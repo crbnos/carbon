@@ -94,6 +94,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false }, { status: 401 });
   }
 
+  // VERIFY(Phase 1.3): AP bill payments are POLL-ONLY. Rillet documents only
+  // `bill-created`/`bill-updated`/`bill-deleted` webhook events — no
+  // bill-payment (or bill-updated-on-payment) event is confirmed — so this
+  // route stays AR-only and the accounting-pull-sweep (RilletProvider.listChanges
+  // over /bill-payments) is the guarantee for AP settlement. If a
+  // bill-updated-on-payment event is later confirmed, branch here and enqueue a
+  // `bill:` composite-id `payment` op via getRilletBillPaymentSyncEntityId.
+  //
   // Forward-compatibility contract: unrecognized entity/event values are
   // acknowledged and ignored, never rejected.
   const isInvoicePayment =

@@ -197,6 +197,42 @@ export namespace Xero {
   export type InvoiceLineItem = z.infer<typeof InvoiceLineItemSchema>;
   export type InvoiceContact = z.infer<typeof InvoiceContactSchema>;
 
+  // Payment schemas for the Xero Accounting API /Payments endpoint.
+  // A Payment settles exactly ONE invoice — `Invoice.Type` (ACCPAY = bill /
+  // AP, ACCREC = sales invoice / AR) is the family discriminator; the settled
+  // document is `Invoice.InvoiceID`. `PaymentType` is ACCPAYPAYMENT /
+  // ACCRECPAYMENT. `Status` is AUTHORISED (settled) or DELETED (voided).
+  // Kept lenient (passthrough + string enums) — Xero adds fields freely and
+  // the syncer only reads the ids/amount/date/status it needs.
+  export const PaymentInvoiceSchema = z
+    .object({
+      InvoiceID: z.string(),
+      // ACCPAY = Bill (AP), ACCREC = Sales Invoice (AR)
+      Type: z.enum(["ACCPAY", "ACCREC"]).optional(),
+      InvoiceNumber: z.string().optional(),
+      CurrencyCode: z.string().optional()
+    })
+    .passthrough();
+
+  export const PaymentSchema = z
+    .object({
+      PaymentID: z.string(),
+      Date: z.string().optional(), // YYYY-MM-DD (or serialized /Date(...)/)
+      Amount: z.number().optional(),
+      Reference: z.string().optional(),
+      CurrencyRate: z.number().optional(),
+      // ACCRECPAYMENT (AR) | ACCPAYPAYMENT (AP) | ... — lenient
+      PaymentType: z.string().optional(),
+      // AUTHORISED (settled) | DELETED (void) — lenient
+      Status: z.string().optional(),
+      Invoice: PaymentInvoiceSchema.optional(),
+      UpdatedDateUTC: z.string() // serialized /Date(...)/
+    })
+    .passthrough();
+
+  export type PaymentInvoice = z.infer<typeof PaymentInvoiceSchema>;
+  export type Payment = z.infer<typeof PaymentSchema>;
+
   // Purchase Order schemas for Xero Accounting API
   export const PurchaseOrderLineItemSchema = z.object({
     LineItemID: z.string().uuid().optional(),

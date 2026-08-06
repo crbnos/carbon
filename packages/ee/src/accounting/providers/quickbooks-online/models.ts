@@ -185,6 +185,10 @@ export namespace Qbo {
     DueDate: z.string().optional(),
     VendorRef: RefSchema,
     Line: z.array(ExpenseLineSchema),
+    /** ISO-4217 currency ref (`{ value: "EUR" }`) — set on FX bills. */
+    CurrencyRef: RefSchema.optional(),
+    /** Foreign→home exchange rate — set on FX bills (omitted at rate 1). */
+    ExchangeRate: z.number().optional(),
     TotalAmt: z.number().optional(),
     Balance: z.number().optional(),
     PrivateNote: z.string().optional(),
@@ -209,6 +213,72 @@ export namespace Qbo {
   });
 
   export type PurchaseOrder = z.infer<typeof PurchaseOrderSchema>;
+
+  /**
+   * A settled transaction referenced by a payment line. QBO BillPayment lines
+   * carry `LinkedTxn[{ TxnId, TxnType:"Bill" }]`; Payment lines carry
+   * `TxnType:"Invoice"`. Only the id + type are used (to resolve the Carbon
+   * bill/invoice via the mapping table).
+   */
+  export const LinkedTxnSchema = z.object({
+    TxnId: z.string(),
+    TxnType: z.string(),
+    TxnLineId: z.string().optional()
+  });
+
+  export type LinkedTxn = z.infer<typeof LinkedTxnSchema>;
+
+  /**
+   * A single application line on a Payment / BillPayment: `Amount` is the
+   * amount applied to the linked document(s). `LinkedTxn` is normally a single
+   * Bill/Invoice per line, but is modeled as an array (QBO's wire shape).
+   */
+  export const PaymentLineSchema = z.object({
+    Amount: z.number().optional(),
+    LinkedTxn: z.array(LinkedTxnSchema).optional()
+  });
+
+  export type PaymentLine = z.infer<typeof PaymentLineSchema>;
+
+  /**
+   * QBO Payment (Accounts Receivable): a customer payment applied to one or
+   * more Invoices via `Line[].LinkedTxn{TxnType:"Invoice"}`. Lenient — only the
+   * fields the payment syncer maps are modeled; QBO returns many more.
+   */
+  export const PaymentSchema = z.object({
+    Id: z.string(),
+    SyncToken: z.string().optional(),
+    TxnDate: z.string().optional(), // YYYY-MM-DD
+    TotalAmt: z.number().optional(),
+    CurrencyRef: RefSchema.optional(),
+    ExchangeRate: z.number().optional(),
+    CustomerRef: RefSchema.optional(),
+    PrivateNote: z.string().optional(),
+    Line: z.array(PaymentLineSchema).optional(),
+    MetaData: MetaDataSchema.optional()
+  });
+
+  export type Payment = z.infer<typeof PaymentSchema>;
+
+  /**
+   * QBO BillPayment (Accounts Payable): a vendor payment applied to one or more
+   * Bills via `Line[].LinkedTxn{TxnType:"Bill"}`. Same lenient contract as
+   * PaymentSchema.
+   */
+  export const BillPaymentSchema = z.object({
+    Id: z.string(),
+    SyncToken: z.string().optional(),
+    TxnDate: z.string().optional(),
+    TotalAmt: z.number().optional(),
+    CurrencyRef: RefSchema.optional(),
+    ExchangeRate: z.number().optional(),
+    VendorRef: RefSchema.optional(),
+    PrivateNote: z.string().optional(),
+    Line: z.array(PaymentLineSchema).optional(),
+    MetaData: MetaDataSchema.optional()
+  });
+
+  export type BillPayment = z.infer<typeof BillPaymentSchema>;
 
   export const JournalEntryLineDetailSchema = z.object({
     /** QBO journal lines are unsigned; the side lives here. */

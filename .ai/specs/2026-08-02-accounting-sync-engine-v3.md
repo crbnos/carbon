@@ -243,6 +243,17 @@ In `journals` mode the AR/AP control-account pre-flight inverts: control-account
 expected and allowed (the check's purpose — preventing double-posting next to documents —
 only applies in `documents` mode).
 
+**Complement — inbound payment settlement sync-back (v2 Phase F, 2026-08-05).** The
+Phase 4 work here is the *outbound* half of payments: Carbon-owned AR/AP payment **journals**
+pushed to the provider GL in `journals` mode. Its mirror — provider-owned payments pulled
+**inbound** as `payment` + `invoiceSettlement` settlements that close Carbon's
+`salesInvoice`/`purchaseInvoice` in `documents` mode — is specified in
+[v2 §Phase F](2026-07-09-accounting-sync-engine.md) (generalizes the shipped Rillet AR
+payment syncer to AP bill payments across QBO, Xero, and Rillet). The two never touch the
+same payment: `journals` mode = Carbon owns it (outbound, Phase 4); `documents` mode = the
+provider owns it (inbound, Phase F). Inbound pull is gated on `families.{ar,ap}='documents'`
+exactly so the seam is clean.
+
 ### 3. Dimension sync (I3)
 
 Two layers, mirroring how account mapping already works:
@@ -734,6 +745,18 @@ Verified against docs.api.rillet.com + the live sandbox:
   `[{ field_id, field_value_id }]` — ids, never names.
 - Unlike external-reference TYPES (dashboard-only), Fields are fully
   API-manageable. autoCreate-on-push for Rillet slots is confirmed viable.
+
+## Changelog addendum — inbound payment sync-back split to v2 Phase F (2026-08-05)
+
+Phase 4's payment scope here is **outbound only** (Carbon-owned payment journals →
+provider GL, `journals` mode). The **inbound** complement — provider-owned payments
+(a vendor bill marked paid in QBO/Xero/Rillet) pulled back as `payment` +
+`invoiceSettlement` settlements closing Carbon's `salesInvoice`/`purchaseInvoice` in
+`documents` mode — was specified as **v2 Phase F** (2026-08-05) rather than folded here,
+because it lives on the pull-sweep/syncer machinery this spec explicitly does *not*
+rewrite. It generalizes the shipped Rillet AR payment syncer to AP bill payments across
+all three providers. See the "Complement" note in §2 and
+`.ai/plans/2026-08-05-accounting-bill-payment-sync.md`. No change to Phase 4's own scope.
 
 Carbon-side capture (Phase 1) is live: `journalLineDimension` rows exist on
 real posted journals (Item/Supplier/Location observed on the sandbox

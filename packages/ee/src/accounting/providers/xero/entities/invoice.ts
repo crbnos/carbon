@@ -1,5 +1,6 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import { loadAccountCodesById } from "../../../core/account-mapping";
 import { createMappingService } from "../../../core/external-mapping";
 import {
   type Accounting,
@@ -101,8 +102,43 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
   Xero.Invoice,
   "UpdatedDateUTC"
 > {
+  private salesAccountCodePromise?: Promise<string | null>;
+
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
+  }
+
+  /**
+   * The Xero AccountCode item-referenced AR invoice lines post to: the item's
+   * mapped REVENUE account (`accountDefault.salesAccount` → the account-mapping
+   * externalCode) — the same resolution that feeds Rillet's product
+   * `account_code` and QBO's `IncomeAccountRef`. Falls back to the provider's
+   * `defaultSalesAccountCode` only when the sales account is unset or unmapped
+   * (so AR sync is never blocked). Per-company defaults are resolved once.
+   */
+  private getSalesAccountCode(): Promise<string | null> {
+    if (!this.salesAccountCodePromise) {
+      this.salesAccountCodePromise = (async () => {
+        const defaults = await this.database
+          .selectFrom("accountDefault")
+          .select("salesAccount")
+          .where("companyId", "=", this.companyId)
+          .executeTakeFirst();
+
+        const fallback =
+          (this.provider as XeroProvider).settings?.defaultSalesAccountCode ??
+          null;
+
+        if (!defaults?.salesAccount) return fallback;
+
+        const codesById = await loadAccountCodesById(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id
+        });
+        return codesById.get(defaults.salesAccount) ?? fallback;
+      })();
+    }
+    return this.salesAccountCodePromise;
   }
 
   // =================================================================
@@ -324,14 +360,11 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       local.customerId
     );
 
-    // Get default account code from provider settings
-    const xeroProvider = this.provider as XeroProvider;
-    const defaultAccountCode = xeroProvider.settings?.defaultSalesAccountCode;
+    // Item-referenced AR posts to the item's mapped REVENUE account
+    // (accountDefault.salesAccount), NOT the blunt defaultSalesAccountCode.
+    const salesAccountCode = await this.getSalesAccountCode();
 
-    logger.info("Provider settings", {
-      settings: xeroProvider.settings,
-      defaultAccountCode
-    });
+    logger.info("Sales AccountCode", { salesAccountCode });
 
     // Build line items, resolving item dependencies
     const lineItems: Xero.InvoiceLineItem[] = [];
@@ -345,8 +378,8 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         UnitAmount: line.unitPrice,
         TaxAmount: taxAmount,
         LineAmount: line.quantity * line.unitPrice,
-        // Use default account code from settings if no account specified
-        AccountCode: defaultAccountCode,
+        // The item's mapped revenue account (item-referenced AR).
+        AccountCode: salesAccountCode ?? undefined,
         // TaxType is required by Xero: OUTPUT for sales tax, NONE for zero tax
         TaxType: line.taxPercent > 0 ? "OUTPUT" : "NONE"
       };

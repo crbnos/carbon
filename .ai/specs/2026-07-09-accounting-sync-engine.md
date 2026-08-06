@@ -223,6 +223,142 @@ decided by the local invoice mapping — the sweep drops changes whose
 `shouldSync` benignly skips webhook-delivered payments on unmapped invoices
 (another instance's subsidiary, or a Rillet-native invoice).
 
+### Phase F — Inbound payment sync-back, generalized to AP bill payments (all providers) (added 2026-08-05)
+
+Inbound payment sync-back today is **Rillet-only and AR-only**: a customer
+invoice payment recorded in Rillet flows back and closes the Carbon
+`salesInvoice`, but a **vendor bill marked paid** in *any* provider never
+reaches Carbon — the `purchaseInvoice` sits open forever. QBO and Xero have no
+payment syncer at all. Phase F closes this for all three providers and both
+families, driven by the AP gap (Brad, 2026-08-05).
+
+The insight that makes it small: Carbon's payment model is already
+**family-symmetric**. AR and AP settle through the *same* two tables
+(`20260630093809_ar-ap-payments.sql`) — a `payment` row discriminated by
+`paymentType` (`Receipt`/`Disbursement`) + party (`customerId`/`supplierId`),
+and an `invoiceSettlement` row discriminated by target
+(`targetSalesInvoiceId`/`targetPurchaseInvoiceId`). An AP bill payment is the
+exact mirror of the AR path `RilletPaymentSyncer` already writes. So Phase F is
+mostly (1) lift the AR write into a family-agnostic core, (2) add the AP mirror,
+(3) give QBO and Xero their first payment syncers.
+
+**F.1 — Family-agnostic `PaymentSyncerBase` + payment-application core.** Extract
+the Carbon-write half of `RilletPaymentSyncer` into a shared
+`accounting/core/payment-application.ts` (pure DB writes) + a
+`PaymentSyncerBase` (pull-flow override), keyed on a normalized shape each
+provider produces: `NormalizedPayment = { family: 'ar'|'ap', documentRemoteId,
+paymentRemoteId, amount, currencyCode, exchangeRate, paidDate, reference, status:
+'settled'|'failed'|'void' }`. The pull flow:
+1. **Write Draft** (idempotent, keyed by the `payment` mapping): a `payment` row
+   `paymentType: family==='ar' ? 'Receipt' : 'Disbursement'`, `status: 'Draft'`,
+   `customerId`/`supplierId` from the settled document, `bankAccount` from
+   `accountDefault.bankCashAccount`, `reference = <provider payment id>`, readable
+   id via `get_next_sequence('payment', companyId)`; one `invoiceSettlement`
+   (`targetSalesInvoiceId` **or** `targetPurchaseInvoiceId`, `appliedAmount`) per
+   mapped linked document; link the `payment` mapping under the composite id.
+2. **Post via the native path** (see F.5): invoke `post-payment
+   { type: 'post', paymentId, companyId, userId }` — it builds the GL journal,
+   sets `payment.journalId`, and flips the payment to `Posted`. *(Corrected
+   2026-08-05 review: `post-payment` does **not** write
+   `salesInvoice`/`purchaseInvoice` status — document status is **view-derived**
+   from settlements of `Posted` payments in the `salesInvoices`/`purchaseInvoices`
+   views.)* `failed`/`void` → `post-payment { type: 'void' }` (reversing journal,
+   payment → `Voided`; **settlement rows are retained** — the views exclude
+   non-Posted payments, which is what reopens the document). **No hand-written
+   document-status logic** — the views own it (drops the AR helper duplication).
+
+Because posting goes through `post-payment` (a separate invocation, not the base
+`withTriggersDisabled` tx), `PaymentSyncerBase` overrides
+`pullFromAccounting`/`pullBatchFromAccounting`: the Draft write happens in the
+base upsert, then post-payment runs after commit. The existing
+`RilletPaymentSyncer` is refactored onto this base. **This intentionally changes
+the shipped Rillet AR behavior** — pulled AR payments now post a Carbon GL
+journal (previously `journalId: NULL`, which left Carbon's GL AR uncleared). A
+behavior-*change* test documents the new AR path (payment + settlement + status
+**+ GL journal**) before AP is added; the AR document-status outcomes stay
+identical.
+
+**F.2 — One `PaymentSyncer` per provider, `payment` entity reused.** No new
+entity type: `payment` already declares `dependsOn: ['invoice','bill']` and
+`supportedDirections: ['pull-from-accounting']` (`core/models.ts`). Register
+`payment` (pull-only, `owner: 'accounting'`) in the QBO and Xero syncer
+registries the way Rillet already does (`RILLET_PULL_ONLY_ENTITIES`). Each
+provider's syncer maps its native payment object → `NormalizedPayment` and calls
+the core. Detection rides the **existing pull sweep as the correctness
+guarantee** (Phase E doctrine — webhooks are latency optimizations, never the
+guarantee); webhooks accelerate only where a provider offers a first-class one:
+
+| Provider | AP object | Poll (the guarantee) | Webhook accelerator |
+|---|---|---|---|
+| **QBO** | first-class `BillPayment` entity (`Line[].LinkedTxn{TxnType:'Bill'}`); AR = `Payment` | add `Payment` + `BillPayment` to `QBO_CDC_ENTITY_TYPES` → existing CDC `listChanges` (correctness backstop). **Deletes (review 2026-08-05):** a CDC `Deleted` stub for `Payment`/`BillPayment` must map to a tombstone `NormalizedPayment{status:'void'}` — a refetch 404s and the sweep's generic deleted-stub skip would leave Carbon `Posted` forever; voids (not deletes) arrive as `TotalAmt === 0` | **committed (Brad, 2026-08-05):** build the first QBO webhook route (`webhook.quickbooks.$companyId.ts`, Intuit `intuit-signature` HMAC verify) for direct `BillPayment`/`Payment` notifications; CDC remains the backstop; cross-path dedupe via the live-operation index + cooldown (see the dedupe note below) |
+| **Xero** | payment on an `Invoice` of `Type='ACCPAY'` via the `/Payments` endpoint (`PaymentType=ACCPAYPAYMENT`); AR = ACCREC | **new**: give `XeroProvider` `SupportsIncrementalPull`, poll `GET /Payments` with `If-Modified-Since` (Xero has no `listChanges` today — inbound was webhook-only). **Voids (review 2026-08-05):** the poll must include `Status=="DELETED"` (second leg or unfiltered) — an `AUTHORISED`-only filter never surfaces deletions, and the Invoice-update accelerator can't either (a deleted payment is absent from the refetched `Payments[]`), so the `DELETED → void` path would be unreachable | Xero has **no payment webhook** (categories: Contact, Invoice, CreditNote, Subscription). Paying an ACCPAY bill mutates the invoice → **Invoice-update webhook** fires; extend the existing Xero inbound webhook to fetch the invoice's `Payments[]` as an accelerator (settled payments only — never voids; see poll) |
+| **Rillet** | dedicated `/bill-payments` (`list-bill-payments`) | extend `listChanges` to also list bill payments via `updated.gt` **(VERIFY the filter is exposed on this endpoint in the live OpenAPI)**. **FX (review 2026-08-05):** the Rillet mapper hardcodes `exchangeRate: 1` (v1 same-currency simplification) — park non-base-currency payments as `Warning` rather than posting at 1.0 | no dedicated bill-payment event (AP events are only `bill-created/updated/deleted`); a payment *should* surface as `bill-updated` but that is **not doc-guaranteed** → **poll is the guarantee for Rillet AP**; wire `bill-updated` as an accelerator only if VERIFY confirms it fires on payment |
+
+**Enablement default (resolved 2026-08-05 review):** `DEFAULT_SYNC_CONFIG` ships `payment`
+as `enabled: false`, and QBO's/Xero's `listChanges` gate on that flag. Like Rillet's
+`RILLET_PULL_ONLY_ENTITIES`, the QBO and Xero registries **force-enable** the pull-only
+`payment` entity, so payment sync-back works out of the box wherever the F.4 `families` gate
+(default `documents`) allows it — the families mode is the user-facing switch, not the entity
+toggle. Verify both registries actually force it (Rillet's mechanism is the template).
+
+**Cross-path dedupe, stated precisely (review 2026-08-05):** webhook and sweep enqueues use
+*different* `idempotencyKey` scopes (`event.id` vs `pull:<updatedAt>`), so the idempotency
+unique index does **not** collapse them. What does: the live-operation unique index (the same
+composite entityId absorbs a second enqueue while one is Pending/In-Flight), the 60s
+completed-cooldown, and — for anything that slips past both — the `postAction: 'none'` guard
+in `upsertLocalPaymentDraft` (re-pulling an already-`Posted` payment is a no-op). Do not
+"simplify" the live index away on the belief that idempotencyKey covers it.
+
+**F.3 — Composite entity id, generalized.** Keep the AR composite contract
+(`<documentRemoteId>:<paymentRemoteId>`) but let `documentRemoteId` be the
+settled **invoice or bill** remote id. `dependsOnMapping` targets that document,
+so the sweep drops (no ledger noise) any provider payment whose settled document
+isn't locally mapped — the exact ownership skip the Rillet AR syncer already
+does. A **multi-document** provider payment (a QBO `BillPayment` paying several
+bills) fans out to **one Carbon `payment` + N `invoiceSettlement` rows**, one per
+mapped linked document — native to Carbon's model (a payment has many
+settlements). Partial payments settle `appliedAmount < invoiceTotal` → document
+status `Partially Paid`.
+
+**F.4 — Ownership boundary with v3 journal-mode (no collision).** v3 Phase 4
+pushes **Carbon-owned** AR/AP payments *outbound* as journal entries (journals
+mode). Phase F pulls **provider-owned** payments *inbound* as settlements
+(documents mode). They never touch the same payment: a payment Carbon recorded
+and pushed has a `owner:'carbon'` mapping, so the inbound `shouldSync` skips it;
+a payment born in the provider has no Carbon origin, so it flows in. Concretely,
+inbound payment pull is **gated on the family being in `documents` mode**
+(`families.ar`/`families.ap = 'documents'`, the default): in `documents` mode the
+provider owns AR/AP and its payments close Carbon's documents; in `journals`/`none`
+mode Carbon owns the payment (or handles it outside) and nothing is pulled. This
+is the clean seam between the two specs — see the v3 §2 complement note.
+
+**F.5 — GL stance: post to Carbon's GL via the native `post-payment` path (no
+double-count).** *(Revised 2026-08-05 per Brad — supersedes the earlier
+`journalId: NULL` stance.)* Carbon's GL and the provider's GL are **separate
+books**. Posting a pulled payment to *Carbon's own* GL (Dr AP / Cr Bank for a
+bill payment; Dr Bank / Cr AR for an invoice payment) is correct and necessary —
+otherwise Carbon's GL AP/AR balance is **never cleared** even though the document
+shows Paid (the latent bug in the shipped `journalId: NULL` AR path). The
+double-count risk is only in the **provider's** GL, and only if Carbon pushed
+that payment journal back out — which it cannot: in `documents` mode (the *only*
+mode inbound pull runs in, F.4) the `Payment` sourceType is **hard-excluded from
+outbound journal push** (DOC_BACKED, Phase B §2), doubly guarded by the AR/AP
+control-account safety net. So the payment journal lives in Carbon and is never
+re-posted to the provider.
+
+Mechanically, the core **reuses the native `post-payment` edge function** rather
+than hand-rolling GL logic: `upsertLocalPaymentDraft` writes the `payment` as
+**Draft** + `invoiceSettlement` + mapping (idempotent), then invokes
+`post-payment { type: 'post', paymentId, companyId, userId }`, which builds the
+journal (respecting `accountingEnabled` — no journal when accounting is off,
+same as native; the payment still flips to `Posted`) and sets
+`payment.journalId`. Document status is view-derived (see F.1). Void/failed →
+`post-payment { type: 'void' }` (reversing journal; payment `Voided`;
+settlements retained; the document reopens via the view filter). This means the
+syncer does **not** hand-write document-status logic (drops the AR helper
+duplication) and gets FX/discount/period-lock handling for free. A period-locked
+payment surfaces as a `Warning` like any other — a real, actionable state.
+
 ### Design Decisions
 
 | Decision | Choice | Rationale |
@@ -255,6 +391,12 @@ decided by the local invoice mapping — the sweep drops changes whose
 | Backward compat (heuristic 7) | Credential read-shim; `externalIntegrationMapping` schema untouched; `DEFAULT_SYNC_CONFIG` behavior identical when no stored config; existing Xero mappings keep working | No public contract changes; EE-internal surfaces only |
 | Plan gating | QBO/QBD registered in the `integrations` array with `FEATURE_PLANS` gates like Xero | `packages/ee/AGENTS.md`: FEATURE_PLANS is the single source of truth |
 | DELETE sync | Still not implemented (log + skip), unchanged | `packages/ee/AGENTS.md` "Never"; deletion semantics differ per provider and are out of scope |
+| Inbound payment scope (Phase F) | AP bill payments for all three providers **+** AR generalized into the same syncer for QBO/Xero (Rillet AR already ships) | The ask is AP; but QBO/Xero have no payment syncer at all, and Carbon's AR/AP tables are symmetric — a family-agnostic syncer delivers AP for the price of AP and closes the AR hole for free. **One scope expansion surfaced for veto** (cut to AP-only if desired) |
+| Payment-application code shape | One family-agnostic `core/payment-application.ts` (`upsertLocalPayment`); providers only normalize their payment object | Carbon's `payment`/`invoiceSettlement` already unify AR/AP by discriminator; avoids three copies of the write path |
+| Payment detection mechanism | Pull sweep (`listChanges`) is the guarantee for all three; webhooks accelerate — **QBO webhook now committed scope** (Brad, 2026-08-05), Xero/Rillet keep poll-first | Phase E doctrine (webhooks are latency, not correctness); QBO has first-class `BillPayment`/`Payment` webhooks worth building; Xero has no payment webhook and Rillet no bill-payment event, so poll is their reliable path |
+| Reused entity type | `payment` (already `dependsOn:['invoice','bill']`, `pull-from-accounting`), not a new `billPayment` type | A payment is a payment; family derives from the settled document; no schema or enum change |
+| GL posting for pulled payments | **Post to Carbon's GL** via the native `post-payment` edge fn (Draft → post); double-count avoided by the documents-mode `Payment` outbound-push exclusion, not by skipping the GL | Carbon's GL is a separate book from the provider's; leaving it unposted (`journalId: NULL`) leaves Carbon's AP/AR uncleared — the latent bug in the shipped AR path. Reuse `post-payment` (no duplicated GL logic); the payment journal is DOC_BACKED-excluded from re-push, so the provider is never double-posted (Brad, 2026-08-05) |
+| Inbound-pull gating | Enabled per family only in `documents` mode (`families.{ar,ap}='documents'`) | Clean seam with v3 Phase 4 (journals mode = Carbon owns the payment, pushed outbound); no double-representation |
 
 ## Data Model Changes
 
@@ -318,6 +460,11 @@ gained a seed row for `rillet` instead.)
   provider lock date for QBO) lives in `companyIntegration.metadata.settings` — existing
   pattern, no schema change.
 - **No changes** to `journal`, `externalIntegrationMapping`, or `companyIntegration` columns.
+- **Phase F adds no schema at all**: it reuses the existing `payment` +
+  `invoiceSettlement` tables, `externalIntegrationMapping(entityType='payment')`,
+  and the `companyIntegration.metadata.settings` blob (a per-family
+  `paymentSyncback` enable flag under the existing `postingSync`/`families`
+  settings). No migration, no enum value, no new table.
 - After migration: `pnpm run generate:types` before typecheck (full-stack type chain).
 
 ## API / Service Changes
@@ -428,6 +575,41 @@ contacts, payment status transitions), webhook signature tests, and a
 sandbox live-fire gate (journal + AR_ONLY invoice push, signed
 payment webhook → Carbon payment + settlement rows).
 
+Phase F — inbound payment sync-back (AR generalization + AP bill payments)
+- [ ] Refactoring `RilletPaymentSyncer` onto `core/payment-application.ts` leaves
+      AR behavior identical: an invoice payment still produces the same
+      `payment` (Receipt) + `invoiceSettlement` + `salesInvoice` status
+      (behavior-parity test on the existing AR path before AP is added).
+- [ ] **Rillet AP:** marking a Carbon-synced bill paid in the Rillet sandbox
+      produces, within one pull sweep, a Carbon `payment` (`Disbursement`,
+      `supplierId`) + `invoiceSettlement` (`targetPurchaseInvoiceId`) and flips
+      the `purchaseInvoice` to `Paid`; a partial payment → `Partially Paid`.
+- [ ] **QBO AP:** a QBO `BillPayment` against a mapped Bill lands the same
+      Carbon rows via CDC pull; a `BillPayment` paying **two** bills produces one
+      `payment` + two `invoiceSettlement` rows (only for the mapped bills).
+- [ ] **QBO AR:** a QBO `Payment` against a mapped Invoice lands a `Receipt`
+      payment + `salesInvoice` status (same syncer, other family).
+- [ ] **Xero AP:** applying a payment to an `ACCPAY` invoice in the Xero sandbox
+      is picked up by the new `/Payments` `If-Modified-Since` sweep and closes the
+      `purchaseInvoice`; the Invoice-update webhook accelerates it (same rows, no
+      duplicate — the live-operation index + cooldown + `postAction:'none'` guard
+      collapse webhook + sweep).
+- [ ] **Ownership boundary:** a payment recorded **in Carbon** (owner `carbon`)
+      is never re-pulled by any provider sweep (`shouldSync` skip); with
+      `families.ap='journals'` no bill payment is pulled at all.
+- [ ] A provider payment on an **unmapped** bill/invoice is dropped by the sweep
+      (no ledger row), not errored.
+- [ ] Deleting/voiding the payment in the provider voids the Carbon `payment`
+      (reversing journal; **settlement rows retained** — the views exclude
+      non-Posted payments, which is what reopens the document). Detection:
+      Xero via the `Status=="DELETED"` poll leg; QBO via the CDC `Deleted`-stub
+      tombstone (hard delete) or `TotalAmt === 0` (void); Rillet via FAILED
+      status.
+- [ ] Per-provider unit tests: payment-object → `NormalizedPayment` mappers
+      (AR + AP, partial, multi-document, void), `core/payment-application.ts`
+      write/void, and `shouldSync` ownership/mapping skips. Sandbox live-fire
+      gates per provider are env-gated (VERIFY notes in §F.2).
+
 ## Risks
 
 | Risk | Severity | Mitigation |
@@ -467,6 +649,10 @@ payment webhook → Carbon payment + settlement rows).
       features off as a documented setup prerequisite (research recommendation over FB_Item).
 - [x] Payments push/pull in Phase B — **Autonomous:** remains disabled in v1; two-way invoice
       sync keeps status fresh; payment-application sync revisited with Phase C.
+      *(Update 2026-08-05: inbound AR payment sync-back shipped for Rillet in Phase D/E;
+      inbound AP bill-payment sync-back — plus AR for QBO/Xero — is now specified in
+      **Phase F** and planned at `.ai/plans/2026-08-05-accounting-bill-payment-sync.md`.
+      Outbound payment push stays deferred, except v3 Phase 4 journal-mode payment journals.)*
 - [x] Dimensions → Xero tracking categories / QB classes — **Autonomous:** out of scope v1;
       documented follow-up (mapping table design deferred until posting sync is proven).
 - [x] Employee/time sync (QBD TimeTrackingAdd) — **Autonomous:** out of scope v1.
@@ -493,3 +679,30 @@ payment webhook → Carbon payment + settlement rows).
   webhook; posting-sync defaults gained `Non-Conformance` and
   `Inbound Inspection` (quality scrap posting merged from main) and a
   config-aware Inventory Adjustment double-post guard.
+- 2026-08-05: **Phase F added — inbound payment sync-back generalized to AP bill
+  payments across all three providers** (Brad, 2026-08-05; triggered by a Rillet
+  bill paid in the provider never reaching Carbon). Family-agnostic
+  `core/payment-application.ts` extracted from the shipped Rillet AR path; AP
+  mirror added (`Disbursement`/`supplierId`/`targetPurchaseInvoiceId`/`purchaseInvoice`
+  status); first payment syncers for QBO (`Payment`+`BillPayment` via CDC) and
+  Xero (`/Payments` via a new `SupportsIncrementalPull` on `XeroProvider`).
+  Pull sweep is the guarantee; webhooks accelerate only where first-class. Zero
+  schema change (reuses `payment`/`invoiceSettlement`/`payment` mappings). One
+  scope expansion (AR for QBO/Xero folded into the same syncer) surfaced for
+  veto. Provider-API facts from a fresh capability survey; three VERIFY gates
+  (Rillet `/bill-payments` `updated.gt`; QBO BillPayment CDC/webhook; Xero
+  `/Payments` `If-Modified-Since` + ACCPAY Invoice-update webhook). Complements
+  v3 Phase 4 (outbound payment *journals*). Plan:
+  `.ai/plans/2026-08-05-accounting-bill-payment-sync.md`.
+- 2026-08-05 (review): Phase F corrections after an implementation-grounded review
+  (Phases 0-3 were already built, uncommitted). `post-payment` does **not** write document
+  status (view-derived; F.1/F.5 corrected), and void **retains** settlement rows (acceptance
+  criterion fixed). Two detection gaps closed in-spec: the Xero payments poll must include
+  `Status=="DELETED"` (an `AUTHORISED`-only filter plus the Invoice-update webhook can never
+  surface a deleted payment), and QBO CDC `Deleted` stubs must become tombstone voids (a
+  refetch 404s). Rillet FX: `exchangeRate: 1` is a v1 constraint — park non-base-currency
+  payments as `Warning`. Cross-path webhook/sweep dedupe restated precisely (live-operation
+  index + cooldown + `postAction:'none'`, not idempotencyKey). QBO/Xero registries
+  force-enable the pull-only `payment` entity (the families mode is the switch). Companion
+  plan updated (stale `journalId:NULL` risk row; dropped `paymentSyncback` flag; new
+  Task 4.4 for the review fixes).

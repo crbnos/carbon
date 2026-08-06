@@ -47,6 +47,7 @@ import {
 import {
   type AccountingEntityType,
   enqueueSyncOperation,
+  findPaymentCompositesByRemoteId,
   getAccountingIntegration,
   getProviderIntegration,
   type ProviderChange,
@@ -231,31 +232,26 @@ async function sweepCompanyProvider(args: {
     (change) => change.updatedAt
   );
 
-  for (const change of kept) {
-    if (change.deleted) {
-      // House rule: DELETE sync is deliberately unimplemented — log + skip
-      summary.deletedSkipped++;
-      console.info(
-        `[PULL SWEEP] ${companyId}/${providerId}: skipping deleted ${change.entityType} ${change.remoteId} (remote deletions are not synced)`
-      );
-      continue;
-    }
-
+  // Enqueue one pull-from-accounting ledger operation, folding the result into
+  // the summary. Shared by the normal change path and the deleted-payment
+  // tombstone path (which fans out over resolved composite ids).
+  const enqueueChange = async (
+    entityType: AccountingEntityType,
+    entityId: string,
+    updatedAt: string | null
+  ): Promise<void> => {
     const enqueued = await enqueueSyncOperation(client, {
       companyId,
       integration: providerId,
-      entityType: change.entityType,
-      entityId: change.remoteId,
+      entityType,
+      entityId,
       direction: "pull-from-accounting",
       trigger: "webhook",
       idempotencyKey: getSyncOperationIdempotencyKey({
-        entityType: change.entityType,
-        entityId: change.remoteId,
+        entityType,
+        entityId,
         direction: "pull-from-accounting",
-        scope: getPullIdempotencyScope(
-          change.updatedAt,
-          cursorDecision.changedSince
-        )
+        scope: getPullIdempotencyScope(updatedAt, cursorDecision.changedSince)
       }),
       createdBy
     });
@@ -263,13 +259,49 @@ async function sweepCompanyProvider(args: {
     if (enqueued.error) {
       summary.enqueueErrors++;
       console.error(
-        `[PULL SWEEP] ${companyId}/${providerId}: failed to enqueue ${change.entityType} ${change.remoteId}: ${enqueued.error}`
+        `[PULL SWEEP] ${companyId}/${providerId}: failed to enqueue ${entityType} ${entityId}: ${enqueued.error}`
       );
     } else if (enqueued.data) {
       summary.enqueued++;
     } else {
       summary.cooldownSkipped++;
     }
+  };
+
+  for (const change of kept) {
+    if (change.deleted) {
+      // A deleted `payment` tombstone still needs to VOID the Carbon payment:
+      // resolve the composite(s) from the existing mapping (the tombstone
+      // carries only the bare payment id) and enqueue the reversing pull — the
+      // payment syncer maps the not-found refetch to status "void". Every other
+      // deletion follows the house rule (DELETE sync unimplemented — log+skip).
+      if (change.entityType === "payment") {
+        const composites = await findPaymentCompositesByRemoteId(client, {
+          companyId,
+          integration: providerId,
+          paymentRemoteId: change.remoteId
+        });
+        if (composites.length === 0) {
+          summary.deletedSkipped++;
+          console.info(
+            `[PULL SWEEP] ${companyId}/${providerId}: deleted payment ${change.remoteId} has no local mapping — skipping (never synced or not ours)`
+          );
+          continue;
+        }
+        for (const composite of composites) {
+          await enqueueChange("payment", composite, change.updatedAt);
+        }
+        continue;
+      }
+
+      summary.deletedSkipped++;
+      console.info(
+        `[PULL SWEEP] ${companyId}/${providerId}: skipping deleted ${change.entityType} ${change.remoteId} (remote deletions are not synced)`
+      );
+      continue;
+    }
+
+    await enqueueChange(change.entityType, change.remoteId, change.updatedAt);
   }
 
   // Drain through the shared machinery (a RatelimitError propagates so the

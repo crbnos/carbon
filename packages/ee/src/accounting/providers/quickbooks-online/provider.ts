@@ -18,7 +18,13 @@ import {
   HTTPClient,
   type HttpResponse
 } from "../../core/utils";
-import type { Qbo, QboCreatePayload, QboUpdatePayload } from "./models";
+import { buildQboPaymentSyncChange } from "./entities/payment";
+import {
+  parseQboDate,
+  type Qbo,
+  type QboCreatePayload,
+  type QboUpdatePayload
+} from "./models";
 
 const QBO_PRODUCTION_HOST = "https://quickbooks.api.intuit.com";
 const QBO_SANDBOX_HOST = "https://sandbox-quickbooks.api.intuit.com";
@@ -277,6 +283,45 @@ type QboProviderConfig = ProviderConfig<{
   refreshToken?: string;
 };
 
+/**
+ * Entities QBO PULLS as a pull-only, always-enabled capability: `payment` (QBO
+ * Payment/BillPayment settlements flowing back onto Carbon sales/purchase
+ * invoices). Forced on so the inbound webhook + CDC sweep work as soon as the
+ * integration is connected — there is no per-company toggle for it yet
+ * (mirrors Rillet's RILLET_PULL_ONLY_ENTITIES).
+ */
+export const QBO_PULL_ONLY_ENTITIES = [
+  "payment"
+] as const satisfies readonly AccountingEntityType[];
+
+/**
+ * Overlay the QBO pull-only forcing on a resolved sync config: `payment` is
+ * forced to direction "pull-from-accounting", owner "accounting", enabled.
+ * Every other entity keeps its resolved (default/company-overridden) config —
+ * unlike Rillet, QBO leaves its master/transaction entities two-way.
+ */
+export function buildQboSyncConfig(
+  resolved: GlobalSyncConfig
+): GlobalSyncConfig {
+  const entities = Object.fromEntries(
+    Object.entries(resolved.entities).map(([entityType, entityConfig]) => [
+      entityType,
+      { ...entityConfig }
+    ])
+  ) as GlobalSyncConfig["entities"];
+
+  for (const entityType of QBO_PULL_ONLY_ENTITIES) {
+    entities[entityType] = {
+      ...entities[entityType],
+      direction: "pull-from-accounting",
+      owner: "accounting",
+      enabled: true
+    };
+  }
+
+  return { entities };
+}
+
 export class QboProvider extends BaseProvider {
   static id = ProviderID.QUICKBOOKS;
 
@@ -294,7 +339,8 @@ export class QboProvider extends BaseProvider {
 
   constructor(public config: Omit<QboProviderConfig, "id">) {
     super();
-    this.syncConfig = config.syncConfig;
+    // `payment` is forced pull-only + enabled (see buildQboSyncConfig).
+    this.syncConfig = buildQboSyncConfig(config.syncConfig);
     this.http = new HTTPClient(
       config.environment === "sandbox" ? QBO_SANDBOX_HOST : QBO_PRODUCTION_HOST
     );
@@ -672,6 +718,20 @@ export class QboProvider extends BaseProvider {
     );
   }
 
+  // =================================================================
+  // Payments (pull-only) — directly addressable by id
+  // =================================================================
+
+  /** GET /payment/{id} — a QBO Payment (Accounts Receivable). */
+  async getPayment(id: string): Promise<Qbo.Payment | null> {
+    return this.readEntity<Qbo.Payment>("payment", "Payment", id);
+  }
+
+  /** GET /billpayment/{id} — a QBO BillPayment (Accounts Payable). */
+  async getBillPayment(id: string): Promise<Qbo.BillPayment | null> {
+    return this.readEntity<Qbo.BillPayment>("billpayment", "BillPayment", id);
+  }
+
   async getJournalEntry(id: string): Promise<Qbo.JournalEntry | null> {
     return this.readEntity<Qbo.JournalEntry>(
       "journalentry",
@@ -892,6 +952,16 @@ export class QboProvider extends BaseProvider {
         );
         continue;
       }
+
+      // Payments (Payment / BillPayment) need the settled document to build the
+      // composite entity id + dependency; CDC only carries the payment id, so
+      // refetch the object.
+      if (entityType === "payment") {
+        const change = await this.buildPaymentChange(entry);
+        if (change) changes.push(change);
+        continue;
+      }
+
       changes.push({
         entityType,
         remoteId: entry.id,
@@ -902,16 +972,90 @@ export class QboProvider extends BaseProvider {
 
     return { changes };
   }
+
+  /**
+   * Turn a CDC Payment/BillPayment entry into a `payment` ProviderChange with
+   * the canonical composite id (`<invoiceId>:<paymentId>` /
+   * `bill:<billId>:<paymentId>`) + a `dependsOnMapping` on the primary settled
+   * document. Refetches the payment (CDC carries only the id) — the SAME
+   * composite the notification-only webhook builds, so webhook + CDC dedupe on
+   * the one `payment` mapping. A hard-deleted stub (`entry.deleted`) is emitted
+   * as a bare-id deleted-flagged change WITHOUT refetching (the sweep turns it
+   * into a void); returns null (logged) only for a live payment that settles no
+   * Bill/Invoice.
+   */
+  private async buildPaymentChange(
+    entry: QboChangeDataCaptureEntry
+  ): Promise<ProviderChange | null> {
+    if (entry.deleted) {
+      // A hard-deleted Payment/BillPayment CDC stub carries only its bare id
+      // (no lines, and a refetch would 404), so the composite entity id can't
+      // be rebuilt here. Emit a deleted-flagged change carrying the BARE
+      // payment id; the pull sweep resolves the composite(s) from the existing
+      // payment mapping (suffix match) and enqueues the reversing void pull.
+      // No dependsOnMapping — the settled document is unknown from a tombstone.
+      return {
+        entityType: "payment",
+        remoteId: entry.id,
+        updatedAt: entry.lastUpdatedTime,
+        deleted: true
+      };
+    }
+
+    const family = entry.entityName === "BillPayment" ? "ap" : "ar";
+    const remote =
+      family === "ap"
+        ? await this.getBillPayment(entry.id)
+        : await this.getPayment(entry.id);
+    if (!remote) {
+      console.warn(
+        `[QBO] ${entry.entityName} ${entry.id} not found on refetch — skipping`
+      );
+      return null;
+    }
+
+    const built = buildQboPaymentSyncChange(remote, family);
+    if (!built) {
+      console.warn(
+        `[QBO] ${entry.entityName} ${entry.id} settles no ${
+          family === "ap" ? "Bill" : "Invoice"
+        } — skipping`
+      );
+      return null;
+    }
+
+    return {
+      entityType: "payment",
+      remoteId: built.entityId,
+      updatedAt:
+        parseQboDate(remote.MetaData?.LastUpdatedTime)?.toISOString() ??
+        entry.lastUpdatedTime,
+      dependsOnMapping: {
+        entityType: family === "ap" ? "bill" : "invoice",
+        remoteId: built.documentRemoteId
+      }
+    };
+  }
 }
 
-/** QBO CDC entity names → Carbon entity types. */
+/**
+ * QBO CDC entity names → Carbon entity types. `Payment` (AR) and `BillPayment`
+ * (AP) both map to the single `payment` entity type — the payment syncer
+ * discriminates family from the composite id / object shape.
+ *
+ * VERIFY(sandbox): confirm QBO CDC actually returns `BillPayment` deltas (and
+ * `Payment` deltas) within the 29-day window; research says yes, but Intuit's
+ * CDC-supported-entity list has historically shifted.
+ */
 export const QBO_CDC_ENTITY_TYPES = {
   Customer: "customer",
   Vendor: "vendor",
   Item: "item",
   Invoice: "invoice",
   Bill: "bill",
-  PurchaseOrder: "purchaseOrder"
+  PurchaseOrder: "purchaseOrder",
+  Payment: "payment",
+  BillPayment: "payment"
 } as const satisfies Record<string, AccountingEntityType>;
 
 export type QboCdcEntityName = keyof typeof QBO_CDC_ENTITY_TYPES;

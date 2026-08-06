@@ -295,6 +295,36 @@ export async function getAccountMappings(
 }
 
 /**
+ * Carbon account.id → provider account CODE from the account-mapping rows
+ * (entityType "account"). Providers that address accounts by code (Xero
+ * `AccountCode`, Rillet `account_code`) resolve through the mapping's stored
+ * `externalCode`; mappings without a code count as unmapped and are omitted.
+ * Shared by the Xero bill/invoice syncers (mirrors the journal syncer's
+ * `getAccountCodesById` and Rillet's `loadRilletAccountCodesById`).
+ */
+export async function loadAccountCodesById(
+  db: Db,
+  args: { companyId: string; integration: string }
+): Promise<Map<string, string>> {
+  const mappings = await getAccountMappings(db, {
+    companyId: args.companyId,
+    integration: args.integration
+  });
+
+  if (mappings.error) {
+    throw new Error(`Failed to load account mappings: ${mappings.error}`);
+  }
+
+  const codesById = new Map<string, string>();
+  for (const mapping of mappings.data ?? []) {
+    if (mapping.externalCode) {
+      codesById.set(mapping.accountId, mapping.externalCode);
+    }
+  }
+  return codesById;
+}
+
+/**
  * Upsert an account mapping (Carbon account.id → provider account id).
  * externalCode/externalName go into the mapping metadata for display.
  * Consolidation is a legitimate many-to-one: several Carbon detail

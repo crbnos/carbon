@@ -5,6 +5,7 @@ import { QboCustomerSyncer } from "./entities/customer";
 import { QboSalesInvoiceSyncer } from "./entities/invoice";
 import { QboItemSyncer } from "./entities/item";
 import { QboJournalEntrySyncer } from "./entities/journal-entry";
+import { QboPaymentSyncer } from "./entities/payment";
 import { QboPurchaseOrderSyncer } from "./entities/purchase-order";
 import { QboVendorSyncer } from "./entities/vendor";
 
@@ -15,6 +16,9 @@ export * from "./entities/item";
 // journal-entry exports mapJournalEntryToQboJournalEntry + the syncer for a
 // future QBO daily-consolidation path, mirroring the Xero barrel's contract
 export * from "./entities/journal-entry";
+// payment exports the composite entity-id helpers + buildQboPaymentSyncChange
+// the inbound QBO webhook route uses to enqueue operations
+export * from "./entities/payment";
 export * from "./entities/purchase-order";
 export * from "./entities/shared";
 export * from "./entities/vendor";
@@ -41,10 +45,14 @@ export const qboSyncerRegistry: SyncerRegistry = {
   purchaseOrder: QboPurchaseOrderSyncer,
 
   // Posting sync (push-only journal entries -> QBO JournalEntry objects)
-  journalEntry: QboJournalEntrySyncer
+  journalEntry: QboJournalEntrySyncer,
+
+  // Pull-only (forced by buildQboSyncConfig): QBO Payment (AR) / BillPayment
+  // (AP) settlements flow back onto Carbon sales/purchase invoices
+  payment: QboPaymentSyncer
 
   // Not yet implemented:
-  // - salesOrder / inventoryAdjustment / employee / payment
+  // - salesOrder / inventoryAdjustment / employee
 };
 
 SyncFactory.register(ProviderID.QUICKBOOKS, qboSyncerRegistry);

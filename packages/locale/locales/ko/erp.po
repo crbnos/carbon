@@ -4472,8 +4472,8 @@ msgstr "문서:"
 msgid "Documents"
 msgstr "문서"
 
-msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. Off records them as deliberately excluded."
-msgstr "문서는 송장, 청구서 및 결제를 기본 공급자 문서로 푸시합니다. 해당 저널은 문서에 의해 처리되는 것으로 기록됩니다. 끔은 의도적으로 제외된 것으로 기록합니다."
+msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
+msgstr ""
 
 msgid "Don't Cancel"
 msgstr "취소하지 않음"

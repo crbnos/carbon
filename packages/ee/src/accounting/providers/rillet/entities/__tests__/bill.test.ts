@@ -162,6 +162,101 @@ describe("mapBillToRilletBill (journal-derived costing)", () => {
   });
 });
 
+describe("mapBillToRilletBill — item labels + FX (representation model)", () => {
+  it("prepends the item code/name label to PO-backed line descriptions", () => {
+    const payload = mapBillToRilletBill({
+      bill: bill(),
+      vendorRemoteId: "vendor-remote-1",
+      accountCodesById: codes,
+      subsidiaryId: null,
+      companyId: "company-1",
+      postingJournalLines: [
+        {
+          id: "jl-1",
+          accountId: "acct_grir",
+          amount: 300,
+          description: "GR/IR Clearing",
+          sourceItem: { id: "item-1", code: "WIDGET-1", name: "Widget" }
+        }
+      ],
+      payablesAccountId: "acct_ap"
+    });
+
+    expect(payload.items[0]?.description).toBe(
+      "WIDGET-1 Widget — GR/IR Clearing"
+    );
+    // account + amount unchanged vs the no-label case (parity, base currency).
+    expect(payload.items[0]?.account_code).toBe("2125");
+    expect(payload.items[0]?.amount).toEqual({
+      amount: "300.00",
+      currency: "USD"
+    });
+    expect(payload.exchange_rate).toBeUndefined();
+  });
+
+  it("uses the item label alone when the line has no journal description", () => {
+    const payload = mapBillToRilletBill({
+      bill: bill(),
+      vendorRemoteId: "vendor-remote-1",
+      accountCodesById: codes,
+      subsidiaryId: null,
+      companyId: "company-1",
+      postingJournalLines: [
+        {
+          id: "jl-1",
+          accountId: "acct_grir",
+          amount: 300,
+          description: null,
+          sourceItem: { id: "item-1", code: "WIDGET-1", name: null }
+        }
+      ],
+      payablesAccountId: "acct_ap"
+    });
+    expect(payload.items[0]?.description).toBe("WIDGET-1");
+  });
+
+  it("replays an FX bill in transaction currency + pins exchange_rate", () => {
+    const fxBill = {
+      ...bill(),
+      currencyCode: "EUR",
+      exchangeRate: 2
+    } as unknown as Accounting.Bill;
+
+    const payload = mapBillToRilletBill({
+      bill: fxBill,
+      vendorRemoteId: "vendor-remote-1",
+      accountCodesById: new Map([
+        ["acct_grir", "2125"],
+        ["acct_ppv", "5210"]
+      ]),
+      subsidiaryId: null,
+      companyId: "company-1",
+      // base-currency debit-signed amounts (rate 2 → half in EUR)
+      postingJournalLines: [
+        {
+          id: "jl-1",
+          accountId: "acct_grir",
+          amount: 300,
+          description: "GR/IR Clearing"
+        },
+        {
+          id: "jl-2",
+          accountId: "acct_ppv",
+          amount: -20,
+          description: "Purchase Price Variance"
+        }
+      ],
+      payablesAccountId: "acct_ap"
+    });
+
+    expect(payload.exchange_rate).toBe(2);
+    expect(payload.items.map((i) => [i.account_code, i.amount])).toEqual([
+      ["2125", { amount: "150.00", currency: "EUR" }],
+      ["5210", { amount: "-10.00", currency: "EUR" }]
+    ]);
+  });
+});
+
 describe("mapBillToRilletBill — dimensions (Fields)", () => {
   const LOCATION_DIM = "dim_loc";
   const LOCATION_FIELD_ID = "f1d10000-0000-0000-0000-000000000001";

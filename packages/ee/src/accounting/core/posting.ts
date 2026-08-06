@@ -65,6 +65,25 @@ export function resolvePostingSyncSettings(
   return parsed.data;
 }
 
+/**
+ * Whether inbound payment sync-back is allowed for an AR/AP family: true
+ * ONLY when that family is in `documents` mode. Payments settle the pushed
+ * documents, so pulling provider payments back is coherent only when Carbon
+ * owns the documents (documents mode). `journals`/`none` families do not pull
+ * payments. A missing/invalid config resolves to the defaults (documents for
+ * both families), so an unconfigured integration keeps sync-back ENABLED —
+ * preserving today's Rillet AR behavior.
+ */
+export function isPaymentSyncbackEnabled(
+  integrationMetadata: unknown,
+  family: "ar" | "ap"
+): boolean {
+  return (
+    resolvePostingSyncSettings(integrationMetadata).families[family] ===
+    "documents"
+  );
+}
+
 // /********************************************************\
 // *              Posting policy decision (v3)              *
 // \********************************************************/
@@ -420,7 +439,11 @@ export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   // Rillet requires external_references on AR_ONLY invoices, and every
   // reference type must be a slug pre-registered (dashboard-only) under
   // Rillet Settings → External References — user-fixable there.
-  "EXTERNAL_REFERENCE_TYPE_MISSING"
+  "EXTERNAL_REFERENCE_TYPE_MISSING",
+  // A document push was skipped because the provider rejects edits to a
+  // document that already carries payments (Xero paid/partially-paid bills).
+  // User-fixable: void/unapply the payment in the provider, then retry.
+  "DOC_HAS_PAYMENTS"
 ] as const;
 
 export type JournalEntrySyncErrorCode =

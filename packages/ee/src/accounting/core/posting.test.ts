@@ -5,6 +5,7 @@ import {
   getDailyConsolidationNarration,
   getDimensionTupleKey,
   getPostingSyncSourceTypeSkipReason,
+  isPaymentSyncbackEnabled,
   JournalEntrySyncError,
   netJournalLinesPerAccount,
   resolvePostingSyncSettings,
@@ -614,5 +615,62 @@ describe("aggregateJournalEntriesForDate — dimension tuples", () => {
         roundingAccountId: "acct_rounding"
       })
     ).toThrowError(JournalEntrySyncError);
+  });
+});
+
+// ── Documents-mode payment sync-back gate (Phase 0.4) ────────────────────────
+// Inbound payment pull is allowed for a family only when it is in `documents`
+// mode; a missing/invalid config defaults to documents (sync-back enabled).
+
+describe("isPaymentSyncbackEnabled", () => {
+  function metadata(family: "ar" | "ap", mode: string) {
+    return { settings: { postingSync: { families: { [family]: mode } } } };
+  }
+
+  it("returns true when the family is in documents mode", () => {
+    expect(isPaymentSyncbackEnabled(metadata("ar", "documents"), "ar")).toBe(
+      true
+    );
+    expect(isPaymentSyncbackEnabled(metadata("ap", "documents"), "ap")).toBe(
+      true
+    );
+  });
+
+  it("returns false when the family is in journals mode", () => {
+    expect(isPaymentSyncbackEnabled(metadata("ar", "journals"), "ar")).toBe(
+      false
+    );
+    expect(isPaymentSyncbackEnabled(metadata("ap", "journals"), "ap")).toBe(
+      false
+    );
+  });
+
+  it("returns false when the family is set to none", () => {
+    expect(isPaymentSyncbackEnabled(metadata("ar", "none"), "ar")).toBe(false);
+    expect(isPaymentSyncbackEnabled(metadata("ap", "none"), "ap")).toBe(false);
+  });
+
+  it("defaults to enabled (documents) for absent or invalid metadata", () => {
+    expect(isPaymentSyncbackEnabled(undefined, "ar")).toBe(true);
+    expect(isPaymentSyncbackEnabled(null, "ap")).toBe(true);
+    expect(isPaymentSyncbackEnabled({}, "ar")).toBe(true);
+    expect(isPaymentSyncbackEnabled({ settings: {} }, "ap")).toBe(true);
+    // A bad stored fragment resolves to defaults, not a crash.
+    expect(
+      isPaymentSyncbackEnabled(
+        { settings: { postingSync: { families: "nonsense" } } },
+        "ar"
+      )
+    ).toBe(true);
+  });
+
+  it("gates each family independently", () => {
+    const meta = {
+      settings: {
+        postingSync: { families: { ar: "documents", ap: "journals" } }
+      }
+    };
+    expect(isPaymentSyncbackEnabled(meta, "ar")).toBe(true);
+    expect(isPaymentSyncbackEnabled(meta, "ap")).toBe(false);
   });
 });

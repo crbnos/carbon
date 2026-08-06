@@ -4472,8 +4472,8 @@ msgstr "Documento:"
 msgid "Documents"
 msgstr "Documentos"
 
-msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. Off records them as deliberately excluded."
-msgstr "Documents envía facturas, pagarés y pagos como documentos de proveedor nativos; sus diarios se registran como cubiertos por el documento. Off los registra como deliberadamente excluidos."
+msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
+msgstr ""
 
 msgid "Don't Cancel"
 msgstr "No Cancelar"

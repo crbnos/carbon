@@ -6,6 +6,7 @@ import { InventoryAdjustmentSyncer } from "./entities/inventory-adjustment";
 import { SalesInvoiceSyncer } from "./entities/invoice";
 import { ItemSyncer } from "./entities/item";
 import { JournalEntrySyncer } from "./entities/journal-entry";
+import { XeroPaymentSyncer } from "./entities/payment";
 import { PurchaseOrderSyncer } from "./entities/purchase-order";
 import { SalesOrderSyncer } from "./entities/sales-order";
 
@@ -16,6 +17,9 @@ export * from "./entities/item";
 // journal-entry exports mapJournalEntryToManualJournal + JournalEntrySyncer
 // for the daily-consolidation cron (@carbon/jobs), per its doc contract
 export * from "./entities/journal-entry";
+// payment exports the composite entity-id helpers the inbound Invoice-update
+// webhook accelerator uses to enqueue payment operations
+export * from "./entities/payment";
 export * from "./entities/purchase-order";
 export * from "./models";
 export * from "./provider";
@@ -42,11 +46,14 @@ export const xeroSyncerRegistry: SyncerRegistry = {
   inventoryAdjustment: InventoryAdjustmentSyncer,
 
   // Posting sync (push-only journal entries -> Xero Manual Journals)
-  journalEntry: JournalEntrySyncer
+  journalEntry: JournalEntrySyncer,
+
+  // Pull-only: Xero payments (ACCREC → AR, ACCPAY → AP) settle Carbon
+  // sales/purchase invoices. Forced pull-only/enabled by buildXeroSyncConfig.
+  payment: XeroPaymentSyncer
 
   // Not yet implemented:
   // - employee: Xero no longer supports the Employees API
-  // - payment
 };
 
 SyncFactory.register(ProviderID.XERO, xeroSyncerRegistry);

@@ -301,7 +301,9 @@ export function PostingSyncSettings({
               <Trans>
                 Documents pushes invoices, bills and payments as native provider
                 documents; their journals are recorded as covered by the
-                document. Off records them as deliberately excluded.
+                document. It also pulls payments recorded in the provider back
+                into Carbon, closing the matching invoice or bill and posting a
+                Carbon GL journal. Off records them as deliberately excluded.
               </Trans>
             </p>
           </div>

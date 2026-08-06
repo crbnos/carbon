@@ -1,16 +1,17 @@
+import { buildDimensionValueMappingEntityId } from "../../../core/dimension-mapping";
 import {
-  buildDimensionValueMappingEntityId,
-  loadJournalLineDimensions
-} from "../../../core/dimension-mapping";
+  type CostingLine,
+  costingLineItemLabel,
+  loadBillCostingLines,
+  toTransactionCurrencyLines
+} from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
 import {
   collectUnmappedDimensionValues,
   JournalEntrySyncError,
-  type JournalLineDimensionRef,
-  toDebitSignedAmount,
   toPostingDateString
 } from "../../../core/posting";
-import type { Accounting } from "../../../core/types";
+import type { Accounting, ShouldSyncContext } from "../../../core/types";
 import type {
   Rillet,
   RilletBillCreate,
@@ -33,17 +34,36 @@ import {
  * purchase-invoice id.
  *
  * Rillet bill items are ACCOUNT-COSTED only (`account_code` + amount —
- * there is no item/product reference on bills), so every Carbon line must
- * resolve to a mapped G/L account through the account-mapping
- * externalCode map (the journal syncer's resolution path). Lines without
- * an account, or with an unmapped account, fail as the structured
- * UNMAPPED_ACCOUNTS Warning — the user assigns/maps the account and
- * retries. There is deliberately NO silent fallback account: misclassed
+ * there is no item/product reference on bills), so the bill reproduces the
+ * bill's posted "Purchase Invoice" journal: its lines minus the AP control
+ * line ARE the bill items (shared `loadBillCostingLines`). The item behind
+ * each PO-backed line is a description LABEL only, never an account.
+ *
+ * Lines without an account, or with an unmapped account, fail as the
+ * structured UNMAPPED_ACCOUNTS Warning — the user assigns/maps the account
+ * and retries. There is deliberately NO silent fallback account: misclassed
  * AP expense in the ledger of record is worse than a parked operation.
+ *
+ * FX bills replay in the invoice's transaction currency (base ÷
+ * `exchangeRate`, residue balanced) with `exchange_rate` pinned on the
+ * payload. Base-currency bills are byte-identical to the pre-refactor output
+ * (only descriptions gain an item label).
  *
  * `due_date` is REQUIRED by Rillet; when Carbon has none it falls back to
  * the bill date (Rillet's own default for invoices).
  */
+
+// Only posted bills are pushed (Draft has no journal to replay) — mirrors the
+// Rillet invoice syncer's posted-status gate.
+const SYNCABLE_STATUSES: Accounting.Bill["status"][] = [
+  "Pending",
+  "Open",
+  "Return",
+  "Debit Note Issued",
+  "Partially Paid",
+  "Paid",
+  "Overdue"
+];
 
 // Row shapes (mirror the QBO bill syncer's)
 type BillRow = {
@@ -83,52 +103,39 @@ type BillLineRow = {
 };
 
 /**
- * Map a Carbon bill to the Rillet bill create payload. Pure — exported
- * for tests.
- *
- * Rillet bill items are ACCOUNT-COSTED, but Carbon purchase-invoice lines
- * often carry no explicit G/L account — item-backed lines resolve their
- * accounts at POSTING time (GR/IR clearing for received goods, variance
- * accounts, tax, ...). The posted "Purchase Invoice" journal is therefore
- * the source of truth for the bill's costing: its lines minus the AP
- * control line ARE the bill items (debit-signed amounts), and by
- * construction they always sum to the AP amount Rillet re-books through
- * its own bill mechanics. Throws structured Warnings when the journal is
- * missing (invoice not posted / accounting off) or an account is
- * unmapped.
+ * The costing lines that become bill items are the shared `CostingLine`
+ * shape (base-currency, debit-signed, AP control line already excluded, with
+ * item labels + dimensions attached). Kept as a local alias so the pure
+ * mapper's tests read against a stable name.
  */
-export type BillPostingJournalLine = {
-  id: string;
-  accountId: string | null;
-  /** Debit-signed (already converted from Carbon's natural-balance sign). */
-  amount: number;
-  description: string | null;
-  /** journalLineDimension rows — bill items inherit them as Field refs. */
-  dimensions?: JournalLineDimensionRef[];
-};
+export type BillPostingJournalLine = CostingLine;
 
-/**
- * The posting journal lines that become bill items: everything except the
- * AP control line(s) — Rillet re-books the payable through its own bill
- * mechanics. Shared by the mapper and the syncer's dimension pre-flight
- * (only costing lines push, so only their dimension values matter).
- */
-export function filterBillCostingLines(
-  lines: BillPostingJournalLine[],
-  payablesAccountId: string | null
-): BillPostingJournalLine[] {
-  return lines.filter(
-    (line) => line.accountId === null || line.accountId !== payablesAccountId
-  );
+/** Prepend the item code/name label to a costing line's description so the
+ * account-costed bill line still shows what was purchased. */
+function describeCostingLine(line: CostingLine): string | undefined {
+  const label = costingLineItemLabel(line);
+  if (!label) return line.description ?? undefined;
+  return line.description ? `${label} — ${line.description}` : label;
 }
 
+/**
+ * Map a Carbon bill to the Rillet bill create payload. Pure — exported for
+ * tests. `postingJournalLines` are the bill's costing lines (AP control line
+ * already excluded by `loadBillCostingLines`); the mapper re-runs the AP
+ * filter defensively so direct callers may pass raw journal lines too.
+ *
+ * The costing lines carry base-currency debit-signed amounts;
+ * `bill.exchangeRate` converts them to the invoice's transaction currency
+ * (pass-through at rate 1). Throws structured Warnings when the journal is
+ * missing (invoice not posted / accounting off) or an account is unmapped.
+ */
 export function mapBillToRilletBill(args: {
   bill: Accounting.Bill;
   vendorRemoteId: string;
   accountCodesById: ReadonlyMap<string, string>;
   subsidiaryId: string | null;
   companyId: string;
-  /** Lines of the bill's posted Purchase Invoice journal(s), debit-signed. */
+  /** Costing lines of the bill's posted Purchase Invoice journal, debit-signed. */
   postingJournalLines: BillPostingJournalLine[];
   /** accountDefault.payablesAccount — the AP control line(s) to exclude. */
   payablesAccountId: string | null;
@@ -152,9 +159,11 @@ export function mapBillToRilletBill(args: {
     });
   }
 
-  const costingLines = filterBillCostingLines(
-    args.postingJournalLines,
-    args.payablesAccountId
+  // Defensive re-filter: loadBillCostingLines already dropped the AP control
+  // line, but keep the filter so raw journal lines (tests) also work.
+  const costingLines = args.postingJournalLines.filter(
+    (line) =>
+      line.accountId === null || line.accountId !== args.payablesAccountId
   );
 
   const unmapped = new Set<string>();
@@ -193,7 +202,14 @@ export function mapBillToRilletBill(args: {
     });
   }
 
-  const items: Rillet.BillItem[] = costingLines.map((line) => {
+  // FX: convert base-currency amounts to the invoice's transaction currency
+  // (pass-through at rate 1) and pin exchange_rate on the payload below.
+  const transactionLines = toTransactionCurrencyLines(
+    costingLines,
+    bill.exchangeRate
+  );
+
+  const items: Rillet.BillItem[] = transactionLines.map((line) => {
     const fieldRefs: Rillet.ItemFieldRef[] = [];
     if (args.dimensions) {
       for (const slot of args.dimensions.slots) {
@@ -214,10 +230,12 @@ export function mapBillToRilletBill(args: {
       }
     }
 
+    const description = describeCostingLine(line);
+
     return {
       account_code: args.accountCodesById.get(line.accountId!)!,
       amount: toRilletMoney(line.amount, currency),
-      ...(line.description ? { description: line.description } : {}),
+      ...(description ? { description } : {}),
       ...(fieldRefs.length > 0 ? { fields: fieldRefs } : {})
     };
   });
@@ -234,6 +252,8 @@ export function mapBillToRilletBill(args: {
     due_date: toPostingDateString(bill.dateDue ?? billDate),
     items,
     ...(args.subsidiaryId ? { subsidiary_id: args.subsidiaryId } : {}),
+    // Pin the provider exchange rate for FX bills (omit at parity rate 1).
+    ...(bill.exchangeRate !== 1 ? { exchange_rate: bill.exchangeRate } : {}),
     external_references: [
       carbonExternalReference(bill.id),
       carbonCompanyExternalReference(args.companyId)
@@ -433,7 +453,27 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
   }
 
   // =================================================================
-  // 3. TRANSFORMATION (Carbon -> Rillet)
+  // 3. SHOULD SYNC (posted-bill gate)
+  // =================================================================
+
+  protected shouldSync(
+    context: ShouldSyncContext<Accounting.Bill, Rillet.Bill>
+  ): boolean | string {
+    if (context.direction === "pull") {
+      return "Bills are push-only; pulling bills from Rillet is not supported";
+    }
+
+    if (context.localEntity) {
+      if (!SYNCABLE_STATUSES.includes(context.localEntity.status)) {
+        return `Bill must be posted before syncing (current status: ${context.localEntity.status})`;
+      }
+    }
+
+    return true;
+  }
+
+  // =================================================================
+  // 4. TRANSFORMATION (Carbon -> Rillet)
   // =================================================================
 
   protected async mapToRemote(
@@ -454,21 +494,21 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       );
     }
 
-    const postingJournalLines = await this.fetchPostingJournalLines(local.id);
     const payablesAccountId = await this.getPayablesAccountId();
+    const { lines: costingLines } = await loadBillCostingLines(this.database, {
+      companyId: this.companyId,
+      billId: local.id,
+      payablesAccountId
+    });
 
     // Dimension slots (same flow as the journal syncer): resolve the
     // value-mapping lookup and upsert missing Field values (autoCreate
     // default ON for Rillet), then apply the onUnmappedDimensionValue
-    // policy over the COSTING lines — the AP control line never pushes,
-    // so its dimensions never park a bill
+    // policy over the COSTING lines (the AP control line never pushes, so
+    // its dimensions never park a bill).
     const settings = await this.getPostingSyncSettings();
     let dimensionValueMappings: Map<string, string> | undefined;
     if (settings.dimensionSlots.length > 0) {
-      const costingLines = filterBillCostingLines(
-        postingJournalLines,
-        payablesAccountId
-      );
       dimensionValueMappings = await this.getDimensionValueMappings();
       await this.ensureAutoCreatedDimensionValues(
         costingLines,
@@ -505,7 +545,7 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       accountCodesById: await this.getAccountCodesById(),
       subsidiaryId: this.rilletProvider.subsidiaryId,
       companyId: this.companyId,
-      postingJournalLines,
+      postingJournalLines: costingLines,
       payablesAccountId,
       ...(dimensionValueMappings
         ? {
@@ -515,50 +555,6 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
             }
           }
         : {})
-    });
-  }
-
-  /**
-   * Lines of the bill's posted "Purchase Invoice" journal(s), debit-signed
-   * — the source of truth for the bill's G/L costing (item-backed invoice
-   * lines carry no account of their own; posting resolves GR/IR clearing,
-   * variances and tax).
-   */
-  private async fetchPostingJournalLines(
-    billId: string
-  ): Promise<BillPostingJournalLine[]> {
-    const rows = await this.database
-      .selectFrom("journalLine")
-      .innerJoin("journal", "journal.id", "journalLine.journalId")
-      .leftJoin("account", "account.id", "journalLine.accountId")
-      .select([
-        "journalLine.id",
-        "journalLine.accountId",
-        "journalLine.amount",
-        "journalLine.description",
-        "account.class as accountClass"
-      ])
-      .where("journalLine.documentId", "=", billId)
-      .where("journal.sourceType", "=", "Purchase Invoice")
-      .where("journal.status", "=", "Posted")
-      .where("journal.companyId", "=", this.companyId)
-      .orderBy("journalLine.journalLineReference", "asc")
-      .execute();
-
-    const dimensionsByLine = await loadJournalLineDimensions(this.database, {
-      companyId: this.companyId,
-      journalLineIds: rows.map((row) => row.id)
-    });
-
-    return rows.map((row) => {
-      const dimensions = dimensionsByLine.get(row.id);
-      return {
-        id: row.id,
-        accountId: row.accountId ?? null,
-        amount: toDebitSignedAmount(row.accountClass, Number(row.amount) || 0),
-        description: row.description ?? null,
-        ...(dimensions ? { dimensions } : {})
-      };
     });
   }
 
@@ -573,7 +569,7 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
   }
 
   // =================================================================
-  // 4. UPSERT REMOTE (create-only; RilletTransactionSyncer hard-skips
+  // 5. UPSERT REMOTE (create-only; RilletTransactionSyncer hard-skips
   //    already-mapped ids)
   // =================================================================
 

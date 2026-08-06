@@ -18,7 +18,10 @@ import {
   HTTPClient,
   type HttpResponse
 } from "../../core/utils";
-import { getRilletPaymentSyncEntityId } from "./entities/payment";
+import {
+  getRilletBillPaymentSyncEntityId,
+  getRilletPaymentSyncEntityId
+} from "./entities/payment";
 import type {
   Rillet,
   RilletBillCreate,
@@ -238,8 +241,10 @@ export const RILLET_PUSH_ONLY_ENTITIES = [
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
- * Entities Rillet PULLS in v1: invoice payments arrive via the
- * invoice-payment-updated webhook and settle Carbon sales invoices.
+ * Entities Rillet PULLS in v1: invoice payments (via the
+ * invoice-payment-updated webhook + the poll sweep) settle Carbon sales
+ * invoices, and bill payments (poll-only — Rillet has no bill-payment webhook)
+ * settle Carbon purchase invoices. Both flow through the same `payment` syncer.
  */
 export const RILLET_PULL_ONLY_ENTITIES = [
   "payment"
@@ -888,14 +893,56 @@ export class RilletProvider extends BaseProvider {
   }
 
   /**
-   * SupportsIncrementalPull: invoice payments changed since `since`, for
-   * the generic accounting-pull-sweep cron. The feed is organization-wide
-   * while this instance owns one subsidiary, so every change carries a
-   * dependsOnMapping on its invoice — the sweep drops changes whose
-   * invoice has no local mapping (another instance's subsidiary, or an
-   * invoice created directly in Rillet) without ledger noise. Payments
-   * missing an invoice_id cannot be addressed (composite id) and are
-   * logged and dropped.
+   * Payments recorded against one bill (AP mirror of listInvoicePayments).
+   * Throws on API failure so the pull can distinguish "bill has no such
+   * payment" from "the listing itself failed".
+   *
+   * VERIFY: the `GET /bills/{billId}/payments` endpoint and its `{ payments:
+   * [...] }` envelope are assumed to mirror `/invoices/{id}/payments`; not yet
+   * confirmed against the live Rillet OpenAPI.
+   */
+  async listBillPayments(billId: string): Promise<Rillet.BillPayment[]> {
+    const response = await this.request<{
+      payments?: Rillet.BillPayment[];
+    }>("GET", `/bills/${billId}/payments`);
+
+    if (response.error) {
+      throwRilletApiError("list bill payments", response);
+    }
+
+    return response.data?.payments ?? [];
+  }
+
+  /**
+   * All bill payments in the organization changed since `updatedAfter`
+   * (org-wide; AP mirror of listInvoicePaymentsUpdatedSince).
+   *
+   * VERIFY: the `GET /bill-payments` endpoint and its `updated.gt` /
+   * `sort_by=updated` filters are assumed to mirror `/invoice-payments`, but
+   * are NOT confirmed in the live Rillet OpenAPI. If the endpoint/filters
+   * differ, fall back to polling `GET /bills` and diffing open balance (note
+   * the degradation). Names/shape mirror the invoice-payment method.
+   */
+  async listBillPaymentsUpdatedSince(
+    updatedAfter: string
+  ): Promise<Rillet.BillPayment[]> {
+    return this.listPaginated<Rillet.BillPayment>(
+      `/bill-payments?updated.gt=${encodeURIComponent(
+        updatedAfter
+      )}&sort_by=updated`,
+      (data) => data.payments as Rillet.BillPayment[] | undefined
+    );
+  }
+
+  /**
+   * SupportsIncrementalPull: invoice AND bill payments changed since `since`,
+   * for the generic accounting-pull-sweep cron. Both feeds are organization-
+   * wide while this instance owns one subsidiary, so every change carries a
+   * dependsOnMapping on its document (invoice for AR, bill for AP) — the sweep
+   * drops changes whose document has no local mapping (another instance's
+   * subsidiary, or a document created directly in Rillet) without ledger noise.
+   * Payments missing their document id cannot be addressed (composite id) and
+   * are logged and dropped.
    */
   async listChanges(args: { since: string }): Promise<ListChangesResult> {
     const paymentConfig = this.getSyncConfig("payment");
@@ -903,13 +950,16 @@ export class RilletProvider extends BaseProvider {
       return { changes: [] };
     }
 
-    const payments = await this.listInvoicePaymentsUpdatedSince(args.since);
-
     const changes: ProviderChange[] = [];
-    for (const payment of payments) {
+
+    // AR — invoice payments settle Carbon sales invoices.
+    const invoicePayments = await this.listInvoicePaymentsUpdatedSince(
+      args.since
+    );
+    for (const payment of invoicePayments) {
       if (!payment.invoice_id) {
         console.warn(
-          `[Rillet] ignoring payment ${payment.id} with no invoice_id`
+          `[Rillet] ignoring invoice payment ${payment.id} with no invoice_id`
         );
         continue;
       }
@@ -920,6 +970,28 @@ export class RilletProvider extends BaseProvider {
         dependsOnMapping: {
           entityType: "invoice",
           remoteId: payment.invoice_id
+        }
+      });
+    }
+
+    // AP — bill payments settle Carbon purchase invoices. Poll is the
+    // correctness guarantee: Rillet documents no bill-payment webhook event
+    // (only bill-created/updated/deleted), so this feed is the only mechanism.
+    const billPayments = await this.listBillPaymentsUpdatedSince(args.since);
+    for (const payment of billPayments) {
+      if (!payment.bill_id) {
+        console.warn(
+          `[Rillet] ignoring bill payment ${payment.id} with no bill_id`
+        );
+        continue;
+      }
+      changes.push({
+        entityType: "payment",
+        remoteId: getRilletBillPaymentSyncEntityId(payment.bill_id, payment.id),
+        updatedAt: payment.updated_at ?? null,
+        dependsOnMapping: {
+          entityType: "bill",
+          remoteId: payment.bill_id
         }
       });
     }

@@ -4,6 +4,7 @@ import type { ProviderCredentials } from "../../../core/types";
 import { AccountingApiError } from "../../../core/utils";
 import { Qbo } from "../models";
 import {
+  buildQboSyncConfig,
   extractQboErrorDetails,
   isQboDuplicateNameError,
   isQboStaleObjectError,
@@ -480,14 +481,16 @@ describe("QboProvider entity reads/writes", () => {
 });
 
 describe("listChanges (SupportsIncrementalPull)", () => {
-  it("maps the six CDC entity names onto Carbon entity types", () => {
+  it("maps the CDC entity names onto Carbon entity types (Payment + BillPayment → payment)", () => {
     expect(QBO_CDC_ENTITY_TYPES).toEqual({
       Customer: "customer",
       Vendor: "vendor",
       Item: "item",
       Invoice: "invoice",
       Bill: "bill",
-      PurchaseOrder: "purchaseOrder"
+      PurchaseOrder: "purchaseOrder",
+      Payment: "payment",
+      BillPayment: "payment"
     });
   });
 
@@ -546,8 +549,9 @@ describe("listChanges (SupportsIncrementalPull)", () => {
     ]);
   });
 
-  it("returns no changes without an API call when nothing has a pull direction", async () => {
-    const { provider } = makeProvider();
+  it("still requests the forced-pull payment entities even when every stored entity is push-only", async () => {
+    // buildQboSyncConfig forces `payment` to pull-from-accounting + enabled, so
+    // even an all-push stored config keeps Payment/BillPayment in the CDC sweep.
     const pushOnlyConfig = structuredClone(DEFAULT_SYNC_CONFIG);
     for (const entityConfig of Object.values(pushOnlyConfig.entities)) {
       entityConfig.direction = "push-to-accounting";
@@ -563,11 +567,50 @@ describe("listChanges (SupportsIncrementalPull)", () => {
       onTokenRefresh: async () => undefined
     });
 
+    // Empty CDC window → no changes, but the request is still made (and only
+    // for the forced-pull payment entities).
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        CDCResponse: [{ QueryResponse: [] }],
+        time: "2026-07-08T16:00:00-07:00"
+      })
+    );
+
     const result = await pushOnly.listChanges({
       since: "2026-07-08T00:00:00.000Z"
     });
     expect(result.changes).toEqual([]);
-    expect(fetchMock).not.toHaveBeenCalled();
-    void provider;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const cdcUrl = decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]));
+    expect(cdcUrl).toContain("entities=Payment,BillPayment");
+  });
+});
+
+describe("buildQboSyncConfig — payment force-enable (pull-only)", () => {
+  it("force-enables `payment` as pull-only even when the stored config disables it", () => {
+    // DEFAULT_SYNC_CONFIG ships `payment` disabled — the provider must override
+    // it so inbound payment sync-back works as soon as the integration connects.
+    expect(DEFAULT_SYNC_CONFIG.entities.payment.enabled).toBe(false);
+
+    const stored = structuredClone(DEFAULT_SYNC_CONFIG);
+    stored.entities.payment = {
+      enabled: false,
+      direction: "two-way",
+      owner: "carbon"
+    };
+
+    expect(buildQboSyncConfig(stored).entities.payment).toEqual({
+      enabled: true,
+      direction: "pull-from-accounting",
+      owner: "accounting"
+    });
+  });
+
+  it("exposes the forced payment config through a constructed provider's getSyncConfig", () => {
+    expect(makeProvider().provider.getSyncConfig("payment")).toEqual({
+      enabled: true,
+      direction: "pull-from-accounting",
+      owner: "accounting"
+    });
   });
 });

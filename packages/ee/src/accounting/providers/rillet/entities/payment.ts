@@ -1,55 +1,40 @@
-import type { KyselyTx } from "@carbon/database/client";
-import { sql } from "kysely";
-import { createMappingService } from "../../../core/external-mapping";
-import {
-  BaseEntitySyncer,
-  type BatchSyncResult,
-  type ShouldSyncContext,
-  type SyncResult
-} from "../../../core/types";
+import type { NormalizedPayment } from "../../../core/payment-application";
+import { PaymentSyncerBase } from "../../../core/payment-syncer";
+import type { ShouldSyncContext } from "../../../core/types";
 import type { Rillet, RilletLocalPayment } from "../models";
 import type { RilletProvider } from "../provider";
+import { loadCompanyBaseCurrency } from "./shared";
+
+// Re-exported for the payment tests (moved to the family-agnostic core, where
+// the runtime document-status boundary now lives — post-payment owns status).
+export { getSettledInvoiceStatus } from "../../../core/payment-application";
 
 /**
- * RilletPaymentSyncer — the first PULL-ONLY payment syncer in the
- * codebase: Rillet invoice payments (recorded against pushed AR_ONLY
- * invoices) settle Carbon sales invoices. Push methods are rejection
- * stubs; ENTITY_DEFINITIONS.payment is pull-only and depends on
- * invoice/bill.
+ * RilletPaymentSyncer — the AR payment syncer for Rillet, on the shared
+ * `PaymentSyncerBase`. Rillet invoice payments (recorded against pushed AR_ONLY
+ * invoices) settle Carbon sales invoices; the base writes a Draft `payment` +
+ * `invoiceSettlement` and then invokes the native `post-payment` edge function
+ * (GL journal + Posted/Voided status). Pushing is a rejection stub.
  *
- * Entity-id contract (mirrors the journal ":reversal" suffix contract in
- * core/posting.ts): the sync operation's entityId is the COMPOSITE
- * `"<invoiceRemoteId>:<paymentRemoteId>"` — Rillet payments are only
- * addressable through their invoice (GET /invoices/{id}/payments), and
- * the drain hands syncers nothing but entity ids, so the composite makes
- * the syncer self-sufficient. The webhook route (written separately)
- * builds operation ids with getRilletPaymentSyncEntityId from the
- * invoice-payment-updated payload; mappings under entityType "payment"
- * are stored against the composite id.
+ * Entity-id contract: the sync operation's entityId is a COMPOSITE. AR keeps
+ * the prefix-less `"<invoiceRemoteId>:<paymentRemoteId>"` form (back-compat with
+ * stored AR mappings); AP uses a `"bill:<billRemoteId>:<billPaymentRemoteId>"`
+ * form. Rillet payments are only addressable through their document
+ * (GET /invoices/{id}/payments, GET /bills/{id}/payments), and the drain hands
+ * syncers nothing but entity ids, so the composite makes the syncer
+ * self-sufficient. Mappings under entityType "payment" are stored against the
+ * composite id. The `bill:` prefix is also the family discriminator the syncer
+ * branches on (and the shape later QBO/Xero payment syncers mirror).
  *
- * What upsertLocal writes (inside the base pull workflow's
- * withTriggersDisabled transaction):
- * - a `payment` row (paymentType "Receipt", status "Posted", journalId
- *   NULL — Rillet owns the cash GL for pulled payments; bankAccount from
- *   accountDefault.bankCashAccount, reference = the Rillet payment id);
- * - one `invoiceSettlement` row applying the full amount to the mapped
- *   Carbon sales invoice;
- * - the invoice's settled status via getSettledInvoiceStatus.
- * A FAILED status voids the previously recorded payment and deletes its
- * settlement (a first-seen FAILED payment is skipped by shouldSync).
- *
- * v1 simplifications (documented, not accidental): exchange rates are
- * recorded as 1 (Rillet payments settle same-currency AR_ONLY invoices),
- * and the settled total counts settlements whose source payment is
- * Posted (memo-sourced settlements count as-is).
+ * v1 simplification (documented): exchange rates are recorded as 1 (Rillet
+ * payments settle same-currency AR_ONLY invoices / AP bills).
  */
 
-const PULL_ONLY_MESSAGE =
-  "Payments are pull-only for Rillet: pushing Carbon payments to Rillet is not supported";
-
 const SYNC_ID_SEPARATOR = ":";
+/** AP composite-id family discriminator prefix. AR is prefix-less. */
+const BILL_PREFIX = "bill:";
 
-/** Composite sync entity id for one Rillet invoice payment. */
+/** Composite sync entity id for one Rillet invoice payment (AR, prefix-less). */
 export function getRilletPaymentSyncEntityId(
   invoiceRemoteId: string,
   paymentRemoteId: string
@@ -57,47 +42,51 @@ export function getRilletPaymentSyncEntityId(
   return `${invoiceRemoteId}${SYNC_ID_SEPARATOR}${paymentRemoteId}`;
 }
 
-/** Split a composite payment entity id. Throws on a malformed id. */
-export function parseRilletPaymentSyncEntityId(entityId: string): {
-  invoiceRemoteId: string;
-  paymentRemoteId: string;
-} {
-  const separatorIndex = entityId.indexOf(SYNC_ID_SEPARATOR);
-  if (separatorIndex <= 0 || separatorIndex === entityId.length - 1) {
-    throw new Error(
-      `Invalid Rillet payment sync entity id "${entityId}" — expected "<invoiceRemoteId>:<paymentRemoteId>"`
-    );
-  }
-  return {
-    invoiceRemoteId: entityId.slice(0, separatorIndex),
-    paymentRemoteId: entityId.slice(separatorIndex + 1)
-  };
+/** Composite sync entity id for one Rillet bill payment (AP, `bill:` prefix). */
+export function getRilletBillPaymentSyncEntityId(
+  billRemoteId: string,
+  billPaymentRemoteId: string
+): string {
+  return `${BILL_PREFIX}${billRemoteId}${SYNC_ID_SEPARATOR}${billPaymentRemoteId}`;
 }
 
 /**
- * Invoice status implied by its settled total (cents-accurate). Returns
- * null for "don't touch": a zero/negative settled total says nothing
- * about what the status should be (the pre-payment status is unknowable
- * here), and a degenerate zero-total invoice is never restated.
+ * Split a composite payment entity id into its family, document remote id, and
+ * payment remote id. A `bill:` prefix marks the AP form; anything else is the
+ * back-compat AR form. Throws on a malformed id.
  */
-export function getSettledInvoiceStatus(args: {
-  invoiceTotal: number;
-  settledTotal: number;
-}): "Paid" | "Partially Paid" | null {
-  const totalCents = Math.round(args.invoiceTotal * 100);
-  const settledCents = Math.round(args.settledTotal * 100);
+export function parseRilletPaymentSyncEntityId(entityId: string): {
+  family: "ar" | "ap";
+  documentRemoteId: string;
+  paymentRemoteId: string;
+} {
+  const isBill = entityId.startsWith(BILL_PREFIX);
+  const remainder = isBill ? entityId.slice(BILL_PREFIX.length) : entityId;
 
-  if (totalCents <= 0 || settledCents <= 0) return null;
-  if (settledCents >= totalCents) return "Paid";
-  return "Partially Paid";
+  const separatorIndex = remainder.indexOf(SYNC_ID_SEPARATOR);
+  if (separatorIndex <= 0 || separatorIndex === remainder.length - 1) {
+    throw new Error(
+      `Invalid Rillet payment sync entity id "${entityId}" — expected "<invoiceRemoteId>:<paymentRemoteId>" or "bill:<billRemoteId>:<billPaymentRemoteId>"`
+    );
+  }
+  return {
+    family: isBill ? "ap" : "ar",
+    documentRemoteId: remainder.slice(0, separatorIndex),
+    paymentRemoteId: remainder.slice(separatorIndex + 1)
+  };
 }
+
+/** A payment object carrying the shared amount/currency wire shape. */
+type RilletPaymentAmountLike = Rillet.InvoicePayment | Rillet.BillPayment;
 
 /**
  * Numeric amount from either wire shape: the list endpoint's
  * `{ amount: { amount: "100.00", currency } }` or the webhook's flat
- * `amount` + `currency`.
+ * `amount` + `currency`. Shared by AR invoice payments and AP bill payments.
  */
-export function getRilletPaymentAmount(remote: Rillet.InvoicePayment): number {
+export function getRilletPaymentAmount(
+  remote: RilletPaymentAmountLike
+): number {
   const raw = remote.amount;
   if (raw && typeof raw === "object") return Number(raw.amount) || 0;
   if (typeof raw === "string" || typeof raw === "number") {
@@ -108,7 +97,7 @@ export function getRilletPaymentAmount(remote: Rillet.InvoicePayment): number {
 
 /** Currency from either wire shape (see getRilletPaymentAmount). */
 export function getRilletPaymentCurrency(
-  remote: Rillet.InvoicePayment
+  remote: RilletPaymentAmountLike
 ): string | null {
   if (remote.amount && typeof remote.amount === "object") {
     return remote.amount.currency ?? null;
@@ -117,10 +106,9 @@ export function getRilletPaymentCurrency(
 }
 
 /**
- * Normalize a Rillet invoice payment onto the local shape. Pure —
- * exported for tests. The composite id / invoice id are completed by
- * upsertLocal from the operation's entity id (the list-endpoint
- * invoice_id is carried through when present).
+ * Normalize a Rillet invoice payment onto the local shape. Pure — exported for
+ * tests. The invoice id / composite id are completed from the operation's
+ * entity id (the list-endpoint invoice_id is carried through when present).
  */
 export function mapRilletPaymentToLocal(
   remote: Rillet.InvoicePayment
@@ -144,48 +132,69 @@ export function mapRilletPaymentToLocal(
   };
 }
 
-export class RilletPaymentSyncer extends BaseEntitySyncer<
-  RilletLocalPayment,
-  Rillet.InvoicePayment,
-  never
-> {
+/** Either Rillet payment wire shape the syncer handles (AR invoice / AP bill). */
+type RilletPayment = Rillet.InvoicePayment | Rillet.BillPayment;
+
+export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
   private get rilletProvider(): RilletProvider {
     return this.provider as RilletProvider;
   }
 
+  /** company.baseCurrencyCode, read once per syncer instance (FX gate). */
+  private baseCurrencyPromise?: Promise<string>;
+
+  private getBaseCurrency(): Promise<string> {
+    if (!this.baseCurrencyPromise) {
+      this.baseCurrencyPromise = loadCompanyBaseCurrency(
+        this.database,
+        this.companyId
+      );
+    }
+    return this.baseCurrencyPromise;
+  }
+
   // =================================================================
-  // 1. REMOTE FETCH — composite id → list the invoice's payments
+  // 1. REMOTE FETCH — composite id → list the document's payments
   // =================================================================
 
-  async fetchRemote(entityId: string): Promise<Rillet.InvoicePayment | null> {
-    const { invoiceRemoteId, paymentRemoteId } =
+  async fetchRemote(entityId: string): Promise<RilletPayment | null> {
+    const { family, documentRemoteId, paymentRemoteId } =
       parseRilletPaymentSyncEntityId(entityId);
 
     const payments =
-      await this.rilletProvider.listInvoicePayments(invoiceRemoteId);
+      family === "ap"
+        ? await this.rilletProvider.listBillPayments(documentRemoteId)
+        : await this.rilletProvider.listInvoicePayments(documentRemoteId);
     return payments.find((payment) => payment.id === paymentRemoteId) ?? null;
   }
 
   /**
-   * Keyed by the COMPOSITE entity id (the base pull workflow uses the map
-   * keys as remote ids, and the drain matches results back to operations
-   * by entityId). One listing per distinct invoice per batch.
+   * Keyed by the COMPOSITE entity id (the base pull workflow uses the map keys
+   * as remote ids, and the drain matches results back to operations by
+   * entityId). One listing per distinct document per batch (AR invoices and AP
+   * bills share the cache key space via the composite prefix).
    */
   protected async fetchRemoteBatch(
     ids: string[]
-  ): Promise<Map<string, Rillet.InvoicePayment>> {
-    const result = new Map<string, Rillet.InvoicePayment>();
-    const paymentsByInvoice = new Map<string, Rillet.InvoicePayment[]>();
+  ): Promise<Map<string, RilletPayment>> {
+    const result = new Map<string, RilletPayment>();
+    const paymentsByDocument = new Map<string, RilletPayment[]>();
 
     for (const entityId of ids) {
-      const { invoiceRemoteId, paymentRemoteId } =
+      const { family, documentRemoteId, paymentRemoteId } =
         parseRilletPaymentSyncEntityId(entityId);
 
-      let payments = paymentsByInvoice.get(invoiceRemoteId);
+      // The family-qualified document id is the cache key, so an AR invoice and
+      // an AP bill that happen to share a remote id never collide.
+      const cacheKey =
+        (family === "ap" ? "bill:" : "invoice:") + documentRemoteId;
+      let payments = paymentsByDocument.get(cacheKey);
       if (!payments) {
         payments =
-          await this.rilletProvider.listInvoicePayments(invoiceRemoteId);
-        paymentsByInvoice.set(invoiceRemoteId, payments);
+          family === "ap"
+            ? await this.rilletProvider.listBillPayments(documentRemoteId)
+            : await this.rilletProvider.listInvoicePayments(documentRemoteId);
+        paymentsByDocument.set(cacheKey, payments);
       }
 
       const payment = payments.find((p) => p.id === paymentRemoteId);
@@ -199,401 +208,132 @@ export class RilletPaymentSyncer extends BaseEntitySyncer<
   // 2. TIMESTAMP + SHOULD SYNC
   // =================================================================
 
-  protected getRemoteUpdatedAt(remote: Rillet.InvoicePayment): Date | null {
+  protected getRemoteUpdatedAt(remote: RilletPayment): Date | null {
     if (!remote.updated_at) return null;
     const parsed = new Date(remote.updated_at);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
   protected async shouldSync(
-    context: ShouldSyncContext<RilletLocalPayment, Rillet.InvoicePayment>
+    context: ShouldSyncContext<RilletPayment, RilletPayment>
   ): Promise<boolean | string> {
     if (context.direction === "push") {
-      return PULL_ONLY_MESSAGE;
+      return "Payments are pull-only for Rillet: pushing Carbon payments to Rillet is not supported";
     }
 
-    // Ownership gate: Rillet webhooks are organization-level and cannot be
-    // filtered by subsidiary, so with several Carbon instances writing to
-    // one Rillet org (one subsidiary each), every instance receives every
-    // payment event. The pushed invoice's mapping is the ownership record:
-    // no local mapping means the invoice belongs to another instance's
-    // subsidiary or was created directly in Rillet — either way there is
-    // no Carbon sales invoice to settle here, and that is a benign skip,
-    // not a failure.
-    const { invoiceRemoteId } = parseRilletPaymentSyncEntityId(
+    const { family, documentRemoteId } = parseRilletPaymentSyncEntityId(
       context.entityId
     );
-    const salesInvoiceId = await this.mappingService.getEntityId(
-      this.provider.id,
-      invoiceRemoteId,
-      "invoice"
-    );
-    if (!salesInvoiceId) {
-      return `Rillet invoice ${invoiceRemoteId} has no Carbon mapping — the payment belongs to another Carbon instance's subsidiary or to an invoice created directly in Rillet`;
+
+    // Documents-mode gate: inbound payment sync-back is allowed only when the
+    // payment's AR/AP family is in `documents` mode (Carbon owns the settled
+    // documents). A `journals`/`none` family does not pull payments — a benign
+    // skip, like the ownership skip below. An unconfigured integration defaults
+    // to documents, preserving today's Rillet AR behavior.
+    if (!(await this.isPaymentSyncbackEnabled(family))) {
+      return `payment sync-back is disabled: the ${family} family is not in documents mode`;
     }
 
-    // A payment first seen as FAILED was never recorded — nothing to void
+    // Ownership gate: Rillet feeds/webhooks are organization-level and cannot be
+    // filtered by subsidiary, so with several Carbon instances writing to one
+    // Rillet org (one subsidiary each), every instance receives every payment
+    // event. The pushed document's mapping is the ownership record: no local
+    // mapping means the invoice/bill belongs to another instance's subsidiary or
+    // was created directly in Rillet — either way there is no Carbon document to
+    // settle here, and that is a benign skip, not a failure.
+    if (family === "ap") {
+      const purchaseInvoiceId = await this.mappingService.getEntityId(
+        this.provider.id,
+        documentRemoteId,
+        "bill"
+      );
+      if (!purchaseInvoiceId) {
+        return `Rillet bill ${documentRemoteId} has no Carbon mapping — the payment belongs to another Carbon instance's subsidiary or to a bill created directly in Rillet`;
+      }
+    } else {
+      const salesInvoiceId = await this.mappingService.getEntityId(
+        this.provider.id,
+        documentRemoteId,
+        "invoice"
+      );
+      if (!salesInvoiceId) {
+        return `Rillet invoice ${documentRemoteId} has no Carbon mapping — the payment belongs to another Carbon instance's subsidiary or to an invoice created directly in Rillet`;
+      }
+    }
+
+    // A payment first seen as FAILED was never recorded — nothing to void.
     if (context.remoteEntity?.status === "FAILED" && context.isFirstSync) {
       return "Failed Rillet payment was never recorded in Carbon — nothing to do";
+    }
+
+    // FX gate: mapToNormalized hardcodes exchangeRate 1 (a documented v1
+    // same-currency simplification), which would silently mis-state a
+    // cross-currency settlement. Park (skip with reason) any payment whose
+    // currency differs from the company base currency; a same-currency or
+    // currency-less payment proceeds unchanged.
+    const paymentCurrency = context.remoteEntity
+      ? getRilletPaymentCurrency(context.remoteEntity)
+      : null;
+    if (paymentCurrency) {
+      const baseCurrency = await this.getBaseCurrency();
+      if (paymentCurrency !== baseCurrency) {
+        return `FX payment (${paymentCurrency} ≠ base ${baseCurrency}) — not supported v1`;
+      }
     }
 
     return true;
   }
 
   // =================================================================
-  // 3. TRANSFORMATION (Rillet -> Carbon)
+  // 3. NORMALIZATION (Rillet -> family-agnostic NormalizedPayment)
   // =================================================================
 
-  protected async mapToLocal(
-    remote: Rillet.InvoicePayment
-  ): Promise<Partial<RilletLocalPayment>> {
-    return mapRilletPaymentToLocal(remote);
-  }
+  protected mapToNormalized(
+    remote: RilletPayment,
+    entityId: string
+  ): NormalizedPayment {
+    const { family, documentRemoteId, paymentRemoteId } =
+      parseRilletPaymentSyncEntityId(entityId);
 
-  // =================================================================
-  // 4. UPSERT LOCAL — payment + invoiceSettlement + invoice status
-  //    (runs inside the base pull workflow's withTriggersDisabled tx)
-  // =================================================================
+    if (family === "ap") {
+      const bill = remote as Rillet.BillPayment;
+      const paidDate = (
+        bill.date ??
+        bill.payment_date ??
+        bill.updated_at ??
+        bill.created_at ??
+        new Date().toISOString()
+      ).slice(0, 10);
 
-  protected async upsertLocal(
-    tx: KyselyTx,
-    data: Partial<RilletLocalPayment>,
-    remoteId: string
-  ): Promise<string> {
-    const { invoiceRemoteId, paymentRemoteId } =
-      parseRilletPaymentSyncEntityId(remoteId);
-    const txMappingService = createMappingService(tx, this.companyId);
-    const now = new Date().toISOString();
-
-    // The pushed invoice's mapping is the anchor: no mapping, no settlement
-    const salesInvoiceId = await txMappingService.getEntityId(
-      this.provider.id,
-      invoiceRemoteId,
-      "invoice"
-    );
-    if (!salesInvoiceId) {
-      throw new Error(
-        `Rillet invoice ${invoiceRemoteId} is not mapped to a Carbon sales invoice; push the invoice first`
-      );
+      return {
+        family: "ap",
+        documentRemoteId,
+        paymentRemoteId,
+        amount: getRilletPaymentAmount(bill),
+        currencyCode: getRilletPaymentCurrency(bill),
+        exchangeRate: 1,
+        paidDate,
+        // The Rillet bill-payment id is the human/provider reference.
+        reference: paymentRemoteId,
+        status: bill.status === "FAILED" ? "failed" : "settled"
+      };
     }
 
-    const invoice = await tx
-      .selectFrom("salesInvoice")
-      .select(["id", "customerId", "currencyCode", "totalAmount"])
-      .where("id", "=", salesInvoiceId)
-      .where("companyId", "=", this.companyId)
-      .executeTakeFirst();
-    if (!invoice) {
-      throw new Error(
-        `Carbon sales invoice ${salesInvoiceId} (Rillet invoice ${invoiceRemoteId}) not found`
-      );
-    }
-
-    // Idempotency anchor: the payment mapping under the composite id
-    const existingMapping = await txMappingService.getByExternalId(
-      this.provider.id,
-      remoteId,
-      "payment"
-    );
-    const existingPaymentRowId = existingMapping?.entityId ?? null;
-    const actorId = await this.getDefaultUser(tx);
-
-    if (data.status === "FAILED") {
-      if (!existingPaymentRowId) {
-        // shouldSync skips first-seen FAILED payments; a mapping without a
-        // payment row is unreachable through this syncer
-        throw new Error(
-          `Rillet payment ${paymentRemoteId} failed but was never recorded in Carbon — nothing to void`
-        );
-      }
-
-      await tx
-        .deleteFrom("invoiceSettlement")
-        .where("paymentId", "=", existingPaymentRowId)
-        .where("companyId", "=", this.companyId)
-        .execute();
-
-      await tx
-        .updateTable("payment")
-        .set({
-          status: "Voided",
-          voidedAt: now,
-          voidedBy: actorId,
-          updatedBy: actorId,
-          updatedAt: now
-        })
-        .where("id", "=", existingPaymentRowId)
-        .where("companyId", "=", this.companyId)
-        .execute();
-
-      await this.applySettledInvoiceStatus(tx, {
-        invoiceId: invoice.id,
-        invoiceTotal: Number(invoice.totalAmount) || 0,
-        paidDate: null,
-        justVoided: true
-      });
-
-      return existingPaymentRowId;
-    }
-
-    // SUCCESSFUL / UNCLEARED / CLEARED / RECONCILED all settle the invoice
-    const amount = data.amount ?? 0;
-    const paymentDate = data.date ?? now.slice(0, 10);
-    const currencyCode = data.currencyCode ?? invoice.currencyCode;
-
-    let paymentRowId = existingPaymentRowId;
-    if (paymentRowId) {
-      await tx
-        .updateTable("payment")
-        .set({
-          status: "Posted",
-          paymentDate,
-          postingDate: paymentDate,
-          currencyCode,
-          totalAmount: amount,
-          voidedAt: null,
-          voidedBy: null,
-          updatedBy: actorId,
-          updatedAt: now
-        })
-        .where("id", "=", paymentRowId)
-        .where("companyId", "=", this.companyId)
-        .execute();
-    } else {
-      const sequence = await sql<{ get_next_sequence: string }>`
-        SELECT get_next_sequence('payment', ${this.companyId}) as get_next_sequence
-      `.execute(tx);
-      const readableId =
-        sequence.rows[0]?.get_next_sequence ??
-        `RILLET-${paymentRemoteId.slice(0, 8)}`;
-
-      const inserted = await tx
-        .insertInto("payment")
-        .values({
-          paymentId: readableId,
-          paymentType: "Receipt",
-          status: "Posted",
-          customerId: invoice.customerId,
-          paymentDate,
-          postingDate: paymentDate,
-          currencyCode,
-          exchangeRate: 1,
-          totalAmount: amount,
-          bankAccount: await this.getBankCashAccount(tx),
-          reference: paymentRemoteId,
-          // journalId stays NULL: Rillet owns the cash GL for pulled payments
-          companyId: this.companyId,
-          createdBy: actorId,
-          createdAt: now
-        })
-        .returning("id")
-        .executeTakeFirstOrThrow();
-      paymentRowId = inserted.id;
-    }
-
-    // Replace this payment's settlement (a Rillet invoice payment applies
-    // to exactly one invoice). invoiceSettlement requires a positive
-    // component sum, so a zero-amount payment records no settlement.
-    await tx
-      .deleteFrom("invoiceSettlement")
-      .where("paymentId", "=", paymentRowId)
-      .where("companyId", "=", this.companyId)
-      .execute();
-
-    if (amount > 0) {
-      await tx
-        .insertInto("invoiceSettlement")
-        .values({
-          paymentId: paymentRowId,
-          targetSalesInvoiceId: invoice.id,
-          appliedAmount: amount,
-          discountAmount: 0,
-          writeOffAmount: 0,
-          sourceExchangeRate: 1,
-          targetExchangeRate: 1,
-          appliedDate: paymentDate,
-          companyId: this.companyId,
-          createdBy: actorId
-        })
-        .execute();
-    }
-
-    await this.applySettledInvoiceStatus(tx, {
-      invoiceId: invoice.id,
-      invoiceTotal: Number(invoice.totalAmount) || 0,
-      paidDate: paymentDate,
-      justVoided: false
-    });
-
-    return paymentRowId;
-  }
-
-  /**
-   * Recompute the invoice's settled total (Posted cash payments + memo
-   * settlements) and apply getSettledInvoiceStatus. A null status leaves
-   * the invoice untouched — except right after a void, where datePaid is
-   * cleared (the pre-payment status itself is unknowable and stays).
-   */
-  private async applySettledInvoiceStatus(
-    tx: KyselyTx,
-    args: {
-      invoiceId: string;
-      invoiceTotal: number;
-      paidDate: string | null;
-      justVoided: boolean;
-    }
-  ): Promise<void> {
-    const rows = await tx
-      .selectFrom("invoiceSettlement")
-      .leftJoin("payment", "payment.id", "invoiceSettlement.paymentId")
-      .select([
-        "invoiceSettlement.appliedAmount",
-        "invoiceSettlement.memoId",
-        "payment.status as paymentStatus"
-      ])
-      .where("invoiceSettlement.targetSalesInvoiceId", "=", args.invoiceId)
-      .where("invoiceSettlement.companyId", "=", this.companyId)
-      .execute();
-
-    const settledTotal = rows
-      .filter((row) => row.memoId !== null || row.paymentStatus === "Posted")
-      .reduce((sum, row) => sum + (Number(row.appliedAmount) || 0), 0);
-
-    const status = getSettledInvoiceStatus({
-      invoiceTotal: args.invoiceTotal,
-      settledTotal
-    });
-    const now = new Date().toISOString();
-
-    if (status === "Paid") {
-      await tx
-        .updateTable("salesInvoice")
-        .set({ status: "Paid", datePaid: args.paidDate, updatedAt: now })
-        .where("id", "=", args.invoiceId)
-        .where("companyId", "=", this.companyId)
-        .execute();
-    } else if (status === "Partially Paid") {
-      await tx
-        .updateTable("salesInvoice")
-        .set({ status: "Partially Paid", datePaid: null, updatedAt: now })
-        .where("id", "=", args.invoiceId)
-        .where("companyId", "=", this.companyId)
-        .execute();
-    } else if (args.justVoided) {
-      await tx
-        .updateTable("salesInvoice")
-        .set({ datePaid: null, updatedAt: now })
-        .where("id", "=", args.invoiceId)
-        .where("companyId", "=", this.companyId)
-        .execute();
-    }
-  }
-
-  /** accountDefault.bankCashAccount — payment.bankAccount is NOT NULL. */
-  private async getBankCashAccount(tx: KyselyTx): Promise<string> {
-    const defaults = await tx
-      .selectFrom("accountDefault")
-      .select("bankCashAccount")
-      .where("companyId", "=", this.companyId)
-      .executeTakeFirst();
-
-    if (!defaults?.bankCashAccount) {
-      throw new Error(
-        `No bank/cash account default (accountDefault.bankCashAccount) configured for company ${this.companyId} — required to record Rillet payments`
-      );
-    }
-    return defaults.bankCashAccount;
-  }
-
-  /**
-   * Default user for system-generated records: company group owner, then
-   * first active employee (QBO/Xero bill-syncer parity).
-   */
-  private async getDefaultUser(tx: KyselyTx): Promise<string> {
-    const group = await tx
-      .selectFrom("company")
-      .innerJoin("companyGroup", "companyGroup.id", "company.companyGroupId")
-      .select("companyGroup.ownerId")
-      .where("company.id", "=", this.companyId)
-      .executeTakeFirst();
-
-    if (group?.ownerId) {
-      return group.ownerId;
-    }
-
-    const employee = await tx
-      .selectFrom("employeeJob")
-      .innerJoin("user", "user.id", "employeeJob.id")
-      .select("employeeJob.id")
-      .where("employeeJob.companyId", "=", this.companyId)
-      .where("user.active", "=", true)
-      .orderBy("user.createdAt", "asc")
-      .limit(1)
-      .executeTakeFirst();
-
-    if (!employee?.id) {
-      throw new Error(
-        `Cannot record Rillet payment: no default user found for company ${this.companyId}`
-      );
-    }
-    return employee.id;
-  }
-
-  // =================================================================
-  // 5. PUSH WORKFLOW - Not supported (pull-only)
-  // =================================================================
-
-  async fetchLocal(_id: string): Promise<RilletLocalPayment | null> {
-    throw new Error(PULL_ONLY_MESSAGE);
-  }
-
-  protected async fetchLocalBatch(
-    _ids: string[]
-  ): Promise<Map<string, RilletLocalPayment>> {
-    throw new Error(PULL_ONLY_MESSAGE);
-  }
-
-  protected async mapToRemote(
-    _local: RilletLocalPayment
-  ): Promise<Rillet.InvoicePayment> {
-    throw new Error(PULL_ONLY_MESSAGE);
-  }
-
-  protected async upsertRemote(
-    _data: Rillet.InvoicePayment,
-    _localId: string
-  ): Promise<string> {
-    throw new Error(PULL_ONLY_MESSAGE);
-  }
-
-  protected async upsertRemoteBatch(
-    _data: Array<{ localId: string; payload: Rillet.InvoicePayment }>
-  ): Promise<Map<string, string>> {
-    throw new Error(PULL_ONLY_MESSAGE);
-  }
-
-  async pushToAccounting(entityId: string): Promise<SyncResult> {
-    return {
-      status: "error",
-      action: "none",
-      localId: entityId,
-      error: PULL_ONLY_MESSAGE
-    };
-  }
-
-  async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
-    const results: SyncResult[] = entityIds.map((entityId) => ({
-      status: "error",
-      action: "none",
-      localId: entityId,
-      error: PULL_ONLY_MESSAGE
-    }));
+    const local = mapRilletPaymentToLocal(remote as Rillet.InvoicePayment);
 
     return {
-      results,
-      successCount: 0,
-      errorCount: results.length,
-      skippedCount: 0
+      family: "ar",
+      documentRemoteId,
+      paymentRemoteId,
+      amount: local.amount ?? 0,
+      currencyCode: local.currencyCode ?? null,
+      exchangeRate: 1,
+      paidDate: local.date ?? new Date().toISOString().slice(0, 10),
+      reference: paymentRemoteId,
+      status:
+        (remote as Rillet.InvoicePayment).status === "FAILED"
+          ? "failed"
+          : "settled"
     };
   }
 }

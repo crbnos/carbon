@@ -471,6 +471,8 @@ describe("listChanges (SupportsIncrementalPull)", () => {
         ]
       })
     );
+    // AP bill-payments feed — empty for this AR-focused case.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ payments: [] }));
 
     const result = await makeProvider().listChanges({
       since: "2026-07-30T00:00:00.000Z"
@@ -493,7 +495,87 @@ describe("listChanges (SupportsIncrementalPull)", () => {
     ]);
   });
 
-  it("follows pagination across pages", async () => {
+  it("lists changed bill payments as `bill:`-prefixed changes with a bill dependency", async () => {
+    // AR invoice-payments feed — empty for this AP-focused case.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ payments: [] }));
+    // AP bill-payments feed.
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        payments: [
+          {
+            id: "bp-1",
+            status: "SUCCESSFUL",
+            bill_id: "bill-1",
+            amount: { amount: "500.00", currency: "USD" },
+            updated_at: "2026-08-01T12:00:00.000Z"
+          },
+          // No bill_id → unaddressable, logged and dropped
+          { id: "bp-2", status: "UNCLEARED" }
+        ]
+      })
+    );
+
+    const result = await makeProvider().listChanges({
+      since: "2026-07-30T00:00:00.000Z"
+    });
+
+    const billUrl = fetchMock.mock.calls[1]?.[0] as string;
+    expect(billUrl).toContain("/bill-payments?");
+    expect(billUrl).toContain(
+      `updated.gt=${encodeURIComponent("2026-07-30T00:00:00.000Z")}`
+    );
+    expect(billUrl).toContain("sort_by=updated");
+
+    expect(result.changes).toEqual([
+      {
+        entityType: "payment",
+        remoteId: "bill:bill-1:bp-1",
+        updatedAt: "2026-08-01T12:00:00.000Z",
+        dependsOnMapping: { entityType: "bill", remoteId: "bill-1" }
+      }
+    ]);
+  });
+
+  it("emits AR and AP changes together from one sweep", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        payments: [
+          {
+            id: "pay-1",
+            status: "SUCCESSFUL",
+            invoice_id: "inv-1",
+            updated_at: "2026-07-31T12:00:00.000Z"
+          }
+        ]
+      })
+    );
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        payments: [
+          {
+            id: "bp-1",
+            status: "SUCCESSFUL",
+            bill_id: "bill-1",
+            updated_at: "2026-08-01T12:00:00.000Z"
+          }
+        ]
+      })
+    );
+
+    const result = await makeProvider().listChanges({
+      since: "2026-07-30T00:00:00.000Z"
+    });
+
+    expect(result.changes.map((change) => change.remoteId)).toEqual([
+      "inv-1:pay-1",
+      "bill:bill-1:bp-1"
+    ]);
+    expect(
+      result.changes.map((change) => change.dependsOnMapping?.entityType)
+    ).toEqual(["invoice", "bill"]);
+  });
+
+  it("follows pagination across pages (both feeds)", async () => {
     fetchMock
       .mockResolvedValueOnce(
         jsonResponse({
@@ -520,13 +602,16 @@ describe("listChanges (SupportsIncrementalPull)", () => {
           ],
           pagination: { next_cursor: null }
         })
-      );
+      )
+      // AP bill-payments feed — single empty page.
+      .mockResolvedValueOnce(jsonResponse({ payments: [] }));
 
     const result = await makeProvider().listChanges({
       since: "2026-07-30T00:00:00.000Z"
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // 2 invoice-payment pages + 1 bill-payment page
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(result.changes.map((change) => change.remoteId)).toEqual([
       "inv-1:pay-1",
       "inv-2:pay-2"

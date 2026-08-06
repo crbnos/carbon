@@ -4472,8 +4472,8 @@ msgstr "दस्तावेज़:"
 msgid "Documents"
 msgstr "दस्तावेज़"
 
-msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. Off records them as deliberately excluded."
-msgstr "दस्तावेज़ चालान, बिल और भुगतान को देशी प्रदाता दस्तावेज़ों के रूप में पुश करता है; उनकी पत्रिकाएं दस्तावेज़ द्वारा कवर के रूप में दर्ज की जाती हैं। बंद उन्हें जानबूझकर बाहर रखा गया मानता है।"
+msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
+msgstr ""
 
 msgid "Don't Cancel"
 msgstr "रद्द न करें"

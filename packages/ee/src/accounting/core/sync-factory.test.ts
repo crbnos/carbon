@@ -8,6 +8,7 @@ import { QboCustomerSyncer } from "../providers/quickbooks-online/entities/custo
 import { QboSalesInvoiceSyncer } from "../providers/quickbooks-online/entities/invoice";
 import { QboItemSyncer } from "../providers/quickbooks-online/entities/item";
 import { QboJournalEntrySyncer } from "../providers/quickbooks-online/entities/journal-entry";
+import { QboPaymentSyncer } from "../providers/quickbooks-online/entities/payment";
 import { QboPurchaseOrderSyncer } from "../providers/quickbooks-online/entities/purchase-order";
 import { QboVendorSyncer } from "../providers/quickbooks-online/entities/vendor";
 import { rilletSyncerRegistry } from "../providers/rillet";
@@ -25,6 +26,7 @@ import { InventoryAdjustmentSyncer } from "../providers/xero/entities/inventory-
 import { SalesInvoiceSyncer } from "../providers/xero/entities/invoice";
 import { ItemSyncer } from "../providers/xero/entities/item";
 import { JournalEntrySyncer } from "../providers/xero/entities/journal-entry";
+import { XeroPaymentSyncer } from "../providers/xero/entities/payment";
 import { PurchaseOrderSyncer } from "../providers/xero/entities/purchase-order";
 import { SalesOrderSyncer } from "../providers/xero/entities/sales-order";
 import { ProviderID } from "./models";
@@ -117,16 +119,21 @@ describe("SyncFactory", () => {
       purchaseOrder: PurchaseOrderSyncer,
       salesOrder: SalesOrderSyncer,
       inventoryAdjustment: InventoryAdjustmentSyncer,
-      journalEntry: JournalEntrySyncer
+      journalEntry: JournalEntrySyncer,
+      // Phase 3: pull-only Xero payment sync-back (ACCREC → AR, ACCPAY → AP)
+      payment: XeroPaymentSyncer
     });
+  });
+
+  it("resolves the Xero payment syncer (Phase 3)", () => {
+    expect(SyncFactory.getSyncer(makeContext("payment"))).toBeInstanceOf(
+      XeroPaymentSyncer
+    );
   });
 
   it("throws the descriptive error for an unregistered entity type", () => {
     expect(() => SyncFactory.getSyncer(makeContext("employee"))).toThrow(
       /^No Syncer implementation found for entity type: employee$/
-    );
-    expect(() => SyncFactory.getSyncer(makeContext("payment"))).toThrow(
-      /^No Syncer implementation found for entity type: payment$/
     );
   });
 
@@ -153,7 +160,8 @@ describe("SyncFactory", () => {
       bill: QboBillSyncer,
       invoice: QboSalesInvoiceSyncer,
       purchaseOrder: QboPurchaseOrderSyncer,
-      journalEntry: QboJournalEntrySyncer
+      journalEntry: QboJournalEntrySyncer,
+      payment: QboPaymentSyncer
     });
   });
 

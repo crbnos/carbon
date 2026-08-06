@@ -165,14 +165,16 @@ export class ItemSyncer extends BaseEntitySyncer<
   ): Promise<Omit<Xero.Item, "UpdatedDateUTC">> {
     const existingRemoteId = await this.getRemoteId(local.id);
 
-    return {
+    // Provider items are pushed NON-TRACKED so Xero never books inventory
+    // (on bills) or COGS (on invoices) — per-SKU valuation stays in Carbon
+    // (representation model, spec invariant 4).
+    const base: Omit<Xero.Item, "UpdatedDateUTC" | "IsTrackedAsInventory"> = {
       ItemID: existingRemoteId!,
       Code: local.code.slice(0, 30),
       Name: local.name.slice(0, 50),
       Description: local.description?.slice(0, 4000) ?? undefined,
       IsPurchased: local.isPurchased,
       IsSold: local.isSold,
-      IsTrackedAsInventory: local.isTrackedAsInventory,
       PurchaseDetails: local.isPurchased
         ? { UnitPrice: local.unitCost }
         : undefined,
@@ -180,6 +182,25 @@ export class ItemSyncer extends BaseEntitySyncer<
         ? { UnitPrice: local.unitSalePrice }
         : undefined
     };
+
+    // CREATE: force non-tracked.
+    if (!existingRemoteId) {
+      return { ...base, IsTrackedAsInventory: false };
+    }
+
+    // UPDATE: Xero rejects flipping a tracked item to non-tracked once it has
+    // stock/transactions, so OMIT the field. If the remote item is still
+    // tracked, record a Warning telling the operator to untrack it manually
+    // (zero the stock, untrack in Xero, retry) — the update still proceeds
+    // (name/price sync) so item sync is never blocked.
+    const remote = await this.fetchRemote(existingRemoteId);
+    if (remote?.IsTrackedAsInventory) {
+      console.warn(
+        `[XeroItemSyncer] Xero item ${local.code} (${existingRemoteId}) is still tracked as inventory. Bills/invoices referencing it will post inventory/COGS in Xero, double-counting Carbon's valuation. Zero its stock and untrack it in Xero (Products & Services → the item → untick "I track this item"), then retry.`
+      );
+    }
+
+    return base;
   }
 
   // =================================================================

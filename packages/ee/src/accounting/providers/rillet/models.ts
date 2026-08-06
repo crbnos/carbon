@@ -340,6 +340,33 @@ export namespace Rillet {
   });
 
   export type InvoicePayment = z.infer<typeof InvoicePaymentSchema>;
+
+  /**
+   * One bill payment (AP mirror of InvoicePayment). Read from
+   * `GET /bills/{billId}/payments` and the org-wide `GET /bill-payments`
+   * feed. Same amount/currency/date wire shapes as invoice payments; the
+   * parent link is `bill_id` (not `invoice_id`).
+   *
+   * VERIFY: the bill-payment status vocabulary is not confirmed against the
+   * live Rillet OpenAPI, so `status` is kept lenient (a bare string) — only
+   * "FAILED" reverses a recorded payment; anything else settles, mirroring
+   * the invoice-payment rule (Anything except FAILED settles).
+   */
+  export const BillPaymentSchema = z.object({
+    id: z.string(),
+    status: z.string(),
+    bill_id: z.string().optional(),
+    amount: z.union([MonetaryAmountSchema, z.string(), z.number()]).optional(),
+    currency: z.string().optional(),
+    date: z.string().optional(),
+    payment_date: z.string().optional(),
+    account_code: z.string().optional(),
+    cash_account_code: z.string().optional(),
+    created_at: z.string().optional(),
+    updated_at: z.string().optional()
+  });
+
+  export type BillPayment = z.infer<typeof BillPaymentSchema>;
 }
 
 /** Server-owned fields every Rillet write payload omits. */

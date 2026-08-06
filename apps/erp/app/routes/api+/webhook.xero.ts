@@ -29,6 +29,8 @@ import type {
 import {
   getAccountingIntegration,
   getProviderIntegration,
+  getXeroBillPaymentSyncEntityId,
+  getXeroPaymentSyncEntityId,
   ProviderID
 } from "@carbon/ee/accounting";
 import { trigger } from "@carbon/jobs";
@@ -230,9 +232,9 @@ export async function action({ request }: ActionFunctionArgs) {
             break;
 
           case "INVOICE":
-            const invoiceType = await fetchInvoiceType(provider, resourceId);
+            const invoiceInfo = await fetchInvoiceForSync(provider, resourceId);
 
-            if (!invoiceType) {
+            if (!invoiceInfo) {
               logger.info("Skipping invoice - could not determine type", {
                 resourceId
               });
@@ -240,10 +242,38 @@ export async function action({ request }: ActionFunctionArgs) {
             }
 
             entities.push({
-              entityType: invoiceType,
+              entityType: invoiceInfo.entityType,
               entityId: resourceId,
               operation: operation
             });
+
+            // Payment accelerator: Xero has no payment webhook, but paying an
+            // ACCPAY/ACCREC invoice fires an Invoice UPDATE event. Enqueue a
+            // pull-only `payment` op per settlement (composite id per the
+            // syncer's contract: ACCPAY → `bill:` prefix, ACCREC → prefix-less).
+            // The accounting-pull-sweep (XeroProvider.listChanges over
+            // /Payments) remains the correctness guarantee; ledger idempotency
+            // dedupes this webhook against the sweep.
+            //
+            // VERIFY: that paying an ACCPAY (bill) invoice actually fires an
+            // INVOICE webhook event and that the fetched invoice carries the
+            // settling payment(s) in `Payments[]` — confirm on the Xero sandbox.
+            for (const payment of invoiceInfo.payments) {
+              if (!payment.PaymentID) continue;
+              const paymentEntityId =
+                invoiceInfo.entityType === "bill"
+                  ? getXeroBillPaymentSyncEntityId(
+                      resourceId,
+                      payment.PaymentID
+                    )
+                  : getXeroPaymentSyncEntityId(resourceId, payment.PaymentID);
+
+              entities.push({
+                entityType: "payment",
+                entityId: paymentEntityId,
+                operation: "update"
+              });
+            }
 
             break;
         }
@@ -332,16 +362,28 @@ const fetchContactType = async (provider: XeroProvider, resourceId: string) => {
 };
 
 /**
- * Fetches invoice from Xero to determine if it's a sales invoice or bill.
- * - ACCREC (Accounts Receivable) = Sales Invoice -> maps to "invoice"
- * - ACCPAY (Accounts Payable) = Purchase Invoice/Bill -> maps to "bill"
+ * Fetches an invoice from Xero to determine its Carbon entity type AND the
+ * payments settling it (the payment accelerator reads `Payments[]`).
+ * - ACCREC (Accounts Receivable) = Sales Invoice -> "invoice"
+ * - ACCPAY (Accounts Payable) = Purchase Invoice/Bill -> "bill"
+ *
+ * `Payments[]` lists the currently-applied payments on the invoice (voided
+ * payments are dropped from the array by Xero), so the accelerator only ever
+ * enqueues settled payments; void detection is left to the poll sweep / status
+ * re-pull.
  */
-const fetchInvoiceType = async (
+const fetchInvoiceForSync = async (
   provider: XeroProvider,
   resourceId: string
-): Promise<"invoice" | "bill" | null> => {
+): Promise<{
+  entityType: "invoice" | "bill";
+  payments: { PaymentID: string }[];
+} | null> => {
   const res = await provider.request<{
-    Invoices: { Type: "ACCREC" | "ACCPAY" }[];
+    Invoices: {
+      Type: "ACCREC" | "ACCPAY";
+      Payments?: { PaymentID: string }[];
+    }[];
   }>("GET", `/Invoices/${resourceId}`);
 
   if (res.error || !res.data || res.data.Invoices.length === 0) {
@@ -352,5 +394,8 @@ const fetchInvoiceType = async (
 
   // ACCREC = Accounts Receivable = Sales Invoice
   // ACCPAY = Accounts Payable = Bill/Purchase Invoice
-  return invoice.Type === "ACCREC" ? "invoice" : "bill";
+  return {
+    entityType: invoice.Type === "ACCREC" ? "invoice" : "bill",
+    payments: (invoice.Payments ?? []).filter((p) => p.PaymentID)
+  };
 };

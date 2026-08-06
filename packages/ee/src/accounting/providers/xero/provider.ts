@@ -6,9 +6,12 @@ import type {
   BaseProvider,
   DimensionTarget,
   GlobalSyncConfig,
+  ListChangesResult,
   ProviderCapabilities,
+  ProviderChange,
   ProviderConfig,
-  ProviderCredentials
+  ProviderCredentials,
+  SupportsIncrementalPull
 } from "../../core/types";
 import {
   createOAuthClient,
@@ -16,7 +19,11 @@ import {
   type HttpResponse,
   throwXeroApiError
 } from "../../core/utils";
-import type { Xero } from "./models";
+import {
+  getXeroBillPaymentSyncEntityId,
+  getXeroPaymentSyncEntityId
+} from "./entities/payment";
+import { parseDotnetDate, type Xero } from "./models";
 
 const logger = getLogger("ee", "accounting", "xero");
 
@@ -71,6 +78,49 @@ export function parseXeroTrackingTarget(target: string): string | null {
   return categoryId.length > 0 ? categoryId : null;
 }
 
+// /********************************************************\
+// *              Sync-config constraints                   *
+// \********************************************************/
+
+/**
+ * Entities Xero PULLS from the accounting system: payments (both AR
+ * ACCREC and AP ACCPAY) settle Carbon invoices/bills. Forced pull-only AND
+ * enabled — inbound payment sync-back must work as soon as the integration is
+ * connected (there is no per-company toggle for it yet; see Phase 0.4). Every
+ * other Xero entity keeps its resolved (possibly two-way) config untouched;
+ * only `payment` is constrained here (mirrors Rillet's RILLET_PULL_ONLY_ENTITIES).
+ */
+export const XERO_PULL_ONLY_ENTITIES = [
+  "payment"
+] as const satisfies readonly AccountingEntityType[];
+
+/**
+ * Constrain a resolved sync config to Xero's payment capability: force
+ * `payment` to direction "pull-from-accounting", owner "accounting", enabled.
+ * Everything else passes through as resolved.
+ */
+export function buildXeroSyncConfig(
+  resolved: GlobalSyncConfig
+): GlobalSyncConfig {
+  const entities = Object.fromEntries(
+    Object.entries(resolved.entities).map(([entityType, entityConfig]) => [
+      entityType,
+      { ...entityConfig }
+    ])
+  ) as GlobalSyncConfig["entities"];
+
+  for (const entityType of XERO_PULL_ONLY_ENTITIES) {
+    entities[entityType] = {
+      ...entities[entityType],
+      direction: "pull-from-accounting",
+      owner: "accounting",
+      enabled: true
+    };
+  }
+
+  return { entities };
+}
+
 function getOAuth2Credentials(
   credentials: ProviderCredentials
 ): Extract<ProviderCredentials, { type: "oauth2" }> {
@@ -119,7 +169,7 @@ type XeroProviderConfig = ProviderConfig<{
   refreshToken?: string;
 };
 
-export class XeroProvider implements BaseProvider {
+export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
   static id = ProviderID.XERO;
 
   /**
@@ -129,6 +179,12 @@ export class XeroProvider implements BaseProvider {
    */
   readonly capabilities?: ProviderCapabilities;
 
+  /**
+   * No cap: `/Payments` with `If-Modified-Since` reaches arbitrarily far back,
+   * so the pull-sweep cursor is never clamped.
+   */
+  readonly pullLookbackDays?: number;
+
   http: HTTPClient;
   auth: AuthProvider;
 
@@ -136,7 +192,7 @@ export class XeroProvider implements BaseProvider {
   private readonly _settings: XeroSettings;
 
   constructor(public config: Omit<XeroProviderConfig, "id">) {
-    this.syncConfig = config.syncConfig;
+    this.syncConfig = buildXeroSyncConfig(config.syncConfig);
     this._settings = config.settings ?? {};
     logger.info("XeroProvider initialized", { settings: this._settings });
     this.http = new HTTPClient("https://api.xero.com/api.xro/2.0");
@@ -477,5 +533,106 @@ export class XeroProvider implements BaseProvider {
     const hasMore = items.length === 100;
 
     return { items, hasMore, page };
+  }
+
+  // =================================================================
+  // SupportsIncrementalPull — the pull-sweep entry point
+  // =================================================================
+
+  /**
+   * SupportsIncrementalPull: payments (AR ACCREC + AP ACCPAY) changed since
+   * `since`, for the generic accounting-pull-sweep cron. Xero has no payment
+   * webhook, so the sweep is the correctness guarantee (the Invoice-update
+   * webhook accelerator only shortens latency). Each change carries a
+   * `dependsOnMapping` on its settled invoice (entityType "bill" for ACCPAY,
+   * "invoice" for ACCREC) — the sweep drops changes whose document has no local
+   * mapping (another instance's, or a document created directly in Xero)
+   * without ledger noise. Composite ids match the syncer's entity-id contract.
+   *
+   * No status filter: Xero payments are only ever AUTHORISED or DELETED, and a
+   * DELETED payment must reach the syncer so the void path fires — so the poll
+   * returns both. A DELETED payment maps to `status: 'void'` in
+   * entities/payment.ts.
+   *
+   * VERIFY: `GET /Payments` with `If-Modified-Since` (whole-second UTC, RFC 1123
+   * via toUTCString — the same header the Contacts/Items reads use) is assumed
+   * to return AP + AR payments changed since the cursor. Confirm the exact
+   * If-Modified-Since format against the Xero sandbox before relying on this in
+   * production.
+   */
+  async listChanges(args: { since: string }): Promise<ListChangesResult> {
+    const paymentConfig = this.getSyncConfig("payment");
+    if (!paymentConfig.enabled) {
+      return { changes: [] };
+    }
+
+    // Whole-second UTC — Xero's If-Modified-Since has second resolution.
+    const sinceMs = new Date(args.since).getTime();
+    const modifiedSince = new Date(
+      Number.isNaN(sinceMs) ? Date.now() : Math.floor(sinceMs / 1000) * 1000
+    );
+
+    const changes: ProviderChange[] = [];
+    let page = 1;
+
+    for (;;) {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      // No status filter: Xero payments are only ever AUTHORISED or DELETED,
+      // and DELETED (a deletion/void) is exactly what the void path needs — an
+      // AUTHORISED-only filter would make the payment/entities void case
+      // unreachable (deleted payments are absent from the refetched invoice
+      // Payments[] too). Both statuses flow to the syncer, which maps DELETED
+      // → status 'void'.
+
+      const response = await this.request<{ Payments: Xero.Payment[] }>(
+        "GET",
+        `/Payments?${params.toString()}`,
+        { headers: { "If-Modified-Since": modifiedSince.toUTCString() } }
+      );
+
+      if (response.error || !response.data?.Payments) {
+        break;
+      }
+
+      const payments = response.data.Payments;
+      for (const payment of payments) {
+        const invoice = payment.Invoice;
+        if (!invoice?.InvoiceID || !invoice.Type) {
+          logger.warning(
+            "Ignoring Xero payment with no settled invoice id/type",
+            { paymentId: payment.PaymentID }
+          );
+          continue;
+        }
+
+        const family = invoice.Type === "ACCPAY" ? "ap" : "ar";
+        const remoteId =
+          family === "ap"
+            ? getXeroBillPaymentSyncEntityId(
+                invoice.InvoiceID,
+                payment.PaymentID
+              )
+            : getXeroPaymentSyncEntityId(invoice.InvoiceID, payment.PaymentID);
+
+        changes.push({
+          entityType: "payment",
+          remoteId,
+          updatedAt: payment.UpdatedDateUTC
+            ? parseDotnetDate(payment.UpdatedDateUTC).toISOString()
+            : null,
+          dependsOnMapping: {
+            entityType: family === "ap" ? "bill" : "invoice",
+            remoteId: invoice.InvoiceID
+          }
+        });
+      }
+
+      // Xero returns 100 payments per page — a full page means there may be more.
+      if (payments.length < 100) break;
+      page++;
+    }
+
+    return { changes };
   }
 }
