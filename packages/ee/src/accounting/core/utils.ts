@@ -452,8 +452,16 @@ export function createOAuthClient({
         })
       });
 
-      if (response.error || !response.data) {
-        throw new Error(`Auth failed: ${response.data}`);
+      if (response.error || !response.data?.access_token) {
+        // Surface the provider's actual rejection (e.g. invalid_grant /
+        // invalid_client) instead of the useless "[object Object]".
+        throw new Error(
+          `Token exchange failed (HTTP ${response.code}): ${
+            typeof response.data === "string"
+              ? response.data
+              : JSON.stringify(response.data)
+          }`
+        );
       }
 
       const newCreds = {

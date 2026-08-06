@@ -207,9 +207,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
   } catch (err) {
-    logger.error("Xero OAuth Error", { error: err });
+    const detail = err instanceof Error ? err.message : String(err);
+    logger.error("Xero OAuth Error", { error: detail });
     return data(
-      { error: "Failed to exchange code for token" },
+      { error: "Failed to exchange code for token", detail },
       { status: 500 }
     );
   }

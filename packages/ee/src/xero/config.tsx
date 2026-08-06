@@ -201,11 +201,19 @@ export const Xero = defineIntegration({
     authUrl: "https://login.xero.com/identity/connect/authorize",
     clientId: XERO_CLIENT_ID!,
     redirectUri: "/api/integrations/xero/oauth",
+    // Granular scopes (Xero retired the broad `accounting.transactions` scope for
+    // apps created after 2026-03-02; the granular set also works on older apps).
+    // Overshoot the accounting-transaction family so no synced entity 403s:
+    // invoices+bills → invoices, payments → payments, journal entries →
+    // manualjournals, POs/quotes → invoices, chart/tax/items → settings.
     scopes: [
       "offline_access",
       "accounting.contacts",
-      "accounting.transactions",
-      "accounting.settings"
+      "accounting.settings",
+      "accounting.invoices",
+      "accounting.payments",
+      "accounting.banktransactions",
+      "accounting.manualjournals"
     ],
     tokenUrl: "https://login.xero.com/identity/connect/token"
   },
