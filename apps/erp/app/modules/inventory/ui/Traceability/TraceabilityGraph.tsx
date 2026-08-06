@@ -37,6 +37,7 @@ import {
 } from "./metadata";
 import { NodeSearchDialog } from "./NodeSearchDialog";
 import { ActivityNode } from "./nodes/ActivityNode";
+import { EntityGroupNode } from "./nodes/EntityGroupNode";
 import { EntityNode } from "./nodes/EntityNode";
 import { useTraceabilityStore } from "./store";
 import { TraceabilityTable } from "./TraceabilityTable";
@@ -55,6 +56,7 @@ import {
 
 const nodeTypes: NodeTypes = {
   entity: EntityNode as any,
+  entityGroup: EntityGroupNode as any,
   activity: ActivityNode as any
 };
 
@@ -66,6 +68,8 @@ const proOptions = { hideAttribution: true };
 
 const EMPTY_NODES: LineageNode[] = [];
 const EMPTY_EDGES: LineageEdge[] = [];
+const EMPTY_ROOT_IDS: string[] = [];
+const EMPTY_MEMBER_MAP: Record<string, string> = {};
 
 type Props = {
   entities: TrackedEntity[];
@@ -126,7 +130,9 @@ function TraceabilityGraphInner({
     toggleExcluded,
     clearExcluded,
     toggleAdditionalRoot,
-    clearAdditionalRoots
+    clearAdditionalRoots,
+    setClusters,
+    setHighlightMember
   } = useTraceabilityStore(
     useShallow((s) => ({
       addExpansion: s.addExpansion,
@@ -141,7 +147,9 @@ function TraceabilityGraphInner({
       toggleExcluded: s.toggleExcluded,
       clearExcluded: s.clearExcluded,
       toggleAdditionalRoot: s.toggleAdditionalRoot,
-      clearAdditionalRoots: s.clearAdditionalRoots
+      clearAdditionalRoots: s.clearAdditionalRoots,
+      setClusters: s.setClusters,
+      setHighlightMember: s.setHighlightMember
     }))
   );
   const excludedIds = useTraceabilityStore((s) => s.excludedIds);
@@ -212,6 +220,11 @@ function TraceabilityGraphInner({
     return set;
   }, [payload.entities]);
 
+  const rootIds = useMemo(
+    () => (rootType === "entity" && rootId ? [rootId] : EMPTY_ROOT_IDS),
+    [rootType, rootId]
+  );
+
   const tracingGraphManager = useTracingGraphManager();
   const layoutResult = useAsyncLayout(
     tracingGraphManager,
@@ -219,10 +232,18 @@ function TraceabilityGraphInner({
     direction,
     spacing,
     rejectIds,
+    rootIds,
     layoutVersion
   );
   const laidNodes = layoutResult?.nodes ?? EMPTY_NODES;
   const laidEdges = layoutResult?.edges ?? EMPTY_EDGES;
+  const memberToCluster = layoutResult?.memberToCluster ?? EMPTY_MEMBER_MAP;
+
+  // The sidebar lives beside this component in the route, so cluster data
+  // reaches it through the store rather than props.
+  useEffect(() => {
+    setClusters(layoutResult?.clusters ?? [], memberToCluster);
+  }, [layoutResult, memberToCluster, setClusters]);
 
   const [nodes, setNodes, onNodesChangeRaw] = useNodesState<Node>(
     laidNodes as Node[]
@@ -321,17 +342,26 @@ function TraceabilityGraphInner({
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedId = selectedIds[0] ?? null;
 
+  // A clustered serial has no node of its own — selecting it means selecting
+  // its group, and telling the sidebar which member to highlight.
+  const resolveNodeId = useCallback(
+    (id: string) => memberToCluster[id] ?? id,
+    [memberToCluster]
+  );
+
   const selectNode = useCallback(
     (id: string | null) => {
+      const targetId = id === null ? null : resolveNodeId(id);
+      setHighlightMember(id !== null && targetId !== id ? id : null);
       setNodes((ns) =>
         ns.map((n) => {
-          const wantsSelected = id !== null && n.id === id;
+          const wantsSelected = targetId !== null && n.id === targetId;
           if (n.selected === wantsSelected) return n;
           return { ...n, selected: wantsSelected };
         })
       );
     },
-    [setNodes]
+    [setNodes, resolveNodeId, setHighlightMember]
   );
 
   const onExpandResult = useCallback(
@@ -409,6 +439,7 @@ function TraceabilityGraphInner({
   useProbeBoundary({
     payload,
     boundaryByNode,
+    memberToCluster,
     markExpandable,
     markExhausted,
     probeCacheRef,
@@ -673,6 +704,7 @@ function TraceabilityGraphInner({
         onOpenChange={setSearchOpen}
         payload={payload}
         onSelect={(id) => selectNode(id)}
+        resolveNodeId={resolveNodeId}
       />
 
       {isExpanding && (

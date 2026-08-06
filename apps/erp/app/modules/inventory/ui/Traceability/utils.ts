@@ -5,6 +5,8 @@ import type {
   ActivityOutput,
   TrackedEntity
 } from "~/modules/inventory";
+import type { ClusterResult, EntityCluster } from "./cluster";
+import { clusterEntities, DEFAULT_CLUSTER_THRESHOLD, edgeKey } from "./cluster";
 import { NODE_SIZE } from "./constants";
 import { isMovementActivity } from "./metadata";
 
@@ -35,7 +37,15 @@ export type ActivityNodeData = {
   movementQuantity?: number;
 };
 
-export type LineageNode = Node<EntityNodeData | ActivityNodeData>;
+export type EntityGroupNodeData = {
+  kind: "entityGroup";
+  cluster: EntityCluster;
+  dimmed: boolean;
+};
+
+export type LineageNode = Node<
+  EntityNodeData | ActivityNodeData | EntityGroupNodeData
+>;
 
 export type LineageEdgeData = {
   kind: "input" | "output" | "movement";
@@ -252,8 +262,9 @@ function buildLotTimeline(
 
 export function payloadToFlow(
   payload: LineagePayload,
-  positions: Map<string, { x: number; y: number }> = new Map()
-): { nodes: LineageNode[]; edges: LineageEdge[] } {
+  positions: Map<string, { x: number; y: number }> = new Map(),
+  opts: { clusterThreshold?: number; rootIds?: string[] } = {}
+): { nodes: LineageNode[]; edges: LineageEdge[] } & ClusterResult {
   const activityById = new Map(payload.activities.map((a) => [a.id, a]));
 
   // Gather each entity's events from the junction rows.
@@ -316,11 +327,47 @@ export function payloadToFlow(
     if (timeline) timelines.set(entity.id, timeline);
   }
 
+  const stateCountByEntity = new Map<string, number>();
+  for (const entity of payload.entities) {
+    if (!entity?.id || stateCountByEntity.has(entity.id)) continue;
+    stateCountByEntity.set(
+      entity.id,
+      timelines.get(entity.id)?.stateQuantities.length ?? 1
+    );
+  }
+
+  // Serial fans: collapse identical-story qty-1 siblings into one group node.
+  // Only single-state entities are eligible — a multi-state entity renders as
+  // a chain, which can't fold into a single circle.
+  const singleStateIds = new Set<string>();
+  for (const [id, count] of stateCountByEntity) {
+    if (count === 1) singleStateIds.add(id);
+  }
+  const { clusters, memberToCluster } = clusterEntities(payload, {
+    threshold: opts.clusterThreshold ?? DEFAULT_CLUSTER_THRESHOLD,
+    excludeIds: new Set(opts.rootIds ?? []),
+    eligibleIds: singleStateIds
+  });
+
   const nodes: LineageNode[] = [];
   const seenNodeIds = new Set<string>();
 
+  for (const cluster of clusters) {
+    seenNodeIds.add(cluster.id);
+    nodes.push({
+      id: cluster.id,
+      type: "entityGroup",
+      position: positions.get(cluster.id) ?? { x: 0, y: 0 },
+      width: NODE_SIZE,
+      height: NODE_SIZE,
+      measured: { width: NODE_SIZE, height: NODE_SIZE },
+      data: { kind: "entityGroup", cluster, dimmed: false }
+    });
+  }
+
   for (const entity of payload.entities) {
     if (!entity?.id || seenNodeIds.has(entity.id)) continue;
+    if (memberToCluster[entity.id]) continue;
     seenNodeIds.add(entity.id);
     const timeline = timelines.get(entity.id);
     const stateQuantities = timeline?.stateQuantities ?? [
@@ -400,6 +447,7 @@ export function payloadToFlow(
   // Timeline-driven edges: each entity wires its own input/creation/
   // continuation edges, labeled with the quantity at that moment.
   for (const [entityId, timeline] of timelines) {
+    if (memberToCluster[entityId]) continue;
     for (const w of timeline.wiring) {
       if (w.beforeState !== null && w.beforeQty !== null) {
         pushEdge(
@@ -430,6 +478,7 @@ export function payloadToFlow(
   );
   for (const input of payload.inputs) {
     if (timelines.has(input.trackedEntityId)) continue;
+    if (memberToCluster[input.trackedEntityId]) continue;
     const kind = isMovementActivity(
       activityTypeById.get(input.trackedActivityId)
     )
@@ -445,6 +494,7 @@ export function payloadToFlow(
   }
   for (const output of payload.outputs) {
     if (timelines.has(output.trackedEntityId)) continue;
+    if (memberToCluster[output.trackedEntityId]) continue;
     pushEdge(
       `out:${output.trackedActivityId}:${output.trackedEntityId}`,
       output.trackedActivityId,
@@ -454,7 +504,35 @@ export function payloadToFlow(
     );
   }
 
-  return { nodes, edges };
+  // One edge per signature entry, standing in for every member edge it
+  // replaced — quantity is their sum.
+  for (const cluster of clusters) {
+    for (const entry of cluster.signature) {
+      const quantity =
+        cluster.quantitiesByEdge[edgeKey(entry.activityId, entry.side)] ?? 0;
+      if (entry.side === "input") {
+        pushEdge(
+          `in:${entry.activityId}:${cluster.id}`,
+          cluster.id,
+          entry.activityId,
+          isMovementActivity(activityTypeById.get(entry.activityId))
+            ? "movement"
+            : "input",
+          quantity
+        );
+      } else {
+        pushEdge(
+          `out:${entry.activityId}:${cluster.id}`,
+          entry.activityId,
+          cluster.id,
+          "output",
+          quantity
+        );
+      }
+    }
+  }
+
+  return { nodes, edges, clusters, memberToCluster };
 }
 
 export function mergePayloads(

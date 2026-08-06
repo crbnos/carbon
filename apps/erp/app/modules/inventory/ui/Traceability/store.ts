@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { EntityCluster } from "./cluster";
 import { clampSpacing, SPACING } from "./constants";
 import type { LineagePayload } from "./utils";
 
@@ -14,6 +15,16 @@ type TraceabilityState = {
   exhausted: Set<string>;
   excludedIds: Set<string>;
   additionalRootIds: Set<string>;
+
+  /**
+   * Serial clusters from the latest layout. The graph computes them (in the
+   * worker, off the expansion-merged payload) but the sidebar is its SIBLING in
+   * the route, not its child — so they travel through here rather than props.
+   */
+  clusters: EntityCluster[];
+  memberToCluster: Record<string, string>;
+  /** Member the sidebar should scroll to and highlight, set by search. */
+  highlightMemberId: string | null;
 
   // persisted preferences
   direction: LayoutDirection;
@@ -32,6 +43,11 @@ type TraceabilityState = {
   markExhausted: (id: string) => void;
   toggleExcluded: (id: string) => void;
   clearExcluded: () => void;
+  setClusters: (
+    clusters: EntityCluster[],
+    memberToCluster: Record<string, string>
+  ) => void;
+  setHighlightMember: (id: string | null) => void;
   setDirection: (next: LayoutDirection) => void;
   setView: (next: ViewMode) => void;
   setSpacing: (next: number) => void;
@@ -47,6 +63,9 @@ export const useTraceabilityStore = create<TraceabilityState>()(
       exhausted: new Set(),
       excludedIds: new Set(),
       additionalRootIds: new Set(),
+      clusters: [],
+      memberToCluster: {},
+      highlightMemberId: null,
       direction: "TB",
       view: "graph",
       spacing: SPACING.default,
@@ -59,7 +78,10 @@ export const useTraceabilityStore = create<TraceabilityState>()(
           expandable: new Set(),
           exhausted: new Set(),
           excludedIds: new Set(),
-          additionalRootIds: new Set()
+          additionalRootIds: new Set(),
+          clusters: [],
+          memberToCluster: {},
+          highlightMemberId: null
         }),
 
       setIsolate: (next) => set({ isolate: next }),
@@ -124,6 +146,16 @@ export const useTraceabilityStore = create<TraceabilityState>()(
       clearExcluded: () =>
         set((s) =>
           s.excludedIds.size === 0 ? {} : { excludedIds: new Set() }
+        ),
+
+      setClusters: (clusters, memberToCluster) =>
+        set((s) =>
+          s.clusters === clusters ? {} : { clusters, memberToCluster }
+        ),
+
+      setHighlightMember: (id) =>
+        set((s) =>
+          s.highlightMemberId === id ? {} : { highlightMemberId: id }
         ),
 
       setDirection: (next) => set({ direction: next }),

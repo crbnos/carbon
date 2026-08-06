@@ -96,6 +96,23 @@ Non-strict variants exist but include same-activity siblings — prefer strict.
 - MES `operations.service.ts`: `getTrackedEntity`, `getTrackedEntitiesByMakeMethodId`,
   `getTrackedInputs` (wraps the strict RPCs), `startProductionEvent`.
 
+**Serial sibling clustering (display only).** A serial item at qty N produces N
+qty-1 entities by design, so one job fans out into N identical nodes. The graph
+collapses siblings that share an identical **edge signature** — the exact set of
+`(activityId, side)` pairs — plus the same item and `status`, into one
+`entityGroup` node (`ui/Traceability/cluster.ts` → `clusterEntities`, called from
+`payloadToFlow` in `ui/Traceability/utils.ts`, whose only caller is the worker's
+`computeFullLayout`). Guards: the traced root never clusters, `quantity !== 1`
+never clusters (protects post-flip batch fragments), the entity must resolve to a
+SINGLE timeline state (a bin-transferred serial replays to two and stays
+individual), and a group needs ≥ 3 members. One edge per signature entry with the
+members' quantities summed. Members are reached only through the sidebar's list —
+cluster nodes carry no expand toggles, since expanding a 50-member group would
+fetch 50 lineages. Clusters travel from the graph to the sidebar (its sibling in
+the route) through `ui/Traceability/store.ts`. Because clustering absorbs serial
+fans, `MAX_ENTITIES` in `lineage.server.ts` is **500**; the BFS must stay complete
+up to it, since a truncated frontier would split a group in two.
+
 ## Picking / availability (shelf → storageUnit rename)
 
 `get_available_tracked_entities(...)` (`20260614171204`) and

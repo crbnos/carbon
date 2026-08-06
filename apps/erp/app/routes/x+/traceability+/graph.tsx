@@ -19,7 +19,9 @@ import {
   fetchLineageSubgraph,
   type LineagePayload
 } from "~/modules/inventory/lineage.server";
+import { isClusterId } from "~/modules/inventory/ui/Traceability/cluster";
 import { clampDepth } from "~/modules/inventory/ui/Traceability/constants";
+import { useTraceabilityStore } from "~/modules/inventory/ui/Traceability/store";
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
 import { stateEntityId } from "~/modules/inventory/ui/Traceability/utils";
@@ -352,30 +354,46 @@ function TraceabilityRouteInner() {
     : (entities[0]?.id ?? activities[0]?.id ?? rootId);
   const sidebarId = focusedSelectedId ?? fallbackSidebarId;
 
+  // Clustered serials have no node of their own — the graph writes the cluster
+  // map into the store after each layout so the sidebar (a sibling here, not a
+  // child of the graph) can resolve them.
+  const clusters = useTraceabilityStore((s) => s.clusters);
+  const memberToCluster = useTraceabilityStore((s) => s.memberToCluster);
+  const highlightMemberId = useTraceabilityStore((s) => s.highlightMemberId);
+  const setHighlightMember = useTraceabilityStore((s) => s.setHighlightMember);
+
   const { setNodes } = useReactFlow();
   const selectNode = useCallback(
     (id: string | null) => {
+      const targetId = id === null ? null : (memberToCluster[id] ?? id);
+      setHighlightMember(id !== null && targetId !== id ? id : null);
       setNodes((nodes) =>
         nodes.map((n) => {
-          const wantsSelected = id !== null && n.id === id;
+          const wantsSelected = targetId !== null && n.id === targetId;
           if (n.selected === wantsSelected) return n;
           return { ...n, selected: wantsSelected };
         })
       );
     },
-    [setNodes]
+    [setNodes, memberToCluster, setHighlightMember]
   );
 
   // Lot-state nodes carry an `::sN` suffix — the sidebar always shows the
   // underlying entity, whichever of its states is selected.
   const sidebarEntityId = stateEntityId(sidebarId);
-  const selectedEntity =
-    (entities.find((e) => e?.id === sidebarEntityId) as
-      | TrackedEntity
-      | undefined) ?? null;
-  const selectedActivity =
-    (activities.find((a) => a?.id === sidebarId) as Activity | undefined) ??
-    null;
+  const selectedCluster =
+    (isClusterId(sidebarId)
+      ? clusters.find((c) => c.id === sidebarId)
+      : undefined) ?? null;
+  const selectedEntity = selectedCluster
+    ? null
+    : ((entities.find((e) => e?.id === sidebarEntityId) as
+        | TrackedEntity
+        | undefined) ?? null);
+  const selectedActivity = selectedCluster
+    ? null
+    : ((activities.find((a) => a?.id === sidebarId) as Activity | undefined) ??
+      null);
 
   return (
     <div className="flex bg-card h-[calc(100dvh-49px)] w-full overflow-hidden scrollbar-hide">
@@ -420,6 +438,9 @@ function TraceabilityRouteInner() {
           key={`sidebar-${sidebarId}`}
           entity={selectedEntity}
           activity={selectedActivity}
+          cluster={selectedCluster}
+          clusters={clusters}
+          highlightMemberId={highlightMemberId}
           payload={{
             entities: entities as TrackedEntity[],
             activities: activities as Activity[],

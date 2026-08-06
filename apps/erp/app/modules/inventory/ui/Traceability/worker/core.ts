@@ -1,4 +1,5 @@
 import Dagre from "@dagrejs/dagre";
+import type { EntityCluster } from "../cluster";
 import {
   annotateEdgeWeights,
   type LineageEdge,
@@ -17,11 +18,15 @@ export type LayoutInput = {
   direction: LayoutDirection;
   spacing: number;
   rejectIds: string[];
+  /** Never clustered — the traced root stays individually visible. */
+  rootIds: string[];
 };
 
 export type LayoutResult = {
   nodes: LineageNode[];
   edges: LineageEdge[];
+  clusters: EntityCluster[];
+  memberToCluster: Record<string, string>;
 };
 
 export type SelectionPathResult = {
@@ -163,11 +168,16 @@ export function computeDagreLayout(
 }
 
 export function computeFullLayout(input: LayoutInput): LayoutResult {
-  const flow = payloadToFlow(input.payload);
-  const weightedEdges = annotateEdgeWeights(
-    flow.edges,
-    new Set(input.rejectIds)
-  );
+  const flow = payloadToFlow(input.payload, undefined, {
+    rootIds: input.rootIds
+  });
+  // Reject ids arrive as ENTITY ids, but a rejected member no longer has a
+  // node of its own — its cluster carries the reject styling instead.
+  const rejectIds = new Set(input.rejectIds);
+  for (const cluster of flow.clusters) {
+    if (cluster.status === "Rejected") rejectIds.add(cluster.id);
+  }
+  const weightedEdges = annotateEdgeWeights(flow.edges, rejectIds);
   const { positioned, backEdges, edgePoints } = computeDagreLayout(
     flow.nodes,
     weightedEdges,
@@ -186,7 +196,12 @@ export function computeFullLayout(input: LayoutInput): LayoutResult {
       }
     });
   }
-  return { nodes: positioned, edges: finalEdges };
+  return {
+    nodes: positioned,
+    edges: finalEdges,
+    clusters: flow.clusters,
+    memberToCluster: flow.memberToCluster
+  };
 }
 
 export function computeSelectionPath(
