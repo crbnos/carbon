@@ -9269,6 +9269,9 @@ msgstr "根据IAS 21翻译股权余额时使用的可选固定汇率（而不是
 msgid "Optional pages & sections"
 msgstr "可选页面和部分"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "选项"
 
@@ -11163,6 +11166,9 @@ msgstr "根据数量或客户自动调整价格的规则"
 msgid "Rules that decide where each item gets stored"
 msgstr "决定每个项目存储位置的规则"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "运行验收测试"
 
@@ -11189,6 +11195,9 @@ msgstr "运行验收清单直到通过"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "在平板电脑上运行车间：记录劳动力、报告进度、查看说明"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "每周供应和需求后运行的库存 — 该行。"
@@ -11838,6 +11847,9 @@ msgstr "设置"
 
 msgid "Setup"
 msgstr "设置"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "设置和控制"

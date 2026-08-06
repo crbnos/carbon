@@ -9269,6 +9269,9 @@ msgstr "Taux fixe optionnel utilisé lors de la traduction des soldes des capita
 msgid "Optional pages & sections"
 msgstr "Pages et sections optionnelles"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "Options"
 
@@ -11163,6 +11166,9 @@ msgstr "Règles qui ajustent les prix automatiquement selon la quantité ou le c
 msgid "Rules that decide where each item gets stored"
 msgstr "Règles qui décident où chaque article est stocké"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "Exécuter les tests d'acceptation"
 
@@ -11189,6 +11195,9 @@ msgstr "Exécuter la liste de contrôle d'acceptation jusqu'à la réussite"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Gérer l'atelier sur tablettes : enregistrer le travail, signaler la progression, consulter les instructions"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Stocks renouvelés après l'offre et la demande de chaque semaine — la ligne."
@@ -11838,6 +11847,9 @@ msgstr "Paramètres"
 
 msgid "Setup"
 msgstr "Configuration"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Configuration et contrôles"

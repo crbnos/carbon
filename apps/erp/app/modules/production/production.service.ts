@@ -7850,6 +7850,8 @@ export async function confirmCutList(
       quantity: number;
       scrapReasonId?: string;
     }[];
+    setupSeconds?: number;
+    machineSeconds?: number;
   }
 ) {
   return client.functions.invoke("issue", {

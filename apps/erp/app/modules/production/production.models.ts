@@ -1103,7 +1103,10 @@ export const cutListCompleteValidator = z.object({
         scrapReasonId: z.string().optional()
       })
     )
-    .default([])
+    .default([]),
+  // Whole-run time, in seconds, split across served operations by nested length.
+  setupSeconds: z.number().min(0).optional(),
+  machineSeconds: z.number().min(0).optional()
 });
 
 export const failureModeValidator = z.object({

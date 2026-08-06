@@ -9269,6 +9269,9 @@ msgstr "Tasa fija opcional utilizada al traducir saldos de capital según IAS 21
 msgid "Optional pages & sections"
 msgstr "Páginas y secciones opcionales"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "Opciones"
 
@@ -11163,6 +11166,9 @@ msgstr "Reglas que ajustan precios automáticamente por cantidad o cliente"
 msgid "Rules that decide where each item gets stored"
 msgstr "Reglas que deciden dónde se almacena cada artículo"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "Ejecutar pruebas de aceptación"
 
@@ -11189,6 +11195,9 @@ msgstr "Ejecutar la lista de verificación de aceptación hasta obtener un resul
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Ejecutar la planta en tablets: registrar mano de obra, reportar progreso, ver instrucciones"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Inventario en ejecución después del suministro y la demanda de cada semana — la línea."
@@ -11838,6 +11847,9 @@ msgstr "Configuración"
 
 msgid "Setup"
 msgstr "Configuración"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Configuración y Controles"

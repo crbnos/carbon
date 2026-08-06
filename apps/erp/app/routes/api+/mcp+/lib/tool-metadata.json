@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-05T20:13:10.758Z",
+  "generated": "2026-08-06T05:31:03.066Z",
   "totalTools": 1432,
   "modules": 15,
   "tools": [
@@ -24513,7 +24513,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "confirm cut list",
-      "paramCount": 6,
+      "paramCount": 8,
       "serviceParams": [
         "client",
         "params"
@@ -24574,6 +24574,12 @@
           "scrap: {\n      fromTrackedEntityId": {
             "type": "array",
             "items": {}
+          },
+          "setupSeconds": {
+            "type": "number"
+          },
+          "machineSeconds": {
+            "type": "number"
           }
         },
         "required": [

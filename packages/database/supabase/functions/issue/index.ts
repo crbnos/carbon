@@ -989,6 +989,10 @@ const payloadValidator = z.discriminatedUnion("type", [
         })
       )
       .default([]),
+    // Total time for the whole run, in seconds. Split across served operations
+    // by nested length and posted as production events.
+    setupSeconds: z.number().min(0).optional(),
+    machineSeconds: z.number().min(0).optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -3802,6 +3806,8 @@ serve(async (req: Request) => {
           untrackedConsumed,
           remnants,
           scrap,
+          setupSeconds,
+          machineSeconds,
           companyId,
           userId,
         } = validatedPayload;
@@ -3926,6 +3932,8 @@ serve(async (req: Request) => {
             scrap,
             minRemnantLength: Number(cutList.minRemnantLength ?? 0),
             stockLengthByEntity,
+            setupSeconds: setupSeconds ?? 0,
+            machineSeconds: machineSeconds ?? 0,
           });
 
           const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
@@ -4233,6 +4241,55 @@ serve(async (req: Request) => {
             operationsCredited += 1;
           }
 
+          // Post the run's setup + machine time onto each served operation.
+          // Each allocation becomes a productionEvent carrying the operation's
+          // own work center, so it costs out at that center's rate through the
+          // normal post-production-event path. duration is in seconds.
+          const timeEventIds: string[] = [];
+          if (plan.timeAllocations.length > 0) {
+            const operationIds = [
+              ...new Set(plan.timeAllocations.map((a) => a.jobOperationId)),
+            ];
+            const operations = await trx
+              .selectFrom("jobOperation")
+              .where("id", "in", operationIds)
+              .select(["id", "workCenterId"])
+              .execute();
+            const workCenterByOperation = new Map(
+              operations.map((op) => [op.id, op.workCenterId])
+            );
+
+            for (const allocation of plan.timeAllocations) {
+              const workCenterId = workCenterByOperation.get(
+                allocation.jobOperationId
+              );
+              // No work center means no rate to cost against — skip rather than
+              // post an event that can never settle.
+              if (!workCenterId) continue;
+              const endTime = new Date();
+              const startTime = new Date(
+                endTime.getTime() - allocation.seconds * 1000
+              );
+              const eventId = nanoid();
+              await trx
+                .insertInto("productionEvent")
+                .values({
+                  id: eventId,
+                  jobOperationId: allocation.jobOperationId,
+                  type: allocation.type,
+                  startTime: startTime.toISOString(),
+                  endTime: endTime.toISOString(),
+                  duration: allocation.seconds,
+                  workCenterId,
+                  notes: `Cut list ${cutList.cutListId}`,
+                  companyId,
+                  createdBy: userId,
+                })
+                .execute();
+              timeEventIds.push(eventId);
+            }
+          }
+
           await trx
             .updateTable("cutList")
             .set({
@@ -4255,8 +4312,25 @@ serve(async (req: Request) => {
             allocations: plan.allocations.length,
             scrapped: plan.scrap.length,
             operationsCredited,
+            timeEventIds,
           };
         });
+
+        // Cost the time events to the GL after commit, the same path MES uses
+        // when an operator ends a production event. Kept outside the
+        // transaction: a GL posting failure shouldn't roll back the confirmed
+        // cut — the events remain and can be reposted.
+        for (const productionEventId of outcome.timeEventIds) {
+          const posted = await client.functions.invoke("post-production-event", {
+            body: { productionEventId, userId, companyId },
+          });
+          if (posted.error) {
+            console.error(
+              `Cut list ${cutListId}: failed to post production event ${productionEventId}`,
+              posted.error
+            );
+          }
+        }
 
         return jsonResponse({
           success: true,
@@ -4265,6 +4339,7 @@ serve(async (req: Request) => {
               ? "Cut list completed"
               : "Cut list progress recorded",
           ...outcome,
+          timeEventsPosted: outcome.timeEventIds.length,
         });
       }
     }

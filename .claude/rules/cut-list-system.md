@@ -111,6 +111,14 @@ edge-function case does the I/O. What it gets right:
    confirmations across a part boundary don't lose one (4-per-part, 6 then 6 =
    3 parts, not 1 + 1).
 
+7. **The run's time splits across the operations too.** When the operator enters
+   setup and/or run (machine) minutes on the confirmation, they divide across the
+   served operations by nested length — the same basis as material — and post as
+   `productionEvent` rows (`Setup` / `Machine`, `duration` in seconds) carrying
+   each operation's own work center, then cost out via `post-production-event`
+   after commit. Whole seconds, last operation absorbs the rounding so the parts
+   sum to exactly the run's time. Zero minutes → no events.
+
 Yield counts only material actually used up: a returned drop is still stock, so
 200" of parts from a 240" bar with a 40" returned drop is **100%**, not 83%.
 

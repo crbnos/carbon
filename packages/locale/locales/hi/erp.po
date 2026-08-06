@@ -9269,6 +9269,9 @@ msgstr "वैकल्पिक निर्धारित दर का उ�
 msgid "Optional pages & sections"
 msgstr "वैकल्पिक पृष्ठ और अनुभाग"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "विकल्प"
 
@@ -11163,6 +11166,9 @@ msgstr "नियम जो मात्रा या ग्राहक के 
 msgid "Rules that decide where each item gets stored"
 msgstr "नियम जो तय करते हैं कि प्रत्येक आइटम कहाँ संग्रहीत होता है"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "स्वीकृति परीक्षण चलाएं"
 
@@ -11189,6 +11195,9 @@ msgstr "स्वीकृति चेकलिस्ट को पास क�
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "टैबलेट पर फ़्लोर चलाएं: श्रम घड़ी, प्रगति रिपोर्ट करें, निर्देश देखें"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "प्रत्येक सप्ताह की आपूर्ति और मांग के बाद चलाई जाने वाली इन्वेंटरी — पंक्ति।"
@@ -11838,6 +11847,9 @@ msgstr "सेटिंग्स"
 
 msgid "Setup"
 msgstr "सेटअप"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "सेटअप और नियंत्रण"

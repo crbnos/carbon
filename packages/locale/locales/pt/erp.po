@@ -9269,6 +9269,9 @@ msgstr "Taxa fixa opcional usada ao traduzir saldos de patrimônio líquido de a
 msgid "Optional pages & sections"
 msgstr "Páginas e seções opcionais"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "Opções"
 
@@ -11163,6 +11166,9 @@ msgstr "Regras que ajustam preços automaticamente por quantidade ou cliente"
 msgid "Rules that decide where each item gets stored"
 msgstr "Regras que decidem onde cada item é armazenado"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "Executar testes de aceitação"
 
@@ -11189,6 +11195,9 @@ msgstr "Executar a lista de verificação de aceitação até passar"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Executar o chão de fábrica em tablets: registrar mão de obra, relatar progresso, ver instruções"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Inventário em execução após o suprimento e demanda de cada semana — a linha."
@@ -11838,6 +11847,9 @@ msgstr "Configurações"
 
 msgid "Setup"
 msgstr "Configuração"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Configuração e Controles"

@@ -9269,6 +9269,9 @@ msgstr "IAS 21'e göre özsermaye bakiyelerini çevirirken kullanılan isteğe b
 msgid "Optional pages & sections"
 msgstr "İsteğe bağlı sayfalar ve bölümler"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "Seçenekler"
 
@@ -11163,6 +11166,9 @@ msgstr "Fiyatları miktara veya müşteriye göre otomatik olarak ayarlayan kura
 msgid "Rules that decide where each item gets stored"
 msgstr "Her öğenin nereye depolanacağını belirleyen kurallar"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "Kabul testini çalıştır"
 
@@ -11189,6 +11195,9 @@ msgstr "Kabul kontrol listesini başarıyla tamamlayın"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Tabletlerde üretim katını yönetin: işçi saatini kaydedin, ilerlemeyi bildirin, talimatları görüntüleyin"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Her haftalık arz ve talep sonrası çalışan envanter — satır."
@@ -11838,6 +11847,9 @@ msgstr "Ayarlar"
 
 msgid "Setup"
 msgstr "Kurulum"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Kurulum ve Kontroller"

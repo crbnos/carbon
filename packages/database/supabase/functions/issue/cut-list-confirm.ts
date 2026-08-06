@@ -69,6 +69,14 @@ export type OperationCompletion = {
   partsComplete: number;
 };
 
+export type TimeAllocation = {
+  jobOperationId: string;
+  jobId: string | null;
+  type: "Setup" | "Machine";
+  /** whole seconds of the run's time attributed to this operation */
+  seconds: number;
+};
+
 export type CutListPostingPlan = {
   /** per-line quantityCut after this confirmation */
   lineUpdates: { id: string; quantityCut: number }[];
@@ -80,6 +88,8 @@ export type CutListPostingPlan = {
   scrap: ScrapInput[];
   /** production to post against each served operation, closing the work orders */
   operationCompletions: OperationCompletion[];
+  /** the run's setup + machine time split across the operations it served */
+  timeAllocations: TimeAllocation[];
   /** Completed once every line is fully cut; otherwise the run stays open */
   status: "In Progress" | "Completed";
   /** used length / consumed length, as a percentage */
@@ -96,6 +106,10 @@ export type BuildPlanArgs = {
   minRemnantLength: number;
   /** physical length of each consumed lot, keyed by tracked entity id */
   stockLengthByEntity?: Record<string, number>;
+  /** total setup time for the whole run, in seconds, to split across operations */
+  setupSeconds?: number;
+  /** total run (machine) time for the whole run, in seconds */
+  machineSeconds?: number;
 };
 
 export function buildCutListPostingPlan(
@@ -108,7 +122,9 @@ export function buildCutListPostingPlan(
     remnants,
     scrap,
     minRemnantLength,
-    stockLengthByEntity = {}
+    stockLengthByEntity = {},
+    setupSeconds = 0,
+    machineSeconds = 0
   } = args;
 
   const lineById = new Map(lines.map((line) => [line.id, line]));
@@ -234,6 +250,58 @@ export function buildCutListPostingPlan(
     });
   }
 
+  // Split the run's setup and machine time across the operations it served, on
+  // the same nested-length basis as material: an operation that cut 40" of bar
+  // carries twice the time of one that cut 20". Material cost splitting on its
+  // own leaves the saw's minutes stranded on the run; this puts them on the
+  // jobs, where they cost out against the work-center rate.
+  const lengthByOperation = new Map<
+    string,
+    { jobId: string | null; length: number }
+  >();
+  let operationNestedLength = 0;
+  for (const entry of cutThisRun) {
+    const operationId = entry.line.jobOperationId;
+    if (!operationId) continue;
+    const length = entry.line.pieceLength * entry.quantity;
+    operationNestedLength += length;
+    const existing = lengthByOperation.get(operationId);
+    if (existing) {
+      existing.length += length;
+    } else {
+      lengthByOperation.set(operationId, {
+        jobId: entry.line.jobId,
+        length
+      });
+    }
+  }
+
+  const timeAllocations: TimeAllocation[] = [];
+  const splitTime = (total: number, type: "Setup" | "Machine") => {
+    if (total <= 0 || operationNestedLength <= 0) return;
+    const entries = [...lengthByOperation.entries()];
+    let assigned = 0;
+    entries.forEach(([jobOperationId, entry], index) => {
+      const isLast = index === entries.length - 1;
+      // Whole seconds, with the last operation absorbing the rounding so the
+      // parts sum to exactly the run's time — no lost or invented minutes.
+      const seconds = isLast
+        ? total - assigned
+        : Math.round((entry.length / operationNestedLength) * total);
+      assigned += seconds;
+      if (seconds > 0) {
+        timeAllocations.push({
+          jobOperationId,
+          jobId: entry.jobId,
+          type,
+          seconds
+        });
+      }
+    });
+  };
+  splitTime(Math.round(setupSeconds), "Setup");
+  splitTime(Math.round(machineSeconds), "Machine");
+
   // Sort a drop into "back on the rack" or "scrap" by the run's threshold.
   const keptRemnants: RemnantInput[] = [];
   const derivedScrap: ScrapInput[] = [...scrap];
@@ -279,6 +347,7 @@ export function buildCutListPostingPlan(
     remnants: keptRemnants,
     scrap: derivedScrap,
     operationCompletions,
+    timeAllocations,
     status: isComplete ? "Completed" : "In Progress",
     actualYieldPct,
     totalConsumed

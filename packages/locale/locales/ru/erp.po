@@ -9269,6 +9269,9 @@ msgstr "Дополнительный фиксированный курс, исп
 msgid "Optional pages & sections"
 msgstr "Дополнительные страницы и разделы"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "Параметры"
 
@@ -11163,6 +11166,9 @@ msgstr "Правила, которые автоматически коррект
 msgid "Rules that decide where each item gets stored"
 msgstr "Правила, определяющие, где хранится каждый товар"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "Провести приемочное тестирование"
 
@@ -11189,6 +11195,9 @@ msgstr "Запустить контрольный список приемки д
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Управляйте цехом с планшетов: учитывайте рабочее время, отслеживайте прогресс, просматривайте инструкции"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Инвентарь, обновляемый после еженедельного спроса и предложения — строка."
@@ -11838,6 +11847,9 @@ msgstr "Параметры"
 
 msgid "Setup"
 msgstr "Настройка"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Настройка и управление"

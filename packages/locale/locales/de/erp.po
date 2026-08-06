@@ -9269,6 +9269,9 @@ msgstr "Optionale feste Rate, die bei der Umrechnung von Eigenkapitalsalden nach
 msgid "Optional pages & sections"
 msgstr "Optionale Seiten & Abschnitte"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "Optionen"
 
@@ -11163,6 +11166,9 @@ msgstr "Regeln, die Preise automatisch nach Menge oder Kunde anpassen"
 msgid "Rules that decide where each item gets stored"
 msgstr "Regeln, die entscheiden, wo jeder Artikel gelagert wird"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "Akzeptanztests durchführen"
 
@@ -11189,6 +11195,9 @@ msgstr "Führen Sie die Akzeptanzprüfliste bis zum Bestehen durch"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Betrieb auf Tablets: Arbeitszeit erfassen, Fortschritt melden, Anweisungen anzeigen"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Bestände nach jeder Woche laufen nach Angebot und Nachfrage — die Linie."
@@ -11838,6 +11847,9 @@ msgstr "Einstellungen"
 
 msgid "Setup"
 msgstr "Einrichtung"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Setup & Kontrollen"

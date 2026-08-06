@@ -332,3 +332,92 @@ Deno.test("less than one part's worth credits nothing yet", () => {
 
   assertEquals(plan.operationCompletions.length, 0);
 });
+
+// --- Run-time allocation -------------------------------------------------
+//
+// Material cost splitting on its own leaves the saw's minutes stranded on the
+// run. The setup + machine time has to divide across the operations too, on the
+// same nested-length basis, so each job carries the time it actually caused.
+
+Deno.test("splits run time across operations by nested length", () => {
+  // opA cuts 2x10=20, opB cuts 1x10=10 → 2:1. 900s of machine time → 600 / 300.
+  const plan = buildCutListPostingPlan({
+    lines: [
+      line("l1", "jobA", 10, 2, 0, { jobOperationId: "opA" }),
+      line("l2", "jobB", 10, 1, 0, { jobOperationId: "opB" })
+    ],
+    inputs: [
+      { cutListLineId: "l1", quantityCut: 2 },
+      { cutListLineId: "l2", quantityCut: 1 }
+    ],
+    consumed: [{ trackedEntityId: "lot1", quantityConsumed: 1 }],
+    remnants: [],
+    scrap: [],
+    minRemnantLength: 0,
+    machineSeconds: 900
+  });
+
+  const machine = plan.timeAllocations.filter((a) => a.type === "Machine");
+  assertEquals(machine.length, 2);
+  assertEquals(machine.find((a) => a.jobOperationId === "opA")?.seconds, 600);
+  assertEquals(machine.find((a) => a.jobOperationId === "opB")?.seconds, 300);
+});
+
+Deno.test("setup and machine each sum to exactly the run total", () => {
+  // Three equal operations; thirds of the total don't divide evenly, so the
+  // last operation absorbs the rounding and the parts still sum exactly.
+  const plan = buildCutListPostingPlan({
+    lines: [
+      line("l1", "jobA", 1, 1, 0, { jobOperationId: "opA" }),
+      line("l2", "jobB", 1, 1, 0, { jobOperationId: "opB" }),
+      line("l3", "jobC", 1, 1, 0, { jobOperationId: "opC" })
+    ],
+    inputs: [
+      { cutListLineId: "l1", quantityCut: 1 },
+      { cutListLineId: "l2", quantityCut: 1 },
+      { cutListLineId: "l3", quantityCut: 1 }
+    ],
+    consumed: [{ trackedEntityId: "lot1", quantityConsumed: 1 }],
+    remnants: [],
+    scrap: [],
+    minRemnantLength: 0,
+    setupSeconds: 100,
+    machineSeconds: 1000
+  });
+
+  const setup = plan.timeAllocations
+    .filter((a) => a.type === "Setup")
+    .reduce((sum, a) => sum + a.seconds, 0);
+  const machine = plan.timeAllocations
+    .filter((a) => a.type === "Machine")
+    .reduce((sum, a) => sum + a.seconds, 0);
+  assertEquals(setup, 100);
+  assertEquals(machine, 1000);
+});
+
+Deno.test("no time entered means no time allocations", () => {
+  const plan = buildCutListPostingPlan({
+    lines: [line("l1", "jobA", 10, 1, 0, { jobOperationId: "opA" })],
+    inputs: [{ cutListLineId: "l1", quantityCut: 1 }],
+    consumed: [{ trackedEntityId: "lot1", quantityConsumed: 1 }],
+    remnants: [],
+    scrap: [],
+    minRemnantLength: 0
+  });
+
+  assertEquals(plan.timeAllocations.length, 0);
+});
+
+Deno.test("a line with no operation gets no time", () => {
+  const plan = buildCutListPostingPlan({
+    lines: [line("l1", "jobA", 10, 1, 0, { jobOperationId: null })],
+    inputs: [{ cutListLineId: "l1", quantityCut: 1 }],
+    consumed: [{ trackedEntityId: "lot1", quantityConsumed: 1 }],
+    remnants: [],
+    scrap: [],
+    minRemnantLength: 0,
+    machineSeconds: 600
+  });
+
+  assertEquals(plan.timeAllocations.length, 0);
+});

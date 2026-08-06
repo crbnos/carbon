@@ -9269,6 +9269,9 @@ msgstr "Optional fixed rate used when translating equity balances per IAS 21 (in
 msgid "Optional pages & sections"
 msgstr "Optional pages & sections"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr "Optional. Split across the jobs this run served, by the length each took."
+
 msgid "Options"
 msgstr "Options"
 
@@ -11163,6 +11166,9 @@ msgstr "Rules that adjust prices automatically by quantity or customer"
 msgid "Rules that decide where each item gets stored"
 msgstr "Rules that decide where each item gets stored"
 
+msgid "Run (minutes)"
+msgstr "Run (minutes)"
+
 msgid "Run acceptance testing"
 msgstr "Run acceptance testing"
 
@@ -11189,6 +11195,9 @@ msgstr "Run the acceptance checklist to a pass"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Run the floor on tablets: clock labor, report progress, see instructions"
+
+msgid "Run time"
+msgstr "Run time"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Running inventory after each week's supply and demand — the line."
@@ -11838,6 +11847,9 @@ msgstr "Settings"
 
 msgid "Setup"
 msgstr "Setup"
+
+msgid "Setup (minutes)"
+msgstr "Setup (minutes)"
 
 msgid "Setup & Controls"
 msgstr "Setup & Controls"

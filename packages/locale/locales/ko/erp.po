@@ -9269,6 +9269,9 @@ msgstr "IAS 21에 따라 자본 잔액을 환산할 때 사용하는 선택적 �
 msgid "Optional pages & sections"
 msgstr "선택적 페이지 및 섹션"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "옵션"
 
@@ -11163,6 +11166,9 @@ msgstr "수량이나 고객에 따라 가격을 자동으로 조정하는 규칙
 msgid "Rules that decide where each item gets stored"
 msgstr "각 품목의 보관 위치를 결정하는 규칙"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "인수 테스트 실행"
 
@@ -11189,6 +11195,9 @@ msgstr "인수 체크리스트를 통과할 때까지 진행하세요"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "태블릿으로 현장을 운영하세요: 근무 시간 기록, 진행 상황 보고, 작업 지시 확인"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "매주 공급과 수요를 반영해 갱신되는 재고 — 그 라인입니다."
@@ -11838,6 +11847,9 @@ msgstr "설정"
 
 msgid "Setup"
 msgstr "설정"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "설정 및 관리"

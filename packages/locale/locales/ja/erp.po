@@ -9269,6 +9269,9 @@ msgstr "IAS 21に従って資本残高を変換する際に使用される任意
 msgid "Optional pages & sections"
 msgstr "オプションページとセクション"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "オプション"
 
@@ -11163,6 +11166,9 @@ msgstr "数量または顧客に基づいて価格を自動的に調整するル
 msgid "Rules that decide where each item gets stored"
 msgstr "各アイテムがどこに保存されるかを決定するルール"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "受け入れテストを実行する"
 
@@ -11189,6 +11195,9 @@ msgstr "受け入れチェックリストを実行してパスする"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "タブレットでフロアを運用：労働時間を記録、進捗を報告、指示を確認"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "毎週の需給の後に実行されるインベントリ — ラインです。"
@@ -11838,6 +11847,9 @@ msgstr "設定"
 
 msgid "Setup"
 msgstr "セットアップ"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "セットアップとコントロール"

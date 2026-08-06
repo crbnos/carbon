@@ -9269,6 +9269,9 @@ msgstr "Tasso fisso opzionale utilizzato quando si traducono i saldi del patrimo
 msgid "Optional pages & sections"
 msgstr "Pagine e sezioni opzionali"
 
+msgid "Optional. Split across the jobs this run served, by the length each took."
+msgstr ""
+
 msgid "Options"
 msgstr "Opzioni"
 
@@ -11163,6 +11166,9 @@ msgstr "Regole che regolano i prezzi automaticamente in base alla quantità o al
 msgid "Rules that decide where each item gets stored"
 msgstr "Regole che decidono dove viene archiviato ogni articolo"
 
+msgid "Run (minutes)"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "Esegui test di accettazione"
 
@@ -11189,6 +11195,9 @@ msgstr "Esegui la checklist di accettazione fino al superamento"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Gestisci il reparto su tablet: registra il lavoro, segnala i progressi, visualizza le istruzioni"
+
+msgid "Run time"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Inventario aggiornato dopo la domanda e l'offerta di ogni settimana — la linea."
@@ -11838,6 +11847,9 @@ msgstr "Impostazioni"
 
 msgid "Setup"
 msgstr "Configurazione"
+
+msgid "Setup (minutes)"
+msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Configurazione e Controlli"
