@@ -27,7 +27,7 @@ function QuantityEdgeImpl({
   targetPosition,
   data
 }: Props) {
-  const [edgePath, labelX, labelY] = getSimpleBezierPath({
+  const [edgePath, midX, midY] = getSimpleBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -35,6 +35,12 @@ function QuantityEdgeImpl({
     targetY,
     targetPosition
   });
+
+  // Parallel edges between the same two ranks all put their label at the same
+  // midpoint, so the pills stack. The worker slides each one along its own
+  // curve until it is clear of the others and hands back the resolved point.
+  const labelX = data?.labelX ?? midX;
+  const labelY = data?.labelY ?? midY;
 
   const isReject = !!data?.isReject;
   const isBackEdge = !!data?.isBackEdge;

@@ -58,6 +58,10 @@ export type LineageEdgeData = {
   isReject?: boolean;
   isBackEdge?: boolean;
   points?: { x: number; y: number }[];
+  /** Collision-resolved label anchor, slid along this edge's own curve so
+   *  parallel edges don't stack their pills. Falls back to the curve midpoint. */
+  labelX?: number;
+  labelY?: number;
 };
 
 export type LineageEdge = Edge<LineageEdgeData>;

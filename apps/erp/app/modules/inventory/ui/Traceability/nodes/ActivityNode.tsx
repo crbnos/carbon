@@ -12,7 +12,12 @@ type Props = NodeProps & {
   };
 };
 
-function ActivityNodeImpl({ data, selected }: Props) {
+function ActivityNodeImpl({
+  data,
+  selected,
+  sourcePosition,
+  targetPosition
+}: Props) {
   const activity = data.activity;
   const kind = activityKindFor(activity.type);
   const meta = ACTIVITY_KIND_META[kind];
@@ -33,12 +38,12 @@ function ActivityNodeImpl({ data, selected }: Props) {
     >
       <Handle
         type="target"
-        position={Position.Top}
+        position={targetPosition ?? Position.Top}
         className="!opacity-0 !pointer-events-none !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-1 !h-1 !min-w-0 !min-h-0 !border-0"
       />
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={sourcePosition ?? Position.Bottom}
         className="!opacity-0 !pointer-events-none !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-1 !h-1 !min-w-0 !min-h-0 !border-0"
       />
       <svg

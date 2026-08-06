@@ -19,7 +19,12 @@ type Props = NodeProps & {
  * No expand toggles: expanding a 50-member group would fetch 50 lineages.
  * Members are reached through the sidebar's list instead.
  */
-function EntityGroupNodeImpl({ data, selected }: Props) {
+function EntityGroupNodeImpl({
+  data,
+  selected,
+  sourcePosition,
+  targetPosition
+}: Props) {
   const cluster = data.cluster;
   const count = cluster.members.length;
 
@@ -44,12 +49,12 @@ function EntityGroupNodeImpl({ data, selected }: Props) {
     >
       <Handle
         type="target"
-        position={Position.Top}
+        position={targetPosition ?? Position.Top}
         className="!opacity-0 !pointer-events-none !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-1 !h-1 !min-w-0 !min-h-0 !border-0"
       />
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={sourcePosition ?? Position.Bottom}
         className="!opacity-0 !pointer-events-none !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-1 !h-1 !min-w-0 !min-h-0 !border-0"
       />
       <svg
