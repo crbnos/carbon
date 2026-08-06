@@ -3,6 +3,7 @@ import {
   edgeLabelPoint,
   type LineageEdge,
   type LineageNode,
+  pointAlongPolyline,
   smoothStepPolyline
 } from "../utils";
 import { resolveEdgeLabelPositions } from "./core";
@@ -238,15 +239,30 @@ describe("smoothStepPolyline", () => {
     expect(p.y).toBeCloseTo(200, 5);
   });
 
-  it("keeps labels off the bends", () => {
+  it("reports how close a point is to a bend", () => {
     // A label parked on a corner floats off the rounded path the renderer
-    // draws, so placement rejects any candidate too close to one.
-    const nodes = [node("S", 0, 0), node("T", 300, 400)];
-    const e = edge("e1", "S", "T");
-    const t = resolveEdgeLabelPositions(nodes, [e], "TB").get("e1")!;
+    // draws, so placement rejects any candidate whose clearance is too small.
+    // Asserted on the polyline directly — `edgeLabelPoint` follows EDGE_STYLE,
+    // and a bezier has no corners at all.
+    const line = smoothStepPolyline(0, 0, "bottom", 300, 400, "top");
 
-    expect(pointFor(nodes, e, t, "TB").distanceToBend).toBeGreaterThanOrEqual(
-      10 + 22 / 2
-    );
+    // Dead on the first corner.
+    const corner = pointAlongPolyline(line, 200 / 700);
+    expect(corner.distanceToBend).toBeCloseTo(0, 5);
+
+    // Halfway along the horizontal run, as far from either corner as possible.
+    const middle = pointAlongPolyline(line, (200 + 150) / 700);
+    expect(middle.distanceToBend).toBeCloseTo(150, 5);
+
+    // Endpoints are not themselves bends, so the clearance there is the run
+    // back to the first/last corner (200 each on this path).
+    expect(pointAlongPolyline(line, 0).distanceToBend).toBeCloseTo(200, 5);
+    expect(pointAlongPolyline(line, 1).distanceToBend).toBeCloseTo(200, 5);
+
+    // A path with no corners at all has nothing to avoid.
+    expect(
+      pointAlongPolyline(smoothStepPolyline(0, 0, "bottom", 0, 400, "top"), 0.5)
+        .distanceToBend
+    ).toBe(Infinity);
   });
 });

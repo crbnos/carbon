@@ -28,12 +28,17 @@ const payload = (over: Partial<LineagePayload> = {}): LineagePayload => ({
 });
 
 /** What startProductionEvent writes: one per operation per unit. */
-const productionEvent = (id: string, type: string) =>
+const productionEvent = (
+  id: string,
+  type: string,
+  createdAt = "2026-08-01T10:00:00Z"
+) =>
   ({
     id,
     type,
     sourceDocument: "Production Event",
     sourceDocumentId: `pe_${id}`,
+    createdAt,
     attributes: { Job: JOB }
   }) as unknown as LineagePayload["activities"][number];
 
@@ -56,7 +61,7 @@ describe("getEntityJobId", () => {
 });
 
 describe("withJobNode", () => {
-  it("anchors seed entities that nothing has produced yet", () => {
+  it("synthesises a node only when the job has no activity to hang from", () => {
     const result = withJobNode(
       payload({ entities: [seed("e1"), seed("e2")] }),
       JOB,
@@ -67,6 +72,68 @@ describe("withJobNode", () => {
     expect(result.outputs).toEqual([
       { trackedActivityId: jobNodeId(JOB), trackedEntityId: "e1", quantity: 1 },
       { trackedActivityId: jobNodeId(JOB), trackedEntityId: "e2", quantity: 1 }
+    ]);
+  });
+
+  it("hangs un-produced seeds off the production activity, not a job node", () => {
+    const result = withJobNode(
+      payload({
+        entities: [seed("e1"), seed("e2")],
+        activities: [productionEvent("pe1", "Manufacturing")],
+        outputs: [
+          { trackedActivityId: "pe1", trackedEntityId: "e1", quantity: 1 }
+        ]
+      }),
+      JOB,
+      "JOB-0001"
+    );
+
+    // No separate "Job" node — the production activity absorbs its role.
+    expect(result.activities.map((a) => a.id)).toEqual(["pe1"]);
+    expect(result.outputs).toEqual([
+      { trackedActivityId: "pe1", trackedEntityId: "e1", quantity: 1 },
+      { trackedActivityId: "pe1", trackedEntityId: "e2", quantity: 1 }
+    ]);
+  });
+
+  it("anchors on the EARLIEST activity — where a unit enters production", () => {
+    const result = withJobNode(
+      payload({
+        entities: [seed("e1")],
+        activities: [
+          productionEvent("pe3", "Inspect (Labor)", "2026-08-01T12:00:00Z"),
+          productionEvent("pe1", "Weld (Labor)", "2026-08-01T10:00:00Z"),
+          productionEvent("pe2", "Assemble (Setup)", "2026-08-01T11:00:00Z")
+        ]
+      }),
+      JOB,
+      "JOB-0001"
+    );
+
+    expect(result.outputs).toEqual([
+      { trackedActivityId: "pe1", trackedEntityId: "e1", quantity: 1 }
+    ]);
+  });
+
+  it("ignores another job's activities when picking the anchor", () => {
+    const foreign = {
+      id: "pe_other",
+      type: "Weld (Labor)",
+      createdAt: "2026-01-01T00:00:00Z",
+      attributes: { Job: "job_2" }
+    } as unknown as LineagePayload["activities"][number];
+
+    const result = withJobNode(
+      payload({
+        entities: [seed("e1")],
+        activities: [foreign, productionEvent("pe1", "Manufacturing")]
+      }),
+      JOB,
+      "JOB-0001"
+    );
+
+    expect(result.outputs).toEqual([
+      { trackedActivityId: "pe1", trackedEntityId: "e1", quantity: 1 }
     ]);
   });
 
@@ -121,17 +188,12 @@ describe("withJobNode", () => {
       "JOB-0001"
     );
 
-    // e1 is produced, e2 is not — the job node stays, but only for e2.
-    expect(result.activities.map((a) => a.id)).toEqual([
-      jobNodeId(JOB),
-      "pe1",
-      "pe2",
-      "pe3"
-    ]);
-    expect(
-      result.outputs.filter((o) => o.trackedActivityId === jobNodeId(JOB))
-    ).toEqual([
-      { trackedActivityId: jobNodeId(JOB), trackedEntityId: "e2", quantity: 1 }
+    // Every operation survives; e2 attaches to the earliest rather than
+    // spawning a parallel job node.
+    expect(result.activities.map((a) => a.id)).toEqual(["pe1", "pe2", "pe3"]);
+    expect(result.outputs).toEqual([
+      { trackedActivityId: "pe1", trackedEntityId: "e1", quantity: 1 },
+      { trackedActivityId: "pe1", trackedEntityId: "e2", quantity: 1 }
     ]);
   });
 

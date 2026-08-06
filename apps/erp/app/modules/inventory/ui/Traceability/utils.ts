@@ -786,6 +786,14 @@ export function annotateEdgeWeights(
 }
 
 // Compact quantity for node badges/stubs, where horizontal space is tight.
+/**
+ * How edges are drawn. Flipping this is a ONE-LINE change: `QuantityEdge` picks
+ * the matching xyflow path function and `edgeLabelPoint` picks the matching
+ * geometry, so labels can never end up sampling a curve the renderer isn't
+ * drawing (which strands them off the line).
+ */
+export const EDGE_STYLE: "bezier" | "smoothstep" = "bezier";
+
 /** Must match the values QuantityEdge passes to `getSmoothStepPath`. */
 export const EDGE_BORDER_RADIUS = 10;
 /** The handles sit at the node CENTRE, so the run has to clear the circle
@@ -948,9 +956,70 @@ export function pointAlongPolyline(
 }
 
 /**
+ * A point on the curve `getSimpleBezierPath` draws.
+ *
+ * Mirrors xyflow's `getControl`: a Left/Right handle puts the control at the
+ * midpoint in x and the endpoint's own y; Top/Bottom is the transpose.
+ */
+function bezierControl(
+  position: string | undefined,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number
+): [number, number] {
+  return isHorizontal(position) ? [0.5 * (x1 + x2), y1] : [x1, 0.5 * (y1 + y2)];
+}
+
+function cubicAt(
+  t: number,
+  p0: number,
+  c1: number,
+  c2: number,
+  p3: number
+): number {
+  const u = 1 - t;
+  return (
+    u * u * u * p0 + 3 * u * u * t * c1 + 3 * u * t * t * c2 + t * t * t * p3
+  );
+}
+
+export function simpleBezierPointAt(
+  t: number,
+  sourceX: number,
+  sourceY: number,
+  sourcePosition: string | undefined,
+  targetX: number,
+  targetY: number,
+  targetPosition: string | undefined
+): { x: number; y: number } {
+  const [c1x, c1y] = bezierControl(
+    sourcePosition,
+    sourceX,
+    sourceY,
+    targetX,
+    targetY
+  );
+  const [c2x, c2y] = bezierControl(
+    targetPosition,
+    targetX,
+    targetY,
+    sourceX,
+    sourceY
+  );
+  return {
+    x: cubicAt(t, sourceX, c1x, c2x, targetX),
+    y: cubicAt(t, sourceY, c1y, c2y, targetY)
+  };
+}
+
+/**
  * Where a label sits on an edge. Layout picks the `fraction`; the edge
  * component evaluates it against LIVE endpoint coordinates, so a dragged node
  * takes its labels with it.
+ *
+ * Dispatches on EDGE_STYLE so the geometry always matches what is drawn.
+ * A bezier has no corners, hence the infinite bend clearance.
  */
 export function edgeLabelPoint(
   fraction: number,
@@ -961,6 +1030,18 @@ export function edgeLabelPoint(
   targetY: number,
   targetPosition: string | undefined
 ): { x: number; y: number; distanceToBend: number } {
+  if (EDGE_STYLE === "bezier") {
+    const p = simpleBezierPointAt(
+      fraction,
+      sourceX,
+      sourceY,
+      sourcePosition,
+      targetX,
+      targetY,
+      targetPosition
+    );
+    return { ...p, distanceToBend: Infinity };
+  }
   return pointAlongPolyline(
     smoothStepPolyline(
       sourceX,

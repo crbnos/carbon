@@ -2,12 +2,14 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   type EdgeProps,
+  getSimpleBezierPath,
   getSmoothStepPath
 } from "@xyflow/react";
 import { memo } from "react";
 import {
   EDGE_BORDER_RADIUS,
   EDGE_OFFSET,
+  EDGE_STYLE,
   edgeLabelPoint,
   type LineageEdgeData
 } from "../utils";
@@ -32,18 +34,28 @@ function QuantityEdgeImpl({
   targetPosition,
   data
 }: Props) {
-  // Orthogonal runs with rounded corners — the segments stay parallel and read
-  // as a flow chart rather than a spray of diagonals.
-  const [edgePath, midX, midY] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-    borderRadius: EDGE_BORDER_RADIUS,
-    offset: EDGE_OFFSET
-  });
+  // Keep this in step with EDGE_STYLE — `edgeLabelPoint` samples the matching
+  // geometry, so the two switch together and labels stay on the line.
+  const [edgePath, midX, midY] =
+    EDGE_STYLE === "bezier"
+      ? getSimpleBezierPath({
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition
+        })
+      : getSmoothStepPath({
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition,
+          borderRadius: EDGE_BORDER_RADIUS,
+          offset: EDGE_OFFSET
+        });
 
   // Parallel edges between the same two ranks all put their label at the same
   // midpoint, so the pills stack. Layout resolves how far along each path the
