@@ -2,10 +2,15 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   type EdgeProps,
-  getSimpleBezierPath
+  getSmoothStepPath
 } from "@xyflow/react";
 import { memo } from "react";
-import { type LineageEdgeData, simpleBezierPointAt } from "../utils";
+import {
+  EDGE_BORDER_RADIUS,
+  EDGE_OFFSET,
+  edgeLabelPoint,
+  type LineageEdgeData
+} from "../utils";
 
 type Props = EdgeProps & {
   data?: LineageEdgeData & {
@@ -27,23 +32,27 @@ function QuantityEdgeImpl({
   targetPosition,
   data
 }: Props) {
-  const [edgePath, midX, midY] = getSimpleBezierPath({
+  // Orthogonal runs with rounded corners — the segments stay parallel and read
+  // as a flow chart rather than a spray of diagonals.
+  const [edgePath, midX, midY] = getSmoothStepPath({
     sourceX,
     sourceY,
     sourcePosition,
     targetX,
     targetY,
-    targetPosition
+    targetPosition,
+    borderRadius: EDGE_BORDER_RADIUS,
+    offset: EDGE_OFFSET
   });
 
   // Parallel edges between the same two ranks all put their label at the same
-  // midpoint, so the pills stack. Layout resolves how far along each curve the
+  // midpoint, so the pills stack. Layout resolves how far along each path the
   // label should sit; evaluate that here against the LIVE endpoints so the
-  // label rides the curve when a node is dragged.
+  // label rides the path when a node is dragged.
   const labelPoint =
     data?.labelT === undefined
       ? null
-      : simpleBezierPointAt(
+      : edgeLabelPoint(
           data.labelT,
           sourceX,
           sourceY,

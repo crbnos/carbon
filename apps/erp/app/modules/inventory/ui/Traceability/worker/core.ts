@@ -4,13 +4,14 @@ import type { EntityCluster } from "../cluster";
 import {
   activityHeadline,
   annotateEdgeWeights,
+  EDGE_BORDER_RADIUS,
+  edgeLabelPoint,
   entityHeadline,
   type LineageEdge,
   type LineageEdgeData,
   type LineageNode,
   type LineagePayload,
-  payloadToFlow,
-  simpleBezierPointAt
+  payloadToFlow
 } from "../utils";
 
 // Position's values ARE these strings. Typed as the enum but written as
@@ -105,22 +106,24 @@ function nodeFootprint(node: LineageNode): { width: number; height: number } {
 /**
  * Where along each edge its quantity pill should sit.
  *
- * Every edge defaults its label to the curve midpoint, so parallel edges
- * between the same two ranks stack their pills on top of each other. Slide each
- * one along its OWN curve until it clears the ones already placed — the label
- * stays visually attached to its edge instead of being nudged into open space.
+ * Every edge defaults its label to the path midpoint, so parallel edges between
+ * the same two ranks stack their pills on top of each other. Slide each one
+ * along its OWN path until it clears the ones already placed — the label stays
+ * visually attached to its edge instead of being nudged into open space.
  *
- * Returns the curve PARAMETER, not a point. An absolute point would be stale
- * the moment a node is dragged, leaving the pill stranded in open canvas while
- * its edge moved away.
+ * Returns the path FRACTION, not a point. An absolute point would be stale the
+ * moment a node is dragged, leaving the pill stranded in open canvas while its
+ * edge moved away.
  */
 type LabelBox = { x: number; y: number; w: number; h: number };
 
 const LABEL_H = 22;
 const LABEL_MIN_W = 26;
 const LABEL_GAP_PX = 4;
-/** Midpoint first, then alternate outward along the curve. */
+/** Midpoint first, then alternate outward along the path. */
 const LABEL_T_CANDIDATES = [0.5, 0.4, 0.6, 0.32, 0.68, 0.25, 0.75, 0.18, 0.82];
+/** A label parked on a corner floats off the rounded path the renderer draws. */
+const MIN_BEND_CLEARANCE = EDGE_BORDER_RADIUS + LABEL_H / 2;
 
 function overlaps(a: LabelBox, b: LabelBox): boolean {
   return (
@@ -172,11 +175,12 @@ export function resolveEdgeLabelPositions(
 
   for (const c of candidates) {
     const pointAt = (t: number) =>
-      simpleBezierPointAt(t, c.s.x, c.s.y, sourcePos, c.t.x, c.t.y, targetPos);
+      edgeLabelPoint(t, c.s.x, c.s.y, sourcePos, c.t.x, c.t.y, targetPos);
 
     let chosenT: number | null = null;
     for (const t of LABEL_T_CANDIDATES) {
       const p = pointAt(t);
+      if (p.distanceToBend < MIN_BEND_CLEARANCE) continue;
       const box: LabelBox = { x: p.x, y: p.y, w: c.w, h: LABEL_H };
       if (!placed.some((q) => overlaps(box, q))) {
         chosenT = t;

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  edgeLabelPoint,
   type LineageEdge,
   type LineageNode,
-  simpleBezierPointAt
+  smoothStepPolyline
 } from "../utils";
 import { resolveEdgeLabelPositions } from "./core";
 
@@ -44,8 +45,8 @@ const pointFor = (
   const s = centre(nodes.find((n) => n.id === e.source)!);
   const g = centre(nodes.find((n) => n.id === e.target)!);
   return direction === "LR"
-    ? simpleBezierPointAt(t, s.x, s.y, "right", g.x, g.y, "left")
-    : simpleBezierPointAt(t, s.x, s.y, "bottom", g.x, g.y, "top");
+    ? edgeLabelPoint(t, s.x, s.y, "right", g.x, g.y, "left")
+    : edgeLabelPoint(t, s.x, s.y, "bottom", g.x, g.y, "top");
 };
 
 /** Same overlap test the placement pass uses (gap included). */
@@ -197,38 +198,55 @@ describe("resolveEdgeLabelPositions", () => {
     const after = pointFor(dragged, e, t, "TB");
 
     expect(after).not.toEqual(before);
-    // Still exactly on the curve between the moved endpoints.
-    expect(after).toEqual(
-      simpleBezierPointAt(t, 22, 22, "bottom", 622, 922, "top")
-    );
+    // Still exactly on the path between the moved endpoints.
+    expect(after).toEqual(edgeLabelPoint(t, 22, 22, "bottom", 622, 922, "top"));
   });
 });
 
-describe("simpleBezierPointAt", () => {
-  it("returns the midpoint of the endpoints at t=0.5 (vertical handles)", () => {
-    // xyflow's control points put both at the mid-y, which collapses the
-    // cubic's midpoint onto the straight midpoint.
-    expect(simpleBezierPointAt(0.5, 0, 0, "bottom", 100, 400, "top")).toEqual({
-      x: 50,
-      y: 200
-    });
+describe("smoothStepPolyline", () => {
+  it("routes a TB edge down, across, then down", () => {
+    // Colinear joints are collapsed — xyflow draws those as a plain `L`.
+    expect(smoothStepPolyline(0, 0, "bottom", 200, 400, "top")).toEqual([
+      { x: 0, y: 0 },
+      { x: 0, y: 200 },
+      { x: 200, y: 200 },
+      { x: 200, y: 400 }
+    ]);
   });
 
-  it("returns the midpoint at t=0.5 for horizontal handles too", () => {
-    expect(simpleBezierPointAt(0.5, 0, 0, "right", 400, 100, "left")).toEqual({
-      x: 200,
-      y: 50
-    });
+  it("routes an LR edge across, down, then across", () => {
+    expect(smoothStepPolyline(0, 0, "right", 400, 200, "left")).toEqual([
+      { x: 0, y: 0 },
+      { x: 200, y: 0 },
+      { x: 200, y: 200 },
+      { x: 400, y: 200 }
+    ]);
   });
 
-  it("hits the endpoints at t=0 and t=1", () => {
-    expect(simpleBezierPointAt(0, 5, 7, "bottom", 90, 300, "top")).toEqual({
-      x: 5,
-      y: 7
-    });
-    expect(simpleBezierPointAt(1, 5, 7, "bottom", 90, 300, "top")).toEqual({
-      x: 90,
-      y: 300
-    });
+  it("collapses a dead-straight edge to a single segment", () => {
+    // No real corners here, so nothing should read as a bend — otherwise
+    // label placement would refuse every position on the line.
+    expect(smoothStepPolyline(0, 0, "bottom", 0, 400, "top")).toEqual([
+      { x: 0, y: 0 },
+      { x: 0, y: 400 }
+    ]);
+  });
+
+  it("puts a straight run's midpoint exactly on the line", () => {
+    const p = edgeLabelPoint(0.5, 0, 0, "bottom", 0, 400, "top");
+    expect(p.x).toBe(0);
+    expect(p.y).toBeCloseTo(200, 5);
+  });
+
+  it("keeps labels off the bends", () => {
+    // A label parked on a corner floats off the rounded path the renderer
+    // draws, so placement rejects any candidate too close to one.
+    const nodes = [node("S", 0, 0), node("T", 300, 400)];
+    const e = edge("e1", "S", "T");
+    const t = resolveEdgeLabelPositions(nodes, [e], "TB").get("e1")!;
+
+    expect(pointFor(nodes, e, t, "TB").distanceToBend).toBeGreaterThanOrEqual(
+      10 + 22 / 2
+    );
   });
 });
