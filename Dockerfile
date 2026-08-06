@@ -24,6 +24,8 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 ENV NODE_ENV=production
 ENV PORT=3000
+# Date derivation assumes UTC until company/location timezones are threaded everywhere
+ENV TZ=UTC
 COPY --from=deps /repo/package.json /repo/pnpm-lock.yaml /repo/pnpm-workspace.yaml /repo/.npmrc ./
 COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=deps /repo/packages ./packages

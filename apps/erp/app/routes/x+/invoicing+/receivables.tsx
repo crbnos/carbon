@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
@@ -8,6 +9,7 @@ import {
   getArTieOut
 } from "~/modules/invoicing";
 import { getCompanySettings } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -32,7 +34,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const asOfDate =
-    url.searchParams.get("asOfDate") ?? new Date().toISOString().slice(0, 10);
+    url.searchParams.get("asOfDate") ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
   const agingMethod: "dueDate" | "documentDate" =
     url.searchParams.get("agingMethod") === "documentDate"
       ? "documentDate"

@@ -2,7 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
@@ -10,6 +10,7 @@ import { getProductionProjections } from "~/modules/production";
 import DemandProjectionsTable from "~/modules/production/ui/Projection/DemandProjectionTable";
 import { getLocationsList } from "~/modules/resources";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -67,7 +68,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const periods = await getOrCreatePeriods(
-    today(getLocalTimeZone()),
+    datetime.today(await getLocationTimeZone(client, locationId, companyId)),
     WEEKS_TO_PROJECT
   );
 

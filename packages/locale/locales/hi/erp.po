@@ -12400,6 +12400,9 @@ msgstr "इस पृष्ठ पर रहें"
 msgid "Step"
 msgstr "चरण"
 
+msgid "Step added"
+msgstr "चरण जोड़ा गया"
+
 msgid "Step Records"
 msgstr "चरण रिकॉर्ड"
 

@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
-import { getLocalTimeZone, parseDate, today } from "npm:@internationalized/date";
+import { type CalendarDate, parseDate } from "@internationalized/date";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { sql } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
 import { buildBatchSplitRecords } from "../shared/batch-split.ts";
@@ -35,12 +35,12 @@ async function getExpiredEntityPolicy(companyId: string): Promise<ExpiredEntityP
 function checkExpiredEntity(
   entity: { id: string; expirationDate: string | null },
   policy: ExpiredEntityPolicy,
-  override: { allowed: boolean; reason: string | null }
+  override: { allowed: boolean; reason: string | null },
+  today: CalendarDate
 ): { warning?: string } {
   if (!entity.expirationDate) return {};
-  const todayLocal = today(getLocalTimeZone());
   try {
-    if (parseDate(entity.expirationDate).compare(todayLocal) >= 0) return {};
+    if (parseDate(entity.expirationDate).compare(today) >= 0) return {};
   } catch {
     return {};
   }
@@ -127,10 +127,11 @@ serve(async (req: Request) => {
   if (preflight) return preflight;
 
   const payload = await req.json();
-  const today = format(new Date(), "yyyy-MM-dd");
 
   try {
     const validatedPayload = payloadValidator.parse(payload);
+    const companyToday = datetime.today(await getCompanyTimeZone(db, validatedPayload.companyId));
+    const today = companyToday.toString();
     let expiredWarning: string | undefined;
     let splitEntityId: string | undefined;
 
@@ -442,7 +443,8 @@ serve(async (req: Request) => {
           const expiredCheck = checkExpiredEntity(
             { id: trackedEntity.id, expirationDate: trackedEntity.expirationDate },
             policy,
-            { allowed: !!overrideExpired, reason: overrideReason ?? null }
+            { allowed: !!overrideExpired, reason: overrideReason ?? null },
+            companyToday
           );
           if (expiredCheck.warning) {
             expiredWarning = expiredCheck.warning;

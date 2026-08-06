@@ -1,9 +1,11 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { createInventoryReconciliationJournal } from "~/modules/inventory";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -19,7 +21,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const asOfDate =
     (formData.get("asOfDate") as string | null) ||
-    new Date().toISOString().slice(0, 10);
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
   const result = await createInventoryReconciliationJournal(
     client,

@@ -15,6 +15,7 @@ import {
   VStack
 } from "@carbon/react";
 import { isInternalEmail } from "@carbon/utils";
+import { getLocalTimeZone } from "@internationalized/date";
 import {
   type ActionFunctionArgs,
   Link,
@@ -26,7 +27,8 @@ import {
   Currency,
   Hidden,
   Input,
-  Submit
+  Submit,
+  Timezone
 } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
 import { addressValidator, getCompany } from "~/modules/settings";
@@ -121,6 +123,9 @@ export default function OnboardingCompany() {
     countryCode: company?.countryCode ?? draft?.company?.countryCode ?? "US",
     baseCurrencyCode:
       company?.baseCurrencyCode ?? draft?.company?.baseCurrencyCode ?? "USD",
+    // Browser timezone is the best guess for the HQ at onboarding time
+    timezone:
+      company?.timezone ?? draft?.company?.timezone ?? getLocalTimeZone(),
     website: company?.website ?? draft?.company?.website ?? ""
   };
 
@@ -139,6 +144,7 @@ export default function OnboardingCompany() {
           <VStack spacing={4}>
             <Input autoFocus name="name" label="Company Name" />
             <AddressAutocomplete />
+            <Timezone name="timezone" label="Timezone" />
             <Input name="website" label="Website" />
             <Currency name="baseCurrencyCode" label="Base Currency" />
           </VStack>

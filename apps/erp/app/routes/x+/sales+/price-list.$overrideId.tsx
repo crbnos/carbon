@@ -11,6 +11,7 @@ import {
   upsertCustomerItemPriceOverride
 } from "~/modules/sales";
 import PriceOverrideForm from "~/modules/sales/ui/Pricing/PriceOverrideForm";
+import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -33,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -79,7 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } = validation.data;
 
   const result = await upsertCustomerItemPriceOverride(
-    client,
+    getDatabaseClient(),
     companyId,
     userId,
     {

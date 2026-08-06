@@ -2,7 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
@@ -12,6 +12,7 @@ import {
 } from "~/modules/production/production.service";
 import DemandProjectionsForm from "~/modules/production/ui/Projection/DemandProjectionForm";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 
 const WEEKS_TO_PROJECT = 52;
@@ -28,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const periods = await getOrCreatePeriods(
-    today(getLocalTimeZone()),
+    datetime.today(await getLocationTimeZone(client, locationId, companyId)),
     WEEKS_TO_PROJECT
   );
 

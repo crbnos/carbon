@@ -31,7 +31,7 @@ pnpm --filter @carbon/checks baseline      # regenerate baseline (careful!)
 
 ## Key Patterns
 
-- **Conformance checks**: `noNumericPrecision`, `noLegacyRls` — scan SQL migrations for anti-patterns
+- **Conformance checks**: `noNumericPrecision`, `noLegacyRls` — scan SQL migrations for anti-patterns; `noLocalTimezone` (in `SERVER_CHECKS`) scans server TS (`sources/server-files.ts`) for `getLocalTimeZone()`, UTC day-slicing, local date-parts of now (`new Date().getDay()` etc.), and `setHours(0,0,0,0)` midnights. Scanned files: MES services, `packages/jobs`, edge functions, ERP module `.service.ts`/`.server.ts`, **plus both apps' route trees** — route modules are server AND client in one file, so `maskClientCode` blanks the browser half (default export, `clientLoader`/`clientAction`, PascalCase/`use*` declarations) while keeping loaders, actions, and the module-level helpers they call
 - **Structure checks**: `moduleShape` — validates ERP modules have `types.ts`, `ui/`, `index.ts`, `<name>.service.ts`, `<name>.models.ts`
 - **Clobber detection**: `findClobbers(branch, main)` — identifies DB objects redefined on both sides
 - **Baseline**: `src/baseline.ts` — grandfathered violations keyed by `checkId + file + line + snippet`

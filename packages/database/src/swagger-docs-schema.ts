@@ -23320,6 +23320,9 @@ export default {
             $ref: "#/parameters/rowFilter.companies.registrationNumber"
           },
           {
+            $ref: "#/parameters/rowFilter.companies.timezone"
+          },
+          {
             $ref: "#/parameters/rowFilter.companies.userId"
           },
           {
@@ -65545,6 +65548,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.registrationNumber"
           },
           {
+            $ref: "#/parameters/rowFilter.company.timezone"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -65709,6 +65715,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.registrationNumber"
           },
           {
+            $ref: "#/parameters/rowFilter.company.timezone"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -65825,6 +65834,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.registrationNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.company.timezone"
           },
           {
             $ref: "#/parameters/body.company"
@@ -87738,6 +87750,63 @@ export default {
         tags: ["(rpc) get_item_quantities_by_tracking_id"]
       }
     },
+    "/rpc/company_today": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) company_today"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) company_today"]
+      }
+    },
     "/rpc/sync_update_customer_type_group": {
       post: {
         parameters: [
@@ -106240,6 +106309,10 @@ export default {
           type: "string"
         },
         registrationNumber: {
+          format: "text",
+          type: "string"
+        },
+        timezone: {
           format: "text",
           type: "string"
         },
@@ -126257,7 +126330,8 @@ export default {
         "suggestionNotificationGroup",
         "auditLogEnabled",
         "isEliminationEntity",
-        "active"
+        "active",
+        "timezone"
       ],
       properties: {
         id: {
@@ -126419,6 +126493,11 @@ export default {
           type: "string"
         },
         registrationNumber: {
+          format: "text",
+          type: "string"
+        },
+        timezone: {
+          default: "UTC",
           format: "text",
           type: "string"
         }
@@ -148115,6 +148194,12 @@ export default {
     },
     "rowFilter.companies.registrationNumber": {
       name: "registrationNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companies.timezone": {
+      name: "timezone",
       required: false,
       in: "query",
       type: "string"
@@ -170535,6 +170620,12 @@ export default {
     },
     "rowFilter.company.registrationNumber": {
       name: "registrationNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.company.timezone": {
+      name: "timezone",
       required: false,
       in: "query",
       type: "string"

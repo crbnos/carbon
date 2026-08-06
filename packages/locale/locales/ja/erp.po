@@ -12400,6 +12400,9 @@ msgstr "このページに留まる"
 msgid "Step"
 msgstr "ステップ"
 
+msgid "Step added"
+msgstr "ステップが追加されました"
+
 msgid "Step Records"
 msgstr "ステップレコード"
 

@@ -10,10 +10,15 @@ import {
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { upsertDocument } from "~/modules/documents";
+import {
+  getCompanyTimeZone,
+  getLocationTimeZone
+} from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/shipment+/$id[.]pdf";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
@@ -49,7 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // fire here too.
   const { data: shipmentForSurface } = await serviceRole
     .from("shipment")
-    .select("sourceDocument")
+    .select("sourceDocument, locationId")
     .eq("id", shipmentId)
     .single();
   const surfaces: ("shipment" | "warehouseTransfer")[] = ["shipment"];
@@ -131,7 +136,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .eq("attributes ->> Shipment", shipmentId)
     .eq("companyId", companyId);
 
-  const todayLocal = today(getLocalTimeZone());
+  // Expiry is judged on the shipping site's calendar, not the server's — a lot
+  // that expires today must not read as expired at a plant still on yesterday.
+  // No location on the shipment → the company calendar.
+  const shipmentLocationId = shipmentForSurface?.locationId as string | null;
+  const todayLocal = datetime.today(
+    shipmentLocationId
+      ? await getLocationTimeZone(serviceRole, shipmentLocationId, companyId)
+      : await getCompanyTimeZone(serviceRole, companyId)
+  );
   const expiredEntities = (shipmentTrackedEntities ?? []).filter((e) => {
     if (!e.expirationDate) return false;
     try {

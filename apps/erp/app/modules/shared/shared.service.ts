@@ -712,6 +712,15 @@ export async function getCountries(client: SupabaseClient<Database>) {
   return client.from("country").select("*").order("name");
 }
 
+/**
+ * Timezone names from the database's own tzdata (pg_timezone_names via the
+ * get_timezone_names RPC) — the authoritative list for what AT TIME ZONE
+ * resolves.
+ */
+export async function getTimezoneNames(client: SupabaseClient<Database>) {
+  return client.rpc("get_timezone_names");
+}
+
 export async function getLatestApprovalRequestForDocument(
   client: SupabaseClient<Database>,
   documentType: (typeof approvalDocumentType)[number],

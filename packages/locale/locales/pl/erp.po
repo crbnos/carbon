@@ -12400,6 +12400,9 @@ msgstr "Zostań na tej stronie"
 msgid "Step"
 msgstr "Krok"
 
+msgid "Step added"
+msgstr "Krok dodany"
+
 msgid "Step Records"
 msgstr "Rekordy Kroków"
 

@@ -2,10 +2,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { MemoForm, memoValidator, upsertMemo } from "~/modules/invoicing";
 import { getCompany, getNextSequence } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -23,7 +25,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       direction: "Credit" as const,
       customerId: "",
       supplierId: "",
-      memoDate: new Date().toISOString().slice(0, 10),
+      memoDate: datetime
+        .today(await getCompanyTimeZone(client, companyId))
+        .toString(),
       currencyCode,
       exchangeRate: 1,
       amount: 0,

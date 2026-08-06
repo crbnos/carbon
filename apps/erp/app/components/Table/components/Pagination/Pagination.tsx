@@ -18,6 +18,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useRef } from "react";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
+import { PAGE_SIZES } from "~/utils/pagination";
 
 export type PaginationProps = {
   compact?: boolean;
@@ -36,12 +37,6 @@ export type PaginationProps = {
 
 const Pagination = (props: PaginationProps) => {
   const { pageSize, setPageSize } = props;
-
-  const pageSizes = [20, 100, 500, 1000];
-  if (!pageSizes.includes(pageSize)) {
-    pageSizes.push(pageSize);
-    pageSizes.sort();
-  }
 
   return (
     <>
@@ -62,7 +57,7 @@ const Pagination = (props: PaginationProps) => {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup value={`${pageSize}`}>
-              {pageSizes.map((size) => (
+              {PAGE_SIZES.map((size) => (
                 <DropdownMenuRadioItem
                   key={`${size}`}
                   value={`${size}`}

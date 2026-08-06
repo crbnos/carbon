@@ -6,7 +6,7 @@ import {
   evaluateLinesForSurface,
   isBlocked
 } from "@carbon/ee/storage-rules.server";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
@@ -156,7 +156,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // If type is Machine, cancel all setup and labor production events for this operation
   if (type === "Machine") {
-    const currentTime = now(getLocalTimeZone()).toAbsoluteString();
+    const currentTime = datetime.timestamp();
 
     await serviceRole
       .from("productionEvent")
@@ -176,7 +176,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       type,
       jobOperationId: operationId,
       workCenterId: jobOperation.data.workCenterId!,
-      startTime: now(getLocalTimeZone()).toAbsoluteString(),
+      startTime: datetime.timestamp(),
       employeeId: userId,
       companyId,
       createdBy: userId

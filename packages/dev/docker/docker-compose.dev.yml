@@ -21,6 +21,7 @@ services:
     ports:
       - "${PORT_DB}:5432"
     environment:
+      TZ: UTC
       POSTGRES_HOST: /var/run/postgresql
       POSTGRES_PORT: 5432
       PGPORT: 5432
@@ -283,6 +284,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      TZ: UTC
       JWT_SECRET: ${SUPABASE_JWT_SECRET}
       SUPABASE_URL: http://kong:8000
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}

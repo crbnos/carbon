@@ -12400,6 +12400,9 @@ msgstr "Ficar nesta página"
 msgid "Step"
 msgstr "Etapa"
 
+msgid "Step added"
+msgstr "Passo adicionado"
+
 msgid "Step Records"
 msgstr "Registros de Etapas"
 

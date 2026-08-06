@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-05T01:23:17.804Z",
-  "totalTools": 1414,
+  "generated": "2026-08-06T01:16:41.924Z",
+  "totalTools": 1415,
   "modules": 15,
   "tools": [
     {
@@ -36385,7 +36385,7 @@
       "description": "upsert customer item price override",
       "paramCount": 10,
       "serviceParams": [
-        "client",
+        "db",
         "companyId",
         "userId",
         "data"
@@ -42003,6 +42003,23 @@
       "module": "shared",
       "classification": "READ",
       "description": "get countries",
+      "paramCount": 0,
+      "serviceParams": [
+        "client"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "shared_getTimezoneNames",
+      "module": "shared",
+      "classification": "READ",
+      "description": "get timezone names",
       "paramCount": 0,
       "serviceParams": [
         "client"

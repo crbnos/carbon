@@ -8,15 +8,11 @@ import type {
 } from "@supabase/supabase-js";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 
 import { Transaction } from "kysely";
-import {
-    getLocalTimeZone,
-    now,
-    toCalendarDate,
-} from "npm:@internationalized/date";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import {
     calculateQuoteLinePrices,
@@ -5662,9 +5658,9 @@ serve(async (req: Request) => {
                 customerLocationId: sourceQuote.data?.customerLocationId,
                 customerReference: sourceQuote.data?.customerReference,
                 locationId: sourceQuote.data?.locationId,
-                expirationDate: toCalendarDate(
-                  now(getLocalTimeZone()).add({ days: 30 })
-                ).toString(),
+                expirationDate: datetime.today(
+                  await getCompanyTimeZone(client, companyId)
+                ).add({ days: 30 }).toString(),
                 salesPersonId: sourceQuote.data?.salesPersonId ?? userId,
                 status: "Draft",
                 externalNotes: sourceQuote.data?.externalNotes,

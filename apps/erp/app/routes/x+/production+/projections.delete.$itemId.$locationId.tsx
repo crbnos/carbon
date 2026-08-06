@@ -1,11 +1,12 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { deleteDemandProjections } from "~/modules/production/production.service";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -27,7 +28,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Get current date to determine future periods
-  const periods = await getOrCreatePeriods(today(getLocalTimeZone()), 52);
+  const periods = await getOrCreatePeriods(
+    datetime.today(await getLocationTimeZone(client, locationId, companyId)),
+    52
+  );
 
   // Only delete projections for future periods (current week and beyond)
   const futurePeriodIds = periods.map((p) => p.id);

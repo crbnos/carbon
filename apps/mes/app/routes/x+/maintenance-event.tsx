@@ -2,7 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import {
@@ -27,7 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
-  const currentTime = now(getLocalTimeZone()).toAbsoluteString();
+  const currentTime = datetime.timestamp();
 
   if (action === "Start") {
     // Start a new maintenance event

@@ -9,6 +9,12 @@ import type {
   SchedulingDirection,
 } from "./types.ts";
 
+// All Date math in this module is UTC-based pure calendar arithmetic on
+// "yyyy-MM-dd" strings — date-only strings parse as UTC midnight, so UTC
+// getters keep the walk independent of the process timezone. The only
+// wall-clock input is `today`, which the engine derives in the job location's
+// timezone.
+
 /**
  * Subtract business days from a date (skips weekends)
  */
@@ -17,9 +23,9 @@ function subtractBusinessDays(date: Date, days: number): Date {
   let remainingDays = days;
 
   while (remainingDays > 0) {
-    result.setDate(result.getDate() - 1);
+    result.setUTCDate(result.getUTCDate() - 1);
     // Skip weekends (0 = Sunday, 6 = Saturday)
-    const dayOfWeek = result.getDay();
+    const dayOfWeek = result.getUTCDay();
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
       remainingDays--;
     }
@@ -36,9 +42,9 @@ function addBusinessDays(date: Date, days: number): Date {
   let remainingDays = days;
 
   while (remainingDays > 0) {
-    result.setDate(result.getDate() + 1);
+    result.setUTCDate(result.getUTCDate() + 1);
     // Skip weekends (0 = Sunday, 6 = Saturday)
-    const dayOfWeek = result.getDay();
+    const dayOfWeek = result.getUTCDay();
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
       remainingDays--;
     }
@@ -55,13 +61,6 @@ function formatDate(date: Date): string {
 }
 
 /**
- * Get today's date as ISO string
- */
-function getTodayString(): string {
-  return formatDate(new Date());
-}
-
-/**
  * Interface for scheduling strategy
  */
 export interface SchedulingStrategy {
@@ -69,7 +68,8 @@ export interface SchedulingStrategy {
     operations: BaseOperation[],
     operationMap: Map<string, BaseOperation>,
     graph: DependencyGraph,
-    anchorDate: string | null
+    anchorDate: string | null,
+    today: string
   ): Map<string, ScheduledOperation>;
 }
 
@@ -81,10 +81,10 @@ export class BackwardSchedulingStrategy implements SchedulingStrategy {
     _operations: BaseOperation[],
     operationMap: Map<string, BaseOperation>,
     graph: DependencyGraph,
-    jobDueDate: string | null
+    jobDueDate: string | null,
+    today: string
   ): Map<string, ScheduledOperation> {
     const scheduled = new Map<string, ScheduledOperation>();
-    const today = getTodayString();
     const finalDueDate = jobDueDate || today;
 
     // Topological sort in reverse order (leaf nodes first)
@@ -244,10 +244,10 @@ export class ForwardSchedulingStrategy implements SchedulingStrategy {
     _operations: BaseOperation[],
     operationMap: Map<string, BaseOperation>,
     graph: DependencyGraph,
-    jobStartDate: string | null
+    jobStartDate: string | null,
+    today: string
   ): Map<string, ScheduledOperation> {
     const scheduled = new Map<string, ScheduledOperation>();
-    const today = getTodayString();
     const startDate = jobStartDate || today;
 
     // Topological sort in forward order (root nodes first)
@@ -380,6 +380,7 @@ export function calculateOperationDates(
   operations: BaseOperation[],
   graph: DependencyGraph,
   anchorDate: string | null,
+  today: string,
   direction: SchedulingDirection = "backward"
 ): Map<string, ScheduledOperation> {
   // Build operation map for quick lookup
@@ -391,7 +392,13 @@ export function calculateOperationDates(
   }
 
   const strategy = getSchedulingStrategy(direction);
-  return strategy.calculateDates(operations, operationMap, graph, anchorDate);
+  return strategy.calculateDates(
+    operations,
+    operationMap,
+    graph,
+    anchorDate,
+    today
+  );
 }
 
-export { addBusinessDays, formatDate, getTodayString, subtractBusinessDays };
+export { addBusinessDays, formatDate, subtractBusinessDays };

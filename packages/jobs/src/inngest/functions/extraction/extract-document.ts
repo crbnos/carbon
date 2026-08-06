@@ -20,6 +20,11 @@ function parseDateToISO8601(value: unknown): string | null {
   const parsed = Date.parse(cleaned);
   if (isNaN(parsed)) return null;
 
+  // Only NON-ISO text reaches this fallback (ISO forms returned above), and
+  // Date.parse interprets non-ISO date strings in the PROCESS timezone — so
+  // reading the parts back with local getters is the symmetric round-trip
+  // that preserves the document's written date under any TZ. UTC getters here
+  // would shift "Jan 2, 2026" to Jan 1 west of UTC.
   const d = new Date(parsed);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }

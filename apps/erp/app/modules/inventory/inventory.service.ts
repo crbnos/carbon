@@ -2,7 +2,7 @@ import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { getLocalTimeZone, now, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -1443,7 +1443,7 @@ export async function updateTrackedEntityExpiry(
         reason: args.reason,
         source: args.source ?? null,
         userId: args.userId,
-        at: now(getLocalTimeZone()).toAbsoluteString()
+        at: datetime.timestamp()
       }
     ]
   };
@@ -2125,7 +2125,7 @@ export async function upsertKanban(
     .from("kanban")
     .update({
       ...sanitize(kanban),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", kanban.id)
     .select("id")
@@ -2155,7 +2155,7 @@ export async function upsertReceipt(
     .from("receipt")
     .update({
       ...sanitize(receipt),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", receipt.id)
     .select("id")
@@ -2190,7 +2190,7 @@ export async function upsertStorageUnit(
     .from("storageUnit")
     .update({
       ...sanitize(storageUnit),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", storageUnit.id)
     .select("id")
@@ -2249,7 +2249,7 @@ export async function upsertShipment(
     .from("shipment")
     .update({
       ...sanitize(shipment),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", shipment.id)
     .select("id")
@@ -2367,7 +2367,7 @@ export async function upsertWarehouseTransfer(
     .from("warehouseTransfer")
     .update({
       ...sanitize(transfer),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", transfer.id)
     .select("id")
@@ -2613,7 +2613,7 @@ export async function upsertStorageType(
     .from("storageType")
     .update({
       ...sanitize(storageType),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", storageType.id)
     .select("id")
@@ -3364,7 +3364,7 @@ export async function generatePickingList(
   // UTC calendar date ((now() AT TIME ZONE 'UTC')::date) — so generation and
   // those RPCs never resolve a different effective successor at a timezone
   // boundary.
-  const asOfDate = today("UTC").toString();
+  const asOfDate = datetime.today("UTC").toString();
 
   // Cache per-item on-hand-by-bin so a supersession redirect doesn't refetch.
   const onHandCache = new Map<string, Map<string, number>>();
@@ -3924,7 +3924,7 @@ export async function updateWarehouseTransfer(
         ...fields,
         customFields,
         updatedBy,
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
     )
     .eq("id", id)

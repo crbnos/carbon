@@ -9,7 +9,7 @@ import type {
   TargetType,
   TransactionSurface
 } from "@carbon/utils";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
@@ -98,7 +98,7 @@ export async function upsertStorageRule(
     .update({
       ...sanitize(rule),
       conditionAst: rule.conditionAst as unknown as Json,
-      updatedAt: now(getLocalTimeZone()).toAbsoluteString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", rule.id)
     .select("id")

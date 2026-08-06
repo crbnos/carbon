@@ -12400,6 +12400,9 @@ msgstr "留在此页面"
 msgid "Step"
 msgstr "步骤"
 
+msgid "Step added"
+msgstr "已添加步骤"
+
 msgid "Step Records"
 msgstr "步骤记录"
 

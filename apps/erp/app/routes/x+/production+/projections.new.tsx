@@ -3,24 +3,27 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
 import { upsertDemandProjections } from "~/modules/production/production.service";
 import DemandProjectionForm from "~/modules/production/ui/Projection/DemandProjectionForm";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 
 const WEEKS_TO_PROJECT = 52;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     create: "production"
   });
 
+  // No location yet — it is picked in the form — so the week grid anchors on
+  // the company calendar.
   const periods = await getOrCreatePeriods(
-    today(getLocalTimeZone()),
+    datetime.today(await getCompanyTimeZone(client, companyId)),
     WEEKS_TO_PROJECT
   );
 

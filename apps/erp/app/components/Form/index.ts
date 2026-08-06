@@ -22,8 +22,7 @@ import {
   SelectControlled,
   Submit,
   TextArea,
-  TimePicker,
-  Timezone
+  TimePicker
 } from "@carbon/form";
 
 import Abilities from "./Abilities";
@@ -83,6 +82,7 @@ import SupplierStatus from "./SupplierStatus";
 import Suppliers from "./Suppliers";
 import SupplierType from "./SupplierType";
 import Tags from "./Tags";
+import Timezone from "./Timezone";
 import Tool from "./Tool";
 import UnitHint from "./UnitHint";
 import UnitOfMeasure from "./UnitOfMeasure";

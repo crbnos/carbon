@@ -1,3 +1,4 @@
+import { isValidTimeZone } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { operationTypes, standardFactorType } from "../shared";
@@ -78,7 +79,10 @@ export const locationValidator = z
     stateProvince: zfd.text(z.string().optional()),
     postalCode: z.string().min(1, { message: "Postal Code is required" }),
     countryCode: z.string().min(1, { message: "Country is required" }),
-    timezone: z.string().min(1, { message: "Timezone is required" }),
+    timezone: z
+      .string()
+      .min(1, { message: "Timezone is required" })
+      .refine(isValidTimeZone, { message: "Invalid timezone" }),
     latitude: zfd.numeric(z.number().optional()),
     longitude: zfd.numeric(z.number().optional())
   })
