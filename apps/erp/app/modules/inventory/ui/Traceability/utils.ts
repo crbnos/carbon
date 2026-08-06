@@ -58,10 +58,13 @@ export type LineageEdgeData = {
   isReject?: boolean;
   isBackEdge?: boolean;
   points?: { x: number; y: number }[];
-  /** Collision-resolved label anchor, slid along this edge's own curve so
-   *  parallel edges don't stack their pills. Falls back to the curve midpoint. */
-  labelX?: number;
-  labelY?: number;
+  /**
+   * Where along this edge's own curve the label sits, 0..1 (0.5 = midpoint).
+   * Layout slides it off the midpoint when parallel edges would stack their
+   * pills. Stored as a PARAMETER, not a point, so the label keeps following
+   * the curve when a node is dragged.
+   */
+  labelT?: number;
 };
 
 export type LineageEdge = Edge<LineageEdgeData>;
@@ -783,6 +786,72 @@ export function annotateEdgeWeights(
 }
 
 // Compact quantity for node badges/stubs, where horizontal space is tight.
+/**
+ * A point on the same curve `getSimpleBezierPath` draws.
+ *
+ * Mirrors xyflow's `getControl` exactly: a Left/Right handle puts the control
+ * at the midpoint in x and the endpoint's own y; Top/Bottom is the transpose.
+ * Compared as string literals rather than importing the `Position` enum, so
+ * this stays free of a runtime @xyflow/react dependency — it runs in the
+ * lineage Web Worker.
+ *
+ * Layout picks the `t`; the edge component evaluates it against LIVE endpoint
+ * coordinates, so a dragged node takes its labels with it.
+ */
+function bezierControl(
+  position: string | undefined,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number
+): [number, number] {
+  return position === "left" || position === "right"
+    ? [0.5 * (x1 + x2), y1]
+    : [x1, 0.5 * (y1 + y2)];
+}
+
+function cubicAt(
+  t: number,
+  p0: number,
+  c1: number,
+  c2: number,
+  p3: number
+): number {
+  const u = 1 - t;
+  return (
+    u * u * u * p0 + 3 * u * u * t * c1 + 3 * u * t * t * c2 + t * t * t * p3
+  );
+}
+
+export function simpleBezierPointAt(
+  t: number,
+  sourceX: number,
+  sourceY: number,
+  sourcePosition: string | undefined,
+  targetX: number,
+  targetY: number,
+  targetPosition: string | undefined
+): { x: number; y: number } {
+  const [c1x, c1y] = bezierControl(
+    sourcePosition,
+    sourceX,
+    sourceY,
+    targetX,
+    targetY
+  );
+  const [c2x, c2y] = bezierControl(
+    targetPosition,
+    targetX,
+    targetY,
+    sourceX,
+    sourceY
+  );
+  return {
+    x: cubicAt(t, sourceX, c1x, c2x, targetX),
+    y: cubicAt(t, sourceY, c1y, c2y, targetY)
+  };
+}
+
 export function formatQuantity(q: number): string {
   if (q >= 1000) return `${(q / 1000).toFixed(1)}k`;
   if (Number.isInteger(q)) return String(q);

@@ -5,7 +5,7 @@ import {
   getSimpleBezierPath
 } from "@xyflow/react";
 import { memo } from "react";
-import type { LineageEdgeData } from "../utils";
+import { type LineageEdgeData, simpleBezierPointAt } from "../utils";
 
 type Props = EdgeProps & {
   data?: LineageEdgeData & {
@@ -37,10 +37,23 @@ function QuantityEdgeImpl({
   });
 
   // Parallel edges between the same two ranks all put their label at the same
-  // midpoint, so the pills stack. The worker slides each one along its own
-  // curve until it is clear of the others and hands back the resolved point.
-  const labelX = data?.labelX ?? midX;
-  const labelY = data?.labelY ?? midY;
+  // midpoint, so the pills stack. Layout resolves how far along each curve the
+  // label should sit; evaluate that here against the LIVE endpoints so the
+  // label rides the curve when a node is dragged.
+  const labelPoint =
+    data?.labelT === undefined
+      ? null
+      : simpleBezierPointAt(
+          data.labelT,
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition
+        );
+  const labelX = labelPoint?.x ?? midX;
+  const labelY = labelPoint?.y ?? midY;
 
   const isReject = !!data?.isReject;
   const isBackEdge = !!data?.isBackEdge;

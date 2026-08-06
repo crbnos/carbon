@@ -1,5 +1,5 @@
 import Dagre from "@dagrejs/dagre";
-import { Position } from "@xyflow/react";
+import type { Position } from "@xyflow/react";
 import type { EntityCluster } from "../cluster";
 import {
   activityHeadline,
@@ -9,8 +9,16 @@ import {
   type LineageEdgeData,
   type LineageNode,
   type LineagePayload,
-  payloadToFlow
+  payloadToFlow,
+  simpleBezierPointAt
 } from "../utils";
+
+// Position's values ARE these strings. Typed as the enum but written as
+// literals so the worker bundle never pulls in @xyflow/react at runtime.
+const POS_RIGHT = "right" as Position;
+const POS_LEFT = "left" as Position;
+const POS_BOTTOM = "bottom" as Position;
+const POS_TOP = "top" as Position;
 
 export type LayoutDirection = "TB" | "LR";
 
@@ -95,16 +103,16 @@ function nodeFootprint(node: LineageNode): { width: number; height: number } {
 }
 
 /**
- * Where an edge's quantity pill sits.
+ * Where along each edge its quantity pill should sit.
  *
  * Every edge defaults its label to the curve midpoint, so parallel edges
  * between the same two ranks stack their pills on top of each other. Slide each
  * one along its OWN curve until it clears the ones already placed — the label
  * stays visually attached to its edge instead of being nudged into open space.
  *
- * Mirrors xyflow's `getSimpleBezierPath` control points exactly (`getControl`
- * in @xyflow/react): a Left/Right handle puts the control at the midpoint in x
- * and the endpoint's own y; Top/Bottom does the transpose.
+ * Returns the curve PARAMETER, not a point. An absolute point would be stale
+ * the moment a node is dragged, leaving the pill stranded in open canvas while
+ * its edge moved away.
  */
 type LabelBox = { x: number; y: number; w: number; h: number };
 
@@ -113,29 +121,6 @@ const LABEL_MIN_W = 26;
 const LABEL_GAP_PX = 4;
 /** Midpoint first, then alternate outward along the curve. */
 const LABEL_T_CANDIDATES = [0.5, 0.4, 0.6, 0.32, 0.68, 0.25, 0.75, 0.18, 0.82];
-
-function controlPoint(
-  horizontal: boolean,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number
-): [number, number] {
-  return horizontal ? [0.5 * (x1 + x2), y1] : [x1, 0.5 * (y1 + y2)];
-}
-
-function cubicAt(
-  t: number,
-  p0: number,
-  c1: number,
-  c2: number,
-  p3: number
-): number {
-  const u = 1 - t;
-  return (
-    u * u * u * p0 + 3 * u * u * t * c1 + 3 * u * t * t * c2 + t * t * t * p3
-  );
-}
 
 function overlaps(a: LabelBox, b: LabelBox): boolean {
   return (
@@ -148,7 +133,7 @@ export function resolveEdgeLabelPositions(
   nodes: LineageNode[],
   edges: LineageEdge[],
   direction: LayoutDirection
-): Map<string, { x: number; y: number }> {
+): Map<string, number> {
   const centers = new Map<string, { x: number; y: number }>();
   for (const n of nodes) {
     centers.set(n.id, {
@@ -157,9 +142,10 @@ export function resolveEdgeLabelPositions(
     });
   }
 
-  const horizontal = direction === "LR";
+  const sourcePos = direction === "LR" ? POS_RIGHT : POS_BOTTOM;
+  const targetPos = direction === "LR" ? POS_LEFT : POS_TOP;
   const placed: LabelBox[] = [];
-  const resolved = new Map<string, { x: number; y: number }>();
+  const resolved = new Map<string, number>();
 
   const candidates = edges
     .map((e) => {
@@ -185,34 +171,27 @@ export function resolveEdgeLabelPositions(
   );
 
   for (const c of candidates) {
-    const [c1x, c1y] = controlPoint(horizontal, c.s.x, c.s.y, c.t.x, c.t.y);
-    const [c2x, c2y] = controlPoint(horizontal, c.t.x, c.t.y, c.s.x, c.s.y);
+    const pointAt = (t: number) =>
+      simpleBezierPointAt(t, c.s.x, c.s.y, sourcePos, c.t.x, c.t.y, targetPos);
 
-    let chosen: LabelBox | null = null;
+    let chosenT: number | null = null;
     for (const t of LABEL_T_CANDIDATES) {
-      const box: LabelBox = {
-        x: cubicAt(t, c.s.x, c1x, c2x, c.t.x),
-        y: cubicAt(t, c.s.y, c1y, c2y, c.t.y),
-        w: c.w,
-        h: LABEL_H
-      };
-      if (!placed.some((p) => overlaps(box, p))) {
-        chosen = box;
+      const p = pointAt(t);
+      const box: LabelBox = { x: p.x, y: p.y, w: c.w, h: LABEL_H };
+      if (!placed.some((q) => overlaps(box, q))) {
+        chosenT = t;
+        placed.push(box);
         break;
       }
     }
     // Every candidate collided — keep the midpoint rather than fling the label
     // somewhere it no longer reads as belonging to this edge.
-    if (!chosen) {
-      chosen = {
-        x: cubicAt(0.5, c.s.x, c1x, c2x, c.t.x),
-        y: cubicAt(0.5, c.s.y, c1y, c2y, c.t.y),
-        w: c.w,
-        h: LABEL_H
-      };
+    if (chosenT === null) {
+      chosenT = 0.5;
+      const p = pointAt(0.5);
+      placed.push({ x: p.x, y: p.y, w: c.w, h: LABEL_H });
     }
-    placed.push(chosen);
-    resolved.set(c.id, { x: chosen.x, y: chosen.y });
+    resolved.set(c.id, chosenT);
   }
 
   return resolved;
@@ -344,8 +323,8 @@ export function computeDagreLayout(
         x: p.x - NODE_WIDTH / 2,
         y: p.y - footprint.height / 2
       },
-      sourcePosition: direction === "LR" ? Position.Right : Position.Bottom,
-      targetPosition: direction === "LR" ? Position.Left : Position.Top
+      sourcePosition: direction === "LR" ? POS_RIGHT : POS_BOTTOM,
+      targetPosition: direction === "LR" ? POS_LEFT : POS_TOP
     };
   });
 
@@ -380,7 +359,7 @@ export function computeFullLayout(input: LayoutInput): LayoutResult {
     input.direction,
     input.spacing
   );
-  const labelPositions = resolveEdgeLabelPositions(
+  const labelTs = resolveEdgeLabelPositions(
     positioned,
     weightedEdges,
     input.direction
@@ -388,15 +367,13 @@ export function computeFullLayout(input: LayoutInput): LayoutResult {
   const finalEdges: LineageEdge[] = [];
   for (let i = 0; i < weightedEdges.length; i++) {
     const e = weightedEdges[i];
-    const label = labelPositions.get(e.id);
     finalEdges.push({
       ...e,
       data: {
         ...(e.data as LineageEdgeData),
         isBackEdge: backEdges.has(e.id),
         points: edgePoints.get(e.id),
-        labelX: label?.x,
-        labelY: label?.y
+        labelT: labelTs.get(e.id)
       }
     });
   }
