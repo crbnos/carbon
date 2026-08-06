@@ -11,7 +11,6 @@ import { Sage } from "./sage/config";
 import { Slack } from "./slack/config";
 import type { QuickInstallConnector } from "./types";
 import { Xero } from "./xero/config";
-import { Zapier } from "./zapier/config";
 
 export { Email } from "./email/config";
 export { defineIntegration } from "./fns";
@@ -41,8 +40,7 @@ export const integrations = [
   Rillet,
   Sage,
   Slack,
-  Xero,
-  Zapier
+  Xero
 ];
 
 export type IntegrationID = (typeof integrations)[number]["id"];
