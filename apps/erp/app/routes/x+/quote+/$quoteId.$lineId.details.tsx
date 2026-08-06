@@ -39,6 +39,7 @@ import {
   getRootQuoteMakeMethod,
   isQuoteLocked,
   quoteLineValidator,
+  reconcileQuantityBreaks,
   resolvePurchaseToOrderPrices,
   resolveQuoteLinePrices,
   upsertQuoteLine
@@ -197,72 +198,102 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // The pricing-seeding branches share the same shape: find quantities the
-  // user newly added to the row and invoke the method-specific resolver for
-  // just those. Surface any resolver failure via flash so the user knows the
-  // line saved but pricing didn't land.
+  // Reconcile the line's price rows against the quantity breaks it now offers,
+  // in both directions. Seeding is method-specific and only covers the three
+  // types below, but PRUNING is unconditional: a break removed from a
+  // Make to Stock line — or from a line whose breaks were all cleared — would
+  // otherwise leave rows behind that render as selectable options on the
+  // customer share page and trip the finalize validation.
+  const serviceRole = getCarbonServiceRole();
+  const existingPrices = await serviceRole
+    .from("quoteLinePrice")
+    .select("quantity")
+    .eq("quoteLineId", lineId);
+
+  if (existingPrices.error) {
+    throw redirect(
+      path.to.quoteLine(quoteId, lineId),
+      await flash(
+        request,
+        error(existingPrices.error, "Failed to read existing quote line prices")
+      )
+    );
+  }
+
+  const { added: addedQuantities, removed: removedQuantities } =
+    reconcileQuantityBreaks(
+      (existingPrices.data ?? []).map((p) => p.quantity),
+      d.quantity ?? []
+    );
+
+  if (removedQuantities.length > 0) {
+    const pruned = await serviceRole
+      .from("quoteLinePrice")
+      .delete()
+      .eq("quoteLineId", lineId)
+      .in("quantity", removedQuantities);
+
+    if (pruned.error) {
+      throw redirect(
+        path.to.quoteLine(quoteId, lineId),
+        await flash(
+          request,
+          error(
+            pruned.error,
+            "Failed to remove prices for deleted quantity breaks"
+          )
+        )
+      );
+    }
+  }
+
+  // Surface any resolver failure via flash so the user knows the line saved
+  // but pricing didn't land.
   const methodType = d.methodType;
   const needsSeed =
-    (methodType === "Make to Order" ||
-      methodType === "Pull from Inventory" ||
-      methodType === "Purchase to Order") &&
-    !!d.quantity?.length;
+    methodType === "Make to Order" ||
+    methodType === "Pull from Inventory" ||
+    methodType === "Purchase to Order";
 
-  if (needsSeed) {
-    const serviceRole = getCarbonServiceRole();
-    const existingPrices = await serviceRole
-      .from("quoteLinePrice")
-      .select("quantity")
-      .eq("quoteLineId", lineId);
-
-    const existingQuantities = new Set(
-      (existingPrices.data ?? []).map((p) => p.quantity)
-    );
-
-    const addedQuantities = (d.quantity ?? []).filter(
-      (q) => !existingQuantities.has(q)
-    );
-
-    if (addedQuantities.length > 0) {
-      const priceResult =
-        methodType === "Make to Order"
-          ? await calculatePricesForQuantities(
+  if (needsSeed && addedQuantities.length > 0) {
+    const priceResult =
+      methodType === "Make to Order"
+        ? await calculatePricesForQuantities(
+            serviceRole,
+            quoteId,
+            lineId,
+            addedQuantities,
+            userId
+          )
+        : methodType === "Pull from Inventory"
+          ? await resolveQuoteLinePrices(
               serviceRole,
+              companyId,
               quoteId,
               lineId,
               addedQuantities,
               userId
             )
-          : methodType === "Pull from Inventory"
-            ? await resolveQuoteLinePrices(
-                serviceRole,
-                companyId,
-                quoteId,
-                lineId,
-                addedQuantities,
-                userId
-              )
-            : await resolvePurchaseToOrderPrices(
-                serviceRole,
-                companyId,
-                quoteId,
-                lineId,
-                addedQuantities,
-                userId
-              );
+          : await resolvePurchaseToOrderPrices(
+              serviceRole,
+              companyId,
+              quoteId,
+              lineId,
+              addedQuantities,
+              userId
+            );
 
-      if (priceResult?.error) {
-        throw redirect(
-          path.to.quoteLine(quoteId, lineId),
-          await flash(
-            request,
-            error(
-              priceResult.error,
-              `Failed to seed ${methodType} prices for new quantities`
-            )
+    if (priceResult?.error) {
+      throw redirect(
+        path.to.quoteLine(quoteId, lineId),
+        await flash(
+          request,
+          error(
+            priceResult.error,
+            `Failed to seed ${methodType} prices for new quantities`
           )
-        );
-      }
+        )
+      );
     }
   }
 
