@@ -34,6 +34,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   ItemThumbnail,
@@ -45,12 +46,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions,
-  useRealtime
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import { purchaseOrderStatusType } from "~/modules/purchasing";
@@ -72,7 +68,6 @@ const PurchaseOrdersTable = memo(
     const { t } = useLingui();
     const permissions = usePermissions();
     const currencyFormatter = useCurrencyFormatter();
-    const { formatDate } = useDateFormatter();
 
     const [selectedPurchaseOrder, setSelectedPurchaseOrder] =
       useState<PurchaseOrder | null>(null);
@@ -181,7 +176,9 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "orderDate",
           header: t`Order Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -189,7 +186,9 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "receiptRequestedDate",
           header: t`Requested Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -219,7 +218,10 @@ const PurchaseOrdersTable = memo(
                       : ""
                 }
               >
-                {formatDate(row.original.receiptPromisedDate)}
+                <DateTime
+                  value={row.original.receiptPromisedDate}
+                  variant="date"
+                />
               </span>
             );
           },
@@ -324,7 +326,9 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -349,7 +353,9 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -364,8 +370,7 @@ const PurchaseOrdersTable = memo(
       currencyFormatter,
       shippingMethods,
       paymentTerms,
-      t,
-      formatDate
+      t
     ]);
 
     const fetcher = useFetcher<typeof action>();

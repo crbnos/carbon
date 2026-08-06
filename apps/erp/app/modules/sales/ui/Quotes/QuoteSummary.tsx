@@ -25,13 +25,8 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { CustomerAvatar } from "~/components";
-import {
-  useDateFormatter,
-  usePercentFormatter,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { CustomerAvatar, DateTime } from "~/components";
+import { usePercentFormatter, useRouteData, useUser } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
 import type {
@@ -672,7 +667,6 @@ const QuoteSummary = ({
 }) => {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quote id");
-  const { formatDate } = useDateFormatter();
   const routeData = useRouteData<{
     quote: Quotation;
     lines: QuotationLine[];
@@ -861,7 +855,11 @@ const QuoteSummary = ({
             <CustomerAvatar customerId={routeData?.quote.customerId ?? null} />
             {routeData?.quote?.expirationDate && (
               <span className="text-xs text-muted-foreground tracking-tight">
-                Expires {formatDate(routeData?.quote.expirationDate)}
+                Expires{" "}
+                <DateTime
+                  value={routeData?.quote.expirationDate}
+                  variant="date"
+                />
               </span>
             )}
           </div>

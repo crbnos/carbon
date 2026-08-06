@@ -48,6 +48,10 @@ msgstr "(このお客様では除外されています)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {このパーツは1つの開いた変更通知に含まれています} other {このパーツは#つの開いた変更通知に含まれています}}"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0}前"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0}件の残高のある顧客"
@@ -2409,9 +2413,8 @@ msgstr "時刻入力"
 msgid "Clock Out"
 msgstr "時間外"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "{0}以来クロックイン中"
+msgid "Clocked in since <0/>"
+msgstr "<0/>からクロックイン中"
 
 msgid "Close"
 msgstr "閉じる"
@@ -5413,8 +5416,9 @@ msgstr "有効期限（このラインのすべてのシリアルに適用）"
 msgid "Expired"
 msgstr "期限切れ"
 
-msgid "Expired {date}"
-msgstr "期限切れ {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "期限切れ {0}"
 
 msgid "Expired batch"
 msgstr "期限切れバッチ"
@@ -5425,8 +5429,8 @@ msgstr "期限切れバッチ"
 msgid "Expires"
 msgstr "有効期限"
 
-msgid "Expires {date}"
-msgstr "有効期限 {date}"
+msgid "Expires <0/>"
+msgstr "有効期限：<0/>"
 
 msgid "Expires At (optional)"
 msgstr "有効期限（オプション）"
@@ -6036,6 +6040,9 @@ msgstr "{0}から"
 msgid "From / To"
 msgstr "開始 / 終了"
 
+msgid "From <0/>"
+msgstr "から <0/>"
+
 msgid "From customer"
 msgstr "顧客から"
 
@@ -6636,6 +6643,10 @@ msgstr "インポート結果"
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
+
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "{0}以内に"
 
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "Onshape でこの OAuth アプリケーションの権限を編集し、「Application can write to your documents」を含めてから、もう一度接続してください。"
@@ -7287,12 +7298,8 @@ msgstr "姓"
 msgid "Last Quarter"
 msgstr "前四半期"
 
-#. placeholder {0}: formatDateTime(lastSyncedAt)
-msgid "Last synced: {0}"
-msgstr "最後に同期: {0}"
-
-msgid "Last updated: {formattedDate}"
-msgstr "最終更新: {formattedDate}"
+msgid "Last synced: <0/>"
+msgstr "最後に同期: <0/>"
 
 msgid "Lead time"
 msgstr "リードタイム"
@@ -15282,9 +15289,8 @@ msgstr "テーマ設定からいつでもUIスタイルを変更できます"
 msgid "You can only see this key once. Store it safely."
 msgstr "このキーは一度だけ表示されます。安全に保管してください。"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "あなたは{0}にクロックインしました。下記でクロックアウト時間を編集するか、まだ働いていることを確認できます。"
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "<0/>に出勤しました。下の退勤時刻を編集するか、まだ作業中であることを確認できます。"
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

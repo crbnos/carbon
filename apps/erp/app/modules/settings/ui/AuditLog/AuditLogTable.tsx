@@ -11,9 +11,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuFilePen, LuFilePlus, LuFileX } from "react-icons/lu";
 import { Link } from "react-router";
-import { EmployeeAvatar, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Table } from "~/components";
 import { ChangeRow } from "~/components/AuditLog";
-import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 
 type AuditLogTableProps = {
@@ -113,7 +112,9 @@ const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
         </div>
         <div>
           <span className="text-muted-foreground">Timestamp</span>
-          <div className="font-mono text-xs">{entry.createdAt}</div>
+          <div className="font-mono text-xs">
+            <DateTime value={entry.createdAt} variant="absolute" />
+          </div>
         </div>
       </div>
 
@@ -146,7 +147,6 @@ ExpandedRowContent.displayName = "ExpandedRowContent";
 
 const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
   const { t } = useLingui();
-  const { formatDateTime } = useDateFormatter();
   const columns = useMemo<ColumnDef<AuditLogEntry>[]>(
     () => [
       {
@@ -253,12 +253,12 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
         header: t`When`,
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">
-            {formatDateTime(row.original.createdAt)}
+            <DateTime value={row.original.createdAt} variant="absolute" />
           </span>
         )
       }
     ],
-    [t, formatDateTime]
+    [t]
   );
 
   const renderExpandedRow = useCallback(

@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
@@ -73,7 +73,7 @@ serve(async (req: Request) => {
       update: "inventory"
     });
 
-    const today = format(new Date(), "yyyy-MM-dd");
+    const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
     const nowIso = new Date().toISOString();
 
     const inventoryCount = await client
@@ -191,7 +191,7 @@ serve(async (req: Request) => {
       throw new Error("Error getting account defaults");
     }
     const accountingPeriodId = accountingEnabled
-      ? await getCurrentAccountingPeriod(client, companyId, db)
+      ? await getCurrentAccountingPeriod(client, companyId, db, today)
       : null;
 
     // Active dimensions for the company group (post-shipment precedent) —

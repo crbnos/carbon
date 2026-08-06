@@ -48,12 +48,12 @@ import {
 } from "react-icons/lu";
 import { useNavigation, useParams } from "react-router";
 import type { z } from "zod";
-import { CustomerAvatar } from "~/components";
+import { CustomerAvatar, DateTime } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { CustomerContact, EmailRecipients } from "~/components/Form";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
-import { useDateFormatter, useRouteData, useUser } from "~/hooks";
+import { useRouteData, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { getDocumentType } from "~/modules/shared";
@@ -970,7 +970,6 @@ function CustomerDetailsForm({ poNumber }: { poNumber: string }) {
 
 function ShippingDetailsForm() {
   const [isExpanded, setIsExpanded] = useState(true);
-  const { formatDate } = useDateFormatter();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
 
@@ -1015,9 +1014,12 @@ function ShippingDetailsForm() {
                 <Trans>Requested Date</Trans>
               </Td>
               <Td>
-                {quoteData?.shipment.receiptRequestedDate
-                  ? formatDate(quoteData?.shipment?.receiptRequestedDate!)
-                  : null}
+                {quoteData?.shipment.receiptRequestedDate ? (
+                  <DateTime
+                    value={quoteData?.shipment?.receiptRequestedDate!}
+                    variant="date"
+                  />
+                ) : null}
               </Td>
             </Tr>
           </Tbody>

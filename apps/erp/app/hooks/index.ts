@@ -6,6 +6,7 @@ import {
   useUrlParams
 } from "@carbon/react";
 import { useCompanySettings } from "./useCompanySettings";
+import { useCompanyTimeZone, useCompanyToday } from "./useCompanyTimeZone";
 import { useCurrencyFormatter } from "./useCurrencyFormatter";
 import { useDateFormatter } from "./useDateFormatter";
 import { useFlags } from "./useFlags";
@@ -31,6 +32,8 @@ import { useUser } from "./useUser";
 
 export {
   useCompanySettings,
+  useCompanyTimeZone,
+  useCompanyToday,
   useCurrencyFormatter,
   useDateFormatter,
   useFlags,

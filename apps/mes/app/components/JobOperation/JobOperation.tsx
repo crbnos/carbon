@@ -90,6 +90,7 @@ import {
 } from "react-icons/lu";
 import { Await, Link, useFetcher, useNavigate, useParams } from "react-router";
 import {
+  DateTime,
   DeadlineIcon,
   FileIcon,
   FilePreview,
@@ -232,7 +233,7 @@ export const JobOperation = ({
   workCenter
 }: JobOperationProps) => {
   const { t } = useLingui();
-  const { formatDate, formatRelativeTime } = useDateFormatter();
+  const { formatRelativeTime } = useDateFormatter();
   const [params, setParams] = useUrlParams();
 
   const trackedEntityParam = params.get("trackedEntityId");
@@ -738,9 +739,12 @@ export const JobOperation = ({
                             : "–"}
                       </Heading>
                       <span className="text-muted-foreground text-sm">
-                        {operation.operationDueDate
-                          ? formatDate(operation.operationDueDate)
-                          : null}
+                        {operation.operationDueDate ? (
+                          <DateTime
+                            value={operation.operationDueDate}
+                            variant="date"
+                          />
+                        ) : null}
                       </span>
                     </VStack>
                   </CardContent>

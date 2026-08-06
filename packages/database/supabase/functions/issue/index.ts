@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { getLocalTimeZone, parseDate, today } from "npm:@internationalized/date";
+import { type CalendarDate, parseDate } from "@internationalized/date";
 import { Transaction } from "kysely";
 import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
@@ -71,13 +72,13 @@ async function getExpiredEntityPolicy(
 function checkExpiredEntities(
   entities: { id: string; expirationDate: string | null }[],
   policy: ExpiredEntityPolicy,
-  override: { allowed: boolean; reason: string | null }
+  override: { allowed: boolean; reason: string | null },
+  today: CalendarDate
 ): { ok: true; warning?: string } | { ok: false; reason: string } {
-  const todayLocal = today(getLocalTimeZone());
   const expired = entities.filter((e) => {
     if (!e.expirationDate) return false;
     try {
-      return parseDate(e.expirationDate).compare(todayLocal) < 0;
+      return parseDate(e.expirationDate).compare(today) < 0;
     } catch {
       return false;
     }
@@ -204,6 +205,13 @@ async function issueJobOperationMaterials(
     items.map((item) => [item.id, item.itemTrackingType === "Inventory"])
   );
 
+  // Company business day — item/cost ledgers and this function's journals must
+  // all post on the same day (they previously relied on the CURRENT_DATE default,
+  // which is UTC and diverged from the company-TZ journals here).
+  const today = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
+
   const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
     [];
 
@@ -299,6 +307,7 @@ async function issueJobOperationMaterials(
         quantity: -quantityToIssue,
         locationId: job.locationId,
         storageUnitId: finalStorageUnitId,
+        postingDate: today,
         createdBy: userId,
       });
     }
@@ -429,6 +438,7 @@ async function issueJobOperationMaterials(
           quantity: -materialQuantity,
           cost: -cogsResult.totalCost,
           remainingQuantity: 0,
+          postingDate: today,
           companyId,
         })
         .execute();
@@ -443,7 +453,9 @@ async function issueJobOperationMaterials(
     }
 
     if (journalLineInserts.length > 0) {
-      const accountingPeriodId = await getCurrentAccountingPeriod(client, companyId, trx);
+      // Resolve the period from the SAME hoisted `today` the ledger rows used —
+      // a midnight rollover mid-transaction must not split journal and ledger.
+      const accountingPeriodId = await getCurrentAccountingPeriod(client, companyId, trx, today);
       const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
 
       const journalResult = await trx
@@ -452,7 +464,7 @@ async function issueJobOperationMaterials(
           journalEntryId,
           accountingPeriodId,
           description: `Material Issue to Job ${job?.jobId ?? jobId}`,
-          postingDate: new Date().toISOString().slice(0, 10),
+          postingDate: today,
           companyId,
           sourceType: "Job Consumption",
           status: "Posted",
@@ -547,6 +559,12 @@ async function createMaterialWipEntries(
     dimensionMap, jobLocationId,
     client, db, companyId, userId,
   } = args;
+
+  // Cost layer posts on the company business day, matching the caller's
+  // itemLedger movement (was defaulting to CURRENT_DATE = UTC).
+  const today = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
 
   const journalLineInserts: {
     accountId: string;
@@ -687,6 +705,7 @@ async function createMaterialWipEntries(
         quantity: isConsumption ? -absQty : absQty,
         cost: isConsumption ? -cost : cost,
         remainingQuantity: 0,
+        postingDate: today,
         companyId,
       })
       .execute();
@@ -702,7 +721,8 @@ async function createMaterialWipEntries(
 
   if (journalLineInserts.length === 0) return;
 
-  const accountingPeriodId = await getCurrentAccountingPeriod(client, companyId, trx);
+  // Same hoisted `today` as this function's ledger rows (see above).
+  const accountingPeriodId = await getCurrentAccountingPeriod(client, companyId, trx, today);
   const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
 
   const journalResult = await trx
@@ -711,7 +731,7 @@ async function createMaterialWipEntries(
       journalEntryId,
       accountingPeriodId,
       description,
-      postingDate: new Date().toISOString().slice(0, 10),
+      postingDate: today,
       companyId,
       sourceType: "Job Consumption",
       status: "Posted",
@@ -1942,6 +1962,7 @@ serve(async (req: Request) => {
         }
 
         const client = await requirePermissions(req, companyId, userId, { update: "production" });
+        const companyToday = datetime.today(await getCompanyTimeZone(client, companyId));
 
         const [accountingSettingsTracked, companyRecordTracked] = await Promise.all([
           client
@@ -2015,7 +2036,8 @@ serve(async (req: Request) => {
               expirationDate: e.expirationDate,
             })),
             expiredPolicy,
-            { allowed: !!overrideExpired, reason: overrideReason ?? null }
+            { allowed: !!overrideExpired, reason: overrideReason ?? null },
+            companyToday
           );
           if (!expiredCheck.ok) {
             throw new Error(expiredCheck.reason);
@@ -2304,7 +2326,7 @@ serve(async (req: Request) => {
                 itemLedgerItemId: trackedEntity.sourceDocumentId,
                 companyId,
                 userId,
-                postingDate: new Date().toISOString().slice(0, 10),
+                postingDate: companyToday.toString(),
                 // Created Available; the shared status update below flips the
                 // child to Consumed in the same transaction.
                 childStatus: "Available",
@@ -3098,6 +3120,7 @@ serve(async (req: Request) => {
         }
 
         let expiredWarning: string | undefined;
+        const companyToday = datetime.today(await getCompanyTimeZone(db, companyId));
 
         const splitEntities = await db.transaction().execute(async (trx) => {
           // Get the maintenance dispatch to find the location
@@ -3168,7 +3191,8 @@ serve(async (req: Request) => {
               expirationDate: e.expirationDate,
             })),
             expiredPolicy,
-            { allowed: !!overrideExpired, reason: overrideReason ?? null }
+            { allowed: !!overrideExpired, reason: overrideReason ?? null },
+            companyToday
           );
           if (!expiredCheck.ok) {
             throw new Error(expiredCheck.reason);
@@ -3283,7 +3307,7 @@ serve(async (req: Request) => {
                 itemLedgerItemId: trackedEntity.sourceDocumentId,
                 companyId,
                 userId,
-                postingDate: new Date().toISOString().slice(0, 10),
+                postingDate: companyToday.toString(),
                 // Created Available; the shared status update below flips the
                 // child to Consumed in the same transaction.
                 childStatus: "Available"

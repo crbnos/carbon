@@ -1,8 +1,9 @@
 import { cn } from "@carbon/react";
 import type { ReactNode } from "react";
-import { useDateFormatter, useHighlightFlash } from "~/hooks";
+import { useHighlightFlash } from "~/hooks";
 import { usePeople } from "~/stores";
 import Avatar from "./Avatar";
+import { DateTime } from "./DateTime";
 
 type Person = { id: string; name: string; avatarUrl: string | null };
 
@@ -36,7 +37,6 @@ const Activity = ({
   comment,
   highlighted = false
 }: ActivityProps) => {
-  const { formatTimeAgo } = useDateFormatter();
   const [people] = usePeople();
   const { ref, isFlashing } = useHighlightFlash<HTMLLIElement>(highlighted);
 
@@ -72,7 +72,7 @@ const Activity = ({
             </p>
           )}
           <div className="text-sm text-muted-foreground mt-1">
-            {formatTimeAgo(activityTime)}
+            <DateTime value={activityTime} variant="relative" />
           </div>
         </div>
         <div className="flex-shrink-0">{activityIcon}</div>

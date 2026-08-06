@@ -1,5 +1,7 @@
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { getLocationTimeZone } from "@carbon/database";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getJobMakeMethod,
@@ -110,7 +112,11 @@ export async function createQualityIssue(
       locationId: context.locationId,
       nonConformanceTypeId: args.nonConformanceTypeId ?? context.issueTypeId,
       nonConformanceWorkflowId: null,
-      openDate: new Date().toISOString().slice(0, 10),
+      openDate: datetime
+        .today(
+          await getLocationTimeZone(serviceRole, context.locationId, companyId)
+        )
+        .toString(),
       quantity,
       assignee: context.assignee,
       requiredActionIds: [],

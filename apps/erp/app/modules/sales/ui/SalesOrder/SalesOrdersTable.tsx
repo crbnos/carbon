@@ -44,6 +44,7 @@ import {
 } from "react-icons/lu";
 import {
   CustomerAvatar,
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   ItemThumbnail,
@@ -55,11 +56,7 @@ import { useLocations } from "~/components/Form/Location";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { jobStatus } from "~/modules/production/production.models";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
@@ -96,7 +93,6 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
-  const { formatDate } = useDateFormatter();
 
   const [selectedSalesOrder, setSelectedSalesOrder] =
     useState<SalesOrder | null>(null);
@@ -338,7 +334,9 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
       {
         accessorKey: "orderDate",
         header: t`Order Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -374,7 +372,9 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
       {
         accessorKey: "receiptPromisedDate",
         header: t`Promised Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -473,7 +473,9 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -498,7 +500,9 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -515,8 +519,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
     currencyFormatter,
     shippingMethods,
     paymentTerms,
-    t,
-    formatDate
+    t
   ]);
 
   const renderContextMenu = useMemo(() => {

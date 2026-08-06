@@ -205,9 +205,11 @@ async function seedDev() {
 
       // Create the company
       console.log("6. Creating company...");
+      // Company timezone matches the seeded HQ location — one calendar for
+      // ledger-scoped derivation from the first day.
       await client.query(
-        `INSERT INTO company (id, name, "baseCurrencyCode", "companyGroupId") VALUES ($1, $2, 'USD', $3)`,
-        [companyId, DEV_COMPANY_NAME, companyGroupId]
+        `INSERT INTO company (id, name, "baseCurrencyCode", "companyGroupId", timezone) VALUES ($1, $2, 'USD', $3, $4)`,
+        [companyId, DEV_COMPANY_NAME, companyGroupId, defaultLocation.timezone]
       );
       console.log(`   Company "${DEV_COMPANY_NAME}" created.`);
 

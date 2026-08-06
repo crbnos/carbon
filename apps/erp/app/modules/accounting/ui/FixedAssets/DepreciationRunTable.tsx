@@ -1,12 +1,11 @@
 import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { LuCalendar, LuEye, LuHash, LuStar, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, Table } from "~/components";
+import { DateTime, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
@@ -45,7 +44,9 @@ const DepreciationRunTable = memo(
         {
           accessorKey: "periodEnd",
           header: t`Period End`,
-          cell: ({ row }) => formatDate(row.original.periodEnd),
+          cell: ({ row }) => (
+            <DateTime value={row.original.periodEnd} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -64,7 +65,11 @@ const DepreciationRunTable = memo(
           accessorKey: "postedAt",
           header: t`Posted At`,
           cell: ({ row }) =>
-            row.original.postedAt ? formatDate(row.original.postedAt) : "—",
+            row.original.postedAt ? (
+              <DateTime value={row.original.postedAt} variant="date" />
+            ) : (
+              "—"
+            ),
           meta: {
             icon: <LuCalendar />
           }

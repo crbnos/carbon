@@ -2,11 +2,10 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { useUser } from "~/hooks";
+import { useCompanyToday, useUser } from "~/hooks";
 import type { PurchasingRFQStatusType } from "~/modules/purchasing";
 import {
   insertPurchasingRFQ,
@@ -80,11 +79,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function PurchasingRFQNewRoute() {
   const { id: userId, defaults } = useUser();
+  const companyToday = useCompanyToday();
   const initialValues = {
     expirationDate: "",
     id: undefined,
     locationId: defaults?.locationId ?? "",
-    rfqDate: today(getLocalTimeZone()).toString(),
+    rfqDate: companyToday,
     rfqId: undefined,
     status: "Draft" as PurchasingRFQStatusType,
     employeeId: userId,

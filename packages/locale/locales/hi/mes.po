@@ -21,6 +21,10 @@ msgstr "{0} - सेट {1}"
 msgid "{0} Active"
 msgstr "{0} सक्रिय"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} पहले"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -211,9 +215,8 @@ msgstr "घड़ी में प्रवेश करें"
 msgid "Clock Out"
 msgstr "घड़ी बंद करें"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Clocked in since {0}"
+msgid "Clocked in since <0/>"
+msgstr "<0/> से घड़ी चालू है"
 
 msgid "Close"
 msgstr "बंद करें"
@@ -313,9 +316,8 @@ msgstr "हटाएं"
 msgid "Delete Step"
 msgstr "चरण हटाएं"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "टाइमकार्ड हटाएं ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "टाइमकार्ड हटाएं (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "समस्या का वर्णन करें..."
@@ -429,11 +431,12 @@ msgstr "फीचर्स टेबल को विस्तृत करे�
 msgid "Expired"
 msgstr "समाप्त"
 
-msgid "Expired {date}"
-msgstr "समाप्त {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "समाप्त {0}"
 
-msgid "Expires {date}"
-msgstr "समाप्त होता है {date}"
+msgid "Expires <0/>"
+msgstr "समाप्त होता है <0/>"
 
 msgid "Expiring first"
 msgstr "पहले समाप्त होने वाले"
@@ -533,6 +536,10 @@ msgstr "प्रभाव"
 msgid "Imperial"
 msgstr "इंपीरियल"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "{0} में"
+
 msgid "In Progress"
 msgstr "प्रगति में"
 
@@ -622,6 +629,9 @@ msgstr "आइटम विवरण लोड हो रहे हैं..."
 
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
+
+msgid "Local"
+msgstr "स्थानीय"
 
 msgid "Location"
 msgstr "स्थान"
@@ -1397,9 +1407,8 @@ msgstr "कार्य केंद्र डिस्प्ले"
 msgid "Yes"
 msgstr "हां"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "आप {0} पर क्लॉक इन हुए हैं। आप नीचे अपने क्लॉक-आउट समय को संपादित कर सकते हैं या यह स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "आपने <0/> पर घड़ी शुरू की है। आप नीचे अपने निकास समय को संपादित कर सकते हैं या स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इन हैं। क्या आप क्लॉक आउट करना भूल गए?"

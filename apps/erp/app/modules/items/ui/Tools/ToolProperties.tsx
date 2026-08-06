@@ -17,7 +17,12 @@ import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { Await, Link, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
+import {
+  DateTime,
+  MethodBadge,
+  MethodIcon,
+  TrackingTypeIcon
+} from "~/components";
 import { Boolean, ItemPostingGroup, Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
@@ -604,7 +609,13 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
           {routeDataFromRoute.supersession.successorEffectivityDate && (
             <p className="text-xs text-muted-foreground">
               <Trans>
-                From {routeDataFromRoute.supersession.successorEffectivityDate}
+                From{" "}
+                <DateTime
+                  value={
+                    routeDataFromRoute.supersession.successorEffectivityDate
+                  }
+                  variant="date"
+                />
               </Trans>
             </p>
           )}

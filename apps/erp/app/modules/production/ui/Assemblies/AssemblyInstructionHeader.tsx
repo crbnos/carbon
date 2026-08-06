@@ -27,15 +27,11 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigate, useParams } from "react-router";
+import { DateTime } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { Confirm } from "~/components/Modals";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import {
-  useDateFormatter,
-  usePermissions,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
@@ -62,7 +58,6 @@ const AssemblyInstructionHeader = () => {
   const navigate = useNavigate();
   const permissions = usePermissions();
   const user = useUser();
-  const { formatRelativeTime } = useDateFormatter();
   const { toggleExplorer, toggleProperties } = usePanels();
   const deleteDisclosure = useDisclosure();
   const activateDisclosure = useDisclosure();
@@ -188,7 +183,10 @@ const AssemblyInstructionHeader = () => {
           <span className="hidden whitespace-nowrap text-xs text-muted-foreground lg:inline">
             {instruction.createdBy === user.id ? "By you · " : ""}
             edited{" "}
-            {formatRelativeTime(instruction.updatedAt ?? instruction.createdAt)}
+            <DateTime
+              value={instruction.updatedAt ?? instruction.createdAt}
+              variant="relative"
+            />
           </span>
         )}
       </HStack>

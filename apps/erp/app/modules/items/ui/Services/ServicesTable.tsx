@@ -43,6 +43,7 @@ import {
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { Link, useFetcher, useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   exportOnlyColumn,
   Hyperlink,
@@ -55,7 +56,7 @@ import {
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
@@ -79,7 +80,6 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
 
   const translateReplenishment = useCallback(
     (v: string) => (v === "Buy" ? t`Buy` : t`Make`),
@@ -315,7 +315,9 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -340,7 +342,9 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -354,8 +358,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
     itemPostingGroups,
     t,
     translateMethodType,
-    translateReplenishment,
-    formatDate
+    translateReplenishment
   ]);
 
   const fetcher = useFetcher<typeof action>();

@@ -21,6 +21,10 @@ msgstr "{0} - 组 {1}"
 msgid "{0} Active"
 msgstr "{0} 个活跃"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} 前"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -211,9 +215,8 @@ msgstr "上班打卡"
 msgid "Clock Out"
 msgstr "下班打卡"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "自 {0} 起已打卡上班"
+msgid "Clocked in since <0/>"
+msgstr "自 <0/> 起打卡"
 
 msgid "Close"
 msgstr "关闭"
@@ -313,9 +316,8 @@ msgstr "删除"
 msgid "Delete Step"
 msgstr "删除步骤"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "删除考勤记录 ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "删除工时表 (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "描述问题..."
@@ -429,11 +431,12 @@ msgstr "展开功能表"
 msgid "Expired"
 msgstr "已过期"
 
-msgid "Expired {date}"
-msgstr "已过期 {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "已过期 {0}"
 
-msgid "Expires {date}"
-msgstr "过期时间 {date}"
+msgid "Expires <0/>"
+msgstr "过期于 <0/>"
 
 msgid "Expiring first"
 msgstr "即将过期优先"
@@ -533,6 +536,10 @@ msgstr "影响"
 msgid "Imperial"
 msgstr "英制"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "在 {0}"
+
 msgid "In Progress"
 msgstr "进行中"
 
@@ -622,6 +629,9 @@ msgstr "正在加载物料详情..."
 
 msgid "Loading..."
 msgstr "加载中..."
+
+msgid "Local"
+msgstr "本地"
 
 msgid "Location"
 msgstr "位置"
@@ -1397,9 +1407,8 @@ msgstr "工作中心显示屏"
 msgid "Yes"
 msgstr "是"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "您于 {0} 打卡上班。您可以在下方编辑下班时间，或确认您仍在工作。"
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "您在 <0/> 打卡。您可以编辑下方的下班时间，或确认您仍在工作。"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班了？"

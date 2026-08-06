@@ -8,6 +8,7 @@ export * from "./color";
 export * from "./const";
 export * from "./country";
 export * from "./date";
+export * from "./datetime";
 export * from "./duration";
 export * from "./field-registry";
 export * from "./file";

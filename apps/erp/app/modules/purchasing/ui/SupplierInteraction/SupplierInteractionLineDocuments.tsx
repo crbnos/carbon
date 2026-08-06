@@ -28,9 +28,9 @@ import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { useFetchers, useRevalidator, useSubmit } from "react-router";
-import { DocumentPreview, FileDropzone } from "~/components";
+import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { useDateFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type { ItemFile } from "~/modules/items";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
@@ -200,7 +200,6 @@ const SupplierInteractionLineDocuments = ({
   type
 }: SupplierInteractionLineDocumentsProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const { canDelete, download, deleteFile, getPath, upload } =
     useSupplierInteractionLineDocuments({
       id,
@@ -302,7 +301,11 @@ const SupplierInteractionLineDocuments = ({
                       )}
                     </Td>
                     <Td className="text-xs font-mono">
-                      {file.created_at ? formatDate(file.created_at) : "--"}
+                      <DateTime
+                        value={file.created_at}
+                        variant="date"
+                        fallback="--"
+                      />
                     </Td>
                     <Td>
                       <div className="flex justify-end w-full">

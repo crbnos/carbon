@@ -47,7 +47,7 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import { Bar, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-import { SupplierAvatar } from "~/components";
+import { DateTime, SupplierAvatar } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { useCurrencyFormatter } from "~/hooks";
 import type { ItemCostHistory } from "~/modules/items";
@@ -310,7 +310,15 @@ export function ItemCostHistoryChart({
                       <Tr key={h.id}>
                         <Td>
                           <div className="flex flex-row items-center gap-2">
-                            {longDateFormatter.format(new Date(h.postingDate))}
+                            <DateTime
+                              value={h.postingDate}
+                              variant="date"
+                              dateOptions={{
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric"
+                              }}
+                            />
                             {h.documentId &&
                               h.documentType === "Purchase Invoice" && (
                                 <Tooltip>

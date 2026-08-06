@@ -55,6 +55,11 @@ export const currenciesQuery = () => ({
   staleTime: RefreshRate.Never
 });
 
+export const timezonesQuery = () => ({
+  queryKey: ["timezones"],
+  staleTime: RefreshRate.Never
+});
+
 export const customerContactsQuery = (customerId: string) => ({
   queryKey: ["customerContacts", customerId],
   staleTime: RefreshRate.Low

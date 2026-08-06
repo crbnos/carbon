@@ -6113,6 +6113,7 @@ export type Database = {
           stateProvince: string | null
           suggestionNotificationGroup: string[]
           taxId: string | null
+          timezone: string
           updatedBy: string | null
           vatNumber: string | null
           website: string | null
@@ -6150,6 +6151,7 @@ export type Database = {
           stateProvince?: string | null
           suggestionNotificationGroup?: string[]
           taxId?: string | null
+          timezone?: string
           updatedBy?: string | null
           vatNumber?: string | null
           website?: string | null
@@ -6187,6 +6189,7 @@ export type Database = {
           stateProvince?: string | null
           suggestionNotificationGroup?: string[]
           taxId?: string | null
+          timezone?: string
           updatedBy?: string | null
           vatNumber?: string | null
           website?: string | null
@@ -60131,6 +60134,7 @@ export type Database = {
           stateProvince: string | null
           suggestionNotificationGroup: string[] | null
           taxId: string | null
+          timezone: string | null
           updatedBy: string | null
           userId: string | null
           vatNumber: string | null
@@ -71438,7 +71442,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71452,7 +71456,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -75348,6 +75352,7 @@ export type Database = {
         Args: { operation_id: string }
         Returns: boolean
       }
+      company_today: { Args: { p_company_id: string }; Returns: string }
       complete_job_to_inventory: {
         Args: {
           p_company_id?: string
@@ -77082,6 +77087,13 @@ export type Database = {
           supplierQuotes: Json
         }[]
       }
+      get_timezone_names: {
+        Args: never
+        Returns: {
+          name: string
+          utcOffset: string
+        }[]
+      }
       get_tool_details: {
         Args: { item_id: string }
         Returns: {
@@ -77320,6 +77332,7 @@ export type Database = {
         Args: { operation_id: string }
         Returns: boolean
       }
+      is_valid_timezone: { Args: { tz: string }; Returns: boolean }
       items_search: {
         Args: {
           match_count: number
@@ -77346,6 +77359,10 @@ export type Database = {
         }[]
       }
       jsonb_to_text_array: { Args: { "": Json }; Returns: string[] }
+      location_today: {
+        Args: { p_company_id: string; p_location_id: string }
+        Returns: string
+      }
       matchIntercompanyTransactions: {
         Args: { p_company_group_id: string }
         Returns: {

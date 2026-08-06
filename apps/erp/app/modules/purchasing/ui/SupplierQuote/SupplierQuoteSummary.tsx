@@ -22,15 +22,10 @@ import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { SupplierAvatar } from "~/components";
+import { DateTime, SupplierAvatar } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { useCurrencyFormatter, useRouteData, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
@@ -311,7 +306,6 @@ const LinePricingOptions = ({
 const SupplierQuoteSummary = () => {
   const { id } = useParams();
   if (!id) throw new Error("Could not find quote id");
-  const { formatDate } = useDateFormatter();
   const routeData = useRouteData<{
     quote: SupplierQuote;
     lines: SupplierQuoteLine[];
@@ -336,7 +330,11 @@ const SupplierQuoteSummary = () => {
             <SupplierAvatar supplierId={routeData?.quote.supplierId ?? null} />
             {routeData?.quote?.expirationDate && (
               <span className="text-xs text-muted-foreground tracking-tight">
-                Expires {formatDate(routeData?.quote.expirationDate)}
+                Expires{" "}
+                <DateTime
+                  value={routeData?.quote.expirationDate}
+                  variant="date"
+                />
               </span>
             )}
           </div>

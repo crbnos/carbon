@@ -38,10 +38,9 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate, groupBy } from "@carbon/utils";
+import { groupBy } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
 import { Fragment, useMemo, useState } from "react";
 import {
@@ -55,6 +54,7 @@ import {
 } from "react-icons/lu";
 import { Outlet, useFetcher } from "react-router";
 import type { z } from "zod";
+import { DateTime } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Input, Location, Select, TextArea } from "~/components/Form";
 import StorageUnit from "~/components/Form/StorageUnit";
@@ -92,7 +92,6 @@ const InventoryStorageUnits = ({
 }: InventoryStorageUnitsProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
-  const { locale } = useLocale();
   const adjustmentModal = useDisclosure();
   const ruleViolations = useStorageRuleViolations({
     action: path.to.inventoryItemAdjustment(pickMethod.itemId),
@@ -289,11 +288,10 @@ const InventoryStorageUnits = ({
           {item.trackedEntityId &&
             trackedEntityExpirations[item.trackedEntityId] && (
               <span>
-                {formatDate(
-                  trackedEntityExpirations[item.trackedEntityId],
-                  undefined,
-                  locale
-                )}
+                <DateTime
+                  value={trackedEntityExpirations[item.trackedEntityId]}
+                  variant="date"
+                />
               </span>
             )}
         </Td>
@@ -445,11 +443,10 @@ const InventoryStorageUnits = ({
                         <Td>
                           {earliestExpiration && (
                             <span>
-                              {formatDate(
-                                earliestExpiration,
-                                undefined,
-                                locale
-                              )}
+                              <DateTime
+                                value={earliestExpiration}
+                                variant="date"
+                              />
                             </span>
                           )}
                         </Td>

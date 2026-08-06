@@ -11,14 +11,14 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect } from "react";
 import { LuCopy, LuInfo, LuLink, LuRefreshCcw } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   Assignee,
+  DateTime,
   EmployeeAvatar,
   useOptimisticAssignment
 } from "~/components";
@@ -57,15 +57,6 @@ const QuoteProperties = () => {
 
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
-  const { locale } = useLocale();
-  const formatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        dateStyle: "medium",
-        timeStyle: "short"
-      }),
-    [locale]
-  );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
@@ -426,17 +417,13 @@ const QuoteProperties = () => {
                 Exchange Rate
               </span>
               {routeData?.quote?.exchangeRateUpdatedAt && (
-                <Tooltip>
-                  <TooltipTrigger tabIndex={-1}>
-                    <LuInfo className="w-4 h-4" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    Last updated:{" "}
-                    {formatter.format(
-                      new Date(routeData?.quote?.exchangeRateUpdatedAt ?? "")
-                    )}
-                  </TooltipContent>
-                </Tooltip>
+                <DateTime
+                  value={routeData?.quote?.exchangeRateUpdatedAt}
+                  variant="absolute"
+                  side="bottom"
+                >
+                  <LuInfo className="h-4 w-4 text-muted-foreground" />
+                </DateTime>
               )}
             </HStack>
             <HStack className="w-full justify-between">

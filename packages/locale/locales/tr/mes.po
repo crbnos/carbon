@@ -21,6 +21,10 @@ msgstr "{0} - Ayarla {1}"
 msgid "{0} Active"
 msgstr "{0} Aktif"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} önce"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -211,9 +215,8 @@ msgstr "Giriş Yap"
 msgid "Clock Out"
 msgstr "Çıkış Yap"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Giriş yapıldı: {0}"
+msgid "Clocked in since <0/>"
+msgstr "<0/>'den beri kaydedilmiş"
 
 msgid "Close"
 msgstr "Kapat"
@@ -313,9 +316,8 @@ msgstr "Sil"
 msgid "Delete Step"
 msgstr "Adımı Sil"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "Zaman Kartını Sil ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "Zaman Kartını Sil (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "Sorunu açıklayın..."
@@ -429,11 +431,12 @@ msgstr "Özellikler tablosunu genişlet"
 msgid "Expired"
 msgstr "Süresi Dolmuş"
 
-msgid "Expired {date}"
-msgstr "Süresi Dolmuş {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Süresi dolmuş {0}"
 
-msgid "Expires {date}"
-msgstr "Son kullanma tarihi {date}'de"
+msgid "Expires <0/>"
+msgstr "Süresi doluyor <0/>"
 
 msgid "Expiring first"
 msgstr "İlk süresi dolacak"
@@ -533,6 +536,10 @@ msgstr "Etki"
 msgid "Imperial"
 msgstr "İmparatorluk"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "{0} içinde"
+
 msgid "In Progress"
 msgstr "Devam Ediyor"
 
@@ -622,6 +629,9 @@ msgstr "Ürün detayları yükleniyor..."
 
 msgid "Loading..."
 msgstr "Yükleniyor..."
+
+msgid "Local"
+msgstr "Yerel"
 
 msgid "Location"
 msgstr "Konum"
@@ -1397,9 +1407,8 @@ msgstr "İş Merkezi Ekranları"
 msgid "Yes"
 msgstr "Evet"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Saat {0} giriş yaptınız. Aşağıdan çıkış saatinizi düzenleyebilir veya hala çalıştığınızı onaylayabilirsiniz."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Saat <0/>'te kaydedildiniz. Aşağıda çıkış saatinizi düzenleyebilir veya hala çalışmakta olduğunuzu onaylayabilirsiniz."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"

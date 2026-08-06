@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
-import { useUser } from "~/hooks";
+import { useCompanyToday, useUser } from "~/hooks";
 import {
   addChangeNoticeAffectedItem,
   changeNoticeValidator,
@@ -15,6 +15,7 @@ import {
   insertChangeNotice
 } from "~/modules/items";
 import { ChangeNoticeForm } from "~/modules/items/ui/ChangeNotice";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -84,7 +85,9 @@ export async function action({ request }: ActionFunctionArgs) {
     priority: d.priority,
     changeNoticeTypeId: d.changeOrderTypeId || undefined,
     nonConformanceId: d.nonConformanceId || undefined,
-    openDate: d.openDate || today(getLocalTimeZone()).toString(),
+    openDate:
+      d.openDate ||
+      datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
     dueDate: d.dueDate || undefined,
     assignee: d.assignee || undefined,
     companyId,
@@ -158,6 +161,7 @@ export default function ChangeNoticeNewRoute() {
   const { types, nonConformanceId, name } = useLoaderData<typeof loader>();
   const user = useUser();
 
+  const companyToday = useCompanyToday();
   const initialValues = {
     id: undefined,
     changeOrderId: undefined,
@@ -167,7 +171,7 @@ export default function ChangeNoticeNewRoute() {
     changeOrderTypeId: "",
     assignee: user.id,
     priority: "Medium" as const,
-    openDate: today(getLocalTimeZone()).toString(),
+    openDate: companyToday,
     dueDate: "",
     nonConformanceId,
     affectedItemIds: []

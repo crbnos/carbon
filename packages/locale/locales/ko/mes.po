@@ -21,6 +21,10 @@ msgstr "{0} - {1} 설정"
 msgid "{0} Active"
 msgstr "{0} 활성"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} 전"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -211,9 +215,8 @@ msgstr "출근"
 msgid "Clock Out"
 msgstr "퇴근"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "{0}부터 출근 중"
+msgid "Clocked in since <0/>"
+msgstr "<0/>부터 근무 중"
 
 msgid "Close"
 msgstr "닫기"
@@ -313,9 +316,8 @@ msgstr "삭제"
 msgid "Delete Step"
 msgstr "단계 삭제"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "근무기록 삭제 ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "타임카드 삭제 (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "문제를 설명하세요..."
@@ -429,11 +431,12 @@ msgstr "기능 테이블 확장"
 msgid "Expired"
 msgstr "만료됨"
 
-msgid "Expired {date}"
-msgstr "{date}에 만료됨"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "만료됨 {0}"
 
-msgid "Expires {date}"
-msgstr "{date}에 만료"
+msgid "Expires <0/>"
+msgstr "만료 <0/>"
 
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
@@ -533,6 +536,10 @@ msgstr "영향"
 msgid "Imperial"
 msgstr "야드파운드법"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "{0} 후"
+
 msgid "In Progress"
 msgstr "진행 중"
 
@@ -622,6 +629,9 @@ msgstr "품목 세부정보를 불러오는 중..."
 
 msgid "Loading..."
 msgstr "불러오는 중..."
+
+msgid "Local"
+msgstr "로컬"
 
 msgid "Location"
 msgstr "위치"
@@ -1397,9 +1407,8 @@ msgstr "작업 센터 디스플레이"
 msgid "Yes"
 msgstr "예"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "{0}에 출근했습니다. 아래에서 퇴근 시간을 수정하거나 계속 근무 중임을 확인할 수 있습니다."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편집하거나 현재 근무 중임을 확인할 수 있습니다."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊으셨나요?"

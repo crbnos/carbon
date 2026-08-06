@@ -48,6 +48,10 @@ msgstr "(für diesen Kunden ausgeschlossen)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {Dieses Teil ist auf 1 offener Änderungsmitteilung} other {Dieses Teil ist auf # offenen Änderungsmitteilungen}}"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "vor {0}"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} Kunden mit einem Saldo"
@@ -2409,9 +2413,8 @@ msgstr "Einstempeln"
 msgid "Clock Out"
 msgstr "Uhr aus"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Angemeldet seit {0}"
+msgid "Clocked in since <0/>"
+msgstr "Angemeldet seit <0/>"
 
 msgid "Close"
 msgstr "Schließen"
@@ -5413,8 +5416,9 @@ msgstr "Verfallsdatum (gilt für alle Seriennummern in dieser Zeile)"
 msgid "Expired"
 msgstr "Abgelaufen"
 
-msgid "Expired {date}"
-msgstr "Abgelaufen {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Abgelaufen {0}"
 
 msgid "Expired batch"
 msgstr "Abgelaufener Charge"
@@ -5425,8 +5429,8 @@ msgstr "Abgelaufene Chargen"
 msgid "Expires"
 msgstr "Verfällt"
 
-msgid "Expires {date}"
-msgstr "Verfällt {date}"
+msgid "Expires <0/>"
+msgstr "Läuft ab <0/>"
 
 msgid "Expires At (optional)"
 msgstr "Verfällt am (optional)"
@@ -6036,6 +6040,9 @@ msgstr "Von {0}"
 msgid "From / To"
 msgstr "Von / An"
 
+msgid "From <0/>"
+msgstr "Von <0/>"
+
 msgid "From customer"
 msgstr "Vom Kunden"
 
@@ -6636,6 +6643,10 @@ msgstr "Importergebnisse"
 
 msgid "Import your BOM"
 msgstr "Importieren Sie Ihre Stückliste"
+
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "in {0}"
 
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "Bearbeiten Sie in Onshape die Berechtigungen dieser OAuth-Anwendung, sodass sie „Application can write to your documents“ enthalten, und verbinden Sie sich dann erneut."
@@ -7287,12 +7298,8 @@ msgstr "Nachname"
 msgid "Last Quarter"
 msgstr "Letztes Quartal"
 
-#. placeholder {0}: formatDateTime(lastSyncedAt)
-msgid "Last synced: {0}"
-msgstr "Zuletzt synchronisiert: {0}"
-
-msgid "Last updated: {formattedDate}"
-msgstr "Zuletzt aktualisiert: {formattedDate}"
+msgid "Last synced: <0/>"
+msgstr "Zuletzt synchronisiert: <0/>"
 
 msgid "Lead time"
 msgstr "Vorlaufzeit"
@@ -15282,9 +15289,8 @@ msgstr "Sie können den UI-Stil jederzeit über die Design-Einstellung ändern"
 msgid "You can only see this key once. Store it safely."
 msgstr "Du kannst diesen Schlüssel nur einmal sehen. Speichere ihn sicher."
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Sie haben sich um {0} angemeldet. Sie können Ihre Abmeldungszeit unten bearbeiten oder bestätigen, dass Sie noch arbeiten."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Sie haben sich um <0/> angemeldet. Sie können Ihre Abmeldungszeit unten ändern oder bestätigen, dass Sie noch arbeiten."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

@@ -34,7 +34,7 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
-import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
+import { formatCityStatePostalCode } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -53,6 +53,7 @@ import {
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
+import { DateTime } from "~/components";
 import { usePercentFormatter } from "~/hooks";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
@@ -237,7 +238,7 @@ const Header = ({
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
             <Trans>Expires</Trans>{" "}
-            {formatDate(quote.expirationDate, undefined, locale)}
+            <DateTime value={quote.expirationDate} variant="date" />
           </p>
         )}
       </div>

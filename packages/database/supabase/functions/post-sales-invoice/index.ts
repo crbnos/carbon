@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
@@ -32,7 +32,6 @@ serve(async (req: Request) => {
   if (preflight) return preflight;
 
   const payload = await req.json();
-  const today = format(new Date(), "yyyy-MM-dd");
 
   try {
     const { type, invoiceId, userId, companyId } =
@@ -47,6 +46,7 @@ serve(async (req: Request) => {
     });
 
     const client = await requirePermissions(req, companyId, userId, { update: "invoicing" });
+    const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
     const [companyRecord, accountingSettings] = await Promise.all([
       client
@@ -898,7 +898,7 @@ serve(async (req: Request) => {
         }
 
         const accountingPeriodId = accountingEnabled
-          ? await getCurrentAccountingPeriod(client, companyId, db)
+          ? await getCurrentAccountingPeriod(client, companyId, db, today)
           : null;
 
         await db.transaction().execute(async (trx) => {
@@ -1076,6 +1076,7 @@ serve(async (req: Request) => {
                     cost: -cogsResult.totalCost,
                     remainingQuantity: 0,
                     companyId,
+                    postingDate: today,
                   })
                   .execute();
 
@@ -1410,7 +1411,7 @@ serve(async (req: Request) => {
         }
 
         const accountingPeriodId = accountingEnabled
-          ? await getCurrentAccountingPeriod(client, companyId, db)
+          ? await getCurrentAccountingPeriod(client, companyId, db, today)
           : null;
 
         await db.transaction().execute(async (trx) => {

@@ -87,11 +87,10 @@ export const MONTH_NUMBER: Record<string, number> = {
 // Fiscal year is named by its ending calendar year (FY2026 = the year that
 // ends in 2026). periodNumber is 1..12 counted from the fiscal start month.
 export function fiscalYearAndPeriodFor(
-  date: Date,
+  year: number,
+  month: number, // 1-12
   startMonth: number
 ): { fiscalYear: number; periodNumber: number } {
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
   const periodNumber = ((month - startMonth + 12) % 12) + 1;
   const fiscalYear =
     startMonth === 1 ? year : month >= startMonth ? year + 1 : year;

@@ -1,10 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
-import { getLocalTimeZone, today as getToday } from "npm:@internationalized/date";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { sql } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
 import { resolveTrackedEntityBin } from "../issue/resolve-tracked-entity-bin.ts";
@@ -119,11 +118,10 @@ serve(async (req: Request) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
 
-  const today = format(getToday(getLocalTimeZone()).toDate(getLocalTimeZone()), "yyyy-MM-dd");
-
   try {
     const payload = await req.json();
     const validatedPayload = payloadValidator.parse(payload);
+    const today = datetime.today(await getCompanyTimeZone(db, validatedPayload.companyId)).toString();
     let splitEntityId: string | undefined;
 
     switch (validatedPayload.type) {

@@ -3,7 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
@@ -16,6 +17,7 @@ import {
   updateGauge
 } from "~/modules/quality";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { getParams, path } from "~/utils/path";
@@ -55,7 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -72,8 +74,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { gaugeId, ...d } = validation.data;
   if (!gaugeId) throw new Error("Could not find gaugeId");
 
+  const companyToday = datetime.today(
+    await getCompanyTimeZone(client, companyId)
+  );
   const gaugeCalibrationStatus = d.nextCalibrationDate
-    ? parseDate(d.nextCalibrationDate) < today(getLocalTimeZone())
+    ? parseDate(d.nextCalibrationDate).compare(companyToday) < 0
       ? "Out-of-Calibration"
       : d.lastCalibrationDate
         ? "In-Calibration"

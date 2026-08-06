@@ -21,6 +21,10 @@ msgstr "{0} - Conjunto {1}"
 msgid "{0} Active"
 msgstr "{0} Activos"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "hace {0}"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -211,9 +215,8 @@ msgstr "Registrar entrada"
 msgid "Clock Out"
 msgstr "Registrar salida"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Registrado desde {0}"
+msgid "Clocked in since <0/>"
+msgstr "Marcado entrada desde <0/>"
 
 msgid "Close"
 msgstr "Cerrar"
@@ -313,9 +316,8 @@ msgstr "Eliminar"
 msgid "Delete Step"
 msgstr "Eliminar paso"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "Eliminar tarjeta de tiempo ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "Eliminar Tarjeta de Tiempo (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "Describe el problema..."
@@ -429,11 +431,12 @@ msgstr "Expandir tabla de características"
 msgid "Expired"
 msgstr "Vencido"
 
-msgid "Expired {date}"
-msgstr "Vencido {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Expirado {0}"
 
-msgid "Expires {date}"
-msgstr "Vence {date}"
+msgid "Expires <0/>"
+msgstr "Expira <0/>"
 
 msgid "Expiring first"
 msgstr "Vencimiento próximo"
@@ -533,6 +536,10 @@ msgstr "Impacto"
 msgid "Imperial"
 msgstr "Imperial"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "en {0}"
+
 msgid "In Progress"
 msgstr "En progreso"
 
@@ -622,6 +629,9 @@ msgstr "Cargando detalles del artículo..."
 
 msgid "Loading..."
 msgstr "Cargando..."
+
+msgid "Local"
+msgstr "Local"
 
 msgid "Location"
 msgstr "Ubicación"
@@ -1397,9 +1407,8 @@ msgstr "Pantallas del Centro de Trabajo"
 msgid "Yes"
 msgstr "Sí"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Registró su entrada a las {0}. Puede editar su hora de salida a continuación o confirmar que sigue trabajando."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Marcaste entrada a las <0/>. Puedes editar tu hora de salida a continuación o confirmar que aún estás trabajando."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ha estado registrado durante {hoursElapsed} horas. ¿Olvidó registrar la salida?"

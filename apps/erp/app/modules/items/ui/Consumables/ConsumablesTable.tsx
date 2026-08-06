@@ -40,6 +40,7 @@ import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetArrow } from "react-icons/tb";
 import { Link, useFetcher, useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   exportOnlyColumn,
   Hyperlink,
@@ -53,7 +54,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
@@ -93,7 +94,6 @@ const ConsumablesTable = memo(
     );
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const { formatDate } = useDateFormatter();
 
     const deleteItemModal = useDisclosure();
     const [selectedItem, setSelectedItem] = useState<Consumable | null>(null);
@@ -350,7 +350,9 @@ const ConsumablesTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -375,7 +377,9 @@ const ConsumablesTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -389,8 +393,7 @@ const ConsumablesTable = memo(
       itemPostingGroups,
       t,
       translateMethodType,
-      translateTrackingType,
-      formatDate
+      translateTrackingType
     ]);
 
     const fetcher = useFetcher<typeof action>();

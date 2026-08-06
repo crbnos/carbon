@@ -20,10 +20,10 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
+import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
 type TimeCardEntry = {
@@ -65,7 +65,6 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
   const { locale } = useLocale();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
   const [params] = useUrlParams();
   const locations = useLocations();
   const [, setTick] = useState(0);
@@ -107,9 +106,15 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         accessorKey: "clockIn",
         header: t`Date`,
         cell: ({ row }) =>
-          row.original.clockIn
-            ? formatDate(row.original.clockIn, { dateStyle: "medium" })
-            : "—",
+          row.original.clockIn ? (
+            <DateTime
+              value={row.original.clockIn}
+              variant="date"
+              dateOptions={{ dateStyle: "medium" }}
+            />
+          ) : (
+            "—"
+          ),
         meta: {
           icon: <LuCalendar />
         }
@@ -117,7 +122,9 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
       {
         id: "clockInTime",
         header: t`Clock In`,
-        cell: ({ row }) => timeLabel(row.original.clockIn),
+        cell: ({ row }) => (
+          <DateTime value={row.original.clockIn} variant="time" fallback="—" />
+        ),
         meta: {
           icon: <LuClock />,
           exportValue: (row) => timeLabel(row.clockIn)
@@ -126,7 +133,9 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
       {
         id: "clockOutTime",
         header: t`Clock Out`,
-        cell: ({ row }) => timeLabel(row.original.clockOut),
+        cell: ({ row }) => (
+          <DateTime value={row.original.clockOut} variant="time" fallback="—" />
+        ),
         meta: {
           icon: <LuClock />,
           exportValue: (row) => timeLabel(row.clockOut)
@@ -189,7 +198,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         }
       }
     ];
-  }, [locations, t, formatDate, locale]);
+  }, [locations, t, locale]);
 
   const renderContextMenu = useCallback(
     (row: TimeCardEntry) => {

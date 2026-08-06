@@ -41,6 +41,7 @@ pnpm --filter @carbon/database typecheck
 | `./sampling` | Node-side re-export of `supabase/functions/shared/sampling-engine.ts` (Z1.4 / ISO 2859-1 resolvers) |
 | `./audit` | Audit-log functions (`getEntityAuditLog`, `enableAuditLog`, `syncAuditSubscriptions`, …); `auditConfig` + `AuditEntityType` come from the separate `./audit.config` subpath |
 | `./ratelimit` | `checkApiKeyRateLimit` (Postgres RPC wrapper) |
+| `.` (root, from `src/timezone.ts` + `src/utils.ts`) | `getCompanyTimeZone(db, companyId)` / `getLocationTimeZone(db, locationId, companyId)` — business-timezone resolvers, overloaded for Supabase client or Kysely handle (they throw on query failure rather than silently falling back); `AnyPostgresClient` + `isKysely` guard for writing such overloads. SQL siblings: `company_today(companyId)` / `location_today(locationId, companyId)` replace `CURRENT_DATE` for business dates in DB functions (SECURITY INVOKER — callers must be SECURITY DEFINER or service-role). ERP routes should prefer the Redis-cached wrappers in `~/modules/shared/timezone.server` |
 
 ## Cross-References
 

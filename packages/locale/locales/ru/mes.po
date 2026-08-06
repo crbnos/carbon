@@ -21,6 +21,10 @@ msgstr "{0} — Набор {1}"
 msgid "{0} Active"
 msgstr "{0} Активных"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} назад"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -211,9 +215,8 @@ msgstr "Отметить приход"
 msgid "Clock Out"
 msgstr "Отметить уход"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "На смене с {0}"
+msgid "Clocked in since <0/>"
+msgstr "Отметился в системе с <0/>"
 
 msgid "Close"
 msgstr "Закрыть"
@@ -313,9 +316,8 @@ msgstr "Удалить"
 msgid "Delete Step"
 msgstr "Удалить шаг"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "Удалить табель ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "Удалить табель учета рабочего времени (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "Опишите проблему..."
@@ -429,11 +431,12 @@ msgstr "Развернуть таблицу функций"
 msgid "Expired"
 msgstr "Истекло"
 
-msgid "Expired {date}"
-msgstr "Истекло {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Истекла {0}"
 
-msgid "Expires {date}"
-msgstr "Истекает {date}"
+msgid "Expires <0/>"
+msgstr "Истекает <0/>"
 
 msgid "Expiring first"
 msgstr "Истекает первым"
@@ -533,6 +536,10 @@ msgstr "Влияние"
 msgid "Imperial"
 msgstr "Имперская"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "через {0}"
+
 msgid "In Progress"
 msgstr "В работе"
 
@@ -622,6 +629,9 @@ msgstr "Загрузка данных номенклатуры..."
 
 msgid "Loading..."
 msgstr "Загрузка..."
+
+msgid "Local"
+msgstr "Локально"
 
 msgid "Location"
 msgstr "Расположение"
@@ -1397,9 +1407,8 @@ msgstr "Дисплеи рабочего центра"
 msgid "Yes"
 msgstr "Да"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Вы отметили приход в {0}. Вы можете изменить время ухода ниже или подтвердить, что всё ещё работаете."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Вы отметились в системе в <0/>. Вы можете отредактировать время выхода ниже или подтвердить, что вы еще работаете."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Вы на смене уже {hoursElapsed} часов. Вы забыли отметить уход?"

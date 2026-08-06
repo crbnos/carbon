@@ -17,6 +17,7 @@ import {
 import { useNavigate } from "react-router";
 import {
   CustomerAvatar,
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   ItemThumbnail,
@@ -25,12 +26,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions,
-  useRealtime
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { SalesInvoice } from "~/modules/invoicing";
 import { salesInvoiceStatusType } from "~/modules/invoicing";
@@ -50,7 +46,6 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
   const currencyFormatter = useCurrencyFormatter();
-  const { formatDate } = useDateFormatter();
 
   const [selectedSalesInvoice, setSelectedSalesInvoice] =
     useState<SalesInvoice | null>(null);
@@ -184,7 +179,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       {
         accessorKey: "dateIssued",
         header: t`Issued Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -192,7 +189,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       {
         accessorKey: "dateDue",
         header: t`Due Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -200,7 +199,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       {
         accessorKey: "datePaid",
         header: t`Paid Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -208,7 +209,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       {
         accessorKey: "postingDate",
         header: t`Posting Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -241,7 +244,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -266,7 +271,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -274,7 +281,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [currencyFormatter, customColumns, people, customers, t, formatDate]);
+  }, [currencyFormatter, customColumns, people, customers, t]);
 
   const renderContextMenu = useMemo(() => {
     return (row: SalesInvoice) => (

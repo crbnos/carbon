@@ -10,6 +10,7 @@ import {
   subsidiaryValidator,
   updateSubsidiary
 } from "~/modules/settings";
+import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -59,6 +60,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // company.timezone may have changed — drop the cached resolution.
+  await invalidateCompanyTimeZone(id);
+
   throw redirect(
     path.to.companies,
     await flash(request, success("Updated subsidiary"))
@@ -81,7 +85,8 @@ export default function EditSubsidiaryRoute() {
     phone: subsidiary.phone ?? "",
     fax: subsidiary.fax ?? "",
     email: subsidiary.email ?? "",
-    website: subsidiary.website ?? ""
+    website: subsidiary.website ?? "",
+    timezone: subsidiary.timezone ?? "UTC"
   };
 
   return <CompanyForm company={initialValues} />;

@@ -3,7 +3,14 @@ import { VStack } from "@carbon/react";
 import { isEoriCountry, isRegistrationNumberCountry } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
-import { Currency, Hidden, Input, PhoneInput, Submit } from "~/components/Form";
+import {
+  Currency,
+  Hidden,
+  Input,
+  PhoneInput,
+  Submit,
+  Timezone
+} from "~/components/Form";
 import AddressAutocomplete from "~/components/Form/AddressAutocomplete";
 import { companyValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
@@ -74,6 +81,7 @@ const CompanyForm = ({ company }: CompanyFormProps) => {
               label={t`Base Currency`}
               disabled={true}
             />
+            <Timezone name="timezone" label={t`Timezone`} />
             <PhoneInput
               name="phone"
               label={t`Phone Number`}

@@ -27,6 +27,7 @@ import {
 import { Link, useNavigate } from "react-router";
 import {
   CustomerAvatar,
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   New,
@@ -35,7 +36,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCompanySettings, useDateFormatter, usePermissions } from "~/hooks";
+import { useCompanySettings, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -53,7 +54,6 @@ const CustomersTable = memo(
     const { t, i18n } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const { formatDate } = useDateFormatter();
     const [people] = usePeople();
     const deleteModal = useDisclosure();
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
@@ -232,7 +232,9 @@ const CustomersTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -257,7 +259,9 @@ const CustomersTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -273,7 +277,6 @@ const CustomersTable = memo(
       tags,
       t,
       translateStatus,
-      formatDate,
       showCustomerReadableId
     ]);
 

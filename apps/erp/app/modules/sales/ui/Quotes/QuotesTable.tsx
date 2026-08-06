@@ -22,6 +22,7 @@ import {
 import { useNavigate } from "react-router";
 import {
   CustomerAvatar,
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   ItemThumbnail,
@@ -30,7 +31,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -47,7 +48,6 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const { formatDate } = useDateFormatter();
 
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(
     null
@@ -191,7 +191,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       {
         accessorKey: "dueDate",
         header: t`Due Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -199,7 +201,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       {
         accessorKey: "expirationDate",
         header: t`Expiration Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -241,7 +245,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -266,7 +272,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -274,7 +282,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [customers, people, customColumns, t, formatDate]);
+  }, [customers, people, customColumns, t]);
 
   const renderContextMenu = useMemo(() => {
     return (row: Quotation) => (

@@ -25,7 +25,6 @@ import {
 import {
   endOfMonth,
   endOfWeek,
-  getLocalTimeZone,
   now,
   parseDate,
   startOfMonth,
@@ -56,6 +55,7 @@ import { DateKanban } from "~/modules/production/ui/Schedule/Kanban/DateKanban";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import { getLocationsList } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { usePeople } from "~/stores";
 import type { Handle } from "~/utils/handle";
@@ -83,11 +83,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const filterParam = searchParams.getAll("filter");
   const view = (searchParams.get("view") as ViewType) ?? "week";
   const dateParam = searchParams.get("date");
-
-  const timezone = getLocalTimeZone();
-  const currentDate = dateParam
-    ? parseDate(dateParam)
-    : toCalendarDate(now(timezone));
 
   let selectedSalesOrderIds: string[] = [];
   let selectedTags: string[] = [];
@@ -148,6 +143,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     locationId = locations.data?.[0].id as string;
   }
+
+  // The board's "today" and its week/month windows belong to the plant being
+  // scheduled, not the server — resolved after locationId settles.
+  const timezone = await getLocationTimeZone(client, locationId, companyId);
+  const currentDate = dateParam
+    ? parseDate(dateParam)
+    : toCalendarDate(now(timezone));
 
   // Calculate date range based on view
   let startDate: string;
@@ -496,7 +498,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     locationId,
     view,
-    currentDate: currentDate.toString()
+    currentDate: currentDate.toString(),
+    timezone
   };
 }
 
@@ -526,10 +529,9 @@ function DateKanbanSchedule() {
     tags,
     locationId,
     view,
-    currentDate
+    currentDate,
+    timezone
   } = useLoaderData<typeof loader>();
-
-  const timezone = getLocalTimeZone();
 
   // Reformat column titles using user locale
   const columns = useMemo(() => {
@@ -652,25 +654,24 @@ function DateKanbanSchedule() {
 
   const getDateSpanLabel = useCallback(
     (date: typeof parsedDate, viewType: ViewType) => {
-      const tz = getLocalTimeZone();
       if (viewType === "week") {
         const weekStart = startOfWeek(date, "en-GB");
         const weekEnd = endOfWeek(date, "en-GB");
-        return `${weekStart.toDate(tz).toLocaleDateString(locale, {
+        return `${weekStart.toDate(timezone).toLocaleDateString(locale, {
           month: "short",
           day: "numeric"
-        })} - ${weekEnd.toDate(tz).toLocaleDateString(locale, {
+        })} - ${weekEnd.toDate(timezone).toLocaleDateString(locale, {
           month: "short",
           day: "numeric"
         })}`;
       } else {
-        return date.toDate(tz).toLocaleDateString(locale, {
+        return date.toDate(timezone).toLocaleDateString(locale, {
           month: "short",
           year: "numeric"
         });
       }
     },
-    [locale]
+    [locale, timezone]
   );
 
   const getSpanStartDate = useCallback(

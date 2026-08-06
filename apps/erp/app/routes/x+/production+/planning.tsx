@@ -2,7 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
@@ -11,6 +11,7 @@ import { getProductionPlanning } from "~/modules/production";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
 import { getLocationsList } from "~/modules/resources";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -67,10 +68,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const periods = await getOrCreatePeriods(
-    today(getLocalTimeZone()),
-    WEEKS_TO_PLAN
+  const locationToday = datetime.today(
+    await getLocationTimeZone(client, locationId, companyId)
   );
+  const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
 
   const items = await getProductionPlanning(
     client,
@@ -97,7 +98,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     items: (items.data ?? []) as ProductionPlanningItem[],
     count: items.count ?? 0,
     periods,
-    locationId
+    locationId,
+    // Planned-order date defaults are business dates on the plant's calendar —
+    // the drawer must not seed them from the planner's browser zone.
+    locationToday: locationToday.toString()
   };
 }
 

@@ -37,7 +37,7 @@ import {
   TabsTrigger,
   toast
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { formatDate, getItemReadableId } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -176,19 +176,13 @@ export function IssueMaterialModal({
   );
 
   // Format an expiration date as `MMM d, yyyy` for the option helper text.
-  // Browsers all support this through Intl.DateTimeFormat, no extra deps.
   const formatExpiry = useCallback((date: string | null | undefined) => {
     if (!date) return "";
-    try {
-      const cd = parseDate(date);
-      return new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      }).format(cd.toDate(getLocalTimeZone()));
-    } catch {
-      return date;
-    }
+    return formatDate(date, {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
   }, []);
 
   const serialOptions = useMemo(() => {

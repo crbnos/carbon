@@ -13,14 +13,9 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useDateFormatter,
-  usePermissions,
-  useRealtime,
-  useUrlParams
-} from "~/hooks";
+import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -42,7 +37,6 @@ const WarehouseTransfersTable = memo(
 
     const [params] = useUrlParams();
     const { t } = useLingui();
-    const { formatDate } = useDateFormatter();
     const navigate = useNavigate();
     const permissions = usePermissions();
 
@@ -114,7 +108,7 @@ const WarehouseTransfersTable = memo(
           header: t`Transfer Date`,
           cell: (item) => {
             const date = item.getValue<string>();
-            return date ? formatDate(date) : "N/A";
+            return date ? <DateTime value={date} variant="date" /> : "N/A";
           },
           meta: {
             icon: <LuCalendar />
@@ -125,7 +119,7 @@ const WarehouseTransfersTable = memo(
           header: t`Expected Receipt`,
           cell: (item) => {
             const date = item.getValue<string>();
-            return date ? formatDate(date) : "N/A";
+            return date ? <DateTime value={date} variant="date" /> : "N/A";
           },
           meta: {
             icon: <LuCalendar />
@@ -151,7 +145,9 @@ const WarehouseTransfersTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -176,7 +172,9 @@ const WarehouseTransfersTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -184,7 +182,7 @@ const WarehouseTransfersTable = memo(
       ];
 
       return [...result, ...customColumns];
-    }, [people, customColumns, t, formatDate]);
+    }, [people, customColumns, t]);
 
     const [selectedTransfer, setSelectedTransfer] =
       useState<WarehouseTransfer | null>(null);

@@ -1,7 +1,7 @@
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
@@ -71,7 +71,7 @@ serve(async (req: Request) => {
       update: "quality",
     });
 
-    const postingDate = providedPostingDate || format(new Date(), "yyyy-MM-dd");
+    const postingDate = providedPostingDate || datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
     // Only movements that actually move stock post anything.
     const effectiveMovements = movements.filter((m) => m.quantity !== 0);
@@ -174,7 +174,7 @@ serve(async (req: Request) => {
     // getCurrentAccountingPeriod uses the REST client and calling it
     // mid-transaction parks the (size 1) pool in idle-in-transaction.
     const accountingPeriodId = accountingEnabled
-      ? await getCurrentAccountingPeriod(client, companyId, db)
+      ? await getCurrentAccountingPeriod(client, companyId, db, postingDate)
       : null;
 
     const journalDescription =

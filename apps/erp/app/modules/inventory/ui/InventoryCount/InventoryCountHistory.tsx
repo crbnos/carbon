@@ -12,9 +12,8 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuMoveDown, LuMoveUp, LuPencil, LuPlus } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 import type { StockMovement } from "../../types";
 
@@ -88,7 +87,6 @@ const InventoryCountHistory = ({
   onClose
 }: InventoryCountHistoryProps) => {
   const { t } = useLingui();
-  const { formatDateTime } = useDateFormatter();
 
   const versions = useMemo(() => toVersions(movements), [movements]);
   const corrections = versions.filter((v) => v.isCorrection).length;
@@ -155,7 +153,10 @@ const InventoryCountHistory = ({
                           )}
                         </HStack>
                         <span className="whitespace-nowrap text-muted-foreground text-xs tabular-nums">
-                          {formatDateTime(version.createdAt)}
+                          <DateTime
+                            value={version.createdAt}
+                            variant="absolute"
+                          />
                         </span>
                       </HStack>
                       <EmployeeAvatar employeeId={version.createdBy} />

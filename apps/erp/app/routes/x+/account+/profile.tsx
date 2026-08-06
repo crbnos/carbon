@@ -39,6 +39,7 @@ import {
   useLoaderData,
   useRevalidator
 } from "react-router";
+import { DateTime } from "~/components";
 import {
   accountProfileValidator,
   getAccount,
@@ -336,26 +337,11 @@ export default function AccountProfile() {
                           {pk.credentialName}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Added{" "}
-                          {new Date(pk.createdAt).toLocaleDateString(
-                            undefined,
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric"
-                            }
-                          )}
+                          Added <DateTime value={pk.createdAt} variant="date" />
                           {pk.lastUsedAt && (
                             <>
                               {" · "}Last used{" "}
-                              {new Date(pk.lastUsedAt).toLocaleDateString(
-                                undefined,
-                                {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric"
-                                }
-                              )}
+                              <DateTime value={pk.lastUsedAt} variant="date" />
                             </>
                           )}
                           {pk.backedUp && " · Synced"}
@@ -406,18 +392,18 @@ export default function AccountProfile() {
                 <VStack spacing={1} className="w-full">
                   <p className="text-xs text-muted-foreground">
                     Added{" "}
-                    {new Date(selectedPasskey.createdAt).toLocaleDateString(
-                      undefined,
-                      { year: "numeric", month: "long", day: "numeric" }
-                    )}
+                    <DateTime
+                      value={selectedPasskey.createdAt}
+                      variant="date"
+                    />
                   </p>
                   {selectedPasskey.lastUsedAt && (
                     <p className="text-xs text-muted-foreground">
                       Last used{" "}
-                      {new Date(selectedPasskey.lastUsedAt).toLocaleDateString(
-                        undefined,
-                        { year: "numeric", month: "long", day: "numeric" }
-                      )}
+                      <DateTime
+                        value={selectedPasskey.lastUsedAt}
+                        variant="date"
+                      />
                     </p>
                   )}
                   {selectedPasskey.backedUp && (

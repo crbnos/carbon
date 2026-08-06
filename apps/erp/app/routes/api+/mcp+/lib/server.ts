@@ -10,9 +10,8 @@ import { executeFunction } from "./direct-executor";
 
 const logger = getLogger("erp", "mcp");
 
-function getServerInstructions(): string {
-  const today = new Date().toISOString().split("T")[0];
-  
+function getServerInstructions(today: string): string {
+
   return `Carbon ERP Manufacturing System
 ==========================================
 Date: ${today}
@@ -54,14 +53,14 @@ KEY PATTERNS:
 - Pagination: limit/offset`;
 }
 
-export function createMcpServer(ctx: McpContext): McpServer {
+export function createMcpServer(ctx: McpContext, today: string): McpServer {
   const server = new McpServer(
     {
       name: "carbon-erp",
       version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "1.0.0",
     },
     {
-      instructions: getServerInstructions(),
+      instructions: getServerInstructions(today),
     },
   );
 

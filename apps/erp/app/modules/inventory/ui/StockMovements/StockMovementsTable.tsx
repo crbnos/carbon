@@ -19,6 +19,7 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   exportOnlyColumn,
   Hyperlink,
@@ -27,7 +28,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { useDateFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
 import type { MethodItemType } from "~/modules/shared";
 import { usePeople } from "~/stores";
@@ -47,7 +48,6 @@ type StockMovementsTableProps = {
 const StockMovementsTable = memo(
   ({ data, count }: StockMovementsTableProps) => {
     const { t } = useLingui();
-    const { formatDate } = useDateFormatter();
     const { company } = useUser();
     const permissions = usePermissions();
     const [correctionTarget, setCorrectionTarget] =
@@ -227,7 +227,9 @@ const StockMovementsTable = memo(
         {
           accessorKey: "postingDate",
           header: t`Posting Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -252,13 +254,15 @@ const StockMovementsTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
         }
       ];
-    }, [people, locations, locationsById, t, formatDate]);
+    }, [people, locations, locationsById, t]);
 
     const renderContextMenu = useCallback(
       (row: StockMovement) => (

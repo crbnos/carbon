@@ -1,13 +1,14 @@
 import type { Database } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
+  datetime,
   type FlatTree,
   flattenTree,
   generateBomIds,
   type TrackedActivityAttributes
 } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -649,16 +650,34 @@ export async function getJobMaterialsByOperationId(
   const consumedEntityIds = Array.from(
     new Set((trackedInputs.data ?? []).map((i) => i.id).filter(Boolean))
   );
-  const todayStr = today(getLocalTimeZone()).toString();
-  const expiredConsumed =
-    consumedEntityIds.length > 0
-      ? await client
-          .from("trackedEntity")
-          .select("id")
-          .in("id", consumedEntityIds)
-          .not("expirationDate", "is", null)
-          .lt("expirationDate", todayStr)
-      : { data: [] as { id: string }[] };
+  let expiredConsumed: { data: { id: string }[] | null } = {
+    data: [] as { id: string }[]
+  };
+  if (consumedEntityIds.length > 0) {
+    const job = await client
+      .from("job")
+      .select("companyId")
+      .eq("id", operation.jobId)
+      .single();
+    // A missing job row must not silently degrade the expiry cutoff to UTC
+    // (getCompanyTimeZone("") resolves no company and falls back).
+    if (job.error || !job.data) {
+      throw new Error(
+        `Failed to resolve job ${operation.jobId} for the expiry check: ${
+          job.error?.message ?? "not found"
+        }`
+      );
+    }
+    const todayStr = datetime
+      .today(await getCompanyTimeZone(client, job.data.companyId))
+      .toString();
+    expiredConsumed = await client
+      .from("trackedEntity")
+      .select("id")
+      .in("id", consumedEntityIds)
+      .not("expirationDate", "is", null)
+      .lt("expirationDate", todayStr);
+  }
   const expiredConsumedIds = new Set(
     (expiredConsumed.data ?? []).map((r) => r.id)
   );

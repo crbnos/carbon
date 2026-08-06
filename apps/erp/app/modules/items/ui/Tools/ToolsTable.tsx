@@ -45,6 +45,7 @@ import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetArrow } from "react-icons/tb";
 import { Link, useFetcher, useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   exportOnlyColumn,
   Hyperlink,
@@ -58,7 +59,7 @@ import {
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
@@ -80,7 +81,6 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
 
   const translateReplenishment = useCallback(
     (v: string) =>
@@ -391,7 +391,9 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -416,7 +418,9 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -431,8 +435,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
     t,
     translateMethodType,
     translateReplenishment,
-    translateTrackingType,
-    formatDate
+    translateTrackingType
   ]);
 
   const fetcher = useFetcher<typeof action>();

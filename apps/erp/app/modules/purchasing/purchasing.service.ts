@@ -1,9 +1,8 @@
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable } from "@carbon/database";
+import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { getPurchaseOrderStatus } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime, getPurchaseOrderStatus } from "@carbon/utils";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -51,11 +50,20 @@ export async function closePurchaseOrder(
   purchaseOrderId: string,
   userId: string
 ) {
+  const purchaseOrder = await client
+    .from("purchaseOrder")
+    .select("companyId")
+    .eq("id", purchaseOrderId)
+    .single();
+  const companyTz = await getCompanyTimeZone(
+    client,
+    purchaseOrder.data?.companyId ?? ""
+  );
   return client
     .from("purchaseOrder")
     .update({
       closed: true,
-      closedAt: today(getLocalTimeZone()).toString(),
+      closedAt: datetime.today(companyTz).toString(),
       closedBy: userId
     })
     .eq("id", purchaseOrderId)
@@ -292,7 +300,7 @@ export async function finalizeSupplierQuote(
     .from("supplierQuote")
     .update({
       status: "Active",
-      updatedAt: today(getLocalTimeZone()).toString(),
+      updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
     .eq("id", supplierQuoteId);
@@ -1094,13 +1102,17 @@ export async function finalizePurchaseOrder(
 
   const updateData: Database["public"]["Tables"]["purchaseOrder"]["Update"] = {
     status,
-    updatedAt: today(getLocalTimeZone()).toString(),
+    updatedAt: datetime.timestamp(),
     updatedBy: userId
   };
 
   // Only set orderDate if it's not already set
   if (!purchaseOrder.data?.orderDate) {
-    updateData.orderDate = today(getLocalTimeZone()).toString();
+    const companyTz = await getCompanyTimeZone(
+      client,
+      purchaseOrder.data?.companyId ?? ""
+    );
+    updateData.orderDate = datetime.today(companyTz).toString();
   }
 
   return client
@@ -1118,7 +1130,7 @@ export async function sendSupplierQuote(
   const quoteUpdate = await client
     .from("supplierQuote")
     .update({
-      updatedAt: today(getLocalTimeZone()).toString(),
+      updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
     .eq("id", supplierQuoteId);
@@ -1473,7 +1485,11 @@ export async function insertPurchaseOrder(
       supplierLocationId: input.supplierLocationId,
       supplierInteractionId: supplierInteraction.data?.id,
       status: input.status ?? "Draft",
-      orderDate: input.orderDate ?? new Date().toISOString().split("T")[0],
+      orderDate:
+        input.orderDate ??
+        datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString(),
       currencyCode: input.currencyCode,
       exchangeRate,
       exchangeRateUpdatedAt,
@@ -1931,7 +1947,7 @@ export async function upsertSupplier(
     .from("supplier")
     .update({
       ...sanitize(supplier),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", supplier.id)
     .select("id")
@@ -2243,13 +2259,17 @@ export async function upsertSupplierQuote(
     // Only update the exchange rate if the currency code has changed
     const existingQuote = await client
       .from("supplierQuote")
-      .select("currencyCode, status")
+      .select("currencyCode, status, companyId")
       .eq("id", supplierQuote.id)
       .single();
 
     if (existingQuote.error) return existingQuote;
 
-    const { currencyCode, status: existingStatus } = existingQuote.data;
+    const {
+      currencyCode,
+      status: existingStatus,
+      companyId
+    } = existingQuote.data;
 
     if (
       supplierQuote.currencyCode &&
@@ -2267,16 +2287,17 @@ export async function upsertSupplierQuote(
     }
     const { companyGroupId: _companyGroupId2, ...supplierQuoteUpdateData } =
       supplierQuote;
+    const companyTz = await getCompanyTimeZone(client, companyId);
     return client
       .from("supplierQuote")
       .update({
         ...sanitize(supplierQuoteUpdateData),
         status:
           supplierQuote.expirationDate &&
-          today(getLocalTimeZone()).toString() > supplierQuote.expirationDate
+          datetime.today(companyTz).toString() > supplierQuote.expirationDate
             ? "Expired"
             : (supplierQuote.status ?? existingStatus ?? "Draft"),
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", supplierQuote.id);
   }
@@ -2511,7 +2532,11 @@ export async function insertPurchasingRFQ(
     .from("purchasingRfq")
     .insert({
       rfqId,
-      rfqDate: input.rfqDate ?? today(getLocalTimeZone()).toString(),
+      rfqDate:
+        input.rfqDate ??
+        datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString(),
       expirationDate: input.expirationDate,
       locationId: input.locationId,
       employeeId: input.employeeId,

@@ -21,6 +21,10 @@ msgstr "{0} - Satz {1}"
 msgid "{0} Active"
 msgstr "{0} Aktiv"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "vor {0}"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -211,9 +215,8 @@ msgstr "Einstempeln"
 msgid "Clock Out"
 msgstr "Ausstempeln"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Eingestempelt seit {0}"
+msgid "Clocked in since <0/>"
+msgstr "Eingecheckt seit <0/>"
 
 msgid "Close"
 msgstr "Schließen"
@@ -313,9 +316,8 @@ msgstr "Löschen"
 msgid "Delete Step"
 msgstr "Schritt löschen"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "Zeitkarte löschen ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "Zeitkarte löschen (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "Beschreiben Sie das Problem..."
@@ -429,11 +431,12 @@ msgstr "Funktionstabelle erweitern"
 msgid "Expired"
 msgstr "Abgelaufen"
 
-msgid "Expired {date}"
-msgstr "Abgelaufen {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Abgelaufen {0}"
 
-msgid "Expires {date}"
-msgstr "Verfällt am {date}"
+msgid "Expires <0/>"
+msgstr "Läuft ab <0/>"
 
 msgid "Expiring first"
 msgstr "Verfällt zuerst"
@@ -533,6 +536,10 @@ msgstr "Auswirkung"
 msgid "Imperial"
 msgstr "Imperiale"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "in {0}"
+
 msgid "In Progress"
 msgstr "In Bearbeitung"
 
@@ -622,6 +629,9 @@ msgstr "Artikeldetails werden geladen..."
 
 msgid "Loading..."
 msgstr "Wird geladen..."
+
+msgid "Local"
+msgstr "Lokal"
 
 msgid "Location"
 msgstr "Standort"
@@ -1397,9 +1407,8 @@ msgstr "Arbeitszentrum-Anzeigetafeln"
 msgid "Yes"
 msgstr "Ja"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Sie haben sich um {0} eingestempelt. Sie können Ihre Ausstempelzeit unten bearbeiten oder bestätigen, dass Sie noch arbeiten."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Sie haben sich um <0/> angemeldet. Sie können Ihre Abmeldungszeit unten ändern oder bestätigen, dass Sie noch arbeiten."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie vergessen auszustempeln?"

@@ -43,13 +43,8 @@ import {
   LuUser
 } from "react-icons/lu";
 import { Outlet, useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
-import {
-  useDateFormatter,
-  usePermissions,
-  useUrlParams,
-  useUser
-} from "~/hooks";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import type { Webhook } from "~/modules/settings";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -62,7 +57,6 @@ type WebhooksTableProps = {
 
 const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const permissions = usePermissions();
@@ -157,13 +151,15 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
       }
     ];
-  }, [people, webhookTables, t, formatDate]);
+  }, [people, webhookTables, t]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const renderContextMenu = useCallback(
