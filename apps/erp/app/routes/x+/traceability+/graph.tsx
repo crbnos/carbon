@@ -21,6 +21,10 @@ import {
 } from "~/modules/inventory/lineage.server";
 import { isClusterId } from "~/modules/inventory/ui/Traceability/cluster";
 import { clampDepth } from "~/modules/inventory/ui/Traceability/constants";
+import {
+  getEntityJobId,
+  withJobNode
+} from "~/modules/inventory/ui/Traceability/jobNode";
 import { useTraceabilityStore } from "~/modules/inventory/ui/Traceability/store";
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
@@ -189,67 +193,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-function getEntityJobId(entity: TrackedEntity | undefined): string | null {
-  const attrs = entity?.attributes;
-  if (!attrs || typeof attrs !== "object" || Array.isArray(attrs)) return null;
-  const job = (attrs as Record<string, unknown>).Job;
-  return typeof job === "string" && job.length > 0 ? job : null;
-}
-
 async function getJobReadableId(
   client: SupabaseClient<Database>,
   jobId: string
 ): Promise<string> {
   const job = await client.from("job").select("jobId").eq("id", jobId).single();
   return job.data?.jobId ?? jobId;
-}
-
-function withJobNode(
-  payload: LineagePayload,
-  jobId: string,
-  jobReadableId: string
-): LineagePayload {
-  const jobNodeId = `job:${jobId}`;
-  const existingActivityIds = new Set(payload.activities.map((a) => a.id));
-  const existingOutputKeys = new Set(
-    payload.outputs.map((o) => `${o.trackedActivityId}:${o.trackedEntityId}`)
-  );
-  const jobEntities = payload.entities.filter((entity) => {
-    if (getEntityJobId(entity) !== jobId) return false;
-    return entity.status === "Reserved" || entity.sourceDocument === "Item";
-  });
-
-  return {
-    ...payload,
-    activities: existingActivityIds.has(jobNodeId)
-      ? payload.activities
-      : [
-          {
-            id: jobNodeId,
-            type: "Job",
-            sourceDocument: "Job",
-            sourceDocumentId: jobId,
-            sourceDocumentReadableId: jobReadableId,
-            attributes: { Job: jobId }
-          },
-          ...payload.activities
-        ],
-    outputs: [
-      ...payload.outputs,
-      ...jobEntities
-        .map((entity) => ({
-          trackedActivityId: jobNodeId,
-          trackedEntityId: entity.id,
-          quantity: entity.quantity
-        }))
-        .filter(
-          (output) =>
-            !existingOutputKeys.has(
-              `${output.trackedActivityId}:${output.trackedEntityId}`
-            )
-        )
-    ]
-  };
 }
 
 function mergeLineagePayloads(
