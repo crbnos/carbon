@@ -1645,7 +1645,11 @@ export async function insertIssue(
       locationId: data.locationId,
       nonConformanceTypeId: data.nonConformanceTypeId,
       // Matches insertPurchaseOrder / insertSalesOrder, which default their own NOT NULL date.
-      openDate: data.openDate ?? new Date().toISOString().split("T")[0],
+      openDate:
+        data.openDate ??
+        datetime
+          .today(await getCompanyTimeZone(client, data.companyId))
+          .toString(),
       description: data.description ?? null,
       nonConformanceWorkflowId: data.nonConformanceWorkflowId ?? null,
       dueDate: data.dueDate ?? null,
