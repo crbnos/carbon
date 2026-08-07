@@ -97,6 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   let invoicedAmount = 0;
   let paidAmount = 0;
+  let balanceRemaining = 0;
   let currencyMismatchCount = 0;
 
   if (invoiceIds.length > 0) {
@@ -128,10 +129,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         continue;
       }
 
+      // Paid = settled amount on the invoice (total − open balance). Using the
+      // view balance captures partial payments; the prior status==="Paid" gate
+      // only counted fully-settled invoices.
+      const openBalance = Math.max(0, Number(invoice.balance ?? invoiceTotal));
+      const settled = Math.max(0, invoiceTotal - openBalance);
+
       invoicedAmount += invoiceTotal;
-      if (invoice.status === "Paid") {
-        paidAmount += invoiceTotal;
-      }
+      paidAmount += settled;
+      balanceRemaining += openBalance;
     }
   }
 
@@ -154,6 +160,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     invoiceSummary: {
       invoicedAmount,
       paidAmount,
+      balanceRemaining,
       currencyMismatchCount
     },
     originatedFromQuote: !!opportunity.data.quotes[0]?.id,

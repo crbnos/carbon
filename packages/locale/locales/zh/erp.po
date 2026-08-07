@@ -2383,6 +2383,9 @@ msgstr "备份"
 msgid "Balance"
 msgstr "余额"
 
+msgid "Balance Remaining:"
+msgstr ""
+
 msgid "Balance Sheet"
 msgstr "资产负债表"
 
@@ -10675,11 +10678,14 @@ msgstr "页面"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "第 {pdfViewPage} 页，共 {documentPageCount} 页"
 
-msgid "Paid Amount:"
-msgstr "已支付金额："
+msgid "Paid"
+msgstr ""
 
 msgid "Paid Date"
 msgstr "支付日期"
+
+msgid "Paid:"
+msgstr ""
 
 msgid "Parameters"
 msgstr "参数"

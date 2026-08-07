@@ -6,6 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   Heading,
   HStack,
   Table,
@@ -418,6 +419,12 @@ const PurchaseOrderSummary = ({
     lines: PurchaseOrderLine[];
     purchaseOrderDelivery: PurchaseOrderDelivery;
     supplier: Supplier;
+    invoiceSummary: {
+      invoicedAmount: number;
+      paidAmount: number;
+      balanceRemaining: number;
+      currencyMismatchCount: number;
+    };
   }>(path.to.purchaseOrder(orderId));
 
   const isEditable = !isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
@@ -472,6 +479,14 @@ const PurchaseOrderSummary = ({
 
   const total = subtotal + tax + shippingCost;
   const supplierTotal = supplierSubtotal + supplierTax + supplierShippingCost;
+
+  const paidAmount = routeData?.invoiceSummary?.paidAmount ?? 0;
+  const balanceRemaining = routeData?.invoiceSummary?.balanceRemaining ?? 0;
+  // Sub-cent dust matches invoice view forgiveness (INVOICE_DUST_THRESHOLD).
+  const isFullyPaid =
+    balanceRemaining < 0.01 &&
+    paidAmount >= 0.01 &&
+    (routeData?.invoiceSummary?.invoicedAmount ?? 0) > 0;
 
   return (
     <Card>
@@ -578,7 +593,9 @@ const PurchaseOrderSummary = ({
           </HStack>
 
           <HStack className="justify-between text-xl font-semibold w-full">
-            <span>Total:</span>
+            <span>
+              <Trans>Total:</Trans>
+            </span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(total)}</span>
               {shouldConvertCurrency && (
@@ -588,6 +605,54 @@ const PurchaseOrderSummary = ({
               )}
             </VStack>
           </HStack>
+
+          <div className="h-px bg-border my-2 w-full" />
+
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
+            <span>
+              <Trans>Invoiced Amount:</Trans>
+            </span>
+            <span>
+              {formatter.format(routeData?.invoiceSummary?.invoicedAmount ?? 0)}
+            </span>
+          </HStack>
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
+            <span>
+              <Trans>Paid:</Trans>
+            </span>
+            <span>{formatter.format(paidAmount)}</span>
+          </HStack>
+          <HStack
+            className={cn(
+              "justify-between text-sm w-full",
+              isFullyPaid
+                ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                : balanceRemaining >= 0.01
+                  ? "text-amber-600 dark:text-amber-400 font-medium"
+                  : "text-muted-foreground"
+            )}
+          >
+            <span>
+              <Trans>Balance Remaining:</Trans>
+            </span>
+            {isFullyPaid ? (
+              <Badge variant="green">
+                <Trans>Paid</Trans>
+              </Badge>
+            ) : (
+              <span>{formatter.format(balanceRemaining)}</span>
+            )}
+          </HStack>
+          {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 0 && (
+            <span className="text-xs text-muted-foreground">
+              Excludes {routeData?.invoiceSummary?.currencyMismatchCount}{" "}
+              invoice
+              {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 1
+                ? "s"
+                : ""}{" "}
+              in a different currency.
+            </span>
+          )}
         </VStack>
       </CardContent>
     </Card>

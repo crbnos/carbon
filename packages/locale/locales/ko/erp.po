@@ -2383,6 +2383,9 @@ msgstr "백업"
 msgid "Balance"
 msgstr "잔액"
 
+msgid "Balance Remaining:"
+msgstr ""
+
 msgid "Balance Sheet"
 msgstr "대차대조표"
 
@@ -10675,11 +10678,14 @@ msgstr "페이지"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "{documentPageCount}페이지 중 {pdfViewPage}페이지"
 
-msgid "Paid Amount:"
-msgstr "지급액:"
+msgid "Paid"
+msgstr ""
 
 msgid "Paid Date"
 msgstr "지급일"
+
+msgid "Paid:"
+msgstr ""
 
 msgid "Parameters"
 msgstr "파라미터"

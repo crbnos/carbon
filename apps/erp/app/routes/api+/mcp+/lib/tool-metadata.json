@@ -25752,6 +25752,59 @@
       }
     },
     {
+      "name": "purchasing_getPurchaseOrderInvoiceLines",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get purchase order invoice lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "purchaseOrderId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purchaseOrderId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getPurchaseOrderInvoicesByIds",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get purchase order invoices by ids",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "invoiceIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "invoiceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "invoiceIds"
+        ]
+      }
+    },
+    {
       "name": "purchasing_getPurchaseOrderLine",
       "module": "purchasing",
       "classification": "READ",

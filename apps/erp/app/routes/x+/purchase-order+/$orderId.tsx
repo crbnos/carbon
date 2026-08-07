@@ -21,6 +21,8 @@ import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
   getPurchaseOrderDelivery,
+  getPurchaseOrderInvoiceLines,
+  getPurchaseOrderInvoicesByIds,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getSupplier,
@@ -523,6 +525,67 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }));
   const resolvedAttachments = [...defaultAttachments, ...adHocAttachments];
 
+  const invoiceLines = await getPurchaseOrderInvoiceLines(client, orderId);
+
+  if (invoiceLines.error) {
+    throw redirect(
+      path.to.purchaseOrder(orderId),
+      await flash(
+        request,
+        error(invoiceLines.error, "Failed to load linked purchase invoices")
+      )
+    );
+  }
+
+  const invoiceIds = Array.from(
+    new Set(
+      (invoiceLines.data ?? []).map((line) => line.invoiceId).filter(Boolean)
+    )
+  ) as string[];
+
+  let invoicedAmount = 0;
+  let paidAmount = 0;
+  let balanceRemaining = 0;
+  let currencyMismatchCount = 0;
+
+  if (invoiceIds.length > 0) {
+    const invoices = await getPurchaseOrderInvoicesByIds(client, invoiceIds);
+
+    if (invoices.error) {
+      throw redirect(
+        path.to.purchaseOrder(orderId),
+        await flash(
+          request,
+          error(invoices.error, "Failed to load purchase invoice totals")
+        )
+      );
+    }
+
+    const orderCurrency = purchaseOrder.data?.currencyCode;
+
+    for (const invoice of invoices.data ?? []) {
+      const invoiceTotal = invoice.orderTotal ?? 0;
+      const invoiceCurrency = invoice.currencyCode;
+
+      // Avoid mixing currencies in the same displayed number.
+      if (
+        orderCurrency &&
+        invoiceCurrency &&
+        invoiceCurrency !== orderCurrency
+      ) {
+        currencyMismatchCount += 1;
+        continue;
+      }
+
+      const openBalance = Math.max(0, Number(invoice.balance ?? invoiceTotal));
+      const settled = Math.max(0, invoiceTotal - openBalance);
+
+      invoicedAmount += invoiceTotal;
+      paidAmount += settled;
+      balanceRemaining += openBalance;
+    }
+  }
+
   return {
     purchaseOrder: purchaseOrder.data,
     purchaseOrderDelivery: purchaseOrderDelivery.data,
@@ -540,7 +603,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canReopen,
     canDelete,
     defaultCc,
-    resolvedAttachments
+    resolvedAttachments,
+    invoiceSummary: {
+      invoicedAmount,
+      paidAmount,
+      balanceRemaining,
+      currencyMismatchCount
+    }
   };
 }
 

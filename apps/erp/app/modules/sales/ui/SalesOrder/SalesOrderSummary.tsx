@@ -84,6 +84,7 @@ const SalesOrderSummary = ({
     invoiceSummary: {
       invoicedAmount: number;
       paidAmount: number;
+      balanceRemaining: number;
       currencyMismatchCount: number;
     };
   }>(path.to.salesOrder(orderId));
@@ -127,6 +128,14 @@ const SalesOrderSummary = ({
     (routeData?.salesOrder?.shippingCost ?? 0);
   const total = subtotal + tax + convertedShippingCost;
   const permissions = usePermissions();
+
+  const paidAmount = routeData?.invoiceSummary?.paidAmount ?? 0;
+  const balanceRemaining = routeData?.invoiceSummary?.balanceRemaining ?? 0;
+  // Sub-cent dust matches invoice view forgiveness (INVOICE_DUST_THRESHOLD).
+  const isFullyPaid =
+    balanceRemaining < 0.01 &&
+    paidAmount >= 0.01 &&
+    (routeData?.invoiceSummary?.invoicedAmount ?? 0) > 0;
 
   const linesRequireJobs = hasLinesRequiringJobs({
     jobs: routeData?.salesOrder?.jobs as SalesOrderForProductionCheck["jobs"],
@@ -313,13 +322,38 @@ const SalesOrderSummary = ({
             </HStack>
             <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>
-                <Trans>Paid Amount:</Trans>
+                <Trans>Paid:</Trans>
               </span>
               <MotionMoney
-                value={routeData?.invoiceSummary?.paidAmount ?? 0}
+                value={paidAmount}
                 currency={routeData?.salesOrder?.currencyCode ?? "USD"}
                 decimalPlaces={currencyDecimals}
               />
+            </HStack>
+            <HStack
+              className={cn(
+                "justify-between text-sm w-full",
+                isFullyPaid
+                  ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                  : balanceRemaining >= 0.01
+                    ? "text-amber-600 dark:text-amber-400 font-medium"
+                    : "text-muted-foreground"
+              )}
+            >
+              <span>
+                <Trans>Balance Remaining:</Trans>
+              </span>
+              {isFullyPaid ? (
+                <Badge variant="green">
+                  <Trans>Paid</Trans>
+                </Badge>
+              ) : (
+                <MotionMoney
+                  value={balanceRemaining}
+                  currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                  decimalPlaces={currencyDecimals}
+                />
+              )}
             </HStack>
             {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 0 && (
               <span className="text-xs text-muted-foreground">
