@@ -11243,6 +11243,9 @@ msgstr "스크랩 사유"
 msgid "Scrap Reasons"
 msgstr "스크랩 사유"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "검색"
 

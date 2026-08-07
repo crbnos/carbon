@@ -11243,6 +11243,9 @@ msgstr "Motivi dello scarto"
 msgid "Scrap Reasons"
 msgstr "Motivi di Scarto"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "Cerca"
 

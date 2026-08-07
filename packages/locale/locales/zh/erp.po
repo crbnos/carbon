@@ -11243,6 +11243,9 @@ msgstr "报废原因"
 msgid "Scrap Reasons"
 msgstr "报废原因"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "搜索"
 

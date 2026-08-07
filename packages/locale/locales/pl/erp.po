@@ -11243,6 +11243,9 @@ msgstr "Przyczyny złomu"
 msgid "Scrap Reasons"
 msgstr "Przyczyny złomu"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "Szukaj"
 

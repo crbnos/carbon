@@ -130,7 +130,8 @@ export const TRACKED_ENTITY_STATUS_COLOR_MAP = {
   Reserved: "gray",
   "On Hold": "orange",
   Rejected: "red",
-  Consumed: "blue"
+  Consumed: "blue",
+  Scrapped: "red"
 } as const satisfies Record<string, StatusColor>;
 
 export const SALES_INVOICE_STATUS_COLOR_MAP = {

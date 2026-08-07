@@ -11243,6 +11243,9 @@ msgstr "Motivos de desecho"
 msgid "Scrap Reasons"
 msgstr "Razones de Rechazo"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "Buscar"
 

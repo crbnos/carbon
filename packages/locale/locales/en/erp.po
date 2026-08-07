@@ -11243,6 +11243,9 @@ msgstr "scrap reasons"
 msgid "Scrap Reasons"
 msgstr "Scrap Reasons"
 
+msgid "Scrapped"
+msgstr "Scrapped"
+
 msgid "Search"
 msgstr "Search"
 

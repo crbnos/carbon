@@ -11243,6 +11243,9 @@ msgstr "Motifs de déchet"
 msgid "Scrap Reasons"
 msgstr "Raisons de rebut"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "Rechercher"
 

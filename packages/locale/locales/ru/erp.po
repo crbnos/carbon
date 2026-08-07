@@ -11243,6 +11243,9 @@ msgstr "Причины брака"
 msgid "Scrap Reasons"
 msgstr "Причины брака"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "Поиск"
 

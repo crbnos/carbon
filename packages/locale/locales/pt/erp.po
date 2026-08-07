@@ -11243,6 +11243,9 @@ msgstr "Motivos da sucata"
 msgid "Scrap Reasons"
 msgstr "Motivos de Sucata"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "Pesquisar"
 

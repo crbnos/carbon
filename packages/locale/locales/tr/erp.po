@@ -11243,6 +11243,9 @@ msgstr "Hurda nedenleri"
 msgid "Scrap Reasons"
 msgstr "Hurdaya Nega"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "Ara"
 

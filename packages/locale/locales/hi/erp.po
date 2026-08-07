@@ -11243,6 +11243,9 @@ msgstr "स्क्रैप कारण"
 msgid "Scrap Reasons"
 msgstr "स्क्रैप कारण"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "खोज"
 

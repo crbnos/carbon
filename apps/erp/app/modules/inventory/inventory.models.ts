@@ -156,12 +156,23 @@ export const inventoryAdjustmentValidator = z
     locationId: z.string().min(1, { message: "Location is required" }),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
-    adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
+    adjustmentType: z.enum([
+      ...itemLedgerTypes,
+      "Set Quantity",
+      "Scrap",
+      "Unscrap"
+    ]),
     quantity: zfd.numeric(z.number()),
     trackedEntityId: zfd.text(z.string().optional()),
     readableId: zfd.text(z.string().optional()),
     expirationDate: zfd.text(z.string().optional()),
     comment: zfd.text(z.string().optional()),
+    // Required for Scrap / Unscrap (enforced below); lands on the itemLedger
+    // row and, when accounting is enabled, as a ScrapReason journal dimension.
+    scrapReasonId: zfd.text(z.string().optional()),
+    // Unscrap: the original scrap movement to reverse against (resolved
+    // server-side from the tracked entity when omitted).
+    unscrapOfItemLedgerId: zfd.text(z.string().optional()),
     // Set by serial-tracked forms so the quantity can be capped server-side.
     requiresSerialTracking: zfd
       .text(z.string().optional())
@@ -175,6 +186,16 @@ export const inventoryAdjustmentValidator = z
         code: z.ZodIssueCode.custom,
         path: ["quantity"],
         message: "Serial items can only have a quantity of 1"
+      });
+    }
+    if (
+      (data.adjustmentType === "Scrap" || data.adjustmentType === "Unscrap") &&
+      !data.scrapReasonId
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["scrapReasonId"],
+        message: "Scrap reason is required"
       });
     }
   });

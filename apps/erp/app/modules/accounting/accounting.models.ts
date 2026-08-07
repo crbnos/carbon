@@ -589,6 +589,7 @@ export const dimensionEntityTypes = [
   "ItemPostingGroup",
   "Location",
   "Process",
+  "ScrapReason",
   "Supplier",
   "SupplierType",
   "WorkCenter"

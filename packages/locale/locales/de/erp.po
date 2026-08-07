@@ -11243,6 +11243,9 @@ msgstr "Verschrottungsgründe"
 msgid "Scrap Reasons"
 msgstr "Verschrottungsgründe"
 
+msgid "Scrapped"
+msgstr ""
+
 msgid "Search"
 msgstr "Suchen"
 
