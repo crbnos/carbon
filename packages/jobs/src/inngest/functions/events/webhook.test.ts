@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { toWebhookBody } from "./webhook.ts";
 
 // The body shape is a PUBLIC contract: it is byte-for-byte what the `webhook`
-// edge function (the tail of the pg_net trigger path) has been POSTing to
-// customer endpoints. Migrating off those triggers must not change it, so these
-// cases mirror `functions/webhook/index.ts` — including `companyId`/`table`,
-// which the triggers passed through and the edge function forwarded.
+// edge function (the tail of the old pg_net trigger path) POSTed to customer
+// endpoints. Migrating off those triggers must not change it, so these cases
+// mirror that now-deleted function — including `companyId`/`table`, which the
+// triggers passed through and it forwarded. See git history at
+// packages/database/supabase/functions/webhook/index.ts, and the public
+// contract in docs/content/docs/building/webhooks.mdx.
 describe("toWebhookBody", () => {
   const row = { id: "c1", name: "Acme", companyId: "co1" };
   const prev = { id: "c1", name: "Acme Inc", companyId: "co1" };

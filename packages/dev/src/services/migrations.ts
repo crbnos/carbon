@@ -237,11 +237,11 @@ async function repairStaleMigrations(
 // ---------------------------------------------------------------------------
 
 // The singleton "config" row is what SECURITY DEFINER functions
-// (wake_event_queue, webhook_insert/update/delete) read to POST to edge
+// (wake_event_queue and the other pg_net callers) read to POST to edge
 // functions via pg_net. Without it those pushes silently no-op, so the
-// event-queue wake and local webhooks never fire in dev. `apiUrl` must be the
-// in-network Kong URL — pg_net runs inside the postgres container, which
-// can't reach host ports.
+// event-queue wake never fires in dev — and since webhooks now ride the event
+// system, they don't either. `apiUrl` must be the in-network Kong URL — pg_net
+// runs inside the postgres container, which can't reach host ports.
 /**
  * Whether the Supabase service schemas are initialized, not just present.
  *
