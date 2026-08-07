@@ -965,6 +965,9 @@ msgstr "エンジニアリング変更：ドラフト上で方法が改訂され
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "統合またはカスタム変更 — 実際にカスタムである小さなスライス。"
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "招待は保留中です。受け入れるとアクティブになります。"
+
 msgid "An item cannot be added to itself."
 msgstr "アイテムをそれ自体に追加することはできません。"
 

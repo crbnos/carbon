@@ -965,6 +965,9 @@ msgstr "Bir mühendislik değişikliği: yöntemleri taslak üzerinde revize edi
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Bir entegrasyon veya özel bir değişiklik — aslında özel olan küçük dilim."
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "Bir davet beklemede. Kabul ettikleri zaman aktif hale gelirler."
+
 msgid "An item cannot be added to itself."
 msgstr "Bir öğe kendisine eklenemez."
 

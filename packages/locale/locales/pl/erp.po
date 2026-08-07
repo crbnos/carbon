@@ -965,6 +965,9 @@ msgstr "Zmiana inżynierska: elementy dotknięte zmianą, których metody zosta�
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Integracja lub zmiana niestandardowa — mała część, która jest faktycznie niestandardowa."
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "Zaproszenie czeka na akceptację. Będą aktywni po zaakceptowaniu."
+
 msgid "An item cannot be added to itself."
 msgstr "Przedmiot nie może być dodany do siebie."
 

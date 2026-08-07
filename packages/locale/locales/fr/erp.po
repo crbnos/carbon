@@ -965,6 +965,9 @@ msgstr "Un ordre de modification d'ingénierie : les articles affectés dont les
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Une intégration ou une modification personnalisée — la petite partie qui est réellement personnalisée."
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "Une invitation est en attente. Elle devient active une fois qu'elle est acceptée."
+
 msgid "An item cannot be added to itself."
 msgstr "Un article ne peut pas être ajouté à lui-même."
 

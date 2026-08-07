@@ -965,6 +965,9 @@ msgstr "An engineering change: the affected items whose methods are revised on a
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "An integration or a custom change — the small slice that's actually custom."
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "An invitation is pending. They become active once they accept it."
+
 msgid "An item cannot be added to itself."
 msgstr "An item cannot be added to itself."
 

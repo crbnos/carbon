@@ -965,6 +965,9 @@ msgstr "Инженерное изменение: затронутые элеме
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Интеграция или пользовательское изменение — небольшая часть, которая действительно является пользовательской."
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "Приглашение ожидает подтверждения. Они станут активными после его принятия."
+
 msgid "An item cannot be added to itself."
 msgstr "Элемент не может быть добавлен к самому себе."
 

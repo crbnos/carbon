@@ -965,6 +965,9 @@ msgstr "工程变更：受影响项目的方法在草稿中进行修改，并一
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "一个集成或自定义更改——实际上是自定义的小部分。"
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "邀请待审批。他们接受后将变为活跃。"
+
 msgid "An item cannot be added to itself."
 msgstr "一个项目不能添加到自身。"
 

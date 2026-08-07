@@ -194,6 +194,7 @@ const EmployeesTable = memo(
           header: t`Active`,
           cell: (item) => {
             const isActive = item.getValue<boolean>();
+            const status = item.row.original.status;
             return (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -206,6 +207,11 @@ const EmployeesTable = memo(
                     <Trans>
                       To deactivate, use the row menu and choose Deactivate
                       Account.
+                    </Trans>
+                  ) : status === "Invited" ? (
+                    <Trans>
+                      An invitation is pending. They become active once they
+                      accept it.
                     </Trans>
                   ) : (
                     <Trans>

@@ -965,6 +965,9 @@ msgstr "एक इंजीनियरिंग परिवर्तन: प�
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "एक एकीकरण या एक कस्टम परिवर्तन — वह छोटा हिस्सा जो वास्तव में कस्टम है।"
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "एक आमंत्रण लंबित है। वे इसे स्वीकार करने के बाद सक्रिय हो जाते हैं।"
+
 msgid "An item cannot be added to itself."
 msgstr "एक आइटम को स्वयं में नहीं जोड़ा जा सकता।"
 
