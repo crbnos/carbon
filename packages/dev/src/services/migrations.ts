@@ -243,13 +243,21 @@ async function repairStaleMigrations(
  * only run when those containers boot. A postgres-only stack leaves stubs — and
  * restoring a dump into that state silently no-ops the dump's `CREATE TABLE
  * auth.users` (the stub already exists), leaving a users table missing most of
- * its columns. `email_confirmed_at` is GoTrue's, so its presence is the cheap
- * proxy for "the full stack has booted at least once".
+ * its columns. `email_confirmed_at` is GoTrue's, so its presence proves GoTrue
+ * migrated rather than that the table merely exists.
+ *
+ * Storage is checked separately rather than assumed from GoTrue: the restore
+ * script guards its storage TRUNCATEs with `to_regclass` so a partially booted
+ * stack can't abort the run, which means a missing `storage.objects` would let
+ * the restore finish "successfully" with no buckets seeded. Both services must
+ * have booted.
  */
 export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
   return withClient(dbPort, async (c) => {
     const r = await c.query(
       `SELECT to_regclass('auth.users') IS NOT NULL
+                AND to_regclass('storage.objects') IS NOT NULL
+                AND to_regclass('storage.buckets') IS NOT NULL
                 AND EXISTS (
                   SELECT 1 FROM information_schema.columns
                   WHERE table_schema = 'auth' AND table_name = 'users'

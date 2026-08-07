@@ -35,6 +35,19 @@ describe("noZeroConcurrency", () => {
     ).toHaveLength(0);
   });
 
+  it("does not match past the closing brace of the concurrency object", () => {
+    // A bounded [\s\S] span reached over the `}` and flagged this.
+    expect(scan(`concurrency: {}, const query = { limit: 0 };`)).toHaveLength(
+      0
+    );
+    expect(
+      scan(`concurrency: { limit: 2 }, const query = { limit: 0 };`)
+    ).toHaveLength(0);
+    expect(
+      scan(`concurrency: {\n  key: "x"\n},\nconst q = { limit: 0 };`)
+    ).toHaveLength(0);
+  });
+
   it("catches every occurrence in a file with more than one handler", () => {
     expect(
       scan(`concurrency: {\n  limit: 0\n}\n\nconcurrency: {\n  limit: 0\n}`)

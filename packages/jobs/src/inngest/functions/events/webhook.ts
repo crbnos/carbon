@@ -21,12 +21,19 @@ export const webhookFunction = inngest.createFunction(
   { event: "carbon/event-webhook" },
   async ({ event, step, logger, attempt }) => {
     const payload = webhookPayloadSchema.parse(event.data);
-    const body = toWebhookBody(payload.data, payload.companyId);
+    const body = toWebhookBody(
+      payload.data,
+      payload.companyId,
+      String(payload.msgId)
+    );
     const webhookId = payload.config.webhookId;
 
     await step.run("send-webhook", async () => {
+      // Never log payload.url — the docs tell customers to treat the URL itself
+      // as the secret (an unguessable token in the path or query), since Carbon
+      // does not sign webhooks. webhookId identifies it without leaking that.
       logger.info(
-        `Firing ${body.type} webhook for ${payload.data.table} to ${payload.url}`
+        `Firing ${body.type} webhook ${webhookId ?? "<unknown>"} for ${payload.data.table}`
       );
 
       try {

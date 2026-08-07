@@ -22,12 +22,13 @@
 --      any employee of the company and would widen access. The same choice was
 --      made for `journal` and `purchaseOrder` in 20260228000000_rls-refactor-3.
 --
---   2. The policy SET is preserved per table. purchasingRfqToPurchaseOrder and
---      purchasingRfqToSupplierQuote have only SELECT + INSERT today -- they are
---      insert-only join tables that clean up via ON DELETE CASCADE. Every prior
---      refactor recreated exactly the verbs that existed (see
---      purchaseOrderTransaction in rls-refactor-3); adding UPDATE/DELETE here
---      would be a behaviour change, so it is not done.
+--   2. Write access is preserved per table. purchasingRfqToPurchaseOrder and
+--      purchasingRfqToSupplierQuote permitted only SELECT + INSERT -- they are
+--      insert-only join tables that clean up via ON DELETE CASCADE. Their
+--      UPDATE/DELETE are now spelled out as USING (false) rather than left
+--      absent: RLS denies either way, but an explicit deny cannot be mistaken
+--      for a policy someone dropped, which is exactly the ambiguity that made
+--      the `rework` drift hard to read.
 --
 -- The old policies carried long descriptive names; they are recreated with the
 -- standardized SELECT/INSERT/UPDATE/DELETE names, matching the rest of the
@@ -119,7 +120,7 @@ FOR DELETE USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_delete'))::text[])
 );
 
--- purchasingRfqToSupplierQuote -- SELECT + INSERT only, deliberately
+-- purchasingRfqToSupplierQuote -- insert-only join table; UPDATE/DELETE denied explicitly
 
 DROP POLICY IF EXISTS "Employees with purchasing_view can view purchasingRfqToSupplierQuote" ON "public"."purchasingRfqToSupplierQuote";
 DROP POLICY IF EXISTS "Employees with purchasing_create can insert purchasingRfqToSupplierQuote" ON "public"."purchasingRfqToSupplierQuote";
@@ -134,7 +135,16 @@ FOR INSERT WITH CHECK (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_create'))::text[])
 );
 
--- purchasingRfqToPurchaseOrder -- SELECT + INSERT only, deliberately
+-- Explicit rather than absent. RLS already denies what no policy permits, so
+-- these change nothing -- but this PR exists partly because `rework` drifted and
+-- nobody could tell a deliberate omission from a lost policy. Say it out loud.
+CREATE POLICY "UPDATE" ON "public"."purchasingRfqToSupplierQuote"
+FOR UPDATE USING (false);
+
+CREATE POLICY "DELETE" ON "public"."purchasingRfqToSupplierQuote"
+FOR DELETE USING (false);
+
+-- purchasingRfqToPurchaseOrder -- insert-only join table; UPDATE/DELETE denied explicitly
 
 DROP POLICY IF EXISTS "Employees with purchasing_view can view purchasingRfqToPurchaseOrder" ON "public"."purchasingRfqToPurchaseOrder";
 DROP POLICY IF EXISTS "Employees with purchasing_create can insert purchasingRfqToPurchaseOrder" ON "public"."purchasingRfqToPurchaseOrder";
@@ -148,6 +158,12 @@ CREATE POLICY "INSERT" ON "public"."purchasingRfqToPurchaseOrder"
 FOR INSERT WITH CHECK (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_create'))::text[])
 );
+
+CREATE POLICY "UPDATE" ON "public"."purchasingRfqToPurchaseOrder"
+FOR UPDATE USING (false);
+
+CREATE POLICY "DELETE" ON "public"."purchasingRfqToPurchaseOrder"
+FOR DELETE USING (false);
 
 -- The new predicate is an index-able `companyId = ANY (array)`. purchasingRfqLine
 -- and purchasingRfqSupplier had only parent-FK indexes; the other three tables

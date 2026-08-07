@@ -3,11 +3,16 @@ import type { ConformanceCheck, Violation } from "../check";
 /**
  * Matches `limit: 0` inside an Inngest `concurrency` block.
  *
- * Anchored on `concurrency` so an unrelated `limit: 0` (a query limit, a
- * pagination default) isn't flagged. The `[\s\S]*?` spans the newline between
- * `concurrency: {` and `limit: 0`, which is how it is always formatted.
+ * `[^{}]*?` cannot cross a brace, so the match is confined to the concurrency
+ * object itself — an unrelated `limit: 0` after it closes (a query limit, a
+ * pagination default) is not flagged. A bounded `[\s\S]` span would reach past
+ * the `}` and match `concurrency: {}, const q = { limit: 0 }`.
+ *
+ * The concurrency object contains no nested braces in practice (`limit`, `key`,
+ * `scope` are all scalars), so excluding braces entirely is exact rather than
+ * approximate.
  */
-const ZERO_CONCURRENCY = /concurrency\s*:\s*\{[\s\S]{0,120}?limit\s*:\s*0\b/g;
+const ZERO_CONCURRENCY = /concurrency\s*:\s*\{[^{}]*?\blimit\s*:\s*0\b/g;
 
 export const noZeroConcurrency: ConformanceCheck = {
   id: "no-zero-concurrency",

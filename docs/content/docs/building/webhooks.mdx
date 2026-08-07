@@ -31,12 +31,15 @@ Carbon `POST`s a JSON body to your URL. `type` is the operation, `record` is the
   "type": "UPDATE",
   "table": "salesOrder",
   "companyId": "abc123",
+  "eventId": "1042",
   "record": { "id": "...", "salesOrderId": "SO000042", "status": "To Ship and Invoice" },
   "old": { "id": "...", "salesOrderId": "SO000042", "status": "Draft" }
 }
 ```
 
 `old` appears only on updates. On a delete, `record` is the row as it last existed and there is no `old`. The only request header is `Content-Type: application/json`.
+
+`eventId` identifies the individual change. It stays the same across retries of that change and differs between changes — including two separate edits to the same record — which makes it the field to de-duplicate on (see below).
 
 ## Configuration
 
@@ -56,7 +59,7 @@ Webhooks are queued rather than sent inline with the database write, so a `POST`
 
 Delivery is **at-least-once**. If your endpoint doesn't return a success status, Carbon retries the same change a few times with exponential backoff before giving up. Two consequences to design for:
 
-- **Handle duplicates.** A delivery that times out or errors after you've already processed it will arrive again. Treat `type` + `record.id` as the de-duplication key, or make your handler idempotent.
+- **Handle duplicates.** A delivery that times out or errors after you've already processed it will arrive again. De-duplicate on `eventId`, which is stable across retries of a change. Don't key on `type` + `record.id` — every update to a given record shares those, so you would discard genuine later changes.
 - **A sustained outage still loses events.** Once retries are exhausted the change is dropped and counted as an error. Reconcile against the API when completeness matters.
 
 The success and error counters record one outcome per change, not per attempt, so a retried-then-delivered event counts once as a success.

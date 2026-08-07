@@ -11,13 +11,15 @@ describe("toWebhookBody", () => {
   it("INSERT sends the new row as `record`, with no `old` key", () => {
     const body = toWebhookBody(
       { table: "customer", operation: "INSERT", new: row, old: null },
-      "co1"
+      "co1",
+      "42"
     );
     expect(body).toEqual({
       type: "INSERT",
       record: row,
       companyId: "co1",
-      table: "customer"
+      table: "customer",
+      eventId: "42"
     });
     expect(body).not.toHaveProperty("old");
   });
@@ -26,14 +28,16 @@ describe("toWebhookBody", () => {
     expect(
       toWebhookBody(
         { table: "customer", operation: "UPDATE", new: row, old: prev },
-        "co1"
+        "co1",
+        "42"
       )
     ).toEqual({
       type: "UPDATE",
       record: row,
       old: prev,
       companyId: "co1",
-      table: "customer"
+      table: "customer",
+      eventId: "42"
     });
   });
 
@@ -41,13 +45,15 @@ describe("toWebhookBody", () => {
     // Getting this wrong hands consumers `record: null` on every delete.
     const body = toWebhookBody(
       { table: "customer", operation: "DELETE", new: null, old: row },
-      "co1"
+      "co1",
+      "42"
     );
     expect(body).toEqual({
       type: "DELETE",
       record: row,
       companyId: "co1",
-      table: "customer"
+      table: "customer",
+      eventId: "42"
     });
     expect(body).not.toHaveProperty("old");
   });
@@ -56,26 +62,30 @@ describe("toWebhookBody", () => {
     expect(
       toWebhookBody(
         { table: "customer", operation: "TRUNCATE", new: null, old: row },
-        "co1"
+        "co1",
+        "42"
       )
     ).toEqual({
       type: "TRUNCATE",
       record: row,
       companyId: "co1",
-      table: "customer"
+      table: "customer",
+      eventId: "42"
     });
   });
 
   it("never emits an `old` key for UPDATE when old is missing", () => {
     const body = toWebhookBody(
       { table: "customer", operation: "UPDATE", new: row, old: null },
-      "co1"
+      "co1",
+      "42"
     );
     expect(body).toEqual({
       type: "UPDATE",
       record: row,
       companyId: "co1",
-      table: "customer"
+      table: "customer",
+      eventId: "42"
     });
     expect(body).not.toHaveProperty("old");
   });
@@ -84,7 +94,8 @@ describe("toWebhookBody", () => {
     // undefined would drop `record` from the JSON body entirely.
     const body = toWebhookBody(
       { table: "customer", operation: "INSERT" },
-      "co1"
+      "co1",
+      "42"
     );
     expect(body.record).toBeNull();
     expect(Object.keys(body)).toContain("record");
@@ -94,8 +105,45 @@ describe("toWebhookBody", () => {
     expect(
       toWebhookBody(
         { table: "salesOrder", operation: "INSERT", new: row },
-        "co2"
+        "co2",
+        "42"
       )
     ).toMatchObject({ table: "salesOrder", companyId: "co2" });
+  });
+
+  it("distinguishes two genuine UPDATEs to the same record", () => {
+    // The reason eventId exists. Delivery is at-least-once, so consumers must
+    // de-dup — but `type` + `record.id` is identical for every update to a row,
+    // so de-duping on those would silently drop real changes. Only eventId
+    // separates them.
+    const first = toWebhookBody(
+      { table: "customer", operation: "UPDATE", new: prev, old: row },
+      "co1",
+      "100"
+    );
+    const second = toWebhookBody(
+      { table: "customer", operation: "UPDATE", new: row, old: prev },
+      "co1",
+      "101"
+    );
+    expect(first.type).toBe(second.type);
+    expect((first.record as { id: string }).id).toBe(
+      (second.record as { id: string }).id
+    );
+    expect(first.eventId).not.toBe(second.eventId);
+  });
+
+  it("gives a retried delivery the same eventId", () => {
+    // eventId is the pgmq message id, which is also the Inngest idempotency
+    // key — retries of one change reuse it, which is what makes it usable as a
+    // de-duplication key rather than just a nonce.
+    const attempt = () =>
+      toWebhookBody(
+        { table: "customer", operation: "INSERT", new: row },
+        "co1",
+        "77"
+      );
+    expect(attempt()).toEqual(attempt());
+    expect(attempt().eventId).toBe("77");
   });
 });
