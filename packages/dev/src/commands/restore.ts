@@ -3,15 +3,13 @@ import { cancel, intro, log, outro, tasks } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { execa } from "execa";
 import { isAbsolute, join, resolve } from "pathe";
-import { onShutdown, requireNumberEnv, tryConnect } from "../helpers.js";
+import { requireNumberEnv, tryConnect } from "../helpers.js";
 import { confirmRestore } from "../prompts.js";
 import {
-  bootStack,
-  ensureDockerRunning,
-  stopStack
-} from "../services/compose.js";
-import { applyMigrations, waitForPostgres } from "../services/migrations.js";
-import { getWorktreeRoot, resolveSlug } from "../worktree.js";
+  applyMigrations,
+  serviceSchemasReady
+} from "../services/migrations.js";
+import { getWorktreeRoot } from "../worktree.js";
 
 export type RestoreMode = "local" | "prod";
 
@@ -55,7 +53,6 @@ export async function restore(opts: RestoreOptions) {
   intro("Carbon · dev restore");
 
   const root = await getWorktreeRoot();
-  const slug = resolveSlug(root);
 
   const backup = isAbsolute(opts.file) ? opts.file : resolve(opts.file);
   if (!existsSync(backup)) {
@@ -91,41 +88,32 @@ export async function restore(opts: RestoreOptions) {
     );
   }
 
-  if (!(await confirmRestore({ port: portDb, file: backup, mode }))) {
+  if (
+    !opts.yes &&
+    !(await confirmRestore({ port: portDb, file: backup, mode }))
+  ) {
     cancel("restore aborted");
     process.exit(0);
   }
 
-  const running = await tryConnect("127.0.0.1", portDb, 500);
-  if (running) {
-    await runRestore(root, backup, portDb, opts);
-    outro("done");
-    return;
+  // Deliberately NOT booting a postgres-only stack the way `crbn migrate` does.
+  // A restore rewrites `auth`/`storage` too, and those schemas are built by
+  // GoTrue's and Storage's own migrations when THOSE containers boot. Against a
+  // postgres-only stack the dump's `CREATE TABLE auth.users` no-ops onto the
+  // image's stub, and the restore fails late — after the data has landed but
+  // before the email scrub — leaving unscrubbed production addresses on disk.
+  if (!(await tryConnect("127.0.0.1", portDb, 500))) {
+    cancel("postgres is not reachable — run `crbn up` first, then retry");
+    process.exit(1);
+  }
+  if (!(await serviceSchemasReady(portDb))) {
+    cancel(
+      "the auth/storage schemas are not initialized (postgres is up but GoTrue/Storage are not) — run `crbn up` so the full stack boots once, then retry"
+    );
+    process.exit(1);
   }
 
-  // Same standalone shape as `crbn migrate`: the restore only needs postgres,
-  // so boot that alone rather than the full stack, and always tear it back down.
-  log.info("postgres not running — booting a postgres-only stack");
-  await ensureDockerRunning();
-
-  let interrupted = false;
-  const detach = onShutdown(() => {
-    if (interrupted) return;
-    interrupted = true;
-    process.stderr.write("\ninterrupted — stopping postgres…\n");
-    void stopStack(root, slug, false).finally(() => process.exit(130));
-  });
-
-  try {
-    await bootStack(root, slug, { services: ["postgres"] });
-    await waitForPostgres(portDb);
-    await runRestore(root, backup, portDb, opts);
-  } finally {
-    detach();
-    log.info("stopping postgres-only stack");
-    await stopStack(root, slug, false);
-  }
-
+  await runRestore(root, backup, portDb, opts);
   outro("done");
 }
 

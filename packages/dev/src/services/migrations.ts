@@ -242,6 +242,30 @@ async function repairStaleMigrations(
 // event-queue wake and local webhooks never fire in dev. `apiUrl` must be the
 // in-network Kong URL — pg_net runs inside the postgres container, which
 // can't reach host ports.
+/**
+ * Whether the Supabase service schemas are initialized, not just present.
+ *
+ * GoTrue and Storage build `auth`/`storage` through their OWN migrations, which
+ * only run when those containers boot. A postgres-only stack leaves stubs — and
+ * restoring a dump into that state silently no-ops the dump's `CREATE TABLE
+ * auth.users` (the stub already exists), leaving a users table missing most of
+ * its columns. `email_confirmed_at` is GoTrue's, so its presence is the cheap
+ * proxy for "the full stack has booted at least once".
+ */
+export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
+  return withClient(dbPort, async (c) => {
+    const r = await c.query(
+      `SELECT to_regclass('auth.users') IS NOT NULL
+                AND EXISTS (
+                  SELECT 1 FROM information_schema.columns
+                  WHERE table_schema = 'auth' AND table_name = 'users'
+                    AND column_name = 'email_confirmed_at'
+                ) AS ready`
+    );
+    return r.rows[0]?.ready === true;
+  });
+}
+
 export async function ensureConfigRow(
   dbPort: number,
   anonKey: string

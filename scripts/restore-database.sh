@@ -103,7 +103,19 @@ $PSQL_PG -At -c "
             WHERE n.nspname='public' AND t.typcategory IN ('E','C')
   UNION ALL SELECT format('DROP SEQUENCE IF EXISTS public.%I CASCADE;', sequencename) FROM pg_sequences WHERE schemaname='public'
 " | $PSQL_PG -v ON_ERROR_STOP=0 >/dev/null
-$PSQL_PG -c "TRUNCATE auth.users CASCADE; TRUNCATE storage.objects CASCADE; TRUNCATE storage.buckets CASCADE;" >/dev/null
+# Guarded the same way as the storage reset in step 5: on a stack that has only
+# ever booted postgres (e.g. `crbn restore` right after a `crbn reset`), the
+# service schemas do not exist yet -- storage.objects is created by the storage
+# service's own migrations, not by the postgres image. A bare TRUNCATE there
+# aborts the whole restore under `set -e`.
+$PSQL_PG -c "
+DO \$\$
+BEGIN
+  IF to_regclass('auth.users') IS NOT NULL THEN TRUNCATE auth.users CASCADE; END IF;
+  IF to_regclass('storage.objects') IS NOT NULL THEN TRUNCATE storage.objects CASCADE; END IF;
+  IF to_regclass('storage.buckets') IS NOT NULL THEN TRUNCATE storage.buckets CASCADE; END IF;
+END \$\$;
+" >/dev/null
 # ── 3. Restore ───────────────────────────────────────────────────────────────
 # Supports both plain-text SQL dumps (Supabase cluster .backup files) and
 # custom-format pg_dump archives (.dump, magic bytes 'PGDMP').
