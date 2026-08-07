@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { datetime } from "@carbon/utils";
 import {
   type ActionOutcome,
   type CatalogAction,
@@ -125,7 +126,7 @@ export async function runUpdateAction(params: {
     .update({
       ...fields,
       updatedBy: ownerId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", target.id)
     .eq("companyId", companyId);

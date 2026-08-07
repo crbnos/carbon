@@ -1,3 +1,4 @@
+import { datetime } from "@carbon/utils";
 import {
   batchCandidates,
   createWorkflowCatalog,
@@ -180,7 +181,7 @@ async function recordStep(
   ) => Promise<NodeResult>
 ): Promise<StepOutcome> {
   const { node, ledger } = args;
-  const startedAt = new Date().toISOString();
+  const startedAt = datetime.timestamp();
 
   // Claim before acting: at most once, on purpose. An interrupted step settles
   // as Failed at the end of the run rather than silently retrying.
@@ -345,7 +346,7 @@ export async function executeWorkflowRun(params: {
       throw new NonRetriableError("Workflow run not found");
     }
 
-    const startedAt = new Date().toISOString();
+    const startedAt = datetime.timestamp();
 
     if (!context.workflowActive) {
       await finishRun(db, {
@@ -492,7 +493,7 @@ export async function walkWorkflow(params: {
   // step that was skipped.
   if (trigger !== undefined) {
     await step.run(`node:${trigger.id}`, async () => {
-      const claimedAt = new Date().toISOString();
+      const claimedAt = datetime.timestamp();
       const claim = await ledger.claimStep({
         nodeId: trigger.id,
         nodeType: "trigger",

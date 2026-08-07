@@ -1,3 +1,4 @@
+import { datetime } from "@carbon/utils";
 import { sql } from "kysely";
 import type { JobDatabase } from "../../../db";
 import { getJobDatabaseClient } from "../../../db";
@@ -121,7 +122,7 @@ export const workflowRunRetentionFunction = inngest.createFunction(
         COMPACT_BATCH,
         true
       );
-      const now = new Date().toISOString();
+      const now = datetime.timestamp();
       let stepCount = 0;
 
       for (const [companyId, ids] of groupByCompany(rows)) {

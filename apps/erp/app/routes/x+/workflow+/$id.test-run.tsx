@@ -5,6 +5,7 @@ import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
 import { executeManualWorkflowRun } from "@carbon/jobs/inngest";
+import { datetime } from "@carbon/utils";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   createWorkflowCatalog,
@@ -217,7 +218,7 @@ async function buildTrigger(
   const { event, input, companyId, previousValue } = args;
 
   if (event === undefined || event.match === undefined) {
-    return { trigger: { kind: "schedule", dueAt: new Date().toISOString() } };
+    return { trigger: { kind: "schedule", dueAt: datetime.timestamp() } };
   }
   const match = event.match;
 

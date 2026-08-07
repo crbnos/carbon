@@ -15,6 +15,7 @@ import {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
+import { datetime } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
@@ -406,7 +407,7 @@ export const notifyFunction = inngest.createFunction(
         // ON DELETE SET NULL, so deleting a parent would resurface its hidden
         // children. Cron digests (no sourceEvent) are intentionally untouched.
         if (content.digest) {
-          const supersededAt = new Date().toISOString();
+          const supersededAt = datetime.timestamp();
 
           const [supersededDigests, supersededFlat] = await Promise.all([
             client

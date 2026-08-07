@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -126,7 +127,7 @@ export async function updateWorkflow(
       name: workflow.name,
       description: workflow.description ?? null,
       updatedBy: workflow.updatedBy,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", workflow.id)
     .eq("companyId", workflow.companyId);
@@ -177,7 +178,7 @@ export async function updateWorkflowDefinition(
       edges: definition.edges,
       formatVersion: definition.formatVersion,
       updatedBy: definition.updatedBy,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", definition.versionId)
     .eq("companyId", definition.companyId);

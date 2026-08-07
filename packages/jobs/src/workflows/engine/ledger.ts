@@ -1,4 +1,5 @@
 import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime } from "@carbon/utils";
 import type { Updateable } from "kysely";
 import type { JobDatabase } from "../../db";
 import type { FinishRunInput } from "./log";
@@ -112,7 +113,7 @@ export async function claimStep(
       itemKey: params.itemKey,
       sequence: params.sequence,
       status: "Running",
-      startedAt: new Date().toISOString(),
+      startedAt: datetime.timestamp(),
       input:
         params.input === undefined ? null : toJson(redactForLog(params.input))
     })
@@ -132,14 +133,14 @@ export async function settleStep(
   db: JobDatabase,
   params: SettleStepInput
 ): Promise<void> {
-  const completedAt = new Date();
+  const completedAt = datetime.timestamp();
   const patch: Updateable<KyselyDatabase["workflowStepRun"]> = {
     status: params.status,
     statusReason: redactText(params.statusReason),
     error: redactText(params.error),
     branchTaken: params.branchTaken ?? null,
-    completedAt: completedAt.toISOString(),
-    durationMs: completedAt.getTime() - new Date(params.startedAt).getTime()
+    completedAt,
+    durationMs: Date.parse(completedAt) - new Date(params.startedAt).getTime()
   };
 
   if (params.input !== undefined)
@@ -167,7 +168,7 @@ export async function failInterruptedSteps(
     .set({
       status: "Failed",
       error: INTERRUPTED,
-      completedAt: new Date().toISOString()
+      completedAt: datetime.timestamp()
     })
     .where("runId", "=", runId)
     .where("companyId", "=", companyId)

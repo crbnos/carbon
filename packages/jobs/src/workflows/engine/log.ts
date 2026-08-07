@@ -1,3 +1,4 @@
+import { datetime } from "@carbon/utils";
 import { sql } from "kysely";
 import type { JobDatabase } from "../../db";
 
@@ -126,7 +127,7 @@ export async function failCrashedRun(
     companyId,
     status: "Failed",
     error,
-    startedAt: row.startedAt ?? new Date().toISOString()
+    startedAt: row.startedAt ?? datetime.timestamp()
   });
 }
 
@@ -143,10 +144,10 @@ export async function finishRun(
   db: JobDatabase,
   params: FinishRunInput
 ): Promise<void> {
-  const completedAt = new Date();
+  const completedAt = datetime.timestamp();
   const durationMs = Math.max(
     0,
-    completedAt.getTime() - new Date(params.startedAt).getTime()
+    Date.parse(completedAt) - new Date(params.startedAt).getTime()
   );
 
   await db
@@ -155,7 +156,7 @@ export async function finishRun(
       status: params.status,
       statusReason: params.statusReason ?? null,
       error: params.error ?? null,
-      completedAt: completedAt.toISOString(),
+      completedAt,
       durationMs
     })
     .where("id", "=", params.runId)

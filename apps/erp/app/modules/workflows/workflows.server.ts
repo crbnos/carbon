@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { trigger } from "@carbon/jobs";
+import { datetime } from "@carbon/utils";
 import type { WorkflowIssue } from "@carbon/workflows";
 import {
   createWorkflowCatalog,
@@ -123,7 +124,7 @@ export async function publishWorkflowVersion(
       activeVersionId: versionId,
       active: true,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", workflowId)
     .eq("companyId", companyId);
@@ -154,7 +155,7 @@ export async function setWorkflowActive(
     .update({
       active,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", workflowId)
     .eq("companyId", companyId);

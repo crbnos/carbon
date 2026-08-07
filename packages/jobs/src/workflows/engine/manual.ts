@@ -1,3 +1,4 @@
+import { datetime } from "@carbon/utils";
 import {
   createWorkflowCatalog,
   type RunTrigger,
@@ -51,7 +52,7 @@ export async function executeManualWorkflowRun(params: {
     payload,
     definition: params.definition,
     companyGroupId: params.companyGroupId,
-    startedAt: new Date().toISOString(),
+    startedAt: datetime.timestamp(),
     step,
     ledger,
     catalog: createWorkflowCatalog(),
