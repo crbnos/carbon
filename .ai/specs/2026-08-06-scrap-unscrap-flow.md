@@ -474,6 +474,19 @@ functions).
 
 ## Changelog
 
+- 2026-08-07: Implemented on `mes-scrap-serial-rework-flow` — see
+  `.ai/plans/2026-08-07-scrap-unscrap-flow.md`. Notable deviations from the
+  plan: (1) the status-aware RPCs needed no `Scrapped` exclusion — scrap posts
+  negative ledger movements and availability RPCs already filter
+  `status='Available'`; (2) the serial/batch/untracked scrap consolidated into
+  ONE `issue` case `jobOperationScrap`; (3) the entity-scrap route had **no UI
+  caller** before this — added `ScrapEntityModal` + a Scrap action in the
+  IssueMaterialModal unconsume tab; (4) `rework.trackedEntityId` no longer
+  exists so it was omitted from the rework insert; (5) ERP Unscrap resolves
+  location/bin/cost server-side from the scrap movement (a Scrapped
+  tracked-entity row carries no location), so `locationId` is optional for
+  Unscrap. Browser verification pending (Task 14).
+
 - 2026-08-07: Auto-Done predicate now excludes `quantityScrapped` (Brad) —
   `targetQuantity` is already the good-quantity target, so ops stay open
   until good units are made; replaced the target-bump design with reopen +

@@ -5,7 +5,7 @@ Tracks item quantities across locations and storage units. Manages receipts, shi
 ## Key Domain Concepts
 
 - **Storage Unit** — hierarchical container (bin, shelf, rack, zone) within a location. Tree structure via `parentId`. Renamed from `shelf` in migration `20260417000100`. MUST use `storageUnit` naming, never `shelf`.
-- **Tracked Entity** — serial/batch/lot-tracked item instance with `readableId` (serial or batch number), `status` (Available/Reserved/On Hold/Consumed/Rejected), `quantity`, and `expirationDate`. Batch items have `batchProperty` definitions.
+- **Tracked Entity** — serial/batch/lot-tracked item instance with `readableId` (serial or batch number), `status` (Available/Reserved/On Hold/Consumed/Rejected/Scrapped), `quantity`, and `expirationDate`. `Scrapped` is terminal but recoverable via the Unscrap adjustment. Batch items have `batchProperty` definitions.
 - **Item Ledger** — append-only log of every inventory movement (`itemLedger` table). Source of truth for on-hand quantities. MUST never INSERT directly — always go through service functions.
 - **Receipt** — inbound inventory from POs or production. Lines link to `purchaseOrderLine` or jobs. Posting creates ledger entries and tracked entities.
 - **Shipment** — outbound inventory to customers. Lines link to sales order lines.

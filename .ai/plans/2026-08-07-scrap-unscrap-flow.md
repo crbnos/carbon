@@ -9,15 +9,15 @@
 - [x] Task 2: Migration B — Done-predicate fix (RPC exclusions verified unnecessary — see task note)
 - [x] Task 3: Apply migrations and regenerate types
 - [x] Task 4: Extend the shared adjustment posting core (dimensions, scrapReasonId, fixed-cost override)
-- [ ] Task 5: post-inventory-adjustment — Scrap and Unscrap adjustment types
-- [ ] Task 6: issue — jobOperationScrap case (serial/batch/untracked WIP scrap + spawn + reopen)
-- [ ] Task 7: issue — rework scrapTrackedEntity (reason, methodType branches, replacement)
-- [ ] Task 8: MES routes + validators for the new scrap paths
-- [ ] Task 9: MES UI — QuantityModal serial confirmation + entity-scrap modal fields
-- [ ] Task 10: ERP models/service/route for Scrap + Unscrap
-- [ ] Task 11: ERP UI — Scrap adjustment type + Scrapped filter + Unscrap action
-- [ ] Task 12: Sweep app-side predicate mirrors + serial-navigation helpers
-- [ ] Task 13: Update rules docs (traceability, inventory, MES) 
+- [x] Task 5: post-inventory-adjustment — Scrap and Unscrap adjustment types
+- [x] Task 6: issue — jobOperationScrap case (serial/batch/untracked WIP scrap + spawn + reopen). Deviation: `issueJobOperationMaterials` returns `{ totalMaterialCost }` (additive) — a local COGS recompute would double-relieve layers.
+- [x] Task 7: issue — rework scrapTrackedEntity (reason, methodType branches, replacement). Deviations: `rework.trackedEntityId` column no longer exists (`20260531084723`) — omitted from the rework insert; route scraps the WHOLE staged entity (no partial-quantity payload exists on this route), so batch partial scrap lives only in the ERP path.
+- [x] Task 8: MES routes + validators for the new scrap paths
+- [x] Task 9: MES UI — QuantityModal serial confirmation + entity-scrap modal fields
+- [x] Task 10: ERP models/service/route for Scrap + Unscrap
+- [x] Task 11: ERP UI — Scrap adjustment type + Scrapped filter + Unscrap action
+- [x] Task 12: Sweep app-side predicate mirrors + serial-navigation helpers
+- [x] Task 13: Update rules docs (traceability, inventory, MES) 
 - [ ] Task 14: Browser verification via /test
 
 ## Dependencies
