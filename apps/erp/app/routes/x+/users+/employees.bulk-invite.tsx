@@ -87,7 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     try {
-      await sendEmail({
+      const emailResult = await sendEmail({
         from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
         to: email,
         subject: `You have been invited to join ${company.data?.name} on Carbon`,
@@ -108,6 +108,17 @@ export async function action({ request }: ActionFunctionArgs) {
         )
       });
 
+      if (emailResult.error) {
+        logger.error(emailResult.error.message ?? "Email send failed");
+        results.push({
+          index,
+          email,
+          success: false,
+          message: "Created, but invite email failed to send"
+        });
+        continue;
+      }
+
       results.push({
         index,
         email,
@@ -121,7 +132,7 @@ export async function action({ request }: ActionFunctionArgs) {
       results.push({
         index,
         email,
-        success: true,
+        success: false,
         message: "Created, but invite email failed to send"
       });
     }
