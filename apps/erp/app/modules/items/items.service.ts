@@ -12,7 +12,11 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
+import {
+  LIST_COUNT,
+  setGenericQueryFilters,
+  setSearchFilter
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { nonConformancePriority } from "../quality/quality.models";
 import type {
@@ -524,7 +528,7 @@ export async function getConsumables(
   let query = client
     .from("consumables")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -1222,7 +1226,7 @@ export async function getMaterials(
   let query = client
     .from("materials")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1756,7 +1760,7 @@ export async function getParts(
   let query = client
     .from("parts")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -2006,7 +2010,7 @@ export async function getServices(
   let query = client
     .from("services")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -2100,7 +2104,7 @@ export async function getTools(
   let query = client
     .from("tools")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
