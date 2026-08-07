@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toWebhookBody } from "./webhook.ts";
+import { toWebhookBody } from "./webhook-body.ts";
 
 // The body shape is a PUBLIC contract: it is byte-for-byte what the `webhook`
 // edge function (the tail of the old pg_net trigger path) POSTed to customer
