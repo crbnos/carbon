@@ -15,7 +15,6 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
@@ -140,11 +139,6 @@ export function EndShift() {
                 >
                   <Trans>Cancel</Trans>
                 </Button>
-                <input
-                  type="hidden"
-                  name="timezone"
-                  value={getLocalTimeZone()}
-                />
                 <Button
                   type="submit"
                   isDisabled={fetcher.state !== "idle"}

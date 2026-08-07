@@ -18,6 +18,27 @@ export function getEffectiveDefaultMarkups(
   return enabled ? defaultMarkups : {};
 }
 
+/**
+ * Reconcile the quantity breaks a quote line currently offers against the
+ * `quoteLinePrice` rows that exist for it, in BOTH directions.
+ *
+ * The save path historically computed only `added` and seeded rows for it, so
+ * removing a break left its price row behind forever. Those orphans render as
+ * selectable options on the customer share page and trip the finalize
+ * validation, so removal must prune.
+ */
+export function reconcileQuantityBreaks(
+  existing: number[],
+  desired: number[]
+): { added: number[]; removed: number[] } {
+  const existingSet = new Set(existing);
+  const desiredSet = new Set(desired);
+  return {
+    added: Array.from(desiredSet).filter((q) => !existingSet.has(q)),
+    removed: Array.from(existingSet).filter((q) => !desiredSet.has(q))
+  };
+}
+
 export type RecalcPricingDecision =
   | { mode: "reprice"; markups: CategoryMarkups }
   | { mode: "preserve" };

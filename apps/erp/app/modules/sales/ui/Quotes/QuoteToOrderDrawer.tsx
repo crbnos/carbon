@@ -403,7 +403,14 @@ const LinePricingForm = ({
   const pricingByLine = useMemo(
     () =>
       lines.reduce<Record<string, QuotationPrice[]>>((acc, line) => {
-        acc[line.id!] = pricing.filter((p) => p.quoteLineId === line.id);
+        // Scope to the breaks the line still offers — an orphaned price row
+        // picked here would convert into a real sales order line.
+        acc[line.id!] = pricing.filter(
+          (p) =>
+            p.quoteLineId === line.id &&
+            Array.isArray(line.quantity) &&
+            line.quantity.includes(p.quantity)
+        );
         return acc;
       }, {}),
     [lines, pricing]

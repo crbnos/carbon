@@ -2,10 +2,17 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   type EdgeProps,
-  getSimpleBezierPath
+  getSimpleBezierPath,
+  getSmoothStepPath
 } from "@xyflow/react";
 import { memo } from "react";
-import type { LineageEdgeData } from "../utils";
+import {
+  EDGE_BORDER_RADIUS,
+  EDGE_OFFSET,
+  EDGE_STYLE,
+  edgeLabelPoint,
+  type LineageEdgeData
+} from "../utils";
 
 type Props = EdgeProps & {
   data?: LineageEdgeData & {
@@ -13,7 +20,6 @@ type Props = EdgeProps & {
     isReject?: boolean;
     isBackEdge?: boolean;
     highlighted?: boolean;
-    points?: { x: number; y: number }[];
   };
 };
 
@@ -27,14 +33,47 @@ function QuantityEdgeImpl({
   targetPosition,
   data
 }: Props) {
-  const [edgePath, labelX, labelY] = getSimpleBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition
-  });
+  // Keep this in step with EDGE_STYLE — `edgeLabelPoint` samples the matching
+  // geometry, so the two switch together and labels stay on the line.
+  const [edgePath, midX, midY] =
+    EDGE_STYLE === "bezier"
+      ? getSimpleBezierPath({
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition
+        })
+      : getSmoothStepPath({
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition,
+          borderRadius: EDGE_BORDER_RADIUS,
+          offset: EDGE_OFFSET
+        });
+
+  // Parallel edges between the same two ranks all put their label at the same
+  // midpoint, so the pills stack. Layout resolves how far along each path the
+  // label should sit; evaluate that here against the LIVE endpoints so the
+  // label rides the path when a node is dragged.
+  const labelPoint =
+    data?.labelT === undefined
+      ? null
+      : edgeLabelPoint(
+          data.labelT,
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition
+        );
+  const labelX = labelPoint?.x ?? midX;
+  const labelY = labelPoint?.y ?? midY;
 
   const isReject = !!data?.isReject;
   const isBackEdge = !!data?.isBackEdge;

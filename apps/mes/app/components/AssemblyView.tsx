@@ -50,7 +50,6 @@ import type {
 } from "@carbon/viewer";
 import { AssemblyPlayer } from "@carbon/viewer";
 import { ModelPreview } from "@carbon/viewer/model-preview";
-import { getLocalTimeZone } from "@internationalized/date";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBox,
@@ -1128,7 +1127,6 @@ export function AssemblyView({
     ) {
       const fd = new FormData();
       fd.set("jobOperationId", operation.id);
-      fd.set("timezone", getLocalTimeZone());
       fd.set("type", "Labor");
       fd.set("action", "Start");
       // Recording the first step means hands-on build has begun: end any open
@@ -1163,7 +1161,6 @@ export function AssemblyView({
     ) {
       const fd = new FormData();
       fd.set("jobOperationId", operation.id);
-      fd.set("timezone", getLocalTimeZone());
       fd.set("type", "Labor");
       fd.set("action", "End");
       fd.set("id", openLaborEvent.id);
@@ -2552,7 +2549,6 @@ function AutoTimer({
     if (running || busy) return;
     const fd = new FormData();
     fd.set("jobOperationId", operationId);
-    fd.set("timezone", getLocalTimeZone());
     fd.set("type", workType);
     fd.set("action", "Start");
     fd.set("exclusive", "true");
@@ -2626,7 +2622,6 @@ function TimerControl({
       className="h-full shrink-0"
     >
       <input type="hidden" name="jobOperationId" value={operation.id} />
-      <input type="hidden" name="timezone" value={getLocalTimeZone()} />
       <input type="hidden" name="type" value={workType} />
       {/* Single-phase clocking: starting this type ends any other open type. */}
       <input type="hidden" name="exclusive" value="true" />
