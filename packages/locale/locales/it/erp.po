@@ -10679,7 +10679,7 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Pagina {pdfViewPage} di {documentPageCount}"
 
 msgid "Paid"
-msgstr "Pagato"
+msgstr "Pagata"
 
 msgid "Paid Date"
 msgstr "Data di Pagamento"

@@ -396,21 +396,25 @@ export async function getPurchaseOrderLines(
 
 export async function getPurchaseOrderInvoiceLines(
   client: SupabaseClient<Database>,
-  purchaseOrderId: string
+  purchaseOrderId: string,
+  companyId: string
 ) {
   return client
     .from("purchaseInvoiceLine")
     .select("invoiceId")
-    .eq("purchaseOrderId", purchaseOrderId);
+    .eq("purchaseOrderId", purchaseOrderId)
+    .eq("companyId", companyId);
 }
 
 export async function getPurchaseOrderInvoicesByIds(
   client: SupabaseClient<Database>,
-  invoiceIds: string[]
+  invoiceIds: string[],
+  companyId: string
 ) {
   return client
     .from("purchaseInvoices")
     .select("id, orderTotal, balance, status, currencyCode")
+    .eq("companyId", companyId)
     .in("id", invoiceIds);
 }
 

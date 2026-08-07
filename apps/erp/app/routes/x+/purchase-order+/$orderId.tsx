@@ -525,11 +525,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }));
   const resolvedAttachments = [...defaultAttachments, ...adHocAttachments];
 
-  const invoiceLines = await getPurchaseOrderInvoiceLines(client, orderId);
+  const invoiceLines = await getPurchaseOrderInvoiceLines(
+    client,
+    orderId,
+    companyId
+  );
 
   if (invoiceLines.error) {
     throw redirect(
-      path.to.purchaseOrder(orderId),
+      path.to.purchaseOrders,
       await flash(
         request,
         error(invoiceLines.error, "Failed to load linked purchase invoices")
@@ -549,11 +553,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let currencyMismatchCount = 0;
 
   if (invoiceIds.length > 0) {
-    const invoices = await getPurchaseOrderInvoicesByIds(client, invoiceIds);
+    const invoices = await getPurchaseOrderInvoicesByIds(
+      client,
+      invoiceIds,
+      companyId
+    );
 
     if (invoices.error) {
       throw redirect(
-        path.to.purchaseOrder(orderId),
+        path.to.purchaseOrders,
         await flash(
           request,
           error(invoices.error, "Failed to load purchase invoice totals")
@@ -562,8 +570,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
 
     const orderCurrency = purchaseOrder.data?.currencyCode;
+    // Draft/Pending are unposted; Voided/Return are non-spend. Match the
+    // invoice-view statuses that keep their stored (non-derived) values.
+    const nonPostedStatuses = new Set(["Draft", "Pending", "Voided", "Return"]);
 
     for (const invoice of invoices.data ?? []) {
+      if (nonPostedStatuses.has(invoice.status ?? "")) {
+        continue;
+      }
+
       const invoiceTotal = invoice.orderTotal ?? 0;
       const invoiceCurrency = invoice.currencyCode;
 

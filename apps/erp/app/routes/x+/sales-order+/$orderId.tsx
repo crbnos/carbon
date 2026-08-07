@@ -76,12 +76,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? getCustomer(client, salesOrder.data.customerId)
       : Promise.resolve(null),
     getCompanySettings(serviceRole, companyId),
-    getSalesOrderInvoiceLines(client, orderId)
+    getSalesOrderInvoiceLines(client, orderId, companyId)
   ]);
 
   if (invoiceLines.error) {
     throw redirect(
-      path.to.salesOrder(orderId),
+      path.to.salesOrders,
       await flash(
         request,
         error(invoiceLines.error, "Failed to load linked sales invoices")
@@ -101,11 +101,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let currencyMismatchCount = 0;
 
   if (invoiceIds.length > 0) {
-    const invoices = await getSalesOrderInvoicesByIds(client, invoiceIds);
+    const invoices = await getSalesOrderInvoicesByIds(
+      client,
+      invoiceIds,
+      companyId
+    );
 
     if (invoices.error) {
       throw redirect(
-        path.to.salesOrder(orderId),
+        path.to.salesOrders,
         await flash(
           request,
           error(invoices.error, "Failed to load sales invoice totals")
@@ -114,8 +118,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
 
     const orderCurrency = salesOrder.data?.currencyCode;
+    // Draft/Pending are unposted; Voided/Return are non-revenue. Match the
+    // invoice-view statuses that keep their stored (non-derived) values.
+    const nonPostedStatuses = new Set(["Draft", "Pending", "Voided", "Return"]);
 
     for (const invoice of invoices.data ?? []) {
+      if (nonPostedStatuses.has(invoice.status ?? "")) {
+        continue;
+      }
+
       const invoiceTotal = invoice.invoiceTotal ?? 0;
       const invoiceCurrency = invoice.currencyCode;
 

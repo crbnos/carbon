@@ -25759,7 +25759,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "purchaseOrderId"
+        "purchaseOrderId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -25784,7 +25785,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "invoiceIds"
+        "invoiceIds",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -37285,7 +37287,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "salesOrderId"
+        "salesOrderId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -37310,7 +37313,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "invoiceIds"
+        "invoiceIds",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"

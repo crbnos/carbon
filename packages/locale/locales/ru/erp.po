@@ -2384,7 +2384,7 @@ msgid "Balance"
 msgstr "Баланс"
 
 msgid "Balance Remaining:"
-msgstr "Остаток:"
+msgstr "Остаток к оплате:"
 
 msgid "Balance Sheet"
 msgstr "Баланс"

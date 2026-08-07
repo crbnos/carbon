@@ -10679,7 +10679,7 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "पृष्ठ {pdfViewPage} का {documentPageCount}"
 
 msgid "Paid"
-msgstr "भुगतान किया"
+msgstr "भुगतान किया गया"
 
 msgid "Paid Date"
 msgstr "भुगतान की गई तारीख"

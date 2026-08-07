@@ -36,6 +36,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { INVOICE_DUST_THRESHOLD } from "~/modules/invoicing";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isPurchaseOrderLocked } from "../../purchasing.models";
@@ -484,8 +485,8 @@ const PurchaseOrderSummary = ({
   const balanceRemaining = routeData?.invoiceSummary?.balanceRemaining ?? 0;
   // Sub-cent dust matches invoice view forgiveness (INVOICE_DUST_THRESHOLD).
   const isFullyPaid =
-    balanceRemaining < 0.01 &&
-    paidAmount >= 0.01 &&
+    balanceRemaining < INVOICE_DUST_THRESHOLD &&
+    paidAmount >= INVOICE_DUST_THRESHOLD &&
     (routeData?.invoiceSummary?.invoicedAmount ?? 0) > 0;
 
   return (
@@ -613,21 +614,23 @@ const PurchaseOrderSummary = ({
               <Trans>Invoiced Amount:</Trans>
             </span>
             <span>
-              {formatter.format(routeData?.invoiceSummary?.invoicedAmount ?? 0)}
+              {presentationCurrencyFormatter.format(
+                routeData?.invoiceSummary?.invoicedAmount ?? 0
+              )}
             </span>
           </HStack>
           <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>
               <Trans>Paid:</Trans>
             </span>
-            <span>{formatter.format(paidAmount)}</span>
+            <span>{presentationCurrencyFormatter.format(paidAmount)}</span>
           </HStack>
           <HStack
             className={cn(
               "justify-between text-sm w-full",
               isFullyPaid
                 ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                : balanceRemaining >= 0.01
+                : balanceRemaining >= INVOICE_DUST_THRESHOLD
                   ? "text-amber-600 dark:text-amber-400 font-medium"
                   : "text-muted-foreground"
             )}
@@ -640,7 +643,9 @@ const PurchaseOrderSummary = ({
                 <Trans>Paid</Trans>
               </Badge>
             ) : (
-              <span>{formatter.format(balanceRemaining)}</span>
+              <span>
+                {presentationCurrencyFormatter.format(balanceRemaining)}
+              </span>
             )}
           </HStack>
           {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 0 && (

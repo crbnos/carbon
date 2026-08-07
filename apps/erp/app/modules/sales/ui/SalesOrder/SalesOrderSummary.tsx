@@ -55,6 +55,7 @@ import {
   usePermissions,
   useRouteData
 } from "~/hooks";
+import { INVOICE_DUST_THRESHOLD } from "~/modules/invoicing";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";
@@ -133,8 +134,8 @@ const SalesOrderSummary = ({
   const balanceRemaining = routeData?.invoiceSummary?.balanceRemaining ?? 0;
   // Sub-cent dust matches invoice view forgiveness (INVOICE_DUST_THRESHOLD).
   const isFullyPaid =
-    balanceRemaining < 0.01 &&
-    paidAmount >= 0.01 &&
+    balanceRemaining < INVOICE_DUST_THRESHOLD &&
+    paidAmount >= INVOICE_DUST_THRESHOLD &&
     (routeData?.invoiceSummary?.invoicedAmount ?? 0) > 0;
 
   const linesRequireJobs = hasLinesRequiringJobs({
@@ -335,7 +336,7 @@ const SalesOrderSummary = ({
                 "justify-between text-sm w-full",
                 isFullyPaid
                   ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                  : balanceRemaining >= 0.01
+                  : balanceRemaining >= INVOICE_DUST_THRESHOLD
                     ? "text-amber-600 dark:text-amber-400 font-medium"
                     : "text-muted-foreground"
               )}

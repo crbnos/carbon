@@ -547,7 +547,9 @@ const SalesInvoiceSummary = ({
               <Trans>Total:</Trans>
             </span>
             <VStack spacing={0} className="items-end">
-              <span>{formatter.format(total)}</span>
+              {/* Use the same view-derived total as Paid/Balance so
+                  Total ≈ Paid + Balance Remaining. */}
+              <span>{formatter.format(Number(invoiceTotal))}</span>
               {shouldConvertCurrency && (
                 <span className="text-sm">
                   {presentationCurrencyFormatter.format(customerTotal)}
