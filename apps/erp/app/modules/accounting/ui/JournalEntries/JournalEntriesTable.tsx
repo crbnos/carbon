@@ -220,7 +220,7 @@ const JournalEntriesTable = memo(
         }
       ];
       return defaultColumns;
-    }, [currencyFormatter, people.map, t]);
+    }, [currencyFormatter, people, t]);
 
     const renderContextMenu = useCallback(
       (row: JournalEntryListItem) => {
