@@ -54,9 +54,12 @@ import {
 } from "~/services/operations.service";
 import { getOpenClockEntry } from "~/services/people.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
+import { isSearchParamOnlyNavigation } from "~/utils/revalidate";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
+  nextUrl,
+  formMethod,
   defaultShouldRevalidate
 }) => {
   if (
@@ -64,6 +67,13 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     currentUrl.pathname.startsWith("/switch-company")
   ) {
     return true;
+  }
+
+  // This loader is the app shell: 9 queries plus an auth round-trip. Without
+  // this it re-ran on every filter, sort and page click, none of which can
+  // change anything it returns.
+  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
+    return false;
   }
 
   return defaultShouldRevalidate;
