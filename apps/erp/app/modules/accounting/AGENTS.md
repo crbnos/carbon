@@ -61,6 +61,8 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `fixedAssetDisposal` / `fixedAssetUsageLog` | Asset disposal and usage tracking |
 | `intercompanyTransaction` | Cross-company transaction matching |
 | `fiscalYearSettings` | Fiscal and tax year configuration |
+| `accountingBook` / `accountingBookCompany` | Multi-book adjustment books (#1052): group-scoped book definitions (`type` Primary/Adjustment, `accountingPrinciple`) + per-company enablement. `journal.bookId` places each journal on a book (Primary stamped by the `journal_default_book` trigger when NULL; `journal_adjustment_book_guard` restricts adjustment books to accounting sources of an enabled company). **Schema only so far — consuming services/RPCs/UI are a follow-up pending DB type regen; see `.ai/specs/2026-07-04-multi-book.md`.** |
+| `fixedAssetBook` / `bookAdjustmentRun` | Per-asset per-book depreciation settings; persisted generator runs (period × book × generator) for the adjustment-generator framework. `depreciationRun.bookId` NULL = Primary run. |
 
 ## Key Service Functions
 

@@ -486,7 +486,8 @@ export const journalEntrySourceTypes = [
   "Credit Memo",
   "Debit Memo",
   "Non-Conformance",
-  "Inbound Inspection"
+  "Inbound Inspection",
+  "Book Adjustment"
 ] as const;
 
 export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
@@ -754,3 +755,88 @@ export const fixedAssetUsageLogValidator = z.object({
 export const fixedAssetDisposalValidator = z.object({
   disposalDate: z.string().min(1, { message: "Disposal date is required" })
 });
+
+// --- Multi-book adjustment books (#1052) -----------------------------------
+// NetSuite-style adjustment-only books on the header-level journal.bookId.
+// See .ai/specs/2026-07-04-multi-book.md.
+
+export const accountingBookTypes = ["Primary", "Adjustment"] as const;
+
+export const accountingPrinciples = [
+  "US-GAAP",
+  "IFRS",
+  "Local",
+  "Tax"
+] as const;
+
+// Reporting perspectives for the book-aware balance/TB/GL-detail RPCs.
+// Primary = today's numbers; Book = the adjustment book's deltas alone;
+// Combined = Primary + the selected book, summed per account.
+export const bookModes = ["Primary", "Book", "Combined"] as const;
+
+export const accountingBookValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  type: z.enum(accountingBookTypes, {
+    errorMap: () => ({ message: "Type is required" })
+  }),
+  accountingPrinciple: z.enum(accountingPrinciples, {
+    errorMap: () => ({ message: "Accounting principle is required" })
+  }),
+  active: zfd.checkbox()
+});
+
+export const accountingBookCompanyValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  bookId: z.string().min(1, { message: "Book is required" }),
+  effectiveFrom: zfd.text(z.string().optional())
+});
+
+export const fixedAssetBookValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  fixedAssetId: z.string().min(1, { message: "Asset is required" }),
+  bookId: z.string().min(1, { message: "Book is required" }),
+  depreciationMethod: z.enum(depreciationMethods, {
+    errorMap: () => ({ message: "Depreciation method is required" })
+  }),
+  usefulLifeMonths: zfd.numeric(
+    z.number().int().positive({ message: "Useful life must be positive" })
+  ),
+  residualValuePercent: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Residual value must be >= 0" })
+      .max(100, { message: "Residual value must be <= 100" })
+  ),
+  depreciationStartDate: zfd.text(z.string().optional()),
+  accumulatedDepreciation: zfd.numeric(
+    z.number().min(0, { message: "Accumulated depreciation must be >= 0" })
+  )
+});
+
+export const bookAdjustmentRunStatuses = [
+  "Draft",
+  "Posted",
+  "Skipped"
+] as const;
+
+export const bookAdjustmentRunValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    bookId: z.string().min(1, { message: "Book is required" }),
+    accountingPeriodId: z.string().min(1, { message: "Period is required" }),
+    generatorKey: z.string().min(1, { message: "Generator is required" }),
+    status: z.enum(bookAdjustmentRunStatuses, {
+      errorMap: () => ({ message: "Status is required" })
+    }),
+    skippedReason: zfd.text(z.string().optional())
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === "Skipped" && !data.skippedReason?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Reason is required when skipping",
+        path: ["skippedReason"]
+      });
+    }
+  });
