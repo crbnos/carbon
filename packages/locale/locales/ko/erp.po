@@ -167,9 +167,6 @@ msgstr "{name} 삭제됨"
 msgid "{providerName} data overwrites Carbon data"
 msgstr "{providerName} 데이터가 Carbon 데이터를 덮어씁니다"
 
-msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr "{providerName}의 기능이 이것들을 결정합니다 — 여기서는 변경할 수 없습니다."
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
 
@@ -5993,9 +5990,6 @@ msgstr "고정자산"
 
 msgid "Fixed Assets"
 msgstr "고정자산"
-
-msgid "Fixed by {providerName}"
-msgstr "{providerName}에 의해 고정됨"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "배치 크기가 표준과 다를 때 발생하는 고정비 상각 차이"
@@ -15184,8 +15178,8 @@ msgstr "이 항목에 대한 각 검사 흐름을 운영하는 문서입니다."
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
 
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr "Carbon과 {providerName} 모두 같은 레코드를 변경했을 때 어느 시스템의 데이터가 우선하는가."
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "승인 가능자"

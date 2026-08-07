@@ -1,5 +1,5 @@
 import { ChoiceCardGroup, Submit, ValidatedForm } from "@carbon/form";
-import { Badge, DrawerBody, DrawerFooter, HStack } from "@carbon/react";
+import { DrawerBody, DrawerFooter, HStack } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -33,6 +33,9 @@ type SourceOfTruthProps = {
   entities: SourceOfTruthEntry[];
 };
 
+/** Forced (non-configurable) entities render a disabled picker that can't change. */
+const noop = () => undefined;
+
 export function SourceOfTruth({
   tabs,
   providerName,
@@ -43,7 +46,6 @@ export function SourceOfTruth({
   const canUpdate = permissions.can("update", "settings");
 
   const configurable = entities.filter((entity) => entity.configurable);
-  const forced = entities.filter((entity) => !entity.configurable);
 
   const [ownerState, setOwnerState] = useState<
     Record<string, SourceOfTruthOwner>
@@ -80,74 +82,53 @@ export function SourceOfTruth({
           <p className="text-xs text-muted-foreground">
             <Trans>
               Which system's data wins when both Carbon and {providerName} have
-              changed the same record.
+              changed the same record. Entries {providerName} fixes by its own
+              capabilities are shown but can't be changed.
             </Trans>
           </p>
         </div>
 
-        {configurable.length > 0 && (
-          <div className="flex w-full flex-col gap-6">
-            {configurable.map((entity) => (
-              <div key={entity.entityType} className="w-full">
-                <div className="flex flex-col gap-0.5 pb-2">
-                  <div className="text-sm font-medium text-foreground">
-                    {entity.label}
-                  </div>
+        <div className="flex w-full flex-col gap-6">
+          {entities.map((entity) => (
+            <div key={entity.entityType} className="w-full">
+              <div className="flex flex-col gap-0.5 pb-2">
+                <div className="text-sm font-medium text-foreground">
+                  {entity.label}
                 </div>
-                <ChoiceCardGroup
-                  value={ownerState[entity.entityType] ?? entity.owner}
-                  onChange={(next) =>
-                    setOwnerState((current) => ({
-                      ...current,
-                      [entity.entityType]: next
-                    }))
-                  }
-                  options={[
-                    {
-                      value: "accounting",
-                      title: providerName,
-                      description: t`${providerName} data overwrites Carbon data`
-                    },
-                    {
-                      value: "carbon",
-                      title: t`Carbon`,
-                      description: t`Carbon data overwrites ${providerName} data`
-                    }
-                  ]}
-                />
               </div>
-            ))}
-          </div>
-        )}
-
-        {forced.length > 0 && (
-          <section className="flex w-full flex-col gap-2 border-t border-border pt-4">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
-                <Trans>Fixed by {providerName}</Trans>
-              </span>
-              <p className="text-xs text-muted-foreground">
-                <Trans>
-                  {providerName}'s capabilities decide these — they can't be
-                  changed here.
-                </Trans>
-              </p>
+              <ChoiceCardGroup
+                value={
+                  entity.configurable
+                    ? (ownerState[entity.entityType] ?? entity.owner)
+                    : entity.owner
+                }
+                onChange={
+                  entity.configurable
+                    ? (next) =>
+                        setOwnerState((current) => ({
+                          ...current,
+                          [entity.entityType]: next
+                        }))
+                    : noop
+                }
+                options={[
+                  {
+                    value: "accounting",
+                    title: providerName,
+                    description: t`${providerName} data overwrites Carbon data`,
+                    disabled: !entity.configurable
+                  },
+                  {
+                    value: "carbon",
+                    title: t`Carbon`,
+                    description: t`Carbon data overwrites ${providerName} data`,
+                    disabled: !entity.configurable
+                  }
+                ]}
+              />
             </div>
-            <div className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
-              {forced.map((entity) => (
-                <div
-                  key={entity.entityType}
-                  className="flex items-center gap-3 px-3 py-2.5"
-                >
-                  <span className="flex-1 text-sm">{entity.label}</span>
-                  {entity.note && (
-                    <Badge variant="secondary">{entity.note}</Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+          ))}
+        </div>
       </DrawerBody>
       <DrawerFooter>
         <HStack>

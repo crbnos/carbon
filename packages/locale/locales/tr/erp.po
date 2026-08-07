@@ -167,9 +167,6 @@ msgstr "{name} silindi"
 msgid "{providerName} data overwrites Carbon data"
 msgstr "{providerName} verileri Carbon verilerini üzerine yazıyor"
 
-msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr "{providerName}'nin yetenekleri bunları belirler — burada değiştirilemiyor."
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
@@ -5993,9 +5990,6 @@ msgstr "Sabit Kıymet"
 
 msgid "Fixed Assets"
 msgstr "Sabit Varlıklar"
-
-msgid "Fixed by {providerName}"
-msgstr "{providerName} tarafından sabitledi"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Kazançlar ve Zararlar"
@@ -15184,8 +15178,8 @@ msgstr "Bu öğe için her inceleme akışını hangi belge yönlendirir."
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Hangi üretim olayı raf ömrü saatini başlatır — örneğin, doldurma, mühürleme veya nihai QC."
 
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr "Her iki Carbon ve {providerName} aynı kaydı değiştirdiğinde hangi sistemin verileri kazanır?"
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "Kimler Onaylayabilir"

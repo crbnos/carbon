@@ -167,9 +167,6 @@ msgstr "{name} हटाया गया"
 msgid "{providerName} data overwrites Carbon data"
 msgstr "{providerName} का डेटा Carbon के डेटा को ओवरराइट करता है"
 
-msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr "{providerName} की क्षमताएं इन्हें तय करती हैं — उन्हें यहां नहीं बदला जा सकता।"
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
 
@@ -5993,9 +5990,6 @@ msgstr "स्थिर संपत्ति"
 
 msgid "Fixed Assets"
 msgstr "स्थिर संपत्ति"
-
-msgid "Fixed by {providerName}"
-msgstr "{providerName} द्वारा निर्धारित"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "लाभ और हानि"
@@ -15184,8 +15178,8 @@ msgstr "कौन सा दस्तावेज़ इस आइटम के 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "कौन सी विनिर्माण घटना शेल्फ-जीवन घड़ी शुरू करती है — उदाहरण के लिए, भरना, सील करना, या अंतिम क्यूसी।"
 
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr "जब Carbon और {providerName} दोनों ने एक ही रिकॉर्ड को बदल दिया है तो कौन सा सिस्टम डेटा जीतता है।"
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "कौन अनुमोदन कर सकता है"

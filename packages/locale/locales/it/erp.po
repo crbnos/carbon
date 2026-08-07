@@ -167,9 +167,6 @@ msgstr "{name} eliminato"
 msgid "{providerName} data overwrites Carbon data"
 msgstr "{providerName} i dati sovrascrivono i dati di Carbon"
 
-msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr "Le capacità di {providerName} decidono questi — non possono essere modificate qui."
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase rimanente} other {# fasi rimanenti}}"
 
@@ -5993,9 +5990,6 @@ msgstr "Cespite Fisso"
 
 msgid "Fixed Assets"
 msgstr "Immobilizzazioni"
-
-msgid "Fixed by {providerName}"
-msgstr "Risolto da {providerName}"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Utili e Perdite"
@@ -15184,8 +15178,8 @@ msgstr "Quale documento gestisce ogni flusso di ispezione per questo articolo."
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Quale evento di produzione avvia l'orologio della vita di magazzino — ad esempio, riempimento, sigillatura o QC finale."
 
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr "I dati di quale sistema vincono quando sia Carbon che {providerName} hanno modificato lo stesso record."
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "Chi Può Approvare"

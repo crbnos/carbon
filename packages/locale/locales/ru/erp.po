@@ -167,9 +167,6 @@ msgstr "{name} удален"
 msgid "{providerName} data overwrites Carbon data"
 msgstr "Данные {providerName} перезаписывают данные Carbon"
 
-msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr "Возможности {providerName} определяют эти настройки — их нельзя изменить здесь."
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
 
@@ -5993,9 +5990,6 @@ msgstr "Основное средство"
 
 msgid "Fixed Assets"
 msgstr "Основные средства"
-
-msgid "Fixed by {providerName}"
-msgstr "Исправлено {providerName}"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Прибыли и Убытки"
@@ -15184,8 +15178,8 @@ msgstr "Какой документ определяет каждый проце
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."
 
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr "Данные какой системы имеют приоритет, когда и Carbon, и {providerName} изменили один и тот же запись."
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "Кто может одобрить"

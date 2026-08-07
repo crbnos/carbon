@@ -167,9 +167,6 @@ msgstr "{name} 已删除"
 msgid "{providerName} data overwrites Carbon data"
 msgstr "{providerName}的数据覆盖Carbon数据"
 
-msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr "{providerName}的功能决定了这些 — 无法在此处更改。"
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
 
@@ -5993,9 +5990,6 @@ msgstr "固定资产"
 
 msgid "Fixed Assets"
 msgstr "固定资产"
-
-msgid "Fixed by {providerName}"
-msgstr "由{providerName}固定"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "收益和损失"
@@ -15184,8 +15178,8 @@ msgstr "哪份文件驱动此物料的每个检验流程。"
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "哪个制造事件启动保质期时钟 — 例如填充、密封或最终QC。"
 
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr "当Carbon和{providerName}都更改了同一记录时，哪个系统的数据优先。"
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "谁可以批准"

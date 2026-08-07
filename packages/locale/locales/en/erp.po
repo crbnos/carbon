@@ -167,9 +167,6 @@ msgstr "{name} deleted"
 msgid "{providerName} data overwrites Carbon data"
 msgstr "{providerName} data overwrites Carbon data"
 
-msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr "{providerName}'s capabilities decide these — they can't be changed here."
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
 
@@ -5993,9 +5990,6 @@ msgstr "Fixed Asset"
 
 msgid "Fixed Assets"
 msgstr "Fixed Assets"
-
-msgid "Fixed by {providerName}"
-msgstr "Fixed by {providerName}"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Fixed cost amortization variance when batch size differs from standard"
@@ -15184,8 +15178,8 @@ msgstr "Which document drives each inspection flow for this item."
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr "Which system's data wins when both Carbon and {providerName} have changed the same record."
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
+msgstr "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
 
 msgid "Who Can Approve"
 msgstr "Who Can Approve"
