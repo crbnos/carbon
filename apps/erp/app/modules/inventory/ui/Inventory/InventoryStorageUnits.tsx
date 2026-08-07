@@ -57,6 +57,7 @@ import type { z } from "zod";
 import { DateTime } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Input, Location, Select, TextArea } from "~/components/Form";
+import ScrapReason from "~/components/Form/ScrapReason";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { usePermissions, usePrinting } from "~/hooks";
@@ -171,6 +172,7 @@ const InventoryStorageUnits = ({
     null
   );
   const [isEditingRow, setIsEditingRow] = useState(false);
+  const [adjustmentType, setAdjustmentType] = useState<string>("Set Quantity");
 
   const isEditing = selectedTrackedEntityId !== null;
 
@@ -208,6 +210,7 @@ const InventoryStorageUnits = ({
     setSelectedTrackedEntityId(trackedEntityId || null);
     setSelectedReadableId(readableId || null);
     setIsEditingRow(storageUnitId !== undefined);
+    setAdjustmentType("Set Quantity");
     if (currentQuantity !== undefined) {
       setQuantity(currentQuantity);
     }
@@ -518,6 +521,9 @@ const InventoryStorageUnits = ({
                     name="adjustmentType"
                     label={t`Adjustment Type`}
                     termId="inventory-adjustment-type"
+                    onChange={(option) =>
+                      setAdjustmentType(option?.value ?? "Set Quantity")
+                    }
                     options={
                       isEditing && (isSerial || isBatch)
                         ? [
@@ -525,7 +531,8 @@ const InventoryStorageUnits = ({
                             {
                               label: t`Negative Adjustment`,
                               value: "Negative Adjmt."
-                            }
+                            },
+                            { label: t`Scrap`, value: "Scrap" }
                           ]
                         : [
                             ...(isSerial
@@ -543,10 +550,14 @@ const InventoryStorageUnits = ({
                             {
                               label: t`Negative Adjustment`,
                               value: "Negative Adjmt."
-                            }
+                            },
+                            { label: t`Scrap`, value: "Scrap" }
                           ]
                     }
                   />
+                  {adjustmentType === "Scrap" && (
+                    <ScrapReason name="scrapReasonId" label={t`Scrap Reason`} />
+                  )}
                   {(isBatch || isSerial) && (
                     <>
                       <Hidden name="trackedEntityId" />

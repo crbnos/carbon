@@ -10773,6 +10773,9 @@ msgstr "Ressources"
 msgid "Restore from Trash"
 msgstr "Restaurer à partir de la corbeille"
 
+msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
+msgstr ""
+
 msgid "Restore tracked entities to available"
 msgstr "Restaurer les entités suivies en disponibles"
 
@@ -13969,6 +13972,12 @@ msgstr "Bons de commande non reçus"
 
 msgid "Unsaved changes"
 msgstr "Modifications non enregistrées"
+
+msgid "Unscrap"
+msgstr ""
+
+msgid "Unscrap {label}"
+msgstr ""
 
 msgid "Unshipped orders"
 msgstr "Commandes non expédiées"

@@ -37,7 +37,9 @@ const payloadValidator = z
       "Unscrap",
     ]),
     itemId: z.string(),
-    locationId: z.string(),
+    // Optional for Unscrap (resolved from the original scrap movement);
+    // required for every other type, enforced by the app-layer validator.
+    locationId: z.string().optional().nullable(),
     storageUnitId: z.string().optional().nullable(),
     trackedEntityId: z.string().optional().nullable(),
     // 0 is legal for Set Quantity (set to zero) and for a tracked Scrap/Unscrap
@@ -85,7 +87,7 @@ serve(async (req: Request) => {
     const {
       adjustmentType,
       itemId,
-      locationId,
+      locationId: payloadLocationId,
       storageUnitId,
       trackedEntityId,
       quantity,
@@ -98,6 +100,10 @@ serve(async (req: Request) => {
       companyId,
       userId,
     } = payloadValidator.parse(payload);
+
+    // Unscrap sends no location (resolved from the scrap movement); every
+    // other type carries one (app-layer validator enforces it).
+    const locationId: string | null = payloadLocationId ?? null;
 
     const client = await requirePermissions(req, companyId, userId, {
       update: "inventory",
@@ -116,7 +122,7 @@ serve(async (req: Request) => {
       client.rpc("get_item_quantities_by_tracking_id", {
         item_id: itemId,
         company_id: companyId,
-        location_id: locationId,
+        location_id: locationId ?? "",
       }),
       client
         .from("item")
@@ -673,6 +679,10 @@ serve(async (req: Request) => {
           const booked = await bookAdjustment(trx, {
             ledger: {
               ...unscrapLedgerBase,
+              // A Scrapped tracked-entity row carries no location — restore to
+              // the bin/location the scrap movement removed it from.
+              locationId:
+                scrapMovement?.locationId ?? unscrapLedgerBase.locationId,
               storageUnitId:
                 scrapMovement?.storageUnitId ?? storageUnitId ?? null,
               correctionOfItemLedgerId: scrapMovement?.id ?? null,

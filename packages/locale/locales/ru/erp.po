@@ -10773,6 +10773,9 @@ msgstr "Ресурсы"
 msgid "Restore from Trash"
 msgstr "Восстановить из корзины"
 
+msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
+msgstr ""
+
 msgid "Restore tracked entities to available"
 msgstr "Восстановить отслеживаемые объекты в доступные"
 
@@ -13969,6 +13972,12 @@ msgstr "Неполученные ПО"
 
 msgid "Unsaved changes"
 msgstr "Несохранённые изменения"
+
+msgid "Unscrap"
+msgstr ""
+
+msgid "Unscrap {label}"
+msgstr ""
 
 msgid "Unshipped orders"
 msgstr "Невыполненные заказы"

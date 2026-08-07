@@ -10773,6 +10773,9 @@ msgstr "संसाधन"
 msgid "Restore from Trash"
 msgstr "ट्रैश से पुनः स्थापित करें"
 
+msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
+msgstr ""
+
 msgid "Restore tracked entities to available"
 msgstr "ट्रैक किए गए इकाइयों को उपलब्ध में पुनः स्थापित करें"
 
@@ -13969,6 +13972,12 @@ msgstr "अप्राप्त POs"
 
 msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
+
+msgid "Unscrap"
+msgstr ""
+
+msgid "Unscrap {label}"
+msgstr ""
 
 msgid "Unshipped orders"
 msgstr "अभी भेजे जाने वाले ऑर्डर"

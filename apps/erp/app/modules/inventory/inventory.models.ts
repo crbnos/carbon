@@ -59,7 +59,8 @@ export const trackedEntityStatus = [
   "Consumed",
   "On Hold",
   "Reserved",
-  "Rejected"
+  "Rejected",
+  "Scrapped"
 ] as const;
 
 export const replenishmentSystemTypes = [
@@ -153,7 +154,10 @@ export const inventoryCountLineValidator = z.object({
 export const inventoryAdjustmentValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
-    locationId: z.string().min(1, { message: "Location is required" }),
+    // Required for every adjustment except Unscrap, where the edge function
+    // resolves the location from the original scrap movement (a Scrapped
+    // tracked-entity row carries no location). Enforced in the refine below.
+    locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
     adjustmentType: z.enum([
@@ -196,6 +200,13 @@ export const inventoryAdjustmentValidator = z
         code: z.ZodIssueCode.custom,
         path: ["scrapReasonId"],
         message: "Scrap reason is required"
+      });
+    }
+    if (data.adjustmentType !== "Unscrap" && !data.locationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["locationId"],
+        message: "Location is required"
       });
     }
   });

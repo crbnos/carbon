@@ -10773,6 +10773,9 @@ msgstr "Zasoby"
 msgid "Restore from Trash"
 msgstr "Przywróć z Kosza"
 
+msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
+msgstr ""
+
 msgid "Restore tracked entities to available"
 msgstr "Przywróć śledzone jednostki do dostępnych"
 
@@ -13969,6 +13972,12 @@ msgstr "Nieprzyjęte zamówienia"
 
 msgid "Unsaved changes"
 msgstr "Niezapisane zmiany"
+
+msgid "Unscrap"
+msgstr ""
+
+msgid "Unscrap {label}"
+msgstr ""
 
 msgid "Unshipped orders"
 msgstr "Niewysłane zamówienia"

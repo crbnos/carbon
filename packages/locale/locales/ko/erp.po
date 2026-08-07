@@ -10773,6 +10773,9 @@ msgstr "리소스"
 msgid "Restore from Trash"
 msgstr "휴지통에서 복원"
 
+msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
+msgstr ""
+
 msgid "Restore tracked entities to available"
 msgstr "추적 개체를 사용 가능 상태로 복원"
 
@@ -13969,6 +13972,12 @@ msgstr "미입고 구매주문"
 
 msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
+
+msgid "Unscrap"
+msgstr ""
+
+msgid "Unscrap {label}"
+msgstr ""
 
 msgid "Unshipped orders"
 msgstr "미출하 주문"

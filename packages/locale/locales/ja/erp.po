@@ -10773,6 +10773,9 @@ msgstr "リソース"
 msgid "Restore from Trash"
 msgstr "ゴミ箱から復元"
 
+msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
+msgstr ""
+
 msgid "Restore tracked entities to available"
 msgstr "追跡対象エンティティを利用可能に復元"
 
@@ -13969,6 +13972,12 @@ msgstr "未受領PO"
 
 msgid "Unsaved changes"
 msgstr "未保存の変更"
+
+msgid "Unscrap"
+msgstr ""
+
+msgid "Unscrap {label}"
+msgstr ""
 
 msgid "Unshipped orders"
 msgstr "未発送注文"

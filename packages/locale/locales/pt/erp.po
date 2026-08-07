@@ -10773,6 +10773,9 @@ msgstr "Recursos"
 msgid "Restore from Trash"
 msgstr "Restaurar da Lixeira"
 
+msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
+msgstr ""
+
 msgid "Restore tracked entities to available"
 msgstr "Restaurar entidades rastreadas para disponível"
 
@@ -13969,6 +13972,12 @@ msgstr "POs não recebidas"
 
 msgid "Unsaved changes"
 msgstr "Alterações não salvas"
+
+msgid "Unscrap"
+msgstr ""
+
+msgid "Unscrap {label}"
+msgstr ""
 
 msgid "Unshipped orders"
 msgstr "Pedidos não enviados"

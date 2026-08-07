@@ -10773,6 +10773,9 @@ msgstr "资源"
 msgid "Restore from Trash"
 msgstr "从垃圾箱恢复"
 
+msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
+msgstr ""
+
 msgid "Restore tracked entities to available"
 msgstr "将跟踪的实体恢复为可用"
 
@@ -13969,6 +13972,12 @@ msgstr "未收到的采购订单"
 
 msgid "Unsaved changes"
 msgstr "未保存的更改"
+
+msgid "Unscrap"
+msgstr ""
+
+msgid "Unscrap {label}"
+msgstr ""
 
 msgid "Unshipped orders"
 msgstr "未发货订单"
