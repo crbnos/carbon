@@ -632,9 +632,7 @@ export async function getUserByEmail(email: string) {
     .single();
 }
 
-// Creates a new auth.users entry for `email`, or — if one already exists due to
-// a partial prior deletion — recovers by returning the existing auth ID so the
-// caller can create just the missing public.user row.
+// Creates the auth user for email, or recovers the existing ID if a prior deletion left one behind.
 async function resolveAuthUserId(email: string): Promise<string | null> {
   const serviceRole = getCarbonServiceRole();
   const result = await serviceRole.auth.admin.createUser({
@@ -645,12 +643,10 @@ async function resolveAuthUserId(email: string): Promise<string | null> {
 
   if (!result.error) return result.data.user.id;
 
-  // Only recover for the specific "already registered" case — any other error
-  // (network failure, rate limit, etc.) should surface as-is.
+  // Only recover for "already registered"; other errors (network, rate limit) surface as-is.
   if (result.error.code !== "user_already_exists") return null;
 
-  // auth.users has the record but public.user doesn't — partial prior delete.
-  // Page through auth users to find the orphaned ID.
+  // auth record exists but app user row doesn't; find the orphaned ID.
   const target = email.toLowerCase();
   let page = 1;
   const perPage = 1000;
