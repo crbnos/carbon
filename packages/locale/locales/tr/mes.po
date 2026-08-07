@@ -679,7 +679,7 @@ msgid "Maintenance overdue"
 msgstr "Bakım vadesi geçmiş"
 
 msgid "Make a replacement"
-msgstr ""
+msgstr "Bir yedek oluştur"
 
 msgid "Manually add items to inventory"
 msgstr "Envantere öğeler eklemek için manuel olarak"
@@ -1057,7 +1057,7 @@ msgid "Remove part"
 msgstr "Parçayı kaldır"
 
 msgid "Reopen the subassembly and create a replacement unit"
-msgstr ""
+msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
 
 msgid "Result"
 msgstr "Sonuç"
@@ -1108,10 +1108,10 @@ msgid "Scrap"
 msgstr "Hurda"
 
 msgid "Scrap {readableId}"
-msgstr ""
+msgstr "Hurdala {readableId}"
 
 msgid "Scrap material"
-msgstr ""
+msgstr "Malzeme hurdası"
 
 msgid "Scrap quantity"
 msgstr "Hurda miktarı"
@@ -1123,10 +1123,10 @@ msgid "Scrapped"
 msgstr "Hurdaya Ayrılan"
 
 msgid "Scrapping serial {trackedEntityReadableId}"
-msgstr ""
+msgstr "Seri hurdası {trackedEntityReadableId}"
 
 msgid "Scrapping the selected serial"
-msgstr ""
+msgstr "Seçilen serinin hurdası"
 
 msgid "Search"
 msgstr "Ara"
@@ -1322,13 +1322,13 @@ msgid "This lot is expired and can't be picked."
 msgstr "Bu parti süresi dolmuş ve alınamaz."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
-msgstr ""
+msgstr "Bu parça siparişe göre yapılmıştır. Hurdalaması, bir yedek yapmak için rotasını yeniden açabilir."
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
-msgstr ""
+msgstr "Bu parça stoktan hurdaya çıkarılacaktır. Gereksinimleri açık kalır, böylece bir yedek çıkarabilirsiniz."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr ""
+msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
 
 msgid "Thumbnail"
 msgstr "Küçük Resim"

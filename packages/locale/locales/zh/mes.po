@@ -679,7 +679,7 @@ msgid "Maintenance overdue"
 msgstr "维护逾期"
 
 msgid "Make a replacement"
-msgstr ""
+msgstr "制作替换件"
 
 msgid "Manually add items to inventory"
 msgstr "手动添加物料到库存"
@@ -1057,7 +1057,7 @@ msgid "Remove part"
 msgstr "移除零件"
 
 msgid "Reopen the subassembly and create a replacement unit"
-msgstr ""
+msgstr "重新打开子装配体并创建替换单元"
 
 msgid "Result"
 msgstr "结果"
@@ -1108,10 +1108,10 @@ msgid "Scrap"
 msgstr "报废"
 
 msgid "Scrap {readableId}"
-msgstr ""
+msgstr "报废 {readableId}"
 
 msgid "Scrap material"
-msgstr ""
+msgstr "报废物料"
 
 msgid "Scrap quantity"
 msgstr "报废数量"
@@ -1123,10 +1123,10 @@ msgid "Scrapped"
 msgstr "已报废"
 
 msgid "Scrapping serial {trackedEntityReadableId}"
-msgstr ""
+msgstr "报废序列号 {trackedEntityReadableId}"
 
 msgid "Scrapping the selected serial"
-msgstr ""
+msgstr "报废所选序列号"
 
 msgid "Search"
 msgstr "搜索"
@@ -1322,13 +1322,13 @@ msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法领取。"
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
-msgstr ""
+msgstr "此部件是按订单生产的。报废它可以重新打开其路线以制作替换件。"
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
-msgstr ""
+msgstr "此部件将从库存中报废。其需求保持打开状态，以便您可以发放替换件。"
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr ""
+msgstr "此单元将被永久报废，并将创建替换序列号。"
 
 msgid "Thumbnail"
 msgstr "缩略图"

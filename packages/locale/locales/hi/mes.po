@@ -679,7 +679,7 @@ msgid "Maintenance overdue"
 msgstr "रखरखाव अतिदेय"
 
 msgid "Make a replacement"
-msgstr ""
+msgstr "एक प्रतिस्थापन बनाएं"
 
 msgid "Manually add items to inventory"
 msgstr "इन्वेंटरी में आइटम मैन्युअली जोड़ें"
@@ -1057,7 +1057,7 @@ msgid "Remove part"
 msgstr "भाग हटाएं"
 
 msgid "Reopen the subassembly and create a replacement unit"
-msgstr ""
+msgstr "सबअ्यासेम्बली को फिर से खोलें और एक प्रतिस्थापन इकाई बनाएं"
 
 msgid "Result"
 msgstr "परिणाम"
@@ -1108,10 +1108,10 @@ msgid "Scrap"
 msgstr "स्क्रैप"
 
 msgid "Scrap {readableId}"
-msgstr ""
+msgstr "स्क्रैप {readableId}"
 
 msgid "Scrap material"
-msgstr ""
+msgstr "स्क्रैप सामग्री"
 
 msgid "Scrap quantity"
 msgstr "स्क्रैप मात्रा"
@@ -1123,10 +1123,10 @@ msgid "Scrapped"
 msgstr "स्क्रैप किया गया"
 
 msgid "Scrapping serial {trackedEntityReadableId}"
-msgstr ""
+msgstr "सीरीयल को स्क्रैप किया जा रहा है {trackedEntityReadableId}"
 
 msgid "Scrapping the selected serial"
-msgstr ""
+msgstr "चयनित सीरीयल को स्क्रैप किया जा रहा है"
 
 msgid "Search"
 msgstr "खोजें"
@@ -1322,13 +1322,13 @@ msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
-msgstr ""
+msgstr "यह हिस्सा आदेश के अनुसार बनाया गया था। इसे स्क्रैप करने से इसका रूटिंग फिर से खुल सकता है प्रतिस्थापन बनाने के लिए।"
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
-msgstr ""
+msgstr "यह हिस्सा स्टॉक से स्क्रैप किया जाएगा। इसकी आवश्यकता खुली रहती है ताकि आप एक प्रतिस्थापन जारी कर सकें।"
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr ""
+msgstr "यह इकाई स्थायी रूप से स्क्रैप की जाएगी और एक प्रतिस्थापन सीरीयल नंबर बनाया जाएगा।"
 
 msgid "Thumbnail"
 msgstr "थंबनेल"

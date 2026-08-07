@@ -679,7 +679,7 @@ msgid "Maintenance overdue"
 msgstr "Manutenzione scaduta"
 
 msgid "Make a replacement"
-msgstr ""
+msgstr "Crea una sostituzione"
 
 msgid "Manually add items to inventory"
 msgstr "Aggiungi manualmente articoli all'inventario"
@@ -1057,7 +1057,7 @@ msgid "Remove part"
 msgstr "Rimuovi componente"
 
 msgid "Reopen the subassembly and create a replacement unit"
-msgstr ""
+msgstr "Riaprire il sottoassieme e creare un'unità di ricambio"
 
 msgid "Result"
 msgstr "Risultato"
@@ -1108,10 +1108,10 @@ msgid "Scrap"
 msgstr "Scarto"
 
 msgid "Scrap {readableId}"
-msgstr ""
+msgstr "Scarta {readableId}"
 
 msgid "Scrap material"
-msgstr ""
+msgstr "Scarta materiale"
 
 msgid "Scrap quantity"
 msgstr "Quantità di scarto"
@@ -1123,10 +1123,10 @@ msgid "Scrapped"
 msgstr "Scartato"
 
 msgid "Scrapping serial {trackedEntityReadableId}"
-msgstr ""
+msgstr "Scarto numero seriale {trackedEntityReadableId}"
 
 msgid "Scrapping the selected serial"
-msgstr ""
+msgstr "Scarto del numero di serie selezionato"
 
 msgid "Search"
 msgstr "Cerca"
@@ -1322,13 +1322,13 @@ msgid "This lot is expired and can't be picked."
 msgstr "Questo lotto è scaduto e non può essere prelevato."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
-msgstr ""
+msgstr "Questa parte è stata realizzata su ordinazione. Lo scarto può riaprire il percorso di produzione per creare una sostituzione."
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
-msgstr ""
+msgstr "Questa parte sarà scartata dallo stock. Il suo fabbisogno rimane aperto per poter emettere una sostituzione."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr ""
+msgstr "Questa unità sarà permanentemente scartata e verrà creato un nuovo numero seriale."
 
 msgid "Thumbnail"
 msgstr "Miniatura"

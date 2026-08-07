@@ -679,7 +679,7 @@ msgid "Maintenance overdue"
 msgstr "기한이 지난 유지보수"
 
 msgid "Make a replacement"
-msgstr ""
+msgstr "교체품 만들기"
 
 msgid "Manually add items to inventory"
 msgstr "재고에 품목을 수동으로 추가"
@@ -1057,7 +1057,7 @@ msgid "Remove part"
 msgstr "품목 제거"
 
 msgid "Reopen the subassembly and create a replacement unit"
-msgstr ""
+msgstr "부분 조립품을 다시 열고 교체 단위를 생성합니다"
 
 msgid "Result"
 msgstr "결과"
@@ -1108,10 +1108,10 @@ msgid "Scrap"
 msgstr "스크랩"
 
 msgid "Scrap {readableId}"
-msgstr ""
+msgstr "{readableId} 폐기"
 
 msgid "Scrap material"
-msgstr ""
+msgstr "자재 폐기"
 
 msgid "Scrap quantity"
 msgstr "폐기 수량"
@@ -1123,10 +1123,10 @@ msgid "Scrapped"
 msgstr "스크랩됨"
 
 msgid "Scrapping serial {trackedEntityReadableId}"
-msgstr ""
+msgstr "일련번호 {trackedEntityReadableId} 폐기"
 
 msgid "Scrapping the selected serial"
-msgstr ""
+msgstr "선택한 일련번호 폐기"
 
 msgid "Search"
 msgstr "검색"
@@ -1322,13 +1322,13 @@ msgid "This lot is expired and can't be picked."
 msgstr "이 로트는 만료되어 피킹할 수 없습니다."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
-msgstr ""
+msgstr "이 부품은 주문 제작되었습니다. 폐기하면 교체품을 만들기 위해 라우팅을 다시 열 수 있습니다."
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
-msgstr ""
+msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으므로 교체품을 발급할 수 있습니다."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr ""
+msgstr "이 단위는 영구적으로 폐기되며 교체 일련번호가 생성됩니다."
 
 msgid "Thumbnail"
 msgstr "썸네일"

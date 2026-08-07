@@ -679,7 +679,7 @@ msgid "Maintenance overdue"
 msgstr "Wartung überfällig"
 
 msgid "Make a replacement"
-msgstr ""
+msgstr "Ersatzteil erstellen"
 
 msgid "Manually add items to inventory"
 msgstr "Artikel manuell zum Bestand hinzufügen"
@@ -1057,7 +1057,7 @@ msgid "Remove part"
 msgstr "Teil entfernen"
 
 msgid "Reopen the subassembly and create a replacement unit"
-msgstr ""
+msgstr "Unterbaugruppe erneut öffnen und Ersatzeinheit erstellen"
 
 msgid "Result"
 msgstr "Ergebnis"
@@ -1108,10 +1108,10 @@ msgid "Scrap"
 msgstr "Ausschuss"
 
 msgid "Scrap {readableId}"
-msgstr ""
+msgstr "{readableId} verschrotten"
 
 msgid "Scrap material"
-msgstr ""
+msgstr "Material verschrotten"
 
 msgid "Scrap quantity"
 msgstr "Verschrottungsmenge"
@@ -1123,10 +1123,10 @@ msgid "Scrapped"
 msgstr "Ausschuss"
 
 msgid "Scrapping serial {trackedEntityReadableId}"
-msgstr ""
+msgstr "Seriennummer {trackedEntityReadableId} wird verschrottet"
 
 msgid "Scrapping the selected serial"
-msgstr ""
+msgstr "Ausgewählte Seriennummer wird verschrottet"
 
 msgid "Search"
 msgstr "Suchen"
@@ -1322,13 +1322,13 @@ msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
-msgstr ""
+msgstr "Dieses Teil wurde auf Bestellung gefertigt. Durch das Verschrotten kann seine Arbeitsfolge erneut geöffnet werden, um ein Ersatzteil zu erstellen."
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
-msgstr ""
+msgstr "Dieses Teil wird aus dem Lager verschrottet. Sein Bedarf bleibt offen, damit Sie ein Ersatzteil ausgeben können."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr ""
+msgstr "Diese Einheit wird endgültig verschrottet und es wird eine neue Seriennummer erstellt."
 
 msgid "Thumbnail"
 msgstr "Vorschaubild"
