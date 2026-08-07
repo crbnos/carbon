@@ -19,7 +19,7 @@ import {
   ToggleGroup,
   ToggleGroupItem
 } from "@carbon/react";
-import { timezones } from "@carbon/utils";
+import { getTimezones } from "@carbon/utils";
 import type { Origin, Schedule } from "@carbon/workflows";
 import { WORKFLOW_ENTITY_REGISTRY, WORKFLOW_EVENTS } from "@carbon/workflows";
 import { getLocalTimeZone } from "@internationalized/date";
@@ -37,7 +37,7 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-const TZ_OPTIONS = timezones.flatMap((group) =>
+const TZ_OPTIONS = getTimezones().flatMap((group) =>
   group.options.map((option) => option.value)
 );
 
@@ -339,7 +339,7 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {timezones.map(({ label, options }) => (
+            {getTimezones().map(({ label, options }) => (
               <SelectGroup key={label}>
                 <SelectLabel>{label}</SelectLabel>
                 {options.map((opt) => (
