@@ -10774,7 +10774,7 @@ msgid "Restore from Trash"
 msgstr "Restaurar da Lixeira"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
-msgstr ""
+msgstr "Restaurar esta entidade para o estoque disponível no depósito e custo de onde foi sucatada."
 
 msgid "Restore tracked entities to available"
 msgstr "Restaurar entidades rastreadas para disponível"
@@ -11247,7 +11247,7 @@ msgid "Scrap Reasons"
 msgstr "Motivos de Sucata"
 
 msgid "Scrapped"
-msgstr ""
+msgstr "Sucatada"
 
 msgid "Search"
 msgstr "Pesquisar"
@@ -13974,10 +13974,10 @@ msgid "Unsaved changes"
 msgstr "Alterações não salvas"
 
 msgid "Unscrap"
-msgstr ""
+msgstr "Recuperar da Sucata"
 
 msgid "Unscrap {label}"
-msgstr ""
+msgstr "Recuperar da Sucata {label}"
 
 msgid "Unshipped orders"
 msgstr "Pedidos não enviados"

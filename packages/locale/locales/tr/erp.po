@@ -10774,7 +10774,7 @@ msgid "Restore from Trash"
 msgstr "Çöp'ten Geri Yükle"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
-msgstr ""
+msgstr "Bu varlığı çıkartıldığı depo ve maliyet için kullanılabilir stoka geri yükleyin."
 
 msgid "Restore tracked entities to available"
 msgstr "Takip edilen varlıkları kullanılabilir hale getir"
@@ -11247,7 +11247,7 @@ msgid "Scrap Reasons"
 msgstr "Hurdaya Nega"
 
 msgid "Scrapped"
-msgstr ""
+msgstr "Çıkartıldı"
 
 msgid "Search"
 msgstr "Ara"
@@ -13974,10 +13974,10 @@ msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
 
 msgid "Unscrap"
-msgstr ""
+msgstr "Çıkartmayı Geri Al"
 
 msgid "Unscrap {label}"
-msgstr ""
+msgstr "Çıkartmayı Geri Al {label}"
 
 msgid "Unshipped orders"
 msgstr "Gönderilmemiş siparişler"

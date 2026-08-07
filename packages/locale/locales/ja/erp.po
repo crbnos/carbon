@@ -10774,7 +10774,7 @@ msgid "Restore from Trash"
 msgstr "ゴミ箱から復元"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
-msgstr ""
+msgstr "このエンティティを、スクラップされた元のビンと原価で利用可能な在庫に復元します。"
 
 msgid "Restore tracked entities to available"
 msgstr "追跡対象エンティティを利用可能に復元"
@@ -11247,7 +11247,7 @@ msgid "Scrap Reasons"
 msgstr "スクラップ理由"
 
 msgid "Scrapped"
-msgstr ""
+msgstr "スクラップ済み"
 
 msgid "Search"
 msgstr "検索"
@@ -13974,10 +13974,10 @@ msgid "Unsaved changes"
 msgstr "未保存の変更"
 
 msgid "Unscrap"
-msgstr ""
+msgstr "スクラップ解除"
 
 msgid "Unscrap {label}"
-msgstr ""
+msgstr "スクラップ解除 {label}"
 
 msgid "Unshipped orders"
 msgstr "未発送注文"

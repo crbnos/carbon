@@ -10774,7 +10774,7 @@ msgid "Restore from Trash"
 msgstr "ट्रैश से पुनः स्थापित करें"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
-msgstr ""
+msgstr "इस इकाई को उसी बिन और लागत पर उपलब्ध स्टॉक में पुनः स्थापित करें जहां से इसे स्क्रैप किया गया था।"
 
 msgid "Restore tracked entities to available"
 msgstr "ट्रैक किए गए इकाइयों को उपलब्ध में पुनः स्थापित करें"
@@ -11247,7 +11247,7 @@ msgid "Scrap Reasons"
 msgstr "स्क्रैप कारण"
 
 msgid "Scrapped"
-msgstr ""
+msgstr "स्क्रैप किया गया"
 
 msgid "Search"
 msgstr "खोज"
@@ -13974,10 +13974,10 @@ msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
 
 msgid "Unscrap"
-msgstr ""
+msgstr "अनस्क्रैप करें"
 
 msgid "Unscrap {label}"
-msgstr ""
+msgstr "अनस्क्रैप करें {label}"
 
 msgid "Unshipped orders"
 msgstr "अभी भेजे जाने वाले ऑर्डर"

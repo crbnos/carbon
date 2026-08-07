@@ -10774,7 +10774,7 @@ msgid "Restore from Trash"
 msgstr "휴지통에서 복원"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
-msgstr ""
+msgstr "이 항목을 폐기 전 보관 위치 및 원가의 사용 가능한 재고로 복원합니다."
 
 msgid "Restore tracked entities to available"
 msgstr "추적 개체를 사용 가능 상태로 복원"
@@ -11247,7 +11247,7 @@ msgid "Scrap Reasons"
 msgstr "스크랩 사유"
 
 msgid "Scrapped"
-msgstr ""
+msgstr "폐기됨"
 
 msgid "Search"
 msgstr "검색"
@@ -13974,10 +13974,10 @@ msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
 
 msgid "Unscrap"
-msgstr ""
+msgstr "폐기 취소"
 
 msgid "Unscrap {label}"
-msgstr ""
+msgstr "{label} 폐기 취소"
 
 msgid "Unshipped orders"
 msgstr "미출하 주문"

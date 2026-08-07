@@ -10774,7 +10774,7 @@ msgid "Restore from Trash"
 msgstr "Restaurer à partir de la corbeille"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
-msgstr ""
+msgstr "Restaurer cette entité au stock disponible dans le bac et au coût d'où elle a été mise au rebut."
 
 msgid "Restore tracked entities to available"
 msgstr "Restaurer les entités suivies en disponibles"
@@ -11247,7 +11247,7 @@ msgid "Scrap Reasons"
 msgstr "Raisons de rebut"
 
 msgid "Scrapped"
-msgstr ""
+msgstr "Mise au rebut"
 
 msgid "Search"
 msgstr "Rechercher"
@@ -13974,10 +13974,10 @@ msgid "Unsaved changes"
 msgstr "Modifications non enregistrées"
 
 msgid "Unscrap"
-msgstr ""
+msgstr "Annuler la mise au rebut"
 
 msgid "Unscrap {label}"
-msgstr ""
+msgstr "Annuler la mise au rebut {label}"
 
 msgid "Unshipped orders"
 msgstr "Commandes non expédiées"
