@@ -18,9 +18,14 @@
 -- produced before. Verified output-identical (md5 of every column, every row)
 -- against 10k orders / 40k lines per view.
 --
--- Measured on that dataset, page-1 query of 100 rows:
---   salesOrders     ~114 ms -> ~5.5 ms
---   purchaseOrders  ~100 ms -> ~2.2 ms
+-- Measured on that dataset, page-1 query of 100 rows, run as `authenticated`
+-- with RLS enforced (the path the app actually takes):
+--   salesOrders     ~145 ms -> ~1.25 ms
+--   purchaseOrders  ~51 ms  -> ~1.25 ms
+--
+-- The gain is larger under RLS than without it: in the plain-subquery form the
+-- per-row policy predicate has to be evaluated while aggregating every tenant's
+-- lines, whereas the LATERAL form evaluates it only for the orders on the page.
 --
 -- jobs/lines get an explicit ORDER BY inside array_agg. Element order was
 -- previously unspecified (it only looked stable because the plan happened to be

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   getRequestContext,
   getRouterContext,
+  oncePerRead,
   oncePerRequest,
   requestMemoSize,
   runInRequestContext
@@ -133,5 +134,58 @@ describe("oncePerRequest", () => {
     expect(oncePerRequest("k", compute)).toBe(1);
     expect(oncePerRequest("k", compute)).toBe(2);
     expect(requestMemoSize()).toBe(0);
+  });
+});
+
+describe("oncePerRead", () => {
+  it("memoizes on a read-only request", () => {
+    let calls = 0;
+    const compute = () => ++calls;
+    runInRequestContext(provider(), () => {
+      oncePerRead("claims:u1:c1", compute);
+      oncePerRead("claims:u1:c1", compute);
+    });
+    expect(calls).toBe(1);
+  });
+
+  // Why this helper exists. React Router runs an action and the loader
+  // revalidation that follows it in ONE request. Memoizing database state there
+  // would hand the revalidating loaders pre-write data — for permission claims
+  // that means a gate passing on permissions the action just revoked.
+  it("does NOT memoize on a mutating request", () => {
+    let claims = "can:delete";
+    const seen: string[] = [];
+    runInRequestContext(
+      provider(),
+      () => {
+        seen.push(oncePerRead("claims:u1:c1", () => claims)); // action reads
+        claims = "revoked"; // action writes + invalidates the redis key
+        seen.push(oncePerRead("claims:u1:c1", () => claims)); // loaders revalidate
+      },
+      { isRead: false }
+    );
+    expect(seen).toEqual(["can:delete", "revoked"]);
+  });
+
+  it("is a pass-through outside any request scope", () => {
+    let calls = 0;
+    const compute = () => ++calls;
+    expect(oncePerRead("k", compute)).toBe(1);
+    expect(oncePerRead("k", compute)).toBe(2);
+  });
+
+  // The client memo is intentionally NOT read-gated: a Supabase client is
+  // interchangeable regardless of what the request does.
+  it("oncePerRequest still memoizes on a mutating request", () => {
+    let calls = 0;
+    runInRequestContext(
+      provider(),
+      () => {
+        oncePerRequest("carbon:token", () => ++calls);
+        oncePerRequest("carbon:token", () => ++calls);
+      },
+      { isRead: false }
+    );
+    expect(calls).toBe(1);
   });
 });

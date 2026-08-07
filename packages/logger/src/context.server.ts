@@ -43,9 +43,17 @@ const storage = new AsyncLocalStorage<RequestContext>();
  * middleware and handler runs inside the scope.
  */
 export const requestContextMiddleware: MiddlewareFunction<Response> = (
-  { context },
+  { context, request },
   next
-) => storage.run(context, () => next());
+) => {
+  context.set(isReadRequestContext, READ_METHODS.has(request.method));
+  return storage.run(context, () => next());
+};
+
+const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+/** Whether this request only reads — see `oncePerRead`. */
+const isReadRequestContext = createContext<boolean>(false);
 
 /** The current request's context provider, or undefined outside a request. */
 export function getRouterContext(): RequestContext | undefined {
@@ -90,6 +98,25 @@ export function oncePerRequest<T>(key: string, compute: () => T): T {
   return memo.get(key) as T;
 }
 
+/**
+ * Like `oncePerRequest`, but ONLY on a request that just reads.
+ *
+ * Use this for anything derived from database state — permission claims, an
+ * order, a job — rather than `oncePerRequest`. React Router runs an action and
+ * the loader revalidation that follows it in the SAME request, so a plain
+ * per-request memo would hand the revalidating loaders whatever was read before
+ * the action wrote: a stale render, or a permission gate passing on claims the
+ * action just revoked. On any mutating method this is a pass-through.
+ *
+ * `oncePerRequest` remains correct for values that are not database state — a
+ * Supabase client is interchangeable regardless of what the request does.
+ */
+export function oncePerRead<T>(key: string, compute: () => T): T {
+  const provider = storage.getStore();
+  if (!provider?.get(isReadRequestContext)) return compute();
+  return oncePerRequest(key, compute);
+}
+
 /** Test seam: how many values the current request has memoized. */
 export function requestMemoSize(): number {
   return storage.getStore()?.get(memoContext)?.size ?? 0;
@@ -98,7 +125,9 @@ export function requestMemoSize(): number {
 /** Test seam: run `fn` inside a fresh request scope, as the middleware would. */
 export function runInRequestContext<T>(
   provider: RequestContext,
-  fn: () => T
+  fn: () => T,
+  options?: { isRead?: boolean }
 ): T {
+  provider.set(isReadRequestContext, options?.isRead ?? true);
   return storage.run(provider, fn);
 }

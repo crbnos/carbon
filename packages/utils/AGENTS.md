@@ -39,6 +39,7 @@ pnpm --filter @carbon/utils typecheck
 | `datetime` | Server-side date derivation with mandatory explicit timezone: `timestamp()`, `today(tz)`, `now(tz)`, `businessDay(instant, tz)`, `weekBounds(tz, offset?, anchor?)` (DST-safe Monday→Sunday instant bounds), `weekNumber(date)`. DST/exotic-zone stress suite in `datetime.test.ts` (gap/overlap disambiguation, midnight-skipping zones, 167/169h weeks, ±30/45-min offsets). Mirrored for Deno at `packages/database/supabase/functions/lib/datetime.ts` — keep in sync |
 | `math` | Rounding, precision, numeric utilities |
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
+| `revalidate` | `isSearchParamOnlyNavigation` — shared by both apps' shell `shouldRevalidate` |
 | `status` | Status resolution, status color mapping |
 | `storage-rules` | Supabase storage bucket access policies |
 | `supabase` | Typed Supabase query helpers |

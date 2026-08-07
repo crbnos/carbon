@@ -26,18 +26,12 @@ export type PurchaseOrderAttachment = FileObject; // TODO: remove
 // use this, so it must stay independent of whatever subset the LIST query selects
 // — see PurchaseOrderListItem.
 export type PurchaseOrder =
-  Database["public"]["Views"]["purchaseOrders"]["Row"] & {
-    receivableQuantity?: number | null;
-    receivedQuantity?: number | null;
-  };
+  Database["public"]["Views"]["purchaseOrders"]["Row"];
 
 // A row of the purchaseOrders LIST, i.e. exactly the columns `getPurchaseOrders` selects.
 export type PurchaseOrderListItem = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrders>>["data"]
->[number] & {
-  receivableQuantity?: number | null;
-  receivedQuantity?: number | null;
-};
+>[number];
 
 export type PurchaseOrderDelivery = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrderDelivery>>["data"]

@@ -70,7 +70,8 @@ export async function getCustomer(client: SupabaseClient<Database>, id: string) 
 Conventions (see also `conventions-services.md`):
 
 - Always scope list queries by `companyId` (`.eq("companyId", companyId)`) — defense in depth even though RLS also enforces it.
-- List endpoints take `GenericQueryFilters` and run through `setGenericQueryFilters(query, args, [...])` (`~/utils/query`) for search/sort/pagination; use `.select("*", { count: "exact" })`.
+- List endpoints take `GenericQueryFilters` and run through `setGenericQueryFilters(query, args, [...])` (`~/utils/query`) for search/sort/pagination.
+- Count/select for list endpoints: small base tables can use `.select("*", { count: "exact" })`. The ten endpoints backed by the big multi-join **views** (`parts`, `materials`, `tools`, `consumables`, `services`, `purchaseOrders`, `quotes`, `salesOrders`, `purchaseInvoices`, `salesInvoices`) instead select an explicit `*_LIST_COLUMNS` constant with `{ count: LIST_COUNT }` (`LIST_COUNT = "estimated"`). `exact` is `COUNT(*) OVER ()`, which materializes the whole filtered set, and `select("*")` stops Postgres pruning the views' unreferenced computed columns. Adding a column to one of those tables means adding it to the constant — `apps/erp/test/list-select-columns.test.ts` fails if an `accessorKey` is missing, because the CSV export reads accessors untyped.
 - Use `sanitize(...)` (re-exported from `@carbon/utils`) to strip empty values before insert/update.
 - Upserts are done either with a manual `id ? update : insert` branch or supabase's native `.upsert(...)`; both are in use.
 - `fetchAllFromTable(client, table, columns, qb)` (from `@carbon/database`) pages through large result sets.

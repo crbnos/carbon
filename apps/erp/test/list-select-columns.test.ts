@@ -14,6 +14,13 @@ import { describe, expect, it } from "vitest";
  *
  * This test closes that gap: every accessorKey a list table declares must be a
  * column its endpoint actually selects.
+ *
+ * Known limitation: it does NOT cover `meta.exportValue` / `exportOnlyColumn`
+ * functions, which read arbitrary row fields rather than a declared accessor
+ * (e.g. PartsTable's `itemName` reads `row.name`). Those are correct today
+ * because the column lists were derived by scanning whole table files, but a
+ * future exportValue reading a dropped column would slip past this. Verify a
+ * CSV export by hand when adding one.
  */
 
 const ROOT = join(__dirname, "..");
