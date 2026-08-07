@@ -3,6 +3,9 @@ import {
   Button,
   MenuIcon,
   MenuItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure
 } from "@carbon/react";
 import { formatDate, formatRelativeTime } from "@carbon/utils";
@@ -67,8 +70,32 @@ const WorkflowsTable = memo(
         {
           accessorKey: "description",
           header: t`Description`,
-          cell: ({ row }) => row.original.description ?? "—",
+          cell: ({ row }) => {
+            const description = row.original.description;
+            if (!description) return "—";
+            return (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="truncate">{description}</span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm whitespace-pre-wrap">
+                  {description}
+                </TooltipContent>
+              </Tooltip>
+            );
+          },
           meta: { icon: <LuText /> }
+        },
+        {
+          accessorKey: "active",
+          header: t`Active`,
+          cell: ({ row }) => (
+            <WorkflowActiveSwitch
+              workflowId={row.original.id}
+              active={row.original.active}
+            />
+          ),
+          meta: { icon: <LuToggleLeft /> }
         },
         {
           accessorKey: "ownerId",
@@ -120,17 +147,6 @@ const WorkflowsTable = memo(
             filterHeader: t`Last Run`,
             exportValue: (row: Workflow) => lastRuns[row.id]?.status ?? ""
           }
-        },
-        {
-          accessorKey: "active",
-          header: t`Active`,
-          cell: ({ row }) => (
-            <WorkflowActiveSwitch
-              workflowId={row.original.id}
-              active={row.original.active}
-            />
-          ),
-          meta: { icon: <LuToggleLeft /> }
         },
         {
           accessorKey: "updatedAt",

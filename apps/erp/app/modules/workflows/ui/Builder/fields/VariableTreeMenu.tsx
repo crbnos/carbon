@@ -1,8 +1,8 @@
-import { cn } from "@carbon/react";
+import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuArrowLeft, LuChevronRight } from "react-icons/lu";
+import { LuArrowLeft, LuChevronRight, LuInfo } from "react-icons/lu";
 import { INITIAL_NAV, type NavState, navigate, rowsAt } from "./menuNav";
 import type { VariableMenuItem, VariableTreeNode } from "./variableMenu";
 
@@ -215,7 +215,32 @@ export function VariableTreeMenu({
                   }
                 >
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate leading-tight">{row.label}</span>
+                    <span className="flex items-center gap-1 leading-tight">
+                      <span className="truncate">{row.label}</span>
+                      {row.description && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            {/* span — not the SVG — so Radix can attach its ref and
+                                pointer handlers (react-icons SVGs don't forward refs).
+                                tabIndex={-1} keeps it out of tab order inside the listbox.
+                                preventDefault on mousedown stops the icon click from
+                                blurring the search field. stopPropagation keeps it from
+                                triggering the row button's own select handler. */}
+                            <span
+                              tabIndex={-1}
+                              className="inline-flex shrink-0 cursor-default text-muted-foreground"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <LuInfo className="h-3 w-3" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs whitespace-pre-wrap">
+                            {row.description}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </span>
                     {row.helper && (
                       <span className="truncate text-xs leading-tight text-muted-foreground">
                         {row.helper}

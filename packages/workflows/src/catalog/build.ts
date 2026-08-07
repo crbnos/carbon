@@ -50,6 +50,9 @@ export interface RegistryEntry {
   watch?: Record<string, WatchedColumnLike | undefined>;
   /** Inert columns a workflow may set. Unrelated to `watch`; the default is excluded. */
   write?: Record<string, WritableColumnLike | undefined>;
+  /** Plain-English explanation per column, surfaced as a tooltip in the variable picker.
+   * Any column in the entity may have one; not restricted to watched or writable columns. */
+  describe?: Record<string, string>;
 }
 
 export interface MomentDeclarationLike {

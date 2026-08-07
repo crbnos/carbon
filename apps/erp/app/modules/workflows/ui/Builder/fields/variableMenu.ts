@@ -25,6 +25,8 @@ export type VariableTreeNode = {
   key: string;
   label: string;
   helper?: string;
+  /** Plain-English explanation of what this field holds, shown as a tooltip. */
+  description?: string;
   item?: VariableMenuItem;
   children?: VariableTreeNode[];
 };
@@ -166,7 +168,8 @@ export function variableTree(
     variable: AvailableVariable,
     type: ValueType,
     path: string[],
-    label: string
+    label: string,
+    description?: string
   ): VariableTreeNode | null {
     const compatible = fits(type);
     const ref: VariableRef = {
@@ -180,6 +183,7 @@ export function variableTree(
       key: `${variable.nodeId}:${variable.output}:${path.join(".")}`,
       label,
       helper,
+      description,
       item: compatible
         ? {
             id: encodeTokenId(ref),
@@ -199,7 +203,8 @@ export function variableTree(
                 variable,
                 propertyType,
                 [...path, property],
-                labelFor(propertyLabelKey(type.of, property), property)
+                labelFor(propertyLabelKey(type.of, property), property),
+                entity.descriptions?.[property]
               )
             )
             .filter((child): child is VariableTreeNode => child !== null)

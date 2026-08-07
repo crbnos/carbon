@@ -85,13 +85,16 @@ const TooltipContent = forwardRef<HTMLDivElement, ContentProps>(
     },
     ref
   ) => (
-    <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Portal
+      container={typeof document !== "undefined" ? document.body : undefined}
+    >
       <TooltipPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
-        className="z-50"
+        className="z-[100]"
+        style={{ zIndex: 9999 }}
       >
         <TooltipPrimitive.Popup
           ref={ref}

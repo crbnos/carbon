@@ -68,6 +68,9 @@ export interface CatalogEntity {
   properties: Record<string, ValueType>;
   /** What the owner must hold to read one; a lookup gates on this. */
   permission?: RequiredPermission;
+  /** Plain-English per-column description, keyed by column name.
+   * Only present for columns the registry explicitly describes. */
+  descriptions?: Record<string, string>;
 }
 
 /** What the validator needs to look up, and nothing more. */

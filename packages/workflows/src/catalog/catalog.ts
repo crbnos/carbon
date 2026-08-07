@@ -23,13 +23,12 @@ const EVENTS: Map<string, CatalogEvent> = new Map(
 
 const ENTITIES: Map<string, CatalogEntity> = new Map(
   Object.entries(WORKFLOW_ENTITIES).map(([name, properties]) => {
-    const module = REGISTRY_ENTRIES[name]?.permission;
-    return [
-      name,
-      module === undefined
-        ? { name, properties }
-        : { name, properties, permission: { module, action: "view" as const } }
-    ];
+    const entry = REGISTRY_ENTRIES[name];
+    const base: CatalogEntity = { name, properties };
+    if (entry?.permission !== undefined)
+      base.permission = { module: entry.permission, action: "view" };
+    if (entry?.describe !== undefined) base.descriptions = entry.describe;
+    return [name, base];
   })
 );
 

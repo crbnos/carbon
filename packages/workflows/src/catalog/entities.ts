@@ -5,12 +5,13 @@ import type {
   WritableColumnLike
 } from "./build";
 
-/** `watch` and `write` keys are bound to the entry's own table, so a renamed column fails to compile. */
+/** `watch`, `write`, and `describe` keys are bound to the entry's own table, so a renamed column fails to compile. */
 interface EntityEntry<T extends TableName>
-  extends Omit<RegistryEntry, "table" | "watch" | "write"> {
+  extends Omit<RegistryEntry, "table" | "watch" | "write" | "describe"> {
   table: T;
   watch?: { [C in ColumnOf<T>]?: WatchedColumnLike };
   write?: { [C in ColumnOf<T>]?: WritableColumnLike };
+  describe?: { [C in ColumnOf<T>]?: string };
 }
 
 /** Identity helper that infers `T` so `watch` keys get checked. */
@@ -39,6 +40,17 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       },
       orderDate: { label: "order date" },
       assignee: { label: "assignee", ref: "user", help: "assignee" }
+    },
+    describe: {
+      status: "Current state of the purchase order (Draft, Submitted, etc.)",
+      supplierId: "The supplier this purchase order is placed with",
+      assignee: "Person responsible for managing this purchase order",
+      orderDate: "The date the order was placed",
+      purchaseOrderType:
+        "Whether this is a standard purchase order or blanket order",
+      supplierReference: "The supplier's own reference number for this order",
+      supplierLocationId: "The supplier's location this order is sent to",
+      tags: "Labels attached to this purchase order for filtering"
     }
   }),
   salesOrder: entity({
@@ -64,6 +76,16 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       orderDate: { label: "order date" },
       assignee: { label: "assignee", ref: "user", help: "assignee" },
       salesPersonId: { label: "salesperson", ref: "user" }
+    },
+    describe: {
+      status: "Current state of the sales order",
+      customerId: "The customer this sales order belongs to",
+      assignee: "Person responsible for this sales order",
+      salesPersonId: "The salesperson handling this order",
+      orderDate: "The date the order was created",
+      locationId: "The warehouse or location fulfilling this order",
+      customerReference: "The customer's own reference or PO number",
+      completedDate: "The date this order was completed"
     }
   }),
   job: entity({
@@ -87,6 +109,16 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       assignee: { label: "assignee", ref: "user", help: "assignee" },
       priority: { label: "priority", help: "job-priority" },
       deadlineType: { label: "deadline type", help: "job-deadline-type" }
+    },
+    describe: {
+      status: "Current state of the job (Draft, In Progress, etc.)",
+      assignee: "Person responsible for this production job",
+      dueDate: "When this job must be completed",
+      startDate: "When work on this job should begin",
+      quantity: "The number of units to produce",
+      priority: "Urgency level — higher number means higher priority",
+      deadlineType: "Whether the due date is a hard or soft deadline",
+      scrapQuantity: "Units scrapped during production"
     }
   }),
   item: entity({
@@ -107,6 +139,17 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     write: {
       name: { label: "name" },
       assignee: { label: "assignee", ref: "user", help: "assignee" }
+    },
+    describe: {
+      active: "Whether this item is currently active and usable",
+      revisionStatus: "The current revision lifecycle stage",
+      replenishmentSystem: "How stock is replenished — Buy, Make, or Transfer",
+      itemTrackingType:
+        "Whether the item is tracked by lot, serial number, or not at all",
+      defaultMethodType: "Default costing method for this item",
+      assignee: "Person responsible for maintaining this item",
+      name: "The display name of this item",
+      unitOfMeasureCode: "The unit this item is measured and ordered in"
     }
   }),
   receipt: entity({
@@ -123,7 +166,17 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       invoiced: { label: "invoiced" },
       sourceDocument: { label: "source document" }
     },
-    write: { assignee: { label: "assignee", ref: "user", help: "assignee" } }
+    write: { assignee: { label: "assignee", ref: "user", help: "assignee" } },
+    describe: {
+      status: "Current state of the receipt (Draft, Posted, etc.)",
+      supplierId: "The supplier the goods were received from",
+      locationId: "The warehouse location where goods were received",
+      assignee: "Person responsible for this receipt",
+      postingDate: "The date this receipt was posted to inventory",
+      invoiced: "Whether this receipt has been matched to a supplier invoice",
+      sourceDocument:
+        "The purchase order or other document this receipt came from"
+    }
   }),
   shipment: entity({
     table: "shipment",
@@ -143,6 +196,15 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       trackingNumber: { label: "tracking number" },
       assignee: { label: "assignee", ref: "user", help: "assignee" },
       shippingMethodId: { label: "shipping method", help: "shipping-method" }
+    },
+    describe: {
+      status: "Current state of the shipment",
+      customerId: "The customer this shipment is going to",
+      locationId: "The warehouse location the goods are shipping from",
+      assignee: "Person responsible for this shipment",
+      postingDate: "The date this shipment was posted",
+      trackingNumber: "Carrier tracking number for this shipment",
+      shippingMethodId: "The shipping carrier or method used"
     }
   }),
   quote: entity({
@@ -173,6 +235,16 @@ export const WORKFLOW_ENTITY_REGISTRY = {
         label: "customer reference",
         help: "customer-document-reference"
       }
+    },
+    describe: {
+      status: "Current state of the quote",
+      customerId: "The customer this quote is for",
+      assignee: "Person managing this quote",
+      estimatorId: "The person who estimated the costs",
+      salesPersonId: "The salesperson responsible for this quote",
+      expirationDate: "Date after which this quote is no longer valid",
+      dueDate: "When the customer needs a response",
+      completedDate: "The date this quote was won or lost"
     }
   }),
   supplier: entity({
@@ -196,6 +268,15 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       },
       assignee: { label: "assignee", ref: "user", help: "assignee" },
       supplierTypeId: { label: "type", help: "supplier-type-field" }
+    },
+    describe: {
+      supplierStatus: "Current status of the supplier relationship",
+      supplierTypeId: "The category or type of supplier",
+      accountManagerId: "Internal person managing the supplier relationship",
+      assignee: "Person primarily responsible for this supplier",
+      name: "The supplier's display name",
+      currencyCode: "The currency used when purchasing from this supplier",
+      taxPercent: "Default tax rate applied to purchases from this supplier"
     }
   }),
   customer: entity({
@@ -219,6 +300,15 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       },
       assignee: { label: "assignee", ref: "user", help: "assignee" },
       customerTypeId: { label: "type", help: "customer-type-field" }
+    },
+    describe: {
+      customerStatusId: "Current status of the customer relationship",
+      customerTypeId: "The category or type of customer",
+      accountManagerId: "Internal person managing the customer account",
+      assignee: "Person primarily responsible for this customer",
+      name: "The customer's display name",
+      currencyCode: "The currency used when selling to this customer",
+      salesContactId: "The main sales contact at this customer"
     }
   }),
   nonConformance: entity({
@@ -242,6 +332,17 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       priority: { label: "priority" },
       dueDate: { label: "due date" },
       nonConformanceTypeId: { label: "type", help: "issue-issue-type" }
+    },
+    describe: {
+      status: "Current state of the issue (Open, Under Review, Closed, etc.)",
+      priority: "How urgently this issue needs to be resolved",
+      assignee: "Person responsible for resolving this issue",
+      source: "Where the issue was discovered (Production, Receiving, etc.)",
+      nonConformanceTypeId: "The type or category of this issue",
+      dueDate: "When this issue must be resolved",
+      closeDate: "The date this issue was closed",
+      locationId: "Location where the issue was found",
+      quantity: "Quantity of units affected by this issue"
     }
   }),
 
