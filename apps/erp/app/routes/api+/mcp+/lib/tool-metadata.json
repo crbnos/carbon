@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-07T11:34:00.821Z",
-  "totalTools": 1417,
+  "generated": "2026-08-07T12:10:07.116Z",
+  "totalTools": 1416,
   "modules": 15,
   "tools": [
     {
@@ -40256,32 +40256,6 @@
       "schema": {
         "type": "object",
         "properties": {}
-      }
-    },
-    {
-      "name": "settings_insertCompany",
-      "module": "settings",
-      "classification": "WRITE",
-      "description": "insert company",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "company",
-        "companyGroupId"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "company": {}
-        },
-        "required": [
-          "company"
-        ]
       }
     },
     {
