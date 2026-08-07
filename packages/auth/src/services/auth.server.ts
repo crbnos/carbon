@@ -2,6 +2,7 @@ import type { Database } from "@carbon/database";
 import { checkApiKeyRateLimit } from "@carbon/database/ratelimit";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { oncePerRequest } from "@carbon/logger/middleware.server";
 import { Edition, Plan } from "@carbon/utils";
 import type {
   AuthSession as SupabaseAuthSession,
@@ -31,6 +32,14 @@ import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
 const log = getLogger("auth");
+
+// Each matched loader used to build its own Supabase client for identical
+// credentials; `createClient` is not free and they are interchangeable.
+const carbonForRequest = (accessToken: string) =>
+  oncePerRequest(`carbon:${accessToken}`, () => getCarbon(accessToken));
+
+const serviceRoleForRequest = () =>
+  oncePerRequest("carbon:service-role", () => getCarbonServiceRole());
 
 export async function createEmailAuthAccount(
   email: string,
@@ -316,8 +325,8 @@ export async function requirePermissions(
     return {
       client:
         requiredPermissions.bypassRls && myClaims.role === "employee"
-          ? getCarbonServiceRole()
-          : getCarbon(accessToken),
+          ? serviceRoleForRequest()
+          : carbonForRequest(accessToken),
       companyId,
       companyGroupId,
       email,
@@ -374,8 +383,8 @@ export async function requirePermissions(
   return {
     client:
       !!requiredPermissions.bypassRls && myClaims.role === "employee"
-        ? getCarbonServiceRole()
-        : getCarbon(accessToken),
+        ? serviceRoleForRequest()
+        : carbonForRequest(accessToken),
     companyId,
     companyGroupId,
     email,
