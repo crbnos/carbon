@@ -149,9 +149,9 @@ FOR INSERT WITH CHECK (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_create'))::text[])
 );
 
--- The new predicate is an index-able `companyId = ANY (array)`, but these two
--- tables only had parent-FK indexes -- the other three already carry a
--- companyId index from 20260115143000.
+-- The new predicate is an index-able `companyId = ANY (array)`. purchasingRfqLine
+-- and purchasingRfqSupplier had only parent-FK indexes; the other three tables
+-- above already carry a companyId index from 20260115143000.
 CREATE INDEX IF NOT EXISTS "purchasingRfqLine_companyId_idx"
   ON "purchasingRfqLine" ("companyId");
 
