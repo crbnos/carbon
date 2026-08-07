@@ -22,10 +22,10 @@
 -- pg_cron sweeper picks it up. Accepted deliberately; webhooks are
 -- notifications, not synchronous integrations.
 --
--- Subscriptions are DERIVED from the `webhook` table by trigger rather than
--- maintained in app code. The webhook table stays the single source of truth,
--- and every writer -- UI, public API, MCP -- is covered without duplicating
--- lifecycle logic across call sites that could silently drift.
+-- Subscriptions are DERIVED from the `webhook` table by an event-system
+-- interceptor rather than maintained in app code. The webhook table stays the
+-- single source of truth, and every writer -- UI, public API, MCP -- is covered
+-- without duplicating lifecycle logic across call sites that could drift.
 --
 -- Removing these triggers also retires 3 of the ~7 net.http_post call sites,
 -- which is direct progress on the RDS compatibility work (pg_net is one of only
@@ -33,9 +33,22 @@
 -- .ai/research/enterprise-iac-byoc-deployment.md section 3.
 
 -- ── 1. Derive a subscription from a webhook row ──────────────────────────────
+--
+-- Written as an event-system AFTER-ROW interceptor, not a bespoke CREATE
+-- TRIGGER: `attach_event_trigger` is how derived-row maintenance is wired in
+-- this codebase (sync_create_customer_entries, propagate_item_readable_id, …).
+-- Calling convention is fixed by dispatch_event_after_interceptors():
+--   fn(table_name TEXT, operation TEXT, new_data JSONB, old_data JSONB)
+-- AFTER rather than BEFORE because the subscription references the webhook row,
+-- so it must not be written until that row actually exists.
 
-CREATE OR REPLACE FUNCTION sync_webhook_subscription()
-RETURNS TRIGGER
+CREATE OR REPLACE FUNCTION sync_webhook_subscription(
+  p_table TEXT,
+  p_operation TEXT,
+  p_new JSONB,
+  p_old JSONB
+)
+RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path TO 'public'
@@ -44,48 +57,52 @@ DECLARE
   v_ops TEXT[];
   v_name TEXT;
 BEGIN
-  IF TG_OP = 'DELETE' THEN
-    PERFORM delete_event_system_subscriptions_by_name(OLD."companyId", 'webhook-' || OLD.id);
-    RETURN OLD;
+  IF p_operation = 'DELETE' THEN
+    PERFORM delete_event_system_subscriptions_by_name(
+      p_old->>'companyId', 'webhook-' || (p_old->>'id')
+    );
+    RETURN;
   END IF;
 
-  v_name := 'webhook-' || NEW.id;
+  v_name := 'webhook-' || (p_new->>'id');
 
   -- Always clear first: `table` is editable, and the subscription's uniqueness
   -- is (companyId, name, table), so an in-place upsert would strand the old
   -- row under the previous table and fire the webhook twice.
-  PERFORM delete_event_system_subscriptions_by_name(NEW."companyId", v_name);
+  PERFORM delete_event_system_subscriptions_by_name(p_new->>'companyId', v_name);
 
   v_ops := ARRAY[]::TEXT[];
-  IF NEW."onInsert" THEN v_ops := array_append(v_ops, 'INSERT'); END IF;
-  IF NEW."onUpdate" THEN v_ops := array_append(v_ops, 'UPDATE'); END IF;
-  IF NEW."onDelete" THEN v_ops := array_append(v_ops, 'DELETE'); END IF;
+  IF (p_new->>'onInsert')::BOOLEAN THEN v_ops := array_append(v_ops, 'INSERT'); END IF;
+  IF (p_new->>'onUpdate')::BOOLEAN THEN v_ops := array_append(v_ops, 'UPDATE'); END IF;
+  IF (p_new->>'onDelete')::BOOLEAN THEN v_ops := array_append(v_ops, 'DELETE'); END IF;
 
   -- A webhook with no operations selected has nothing to subscribe to; leaving
   -- the row deleted is correct rather than creating an unreachable subscription.
   IF array_length(v_ops, 1) IS NULL THEN
-    RETURN NEW;
+    RETURN;
   END IF;
 
   PERFORM create_event_system_subscription(
     v_name,
-    NEW."table",
-    NEW."companyId",
+    p_new->>'table',
+    p_new->>'companyId',
     v_ops,
     'WEBHOOK',
-    jsonb_build_object('url', NEW.url, 'webhookId', NEW.id),
+    jsonb_build_object('url', p_new->>'url', 'webhookId', p_new->>'id'),
     '{}'::jsonb,
-    COALESCE(NEW.active, false)
+    COALESCE((p_new->>'active')::BOOLEAN, false)
   );
-
-  RETURN NEW;
 END;
 $$;
 
-DROP TRIGGER IF EXISTS "syncWebhookSubscription" ON "webhook";
-CREATE TRIGGER "syncWebhookSubscription"
-AFTER INSERT OR UPDATE OR DELETE ON "webhook"
-FOR EACH ROW EXECUTE FUNCTION sync_webhook_subscription();
+-- This also attaches the standard async statement triggers to `webhook`, which
+-- is harmless: dispatch_event_batch() enqueues nothing unless a subscription
+-- watches the table, and nothing subscribes to `webhook` itself.
+SELECT attach_event_trigger(
+  'webhook',
+  ARRAY[]::TEXT[],
+  ARRAY['sync_webhook_subscription']::TEXT[]
+);
 
 -- ── 2. Backfill subscriptions for existing webhooks ──────────────────────────
 
