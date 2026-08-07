@@ -22,6 +22,7 @@ const eventSchema = z.object({
 
 const webhookPayloadSchema = z.object({
   url: z.string().url(),
+  companyId: z.string(),
   data: eventSchema,
   config: z
     .object({
@@ -37,34 +38,48 @@ export type WebhookEvent = z.infer<typeof eventSchema>;
 /**
  * Map a queue event onto the body external consumers already receive.
  *
- * This shape is a PUBLIC contract — it is what the pg_net trigger path
- * (`webhook_insert`/`_update`/`_delete` → the `webhook` edge function) has been
- * POSTing, so it has to survive the move to the event system verbatim:
+ * This shape is a PUBLIC contract. It is what the `webhook` edge function POSTs
+ * at the END of the pg_net trigger path — NOT what the triggers posted to that
+ * edge function, which carried extra routing fields (`url`, `webhookId`) that
+ * never reached the customer. The outbound body is:
  *
- *   INSERT  { type, record: NEW }
- *   UPDATE  { type, record: NEW, old: OLD }
- *   DELETE  { type, record: OLD }          <- record comes from OLD, and no `old` key
+ *   INSERT  { type, record: NEW,           companyId, table }
+ *   UPDATE  { type, record: NEW, old: OLD, companyId, table }
+ *   DELETE  { type, record: OLD,           companyId, table }
  *
- * The DELETE row is the trap: the queue event carries the row under `old` (its
- * `new` is null), but the trigger sent it as `record`. Forwarding the raw event
- * would hand consumers `{operation, new, old}` and quietly break every
- * integration.
+ * Two traps:
+ *
+ * 1. DELETE takes `record` from OLD. The queue event carries the row under
+ *    `old` (its `new` is null), but the trigger sent it as `record`. Forwarding
+ *    the raw event would hand consumers `record: null` on every delete.
+ * 2. `companyId` and `table` are part of the body. `table` is on the event, but
+ *    `companyId` lives on the queue message, so the drainer forwards it
+ *    explicitly.
  */
-export function toWebhookBody(event: WebhookEvent): {
+export function toWebhookBody(
+  event: WebhookEvent,
+  companyId: string
+): {
   type: string;
   record: Record<string, unknown> | null;
   old?: Record<string, unknown>;
+  companyId: string;
+  table: string;
 } {
   const isRemoval =
     event.operation === "DELETE" || event.operation === "TRUNCATE";
   const record = (isRemoval ? event.old : event.new) ?? null;
 
   // `old` is emitted only for UPDATE — the edge function spreads it
-  // conditionally (`...(old && { old })`) and the INSERT/DELETE triggers never
-  // send a usable one.
-  return event.operation === "UPDATE" && event.old
-    ? { type: event.operation, record, old: event.old }
-    : { type: event.operation, record };
+  // conditionally (`...(old && { old })`), and the INSERT trigger explicitly
+  // sent `'old', NULL` while the DELETE trigger omitted the key entirely.
+  return {
+    type: event.operation,
+    record,
+    ...(event.operation === "UPDATE" && event.old ? { old: event.old } : {}),
+    companyId,
+    table: event.table
+  };
 }
 
 export const webhookFunction = inngest.createFunction(
@@ -80,7 +95,7 @@ export const webhookFunction = inngest.createFunction(
   { event: "carbon/event-webhook" },
   async ({ event, step, logger, attempt }) => {
     const payload = webhookPayloadSchema.parse(event.data);
-    const body = toWebhookBody(payload.data);
+    const body = toWebhookBody(payload.data, payload.companyId);
     const webhookId = payload.config.webhookId;
 
     await step.run("send-webhook", async () => {

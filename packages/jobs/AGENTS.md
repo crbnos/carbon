@@ -42,7 +42,7 @@ pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
 
 | Handler | Event | Purpose |
 |---------|-------|---------|
-| WEBHOOK | `carbon/event-webhook` | POST to configured URL |
+| WEBHOOK | `carbon/event-webhook` | POST to configured URL. Backs the user-facing Settings → Webhooks feature; its body `{type, record, old?, companyId, table}` is a public contract — change `toWebhookBody` only with the docs and `webhook.test.ts` |
 | SYNC | `carbon/event-sync` | Accounting sync (Xero) |
 | SEARCH | `carbon/event-search` | Upsert/delete search index |
 | AUDIT | `carbon/event-audit` | Per-company audit log |

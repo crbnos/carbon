@@ -1,6 +1,6 @@
 # Webhooks
 
-> Get an HTTP callback the moment a Carbon record is created, changed, or deleted.
+> Get an HTTP callback when a Carbon record is created, changed, or deleted.
 
 A **webhook** sends an HTTP `POST` to a URL you choose whenever a record in a subscribed table is inserted, updated, or deleted. It's the lightest way to react to Carbon in your own systems without polling the API.
 
@@ -22,7 +22,7 @@ For each webhook you choose which operations fire it (**insert**, **update**, **
 
 ## The payload
 
-Carbon `POST`s a JSON body to your URL. `type` is the operation, `record` is the affected row, and `old` carries the previous row on updates and deletes.
+Carbon `POST`s a JSON body to your URL. `type` is the operation, `record` is the affected row, and `old` carries the previous row on updates.
 
 ```json
 {
@@ -34,7 +34,7 @@ Carbon `POST`s a JSON body to your URL. `type` is the operation, `record` is the
 }
 ```
 
-On an insert, `old` is omitted; on a delete, `record` is the row as it last existed. The only request header is `Content-Type: application/json`.
+`old` appears only on updates. On a delete, `record` is the row as it last existed and there is no `old`. The only request header is `Content-Type: application/json`.
 
 ## Configuration
 
@@ -50,7 +50,14 @@ Carbon tracks a success and error count per webhook, with the timestamp of the l
 
 ## Delivery & reliability
 
-Delivery is **at-most-once**: Carbon fires a single `POST` per change and records the outcome. There are no automatic retries, no backoff, and no rate limiting on outbound calls. If your endpoint is down when the event fires, that delivery is missed (the success/error counters will show it). Build your consumer to tolerate the occasional gap, and reconcile against the API when it matters.
+Webhooks are queued rather than sent inline with the database write, so a `POST` normally lands a few seconds after the change. A brief delay is expected; it is not a sign your endpoint was skipped.
+
+Delivery is **at-least-once**. If your endpoint doesn't return a success status, Carbon retries the same change a few times with exponential backoff before giving up. Two consequences to design for:
+
+- **Handle duplicates.** A delivery that times out or errors after you've already processed it will arrive again. Treat `type` + `record.id` as the de-duplication key, or make your handler idempotent.
+- **A sustained outage still loses events.** Once retries are exhausted the change is dropped and counted as an error. Reconcile against the API when completeness matters.
+
+The success and error counters record one outcome per change, not per attempt, so a retried-then-delivered event counts once as a success.
 
 Carbon does **not** sign webhook payloads. There is no shared secret or signature header to verify against. Treat the webhook URL itself as the secret: serve it over HTTPS and include an unguessable token in the path or query so you can reject anything that doesn't carry it.
 

@@ -18,7 +18,7 @@
     {
       "slug": "docs/building/webhooks",
       "title": "Webhooks",
-      "description": "Get an HTTP callback the moment a Carbon record is created, changed, or deleted.",
+      "description": "Get an HTTP callback when a Carbon record is created, changed, or deleted.",
       "keywords": ["webhooks", "docs", "building"],
       "headings": [
         "Subscribable tables",
