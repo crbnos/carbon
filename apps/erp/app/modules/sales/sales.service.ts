@@ -4224,14 +4224,45 @@ async function buildCostEffects(
   return { effects, costCategoryKeys };
 }
 
-export async function calculatePricesForQuantities(
+/**
+ * The three price resolvers below each read a pile of context, compute price
+ * rows, and finish with ONE insert. They are split at that seam so a caller
+ * that needs the write to be atomic with other writes can build the rows first
+ * and hand them to a transaction (see `saveQuoteLineWithPrices`).
+ *
+ * `itemIdOverride` exists because the quote-line save path updates the line and
+ * prices together: the row in the database still holds the OLD `itemId` while
+ * the new one is only in the validated form data, so the caller passes it in
+ * rather than the builder reading a value that is about to change.
+ */
+export type QuoteLinePriceRow = {
+  quoteId: string;
+  quoteLineId: string;
+  companyId: string;
+  quantity: number;
+  unitPrice: number;
+  exchangeRate: number;
+  createdBy: string;
+  leadTime: number;
+  discountPercent: number;
+  categoryMarkups?: Record<string, number>;
+  priceSource?: string;
+};
+
+type BuildPriceRowsResult = {
+  rows: QuoteLinePriceRow[];
+  error: unknown | null;
+};
+
+export async function buildMakeToOrderPriceRows(
   client: SupabaseClient<Database>,
   quoteId: string,
   quoteLineId: string,
   quantities: number[],
-  userId: string
-) {
-  if (!quantities.length) return { error: null };
+  userId: string,
+  itemIdOverride?: string | null
+): Promise<BuildPriceRowsResult> {
+  if (!quantities.length) return { rows: [], error: null };
 
   // 1. Fetch quote (with companyId + customerId) and line in parallel
   const [quoteResult, lineResult] = await Promise.all([
@@ -4247,8 +4278,8 @@ export async function calculatePricesForQuantities(
       .single()
   ]);
 
-  if (quoteResult.error) return { error: quoteResult.error };
-  if (lineResult.error) return { error: lineResult.error };
+  if (quoteResult.error) return { rows: [], error: quoteResult.error };
+  if (lineResult.error) return { rows: [], error: lineResult.error };
 
   // Fetch settings filtered by company (required for service-role access)
   const settingsResult = await client
@@ -4257,11 +4288,14 @@ export async function calculatePricesForQuantities(
     .eq("id", quoteResult.data.companyId)
     .single();
 
-  if (settingsResult.error) return { error: settingsResult.error };
+  if (settingsResult.error) return { rows: [], error: settingsResult.error };
 
   const companyId = quoteResult.data.companyId;
   const customerId = quoteResult.data.customerId ?? undefined;
-  const itemId = lineResult.data.itemId ?? undefined;
+  const itemId =
+    itemIdOverride === undefined
+      ? (lineResult.data.itemId ?? undefined)
+      : (itemIdOverride ?? undefined);
   const exchangeRate = quoteResult.data.exchangeRate ?? 1;
   const precision = lineResult.data.unitPricePrecision ?? 2;
 
@@ -4279,11 +4313,11 @@ export async function calculatePricesForQuantities(
   const result = await buildCostEffects(client, quoteLineId);
   // buildCostEffects returns null when the line has no costed method yet —
   // treat as a no-op so partial drafts don't block the save.
-  if (!result) return { error: null };
+  if (!result) return { rows: [], error: null };
 
   const { effects } = result;
 
-  const priceRows = [];
+  const priceRows: QuoteLinePriceRow[] = [];
   for (const qty of quantities) {
     const categoryCosts: Record<string, number> = {};
     for (const key of costCategoryKeys) {
@@ -4323,7 +4357,27 @@ export async function calculatePricesForQuantities(
     });
   }
 
-  const insertResult = await client.from("quoteLinePrice").insert(priceRows);
+  return { rows: priceRows, error: null };
+}
+
+export async function calculatePricesForQuantities(
+  client: SupabaseClient<Database>,
+  quoteId: string,
+  quoteLineId: string,
+  quantities: number[],
+  userId: string
+) {
+  const { rows, error } = await buildMakeToOrderPriceRows(
+    client,
+    quoteId,
+    quoteLineId,
+    quantities,
+    userId
+  );
+  if (error) return { error };
+  if (!rows.length) return { error: null };
+
+  const insertResult = await client.from("quoteLinePrice").insert(rows);
   if (insertResult.error) {
     logger.error("Failed to insert MtO calc quote line prices", {
       quoteLineId,
@@ -4334,15 +4388,16 @@ export async function calculatePricesForQuantities(
   return { error: null };
 }
 
-export async function resolveQuoteLinePrices(
+export async function buildPullFromInventoryPriceRows(
   client: SupabaseClient<Database>,
   companyId: string,
   quoteId: string,
   quoteLineId: string,
   quantities: number[],
-  userId: string
-) {
-  if (!quantities.length) return { error: null };
+  userId: string,
+  itemIdOverride?: string | null
+): Promise<BuildPriceRowsResult> {
+  if (!quantities.length) return { rows: [], error: null };
 
   const [quoteResult, lineResult] = await Promise.all([
     client
@@ -4357,17 +4412,19 @@ export async function resolveQuoteLinePrices(
       .single()
   ]);
 
-  if (quoteResult.error) return { error: quoteResult.error };
-  if (lineResult.error) return { error: lineResult.error };
-  // Missing itemId is a benign draft state, not an error.
-  if (!lineResult.data.itemId) return { error: null };
+  if (quoteResult.error) return { rows: [], error: quoteResult.error };
+  if (lineResult.error) return { rows: [], error: lineResult.error };
 
-  const itemId = lineResult.data.itemId;
+  const itemId =
+    itemIdOverride === undefined ? lineResult.data.itemId : itemIdOverride;
+  // Missing itemId is a benign draft state, not an error.
+  if (!itemId) return { rows: [], error: null };
+
   const exchangeRate = quoteResult.data.exchangeRate ?? 1;
   const precision = lineResult.data.unitPricePrecision ?? 2;
   const customerId = quoteResult.data.customerId ?? undefined;
 
-  const priceRows = [];
+  const priceRows: QuoteLinePriceRow[] = [];
   for (const qty of quantities) {
     const resolved = await resolvePrice(client, companyId, {
       itemId,
@@ -4388,7 +4445,29 @@ export async function resolveQuoteLinePrices(
     });
   }
 
-  const insertResult = await client.from("quoteLinePrice").insert(priceRows);
+  return { rows: priceRows, error: null };
+}
+
+export async function resolveQuoteLinePrices(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  quoteId: string,
+  quoteLineId: string,
+  quantities: number[],
+  userId: string
+) {
+  const { rows, error } = await buildPullFromInventoryPriceRows(
+    client,
+    companyId,
+    quoteId,
+    quoteLineId,
+    quantities,
+    userId
+  );
+  if (error) return { error };
+  if (!rows.length) return { error: null };
+
+  const insertResult = await client.from("quoteLinePrice").insert(rows);
   if (insertResult.error) {
     logger.error("Failed to insert Pull quote line prices", {
       quoteLineId,
@@ -4399,15 +4478,16 @@ export async function resolveQuoteLinePrices(
   return { error: null };
 }
 
-export async function resolvePurchaseToOrderPrices(
+export async function buildPurchaseToOrderPriceRows(
   client: SupabaseClient<Database>,
   companyId: string,
   quoteId: string,
   quoteLineId: string,
   quantities: number[],
-  userId: string
-) {
-  if (!quantities.length) return { error: null };
+  userId: string,
+  itemIdOverride?: string | null
+): Promise<BuildPriceRowsResult> {
+  if (!quantities.length) return { rows: [], error: null };
 
   const [quoteResult, lineResult] = await Promise.all([
     client
@@ -4422,18 +4502,20 @@ export async function resolvePurchaseToOrderPrices(
       .single()
   ]);
 
-  if (quoteResult.error) return { error: quoteResult.error };
-  if (lineResult.error) return { error: lineResult.error };
-  if (!lineResult.data.itemId) return { error: null };
+  if (quoteResult.error) return { rows: [], error: quoteResult.error };
+  if (lineResult.error) return { rows: [], error: lineResult.error };
 
-  const itemId = lineResult.data.itemId;
+  const itemId =
+    itemIdOverride === undefined ? lineResult.data.itemId : itemIdOverride;
+  if (!itemId) return { rows: [], error: null };
+
   const exchangeRate = quoteResult.data.exchangeRate ?? 1;
   const precision = lineResult.data.unitPricePrecision ?? 2;
   const customerId = quoteResult.data.customerId ?? undefined;
 
   const priceMap = await getSupplierPriceBreaksForItems(client, [itemId]);
 
-  const priceRows = [];
+  const priceRows: QuoteLinePriceRow[] = [];
   for (const qty of quantities) {
     const supplierPrice = lookupBuyPriceFromMap(itemId, qty, priceMap, 0);
     const resolved = await resolvePrice(client, companyId, {
@@ -4456,7 +4538,29 @@ export async function resolvePurchaseToOrderPrices(
     });
   }
 
-  const insertResult = await client.from("quoteLinePrice").insert(priceRows);
+  return { rows: priceRows, error: null };
+}
+
+export async function resolvePurchaseToOrderPrices(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  quoteId: string,
+  quoteLineId: string,
+  quantities: number[],
+  userId: string
+) {
+  const { rows, error } = await buildPurchaseToOrderPriceRows(
+    client,
+    companyId,
+    quoteId,
+    quoteLineId,
+    quantities,
+    userId
+  );
+  if (error) return { error };
+  if (!rows.length) return { error: null };
+
+  const insertResult = await client.from("quoteLinePrice").insert(rows);
   if (insertResult.error) {
     logger.error("Failed to insert P2O quote line prices", {
       quoteLineId,

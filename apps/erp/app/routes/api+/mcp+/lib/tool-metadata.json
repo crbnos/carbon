@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-06T18:37:59.212Z",
-  "totalTools": 1414,
+  "generated": "2026-08-07T00:38:01.169Z",
+  "totalTools": 1417,
   "modules": 15,
   "tools": [
     {
@@ -37660,6 +37660,52 @@
       }
     },
     {
+      "name": "sales_buildMakeToOrderPriceRows",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "build make to order price rows",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "quoteId",
+        "quoteLineId",
+        "quantities",
+        "userId",
+        "itemIdOverride"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "quoteId": {
+            "type": "string"
+          },
+          "quoteLineId": {
+            "type": "string"
+          },
+          "quantities": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "itemIdOverride": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "quoteId",
+          "quoteLineId",
+          "quantities"
+        ]
+      }
+    },
+    {
       "name": "sales_calculatePricesForQuantities",
       "module": "sales",
       "classification": "WRITE",
@@ -37689,6 +37735,53 @@
             "items": {
               "type": "number"
             }
+          }
+        },
+        "required": [
+          "quoteId",
+          "quoteLineId",
+          "quantities"
+        ]
+      }
+    },
+    {
+      "name": "sales_buildPullFromInventoryPriceRows",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "build pull from inventory price rows",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "quoteId",
+        "quoteLineId",
+        "quantities",
+        "userId",
+        "itemIdOverride"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "quoteId": {
+            "type": "string"
+          },
+          "quoteLineId": {
+            "type": "string"
+          },
+          "quantities": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "itemIdOverride": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -37729,6 +37822,53 @@
             "items": {
               "type": "number"
             }
+          }
+        },
+        "required": [
+          "quoteId",
+          "quoteLineId",
+          "quantities"
+        ]
+      }
+    },
+    {
+      "name": "sales_buildPurchaseToOrderPriceRows",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "build purchase to order price rows",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "quoteId",
+        "quoteLineId",
+        "quantities",
+        "userId",
+        "itemIdOverride"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "quoteId": {
+            "type": "string"
+          },
+          "quoteLineId": {
+            "type": "string"
+          },
+          "quantities": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "itemIdOverride": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
