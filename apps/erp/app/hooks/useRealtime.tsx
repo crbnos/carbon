@@ -47,7 +47,13 @@ export function useRealtime(
             return;
           }
 
-          logger.info("🌀 Revalidation payload received:", payload);
+          // Metadata only — `payload.new`/`payload.old` carry the whole changed
+          // row, and this hook is shared by every ERP table, so logging the
+          // payload puts arbitrary tenant data and PII into the logs.
+          logger.info("🌀 Revalidation payload received:", {
+            table,
+            eventType: payload.eventType
+          });
 
           if (timeout.current) clearTimeout(timeout.current);
           timeout.current = setTimeout(() => {
