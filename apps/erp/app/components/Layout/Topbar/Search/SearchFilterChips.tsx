@@ -4,15 +4,16 @@ import {
   entityTypeConfig,
   getEntityTypeConfig,
   getEntityTypeLabel
-} from "./config";
+} from "~/components/Layout/Topbar/Search/config";
 import type {
-  EntityType,
   EntityTypeFilter,
   SearchFilterChipsProps
-} from "./types";
+} from "~/components/Layout/Topbar/Search/types";
 
-/** Entity types exposed as filter chips (matches backend search index). */
-const FILTERABLE_ENTITY_TYPES = Object.keys(entityTypeConfig) as EntityType[];
+/** Entity types exposed as filter chips (keys are constrained to EntityType). */
+const FILTERABLE_ENTITY_TYPES = Object.keys(entityTypeConfig) as Array<
+  keyof typeof entityTypeConfig
+>;
 
 const FILTER_OPTIONS: { value: EntityTypeFilter; label: string }[] = [
   { value: "all", label: "All" },

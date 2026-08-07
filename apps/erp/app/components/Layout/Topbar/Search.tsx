@@ -36,6 +36,10 @@ import {
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { useFetcher, useNavigate } from "react-router";
 import { MethodItemTypeIcon } from "~/components/Icons";
+import { getEntityTypeConfig } from "~/components/Layout/Topbar/Search/config";
+import { SearchEmptyState } from "~/components/Layout/Topbar/Search/SearchEmptyState";
+import { SearchFilterChips } from "~/components/Layout/Topbar/Search/SearchFilterChips";
+import type { EntityTypeFilter } from "~/components/Layout/Topbar/Search/types";
 import { useModules, useUser } from "~/hooks";
 import useAccountSubmodules from "~/modules/account/ui/useAccountSubmodules";
 import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
@@ -53,12 +57,7 @@ import useSettingsSubmodules from "~/modules/settings/ui/useSettingsSubmodules";
 import useUsersSubmodules from "~/modules/users/ui/useUsersSubmodules";
 import type { SearchResponse } from "~/routes/api+/search";
 import { useUIStore } from "~/stores/ui";
-
 import type { Authenticated, Route } from "~/types";
-import { getEntityTypeConfig } from "./Search/config";
-import { SearchEmptyState } from "./Search/SearchEmptyState";
-import { SearchFilterChips } from "./Search/SearchFilterChips";
-import type { EntityTypeFilter } from "./Search/types";
 
 type RecentSearch = Route & {
   entityType?: string;

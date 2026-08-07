@@ -16,10 +16,11 @@ import {
   RiProgress4Line,
   RiProgress8Line
 } from "react-icons/ri";
+import type { EntityType } from "~/components/Layout/Topbar/Search/types";
 
-// Entity type styling configuration
+// Entity type styling configuration (keys must match EntityType)
 export const entityTypeConfig: Record<
-  string,
+  EntityType,
   { bgColor: string; textColor: string; icon: IconType }
 > = {
   customer: {
@@ -96,7 +97,7 @@ export const entityTypeConfig: Record<
 
 export function getEntityTypeConfig(entityType: string) {
   return (
-    entityTypeConfig[entityType] ?? {
+    entityTypeConfig[entityType as EntityType] ?? {
       bgColor: "bg-muted",
       textColor: "text-muted-foreground",
       icon: null
