@@ -202,6 +202,20 @@ export async function confirmReset(projectName: string): Promise<boolean> {
   return ok as boolean;
 }
 
+export async function confirmRestore(opts: {
+  port: number;
+  file: string;
+  mode: string;
+}): Promise<boolean> {
+  if (process.env.CARBON_DEV_YES === "1") return true;
+  const ok = await confirm({
+    message: `Replace the database on 127.0.0.1:${pc.bold(String(opts.port))} with ${pc.bold(opts.file)}? (mode: ${opts.mode} — the current data, including any seeded test data, is wiped)`,
+    initialValue: false
+  });
+  if (isCancel(ok)) return false;
+  return ok as boolean;
+}
+
 export async function confirmRemove(opts: {
   branchOrPath: string;
   hasStack: boolean;

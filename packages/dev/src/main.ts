@@ -8,6 +8,7 @@ import { newWorktree } from "./commands/new.js";
 import { reload } from "./commands/reload.js";
 import { removeWorktreeCmd } from "./commands/remove.js";
 import { reset } from "./commands/reset.js";
+import { type RestoreMode, restore } from "./commands/restore.js";
 import { status } from "./commands/status.js";
 import { up } from "./commands/up.js";
 
@@ -162,6 +163,75 @@ const main = defineCommand({
       },
       run: ({ args }) =>
         args.force ? reset() : migrate({ regen: args.regen !== false })
+    }),
+    restore: defineCommand({
+      meta: {
+        description:
+          "Restore a production backup into this worktree's database, then apply the migrations it predates (wraps scripts/restore-database.sh)"
+      },
+      args: {
+        file: {
+          type: "positional",
+          required: true,
+          description: "Path to a .backup cluster dump or .dump archive"
+        },
+        "scrub-emails": {
+          type: "boolean",
+          default: true,
+          description:
+            "Rewrite every email address to @example.test so production addresses can never be contacted locally (--no-scrub-emails to keep them)"
+        },
+        "admin-email": {
+          type: "string",
+          description:
+            "Your email in the backup — upgraded to Admin in the companies it already belongs to, with the password reset locally"
+        },
+        "admin-password": {
+          type: "string",
+          description: "Local password for --admin-email (default: localpass)"
+        },
+        mode: {
+          type: "string",
+          default: "local",
+          description:
+            "'local' points config at the local stack and deactivates webhooks/integrations/printer routes; 'prod' restores as-is"
+        },
+        migrate: {
+          type: "boolean",
+          default: true,
+          description:
+            "Apply migrations the backup predates (use --no-migrate to leave the schema at the backup's state)"
+        },
+        regen: {
+          type: "boolean",
+          default: true,
+          description: "Regenerate db types afterwards (use --no-regen to skip)"
+        },
+        yes: {
+          type: "boolean",
+          default: false,
+          description: "Skip the confirmation prompt"
+        }
+      },
+      run: ({ args }) => {
+        const mode = args.mode === "prod" ? "prod" : "local";
+        return restore({
+          file: String(args.file),
+          scrubEmails: args["scrub-emails"] !== false,
+          adminEmail:
+            typeof args["admin-email"] === "string"
+              ? args["admin-email"]
+              : undefined,
+          adminPassword:
+            typeof args["admin-password"] === "string"
+              ? args["admin-password"]
+              : undefined,
+          mode: mode as RestoreMode,
+          migrate: args.migrate !== false,
+          regen: args.regen !== false,
+          yes: args.yes === true
+        });
+      }
     }),
     new: defineCommand({
       meta: {
