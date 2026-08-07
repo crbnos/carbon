@@ -383,11 +383,13 @@ export function InspectionView({
     return ids;
   }, [samples, sampleStatuses]);
 
+  // Remaining GOOD work: scrap no longer counts toward targetQuantity
+  // (20260807090629), so a scrapped unit doesn't reduce what's left to make —
+  // its replacement still has to be completed.
   const opRemaining = Math.max(
     0,
     (operation.targetQuantity ?? operation.operationQuantity ?? 0) -
       (operation.quantityComplete ?? 0) -
-      (operation.quantityScrapped ?? 0) -
       (operation.quantityReworked ?? 0)
   );
 
