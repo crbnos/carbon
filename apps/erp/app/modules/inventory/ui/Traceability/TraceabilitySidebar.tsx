@@ -93,6 +93,10 @@ export function TraceabilitySidebar({
         ? (activity.type ?? activity.id)
         : "No selection";
 
+  // `selectedNode` is null for a cluster, so the header and the Copy ID button
+  // both read from here rather than each deriving the id separately.
+  const copyId = cluster ? cluster.id : (selectedNode?.id ?? "");
+
   const sourceDoc = entity?.sourceDocument ?? activity?.sourceDocument;
   const sourceDocId = entity?.sourceDocumentId ?? activity?.sourceDocumentId;
   const sourceDocReadableId =
@@ -387,7 +391,7 @@ export function TraceabilitySidebar({
                   aria-label={t`Copy ID`}
                   size="sm"
                   className="p-1 h-7 w-7"
-                  onClick={() => copyToClipboard(selectedNode?.id ?? "")}
+                  onClick={() => copyToClipboard(copyId)}
                 >
                   <LuCopy className="w-3.5 h-3.5" />
                 </Button>
@@ -402,7 +406,7 @@ export function TraceabilitySidebar({
           {headline}
         </h2>
         <p className="text-[11px] text-muted-foreground/70 font-mono break-all leading-4 mt-0.5">
-          {cluster ? cluster.id : selectedNode?.id}
+          {copyId}
         </p>
       </header>
 

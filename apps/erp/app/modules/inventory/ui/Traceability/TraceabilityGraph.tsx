@@ -659,6 +659,9 @@ function TraceabilityGraphInner({
             if (data?.kind === "entity") {
               return entityStatusMeta(data.entity?.status).color;
             }
+            if (data?.kind === "entityGroup") {
+              return entityStatusMeta(data.cluster?.status).color;
+            }
             return ACTIVITY_KIND_META[activityKindFor(data?.activity?.type)]
               .color;
           }}

@@ -139,13 +139,18 @@ export function clusterEntities(
     // An entity with no edges is an isolated node — nothing to collapse.
     if (signature.length === 0) continue;
 
-    const identity = entity.sourceDocumentReadableId ?? entity.itemId ?? "";
-    // JSON rather than a delimiter join: `identity` is user-controlled data,
-    // so any separator we picked could in principle appear inside it and
-    // collapse two different groups into one.
+    // Key on the real `itemId`, not just the denormalised
+    // `sourceDocumentReadableId` display string — the documented rule is "same
+    // item", and identity should not ride on a value a trigger keeps in sync.
+    // Both are included so entities missing one still discriminate on the other.
+    //
+    // JSON rather than a delimiter join: these are data values, so any
+    // separator we picked could in principle appear inside one and collapse
+    // two different groups into one.
     const groupKey = JSON.stringify([
       entity.status,
-      identity,
+      entity.itemId ?? "",
+      entity.sourceDocumentReadableId ?? "",
       signature.map((s) => edgeKey(s.activityId, s.side))
     ]);
 

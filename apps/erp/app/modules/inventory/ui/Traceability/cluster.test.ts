@@ -136,6 +136,28 @@ describe("clusterEntities", () => {
     ]);
   });
 
+  it("never merges different items that share a sourceDocumentReadableId", () => {
+    // `sourceDocumentReadableId` is a denormalised display string kept in sync
+    // by a trigger; `itemId` is the identity. The documented rule is "same
+    // item", so a stale or colliding display string must not merge two items.
+    const entities = [
+      entity("A1", { itemId: "PART-A", sourceDocumentReadableId: "SHARED" }),
+      entity("A2", { itemId: "PART-A", sourceDocumentReadableId: "SHARED" }),
+      entity("A3", { itemId: "PART-A", sourceDocumentReadableId: "SHARED" }),
+      entity("B1", { itemId: "PART-B", sourceDocumentReadableId: "SHARED" }),
+      entity("B2", { itemId: "PART-B", sourceDocumentReadableId: "SHARED" }),
+      entity("B3", { itemId: "PART-B", sourceDocumentReadableId: "SHARED" })
+    ];
+    const { clusters } = run(
+      entities,
+      [],
+      entities.map((e) => output("JOB", e.id))
+    );
+
+    expect(clusters).toHaveLength(2);
+    for (const c of clusters) expect(c.members).toHaveLength(3);
+  });
+
   it("never clusters the traced root", () => {
     const entities = ["S1", "S2", "S3", "S4"].map((id) => entity(id));
     const { clusters, memberToCluster } = run(
