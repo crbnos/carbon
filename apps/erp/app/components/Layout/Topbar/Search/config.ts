@@ -33,13 +33,13 @@ export const entityTypeConfig: Record<
     icon: PiShareNetworkFill
   },
   gauge: {
-    bgColor: "",
-    textColor: "",
+    bgColor: "bg-amber-100 dark:bg-amber-900/30",
+    textColor: "text-amber-600 dark:text-amber-400",
     icon: LuGauge
   },
   issue: {
-    bgColor: "",
-    textColor: "",
+    bgColor: "bg-rose-100 dark:bg-rose-900/30",
+    textColor: "text-rose-600 dark:text-rose-400",
     icon: LuOctagonAlert
   },
   item: {
