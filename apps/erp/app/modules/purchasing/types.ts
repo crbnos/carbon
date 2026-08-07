@@ -22,7 +22,17 @@ import type {
 
 export type PurchaseOrderAttachment = FileObject; // TODO: remove
 
-export type PurchaseOrder = NonNullable<
+// The full `purchaseOrders` view row. Detail screens (Properties/Summary/Header/LineForm)
+// use this, so it must stay independent of whatever subset the LIST query selects
+// — see PurchaseOrderListItem.
+export type PurchaseOrder =
+  Database["public"]["Views"]["purchaseOrders"]["Row"] & {
+    receivableQuantity?: number | null;
+    receivedQuantity?: number | null;
+  };
+
+// A row of the purchaseOrders LIST, i.e. exactly the columns `getPurchaseOrders` selects.
+export type PurchaseOrderListItem = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrders>>["data"]
 >[number] & {
   receivableQuantity?: number | null;

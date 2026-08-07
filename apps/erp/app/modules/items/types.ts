@@ -92,7 +92,13 @@ export type ConfigurationParameterGroup = NonNullable<
   Awaited<ReturnType<typeof getConfigurationParameters>>["groups"]
 >[number];
 
-export type Consumable = NonNullable<
+// The full `consumables` view row. Detail screens (Properties/Summary/Header/LineForm)
+// use this, so it must stay independent of whatever subset the LIST query selects
+// — see ConsumableListItem.
+export type Consumable = Database["public"]["Views"]["consumables"]["Row"];
+
+// A row of the consumables LIST, i.e. exactly the columns `getConsumables` selects.
+export type ConsumableListItem = NonNullable<
   Awaited<ReturnType<typeof getConsumables>>["data"]
 >[number];
 
@@ -151,7 +157,13 @@ export type MakeMethod = NonNullable<
   Awaited<ReturnType<typeof getMakeMethods>>["data"]
 >[number];
 
-export type Material = NonNullable<
+// The full `materials` view row. Detail screens (Properties/Summary/Header/LineForm)
+// use this, so it must stay independent of whatever subset the LIST query selects
+// — see MaterialListItem.
+export type Material = Database["public"]["Views"]["materials"]["Row"];
+
+// A row of the materials LIST, i.e. exactly the columns `getMaterials` selects.
+export type MaterialListItem = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]
 >[number];
 
@@ -187,7 +199,13 @@ export type MethodOperation = NonNullable<
   Awaited<ReturnType<typeof getMethodOperations>>["data"]
 >[number];
 
-export type Part = NonNullable<
+// The full `parts` view row. Detail screens (Properties/Summary/Header/LineForm)
+// use this, so it must stay independent of whatever subset the LIST query selects
+// — see PartListItem.
+export type Part = Database["public"]["Views"]["parts"]["Row"];
+
+// A row of the parts LIST, i.e. exactly the columns `getParts` selects.
+export type PartListItem = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]
 >[number];
 
@@ -203,7 +221,13 @@ export type PickMethod = NonNullable<
   Awaited<ReturnType<typeof getPickMethods>>["data"]
 >[number];
 
-export type Service = NonNullable<
+// The full `services` view row. Detail screens (Properties/Summary/Header/LineForm)
+// use this, so it must stay independent of whatever subset the LIST query selects
+// — see ServiceListItem.
+export type Service = Database["public"]["Views"]["services"]["Row"];
+
+// A row of the services LIST, i.e. exactly the columns `getServices` selects.
+export type ServiceListItem = NonNullable<
   Awaited<ReturnType<typeof getServices>>["data"]
 >[number];
 
@@ -219,7 +243,13 @@ export type SupplierPart = NonNullable<
   Awaited<ReturnType<typeof getSupplierParts>>["data"]
 >[number];
 
-export type Tool = NonNullable<
+// The full `tools` view row. Detail screens (Properties/Summary/Header/LineForm)
+// use this, so it must stay independent of whatever subset the LIST query selects
+// — see ToolListItem.
+export type Tool = Database["public"]["Views"]["tools"]["Row"];
+
+// A row of the tools LIST, i.e. exactly the columns `getTools` selects.
+export type ToolListItem = NonNullable<
   Awaited<ReturnType<typeof getTools>>["data"]
 >[number];
 

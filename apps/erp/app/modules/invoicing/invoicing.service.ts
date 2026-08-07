@@ -34,6 +34,20 @@ import type {
   salesInvoiceValidator
 } from "./invoicing.models";
 
+// Columns the Purchase Invoices list actually renders, filters, or exports. Selecting
+// them explicitly lets Postgres prune the view's unreferenced computed
+// columns instead of materializing them per row. Adding a column to the
+// table UI means adding it here.
+const PURCHASE_INVOICES_LIST_COLUMNS =
+  "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
+
+// Columns the Sales Invoices list actually renders, filters, or exports. Selecting
+// them explicitly lets Postgres prune the view's unreferenced computed
+// columns instead of materializing them per row. Adding a column to the
+// table UI means adding it here.
+const SALES_INVOICES_LIST_COLUMNS =
+  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName" as const;
+
 /**
  * Compute an invoice's Due Date from its Issue Date and Payment Term.
  * Returns null when either input is missing, the payment term genuinely doesn't
@@ -245,7 +259,7 @@ export async function getPurchaseInvoices(
 ) {
   let query = client
     .from("purchaseInvoices")
-    .select("*", { count: LIST_COUNT })
+    .select(PURCHASE_INVOICES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -328,7 +342,7 @@ export async function getSalesInvoices(
 ) {
   let query = client
     .from("salesInvoices")
-    .select("*", { count: LIST_COUNT })
+    .select(SALES_INVOICES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {

@@ -69,10 +69,10 @@ import {
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
-import type { Tool } from "../../types";
+import type { ToolListItem } from "../../types";
 
 type ToolsTableProps = {
-  data: Tool[];
+  data: ToolListItem[];
   tags: { name: string }[];
   count: number;
 };
@@ -109,14 +109,14 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
   );
 
   const deleteItemModal = useDisclosure();
-  const [selectedItem, setSelectedItem] = useState<Tool | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ToolListItem | null>(null);
 
   const [people] = usePeople();
   const itemPostingGroups = useItemPostingGroups();
-  const customColumns = useCustomColumns<Tool>("tool");
+  const customColumns = useCustomColumns<ToolListItem>("tool");
 
-  const columns = useMemo<ColumnDef<Tool>[]>(() => {
-    const defaultColumns: ColumnDef<Tool>[] = [
+  const columns = useMemo<ColumnDef<ToolListItem>[]>(() => {
+    const defaultColumns: ColumnDef<ToolListItem>[] = [
       {
         accessorKey: "id",
         header: t`Tool ID`,
@@ -144,7 +144,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           exportValue: (row) => row.readableIdWithRevision ?? null
         }
       },
-      exportOnlyColumn<Tool>({
+      exportOnlyColumn<ToolListItem>({
         id: "itemName",
         header: t`Item Name`,
         value: (row) => row.name ?? null
@@ -558,7 +558,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
   );
 
   const renderContextMenu = useMemo(() => {
-    return (row: Tool) => {
+    return (row: ToolListItem) => {
       const revisions =
         (row.revisions as {
           id: string;
@@ -607,7 +607,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
 
   return (
     <>
-      <Table<Tool>
+      <Table<ToolListItem>
         count={count}
         columns={columns}
         data={data}

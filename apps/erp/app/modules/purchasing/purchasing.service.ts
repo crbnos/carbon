@@ -43,6 +43,13 @@ import type {
 } from "./purchasing.models";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
 
+// Columns the Purchase Orders list actually renders, filters, or exports. Selecting
+// them explicitly lets Postgres prune the view's unreferenced computed
+// columns instead of materializing them per row. Adding a column to the
+// table UI means adding it here.
+const PURCHASE_ORDERS_LIST_COLUMNS =
+  "id,purchaseOrderId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
+
 const logger = getLogger("erp", "purchasing-service");
 
 export async function closePurchaseOrder(
@@ -323,7 +330,7 @@ export async function getPurchaseOrders(
 ) {
   let query = client
     .from("purchaseOrders")
-    .select("*", { count: LIST_COUNT })
+    .select(PURCHASE_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {

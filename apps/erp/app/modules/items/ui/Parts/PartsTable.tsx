@@ -69,10 +69,10 @@ import {
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
-import type { Part } from "../../types";
+import type { PartListItem } from "../../types";
 
 type PartsTableProps = {
-  data: Part[];
+  data: PartListItem[];
   tags: { name: string }[];
   count: number;
 };
@@ -109,14 +109,14 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
   );
 
   const deleteItemModal = useDisclosure();
-  const [selectedItem, setSelectedItem] = useState<Part | null>(null);
+  const [selectedItem, setSelectedItem] = useState<PartListItem | null>(null);
 
   const [people] = usePeople();
   const itemPostingGroups = useItemPostingGroups();
-  const customColumns = useCustomColumns<Part>("part");
+  const customColumns = useCustomColumns<PartListItem>("part");
 
-  const columns = useMemo<ColumnDef<Part>[]>(() => {
-    const defaultColumns: ColumnDef<Part>[] = [
+  const columns = useMemo<ColumnDef<PartListItem>[]>(() => {
+    const defaultColumns: ColumnDef<PartListItem>[] = [
       {
         accessorKey: "id",
         header: t`Part ID`,
@@ -144,7 +144,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
           exportValue: (row) => row.readableIdWithRevision ?? null
         }
       },
-      exportOnlyColumn<Part>({
+      exportOnlyColumn<PartListItem>({
         id: "itemName",
         header: t`Item Name`,
         value: (row) => row.name ?? null
@@ -570,7 +570,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
   );
 
   const renderContextMenu = useMemo(() => {
-    return (row: Part) => {
+    return (row: PartListItem) => {
       const revisions =
         (row.revisions as {
           id: string;
@@ -631,7 +631,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
 
   return (
     <>
-      <Table<Part>
+      <Table<PartListItem>
         count={count}
         columns={columns}
         data={data}

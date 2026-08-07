@@ -185,7 +185,13 @@ export type QuotationMakeMethod = NonNullable<
   Awaited<ReturnType<typeof getQuoteMakeMethod>>["data"]
 >;
 
-export type Quotation = NonNullable<
+// The full `quotes` view row. Detail screens (Properties/Summary/Header/LineForm)
+// use this, so it must stay independent of whatever subset the LIST query selects
+// — see QuotationListItem.
+export type Quotation = Database["public"]["Views"]["quotes"]["Row"];
+
+// A row of the quotes LIST, i.e. exactly the columns `getQuotes` selects.
+export type QuotationListItem = NonNullable<
   Awaited<ReturnType<typeof getQuotes>>["data"]
 >[number];
 
@@ -221,7 +227,13 @@ export type QuotationShipment = NonNullable<
   Awaited<ReturnType<typeof getQuoteShipment>>["data"]
 >;
 
-export type SalesOrder = NonNullable<
+// The full `salesOrders` view row. Detail screens (Properties/Summary/Header/LineForm)
+// use this, so it must stay independent of whatever subset the LIST query selects
+// — see SalesOrderListItem.
+export type SalesOrder = Database["public"]["Views"]["salesOrders"]["Row"];
+
+// A row of the salesOrders LIST, i.e. exactly the columns `getSalesOrders` selects.
+export type SalesOrderListItem = NonNullable<
   Awaited<ReturnType<typeof getSalesOrders>>["data"]
 >[number];
 

@@ -86,6 +86,41 @@ import {
 } from "./items.models";
 import type { InventoryItemType } from "./types";
 
+// Columns the Parts list actually renders, filters, or exports. Selecting
+// them explicitly lets Postgres prune the view's unreferenced computed
+// columns instead of materializing them per row. Adding a column to the
+// table UI means adding it here.
+const PARTS_LIST_COLUMNS =
+  "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+
+// Columns the Materials list actually renders, filters, or exports. Selecting
+// them explicitly lets Postgres prune the view's unreferenced computed
+// columns instead of materializing them per row. Adding a column to the
+// table UI means adding it here.
+const MATERIALS_LIST_COLUMNS =
+  "active,defaultMethodType,description,itemTrackingType,name,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,unitOfMeasure,revisions,materialForm,materialSubstance,dimensions,finish,grade,materialType,materialSubstanceId,materialFormId,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+
+// Columns the Tools list actually renders, filters, or exports. Selecting
+// them explicitly lets Postgres prune the view's unreferenced computed
+// columns instead of materializing them per row. Adding a column to the
+// table UI means adding it here.
+const TOOLS_LIST_COLUMNS =
+  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+
+// Columns the Consumables list actually renders, filters, or exports. Selecting
+// them explicitly lets Postgres prune the view's unreferenced computed
+// columns instead of materializing them per row. Adding a column to the
+// table UI means adding it here.
+const CONSUMABLES_LIST_COLUMNS =
+  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+
+// Columns the Services list actually renders, filters, or exports. Selecting
+// them explicitly lets Postgres prune the view's unreferenced computed
+// columns instead of materializing them per row. Adding a column to the
+// table UI means adding it here.
+const SERVICES_LIST_COLUMNS =
+  "active,defaultMethodType,description,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt" as const;
+
 const logger = getLogger("erp", "items");
 
 export async function activateMethodVersion(
@@ -527,7 +562,7 @@ export async function getConsumables(
 ) {
   let query = client
     .from("consumables")
-    .select("*", {
+    .select(CONSUMABLES_LIST_COLUMNS, {
       count: LIST_COUNT
     })
     .eq("companyId", companyId);
@@ -1225,7 +1260,7 @@ export async function getMaterials(
 ) {
   let query = client
     .from("materials")
-    .select("*", {
+    .select(MATERIALS_LIST_COLUMNS, {
       count: LIST_COUNT
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
@@ -1759,7 +1794,7 @@ export async function getParts(
 ) {
   let query = client
     .from("parts")
-    .select("*", {
+    .select(PARTS_LIST_COLUMNS, {
       count: LIST_COUNT
     })
     .eq("companyId", companyId);
@@ -2009,7 +2044,7 @@ export async function getServices(
 ) {
   let query = client
     .from("services")
-    .select("*", {
+    .select(SERVICES_LIST_COLUMNS, {
       count: LIST_COUNT
     })
     .eq("companyId", companyId);
@@ -2103,7 +2138,7 @@ export async function getTools(
 ) {
   let query = client
     .from("tools")
-    .select("*", {
+    .select(TOOLS_LIST_COLUMNS, {
       count: LIST_COUNT
     })
     .eq("companyId", companyId);

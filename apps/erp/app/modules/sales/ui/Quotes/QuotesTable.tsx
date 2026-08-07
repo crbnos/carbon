@@ -36,11 +36,11 @@ import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { quoteStatusType } from "../../sales.models";
-import type { Quotation } from "../../types";
+import type { QuotationListItem } from "../../types";
 import QuoteStatus from "./QuoteStatus";
 
 type QuotesTableProps = {
-  data: Quotation[];
+  data: QuotationListItem[];
   count: number;
 };
 
@@ -49,22 +49,21 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
 
-  const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(
-    null
-  );
+  const [selectedQuotation, setSelectedQuotation] =
+    useState<QuotationListItem | null>(null);
   const deleteQuotationModal = useDisclosure();
 
   const [customers] = useCustomers();
   const [people] = usePeople();
 
-  const customColumns = useCustomColumns<Quotation>("quote");
-  const columns = useMemo<ColumnDef<Quotation>[]>(() => {
+  const customColumns = useCustomColumns<QuotationListItem>("quote");
+  const columns = useMemo<ColumnDef<QuotationListItem>[]>(() => {
     const employeeOptions = people.map((employee) => ({
       value: employee.id,
       label: employee.name
     }));
 
-    const defaultColumns: ColumnDef<Quotation>[] = [
+    const defaultColumns: ColumnDef<QuotationListItem>[] = [
       {
         accessorKey: "quoteId",
         header: t`Quote Number`,
@@ -285,7 +284,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
   }, [customers, people, customColumns, t]);
 
   const renderContextMenu = useMemo(() => {
-    return (row: Quotation) => (
+    return (row: QuotationListItem) => (
       <>
         <MenuItem onClick={() => navigate(path.to.quoteDetails(row.id!))}>
           <MenuIcon icon={<LuPencil />} />
@@ -308,7 +307,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
 
   return (
     <>
-      <Table<Quotation>
+      <Table<QuotationListItem>
         count={count}
         columns={columns}
         data={data}

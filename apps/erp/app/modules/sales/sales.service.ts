@@ -74,6 +74,20 @@ import type {
   SalesRFQ
 } from "./types";
 
+// Columns the Quotes list actually renders, filters, or exports. Selecting
+// them explicitly lets Postgres prune the view's unreferenced computed
+// columns instead of materializing them per row. Adding a column to the
+// table UI means adding it here.
+const QUOTES_LIST_COLUMNS =
+  "id,quoteId,revisionId,dueDate,expirationDate,status,salesPersonId,estimatorId,customerId,customerReference,assignee,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,locationName,lines,completedLines" as const;
+
+// Columns the Sales Orders list actually renders, filters, or exports. Selecting
+// them explicitly lets Postgres prune the view's unreferenced computed
+// columns instead of materializing them per row. Adding a column to the
+// table UI means adding it here.
+const SALES_ORDERS_LIST_COLUMNS =
+  "id,salesOrderId,status,orderDate,customerId,customerReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,locationId,displayStatus,thumbnailPath,itemType,orderTotal,jobs,lines,paymentTermId,shippingMethodId,receiptPromisedDate,dropShipment" as const;
+
 const logger = getLogger("erp", "sales");
 
 export function applyPriceRules(
@@ -1159,7 +1173,7 @@ export async function getQuotes(
 ) {
   let query = client
     .from("quotes")
-    .select("*", { count: LIST_COUNT })
+    .select(QUOTES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1633,7 +1647,7 @@ export async function getSalesOrders(
 ) {
   let query = client
     .from("salesOrders")
-    .select("*", { count: LIST_COUNT })
+    .select(SALES_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
