@@ -3,15 +3,20 @@ import { DETAILS_SCROLLPORT_CLASSNAME } from "./detailsScrollport";
 
 describe("DETAILS_SCROLLPORT_CLASSNAME (#959 mobile files)", () => {
   it("does not force a fixed height on small viewports", () => {
-    // A bare `h-[calc(...)]` without an `lg:` prefix would reintroduce the
-    // nested-scroll trap that hid Files on mobile.
+    // Any fixed-height utility before `lg` (h-screen, h-full, h-[...],
+    // sm:/md: variants) would reintroduce the nested-scroll trap that hid
+    // Files / Serial Numbers on mobile.
     const tokens = DETAILS_SCROLLPORT_CLASSNAME.split(/\s+/);
     expect(tokens).toContain("h-auto");
     expect(
       tokens.some(
-        (t) => t.startsWith("h-[") && !t.startsWith("lg:h-[") && t !== "h-auto"
+        (t) =>
+          /^(?:h-|sm:h-|md:h-)/.test(t) &&
+          t !== "h-auto" &&
+          !t.endsWith(":h-auto")
       )
     ).toBe(false);
+    expect(tokens).toContain("overflow-y-visible");
   });
 
   it("keeps the desktop fixed-height scrollport at lg+", () => {
