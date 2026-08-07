@@ -15,8 +15,10 @@ import {
 } from "@carbon/ee/hooks.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
+import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { getConnectAccountStatus } from "@carbon/stripe/connect.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import { getIntegration, IntegrationForm } from "~/modules/settings";
@@ -188,6 +190,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
       // Continue without dynamic options - form will show empty selects
     }
+  } else if (integrationId === "stripe-connect") {
+    // Whether the platform even has a Stripe secret key configured — cheap,
+    // synchronous, known without ever calling Stripe. Display-only: never
+    // part of the submitted form/schema, so merging it into metadata here
+    // doesn't risk it being written back to the DB on save.
+    flattenedMetadata.platformConfigured = !!STRIPE_SECRET_KEY;
+
+    // Refresh Stripe Connect's status from Stripe so the drawer shows live
+    // onboarding progress rather than a possibly-stale stored snapshot.
+    if (flattenedMetadata.stripeAccountId) {
+      try {
+        const freshStatus = await getConnectAccountStatus(
+          flattenedMetadata.stripeAccountId as string
+        );
+        if (freshStatus) {
+          Object.assign(flattenedMetadata, freshStatus);
+        }
+      } catch (err) {
+        logger.error("Failed to fetch Stripe Connect status for settings", {
+          error: err
+        });
+      }
+    }
+
+    // add dynamic options here as needed
   }
 
   return {

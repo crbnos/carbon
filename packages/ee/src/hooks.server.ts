@@ -2,6 +2,11 @@ import { emailHealthcheck } from "./email/hooks.server";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { onshapeOnUninstall } from "./onshape/hooks.server";
+import {
+  stripeConnectHealthcheck,
+  stripeConnectOnInstall,
+  stripeConnectOnUninstall
+} from "./stripe-connect/hooks.server";
 import type { IntegrationServerHooks } from "./types";
 
 // Onshape keeps its release webhook subscription in lockstep with the asset-sync
@@ -43,6 +48,11 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onHealthcheck: xeroHealthcheck,
     onInstall: xeroOnInstall,
     onUninstall: xeroOnUninstall
+  },
+  "stripe-connect": {
+    onHealthcheck: stripeConnectHealthcheck,
+    onInstall: stripeConnectOnInstall,
+    onUninstall: stripeConnectOnUninstall
   }
 };
 

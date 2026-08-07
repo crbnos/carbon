@@ -8,6 +8,7 @@ import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
 import { Sage } from "./sage/config";
 import { Slack } from "./slack/config";
+import { StripeConnect } from "./stripe-connect/config";
 import type { QuickInstallConnector } from "./types";
 import { Xero } from "./xero/config";
 import { Zapier } from "./zapier/config";
@@ -32,6 +33,7 @@ export const integrations = [
   // Radan,
   Email,
   ExchangeRates,
+  StripeConnect,
   Jira,
   Linear,
   Onshape,
@@ -52,6 +54,7 @@ export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";
 export { Slack } from "./slack/config";
 export * from "./slack/lib/messages";
+export { StripeConnect } from "./stripe-connect/config";
 export { Xero } from "./xero/config";
 
 /**
