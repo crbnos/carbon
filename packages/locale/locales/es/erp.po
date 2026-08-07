@@ -13574,13 +13574,13 @@ msgid "Title"
 msgstr "Título"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
-msgstr ""
+msgstr "Para desactivar, utilice el menú de la fila y seleccione Desactivar cuenta."
 
 msgid "To Location"
 msgstr "Ubicación de destino"
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
-msgstr ""
+msgstr "Para reactivar, utilice el menú de la fila y seleccione Enviar invitación. El empleado se activa una vez que acepta."
 
 msgid "To Receive"
 msgstr "Por Recibir"

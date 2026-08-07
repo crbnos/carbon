@@ -13574,13 +13574,13 @@ msgid "Title"
 msgstr "标题"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
-msgstr ""
+msgstr "要停用，请使用行菜单并选择停用账户。"
 
 msgid "To Location"
 msgstr "至位置"
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
-msgstr ""
+msgstr "要重新激活，请使用行菜单并选择发送邀请。员工接受后即会激活。"
 
 msgid "To Receive"
 msgstr "待接收"

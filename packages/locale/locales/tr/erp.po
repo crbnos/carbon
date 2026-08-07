@@ -13574,13 +13574,13 @@ msgid "Title"
 msgstr "Unvan"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
-msgstr ""
+msgstr "Deaktif hale getirmek için, satır menüsünü kullanın ve Hesabı Deaktif Et'i seçin."
 
 msgid "To Location"
 msgstr "Varış Konumu"
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
-msgstr ""
+msgstr "Yeniden etkinleştirmek için, satır menüsünü kullanın ve Davet Gönder'i seçin. Çalışan bunu kabul ettiğinde etkin hale gelir."
 
 msgid "To Receive"
 msgstr "Alınacak"

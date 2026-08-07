@@ -13574,13 +13574,13 @@ msgid "Title"
 msgstr "제목"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
-msgstr ""
+msgstr "비활성화하려면 행 메뉴를 사용하여 계정 비활성화를 선택하세요."
 
 msgid "To Location"
 msgstr "대상 위치"
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
-msgstr ""
+msgstr "다시 활성화하려면 행 메뉴를 사용하여 초대 보내기를 선택하세요. 직원이 수락하면 활성화됩니다."
 
 msgid "To Receive"
 msgstr "입고 예정"
