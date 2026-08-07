@@ -1210,7 +1210,7 @@ msgid "Add Employee"
 msgstr "Dodaj Pracownika"
 
 msgid "Add Employee"
-msgstr ""
+msgstr "Dodaj pracownika"
 
 msgid "Add Entry"
 msgstr "Dodaj wpis"
@@ -8379,13 +8379,13 @@ msgstr "Zaproś"
 msgid "Invite Expired"
 msgstr "Zaproszenie wygasło"
 msgid "Invite All"
-msgstr ""
+msgstr "Zaproś wszystkich"
 
 msgid "Invite Multiple"
-msgstr ""
+msgstr "Zaproś wielu"
 
 msgid "Invite Multiple Employees"
-msgstr ""
+msgstr "Zaproś wielu pracowników"
 
 msgid "Invited"
 msgstr "Zaproszony"
@@ -13055,7 +13055,7 @@ msgid "Remove Employee"
 msgstr "Usuń pracownika"
 
 msgid "Remove employee"
-msgstr ""
+msgstr "Usuń pracownika"
 
 msgid "Remove filter"
 msgstr "Usuń z listy filtr"

@@ -8377,13 +8377,13 @@ msgstr "Inviter"
 msgid "Invite Expired"
 msgstr "Invitation expirée"
 msgid "Invite All"
-msgstr ""
+msgstr "Tout inviter"
 
 msgid "Invite Multiple"
-msgstr ""
+msgstr "Inviter plusieurs"
 
 msgid "Invite Multiple Employees"
-msgstr ""
+msgstr "Inviter plusieurs employés"
 
 msgid "Invited"
 msgstr "Invité"
@@ -13053,7 +13053,7 @@ msgid "Remove Employee"
 msgstr "Supprimer l'employé"
 
 msgid "Remove employee"
-msgstr ""
+msgstr "Retirer l'employé"
 
 msgid "Remove filter"
 msgstr "Retirer le filtre"

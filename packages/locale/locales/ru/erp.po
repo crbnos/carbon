@@ -8378,13 +8378,13 @@ msgid "Invite Expired"
 msgstr "Истек срок приглашения"
 msgstr "Приглашение истекло"
 msgid "Invite All"
-msgstr ""
+msgstr "Пригласить всех"
 
 msgid "Invite Multiple"
-msgstr ""
+msgstr "Пригласить нескольких"
 
 msgid "Invite Multiple Employees"
-msgstr ""
+msgstr "Пригласить нескольких сотрудников"
 
 msgid "Invited"
 msgstr "Приглашено"
@@ -13054,7 +13054,7 @@ msgid "Remove Employee"
 msgstr "Удалить сотрудника"
 
 msgid "Remove employee"
-msgstr ""
+msgstr "Удалить сотрудника"
 
 msgid "Remove filter"
 msgstr "Убрать фильтр"
