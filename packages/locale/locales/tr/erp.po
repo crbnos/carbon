@@ -1208,6 +1208,7 @@ msgstr "Maliyet Merkezi Ekle"
 
 msgid "Add Employee"
 msgstr "Çalışan Ekle"
+msgstr ""
 
 msgid "Add Entry"
 msgstr "Giri Ekle"
@@ -8375,6 +8376,14 @@ msgstr "Davet et"
 
 msgid "Invite Expired"
 msgstr "Davet Süresi Doldu"
+msgid "Invite All"
+msgstr ""
+
+msgid "Invite Multiple"
+msgstr ""
+
+msgid "Invite Multiple Employees"
+msgstr ""
 
 msgid "Invited"
 msgstr "Davetli"
@@ -13042,6 +13051,8 @@ msgstr "Bozuk verileri kaldır ve geri yükle"
 
 msgid "Remove Employee"
 msgstr "Çalışanı Kaldır"
+msgid "Remove employee"
+msgstr ""
 
 msgid "Remove filter"
 msgstr "Filtreyi kaldır"

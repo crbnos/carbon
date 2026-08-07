@@ -1,5 +1,6 @@
 import {
   Badge,
+  Button,
   Checkbox,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -24,9 +25,10 @@ import {
   LuShieldOff,
   LuToggleRight,
   LuUser,
-  LuUserCheck
+  LuUserCheck,
+  LuUsers
 } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
@@ -458,7 +460,16 @@ const EmployeesTable = memo(
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
             permissions.can("create", "users") && (
-              <New label={t`Account`} to={`new?${params.toString()}`} />
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" leftIcon={<LuUsers />} asChild>
+                  <Link
+                    to={`${path.to.bulkInviteEmployees}?${params.toString()}`}
+                  >
+                    <Trans>Invite Multiple</Trans>
+                  </Link>
+                </Button>
+                <New label={t`Account`} to={`new?${params.toString()}`} />
+              </div>
             )
           }
           renderActions={renderActions}
