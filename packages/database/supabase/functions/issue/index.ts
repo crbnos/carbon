@@ -14,11 +14,13 @@ import {
 } from "../lib/storage-units.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
+import type { Json } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
 
 import { buildBatchSplitRecords } from "../shared/batch-split.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { applyScrapReplacement } from "./scrap-replacement.ts";
 import { getNextSerialNumbers } from "../shared/get-next-serial-number.ts";
 import {
   getDefaultPostingGroup,
@@ -172,7 +174,7 @@ async function issueJobOperationMaterials(
     materialsToIssue.push(...materialsToIssueFromKittedChildren);
   }
 
-  if (materialsToIssue.length === 0) return;
+  if (materialsToIssue.length === 0) return { totalMaterialCost: 0 };
 
   const jobId = materialsToIssue[0].jobId;
 
@@ -318,6 +320,12 @@ async function issueJobOperationMaterials(
       .execute();
   }
 
+  // Total material cost this call relieved from inventory into WIP — the
+  // jobOperationScrap case posts its WIP→scrap journal from this figure so a
+  // second calculateCOGS pass never double-relieves cost layers. 0 when
+  // accounting is disabled (no journal needed).
+  let totalMaterialCost = 0;
+
   if (itemLedgerInserts.length > 0) {
     await trx.insertInto("itemLedger").values(itemLedgerInserts).execute();
 
@@ -391,6 +399,7 @@ async function issueJobOperationMaterials(
         quantity: materialQuantity,
         companyId,
       });
+      totalMaterialCost += cogsResult.totalCost;
 
       const journalLineReference = nanoid();
 
@@ -529,6 +538,8 @@ async function issueJobOperationMaterials(
       }
     }
   }
+
+  return { totalMaterialCost };
 }
 
 async function createMaterialWipEntries(
@@ -851,6 +862,19 @@ const payloadValidator = z.discriminatedUnion("type", [
     setupProductionEventId: z.string().optional(),
     inspectionId: z.string().optional(),
     inspectionSampleId: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("jobOperationScrap"),
+    jobOperationId: z.string(),
+    quantity: z.number().positive(),
+    scrapReasonId: z.string(),
+    trackedEntityId: z.string().optional(),
+    notes: z.string().optional(),
+    laborProductionEventId: z.string().optional(),
+    machineProductionEventId: z.string().optional(),
+    setupProductionEventId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
   }),
   z.object({
     type: z.literal("partToOperation"),
@@ -1378,6 +1402,474 @@ serve(async (req: Request) => {
             db,
           });
         });
+
+        return jsonResponse({
+          success: true,
+          newTrackedEntityId: newEntityId,
+        });
+      }
+      case "jobOperationScrap": {
+        const {
+          jobOperationId,
+          quantity,
+          scrapReasonId,
+          trackedEntityId: scrapEntityId,
+          notes,
+          laborProductionEventId,
+          machineProductionEventId,
+          setupProductionEventId,
+          companyId,
+          userId,
+        } = validatedPayload;
+        const client = await requirePermissions(req, companyId, userId, {
+          update: "production",
+        });
+
+        const operationRes = await client
+          .from("jobOperation")
+          .select("*")
+          .eq("id", jobOperationId)
+          .single();
+        const operation = operationRes.data;
+        if (!operation || !operation.jobMakeMethodId) {
+          throw new Error("Job operation not found");
+        }
+
+        const [
+          makeMethodRes,
+          jobRes,
+          trackedEntitiesRes,
+          accountingSettingsScrapOp,
+          companyRecordScrapOp,
+        ] = await Promise.all([
+          client
+            .from("jobMakeMethod")
+            .select(
+              "id, itemId, requiresSerialTracking, requiresBatchTracking, parentMaterialId"
+            )
+            .eq("id", operation.jobMakeMethodId)
+            .single(),
+          client
+            .from("job")
+            .select("id, jobId, locationId")
+            .eq("id", operation.jobId)
+            .single(),
+          client
+            .from("trackedEntity")
+            .select("id")
+            .eq("attributes->>Job Make Method", operation.jobMakeMethodId),
+          client
+            .from("companySettings")
+            .select("accountingEnabled")
+            .eq("id", companyId)
+            .single(),
+          client
+            .from("company")
+            .select("companyGroupId")
+            .eq("id", companyId)
+            .single(),
+        ]);
+        if (makeMethodRes.error || !makeMethodRes.data) {
+          throw new Error("Job make method not found");
+        }
+        if (jobRes.error || !jobRes.data) throw new Error("Job not found");
+        if (companyRecordScrapOp.error) {
+          throw new Error("Failed to fetch company");
+        }
+        const makeMethod = makeMethodRes.data;
+        const job = jobRes.data;
+        const existingEntityCount = trackedEntitiesRes.data?.length ?? 0;
+
+        const accountingEnabledScrapOp =
+          accountingSettingsScrapOp.data?.accountingEnabled ?? false;
+        const accountDefaultsScrapOp = accountingEnabledScrapOp
+          ? await getDefaultPostingGroup(client, companyId)
+          : null;
+        if (
+          accountingEnabledScrapOp &&
+          (accountDefaultsScrapOp?.error || !accountDefaultsScrapOp?.data)
+        ) {
+          throw new Error("Error getting account defaults");
+        }
+
+        const dimensionsScrapOp = accountingEnabledScrapOp
+          ? await client
+              .from("dimension")
+              .select("id, entityType")
+              .eq("companyGroupId", companyRecordScrapOp.data.companyGroupId)
+              .eq("active", true)
+              .in("entityType", [
+                "ItemPostingGroup",
+                "Item",
+                "Location",
+                "ScrapReason",
+                "WorkCenter",
+                "Employee",
+              ])
+          : null;
+        const dimensionMapScrapOp = new Map<string, string>();
+        if (dimensionsScrapOp?.data) {
+          for (const dim of dimensionsScrapOp.data) {
+            if (dim.entityType) dimensionMapScrapOp.set(dim.entityType, dim.id);
+          }
+        }
+
+        const isSerial = makeMethod.requiresSerialTracking === true;
+        if (isSerial && !scrapEntityId) {
+          throw new Error("trackedEntityId is required to scrap a serial unit");
+        }
+        if (isSerial && quantity !== 1) {
+          throw new Error("Serial units are scrapped one at a time");
+        }
+
+        const todayScrapOp = datetime
+          .today(await getCompanyTimeZone(client, companyId))
+          .toString();
+
+        let newEntityId: string | undefined;
+        await db.transaction().execute(async (trx) => {
+          // 1. Scrap quantity record. The quantity-sync interceptor aggregates
+          //    quantityScrapped; scrap no longer counts toward the auto-Done
+          //    target (20260807090629), so the operation stays open until the
+          //    good quantity is actually made.
+          await trx
+            .insertInto("productionQuantity")
+            .values({
+              jobOperationId,
+              quantity,
+              type: "Scrap",
+              scrapReasonId,
+              notes,
+              laborProductionEventId,
+              machineProductionEventId,
+              setupProductionEventId,
+              companyId,
+              createdBy: userId,
+            })
+            .executeTakeFirst();
+
+          // 2. Backflush the scrapped units\' BOM for this operation — material
+          //    cost enters WIP exactly as a completion would (NetSuite "Issue
+          //    for Scrap"); the WIP→scrap journal below relieves it.
+          const backflush = await issueJobOperationMaterials(trx, {
+            jobOperationId,
+            quantity,
+            companyId,
+            userId,
+            accountingEnabled: accountingEnabledScrapOp,
+            accountDefaults: accountDefaultsScrapOp?.data
+              ? accountDefaultsScrapOp
+              : null,
+            dimensionMap: dimensionMapScrapOp,
+            client,
+            db,
+          });
+
+          // 3. Serial: terminal status + Scrap genealogy on the selected unit.
+          //    The entity keeps its consumed-material input tree.
+          let scrappedEntityAttributes: TrackedEntityAttributes | null = null;
+          if (isSerial && scrapEntityId) {
+            const entity = await trx
+              .selectFrom("trackedEntity")
+              .selectAll()
+              .where("id", "=", scrapEntityId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst();
+            if (!entity) throw new Error("Tracked entity not found");
+            if (entity.status === "Consumed" || entity.status === "Scrapped") {
+              throw new Error("Tracked entity is not in progress");
+            }
+            scrappedEntityAttributes =
+              entity.attributes as TrackedEntityAttributes;
+
+            const scrapActivityId = nanoid();
+            await trx
+              .insertInto("trackedActivity")
+              .values({
+                id: scrapActivityId,
+                type: "Scrap",
+                sourceDocument: "Job Operation",
+                sourceDocumentId: jobOperationId,
+                attributes: {
+                  "Job Operation": jobOperationId,
+                  "Scrap Reason": scrapReasonId,
+                  Employee: userId,
+                  ...(notes?.trim() ? { Notes: notes.trim() } : {}),
+                },
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+            await trx
+              .insertInto("trackedActivityInput")
+              .values({
+                trackedActivityId: scrapActivityId,
+                trackedEntityId: scrapEntityId,
+                quantity: 1,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+            // No `Operation ...` completion stamp — the unit did NOT complete
+            // this operation; status is the terminal marker.
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                status: "Scrapped",
+                attributes: {
+                  ...(entity.attributes as TrackedEntityAttributes),
+                  "Scrap Reason": scrapReasonId,
+                },
+              })
+              .where("id", "=", scrapEntityId)
+              .execute();
+          }
+
+          // 4. Reopen Done ops + capacity top-up beyond the planned allowance
+          //    so replacement units can run the FULL routing.
+          await applyScrapReplacement(trx, {
+            jobMakeMethodId: operation.jobMakeMethodId!,
+            jobId: job.id,
+            companyId,
+            userId,
+          });
+
+          // 5. Serial: spawn the replacement Reserved unit. Same convention as
+          //    jobOperationSerialComplete — spawn while total entities <
+          //    operationQuantity; the top-up above grew operationQuantity by
+          //    the beyond-allowance scrap, and pre-created allowance units
+          //    (job.scrapQuantity at release) already cover in-allowance scrap.
+          if (isSerial && scrapEntityId && scrappedEntityAttributes) {
+            const updatedOperation = await trx
+              .selectFrom("jobOperation")
+              .select(["operationQuantity"])
+              .where("id", "=", jobOperationId)
+              .executeTakeFirst();
+            const capacity = Number(updatedOperation?.operationQuantity ?? 0);
+            if (existingEntityCount < capacity) {
+              let spawnReadableId: string | null = null;
+              if (makeMethod.itemId) {
+                let locationCode: string | null = null;
+                let locationName: string | null = null;
+                if (job.locationId) {
+                  const loc = await client
+                    .from("location")
+                    .select("code, name")
+                    .eq("id", job.locationId)
+                    .eq("companyId", companyId)
+                    .single();
+                  locationCode = loc.data?.code ?? null;
+                  locationName = loc.data?.name ?? null;
+                }
+                const spawnSerials = await getNextSerialNumbers(trx, {
+                  itemId: makeMethod.itemId,
+                  companyId,
+                  count: 1,
+                  locationCode,
+                  locationName,
+                });
+                spawnReadableId = spawnSerials[0] ?? null;
+              }
+
+              const scrappedEntity = await trx
+                .selectFrom("trackedEntity")
+                .selectAll()
+                .where("id", "=", scrapEntityId)
+                .executeTakeFirst();
+              const newTrackedEntityResult = await trx
+                .insertInto("trackedEntity")
+                .values({
+                  sourceDocument: scrappedEntity?.sourceDocument ?? "Item",
+                  sourceDocumentId:
+                    scrappedEntity?.sourceDocumentId ?? makeMethod.itemId ?? "",
+                  sourceDocumentReadableId:
+                    scrappedEntity?.sourceDocumentReadableId,
+                  quantity: 1,
+                  status: "Reserved",
+                  attributes: scrappedEntityAttributes as unknown as Json,
+                  itemId: makeMethod.itemId ?? null,
+                  expirationDate: scrappedEntity?.expirationDate ?? null,
+                  readableId: spawnReadableId,
+                  companyId,
+                  createdBy: userId,
+                })
+                .returning(["id"])
+                .executeTakeFirst();
+              newEntityId = newTrackedEntityResult?.id;
+            }
+          }
+
+          // 6. GL: relieve the scrapped units\' accumulated material cost from
+          //    WIP into the scrap account. Valuation = this operation\'s actual
+          //    backflush cost + prior operations\' estimated material cost
+          //    (jobMaterial per-unit quantity × itemCost.unitCost). Labor and
+          //    overhead already absorbed stay in WIP and settle via close-job
+          //    variance (spec decision 6).
+          if (accountingEnabledScrapOp && accountDefaultsScrapOp?.data) {
+            let priorUnitMaterialCost = 0;
+            const priorOperations = await trx
+              .selectFrom("jobOperation")
+              .select(["id"])
+              .where("jobMakeMethodId", "=", operation.jobMakeMethodId!)
+              .where("order", "<", operation.order)
+              .execute();
+            if (priorOperations.length > 0) {
+              const priorMaterials = await trx
+                .selectFrom("jobMaterial")
+                .select(["itemId", "quantity"])
+                .where(
+                  "jobOperationId",
+                  "in",
+                  priorOperations.map((op) => op.id)
+                )
+                .where("methodType", "!=", "Make to Order")
+                .execute();
+              if (priorMaterials.length > 0) {
+                const priorCosts = await trx
+                  .selectFrom("itemCost")
+                  .select(["itemId", "unitCost"])
+                  .where(
+                    "itemId",
+                    "in",
+                    priorMaterials.map((m) => m.itemId)
+                  )
+                  .where("companyId", "=", companyId)
+                  .execute();
+                const unitCostByItem = new Map(
+                  priorCosts.map((c) => [c.itemId, Number(c.unitCost) || 0])
+                );
+                for (const material of priorMaterials) {
+                  priorUnitMaterialCost +=
+                    (Number(material.quantity) || 0) *
+                    (unitCostByItem.get(material.itemId) ?? 0);
+                }
+              }
+            }
+
+            const scrapCost =
+              backflush.totalMaterialCost + priorUnitMaterialCost * quantity;
+            if (scrapCost > 0) {
+              const accountingPeriodId = await getCurrentAccountingPeriod(
+                client,
+                companyId,
+                trx,
+                todayScrapOp
+              );
+              const journalEntryId = await getNextSequence(
+                trx,
+                "journalEntry",
+                companyId
+              );
+              const journalResult = await trx
+                .insertInto("journal")
+                .values({
+                  journalEntryId,
+                  accountingPeriodId,
+                  description: `Scrap — Job ${job.jobId ?? job.id}`,
+                  postingDate: todayScrapOp,
+                  companyId,
+                  sourceType: "Job Consumption",
+                  status: "Posted",
+                  postedAt: new Date().toISOString(),
+                  postedBy: userId,
+                  createdBy: userId,
+                })
+                .returning(["id"])
+                .executeTakeFirstOrThrow();
+
+              const scrapAccount =
+                accountDefaultsScrapOp.data.scrapAccount ??
+                accountDefaultsScrapOp.data.inventoryAdjustmentVarianceAccount;
+              const journalLineReference = nanoid();
+              const journalLineResults = await trx
+                .insertInto("journalLine")
+                .values([
+                  {
+                    journalId: journalResult.id,
+                    accountId: scrapAccount,
+                    description: "Scrap Account",
+                    amount: debit("expense", scrapCost),
+                    quantity,
+                    documentType: "Scrap",
+                    documentId: job.id,
+                    documentLineReference: `jobOperationScrap:${jobOperationId}`,
+                    journalLineReference,
+                    companyId,
+                  },
+                  {
+                    journalId: journalResult.id,
+                    accountId: accountDefaultsScrapOp.data.workInProgressAccount,
+                    description: "WIP Account",
+                    amount: credit("asset", scrapCost),
+                    quantity,
+                    documentType: "Scrap",
+                    documentId: job.id,
+                    documentLineReference: `jobOperationScrap:${jobOperationId}`,
+                    journalLineReference,
+                    companyId,
+                  },
+                ])
+                .returning(["id"])
+                .execute();
+
+              const itemCostRow = makeMethod.itemId
+                ? await trx
+                    .selectFrom("itemCost")
+                    .select(["itemPostingGroupId"])
+                    .where("itemId", "=", makeMethod.itemId)
+                    .where("companyId", "=", companyId)
+                    .executeTakeFirst()
+                : null;
+              const scrapDimensionValues: Array<[string, string | null]> = [
+                ["Item", makeMethod.itemId ?? null],
+                ["ItemPostingGroup", itemCostRow?.itemPostingGroupId ?? null],
+                ["Location", job.locationId ?? null],
+                ["ScrapReason", scrapReasonId],
+                ["WorkCenter", operation.workCenterId ?? null],
+                ["Employee", userId],
+              ];
+              const dimensionInserts = journalLineResults.flatMap((line) =>
+                scrapDimensionValues
+                  .filter(
+                    ([entityType, valueId]) =>
+                      dimensionMapScrapOp.has(entityType) && valueId
+                  )
+                  .map(([entityType, valueId]) => ({
+                    journalLineId: line.id,
+                    dimensionId: dimensionMapScrapOp.get(entityType)!,
+                    valueId: valueId as string,
+                    companyId,
+                  }))
+              );
+              if (dimensionInserts.length > 0) {
+                await trx
+                  .insertInto("journalLineDimension")
+                  .values(dimensionInserts)
+                  .execute();
+              }
+            }
+          }
+        });
+
+        // Reschedule outside the transaction (trigger-rework precedent):
+        // reopened/topped-up operations need fresh dates and priorities.
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL");
+          const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+          await fetch(`${supabaseUrl}/functions/v1/reschedule`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${serviceRoleKey}`,
+            },
+            body: JSON.stringify({ jobId: job.id, companyId, userId }),
+          });
+        } catch (rescheduleError) {
+          console.error(
+            "Failed to trigger reschedule after scrap:",
+            rescheduleError
+          );
+        }
 
         return jsonResponse({
           success: true,
