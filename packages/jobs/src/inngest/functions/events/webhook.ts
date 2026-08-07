@@ -34,9 +34,8 @@ export const webhookFunction = inngest.createFunction(
           }
         });
       } catch (err) {
-        // Count one failure per EVENT, not per attempt. The trigger path fired
-        // once and recorded once; with retries enabled, incrementing on every
-        // attempt would inflate errorCount 4x for a single undelivered event.
+        // Count one failure per event, not per attempt — otherwise retries
+        // inflate errorCount 4x for a single undelivered event.
         if (webhookId && attempt >= RETRIES) {
           await getCarbonServiceRole().rpc("increment_webhook_error", {
             webhook_id: webhookId

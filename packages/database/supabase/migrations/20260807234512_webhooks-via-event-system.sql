@@ -1,46 +1,16 @@
--- Move webhooks off the bespoke pg_net triggers and onto the event system.
+-- Move webhooks off their own pg_net dispatch path (39 webhook_* triggers -> the
+-- `webhook` edge function) and onto the event system. All 13 tables already
+-- carried trg_event_async_* triggers, so every write was being observed twice.
+-- A webhook is now an eventSystemSubscription with handlerType 'WEBHOOK'.
 --
--- Until now webhooks ran on their own dispatch path: 39 triggers (13 tables x
--- INSERT/UPDATE/DELETE) calling webhook_insert/_update/_delete, each of which
--- looked up matching `webhook` rows and net.http_post-ed the `webhook` edge
--- function, which then POSTed the customer. That duplicated infrastructure the
--- event system already provides -- every one of those 13 tables ALREADY carries
--- trg_event_async_ins/upd/del_* feeding dispatch_event_batch(), so the writes
--- were being observed twice.
---
--- After this migration a webhook is just an eventSystemSubscription with
--- handlerType 'WEBHOOK', drained by the existing queue and delivered by
--- packages/jobs/.../events/webhook.ts.
---
--- The customer-facing body is unchanged: the handler maps the queue event back
--- to {type, record, old?} (see toWebhookBody, contract-tested), including the
--- DELETE case where `record` comes from OLD. Delivery counters
--- (increment_webhook_success/_error) are preserved by the handler.
---
--- What DOES change is timing: pg_net fired on commit, the event system is
--- queued -- typically ~3-5s, worst case ~1 min if a wake is lost and the
--- pg_cron sweeper picks it up. Accepted deliberately; webhooks are
--- notifications, not synchronous integrations.
---
--- Subscriptions are DERIVED from the `webhook` table by an event-system
--- interceptor rather than maintained in app code. The webhook table stays the
--- single source of truth, and every writer -- UI, public API, MCP -- is covered
--- without duplicating lifecycle logic across call sites that could drift.
---
--- Removing these triggers also retires 3 of the ~7 net.http_post call sites,
--- which is direct progress on the RDS compatibility work (pg_net is one of only
--- two extensions blocking RDS/Aurora) -- see
--- .ai/research/enterprise-iac-byoc-deployment.md section 3.
+-- Delivery moves from on-commit to queued (~3-5s) and from at-most-once to
+-- at-least-once; the customer-facing body is unchanged (see toWebhookBody).
+-- Also retires 3 of the ~7 net.http_post call sites, which pg_net blocks on RDS.
 
 -- ── 1. Derive a subscription from a webhook row ──────────────────────────────
---
--- Written as an event-system AFTER-ROW interceptor, not a bespoke CREATE
--- TRIGGER: `attach_event_trigger` is how derived-row maintenance is wired in
--- this codebase (sync_create_customer_entries, propagate_item_readable_id, …).
--- Calling convention is fixed by dispatch_event_after_interceptors():
---   fn(table_name TEXT, operation TEXT, new_data JSONB, old_data JSONB)
--- AFTER rather than BEFORE because the subscription references the webhook row,
--- so it must not be written until that row actually exists.
+-- AFTER-ROW interceptor rather than a bespoke trigger: attach_event_trigger is
+-- how derived-row maintenance is wired here (cf. sync_create_customer_entries).
+-- AFTER because the subscription references the webhook row.
 
 CREATE OR REPLACE FUNCTION sync_webhook_subscription(
   p_table TEXT,
@@ -66,9 +36,8 @@ BEGIN
 
   v_name := 'webhook-' || (p_new->>'id');
 
-  -- Always clear first: `table` is editable, and the subscription's uniqueness
-  -- is (companyId, name, table), so an in-place upsert would strand the old
-  -- row under the previous table and fire the webhook twice.
+  -- Clear first: `table` is editable and uniqueness is (companyId, name, table),
+  -- so an upsert would strand the old row and fire the webhook twice.
   PERFORM delete_event_system_subscriptions_by_name(p_new->>'companyId', v_name);
 
   v_ops := ARRAY[]::TEXT[];
@@ -76,8 +45,6 @@ BEGIN
   IF (p_new->>'onUpdate')::BOOLEAN THEN v_ops := array_append(v_ops, 'UPDATE'); END IF;
   IF (p_new->>'onDelete')::BOOLEAN THEN v_ops := array_append(v_ops, 'DELETE'); END IF;
 
-  -- A webhook with no operations selected has nothing to subscribe to; leaving
-  -- the row deleted is correct rather than creating an unreachable subscription.
   IF array_length(v_ops, 1) IS NULL THEN
     RETURN;
   END IF;
@@ -95,9 +62,8 @@ BEGIN
 END;
 $$;
 
--- This also attaches the standard async statement triggers to `webhook`, which
--- is harmless: dispatch_event_batch() enqueues nothing unless a subscription
--- watches the table, and nothing subscribes to `webhook` itself.
+-- Also attaches the async statement triggers to `webhook`; harmless, since
+-- dispatch_event_batch() enqueues nothing unless a subscription watches it.
 SELECT attach_event_trigger(
   'webhook',
   ARRAY[]::TEXT[],
@@ -105,33 +71,11 @@ SELECT attach_event_trigger(
 );
 
 -- ── 2. Backfill subscriptions for existing webhooks ──────────────────────────
+-- A no-op update fires the interceptor, so the backfill can't drift from it.
 
-DO $$
-DECLARE w RECORD;
-BEGIN
-  FOR w IN SELECT * FROM "webhook" LOOP
-    DECLARE
-      v_ops TEXT[] := ARRAY[]::TEXT[];
-    BEGIN
-      IF w."onInsert" THEN v_ops := array_append(v_ops, 'INSERT'); END IF;
-      IF w."onUpdate" THEN v_ops := array_append(v_ops, 'UPDATE'); END IF;
-      IF w."onDelete" THEN v_ops := array_append(v_ops, 'DELETE'); END IF;
-
-      IF array_length(v_ops, 1) IS NOT NULL THEN
-        PERFORM delete_event_system_subscriptions_by_name(w."companyId", 'webhook-' || w.id);
-        PERFORM create_event_system_subscription(
-          'webhook-' || w.id, w."table", w."companyId", v_ops, 'WEBHOOK',
-          jsonb_build_object('url', w.url, 'webhookId', w.id),
-          '{}'::jsonb, COALESCE(w.active, false)
-        );
-      END IF;
-    END;
-  END LOOP;
-END $$;
+UPDATE "webhook" SET "url" = "url";
 
 -- ── 3. Retire the old dispatch path ──────────────────────────────────────────
--- 39 triggers across the 13 tables in `webhookTable`. Dropped by name rather
--- than by loop so the set is auditable in review.
 
 DROP TRIGGER IF EXISTS "customerInsertWebhook" ON "customer";
 DROP TRIGGER IF EXISTS "customerUpdateWebhook" ON "customer";

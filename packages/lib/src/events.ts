@@ -357,8 +357,8 @@ export type Events = {
     data: {
       msgId: number;
       url: string;
-      // Part of the outbound body customers receive, so the drainer has to
-      // forward it off the queue message (it is not inside `data`).
+      // Part of the outbound body, but not on the event — forwarded off the
+      // queue message by the drainer.
       companyId: string;
       config: {
         headers?: Record<string, string>;

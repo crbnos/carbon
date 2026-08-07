@@ -1,13 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { toWebhookBody } from "./webhook-body.ts";
 
-// The body shape is a PUBLIC contract: it is byte-for-byte what the `webhook`
-// edge function (the tail of the old pg_net trigger path) POSTed to customer
-// endpoints. Migrating off those triggers must not change it, so these cases
-// mirror that now-deleted function — including `companyId`/`table`, which the
-// triggers passed through and it forwarded. See git history at
-// packages/database/supabase/functions/webhook/index.ts, and the public
-// contract in docs/content/docs/building/webhooks.mdx.
+// PUBLIC contract — these cases mirror the deleted `webhook` edge function
+// (git history: packages/database/supabase/functions/webhook/index.ts), which
+// is what customer endpoints actually received.
 describe("toWebhookBody", () => {
   const row = { id: "c1", name: "Acme", companyId: "co1" };
   const prev = { id: "c1", name: "Acme Inc", companyId: "co1" };
@@ -23,8 +19,6 @@ describe("toWebhookBody", () => {
       companyId: "co1",
       table: "customer"
     });
-    // The trigger sent `'old', NULL` and the edge fn spreads it conditionally,
-    // so the key must be ABSENT rather than null.
     expect(body).not.toHaveProperty("old");
   });
 
@@ -44,9 +38,7 @@ describe("toWebhookBody", () => {
   });
 
   it("DELETE takes `record` from OLD and omits `old`", () => {
-    // The subtle one: the queue event carries the row under `old` because `new`
-    // is null, but the trigger sent it as `record`. Getting this wrong hands
-    // consumers `record: null` on every delete.
+    // Getting this wrong hands consumers `record: null` on every delete.
     const body = toWebhookBody(
       { table: "customer", operation: "DELETE", new: null, old: row },
       "co1"
@@ -99,8 +91,6 @@ describe("toWebhookBody", () => {
   });
 
   it("carries the event's table, not the subscription's", () => {
-    // `table` comes off the event so a subscription pointed at a renamed table
-    // can't mislabel the payload.
     expect(
       toWebhookBody(
         { table: "salesOrder", operation: "INSERT", new: row },
