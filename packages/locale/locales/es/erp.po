@@ -2384,7 +2384,7 @@ msgid "Balance"
 msgstr "Saldo"
 
 msgid "Balance Remaining:"
-msgstr ""
+msgstr "Saldo restante:"
 
 msgid "Balance Sheet"
 msgstr "Balance General"
@@ -10679,13 +10679,13 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Página {pdfViewPage} de {documentPageCount}"
 
 msgid "Paid"
-msgstr ""
+msgstr "Pagado"
 
 msgid "Paid Date"
 msgstr "Fecha de Pago"
 
 msgid "Paid:"
-msgstr ""
+msgstr "Pagado:"
 
 msgid "Parameters"
 msgstr "Parámetros"

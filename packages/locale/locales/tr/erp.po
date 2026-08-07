@@ -2384,7 +2384,7 @@ msgid "Balance"
 msgstr "Bakiye"
 
 msgid "Balance Remaining:"
-msgstr ""
+msgstr "Kalan bakiye:"
 
 msgid "Balance Sheet"
 msgstr "Bilanço"
@@ -10679,13 +10679,13 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Sayfa {pdfViewPage} / {documentPageCount}"
 
 msgid "Paid"
-msgstr ""
+msgstr "Ödendi"
 
 msgid "Paid Date"
 msgstr "Ödeme Tarihi"
 
 msgid "Paid:"
-msgstr ""
+msgstr "Ödenen:"
 
 msgid "Parameters"
 msgstr "Parametreler"

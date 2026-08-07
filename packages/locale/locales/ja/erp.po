@@ -2384,7 +2384,7 @@ msgid "Balance"
 msgstr "残高"
 
 msgid "Balance Remaining:"
-msgstr ""
+msgstr "残額:"
 
 msgid "Balance Sheet"
 msgstr "貸借対照表"
@@ -10679,13 +10679,13 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "ページ {pdfViewPage} / {documentPageCount}"
 
 msgid "Paid"
-msgstr ""
+msgstr "支払済"
 
 msgid "Paid Date"
 msgstr "支払日"
 
 msgid "Paid:"
-msgstr ""
+msgstr "支払済:"
 
 msgid "Parameters"
 msgstr "パラメータ"

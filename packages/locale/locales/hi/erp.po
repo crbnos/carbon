@@ -2384,7 +2384,7 @@ msgid "Balance"
 msgstr "शेष"
 
 msgid "Balance Remaining:"
-msgstr ""
+msgstr "शेष राशि:"
 
 msgid "Balance Sheet"
 msgstr "बैलेंस शीट"
@@ -10679,13 +10679,13 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "पृष्ठ {pdfViewPage} का {documentPageCount}"
 
 msgid "Paid"
-msgstr ""
+msgstr "भुगतान किया"
 
 msgid "Paid Date"
 msgstr "भुगतान की गई तारीख"
 
 msgid "Paid:"
-msgstr ""
+msgstr "भुगतान:"
 
 msgid "Parameters"
 msgstr "पैरामीटर"
