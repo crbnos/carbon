@@ -25,7 +25,11 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
 import type { GenericQueryFilters } from "~/utils/query";
-import { getGenericFilter, setGenericQueryFilters } from "~/utils/query";
+import {
+  getGenericFilter,
+  LIST_COUNT,
+  setGenericQueryFilters
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getDefaultStorageUnitForJob } from "../inventory";
 import { getEmployeeJob } from "../people";
@@ -992,7 +996,7 @@ export async function getJobs(
   let query = client
     .from("jobs")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 

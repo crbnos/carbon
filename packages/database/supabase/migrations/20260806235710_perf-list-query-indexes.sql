@@ -107,3 +107,16 @@ CREATE INDEX IF NOT EXISTS "salesOrder_companyId_createdAt_idx"
 
 CREATE INDEX IF NOT EXISTS "purchaseOrder_companyId_purchaseOrderId_idx"
   ON "purchaseOrder" ("companyId", "purchaseOrderId" DESC);
+
+-- Same treatment for the jobs list: `job` has separate "companyId" and "jobId"
+-- indexes but no composite, so the list's default sort could not be served from
+-- an index within the company. Measured on 100k jobs, page 1 with the real
+-- ORDER BY "jobId" DESC: 432 ms -> 281 ms once the count is estimated rather
+-- than exact.
+--
+-- This does NOT make the jobs list O(page) the way it did for the order lists:
+-- the `jobs` view builds a `job_model` CTE that scans every job, so the plan
+-- still materializes all rows before the limit. Getting past that needs the
+-- view restructured, which is deliberately not in this PR.
+CREATE INDEX IF NOT EXISTS "job_companyId_jobId_idx"
+  ON "job" ("companyId", "jobId" DESC);
