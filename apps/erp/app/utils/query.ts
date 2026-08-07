@@ -15,6 +15,13 @@ import { getPageOffset, getPageSize } from "./pagination";
  * count when the planner's estimate is under `max-rows`, and only falls back to
  * the estimate for result sets far larger than any page a user is reading. The
  * totals stay accurate at the sizes where being off by a few would be visible.
+ *
+ * These endpoints also pair it with an explicit `*_LIST_COLUMNS` constant rather
+ * than `select("*")`, for the same reason: naming the columns lets Postgres
+ * prune the views' unreferenced computed columns instead of materializing them
+ * per row. Adding a column to one of those tables means adding it to the
+ * constant — `apps/erp/test/list-select-columns.test.ts` fails if an
+ * `accessorKey` is missing, because the CSV export reads accessors untyped.
  */
 export const LIST_COUNT = "estimated" as const;
 

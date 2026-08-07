@@ -38,7 +38,11 @@
 --
 -- Semantics preserved: an aggregate with no GROUP BY over an empty set returns
 -- a single all-NULL row, exactly what the LEFT JOIN miss produced before.
--- Verified output-identical -- md5 over every column of all 10,000 rows:
+-- Verified output-identical against the definitions these replace, two ways:
+-- a bidirectional EXCEPT ALL over every row cast to text (multiset-aware, and
+-- it names the differing rows rather than just flagging a mismatch) returned 0
+-- rows in both directions for both views with identical row counts; and md5
+-- over every column of all 10,000 rows matched:
 --   salesOrders     10000|ff11e3974f94976976d81b396966f8e2
 --   purchaseOrders  10000|a649b4cd7477e1a9d8c6e5629f910bc0
 --

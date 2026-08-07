@@ -14,15 +14,12 @@ import { getUserDefaults } from "~/modules/users/users.server";
  * screens carried its own copy of this, differing only in where they redirect
  * on failure.
  *
- * Note the ordering is deliberately sequential, not parallel: when
- * `?location=` is present (the common case once a screen has loaded) only the
- * company-scoping probe runs, and when it is absent the user's default almost
- * always resolves it in one. Issuing them concurrently would add a query to the
- * common path to save a round-trip on the rare one.
+ * The steps run sequentially on purpose: each one usually resolves the id, so
+ * running them concurrently would add queries to the common path to save a
+ * round-trip on the rare one.
  *
- * The returned id is always one that belongs to `companyId` — callers rely on
- * that, because several run with `bypassRls: true` and then filter only on the
- * location.
+ * The returned id always belongs to `companyId` — callers rely on that, because
+ * several run with `bypassRls: true` and then filter only on the location.
  */
 export async function resolveLocationId(
   client: SupabaseClient<Database>,
@@ -42,15 +39,12 @@ export async function resolveLocationId(
 
   let locationId = searchParams.get("location");
 
-  // `?location=` is attacker-controlled, and five of the six callers run with
-  // `bypassRls: true`. Several of the queries they then issue filter on the
-  // location alone with no company predicate — `get_jobs_by_date_range` and
-  // `get_unscheduled_jobs` (both `WHERE j."locationId" = location_id`),
-  // `get_active_job_operations_by_location`, and the `workCenters` reads — so a
-  // foreign location id in the URL would return another tenant's rows. An
-  // unknown or foreign id falls back to the user's default rather than 404ing,
-  // which is what a stale bookmark should do. The probe hits the composite
-  // primary key ("id", "companyId"), so it is an index-only lookup.
+  // `?location=` is attacker-controlled and five of the six callers run with
+  // `bypassRls: true`, over queries that filter on the location with no company
+  // predicate of their own (`get_jobs_by_date_range`, `get_unscheduled_jobs`,
+  // `get_active_job_operations_by_location`, the `workCenters` reads) — so a
+  // foreign id here would return another tenant's rows. Falls back to the
+  // user's default rather than 404ing, which is what a stale bookmark should do.
   if (locationId) {
     const requested = await client
       .from("location")

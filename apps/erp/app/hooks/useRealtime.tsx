@@ -35,11 +35,10 @@ export function useRealtime(
         "postgres_changes",
         { event: "*", schema: "public", table: table, filter: filter },
         (payload) => {
-          // The row lives under `new`/`old`, never on the payload itself — the
-          // previous `"companyId" in payload` test was always false, so this
-          // guard never dropped anything. It matters for the subscriptions that
-          // pass no `filter` (journal, purchaseOrder, changeOrder, printJob,
-          // part), which would otherwise revalidate on another tenant's writes.
+          // The row lives under `new`/`old`, never on the payload itself. This
+          // guard is what stops the subscriptions that pass no `filter`
+          // (journal, purchaseOrder, changeOrder, printJob, part) from
+          // revalidating on another tenant's writes.
           const row = (payload.new ?? payload.old) as
             | { companyId?: string }
             | undefined;

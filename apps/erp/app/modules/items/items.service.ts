@@ -86,38 +86,18 @@ import {
 } from "./items.models";
 import type { InventoryItemType } from "./types";
 
-// Columns the Parts list actually renders, filters, or exports. Selecting
-// them explicitly lets Postgres prune the view's unreferenced computed
-// columns instead of materializing them per row. Adding a column to the
-// table UI means adding it here.
 const PARTS_LIST_COLUMNS =
   "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
 
-// Columns the Materials list actually renders, filters, or exports. Selecting
-// them explicitly lets Postgres prune the view's unreferenced computed
-// columns instead of materializing them per row. Adding a column to the
-// table UI means adding it here.
 const MATERIALS_LIST_COLUMNS =
   "active,defaultMethodType,description,itemTrackingType,name,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,unitOfMeasure,revisions,materialForm,materialSubstance,dimensions,finish,grade,materialType,materialSubstanceId,materialFormId,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
 
-// Columns the Tools list actually renders, filters, or exports. Selecting
-// them explicitly lets Postgres prune the view's unreferenced computed
-// columns instead of materializing them per row. Adding a column to the
-// table UI means adding it here.
 const TOOLS_LIST_COLUMNS =
   "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
 
-// Columns the Consumables list actually renders, filters, or exports. Selecting
-// them explicitly lets Postgres prune the view's unreferenced computed
-// columns instead of materializing them per row. Adding a column to the
-// table UI means adding it here.
 const CONSUMABLES_LIST_COLUMNS =
   "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
 
-// Columns the Services list actually renders, filters, or exports. Selecting
-// them explicitly lets Postgres prune the view's unreferenced computed
-// columns instead of materializing them per row. Adding a column to the
-// table UI means adding it here.
 const SERVICES_LIST_COLUMNS =
   "active,defaultMethodType,description,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt" as const;
 

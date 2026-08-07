@@ -22,13 +22,13 @@ import type {
 
 export type PurchaseOrderAttachment = FileObject; // TODO: remove
 
-// The full `purchaseOrders` view row. Detail screens (Properties/Summary/Header/LineForm)
-// use this, so it must stay independent of whatever subset the LIST query selects
-// — see PurchaseOrderListItem.
+// The `X`/`XListItem` pairs below are deliberately separate: `X` is the full
+// view row that detail screens read, `XListItem` is exactly what the list
+// query selects. Defining `X` from the list getter is what broke ~250 call
+// sites when the list selects were narrowed.
 export type PurchaseOrder =
   Database["public"]["Views"]["purchaseOrders"]["Row"];
 
-// A row of the purchaseOrders LIST, i.e. exactly the columns `getPurchaseOrders` selects.
 export type PurchaseOrderListItem = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrders>>["data"]
 >[number];
