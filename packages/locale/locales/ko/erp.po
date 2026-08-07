@@ -1208,6 +1208,7 @@ msgstr "원가 센터 추가"
 
 msgid "Add Employee"
 msgstr "직원 추가"
+msgstr ""
 
 msgid "Add Entry"
 msgstr "항목 추가"
@@ -8375,6 +8376,14 @@ msgstr "초대"
 
 msgid "Invite Expired"
 msgstr "초대권 만료됨"
+msgid "Invite All"
+msgstr ""
+
+msgid "Invite Multiple"
+msgstr ""
+
+msgid "Invite Multiple Employees"
+msgstr ""
 
 msgid "Invited"
 msgstr "초대됨"
@@ -13042,6 +13051,8 @@ msgstr "손상된 데이터 제거 및 복원"
 
 msgid "Remove Employee"
 msgstr "직원 제거"
+msgid "Remove employee"
+msgstr ""
 
 msgid "Remove filter"
 msgstr "필터 제거"

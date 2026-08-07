@@ -1208,6 +1208,7 @@ msgstr "लागत केंद्र जोड़ें"
 
 msgid "Add Employee"
 msgstr "कर्मचारी जोड़ें"
+msgstr ""
 
 msgid "Add Entry"
 msgstr "प्रविष्टि जोड़ें"
@@ -8375,6 +8376,14 @@ msgstr "आमंत्रित करें"
 
 msgid "Invite Expired"
 msgstr "आमंत्रण समाप्त हो गया"
+msgid "Invite All"
+msgstr ""
+
+msgid "Invite Multiple"
+msgstr ""
+
+msgid "Invite Multiple Employees"
+msgstr ""
 
 msgid "Invited"
 msgstr "आमंत्रित"
@@ -13042,6 +13051,9 @@ msgstr "भ्रष्ट डेटा निकालें और पुन�
 
 msgid "Remove Employee"
 msgstr "कर्मचारी को हटाएँ"
+
+msgid "Remove employee"
+msgstr ""
 
 msgid "Remove filter"
 msgstr "फ़िल्टर निकालें"

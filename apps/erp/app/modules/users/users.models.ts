@@ -73,6 +73,36 @@ export const itarUserCertificationValidator = z.object({
     .min(1, { message: "Full legal name is required" })
 });
 
+export const bulkCreateEmployeeValidator = z
+  .object({
+    employees: zfd
+      .repeatableOfType(createEmployeeValidator)
+      .refine((arr) => arr.length >= 1, {
+        message: "At least one employee is required"
+      })
+  })
+  .superRefine((data, ctx) => {
+    const seen = new Map<string, number[]>();
+    data.employees.forEach((employee, index) => {
+      const email = employee.email.toLowerCase().trim();
+      if (!email) return;
+      const indexes = seen.get(email) ?? [];
+      indexes.push(index);
+      seen.set(email, indexes);
+    });
+
+    for (const indexes of seen.values()) {
+      if (indexes.length < 2) continue;
+      for (const index of indexes) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Duplicate email",
+          path: ["employees", index, "email"]
+        });
+      }
+    }
+  });
+
 export const createOperatorValidator = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),

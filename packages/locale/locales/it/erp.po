@@ -1208,6 +1208,7 @@ msgstr "Aggiungi centro di costo"
 
 msgid "Add Employee"
 msgstr "Aggiungi Dipendente"
+msgstr ""
 
 msgid "Add Entry"
 msgstr "Aggiungi Voce"
@@ -8375,6 +8376,14 @@ msgstr "Invita"
 
 msgid "Invite Expired"
 msgstr "Invito Scaduto"
+msgid "Invite All"
+msgstr ""
+
+msgid "Invite Multiple"
+msgstr ""
+
+msgid "Invite Multiple Employees"
+msgstr ""
 
 msgid "Invited"
 msgstr "Invitato"
@@ -13042,6 +13051,8 @@ msgstr "Rimuovi i dati corrotti e ripristina"
 
 msgid "Remove Employee"
 msgstr "Rimuovi dipendente"
+msgid "Remove employee"
+msgstr ""
 
 msgid "Remove filter"
 msgstr "Rimuovi filtro"

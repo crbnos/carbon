@@ -1209,6 +1209,9 @@ msgstr "Dodaj miejsce powstawania kosztów"
 msgid "Add Employee"
 msgstr "Dodaj Pracownika"
 
+msgid "Add Employee"
+msgstr ""
+
 msgid "Add Entry"
 msgstr "Dodaj wpis"
 
@@ -8375,6 +8378,14 @@ msgstr "Zaproś"
 
 msgid "Invite Expired"
 msgstr "Zaproszenie wygasło"
+msgid "Invite All"
+msgstr ""
+
+msgid "Invite Multiple"
+msgstr ""
+
+msgid "Invite Multiple Employees"
+msgstr ""
 
 msgid "Invited"
 msgstr "Zaproszony"
@@ -13042,6 +13053,9 @@ msgstr "Usuń uszkodzone dane i przywróć"
 
 msgid "Remove Employee"
 msgstr "Usuń pracownika"
+
+msgid "Remove employee"
+msgstr ""
 
 msgid "Remove filter"
 msgstr "Usuń z listy filtr"
