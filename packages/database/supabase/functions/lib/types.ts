@@ -19549,6 +19549,7 @@ export type Database = {
           locationId: string | null
           postingDate: string
           quantity: number
+          scrapReasonId: string | null
           storageUnitId: string | null
           trackedEntityId: string | null
           trackedEntityStatus:
@@ -19575,6 +19576,7 @@ export type Database = {
           locationId?: string | null
           postingDate?: string
           quantity: number
+          scrapReasonId?: string | null
           storageUnitId?: string | null
           trackedEntityId?: string | null
           trackedEntityStatus?:
@@ -19601,6 +19603,7 @@ export type Database = {
           locationId?: string | null
           postingDate?: string
           quantity?: number
+          scrapReasonId?: string | null
           storageUnitId?: string | null
           trackedEntityId?: string | null
           trackedEntityStatus?:
@@ -19691,6 +19694,13 @@ export type Database = {
             columns: ["locationId"]
             isOneToOne: false
             referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_scrapReasonId_fkey"
+            columns: ["scrapReasonId"]
+            isOneToOne: false
+            referencedRelation: "scrapReason"
             referencedColumns: ["id"]
           },
           {
@@ -70160,6 +70170,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["customerCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -70168,13 +70185,6 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -76596,6 +76606,7 @@ export type Database = {
         | "Customer"
         | "Supplier"
         | "Item"
+        | "ScrapReason"
       disposalMethod: "Sale" | "Scrapping"
       disposition:
         | "Conditional Acceptance"
@@ -76760,6 +76771,7 @@ export type Database = {
         | "Non-Conformance"
         | "Inbound Inspection"
         | "Inventory Count"
+        | "Scrap"
       itemLedgerType:
         | "Purchase"
         | "Sale"
@@ -76854,6 +76866,7 @@ export type Database = {
         | "Inventory Count"
         | "Non-Conformance"
         | "Inbound Inspection"
+        | "Scrap"
       kanbanOutput: "label" | "qrcode" | "url"
       macrsConvention: "Half-Year" | "Mid-Quarter"
       macrsPropertyClass: "3" | "5" | "7" | "10" | "15" | "20" | "27.5" | "39"
@@ -77165,6 +77178,7 @@ export type Database = {
         | "On Hold"
         | "Consumed"
         | "Rejected"
+        | "Scrapped"
       trackingSource: "Purchased" | "Manufactured"
       trainingFrequency: "Once" | "Quarterly" | "Annual"
       trainingQuestionType:
@@ -77956,6 +77970,7 @@ export const Constants = {
         "Customer",
         "Supplier",
         "Item",
+        "ScrapReason",
       ],
       disposalMethod: ["Sale", "Scrapping"],
       disposition: [
@@ -78134,6 +78149,7 @@ export const Constants = {
         "Non-Conformance",
         "Inbound Inspection",
         "Inventory Count",
+        "Scrap",
       ],
       itemLedgerType: [
         "Purchase",
@@ -78236,6 +78252,7 @@ export const Constants = {
         "Inventory Count",
         "Non-Conformance",
         "Inbound Inspection",
+        "Scrap",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       macrsConvention: ["Half-Year", "Mid-Quarter"],
@@ -78579,6 +78596,7 @@ export const Constants = {
         "On Hold",
         "Consumed",
         "Rejected",
+        "Scrapped",
       ],
       trackingSource: ["Purchased", "Manufactured"],
       trainingFrequency: ["Once", "Quarterly", "Annual"],

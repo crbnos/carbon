@@ -19384,6 +19384,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.correctionOfItemLedgerId"
           },
           {
+            $ref: "#/parameters/rowFilter.itemLedger.scrapReasonId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -19503,6 +19506,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.correctionOfItemLedgerId"
           },
           {
+            $ref: "#/parameters/rowFilter.itemLedger.scrapReasonId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -19574,6 +19580,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemLedger.correctionOfItemLedgerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedger.scrapReasonId"
           },
           {
             $ref: "#/parameters/body.itemLedger"
@@ -85222,6 +85231,47 @@ export default {
         tags: ["(rpc) sync_contact_to_parent"]
       }
     },
+    "/rpc/get_timezone_names": {
+      get: {
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_timezone_names"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_timezone_names"]
+      }
+    },
     "/rpc/sync_insert_quote_line_make_method": {
       post: {
         parameters: [
@@ -88790,6 +88840,63 @@ export default {
         tags: ["(rpc) xid_pid"]
       }
     },
+    "/rpc/is_valid_timezone": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "tz",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) is_valid_timezone"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                tz: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["tz"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) is_valid_timezone"]
+      }
+    },
     "/rpc/upsert_to_search_index": {
       post: {
         parameters: [
@@ -89153,6 +89260,74 @@ export default {
           }
         },
         tags: ["(rpc) sync_create_item_related_records"]
+      }
+    },
+    "/rpc/location_today": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) location_today"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_location_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_location_id", "p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) location_today"]
       }
     },
     "/rpc/get_active_job_count": {
@@ -98209,7 +98384,8 @@ export default {
             "FixedAssetClass",
             "Customer",
             "Supplier",
-            "Item"
+            "Item",
+            "ScrapReason"
           ],
           format: 'public."dimensionEntityType"',
           type: "string"
@@ -104244,7 +104420,8 @@ export default {
             "Maintenance Consumption",
             "Non-Conformance",
             "Inbound Inspection",
-            "Inventory Count"
+            "Inventory Count",
+            "Scrap"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -104312,7 +104489,14 @@ export default {
           type: "string"
         },
         trackedEntityStatus: {
-          enum: ["Available", "Reserved", "On Hold", "Consumed", "Rejected"],
+          enum: [
+            "Available",
+            "Reserved",
+            "On Hold",
+            "Consumed",
+            "Rejected",
+            "Scrapped"
+          ],
           format: 'public."trackedEntityStatus"',
           type: "string"
         },
@@ -104323,6 +104507,12 @@ export default {
           type: "string"
         },
         correctionOfItemLedgerId: {
+          format: "text",
+          type: "string"
+        },
+        scrapReasonId: {
+          description:
+            "Note:\nThis is a Foreign Key to `scrapReason.id`.<fk table='scrapReason' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -108989,7 +109179,8 @@ export default {
             "Maintenance Consumption",
             "Non-Conformance",
             "Inbound Inspection",
-            "Inventory Count"
+            "Inventory Count",
+            "Scrap"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -109055,7 +109246,14 @@ export default {
           type: "string"
         },
         trackedEntityStatus: {
-          enum: ["Available", "Reserved", "On Hold", "Consumed", "Rejected"],
+          enum: [
+            "Available",
+            "Reserved",
+            "On Hold",
+            "Consumed",
+            "Rejected",
+            "Scrapped"
+          ],
           format: 'public."trackedEntityStatus"',
           type: "string"
         },
@@ -109535,7 +109733,8 @@ export default {
             "Inventory Adjustment",
             "Inventory Count",
             "Non-Conformance",
-            "Inbound Inspection"
+            "Inbound Inspection",
+            "Scrap"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -120181,7 +120380,14 @@ export default {
         },
         status: {
           default: "Available",
-          enum: ["Available", "Reserved", "On Hold", "Consumed", "Rejected"],
+          enum: [
+            "Available",
+            "Reserved",
+            "On Hold",
+            "Consumed",
+            "Rejected",
+            "Scrapped"
+          ],
           format: 'public."trackedEntityStatus"',
           type: "string"
         },
@@ -121663,7 +121869,8 @@ export default {
             "Maintenance Consumption",
             "Non-Conformance",
             "Inbound Inspection",
-            "Inventory Count"
+            "Inventory Count",
+            "Scrap"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -121869,7 +122076,8 @@ export default {
             "Inventory Adjustment",
             "Inventory Count",
             "Non-Conformance",
-            "Inbound Inspection"
+            "Inbound Inspection",
+            "Scrap"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -122048,7 +122256,8 @@ export default {
             "Inventory Adjustment",
             "Inventory Count",
             "Non-Conformance",
-            "Inbound Inspection"
+            "Inbound Inspection",
+            "Scrap"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -123004,7 +123213,8 @@ export default {
             "FixedAssetClass",
             "Customer",
             "Supplier",
-            "Item"
+            "Item",
+            "ScrapReason"
           ],
           format: 'public."dimensionEntityType"',
           type: "string"
@@ -145862,6 +146072,12 @@ export default {
     },
     "rowFilter.itemLedger.correctionOfItemLedgerId": {
       name: "correctionOfItemLedgerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedger.scrapReasonId": {
+      name: "scrapReasonId",
       required: false,
       in: "query",
       type: "string"
