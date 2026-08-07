@@ -196,6 +196,12 @@ const main = defineCommand({
           description:
             "'local' points config at the local stack and deactivates webhooks/integrations/printer routes; 'prod' restores as-is"
         },
+        "keep-storage-objects": {
+          type: "boolean",
+          default: false,
+          description:
+            "Keep the backup's storage.objects rows and buckets instead of clearing them. Downloads still 404 (the bytes are not in the DB); use when you need realistic storage metadata, e.g. profiling storage RLS"
+        },
         migrate: {
           type: "boolean",
           default: true,
@@ -227,6 +233,7 @@ const main = defineCommand({
               ? args["admin-password"]
               : undefined,
           mode: mode as RestoreMode,
+          keepStorageObjects: args["keep-storage-objects"] === true,
           migrate: args.migrate !== false,
           regen: args.regen !== false,
           yes: args.yes === true

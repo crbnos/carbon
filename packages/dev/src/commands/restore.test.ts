@@ -38,4 +38,16 @@ describe("buildRestoreEnv", () => {
       "ADMIN_EMAIL"
     );
   });
+
+  it("clears storage metadata unless explicitly asked to keep it", () => {
+    // Default matters: kept rows point at files that only exist in the source
+    // environment's backend, so every download 404s.
+    expect(buildRestoreEnv({})).not.toHaveProperty("KEEP_STORAGE_OBJECTS");
+    expect(buildRestoreEnv({ keepStorageObjects: false })).not.toHaveProperty(
+      "KEEP_STORAGE_OBJECTS"
+    );
+    expect(
+      buildRestoreEnv({ keepStorageObjects: true }).KEEP_STORAGE_OBJECTS
+    ).toBe("1");
+  });
 });

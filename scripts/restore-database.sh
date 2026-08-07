@@ -25,6 +25,13 @@
 #                   contact, invite, companySettings, quote) to @example.test
 #                   so no production emails can be contacted from local.
 #                   The ADMIN_EMAIL account is preserved so you can still log in.
+#   KEEP_STORAGE_OBJECTS
+#                   set to any non-empty value to KEEP the dump's
+#                   storage.objects/prefixes rows and its buckets instead of
+#                   clearing them. File downloads still 404 (the bytes live in
+#                   the source environment's backend, not the DB) — this is for
+#                   work that needs realistic storage metadata volume, such as
+#                   profiling RLS on storage listings.
 #   RESTORE_MODE    'local' (default) or 'prod'.
 #                   local: after restoring, localize environment-sensitive state —
 #                     re-seed the config row to local Kong, deactivate webhooks /
@@ -185,10 +192,20 @@ ON CONFLICT (queue_name) DO NOTHING;
 # the actual file bytes live in prod's storage backend, not in the DB — so
 # those rows would point at files that don't exist locally and downloads
 # would 404. Clear the metadata, keep/create the buckets the app expects.
-echo "▶ Resetting storage metadata + ensuring buckets (fixed + per-company)"
-# Guard each TRUNCATE with to_regclass so a table that doesn't exist in this
-# Supabase version can't abort — and thereby roll back — the whole block.
-$PSQL_SA -v ON_ERROR_STOP=0 -c "
+if [[ -n "$KEEP_STORAGE_OBJECTS" ]]; then
+  # Opt-in: keep the dump's storage rows AND its buckets. Downloads still 404
+  # (the bytes are in the source environment's backend, not the DB) — this
+  # exists for work that needs realistic storage.objects volume, e.g. profiling
+  # the RLS on storage listings, which is unmeasurable against an empty table.
+  # Buckets are kept too: the objects reference buckets that the re-seed below
+  # does not recreate (`temp-staging` is neither a fixed bucket nor a company),
+  # so truncating them would strand those rows on a missing FK.
+  echo "▶ Keeping storage metadata (KEEP_STORAGE_OBJECTS) — downloads will 404 locally"
+else
+  echo "▶ Resetting storage metadata + ensuring buckets (fixed + per-company)"
+  # Guard each TRUNCATE with to_regclass so a table that doesn't exist in this
+  # Supabase version can't abort — and thereby roll back — the whole block.
+  $PSQL_SA -v ON_ERROR_STOP=0 -c "
 DO \$\$
 BEGIN
   IF to_regclass('storage.objects') IS NOT NULL THEN TRUNCATE storage.objects CASCADE; END IF;
@@ -198,6 +215,7 @@ BEGIN
   IF to_regclass('storage.buckets') IS NOT NULL THEN TRUNCATE storage.buckets CASCADE; END IF;
 END \$\$;
 " >/dev/null 2>&1 || true
+fi
 # Re-seed buckets in a SEPARATE statement so the TRUNCATE outcome above can never
 # roll it back: the fixed app buckets plus one private bucket per restored
 # company (id = company id), matching the bucket-seeding migrations.

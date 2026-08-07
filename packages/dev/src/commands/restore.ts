@@ -19,6 +19,7 @@ export type RestoreOptions = {
   adminEmail?: string;
   adminPassword?: string;
   mode?: RestoreMode;
+  keepStorageObjects?: boolean;
   migrate?: boolean;
   regen?: boolean;
   yes?: boolean;
@@ -37,7 +38,11 @@ const SCRIPT = "scripts/restore-database.sh";
 export function buildRestoreEnv(
   opts: Pick<
     RestoreOptions,
-    "scrubEmails" | "adminEmail" | "adminPassword" | "mode"
+    | "scrubEmails"
+    | "adminEmail"
+    | "adminPassword"
+    | "mode"
+    | "keepStorageObjects"
   >
 ): Record<string, string> {
   const env: Record<string, string> = {
@@ -46,6 +51,7 @@ export function buildRestoreEnv(
   if (opts.scrubEmails !== false) env.SCRUB_EMAILS = "1";
   if (opts.adminEmail) env.ADMIN_EMAIL = opts.adminEmail;
   if (opts.adminPassword) env.ADMIN_PASSWORD = opts.adminPassword;
+  if (opts.keepStorageObjects) env.KEEP_STORAGE_OBJECTS = "1";
   return env;
 }
 
