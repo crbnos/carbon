@@ -270,17 +270,12 @@ export async function createCustomerAccount(
     userId = user.data.id;
   } else {
     isNewUser = true;
-    const createSupabaseUser = await serviceRole.auth.admin.createUser({
-      email: email.toLowerCase(),
-      password: crypto.randomUUID(),
-      email_confirm: true
-    });
-
-    if (createSupabaseUser.error) {
-      return { success: false, message: createSupabaseUser.error.message };
+    const resolvedId = await resolveAuthUserId(email);
+    if (!resolvedId) {
+      return { success: false, message: "Failed to create auth account" };
     }
+    userId = resolvedId;
 
-    userId = createSupabaseUser.data.user.id;
     const createCarbonUser = await createUser(serviceRole, {
       id: userId,
       email: email.toLowerCase(),
@@ -399,17 +394,12 @@ export async function createEmployeeAccount(
     }
   } else {
     isNewUser = true;
-    const createSupabaseUser = await serviceRole.auth.admin.createUser({
-      email: email.toLowerCase(),
-      password: crypto.randomUUID(),
-      email_confirm: true
-    });
-
-    if (createSupabaseUser.error) {
-      return { success: false, message: createSupabaseUser.error.message };
+    const resolvedId = await resolveAuthUserId(email);
+    if (!resolvedId) {
+      return { success: false, message: "Failed to create auth account" };
     }
+    userId = resolvedId;
 
-    userId = createSupabaseUser.data.user.id;
     const createCarbonUser = await createUser(serviceRole, {
       id: userId,
       email: email.toLowerCase(),
@@ -514,17 +504,12 @@ export async function createSupplierAccount(
     userId = user.data.id;
   } else {
     isNewUser = true;
-    const createSupabaseUser = await serviceRole.auth.admin.createUser({
-      email: email.toLowerCase(),
-      password: crypto.randomUUID(),
-      email_confirm: true
-    });
-
-    if (createSupabaseUser.error) {
-      return { success: false, message: createSupabaseUser.error.message };
+    const resolvedId = await resolveAuthUserId(email);
+    if (!resolvedId) {
+      return { success: false, message: "Failed to create auth account" };
     }
+    userId = resolvedId;
 
-    userId = createSupabaseUser.data.user.id;
     const createCarbonUser = await createUser(serviceRole, {
       id: userId,
       email: email.toLowerCase(),
@@ -645,6 +630,41 @@ export async function getUserByEmail(email: string) {
     .select("*")
     .eq("email", email.toLowerCase())
     .single();
+}
+
+// Creates a new auth.users entry for `email`, or — if one already exists due to
+// a partial prior deletion — recovers by returning the existing auth ID so the
+// caller can create just the missing public.user row.
+async function resolveAuthUserId(email: string): Promise<string | null> {
+  const serviceRole = getCarbonServiceRole();
+  const result = await serviceRole.auth.admin.createUser({
+    email: email.toLowerCase(),
+    password: crypto.randomUUID(),
+    email_confirm: true
+  });
+
+  if (!result.error) return result.data.user.id;
+
+  // Only recover for the specific "already registered" case — any other error
+  // (network failure, rate limit, etc.) should surface as-is.
+  if (result.error.code !== "user_already_exists") return null;
+
+  // auth.users has the record but public.user doesn't — partial prior delete.
+  // Page through auth users to find the orphaned ID.
+  const target = email.toLowerCase();
+  let page = 1;
+  const perPage = 1000;
+  while (true) {
+    const { data, error } = await serviceRole.auth.admin.listUsers({
+      page,
+      perPage
+    });
+    if (error || !data?.users?.length) return null;
+    const match = data.users.find((u) => u.email?.toLowerCase() === target);
+    if (match) return match.id;
+    if (data.users.length < perPage) return null;
+    page++;
+  }
 }
 
 export async function getUserGroups(
