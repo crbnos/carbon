@@ -2545,6 +2545,10 @@ export const JobOperation = ({
           parentIsBatch={parentIsBatch}
           setupProductionEvent={setupProductionEvent}
           trackedEntityId={trackedEntityId}
+          trackedEntityReadableId={
+            trackedEntities.find((entity) => entity.id === trackedEntityId)
+              ?.readableId ?? undefined
+          }
           onClose={scrapModal.onClose}
         />
       )}

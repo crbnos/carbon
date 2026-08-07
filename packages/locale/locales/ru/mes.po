@@ -678,6 +678,9 @@ msgstr "Обслуживание завершено"
 msgid "Maintenance overdue"
 msgstr "Обслуживание просрочено"
 
+msgid "Make a replacement"
+msgstr ""
+
 msgid "Manually add items to inventory"
 msgstr "Добавить номенклатуру на склад вручную"
 
@@ -1053,6 +1056,9 @@ msgstr "Списать запас"
 msgid "Remove part"
 msgstr "Удалить деталь"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr ""
+
 msgid "Result"
 msgstr "Результат"
 
@@ -1101,6 +1107,12 @@ msgstr "Расписание"
 msgid "Scrap"
 msgstr "Брак"
 
+msgid "Scrap {readableId}"
+msgstr ""
+
+msgid "Scrap material"
+msgstr ""
+
 msgid "Scrap quantity"
 msgstr "Количество брака"
 
@@ -1109,6 +1121,12 @@ msgstr "Причина брака"
 
 msgid "Scrapped"
 msgstr "Списано в брак"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr ""
+
+msgid "Scrapping the selected serial"
+msgstr ""
 
 msgid "Search"
 msgstr "Поиск"
@@ -1302,6 +1320,15 @@ msgstr "Эти позиции содержат материал для подб�
 
 msgid "This lot is expired and can't be picked."
 msgstr "Эта партия истекла и не может быть выбрана."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr ""
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr ""
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "Миниатюра"

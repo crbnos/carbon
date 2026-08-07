@@ -678,6 +678,9 @@ msgstr "Maintenance Completed"
 msgid "Maintenance overdue"
 msgstr "Maintenance overdue"
 
+msgid "Make a replacement"
+msgstr "Make a replacement"
+
 msgid "Manually add items to inventory"
 msgstr "Manually add items to inventory"
 
@@ -1053,6 +1056,9 @@ msgstr "Remove Inventory"
 msgid "Remove part"
 msgstr "Remove part"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "Reopen the subassembly and create a replacement unit"
+
 msgid "Result"
 msgstr "Result"
 
@@ -1101,6 +1107,12 @@ msgstr "Schedule"
 msgid "Scrap"
 msgstr "Scrap"
 
+msgid "Scrap {readableId}"
+msgstr "Scrap {readableId}"
+
+msgid "Scrap material"
+msgstr "Scrap material"
+
 msgid "Scrap quantity"
 msgstr "Scrap quantity"
 
@@ -1109,6 +1121,12 @@ msgstr "Scrap Reason"
 
 msgid "Scrapped"
 msgstr "Scrapped"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "Scrapping serial {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "Scrapping the selected serial"
 
 msgid "Search"
 msgstr "Search"
@@ -1302,6 +1320,15 @@ msgstr "These items still have material to pick. Finishing now marks the list Pa
 
 msgid "This lot is expired and can't be picked."
 msgstr "This lot is expired and can't be picked."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "This unit will be permanently scrapped and a replacement serial number will be created."
 
 msgid "Thumbnail"
 msgstr "Thumbnail"

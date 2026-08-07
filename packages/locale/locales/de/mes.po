@@ -678,6 +678,9 @@ msgstr "Instandhaltung abgeschlossen"
 msgid "Maintenance overdue"
 msgstr "Wartung überfällig"
 
+msgid "Make a replacement"
+msgstr ""
+
 msgid "Manually add items to inventory"
 msgstr "Artikel manuell zum Bestand hinzufügen"
 
@@ -1053,6 +1056,9 @@ msgstr "Bestand entfernen"
 msgid "Remove part"
 msgstr "Teil entfernen"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr ""
+
 msgid "Result"
 msgstr "Ergebnis"
 
@@ -1101,6 +1107,12 @@ msgstr "Zeitplan"
 msgid "Scrap"
 msgstr "Ausschuss"
 
+msgid "Scrap {readableId}"
+msgstr ""
+
+msgid "Scrap material"
+msgstr ""
+
 msgid "Scrap quantity"
 msgstr "Verschrottungsmenge"
 
@@ -1109,6 +1121,12 @@ msgstr "Ausschussgrund"
 
 msgid "Scrapped"
 msgstr "Ausschuss"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr ""
+
+msgid "Scrapping the selected serial"
+msgstr ""
 
 msgid "Search"
 msgstr "Suchen"
@@ -1302,6 +1320,15 @@ msgstr "Diese Artikel haben noch Material zum Picken. Ein Abschluss jetzt markie
 
 msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr ""
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr ""
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "Vorschaubild"

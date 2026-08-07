@@ -1187,9 +1187,12 @@ export function isSerialEntityIncompleteForOperation(
   jobOperationId: string
 ): boolean {
   const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
+  // Scrapped is terminal like Consumed — a scrapped unit is never a work
+  // candidate; its replacement is the spawned Reserved entity.
   return (
     !(`Operation ${jobOperationId}` in attributes) &&
-    entity.status !== "Consumed"
+    entity.status !== "Consumed" &&
+    entity.status !== "Scrapped"
   );
 }
 

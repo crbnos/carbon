@@ -2307,6 +2307,7 @@ export function AssemblyView({
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}
           trackedEntityId={currentEntity?.id ?? ""}
+          trackedEntityReadableId={currentEntity?.readableId ?? undefined}
           setupProductionEvent={openByType("Setup")}
           laborProductionEvent={openByType("Labor")}
           machineProductionEvent={openByType("Machine")}

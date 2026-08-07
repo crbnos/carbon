@@ -678,6 +678,9 @@ msgstr "メンテナンス完了"
 msgid "Maintenance overdue"
 msgstr "メンテナンス期限超過"
 
+msgid "Make a replacement"
+msgstr ""
+
 msgid "Manually add items to inventory"
 msgstr "手動で在庫に品目を追加"
 
@@ -1053,6 +1056,9 @@ msgstr "在庫削除"
 msgid "Remove part"
 msgstr "パーツを削除"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr ""
+
 msgid "Result"
 msgstr "結果"
 
@@ -1101,6 +1107,12 @@ msgstr "スケジュール"
 msgid "Scrap"
 msgstr "廃棄"
 
+msgid "Scrap {readableId}"
+msgstr ""
+
+msgid "Scrap material"
+msgstr ""
+
 msgid "Scrap quantity"
 msgstr "スクラップ数量"
 
@@ -1109,6 +1121,12 @@ msgstr "スクラップ理由"
 
 msgid "Scrapped"
 msgstr "スクラップ済み"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr ""
+
+msgid "Scrapping the selected serial"
+msgstr ""
 
 msgid "Search"
 msgstr "検索"
@@ -1302,6 +1320,15 @@ msgstr "これらのアイテムにはまだピッキング対象の材料があ
 
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr ""
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr ""
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "サムネイル"
