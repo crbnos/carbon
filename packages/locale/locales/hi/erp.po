@@ -13573,8 +13573,14 @@ msgstr "समय क्षेत्र"
 msgid "Title"
 msgstr "शीर्षक"
 
+msgid "To deactivate, use the row menu and choose Deactivate Account."
+msgstr ""
+
 msgid "To Location"
 msgstr "स्थान को"
+
+msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
+msgstr ""
 
 msgid "To Receive"
 msgstr "प्राप्त करने के लिए"

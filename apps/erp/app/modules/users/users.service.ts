@@ -85,6 +85,8 @@ export async function getEmployee(
     .single();
 }
 
+// Pending only (mirrors the 'Invited' condition in the `employees` view): counting
+// accepted invites would leave a deactivated employee with no way to be re-invited.
 export async function getUnrevokedInviteEmails(
   client: SupabaseClient<Database>,
   companyId: string
@@ -93,6 +95,7 @@ export async function getUnrevokedInviteEmails(
     .from("invite")
     .select("email")
     .eq("companyId", companyId)
+    .is("acceptedAt", null)
     .is("revokedAt", null);
 }
 

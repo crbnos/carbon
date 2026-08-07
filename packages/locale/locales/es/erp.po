@@ -13573,8 +13573,14 @@ msgstr "Zona horaria"
 msgid "Title"
 msgstr "Título"
 
+msgid "To deactivate, use the row menu and choose Deactivate Account."
+msgstr ""
+
 msgid "To Location"
 msgstr "Ubicación de destino"
+
+msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
+msgstr ""
 
 msgid "To Receive"
 msgstr "Por Recibir"
