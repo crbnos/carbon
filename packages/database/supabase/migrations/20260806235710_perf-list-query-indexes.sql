@@ -88,3 +88,22 @@ ALTER FUNCTION public.get_company_id_from_foreign_key(text, text) STABLE;
 ALTER FUNCTION public.get_permission_companies(text) STABLE;
 ALTER FUNCTION public.has_any_company_permission(text) STABLE;
 ALTER FUNCTION public.has_role(text, text) STABLE;
+
+-- Sort-supporting indexes for the two order lists.
+--
+-- These are what let the LATERAL rewrite in 20260807011742 work at all. Each
+-- list has a fixed default sort, and without an index that already supplies it
+-- Postgres must sort every order the caller can see before applying LIMIT 100 --
+-- which means the lateral aggregate runs once per order in the company rather
+-- than once per row on the page. With the index the sort is index-ordered, the
+-- limit is pushed below the join, and the aggregate runs ~100 times.
+--
+-- salesOrders page 1: 223 ms -> 2.8 ms.  purchaseOrders page 1: 61 ms -> 4.5 ms.
+--
+-- Column order matters: companyId first (the equality predicate), then the sort
+-- key in the direction the list actually uses.
+CREATE INDEX IF NOT EXISTS "salesOrder_companyId_createdAt_idx"
+  ON "salesOrder" ("companyId", "createdAt" DESC);
+
+CREATE INDEX IF NOT EXISTS "purchaseOrder_companyId_purchaseOrderId_idx"
+  ON "purchaseOrder" ("companyId", "purchaseOrderId" DESC);
