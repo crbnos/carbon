@@ -12,7 +12,8 @@ import { useNumberFormatter } from "@react-aria/i18n";
 import type { ReactNode } from "react";
 import { LuInfo } from "react-icons/lu";
 import { Link } from "react-router";
-import { useCurrencyFormatter, useDateFormatter } from "~/hooks";
+import { DateTime } from "~/components";
+import { useCurrencyFormatter } from "~/hooks";
 import type { PlannedOrder } from "~/modules/purchasing/purchasing.models";
 import { PurchasingStatus } from "~/modules/purchasing/ui/PurchaseOrder";
 import { useSuppliers } from "~/stores";
@@ -32,7 +33,6 @@ export function PlannedOrderDetailsPopover({
   children
 }: Props) {
   const numberFormatter = useNumberFormatter();
-  const { formatDate } = useDateFormatter();
   const currencyFormatter = useCurrencyFormatter();
   const [suppliers] = useSuppliers();
 
@@ -112,7 +112,9 @@ export function PlannedOrderDetailsPopover({
                       </TooltipContent>
                     </Tooltip>
                   </dt>
-                  <dd>{formatDate(order.startDate)}</dd>
+                  <dd>
+                    <DateTime value={order.startDate} variant="date" />
+                  </dd>
                 </>
               )}
 
@@ -136,7 +138,7 @@ export function PlannedOrderDetailsPopover({
                     </Tooltip>
                   </dt>
                   <dd>
-                    {formatDate(order.dueDate)}
+                    <DateTime value={order.dueDate} variant="date" />
                     {isAsap && (
                       <span className="ml-2 text-xs text-red-500 font-medium uppercase">
                         ASAP

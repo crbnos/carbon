@@ -41,6 +41,7 @@ import {
 import { useFetcher, useNavigate } from "react-router";
 import {
   CustomerAvatar,
+  DateTime,
   EmployeeAvatar,
   exportOnlyColumn,
   Hyperlink,
@@ -51,12 +52,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useDateFormatter,
-  usePermissions,
-  useUrlParams,
-  useUser
-} from "~/hooks";
+import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { action } from "~/routes/x+/job+/update";
 import { useCustomers, useParts, usePeople, useTools } from "~/stores";
@@ -145,7 +141,6 @@ function useReadableTrackedEntities(data: Job[], companyId: string) {
 const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
   const navigate = useNavigate();
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const [params] = useUrlParams();
   const parts = useParts();
   const tools = useTools();
@@ -158,6 +153,19 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
   const [people] = usePeople();
   const [customers] = useCustomers();
   const locations = useLocations();
+
+  // Scheduling dates belong to the job's location calendar. Empty timezone
+  // means the location inherits the company's — omit it and the popover
+  // collapses to the company row.
+  const locationZoneProps = useCallback(
+    (locationId: string | null | undefined) => {
+      const timezone = locationId
+        ? locations.find((l) => l.value === locationId)?.timezone
+        : undefined;
+      return timezone ? { locationTimeZone: timezone } : {};
+    },
+    [locations]
+  );
 
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
@@ -372,7 +380,15 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
       {
         accessorKey: "startDate",
         header: t`Start Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        // Scheduling dates are operational — resolve on the job's location
+        // calendar, not the company's.
+        cell: ({ row }) => (
+          <DateTime
+            value={row.original.startDate}
+            variant="date"
+            {...locationZoneProps(row.original.locationId)}
+          />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -380,7 +396,13 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
       {
         accessorKey: "dueDate",
         header: t`Due Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: ({ row }) => (
+          <DateTime
+            value={row.original.dueDate}
+            variant="date"
+            {...locationZoneProps(row.original.locationId)}
+          />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -552,7 +574,9 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -577,7 +601,9 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }

@@ -43,6 +43,7 @@ export default $config({
       ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
       // Job/result store — REQUIRED; the assembler refuses to boot without it.
       REDIS_URL: process.env.REDIS_URL,
+      TZ: "UTC",
       // Optimize time budget + dispatch mode are AUTO-DETECTED in-service from
       // AWS_LAMBDA_FUNCTION_NAME (720s ladder budget on Lambda; self-invoke
       // dispatch) — no env needed here.

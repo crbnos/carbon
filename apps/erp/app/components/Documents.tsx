@@ -34,13 +34,14 @@ import {
   ModelOptimizedIndicator
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { useDateFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload, StorageItem } from "~/types";
 import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+import { DateTime } from "./DateTime";
 
 const logger = getLogger("erp", "documents");
 
@@ -64,7 +65,6 @@ const Documents = ({
   writeBucketPermission
 }: DocumentsProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const permissions = usePermissions();
   const revalidator = useRevalidator();
   const { carbon } = useCarbon();
@@ -398,7 +398,11 @@ const Documents = ({
                     )}
                   </Td>
                   <Td className="text-xs font-mono">
-                    {file.created_at ? formatDate(file.created_at) : "--"}
+                    {file.created_at ? (
+                      <DateTime value={file.created_at} variant="date" />
+                    ) : (
+                      "--"
+                    )}
                   </Td>
                   <Td>
                     <div className="flex justify-end w-full">

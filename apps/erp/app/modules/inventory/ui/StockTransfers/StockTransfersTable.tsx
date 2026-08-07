@@ -19,11 +19,11 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { clearStockTransferWizard, usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -44,7 +44,6 @@ const StockTransfersTable = memo(
 
     const [params] = useUrlParams();
     const { t } = useLingui();
-    const { formatDate } = useDateFormatter();
     const navigate = useNavigate();
     const permissions = usePermissions();
 
@@ -130,7 +129,9 @@ const StockTransfersTable = memo(
         {
           accessorKey: "completedAt",
           header: t`Completed At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -155,7 +156,9 @@ const StockTransfersTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -180,7 +183,9 @@ const StockTransfersTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -188,7 +193,7 @@ const StockTransfersTable = memo(
       ];
 
       return [...result, ...customColumns];
-    }, [locations, people, customColumns, t, formatDate]);
+    }, [locations, people, customColumns, t]);
 
     const [selectedStockTransfer, setSelectedStockTransfer] =
       useState<StockTransfer | null>(null);

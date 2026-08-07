@@ -1,5 +1,6 @@
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
 import type {
   DocumentBlock,
   DocumentSectionPlacement,
@@ -309,8 +310,11 @@ export async function getCurrentSequence(
   const { prefix, suffix, next, size } = sequence.data;
 
   const currentSequence = next.toString().padStart(size, "0");
-  const derivedPrefix = interpolateSequenceDate(prefix);
-  const derivedSuffix = interpolateSequenceDate(suffix);
+  // Same calendar as get_next_sequence (SQL): tokens roll over at the
+  // company's midnight, or the preview disagrees with the issued number.
+  const timezone = await getCompanyTimeZone(client, companyId);
+  const derivedPrefix = interpolateSequenceDate(prefix, timezone);
+  const derivedSuffix = interpolateSequenceDate(suffix, timezone);
 
   return {
     data: `${derivedPrefix}${currentSequence}${derivedSuffix}`,

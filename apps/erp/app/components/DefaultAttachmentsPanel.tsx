@@ -31,10 +31,11 @@ import { useRevalidator } from "react-router";
 import DocumentIcon from "~/components/DocumentIcon";
 import DocumentPreview from "~/components/DocumentPreview";
 import FileDropzone from "~/components/FileDropzone";
-import { useDateFormatter, useUser } from "~/hooks";
+import { useUser } from "~/hooks";
 import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+import { DateTime } from "./DateTime";
 
 const logger = getLogger("erp", "defaultattachmentspanel");
 
@@ -54,7 +55,6 @@ export default function DefaultAttachmentsPanel({
   description
 }: Props) {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const revalidator = useRevalidator();
@@ -205,7 +205,11 @@ export default function DefaultAttachmentsPanel({
                       {sizeKb != null ? convertKbToString(sizeKb) : "--"}
                     </Td>
                     <Td className="text-xs font-mono whitespace-nowrap">
-                      {f.created_at ? formatDate(f.created_at) : "--"}
+                      {f.created_at ? (
+                        <DateTime value={f.created_at} variant="date" />
+                      ) : (
+                        "--"
+                      )}
                     </Td>
                     <Td>
                       <div className="flex justify-end w-full">

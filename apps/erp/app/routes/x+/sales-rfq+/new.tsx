@@ -2,11 +2,10 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { useUrlParams, useUser } from "~/hooks";
+import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import { upsertDocument } from "~/modules/documents";
 import { resolveItemIdFromExtractedText } from "~/modules/items";
 import type { SalesRFQStatusType } from "~/modules/sales";
@@ -155,6 +154,7 @@ export default function SalesRFQNewRoute() {
   const { id: userId, defaults } = useUser();
   const [params] = useUrlParams();
   const customerId = params.get("customerId");
+  const companyToday = useCompanyToday();
   const initialValues = {
     customerContactId: "",
     customerLocationId: "",
@@ -163,7 +163,7 @@ export default function SalesRFQNewRoute() {
     expirationDate: "",
     id: undefined,
     locationId: defaults?.locationId ?? "",
-    rfqDate: today(getLocalTimeZone()).toString(),
+    rfqDate: companyToday,
     rfqId: undefined,
     status: "Draft" as SalesRFQStatusType,
     salesPersonId: userId

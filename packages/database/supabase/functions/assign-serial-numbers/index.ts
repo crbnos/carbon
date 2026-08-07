@@ -85,8 +85,10 @@ serve(async (req: Request) => {
 
       // 5. The root make-method seed entity for this job. The job-insert
       //    interceptor tags it with the Job id; sub-assembly seeds also carry a
-      //    Job Material id, and consumption remainders carry a Split Entity ID —
-      //    exclude both so we only touch the root make method's seed.
+      //    Job Material id, and split fragments carry a pointer key — the
+      //    legacy "Split Entity ID" (old convention: departed original) or
+      //    "Split From Entity ID" (new convention: split child). Exclude all
+      //    so we only touch the root make method's seed.
       const seeds = await trx
         .selectFrom("trackedEntity")
         .selectAll()
@@ -94,6 +96,7 @@ serve(async (req: Request) => {
         .where(sql<boolean>`attributes->>'Job' = ${jobId}`)
         .where(sql<boolean>`attributes->>'Job Material' IS NULL`)
         .where(sql<boolean>`attributes->>'Split Entity ID' IS NULL`)
+        .where(sql<boolean>`attributes->>'Split From Entity ID' IS NULL`)
         .orderBy("createdAt", "asc")
         // Lock the seed row for the duration of the transaction so concurrent
         // invocations for the same job serialize here: the second waits, then

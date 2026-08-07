@@ -13,9 +13,9 @@ import {
   LuUser
 } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import { pickingListStatusType } from "../../inventory.models";
 import PickingListStatus from "./PickingListStatus";
@@ -46,7 +46,6 @@ type PickingListsTableProps = {
 const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
   const [params] = useUrlParams();
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const permissions = usePermissions();
 
@@ -112,7 +111,7 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
         header: t`Due Date`,
         cell: (item) => {
           const date = item.getValue<string>();
-          return date ? formatDate(date) : "N/A";
+          return date ? <DateTime value={date} variant="date" /> : "N/A";
         },
         meta: {
           icon: <LuCalendar />
@@ -130,7 +129,9 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -146,7 +147,7 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
         }
       }
     ];
-  }, [t, formatDate]);
+  }, [t]);
 
   const [selectedPickingList, setSelectedPickingList] =
     useState<PickingList | null>(null);

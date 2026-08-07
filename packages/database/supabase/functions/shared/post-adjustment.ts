@@ -217,6 +217,7 @@ export async function bookAdjustment(
         quantity: -absQuantity,
         cost: -cogs.totalCost,
         remainingQuantity: 0,
+        postingDate: ledger.postingDate,
         companyId,
       })
       .execute();
@@ -283,6 +284,7 @@ export async function bookAdjustment(
         quantity: absQuantity,
         cost,
         remainingQuantity: absQuantity,
+        postingDate: ledger.postingDate,
         companyId,
       })
       .execute();

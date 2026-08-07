@@ -8,7 +8,6 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@carbon/react";
-import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ComponentProps, ReactNode } from "react";
@@ -292,7 +291,6 @@ export function StartStopButton({
       defaultValues={{
         id,
         jobOperationId: operation.id,
-        timezone: getLocalTimeZone(),
         action: isActive ? "End" : "Start",
         type: eventType,
         workCenterId: operation.workCenterId ?? undefined
@@ -304,7 +302,6 @@ export function StartStopButton({
         <Hidden name="trackedEntityId" value={trackedEntityId} />
       )}
       <Hidden name="jobOperationId" value={operation.id} />
-      <Hidden name="timezone" />
 
       <Hidden name="action" value={isActive ? "End" : "Start"} />
       <Hidden name="type" value={eventType} />

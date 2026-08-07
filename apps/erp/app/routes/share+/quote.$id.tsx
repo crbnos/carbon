@@ -34,7 +34,7 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
-import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
+import { formatCityStatePostalCode } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -53,6 +53,7 @@ import {
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
+import { DateTime } from "~/components";
 import { usePercentFormatter } from "~/hooks";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
@@ -237,7 +238,7 @@ const Header = ({
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
             <Trans>Expires</Trans>{" "}
-            {formatDate(quote.expirationDate, undefined, locale)}
+            <DateTime value={quote.expirationDate} variant="date" />
           </p>
         )}
       </div>
@@ -341,9 +342,17 @@ const LineItems = ({
         if (!line.id) {
           return acc;
         }
+        // Scope to the breaks the line actually offers. A removed break can
+        // leave its price row behind, and an orphan here becomes a selectable
+        // option the customer was never meant to see.
         acc[line.id!] =
           quoteLinePrices
-            ?.filter((p) => p.quoteLineId === line.id)
+            ?.filter(
+              (p) =>
+                p.quoteLineId === line.id &&
+                Array.isArray(line.quantity) &&
+                line.quantity.includes(p.quantity)
+            )
             .sort((a, b) => a.quantity - b.quantity) ?? [];
         return acc;
       }, {}) ?? {},
@@ -362,11 +371,7 @@ const LineItems = ({
   return (
     <VStack spacing={8} className="w-full">
       {quoteLines?.map((line) => {
-        const prices = quoteLinePrices
-          ?.filter((price) => price.quoteLineId === line.id)
-          .sort((a, b) => a.quantity - b.quantity);
-
-        if (!line || !prices || !line.id) {
+        if (!line || !line.id) {
           return null;
         }
 

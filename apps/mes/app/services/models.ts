@@ -143,7 +143,6 @@ export const productionEventValidator = z.object({
   jobOperationId: z
     .string()
     .min(1, { message: "Job Operation ID is required" }),
-  timezone: zfd.text(z.string()),
   action: z.enum(productionEventAction, {
     errorMap: (issue, ctx) => ({
       message: "Action is required"

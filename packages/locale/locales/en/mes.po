@@ -21,6 +21,10 @@ msgstr "{0} - Set {1}"
 msgid "{0} Active"
 msgstr "{0} Active"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} ago"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -38,6 +42,14 @@ msgstr "{0} of {1} complete"
 msgid "{0} of {1} completed"
 msgstr "{0} of {1} completed"
 
+#. placeholder {0}: rows.length
+msgid "{0} queued"
+msgstr "{0} queued"
+
+#. placeholder {0}: activeWork.length
+msgid "{0} running"
+msgstr "{0} running"
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} Scrapped"
@@ -47,6 +59,9 @@ msgstr "{completions} passed unit(s) will be completed."
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+
+msgid "+{overflow} more"
+msgstr "+{overflow} more"
 
 msgid "About"
 msgstr "About"
@@ -92,6 +107,9 @@ msgstr "Add Spare Part"
 
 msgid "All"
 msgstr "All"
+
+msgid "All clear"
+msgstr "All clear"
 
 msgid "All rework"
 msgstr "All rework"
@@ -161,6 +179,9 @@ msgstr "But don't worry. You can use the forgot password flow to request a new m
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 
+msgid "By?"
+msgstr "By?"
+
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -194,9 +215,8 @@ msgstr "Clock In"
 msgid "Clock Out"
 msgstr "Clock Out"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Clocked in since {0}"
+msgid "Clocked in since <0/>"
+msgstr "Clocked in since <0/>"
 
 msgid "Close"
 msgstr "Close"
@@ -239,6 +259,9 @@ msgstr "Complete passed"
 msgid "Completed"
 msgstr "Completed"
 
+msgid "Connecting"
+msgstr "Connecting"
+
 msgid "Console"
 msgstr "Console"
 
@@ -247,6 +270,10 @@ msgstr "Console Mode"
 
 msgid "Consumed expired"
 msgstr "Consumed expired"
+
+#. placeholder {0}: board.unplannedCost.days
+msgid "Cost of unplanned maintenance, last {0} days"
+msgstr "Cost of unplanned maintenance, last {0} days"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -261,6 +288,9 @@ msgstr "Create Quality Issue"
 
 msgid "Create Rework"
 msgstr "Create Rework"
+
+msgid "Current work"
+msgstr "Current work"
 
 msgid "Customer"
 msgstr "Customer"
@@ -286,9 +316,8 @@ msgstr "Delete"
 msgid "Delete Step"
 msgstr "Delete Step"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "Delete Timecard ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "Delete Timecard (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "Describe the problem..."
@@ -308,8 +337,21 @@ msgstr "Dispatch not found"
 msgid "Display"
 msgstr "Display"
 
+msgid "Displays"
+msgstr "Displays"
+
 msgid "Down"
 msgstr "Down"
+
+msgid "Down for maintenance"
+msgstr "Down for maintenance"
+
+#. placeholder {0}: workCenter.blockingDispatchReadableId
+msgid "Down for maintenance · {0}"
+msgstr "Down for maintenance · {0}"
+
+msgid "Down for planned maintenance"
+msgstr "Down for planned maintenance"
 
 msgid "Download"
 msgstr "Download"
@@ -339,6 +381,13 @@ msgstr "Due {0}"
 msgid "Due Date"
 msgstr "Due Date"
 
+#. placeholder {0}: board.dueSoon.days
+msgid "Due in the next {0} days?"
+msgstr "Due in the next {0} days?"
+
+msgid "Due today?"
+msgstr "Due today?"
+
 msgid "Duplicate batch number"
 msgstr "Duplicate batch number"
 
@@ -350,6 +399,9 @@ msgstr "Duration"
 
 msgid "Edit"
 msgstr "Edit"
+
+msgid "Elapsed"
+msgstr "Elapsed"
 
 msgid "Email Address"
 msgstr "Email Address"
@@ -379,11 +431,12 @@ msgstr "Expand features table"
 msgid "Expired"
 msgstr "Expired"
 
-msgid "Expired {date}"
-msgstr "Expired {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Expired {0}"
 
-msgid "Expires {date}"
-msgstr "Expires {date}"
+msgid "Expires <0/>"
+msgstr "Expires <0/>"
 
 msgid "Expiring first"
 msgstr "Expiring first"
@@ -437,6 +490,9 @@ msgstr "Files related to the job and the opportunity line."
 msgid "Filter"
 msgstr "Filter"
 
+msgid "Filter by location"
+msgstr "Filter by location"
+
 msgid "Finish"
 msgstr "Finish"
 
@@ -459,6 +515,9 @@ msgstr "Go back to operation"
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
 
+msgid "How many?"
+msgstr "How many?"
+
 msgid "I understand and want to complete without issuing"
 msgstr "I understand and want to complete without issuing"
 
@@ -468,11 +527,18 @@ msgstr "I'm Still Working"
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideas, suggestions or problems?"
 
+msgid "Idle for"
+msgstr "Idle for"
+
 msgid "Impact"
 msgstr "Impact"
 
 msgid "Imperial"
 msgstr "Imperial"
+
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "in {0}"
 
 msgid "In Progress"
 msgstr "In Progress"
@@ -510,6 +576,12 @@ msgstr "Issue Material"
 msgid "Issue Type"
 msgstr "Issue Type"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "Issued {issuedQuantity} of {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+
 msgid "Item"
 msgstr "Item"
 
@@ -537,6 +609,9 @@ msgstr "Kit"
 msgid "Labor"
 msgstr "Labor"
 
+msgid "Last completed"
+msgstr "Last completed"
+
 msgid "Learn more"
 msgstr "Learn more"
 
@@ -554,6 +629,9 @@ msgstr "Loading item details..."
 
 msgid "Loading..."
 msgstr "Loading..."
+
+msgid "Local"
+msgstr "Local"
 
 msgid "Location"
 msgstr "Location"
@@ -588,11 +666,17 @@ msgstr "Lot"
 msgid "Machine"
 msgstr "Machine"
 
+msgid "Machine down for maintenance now?"
+msgstr "Machine down for maintenance now?"
+
 msgid "Maintenance"
 msgstr "Maintenance"
 
 msgid "Maintenance Completed"
 msgstr "Maintenance Completed"
+
+msgid "Maintenance overdue"
+msgstr "Maintenance overdue"
 
 msgid "Manually add items to inventory"
 msgstr "Manually add items to inventory"
@@ -658,11 +742,20 @@ msgstr "Newest first"
 msgid "Next"
 msgstr "Next"
 
+msgid "No"
+msgstr "No"
+
+msgid "No active job at this work center"
+msgstr "No active job at this work center"
+
 msgid "No active maintenance dispatches"
 msgstr "No active maintenance dispatches"
 
 msgid "No active operations"
 msgstr "No active operations"
+
+msgid "No active work centers at this location."
+msgstr "No active work centers at this location."
 
 msgid "No assigned operations"
 msgstr "No assigned operations"
@@ -763,8 +856,17 @@ msgstr "No work centers are blocked"
 msgid "No work centers exist"
 msgstr "No work centers exist"
 
+msgid "None"
+msgstr "None"
+
 msgid "Notes"
 msgstr "Notes"
+
+msgid "Nothing running"
+msgstr "Nothing running"
+
+msgid "Nothing scheduled at this work center"
+msgstr "Nothing scheduled at this work center"
 
 msgid "OEE Impact"
 msgstr "OEE Impact"
@@ -785,6 +887,9 @@ msgstr "Oops. You shouldn't see this page. Eventually it will be a landing page.
 msgid "Open"
 msgstr "Open"
 
+msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
+msgstr "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
+
 msgid "Open an NCR for MRB disposition"
 msgstr "Open an NCR for MRB disposition"
 
@@ -797,6 +902,9 @@ msgstr "Operations"
 msgid "Operations ended"
 msgstr "Operations ended"
 
+msgid "Operator"
+msgstr "Operator"
+
 msgid "Operator Performed"
 msgstr "Operator Performed"
 
@@ -805,6 +913,9 @@ msgstr "Optional"
 
 msgid "Overall result"
 msgstr "Overall result"
+
+msgid "Overdue PMs?"
+msgstr "Overdue PMs?"
 
 msgid "Parameters"
 msgstr "Parameters"
@@ -857,6 +968,9 @@ msgstr "Please record all steps for this operation before closing."
 msgid "Please select an item"
 msgstr "Please select an item"
 
+msgid "PM schedule lapsed"
+msgstr "PM schedule lapsed"
+
 msgid "Prev"
 msgstr "Prev"
 
@@ -898,6 +1012,9 @@ msgstr "Quantity"
 
 msgid "Quantity must be greater than 0"
 msgstr "Quantity must be greater than 0"
+
+msgid "Queue empty"
+msgstr "Queue empty"
 
 msgid "Reason for rework"
 msgstr "Reason for rework"
@@ -947,6 +1064,9 @@ msgstr "Rework created successfully"
 
 msgid "Rework quantity"
 msgstr "Rework quantity"
+
+msgid "Running"
+msgstr "Running"
 
 msgid "Sales Order"
 msgstr "Sales Order"
@@ -1232,14 +1352,28 @@ msgstr "Unpick"
 msgid "Unpick {0}"
 msgstr "Unpick {0}"
 
+msgid "Unplanned downtime"
+msgstr "Unplanned downtime"
+
+#. placeholder {0}: board.unplannedCount.days
+msgid "Unplanned maintenance items, last {0} days"
+msgstr "Unplanned maintenance items, last {0} days"
+
 msgid "Unsaved changes"
 msgstr "Unsaved changes"
+
+msgid "Up next"
+msgstr "Up next"
 
 msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
 msgstr "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
 
 msgid "Update"
 msgstr "Update"
+
+#. placeholder {0}: formatClock(lastUpdated)
+msgid "Updated {0}"
+msgstr "Updated {0}"
 
 msgid "Updated successfully"
 msgstr "Updated successfully"
@@ -1267,9 +1401,14 @@ msgstr "WIP"
 msgid "Work Center"
 msgstr "Work Center"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
+msgid "Work Center Displays"
+msgstr "Work Center Displays"
+
+msgid "Yes"
+msgstr "Yes"
+
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"

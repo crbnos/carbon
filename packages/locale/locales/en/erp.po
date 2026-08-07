@@ -48,6 +48,10 @@ msgstr "(excluded for this customer)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} ago"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} customers with a balance"
@@ -2839,9 +2843,8 @@ msgstr "Clock In"
 msgid "Clock Out"
 msgstr "Clock Out"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Clocked in since {0}"
+msgid "Clocked in since <0/>"
+msgstr "Clocked in since <0/>"
 
 msgid "Close"
 msgstr "Close"
@@ -3049,9 +3052,6 @@ msgstr "Configure default equity and retained earnings accounts"
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "Configure defaults for the quality dashboard."
-
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 
 msgid "Configure Item"
 msgstr "Configure Item"
@@ -4190,9 +4190,6 @@ msgstr "Days Due"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Days from ordering a part to having it available; planning offsets demand backward by this much."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Days in advance to generate dispatches"
 
 msgid "Days Off"
 msgstr "Days Off"
@@ -5928,8 +5925,9 @@ msgstr "Expiration Date (applies to all serials on this line)"
 msgid "Expired"
 msgstr "Expired"
 
-msgid "Expired {date}"
-msgstr "Expired {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Expired {0}"
 
 msgid "Expired batch"
 msgstr "Expired batch"
@@ -5940,8 +5938,8 @@ msgstr "Expired Batches"
 msgid "Expires"
 msgstr "Expires"
 
-msgid "Expires {date}"
-msgstr "Expires {date}"
+msgid "Expires <0/>"
+msgstr "Expires <0/>"
 
 msgid "Expires At (optional)"
 msgstr "Expires At (optional)"
@@ -6578,6 +6576,9 @@ msgstr "From {0}"
 msgid "From / To"
 msgstr "From / To"
 
+msgid "From <0/>"
+msgstr "From <0/>"
+
 msgid "From customer"
 msgstr "From customer"
 
@@ -7187,6 +7188,10 @@ msgstr "Import results"
 
 msgid "Import your BOM"
 msgstr "Import your BOM"
+
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "in {0}"
 
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
@@ -7931,12 +7936,8 @@ msgstr "Last Quarter"
 msgid "Last Run"
 msgstr "Last Run"
 
-#. placeholder {0}: formatDateTime(lastSyncedAt)
-msgid "Last synced: {0}"
-msgstr "Last synced: {0}"
-
-msgid "Last updated: {formattedDate}"
-msgstr "Last updated: {formattedDate}"
+msgid "Last synced: <0/>"
+msgstr "Last synced: <0/>"
 
 msgid "Latest operation end"
 msgstr "Latest operation end"
@@ -8308,9 +8309,6 @@ msgstr "Maintenance Expense (default)"
 
 msgid "Maintenance Schedules"
 msgstr "Maintenance Schedules"
-
-msgid "Maintenance Scheduling"
-msgstr "Maintenance Scheduling"
 
 msgid "Maintenance Type"
 msgstr "Maintenance Type"
@@ -9187,6 +9185,9 @@ msgstr "Next Date"
 
 msgid "Next Due"
 msgstr "Next Due"
+
+msgid "Next Due Date"
+msgstr "Next Due Date"
 
 msgid "Next page"
 msgstr "Next page"
@@ -13264,6 +13265,9 @@ msgstr "Stay on this page"
 msgid "Step"
 msgstr "Step"
 
+msgid "Step added"
+msgstr "Step added"
+
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr "Step detail is kept for 30 days. This run's steps have been removed."
 
@@ -16412,9 +16416,8 @@ msgstr "You can change the UI style any time through the theme setting"
 msgid "You can only see this key once. Store it safely."
 msgstr "You can only see this key once. Store it safely."
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

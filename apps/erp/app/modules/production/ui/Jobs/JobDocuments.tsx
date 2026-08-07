@@ -35,6 +35,7 @@ import { useCallback } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
 import {
+  DateTime,
   DocumentPreview,
   FileDropzone,
   Hyperlink,
@@ -42,7 +43,7 @@ import {
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
-import { useDateFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
@@ -332,7 +333,6 @@ const JobDocuments = ({
   isReadOnly
 }: JobDocumentsProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const {
     canDelete,
     canUpdate,
@@ -527,7 +527,11 @@ const JobDocuments = ({
                       />
                     </Td>
                     <Td className="text-xs font-mono">
-                      {file.created_at ? formatDate(file.created_at) : "--"}
+                      <DateTime
+                        value={file.created_at}
+                        variant="date"
+                        fallback="--"
+                      />
                     </Td>
                     <Td>
                       <div className="flex justify-end w-full">

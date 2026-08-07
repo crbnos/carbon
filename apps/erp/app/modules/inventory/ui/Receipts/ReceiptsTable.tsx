@@ -21,15 +21,16 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, SupplierAvatar, Table } from "~/components";
+import {
+  DateTime,
+  EmployeeAvatar,
+  Hyperlink,
+  SupplierAvatar,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useDateFormatter,
-  usePermissions,
-  useRealtime,
-  useUrlParams
-} from "~/hooks";
+import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Receipt } from "~/modules/inventory";
 import {
@@ -66,7 +67,6 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
 
   const [params] = useUrlParams();
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const permissions = usePermissions();
 
@@ -186,7 +186,9 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
       {
         accessorKey: "postingDate",
         header: t`Posting Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -270,7 +272,9 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -295,7 +299,9 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -303,7 +309,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
     ];
 
     return [...result, ...customColumns];
-  }, [people, suppliers, customColumns, t, formatDate]);
+  }, [people, suppliers, customColumns, t]);
 
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const deleteReceiptModal = useDisclosure();

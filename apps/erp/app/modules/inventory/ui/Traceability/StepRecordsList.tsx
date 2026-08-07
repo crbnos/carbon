@@ -1,8 +1,8 @@
 import { Checkbox, cn } from "@carbon/react";
-import { formatDateTime } from "@carbon/utils";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { LuPaperclip } from "react-icons/lu";
 import { Link } from "react-router";
+import { DateTime } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { usePeople } from "~/stores";
@@ -59,7 +59,7 @@ export function StepRecordsList({ records, jobId }: Props) {
               )}
               <span className="text-muted-foreground/40">·</span>
               <span className="tabular-nums">
-                {formatDateTime(r.createdAt)}
+                <DateTime value={r.createdAt} variant="absolute" />
               </span>
             </div>
           </>
@@ -129,7 +129,7 @@ function StepValue({
     case "Timestamp":
       return (
         <span className="text-muted-foreground">
-          {formatDateTime(record.value ?? "")}
+          <DateTime value={record.value} variant="absolute" />
         </span>
       );
     case "Person": {

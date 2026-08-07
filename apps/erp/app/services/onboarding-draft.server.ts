@@ -27,6 +27,7 @@ export type OnboardingDraft = {
     postalCode?: string;
     countryCode?: string;
     baseCurrencyCode?: string;
+    timezone?: string;
     website?: string;
   };
 };

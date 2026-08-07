@@ -92,7 +92,13 @@ export type ConfigurationParameterGroup = NonNullable<
   Awaited<ReturnType<typeof getConfigurationParameters>>["groups"]
 >[number];
 
-export type Consumable = NonNullable<
+// The `X`/`XListItem` pairs below are deliberately separate: `X` is the full
+// view row that detail screens read, `XListItem` is exactly what the list
+// query selects. Defining `X` from the list getter is what broke ~250 call
+// sites when the list selects were narrowed.
+export type Consumable = Database["public"]["Views"]["consumables"]["Row"];
+
+export type ConsumableListItem = NonNullable<
   Awaited<ReturnType<typeof getConsumables>>["data"]
 >[number];
 
@@ -151,7 +157,9 @@ export type MakeMethod = NonNullable<
   Awaited<ReturnType<typeof getMakeMethods>>["data"]
 >[number];
 
-export type Material = NonNullable<
+export type Material = Database["public"]["Views"]["materials"]["Row"];
+
+export type MaterialListItem = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]
 >[number];
 
@@ -187,7 +195,9 @@ export type MethodOperation = NonNullable<
   Awaited<ReturnType<typeof getMethodOperations>>["data"]
 >[number];
 
-export type Part = NonNullable<
+export type Part = Database["public"]["Views"]["parts"]["Row"];
+
+export type PartListItem = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]
 >[number];
 
@@ -203,7 +213,9 @@ export type PickMethod = NonNullable<
   Awaited<ReturnType<typeof getPickMethods>>["data"]
 >[number];
 
-export type Service = NonNullable<
+export type Service = Database["public"]["Views"]["services"]["Row"];
+
+export type ServiceListItem = NonNullable<
   Awaited<ReturnType<typeof getServices>>["data"]
 >[number];
 
@@ -219,7 +231,9 @@ export type SupplierPart = NonNullable<
   Awaited<ReturnType<typeof getSupplierParts>>["data"]
 >[number];
 
-export type Tool = NonNullable<
+export type Tool = Database["public"]["Views"]["tools"]["Row"];
+
+export type ToolListItem = NonNullable<
   Awaited<ReturnType<typeof getTools>>["data"]
 >[number];
 

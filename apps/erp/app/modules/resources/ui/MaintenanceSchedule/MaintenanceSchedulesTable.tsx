@@ -7,7 +7,6 @@ import {
   Status
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
@@ -22,7 +21,7 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
+import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -44,7 +43,6 @@ type MaintenanceSchedulesTableProps = {
 const MaintenanceSchedulesTable = memo(
   ({ data, count, locations, locationId }: MaintenanceSchedulesTableProps) => {
     const { t } = useLingui();
-    const { locale } = useLocale();
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -99,9 +97,7 @@ const MaintenanceSchedulesTable = memo(
           accessorKey: "name",
           header: t`Schedule Name`,
           cell: ({ row }) => (
-            <Hyperlink to={row.original.id!}>
-              <Enumerable value={row.original.name} />
-            </Hyperlink>
+            <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
           )
         },
         {
@@ -203,16 +199,24 @@ const MaintenanceSchedulesTable = memo(
         {
           accessorKey: "nextDueAt",
           header: t`Next Due`,
+          // nextDueAt is a due *date* stored as midnight UTC. Format the date
+          // portion (a CalendarDate) so the table matches the form instead of
+          // shifting a day back for viewers behind UTC.
           cell: ({ row }) =>
-            row.original.nextDueAt
-              ? new Date(row.original.nextDueAt).toLocaleDateString(locale)
-              : "-",
+            row.original.nextDueAt ? (
+              <DateTime
+                value={row.original.nextDueAt.slice(0, 10)}
+                variant="date"
+              />
+            ) : (
+              "-"
+            ),
           meta: {
             icon: <LuCalendar />
           }
         }
       ];
-    }, [allDaysSelected, allLocations, renderDays, t, locale]);
+    }, [allDaysSelected, allLocations, renderDays, t]);
 
     const renderContextMenu = useCallback(
       (row: MaintenanceSchedule) => {

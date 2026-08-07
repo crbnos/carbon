@@ -15,6 +15,7 @@ import {
   VStack
 } from "@carbon/react";
 import {
+  datetime,
   fiscalYearAndPeriodFor,
   formatDate,
   MONTH_NUMBER
@@ -35,6 +36,7 @@ import {
   generateFiscalYearPeriodsValidator,
   getFiscalYearSettings
 } from "~/modules/accounting";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -53,8 +55,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const startMonth = settings.data?.startMonth
     ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
     : 1;
+  const companyToday = datetime.today(
+    await getCompanyTimeZone(client, companyId)
+  );
   const defaultFiscalYear = fiscalYearAndPeriodFor(
-    new Date(),
+    companyToday.year,
+    companyToday.month,
     startMonth
   ).fiscalYear;
 

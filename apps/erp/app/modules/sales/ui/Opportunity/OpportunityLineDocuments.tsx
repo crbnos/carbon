@@ -35,6 +35,7 @@ import { useCallback } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
 import {
+  DateTime,
   DocumentPreview,
   FileDropzone,
   Hyperlink,
@@ -42,7 +43,7 @@ import {
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
-import { useDateFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
@@ -385,7 +386,6 @@ const OpportunityLineDocuments = ({
   type,
   isReadOnly: isReadOnlyProp
 }: OpportunityLineDocumentsProps) => {
-  const { formatDate } = useDateFormatter();
   const {
     canDelete: canDeleteBase,
     canUpdate: canUpdateBase,
@@ -595,7 +595,11 @@ const OpportunityLineDocuments = ({
                       />
                     </Td>
                     <Td className="text-xs font-mono">
-                      {file.created_at ? formatDate(file.created_at) : "--"}
+                      {file.created_at ? (
+                        <DateTime value={file.created_at} variant="date" />
+                      ) : (
+                        "--"
+                      )}
                     </Td>
                     <Td>
                       <div className="flex justify-end w-full">

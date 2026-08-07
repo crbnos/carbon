@@ -15,7 +15,7 @@ import { Trans } from "@lingui/react/macro";
 import { memo, useCallback } from "react";
 import { LuDownload } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { useDateFormatter } from "~/hooks";
+import { DateTime } from "~/components";
 
 type AuditLogSettingsProps = {
   enabled: boolean;
@@ -32,7 +32,6 @@ function formatBytes(bytes: number): string {
 
 const AuditLogSettings = memo(
   ({ enabled, archives }: AuditLogSettingsProps) => {
-    const { formatDate } = useDateFormatter();
     const fetcher = useFetcher();
 
     const isToggling = fetcher.state !== "idle";
@@ -122,8 +121,8 @@ const AuditLogSettings = memo(
                     >
                       <VStack className="items-start">
                         <span className="font-medium text-sm">
-                          {formatDate(archive.startDate)} -{" "}
-                          {formatDate(archive.endDate)}
+                          <DateTime value={archive.startDate} variant="date" />{" "}
+                          - <DateTime value={archive.endDate} variant="date" />
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {archive.rowCount.toLocaleString()} records

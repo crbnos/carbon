@@ -1,11 +1,13 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
-import { getLocalTimeZone, parseDate, today } from "npm:@internationalized/date";
+import { type CalendarDate, parseDate } from "@internationalized/date";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
+import { sql } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
+import { buildBatchSplitRecords } from "../shared/batch-split.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -33,12 +35,12 @@ async function getExpiredEntityPolicy(companyId: string): Promise<ExpiredEntityP
 function checkExpiredEntity(
   entity: { id: string; expirationDate: string | null },
   policy: ExpiredEntityPolicy,
-  override: { allowed: boolean; reason: string | null }
+  override: { allowed: boolean; reason: string | null },
+  today: CalendarDate
 ): { warning?: string } {
   if (!entity.expirationDate) return {};
-  const todayLocal = today(getLocalTimeZone());
   try {
-    if (parseDate(entity.expirationDate).compare(todayLocal) >= 0) return {};
+    if (parseDate(entity.expirationDate).compare(today) >= 0) return {};
   } catch {
     return {};
   }
@@ -125,10 +127,11 @@ serve(async (req: Request) => {
   if (preflight) return preflight;
 
   const payload = await req.json();
-  const today = format(new Date(), "yyyy-MM-dd");
 
   try {
     const validatedPayload = payloadValidator.parse(payload);
+    const companyToday = datetime.today(await getCompanyTimeZone(db, validatedPayload.companyId));
+    const today = companyToday.toString();
     let expiredWarning: string | undefined;
     let splitEntityId: string | undefined;
 
@@ -440,7 +443,8 @@ serve(async (req: Request) => {
           const expiredCheck = checkExpiredEntity(
             { id: trackedEntity.id, expirationDate: trackedEntity.expirationDate },
             policy,
-            { allowed: !!overrideExpired, reason: overrideReason ?? null }
+            { allowed: !!overrideExpired, reason: overrideReason ?? null },
+            companyToday
           );
           if (expiredCheck.warning) {
             expiredWarning = expiredCheck.warning;
@@ -451,141 +455,71 @@ serve(async (req: Request) => {
           const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
             [];
 
-          // Handle batch splitting if needed
+          // Split the batch when transferring less than the whole entity: the
+          // source entity keeps its id and is decremented; a NEW child entity
+          // departs to the destination bin with the transfer quantity.
+          let transferredEntityId = trackedEntityId;
           if (entityQuantity !== transferQuantity) {
-            // Need to split the batch
-            const remainingQuantity = entityQuantity - transferQuantity;
-            const newTrackedEntityId = nanoid();
-            splitEntityId = newTrackedEntityId;
+            const childId = nanoid();
+            splitEntityId = childId;
+            transferredEntityId = childId;
 
-            // Create split activity
-            const splitActivityId = nanoid();
-            await trx
-              .insertInto("trackedActivity")
-              .values({
-                id: splitActivityId,
-                type: "Split",
-                sourceDocument: "Stock Transfer",
-                sourceDocumentId: stockTransferId,
-                attributes: {
-                  "Original Quantity": entityQuantity,
-                  "Transfer Quantity": transferQuantity,
-                  "Remaining Quantity": remainingQuantity,
-                  "Split Entity ID": newTrackedEntityId,
-                },
-                companyId,
-                createdBy: userId,
-              })
-              .execute();
-
-            // Record original entity as input to split
-            await trx
-              .insertInto("trackedActivityInput")
-              .values({
-                trackedActivityId: splitActivityId,
-                trackedEntityId: trackedEntityId,
-                quantity: entityQuantity,
-                companyId,
-                createdBy: userId,
-              })
-              .execute();
-
-            // Create new tracked entity for remaining quantity
-            await trx
-              .insertInto("trackedEntity")
-              .values({
-                id: newTrackedEntityId,
+            const split = buildBatchSplitRecords({
+              parent: {
+                id: trackedEntity.id,
                 readableId: trackedEntity.readableId,
+                quantity: entityQuantity,
                 sourceDocument: trackedEntity.sourceDocument,
                 sourceDocumentId: trackedEntity.sourceDocumentId,
                 sourceDocumentReadableId:
                   trackedEntity.sourceDocumentReadableId,
-                quantity: remainingQuantity,
-                status: "Available",
-                attributes: trackedEntity.attributes,
                 itemId: trackedEntity.itemId ?? null,
                 expirationDate: trackedEntity.expirationDate ?? null,
-                companyId,
-                createdBy: userId,
-              })
+                attributes: trackedEntity.attributes as Record<
+                  string,
+                  unknown
+                > | null,
+              },
+              drawQuantity: transferQuantity,
+              childId,
+              splitActivityId: nanoid(),
+              activitySourceDocument: "Stock Transfer",
+              activitySourceDocumentId: stockTransferId,
+              bin: { storageUnitId: fromStorageUnitId, locationId },
+              itemLedgerItemId: stockTransferLine.itemId,
+              companyId,
+              userId,
+              postingDate: today,
+              childStatus: "Available",
+            });
+
+            await trx
+              .insertInto("trackedActivity")
+              .values(split.activityInsert)
               .execute();
 
-            // Record outputs from split
+            await trx
+              .insertInto("trackedEntity")
+              .values(split.childEntityInsert)
+              .execute();
+
+            await trx
+              .insertInto("trackedActivityInput")
+              .values(split.activityInputInsert)
+              .execute();
+
             await trx
               .insertInto("trackedActivityOutput")
-              .values([
-                {
-                  trackedActivityId: splitActivityId,
-                  trackedEntityId: newTrackedEntityId,
-                  quantity: remainingQuantity,
-                  companyId,
-                  createdBy: userId,
-                },
-                {
-                  trackedActivityId: splitActivityId,
-                  trackedEntityId: trackedEntityId,
-                  quantity: transferQuantity,
-                  companyId,
-                  createdBy: userId,
-                },
-              ])
+              .values(split.activityOutputInsert)
               .execute();
 
-            // Update original entity with split reference and new quantity
             await trx
               .updateTable("trackedEntity")
-              .set({
-                quantity: transferQuantity,
-                attributes: {
-                  ...(trackedEntity.attributes as Record<string, unknown>),
-                  "Split Entity ID": newTrackedEntityId,
-                },
-              })
+              .set(split.parentUpdate)
               .where("id", "=", trackedEntityId)
               .execute();
 
-            // Create item ledger entries for split
-            itemLedgerInserts.push(
-              {
-                postingDate: today,
-                itemId: stockTransferLine.itemId,
-                quantity: -entityQuantity,
-                locationId: locationId,
-                storageUnitId: fromStorageUnitId,
-                entryType: "Negative Adjmt.",
-                documentType: "Batch Split",
-                documentId: splitActivityId,
-                trackedEntityId: trackedEntityId,
-                createdBy: userId,
-                companyId,
-              },
-              {
-                postingDate: today,
-                itemId: stockTransferLine.itemId,
-                quantity: transferQuantity,
-                locationId: locationId,
-                storageUnitId: fromStorageUnitId,
-                entryType: "Positive Adjmt.",
-                documentType: "Batch Split",
-                documentId: splitActivityId,
-                trackedEntityId: trackedEntityId,
-                createdBy: userId,
-                companyId,
-              },
-              {
-                postingDate: today,
-                itemId: stockTransferLine.itemId,
-                quantity: remainingQuantity,
-                locationId: locationId,
-                storageUnitId: fromStorageUnitId,
-                entryType: "Positive Adjmt.",
-                documentType: "Batch Split",
-                documentId: splitActivityId,
-                trackedEntityId: newTrackedEntityId,
-                createdBy: userId,
-                companyId,
-              }
-            );
+            itemLedgerInserts.push(...split.ledgerInserts);
           }
 
           // Create transfer activity
@@ -612,12 +546,13 @@ serve(async (req: Request) => {
             })
             .execute();
 
-          // Record tracked entity as input to transfer
+          // Record the DEPARTING entity (split child, or the whole entity on
+          // a full-quantity transfer) as input to the transfer.
           await trx
             .insertInto("trackedActivityInput")
             .values({
               trackedActivityId: transferActivityId,
-              trackedEntityId: trackedEntityId,
+              trackedEntityId: transferredEntityId,
               quantity: transferQuantity,
               companyId,
               createdBy: userId,
@@ -638,7 +573,7 @@ serve(async (req: Request) => {
               entryType: "Transfer",
               documentType: "Direct Transfer",
               documentId: stockTransferId,
-              trackedEntityId: trackedEntityId,
+              trackedEntityId: transferredEntityId,
               createdBy: userId,
               companyId,
             },
@@ -651,7 +586,7 @@ serve(async (req: Request) => {
               entryType: "Transfer",
               documentType: "Direct Transfer",
               documentId: stockTransferId,
-              trackedEntityId: trackedEntityId,
+              trackedEntityId: transferredEntityId,
               createdBy: userId,
               companyId,
             }
@@ -665,11 +600,12 @@ serve(async (req: Request) => {
               .execute();
           }
 
-          // Update stock transfer line with picked quantity
+          // Update stock transfer line with picked quantity — the line
+          // references the entity that physically arrives at the destination.
           await trx
             .updateTable("stockTransferLine")
             .set({
-              trackedEntityId,
+              trackedEntityId: transferredEntityId,
               fromStorageUnitId: fromStorageUnitId,
               pickedQuantity: transferQuantity,
               updatedBy: userId,
@@ -859,16 +795,114 @@ serve(async (req: Request) => {
           const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
             [];
 
-          // Check if this entity was created from a split operation
-          const splitEntityId = (
-            trackedEntity.attributes as Record<string, unknown>
-          )?.["Split Entity ID"] as string | undefined;
+          const entityAttributes = (trackedEntity.attributes ?? {}) as Record<
+            string,
+            unknown
+          >;
+          // New convention: the line's entity is a split CHILD carrying a
+          // back-pointer to the parent that stayed at the source bin.
+          const splitFromParentId = entityAttributes["Split From Entity ID"] as
+            | string
+            | undefined;
+          // Legacy convention (pre-flip rows): the departed ORIGINAL carries a
+          // forward pointer to the remainder entity it left behind.
+          const legacyRemainderId = entityAttributes["Split Entity ID"] as
+            | string
+            | undefined;
 
-          if (splitEntityId) {
+          if (splitFromParentId) {
+            // Merge the child fully back into its parent and delete the Split
+            // — a clean undo, as if the partial transfer never happened.
+            const parent = await trx
+              .selectFrom("trackedEntity")
+              .where("id", "=", splitFromParentId)
+              .where("companyId", "=", companyId)
+              .selectAll()
+              .executeTakeFirstOrThrow();
+
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                quantity: Number(parent.quantity) + transferQuantity,
+              })
+              .where("id", "=", parent.id)
+              .execute();
+
+            // Drain the child (don't delete it — ledger history keeps the FK).
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                status: "Consumed",
+                quantity: 0,
+              })
+              .where("id", "=", trackedEntityId)
+              .execute();
+
+            itemLedgerInserts.push(
+              {
+                postingDate: today,
+                itemId: stockTransferLine.itemId,
+                quantity: -transferQuantity, // drain the child at the destination
+                locationId: locationId,
+                storageUnitId: stockTransferLine.toStorageUnitId,
+                entryType: "Negative Adjmt.",
+                documentType: "Direct Transfer",
+                documentId: stockTransferId!,
+                trackedEntityId: trackedEntityId,
+                createdBy: userId,
+                companyId,
+              },
+              {
+                postingDate: today,
+                itemId: stockTransferLine.itemId,
+                quantity: transferQuantity, // restore the parent at the source
+                locationId: locationId,
+                storageUnitId: stockTransferLine.fromStorageUnitId,
+                entryType: "Positive Adjmt.",
+                documentType: "Direct Transfer",
+                documentId: stockTransferId!,
+                trackedEntityId: parent.id,
+                createdBy: userId,
+                companyId,
+              }
+            );
+
+            // Delete the Split activity that minted the child — scoped to the
+            // entity AND this transfer (a bare sourceDocumentId lookup grabs
+            // a sibling line's split on multi-line transfers).
+            const splitActivity = await trx
+              .selectFrom("trackedActivity")
+              .where("type", "=", "Split")
+              .where("sourceDocument", "=", "Stock Transfer")
+              .where("sourceDocumentId", "=", stockTransferId)
+              .where(
+                sql<boolean>`attributes->>'Split Entity ID' = ${trackedEntityId}`
+              )
+              .where("companyId", "=", companyId)
+              .selectAll()
+              .executeTakeFirst();
+
+            if (splitActivity) {
+              await trx
+                .deleteFrom("trackedActivityOutput")
+                .where("trackedActivityId", "=", splitActivity.id!)
+                .execute();
+
+              await trx
+                .deleteFrom("trackedActivityInput")
+                .where("trackedActivityId", "=", splitActivity.id!)
+                .execute();
+
+              await trx
+                .deleteFrom("trackedActivity")
+                .where("id", "=", splitActivity.id!)
+                .execute();
+            }
+          } else if (legacyRemainderId) {
             // This entity was created from a split, need to merge it back
             const originalEntity = await trx
               .selectFrom("trackedEntity")
-              .where("id", "=", splitEntityId)
+              .where("id", "=", legacyRemainderId)
               .where("companyId", "=", companyId)
               .selectAll()
               .executeTakeFirstOrThrow();
@@ -876,16 +910,16 @@ serve(async (req: Request) => {
             const originalQuantity =
               Number(originalEntity.quantity) + transferQuantity;
 
-            const remainingQuantity = (
-              trackedEntity.attributes as Record<string, unknown>
-            )?.["Remaining Quantity"] as number | undefined;
-
-            // Find the split activity
+            // Find the split activity — scoped to the remainder entity this
+            // pointer names, not just the transfer (multi-line safety).
             const splitActivity = await trx
               .selectFrom("trackedActivity")
               .where("type", "=", "Split")
               .where("sourceDocument", "=", "Stock Transfer")
               .where("sourceDocumentId", "=", stockTransferId)
+              .where(
+                sql<boolean>`attributes->>'Split Entity ID' = ${legacyRemainderId}`
+              )
               .where("companyId", "=", companyId)
               .selectAll()
               .executeTakeFirstOrThrow();
@@ -897,7 +931,7 @@ serve(async (req: Request) => {
                 status: "Consumed",
                 quantity: 0,
               })
-              .where("id", "=", splitEntityId)
+              .where("id", "=", legacyRemainderId)
               .execute();
 
             // Mark the split entity as consumed (don't delete it)
@@ -948,7 +982,7 @@ serve(async (req: Request) => {
                 entryType: "Negative Adjmt.",
                 documentType: "Direct Transfer",
                 documentId: stockTransferId!,
-                trackedEntityId: splitEntityId,
+                trackedEntityId: legacyRemainderId,
                 createdBy: userId,
                 companyId,
               }
@@ -984,11 +1018,6 @@ serve(async (req: Request) => {
               .execute();
 
             // Create reverse item ledger entries to undo the transfer
-            // Use the correct trackedEntityId based on whether this was a split operation
-            // For split operations, use the original entity (splitEntityId)
-            // For direct operations, use the trackedEntityId
-            const finalTrackedEntityId = splitEntityId || trackedEntityId;
-
             itemLedgerInserts.push({
               postingDate: today,
               itemId: stockTransferLine.itemId,
@@ -998,7 +1027,7 @@ serve(async (req: Request) => {
               entryType: "Transfer",
               documentType: "Direct Transfer",
               documentId: stockTransferId,
-              trackedEntityId: finalTrackedEntityId,
+              trackedEntityId: trackedEntityId,
               createdBy: userId,
               companyId,
             });
@@ -1012,7 +1041,7 @@ serve(async (req: Request) => {
               entryType: "Transfer",
               documentType: "Direct Transfer",
               documentId: stockTransferId,
-              trackedEntityId: finalTrackedEntityId,
+              trackedEntityId: trackedEntityId,
               createdBy: userId,
               companyId,
             });

@@ -185,7 +185,13 @@ export type QuotationMakeMethod = NonNullable<
   Awaited<ReturnType<typeof getQuoteMakeMethod>>["data"]
 >;
 
-export type Quotation = NonNullable<
+// The `X`/`XListItem` pairs below are deliberately separate: `X` is the full
+// view row that detail screens read, `XListItem` is exactly what the list
+// query selects. Defining `X` from the list getter is what broke ~250 call
+// sites when the list selects were narrowed.
+export type Quotation = Database["public"]["Views"]["quotes"]["Row"];
+
+export type QuotationListItem = NonNullable<
   Awaited<ReturnType<typeof getQuotes>>["data"]
 >[number];
 
@@ -221,7 +227,9 @@ export type QuotationShipment = NonNullable<
   Awaited<ReturnType<typeof getQuoteShipment>>["data"]
 >;
 
-export type SalesOrder = NonNullable<
+export type SalesOrder = Database["public"]["Views"]["salesOrders"]["Row"];
+
+export type SalesOrderListItem = NonNullable<
   Awaited<ReturnType<typeof getSalesOrders>>["data"]
 >[number];
 

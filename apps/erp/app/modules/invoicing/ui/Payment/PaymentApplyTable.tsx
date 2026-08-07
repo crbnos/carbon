@@ -18,11 +18,8 @@ import type { CSSProperties } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { LuListChecks, LuRotateCcw, LuSave } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions
-} from "~/hooks";
+import { DateTime } from "~/components";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 
 // One row in the apply table — an open invoice for the payment's
@@ -126,7 +123,6 @@ const PaymentApplyTable = ({
   const permissions = usePermissions();
   const fetcher = useFetcher();
   const currencyFormatter = useCurrencyFormatter({ currency: paymentCurrency });
-  const { formatDate } = useDateFormatter();
   const today = new Date().toISOString().slice(0, 10);
   const isReceipt = paymentType === "Receipt";
   const canEdit = permissions.can("update", "invoicing");
@@ -375,7 +371,11 @@ const PaymentApplyTable = ({
                         {r.invoiceId}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {r.dateDue ? formatDate(r.dateDue) : t`No due date`}
+                        {r.dateDue ? (
+                          <DateTime value={r.dateDue} variant="date" />
+                        ) : (
+                          t`No due date`
+                        )}
                         {" · "}
                         {r.currencyCode}
                       </div>

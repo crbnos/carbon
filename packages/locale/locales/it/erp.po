@@ -48,6 +48,10 @@ msgstr "(escluso per questo cliente)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {Questa parte è in 1 avviso di modifica aperto} other {Questa parte è in # avvisi di modifica aperti}}"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} fa"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} clienti con saldo"
@@ -2839,9 +2843,8 @@ msgstr "Accedi"
 msgid "Clock Out"
 msgstr "Orario di uscita"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Registrato dal {0}"
+msgid "Clocked in since <0/>"
+msgstr "In servizio da <0/>"
 
 msgid "Close"
 msgstr "Chiudi"
@@ -3049,9 +3052,6 @@ msgstr "Configurare i conti di patrimonio netto e utili non distribuiti predefin
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "Configura i valori predefiniti per il dashboard di qualità."
-
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Configura come i dispatches di manutenzione preventiva vengono generati automaticamente dalle pianificazioni di manutenzione."
 
 msgid "Configure Item"
 msgstr "Configura Articolo"
@@ -4190,9 +4190,6 @@ msgstr "Giorni di Scadenza"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Giorni dall'ordine di una parte alla sua disponibilità; la pianificazione compensa la domanda all'indietro di questo importo."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Giorni in anticipo per generare i dispatches"
 
 msgid "Days Off"
 msgstr "Giorni liberi"
@@ -5928,8 +5925,9 @@ msgstr "Data di scadenza (si applica a tutti i numeri seriali su questa riga)"
 msgid "Expired"
 msgstr "Scaduto"
 
-msgid "Expired {date}"
-msgstr "Scaduto {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Scaduto {0}"
 
 msgid "Expired batch"
 msgstr "Lotto scaduto"
@@ -5940,8 +5938,8 @@ msgstr "Lotti Scaduti"
 msgid "Expires"
 msgstr "Scade"
 
-msgid "Expires {date}"
-msgstr "Scade {date}"
+msgid "Expires <0/>"
+msgstr "Scade <0/>"
 
 msgid "Expires At (optional)"
 msgstr "Scade il (facoltativo)"
@@ -6578,6 +6576,9 @@ msgstr "Da {0}"
 msgid "From / To"
 msgstr "Da / A"
 
+msgid "From <0/>"
+msgstr "Da <0/>"
+
 msgid "From customer"
 msgstr "Da cliente"
 
@@ -7187,6 +7188,10 @@ msgstr "Risultati dell'Importazione"
 
 msgid "Import your BOM"
 msgstr "Importa il tuo BOM"
+
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "in {0}"
 
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "In Onshape, modifica le autorizzazioni di questa applicazione OAuth per includere «Application can write to your documents», quindi riprova a connetterti."
@@ -7931,12 +7936,8 @@ msgstr "Ultimo Trimestre"
 msgid "Last Run"
 msgstr ""
 
-#. placeholder {0}: formatDateTime(lastSyncedAt)
-msgid "Last synced: {0}"
-msgstr "Ultimo sincronizzato: {0}"
-
-msgid "Last updated: {formattedDate}"
-msgstr "Ultimo aggiornamento: {formattedDate}"
+msgid "Last synced: <0/>"
+msgstr "Ultimo sincronismo: <0/>"
 
 msgid "Latest operation end"
 msgstr ""
@@ -8308,9 +8309,6 @@ msgstr "Spese di Manutenzione (predefinite)"
 
 msgid "Maintenance Schedules"
 msgstr "Programmi di Manutenzione"
-
-msgid "Maintenance Scheduling"
-msgstr "Pianificazione della manutenzione"
 
 msgid "Maintenance Type"
 msgstr "Tipo di Manutenzione"
@@ -9188,6 +9186,9 @@ msgstr "Data successiva"
 msgid "Next Due"
 msgstr "Prossima Scadenza"
 
+msgid "Next Due Date"
+msgstr "Data di prossima scadenza"
+
 msgid "Next page"
 msgstr "Pagina successiva"
 
@@ -9402,7 +9403,7 @@ msgid "No matches. Type to create one."
 msgstr "Nessuna corrispondenza. Digita per crearne uno."
 
 msgid "No matching bins"
-msgstr "Nessun bin corrispondente"
+msgstr "Nessun contenitore corrisponde"
 
 msgid "No new notifications"
 msgstr "Nessuna nuova notifica"
@@ -13264,6 +13265,9 @@ msgstr "Rimani su questa pagina"
 msgid "Step"
 msgstr "Passaggio"
 
+msgid "Step added"
+msgstr "Passaggio aggiunto"
+
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
@@ -16412,9 +16416,8 @@ msgstr "Puoi cambiare lo stile dell'interfaccia in qualsiasi momento attraverso 
 msgid "You can only see this key once. Store it safely."
 msgstr "Puoi visualizzare questa chiave solo una volta. Conservala in modo sicuro."
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Hai effettuato il check-in alle {0}. Puoi modificare l'orario di check-out di seguito o confermare che stai ancora lavorando."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Hai registrato l'ingresso alle <0/>. Puoi modificare l'orario di uscita qui sotto o confermare che stai ancora lavorando."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

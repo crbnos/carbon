@@ -1,10 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import {
-  Input as FormInput,
-  Number as FormNumberInput,
-  Hidden,
-  ValidatedForm
-} from "@carbon/form";
+import { Number as FormNumberInput, Hidden, ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertDescription,
@@ -40,35 +35,30 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  toast,
-  useDisclosure
+  toast
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { formatDate, getItemReadableId } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  LuArrowRightLeft,
   LuCheck,
   LuChevronDown,
   LuChevronUp,
   LuCirclePlus,
-  LuGitBranch,
   LuList,
   LuQrCode,
-  LuScale,
-  LuTrash,
   LuUndo2,
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { PrintButton } from "~/components";
 import type {
   getBatchNumbersForItem,
   getSerialNumbersForItem,
   SuggestedAllocationLot
 } from "~/services/inventory.service";
-import { convertEntityValidator, issueValidator } from "~/services/models";
+import { issueValidator } from "~/services/models";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -134,6 +124,7 @@ export function IssueMaterialModal({
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
+  const { t } = useLingui();
   const [items] = useItems();
   const numberFormatter = useNumberFormatter({ maximumFractionDigits: 4 });
 
@@ -185,19 +176,13 @@ export function IssueMaterialModal({
   );
 
   // Format an expiration date as `MMM d, yyyy` for the option helper text.
-  // Browsers all support this through Intl.DateTimeFormat, no extra deps.
   const formatExpiry = useCallback((date: string | null | undefined) => {
     if (!date) return "";
-    try {
-      const cd = parseDate(date);
-      return new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      }).format(cd.toDate(getLocalTimeZone()));
-    } catch {
-      return date;
-    }
+    return formatDate(date, {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
   }, []);
 
   const serialOptions = useMemo(() => {
@@ -415,6 +400,26 @@ export function IssueMaterialModal({
     usePickedAllocation(
       shouldLoadPickedAllocation ? (material?.id ?? undefined) : undefined
     );
+
+  // Scanning the SHELF label must issue the allocated lineside child, not the
+  // warehouse lot: after a partial pick the shelf entity keeps its id (and its
+  // printed label) while the picked portion is a child entity staged at
+  // lineside. Without this mapping, a shelf-label scan would consume the
+  // warehouse parent at the wrong bin. Only remaps when the scanned id is not
+  // itself an allocated lot and a picked child points back at it.
+  const resolveScannedBatchId = useCallback(
+    (scannedId: string) => {
+      if (!scannedId || pickedAllocation.length === 0) return scannedId;
+      if (pickedAllocation.some((lot) => lot.trackedEntityId === scannedId)) {
+        return scannedId;
+      }
+      return (
+        pickedAllocation.find((lot) => lot.splitFromEntityId === scannedId)
+          ?.trackedEntityId ?? scannedId
+      );
+    },
+    [pickedAllocation]
+  );
   // Prefer the actual picks; fall back to the suggestion only when nothing's
   // been picked yet (allocated-but-not-picked) or when there's no picking list.
   // Wait for the picked-allocation request to resolve before falling back, so a
@@ -525,16 +530,6 @@ export function IssueMaterialModal({
   const hasExpiredSelection =
     expiredSerialIds.length > 0 || expiredBatchIds.length > 0;
 
-  // Split entities result state (for batch splitting)
-  const [splitEntitiesResult, setSplitEntitiesResult] = useState<
-    {
-      newId: string;
-      originalId: string;
-      quantity: number;
-      readableId?: string;
-    }[]
-  >([]);
-
   // Fetchers
   const fetcher = useFetcher<{
     success: boolean;
@@ -544,15 +539,11 @@ export function IssueMaterialModal({
       newId: string;
       quantity: number;
       readableId?: string;
+      remainingQuantity?: number;
     }>;
   }>();
   const unconsumeFetcher = useFetcher<{ success: boolean; message: string }>();
   const inventoryFetcher = useFetcher<{ success: boolean; message: string }>();
-
-  // Sub-modals for batch splitting
-  const convertDisclosure = useDisclosure();
-  const scrapDisclosure = useDisclosure();
-  const [trackedEntity, setTrackedEntity] = useState<string | null>(null);
 
   // Fetch item details when item is selected (only when no material provided)
   const handleItemChange = useCallback(
@@ -1053,15 +1044,27 @@ export function IssueMaterialModal({
           fetcher.data.splitEntities &&
           fetcher.data.splitEntities.length > 0
         ) {
-          setSplitEntitiesResult(
-            fetcher.data.splitEntities.map((entity) => ({
-              newId: entity.newId,
-              originalId: entity.originalId,
-              readableId: entity.readableId,
-              quantity: entity.quantity
-            }))
-          );
-          toast.success(fetcher.data.message);
+          // A partial issue split the lot: the consumed portion departed as a
+          // new child entity and the surviving lineside lot kept its id (and
+          // its label). A one-line confirmation replaces the old full-screen
+          // split ceremony — nothing to print, nothing to act on.
+          for (const split of fetcher.data.splitEntities) {
+            const lotLabel =
+              split.readableId ||
+              getItemReadableId(items, material?.itemId) ||
+              "batch";
+            const issuedQuantity = numberFormatter.format(split.quantity);
+            const remainingQuantity =
+              split.remainingQuantity !== undefined
+                ? numberFormatter.format(split.remainingQuantity)
+                : null;
+            toast.success(
+              remainingQuantity !== null
+                ? t`Issued ${issuedQuantity} of ${lotLabel} — ${remainingQuantity} remains`
+                : t`Issued ${issuedQuantity} of ${lotLabel}`
+            );
+          }
+          onClose();
         } else {
           onClose();
           if (fetcher.data.message) {
@@ -1072,7 +1075,15 @@ export function IssueMaterialModal({
         toast.error(fetcher.data.message);
       }
     }
-  }, [fetcher.state, fetcher.data, onClose]);
+  }, [
+    fetcher.state,
+    fetcher.data,
+    onClose,
+    items,
+    material?.itemId,
+    numberFormatter,
+    t
+  ]);
 
   useEffect(() => {
     if (unconsumeFetcher.data?.success) {
@@ -1114,76 +1125,9 @@ export function IssueMaterialModal({
             )}
           </ModalHeader>
 
-          {splitEntitiesResult.length > 0 ? (
-            // Show split entities result
-            <ModalBody>
-              <Alert variant="default" className="mb-4">
-                <LuGitBranch className="mr-2" />
-                <AlertTitle>Batch Split Occurred</AlertTitle>
-                <AlertDescription>
-                  <div className="flex flex-col gap-2">
-                    <p>A new batch entity was created from a split:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      {splitEntitiesResult.map((split) => (
-                        <li key={split.newId} className="flex flex-col text-sm">
-                          <span className="text-md font-semibold">
-                            {split.readableId ??
-                              getItemReadableId(items, material?.itemId) ??
-                              "Material"}
-                          </span>
-                          <div className="flex gap-2 items-center">
-                            <span className="font-mono flex gap-1 items-center">
-                              <LuQrCode />
-                              {split.newId}
-                            </span>
-                            <span className="font-mono text-xs text-muted-foreground flex gap-1 items-center truncate">
-                              <LuScale />
-                              {numberFormatter.format(split.quantity)}
-                            </span>
-                          </div>
-                          <div className="flex gap-2 mt-4">
-                            <PrintButton
-                              sourceDocument="Split"
-                              sourceDocumentId={split.newId}
-                              locationId={locationId}
-                              context="workCenter"
-                              workCenterId={workCenterId}
-                              fileRoutes={{
-                                pdf: path.to.file.trackedEntityLabelPdf,
-                                zpl: path.to.file.trackedEntityLabelZpl
-                              }}
-                            />
-                            <Button
-                              variant="secondary"
-                              leftIcon={<LuArrowRightLeft />}
-                              onClick={() => {
-                                setTrackedEntity(split.newId);
-                                convertDisclosure.onOpen();
-                              }}
-                            >
-                              Convert
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              leftIcon={<LuTrash />}
-                              onClick={() => {
-                                setTrackedEntity(split.newId);
-                                scrapDisclosure.onOpen();
-                              }}
-                            >
-                              Scrap
-                            </Button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            </ModalBody>
-          ) : trackingType === "Inventory" ||
-            trackingType === "Non-Inventory" ||
-            trackingType === null ? (
+          {trackingType === "Inventory" ||
+          trackingType === "Non-Inventory" ||
+          trackingType === null ? (
             // Untracked item (Inventory or Non-Inventory, e.g. consumables and
             // services) - use ValidatedForm; the issue edge function skips the
             // itemLedger for Non-Inventory items but still posts the WIP cost
@@ -1635,7 +1579,12 @@ export function IssueMaterialModal({
                                       autoFocus={index === 0}
                                       value={batch.id}
                                       onChange={(e) => {
-                                        const newValue = e.target.value;
+                                        // A shelf-label scan resolves to its
+                                        // allocated lineside child (see
+                                        // resolveScannedBatchId).
+                                        const newValue = resolveScannedBatchId(
+                                          e.target.value
+                                        );
                                         updateBatchNumber({
                                           ...batch,
                                           id: newValue
@@ -1652,7 +1601,7 @@ export function IssueMaterialModal({
                                       }}
                                       onBlur={(e) => {
                                         validateBatchInput(
-                                          e.target.value,
+                                          resolveScannedBatchId(e.target.value),
                                           index
                                         );
                                       }}
@@ -1891,273 +1840,56 @@ export function IssueMaterialModal({
                 </div>
               </ModalBody>
               <ModalFooter>
-                {splitEntitiesResult.length > 0 ? (
-                  <Button variant="primary" size="lg" onClick={onClose}>
-                    Close
+                <Button variant="secondary" size="lg" onClick={onClose}>
+                  Cancel
+                </Button>
+                {activeTab === "unconsume" ? (
+                  <Button
+                    variant="destructive"
+                    size="lg"
+                    onClick={
+                      trackingType === "Serial"
+                        ? handleUnconsumeSerial
+                        : handleUnconsumeBatch
+                    }
+                    isLoading={unconsumeFetcher.state !== "idle"}
+                    isDisabled={
+                      unconsumeFetcher.state !== "idle" ||
+                      (trackingType === "Serial"
+                        ? selectedTrackedInputs.length === 0
+                        : !unconsumedBatch)
+                    }
+                  >
+                    Unconsume
                   </Button>
                 ) : (
-                  <>
-                    <Button variant="secondary" size="lg" onClick={onClose}>
-                      Cancel
-                    </Button>
-                    {activeTab === "unconsume" ? (
-                      <Button
-                        variant="destructive"
-                        size="lg"
-                        onClick={
-                          trackingType === "Serial"
-                            ? handleUnconsumeSerial
-                            : handleUnconsumeBatch
-                        }
-                        isLoading={unconsumeFetcher.state !== "idle"}
-                        isDisabled={
-                          unconsumeFetcher.state !== "idle" ||
-                          (trackingType === "Serial"
-                            ? selectedTrackedInputs.length === 0
-                            : !unconsumedBatch)
-                        }
-                      >
-                        Unconsume
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        onClick={
-                          trackingType === "Serial"
-                            ? handleSubmitSerial
-                            : handleSubmitBatch
-                        }
-                        isLoading={fetcher.state !== "idle"}
-                        isDisabled={
-                          fetcher.state !== "idle" ||
-                          !selectedItemId ||
-                          isLoadingItem
-                        }
-                      >
-                        Issue
-                      </Button>
-                    )}
-                  </>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={
+                      trackingType === "Serial"
+                        ? handleSubmitSerial
+                        : handleSubmitBatch
+                    }
+                    isLoading={fetcher.state !== "idle"}
+                    isDisabled={
+                      fetcher.state !== "idle" ||
+                      !selectedItemId ||
+                      isLoadingItem
+                    }
+                  >
+                    Issue
+                  </Button>
                 )}
               </ModalFooter>
             </>
           )}
-
-          {/* Footer for split entities result */}
-          {splitEntitiesResult.length > 0 && (
-            <ModalFooter>
-              <Button variant="primary" size="lg" onClick={onClose}>
-                Close
-              </Button>
-            </ModalFooter>
-          )}
         </ModalContent>
       </Modal>
-
-      {/* Sub-modals for batch splitting */}
-      {convertDisclosure.isOpen && (
-        <ConvertSplitModal
-          trackedEntity={trackedEntity}
-          itemType={material?.itemType ?? "Part"}
-          onCancel={() => {
-            convertDisclosure.onClose();
-            setTrackedEntity(null);
-          }}
-          onSuccess={(convertedEntity) => {
-            setSplitEntitiesResult((prev) =>
-              prev.map((entity) =>
-                entity.newId === convertedEntity.trackedEntityId
-                  ? {
-                      ...entity,
-                      readableId: convertedEntity.readableId,
-                      quantity: convertedEntity.quantity
-                    }
-                  : entity
-              )
-            );
-            convertDisclosure.onClose();
-            setTrackedEntity(null);
-          }}
-        />
-      )}
-      {scrapDisclosure.isOpen && (
-        <ScrapSplitModal
-          materialId={material?.id!}
-          parentTrackedEntityId={parentId ?? ""}
-          trackedEntity={trackedEntity}
-          onCancel={() => {
-            scrapDisclosure.onClose();
-            setTrackedEntity(null);
-          }}
-          onSuccess={() => {
-            scrapDisclosure.onClose();
-            setTrackedEntity(null);
-            onClose();
-          }}
-        />
-      )}
     </>
   );
 }
 
-// Sub-modal for converting split batch entities
-function ConvertSplitModal({
-  trackedEntity,
-  itemType,
-  onCancel,
-  onSuccess
-}: {
-  trackedEntity: string | null;
-  itemType: string | null;
-  onCancel: () => void;
-  onSuccess: (convertedEntity: {
-    trackedEntityId: string;
-    readableId: string;
-    quantity: number;
-  }) => void;
-}) {
-  const fetcher = useFetcher<{
-    success: boolean;
-    message: string;
-    convertedEntity?: {
-      trackedEntityId: string;
-      readableId: string;
-      quantity: number;
-    };
-  }>();
-
-  useEffect(() => {
-    if (fetcher.data?.success && fetcher.data.convertedEntity) {
-      toast.success("Entity converted successfully");
-      onSuccess(fetcher.data.convertedEntity);
-    } else if (fetcher.data?.success === false) {
-      toast.error(fetcher.data.message || "Failed to convert entity");
-    }
-  }, [fetcher.data, onSuccess]);
-
-  if (!trackedEntity) return null;
-
-  return (
-    <Modal open onOpenChange={onCancel}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            Convert to New {itemType === "Material" ? "Size" : "Revision"}
-          </ModalTitle>
-          <ModalDescription>
-            Convert this tracked entity into a quantity of 1 of a new size.
-          </ModalDescription>
-        </ModalHeader>
-        <ValidatedForm
-          method="post"
-          action={path.to.convertEntity(trackedEntity)}
-          defaultValues={{
-            trackedEntityId: trackedEntity,
-            newRevision: "",
-            quantity: 1
-          }}
-          validator={convertEntityValidator}
-          fetcher={fetcher}
-        >
-          <Hidden name="trackedEntityId" />
-          <ModalBody>
-            <div className="flex flex-col gap-4">
-              <FormInput
-                name="newRevision"
-                label={`New ${itemType === "Material" ? "Size" : "Revision"}`}
-                autoFocus
-              />
-              <FormNumberInput
-                name="quantity"
-                label="Quantity"
-                minValue={0.001}
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" size="lg" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              type="submit"
-              size="lg"
-              variant="primary"
-            >
-              Convert
-            </Button>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
-  );
-}
-
-// Sub-modal for scrapping split batch entities
-function ScrapSplitModal({
-  materialId,
-  parentTrackedEntityId,
-  trackedEntity,
-  onCancel,
-  onSuccess
-}: {
-  materialId: string;
-  parentTrackedEntityId: string;
-  trackedEntity: string | null;
-  onCancel: () => void;
-  onSuccess: () => void;
-}) {
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onSuccess();
-    }
-  }, [fetcher.data?.success, onSuccess]);
-
-  if (!trackedEntity) return null;
-
-  return (
-    <Modal open onOpenChange={onCancel}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>Are you sure you want to scrap this batch?</ModalTitle>
-          <ModalDescription>
-            The remaining quantity will be removed from inventory and issued to
-            the job
-          </ModalDescription>
-        </ModalHeader>
-        <ModalFooter>
-          <Button variant="secondary" size="lg" onClick={onCancel}>
-            Cancel
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.scrapEntity(
-              materialId,
-              trackedEntity,
-              parentTrackedEntityId
-            )}
-          >
-            <Button
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              type="submit"
-              size="lg"
-              variant="destructive"
-            >
-              Scrap
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
-  );
-}
-
-// Hook for fetching serial numbers
 function useSerialNumbers(itemId?: string) {
   const serialNumbersFetcher =
     useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();

@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
@@ -19,6 +20,7 @@ import {
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
 import { months } from "~/modules/shared";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { revalidateIgnoringOffset } from "~/utils/revalidate";
@@ -65,7 +67,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const isMultiCompany = selectedCompanyIds.length > 1;
 
   if (isMultiCompany && parentCurrency) {
-    const periodEnd = endDate ?? new Date().toISOString().split("T")[0];
+    const periodEnd =
+      endDate ??
+      datetime.today(await getCompanyTimeZone(client, companyId)).toString();
     const consolidated = await getConsolidatedBalances(
       client,
       companyGroupId,
@@ -124,7 +128,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ) as (Chart & { translatedBalance?: number; exchangeRate?: number })[];
 
   if (showTranslated && isForeignCurrency && parentCurrency) {
-    const periodEnd = endDate ?? new Date().toISOString().split("T")[0];
+    const periodEnd =
+      endDate ??
+      datetime.today(await getCompanyTimeZone(client, companyId)).toString();
     const translation = await translateCompanyBalances(
       client,
       companyGroupId,

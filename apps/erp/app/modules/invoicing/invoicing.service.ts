@@ -1,11 +1,8 @@
 import type { Database, Json } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import {
-  endOfMonth,
-  getLocalTimeZone,
-  parseDate,
-  today
-} from "@internationalized/date";
+import { datetime } from "@carbon/utils";
+import { endOfMonth, parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import {
@@ -14,7 +11,7 @@ import {
   insertSupplierInteraction
 } from "~/modules/purchasing";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
@@ -36,6 +33,12 @@ import type {
   salesInvoiceStatusType,
   salesInvoiceValidator
 } from "./invoicing.models";
+
+const PURCHASE_INVOICES_LIST_COLUMNS =
+  "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
+
+const SALES_INVOICES_LIST_COLUMNS =
+  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName" as const;
 
 /**
  * Compute an invoice's Due Date from its Issue Date and Payment Term.
@@ -248,7 +251,7 @@ export async function getPurchaseInvoices(
 ) {
   let query = client
     .from("purchaseInvoices")
-    .select("*", { count: "exact" })
+    .select(PURCHASE_INVOICES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -331,7 +334,7 @@ export async function getSalesInvoices(
 ) {
   let query = client
     .from("salesInvoices")
-    .select("*", { count: "exact" })
+    .select(SALES_INVOICES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -571,7 +574,11 @@ export async function insertPurchaseInvoice(
       exchangeRate,
       exchangeRateUpdatedAt,
       paymentTermId: input.paymentTermId ?? paymentTermId,
-      dateIssued: input.dateIssued ?? today(getLocalTimeZone()).toString(),
+      dateIssued:
+        input.dateIssued ??
+        datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString(),
       dateDue: input.dateDue ?? null,
       locationId,
       customFields: input.customFields,
@@ -635,7 +642,7 @@ export async function updatePurchaseInvoice(
     .from("purchaseInvoice")
     .update({
       ...sanitize(rest),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id)
     .select("id")
@@ -668,7 +675,7 @@ export async function upsertPurchaseInvoice(
       .from("purchaseInvoice")
       .update({
         ...sanitize(purchaseInvoice),
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", purchaseInvoice.id)
       .select("id, invoiceId");
@@ -945,7 +952,11 @@ export async function insertSalesInvoice(
       exchangeRate,
       exchangeRateUpdatedAt,
       paymentTermId: input.paymentTermId ?? paymentTermId,
-      dateIssued: input.dateIssued ?? today(getLocalTimeZone()).toString(),
+      dateIssued:
+        input.dateIssued ??
+        datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString(),
       dateDue: input.dateDue ?? null,
       locationId,
       customFields: input.customFields,
@@ -1009,7 +1020,7 @@ export async function updateSalesInvoice(
     .from("salesInvoice")
     .update({
       ...sanitize(rest),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id)
     .select("id")
@@ -1042,7 +1053,7 @@ export async function upsertSalesInvoice(
       .from("salesInvoice")
       .update({
         ...sanitize(salesInvoice),
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", salesInvoice.id)
       .select("id, invoiceId");

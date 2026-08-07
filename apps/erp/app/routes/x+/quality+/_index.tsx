@@ -32,6 +32,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@carbon/react/Chart";
+import { formatDate } from "@carbon/utils";
 import { today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -136,7 +137,11 @@ function formatWeekLabel(weekKey: string, locale?: string): string {
   const week = Number.parseInt(match[2]);
   const d = new Date(Date.UTC(year, 0, 4));
   d.setUTCDate(d.getUTCDate() - (d.getUTCDay() || 7) + 1 + (week - 1) * 7);
-  return d.toLocaleDateString(locale, { month: "short", day: "numeric" });
+  return formatDate(
+    d.toISOString().slice(0, 10),
+    { month: "short", day: "numeric" },
+    locale
+  );
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {

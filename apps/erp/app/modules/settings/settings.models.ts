@@ -6,7 +6,7 @@ import {
   sectionConfigSchema,
   themeSchema
 } from "@carbon/documents/template";
-import { labelSizes } from "@carbon/utils";
+import { isValidTimeZone, labelSizes } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
@@ -75,6 +75,10 @@ const companyAddress = {
   postalCode: z.string().min(1, { message: "Postal Code is required" }),
   countryCode: z.string().min(1, { message: "Country is required" }),
   baseCurrencyCode: zfd.text(z.string()),
+  timezone: z
+    .string()
+    .min(1, { message: "Timezone is required" })
+    .refine(isValidTimeZone, { message: "Invalid timezone" }),
   website: zfd.text(z.string().optional())
 };
 
@@ -233,11 +237,6 @@ export const returnPickedMaterialTimingValidator = z.object({
 
 export const updateLeadTimesOnReceiptValidator = z.object({
   updateLeadTimesOnReceipt: zfd.checkbox()
-});
-
-export const maintenanceSettingsValidator = z.object({
-  maintenanceGenerateInAdvance: zfd.checkbox(),
-  maintenanceAdvanceDays: zfd.numeric(z.number().min(1).max(90).default(7))
 });
 
 export const materialIdsValidator = z.object({

@@ -64,6 +64,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+      TZ: UTC
       CARBON_EDITION: ${CARBON_EDITION:-community}
       AUTH_PROVIDERS: ${AUTH_PROVIDERS:-email,google,azure}
       DOMAIN: ${DOMAIN}
@@ -106,6 +107,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+      TZ: UTC
       CARBON_EDITION: ${CARBON_EDITION:-community}
       AUTH_PROVIDERS: ${AUTH_PROVIDERS:-email,google,azure}
       DOMAIN: ${DOMAIN}
@@ -205,6 +207,7 @@ services:
       - postgres_password
       - jwt_secret
     environment:
+      TZ: UTC
       POSTGRES_HOST: /var/run/postgresql
       POSTGRES_PORT: "5432"
       PGPORT: "5432"
@@ -476,6 +479,7 @@ services:
       - anon_key
       - service_role_key
     environment:
+      TZ: UTC
       JWT_SECRET: __JWT_SECRET__
       SUPABASE_URL: http://kong:8000
       SUPABASE_ANON_KEY: __ANON_KEY__

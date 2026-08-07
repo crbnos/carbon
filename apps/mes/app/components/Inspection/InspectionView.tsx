@@ -20,7 +20,6 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
-import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   lazy,
@@ -1245,7 +1244,6 @@ function AutoTimer({
     if (running || busy) return;
     const fd = new FormData();
     fd.set("jobOperationId", operationId);
-    fd.set("timezone", getLocalTimeZone());
     fd.set("type", workType);
     fd.set("action", "Start");
     fd.set("exclusive", "true");
@@ -1316,7 +1314,6 @@ function TimerControl({
       className="h-full shrink-0"
     >
       <input type="hidden" name="jobOperationId" value={operationId} />
-      <input type="hidden" name="timezone" value={getLocalTimeZone()} />
       <input type="hidden" name="type" value={workType} />
       <input type="hidden" name="exclusive" value="true" />
       <input type="hidden" name="action" value={openEvent ? "End" : "Start"} />

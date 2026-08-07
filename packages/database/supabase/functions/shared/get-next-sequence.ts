@@ -5,6 +5,21 @@ import { sql, Transaction } from "kysely";
 import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
 import { interpolateSequenceDate } from "../lib/utils.ts";
 
+// Sequence date tokens (%{yyyy}, %{ww}, …) roll over at the COMPANY's midnight —
+// document numbering is ledger-scoped. Inline query (not lib/datetime.ts) so
+// this file stays importable from Node.
+export async function getSequenceTimeZone(
+  trx: Transaction<DB>,
+  companyId: string
+): Promise<string> {
+  const row = await trx
+    .selectFrom("company")
+    .select("timezone")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  return row?.timezone ?? "UTC";
+}
+
 export async function getNextSequence(
   trx: Transaction<DB>,
   tableName: string,
@@ -29,8 +44,9 @@ export async function getNextSequence(
   if (!Number.isInteger(size)) throw new Error("Size is not an integer");
 
   const nextSequence = next!.toString().padStart(size!, "0");
-  const derivedPrefix = interpolateSequenceDate(prefix);
-  const derivedSuffix = interpolateSequenceDate(suffix);
+  const timezone = await getSequenceTimeZone(trx, companyId);
+  const derivedPrefix = interpolateSequenceDate(prefix, timezone);
+  const derivedSuffix = interpolateSequenceDate(suffix, timezone);
 
   return `${derivedPrefix}${nextSequence}${derivedSuffix}`;
 }

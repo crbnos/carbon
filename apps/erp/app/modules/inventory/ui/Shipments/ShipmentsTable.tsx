@@ -21,15 +21,16 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
-import { CustomerAvatar, EmployeeAvatar, Hyperlink, Table } from "~/components";
+import {
+  CustomerAvatar,
+  DateTime,
+  EmployeeAvatar,
+  Hyperlink,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useDateFormatter,
-  usePermissions,
-  useRealtime,
-  useUrlParams
-} from "~/hooks";
+import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -66,7 +67,6 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
 
   const [params] = useUrlParams();
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const permissions = usePermissions();
 
@@ -216,7 +216,9 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
       {
         accessorKey: "postingDate",
         header: t`Posting Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -283,7 +285,9 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -308,7 +312,9 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -316,7 +322,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
     ];
 
     return [...result, ...customColumns];
-  }, [people, customers, customColumns, t, formatDate]);
+  }, [people, customers, customColumns, t]);
 
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(
     null

@@ -1,20 +1,21 @@
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable } from "@carbon/database";
+import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
-import { getLocalTimeZone, now, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type {
   PostgrestError,
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import type { z } from "zod";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting";
 import type {
@@ -73,6 +74,12 @@ import type {
   SalesOrder,
   SalesRFQ
 } from "./types";
+
+const QUOTES_LIST_COLUMNS =
+  "id,quoteId,revisionId,dueDate,expirationDate,status,salesPersonId,estimatorId,customerId,customerReference,assignee,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,locationName,lines,completedLines" as const;
+
+const SALES_ORDERS_LIST_COLUMNS =
+  "id,salesOrderId,status,orderDate,customerId,customerReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,locationId,displayStatus,thumbnailPath,itemType,orderTotal,jobs,lines,paymentTermId,shippingMethodId,receiptPromisedDate,dropShipment" as const;
 
 const logger = getLogger("erp", "sales");
 
@@ -153,11 +160,20 @@ export async function closeSalesOrder(
   salesOrderId: string,
   userId: string
 ) {
+  const salesOrder = await client
+    .from("salesOrder")
+    .select("companyId")
+    .eq("id", salesOrderId)
+    .single();
+  const companyTz = await getCompanyTimeZone(
+    client,
+    salesOrder.data?.companyId ?? ""
+  );
   return client
     .from("salesOrder")
     .update({
       closed: true,
-      closedAt: today(getLocalTimeZone()).toString(),
+      closedAt: datetime.today(companyTz).toString(),
       closedBy: userId
     })
     .eq("id", salesOrderId)
@@ -1168,7 +1184,7 @@ export async function getQuotes(
 ) {
   let query = client
     .from("quotes")
-    .select("*", { count: "exact" })
+    .select(QUOTES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1642,7 +1658,7 @@ export async function getSalesOrders(
 ) {
   let query = client
     .from("salesOrders")
-    .select("*", { count: "exact" })
+    .select(SALES_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -2000,7 +2016,7 @@ export async function finalizeQuote(
     .from("quote")
     .update({
       status: "Sent",
-      updatedAt: today(getLocalTimeZone()).toString(),
+      updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
     .eq("id", quoteId);
@@ -2013,7 +2029,7 @@ export async function finalizeQuote(
     .from("quoteLine")
     .update({
       status: "Complete",
-      updatedAt: today(getLocalTimeZone()).toString(),
+      updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
     .neq("status", "No Quote")
@@ -2039,7 +2055,7 @@ export async function releaseSalesOrder(
     .from("salesOrder")
     .update({
       status: "To Ship and Invoice",
-      updatedAt: today(getLocalTimeZone()).toString(),
+      updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
     .eq("id", salesOrderId);
@@ -2050,7 +2066,9 @@ export async function resolvePrice(
   companyId: string,
   input: PriceResolutionInput
 ): Promise<PriceResolutionResult> {
-  const date = input.date ?? new Date().toISOString().split("T")[0]!;
+  const date =
+    input.date ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
   const trace: PriceTraceStep[] = [];
 
   let resolvedCustomerTypeId = input.customerTypeId ?? null;
@@ -2281,7 +2299,9 @@ export async function resolvePriceList(
     quantity?: number;
   }
 ): Promise<PriceListResult> {
-  const date = new Date().toISOString().split("T")[0]!;
+  const date = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
   const previewQuantity = Math.max(args.quantity ?? 1, 0);
 
   let scopeQuery = client
@@ -2676,7 +2696,7 @@ export async function upsertCustomer(
     .from("customer")
     .update({
       ...sanitize(customer),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", customer.id)
     .select("id")
@@ -2684,7 +2704,7 @@ export async function upsertCustomer(
 }
 
 export async function upsertCustomerItemPriceOverride(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string,
   data: {
@@ -2717,146 +2737,145 @@ export async function upsertCustomerItemPriceOverride(
     applyRulesOnTop: data.applyRulesOnTop
   };
 
-  let parentId: string | null = null;
-  let parentError: unknown = null;
-
-  if (data.id) {
-    const { data: row, error } = await client
-      .from("customerItemPriceOverride")
-      .update({
-        ...parentFields,
-        customerId: data.customerId ?? null,
-        customerTypeId: data.customerTypeId ?? null,
-        itemId: data.itemId,
-        updatedBy: userId,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("id", data.id)
-      .eq("companyId", companyId)
-      .select("id")
-      .single();
-    parentId = row?.id ?? null;
-    parentError = error;
-  } else {
-    // Collapse onto an existing (scope, item) row if one exists — the partial
-    // unique indexes would reject a duplicate insert anyway.
-    const lookup = client
-      .from("customerItemPriceOverride")
-      .select("id")
-      .eq("itemId", data.itemId)
-      .eq("companyId", companyId);
-
-    const scopedLookup = data.customerId
-      ? lookup.eq("customerId", data.customerId)
-      : data.customerTypeId
-        ? lookup.eq("customerTypeId", data.customerTypeId)
-        : lookup.is("customerId", null).is("customerTypeId", null);
-    const { data: existing } = await scopedLookup.maybeSingle();
-
-    if (existing) {
-      const { data: row, error } = await client
-        .from("customerItemPriceOverride")
-        .update({
-          ...parentFields,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("id", existing.id)
-        .select("id")
-        .single();
-      parentId = row?.id ?? null;
-      parentError = error;
-    } else {
-      const { data: row, error } = await client
-        .from("customerItemPriceOverride")
-        .insert({
-          ...parentFields,
-          customerId: data.customerId ?? null,
-          customerTypeId: data.customerTypeId ?? null,
-          itemId: data.itemId,
-          companyId,
-          createdBy: userId
-        })
-        .select("id")
-        .single();
-      parentId = row?.id ?? null;
-      parentError = error;
-    }
-  }
-
-  if (parentError || !parentId) {
-    return { data: null, error: parentError };
-  }
-
-  // Identity-preserving sync so the audit log shows one UPDATE per actually-
-  // changed rung instead of a churn of DELETE+INSERT on every save. The form
-  // round-trips each break's id — rows with known ids update in place, rows
-  // without ids insert, rows missing from the submission delete.
-  const { data: existingRows, error: fetchExistingError } = await client
-    .from("customerItemPriceOverrideBreak")
-    .select("id")
-    .eq("customerItemPriceOverrideId", parentId)
-    .eq("companyId", companyId);
-  if (fetchExistingError) {
-    return { data: null, error: fetchExistingError };
-  }
-
-  const existingIds = new Set((existingRows ?? []).map((r) => r.id));
-  const submittedIds = new Set(
-    sortedBreaks
-      .map((b) => b.id)
-      .filter((id): id is string => typeof id === "string")
-  );
-
-  const toDelete = [...existingIds].filter((id) => !submittedIds.has(id));
-  if (toDelete.length > 0) {
-    const { error } = await client
-      .from("customerItemPriceOverrideBreak")
-      .delete()
-      .in("id", toDelete)
-      .eq("companyId", companyId);
-    if (error) return { data: null, error };
-  }
-
-  // Updates go one-at-a-time. Edge case: if the user swaps quantities between
-  // two existing rungs (A 5↔10 B), the mid-batch state transiently violates
-  // the (parent, quantity) UNIQUE constraint. In that narrow case the save
-  // returns an error and the user saves again. Worth it for the clean audit.
-  const updateTimestamp = new Date().toISOString();
-  for (const b of sortedBreaks) {
-    if (!b.id || !existingIds.has(b.id)) continue;
-    const { error } = await client
-      .from("customerItemPriceOverrideBreak")
-      .update({
-        quantity: b.quantity,
-        overridePrice: b.overridePrice,
-        active: b.active,
-        updatedBy: userId,
-        updatedAt: updateTimestamp
-      })
-      .eq("id", b.id)
-      .eq("companyId", companyId);
-    if (error) return { data: null, error };
-  }
-
-  const toInsert = sortedBreaks.filter((b) => !b.id || !existingIds.has(b.id));
-  if (toInsert.length > 0) {
-    const { error } = await client
-      .from("customerItemPriceOverrideBreak")
-      .insert(
-        toInsert.map((b) => ({
-          customerItemPriceOverrideId: parentId as string,
-          quantity: b.quantity,
-          overridePrice: b.overridePrice,
-          active: b.active,
-          companyId,
-          createdBy: userId
-        }))
+  // Parent + break rungs in one transaction. Breaks sync by id (update in place,
+  // insert new, delete missing) to keep the audit log to one UPDATE per rung.
+  // The (parent, quantity) UNIQUE is deferred to commit so shifting the ladder
+  // one rung at a time doesn't trip a transient duplicate mid-transaction.
+  const timestamp = new Date().toISOString();
+  try {
+    return await db.transaction().execute(async (trx) => {
+      await sql`SET CONSTRAINTS "public"."customerItemPriceOverrideBreak_override_qty_uq" DEFERRED`.execute(
+        trx
       );
-    if (error) return { data: null, error };
-  }
 
-  return { data: { id: parentId }, error: null };
+      let parentId: string;
+
+      if (data.id) {
+        const row = await trx
+          .updateTable("customerItemPriceOverride")
+          .set({
+            ...parentFields,
+            customerId: data.customerId ?? null,
+            customerTypeId: data.customerTypeId ?? null,
+            itemId: data.itemId,
+            updatedBy: userId,
+            updatedAt: timestamp
+          })
+          .where("id", "=", data.id)
+          .where("companyId", "=", companyId)
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        parentId = row.id;
+      } else {
+        // Collapse onto an existing (scope, item) row if one exists — the partial
+        // unique indexes would reject a duplicate insert anyway.
+        let lookup = trx
+          .selectFrom("customerItemPriceOverride")
+          .select("id")
+          .where("itemId", "=", data.itemId)
+          .where("companyId", "=", companyId);
+
+        lookup = data.customerId
+          ? lookup.where("customerId", "=", data.customerId)
+          : data.customerTypeId
+            ? lookup.where("customerTypeId", "=", data.customerTypeId)
+            : lookup
+                .where("customerId", "is", null)
+                .where("customerTypeId", "is", null);
+        const existing = await lookup.executeTakeFirst();
+
+        if (existing) {
+          const row = await trx
+            .updateTable("customerItemPriceOverride")
+            .set({ ...parentFields, updatedBy: userId, updatedAt: timestamp })
+            .where("id", "=", existing.id)
+            .where("companyId", "=", companyId)
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          parentId = row.id;
+        } else {
+          const row = await trx
+            .insertInto("customerItemPriceOverride")
+            .values({
+              ...parentFields,
+              customerId: data.customerId ?? null,
+              customerTypeId: data.customerTypeId ?? null,
+              itemId: data.itemId,
+              companyId,
+              createdBy: userId
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          parentId = row.id;
+        }
+      }
+
+      const existingRows = await trx
+        .selectFrom("customerItemPriceOverrideBreak")
+        .select("id")
+        .where("customerItemPriceOverrideId", "=", parentId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      const existingIds = new Set(existingRows.map((r) => r.id));
+      const submittedIds = new Set(
+        sortedBreaks
+          .map((b) => b.id)
+          .filter((id): id is string => typeof id === "string")
+      );
+
+      const toDelete = [...existingIds].filter((id) => !submittedIds.has(id));
+      if (toDelete.length > 0) {
+        await trx
+          .deleteFrom("customerItemPriceOverrideBreak")
+          .where("id", "in", toDelete)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      for (const b of sortedBreaks) {
+        if (!b.id || !existingIds.has(b.id)) continue;
+        await trx
+          .updateTable("customerItemPriceOverrideBreak")
+          .set({
+            quantity: b.quantity,
+            overridePrice: b.overridePrice,
+            active: b.active,
+            updatedBy: userId,
+            updatedAt: timestamp
+          })
+          .where("id", "=", b.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      const toInsert = sortedBreaks.filter(
+        (b) => !b.id || !existingIds.has(b.id)
+      );
+      if (toInsert.length > 0) {
+        await trx
+          .insertInto("customerItemPriceOverrideBreak")
+          .values(
+            toInsert.map((b) => ({
+              customerItemPriceOverrideId: parentId,
+              quantity: b.quantity,
+              overridePrice: b.overridePrice,
+              active: b.active,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+
+      return { data: { id: parentId }, error: null };
+    });
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err : { message: String(err) }
+    };
+  }
 }
 
 export async function deleteCustomerItemPriceOverride(
@@ -3267,7 +3286,7 @@ export async function updateSalesRFQStatus(
     ...rest,
     ...(noQuoteReasonId ? { noQuoteReasonId } : {}),
     ...(status === "Ready for Quote"
-      ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
+      ? { completedDate: datetime.timestamp() }
       : {})
   };
 
@@ -3317,9 +3336,7 @@ export async function updateQuoteStatus(
   const updateData = {
     status,
     ...rest,
-    ...(status === "Sent"
-      ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
-      : {})
+    ...(status === "Sent" ? { completedDate: datetime.timestamp() } : {})
   };
   return client.from("quote").update(updateData).eq("id", update.id);
 }
@@ -3634,7 +3651,7 @@ export async function updateQuote(
       ...(exchangeRateUpdatedAt && { exchangeRateUpdatedAt }),
       ...(notes !== undefined && { internalNotes: notes }),
       updatedBy,
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id)
     .select("id")
@@ -3809,7 +3826,7 @@ export async function upsertQuote(
       .from("quote")
       .update({
         ...sanitize(quoteUpdateData),
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", quote.id);
   }
@@ -4243,14 +4260,45 @@ async function buildCostEffects(
   return { effects, costCategoryKeys };
 }
 
-export async function calculatePricesForQuantities(
+/**
+ * The three price resolvers below each read a pile of context, compute price
+ * rows, and finish with ONE insert. They are split at that seam so a caller
+ * that needs the write to be atomic with other writes can build the rows first
+ * and hand them to a transaction (see `saveQuoteLineWithPrices`).
+ *
+ * `itemIdOverride` exists because the quote-line save path updates the line and
+ * prices together: the row in the database still holds the OLD `itemId` while
+ * the new one is only in the validated form data, so the caller passes it in
+ * rather than the builder reading a value that is about to change.
+ */
+export type QuoteLinePriceRow = {
+  quoteId: string;
+  quoteLineId: string;
+  companyId: string;
+  quantity: number;
+  unitPrice: number;
+  exchangeRate: number;
+  createdBy: string;
+  leadTime: number;
+  discountPercent: number;
+  categoryMarkups?: Record<string, number>;
+  priceSource?: string;
+};
+
+type BuildPriceRowsResult = {
+  rows: QuoteLinePriceRow[];
+  error: unknown | null;
+};
+
+export async function buildMakeToOrderPriceRows(
   client: SupabaseClient<Database>,
   quoteId: string,
   quoteLineId: string,
   quantities: number[],
-  userId: string
-) {
-  if (!quantities.length) return { error: null };
+  userId: string,
+  itemIdOverride?: string | null
+): Promise<BuildPriceRowsResult> {
+  if (!quantities.length) return { rows: [], error: null };
 
   // 1. Fetch quote (with companyId + customerId) and line in parallel
   const [quoteResult, lineResult] = await Promise.all([
@@ -4266,8 +4314,8 @@ export async function calculatePricesForQuantities(
       .single()
   ]);
 
-  if (quoteResult.error) return { error: quoteResult.error };
-  if (lineResult.error) return { error: lineResult.error };
+  if (quoteResult.error) return { rows: [], error: quoteResult.error };
+  if (lineResult.error) return { rows: [], error: lineResult.error };
 
   // Fetch settings filtered by company (required for service-role access)
   const settingsResult = await client
@@ -4276,11 +4324,14 @@ export async function calculatePricesForQuantities(
     .eq("id", quoteResult.data.companyId)
     .single();
 
-  if (settingsResult.error) return { error: settingsResult.error };
+  if (settingsResult.error) return { rows: [], error: settingsResult.error };
 
   const companyId = quoteResult.data.companyId;
   const customerId = quoteResult.data.customerId ?? undefined;
-  const itemId = lineResult.data.itemId ?? undefined;
+  const itemId =
+    itemIdOverride === undefined
+      ? (lineResult.data.itemId ?? undefined)
+      : (itemIdOverride ?? undefined);
   const exchangeRate = quoteResult.data.exchangeRate ?? 1;
   const precision = lineResult.data.unitPricePrecision ?? 2;
 
@@ -4298,11 +4349,11 @@ export async function calculatePricesForQuantities(
   const result = await buildCostEffects(client, quoteLineId);
   // buildCostEffects returns null when the line has no costed method yet —
   // treat as a no-op so partial drafts don't block the save.
-  if (!result) return { error: null };
+  if (!result) return { rows: [], error: null };
 
   const { effects } = result;
 
-  const priceRows = [];
+  const priceRows: QuoteLinePriceRow[] = [];
   for (const qty of quantities) {
     const categoryCosts: Record<string, number> = {};
     for (const key of costCategoryKeys) {
@@ -4342,7 +4393,27 @@ export async function calculatePricesForQuantities(
     });
   }
 
-  const insertResult = await client.from("quoteLinePrice").insert(priceRows);
+  return { rows: priceRows, error: null };
+}
+
+export async function calculatePricesForQuantities(
+  client: SupabaseClient<Database>,
+  quoteId: string,
+  quoteLineId: string,
+  quantities: number[],
+  userId: string
+) {
+  const { rows, error } = await buildMakeToOrderPriceRows(
+    client,
+    quoteId,
+    quoteLineId,
+    quantities,
+    userId
+  );
+  if (error) return { error };
+  if (!rows.length) return { error: null };
+
+  const insertResult = await client.from("quoteLinePrice").insert(rows);
   if (insertResult.error) {
     logger.error("Failed to insert MtO calc quote line prices", {
       quoteLineId,
@@ -4353,15 +4424,16 @@ export async function calculatePricesForQuantities(
   return { error: null };
 }
 
-export async function resolveQuoteLinePrices(
+export async function buildPullFromInventoryPriceRows(
   client: SupabaseClient<Database>,
   companyId: string,
   quoteId: string,
   quoteLineId: string,
   quantities: number[],
-  userId: string
-) {
-  if (!quantities.length) return { error: null };
+  userId: string,
+  itemIdOverride?: string | null
+): Promise<BuildPriceRowsResult> {
+  if (!quantities.length) return { rows: [], error: null };
 
   const [quoteResult, lineResult] = await Promise.all([
     client
@@ -4376,17 +4448,19 @@ export async function resolveQuoteLinePrices(
       .single()
   ]);
 
-  if (quoteResult.error) return { error: quoteResult.error };
-  if (lineResult.error) return { error: lineResult.error };
-  // Missing itemId is a benign draft state, not an error.
-  if (!lineResult.data.itemId) return { error: null };
+  if (quoteResult.error) return { rows: [], error: quoteResult.error };
+  if (lineResult.error) return { rows: [], error: lineResult.error };
 
-  const itemId = lineResult.data.itemId;
+  const itemId =
+    itemIdOverride === undefined ? lineResult.data.itemId : itemIdOverride;
+  // Missing itemId is a benign draft state, not an error.
+  if (!itemId) return { rows: [], error: null };
+
   const exchangeRate = quoteResult.data.exchangeRate ?? 1;
   const precision = lineResult.data.unitPricePrecision ?? 2;
   const customerId = quoteResult.data.customerId ?? undefined;
 
-  const priceRows = [];
+  const priceRows: QuoteLinePriceRow[] = [];
   for (const qty of quantities) {
     const resolved = await resolvePrice(client, companyId, {
       itemId,
@@ -4407,7 +4481,29 @@ export async function resolveQuoteLinePrices(
     });
   }
 
-  const insertResult = await client.from("quoteLinePrice").insert(priceRows);
+  return { rows: priceRows, error: null };
+}
+
+export async function resolveQuoteLinePrices(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  quoteId: string,
+  quoteLineId: string,
+  quantities: number[],
+  userId: string
+) {
+  const { rows, error } = await buildPullFromInventoryPriceRows(
+    client,
+    companyId,
+    quoteId,
+    quoteLineId,
+    quantities,
+    userId
+  );
+  if (error) return { error };
+  if (!rows.length) return { error: null };
+
+  const insertResult = await client.from("quoteLinePrice").insert(rows);
   if (insertResult.error) {
     logger.error("Failed to insert Pull quote line prices", {
       quoteLineId,
@@ -4418,15 +4514,16 @@ export async function resolveQuoteLinePrices(
   return { error: null };
 }
 
-export async function resolvePurchaseToOrderPrices(
+export async function buildPurchaseToOrderPriceRows(
   client: SupabaseClient<Database>,
   companyId: string,
   quoteId: string,
   quoteLineId: string,
   quantities: number[],
-  userId: string
-) {
-  if (!quantities.length) return { error: null };
+  userId: string,
+  itemIdOverride?: string | null
+): Promise<BuildPriceRowsResult> {
+  if (!quantities.length) return { rows: [], error: null };
 
   const [quoteResult, lineResult] = await Promise.all([
     client
@@ -4441,18 +4538,20 @@ export async function resolvePurchaseToOrderPrices(
       .single()
   ]);
 
-  if (quoteResult.error) return { error: quoteResult.error };
-  if (lineResult.error) return { error: lineResult.error };
-  if (!lineResult.data.itemId) return { error: null };
+  if (quoteResult.error) return { rows: [], error: quoteResult.error };
+  if (lineResult.error) return { rows: [], error: lineResult.error };
 
-  const itemId = lineResult.data.itemId;
+  const itemId =
+    itemIdOverride === undefined ? lineResult.data.itemId : itemIdOverride;
+  if (!itemId) return { rows: [], error: null };
+
   const exchangeRate = quoteResult.data.exchangeRate ?? 1;
   const precision = lineResult.data.unitPricePrecision ?? 2;
   const customerId = quoteResult.data.customerId ?? undefined;
 
   const priceMap = await getSupplierPriceBreaksForItems(client, [itemId]);
 
-  const priceRows = [];
+  const priceRows: QuoteLinePriceRow[] = [];
   for (const qty of quantities) {
     const supplierPrice = lookupBuyPriceFromMap(itemId, qty, priceMap, 0);
     const resolved = await resolvePrice(client, companyId, {
@@ -4475,7 +4574,29 @@ export async function resolvePurchaseToOrderPrices(
     });
   }
 
-  const insertResult = await client.from("quoteLinePrice").insert(priceRows);
+  return { rows: priceRows, error: null };
+}
+
+export async function resolvePurchaseToOrderPrices(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  quoteId: string,
+  quoteLineId: string,
+  quantities: number[],
+  userId: string
+) {
+  const { rows, error } = await buildPurchaseToOrderPriceRows(
+    client,
+    companyId,
+    quoteId,
+    quoteLineId,
+    quantities,
+    userId
+  );
+  if (error) return { error };
+  if (!rows.length) return { error: null };
+
+  const insertResult = await client.from("quoteLinePrice").insert(rows);
   if (insertResult.error) {
     logger.error("Failed to insert P2O quote line prices", {
       quoteLineId,
@@ -5009,7 +5130,7 @@ export async function updateSalesOrderStatus(
     status,
     ...rest,
     ...(["To Ship", "To Ship and Invoice"].includes(status)
-      ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
+      ? { completedDate: datetime.timestamp() }
       : {})
   };
 
@@ -5138,7 +5259,11 @@ export async function insertSalesOrder(
       salesPersonId: input.salesPersonId ?? null,
       opportunityId,
       status: input.status ?? "Draft",
-      orderDate: input.orderDate ?? new Date().toISOString().split("T")[0],
+      orderDate:
+        input.orderDate ??
+        datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString(),
       currencyCode,
       exchangeRate,
       exchangeRateUpdatedAt,
@@ -5719,7 +5844,11 @@ export async function insertSalesRFQ(
       customerId: input.customerId,
       customerContactId: input.customerContactId,
       customerReference: input.customerReference,
-      rfqDate: input.rfqDate ?? today(getLocalTimeZone()).toString(),
+      rfqDate:
+        input.rfqDate ??
+        datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString(),
       expirationDate: input.expirationDate,
       locationId: input.locationId,
       salesPersonId: input.salesPersonId,
@@ -5854,7 +5983,7 @@ export async function upsertSalesRFQ(
       .from("salesRfq")
       .update({
         ...sanitize(rfq),
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", rfq.id);
   }

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-05T13:35:34.263Z",
-  "totalTools": 1412,
+  "generated": "2026-08-07T05:48:38.990Z",
+  "totalTools": 1417,
   "modules": 15,
   "tools": [
     {
@@ -28178,6 +28178,36 @@
       }
     },
     {
+      "name": "quality_getIssueTypeByName",
+      "module": "quality",
+      "classification": "READ",
+      "description": "get issue type by name",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "name",
+        "excludeId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "excludeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
       "name": "quality_getIssueTypes",
       "module": "quality",
       "classification": "READ",
@@ -32623,7 +32653,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance schedule",
-      "paramCount": 15,
+      "paramCount": 16,
       "serviceParams": [
         "client",
         "schedule"
@@ -32659,6 +32689,9 @@
           },
           "estimatedDuration": {
             "type": "number"
+          },
+          "nextDueAt": {
+            "type": "string"
           },
           "active": {
             "type": "string"
@@ -36320,7 +36353,7 @@
       "description": "upsert customer item price override",
       "paramCount": 10,
       "serviceParams": [
-        "client",
+        "db",
         "companyId",
         "userId",
         "data"
@@ -37627,6 +37660,52 @@
       }
     },
     {
+      "name": "sales_buildMakeToOrderPriceRows",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "build make to order price rows",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "quoteId",
+        "quoteLineId",
+        "quantities",
+        "userId",
+        "itemIdOverride"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "quoteId": {
+            "type": "string"
+          },
+          "quoteLineId": {
+            "type": "string"
+          },
+          "quantities": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "itemIdOverride": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "quoteId",
+          "quoteLineId",
+          "quantities"
+        ]
+      }
+    },
+    {
       "name": "sales_calculatePricesForQuantities",
       "module": "sales",
       "classification": "WRITE",
@@ -37656,6 +37735,53 @@
             "items": {
               "type": "number"
             }
+          }
+        },
+        "required": [
+          "quoteId",
+          "quoteLineId",
+          "quantities"
+        ]
+      }
+    },
+    {
+      "name": "sales_buildPullFromInventoryPriceRows",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "build pull from inventory price rows",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "quoteId",
+        "quoteLineId",
+        "quantities",
+        "userId",
+        "itemIdOverride"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "quoteId": {
+            "type": "string"
+          },
+          "quoteLineId": {
+            "type": "string"
+          },
+          "quantities": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "itemIdOverride": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -37696,6 +37822,53 @@
             "items": {
               "type": "number"
             }
+          }
+        },
+        "required": [
+          "quoteId",
+          "quoteLineId",
+          "quantities"
+        ]
+      }
+    },
+    {
+      "name": "sales_buildPurchaseToOrderPriceRows",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "build purchase to order price rows",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "quoteId",
+        "quoteLineId",
+        "quantities",
+        "userId",
+        "itemIdOverride"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "quoteId": {
+            "type": "string"
+          },
+          "quoteLineId": {
+            "type": "string"
+          },
+          "quantities": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "itemIdOverride": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -41938,6 +42111,23 @@
       "module": "shared",
       "classification": "READ",
       "description": "get countries",
+      "paramCount": 0,
+      "serviceParams": [
+        "client"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "shared_getTimezoneNames",
+      "module": "shared",
+      "classification": "READ",
+      "description": "get timezone names",
       "paramCount": 0,
       "serviceParams": [
         "client"

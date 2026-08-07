@@ -127,6 +127,8 @@ export interface Activity {
   sourceDocumentId?: string;
   sourceDocumentReadableId?: string;
   attributes: Record<string, any>;
+  /** Present when loaded from trackedActivity (select *); orders lot states. */
+  createdAt?: string;
 }
 
 export interface ActivityInput {

@@ -43,6 +43,7 @@ import {
   LuTrash2
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
+import { useRouteData } from "~/hooks";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
@@ -74,6 +75,13 @@ export const ProductionPlanningOrderDrawer = memo(
   }: ProductionPlanningOrderDrawerProps) => {
     const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { t } = useLingui();
+    // Planned-order defaults are business dates on the plant's calendar — use
+    // the loader's location-today, not the planner's browser zone.
+    const planningData = useRouteData<{ locationToday?: string }>(
+      path.to.productionPlanning
+    );
+    const locationToday =
+      planningData?.locationToday ?? today(getLocalTimeZone()).toString();
     const { carbon } = useCarbon();
 
     // Memoize getExistingOrders callback
@@ -155,16 +163,16 @@ export const ProductionPlanningOrderDrawer = memo(
       if (row.id) {
         const newOrder: ProductionOrder = {
           quantity: row.lotSize || row.minimumOrderQuantity || 1,
-          dueDate: today(getLocalTimeZone())
+          dueDate: parseDate(locationToday)
             .add({ days: row.leadTime ?? 0 })
             .toString(),
-          startDate: today(getLocalTimeZone()).toString(),
+          startDate: locationToday,
           isASAP: false,
           periodId: periods[0].id
         };
         setOrders(row, [...orders, newOrder]);
       }
-    }, [row, orders, setOrders, periods]);
+    }, [row, orders, setOrders, periods, locationToday]);
 
     const onRemoveOrder = useCallback(
       (index: number) => {

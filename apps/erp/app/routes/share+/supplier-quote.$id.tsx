@@ -35,7 +35,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
@@ -49,6 +48,7 @@ import {
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
+import { DateTime } from "~/components";
 import { externalSupplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getSupplierQuoteByExternalLinkId,
@@ -212,7 +212,7 @@ const Header = ({
         )}
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
-            Expires {formatDate(quote.expirationDate, undefined, locale)}
+            Expires <DateTime value={quote.expirationDate} variant="date" />
           </p>
         )}
       </div>

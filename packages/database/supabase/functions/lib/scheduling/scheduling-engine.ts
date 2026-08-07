@@ -6,6 +6,7 @@ import {
   AssemblyHandler,
   buildMakeMethodDependencies,
 } from "./assembly-handler.ts";
+import { datetime, getCompanyTimeZone, getLocationTimeZone } from "../datetime.ts";
 import { calculateOperationDates } from "./date-calculator.ts";
 import {
   buildOperationDependencies,
@@ -54,6 +55,7 @@ export class SchedulingEngine {
   private affectedWorkCenters: Set<string> = new Set();
   private assemblyDepth: number = 0;
   private conflictsDetected: number = 0;
+  private timezone: string = "UTC";
 
   private assemblyHandler: AssemblyHandler;
   private workCenterSelector: WorkCenterSelector | null = null;
@@ -97,6 +99,12 @@ export class SchedulingEngine {
     }
 
     this.job = job;
+
+    // "Today" (conflict detection, fallback anchor) follows the job site's
+    // wall clock — scheduling is operational, not ledger-scoped.
+    this.timezone = job.locationId
+      ? await getLocationTimeZone(this.db, job.locationId, this.companyId)
+      : await getCompanyTimeZone(this.db, this.companyId);
 
     // Initialize work center selector with location
     if (job.locationId) {
@@ -424,6 +432,7 @@ export class SchedulingEngine {
       this.operations,
       graph,
       anchorDate,
+      datetime.today(this.timezone).toString(),
       this.direction
     );
 

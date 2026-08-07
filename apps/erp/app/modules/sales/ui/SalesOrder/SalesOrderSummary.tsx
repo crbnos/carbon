@@ -41,14 +41,9 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { CustomerAvatar, Hyperlink, MethodIcon } from "~/components";
+import { CustomerAvatar, DateTime, Hyperlink, MethodIcon } from "~/components";
 import { Confirm } from "~/components/Modals";
-import {
-  useDateFormatter,
-  usePercentFormatter,
-  usePermissions,
-  useRouteData
-} from "~/hooks";
+import { usePercentFormatter, usePermissions, useRouteData } from "~/hooks";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";
@@ -69,7 +64,6 @@ const SalesOrderSummary = ({
   const { t } = useLingui();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
-  const { formatDate } = useDateFormatter();
 
   const routeData = useRouteData<{
     salesOrder: SalesOrder;
@@ -196,7 +190,10 @@ const SalesOrderSummary = ({
               {routeData?.salesOrder?.orderDate && (
                 <span className="text-xs text-muted-foreground tracking-tight">
                   <Trans>Ordered</Trans>{" "}
-                  {formatDate(routeData?.salesOrder.orderDate)}
+                  <DateTime
+                    value={routeData?.salesOrder.orderDate}
+                    variant="date"
+                  />
                 </span>
               )}
               {routeData?.quote?.digitalQuoteAcceptedBy && (

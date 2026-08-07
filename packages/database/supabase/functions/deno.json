@@ -5,6 +5,7 @@
     "check:response": "deno check --no-lock lib/response.ts lib/response.test.ts"
   },
   "imports": {
+    "@internationalized/date": "npm:@internationalized/date@3.12.0",
     "kysely": "npm:kysely@0.26.3",
     "pg": "https://deno.land/x/postgres@v0.17.0/mod.ts",
     "@supabase/supabase-js": "npm:@supabase/supabase-js@2.33.1",

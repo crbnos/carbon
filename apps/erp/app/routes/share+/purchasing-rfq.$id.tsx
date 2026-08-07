@@ -18,13 +18,13 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { DateTime } from "~/components";
 import {
   getPurchasingRFQ,
   getPurchasingRFQLines
@@ -124,7 +124,7 @@ const Header = ({
         )}
         {rfq?.dueDate && (
           <p className="text-lg text-muted-foreground">
-            Due {formatDate(rfq.dueDate, undefined, locale)}
+            Due <DateTime value={rfq.dueDate} variant="date" />
           </p>
         )}
       </div>

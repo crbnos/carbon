@@ -110,6 +110,8 @@ import {
   DateTimePicker,
   TimePicker
 } from "./Date";
+import type { DateTimeProps } from "./DateTime";
+import { DateTime } from "./DateTime";
 import {
   Drawer,
   DrawerBody,
@@ -427,6 +429,7 @@ export {
   CreatableMultiSelect,
   DatePicker,
   DateRangePicker,
+  DateTime,
   DateTimePicker,
   Drawer,
   DrawerBody,
@@ -642,6 +645,7 @@ export type {
   ComboboxProps,
   CreatableComboboxProps,
   CreatableMultiSelectProps,
+  DateTimeProps,
   InputProps,
   JSONContent,
   Modifier,

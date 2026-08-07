@@ -6113,6 +6113,7 @@ export type Database = {
           stateProvince: string | null
           suggestionNotificationGroup: string[]
           taxId: string | null
+          timezone: string
           updatedBy: string | null
           vatNumber: string | null
           website: string | null
@@ -6150,6 +6151,7 @@ export type Database = {
           stateProvince?: string | null
           suggestionNotificationGroup?: string[]
           taxId?: string | null
+          timezone?: string
           updatedBy?: string | null
           vatNumber?: string | null
           website?: string | null
@@ -6187,6 +6189,7 @@ export type Database = {
           stateProvince?: string | null
           suggestionNotificationGroup?: string[]
           taxId?: string | null
+          timezone?: string
           updatedBy?: string | null
           vatNumber?: string | null
           website?: string | null
@@ -6744,9 +6747,7 @@ export type Database = {
           inventoryJobCompletedNotificationGroup: string[]
           inventoryShelfLife: Json
           kanbanOutput: Database["public"]["Enums"]["kanbanOutput"]
-          maintenanceAdvanceDays: number
           maintenanceDispatchNotificationGroup: string[] | null
-          maintenanceGenerateInAdvance: boolean
           materialGeneratedIds: boolean
           operationsDispatchNotificationGroup: string[] | null
           otherDispatchNotificationGroup: string[] | null
@@ -6793,9 +6794,7 @@ export type Database = {
           inventoryJobCompletedNotificationGroup?: string[]
           inventoryShelfLife?: Json
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
-          maintenanceAdvanceDays?: number
           maintenanceDispatchNotificationGroup?: string[] | null
-          maintenanceGenerateInAdvance?: boolean
           materialGeneratedIds?: boolean
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
@@ -6842,9 +6841,7 @@ export type Database = {
           inventoryJobCompletedNotificationGroup?: string[]
           inventoryShelfLife?: Json
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
-          maintenanceAdvanceDays?: number
           maintenanceDispatchNotificationGroup?: string[] | null
-          maintenanceGenerateInAdvance?: boolean
           materialGeneratedIds?: boolean
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
@@ -59810,6 +59807,7 @@ export type Database = {
           stateProvince: string | null
           suggestionNotificationGroup: string[] | null
           taxId: string | null
+          timezone: string | null
           updatedBy: string | null
           userId: string | null
           vatNumber: string | null
@@ -65799,14 +65797,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -70850,13 +70848,6 @@ export type Database = {
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
         ]
       }
       salesInvoices: {
@@ -74798,6 +74789,7 @@ export type Database = {
         Args: { operation_id: string }
         Returns: boolean
       }
+      company_today: { Args: { p_company_id: string }; Returns: string }
       complete_job_to_inventory: {
         Args: {
           p_company_id?: string
@@ -76529,6 +76521,13 @@ export type Database = {
           supplierQuotes: Json
         }[]
       }
+      get_timezone_names: {
+        Args: never
+        Returns: {
+          name: string
+          utcOffset: string
+        }[]
+      }
       get_tool_details: {
         Args: { item_id: string }
         Returns: {
@@ -76767,6 +76766,7 @@ export type Database = {
         Args: { operation_id: string }
         Returns: boolean
       }
+      is_valid_timezone: { Args: { tz: string }; Returns: boolean }
       items_search: {
         Args: {
           match_count: number
@@ -76793,6 +76793,10 @@ export type Database = {
         }[]
       }
       jsonb_to_text_array: { Args: { "": Json }; Returns: string[] }
+      location_today: {
+        Args: { p_company_id: string; p_location_id: string }
+        Returns: string
+      }
       matchIntercompanyTransactions: {
         Args: { p_company_group_id: string }
         Returns: {

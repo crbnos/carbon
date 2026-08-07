@@ -14,6 +14,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   ItemThumbnail,
@@ -22,7 +23,7 @@ import {
   Table
 } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
@@ -43,7 +44,6 @@ const SupplierQuotesTable = memo(
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
-    const { formatDate } = useDateFormatter();
 
     const [selectedSupplierQuote, setSelectedSupplierQuote] =
       useState<SupplierQuote | null>(null);
@@ -144,7 +144,9 @@ const SupplierQuotesTable = memo(
         {
           accessorKey: "quotedDate",
           header: t`Quoted Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -152,7 +154,9 @@ const SupplierQuotesTable = memo(
         {
           accessorKey: "expirationDate",
           header: t`Expiration Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -178,7 +182,9 @@ const SupplierQuotesTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -203,7 +209,9 @@ const SupplierQuotesTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -211,7 +219,7 @@ const SupplierQuotesTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [suppliers, people, customColumns, t, formatDate]);
+    }, [suppliers, people, customColumns, t]);
 
     const renderContextMenu = useMemo(() => {
       return (row: SupplierQuote) => (

@@ -7,6 +7,7 @@ import CadModel from "./CadModel";
 import Contact from "./Contact";
 import CustomerAvatar from "./CustomerAvatar";
 import { DateSelect } from "./DateSelect";
+import { DateTime } from "./DateTime";
 import { DeferredFiles } from "./DeferredFiles";
 import { DirectionAwareTabs } from "./DirectionAwareTabs";
 import DocumentHeader from "./DocumentHeader";
@@ -54,6 +55,7 @@ export {
   Contact,
   CustomerAvatar,
   DateSelect,
+  DateTime,
   DeferredFiles,
   DirectionAwareTabs,
   DocumentHeader,
@@ -90,5 +92,4 @@ export {
   exportOnlyColumn,
   useOptimisticAssignment,
   VersionMenu
-
 };

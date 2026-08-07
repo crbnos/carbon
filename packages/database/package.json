@@ -44,6 +44,7 @@
   "sideEffects": false,
   "version": "0.0.0",
   "dependencies": {
+    "@internationalized/date": "catalog:",
     "@supabase/postgrest-js": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",

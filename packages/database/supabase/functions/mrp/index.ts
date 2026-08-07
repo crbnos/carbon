@@ -1,12 +1,11 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import {
-  getLocalTimeZone,
-  today as getToday,
   parseDate,
   startOfWeek,
   type CalendarDate,
-} from "npm:@internationalized/date";
+} from "@internationalized/date";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import {
   explodeBom,
   splitKey,
@@ -81,7 +80,7 @@ serve(async (req: Request) => {
 
   console.log({ function: "mrp", type, companyId, userId });
 
-  const today = getToday(getLocalTimeZone());
+  const today = datetime.today(await getCompanyTimeZone(db, companyId));
   const ranges = getStartAndEndDates(today, "Week");
   const periods = await getOrCreateDemandPeriods(db, ranges, "Week");
 

@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -8,6 +9,7 @@ import {
   InventoryValuationWorkbench
 } from "~/modules/inventory";
 import { getCompanySettings } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -24,7 +26,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const asOfDate =
-    url.searchParams.get("asOfDate") ?? new Date().toISOString().slice(0, 10);
+    url.searchParams.get("asOfDate") ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
   const groupBy: "location" | "item" =
     url.searchParams.get("groupBy") === "item" ? "item" : "location";
   const locationId = url.searchParams.get("locationId") || null;

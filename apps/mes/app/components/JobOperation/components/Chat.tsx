@@ -12,11 +12,11 @@ import {
   useRealtimeChannel
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { LuArrowUp } from "react-icons/lu";
+import { DateTime } from "~/components";
 import { useUser } from "~/hooks";
 import type { OperationWithDetails } from "~/services/types";
 import { usePeople } from "~/stores";
@@ -37,7 +37,6 @@ export function OperationChat({
   operation: OperationWithDetails;
 }) {
   const { t } = useLingui();
-  const { locale } = useLocale();
   const user = useUser();
 
   const [employees] = usePeople();
@@ -193,10 +192,7 @@ export function OperationChat({
                         <p className="text-sm">{m.note}</p>
 
                         <span className="text-xs opacity-70">
-                          {new Date(m.createdAt).toLocaleTimeString(locale, {
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
+                          <DateTime value={m.createdAt} variant="time" />
                         </span>
                       </div>
                     </div>

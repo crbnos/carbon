@@ -11,6 +11,7 @@ import {
   LuPackageX,
   LuPause,
   LuRotateCw,
+  LuShoppingCart,
   LuTruck,
   LuWrench
 } from "react-icons/lu";
@@ -64,6 +65,7 @@ export type ActivityKind =
   | "Manufacturing"
   | "Assembly"
   | "Shipment"
+  | "Pick"
   | "Transfer"
   | "Rework"
   | "Inspection"
@@ -84,6 +86,8 @@ export const ACTIVITY_KIND_META: Record<ActivityKind, ActivityKindMeta> = {
   },
   Assembly: { label: "Assembly", color: "hsl(265 70% 65%)", icon: LuWrench },
   Shipment: { label: "Shipment", color: "hsl(20 90% 55%)", icon: LuTruck },
+  // Same blue as Transfer: both are moves, the icon carries the distinction.
+  Pick: { label: "Pick", color: "hsl(200 80% 55%)", icon: LuShoppingCart },
   Transfer: { label: "Transfer", color: "hsl(200 80% 55%)", icon: LuForklift },
   Rework: { label: "Rework", color: "hsl(45 95% 55%)", icon: LuRotateCw },
   Inspection: {
@@ -99,9 +103,10 @@ export function activityKindFor(type: string | undefined | null): ActivityKind {
   const t = type.toLowerCase();
   if (t.includes("receipt") || t.includes("receive")) return "Receipt";
   if (t.includes("ship")) return "Shipment";
-  // A pick is a warehouse→lineside transfer; render it with the Transfer kind
-  // (the node label still shows the raw "Pick" type).
-  if (t.includes("transfer") || t.includes("pick")) return "Transfer";
+  // Its own kind so picks and transfers don't render identically, but still a
+  // movement — see isMovementActivity.
+  if (t.includes("pick")) return "Pick";
+  if (t.includes("transfer")) return "Transfer";
   if (t.includes("rework")) return "Rework";
   if (t.includes("inspect") || t.includes("qc") || t.includes("quality"))
     return "Inspection";
@@ -115,5 +120,6 @@ export function activityKindFor(type: string | undefined | null): ActivityKind {
 // Such activities record only an input, so they read as a consumption unless
 // callers distinguish them. Shipments don't qualify: those really do consume.
 export function isMovementActivity(type: string | null | undefined): boolean {
-  return activityKindFor(type) === "Transfer";
+  const kind = activityKindFor(type);
+  return kind === "Transfer" || kind === "Pick";
 }

@@ -48,6 +48,10 @@ msgstr "(bu müşteri için hariç tutulmuş)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {Bu parça 1 açık değişiklik bildirisinde yer alıyor} other {Bu parça # açık değişiklik bildirisinde yer alıyor}}"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} önce"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} müşteri bakiye ile"
@@ -2839,9 +2843,8 @@ msgstr "Giriş Saati"
 msgid "Clock Out"
 msgstr "Çıkış Saati"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Saat giriş yapıldı: {0}"
+msgid "Clocked in since <0/>"
+msgstr "<0/> tarihinden beri saatlenmiş"
 
 msgid "Close"
 msgstr "Kapat"
@@ -3049,9 +3052,6 @@ msgstr "Varsayılan öz sermaye ve birikmiş karlar hesaplarını yapılandırı
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "Kalite panosu için varsayılan ayarları yapılandırın."
-
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Önleyici bakım sevklerinin bakım programlarından otomatik olarak nasıl oluşturulacağını yapılandırın."
 
 msgid "Configure Item"
 msgstr "Öğe Yapılandır"
@@ -4190,9 +4190,6 @@ msgstr "Vade Tarihi"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Bir parça sipariş etmekten elde edilebilir olana kadar geçen günler; planlama talebi bu kadar geriye kaydırır."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Gönderileri oluşturmak için kaç gün önceden"
 
 msgid "Days Off"
 msgstr "İzin Günleri"
@@ -5928,8 +5925,9 @@ msgstr "Son Kullanma Tarihi (bu satırdaki tüm seri numaraları için geçerlid
 msgid "Expired"
 msgstr "Süresi Dolmuş"
 
-msgid "Expired {date}"
-msgstr "Süresi Dolmuş {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Süresi dolmuş {0}"
 
 msgid "Expired batch"
 msgstr "Süresi dolmuş parti"
@@ -5940,8 +5938,8 @@ msgstr "Süresi Dolmuş Lotlar"
 msgid "Expires"
 msgstr "Süresi Doluyor"
 
-msgid "Expires {date}"
-msgstr "Son kullanma tarihi {date}'de"
+msgid "Expires <0/>"
+msgstr "Süresi doluyor <0/>"
 
 msgid "Expires At (optional)"
 msgstr "Son Kullanma Tarihi (isteğe bağlı)"
@@ -6578,6 +6576,9 @@ msgstr "{0} tarihinden itibaren"
 msgid "From / To"
 msgstr "Başlangıç / Bitiş"
 
+msgid "From <0/>"
+msgstr "<0/>'den"
+
 msgid "From customer"
 msgstr "Müşteriden"
 
@@ -7187,6 +7188,10 @@ msgstr "İçe Aktarma Sonuçları"
 
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
+
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "{0} içinde"
 
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "Onshape'te bu OAuth uygulamasının izinlerini düzenleyerek \"Application can write to your documents\" iznini ekleyin, ardından yeniden bağlanın."
@@ -7931,12 +7936,8 @@ msgstr "Son Çeyrek"
 msgid "Last Run"
 msgstr ""
 
-#. placeholder {0}: formatDateTime(lastSyncedAt)
-msgid "Last synced: {0}"
-msgstr "Son senkronize edildi: {0}"
-
-msgid "Last updated: {formattedDate}"
-msgstr "Son güncellendi: {formattedDate}"
+msgid "Last synced: <0/>"
+msgstr "Son senkronizasyon: <0/>"
 
 msgid "Latest operation end"
 msgstr ""
@@ -8308,9 +8309,6 @@ msgstr "Bakım Gideri (varsayılan)"
 
 msgid "Maintenance Schedules"
 msgstr "Bakım Programları"
-
-msgid "Maintenance Scheduling"
-msgstr "Bakım Planlaması"
 
 msgid "Maintenance Type"
 msgstr "Bakım Türü"
@@ -9188,6 +9186,9 @@ msgstr "Sonraki Tarih"
 msgid "Next Due"
 msgstr "Sonraki Teslim Tarihi"
 
+msgid "Next Due Date"
+msgstr "Sonraki Vade Tarihi"
+
 msgid "Next page"
 msgstr "Sonraki sayfa"
 
@@ -9655,7 +9656,7 @@ msgstr ""
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "Bu konumdaki hiçbir şey \"{0}\" ile eşleşmiyor."
+msgstr "Bu konumda \"{0}\" ile eşleşen hiçbir şey yok."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
@@ -13264,6 +13265,9 @@ msgstr "Bu sayfada kal"
 msgid "Step"
 msgstr "Adım"
 
+msgid "Step added"
+msgstr "Adım eklendi"
+
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
@@ -16412,9 +16416,8 @@ msgstr "Kullanıcı arayüzü stilini tema ayarları aracılığıyla istediğin
 msgid "You can only see this key once. Store it safely."
 msgstr "Bu anahtarı yalnızca bir kez görebilirsiniz. Güvenli bir yerde saklayın."
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Saat {0} giriş yaptınız. Aşağıdan çıkış saatinizi düzenleyebilir veya hala çalıştığınızı onaylayabilirsiniz."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Saatinizi <0/> tarihinde kaydettiniz. Aşağıda çıkış saatinizi düzenleyebilir veya hala çalışmakta olduğunuzu onaylayabilirsiniz."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

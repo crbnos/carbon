@@ -113,6 +113,7 @@
     "dev:app": "react-router dev",
     "lint": "biome lint --write ",
     "start": "NODE_ENV=production react-router-serve ./build/server/index.js",
+    "test": "vitest run",
     "typecheck": "tsgo --noEmit",
     "typegen": "react-router typegen"
   },
