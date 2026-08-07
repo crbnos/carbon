@@ -18,7 +18,7 @@
 - [x] Task 11: ERP UI — Scrap adjustment type + Scrapped filter + Unscrap action
 - [x] Task 12: Sweep app-side predicate mirrors + serial-navigation helpers
 - [x] Task 13: Update rules docs (traceability, inventory, MES) 
-- [ ] Task 14: Browser verification via /test
+- [~] Task 14: Browser verification — ERP surfaces render clean (tracked-entities loads, no errors); full behavioral e2e (serial scrap→spawn, MTO replacement, ERP scrap/unscrap with accounting fixtures) PENDING: needs seeded fixtures + MES here uses magic-link auth (no DEV_BYPASS), blocking MES browser drive
 
 ## Dependencies
 - Task 2 needs Task 1 (enum values must be committed before function bodies reference `'Scrapped'`)
