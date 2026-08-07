@@ -10,8 +10,11 @@ export const webhookFunction = inngest.createFunction(
     id: "event-handler-webhook",
     retries: RETRIES,
     idempotency: "event.data.msgId",
+    // One in-flight delivery per record, so a rapid update burst can't reorder
+    // on the wire. limit must be >= 1 -- 0 is no capacity, not unlimited, and
+    // parks every run in QUEUED forever.
     concurrency: {
-      limit: 0,
+      limit: 1,
       key: "event.data.data.table + '-' + event.data.data.recordId"
     }
   },
