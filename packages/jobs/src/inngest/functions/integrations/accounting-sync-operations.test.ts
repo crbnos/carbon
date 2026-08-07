@@ -7,6 +7,7 @@ import {
   getDailyConsolidationBatchKey,
   getJournalPostingDecision,
   getNettedPositiveCents,
+  getPaymentPushDecision,
   getPositiveCents,
   getPullCursorDecision,
   getPullIdempotencyScope,
@@ -159,6 +160,86 @@ describe("getJournalPostingDecision", () => {
       journalEvent({ old: { id: "je_1" } })
     );
     expect(missingOld.action).toBe("skip");
+  });
+});
+
+// ── Payment push transition detection (Phase G) ─────────────────────────────
+function paymentEvent(
+  overrides: Partial<JournalPostingEventInput>
+): JournalPostingEventInput {
+  return {
+    operation: "UPDATE",
+    recordId: "pay_1",
+    new: { id: "pay_1", status: "Posted" },
+    old: { id: "pay_1", status: "Draft" },
+    ...overrides
+  };
+}
+
+describe("getPaymentPushDecision", () => {
+  it("enqueues the payment row id when status transitions Draft → Posted", () => {
+    expect(getPaymentPushDecision(paymentEvent({}))).toEqual({
+      action: "enqueue",
+      entityId: "pay_1"
+    });
+  });
+
+  it("enqueues when status transitions to Voided (echo the void)", () => {
+    const decision = getPaymentPushDecision(
+      paymentEvent({
+        new: { id: "pay_1", status: "Voided" },
+        old: { id: "pay_1", status: "Posted" }
+      })
+    );
+    expect(decision).toEqual({ action: "enqueue", entityId: "pay_1" });
+  });
+
+  it("enqueues a payment INSERTed born Posted", () => {
+    const decision = getPaymentPushDecision(
+      paymentEvent({ operation: "INSERT", old: null })
+    );
+    expect(decision).toEqual({ action: "enqueue", entityId: "pay_1" });
+  });
+
+  it("skips an INSERT of a Draft payment (the normal creation path)", () => {
+    const decision = getPaymentPushDecision(
+      paymentEvent({
+        operation: "INSERT",
+        new: { id: "pay_1", status: "Draft" },
+        old: null
+      })
+    );
+    expect(decision.action).toBe("skip");
+  });
+
+  it("skips a same-status UPDATE (an unrelated column touched on a Posted payment)", () => {
+    const decision = getPaymentPushDecision(
+      paymentEvent({
+        new: { id: "pay_1", status: "Posted", reference: "edited" },
+        old: { id: "pay_1", status: "Posted", reference: "original" }
+      })
+    );
+    expect(decision.action).toBe("skip");
+    if (decision.action === "skip") {
+      expect(decision.reason).toContain("did not change");
+    }
+  });
+
+  it("skips a transition to a non-push status", () => {
+    const decision = getPaymentPushDecision(
+      paymentEvent({
+        new: { id: "pay_1", status: "Draft" },
+        old: { id: "pay_1", status: "Posted" }
+      })
+    );
+    expect(decision.action).toBe("skip");
+  });
+
+  it("skips DELETEs", () => {
+    const decision = getPaymentPushDecision(
+      paymentEvent({ operation: "DELETE", new: null })
+    );
+    expect(decision.action).toBe("skip");
   });
 });
 

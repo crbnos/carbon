@@ -164,6 +164,12 @@ msgstr "{missingCount}件のジャーナルが見つからず、{mismatchCount}�
 msgid "{name} deleted"
 msgstr "{name}が削除されました"
 
+msgid "{providerName} data overwrites Carbon data"
+msgstr ""
+
+msgid "{providerName}'s capabilities decide these — they can't be changed here."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
 
@@ -2254,6 +2260,9 @@ msgstr "Carbonクライアントが見つかりません"
 
 msgid "Carbon column"
 msgstr "Carbonカラム"
+
+msgid "Carbon data overwrites {providerName} data"
+msgstr ""
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbonがあなたの会社の運営方法に合わせて設定され、データが読み込まれ、チームがそれを自信を持って使用できるようになっています。その状態になれば、本番環境への移行準備が整っています。"
@@ -5984,6 +5993,9 @@ msgstr "固定資産"
 
 msgid "Fixed Assets"
 msgstr "固定資産"
+
+msgid "Fixed by {providerName}"
+msgstr ""
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "利益と損失"
@@ -12258,6 +12270,12 @@ msgstr "ソースアイテム"
 msgid "Source Method"
 msgstr "ソース方法"
 
+msgid "Source of truth"
+msgstr ""
+
+msgid "Source of Truth"
+msgstr ""
+
 msgid "Source types"
 msgstr "ソースタイプ"
 
@@ -15165,6 +15183,9 @@ msgstr "このアイテムの各検査フローを駆動するドキュメント
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "どの製造イベントが保存期間時計を開始するか — たとえば、塗りつぶし、シール、または最終QC。"
+
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "誰が承認できるか"

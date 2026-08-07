@@ -164,6 +164,12 @@ msgstr "{missingCount} brakujących dzienników i {mismatchCount} miesięcy z ni
 msgid "{name} deleted"
 msgstr "{name} usunięty"
 
+msgid "{providerName} data overwrites Carbon data"
+msgstr ""
+
+msgid "{providerName}'s capabilities decide these — they can't be changed here."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
 
@@ -2254,6 +2260,9 @@ msgstr "Klient Carbon nie znaleziony"
 
 msgid "Carbon column"
 msgstr "Kolumna Carbon"
+
+msgid "Carbon data overwrites {providerName} data"
+msgstr ""
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon jest skonfigurowany w taki sposób, w jaki działa Twoja firma, Twoje dane są załadowane, a Twój zespół pewnie go używa. Gdy tak się stanie, będziesz gotowy do uruchomienia."
@@ -5984,6 +5993,9 @@ msgstr "Środek trwały"
 
 msgid "Fixed Assets"
 msgstr "Środki trwałe"
+
+msgid "Fixed by {providerName}"
+msgstr ""
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Zyski i Straty"
@@ -12258,6 +12270,12 @@ msgstr "Element źródłowy"
 msgid "Source Method"
 msgstr "Metoda źródłowa"
 
+msgid "Source of truth"
+msgstr ""
+
+msgid "Source of Truth"
+msgstr ""
+
 msgid "Source types"
 msgstr "Typy źródła"
 
@@ -15165,6 +15183,9 @@ msgstr "Który dokument kieruje każdym przepływem kontroli dla tego produktu."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Które zdarzenie produkcyjne uruchamia zegar czasu przechowywania — na przykład napełnianie, uszczelnianie lub ostateczną kontrolę jakości."
+
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "Kto może zatwierdzić"

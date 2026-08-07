@@ -287,8 +287,9 @@ type QboProviderConfig = ProviderConfig<{
  * Entities QBO PULLS as a pull-only, always-enabled capability: `payment` (QBO
  * Payment/BillPayment settlements flowing back onto Carbon sales/purchase
  * invoices). Forced on so the inbound webhook + CDC sweep work as soon as the
- * integration is connected — there is no per-company toggle for it yet
- * (mirrors Rillet's RILLET_PULL_ONLY_ENTITIES).
+ * integration is connected — there is no per-company toggle for it yet. QBO has
+ * no outbound payment push yet, so this stays pull-only (unlike Rillet, which is
+ * two-way as of Phase G).
  */
 export const QBO_PULL_ONLY_ENTITIES = [
   "payment"

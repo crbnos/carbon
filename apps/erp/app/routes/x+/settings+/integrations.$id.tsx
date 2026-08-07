@@ -10,6 +10,7 @@ import {
   getAccountingIntegration,
   getAccountMappings,
   getDimensionValueMappings,
+  getEntitySyncView,
   getProviderIntegration,
   getSyncOperations,
   getUnmappedPostingAccounts,
@@ -74,6 +75,7 @@ import {
   dimensionSlotsUpdateValidator,
   dimensionValueMappingBulkUpsertValidator,
   dimensionValueMappingUpsertValidator,
+  entitySyncSettingsValidator,
   postingSyncSettingsValidator
 } from "~/modules/settings/settings.models";
 import {
@@ -84,16 +86,13 @@ import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMappin
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
+import { SourceOfTruth } from "~/modules/settings/ui/Integrations/SourceOfTruth";
 import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "integrations-id");
 
-/**
- * Transforms flat owner settings (customerOwner, vendorOwner, etc.) into
- * the nested syncConfig.entities structure expected by the accounting sync.
- */
 /**
  * Rillet authenticates with an API key entered on the standard install
  * form. The engine reads credentials exclusively from
@@ -166,89 +165,6 @@ function unfoldRilletCredentials(
       typeof providerMetadata.webhookToken === "string"
         ? providerMetadata.webhookToken
         : ""
-  };
-}
-
-function buildIntegrationMetadata(
-  existingMetadata: Record<string, unknown>,
-  formData: Record<string, unknown>
-): Record<string, unknown> {
-  // Extract owner settings from form data
-  const ownerSettings = {
-    customerOwner: formData.customerOwner as string | undefined,
-    vendorOwner: formData.vendorOwner as string | undefined,
-    itemOwner: formData.itemOwner as string | undefined,
-    invoiceOwner: formData.invoiceOwner as string | undefined,
-    billOwner: formData.billOwner as string | undefined
-  };
-
-  // Check if any owner settings are present
-  const hasOwnerSettings = Object.values(ownerSettings).some(
-    (v) => v !== undefined
-  );
-
-  if (!hasOwnerSettings) {
-    // No owner settings, just merge as-is
-    return { ...existingMetadata, ...formData };
-  }
-
-  // Build syncConfig.entities from owner settings
-  const existingSyncConfig =
-    (existingMetadata.syncConfig as Record<string, unknown>) ?? {};
-  const existingEntities =
-    (existingSyncConfig.entities as Record<string, unknown>) ?? {};
-
-  const syncConfig = {
-    ...existingSyncConfig,
-    entities: {
-      ...existingEntities,
-      ...(ownerSettings.customerOwner && {
-        customer: {
-          ...(existingEntities.customer as Record<string, unknown>),
-          owner: ownerSettings.customerOwner
-        }
-      }),
-      ...(ownerSettings.vendorOwner && {
-        vendor: {
-          ...(existingEntities.vendor as Record<string, unknown>),
-          owner: ownerSettings.vendorOwner
-        }
-      }),
-      ...(ownerSettings.itemOwner && {
-        item: {
-          ...(existingEntities.item as Record<string, unknown>),
-          owner: ownerSettings.itemOwner
-        }
-      }),
-      ...(ownerSettings.invoiceOwner && {
-        invoice: {
-          ...(existingEntities.invoice as Record<string, unknown>),
-          owner: ownerSettings.invoiceOwner
-        }
-      }),
-      ...(ownerSettings.billOwner && {
-        bill: {
-          ...(existingEntities.bill as Record<string, unknown>),
-          owner: ownerSettings.billOwner
-        }
-      })
-    }
-  };
-
-  // Remove owner settings from formData since they're now in syncConfig
-  const {
-    customerOwner: _customerOwner,
-    vendorOwner: _vendorOwner,
-    itemOwner: _itemOwner,
-    invoiceOwner: _invoiceOwner,
-    billOwner: _billOwner,
-    ...restFormData
-  } = formData;
-
-  return {
-    ...existingMetadata,
-    ...restFormData,
-    syncConfig
   };
 }
 
@@ -594,6 +510,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       dynamicOptions: {},
       syncActivity: null,
       accountMapping: null,
+      entitySync: null,
       postingSync: null,
       dimensionSync: null
     };
@@ -664,12 +581,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  // Extract owner settings from syncConfig back into flat fields for the form
   const metadata = (integrationData.data.metadata ?? {}) as Record<
     string,
     unknown
   >;
-  let flattenedMetadata = flattenSyncConfigToOwnerSettings(metadata);
+  let flattenedMetadata: Record<string, unknown> = metadata;
   // Rillet keeps its API credentials under metadata.credentials; unfold
   // them into the flat form fields so the drawer prefills instead of
   // showing blanks (which a re-save would then persist over the real
@@ -678,8 +594,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     flattenedMetadata = unfoldRilletCredentials(flattenedMetadata);
   }
 
-  // Fetch dynamic options for Xero integration (chart of accounts)
-  let dynamicOptions: Record<
+  // Server-fetched options for "options"-type settings fields. No current
+  // integration config populates this, but IntegrationForm still accepts it
+  // generically for a future provider-fetched choice list.
+  const dynamicOptions: Record<
     string,
     Array<{ value: string; label: string; description?: string }>
   > = {};
@@ -706,19 +624,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
       const accounts = await provider.listChartOfAccounts();
 
-      const accountOptions = accounts.map((account) => ({
-        value: account.Code ?? account.AccountID,
-        label: account.Code
-          ? `${account.Code} - ${account.Name}`
-          : account.Name,
-        description: account.Type
-      }));
-
-      dynamicOptions = {
-        defaultSalesAccountCode: accountOptions,
-        defaultPurchaseAccountCode: accountOptions
-      };
-
       chartAccounts = accounts.flatMap((account) =>
         account.Code
           ? [{ id: account.AccountID, code: account.Code, name: account.Name }]
@@ -728,7 +633,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       logger.error("Failed to fetch Xero accounts for settings", {
         error: error
       });
-      // Continue without dynamic options - form will show empty selects
+      // Continue without chart accounts — the Account Mapping tab renders
+      // with Carbon accounts only
     }
   }
 
@@ -793,6 +699,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? await getAccountMappingTabData(companyId, integrationId, chartAccounts)
     : null;
 
+  // Source of Truth tab data — per-entity owner view, capability-driven via
+  // the provider's sync-config force function (replaces Xero's old bespoke
+  // customerOwner/vendorOwner/itemOwner/invoiceOwner/billOwner settings).
+  const entitySync = isAccountingInstalled
+    ? {
+        providerName: integration.name,
+        entities: getEntitySyncView(integrationId, metadata)
+      }
+    : null;
+
   const resolvedPostingSettings = isAccountingInstalled
     ? resolvePostingSyncSettings(metadata)
     : null;
@@ -839,34 +755,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dynamicOptions,
     syncActivity,
     accountMapping,
+    entitySync,
     postingSync,
     dimensionSync
-  };
-}
-
-/**
- * Extracts owner settings from nested syncConfig.entities back into
- * flat fields (customerOwner, vendorOwner, etc.) for the form.
- */
-function flattenSyncConfigToOwnerSettings(
-  metadata: Record<string, unknown>
-): Record<string, unknown> {
-  const syncConfig = metadata.syncConfig as Record<string, unknown> | undefined;
-  const entities = syncConfig?.entities as
-    | Record<string, Record<string, unknown>>
-    | undefined;
-
-  if (!entities) {
-    return metadata;
-  }
-
-  return {
-    ...metadata,
-    customerOwner: entities.customer?.owner,
-    vendorOwner: entities.vendor?.owner,
-    itemOwner: entities.item?.owner,
-    invoiceOwner: entities.invoice?.owner,
-    billOwner: entities.bill?.owner
   };
 }
 
@@ -1056,6 +947,98 @@ export async function action({ request, params }: ActionFunctionArgs) {
         ? "account mapping"
         : `${mappings.length} account mappings`;
     return data({}, await flash(request, success(`Saved ${mappingNoun}`)));
+  }
+
+  // Persist per-entity Source of Truth owner overrides (Source of Truth
+  // tab): read-modify-write syncConfig.entities.<entity>.owner for the
+  // entities the provider's capability-forcing (getEntitySyncView) marks
+  // configurable. Any submitted entry for a provider-forced entity is
+  // ignored — the UI never renders a control for one, but the server
+  // re-checks so a forced entity's owner can never be overridden. Stays on
+  // the page so the tab revalidates in place.
+  if (formData.get("intent") === "update-entity-sync") {
+    const validation = await validator(entitySyncSettingsValidator).validate(
+      formData
+    );
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const { entityOwners } = validation.data;
+
+    const existing = await getIntegration(client, integrationId, companyId);
+    if (existing.error || !existing.data) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(existing.error, "Failed to load integration settings")
+        )
+      );
+    }
+
+    const existingMetadata =
+      (existing.data.metadata as Record<string, unknown>) ?? {};
+
+    const configurableEntityTypes = new Set<string>(
+      getEntitySyncView(integrationId, existingMetadata)
+        .filter((entry) => entry.configurable)
+        .map((entry) => entry.entityType)
+    );
+
+    const existingSyncConfig =
+      (existingMetadata.syncConfig as Record<string, unknown> | undefined) ??
+      {};
+    const existingEntities =
+      (existingSyncConfig.entities as Record<string, unknown> | undefined) ??
+      {};
+
+    const updatedEntities: Record<string, unknown> = { ...existingEntities };
+    for (const entry of entityOwners) {
+      const separator = entry.lastIndexOf("|");
+      const entityType = entry.slice(0, separator);
+      const owner = entry.slice(separator + 1);
+      if (!configurableEntityTypes.has(entityType)) continue;
+
+      updatedEntities[entityType] = {
+        ...(existingEntities[entityType] as Record<string, unknown>),
+        owner
+      };
+    }
+
+    const metadata = {
+      ...existingMetadata,
+      syncConfig: {
+        ...existingSyncConfig,
+        entities: updatedEntities
+      }
+    };
+
+    const update = await upsertCompanyIntegration(client, {
+      id: integrationId,
+      active: existing.data.active ?? true,
+      metadata: metadata as Json,
+      companyId,
+      updatedBy: userId
+    });
+
+    if (update.error) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(update.error, "Failed to update source of truth settings")
+        )
+      );
+    }
+
+    await invalidateIntegrationHealthCache(integrationId, companyId);
+
+    return data(
+      {},
+      await flash(request, success("Updated source of truth settings"))
+    );
   }
 
   // Save the dimension-slot configuration (Dimensions tab): validate the
@@ -1449,8 +1432,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const existingMetadata =
     (existing.data?.metadata as Record<string, unknown>) ?? {};
 
-  // Build metadata, transforming owner settings into syncConfig structure
-  let metadata = buildIntegrationMetadata(existingMetadata, d);
+  let metadata: Record<string, unknown> = { ...existingMetadata, ...d };
   if (integrationId === "rillet") {
     metadata = foldRilletCredentials(metadata);
   }
@@ -1579,6 +1561,7 @@ export default function IntegrationRoute() {
     dynamicOptions,
     syncActivity,
     accountMapping,
+    entitySync,
     postingSync,
     dimensionSync
   } = useLoaderData<typeof loader>();
@@ -1586,10 +1569,23 @@ export default function IntegrationRoute() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Accounting-category integrations get Account Mapping, Posting and
-  // Sync Activity tabs next to the Settings form (deep-linkable via
-  // ?tab=<value>).
+  // Accounting-category integrations get Source of Truth, Account Mapping,
+  // Posting and Sync Activity tabs next to the Settings form (deep-linkable
+  // via ?tab=<value>).
   const tabs: IntegrationFormTab[] = [];
+  if (entitySync) {
+    tabs.push({
+      value: "source-of-truth",
+      label: <Trans>Source of Truth</Trans>,
+      content: (tabBar) => (
+        <SourceOfTruth
+          tabs={tabBar}
+          providerName={entitySync.providerName}
+          entities={entitySync.entities}
+        />
+      )
+    });
+  }
   if (accountMapping) {
     tabs.push({
       value: "account-mapping",

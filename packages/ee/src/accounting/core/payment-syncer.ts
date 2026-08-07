@@ -1,15 +1,17 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { sql } from "kysely";
+import { createMappingService } from "./external-mapping";
 import {
   type NormalizedPayment,
   upsertLocalPaymentDraft
 } from "./payment-application";
-import { isPaymentSyncbackEnabled } from "./posting";
+import { isPaymentSyncbackEnabled, JournalEntrySyncError } from "./posting";
 import {
   BaseEntitySyncer,
   type BatchSyncResult,
   type SyncResult
 } from "./types";
+import { withTriggersDisabled } from "./utils";
 
 /**
  * PaymentSyncerBase — the family-agnostic, PULL-ONLY base for every payment
@@ -318,9 +320,319 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
   }
 
   // =================================================================
-  // Push workflow — not supported (pull-only)
+  // Push workflow (Phase G — outbound payment write-back)
   // =================================================================
 
+  /**
+   * Whether this provider can write a Carbon-born payment back out as a
+   * provider payment document. Off by default (QBO/Xero keep rejecting push);
+   * RilletPaymentSyncer sets it true. When false, `pushToAccounting` returns
+   * the pull-only error and `pushRemotePayment` is never reached.
+   */
+  protected supportsPaymentPush = false;
+
+  /**
+   * Whether this provider can echo a void of a Carbon-pushed payment back out.
+   * Off in v1 for every provider (Rillet has no payment-void endpoint) — a
+   * voided Carbon-originated payment lands a Skipped op telling the operator to
+   * void it in the provider by hand.
+   */
+  protected supportsPaymentVoidPush = false;
+
+  /**
+   * Provider adapter: create ONE provider payment document for the settled
+   * Carbon document and return its remote id plus the composite entity id the
+   * `payment` mapping is stored under (`<invoiceRemoteId>:<paymentRemoteId>` for
+   * AR, `bill:<billRemoteId>:<paymentRemoteId>` for AP). Resolves the settled
+   * document's remote id and the bank account's provider code itself, throwing a
+   * `JournalEntrySyncError` (warning) when either mapping is missing. Only
+   * reached when `supportsPaymentPush` is true.
+   */
+  protected pushRemotePayment(
+    _context: PaymentPushContext
+  ): Promise<{ remoteId: string; compositeEntityId: string }> {
+    throw new Error(PAYMENT_PULL_ONLY_MESSAGE);
+  }
+
+  async pushToAccounting(entityId: string): Promise<SyncResult> {
+    if (!this.supportsPaymentPush) {
+      return {
+        status: "error",
+        action: "none",
+        localId: entityId,
+        error: PAYMENT_PULL_ONLY_MESSAGE
+      };
+    }
+
+    if (!this.config.enabled) {
+      return {
+        status: "skipped",
+        action: "none",
+        localId: entityId,
+        error: "Sync disabled in config"
+      };
+    }
+
+    try {
+      const payment = await this.loadLocalPaymentForPush(entityId);
+      if (!payment) {
+        return {
+          status: "error",
+          action: "none",
+          localId: entityId,
+          error: `Payment ${entityId} not found in Carbon`
+        };
+      }
+
+      // The event trigger only enqueues on transitions to Posted/Voided, but
+      // guard anyway — a Draft payment has no settled GL to represent.
+      if (payment.status !== "Posted" && payment.status !== "Voided") {
+        return skipped(
+          entityId,
+          `Payment is ${payment.status} — only Posted or Voided payments push`
+        );
+      }
+
+      const family: "ar" | "ap" =
+        payment.paymentType === "Receipt" ? "ar" : "ap";
+
+      // Same gate as inbound pull: outbound push only runs while the family is
+      // in documents mode (the provider owns the settled document, so a payment
+      // document is what closes it). In journals/none mode Carbon's payment is
+      // represented by the v3 journal path, not a document.
+      if (!(await this.isPaymentSyncbackEnabled(family))) {
+        return skipped(
+          entityId,
+          `payment push is disabled: the ${family} family is not in documents mode`
+        );
+      }
+
+      // Origin routing via the payment mapping. A pulled payment links its
+      // mapping in the pull upsert BEFORE post-payment flips it to Posted, so
+      // its Posted event finds a mapping here and skips — the loop guard.
+      const mapping = await this.mappingService.getByEntity(
+        "payment",
+        entityId,
+        this.provider.id
+      );
+
+      if (payment.status === "Voided") {
+        return this.pushVoid(entityId, mapping);
+      }
+
+      if (mapping?.externalId) {
+        // Provider-known (pulled) or already pushed — idempotent skip.
+        return {
+          status: "skipped",
+          action: "none",
+          localId: entityId,
+          remoteId: mapping.externalId,
+          error: `Payment ${entityId} already linked to ${this.provider.id} — skipping (idempotent)`
+        };
+      }
+
+      // A Carbon-born payment: push it. v1 supports the single-settlement case
+      // (the Ramp scenario — one bill, one payment); multi-settlement,
+      // discounted, and FX payments are parked as Skipped (documented follow-ups).
+      const settlements = payment.settlements;
+      if (settlements.length === 0) {
+        return skipped(
+          entityId,
+          `Payment ${entityId} has no settlements — nothing to push`
+        );
+      }
+      if (settlements.length > 1) {
+        return skipped(
+          entityId,
+          `Payment ${entityId} settles ${settlements.length} documents — outbound push of multi-document payments is not supported in v1`
+        );
+      }
+
+      const settlement = settlements[0]!;
+      if (settlement.discountAmount !== 0 || settlement.writeOffAmount !== 0) {
+        return skipped(
+          entityId,
+          `Payment ${entityId} carries a discount or write-off — outbound push of adjusted payments is not supported in v1`
+        );
+      }
+      if (payment.exchangeRate !== 1) {
+        return skipped(
+          entityId,
+          `Payment ${entityId} is foreign-currency (rate ${payment.exchangeRate}) — outbound FX payment push is not supported in v1`
+        );
+      }
+
+      const targetDocumentId =
+        family === "ar"
+          ? settlement.targetSalesInvoiceId
+          : settlement.targetPurchaseInvoiceId;
+      if (!targetDocumentId) {
+        return skipped(
+          entityId,
+          `Payment ${entityId} settlement has no ${
+            family === "ar" ? "sales" : "purchase"
+          } invoice target`
+        );
+      }
+
+      const { remoteId, compositeEntityId } = await this.pushRemotePayment({
+        carbonPaymentId: entityId,
+        family,
+        targetDocumentId,
+        bankAccountId: payment.bankAccount,
+        amount: settlement.appliedAmount,
+        currencyCode: payment.currencyCode,
+        paidDate: payment.paidDate,
+        reference: payment.reference
+      });
+
+      // Stamp origin:"carbon" so a subsequent void of THIS payment echoes out
+      // (pulled payments have no origin and never echo their void back), and so
+      // a later pull of the same provider payment recognizes the composite and
+      // no-ops. Trigger-suppressed to break the sync loop.
+      await withTriggersDisabled(this.database, async (tx) => {
+        await createMappingService(tx, this.companyId).link(
+          "payment",
+          entityId,
+          this.provider.id,
+          compositeEntityId,
+          { metadata: { origin: "carbon" } }
+        );
+      });
+
+      return {
+        status: "success",
+        action: "created",
+        localId: entityId,
+        remoteId
+      };
+    } catch (err) {
+      if (err instanceof JournalEntrySyncError) {
+        return {
+          status: "error",
+          action: "none",
+          localId: entityId,
+          error: err.failure
+        };
+      }
+      return {
+        status: "error",
+        action: "none",
+        localId: entityId,
+        error: err instanceof Error ? err.message : String(err)
+      };
+    }
+  }
+
+  /**
+   * A Carbon payment reaching Voided. Echo the void to the provider ONLY for a
+   * payment Carbon originated and pushed (mapping stamped origin:"carbon") — a
+   * pulled payment voided in the provider already reversed there, so re-pushing
+   * would loop. v1 has no provider void endpoint, so this always Skips with a
+   * manual-remediation message; it is the seam a provider void hook plugs into.
+   */
+  private pushVoid(
+    entityId: string,
+    mapping: { metadata: Record<string, unknown> | null } | null
+  ): SyncResult {
+    const carbonOrigin =
+      mapping?.metadata != null && mapping.metadata.origin === "carbon";
+    if (!carbonOrigin) {
+      return skipped(
+        entityId,
+        `Voided payment ${entityId} has no Carbon-originated provider payment to reverse`
+      );
+    }
+    if (!this.supportsPaymentVoidPush) {
+      return skipped(
+        entityId,
+        `Voiding a pushed payment in ${this.provider.id} is not supported in v1 — void it manually in the provider`
+      );
+    }
+    // No provider implements void push in v1; when one does, call its void
+    // adapter here.
+    return skipped(
+      entityId,
+      `Voiding a pushed payment in ${this.provider.id} is not supported in v1`
+    );
+  }
+
+  async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
+    const results: SyncResult[] = [];
+    for (const entityId of entityIds) {
+      results.push(await this.pushToAccounting(entityId));
+    }
+    return {
+      results,
+      successCount: results.filter((r) => r.status === "success").length,
+      errorCount: results.filter((r) => r.status === "error").length,
+      skippedCount: results.filter((r) => r.status === "skipped").length
+    };
+  }
+
+  /**
+   * Load the Carbon payment + its settlements for an outbound push. Numeric
+   * columns arrive as strings from Kysely and are coerced. `paidDate` is the
+   * posting date when set (accounting on), else the payment date.
+   */
+  private async loadLocalPaymentForPush(
+    paymentId: string
+  ): Promise<LocalPaymentForPush | null> {
+    const payment = await this.database
+      .selectFrom("payment")
+      .select([
+        "id",
+        "status",
+        "paymentType",
+        "customerId",
+        "supplierId",
+        "bankAccount",
+        "currencyCode",
+        "exchangeRate",
+        "paymentDate",
+        "postingDate",
+        "reference"
+      ])
+      .where("id", "=", paymentId)
+      .where("companyId", "=", this.companyId)
+      .executeTakeFirst();
+
+    if (!payment) return null;
+
+    const settlements = await this.database
+      .selectFrom("invoiceSettlement")
+      .select([
+        "targetSalesInvoiceId",
+        "targetPurchaseInvoiceId",
+        "appliedAmount",
+        "discountAmount",
+        "writeOffAmount"
+      ])
+      .where("paymentId", "=", paymentId)
+      .where("companyId", "=", this.companyId)
+      .execute();
+
+    return {
+      status: payment.status,
+      paymentType: payment.paymentType,
+      bankAccount: payment.bankAccount,
+      currencyCode: payment.currencyCode,
+      exchangeRate: Number(payment.exchangeRate ?? 1),
+      paidDate: (payment.postingDate ?? payment.paymentDate).slice(0, 10),
+      reference: payment.reference,
+      settlements: settlements.map((s) => ({
+        targetSalesInvoiceId: s.targetSalesInvoiceId,
+        targetPurchaseInvoiceId: s.targetPurchaseInvoiceId,
+        appliedAmount: Number(s.appliedAmount ?? 0),
+        discountAmount: Number(s.discountAmount ?? 0),
+        writeOffAmount: Number(s.writeOffAmount ?? 0)
+      }))
+    };
+  }
+
+  // fetchLocal / mapToRemote / upsertRemote are unused by the bespoke push
+  // above (which reads the Carbon payment directly), but the abstract base
+  // still declares them — keep them as hard rejections.
   async fetchLocal(_id: string): Promise<TRemote | null> {
     throw new Error(PAYMENT_PULL_ONLY_MESSAGE);
   }
@@ -347,29 +659,45 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
   ): Promise<Map<string, string>> {
     throw new Error(PAYMENT_PULL_ONLY_MESSAGE);
   }
+}
 
-  async pushToAccounting(entityId: string): Promise<SyncResult> {
-    return {
-      status: "error",
-      action: "none",
-      localId: entityId,
-      error: PAYMENT_PULL_ONLY_MESSAGE
-    };
-  }
+/** Context handed to a provider's `pushRemotePayment` adapter (Phase G). */
+export interface PaymentPushContext {
+  carbonPaymentId: string;
+  family: "ar" | "ap";
+  /** Carbon salesInvoice (AR) or purchaseInvoice (AP) id being settled. */
+  targetDocumentId: string;
+  /** Carbon account id (payment.bankAccount) the payment clears through. */
+  bankAccountId: string;
+  amount: number;
+  currencyCode: string;
+  /** YYYY-MM-DD. */
+  paidDate: string;
+  reference: string | null;
+}
 
-  async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
-    const results: SyncResult[] = entityIds.map((entityId) => ({
-      status: "error",
-      action: "none",
-      localId: entityId,
-      error: PAYMENT_PULL_ONLY_MESSAGE
-    }));
+type LocalPaymentForPush = {
+  status: "Draft" | "Posted" | "Voided";
+  paymentType: "Receipt" | "Disbursement";
+  bankAccount: string;
+  currencyCode: string;
+  exchangeRate: number;
+  paidDate: string;
+  reference: string | null;
+  settlements: Array<{
+    targetSalesInvoiceId: string | null;
+    targetPurchaseInvoiceId: string | null;
+    appliedAmount: number;
+    discountAmount: number;
+    writeOffAmount: number;
+  }>;
+};
 
-    return {
-      results,
-      successCount: 0,
-      errorCount: results.length,
-      skippedCount: 0
-    };
-  }
+function skipped(entityId: string, reason: string): SyncResult {
+  return {
+    status: "skipped",
+    action: "none",
+    localId: entityId,
+    error: reason
+  };
 }

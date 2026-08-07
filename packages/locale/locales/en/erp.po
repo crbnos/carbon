@@ -164,6 +164,12 @@ msgstr "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgid "{name} deleted"
 msgstr "{name} deleted"
 
+msgid "{providerName} data overwrites Carbon data"
+msgstr "{providerName} data overwrites Carbon data"
+
+msgid "{providerName}'s capabilities decide these — they can't be changed here."
+msgstr "{providerName}'s capabilities decide these — they can't be changed here."
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
 
@@ -2254,6 +2260,9 @@ msgstr "Carbon client not found"
 
 msgid "Carbon column"
 msgstr "Carbon column"
+
+msgid "Carbon data overwrites {providerName} data"
+msgstr "Carbon data overwrites {providerName} data"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
@@ -5984,6 +5993,9 @@ msgstr "Fixed Asset"
 
 msgid "Fixed Assets"
 msgstr "Fixed Assets"
+
+msgid "Fixed by {providerName}"
+msgstr "Fixed by {providerName}"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Fixed cost amortization variance when batch size differs from standard"
@@ -12258,6 +12270,12 @@ msgstr "Source Item"
 msgid "Source Method"
 msgstr "Source Method"
 
+msgid "Source of truth"
+msgstr "Source of truth"
+
+msgid "Source of Truth"
+msgstr "Source of Truth"
+
 msgid "Source types"
 msgstr "Source types"
 
@@ -15165,6 +15183,9 @@ msgstr "Which document drives each inspection flow for this item."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
+
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
+msgstr "Which system's data wins when both Carbon and {providerName} have changed the same record."
 
 msgid "Who Can Approve"
 msgstr "Who Can Approve"

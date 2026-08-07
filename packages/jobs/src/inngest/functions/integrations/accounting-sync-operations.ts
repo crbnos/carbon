@@ -223,6 +223,76 @@ export function isJournalEntryPostingEnabled(
   return resolveSyncConfig(integrationMetadata).entities.journalEntry.enabled;
 }
 
+export type PaymentPushDecision =
+  | { action: "enqueue"; entityId: string }
+  | { action: "skip"; reason: string };
+
+/**
+ * Decide whether a `payment` table event is an outbound push event (Phase G).
+ * A Carbon-born payment pushes to the provider when it reaches a settled state:
+ *
+ * - INSERT born `status='Posted'` (defensive — payments are created Draft then
+ *   posted, but a directly-inserted Posted payment still counts).
+ * - UPDATE whose status MOVED to 'Posted' (the normal path: post-payment flips
+ *   Draft→Posted) or to 'Voided' (echo the void for a Carbon-pushed payment).
+ *
+ * Same-status UPDATEs and every other operation skip. The enqueued `entityId`
+ * is the Carbon payment row id — the push syncer reads the payment directly and
+ * decides per-record (via the payment mapping) whether it is Carbon-born (push)
+ * or provider-known (skip), which is the loop guard against pulled payments.
+ */
+export function getPaymentPushDecision(
+  event: JournalPostingEventInput
+): PaymentPushDecision {
+  if (event.operation === "INSERT") {
+    const insertedStatus =
+      typeof event.new?.status === "string" ? event.new.status : null;
+    if (insertedStatus !== "Posted") {
+      return {
+        action: "skip",
+        reason: `Payment INSERT with status '${insertedStatus ?? "unknown"}' is not a push event (only payments born Posted enqueue on INSERT)`
+      };
+    }
+    return { action: "enqueue", entityId: event.recordId };
+  }
+
+  if (event.operation !== "UPDATE") {
+    return {
+      action: "skip",
+      reason: `Payment ${event.operation} is not a push event (payments enqueue on INSERT born Posted or when an UPDATE moves status to Posted or Voided)`
+    };
+  }
+
+  const newStatus =
+    typeof event.new?.status === "string" ? event.new.status : null;
+  const oldStatus =
+    typeof event.old?.status === "string" ? event.old.status : null;
+
+  if (!newStatus || !oldStatus) {
+    return {
+      action: "skip",
+      reason:
+        "Payment UPDATE event is missing the old or new status; cannot detect a push transition"
+    };
+  }
+
+  if (newStatus === oldStatus) {
+    return {
+      action: "skip",
+      reason: `Payment status did not change (still '${newStatus}'); not a push transition`
+    };
+  }
+
+  if (newStatus === "Posted" || newStatus === "Voided") {
+    return { action: "enqueue", entityId: event.recordId };
+  }
+
+  return {
+    action: "skip",
+    reason: `Payment status transitioned to '${newStatus}', which is not a push status (only Posted and Voided enqueue)`
+  };
+}
+
 /**
  * Resolve which AR/AP side a Payment journal's lines touch, from the
  * company's control accounts (accountDefault.receivablesAccount /

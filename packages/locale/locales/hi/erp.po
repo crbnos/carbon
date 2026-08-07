@@ -164,6 +164,12 @@ msgstr "{missingCount} नहीं मिली पत्रिकाएं औ
 msgid "{name} deleted"
 msgstr "{name} हटाया गया"
 
+msgid "{providerName} data overwrites Carbon data"
+msgstr ""
+
+msgid "{providerName}'s capabilities decide these — they can't be changed here."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
 
@@ -2254,6 +2260,9 @@ msgstr "कार्बन क्लाइंट नहीं मिला"
 
 msgid "Carbon column"
 msgstr "कार्बन कॉलम"
+
+msgid "Carbon data overwrites {providerName} data"
+msgstr ""
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon को आपकी कंपनी के तरीके से कॉन्फ़िगर किया गया है, आपका डेटा लोड किया गया है, और आपकी टीम इसे उपयोग करने में आत्मविश्वास रखती है। जब यह सच हो, तो आप लाइव जाने के लिए तैयार हैं।"
@@ -5984,6 +5993,9 @@ msgstr "स्थिर संपत्ति"
 
 msgid "Fixed Assets"
 msgstr "स्थिर संपत्ति"
+
+msgid "Fixed by {providerName}"
+msgstr ""
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "लाभ और हानि"
@@ -12258,6 +12270,12 @@ msgstr "स्रोत आइटम"
 msgid "Source Method"
 msgstr "स्रोत विधि"
 
+msgid "Source of truth"
+msgstr ""
+
+msgid "Source of Truth"
+msgstr ""
+
 msgid "Source types"
 msgstr "स्रोत प्रकार"
 
@@ -15165,6 +15183,9 @@ msgstr "कौन सा दस्तावेज़ इस आइटम के 
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "कौन सी विनिर्माण घटना शेल्फ-जीवन घड़ी शुरू करती है — उदाहरण के लिए, भरना, सील करना, या अंतिम क्यूसी।"
+
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "कौन अनुमोदन कर सकता है"

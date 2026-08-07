@@ -249,11 +249,7 @@ export function getProviderIntegration(
       });
     }
     case "xero": {
-      const settings = {
-        defaultSalesAccountCode: config?.defaultSalesAccountCode,
-        defaultPurchaseAccountCode: config?.defaultPurchaseAccountCode
-      };
-      logger.info("Creating XeroProvider", { settings, config });
+      logger.info("Creating XeroProvider", { config });
       return new XeroProvider({
         companyId,
         tenantId,
@@ -263,8 +259,7 @@ export function getProviderIntegration(
         clientSecret: process.env.XERO_CLIENT_SECRET!,
         redirectUri: process.env.XERO_REDIRECT_URI,
         syncConfig,
-        onTokenRefresh,
-        settings
+        onTokenRefresh
       });
     }
     // Add other providers as needed

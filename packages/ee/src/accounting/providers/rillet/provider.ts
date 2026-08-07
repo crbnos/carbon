@@ -28,6 +28,7 @@ import type {
   RilletCustomerWrite,
   RilletInvoiceCreate,
   RilletJournalEntryCreate,
+  RilletPaymentCreate,
   RilletProductWrite,
   RilletVendorWrite
 } from "./models";
@@ -241,12 +242,15 @@ export const RILLET_PUSH_ONLY_ENTITIES = [
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
- * Entities Rillet PULLS in v1: invoice payments (via the
- * invoice-payment-updated webhook + the poll sweep) settle Carbon sales
- * invoices, and bill payments (poll-only — Rillet has no bill-payment webhook)
- * settle Carbon purchase invoices. Both flow through the same `payment` syncer.
+ * Entities Rillet syncs TWO-WAY: `payment`. Inbound (pull) — provider-recorded
+ * invoice/bill payments settle Carbon documents (Phase F). Outbound (push) —
+ * Carbon-born Posted payments (e.g. a bill paid through Ramp, recorded in
+ * Carbon) are written to Rillet as payment documents (Phase G). Which direction
+ * fires per record is decided by origin: a payment already carrying a `payment`
+ * mapping is provider-known and skips push; a mapping-less Carbon payment is
+ * pushed. Both flow through the same `payment` syncer.
  */
-export const RILLET_PULL_ONLY_ENTITIES = [
+export const RILLET_TWO_WAY_ENTITIES = [
   "payment"
 ] as const satisfies readonly AccountingEntityType[];
 
@@ -268,9 +272,10 @@ export const RILLET_DISABLED_ENTITIES = [
  * "push-to-accounting" with owner "carbon" (push-only is a capability
  * limit, not a preference — stored two-way/pull overrides are ignored)
  * while their per-company `enabled` flag survives; `payment` is forced
- * pull-only AND enabled (the inbound webhook must work as soon as a token
- * is pasted — there is no per-company toggle for it); everything else is
- * force-disabled.
+ * `two-way` AND enabled (inbound pull + outbound push must both work as soon
+ * as the integration is connected — there is no per-company toggle for it,
+ * and the documents-mode families gate governs whether it actually runs);
+ * everything else is force-disabled.
  */
 export function buildRilletSyncConfig(
   resolved: GlobalSyncConfig
@@ -290,10 +295,10 @@ export function buildRilletSyncConfig(
     };
   }
 
-  for (const entityType of RILLET_PULL_ONLY_ENTITIES) {
+  for (const entityType of RILLET_TWO_WAY_ENTITIES) {
     entities[entityType] = {
       ...entities[entityType],
-      direction: "pull-from-accounting",
+      direction: "two-way",
       owner: "accounting",
       enabled: true
     };
@@ -932,6 +937,53 @@ export class RilletProvider extends BaseProvider {
       )}&sort_by=updated`,
       (data) => data.payments as Rillet.BillPayment[] | undefined
     );
+  }
+
+  /**
+   * Record a payment against one AR invoice (Phase G outbound write-back for a
+   * Carbon-born payment). Returns the created Rillet payment so its id can seed
+   * the composite mapping. Idempotency-Key protects against double-create on a
+   * push retry (Rillet replays the stored response for 24h).
+   *
+   * VERIFY: the `POST /invoices/{id}/payments` path + `{ payment }` envelope +
+   * `RilletPaymentCreate` field names are assumed to mirror the read endpoints;
+   * not confirmed against the live Rillet OpenAPI.
+   */
+  async createInvoicePayment(
+    invoiceId: string,
+    payment: RilletPaymentCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.InvoicePayment> {
+    return this.writeEntity({
+      method: "POST",
+      path: `/invoices/${invoiceId}/payments`,
+      envelopeKey: "payment",
+      operation: "create invoice payment",
+      payload: payment,
+      idempotencyKey
+    });
+  }
+
+  /**
+   * Record a payment against one AP bill (AP mirror of createInvoicePayment).
+   *
+   * VERIFY: the `POST /bills/{id}/payments` path + `{ payment }` envelope are
+   * assumed to mirror the read endpoints; not confirmed against the live Rillet
+   * OpenAPI.
+   */
+  async createBillPayment(
+    billId: string,
+    payment: RilletPaymentCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.BillPayment> {
+    return this.writeEntity({
+      method: "POST",
+      path: `/bills/${billId}/payments`,
+      envelopeKey: "payment",
+      operation: "create bill payment",
+      payload: payment,
+      idempotencyKey
+    });
   }
 
   /**

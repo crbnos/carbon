@@ -19,6 +19,7 @@ import {
   type DrainSummary,
   drainSyncOperations,
   enqueueSyncOperations,
+  getPaymentPushDecision,
   getSyncOperationActor,
   insertTerminalSyncOperations,
   isJournalEntryPostingEnabled,
@@ -49,7 +50,8 @@ const TABLE_TO_ENTITY_MAP: Partial<Record<string, AccountingEntityType>> = {
   purchaseOrder: "purchaseOrder",
   purchaseInvoice: "bill",
   salesInvoice: "invoice",
-  journal: "journalEntry"
+  journal: "journalEntry",
+  payment: "payment"
 };
 
 function getEntityTypeFromTable(table: string): AccountingEntityType | null {
@@ -191,6 +193,28 @@ export const syncFunction = inngest.createFunction(
                 } else {
                   terminalRequests.push(plan.request);
                 }
+                continue;
+              }
+
+              // Payment rows push OUTBOUND (Phase G) only on a transition to
+              // Posted/Voided — never on the generic INSERT/UPDATE path, which
+              // would re-push on every Draft edit. The push syncer decides
+              // per-record whether the payment is Carbon-born (push) or
+              // provider-known (skip) via the payment mapping.
+              if (entityType === "payment") {
+                const decision = getPaymentPushDecision(r.event);
+                if (decision.action === "skip") {
+                  stepSummary.skipped.push({
+                    recordId: r.event.recordId,
+                    reason: decision.reason
+                  });
+                  continue;
+                }
+                requests.push({
+                  entityType: "payment",
+                  entityId: decision.entityId,
+                  direction: "push-to-accounting"
+                });
                 continue;
               }
 

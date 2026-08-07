@@ -7,8 +7,10 @@ import { SalesInvoiceSyncer } from "../invoice";
  * Item-referenced AR invoices post to the item's mapped REVENUE account
  * (accountDefault.salesAccount → account-mapping externalCode) — the same
  * resolution that feeds Rillet's product account_code and QBO's
- * IncomeAccountRef — NOT the blunt defaultSalesAccountCode. COGS stays on the
- * shipment journal.
+ * IncomeAccountRef. There is no blunt default-account-code fallback: when
+ * the company default is unset or unmapped, mapToRemote throws the
+ * structured UNMAPPED_ACCOUNTS Warning instead. COGS stays on the shipment
+ * journal.
  */
 
 const invoice = (): Accounting.SalesInvoice =>
@@ -85,8 +87,7 @@ function makeInvoiceSyncer(db: never) {
     database: db,
     companyId: "company-1",
     provider: {
-      id: "xero",
-      settings: { defaultSalesAccountCode: "9999" }
+      id: "xero"
     } as never,
     config: { enabled: true, direction: "two-way", owner: "carbon" },
     entityType: "invoice"
@@ -100,7 +101,7 @@ function makeInvoiceSyncer(db: never) {
 }
 
 describe("SalesInvoiceSyncer.mapToRemote (item revenue account)", () => {
-  it("posts to the mapped sales account, not defaultSalesAccountCode", async () => {
+  it("posts to the mapped sales account", async () => {
     const payload = await makeInvoiceSyncer(
       makeInvoiceDb({
         accountDefault: { salesAccount: "acct_sales" },
@@ -119,21 +120,37 @@ describe("SalesInvoiceSyncer.mapToRemote (item revenue account)", () => {
     ).mapToRemote(invoice());
 
     expect(payload.LineItems[0]?.AccountCode).toBe("4000");
-    expect(payload.LineItems[0]?.AccountCode).not.toBe("9999");
     // Item still referenced; tax handling unchanged (Exclusive + NONE at 0 tax).
     expect(payload.LineItems[0]?.ItemCode).toBe("WIDGET-1");
     expect(payload.LineItems[0]?.TaxType).toBe("NONE");
     expect(payload.LineAmountTypes).toBe("Exclusive");
   });
 
-  it("falls back to defaultSalesAccountCode only when the sales account is unset", async () => {
-    const payload = await makeInvoiceSyncer(
+  it("throws the structured UNMAPPED_ACCOUNTS warning when the company has no default sales account", async () => {
+    const syncer = makeInvoiceSyncer(
       makeInvoiceDb({
         accountDefault: { salesAccount: null },
         accountMappings: []
       })
-    ).mapToRemote(invoice());
+    );
 
-    expect(payload.LineItems[0]?.AccountCode).toBe("9999");
+    await expect(syncer.mapToRemote(invoice())).rejects.toMatchObject({
+      name: "JournalEntrySyncError",
+      failure: expect.objectContaining({ errorCode: "UNMAPPED_ACCOUNTS" })
+    });
+  });
+
+  it("throws the structured UNMAPPED_ACCOUNTS warning when the default sales account has no Xero mapping", async () => {
+    const syncer = makeInvoiceSyncer(
+      makeInvoiceDb({
+        accountDefault: { salesAccount: "acct_sales" },
+        accountMappings: []
+      })
+    );
+
+    await expect(syncer.mapToRemote(invoice())).rejects.toMatchObject({
+      name: "JournalEntrySyncError",
+      failure: expect.objectContaining({ errorCode: "UNMAPPED_ACCOUNTS" })
+    });
   });
 });

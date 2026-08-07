@@ -27,16 +27,20 @@ export async function rilletHealthcheck(
 export async function rilletOnInstall(companyId: string) {
   const client = getCarbonServiceRole();
 
-  // Push-only master data + documents. No purchaseOrder/salesOrder — Rillet
-  // has no PO endpoint, and orders have no Rillet representation. Payments
-  // flow INTO Carbon via the Rillet webhook, not the event system.
+  // Push master data + documents. No purchaseOrder/salesOrder — Rillet has no
+  // PO endpoint, and orders have no Rillet representation. `payment` is here for
+  // the OUTBOUND half (Phase G): a Carbon-born Posted payment (e.g. a bill paid
+  // through Ramp) pushes to Rillet as a payment document. Provider-recorded
+  // payments still flow INTO Carbon via the Rillet webhook + pull sweep; the
+  // push syncer skips those (their mapping marks them provider-owned).
   const tables: CreateSubscriptionParams["table"][] = [
     "address",
     "customer",
     "supplier",
     "item",
     "salesInvoice",
-    "purchaseInvoice"
+    "purchaseInvoice",
+    "payment"
   ];
 
   for (const table of tables) {

@@ -359,6 +359,101 @@ syncer does **not** hand-write document-status logic (drops the AR helper
 duplication) and gets FX/discount/period-lock handling for free. A period-locked
 payment surfaces as a `Warning` like any other — a real, actionable state.
 
+### Phase G — Outbound payment write-back (documents mode) (added 2026-08-07)
+
+Phase F covers payments **executed inside the provider** (bank, Stripe-in-Rillet)
+flowing back to Carbon. The inverse gap (Brad, 2026-08-07): payments executed
+**outside** the provider — a customer paying AP bills through **Ramp**, a manual
+payment entered in Carbon, any future payment integration — are recorded in
+Carbon and today never reach the provider. In `documents` mode the bill/invoice
+document sits **open in the provider forever**, because the payment's journal is
+DOC_BACKED-excluded from journal push by design (F.5) and no payment-document
+push exists. Phase G closes it: **Carbon-born `Posted` payments push to the
+provider as payment documents** (Rillet first). Hub-and-spoke: Ramp → Carbon →
+Rillet; payment producers write native Carbon payments and never talk to the
+accounting provider — so the push half serves manual payments and every future
+integration automatically.
+
+**G.1 — Per-record direction by origin, not config.** The ledger drain routes
+each operation by its **stored direction** (verified:
+`accounting-sync-operations.ts` groups by `entityType:direction` and dispatches
+push vs pull per group), so `payment` becomes genuinely two-way:
+sweep/webhook enqueue pull ops (Phase F, unchanged), the event system enqueues
+push ops (G.2). Origin routing needs no new state:
+- A payment **with** an existing `payment` mapping is provider-known → the push
+  path's create-only **mapping-exists skip** (same rule as
+  `RilletTransactionSyncer.pushToAccounting`) absorbs it. This is the loop
+  guard: a pulled payment links its mapping in the pull upsert *before*
+  `post-payment` fires the Posted UPDATE, so the resulting push op finds the
+  mapping and skips.
+- A **Carbon-born** `Posted` payment has no mapping → pushes; on success the
+  mapping links under the canonical composite id
+  (`bill:<billRemoteId>:<paymentRemoteId>` / `<invoiceRemoteId>:<paymentRemoteId>`).
+  The inbound sweep's later re-discovery of the pushed payment is then a no-op
+  (`upsertLocalPaymentDraft`: existing-`Posted` → `postAction: 'none'`), and a
+  provider-side void of the pushed payment flows back naturally
+  (`postAction: 'void'`).
+Config: `payment` `supportedDirections` gains push; `buildRilletSyncConfig`
+changes payment from forced pull-only to `direction: "two-way"`, still
+`enabled: true` (the Rillet `listChanges` gate keys on `enabled`, unaffected).
+
+**G.2 — Event wiring.** The `payment` table has no event trigger and no
+`TABLE_TO_ENTITY_MAP` entry today (verified). Add: (a) migration —
+`attach_event_trigger('payment', ARRAY[]::TEXT[], ARRAY[]::TEXT[])` + backfill
+`eventSystemSubscription` (`rillet-sync`, table `payment`) for companies with
+Rillet installed, copying the journal-trigger precedent; (b) `payment` added to
+`rilletOnInstall`'s subscription tables; (c) `TABLE_TO_ENTITY_MAP.payment =
+'payment'` with a **payment-specific enqueue rule** (like the journalEntry
+branch, not the generic INSERT/UPDATE branch): enqueue push only on transition
+**to `Posted`** (UPDATE `old.status ≠ 'Posted'` → `'Posted'`; INSERT born
+`Posted` for completeness) or **to `Voided`** (push-void). Everything else
+skips. Xero/QBO subscriptions don't include `payment`, so no push ops exist for
+them until their push halves ship (G.5).
+
+**G.3 — Push flow (base push half + provider adapter).** `PaymentSyncerBase`
+replaces its push-rejection stubs with a real push half:
+1. `fetchLocal`: the `Posted`/`Voided` payment + its `invoiceSettlement` rows.
+   Family per payment from the party/type (`Disbursement`+`supplierId` → ap,
+   `Receipt`+`customerId` → ar) — mirrors POSTING_POLICY's per-line Payment
+   family.
+2. **Gate**: `families[family] === 'documents'` — the *same* gate as inbound
+   pull. In `documents` mode the document lives in the provider and only a
+   payment document can close it; in `journals`/`none` mode the v3 journal path
+   owns payment representation and a document push would double-apply. (This
+   corrects the naive "push is the mirror of pull so it belongs in journals
+   mode" reading — both directions are documents-mode citizens, disambiguated
+   per record by origin.)
+3. Pre-flight handling: unmapped settled document or unmapped
+   `payment.bankAccount` (through `externalIntegrationMapping(entityType='account')`)
+   → structured `UNMAPPED_ACCOUNTS` **Warning** (park, retry after mapping —
+   the bill/invoice must sync first). Non-base-currency payment, nonzero
+   `discountAmount`/`writeOffAmount` → **Skipped** (v1 limits, documented
+   follow-ups).
+4. **v1 scope: single-settlement** (the Ramp case — one bill, one payment). One
+   provider payment for the settled document, linked under the composite id,
+   amount = `appliedAmount`, idempotency-keyed per (payment, document). A
+   multi-settlement Carbon payment parks as **Skipped** (N→N fan-out is a
+   documented follow-up — the `payment` mapping's one-row-per-payment cardinality
+   makes N composites need extra modeling).
+5. Void: Carbon payment → `Voided` with a mapping stamped `origin:"carbon"` →
+   provider void/delete (VERIFY API support; **v1: no provider implements it —
+   Skipped with a manual-remediation message**). A voided pulled payment
+   (mapping without `origin:"carbon"`) never echoes its void back.
+
+**G.4 — Rillet adapter (VERIFY-gated).** The Rillet client has list/read
+payment endpoints only; add `createInvoicePayment` (`POST
+/invoices/{id}/payments`) and `createBillPayment` (`POST /bills/{id}/payments`)
+through the existing `writeEntity` plumbing (Idempotency-Key header, RFC 9457
+error mapping), with **VERIFY** comments mirroring the existing bill-payment
+read VERIFYs — no local OpenAPI exists to confirm the create paths/shapes.
+**If Rillet turns out to have no payment-creation API**, the fallback design is
+pushing the payment *journal* for Carbon-born payments only (a scoped
+documents-mode exception) — not implemented unless VERIFY fails.
+
+**G.5 — Generalization.** Xero (`PUT /Payments`) and QBO (`Payment`/
+`BillPayment` create) ride the same base push half later; out of Phase G scope.
+Their payment syncers keep rejecting push cleanly until then.
+
 ### Design Decisions
 
 | Decision | Choice | Rationale |
@@ -397,6 +492,9 @@ payment surfaces as a `Warning` like any other — a real, actionable state.
 | Reused entity type | `payment` (already `dependsOn:['invoice','bill']`, `pull-from-accounting`), not a new `billPayment` type | A payment is a payment; family derives from the settled document; no schema or enum change |
 | GL posting for pulled payments | **Post to Carbon's GL** via the native `post-payment` edge fn (Draft → post); double-count avoided by the documents-mode `Payment` outbound-push exclusion, not by skipping the GL | Carbon's GL is a separate book from the provider's; leaving it unposted (`journalId: NULL`) leaves Carbon's AP/AR uncleared — the latent bug in the shipped AR path. Reuse `post-payment` (no duplicated GL logic); the payment journal is DOC_BACKED-excluded from re-push, so the provider is never double-posted (Brad, 2026-08-05) |
 | Inbound-pull gating | Enabled per family only in `documents` mode (`families.{ar,ap}='documents'`) | Clean seam with v3 Phase 4 (journals mode = Carbon owns the payment, pushed outbound); no double-representation |
+| Outbound payment write-back (Phase G) | Carbon-born `Posted` payments push as provider payment **documents**, documents-mode only, Rillet first | Ramp-style externally-executed payments otherwise leave the provider's bill/invoice open forever; the payment journal is DOC_BACKED-excluded, so the document is the only channel |
+| Payment direction routing (Phase G) | Per-record by origin via the mapping (mapping exists → provider-known, push skips; absent → Carbon-born, push + link), not per-entity config | The drain already dispatches by stored op direction; no owner column needed; the same composite id makes push and pull mutually idempotent |
+| Payment push trigger (Phase G) | Event system on the `payment` table, enqueue only on transitions to `Posted`/`Voided` | Same mechanism as journal posting; pulled payments' Posted UPDATE (triggers deliberately enabled) is absorbed by the mapping-exists skip |
 
 ## Data Model Changes
 
@@ -610,6 +708,31 @@ Phase F — inbound payment sync-back (AR generalization + AP bill payments)
       write/void, and `shouldSync` ownership/mapping skips. Sandbox live-fire
       gates per provider are env-gated (VERIFY notes in §F.2).
 
+Phase G — outbound payment write-back (Rillet)
+- [ ] A Carbon-born Posted AP payment (paymentType `Disbursement`, one
+      `invoiceSettlement` targeting a mapped `purchaseInvoice`) enqueues a push
+      op on the Posted transition and creates one Rillet bill payment against the
+      mapped bill; the `payment` mapping links the composite
+      `bill:<billRemote>:<rilletPaymentId>` with `metadata.origin='carbon'`.
+- [ ] AR mirror: a Carbon-born `Receipt` payment on a mapped invoice creates a
+      Rillet invoice payment under the prefix-less composite.
+- [ ] **Loop guard:** a payment PULLED from Rillet (mapping present, no
+      `origin:'carbon'`) is NOT re-pushed when post-payment flips it to Posted
+      (mapping-exists skip); and re-pulling a Carbon-pushed payment is a no-op
+      (`postAction:'none'`).
+- [ ] Gates park correctly: `families.ap` not `documents` → Skipped;
+      multi-settlement → Skipped; foreign-currency → Skipped; discount/write-off
+      → Skipped; unmapped bill or unmapped bank account → `UNMAPPED_ACCOUNTS`
+      Warning (retryable).
+- [ ] Voiding a Carbon-pushed payment → Skipped with a manual-remediation
+      message (no Rillet void endpoint v1); voiding a pulled payment never echoes
+      out.
+- [ ] Unit tests: `getPaymentPushDecision` transitions, the base push gates, the
+      Rillet `pushRemotePayment` mapper + Warnings, `buildRilletSyncConfig`
+      payment two-way. Rillet sandbox live-fire (create endpoints) is env-gated
+      (VERIFY — no local OpenAPI). QBO/Xero push halves are out of Phase G scope
+      (their payment syncers keep rejecting push).
+
 ## Risks
 
 | Risk | Severity | Mitigation |
@@ -706,3 +829,12 @@ Phase F — inbound payment sync-back (AR generalization + AP bill payments)
   force-enable the pull-only `payment` entity (the families mode is the switch). Companion
   plan updated (stale `journalId:NULL` risk row; dropped `paymentSyncback` flag; new
   Task 4.4 for the review fixes).
+- 2026-08-07: **Phase G added — outbound payment write-back** (Brad, 2026-08-07; driven by
+  the Ramp scenario: payments executed outside the provider must still close the provider's
+  bill/invoice). Carbon-born `Posted` payments push as provider payment documents in
+  `documents` mode, Rillet first; per-record origin routing via the payment mapping
+  (mapping-exists skip = loop guard); event wiring for the `payment` table
+  (Posted/Voided transitions only); pre-flight Warnings for unmapped document/bank account,
+  FX, and discounts; VERIFY gates on Rillet's payment-creation endpoints. Xero/QBO push
+  halves deferred to G.5. Hub-and-spoke doctrine recorded: payment producers (Ramp, manual
+  entry) write native Carbon payments; only the accounting sync talks to the provider.

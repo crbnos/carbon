@@ -1,9 +1,18 @@
 import type { NormalizedPayment } from "../../../core/payment-application";
-import { PaymentSyncerBase } from "../../../core/payment-syncer";
+import {
+  type PaymentPushContext,
+  PaymentSyncerBase
+} from "../../../core/payment-syncer";
+import { JournalEntrySyncError } from "../../../core/posting";
 import type { ShouldSyncContext } from "../../../core/types";
 import type { Rillet, RilletLocalPayment } from "../models";
-import type { RilletProvider } from "../provider";
-import { loadCompanyBaseCurrency } from "./shared";
+import { buildRilletIdempotencyKey, type RilletProvider } from "../provider";
+import {
+  loadCompanyBaseCurrency,
+  loadRilletAccountCodesById,
+  RILLET_CARBON_REFERENCE_TYPE,
+  toRilletMoney
+} from "./shared";
 
 // Re-exported for the payment tests (moved to the family-agnostic core, where
 // the runtime document-status boundary now lives — post-payment owns status).
@@ -140,6 +149,9 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
     return this.provider as RilletProvider;
   }
 
+  /** Rillet accepts Carbon-born payments back out (Phase G). */
+  protected supportsPaymentPush = true;
+
   /** company.baseCurrencyCode, read once per syncer instance (FX gate). */
   private baseCurrencyPromise?: Promise<string>;
 
@@ -151,6 +163,19 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
       );
     }
     return this.baseCurrencyPromise;
+  }
+
+  /** Carbon account.id → Rillet account code, read once per syncer instance. */
+  private accountCodesByIdPromise?: Promise<Map<string, string>>;
+
+  private getAccountCodesById(): Promise<Map<string, string>> {
+    if (!this.accountCodesByIdPromise) {
+      this.accountCodesByIdPromise = loadRilletAccountCodesById(this.database, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      });
+    }
+    return this.accountCodesByIdPromise;
   }
 
   // =================================================================
@@ -217,10 +242,8 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
   protected async shouldSync(
     context: ShouldSyncContext<RilletPayment, RilletPayment>
   ): Promise<boolean | string> {
-    if (context.direction === "push") {
-      return "Payments are pull-only for Rillet: pushing Carbon payments to Rillet is not supported";
-    }
-
+    // Push is gated entirely in PaymentSyncerBase.pushToAccounting (origin,
+    // documents-mode, single-settlement, FX) — shouldSync only governs the pull.
     const { family, documentRemoteId } = parseRilletPaymentSyncEntityId(
       context.entityId
     );
@@ -335,5 +358,87 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
           ? "failed"
           : "settled"
     };
+  }
+
+  // =================================================================
+  // 4. PUSH (Phase G — Carbon-born payment → Rillet payment document)
+  // =================================================================
+
+  /**
+   * Create one Rillet payment for the settled document. Resolves the document's
+   * Rillet id and the bank account's Rillet code from the mappings (either
+   * missing → structured UNMAPPED_ACCOUNTS Warning: the bill/invoice must sync
+   * first, and the bank account must be mapped on the integration settings
+   * page), then POSTs the payment and returns its id + the composite mapping id.
+   */
+  protected async pushRemotePayment(
+    context: PaymentPushContext
+  ): Promise<{ remoteId: string; compositeEntityId: string }> {
+    const documentRemoteId = await this.mappingService.getExternalId(
+      context.family === "ar" ? "invoice" : "bill",
+      context.targetDocumentId,
+      this.provider.id
+    );
+    if (!documentRemoteId) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        message: `The settled ${
+          context.family === "ar" ? "invoice" : "bill"
+        } has not synced to Rillet yet — sync it, then retry the payment`,
+        warning: true,
+        metadata: { targetDocumentId: context.targetDocumentId }
+      });
+    }
+
+    const accountCode = (await this.getAccountCodesById()).get(
+      context.bankAccountId
+    );
+    if (!accountCode) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        message: `The payment's bank/cash account is not mapped to a Rillet account — map it on the integration settings page, then retry`,
+        warning: true,
+        metadata: { bankAccountId: context.bankAccountId }
+      });
+    }
+
+    const payload = {
+      amount: toRilletMoney(context.amount, context.currencyCode),
+      payment_date: context.paidDate,
+      account_code: accountCode,
+      external_references: [
+        { type: RILLET_CARBON_REFERENCE_TYPE, id: context.carbonPaymentId }
+      ]
+    };
+
+    const idempotencyKey = buildRilletIdempotencyKey({
+      companyId: this.companyId,
+      operation:
+        context.family === "ar"
+          ? "create invoice payment"
+          : "create bill payment",
+      localId: `${context.carbonPaymentId}:${context.targetDocumentId}`,
+      payload
+    });
+
+    const created =
+      context.family === "ar"
+        ? await this.rilletProvider.createInvoicePayment(
+            documentRemoteId,
+            payload,
+            idempotencyKey
+          )
+        : await this.rilletProvider.createBillPayment(
+            documentRemoteId,
+            payload,
+            idempotencyKey
+          );
+
+    const compositeEntityId =
+      context.family === "ar"
+        ? getRilletPaymentSyncEntityId(documentRemoteId, created.id)
+        : getRilletBillPaymentSyncEntityId(documentRemoteId, created.id);
+
+    return { remoteId: created.id, compositeEntityId };
   }
 }

@@ -164,6 +164,12 @@ msgstr "{missingCount} 份缺失日记账和 {mismatchCount} 个月不匹配"
 msgid "{name} deleted"
 msgstr "{name} 已删除"
 
+msgid "{providerName} data overwrites Carbon data"
+msgstr ""
+
+msgid "{providerName}'s capabilities decide these — they can't be changed here."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
 
@@ -2254,6 +2260,9 @@ msgstr "找不到 Carbon 客户端"
 
 msgid "Carbon column"
 msgstr "Carbon 列"
+
+msgid "Carbon data overwrites {providerName} data"
+msgstr ""
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon已按照您公司的运营方式进行配置，您的数据已加载，您的团队对使用它充满信心。当这一切都实现时，您就可以上线了。"
@@ -5984,6 +5993,9 @@ msgstr "固定资产"
 
 msgid "Fixed Assets"
 msgstr "固定资产"
+
+msgid "Fixed by {providerName}"
+msgstr ""
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "收益和损失"
@@ -12258,6 +12270,12 @@ msgstr "源项目"
 msgid "Source Method"
 msgstr "源方法"
 
+msgid "Source of truth"
+msgstr ""
+
+msgid "Source of Truth"
+msgstr ""
+
 msgid "Source types"
 msgstr "源类型"
 
@@ -15165,6 +15183,9 @@ msgstr "哪份文件驱动此物料的每个检验流程。"
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "哪个制造事件启动保质期时钟 — 例如填充、密封或最终QC。"
+
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "谁可以批准"

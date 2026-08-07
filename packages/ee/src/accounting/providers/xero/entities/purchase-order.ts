@@ -314,11 +314,6 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       );
     }
 
-    // Get default account code from provider settings
-    const xeroProvider = this.provider as XeroProvider;
-    const defaultAccountCode =
-      xeroProvider.settings?.defaultPurchaseAccountCode;
-
     // Map line items
     const lineItems: Xero.PurchaseOrderLineItem[] = await Promise.all(
       local.lines.map(async (line) => {
@@ -348,8 +343,10 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           Quantity: line.quantity,
           UnitAmount: line.unitPrice,
           ItemCode: itemCode?.slice(0, 30) ?? undefined,
-          // Use line's account number if specified, otherwise use default from settings
-          AccountCode: line.accountNumber ?? defaultAccountCode,
+          // PO is non-posting — Xero accepts PO lines without AccountCode, so
+          // only send one when the line actually carries an account number
+          // (no blunt default-account-code fallback).
+          AccountCode: line.accountNumber ?? undefined,
           TaxAmount: line.taxAmount ?? undefined,
           LineAmount: line.totalAmount,
           // TaxType is required by Xero: INPUT for purchase tax, NONE for zero tax

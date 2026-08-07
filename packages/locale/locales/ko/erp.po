@@ -164,6 +164,12 @@ msgstr "{missingCount}개 누락된 분개 및 {mismatchCount}개 일치하지 �
 msgid "{name} deleted"
 msgstr "{name} 삭제됨"
 
+msgid "{providerName} data overwrites Carbon data"
+msgstr ""
+
+msgid "{providerName}'s capabilities decide these — they can't be changed here."
+msgstr ""
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
 
@@ -2254,6 +2260,9 @@ msgstr "Carbon 클라이언트를 찾을 수 없음"
 
 msgid "Carbon column"
 msgstr "Carbon 열"
+
+msgid "Carbon data overwrites {providerName} data"
+msgstr ""
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon이 귀사의 운영 방식에 맞게 설정되었고, 데이터가 적재되었으며, 팀이 자신 있게 사용할 수 있는 상태입니다. 이 조건이 충족되면 실제 운영을 시작할 준비가 된 것입니다."
@@ -5984,6 +5993,9 @@ msgstr "고정자산"
 
 msgid "Fixed Assets"
 msgstr "고정자산"
+
+msgid "Fixed by {providerName}"
+msgstr ""
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "배치 크기가 표준과 다를 때 발생하는 고정비 상각 차이"
@@ -12258,6 +12270,12 @@ msgstr "소스 품목"
 msgid "Source Method"
 msgstr "소스 방법"
 
+msgid "Source of truth"
+msgstr ""
+
+msgid "Source of Truth"
+msgstr ""
+
 msgid "Source types"
 msgstr "소스 유형"
 
@@ -15165,6 +15183,9 @@ msgstr "이 항목에 대한 각 검사 흐름을 운영하는 문서입니다."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
+
+msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "승인 가능자"

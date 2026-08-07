@@ -51,11 +51,6 @@ export interface ListItemsResponse {
   page: number;
 }
 
-export interface XeroSettings {
-  defaultSalesAccountCode?: string;
-  defaultPurchaseAccountCode?: string;
-}
-
 /**
  * Xero's org-wide limit: at most 2 ACTIVE tracking categories, so at most
  * 2 dimension slots. Kept as an exported constant (not on `capabilities`)
@@ -88,7 +83,8 @@ export function parseXeroTrackingTarget(target: string): string | null {
  * enabled — inbound payment sync-back must work as soon as the integration is
  * connected (there is no per-company toggle for it yet; see Phase 0.4). Every
  * other Xero entity keeps its resolved (possibly two-way) config untouched;
- * only `payment` is constrained here (mirrors Rillet's RILLET_PULL_ONLY_ENTITIES).
+ * only `payment` is constrained here. Xero has no outbound payment push yet, so
+ * this stays pull-only (unlike Rillet, which is two-way as of Phase G).
  */
 export const XERO_PULL_ONLY_ENTITIES = [
   "payment"
@@ -162,7 +158,6 @@ type XeroProviderConfig = ProviderConfig<{
   clientSecret: string;
   redirectUri?: string;
   tenantId?: string;
-  settings?: XeroSettings;
 }> & {
   id: ProviderID.XERO;
   accessToken?: string;
@@ -189,12 +184,10 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
   auth: AuthProvider;
 
   private readonly syncConfig!: GlobalSyncConfig;
-  private readonly _settings: XeroSettings;
 
   constructor(public config: Omit<XeroProviderConfig, "id">) {
     this.syncConfig = buildXeroSyncConfig(config.syncConfig);
-    this._settings = config.settings ?? {};
-    logger.info("XeroProvider initialized", { settings: this._settings });
+    logger.info("XeroProvider initialized", { companyId: config.companyId });
     this.http = new HTTPClient("https://api.xero.com/api.xro/2.0");
     this.auth = createOAuthClient({
       clientId: config.clientId,
@@ -221,13 +214,6 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
   get id(): ProviderID.XERO {
     // @ts-expect-error
     return this.constructor.id;
-  }
-
-  /**
-   * Get integration settings (e.g., default account codes).
-   */
-  get settings(): XeroSettings {
-    return this._settings;
   }
 
   getSyncConfig(entity: AccountingEntityType) {

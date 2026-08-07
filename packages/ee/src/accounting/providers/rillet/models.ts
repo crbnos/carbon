@@ -389,6 +389,29 @@ export type RilletInvoiceCreate = Omit<
 export type RilletBillCreate = Omit<Rillet.Bill, RilletTransactionWriteOmit>;
 
 /**
+ * Create payload for a Rillet payment recorded against one document
+ * (`POST /invoices/{id}/payments` for AR, `POST /bills/{id}/payments` for AP —
+ * the parent document is in the path). Used by the Phase G outbound payment
+ * write-back for Carbon-born payments (e.g. a bill paid through Ramp).
+ *
+ * VERIFY: neither the create endpoints/paths nor the exact field names are
+ * confirmed against the live Rillet OpenAPI (no local spec exists). The shape
+ * mirrors the READ schemas (InvoicePaymentSchema / BillPaymentSchema) —
+ * `amount` as a MonetaryAmount, an ISO `payment_date`, and the cash/bank
+ * `account_code` — plus the Carbon external reference. If a field is wrong,
+ * the create 400s and the sync operation lands Failed (visible, not silent).
+ */
+export type RilletPaymentCreate = {
+  amount: Rillet.MonetaryAmount;
+  /** YYYY-MM-DD. */
+  payment_date: string;
+  /** Rillet cash/bank account code the payment clears through. */
+  account_code: string;
+  /** Carbon payment id, tagged like every other pushed document. */
+  external_references?: Rillet.ExternalReference[];
+};
+
+/**
  * Local shape of a pulled Rillet invoice payment. Core has no
  * Accounting.Payment schema yet, so the payment syncer's TLocal stays
  * provider-local: it describes what upsertLocal writes into the Carbon

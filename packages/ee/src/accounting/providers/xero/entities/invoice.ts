@@ -2,6 +2,7 @@ import type { KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { loadAccountCodesById } from "../../../core/account-mapping";
 import { createMappingService } from "../../../core/external-mapping";
+import { JournalEntrySyncError } from "../../../core/posting";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -102,7 +103,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
   Xero.Invoice,
   "UpdatedDateUTC"
 > {
-  private salesAccountCodePromise?: Promise<string | null>;
+  private salesAccountCodePromise?: Promise<string>;
 
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
@@ -112,11 +113,14 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
    * The Xero AccountCode item-referenced AR invoice lines post to: the item's
    * mapped REVENUE account (`accountDefault.salesAccount` → the account-mapping
    * externalCode) — the same resolution that feeds Rillet's product
-   * `account_code` and QBO's `IncomeAccountRef`. Falls back to the provider's
-   * `defaultSalesAccountCode` only when the sales account is unset or unmapped
-   * (so AR sync is never blocked). Per-company defaults are resolved once.
+   * `account_code` and QBO's `IncomeAccountRef`. No blunt default-account-code
+   * fallback: when the company default is unset or unmapped, throws the
+   * structured UNMAPPED_ACCOUNTS Warning (same contract as the Rillet/QBO item
+   * syncers' revenue-account check) so the gap is surfaced and fixed rather
+   * than silently posted to the wrong account. Per-company defaults are
+   * resolved once.
    */
-  private getSalesAccountCode(): Promise<string | null> {
+  private getSalesAccountCode(): Promise<string> {
     if (!this.salesAccountCodePromise) {
       this.salesAccountCodePromise = (async () => {
         const defaults = await this.database
@@ -125,17 +129,31 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
           .where("companyId", "=", this.companyId)
           .executeTakeFirst();
 
-        const fallback =
-          (this.provider as XeroProvider).settings?.defaultSalesAccountCode ??
-          null;
-
-        if (!defaults?.salesAccount) return fallback;
+        if (!defaults?.salesAccount) {
+          throw new JournalEntrySyncError({
+            errorCode: "UNMAPPED_ACCOUNTS",
+            message:
+              "Cannot sync invoice: the company account defaults are missing salesAccount — Xero invoice lines require a revenue account code. Map the account on the integration settings page, then retry.",
+            warning: true,
+            metadata: { missingDefaults: ["salesAccount"] }
+          });
+        }
 
         const codesById = await loadAccountCodesById(this.database, {
           companyId: this.companyId,
           integration: this.provider.id
         });
-        return codesById.get(defaults.salesAccount) ?? fallback;
+        const code = codesById.get(defaults.salesAccount);
+        if (!code) {
+          throw new JournalEntrySyncError({
+            errorCode: "UNMAPPED_ACCOUNTS",
+            message:
+              "Cannot sync invoice: the default sales account has no Xero account mapping. Map the account on the integration settings page, then retry.",
+            warning: true,
+            metadata: { unmappedAccountIds: [defaults.salesAccount] }
+          });
+        }
+        return code;
       })();
     }
     return this.salesAccountCodePromise;
@@ -361,7 +379,8 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     );
 
     // Item-referenced AR posts to the item's mapped REVENUE account
-    // (accountDefault.salesAccount), NOT the blunt defaultSalesAccountCode.
+    // (accountDefault.salesAccount) — throws UNMAPPED_ACCOUNTS when unset
+    // or unmapped (see getSalesAccountCode).
     const salesAccountCode = await this.getSalesAccountCode();
 
     logger.info("Sales AccountCode", { salesAccountCode });
@@ -379,7 +398,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         TaxAmount: taxAmount,
         LineAmount: line.quantity * line.unitPrice,
         // The item's mapped revenue account (item-referenced AR).
-        AccountCode: salesAccountCode ?? undefined,
+        AccountCode: salesAccountCode,
         // TaxType is required by Xero: OUTPUT for sales tax, NONE for zero tax
         TaxType: line.taxPercent > 0 ? "OUTPUT" : "NONE"
       };

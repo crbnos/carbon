@@ -23,7 +23,7 @@ The sync engine lives in `packages/ee/src/accounting/` (package `@carbon/ee/acco
 
 ## Entity types & directions
 
-`AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry`. `payment` is `dependsOn: ['invoice','bill']`, `pull-from-accounting` only.
+`AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry`. `payment` is `dependsOn: ['invoice','bill']` and **two-way** (Phase G): provider-recorded payments pull back (Phase F) and Carbon-born Posted payments push out as provider payment documents. Routing is per-record by origin (the `payment` mapping), not a static direction — see Payment sync-back.
 
 `SyncDirection` = `"two-way" | "push-to-accounting" | "pull-from-accounting"` (NOT the old `from-/to-/bi-directional`). Each entity has an `EntityConfig { enabled, direction, owner: "carbon" | "accounting", syncFromDate? }`. Per-entity defaults live in `DEFAULT_SYNC_CONFIG`, deep-merged with the company's stored `syncConfig`; providers may force an entity's config (e.g. each provider forces `payment` to `pull-from-accounting` / `owner: accounting`). `owner` decides the winner on conflict in two-way sync.
 
@@ -42,7 +42,7 @@ The drain path routes through a durable **`accountingSyncOperation`** ledger (`a
 
 `sync-external-accounting.ts` flow: parse `AccountingSyncSchema` → `getAccountingIntegration` → `getProviderIntegration` → group entities by type → per type `provider.getSyncConfig(type)` (skip if `!enabled`) → `SyncFactory.getSyncer(...)` → resolve `effectiveDirection` (`two-way` uses `entityConfig.direction`) → `pushBatchToAccounting` / `pullBatchFromAccounting` / `handleTwoWaySync`. A **60s per-entity cooldown** (`SYNC_COOLDOWN_MS`, via `mappingService.getByEntity().lastSyncedAt`) skips recently-synced entities. Returns `{ success: BatchSyncResult[], failed[] }`.
 
-`events/sync.ts` maps DB table → entity type via `TABLE_TO_ENTITY_MAP` (`customer→customer`, `supplier→vendor`, `item→item`, `purchaseOrder→purchaseOrder`, `purchaseInvoice→bill`, `salesInvoice→invoice`). INSERT/UPDATE → `pushBatchToAccounting`; **DELETE is logged/skipped (not implemented)**. Wrapped in `step.run` per company+provider for checkpointing; re-throws `RatelimitError` so Inngest retries.
+`events/sync.ts` maps DB table → entity type via `TABLE_TO_ENTITY_MAP` (`customer→customer`, `supplier→vendor`, `item→item`, `purchaseOrder→purchaseOrder`, `purchaseInvoice→bill`, `salesInvoice→invoice`, `journal→journalEntry`, `payment→payment`). Generic INSERT/UPDATE → `pushBatchToAccounting`; **DELETE is logged/skipped (not implemented)**. Two tables use a table-specific enqueue rule instead of the generic push: `journal` (via `planJournalPostingOperation` — only on a transition to Posted/Reversed) and `payment` (via `getPaymentPushDecision` — only on a transition to Posted/Voided; Phase G, see Payment sync-back below). Wrapped in `step.run` per company+provider for checkpointing; re-throws `RatelimitError` so Inngest retries.
 
 ## externalIntegrationMapping table
 
@@ -89,6 +89,29 @@ into Carbon as `payment` + `invoiceSettlement` rows that close the
   family is in `documents` mode (`PostingSyncSettings.families`); `journals`/`none`
   means Carbon owns the payment (v3 Phase 4 pushes it outbound). `shouldSync` also
   benignly skips a payment whose settled document has no local mapping (ownership).
+
+### Outbound payment write-back (Phase G — Rillet)
+
+Payments executed OUTSIDE the provider (e.g. a bill paid through Ramp, recorded
+in Carbon, or a manual Carbon payment) push back so the provider's bill/invoice
+closes. `PaymentSyncerBase` gained a bespoke `pushToAccounting` (not the templated
+fetchLocal→mapToRemote flow): it reads the Carbon `payment` + `invoiceSettlement`
+directly, gates on the SAME documents-mode families gate as pull, and routes
+per-record by the `payment` mapping — a payment that already carries a mapping is
+provider-known and skips (the loop guard: a pulled payment links its mapping
+BEFORE post-payment flips it to Posted, so its Posted event finds the mapping and
+skips). A mapping-less Carbon-born payment is pushed via the provider adapter
+`pushRemotePayment` (one provider payment per settled document), then linked under
+the composite id with `metadata.origin = "carbon"` so a later void echoes out and
+a later pull no-ops. `supportsPaymentPush` gates the whole thing (Rillet true;
+QBO/Xero keep rejecting push). v1 is single-settlement, base-currency, no
+discount, no void-echo (Rillet has no payment-void endpoint) — everything else
+parks as Skipped. Rillet client: `createInvoicePayment`/`createBillPayment` (VERIFY
+comments — no local OpenAPI). Trigger: the `payment` table has an event trigger
+(`20260807152238_payment-event-trigger.sql`) + a `rillet-sync` subscription
+(`rilletOnInstall` for new installs, backfilled for existing); `getPaymentPushDecision`
+enqueues push only on a transition to Posted/Voided. Spec:
+`.ai/specs/2026-07-09-accounting-sync-engine.md` §Phase G.
 
 ## Document representation model (bills, invoices, items)
 

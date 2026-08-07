@@ -178,7 +178,14 @@ export const ENTITY_DEFINITIONS: Record<
     label: "Payments",
     type: "transaction",
     dependsOn: ["invoice", "bill"],
-    supportedDirections: ["pull-from-accounting"]
+    // Two-way: provider-recorded payments pull back (Phase F), and Carbon-born
+    // Posted payments push out as provider payment documents (Phase G). Routing
+    // is per-record by origin (the payment mapping), not a static direction.
+    supportedDirections: [
+      "two-way",
+      "pull-from-accounting",
+      "push-to-accounting"
+    ]
   },
   inventoryAdjustment: {
     label: "Inventory Adjustments",

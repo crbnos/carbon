@@ -434,11 +434,12 @@ describe("buildRilletSyncConfig", () => {
       DEFAULT_SYNC_CONFIG.entities.journalEntry.enabled
     );
 
-    // Payment: pull-only, owner accounting, and FORCED enabled (webhook
-    // must work once a token is pasted — no per-company toggle)
+    // Payment: two-way (pull inbound + push Carbon-born outbound, Phase G),
+    // owner accounting, and FORCED enabled (no per-company toggle — the
+    // documents-mode families gate governs whether it runs)
     expect(built.entities.payment).toEqual({
       enabled: true,
-      direction: "pull-from-accounting",
+      direction: "two-way",
       owner: "accounting"
     });
 
