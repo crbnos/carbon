@@ -105,13 +105,20 @@ per-entity (`sourceDocument="Entity"`, `trackedEntityLabel*`). See
 
 ## Responsive / CSS gotchas
 
-- CSS vars: **`--controls-width: 240px`** (fixed, in `apps/mes/app/styles/tailwind.css`),
+- CSS vars: **`--controls-width: 220px`** (260px at xl, in `apps/mes/app/styles/tailwind.css`),
   `--controls-height` set inline from a computed `controlsHeight` memo, `--header-height`
-  from `@carbon/react`. The Details `ScrollArea` reserves right space with
-  `md:pr-[calc(var(--controls-width))]` and height
-  `calc(100dvh - var(--header-height)*2 - var(--controls-height) - 2rem)`.
-- Header detail metadata is `hidden md:flex` (so `Controls` shows it on mobile instead);
-  Materials "Source" column is `hidden lg:table-cell`; Procedure tab is `hidden lg:block`;
-  the `Controls` panel is inline on mobile, `md:absolute` top-right on desktop.
+  from `@carbon/react`. Details scrollport classes live in
+  `detailsScrollport.ts` (`DETAILS_SCROLLPORT_CLASSNAME`):
+  - **Below `lg`:** `h-auto` + page scroll — Controls/Times stack inline under content so
+    Files / Serial Numbers stay reachable (do **not** put a viewport-filling fixed height
+    here; that nested-scroll trap was #959).
+  - **`lg+`:** fixed height
+    `calc(100dvh - var(--header-height)*2 - var(--controls-height) - 2rem)` with
+    `lg:pr-[var(--controls-gutter)]` so absolute Controls/Times dock without overlap.
+- Root Tabs is `min-h-screen h-auto lg:h-screen` for the same reason.
+- Header detail metadata is `hidden lg:flex` (so `Controls` shows it on mobile instead);
+  Materials "Source" column is `hidden lg:table-cell`; Procedure steps list is
+  `hidden lg:block`; the `Controls` panel is inline on mobile, `lg:absolute` top-right
+  on desktop.
 
 <!-- UNVERIFIED: exact column set of jobOperation (status/duration fields) not fully audited here; check the live schema or 20240909194622_jobs.sql + later alters when relying on specific fields. -->

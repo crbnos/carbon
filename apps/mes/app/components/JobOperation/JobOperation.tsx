@@ -142,6 +142,7 @@ import {
   StepsListItem
 } from "./components/Step";
 import { TableSkeleton } from "./components/TableSkeleton";
+import { DETAILS_SCROLLPORT_CLASSNAME } from "./detailsScrollport";
 import { useFiles } from "./hooks/useFiles";
 import { useOperation } from "./hooks/useOperation";
 
@@ -485,7 +486,9 @@ export const JobOperation = ({
         key={`operation-${operation.id}`}
         value={activeTab}
         onValueChange={setActiveTab}
-        className="w-full min-w-0 h-screen bg-card relative"
+        // Below lg the page scrolls (Controls stacks inline). A fixed h-screen
+        // box would clip that overflow; grow with content on small viewports.
+        className="w-full min-w-0 min-h-screen h-auto lg:h-screen bg-card relative"
         style={
           {
             "--controls-height": `${controlsHeight}px`,
@@ -641,7 +644,13 @@ export const JobOperation = ({
         <Separator />
 
         <TabsContent value="details" className="flex flex-col">
-          <ScrollArea className="w-full min-w-0 lg:pr-[var(--controls-gutter)] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+          {/*
+            Native scrollport (not Radix ScrollArea): below lg height is auto so
+            Files/Serials participate in page scroll with the stacked Controls.
+            At lg+ a fixed height + overflow-y-auto docks beside absolute Controls.
+            See detailsScrollport.ts / #959.
+          */}
+          <div className={DETAILS_SCROLLPORT_CLASSNAME}>
             <div className="flex items-start justify-between gap-4 p-4 lg:p-6">
               <HStack className="min-w-0">
                 {thumbnailPath && (
@@ -1825,7 +1834,7 @@ export const JobOperation = ({
                 </div>
               </>
             )}
-          </ScrollArea>
+          </div>
         </TabsContent>
         <TabsContent value="model">
           <div className="relative w-full min-w-0 lg:pr-[var(--controls-gutter)] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] p-0">
