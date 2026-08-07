@@ -1,5 +1,4 @@
 import type { KyselyDatabase } from "@carbon/database/client";
-import { redis } from "@carbon/kv";
 import { findTriggerSchedule, nextRunAfter } from "@carbon/workflows";
 import type { Kysely } from "kysely";
 import type { MatchResult } from "./matcher";
@@ -227,6 +226,7 @@ export async function dispatchDue(
 export async function ownsChain(bookedFor: number | null): Promise<boolean> {
   if (bookedFor === null) return true; // the backstop always adopts
   try {
+    const { redis } = await import("@carbon/kv");
     const current = await redis.get(CHAIN_KEY);
     return current === null || current === String(bookedFor);
   } catch {
@@ -236,6 +236,7 @@ export async function ownsChain(bookedFor: number | null): Promise<boolean> {
 
 export async function bookChain(wakeAt: number): Promise<void> {
   try {
+    const { redis } = await import("@carbon/kv");
     await redis.set(CHAIN_KEY, String(wakeAt), "EX", CHAIN_TTL_SECONDS);
   } catch {
     // Non-fatal: the hourly backstop revives the chain.
@@ -245,6 +246,7 @@ export async function bookChain(wakeAt: number): Promise<void> {
 /** True when the chain looks dead and a wake should be sent to adopt it. */
 export async function chainIsStale(now: Date): Promise<boolean> {
   try {
+    const { redis } = await import("@carbon/kv");
     const current = await redis.get(CHAIN_KEY);
     if (current === null) return true;
     return Number(current) < now.getTime() - BACKSTOP_STALE_MS;
