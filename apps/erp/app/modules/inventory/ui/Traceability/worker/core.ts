@@ -23,8 +23,6 @@ const POS_TOP = "top" as Position;
 
 export type LayoutDirection = "TB" | "LR";
 
-export type EdgePoint = { x: number; y: number };
-
 export type LayoutInput = {
   payload: LineagePayload;
   direction: LayoutDirection;
@@ -274,10 +272,9 @@ export function computeDagreLayout(
 ): {
   positioned: LineageNode[];
   backEdges: Set<string>;
-  edgePoints: Map<string, EdgePoint[]>;
 } {
   if (nodes.length === 0) {
-    return { positioned: nodes, backEdges: new Set(), edgePoints: new Map() };
+    return { positioned: nodes, backEdges: new Set() };
   }
 
   const backEdges = detectBackEdges(nodes, edges);
@@ -332,18 +329,7 @@ export function computeDagreLayout(
     };
   });
 
-  const edgePoints = new Map<string, EdgePoint[]>();
-  for (const e of edges) {
-    if (backEdges.has(e.id)) continue;
-    const dagreEdge = g.edge({ v: e.source, w: e.target, name: e.id }) as
-      | { points?: EdgePoint[] }
-      | undefined;
-    if (dagreEdge?.points && dagreEdge.points.length >= 2) {
-      edgePoints.set(e.id, dagreEdge.points);
-    }
-  }
-
-  return { positioned, backEdges, edgePoints };
+  return { positioned, backEdges };
 }
 
 export function computeFullLayout(input: LayoutInput): LayoutResult {
@@ -357,7 +343,7 @@ export function computeFullLayout(input: LayoutInput): LayoutResult {
     if (cluster.status === "Rejected") rejectIds.add(cluster.id);
   }
   const weightedEdges = annotateEdgeWeights(flow.edges, rejectIds);
-  const { positioned, backEdges, edgePoints } = computeDagreLayout(
+  const { positioned, backEdges } = computeDagreLayout(
     flow.nodes,
     weightedEdges,
     input.direction,
@@ -376,7 +362,6 @@ export function computeFullLayout(input: LayoutInput): LayoutResult {
       data: {
         ...(e.data as LineageEdgeData),
         isBackEdge: backEdges.has(e.id),
-        points: edgePoints.get(e.id),
         labelT: labelTs.get(e.id)
       }
     });

@@ -57,7 +57,6 @@ export type LineageEdgeData = {
   weight?: number;
   isReject?: boolean;
   isBackEdge?: boolean;
-  points?: { x: number; y: number }[];
   /**
    * Where along this edge's own curve the label sits, 0..1 (0.5 = midpoint).
    * Layout slides it off the midpoint when parallel edges would stack their

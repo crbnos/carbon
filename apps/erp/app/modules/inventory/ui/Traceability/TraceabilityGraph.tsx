@@ -203,7 +203,6 @@ function TraceabilityGraphInner({
     setLayoutVersion((v) => v + 1);
   }, []);
 
-  const [draggedIds, setDraggedIds] = useState<Set<string>>(new Set());
   const [fitted, setFitted] = useState(false);
 
   useEffect(() => {
@@ -326,7 +325,6 @@ function TraceabilityGraphInner({
   useEffect(() => {
     setNodes(laidNodes as Node[]);
     setEdges(laidEdges as Edge[]);
-    setDraggedIds(new Set());
     setLayoutAnimating(true);
     const t = setTimeout(() => setLayoutAnimating(false), 260);
     return () => clearTimeout(t);
@@ -517,16 +515,12 @@ function TraceabilityGraphInner({
     return edges.map((e) => {
       const dimmed = isolated ? !isolated.edgeIds.has(e.id) : false;
       const highlighted = selectionPath?.edgeIds.has(e.id) ?? false;
-      const touchesDragged =
-        draggedIds.has(e.source) || draggedIds.has(e.target);
-      const baseData = { ...((e.data as any) ?? {}) };
-      if (touchesDragged) baseData.points = undefined;
       return {
         ...e,
-        data: { ...baseData, dimmed, highlighted }
+        data: { ...((e.data as any) ?? {}), dimmed, highlighted }
       };
     });
-  }, [edges, isolated, selectionPath, draggedIds]);
+  }, [edges, isolated, selectionPath]);
 
   useEffect(() => {
     if (!nodesInitialized) return;
@@ -635,14 +629,6 @@ function TraceabilityGraphInner({
         onEdgesChange={onEdgesChange}
         className="trace-fade-in"
         style={{ opacity: fitted ? 1 : 0 }}
-        onNodeDragStart={(_, node) =>
-          setDraggedIds((prev) => {
-            if (prev.has(node.id)) return prev;
-            const next = new Set(prev);
-            next.add(node.id);
-            return next;
-          })
-        }
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         proOptions={proOptions}

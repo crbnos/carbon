@@ -20,7 +20,6 @@ type Props = EdgeProps & {
     isReject?: boolean;
     isBackEdge?: boolean;
     highlighted?: boolean;
-    points?: { x: number; y: number }[];
   };
 };
 
