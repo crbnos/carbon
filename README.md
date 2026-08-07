@@ -405,7 +405,7 @@ To restore a production database snapshot locally, use `crbn restore`. It handle
    # …or for .dump archives:
    $ crbn restore /path/to/postgres_YYYYMMDD.dump
    ```
-   It prompts before replacing the database. If the stack isn't running it boots a postgres-only stack for the restore and tears it back down, so `crbn up` first is optional.
+   It prompts before replacing the database. The stack must already be running (`crbn up`) — a restore rewrites the `auth` and `storage` schemas, which GoTrue and Storage build through their own migrations when those containers boot, so `crbn restore` refuses rather than restore into an uninitialized stack.
 
    To also get local admin access, pass your production email — your account is upgraded to Admin in the companies it already belongs to and the password is reset locally:
    ```bash

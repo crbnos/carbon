@@ -220,7 +220,14 @@ const main = defineCommand({
         }
       },
       run: ({ args }) => {
-        const mode = args.mode === "prod" ? "prod" : "local";
+        // Explicit rather than coercing anything non-"prod" to "local": a typo
+        // in a flag that controls whether production services stay wired up
+        // must not silently pick a mode.
+        const mode = String(args.mode ?? "local");
+        if (mode !== "local" && mode !== "prod") {
+          console.error(`--mode must be 'local' or 'prod' (got '${mode}')`);
+          process.exit(1);
+        }
         return restore({
           file: String(args.file),
           scrubEmails: args["scrub-emails"] !== false,

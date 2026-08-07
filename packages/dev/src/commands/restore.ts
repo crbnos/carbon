@@ -83,7 +83,9 @@ export async function restore(opts: RestoreOptions) {
   }
 
   const mode = opts.mode ?? "local";
-  if (mode === "prod" && !opts.yes) {
+  // Warned unconditionally: --yes also skips the confirmation, so gating this on
+  // !yes made the most dangerous invocation the silent one.
+  if (mode === "prod") {
     log.warn(
       "--mode prod skips ALL localization: webhooks, integrations and printer routes stay pointed at the source environment"
     );
@@ -169,4 +171,13 @@ async function runRestore(
         ]
       : [])
   ]);
+
+  if (shouldRegen) {
+    // These types now describe the RESTORED database, which carries whatever
+    // the source environment accumulated outside the migration stream. Commit
+    // them and that drift enters the repo's type surface.
+    log.warn(
+      "types were regenerated from the restored snapshot — do NOT commit them; run `pnpm db:types` against a migration-built database before committing"
+    );
+  }
 }

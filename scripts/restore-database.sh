@@ -54,6 +54,7 @@ set -euo pipefail
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-localpass}"
 SCRUB_EMAILS="${SCRUB_EMAILS:-}"
+KEEP_STORAGE_OBJECTS="${KEEP_STORAGE_OBJECTS:-}"
 RESTORE_MODE="${RESTORE_MODE:-local}"
 if [[ "$RESTORE_MODE" != "local" && "$RESTORE_MODE" != "prod" ]]; then
   echo "RESTORE_MODE must be 'local' or 'prod' (got '$RESTORE_MODE')" >&2
