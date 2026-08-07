@@ -15179,7 +15179,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "Welches Fertigungsereignis die Lagerfrist-Uhr startet — z. B. Füllen, Versiegeln oder endgültiges QS."
 
 msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
-msgstr ""
+msgstr "Welche Systemdaten gewinnen, wenn sowohl Carbon als auch {providerName} denselben Datensatz geändert haben. Einträge, die {providerName} durch seine eigenen Funktionen behebt, werden angezeigt, können aber nicht geändert werden."
 
 msgid "Who Can Approve"
 msgstr "Wer kann genehmigen"

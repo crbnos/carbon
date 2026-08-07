@@ -15179,7 +15179,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
 
 msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
-msgstr ""
+msgstr "Carbon과 {providerName}이 같은 레코드를 모두 변경한 경우 어느 시스템의 데이터를 우선하는지 결정합니다. {providerName}이 자체 기능으로 수정한 항목은 표시되지만 변경할 수 없습니다."
 
 msgid "Who Can Approve"
 msgstr "승인 가능자"
