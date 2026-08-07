@@ -268,6 +268,13 @@ export async function createCustomerAccount(
 
   if (user.data) {
     userId = user.data.id;
+    if (!(await authIdentityExists(userId))) {
+      return {
+        success: false,
+        message:
+          "This user's auth account no longer exists. Contact support before re-adding."
+      };
+    }
   } else {
     isNewUser = true;
     const resolvedId = await resolveAuthUserId(email);
@@ -378,6 +385,13 @@ export async function createEmployeeAccount(
 
   if (user.data) {
     userId = user.data.id;
+    if (!(await authIdentityExists(userId))) {
+      return {
+        success: false,
+        message:
+          "This user's auth account no longer exists. Contact support before re-adding."
+      };
+    }
 
     const existingEmployee = await client
       .from("employee")
@@ -502,6 +516,13 @@ export async function createSupplierAccount(
 
   if (user.data) {
     userId = user.data.id;
+    if (!(await authIdentityExists(userId))) {
+      return {
+        success: false,
+        message:
+          "This user's auth account no longer exists. Contact support before re-adding."
+      };
+    }
   } else {
     isNewUser = true;
     const resolvedId = await resolveAuthUserId(email);
@@ -630,6 +651,12 @@ export async function getUserByEmail(email: string) {
     .select("*")
     .eq("email", email.toLowerCase())
     .single();
+}
+
+// Returns false if the auth identity for this userId has been deleted, leaving only an app-side row.
+async function authIdentityExists(userId: string): Promise<boolean> {
+  const { error } = await getCarbonServiceRole().auth.admin.getUserById(userId);
+  return !error;
 }
 
 // Creates the auth user for email, or recovers the existing ID if a prior deletion left one behind.
