@@ -165,10 +165,10 @@ msgid "{name} deleted"
 msgstr "{name} 已删除"
 
 msgid "{providerName} data overwrites Carbon data"
-msgstr ""
+msgstr "{providerName}的数据覆盖Carbon数据"
 
 msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr ""
+msgstr "{providerName}的功能决定了这些 — 无法在此处更改。"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
@@ -2262,7 +2262,7 @@ msgid "Carbon column"
 msgstr "Carbon 列"
 
 msgid "Carbon data overwrites {providerName} data"
-msgstr ""
+msgstr "Carbon数据覆盖{providerName}的数据"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon已按照您公司的运营方式进行配置，您的数据已加载，您的团队对使用它充满信心。当这一切都实现时，您就可以上线了。"
@@ -4482,7 +4482,7 @@ msgid "Documents"
 msgstr "文档"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
-msgstr ""
+msgstr "文档将发票、账单和付款推送为原生提供商文档；其日记被记录为由文档覆盖。它还将在提供商中记录的付款拉回到Carbon，关闭匹配的发票或账单并发布Carbon GL日记。关闭时将其记录为故意排除。"
 
 msgid "Don't Cancel"
 msgstr "不要取消"
@@ -5995,7 +5995,7 @@ msgid "Fixed Assets"
 msgstr "固定资产"
 
 msgid "Fixed by {providerName}"
-msgstr ""
+msgstr "由{providerName}固定"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "收益和损失"
@@ -12271,10 +12271,10 @@ msgid "Source Method"
 msgstr "源方法"
 
 msgid "Source of truth"
-msgstr ""
+msgstr "真实来源"
 
 msgid "Source of Truth"
-msgstr ""
+msgstr "真实来源"
 
 msgid "Source types"
 msgstr "源类型"
@@ -15185,7 +15185,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "哪个制造事件启动保质期时钟 — 例如填充、密封或最终QC。"
 
 msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr ""
+msgstr "当Carbon和{providerName}都更改了同一记录时，哪个系统的数据优先。"
 
 msgid "Who Can Approve"
 msgstr "谁可以批准"

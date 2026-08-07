@@ -165,10 +165,10 @@ msgid "{name} deleted"
 msgstr "{name}が削除されました"
 
 msgid "{providerName} data overwrites Carbon data"
-msgstr ""
+msgstr "{providerName}のデータがCarbonのデータを上書きします"
 
 msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr ""
+msgstr "{providerName}の機能がこれらを決定します。ここで変更することはできません。"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
@@ -2262,7 +2262,7 @@ msgid "Carbon column"
 msgstr "Carbonカラム"
 
 msgid "Carbon data overwrites {providerName} data"
-msgstr ""
+msgstr "Carbonのデータが{providerName}のデータを上書きします"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbonがあなたの会社の運営方法に合わせて設定され、データが読み込まれ、チームがそれを自信を持って使用できるようになっています。その状態になれば、本番環境への移行準備が整っています。"
@@ -4482,7 +4482,7 @@ msgid "Documents"
 msgstr "ドキュメント"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
-msgstr ""
+msgstr "ドキュメントは、請求書、帳票、支払いをネイティブプロバイダードキュメントとしてプッシュします。それらの仕訳はドキュメントでカバーされているものとして記録されます。また、プロバイダーで記録された支払いをCarbonに引き戻し、一致する請求書または帳票を閉じて、CarbonのGL仕訳を投稿します。Offはそれらを意図的に除外されたものとして記録します。"
 
 msgid "Don't Cancel"
 msgstr "キャンセルしない"
@@ -5995,7 +5995,7 @@ msgid "Fixed Assets"
 msgstr "固定資産"
 
 msgid "Fixed by {providerName}"
-msgstr ""
+msgstr "{providerName}によって固定"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "利益と損失"
@@ -12271,10 +12271,10 @@ msgid "Source Method"
 msgstr "ソース方法"
 
 msgid "Source of truth"
-msgstr ""
+msgstr "信頼できる情報源"
 
 msgid "Source of Truth"
-msgstr ""
+msgstr "信頼できる情報源"
 
 msgid "Source types"
 msgstr "ソースタイプ"
@@ -15185,7 +15185,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "どの製造イベントが保存期間時計を開始するか — たとえば、塗りつぶし、シール、または最終QC。"
 
 msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr ""
+msgstr "Carbonと{providerName}の両方が同じレコードを変更した場合、どのシステムのデータが優先されるか。"
 
 msgid "Who Can Approve"
 msgstr "誰が承認できるか"

@@ -165,10 +165,10 @@ msgid "{name} deleted"
 msgstr "{name} usunięty"
 
 msgid "{providerName} data overwrites Carbon data"
-msgstr ""
+msgstr "{providerName} dane zastępują dane Carbon"
 
 msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr ""
+msgstr "Możliwości {providerName} decydują o tym — nie można ich zmienić tutaj."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
@@ -2262,7 +2262,7 @@ msgid "Carbon column"
 msgstr "Kolumna Carbon"
 
 msgid "Carbon data overwrites {providerName} data"
-msgstr ""
+msgstr "Dane Carbon zastępują dane {providerName}"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon jest skonfigurowany w taki sposób, w jaki działa Twoja firma, Twoje dane są załadowane, a Twój zespół pewnie go używa. Gdy tak się stanie, będziesz gotowy do uruchomienia."
@@ -4482,7 +4482,7 @@ msgid "Documents"
 msgstr "Dokumenty"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
-msgstr ""
+msgstr "Dokumenty wysyła faktury, rachunki i płatności jako dokumenty dostawcy; ich dzienniki są rejestrowane jako pokryte dokumentem. Pobiera również płatności zarejestrowane u dostawcy z powrotem do Carbon, zamykając pasującą fakturę lub rachunek i publikując dziennik GL Carbon. Off rejestruje je jako celowo wyłączone."
 
 msgid "Don't Cancel"
 msgstr "Nie anuluj"
@@ -5995,7 +5995,7 @@ msgid "Fixed Assets"
 msgstr "Środki trwałe"
 
 msgid "Fixed by {providerName}"
-msgstr ""
+msgstr "Ustalono przez {providerName}"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Zyski i Straty"
@@ -12271,10 +12271,10 @@ msgid "Source Method"
 msgstr "Metoda źródłowa"
 
 msgid "Source of truth"
-msgstr ""
+msgstr "Źródło prawdy"
 
 msgid "Source of Truth"
-msgstr ""
+msgstr "Źródło Prawdy"
 
 msgid "Source types"
 msgstr "Typy źródła"
@@ -15185,7 +15185,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "Które zdarzenie produkcyjne uruchamia zegar czasu przechowywania — na przykład napełnianie, uszczelnianie lub ostateczną kontrolę jakości."
 
 msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr ""
+msgstr "Którego systemu dane wygrają, gdy zarówno Carbon, jak i {providerName} zmieniły ten sam rekord."
 
 msgid "Who Can Approve"
 msgstr "Kto może zatwierdzić"

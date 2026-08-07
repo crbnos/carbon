@@ -165,10 +165,10 @@ msgid "{name} deleted"
 msgstr "{name} удален"
 
 msgid "{providerName} data overwrites Carbon data"
-msgstr ""
+msgstr "Данные {providerName} перезаписывают данные Carbon"
 
 msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr ""
+msgstr "Возможности {providerName} определяют эти настройки — их нельзя изменить здесь."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
@@ -2262,7 +2262,7 @@ msgid "Carbon column"
 msgstr "Столбец Carbon"
 
 msgid "Carbon data overwrites {providerName} data"
-msgstr ""
+msgstr "Данные Carbon перезаписывают данные {providerName}"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon настроена в соответствии с тем, как работает ваша компания, ваши данные загружены, и ваша команда уверенно её использует. Когда это произойдёт, вы будете готовы к запуску."
@@ -4482,7 +4482,7 @@ msgid "Documents"
 msgstr "Документы"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
-msgstr ""
+msgstr "Documents отправляет счета-фактуры, счета и платежи в виде родных документов поставщика; их журналы записываются как покрытые документом. Он также получает платежи, записанные в поставщик, обратно в Carbon, закрывая соответствующую счет-фактуру или счет и публикуя журнал GL Carbon. Off записывает их как намеренно исключенные."
 
 msgid "Don't Cancel"
 msgstr "Не отменять"
@@ -5995,7 +5995,7 @@ msgid "Fixed Assets"
 msgstr "Основные средства"
 
 msgid "Fixed by {providerName}"
-msgstr ""
+msgstr "Исправлено {providerName}"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Прибыли и Убытки"
@@ -12271,10 +12271,10 @@ msgid "Source Method"
 msgstr "Исходный метод"
 
 msgid "Source of truth"
-msgstr ""
+msgstr "источник истины"
 
 msgid "Source of Truth"
-msgstr ""
+msgstr "Источник истины"
 
 msgid "Source types"
 msgstr "Типы источников"
@@ -15185,7 +15185,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."
 
 msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr ""
+msgstr "Данные какой системы имеют приоритет, когда и Carbon, и {providerName} изменили один и тот же запись."
 
 msgid "Who Can Approve"
 msgstr "Кто может одобрить"

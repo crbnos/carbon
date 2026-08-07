@@ -165,10 +165,10 @@ msgid "{name} deleted"
 msgstr "{name} silindi"
 
 msgid "{providerName} data overwrites Carbon data"
-msgstr ""
+msgstr "{providerName} verileri Carbon verilerini üzerine yazıyor"
 
 msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr ""
+msgstr "{providerName}'nin yetenekleri bunları belirler — burada değiştirilemiyor."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
@@ -2262,7 +2262,7 @@ msgid "Carbon column"
 msgstr "Carbon sütunu"
 
 msgid "Carbon data overwrites {providerName} data"
-msgstr ""
+msgstr "Carbon verileri {providerName} verilerini üzerine yazıyor"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon, şirketinizin çalışma şekline göre yapılandırılmış, verileriniz yüklenmiş ve ekibiniz bunu kullanmakta kendinden emin. Bu doğru olduğunda, canlı yayına geçmeye hazırsınız."
@@ -4482,7 +4482,7 @@ msgid "Documents"
 msgstr "Belgeler"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
-msgstr ""
+msgstr "Documents faturaları, muhasebe faturalarını ve ödemeleri sağlayıcı belgesi olarak gönderir; muhasebe kayıtları belge tarafından kapsandığı şekilde kaydedilir. Ayrıca sağlayıcıda kaydedilen ödemeleri Carbon'a geri çekerek, eşleşen fatura veya muhasebe faturasını kapatır ve bir Carbon GL muhasebe kaydı oluşturur. Kapalı, bunları kasıtlı olarak hariç tutulmuş olarak kaydeder."
 
 msgid "Don't Cancel"
 msgstr "İptal Etme"
@@ -5995,7 +5995,7 @@ msgid "Fixed Assets"
 msgstr "Sabit Varlıklar"
 
 msgid "Fixed by {providerName}"
-msgstr ""
+msgstr "{providerName} tarafından sabitledi"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Kazançlar ve Zararlar"
@@ -12271,10 +12271,10 @@ msgid "Source Method"
 msgstr "Kaynak Yöntem"
 
 msgid "Source of truth"
-msgstr ""
+msgstr "Gerçeğin kaynağı"
 
 msgid "Source of Truth"
-msgstr ""
+msgstr "Gerçeğin Kaynağı"
 
 msgid "Source types"
 msgstr "Kaynak türleri"
@@ -15185,7 +15185,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "Hangi üretim olayı raf ömrü saatini başlatır — örneğin, doldurma, mühürleme veya nihai QC."
 
 msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr ""
+msgstr "Her iki Carbon ve {providerName} aynı kaydı değiştirdiğinde hangi sistemin verileri kazanır?"
 
 msgid "Who Can Approve"
 msgstr "Kimler Onaylayabilir"

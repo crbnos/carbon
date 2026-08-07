@@ -165,10 +165,10 @@ msgid "{name} deleted"
 msgstr "{name} 삭제됨"
 
 msgid "{providerName} data overwrites Carbon data"
-msgstr ""
+msgstr "{providerName} 데이터가 Carbon 데이터를 덮어씁니다"
 
 msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr ""
+msgstr "{providerName}의 기능이 이것들을 결정합니다 — 여기서는 변경할 수 없습니다."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
@@ -2262,7 +2262,7 @@ msgid "Carbon column"
 msgstr "Carbon 열"
 
 msgid "Carbon data overwrites {providerName} data"
-msgstr ""
+msgstr "Carbon 데이터가 {providerName} 데이터를 덮어씁니다"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon이 귀사의 운영 방식에 맞게 설정되었고, 데이터가 적재되었으며, 팀이 자신 있게 사용할 수 있는 상태입니다. 이 조건이 충족되면 실제 운영을 시작할 준비가 된 것입니다."
@@ -4482,7 +4482,7 @@ msgid "Documents"
 msgstr "문서"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
-msgstr ""
+msgstr "문서는 송장, 청구서 및 지불을 기본 공급자 문서로 푸시하고, 해당 분개는 문서에서 다룬 것으로 기록됩니다. 또한 공급자에 기록된 지불을 Carbon으로 다시 끌어와 일치하는 청구서 또는 송장을 마감하고 Carbon GL 분개를 게시합니다. Off는 이를 의도적으로 제외된 것으로 기록합니다."
 
 msgid "Don't Cancel"
 msgstr "취소하지 않음"
@@ -5995,7 +5995,7 @@ msgid "Fixed Assets"
 msgstr "고정자산"
 
 msgid "Fixed by {providerName}"
-msgstr ""
+msgstr "{providerName}에 의해 고정됨"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "배치 크기가 표준과 다를 때 발생하는 고정비 상각 차이"
@@ -12271,10 +12271,10 @@ msgid "Source Method"
 msgstr "소스 방법"
 
 msgid "Source of truth"
-msgstr ""
+msgstr "신뢰할 수 있는 데이터 출처"
 
 msgid "Source of Truth"
-msgstr ""
+msgstr "신뢰할 수 있는 데이터 출처"
 
 msgid "Source types"
 msgstr "소스 유형"
@@ -15185,7 +15185,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
 
 msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr ""
+msgstr "Carbon과 {providerName} 모두 같은 레코드를 변경했을 때 어느 시스템의 데이터가 우선하는가."
 
 msgid "Who Can Approve"
 msgstr "승인 가능자"

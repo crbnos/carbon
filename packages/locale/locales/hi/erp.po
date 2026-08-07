@@ -165,10 +165,10 @@ msgid "{name} deleted"
 msgstr "{name} हटाया गया"
 
 msgid "{providerName} data overwrites Carbon data"
-msgstr ""
+msgstr "{providerName} का डेटा Carbon के डेटा को ओवरराइट करता है"
 
 msgid "{providerName}'s capabilities decide these — they can't be changed here."
-msgstr ""
+msgstr "{providerName} की क्षमताएं इन्हें तय करती हैं — उन्हें यहां नहीं बदला जा सकता।"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
@@ -2262,7 +2262,7 @@ msgid "Carbon column"
 msgstr "कार्बन कॉलम"
 
 msgid "Carbon data overwrites {providerName} data"
-msgstr ""
+msgstr "Carbon का डेटा {providerName} के डेटा को ओवरराइट करता है"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon को आपकी कंपनी के तरीके से कॉन्फ़िगर किया गया है, आपका डेटा लोड किया गया है, और आपकी टीम इसे उपयोग करने में आत्मविश्वास रखती है। जब यह सच हो, तो आप लाइव जाने के लिए तैयार हैं।"
@@ -4482,7 +4482,7 @@ msgid "Documents"
 msgstr "दस्तावेज़"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
-msgstr ""
+msgstr "दस्तावेज़ चालान, बिल और भुगतान को मूल प्रदाता दस्तावेज़ के रूप में धकेलता है; उनकी पत्रिकाओं को दस्तावेज़ द्वारा कवर किए गए के रूप में दर्ज किया जाता है। यह प्रदाता में दर्ज भुगतान को वापस Carbon में खींचता है, मिलान वाले चालान या बिल को बंद करता है और एक Carbon GL पत्रिका पोस्ट करता है। बंद उन्हें जानबूझकर बाहर रखे गए के रूप में दर्ज करता है।"
 
 msgid "Don't Cancel"
 msgstr "रद्द न करें"
@@ -5995,7 +5995,7 @@ msgid "Fixed Assets"
 msgstr "स्थिर संपत्ति"
 
 msgid "Fixed by {providerName}"
-msgstr ""
+msgstr "{providerName} द्वारा निर्धारित"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "लाभ और हानि"
@@ -12271,10 +12271,10 @@ msgid "Source Method"
 msgstr "स्रोत विधि"
 
 msgid "Source of truth"
-msgstr ""
+msgstr "सत्य का स्रोत"
 
 msgid "Source of Truth"
-msgstr ""
+msgstr "सत्य का स्रोत"
 
 msgid "Source types"
 msgstr "स्रोत प्रकार"
@@ -15185,7 +15185,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "कौन सी विनिर्माण घटना शेल्फ-जीवन घड़ी शुरू करती है — उदाहरण के लिए, भरना, सील करना, या अंतिम क्यूसी।"
 
 msgid "Which system's data wins when both Carbon and {providerName} have changed the same record."
-msgstr ""
+msgstr "जब Carbon और {providerName} दोनों ने एक ही रिकॉर्ड को बदल दिया है तो कौन सा सिस्टम डेटा जीतता है।"
 
 msgid "Who Can Approve"
 msgstr "कौन अनुमोदन कर सकता है"
