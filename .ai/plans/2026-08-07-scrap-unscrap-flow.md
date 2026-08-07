@@ -8,7 +8,7 @@
 - [x] Task 1: Migration A — scrap enums + itemLedger.scrapReasonId
 - [x] Task 2: Migration B — Done-predicate fix (RPC exclusions verified unnecessary — see task note)
 - [x] Task 3: Apply migrations and regenerate types
-- [ ] Task 4: Extend the shared adjustment posting core (dimensions, scrapReasonId, fixed-cost override)
+- [x] Task 4: Extend the shared adjustment posting core (dimensions, scrapReasonId, fixed-cost override)
 - [ ] Task 5: post-inventory-adjustment — Scrap and Unscrap adjustment types
 - [ ] Task 6: issue — jobOperationScrap case (serial/batch/untracked WIP scrap + spawn + reopen)
 - [ ] Task 7: issue — rework scrapTrackedEntity (reason, methodType branches, replacement)
@@ -159,6 +159,7 @@ cd packages/database/supabase/functions && git show HEAD:./shared/post-adjustmen
 - Modify: `packages/database/supabase/functions/post-inventory-adjustment/index.ts`
 - Create: `packages/database/supabase/functions/post-inventory-adjustment/resolve-unscrap-cost.ts` (pure module + test)
 - Create: `packages/database/supabase/functions/post-inventory-adjustment/resolve-unscrap-cost.test.ts`
+- Modify: `packages/database/supabase/functions/shared/batch-split.ts` — widen `childStatus` union with `"Scrapped"` (discovered during execution; additive type change only, callers unaffected)
 
 **Steps:**
 1. Extend the zod payload (~line 28): `adjustmentType` enum adds `"Scrap"` and `"Unscrap"`; add `scrapReasonId: z.string().optional()`, `unscrapOfItemLedgerId: z.string().optional()`; `.superRefine` requiring `scrapReasonId` whenever `adjustmentType` is `Scrap` or `Unscrap`.
