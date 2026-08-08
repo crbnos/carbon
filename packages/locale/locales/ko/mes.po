@@ -154,7 +154,7 @@ msgid "available"
 msgstr "사용 가능"
 
 msgid "Available"
-msgstr ""
+msgstr "사용 가능"
 
 msgid "Batch"
 msgstr "배치"
@@ -272,7 +272,7 @@ msgid "Console Mode"
 msgstr "콘솔 모드"
 
 msgid "Consumed"
-msgstr ""
+msgstr "소비됨"
 
 msgid "Consumed expired"
 msgstr "만료 후 소모됨"
@@ -878,7 +878,7 @@ msgid "Nothing scheduled at this work center"
 msgstr "이 작업 센터에서 예정된 것 없음"
 
 msgid "Nothing to scrap"
-msgstr ""
+msgstr "폐기할 것이 없습니다"
 
 msgid "OEE Impact"
 msgstr "OEE 영향"
@@ -1322,7 +1322,7 @@ msgid "The lot will still be dispositioned, but an NCR cannot be created until a
 msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 구성될 때까지 NCR을 생성할 수 없습니다."
 
 msgid "There are no available or consumed tracked parts for this material."
-msgstr ""
+msgstr "이 재료에 대해 사용 가능하거나 소비된 추적된 부품이 없습니다."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "자재명세서(BOM)에 아직 완전히 출고되지 않은 일련번호 또는 배치 추적 자재가 있습니다. 출고하지 않고 완료하면 이력추적 기록이 부정확해질 수 있습니다."

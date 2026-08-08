@@ -154,7 +154,7 @@ msgid "available"
 msgstr "mevcut"
 
 msgid "Available"
-msgstr ""
+msgstr "Mevcut"
 
 msgid "Batch"
 msgstr "Parti"
@@ -272,7 +272,7 @@ msgid "Console Mode"
 msgstr "Konsol Modu"
 
 msgid "Consumed"
-msgstr ""
+msgstr "Tüketildi"
 
 msgid "Consumed expired"
 msgstr "Tüketilmiş süre dolmuş"
@@ -878,7 +878,7 @@ msgid "Nothing scheduled at this work center"
 msgstr "Bu iş merkezinde hiçbir şey planlanmadı"
 
 msgid "Nothing to scrap"
-msgstr ""
+msgstr "Atılacak hiçbir şey yok"
 
 msgid "OEE Impact"
 msgstr "OEE Etkisi"
@@ -1322,7 +1322,7 @@ msgid "The lot will still be dispositioned, but an NCR cannot be created until a
 msgstr "Lot yine de işleme tabi tutulacak, ancak en az bir Sorun Türü yapılandırılana kadar bir NCR oluşturulamaz."
 
 msgid "There are no available or consumed tracked parts for this material."
-msgstr ""
+msgstr "Bu malzeme için mevcut veya tüketilmiş izlenen parça bulunmamaktadır."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak verilmemiş. Vermeden tamamlamak, yanlış izlenebilirlik kayıtlarına neden olabilir."

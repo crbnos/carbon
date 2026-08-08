@@ -154,7 +154,7 @@ msgid "available"
 msgstr "verfügbar"
 
 msgid "Available"
-msgstr ""
+msgstr "Verfügbar"
 
 msgid "Batch"
 msgstr "Charge"
@@ -272,7 +272,7 @@ msgid "Console Mode"
 msgstr "Konsolenmodus"
 
 msgid "Consumed"
-msgstr ""
+msgstr "Verbraucht"
 
 msgid "Consumed expired"
 msgstr "Verbrauchte abgelaufen"
@@ -878,7 +878,7 @@ msgid "Nothing scheduled at this work center"
 msgstr "Nichts geplant in diesem Arbeitszentrum"
 
 msgid "Nothing to scrap"
-msgstr ""
+msgstr "Nichts zum Verschrotten"
 
 msgid "OEE Impact"
 msgstr "OEE-Auswirkung"
@@ -1322,7 +1322,7 @@ msgid "The lot will still be dispositioned, but an NCR cannot be created until a
 msgstr "Das Los wird weiterhin dispositioniert, aber ein NCR kann nicht erstellt werden, bis mindestens ein Problemtyp konfiguriert ist."
 
 msgid "There are no available or consumed tracked parts for this material."
-msgstr ""
+msgstr "Es gibt keine verfügbaren oder verbrauchten verfolgten Teile für dieses Material."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Es gibt serien- oder chargenverfolgte Materialien in der Stückliste, die noch nicht vollständig ausgegeben wurden. Ein Abschluss ohne Ausgabe kann zu fehlerhaften Rückverfolgbarkeitsdaten führen."
