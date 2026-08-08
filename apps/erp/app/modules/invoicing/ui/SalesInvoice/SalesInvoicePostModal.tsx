@@ -60,14 +60,16 @@ const SalesInvoicePostModal = ({
   const hasLinesToShip = linesToShip.length > 0;
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
+  const canStripe = integrations.has("stripe-connect");
 
-  const [notificationType, setNotificationType] = useState(
-    canEmail ? "Email" : "None"
-  );
+  const [notificationType, setNotificationType] = useState<
+    "Email" | "Stripe" | "None"
+  >(canStripe ? "Stripe" : canEmail ? "Email" : "None");
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success) {
+      if (fetcher.data?.message) toast.success(fetcher.data.message);
       onClose();
     } else if (fetcher.data?.success === false && fetcher.data?.message) {
       toast.error(fetcher.data.message);
@@ -87,7 +89,7 @@ const SalesInvoicePostModal = ({
           validator={salesInvoicePostValidator}
           action={path.to.salesInvoicePost(invoiceId)}
           defaultValues={{
-            notification: notificationType as "Email" | "None",
+            notification: notificationType,
             customerContact: customerContactId ?? undefined,
             cc: defaultCc
           }}
@@ -142,7 +144,7 @@ const SalesInvoicePostModal = ({
                 </div>
               )}
 
-              {canEmail && (
+              {(canEmail || canStripe) && (
                 <SelectControlled
                   label={t`Send Via`}
                   name="notification"
@@ -151,26 +153,42 @@ const SalesInvoicePostModal = ({
                       label: "None",
                       value: "None"
                     },
-                    {
-                      label: "Email",
-                      value: "Email"
-                    }
+                    ...(canEmail
+                      ? [
+                          {
+                            label: "Email",
+                            value: "Email"
+                          }
+                        ]
+                      : []),
+                    ...(canStripe
+                      ? [
+                          {
+                            label: "Stripe",
+                            value: "Stripe"
+                          }
+                        ]
+                      : [])
                   ]}
                   value={notificationType}
                   onChange={(t) => {
-                    if (t) setNotificationType(t.value);
+                    if (t)
+                      setNotificationType(
+                        t.value as "Email" | "Stripe" | "None"
+                      );
                   }}
                 />
               )}
 
+              {(notificationType === "Email" ||
+                notificationType === "Stripe") && (
+                <CustomerContact
+                  name="customerContact"
+                  customer={customerId ?? undefined}
+                />
+              )}
               {notificationType === "Email" && (
-                <>
-                  <CustomerContact
-                    name="customerContact"
-                    customer={customerId ?? undefined}
-                  />
-                  <EmailRecipients name="cc" label={t`CC`} type="employee" />
-                </>
+                <EmailRecipients name="cc" label={t`CC`} type="employee" />
               )}
             </VStack>
           </ModalBody>

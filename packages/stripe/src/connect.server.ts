@@ -200,3 +200,121 @@ export async function createExpressDashboardLoginLink(
   const loginLink = await stripe.accounts.createLoginLink(stripeAccountId);
   return loginLink.url;
 }
+
+// --- Invoicing against a connected account ---
+// Everything below operates on an existing Connect account (see above) to
+// create and send a Stripe invoice on its behalf. Same v1/v2 interop rule as
+// createExpressDashboardLoginLink: Invoicing is a v1-only API surface, so it
+// stays on the shared v1-pinned `stripe` client with `{ stripeAccount }`
+// rather than the v2 `stripeConnect` client used for account management.
+
+export function toStripeAmount(value: number, _currencyCode: string): number {
+  // TODO: zero-decimal currencies (JPY, etc.) need to skip the *100 — not
+  // handled yet, this spike assumes 2-decimal currencies only.
+  return Math.round(value * 100);
+}
+
+export async function createConnectCustomer(
+  stripeAccountId: string,
+  customer: { name: string; email: string }
+): Promise<string> {
+  if (!stripe) {
+    throw new Error("Stripe secret key is not configured.");
+  }
+
+  const stripeCustomer = await stripe.customers.create(
+    { name: customer.name, email: customer.email },
+    { stripeAccount: stripeAccountId }
+  );
+
+  return stripeCustomer.id;
+}
+
+export async function createAndSendConnectInvoice(
+  stripeAccountId: string,
+  stripeCustomerId: string,
+  params: {
+    lines: { description: string; quantity: number; unitPrice: number }[];
+    currencyCode: string;
+    daysUntilDue: number;
+    metadata?: Record<string, string>;
+  }
+): Promise<{
+  id: string;
+  hostedInvoiceUrl: string | null;
+  invoicePdf: string | null;
+}> {
+  if (!stripe) {
+    throw new Error("Stripe secret key is not configured.");
+  }
+
+  const currency = params.currencyCode.toLowerCase();
+  const options = { stripeAccount: stripeAccountId };
+
+  // Stripe refuses to send a zero-amount invoice, and the resulting API error
+  // ("This invoice cannot be sent right now") gives no hint why — so fail here
+  // with something actionable instead.
+  const total = params.lines.reduce(
+    (sum, line) =>
+      sum + toStripeAmount(line.unitPrice * line.quantity, currency),
+    0
+  );
+  if (!params.lines.length || total <= 0) {
+    throw new Error(
+      "the invoice has no billable lines (Stripe cannot send a zero-amount invoice)"
+    );
+  }
+
+  // Create the draft FIRST, then attach each item to it by id. Creating items
+  // against the customer alone leaves them as *pending* items that a standalone
+  // invoice does not pick up unless it passes `pending_invoice_items_behavior:
+  // "include"` — and any item left unconsumed silently lands on the next
+  // invoice created for that customer. Attaching explicitly avoids both traps.
+  const invoice = await stripe.invoices.create(
+    {
+      customer: stripeCustomerId,
+      currency,
+      collection_method: "send_invoice",
+      days_until_due: params.daysUntilDue,
+      auto_advance: false,
+      metadata: params.metadata
+    },
+    options
+  );
+
+  for (const line of params.lines) {
+    // `amount` and `quantity` are mutually exclusive on invoice items, and the
+    // per-unit alternative (`price_data`) requires a pre-existing Product — so
+    // send the line total and carry the quantity breakdown in the description.
+    const description = line.description || "Item";
+    await stripe.invoiceItems.create(
+      {
+        customer: stripeCustomerId,
+        invoice: invoice.id!,
+        currency,
+        description:
+          line.quantity === 1
+            ? description
+            : `${description} (${line.quantity} × ${line.unitPrice})`,
+        amount: toStripeAmount(line.unitPrice * line.quantity, currency)
+      },
+      options
+    );
+  }
+
+  // Finalizing is what mints `hosted_invoice_url` and `invoice_pdf` — both are
+  // null on a draft. Sending is a separate step that only handles email
+  // delivery (and is a no-op for email in test mode).
+  const finalized = await stripe.invoices.finalizeInvoice(
+    invoice.id!,
+    {},
+    options
+  );
+  const sent = await stripe.invoices.sendInvoice(finalized.id!, {}, options);
+
+  return {
+    id: sent.id!,
+    hostedInvoiceUrl: sent.hosted_invoice_url ?? null,
+    invoicePdf: sent.invoice_pdf ?? null
+  };
+}

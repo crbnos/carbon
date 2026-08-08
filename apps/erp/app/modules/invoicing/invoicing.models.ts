@@ -201,14 +201,17 @@ export const salesInvoiceValidator = z.object({
 
 export const salesInvoicePostValidator = z
   .object({
-    notification: z.enum(["Email", "None"]).optional(),
+    notification: z.enum(["Email", "Stripe", "None"]).optional(),
     customerContact: zfd.text(z.string().optional()),
     cc: z.array(z.string()).optional()
   })
   .refine(
-    (data) => (data.notification === "Email" ? data.customerContact : true),
+    (data) =>
+      data.notification === "Email" || data.notification === "Stripe"
+        ? data.customerContact
+        : true,
     {
-      message: "Customer contact is required for email",
+      message: "Customer contact is required",
       path: ["customerContact"] // path of error
     }
   );

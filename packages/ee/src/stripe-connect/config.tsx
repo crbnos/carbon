@@ -1,6 +1,6 @@
-// import { Badge, Button, toast } from "@carbon/react";
+import { Badge, Button, toast } from "@carbon/react";
 import type { ComponentProps } from "react";
-// import { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
 
@@ -21,7 +21,7 @@ export const StripeConnect = defineIntegration({
     "Connect your Stripe account to send invoices with direct online payment options to your customers, automatically updating payment statuses and AR ledger entries.",
   shortDescription: "Accept card and ACH payments directly on sales invoices.",
   images: [],
-  // setupInstructions: StripeConnectStatus,
+  setupInstructions: StripeConnectStatus,
   schema: StripeConnectSettingsSchema,
   settingGroups: [
     {
@@ -44,12 +44,6 @@ export const StripeConnect = defineIntegration({
   ],
   actions: [
     {
-      id: "connect",
-      label: "Stripe Connect Onboarding",
-      description: "Configure your Linked Stripe Account",
-      endpoint: "/api/integrations/stripe-connect/connect"
-    },
-    {
       id: "dashboard",
       label: "Open Express Dashboard",
       description: "View payouts, transactions, and account details in Stripe",
@@ -58,170 +52,171 @@ export const StripeConnect = defineIntegration({
   ]
 });
 
-// function ConnectStripeAccountButton({
-//   label,
-//   onPlatformError
-// }: {
-//   label: string;
-//   onPlatformError: (message: string) => void;
-// }) {
-//   const [isLoading, setIsLoading] = useState(false);
+function ConnectStripeAccountButton({
+  label,
+  onPlatformError
+}: {
+  label: string;
+  onPlatformError: (message: string) => void;
+}) {
+  const [isLoading, setIsLoading] = useState(false);
 
-//   const handleClick = useCallback(async () => {
-//     setIsLoading(true);
-//     try {
-//       const response = await fetch("/api/integrations/stripe-connect/connect", {
-//         method: "POST"
-//       });
-//       const data = await response.json();
+  const handleClick = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/integrations/stripe-connect/connect", {
+        method: "POST"
+      });
+      const data = await response.json();
 
-//       if (data?.redirectUrl) {
-//         window.location.href = data.redirectUrl;
-//         return;
-//       }
+      if (data?.redirectUrl) {
+        window.open(data.redirectUrl);
+        // , "_blank", "noopener,noreferrer");
+        return;
+      }
 
-//       // A platform-level misconfiguration (e.g. this Stripe account was
-//       // never set up as a Connect platform) isn't something retrying fixes —
-//       // switch the panel to a persistent "ask your administrator" state
-//       // instead of just a one-off toast the user could miss.
-//       if (data?.isPlatformConfigError) {
-//         onPlatformError(
-//           data.error || "Stripe Connect isn't set up on this platform yet."
-//         );
-//         return;
-//       }
+      // A platform-level misconfiguration (e.g. this Stripe account was
+      // never set up as a Connect platform) isn't something retrying fixes —
+      // switch the panel to a persistent "ask your administrator" state
+      // instead of just a one-off toast the user could miss.
+      if (data?.isPlatformConfigError) {
+        onPlatformError(
+          data.error || "Stripe Connect isn't set up on this platform yet."
+        );
+        return;
+      }
 
-//       toast.error(data?.error || "Failed to start Stripe Connect onboarding");
-//     } catch {
-//       toast.error("Failed to start Stripe Connect onboarding");
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   }, [onPlatformError]);
+      toast.error(data?.error || "Failed to start Stripe Connect onboarding");
+    } catch {
+      toast.error("Failed to start Stripe Connect onboarding");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [onPlatformError]);
 
-//   return (
-//     <Button
-//       variant="secondary"
-//       size="sm"
-//       onClick={handleClick}
-//       isLoading={isLoading}
-//       isDisabled={isLoading}
-//     >
-//       {label}
-//     </Button>
-//   );
-// }
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      onClick={handleClick}
+      isLoading={isLoading}
+      isDisabled={isLoading}
+    >
+      {label}
+    </Button>
+  );
+}
 
-// function StripeConnectStatus({
-//   metadata
-// }: {
-//   companyId: string;
-//   metadata?: Record<string, unknown>;
-//   installed?: boolean;
-// }) {
-//   const [platformError, setPlatformError] = useState<string | null>(null);
+function StripeConnectStatus({
+  metadata
+}: {
+  companyId: string;
+  metadata?: Record<string, unknown>;
+  installed?: boolean;
+}) {
+  const [platformError, setPlatformError] = useState<string | null>(null);
 
-//   // The loader always sets this for stripe-connect (even before any row
-//   // exists — see integrations.$id.tsx), so treat a missing value as
-//   // configured rather than silently showing State A on a loader hiccup.
-//   const platformConfigured = metadata?.platformConfigured !== false;
-//   const stripeAccountId = metadata?.stripeAccountId as string | undefined;
-//   const chargesEnabled = metadata?.chargesEnabled === true;
-//   const payoutsEnabled = metadata?.payoutsEnabled === true;
-//   const onboardingComplete = chargesEnabled && payoutsEnabled;
-//   const requirementErrors =
-//     (metadata?.requirementErrors as string[] | undefined) ?? [];
-//   const hasIssue = requirementErrors.length > 0;
-//   const email = metadata?.email as string | undefined;
-//   const displayName = metadata?.displayName as string | undefined;
-//   // A linked account already existing counts as "started" even if the flag
-//   // predates this field being introduced.
-//   const onboardingStarted =
-//     metadata?.onboardingStarted === true || !!stripeAccountId;
+  // The loader always sets this for stripe-connect (even before any row
+  // exists — see integrations.$id.tsx), so treat a missing value as
+  // configured rather than silently showing State A on a loader hiccup.
+  const platformConfigured = metadata?.platformConfigured !== false;
+  const stripeAccountId = metadata?.stripeAccountId as string | undefined;
+  const chargesEnabled = metadata?.chargesEnabled === true;
+  const payoutsEnabled = metadata?.payoutsEnabled === true;
+  const onboardingComplete = chargesEnabled && payoutsEnabled;
+  const requirementErrors =
+    (metadata?.requirementErrors as string[] | undefined) ?? [];
+  const hasIssue = requirementErrors.length > 0;
+  const email = metadata?.email as string | undefined;
+  const displayName = metadata?.displayName as string | undefined;
+  // A linked account already existing counts as "started" even if the flag
+  // predates this field being introduced.
+  const onboardingStarted =
+    metadata?.onboardingStarted === true || !!stripeAccountId;
 
-//   const showPlatformIssue = !platformConfigured || !!platformError;
+  const showPlatformIssue = !platformConfigured || !!platformError;
 
-//   const status = showPlatformIssue
-//     ? { label: "Not available", variant: "gray" as const }
-//     : !stripeAccountId
-//       ? { label: "Not connected", variant: "gray" as const }
-//       : onboardingComplete
-//         ? { label: "Active", variant: "green" as const }
-//         : hasIssue
-//           ? { label: "Needs attention", variant: "red" as const }
-//           : { label: "Pending onboarding", variant: "yellow" as const };
+  const status = showPlatformIssue
+    ? { label: "Not available", variant: "gray" as const }
+    : !stripeAccountId
+      ? { label: "Not connected", variant: "gray" as const }
+      : onboardingComplete
+        ? { label: "Active", variant: "green" as const }
+        : hasIssue
+          ? { label: "Needs attention", variant: "red" as const }
+          : { label: "Pending onboarding", variant: "yellow" as const };
 
-//   return (
-//     <div className="flex flex-col gap-4">
-//       <input
-//         type="hidden"
-//         name="onboardingStarted"
-//         value={onboardingStarted ? "true" : "false"}
-//       />
-//       <div className="flex items-center gap-2">
-//         <span className="text-sm font-medium">Connection status</span>
-//         <Badge variant={status.variant}>{status.label}</Badge>
-//       </div>
+  return (
+    <div className="flex flex-col gap-4">
+      <input
+        type="hidden"
+        name="onboardingStarted"
+        value={onboardingStarted ? "true" : "false"}
+      />
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">Connection status</span>
+        <Badge variant={status.variant}>{status.label}</Badge>
+      </div>
 
-//       {showPlatformIssue ? (
-//         // State A: nothing the installing user can do here — retrying won't
-//         // help until an administrator fixes the platform-level Stripe setup.
-//         <p className="text-xs text-muted-foreground">
-//           {platformError ??
-//             "Stripe isn't configured on this platform yet. Ask your administrator to add a Stripe secret key with Connect enabled."}
-//         </p>
-//       ) : !stripeAccountId ? (
-//         <div className="flex flex-col gap-2">
-//           <p className="text-xs text-muted-foreground">
-//             Connecting creates a Stripe Express account for this company from
-//             your Company Settings details — no extra info needed here — then
-//             sends you to Stripe to finish onboarding.
-//           </p>
-//           <div>
-//             <ConnectStripeAccountButton
-//               label="Connect Stripe Account"
-//               onPlatformError={setPlatformError}
-//             />
-//           </div>
-//         </div>
-//       ) : !onboardingComplete ? (
-//         <div className="flex flex-col gap-2">
-//           <p className="text-xs text-muted-foreground">
-//             {hasIssue
-//               ? "Stripe flagged an issue with this account:"
-//               : "Your Stripe account has been created, but onboarding isn't complete — card payments and payouts won't work until it is."}
-//           </p>
-//           {hasIssue && (
-//             <ul className="list-disc pl-4 text-xs text-muted-foreground">
-//               {requirementErrors.map((message) => (
-//                 <li key={message}>{message}</li>
-//               ))}
-//             </ul>
-//           )}
-//           <div>
-//             <ConnectStripeAccountButton
-//               label={hasIssue ? "Fix on Stripe" : "Finish Onboarding on Stripe"}
-//               onPlatformError={setPlatformError}
-//             />
-//           </div>
-//         </div>
-//       ) : (
-//         <div className="flex flex-col gap-1">
-//           <p className="text-xs text-muted-foreground">
-//             Onboarding is complete. Use "Open Express Dashboard" below to view
-//             payouts and transactions on Stripe.
-//           </p>
-//           {(displayName || email) && (
-//             <p className="text-xs text-muted-foreground">
-//               Connected as {displayName || email}
-//               {displayName && email ? ` (${email})` : ""}.
-//             </p>
-//           )}
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
+      {showPlatformIssue ? (
+        // State A: nothing the installing user can do here — retrying won't
+        // help until an administrator fixes the platform-level Stripe setup.
+        <p className="text-xs text-muted-foreground">
+          {platformError ??
+            "Stripe isn't configured on this platform yet. Ask your administrator to add a Stripe secret key with Connect enabled."}
+        </p>
+      ) : !stripeAccountId ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground">
+            Connecting creates a Stripe Express account for this company from
+            your Company Settings details — no extra info needed here — then
+            sends you to Stripe to finish onboarding.
+          </p>
+          <div>
+            <ConnectStripeAccountButton
+              label="Connect Stripe Account"
+              onPlatformError={setPlatformError}
+            />
+          </div>
+        </div>
+      ) : !onboardingComplete ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground">
+            {hasIssue
+              ? "Stripe flagged an issue with this account:"
+              : "Your Stripe account has been created, but onboarding isn't complete — card payments and payouts won't work until it is."}
+          </p>
+          {hasIssue && (
+            <ul className="list-disc pl-4 text-xs text-muted-foreground">
+              {requirementErrors.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          )}
+          <div>
+            <ConnectStripeAccountButton
+              label={hasIssue ? "Fix on Stripe" : "Finish Onboarding on Stripe"}
+              onPlatformError={setPlatformError}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-muted-foreground">
+            Onboarding is complete. Use "Open Express Dashboard" below to view
+            payouts and transactions on Stripe.
+          </p>
+          {(displayName || email) && (
+            <p className="text-xs text-muted-foreground">
+              Connected as {displayName || email}
+              {displayName && email ? ` (${email})` : ""}.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function StripeLogo(props: ComponentProps<"svg">) {
   return (
