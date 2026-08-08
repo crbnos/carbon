@@ -19,6 +19,7 @@ export const dimensions = [
   { name: "Customer", entityType: "Customer" },
   { name: "Supplier", entityType: "Supplier" },
   { name: "Item", entityType: "Item" },
+  { name: "Scrap Reason", entityType: "ScrapReason" },
 ] as const;
 
 export const supplierStatuses = [

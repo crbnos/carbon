@@ -11,7 +11,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import ScrapReason from "~/components/Form/ScrapReason";
 import { inventoryAdjustmentValidator } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
@@ -53,7 +52,6 @@ export function UnscrapModal({
             trackedEntityId,
             adjustmentType: "Unscrap",
             quantity,
-            scrapReasonId: "",
             comment: ""
           }}
           onSubmit={onClose}
@@ -75,7 +73,6 @@ export function UnscrapModal({
             <Hidden name="adjustmentType" />
             <Hidden name="quantity" />
             <VStack spacing={4}>
-              <ScrapReason name="scrapReasonId" label={t`Reason`} />
               <TextArea name="comment" label={t`Comment`} />
             </VStack>
           </ModalBody>

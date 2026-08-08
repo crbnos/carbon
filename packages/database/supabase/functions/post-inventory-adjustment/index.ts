@@ -50,8 +50,9 @@ const payloadValidator = z
     originalStorageUnitId: z.string().optional().nullable(),
     expirationDate: z.string().optional().nullable(),
     comment: z.string().optional().nullable(),
-    // Required for Scrap/Unscrap (enforced below) — lands on the itemLedger
-    // row and, when accounting is enabled, as a ScrapReason journal dimension.
+    // Required for Scrap (enforced below) — lands on the itemLedger row and,
+    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
+    // omits it: the reason is inherited from the original scrap movement.
     scrapReasonId: z.string().optional().nullable(),
     // Unscrap: the original scrap itemLedger row to reverse against. Optional —
     // resolved server-side from the tracked entity's newest Scrap movement.
@@ -60,10 +61,7 @@ const payloadValidator = z
     userId: z.string(),
   })
   .superRefine((data, ctx) => {
-    if (
-      (data.adjustmentType === "Scrap" || data.adjustmentType === "Unscrap") &&
-      !data.scrapReasonId
-    ) {
+    if (data.adjustmentType === "Scrap" && !data.scrapReasonId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["scrapReasonId"],
@@ -604,7 +602,7 @@ serve(async (req: Request) => {
           let scrapMovement = unscrapOfItemLedgerId
             ? await trx
                 .selectFrom("itemLedger")
-                .select(["id", "storageUnitId", "locationId"])
+                .select(["id", "storageUnitId", "locationId", "scrapReasonId"])
                 .where("id", "=", unscrapOfItemLedgerId)
                 .where("companyId", "=", companyId)
                 .executeTakeFirst()
@@ -612,7 +610,7 @@ serve(async (req: Request) => {
           if (!scrapMovement) {
             scrapMovement = await trx
               .selectFrom("itemLedger")
-              .select(["id", "storageUnitId", "locationId"])
+              .select(["id", "storageUnitId", "locationId", "scrapReasonId"])
               .where("trackedEntityId", "=", trackedEntityId)
               .where("companyId", "=", companyId)
               .where("documentType", "=", "Scrap")
@@ -620,6 +618,28 @@ serve(async (req: Request) => {
               .orderBy("createdAt", "desc")
               .executeTakeFirst();
           }
+
+          // Inherit the reason from the original scrap movement so an unscrap
+          // is never mis-classified — the operator no longer re-enters it. Fall
+          // back to any payload reason, then null (untracked/legacy rows).
+          const resolvedScrapReasonId =
+            scrapMovement?.scrapReasonId ?? scrapReasonId ?? null;
+          const accountingForTrackedUnscrap = accountingForUnscrap
+            ? {
+                ...accountingForUnscrap,
+                extraDimensions: [
+                  ...(resolvedScrapReasonId
+                    ? [
+                        {
+                          entityType: "ScrapReason",
+                          valueId: resolvedScrapReasonId,
+                        },
+                      ]
+                    : []),
+                  { entityType: "Employee", valueId: userId },
+                ],
+              }
+            : null;
 
           // Reverse at the ORIGINAL scrapped cost when the scrap movement's
           // cost rows are resolvable (costLedger.documentId = the scrap
@@ -657,7 +677,7 @@ serve(async (req: Request) => {
               sourceDocument: "Item",
               sourceDocumentId: itemId,
               attributes: {
-                "Scrap Reason": scrapReasonId,
+                "Scrap Reason": resolvedScrapReasonId,
                 Employee: userId,
                 ...(comment?.trim() ? { Notes: comment.trim() } : {}),
               },
@@ -679,6 +699,7 @@ serve(async (req: Request) => {
           const booked = await bookAdjustment(trx, {
             ledger: {
               ...unscrapLedgerBase,
+              scrapReasonId: resolvedScrapReasonId,
               // A Scrapped tracked-entity row carries no location — restore to
               // the bin/location the scrap movement removed it from.
               locationId:
@@ -690,7 +711,7 @@ serve(async (req: Request) => {
             },
             item,
             itemCost,
-            accounting: accountingForUnscrap,
+            accounting: accountingForTrackedUnscrap,
             fixedUnitCost,
           });
           resultLedgerId = booked.itemLedgerId;

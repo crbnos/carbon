@@ -103,6 +103,7 @@ export function ScrapEntityModal({
                   name="makeReplacement"
                   label={t`Make a replacement`}
                   description={t`Reopen the subassembly and create a replacement unit`}
+                  bordered
                 />
               )}
               <TextArea label={t`Notes`} name="notes" size="lg" />

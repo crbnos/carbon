@@ -109,7 +109,10 @@ Non-strict variants exist but include same-activity siblings — prefer strict.
   `getTrackedEntitiesByMakeMethodId`, `getTrackedEntitiesByOperationId`,
   `updateTrackedEntityExpiry`, `getTrackedEntityExpirations`.
 - MES `operations.service.ts`: `getTrackedEntity`, `getTrackedEntitiesByMakeMethodId`,
-  `getTrackedInputs` (wraps the strict RPCs), `startProductionEvent`.
+  `getTrackedInputs` (wraps the strict RPCs; **filters out `Scrapped` descendants** so a
+  scrapped subcomponent no longer appears in the issue modal's Unconsume/Scrap lists — the
+  scrap already relieved its WIP and reopened the requirement; the lineage graph still shows
+  it), `startProductionEvent`.
 
 ## Picking / availability (shelf → storageUnit rename)
 

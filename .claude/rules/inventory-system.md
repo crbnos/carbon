@@ -45,9 +45,21 @@ Key service functions (verified):
   `Available` at the **original scrapped cost** (resolved from the scrap
   movement's `costLedger` via `resolve-unscrap-cost.ts`) and bin, linked by
   `correctionOfItemLedgerId`; ERP UI = the Unscrap row action on the tracked-
-  entities table (`UnscrapModal`, no location submitted — resolved server-side).
+  entities table (`UnscrapModal`, no location and **no scrap reason** submitted —
+  both resolved server-side; the reason is inherited from the original scrap
+  movement so unscrap can't be mis-classified, and the UI collects only an
+  optional comment).
   Scrap journals carry ScrapReason/WorkCenter/Employee dimensions; the single
   `scrapAccount` + dimensions replaces per-reason account mapping by design.
+  The **ScrapReason** dimension is seeded active by default (a `dimension` row per
+  company group, from `functions/lib/seed.data.ts`; backfilled to existing groups by
+  `20260808114732_backfill-scrap-reason-dimension.sql`). Like CustomerType/ItemPostingGroup
+  it is entity-backed — its values resolve live from the `scrapReason` table via
+  `getEntityDimensionValues`/`getEntityValuesByIds` (accounting.service.ts), so adding a
+  scrap reason immediately makes it a selectable/taggable dimension value with no sync step.
+  A tag is only written when the entity type has an **active** `dimension` row — a scrap
+  posting's ScrapReason `extraDimension` is dropped in `post-adjustment.ts` if the dimension
+  was deleted/deactivated for that company group.
 - `correctStockMovement` — wraps the **`correct-stock-movement` edge function**: fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
   correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's

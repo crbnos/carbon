@@ -229,8 +229,10 @@ Extends `post-inventory-adjustment` + `shared/post-adjustment.ts` (no new
 edge function):
 
 - Payload `adjustmentType` gains **`'Scrap'`** and **`'Unscrap'`**;
-  `scrapReasonId` required for both; `unscrapOfItemLedgerId` optional (set by
-  the Unscrap UI).
+  `scrapReasonId` required for **Scrap only** — Unscrap inherits the reason from
+  the original scrap movement it reverses (falls back to any supplied reason,
+  then null), so the operator never re-enters it; `unscrapOfItemLedgerId`
+  optional (set by the Unscrap UI).
 - **Scrap** = the existing negative-adjustment machinery with:
   `offsetAccount = accountDefault.scrapAccount` (runtime fallback to
   `inventoryAdjustmentVarianceAccount`, per the seed comment),
@@ -254,7 +256,8 @@ edge function):
   - The adjustment form's type select gains **Scrap** (shows required
     `ScrapReason` + notes).
   - The item's tracking view gains a **Scrapped** filter listing `Scrapped`
-    entities with an **Unscrap** row action (reason + confirm).
+    entities with an **Unscrap** row action (optional comment + confirm; the
+    reason is inherited from the original scrap movement, not re-entered).
   - Detail overlays follow the Drawer convention. All new strings through
     Lingui. Permission: `inventory_update` (same as adjustments today);
     MES scrap routes stay `production_update`-gated.
@@ -338,7 +341,10 @@ functions).
   branches per §2); shared capacity-bump helper used by both.
 - `post-inventory-adjustment`: `adjustmentType` `'Scrap'`/`'Unscrap'`,
   `scrapReasonId`, `unscrapOfItemLedgerId`; `bookAdjustment` gains
-  `scrapReasonId` passthrough + fixed-cost override for unscrap reversal.
+  `scrapReasonId` passthrough + fixed-cost override for unscrap reversal. The
+  Unscrap branch reads `scrapReasonId` off the resolved original scrap movement
+  and books the ledger row, `trackedActivity`, and ScrapReason journal
+  dimension with that inherited value.
 - MES `x+/scrap.tsx`: routes serial-tracked parents to
   `jobOperationSerialScrap`; batch/untracked path adds the WIP→scrap GL leg.
 - Entity-scrap route action: validator gains `scrapReasonId` (required) +

@@ -171,8 +171,10 @@ export const inventoryAdjustmentValidator = z
     readableId: zfd.text(z.string().optional()),
     expirationDate: zfd.text(z.string().optional()),
     comment: zfd.text(z.string().optional()),
-    // Required for Scrap / Unscrap (enforced below); lands on the itemLedger
-    // row and, when accounting is enabled, as a ScrapReason journal dimension.
+    // Required for Scrap (enforced below); lands on the itemLedger row and,
+    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
+    // omits it — the edge function inherits the reason from the original scrap
+    // movement it reverses.
     scrapReasonId: zfd.text(z.string().optional()),
     // Unscrap: the original scrap movement to reverse against (resolved
     // server-side from the tracked entity when omitted).
@@ -192,10 +194,7 @@ export const inventoryAdjustmentValidator = z
         message: "Serial items can only have a quantity of 1"
       });
     }
-    if (
-      (data.adjustmentType === "Scrap" || data.adjustmentType === "Unscrap") &&
-      !data.scrapReasonId
-    ) {
+    if (data.adjustmentType === "Scrap" && !data.scrapReasonId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["scrapReasonId"],

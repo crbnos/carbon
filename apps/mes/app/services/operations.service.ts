@@ -1259,6 +1259,15 @@ export async function getTrackedInputs(
     })
   ]);
 
+  // A scrapped descendant is no longer a live consumed input — the scrap flow
+  // relieved its WIP and reopened the material requirement — so it must not
+  // surface in the Unconsume/Scrap lists (which are built from these inputs).
+  // Genealogy still sees it via the traceability lineage RPCs; this MES helper
+  // intentionally hides it.
+  if (inputs.data) {
+    inputs.data = inputs.data.filter((input) => input.status !== "Scrapped");
+  }
+
   if (outputs.error || outputs.data.length === 0) return inputs;
 
   // Handle circular references while keeping only unique entities that appear more times in inputs than outputs

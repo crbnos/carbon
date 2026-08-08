@@ -1752,7 +1752,10 @@ export const JobOperation = ({
                           trackedEntities?.map((entity) => (
                             <Tr
                               key={`serial-${entity.id}`}
-                              className="[&>td]:py-3"
+                              className={cn(
+                                "[&>td]:py-3",
+                                entity.status === "Scrapped" && "opacity-60"
+                              )}
                             >
                               <Td>
                                 <div className="flex gap-2 items-center">
@@ -1776,6 +1779,11 @@ export const JobOperation = ({
                                     <LuCheck className="text-emerald-500 size-4 shrink-0" />
                                   )}
                                   <Copy text={entity.readableId || entity.id} />
+                                  {entity.status === "Scrapped" && (
+                                    <Badge variant="red">
+                                      <Trans>Scrapped</Trans>
+                                    </Badge>
+                                  )}
                                 </div>
                               </Td>
 
@@ -1798,7 +1806,10 @@ export const JobOperation = ({
                                   <Button
                                     variant="secondary"
                                     size="lg"
-                                    isDisabled={entity.id === trackedEntityId}
+                                    isDisabled={
+                                      entity.id === trackedEntityId ||
+                                      entity.status === "Scrapped"
+                                    }
                                     onClick={() => {
                                       const entityIndex =
                                         trackedEntities.findIndex(
