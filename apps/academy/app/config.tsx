@@ -532,6 +532,15 @@ export const modules: Config = [
                 description:
                   "Learn how to use engineering change notices to manage and track changes to items, methods, and bills in a controlled, auditable way.",
                 duration: 260
+              },
+              {
+                id: "scrap",
+                loomUrl:
+                  "https://www.loom.com/share/f69fe5573f7b4cdcb79e545ce571679e",
+                name: "Scrap",
+                description:
+                  "Learn how to scrap serials, subcomponents, and stock in Carbon, and how scrap flows through production and inventory.",
+                duration: 597
               }
             ],
             supplemental: []
