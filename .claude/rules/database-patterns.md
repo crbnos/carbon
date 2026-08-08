@@ -70,7 +70,9 @@ export async function getCustomer(client: SupabaseClient<Database>, id: string) 
 Conventions (see also `conventions-services.md`):
 
 - Always scope list queries by `companyId` (`.eq("companyId", companyId)`) — defense in depth even though RLS also enforces it.
-- List endpoints take `GenericQueryFilters` and run through `setGenericQueryFilters(query, args, [...])` (`~/utils/query`) for search/sort/pagination; use `.select("*", { count: "exact" })`.
+- List endpoints take `GenericQueryFilters` and run through `setGenericQueryFilters(query, args, [...])` (`~/utils/query`) for search/sort/pagination.
+- Count/select for list endpoints: prefer `{ count: LIST_COUNT }` (`LIST_COUNT = "estimated"`, `~/utils/query`) over `count: "exact"`. `exact` is `COUNT(*) OVER ()`, which materializes the whole filtered set just to produce a total the UI shows approximately anyway — on 500k `trackedEntity` rows that is 652 ms vs 1.5 ms. `estimated` is a hybrid: PostgREST still returns an exact count below its threshold, so small tenants see no change. Currently used by the ten view-backed endpoints plus `getJobs` and `getTrackedEntities`.
+- The ten endpoints backed by the big multi-join **views** (`parts`, `materials`, `tools`, `consumables`, `services`, `purchaseOrders`, `quotes`, `salesOrders`, `purchaseInvoices`, `salesInvoices`) additionally select an explicit `*_LIST_COLUMNS` constant instead of `select("*")`, so Postgres can prune the views' unreferenced computed columns. Adding a column to one of those tables means adding it to the constant — `apps/erp/test/list-select-columns.test.ts` fails if an `accessorKey` is missing, because the CSV export reads accessors untyped. The rationale lives once on `LIST_COUNT` in `apps/erp/app/utils/query.ts`, not at each constant.
 - Use `sanitize(...)` (re-exported from `@carbon/utils`) to strip empty values before insert/update.
 - Upserts are done either with a manual `id ? update : insert` branch or supabase's native `.upsert(...)`; both are in use.
 - `fetchAllFromTable(client, table, columns, qb)` (from `@carbon/database`) pages through large result sets.

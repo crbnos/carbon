@@ -111,9 +111,16 @@ const LineItems = ({
           if (!line.id) {
             return acc;
           }
+          // Scope to the breaks the line still offers — a removed break can
+          // leave an orphaned price row behind.
           acc[line.id!] =
             routeData?.prices
-              ?.filter((p) => p.quoteLineId === line.id)
+              ?.filter(
+                (p) =>
+                  p.quoteLineId === line.id &&
+                  Array.isArray(line.quantity) &&
+                  line.quantity.includes(p.quantity)
+              )
               .sort((a, b) => a.quantity - b.quantity) ?? [];
           return acc;
         },

@@ -28,7 +28,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { PurchaseInvoice } from "~/modules/invoicing";
+import type { PurchaseInvoiceListItem } from "~/modules/invoicing";
 import {
   PurchaseInvoicingStatus,
   purchaseInvoiceStatusType
@@ -37,7 +37,7 @@ import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type PurchaseInvoicesTableProps = {
-  data: PurchaseInvoice[];
+  data: PurchaseInvoiceListItem[];
   count: number;
 };
 
@@ -54,15 +54,16 @@ const PurchaseInvoicesTable = memo(
     const currencyFormatter = useCurrencyFormatter();
 
     const [selectedPurchaseInvoice, setSelectedPurchaseInvoice] =
-      useState<PurchaseInvoice | null>(null);
+      useState<PurchaseInvoiceListItem | null>(null);
     const closePurchaseInvoiceModal = useDisclosure();
 
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
-    const customColumns = useCustomColumns<PurchaseInvoice>("purchaseInvoice");
+    const customColumns =
+      useCustomColumns<PurchaseInvoiceListItem>("purchaseInvoice");
 
-    const columns = useMemo<ColumnDef<PurchaseInvoice>[]>(() => {
-      const defaultColumns: ColumnDef<PurchaseInvoice>[] = [
+    const columns = useMemo<ColumnDef<PurchaseInvoiceListItem>[]>(() => {
+      const defaultColumns: ColumnDef<PurchaseInvoiceListItem>[] = [
         {
           accessorKey: "invoiceId",
           header: t`Invoice Number`,
@@ -290,7 +291,7 @@ const PurchaseInvoicesTable = memo(
     }, [currencyFormatter, customColumns, people, suppliers, t]);
 
     const renderContextMenu = useMemo(() => {
-      return (row: PurchaseInvoice) => (
+      return (row: PurchaseInvoiceListItem) => (
         <>
           <MenuItem
             disabled={!permissions.can("view", "invoicing")}
@@ -318,7 +319,7 @@ const PurchaseInvoicesTable = memo(
 
     return (
       <>
-        <Table<PurchaseInvoice>
+        <Table<PurchaseInvoiceListItem>
           count={count}
           columns={columns}
           data={data}

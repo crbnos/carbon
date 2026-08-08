@@ -396,31 +396,31 @@ To run a command against a single workspace, use `pnpm --filter`:
 $ pnpm --filter @carbon/react test
 ```
 
-To restore a production database snapshot locally, use the `scripts/restore-database.sh` script. It handles both plain-text `.backup` and custom-format `.dump` archives, drops and rebuilds the public schema, realigns internal sequences, and resets storage metadata.
+To restore a production database snapshot locally, use `crbn restore`. It handles both plain-text `.backup` and custom-format `.dump` archives, drops and rebuilds the public schema, realigns internal sequences, resets storage metadata, then applies any migrations the backup predates and regenerates types.
 
 1. Export a backup from your production Supabase project (`pg_dump` or Supabase Dashboard → Database → Backups).
-2. Boot the stack **without applying migrations** so they don't fight the dump's schema state:
+2. Run it from your worktree root:
    ```bash
-   $ crbn up --no-migrate
-   ```
-3. Run the restore script from your worktree root, passing the path to the backup file:
-   ```bash
-   $ ./scripts/restore-database.sh /path/to/db_cluster.backup
+   $ crbn restore /path/to/db_cluster.backup
    # …or for .dump archives:
-   $ ./scripts/restore-database.sh /path/to/postgres_YYYYMMDD.dump
+   $ crbn restore /path/to/postgres_YYYYMMDD.dump
    ```
-   To also get local admin access, set `ADMIN_EMAIL` to your production email. The script will upgrade your account to Admin in all companies you already belong to and reset your password locally:
-   ```bash
-   $ ADMIN_EMAIL=you@example.com ./scripts/restore-database.sh /path/to/backup.backup
-   # Optional: set a custom local password (default: localpass)
-   $ ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=mypass ./scripts/restore-database.sh /path/to/backup.backup
-   ```
-   > **Note:** Emails are not scrubbed — real production addresses will be present in the local DB. Ensure local email sending is disabled or pointed at a sandbox (e.g. Mailpit) before triggering any email flows.
+   It prompts before replacing the database. The stack must already be running (`crbn up`) — a restore rewrites the `auth` and `storage` schemas, which GoTrue and Storage build through their own migrations when those containers boot, so `crbn restore` refuses rather than restore into an uninitialized stack.
 
-4. Regenerate types so app code reflects the restored schema:
+   To also get local admin access, pass your production email — your account is upgraded to Admin in the companies it already belongs to and the password is reset locally:
    ```bash
-   $ pnpm db:types
+   $ crbn restore /path/to/backup.backup --admin-email you@example.com
+   # Optional: set a custom local password (default: localpass)
+   $ crbn restore /path/to/backup.backup --admin-email you@example.com --admin-password mypass
    ```
+
+   Useful flags: `--no-scrub-emails` keeps real addresses (see the warning below), `--mode prod` restores exactly as-is without localizing config/webhooks/integrations, `--no-migrate` / `--no-regen` skip the trailing steps, `--yes` skips the prompt.
+
+   > **Emails are scrubbed by default** — every address is rewritten to `@example.test` (your `--admin-email` is preserved so you can still log in). If you pass `--no-scrub-emails`, real production addresses will be present in the local DB; ensure local email sending is disabled or pointed at a sandbox (e.g. Mailpit) before triggering any email flows.
+   >
+   > **Note:** `storage.objects` is truncated by default, so a restore does not populate local file storage — kept rows would reference files that only exist in the source environment's backend. Pass `--keep-storage-objects` to retain the metadata (and the backup's buckets) anyway; downloads will still 404, but the rows are there for work that needs realistic storage volume.
+
+The underlying script, `scripts/restore-database.sh`, can still be invoked directly — it takes the same options as environment variables (`SCRUB_EMAILS`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `RESTORE_MODE`), but note it defaults to **not** scrubbing emails and leaves the trailing `pnpm db:migrate` / `pnpm db:types` to you.
 
 ## API
 

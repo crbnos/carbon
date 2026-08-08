@@ -965,6 +965,9 @@ msgstr "エンジニアリング変更：ドラフト上で方法が改訂され
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "統合またはカスタム変更 — 実際にカスタムである小さなスライス。"
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "招待は保留中です。受け入れるとアクティブになります。"
+
 msgid "An item cannot be added to itself."
 msgstr "アイテムをそれ自体に追加することはできません。"
 
@@ -13579,8 +13582,14 @@ msgstr "タイムゾーン"
 msgid "Title"
 msgstr "タイトル"
 
+msgid "To deactivate, use the row menu and choose Deactivate Account."
+msgstr "無効化するには、行メニューを使用して、アカウント無効化を選択します。"
+
 msgid "To Location"
 msgstr "到着地"
+
+msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
+msgstr "再度有効化するには、行メニューを使用して、招待を送信を選択します。従業員が受け入れるとアクティブになります。"
 
 msgid "To Receive"
 msgstr "受け取り予定"

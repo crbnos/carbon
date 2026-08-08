@@ -11,7 +11,7 @@ import type {
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting/accounting.service";
 import type { PurchaseInvoice } from "../invoicing/types";
@@ -42,6 +42,9 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
+
+const PURCHASE_ORDERS_LIST_COLUMNS =
+  "id,purchaseOrderId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
 
 const logger = getLogger("erp", "purchasing-service");
 
@@ -323,7 +326,7 @@ export async function getPurchaseOrders(
 ) {
   let query = client
     .from("purchaseOrders")
-    .select("*", { count: "exact" })
+    .select(PURCHASE_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {

@@ -7,7 +7,10 @@ import {
 } from "@carbon/auth/middleware/flash.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
-import { requestIdMiddleware } from "@carbon/logger/middleware.server";
+import {
+  requestContextMiddleware,
+  requestIdMiddleware
+} from "@carbon/logger/middleware.server";
 import {
   OperatingSystemContextProvider,
   Toaster,
@@ -46,7 +49,12 @@ import "@carbon/lib/shims";
 import type { Route } from "./+types/root";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [requestIdMiddleware, flashMiddleware];
+export const middleware = [
+  // First: publishes the request context so server code can reach it via ALS.
+  requestContextMiddleware,
+  requestIdMiddleware,
+  flashMiddleware
+];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: Route.LinksFunction = () => [

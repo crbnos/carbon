@@ -7,6 +7,8 @@ type Boundary = { incoming: Set<string>; outgoing: Set<string> };
 type Args = {
   payload: LineagePayload;
   boundaryByNode: Boundary;
+  /** Member entity id → cluster id. */
+  memberToCluster: Record<string, string>;
   markExpandable: (id: string) => void;
   markExhausted: (id: string) => void;
   probeCacheRef: MutableRefObject<Map<string, LineagePayload>>;
@@ -16,6 +18,7 @@ type Args = {
 export function useProbeBoundary({
   payload,
   boundaryByNode,
+  memberToCluster,
   markExpandable,
   markExhausted,
   probeCacheRef,
@@ -25,6 +28,10 @@ export function useProbeBoundary({
     let cancelled = false;
     const candidates = payload.entities.filter((e) => {
       if (probedRef.current.has(e.id)) return false;
+      // A clustered member's edges belong to its group node, so it always looks
+      // like a boundary. Probing it would fire one request per member and mark
+      // an id that has no node to render the indicator on.
+      if (memberToCluster[e.id]) return false;
       const hasIn = boundaryByNode.incoming.has(e.id);
       const hasOut = boundaryByNode.outgoing.has(e.id);
       return !hasIn || !hasOut;
@@ -66,6 +73,7 @@ export function useProbeBoundary({
   }, [
     payload,
     boundaryByNode,
+    memberToCluster,
     markExpandable,
     markExhausted,
     probeCacheRef,

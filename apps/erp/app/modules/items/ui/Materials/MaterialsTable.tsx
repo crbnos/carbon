@@ -74,10 +74,10 @@ import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { itemTrackingTypes } from "../../items.models";
-import type { Material } from "../../types";
+import type { MaterialListItem } from "../../types";
 
 type MaterialsTableProps = {
-  data: Material[];
+  data: MaterialListItem[];
   tags: { name: string }[];
   count: number;
 };
@@ -108,19 +108,21 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
   const permissions = usePermissions();
 
   const deleteItemModal = useDisclosure();
-  const [selectedItem, setSelectedItem] = useState<Material | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MaterialListItem | null>(
+    null
+  );
 
   const [people] = usePeople();
   const unitsOfMeasure = useUnitOfMeasure();
   const itemPostingGroups = useItemPostingGroups();
-  const customColumns = useCustomColumns<Material>("material");
+  const customColumns = useCustomColumns<MaterialListItem>("material");
 
   const filters = useFilters();
   const materialSubstanceId = filters.getFilter("materialSubstanceId")?.[0];
   const materialFormId = filters.getFilter("materialFormId")?.[0];
 
-  const columns = useMemo<ColumnDef<Material>[]>(() => {
-    const defaultColumns: ColumnDef<Material>[] = [
+  const columns = useMemo<ColumnDef<MaterialListItem>[]>(() => {
+    const defaultColumns: ColumnDef<MaterialListItem>[] = [
       {
         accessorKey: "id",
         header: t`Material ID`,
@@ -148,7 +150,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           exportValue: (row) => row.readableIdWithRevision ?? null
         }
       },
-      exportOnlyColumn<Material>({
+      exportOnlyColumn<MaterialListItem>({
         id: "itemName",
         header: t`Item Name`,
         value: (row) => row.name ?? null
@@ -641,7 +643,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
   );
 
   const renderContextMenu = useMemo(() => {
-    return (row: Material) => {
+    return (row: MaterialListItem) => {
       const revisions =
         (row.revisions as {
           id: string;
@@ -690,7 +692,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
 
   return (
     <>
-      <Table<Material>
+      <Table<MaterialListItem>
         count={count}
         columns={columns}
         data={data}

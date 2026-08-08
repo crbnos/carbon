@@ -9,6 +9,7 @@ import { moduleShape } from "./conformance/module-shape";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
+import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import {
   loadSqlFiles,
   migrationsDir,
@@ -24,7 +25,10 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */
-export const SERVER_CHECKS: ConformanceCheck[] = [noLocalTimezone];
+export const SERVER_CHECKS: ConformanceCheck[] = [
+  noLocalTimezone,
+  noZeroConcurrency
+];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
 

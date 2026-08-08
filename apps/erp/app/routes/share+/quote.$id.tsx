@@ -342,9 +342,17 @@ const LineItems = ({
         if (!line.id) {
           return acc;
         }
+        // Scope to the breaks the line actually offers. A removed break can
+        // leave its price row behind, and an orphan here becomes a selectable
+        // option the customer was never meant to see.
         acc[line.id!] =
           quoteLinePrices
-            ?.filter((p) => p.quoteLineId === line.id)
+            ?.filter(
+              (p) =>
+                p.quoteLineId === line.id &&
+                Array.isArray(line.quantity) &&
+                line.quantity.includes(p.quantity)
+            )
             .sort((a, b) => a.quantity - b.quantity) ?? [];
         return acc;
       }, {}) ?? {},
@@ -363,11 +371,7 @@ const LineItems = ({
   return (
     <VStack spacing={8} className="w-full">
       {quoteLines?.map((line) => {
-        const prices = quoteLinePrices
-          ?.filter((price) => price.quoteLineId === line.id)
-          .sort((a, b) => a.quantity - b.quantity);
-
-        if (!line || !prices || !line.id) {
+        if (!line || !line.id) {
           return null;
         }
 

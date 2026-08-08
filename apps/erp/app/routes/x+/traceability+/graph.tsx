@@ -19,7 +19,13 @@ import {
   fetchLineageSubgraph,
   type LineagePayload
 } from "~/modules/inventory/lineage.server";
+import { isClusterId } from "~/modules/inventory/ui/Traceability/cluster";
 import { clampDepth } from "~/modules/inventory/ui/Traceability/constants";
+import {
+  getEntityJobId,
+  withJobNode
+} from "~/modules/inventory/ui/Traceability/jobNode";
+import { useTraceabilityStore } from "~/modules/inventory/ui/Traceability/store";
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
 import { stateEntityId } from "~/modules/inventory/ui/Traceability/utils";
@@ -187,67 +193,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-function getEntityJobId(entity: TrackedEntity | undefined): string | null {
-  const attrs = entity?.attributes;
-  if (!attrs || typeof attrs !== "object" || Array.isArray(attrs)) return null;
-  const job = (attrs as Record<string, unknown>).Job;
-  return typeof job === "string" && job.length > 0 ? job : null;
-}
-
 async function getJobReadableId(
   client: SupabaseClient<Database>,
   jobId: string
 ): Promise<string> {
   const job = await client.from("job").select("jobId").eq("id", jobId).single();
   return job.data?.jobId ?? jobId;
-}
-
-function withJobNode(
-  payload: LineagePayload,
-  jobId: string,
-  jobReadableId: string
-): LineagePayload {
-  const jobNodeId = `job:${jobId}`;
-  const existingActivityIds = new Set(payload.activities.map((a) => a.id));
-  const existingOutputKeys = new Set(
-    payload.outputs.map((o) => `${o.trackedActivityId}:${o.trackedEntityId}`)
-  );
-  const jobEntities = payload.entities.filter((entity) => {
-    if (getEntityJobId(entity) !== jobId) return false;
-    return entity.status === "Reserved" || entity.sourceDocument === "Item";
-  });
-
-  return {
-    ...payload,
-    activities: existingActivityIds.has(jobNodeId)
-      ? payload.activities
-      : [
-          {
-            id: jobNodeId,
-            type: "Job",
-            sourceDocument: "Job",
-            sourceDocumentId: jobId,
-            sourceDocumentReadableId: jobReadableId,
-            attributes: { Job: jobId }
-          },
-          ...payload.activities
-        ],
-    outputs: [
-      ...payload.outputs,
-      ...jobEntities
-        .map((entity) => ({
-          trackedActivityId: jobNodeId,
-          trackedEntityId: entity.id,
-          quantity: entity.quantity
-        }))
-        .filter(
-          (output) =>
-            !existingOutputKeys.has(
-              `${output.trackedActivityId}:${output.trackedEntityId}`
-            )
-        )
-    ]
-  };
 }
 
 function mergeLineagePayloads(
@@ -352,30 +303,46 @@ function TraceabilityRouteInner() {
     : (entities[0]?.id ?? activities[0]?.id ?? rootId);
   const sidebarId = focusedSelectedId ?? fallbackSidebarId;
 
+  // Clustered serials have no node of their own — the graph writes the cluster
+  // map into the store after each layout so the sidebar (a sibling here, not a
+  // child of the graph) can resolve them.
+  const clusters = useTraceabilityStore((s) => s.clusters);
+  const memberToCluster = useTraceabilityStore((s) => s.memberToCluster);
+  const highlightMemberId = useTraceabilityStore((s) => s.highlightMemberId);
+  const setHighlightMember = useTraceabilityStore((s) => s.setHighlightMember);
+
   const { setNodes } = useReactFlow();
   const selectNode = useCallback(
     (id: string | null) => {
+      const targetId = id === null ? null : (memberToCluster[id] ?? id);
+      setHighlightMember(id !== null && targetId !== id ? id : null);
       setNodes((nodes) =>
         nodes.map((n) => {
-          const wantsSelected = id !== null && n.id === id;
+          const wantsSelected = targetId !== null && n.id === targetId;
           if (n.selected === wantsSelected) return n;
           return { ...n, selected: wantsSelected };
         })
       );
     },
-    [setNodes]
+    [setNodes, memberToCluster, setHighlightMember]
   );
 
   // Lot-state nodes carry an `::sN` suffix — the sidebar always shows the
   // underlying entity, whichever of its states is selected.
   const sidebarEntityId = stateEntityId(sidebarId);
-  const selectedEntity =
-    (entities.find((e) => e?.id === sidebarEntityId) as
-      | TrackedEntity
-      | undefined) ?? null;
-  const selectedActivity =
-    (activities.find((a) => a?.id === sidebarId) as Activity | undefined) ??
-    null;
+  const selectedCluster =
+    (isClusterId(sidebarId)
+      ? clusters.find((c) => c.id === sidebarId)
+      : undefined) ?? null;
+  const selectedEntity = selectedCluster
+    ? null
+    : ((entities.find((e) => e?.id === sidebarEntityId) as
+        | TrackedEntity
+        | undefined) ?? null);
+  const selectedActivity = selectedCluster
+    ? null
+    : ((activities.find((a) => a?.id === sidebarId) as Activity | undefined) ??
+      null);
 
   return (
     <div className="flex bg-card h-[calc(100dvh-49px)] w-full overflow-hidden scrollbar-hide">
@@ -420,6 +387,9 @@ function TraceabilityRouteInner() {
           key={`sidebar-${sidebarId}`}
           entity={selectedEntity}
           activity={selectedActivity}
+          cluster={selectedCluster}
+          clusters={clusters}
+          highlightMemberId={highlightMemberId}
           payload={{
             entities: entities as TrackedEntity[],
             activities: activities as Activity[],

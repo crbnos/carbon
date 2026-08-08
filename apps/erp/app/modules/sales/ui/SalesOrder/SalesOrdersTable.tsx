@@ -63,12 +63,12 @@ import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { salesOrderStatusType } from "../../sales.models";
-import type { SalesOrder, SalesOrderJob } from "../../types";
+import type { SalesOrderJob, SalesOrderListItem } from "../../types";
 import SalesStatus from "./SalesStatus";
 import { useSalesOrder } from "./useSalesOrder";
 
 type SalesOrdersTableProps = {
-  data: SalesOrder[];
+  data: SalesOrderListItem[];
   count: number;
 };
 
@@ -95,7 +95,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
   const currencyFormatter = useCurrencyFormatter();
 
   const [selectedSalesOrder, setSelectedSalesOrder] =
-    useState<SalesOrder | null>(null);
+    useState<SalesOrderListItem | null>(null);
 
   const deleteSalesOrderModal = useDisclosure();
 
@@ -108,10 +108,10 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
 
   const { edit } = useSalesOrder();
 
-  const customColumns = useCustomColumns<SalesOrder>("salesOrder");
+  const customColumns = useCustomColumns<SalesOrderListItem>("salesOrder");
 
-  const columns = useMemo<ColumnDef<SalesOrder>[]>(() => {
-    const defaultColumns: ColumnDef<SalesOrder>[] = [
+  const columns = useMemo<ColumnDef<SalesOrderListItem>[]>(() => {
+    const defaultColumns: ColumnDef<SalesOrderListItem>[] = [
       {
         accessorKey: "salesOrderId",
         header: t`Sales Order Number`,
@@ -523,7 +523,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
   ]);
 
   const renderContextMenu = useMemo(() => {
-    return (row: SalesOrder) => (
+    return (row: SalesOrderListItem) => (
       <>
         <MenuItem
           disabled={!permissions.can("view", "sales")}
@@ -563,7 +563,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
 
   return (
     <>
-      <Table<SalesOrder>
+      <Table<SalesOrderListItem>
         count={count}
         columns={columns}
         data={data}

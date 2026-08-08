@@ -633,3 +633,73 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** When authoring a conformance check, verify the checker actually loads every file class the rule applies to (run it, count the files, grep one known-bad file into the scan). Ban the bug class, not just the instances you found — then run the widened pattern over the full source set and fix or baseline everything it surfaces before landing. For React Router route modules, path-level globs are the wrong granularity: mask OUT the client regions by declaration shape (`maskClientCode` blanks default export / `clientLoader` / `clientAction` / PascalCase and `use*` declarations) so server helpers stay covered; masking IN named exports under-covers. And when masking by line shape, the region CLOSER is as bug-prone as the opener: a `)` closer that also matches a multi-line signature's `) {` line ends the region before the body and un-masks client code (only statement-terminating `)`/`);` lines close a region), while an expression-bodied one-liner (`const X = () => null;`) must never OPEN a region at all — pin both shapes as regression tests.
 
 **Applies to:** `packages/checks/src/sources/server-files.ts` + `conformance/no-local-timezone.ts`; any new `SERVER_CHECKS` rule; any lint/conformance gate keyed on file paths over `apps/*/app/routes`.
+
+## A per-request memo keyed on the `Request` object never hits — React Router doesn't share one across loaders
+
+**Context:** Perf work on `sid/perf-audit-hot-paths` (2026-08). Every matched route calls `requirePermissions` independently, so a detail page did one Redis GET for permission claims and one `createClient()` per loader. The obvious fix is to memoize per request.
+
+**Problem:** The first attempt was a `WeakMap<Request, …>` — safe-looking, self-evicting, zero call-site changes, and it passed typecheck plus six unit tests asserting "same Request → same value, different Request → different value". It also did nothing: measured with `redis-cli monitor`, claims lookups on a deep page were **4 both with and without it**, because React Router does not hand the same `Request` instance to every matched loader. The unit tests were green precisely because they constructed the shared-Request case the runtime never produces. The working mechanism is AsyncLocalStorage holding React Router's own per-request `RouterContextProvider` (published by a root middleware) — the same pattern `requestIdMiddleware` already used via LogTape's `withContext`. That took the page from 4 lookups to 1.
+
+**Rule:** A memo is a performance claim, and a performance claim needs a measurement, not a unit test — a test can only prove the memo behaves as written, never that its key is stable in production. Before shipping request-scoped caching, count the underlying calls end-to-end (redis `MONITOR`, `pg_stat_statements`, a temporary counter) with the change toggled off and on. Reach for ALS-over-`context` rather than keying on `Request`. And note the corollary: memoizing **database state** must be gated to GET/HEAD/OPTIONS (`oncePerRead`), because React Router runs an action and its loader revalidation in a single request — an ungated memo there serves pre-write data, which for permission claims means a gate passing on permissions the action just revoked.
+
+**Applies to:** `packages/logger/src/context.server.ts` (`oncePerRequest` / `oncePerRead` / `requestContextMiddleware`), `packages/auth/src/services/{auth,users}.server.ts`, and any future request-scoped cache.
+
+## A word-boundary rename corrupts UI copy that typecheck and tests can't see
+
+**Context:** Splitting ERP list types into `X` (full view row, for detail screens) and `XListItem` (the narrowed list select) on `sid/perf-audit-hot-paths`. Applied with a regex renaming the whole-word alias across each table component.
+
+**Problem:** `Part`, `Material`, `Tool`, `Consumable`, `Service` are single words that appear in **user-visible strings** as well as type positions. The rename produced ``t`PartListItem ID` ``, `<Trans>Delete PartListItem</Trans>`, and a button reading "Add PartListItem" — 20 occurrences across five files. Typecheck passed, 268 unit tests passed, all ten narrowed selects returned 206 from PostgREST, and `EXPLAIN` looked right. Only loading the page caught it. (The five multi-word aliases — `PurchaseOrder`, `SalesOrder`, … — were untouched, because their display text contains a space.)
+
+**Rule:** After any mechanical rename of an identifier that is also an English word, grep for the new name inside string literals, template literals and JSX text (``t`…` ``, `<Trans>…</Trans>`, `"…"`) before committing — and load one affected screen. Type-level green says nothing about copy. Prefer renaming with an editor's symbol-aware rename over a regex; when a regex is the only option, exclude string/JSX regions explicitly.
+
+**Applies to:** `apps/erp/app/modules/*/ui/*/*Table.tsx`, `apps/erp/app/modules/*/types.ts`; any bulk identifier rename in files containing Lingui macros.
+
+## A new package `exports` subpath 500s until every running dev server restarts
+
+**Context:** Adding `@carbon/logger/context.server` and `@carbon/auth/request-scope` during the same perf work.
+
+**Problem:** Vite resolves a package's `exports` map once at dev-server start. Adding a subpath and importing it immediately produced `"./context.server" is not exported under the conditions [...]` on every route — a hard 500 across the whole app, twice, each time looking like a code bug rather than a stale resolver. Typecheck was green throughout, since TypeScript reads the updated `package.json` directly.
+
+**Rule:** Adding an export subpath to a workspace package is a dev-server-restart change. Either restart every running dev server as part of the change, or re-export the new module from an already-exported entry point and leave a TODO to move it at the next coordinated restart. A green typecheck does not mean the running server can resolve the import.
+
+**Applies to:** `packages/*/package.json` `exports`, and any new `src/*.server.ts` intended for cross-package import.
+
+## `space-x-*` gives a phantom margin when a component injects sibling nodes
+
+**Context:** A reported layout shift — hovering any row of an ERP list table shifted every column of the whole table ~8px sideways.
+
+**Problem:** `Hyperlink` renders `<Link prefetch="intent">`. React Router implements that by rendering `<>{anchor}{prefetchLinks}</>`, so on hover four `<link rel="prefetch">` elements appear **as siblings of the anchor** inside whatever container the caller used — here `<HStack>`. Tailwind v4's `space-x-*` compiles to `& > :not(:last-child) { margin-inline-end }`, so the instant those links mount the anchor stops being `:last-child` and gains a real 8px margin. Under `table-layout: auto` that re-lays out the column and the whole table. The links are `display: none`, which is exactly why this reads as impossible: every computed style on the `<td>` except `background-color` is unchanged, the anchor and all its children keep identical widths, and only the `<td>` and its wrapper grow. Two false leads first — the load-time column settle (237.5 → 245.1 with no hover, ~4s after load) masquerades as the same shift, and `opacity-0 → opacity-100` on the "Open" button looks like the obvious culprit but cannot move layout.
+
+**Rule:** `space-x-*` / `space-y-*` are structural (`:not(:last-child)`) — never use them on a container whose children a component may add to at runtime; use `gap-*`, which only applies between elements that generate boxes and so ignores `display:none`. When a component renders extra DOM next to its main element (React Router prefetch links, portals, measurement nodes), isolate it in a `display: contents` wrapper so it can't perturb the caller's layout. To diagnose "impossible" width changes, diff every computed property between states and count child nodes — a node-count delta with no style delta means injected DOM, not CSS.
+
+**Applies to:** `apps/erp/app/components/Hyperlink.tsx`; `packages/react/src/{HStack,VStack}.tsx` (still `space-x-*`/`space-y-*`, ~2,500 call sites); any `<Link prefetch>` placed directly inside a `space-*` container.
+
+## A list-query benchmark that omits the ORDER BY measures a query the app never runs
+
+**Context:** Lateralizing the `salesOrders`/`purchaseOrders` list views on `sid/perf-audit-hot-paths`. The rewrite benchmarked as a ~9x win and shipped; re-measuring later against the real endpoint showed page 1 taking **41.6 seconds**.
+
+**Problem:** The benchmark ran `SELECT ... FROM "salesOrders" WHERE "companyId" = $1 LIMIT 100` — no `ORDER BY`. Every one of these endpoints applies a fixed default sort (`setGenericQueryFilters(query, args, [{ column: "createdAt", ascending: false }])`). That one clause inverts the result: with no sort the planner pushes `LIMIT 100` below the lateral join so the aggregate runs ~100 times (10.6 ms vs 91.3 ms for the bulk form — the win that was measured); with the sort and no index supplying its order, every row must be produced before the limit applies, so the aggregate runs once per order in the company — 10,000 times, each re-scanning `item` under a non-indexable RLS policy. Two other things hid it: the seeded tables had **never been analyzed** (`last_analyze` and `last_autoanalyze` both NULL, `n_live_tup` 0), so plan choice was unstable; and the stated rationale — "the bulk form aggregates every tenant's lines" — was simply false, since `salesOrderLine` has RLS and the view is `SECURITY INVOKER`, so it was always company-scoped.
+
+**Rule:** Benchmark the query the service actually builds — copy the projection, the `ORDER BY` from `setGenericQueryFilters`, and the `LIMIT/OFFSET`, not a simplified `SELECT * ... LIMIT n`. Run `ANALYZE` before trusting any timing on seeded data, and check `pg_stat_user_tables.last_analyze` first. When a rewrite's premise is "this touches rows it shouldn't", verify it against `pg_policies` before optimizing — RLS may already be doing it. A LATERAL is only a win when the limit can be pushed below the join, which needs an index supplying the sort; check the plan for `Seq Scan ... loops=<number of outer rows>`, which is the signature of a per-row aggregate that was meant to run per page.
+
+**Applies to:** `packages/database/supabase/migrations/20260807011742_lateralize-order-list-views.sql`, `20260806235710_perf-list-query-indexes.sql`, `apps/erp/app/utils/query.ts` (`setGenericQueryFilters`), and any future list-view or RLS-policy performance work.
+
+## Inngest `concurrency: { limit: 0 }` is no capacity, not unlimited
+
+**Context:** Moving webhooks onto the event system. The `WEBHOOK` handler had never actually run — webhooks went through 39 pg_net triggers, so the handler was dead code. Once a subscription made it live, every delivery sat in `QUEUED` forever and nothing reached the endpoint.
+
+**Problem:** `webhook.ts` declared `concurrency: { limit: 0, key: "<table>-<recordId>" }`. `limit: 0` reads like "unlimited" and is almost certainly what the author meant, but Inngest treats it as zero capacity: runs are accepted, grouped by key, and never scheduled. The failure is silent and looks like the event never fired — the drainer completes, the queue empties, `pgmq` shows nothing pending, and only the run list reveals runs parked in `QUEUED` while sibling handlers from the same drain show `COMPLETED`. A controlled test confirmed it: three runs stuck at `limit: 0`, and changing only that value to `1` released them. Two more instances existed — `workflow.ts` (a stub, latent) and `reschedule-job.ts` (`schedule-job`, live, called from `production.server.ts` and `production.service.ts`).
+
+**Rule:** Inngest `concurrency.limit` must be `>= 1`; to mean "unlimited", omit the `concurrency` block entirely. With a `key`, `limit: 1` is the usual intent — serialize per record/company. Enforced by the `no-zero-concurrency` conformance check in `@carbon/checks`. More generally: a handler with zero subscriptions is dead code whose config is never exercised, so any bug in it surfaces only when something makes it live — when wiring an existing-but-unused handler, fire it end-to-end rather than trusting that it worked before.
+
+**Applies to:** `packages/jobs/src/inngest/**` `createFunction` options; `packages/checks/src/conformance/no-zero-concurrency.ts`.
+
+## Generated DB types must come from a migration-built database, never a restored snapshot
+
+**Context:** `crbn restore` ends with `pnpm db:types`. Those regenerated types were then swept into a commit by `git add -A`, putting 194 lines of unrelated churn into a webhooks/RLS PR.
+
+**Problem:** A production snapshot carries whatever the source environment accumulated outside the migration stream, so types generated from it describe *that* database rather than the schema the migrations define. The diff added a `v_readable_id` relation absent from `main` — not a schema object at all, but a plpgsql local (`v_readable_id TEXT;` … `SELECT … INTO v_readable_id, v_company_id`) that ran somewhere in a plain-SQL context, where `SELECT … INTO` is CREATE-TABLE-AS. An accidental artifact table exists in the snapshot, and regenerating baked it into the repo's public type surface, alongside `procedureStep`→`procedureAttribute` FK-name churn.
+
+**Rule:** Never commit `packages/database/src/types.ts` (or `supabase/functions/lib/types.ts`) generated after a `crbn restore` — regenerate against a migration-built database first. `crbn restore` now warns about this. Stage generated types explicitly rather than with `git add -A`, and diff them before committing: any relation appearing that no migration defines is drift from the source environment, not a schema change. Separately, `SELECT … INTO <name>` in a SQL (non-plpgsql) context silently creates a table — a real hazard when copying plpgsql bodies into migrations.
+
+**Applies to:** `packages/dev/src/commands/restore.ts`, `packages/database/src/types.ts`, `packages/database/supabase/functions/lib/types.ts`.

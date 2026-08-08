@@ -109,6 +109,7 @@ export const eventQueueFunction = inngest.createFunction(
           data: {
             msgId: job.msg_id,
             url: job.message.handlerConfig.url,
+            companyId: job.message.companyId,
             config: job.message.handlerConfig,
             data: job.message.event
           }

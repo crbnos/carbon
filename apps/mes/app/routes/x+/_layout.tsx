@@ -23,7 +23,7 @@ import {
   useNProgress
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import { Edition, isSearchParamOnlyNavigation } from "@carbon/utils";
 import posthog from "posthog-js";
 import { Suspense } from "react";
 import type {
@@ -57,6 +57,8 @@ import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
+  nextUrl,
+  formMethod,
   defaultShouldRevalidate
 }) => {
   if (
@@ -64,6 +66,18 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     currentUrl.pathname.startsWith("/switch-company")
   ) {
     return true;
+  }
+
+  // This loader is the app shell: 9 queries plus an auth round-trip. Without
+  // this it re-ran on every filter, sort and page click, none of which can
+  // change anything it returns.
+  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
+  // also looks like a same-pathname GET, so the shell does not re-run for
+  // realtime events either. Leaf loaders still refresh, which is the intent.
+  // Shell data that must react to a realtime change needs an explicit case
+  // above.
+  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
+    return false;
   }
 
   return defaultShouldRevalidate;

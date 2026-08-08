@@ -965,6 +965,9 @@ msgstr "엔지니어링 변경: 초안에서 방법이 수정되고 함께 릴�
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "연동이나 커스텀 변경 — 실제로 커스텀인 작은 부분."
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "초대가 대기 중입니다. 초대를 수락하면 활성화됩니다."
+
 msgid "An item cannot be added to itself."
 msgstr "품목을 자기 자신에게 추가할 수 없습니다."
 
@@ -13579,8 +13582,14 @@ msgstr "시간대"
 msgid "Title"
 msgstr "제목"
 
+msgid "To deactivate, use the row menu and choose Deactivate Account."
+msgstr "비활성화하려면 행 메뉴를 사용하여 계정 비활성화를 선택하세요."
+
 msgid "To Location"
 msgstr "대상 위치"
+
+msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
+msgstr "다시 활성화하려면 행 메뉴를 사용하여 초대 보내기를 선택하세요. 직원이 수락하면 활성화됩니다."
 
 msgid "To Receive"
 msgstr "입고 예정"

@@ -10,7 +10,7 @@ export const rescheduleJobFunction = inngest.createFunction(
     id: "schedule-job",
     retries: 3,
     concurrency: {
-      limit: 0,
+      limit: 1,
       key: "event.data.companyId"
     }
   },

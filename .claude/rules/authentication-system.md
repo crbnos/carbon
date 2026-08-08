@@ -70,6 +70,13 @@ the gate used in every loader/action. Two paths:
    - Claims are `{ role, permissions }`. Cached in **Redis** (`@carbon/kv`) at key
      `permissions:${userId}`; on miss, fetched via the `get_claims(uid, company)` RPC
      (`getCarbonServiceRole`) and cached. `makePermissionsFromClaims` shapes the result.
+   - `getUserClaims` is additionally memoized **per read request** via
+     `oncePerRead` (`@carbon/logger/middleware.server`), so the several loaders a
+     page matches share one Redis GET. Read-gated on purpose: an action and its
+     loader revalidation run in the same request, and memoizing there could let a
+     gate pass on claims the action just revoked. The Supabase clients
+     `requirePermissions` returns are memoized per request too (`oncePerRequest`),
+     which needs no gate — a client is not database state.
    - Each required permission checks `permissions[name][action]` contains the active
      `companyId` (or `"0"` wildcard = all companies). `role` is matched directly.
    - On failure: if `role === null` destroy session → `/`; else flash "Access Denied"
@@ -143,6 +150,13 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 
 - `getUserClaims` swallows Redis errors and falls back to the DB; a stale cache is the
   usual cause of "Access Denied" after a permission change — invalidate the cache key.
+- `verifyAuthSession` (the `requireAuthSession(request, { verify: true })` path) caches
+  only its **positive** verdict in Redis for 60s, keyed by a SHA-256 of the access
+  token. Negatives are never cached — `getAuthAccountByAccessToken` also returns null
+  on a transient network error. Bounds how long a deleted/deactivated account keeps
+  being accepted; signing out never revoked a live access token anyway.
+- ERP's `~/modules/users/users.server` re-exports `getUserClaims` from `@carbon/auth`;
+  it used to carry a drifted copy that missed the cache TTL. Don't reintroduce one.
 - Service-role clients bypass RLS — only use behind `bypassRls` + employee role.
 - API key `scopes: {}` denies, not grants. Don't assume empty = full access.
 - Edition matters: Enterprise rejects unknown-user login; Cloud gates API keys by plan

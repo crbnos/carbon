@@ -22,10 +22,13 @@ import type {
   Quotation,
   QuotationOperation,
   QuotationPrice,
+  QuoteLinePriceRow,
   QuoteMethod
 } from "~/modules/sales";
 import {
-  calculatePricesForQuantities,
+  buildMakeToOrderPriceRows,
+  buildPullFromInventoryPriceRows,
+  buildPurchaseToOrderPriceRows,
   getConfigurationParametersByQuoteLineId,
   getModelByQuoteLineId,
   getOpportunityLineDocuments,
@@ -39,10 +42,9 @@ import {
   getRootQuoteMakeMethod,
   isQuoteLocked,
   quoteLineValidator,
-  resolvePurchaseToOrderPrices,
-  resolveQuoteLinePrices,
-  upsertQuoteLine
+  reconcileQuantityBreaks
 } from "~/modules/sales";
+import { saveQuoteLineWithPrices } from "~/modules/sales/sales.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -62,6 +64,7 @@ import { getTagsList, type SupplierPriceMap } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+import { sanitize } from "~/utils/supabase";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { client, companyId } = await requirePermissions(request, {
@@ -150,7 +153,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  // Still the authorization gate, and load-bearing: the write below goes
+  // through Kysely, which bypasses RLS entirely.
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -180,90 +185,110 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const updateQuotationLine = await upsertQuoteLine(client, {
-    id: lineId,
-    ...d,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
-  });
+  // The line update and its price reconciliation have to land together. Prices
+  // are COMPUTED first (the builders only read), so a pricing failure aborts
+  // before anything is written; the three writes then commit in one
+  // transaction. Previously the line update committed on its own, and a
+  // resolver failure left it saved with its new breaks unpriced.
+  const serviceRole = getCarbonServiceRole();
+  const existingPrices = await serviceRole
+    .from("quoteLinePrice")
+    .select("quantity")
+    .eq("quoteLineId", lineId);
 
-  if (updateQuotationLine.error) {
+  if (existingPrices.error) {
     throw redirect(
       path.to.quoteLine(quoteId, lineId),
       await flash(
         request,
-        error(updateQuotationLine.error, "Failed to update quote line")
+        error(existingPrices.error, "Failed to read existing quote line prices")
       )
     );
   }
 
-  // The pricing-seeding branches share the same shape: find quantities the
-  // user newly added to the row and invoke the method-specific resolver for
-  // just those. Surface any resolver failure via flash so the user knows the
-  // line saved but pricing didn't land.
+  // Reconcile in both directions. Seeding is method-specific and only covers
+  // the three types below, but PRUNING is unconditional: a break removed from a
+  // Make to Stock line — or from a line whose breaks were all cleared — would
+  // otherwise leave rows behind that render as selectable options on the
+  // customer share page and trip the finalize validation.
+  const { added: addedQuantities, removed: removedQuantities } =
+    reconcileQuantityBreaks(
+      (existingPrices.data ?? []).map((p) => p.quantity),
+      d.quantity ?? []
+    );
+
   const methodType = d.methodType;
   const needsSeed =
-    (methodType === "Make to Order" ||
-      methodType === "Pull from Inventory" ||
-      methodType === "Purchase to Order") &&
-    !!d.quantity?.length;
+    methodType === "Make to Order" ||
+    methodType === "Pull from Inventory" ||
+    methodType === "Purchase to Order";
 
-  if (needsSeed) {
-    const serviceRole = getCarbonServiceRole();
-    const existingPrices = await serviceRole
-      .from("quoteLinePrice")
-      .select("quantity")
-      .eq("quoteLineId", lineId);
-
-    const existingQuantities = new Set(
-      (existingPrices.data ?? []).map((p) => p.quantity)
-    );
-
-    const addedQuantities = (d.quantity ?? []).filter(
-      (q) => !existingQuantities.has(q)
-    );
-
-    if (addedQuantities.length > 0) {
-      const priceResult =
-        methodType === "Make to Order"
-          ? await calculatePricesForQuantities(
+  let priceRows: QuoteLinePriceRow[] = [];
+  if (needsSeed && addedQuantities.length > 0) {
+    // The stored line still holds the OLD itemId — the new one is only in the
+    // validated form data — so pass it through rather than let the builder read
+    // a value this same request is about to change.
+    const built =
+      methodType === "Make to Order"
+        ? await buildMakeToOrderPriceRows(
+            serviceRole,
+            quoteId,
+            lineId,
+            addedQuantities,
+            userId,
+            d.itemId
+          )
+        : methodType === "Pull from Inventory"
+          ? await buildPullFromInventoryPriceRows(
               serviceRole,
+              companyId,
               quoteId,
               lineId,
               addedQuantities,
-              userId
+              userId,
+              d.itemId
             )
-          : methodType === "Pull from Inventory"
-            ? await resolveQuoteLinePrices(
-                serviceRole,
-                companyId,
-                quoteId,
-                lineId,
-                addedQuantities,
-                userId
-              )
-            : await resolvePurchaseToOrderPrices(
-                serviceRole,
-                companyId,
-                quoteId,
-                lineId,
-                addedQuantities,
-                userId
-              );
+          : await buildPurchaseToOrderPriceRows(
+              serviceRole,
+              companyId,
+              quoteId,
+              lineId,
+              addedQuantities,
+              userId,
+              d.itemId
+            );
 
-      if (priceResult?.error) {
-        throw redirect(
-          path.to.quoteLine(quoteId, lineId),
-          await flash(
-            request,
-            error(
-              priceResult.error,
-              `Failed to seed ${methodType} prices for new quantities`
-            )
+    if (built.error) {
+      throw redirect(
+        path.to.quoteLine(quoteId, lineId),
+        await flash(
+          request,
+          error(
+            built.error,
+            `Failed to calculate ${methodType} prices for new quantities`
           )
-        );
-      }
+        )
+      );
     }
+    priceRows = built.rows;
+  }
+
+  try {
+    await saveQuoteLineWithPrices({
+      lineId,
+      line: {
+        ...sanitize({ ...d, updatedBy: userId }),
+        customFields: setCustomFields(formData)
+      },
+      removedQuantities,
+      priceRows
+    });
+  } catch (err) {
+    // Kysely throws on rollback — nothing was written.
+    throw redirect(
+      path.to.quoteLine(quoteId, lineId),
+      await flash(request, error(err, "Failed to update quote line"))
+    );
   }
 
   throw redirect(path.to.quoteLine(quoteId, lineId));

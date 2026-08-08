@@ -29,7 +29,7 @@ pg_cron 'event-queue-sweeper' (* * * * *, in-DB): if visible messages exist → 
 ```
 
 The wake path (`20260721184852_event-queue-wake.sql`) — both helpers live in the internal `util` schema (like `util.process_embeddings`), NOT `public`:
-- `util.wake_event_queue()` — SECURITY DEFINER; reads `apiUrl`/`anonKey` from the singleton `config` table (same as the webhook triggers) and `net.http_post`s to `/functions/v1/event-wake`. Error-swallowed and no-ops when `config` is unseeded — OLTP writes never fail on push failure. pg_net queues the request transactionally, so the wake fires only after commit.
+- `util.wake_event_queue()` — SECURITY DEFINER; reads `apiUrl`/`anonKey` from the singleton `config` table and `net.http_post`s to `/functions/v1/event-wake`. Error-swallowed and no-ops when `config` is unseeded — OLTP writes never fail on push failure. pg_net queues the request transactionally, so the wake fires only after commit.
 - `dispatch_event_batch()` calls it at most **once per transaction** via the txn-local GUC `carbon.event_wake_sent` (`set_config(..., true)`).
 - `util.sweep_event_queue()` — pg_cron job `event-queue-sweeper` re-wakes every minute while *visible* messages (`vt <= clock_timestamp()`) sit in `pgmq.q_event_system`.
 - **Why `util`, not `public`:** a public function is auto-exposed as a PostgREST RPC, and a non-superuser reference to a function that transitively calls `net.http_post` segfaults the backend (pg_net 0.20 / PG15) — a remote-DoS surface a `REVOKE` can't close because the crash precedes the privilege check. anon/authenticated have no `USAGE` on `util`, so the API can't reach it. The trigger and pg_cron call it as the owner (superuser), where the pg_net path is safe.
@@ -66,7 +66,7 @@ Zod schemas + helpers. `QueueMessage` = `{ subscriptionId, triggerType: ROW|STAT
 
 | handlerType | event name | file | purpose |
 |---|---|---|---|
-| `WEBHOOK` | `carbon/event-webhook` | `webhook.ts` | `axios.post(config.url, data, { headers })` |
+| `WEBHOOK` | `carbon/event-webhook` | `webhook.ts` | `axios.post(config.url, toWebhookBody(...), { headers })` — customer-facing webhooks; see below |
 | `WORKFLOW` | `carbon/event-workflow` | `workflow.ts` | dispatch by `workflowId` (<!-- UNVERIFIED: body is still a stub/no-op --> ) |
 | `SYNC` | `carbon/event-sync` | `sync.ts` | accounting sync (Xero); maps table→entity, calls `@carbon/ee/accounting` |
 | `SEARCH` | `carbon/event-search` | `search.ts` | upsert/delete `search_index` via RPC per entity config |
@@ -74,6 +74,14 @@ Zod schemas + helpers. `QueueMessage` = `{ subscriptionId, triggerType: ROW|STAT
 | `EMBEDDING` | `carbon/event-embedding` | `embedding.ts` | invokes `embed` edge fn for `item/customer/supplier` name/description changes |
 
 All handlers (incl. `eventQueueFunction`) are exported from `events/index.ts` and registered in `packages/jobs/src/inngest/functions/index.ts`. Inngest client comes from `@carbon/lib/inngest`.
+
+### WEBHOOK — the customer-facing one
+
+Since `20260807234512_webhooks-via-event-system.sql`, user-configured webhooks (Settings → Webhooks) run on this handler. Before that they had their own pg_net path: 39 `webhook_*` triggers → the `webhook` edge function. Both the triggers and that edge function are **deleted** — don't resurrect them.
+
+- **Subscriptions are derived, not app-managed.** The `sync_webhook_subscription` AFTER-ROW interceptor — registered via `attach_event_trigger('webhook', ARRAY[]::TEXT[], ARRAY['sync_webhook_subscription'])`, so it follows the same convention as `sync_create_customer_entries` — maintains a subscription named `webhook-<webhook.id>` with `handlerType 'WEBHOOK'` and `config {url, webhookId}`. The `webhook` table is the single source of truth, so UI/API/MCP writers all work without lifecycle code. It deletes-then-recreates on UPDATE because `table` is editable and uniqueness is `(companyId, name, table)`.
+- **The body is a PUBLIC contract**: `{type, record, old?, companyId, table, eventId}` — documented at `docs/content/docs/building/webhooks.mdx` and pinned by `webhook.test.ts`. `toWebhookBody` maps the queue event onto it. Two traps: DELETE takes `record` from the event's `old` (its `new` is null), and `companyId` is **not** on the event — the drainer forwards it from the queue message.
+- Delivery moved from at-most-once to **at-least-once** (Inngest `retries: 3`); `increment_webhook_error` fires only on the final attempt so counters stay one-per-event. `eventId` is the pgmq `msgId` — stable across an event's retries (it is also the Inngest idempotency key), distinct per change — and is the documented de-dup key. `type` + `record.id` is NOT usable: two genuine updates to a row share both.
 
 ## Notes
 - Latency: typically ~3–5s (sub-second wake + the multi-step drain run). Worst case ~1 min if a push is lost (dead pg_net worker, edge fn down) — the pg_cron sweeper re-wakes while messages are pending. Still async: use sync interceptors, not subscriptions, for data-integrity / real-time needs.

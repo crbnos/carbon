@@ -3,6 +3,28 @@ import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import type { GenericSchema } from "@supabase/supabase-js/dist/module/lib/types";
 import { getPageOffset, getPageSize } from "./pagination";
 
+/**
+ * Count mode for the paged list endpoints backed by the big multi-join views
+ * (`parts`, `materials`, `salesOrders`, `purchaseOrders`, the invoice views…).
+ *
+ * PostgREST implements `exact` as `COUNT(*) OVER ()`, which makes Postgres
+ * materialize the entire filtered result set purely to produce a total — so
+ * `.range()` pagination limits what is transferred but not what is computed.
+ *
+ * `estimated` is a hybrid, not a blind guess: PostgREST still returns an exact
+ * count when the planner's estimate is under `max-rows`, and only falls back to
+ * the estimate for result sets far larger than any page a user is reading. The
+ * totals stay accurate at the sizes where being off by a few would be visible.
+ *
+ * These endpoints also pair it with an explicit `*_LIST_COLUMNS` constant rather
+ * than `select("*")`, for the same reason: naming the columns lets Postgres
+ * prune the views' unreferenced computed columns instead of materializing them
+ * per row. Adding a column to one of those tables means adding it to the
+ * constant — `apps/erp/test/list-select-columns.test.ts` fails if an
+ * `accessorKey` is missing, because the CSV export reads accessors untyped.
+ */
+export const LIST_COUNT = "estimated" as const;
+
 export type Sort = {
   sortBy: string;
   sortAsc: boolean;

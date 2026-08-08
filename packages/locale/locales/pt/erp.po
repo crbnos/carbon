@@ -965,6 +965,9 @@ msgstr "Uma mudança de engenharia: os itens afetados cujos métodos são revisa
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Uma integração ou uma mudança personalizada — a pequena parte que é realmente personalizada."
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "Um convite está pendente. Eles se tornam ativos assim que aceitarem."
+
 msgid "An item cannot be added to itself."
 msgstr "Um item não pode ser adicionado a si mesmo."
 
@@ -13579,8 +13582,14 @@ msgstr "Fuso Horário"
 msgid "Title"
 msgstr "Título"
 
+msgid "To deactivate, use the row menu and choose Deactivate Account."
+msgstr "Para desativar, use o menu de linha e escolha Desativar Conta."
+
 msgid "To Location"
 msgstr "Para Localização"
+
+msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
+msgstr "Para reativar, use o menu de linha e escolha Enviar Convite. O funcionário fica ativo assim que aceita."
 
 msgid "To Receive"
 msgstr "Para Receber"

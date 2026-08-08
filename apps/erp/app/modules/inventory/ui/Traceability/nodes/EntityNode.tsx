@@ -19,7 +19,13 @@ type Props = NodeProps & {
   };
 };
 
-function EntityNodeImpl({ data, selected, id }: Props) {
+function EntityNodeImpl({
+  data,
+  selected,
+  id,
+  sourcePosition,
+  targetPosition
+}: Props) {
   const entity = data.entity;
   const headline = entityHeadline(entity, 8);
 
@@ -61,12 +67,12 @@ function EntityNodeImpl({ data, selected, id }: Props) {
     >
       <Handle
         type="target"
-        position={Position.Top}
+        position={targetPosition ?? Position.Top}
         className="!opacity-0 !pointer-events-none !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-1 !h-1 !min-w-0 !min-h-0 !border-0"
       />
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={sourcePosition ?? Position.Bottom}
         className="!opacity-0 !pointer-events-none !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-1 !h-1 !min-w-0 !min-h-0 !border-0"
       />
       <svg

@@ -965,6 +965,9 @@ msgstr "Un ordre de modification d'ingénierie : les articles affectés dont les
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Une intégration ou une modification personnalisée — la petite partie qui est réellement personnalisée."
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "Une invitation est en attente. Elle devient active une fois qu'elle est acceptée."
+
 msgid "An item cannot be added to itself."
 msgstr "Un article ne peut pas être ajouté à lui-même."
 
@@ -13579,8 +13582,14 @@ msgstr "Fuseau horaire"
 msgid "Title"
 msgstr "Titre"
 
+msgid "To deactivate, use the row menu and choose Deactivate Account."
+msgstr "Pour désactiver, utilisez le menu de ligne et choisissez Désactiver le compte."
+
 msgid "To Location"
 msgstr "Vers l'emplacement"
+
+msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
+msgstr "Pour réactiver, utilisez le menu de ligne et choisissez Envoyer une invitation. L'employé devient actif dès qu'il accepte."
 
 msgid "To Receive"
 msgstr "À recevoir"

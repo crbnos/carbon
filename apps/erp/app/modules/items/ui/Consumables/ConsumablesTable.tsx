@@ -61,10 +61,10 @@ import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { itemTrackingTypes } from "../../items.models";
-import type { Consumable } from "../../types";
+import type { ConsumableListItem } from "../../types";
 
 type ConsumablesTableProps = {
-  data: Consumable[];
+  data: ConsumableListItem[];
   tags: { name: string }[];
   count: number;
 };
@@ -96,14 +96,16 @@ const ConsumablesTable = memo(
     const permissions = usePermissions();
 
     const deleteItemModal = useDisclosure();
-    const [selectedItem, setSelectedItem] = useState<Consumable | null>(null);
+    const [selectedItem, setSelectedItem] = useState<ConsumableListItem | null>(
+      null
+    );
 
     const [people] = usePeople();
     const itemPostingGroups = useItemPostingGroups();
-    const customColumns = useCustomColumns<Consumable>("consumable");
+    const customColumns = useCustomColumns<ConsumableListItem>("consumable");
 
-    const columns = useMemo<ColumnDef<Consumable>[]>(() => {
-      const defaultColumns: ColumnDef<Consumable>[] = [
+    const columns = useMemo<ColumnDef<ConsumableListItem>[]>(() => {
+      const defaultColumns: ColumnDef<ConsumableListItem>[] = [
         {
           accessorKey: "id",
           header: t`Consumable ID`,
@@ -130,7 +132,7 @@ const ConsumablesTable = memo(
             exportValue: (row) => row.readableIdWithRevision ?? null
           }
         },
-        exportOnlyColumn<Consumable>({
+        exportOnlyColumn<ConsumableListItem>({
           id: "itemName",
           header: t`Item Name`,
           value: (row) => row.name ?? null
@@ -515,11 +517,11 @@ const ConsumablesTable = memo(
     );
 
     const renderContextMenu = useMemo(() => {
-      return (row: Consumable) => (
+      return (row: ConsumableListItem) => (
         <>
           <MenuItem onClick={() => navigate(path.to.consumable(row.id!))}>
             <MenuIcon icon={<LuPencil />} />
-            Edit Consumable
+            Edit ConsumableListItem
           </MenuItem>
           <MenuItem
             disabled={!permissions.can("delete", "parts")}
@@ -530,7 +532,7 @@ const ConsumablesTable = memo(
             }}
           >
             <MenuIcon icon={<LuTrash />} />
-            Delete Consumable
+            Delete ConsumableListItem
           </MenuItem>
         </>
       );
@@ -538,7 +540,7 @@ const ConsumablesTable = memo(
 
     return (
       <>
-        <Table<Consumable>
+        <Table<ConsumableListItem>
           count={count}
           columns={columns}
           data={data}

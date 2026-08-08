@@ -28,7 +28,7 @@ import {
   useNProgress
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import { Edition, isSearchParamOnlyNavigation } from "@carbon/utils";
 import posthog from "posthog-js";
 import { Suspense } from "react";
 import type {
@@ -72,6 +72,8 @@ import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
+  nextUrl,
+  formMethod,
   defaultShouldRevalidate
 }) => {
   if (
@@ -83,6 +85,18 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     currentUrl.pathname.startsWith("/x/shared/views")
   ) {
     return true;
+  }
+
+  // This loader is the app shell: 16 parallel queries plus an auth round-trip.
+  // Without this it re-ran on every table filter, sort and page click, none of
+  // which can change anything it returns.
+  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
+  // also looks like a same-pathname GET, so the shell does not re-run for
+  // realtime events either. Leaf loaders still refresh, which is the intent.
+  // Shell data that must react to a realtime change needs an explicit case
+  // above.
+  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
+    return false;
   }
 
   return defaultShouldRevalidate;
@@ -109,6 +123,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const client = getCarbon(accessToken);
 
+  // Only probe product signals when the company is actually enrolled, so the
+  // home card + nav badge count gates the same way the hub page does. Chained
+  // off the hub query rather than awaited after the fan-out below, so the
+  // probes overlap the rest of it instead of forming a second serial wave.
+  const implementationHubPromise = getImplementationHub(client, companyId);
+  const implementationSignalsPromise = implementationHubPromise.then((hub) =>
+    hub.data ? detectImplementationSignals(client, companyId) : null
+  );
+
   // Parallelize all requests
   const [
     companies,
@@ -126,7 +149,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     modulePreferences,
     printerRoutes,
     implementationHub,
-    implementationCheckStates
+    implementationCheckStates,
+    implementationSignals
   ] = await Promise.all([
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
@@ -144,8 +168,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isAuditLogEnabled(client, companyId).catch(() => false),
     getModulePreferences(client, userId, companyId),
     getPrinterRoutes(client, companyId),
-    getImplementationHub(client, companyId),
-    getImplementationCheckStates(client, companyId)
+    implementationHubPromise,
+    getImplementationCheckStates(client, companyId),
+    implementationSignalsPromise
   ]);
 
   if (!claims || user.error || !user.data || !groups.data) {
@@ -200,12 +225,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (requiresOnboarding) {
     throw redirect(path.to.onboarding.root);
   }
-
-  // Only probe product signals when the company is actually enrolled, so the
-  // home card + nav badge count gates the same way the hub page does.
-  const implementationSignals = implementationHub.data
-    ? await detectImplementationSignals(client, companyId)
-    : null;
 
   return data({
     session: {
