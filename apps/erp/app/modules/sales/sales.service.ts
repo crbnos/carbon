@@ -5766,6 +5766,8 @@ export async function insertSalesRFQ(
     locationId?: string;
     salesPersonId?: string;
     customerContactId?: string;
+    customerEngineeringContactId?: string;
+    customerLocationId?: string;
     customerReference?: string;
     status?: "Draft" | "Ready for Quote" | "Quoted" | "Closed";
     notes?: string;
@@ -5813,6 +5815,8 @@ export async function insertSalesRFQ(
       rfqId,
       customerId: input.customerId,
       customerContactId: input.customerContactId,
+      customerEngineeringContactId: input.customerEngineeringContactId,
+      customerLocationId: input.customerLocationId,
       customerReference: input.customerReference,
       rfqDate:
         input.rfqDate ??
@@ -5845,6 +5849,8 @@ export async function updateSalesRFQ(
     updatedBy: string;
     customerId?: string;
     customerContactId?: string | null;
+    customerEngineeringContactId?: string | null;
+    customerLocationId?: string | null;
     customerReference?: string | null;
     rfqDate?: string;
     expirationDate?: string | null;

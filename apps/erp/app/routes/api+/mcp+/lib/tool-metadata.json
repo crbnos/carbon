@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-08T19:49:36.245Z",
+  "generated": "2026-08-08T23:00:41.235Z",
   "totalTools": 1416,
   "modules": 15,
   "tools": [
@@ -38723,7 +38723,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "insert sales r f q",
-      "paramCount": 11,
+      "paramCount": 13,
       "serviceParams": [
         "client",
         "input"
@@ -38757,6 +38757,12 @@
           "customerContactId": {
             "type": "string"
           },
+          "customerEngineeringContactId": {
+            "type": "string"
+          },
+          "customerLocationId": {
+            "type": "string"
+          },
           "customerReference": {
             "type": "string"
           },
@@ -38784,7 +38790,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "update sales r f q",
-      "paramCount": 11,
+      "paramCount": 13,
       "serviceParams": [
         "client",
         "input"
@@ -38803,6 +38809,18 @@
             "type": "string"
           },
           "customerContactId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customerEngineeringContactId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customerLocationId": {
             "type": [
               "string",
               "null"
