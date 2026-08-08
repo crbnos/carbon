@@ -354,7 +354,11 @@ export function InspectionView({
   const opAttrKey = `Operation ${operationId}`;
   const entityOpenAtOp = useCallback(
     (entity: TrackedEntity) => {
-      if (entity.status === "Consumed" || entity.status === "Rejected") {
+      if (
+        entity.status === "Consumed" ||
+        entity.status === "Rejected" ||
+        entity.status === "Scrapped"
+      ) {
         return false;
       }
       const attributes = (entity.attributes ?? {}) as Record<string, unknown>;

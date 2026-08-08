@@ -210,7 +210,11 @@ const InventoryStorageUnits = ({
     setSelectedTrackedEntityId(trackedEntityId || null);
     setSelectedReadableId(readableId || null);
     setIsEditingRow(storageUnitId !== undefined);
-    setAdjustmentType("Set Quantity");
+    // A new serial adjustment has no "Set Quantity" option (see the options list
+    // below), so default it to a valid choice instead of an unselectable one.
+    setAdjustmentType(
+      isSerial && !trackedEntityId ? "Positive Adjmt." : "Set Quantity"
+    );
     if (currentQuantity !== undefined) {
       setQuantity(currentQuantity);
     }
@@ -490,7 +494,8 @@ const InventoryStorageUnits = ({
                 originalStorageUnitId: isEditing
                   ? selectedStorageUnitId || undefined
                   : undefined,
-                adjustmentType: "Set Quantity",
+                adjustmentType:
+                  isSerial && !isEditing ? "Positive Adjmt." : "Set Quantity",
                 trackedEntityId: selectedTrackedEntityId || nanoid(),
                 readableId: selectedReadableId || undefined,
                 expirationDate: defaultExpirationDate

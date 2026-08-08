@@ -1432,6 +1432,7 @@ serve(async (req: Request) => {
           .from("jobOperation")
           .select("*")
           .eq("id", jobOperationId)
+          .eq("companyId", companyId)
           .single();
         const operation = operationRes.data;
         if (!operation || !operation.jobMakeMethodId) {
@@ -1451,16 +1452,19 @@ serve(async (req: Request) => {
               "id, itemId, requiresSerialTracking, requiresBatchTracking, parentMaterialId"
             )
             .eq("id", operation.jobMakeMethodId)
+            .eq("companyId", companyId)
             .single(),
           client
             .from("job")
             .select("id, jobId, locationId")
             .eq("id", operation.jobId)
+            .eq("companyId", companyId)
             .single(),
           client
             .from("trackedEntity")
             .select("id")
-            .eq("attributes->>Job Make Method", operation.jobMakeMethodId),
+            .eq("attributes->>Job Make Method", operation.jobMakeMethodId)
+            .eq("companyId", companyId),
           client
             .from("companySettings")
             .select("accountingEnabled")
@@ -1866,6 +1870,9 @@ serve(async (req: Request) => {
               Authorization: `Bearer ${serviceRoleKey}`,
             },
             body: JSON.stringify({ jobId: job.id, companyId, userId }),
+            // The scrap transaction already committed; don't let a stalled
+            // reschedule hold the request open until the platform kills it.
+            signal: AbortSignal.timeout(10_000),
           });
         } catch (rescheduleError) {
           console.error(
@@ -2193,8 +2200,14 @@ serve(async (req: Request) => {
             .from("trackedEntity")
             .select("*")
             .eq("id", trackedEntityId)
+            .eq("companyId", companyId)
             .single(),
-          client.from("jobMaterial").select("*").eq("id", materialId).single(),
+          client
+            .from("jobMaterial")
+            .select("*")
+            .eq("id", materialId)
+            .eq("companyId", companyId)
+            .single(),
         ]);
 
         if (!trackedEntity.data) {
@@ -2658,6 +2671,9 @@ serve(async (req: Request) => {
                 companyId,
                 userId,
               }),
+              // The scrap transaction already committed; don't let a stalled
+              // reschedule hold the request open until the platform kills it.
+              signal: AbortSignal.timeout(10_000),
             });
           } catch (rescheduleError) {
             console.error(

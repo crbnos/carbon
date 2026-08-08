@@ -605,6 +605,12 @@ serve(async (req: Request) => {
                 .select(["id", "storageUnitId", "locationId", "scrapReasonId"])
                 .where("id", "=", unscrapOfItemLedgerId)
                 .where("companyId", "=", companyId)
+                // Constrain a caller-supplied id to THIS entity's own negative
+                // Scrap movements (same filters as the fallback below) — an
+                // unrelated ledger id must not drive the restored bin/cost.
+                .where("trackedEntityId", "=", trackedEntityId)
+                .where("documentType", "=", "Scrap")
+                .where("quantity", "<", 0)
                 .executeTakeFirst()
             : undefined;
           if (!scrapMovement) {
@@ -723,6 +729,15 @@ serve(async (req: Request) => {
         if (quantity <= 0) {
           throw new ValidationError(
             "Unscrap quantity must be greater than zero"
+          );
+        }
+        // Unscrap makes locationId optional in the validator (the tracked path
+        // recovers it from the scrap movement). The untracked path has no such
+        // recovery, so require it — a null-location ledger row is invisible to
+        // location-scoped inventory queries.
+        if (!locationId) {
+          throw new ValidationError(
+            "Location is required to unscrap untracked stock"
           );
         }
         const booked = await bookAdjustment(trx, {

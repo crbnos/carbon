@@ -282,20 +282,23 @@ const TrackedEntitiesTable = memo(
             label={editingExpiry.sourceDocumentReadableId ?? editingExpiry.id}
           />
         )}
-        {unscrapping && unscrapping.itemId && (
-          <UnscrapModal
-            open={!!unscrapping}
-            onClose={() => setUnscrapping(null)}
-            itemId={unscrapping.itemId}
-            trackedEntityId={unscrapping.id}
-            quantity={Number(unscrapping.quantity) || 1}
-            label={
-              unscrapping.readableId ??
-              unscrapping.sourceDocumentReadableId ??
-              unscrapping.id
-            }
-          />
-        )}
+        {unscrapping &&
+          unscrapping.itemId &&
+          Number.isFinite(Number(unscrapping.quantity)) &&
+          Number(unscrapping.quantity) > 0 && (
+            <UnscrapModal
+              open={!!unscrapping}
+              onClose={() => setUnscrapping(null)}
+              itemId={unscrapping.itemId}
+              trackedEntityId={unscrapping.id}
+              quantity={Number(unscrapping.quantity)}
+              label={
+                unscrapping.readableId ??
+                unscrapping.sourceDocumentReadableId ??
+                unscrapping.id
+              }
+            />
+          )}
       </>
     );
   }

@@ -305,6 +305,10 @@ export function IssueMaterialModal({
         ? (batchNumbers?.data ?? [])
         : (serialNumbers?.data ?? []);
     const available: ScrappableEntity[] = availableSource
+      // Batch numbers are not pre-filtered by status at the query, so guard here
+      // (serial numbers already come back Available-only) — Reserved/On Hold/
+      // Scrapped entities must never appear as scrap-from-stock targets.
+      .filter((s) => s.status === "Available")
       .filter((s) => !consumedIds.has(s.id))
       .map((s) => ({
         id: s.id,

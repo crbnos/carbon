@@ -1209,10 +1209,20 @@ export function getNextIncompleteSerialEntity<
   T extends SerialEntityForSelection
 >(entities: T[], jobOperationId: string): T | undefined {
   if (entities.length === 0) return undefined;
+  // Prefer a non-terminal (not Consumed/Scrapped) unit for the end-state
+  // fallback so we never seed work onto a scrapped/consumed serial. But keep
+  // the guaranteed last-entity fallback for a fully-terminal make method (every
+  // unit Consumed on a finished subassembly), preserving the prior behavior of
+  // always returning something when entities exist.
+  const selectable = entities.filter(
+    (entity) => entity.status !== "Consumed" && entity.status !== "Scrapped"
+  );
   return (
-    entities.find((entity) =>
+    selectable.find((entity) =>
       isSerialEntityIncompleteForOperation(entity, jobOperationId)
-    ) ?? entities[entities.length - 1]
+    ) ??
+    selectable[selectable.length - 1] ??
+    entities[entities.length - 1]
   );
 }
 

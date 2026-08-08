@@ -1,4 +1,4 @@
-import { Hidden, Submit, TextArea, ValidatedForm } from "@carbon/form";
+import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   Modal,
@@ -11,6 +11,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Hidden, Submit, TextArea } from "~/components/Form";
 import { inventoryAdjustmentValidator } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
