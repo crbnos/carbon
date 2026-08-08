@@ -1315,6 +1315,20 @@
       ]
     },
     {
+      "slug": "docs/reference/scrap",
+      "title": "Scrap and unscrap",
+      "description": "Writing off defective or lost material, and restoring it if the write-off was a mistake.",
+      "keywords": ["scrap", "and", "unscrap", "docs", "reference"],
+      "headings": [
+        "Scrapping a unit on the floor",
+        "Scrapping a subcomponent",
+        "Scrapping stock",
+        "Unscrap",
+        "Accounting for scrap",
+        "Related"
+      ]
+    },
+    {
       "slug": "docs/reference/sequences",
       "title": "Numbering sequences",
       "description": "The per-company generator behind every readable document number — jobs, change notices, payments, and more.",
