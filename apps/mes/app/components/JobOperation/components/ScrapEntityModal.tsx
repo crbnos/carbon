@@ -23,14 +23,14 @@ import ScrapReason from "./ScrapReason";
 // Make-to-Order subassemblies flip to Scrapped and — when makeReplacement is
 // checked — reopen their routing and spawn a replacement unit.
 export function ScrapEntityModal({
-  operationId,
+  materialId,
   trackedEntityId,
   readableId,
   parentId,
   isMakeToOrder,
   onClose
 }: {
-  operationId: string;
+  materialId: string;
   trackedEntityId: string;
   readableId?: string | null;
   parentId?: string;
@@ -56,7 +56,7 @@ export function ScrapEntityModal({
     >
       <ModalContent>
         <ValidatedForm
-          action={path.to.scrapEntity(operationId, trackedEntityId, parentId)}
+          action={path.to.scrapEntity(materialId, trackedEntityId, parentId)}
           method="post"
           validator={scrapTrackedEntityValidator}
           defaultValues={{

@@ -2349,7 +2349,15 @@ serve(async (req: Request) => {
               .where("companyId", "=", companyId)
               .executeTakeFirst(),
           ]);
-          if (!itemCostRow) throw new Error("Item cost not found");
+          // A missing itemCost must not fail the scrap — fall back to zero
+          // cost (no journal value) so the physical/traceability scrap still
+          // records; accounting can be reconciled later.
+          const resolvedItemCost = {
+            costingMethod: itemCostRow?.costingMethod ?? "Average",
+            unitCost: Number(itemCostRow?.unitCost ?? 0),
+            standardCost: Number(itemCostRow?.standardCost ?? 0),
+            itemPostingGroupId: itemCostRow?.itemPostingGroupId ?? null,
+          };
 
           // Entity STATE drives the accounting side, not methodType:
           //  - Available (picked / in stock) → scrap FROM STOCK (Cr inventory)
@@ -2402,12 +2410,12 @@ serve(async (req: Request) => {
               item: {
                 itemTrackingType: itemRow?.itemTrackingType ?? null,
                 replenishmentSystem: itemRow?.replenishmentSystem ?? null,
-                itemPostingGroupId: itemCostRow.itemPostingGroupId,
+                itemPostingGroupId: resolvedItemCost.itemPostingGroupId,
               },
               itemCost: {
-                costingMethod: itemCostRow.costingMethod,
-                unitCost: Number(itemCostRow.unitCost ?? 0),
-                standardCost: Number(itemCostRow.standardCost ?? 0),
+                costingMethod: resolvedItemCost.costingMethod,
+                unitCost: resolvedItemCost.unitCost,
+                standardCost: resolvedItemCost.standardCost,
               },
               accounting:
                 accountingEnabledScrap &&
@@ -2441,7 +2449,7 @@ serve(async (req: Request) => {
             // Relieve it to scrap (Dr scrapAccount / Cr WIP at the item's unit
             // cost — materials-only, spec decision 6) and reopen the material
             // requirement so a replacement can be issued.
-            const scrapCost = Number(itemCostRow.unitCost ?? 0) * quantity;
+            const scrapCost = resolvedItemCost.unitCost * quantity;
             if (
               accountingEnabledScrap &&
               accountDefaultsScrap?.data &&
@@ -2507,7 +2515,7 @@ serve(async (req: Request) => {
 
               const scrapDimensionValues: Array<[string, string | null]> = [
                 ["Item", consumedItemId],
-                ["ItemPostingGroup", itemCostRow.itemPostingGroupId],
+                ["ItemPostingGroup", resolvedItemCost.itemPostingGroupId],
                 ["Location", job?.locationId ?? null],
                 ["ScrapReason", scrapReasonId],
                 ["WorkCenter", scrapWorkCenterId],

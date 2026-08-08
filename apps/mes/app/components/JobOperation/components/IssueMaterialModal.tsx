@@ -1951,7 +1951,7 @@ export function IssueMaterialModal({
       </Modal>
       {scrapEntityTarget && (
         <ScrapEntityModal
-          operationId={operationId}
+          materialId={material?.id ?? ""}
           trackedEntityId={scrapEntityTarget.id}
           readableId={scrapEntityTarget.readableId}
           parentId={parentId}
