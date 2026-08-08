@@ -151,6 +151,9 @@ msgstr "{totalQuantity, plural, one {# единица} other {# единиц}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
 
+msgid "{uploadedFileName} uploaded — fields filled from the document."
+msgstr "Файл {uploadedFileName} загружен — поля заполнены из документа."
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# строка отличается от ожидаемого количества} other {# строк отличаются от ожидаемого количества}}"
 
@@ -14090,6 +14093,9 @@ msgstr "Загрузка завершена, но путь файла не во�
 
 msgid "Upload CSV"
 msgstr "Загрузить CSV"
+
+msgid "Upload failed. Please try again."
+msgstr "Не удалось загрузить файл. Попробуйте ещё раз."
 
 msgid "Uploaded model"
 msgstr "Модель загружена"

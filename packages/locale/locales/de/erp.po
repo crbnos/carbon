@@ -151,6 +151,9 @@ msgstr "{totalQuantity, plural, one {# Einheit} other {# Einheiten}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# nicht gezählte Zeile} other {# nicht gezählte Zeilen}}"
 
+msgid "{uploadedFileName} uploaded — fields filled from the document."
+msgstr "{uploadedFileName} hochgeladen — Felder wurden aus dem Dokument ausgefüllt."
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# Zeile weicht von der erwarteten Menge ab} other {# Zeilen weichen von der erwarteten Menge ab}}"
 
@@ -14090,6 +14093,9 @@ msgstr "Upload abgeschlossen, aber kein Dateipfad zurückgegeben"
 
 msgid "Upload CSV"
 msgstr "CSV hochladen"
+
+msgid "Upload failed. Please try again."
+msgstr "Hochladen fehlgeschlagen. Bitte versuchen Sie es erneut."
 
 msgid "Uploaded model"
 msgstr "Modell hochgeladen"

@@ -151,6 +151,9 @@ msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
+msgid "{uploadedFileName} uploaded — fields filled from the document."
+msgstr "{uploadedFileName} 已上传 — 已根据文档填写字段。"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行与预期数量不同} other {# 行与预期数量不同}}"
 
@@ -14090,6 +14093,9 @@ msgstr "上传完成但未返回文件路径"
 
 msgid "Upload CSV"
 msgstr "上传 CSV"
+
+msgid "Upload failed. Please try again."
+msgstr "上传失败。请重试。"
 
 msgid "Uploaded model"
 msgstr "已上传模型"

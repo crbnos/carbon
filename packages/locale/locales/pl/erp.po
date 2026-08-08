@@ -151,6 +151,9 @@ msgstr "{totalQuantity, plural, one {# jednostka} other {# jednostek}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# niepoliczony wiersz} other {# niepoliczone wiersze}}"
 
+msgid "{uploadedFileName} uploaded — fields filled from the document."
+msgstr "Przesłano {uploadedFileName} — pola wypełniono na podstawie dokumentu."
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# linia różni się od oczekiwanej ilości} other {# linii różni się od oczekiwanej ilości}}"
 
@@ -14090,6 +14093,9 @@ msgstr "Przesyłanie zakończone, ale ścieżka pliku nie została zwrócona"
 
 msgid "Upload CSV"
 msgstr "Prześlij CSV"
+
+msgid "Upload failed. Please try again."
+msgstr "Przesyłanie nie powiodło się. Spróbuj ponownie."
 
 msgid "Uploaded model"
 msgstr "Model przesłany"

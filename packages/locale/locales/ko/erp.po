@@ -151,6 +151,9 @@ msgstr "{totalQuantity, plural, one {# 단위} other {# 단위}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
 
+msgid "{uploadedFileName} uploaded — fields filled from the document."
+msgstr "{uploadedFileName} 업로드됨 — 문서에서 필드가 채워졌습니다."
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "예상 수량과 다른 라인 {variances}개"
 
@@ -14090,6 +14093,9 @@ msgstr "업로드는 완료되었지만 파일 경로가 반환되지 않았습�
 
 msgid "Upload CSV"
 msgstr "CSV 업로드"
+
+msgid "Upload failed. Please try again."
+msgstr "업로드에 실패했습니다. 다시 시도해 주세요."
 
 msgid "Uploaded model"
 msgstr "업로드된 모델"

@@ -2,6 +2,7 @@ import { getLogger } from "@carbon/logger";
 import { Spinner, useCarbon } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
+import { LuCircleCheck } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { FileDropzone } from "~/components";
 import { useUser } from "~/hooks";
@@ -32,6 +33,8 @@ export function PdfExtractor({
   const fetcher = useFetcher<{ extractionId?: string }>();
   const [extractionId, setExtractionId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [uploadFailed, setUploadFailed] = useState(false);
   const [notifiedExtractionId, setNotifiedExtractionId] = useState<
     string | null
   >(null);
@@ -76,6 +79,8 @@ export function PdfExtractor({
     if (!file || !file.name.endsWith(".pdf")) return;
     if (!supabase) return;
 
+    setUploadFailed(false);
+    setUploadedFileName(file.name);
     setUploading(true);
     const storagePath = `${company.id}/extractions/${Date.now()}_${file.name}`;
 
@@ -85,6 +90,8 @@ export function PdfExtractor({
 
     if (error) {
       logger.error("Upload failed", error);
+      setUploadFailed(true);
+      setUploadedFileName(null);
       setUploading(false);
       return;
     }
@@ -134,6 +141,17 @@ export function PdfExtractor({
           </div>
         )}
       </div>
+      {status === "completed" && uploadedFileName && !isBusy && (
+        <p className="flex items-center gap-1.5 text-xs text-emerald-600">
+          <LuCircleCheck className="size-3.5 flex-shrink-0" />
+          {t`${uploadedFileName} uploaded — fields filled from the document.`}
+        </p>
+      )}
+      {uploadFailed && (
+        <p className="text-xs text-red-600">
+          {t`Upload failed. Please try again.`}
+        </p>
+      )}
       {status === "failed" && (
         <p className="text-xs text-red-600">
           {t`Could not read the document: ${extraction?.error ?? ""}`}

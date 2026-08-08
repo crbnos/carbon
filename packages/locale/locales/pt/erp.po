@@ -151,6 +151,9 @@ msgstr "{totalQuantity, plural, one {# unidade} other {# unidades}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# linha não contada} other {# linhas não contadas}}"
 
+msgid "{uploadedFileName} uploaded — fields filled from the document."
+msgstr "{uploadedFileName} enviado — campos preenchidos a partir do documento."
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# linha difere da quantidade esperada} other {# linhas diferem da quantidade esperada}}"
 
@@ -14090,6 +14093,9 @@ msgstr "Upload concluído, mas nenhum caminho de arquivo foi retornado"
 
 msgid "Upload CSV"
 msgstr "Carregar CSV"
+
+msgid "Upload failed. Please try again."
+msgstr "Falha no envio. Tente novamente."
 
 msgid "Uploaded model"
 msgstr "Modelo carregado"

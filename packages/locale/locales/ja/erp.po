@@ -151,6 +151,9 @@ msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
 
+msgid "{uploadedFileName} uploaded — fields filled from the document."
+msgstr "{uploadedFileName} をアップロードしました — ドキュメントからフィールドに入力されました。"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行が予想数量と異なります} other {# 行が予想数量と異なります}}"
 
@@ -14090,6 +14093,9 @@ msgstr "アップロードは完了しましたがファイルパスが返され
 
 msgid "Upload CSV"
 msgstr "CSVをアップロード"
+
+msgid "Upload failed. Please try again."
+msgstr "アップロードに失敗しました。もう一度お試しください。"
 
 msgid "Uploaded model"
 msgstr "モデルをアップロードしました"

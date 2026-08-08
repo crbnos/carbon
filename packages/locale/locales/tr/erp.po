@@ -151,6 +151,9 @@ msgstr "{totalQuantity, plural, one {# birim} other {# birimler}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
 
+msgid "{uploadedFileName} uploaded — fields filled from the document."
+msgstr "{uploadedFileName} yüklendi — alanlar belgeden dolduruldu."
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# satır beklenen miktardan farklı} other {# satırlar beklenen miktardan farklı}}"
 
@@ -14090,6 +14093,9 @@ msgstr "Yükleme tamamlandı ancak dosya yolu döndürülmedi"
 
 msgid "Upload CSV"
 msgstr "CSV Yükle"
+
+msgid "Upload failed. Please try again."
+msgstr "Yükleme başarısız oldu. Lütfen tekrar deneyin."
 
 msgid "Uploaded model"
 msgstr "Yüklenen model"
