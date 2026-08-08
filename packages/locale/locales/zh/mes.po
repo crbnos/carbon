@@ -153,6 +153,9 @@ msgstr "认证错误"
 msgid "available"
 msgstr "可用"
 
+msgid "Available"
+msgstr ""
+
 msgid "Batch"
 msgstr "批次"
 
@@ -267,6 +270,9 @@ msgstr "控制台"
 
 msgid "Console Mode"
 msgstr "控制台模式"
+
+msgid "Consumed"
+msgstr ""
 
 msgid "Consumed expired"
 msgstr "已消耗过期"
@@ -871,6 +877,9 @@ msgstr "没有运行"
 msgid "Nothing scheduled at this work center"
 msgstr "该工作中心没有计划任务"
 
+msgid "Nothing to scrap"
+msgstr ""
+
 msgid "OEE Impact"
 msgstr "OEE 影响"
 
@@ -1311,6 +1320,9 @@ msgstr "该批次将被标记为\"通过\"，{remaining} 个剩余单位将在�
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前，无法创建NCR。"
+
+msgid "There are no available or consumed tracked parts for this material."
+msgstr ""
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "物料清单中有序列号或批次追踪的物料尚未完全发放。不发放即完成可能导致追溯记录不正确。"

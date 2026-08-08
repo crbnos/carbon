@@ -153,6 +153,9 @@ msgstr "Błąd uwierzytelniania"
 msgid "available"
 msgstr "dostępne"
 
+msgid "Available"
+msgstr ""
+
 msgid "Batch"
 msgstr "Partia"
 
@@ -267,6 +270,9 @@ msgstr "Konsola"
 
 msgid "Console Mode"
 msgstr "Tryb konsoli"
+
+msgid "Consumed"
+msgstr ""
 
 msgid "Consumed expired"
 msgstr "Zużyte wygasłe"
@@ -871,6 +877,9 @@ msgstr "Nic nie działa"
 msgid "Nothing scheduled at this work center"
 msgstr "Nic nie zaplanowano w tym centrum roboczym"
 
+msgid "Nothing to scrap"
+msgstr ""
+
 msgid "OEE Impact"
 msgstr "Wpływ na OEE"
 
@@ -1311,6 +1320,9 @@ msgstr "Partia zostanie oznaczona jako Zaakceptowana i {remaining} pozostałych 
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Partia będzie nadal dyspozycjonowana, ale nie można utworzyć NCR, dopóki nie zostanie skonfigurowany co najmniej jeden typ problemu."
+
+msgid "There are no available or consumed tracked parts for this material."
+msgstr ""
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Na liście materiałowej znajdują się materiały śledzone seryjnie lub partiami, które nie zostały w pełni wydane. Ukończenie bez wydania może skutkować nieprawidłowymi rekordami śledzenia."

@@ -153,6 +153,9 @@ msgstr "Authentication Error"
 msgid "available"
 msgstr "available"
 
+msgid "Available"
+msgstr "Available"
+
 msgid "Batch"
 msgstr "Batch"
 
@@ -267,6 +270,9 @@ msgstr "Console"
 
 msgid "Console Mode"
 msgstr "Console Mode"
+
+msgid "Consumed"
+msgstr "Consumed"
 
 msgid "Consumed expired"
 msgstr "Consumed expired"
@@ -871,6 +877,9 @@ msgstr "Nothing running"
 msgid "Nothing scheduled at this work center"
 msgstr "Nothing scheduled at this work center"
 
+msgid "Nothing to scrap"
+msgstr "Nothing to scrap"
+
 msgid "OEE Impact"
 msgstr "OEE Impact"
 
@@ -1311,6 +1320,9 @@ msgstr "The lot will be marked Passed and {remaining} remaining unit(s) will be 
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "There are no available or consumed tracked parts for this material."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."

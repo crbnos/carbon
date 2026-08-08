@@ -153,6 +153,9 @@ msgstr "प्रमाणीकरण त्रुटि"
 msgid "available"
 msgstr "उपलब्ध"
 
+msgid "Available"
+msgstr ""
+
 msgid "Batch"
 msgstr "बैच"
 
@@ -267,6 +270,9 @@ msgstr "कंसोल"
 
 msgid "Console Mode"
 msgstr "कंसोल मोड"
+
+msgid "Consumed"
+msgstr ""
 
 msgid "Consumed expired"
 msgstr "खपत की गई समाप्त"
@@ -871,6 +877,9 @@ msgstr "कुछ नहीं चल रहा"
 msgid "Nothing scheduled at this work center"
 msgstr "इस कार्य केंद्र पर कुछ भी शेड्यूल नहीं है"
 
+msgid "Nothing to scrap"
+msgstr ""
+
 msgid "OEE Impact"
 msgstr "OEE प्रभाव"
 
@@ -1311,6 +1320,9 @@ msgstr "लॉट को पास के रूप में चिह्नि
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "लॉट को अभी भी डिस्पोज़ किया जाएगा, लेकिन कम से कम एक Issue Type कॉन्फ़िगर होने तक NCR नहीं बनाया जा सकता।"
+
+msgid "There are no available or consumed tracked parts for this material."
+msgstr ""
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "बिल ऑफ मेटेरियल पर सीरियल या बैच ट्रैक किए गए मेटेरियल हैं जो पूरी तरह से जारी नहीं किए गए हैं। जारी किए बिना पूरा करने से गलत ट्रेसेबिलिटी रिकॉर्ड हो सकते हैं।"

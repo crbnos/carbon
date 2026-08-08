@@ -153,6 +153,9 @@ msgstr "Ошибка аутентификации"
 msgid "available"
 msgstr "доступно"
 
+msgid "Available"
+msgstr ""
+
 msgid "Batch"
 msgstr "Партия"
 
@@ -267,6 +270,9 @@ msgstr "Консоль"
 
 msgid "Console Mode"
 msgstr "Режим консоли"
+
+msgid "Consumed"
+msgstr ""
 
 msgid "Consumed expired"
 msgstr "Потреблено истекшее"
@@ -871,6 +877,9 @@ msgstr "Ничего не работает"
 msgid "Nothing scheduled at this work center"
 msgstr "Ничего не запланировано на этом рабочем центре"
 
+msgid "Nothing to scrap"
+msgstr ""
+
 msgid "OEE Impact"
 msgstr "Влияние на OEE"
 
@@ -1311,6 +1320,9 @@ msgstr "Партия будет отмечена как Пройдена, и {re
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Партия все еще будет распределена, но NCR не может быть создана до тех пор, пока не будет настроен хотя бы один тип проблемы."
+
+msgid "There are no available or consumed tracked parts for this material."
+msgstr ""
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "В спецификации есть материалы с серийным или партионным учётом, которые не были полностью выданы. Завершение без выдачи может привести к некорректным записям прослеживаемости."

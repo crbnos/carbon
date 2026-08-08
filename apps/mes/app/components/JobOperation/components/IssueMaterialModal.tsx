@@ -64,6 +64,8 @@ import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { ScrapEntityModal } from "./ScrapEntityModal";
+import type { ScrappableEntity } from "./ScrapTab";
+import { ScrapTab } from "./ScrapTab";
 
 type TrackingType = "Serial" | "Batch" | "Inventory" | "Non-Inventory" | null;
 
@@ -288,6 +290,29 @@ export function IssueMaterialModal({
       value: input.id
     }));
   }, [trackedInputs]);
+
+  // Scrappable entities for this material: available (picked / in stock,
+  // pulled from the item's available serials) + already-consumed (trackedInputs).
+  const scrappableEntities = useMemo<ScrappableEntity[]>(() => {
+    const consumed: ScrappableEntity[] = trackedInputs.map((input) => ({
+      id: input.id,
+      readableId: input.readableId,
+      state: "Consumed" as const
+    }));
+    const consumedIds = new Set(consumed.map((e) => e.id));
+    const availableSource =
+      trackingType === "Batch"
+        ? (batchNumbers?.data ?? [])
+        : (serialNumbers?.data ?? []);
+    const available: ScrappableEntity[] = availableSource
+      .filter((s) => !consumedIds.has(s.id))
+      .map((s) => ({
+        id: s.id,
+        readableId: s.readableId,
+        state: "Available" as const
+      }));
+    return [...available, ...consumed];
+  }, [trackedInputs, trackingType, serialNumbers?.data, batchNumbers?.data]);
 
   // Default issue quantity. Serial parents always issue per-unit
   // (material.quantity is the per-unit requirement and quantityIssued is
@@ -1301,8 +1326,8 @@ export function IssueMaterialModal({
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                       <TabsList
                         className={cn(
-                          "grid w-full grid-cols-2 mb-4",
-                          hasTrackedInputs && "grid-cols-3"
+                          "grid w-full grid-cols-3 mb-4",
+                          hasTrackedInputs && "grid-cols-4"
                         )}
                       >
                         <TabsTrigger value="scan">
@@ -1313,6 +1338,10 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
+                        <TabsTrigger value="scrap">
+                          <LuTrash2 className="mr-2" />
+                          Scrap
+                        </TabsTrigger>
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1320,6 +1349,18 @@ export function IssueMaterialModal({
                           </TabsTrigger>
                         )}
                       </TabsList>
+
+                      <TabsContent value="scrap">
+                        <ScrapTab
+                          entities={scrappableEntities}
+                          onScrap={(entity) =>
+                            setScrapEntityTarget({
+                              id: entity.id,
+                              readableId: entity.readableId
+                            })
+                          }
+                        />
+                      </TabsContent>
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
@@ -1534,18 +1575,6 @@ export function IssueMaterialModal({
                                     </div>
                                   )}
                                 </label>
-                                <IconButton
-                                  aria-label={t`Scrap`}
-                                  icon={<LuTrash2 />}
-                                  variant="ghost"
-                                  onClick={() =>
-                                    setScrapEntityTarget({
-                                      id: input.id,
-                                      readableId: input.readableId
-                                    })
-                                  }
-                                  className="flex-shrink-0 text-destructive"
-                                />
                               </div>
                             ))}
                             {trackedInputs.length === 0 && (
@@ -1566,8 +1595,8 @@ export function IssueMaterialModal({
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                       <TabsList
                         className={cn(
-                          "grid w-full grid-cols-2 mb-4",
-                          hasTrackedInputs && "grid-cols-3"
+                          "grid w-full grid-cols-3 mb-4",
+                          hasTrackedInputs && "grid-cols-4"
                         )}
                       >
                         <TabsTrigger value="scan">
@@ -1578,6 +1607,10 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
+                        <TabsTrigger value="scrap">
+                          <LuTrash2 className="mr-2" />
+                          Scrap
+                        </TabsTrigger>
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1585,6 +1618,18 @@ export function IssueMaterialModal({
                           </TabsTrigger>
                         )}
                       </TabsList>
+
+                      <TabsContent value="scrap">
+                        <ScrapTab
+                          entities={scrappableEntities}
+                          onScrap={(entity) =>
+                            setScrapEntityTarget({
+                              id: entity.id,
+                              readableId: entity.readableId
+                            })
+                          }
+                        />
+                      </TabsContent>
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">

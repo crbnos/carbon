@@ -2204,11 +2204,8 @@ serve(async (req: Request) => {
         if (!jobMaterial.data) {
           throw new Error("Job material not found");
         }
-        if (
-          trackedEntity.data.status === "Consumed" ||
-          trackedEntity.data.status === "Scrapped"
-        ) {
-          throw new Error("Tracked entity has already been consumed or scrapped");
+        if (trackedEntity.data.status === "Scrapped") {
+          throw new Error("Tracked entity has already been scrapped");
         }
 
         const [accountingSettingsScrap, companyRecordScrap] = await Promise.all([
@@ -2333,39 +2330,59 @@ serve(async (req: Request) => {
             .where("id", "=", trackedEntityId)
             .execute();
 
-          if (material.methodType !== "Make to Order") {
-            // From-stock part: scrap FROM INVENTORY (Dr scrapAccount /
-            // Cr inventory via the shared adjustment core) at the entity’s
-            // actual on-hand bin — NOT consumption into WIP, and NO
-            // quantityIssued bump: the requirement stays open so the operator
-            // pulls a replacement from stock (spec decision 10).
+          const consumedItemId = entity.sourceDocumentId ?? material.itemId!;
+          const [itemRow, itemCostRow] = await Promise.all([
+            trx
+              .selectFrom("item")
+              .select(["itemTrackingType", "replenishmentSystem"])
+              .where("id", "=", consumedItemId)
+              .executeTakeFirst(),
+            trx
+              .selectFrom("itemCost")
+              .select([
+                "costingMethod",
+                "unitCost",
+                "standardCost",
+                "itemPostingGroupId",
+              ])
+              .where("itemId", "=", consumedItemId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst(),
+          ]);
+          if (!itemCostRow) throw new Error("Item cost not found");
+
+          // Entity STATE drives the accounting side, not methodType:
+          //  - Available (picked / in stock) → scrap FROM STOCK (Cr inventory)
+          //  - Consumed (already issued into the parent) → relieve WIP (Cr WIP)
+          const isConsumed = entity.status === "Consumed";
+
+          const scrapWorkCenterId = material.jobOperationId
+            ? ((
+                await trx
+                  .selectFrom("jobOperation")
+                  .select(["workCenterId"])
+                  .where("id", "=", material.jobOperationId)
+                  .executeTakeFirst()
+              )?.workCenterId ?? null)
+            : null;
+          const scrapExtraDimensions = [
+            { entityType: "ScrapReason", valueId: scrapReasonId },
+            ...(scrapWorkCenterId
+              ? [{ entityType: "WorkCenter", valueId: scrapWorkCenterId }]
+              : []),
+            { entityType: "Employee", valueId: userId },
+          ];
+
+          if (!isConsumed) {
+            // AVAILABLE → scrap from stock (Dr scrapAccount / Cr inventory via
+            // the shared adjustment core) at the entity's actual on-hand bin.
+            // quantityIssued is untouched — it was never consumed.
             const ledgerRows = await trx
               .selectFrom("itemLedger")
               .select(["trackedEntityId", "storageUnitId", "quantity"])
               .where("trackedEntityId", "=", trackedEntityId)
               .execute();
             const bin = resolveTrackedEntityBin(ledgerRows, trackedEntityId);
-
-            const consumedItemId = entity.sourceDocumentId!;
-            const [itemRow, itemCostRow] = await Promise.all([
-              trx
-                .selectFrom("item")
-                .select(["itemTrackingType", "replenishmentSystem"])
-                .where("id", "=", consumedItemId)
-                .executeTakeFirst(),
-              trx
-                .selectFrom("itemCost")
-                .select([
-                  "costingMethod",
-                  "unitCost",
-                  "standardCost",
-                  "itemPostingGroupId",
-                ])
-                .where("itemId", "=", consumedItemId)
-                .where("companyId", "=", companyId)
-                .executeTakeFirst(),
-            ]);
-            if (!itemCostRow) throw new Error("Item cost not found");
 
             await bookAdjustment(trx, {
               ledger: {
@@ -2415,35 +2432,124 @@ serve(async (req: Request) => {
                       description: `Scrap — ${item?.readableIdWithRevision ?? ""}`,
                       userId,
                       dimensions: Object.fromEntries(dimensionMapScrap),
-                      extraDimensions: [
-                        { entityType: "ScrapReason", valueId: scrapReasonId },
-                        ...(material.jobOperationId
-                          ? await trx
-                              .selectFrom("jobOperation")
-                              .select(["workCenterId"])
-                              .where("id", "=", material.jobOperationId)
-                              .executeTakeFirst()
-                              .then((op) =>
-                                op?.workCenterId
-                                  ? [
-                                      {
-                                        entityType: "WorkCenter",
-                                        valueId: op.workCenterId,
-                                      },
-                                    ]
-                                  : []
-                              )
-                          : []),
-                        { entityType: "Employee", valueId: userId },
-                      ],
+                      extraDimensions: scrapExtraDimensions,
                     }
                   : null,
             });
           } else {
-            // Make-to-Order subassembly: never in inventory — its cost is
-            // already in WIP. Relieve it: Dr scrapAccount / Cr WIP at the
-            // subassembly’s estimated material cost (spec decision 6 —
-            // labor stays in WIP → close-job variance).
+            // CONSUMED → the material cost was moved into WIP at consumption.
+            // Relieve it to scrap (Dr scrapAccount / Cr WIP at the item's unit
+            // cost — materials-only, spec decision 6) and reopen the material
+            // requirement so a replacement can be issued.
+            const scrapCost = Number(itemCostRow.unitCost ?? 0) * quantity;
+            if (
+              accountingEnabledScrap &&
+              accountDefaultsScrap?.data &&
+              accountingPeriodIdScrap &&
+              scrapCost > 0
+            ) {
+              const journalEntryId = await getNextSequence(
+                trx,
+                "journalEntry",
+                companyId
+              );
+              const journalResult = await trx
+                .insertInto("journal")
+                .values({
+                  journalEntryId,
+                  accountingPeriodId: accountingPeriodIdScrap,
+                  description: `Scrap — ${item?.readableIdWithRevision ?? ""}`,
+                  postingDate: todayScrap,
+                  companyId,
+                  sourceType: "Job Consumption",
+                  status: "Posted",
+                  postedAt: new Date().toISOString(),
+                  postedBy: userId,
+                  createdBy: userId,
+                })
+                .returning(["id"])
+                .executeTakeFirstOrThrow();
+
+              const scrapAccount =
+                accountDefaultsScrap.data.scrapAccount ??
+                accountDefaultsScrap.data.inventoryAdjustmentVarianceAccount;
+              const journalLineReference = nanoid();
+              const journalLineResults = await trx
+                .insertInto("journalLine")
+                .values([
+                  {
+                    journalId: journalResult.id,
+                    accountId: scrapAccount,
+                    description: "Scrap Account",
+                    amount: debit("expense", scrapCost),
+                    quantity,
+                    documentType: "Scrap",
+                    documentId: job?.id ?? null,
+                    documentLineReference: `scrapTrackedEntity:${materialId}`,
+                    journalLineReference,
+                    companyId,
+                  },
+                  {
+                    journalId: journalResult.id,
+                    accountId: accountDefaultsScrap.data.workInProgressAccount,
+                    description: "WIP Account",
+                    amount: credit("asset", scrapCost),
+                    quantity,
+                    documentType: "Scrap",
+                    documentId: job?.id ?? null,
+                    documentLineReference: `scrapTrackedEntity:${materialId}`,
+                    journalLineReference,
+                    companyId,
+                  },
+                ])
+                .returning(["id"])
+                .execute();
+
+              const scrapDimensionValues: Array<[string, string | null]> = [
+                ["Item", consumedItemId],
+                ["ItemPostingGroup", itemCostRow.itemPostingGroupId],
+                ["Location", job?.locationId ?? null],
+                ["ScrapReason", scrapReasonId],
+                ["WorkCenter", scrapWorkCenterId],
+                ["Employee", userId],
+              ];
+              const dimensionInserts = journalLineResults.flatMap((line) =>
+                scrapDimensionValues
+                  .filter(
+                    ([entityType, valueId]) =>
+                      dimensionMapScrap.has(entityType) && valueId
+                  )
+                  .map(([entityType, valueId]) => ({
+                    journalLineId: line.id,
+                    dimensionId: dimensionMapScrap.get(entityType)!,
+                    valueId: valueId as string,
+                    companyId,
+                  }))
+              );
+              if (dimensionInserts.length > 0) {
+                await trx
+                  .insertInto("journalLineDimension")
+                  .values(dimensionInserts)
+                  .execute();
+              }
+            }
+
+            // Reopen the requirement — the consumed part is gone, so the
+            // assembly needs a replacement issued.
+            const currentQuantityIssued = Number(material.quantityIssued) || 0;
+            await trx
+              .updateTable("jobMaterial")
+              .set({
+                quantityIssued: Math.max(0, currentQuantityIssued - quantity),
+              })
+              .where("id", "=", materialId)
+              .execute();
+          }
+
+          // Replacement flow ("made 3, scrapped 1 → make 1 more"): only a
+          // Make-to-Order subassembly can be re-made in place. Reopen its
+          // routing, spawn the replacement serial, and record a rework row.
+          if (makeReplacement && job) {
             const subMakeMethod = await trx
               .selectFrom("jobMakeMethod")
               .select(["id", "itemId", "requiresSerialTracking"])
@@ -2451,148 +2557,7 @@ serve(async (req: Request) => {
               .where("companyId", "=", companyId)
               .executeTakeFirst();
 
-            if (
-              accountingEnabledScrap &&
-              accountDefaultsScrap?.data &&
-              accountingPeriodIdScrap &&
-              subMakeMethod
-            ) {
-              const subMaterials = await trx
-                .selectFrom("jobMaterial")
-                .select(["itemId", "quantity"])
-                .where("jobMakeMethodId", "=", subMakeMethod.id)
-                .where("methodType", "!=", "Make to Order")
-                .execute();
-              let unitMaterialCost = 0;
-              if (subMaterials.length > 0) {
-                const subCosts = await trx
-                  .selectFrom("itemCost")
-                  .select(["itemId", "unitCost"])
-                  .where(
-                    "itemId",
-                    "in",
-                    subMaterials.map((m) => m.itemId)
-                  )
-                  .where("companyId", "=", companyId)
-                  .execute();
-                const unitCostByItem = new Map(
-                  subCosts.map((c) => [c.itemId, Number(c.unitCost) || 0])
-                );
-                for (const subMaterial of subMaterials) {
-                  unitMaterialCost +=
-                    (Number(subMaterial.quantity) || 0) *
-                    (unitCostByItem.get(subMaterial.itemId) ?? 0);
-                }
-              }
-              const scrapCost = unitMaterialCost * quantity;
-              if (scrapCost > 0) {
-                const journalEntryId = await getNextSequence(
-                  trx,
-                  "journalEntry",
-                  companyId
-                );
-                const journalResult = await trx
-                  .insertInto("journal")
-                  .values({
-                    journalEntryId,
-                    accountingPeriodId: accountingPeriodIdScrap,
-                    description: `Scrap — ${item?.readableIdWithRevision ?? ""}`,
-                    postingDate: todayScrap,
-                    companyId,
-                    sourceType: "Job Consumption",
-                    status: "Posted",
-                    postedAt: new Date().toISOString(),
-                    postedBy: userId,
-                    createdBy: userId,
-                  })
-                  .returning(["id"])
-                  .executeTakeFirstOrThrow();
-
-                const scrapAccount =
-                  accountDefaultsScrap.data.scrapAccount ??
-                  accountDefaultsScrap.data.inventoryAdjustmentVarianceAccount;
-                const journalLineReference = nanoid();
-                const journalLineResults = await trx
-                  .insertInto("journalLine")
-                  .values([
-                    {
-                      journalId: journalResult.id,
-                      accountId: scrapAccount,
-                      description: "Scrap Account",
-                      amount: debit("expense", scrapCost),
-                      quantity,
-                      documentType: "Scrap",
-                      documentId: job?.id ?? null,
-                      documentLineReference: `scrapTrackedEntity:${materialId}`,
-                      journalLineReference,
-                      companyId,
-                    },
-                    {
-                      journalId: journalResult.id,
-                      accountId:
-                        accountDefaultsScrap.data.workInProgressAccount,
-                      description: "WIP Account",
-                      amount: credit("asset", scrapCost),
-                      quantity,
-                      documentType: "Scrap",
-                      documentId: job?.id ?? null,
-                      documentLineReference: `scrapTrackedEntity:${materialId}`,
-                      journalLineReference,
-                      companyId,
-                    },
-                  ])
-                  .returning(["id"])
-                  .execute();
-
-                const workCenterRow = material.jobOperationId
-                  ? await trx
-                      .selectFrom("jobOperation")
-                      .select(["workCenterId"])
-                      .where("id", "=", material.jobOperationId)
-                      .executeTakeFirst()
-                  : null;
-                const subItemCost = subMakeMethod.itemId
-                  ? await trx
-                      .selectFrom("itemCost")
-                      .select(["itemPostingGroupId"])
-                      .where("itemId", "=", subMakeMethod.itemId)
-                      .where("companyId", "=", companyId)
-                      .executeTakeFirst()
-                  : null;
-                const scrapDimensionValues: Array<[string, string | null]> = [
-                  ["Item", subMakeMethod.itemId ?? null],
-                  ["ItemPostingGroup", subItemCost?.itemPostingGroupId ?? null],
-                  ["Location", job?.locationId ?? null],
-                  ["ScrapReason", scrapReasonId],
-                  ["WorkCenter", workCenterRow?.workCenterId ?? null],
-                  ["Employee", userId],
-                ];
-                const dimensionInserts = journalLineResults.flatMap((line) =>
-                  scrapDimensionValues
-                    .filter(
-                      ([entityType, valueId]) =>
-                        dimensionMapScrap.has(entityType) && valueId
-                    )
-                    .map(([entityType, valueId]) => ({
-                      journalLineId: line.id,
-                      dimensionId: dimensionMapScrap.get(entityType)!,
-                      valueId: valueId as string,
-                      companyId,
-                    }))
-                );
-                if (dimensionInserts.length > 0) {
-                  await trx
-                    .insertInto("journalLineDimension")
-                    .values(dimensionInserts)
-                    .execute();
-                }
-              }
-            }
-
-            // Replacement flow: "made 3, scrapped 1 → make 1 more". Reopen
-            // the subassembly’s routing (+ capacity beyond allowance), spawn
-            // the replacement serial, and surface it on the rework views.
-            if (makeReplacement && subMakeMethod && job) {
+            if (subMakeMethod) {
               didReplace = true;
               await applyScrapReplacement(trx, {
                 jobMakeMethodId: subMakeMethod.id,

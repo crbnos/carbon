@@ -153,6 +153,9 @@ msgstr "認証エラー"
 msgid "available"
 msgstr "利用可能"
 
+msgid "Available"
+msgstr ""
+
 msgid "Batch"
 msgstr "バッチ"
 
@@ -267,6 +270,9 @@ msgstr "コンソール"
 
 msgid "Console Mode"
 msgstr "コンソールモード"
+
+msgid "Consumed"
+msgstr ""
 
 msgid "Consumed expired"
 msgstr "消費期限切れ"
@@ -871,6 +877,9 @@ msgstr "稼働中の作業はありません"
 msgid "Nothing scheduled at this work center"
 msgstr "このワークセンターにはスケジュールされたものはありません"
 
+msgid "Nothing to scrap"
+msgstr ""
+
 msgid "OEE Impact"
 msgstr "OEE影響度"
 
@@ -1311,6 +1320,9 @@ msgstr "ロットは「合格」とマークされ、{remaining}個の残りユ�
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "ロットは引き続き処分されますが、少なくとも1つの問題タイプが設定されるまでNCRを作成することはできません。"
+
+msgid "There are no available or consumed tracked parts for this material."
+msgstr ""
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "部品表にシリアルまたはバッチ追跡対象の材料が完全に払い出されていません。払出なしで完了すると、トレーサビリティ記録が不正確になる可能性があります。"
