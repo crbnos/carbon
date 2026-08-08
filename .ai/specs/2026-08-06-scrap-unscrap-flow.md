@@ -474,6 +474,17 @@ functions).
 
 ## Changelog
 
+- 2026-08-07: Subcomponent scrap reworked to be **state-based** (Brad) — the
+  original `scrapTrackedEntity` branched on `methodType` and rejected
+  `Consumed` entities, but the only UI entry (the Unconsume tab) lists consumed
+  subcomponents, so it never worked. Now: entity **state** drives the posting
+  (`Available` → scrap from stock; `Consumed` → relieve WIP + decrement
+  `jobMaterial.quantityIssued` to reopen the requirement); `methodType` only
+  gates the MTO make-replacement flow. UI: a dedicated **Scrap tab** in
+  `IssueMaterialModal` (`ScrapTab`) lists Available + Consumed entities for the
+  material, replacing the (broken) per-row Scrap button in the Unconsume tab.
+  Two judgment calls: state (not methodType) drives accounting; consumed-scrap
+  decrements `quantityIssued`.
 - 2026-08-07: Implemented on `mes-scrap-serial-rework-flow` — see
   `.ai/plans/2026-08-07-scrap-unscrap-flow.md`. Notable deviations from the
   plan: (1) the status-aware RPCs needed no `Scrapped` exclusion — scrap posts

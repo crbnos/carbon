@@ -74,10 +74,12 @@ and MES services — NOT a single `post-production`:
   entity → `Scrapped`, then **spawns the next serial** (same `getNextSerialNumbers`
   path as `jobOperationSerialComplete`) and reopens the make method's Done ops
   (`issue/scrap-replacement.ts`) so the replacement runs the full routing. `issue`
-  case `scrapTrackedEntity` scraps an already-made BOM entity: Pull-from-Inventory
-  posts a `Scrap` (`Negative Adjmt.`) `itemLedger` at the entity's on-hand bin and
-  does **not** bump `quantityIssued`; Make-to-Order posts Dr scrap / Cr WIP and can
-  spawn a replacement + `rework` row. ERP stock **Scrap/Unscrap** run through
+  case `scrapTrackedEntity` scraps a subcomponent, branching on entity **state**:
+  an `Available` part posts a `Scrap` (`Negative Adjmt.`) `itemLedger` at its
+  on-hand bin (`quantityIssued` untouched); a `Consumed` part posts Dr scrap /
+  Cr WIP at the item's unit cost and **decrements `quantityIssued`** to reopen
+  the requirement. Make-to-Order can additionally spawn a replacement + `rework`
+  row (`makeReplacement`). ERP stock **Scrap/Unscrap** run through
   `post-inventory-adjustment` (`type: 'Unscrap'` activity restores a `Scrapped`
   entity at the original scrapped cost via `correctionOfItemLedgerId`). Every scrap
   journal is offset to `accountDefault.scrapAccount` and tagged with ScrapReason /
