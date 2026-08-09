@@ -997,14 +997,15 @@ export async function getDimensionPivot(
   const hasUnassignedColumn = groups.some((g) => g.columnKey === null);
   let columnKeys: string[];
   if (state.columnAxis.type === "period") {
-    const present = new Set(
-      groups.flatMap((g) => (g.columnKey === null ? [] : [g.columnKey]))
-    );
-    columnKeys = (args.periodEnds ?? []).filter((pe) => present.has(pe));
+    // Every bucket in the selected range renders as a column, including
+    // buckets with no journal lines — a 6-month range always shows 6 columns.
+    columnKeys = [...(args.periodEnds ?? [])];
     // Defensive: keep any keys the periodEnds contract didn't cover (e.g. the
     // literal 'total' when no period ends were provided).
-    for (const key of present) {
-      if (!columnKeys.includes(key)) columnKeys.push(key);
+    for (const g of groups) {
+      if (g.columnKey !== null && !columnKeys.includes(g.columnKey)) {
+        columnKeys.push(g.columnKey);
+      }
     }
   } else {
     const totalsByColumn = new Map<string, number>();
