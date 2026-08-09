@@ -96,6 +96,118 @@ export const financialReportParamsValidator = z.object({
     .transform((v) => v === "true")
 });
 
+// -- Dimensional analytics (pivot) reports --
+// Spec: .ai/specs/2026-08-09-dimensional-pivot-reporting.md
+
+export const analyticsReportKeys = [
+  "revenue",
+  "expenses",
+  "cogs",
+  "inventory-change",
+  "scrap"
+] as const;
+export type AnalyticsReportKey = (typeof analyticsReportKeys)[number];
+
+// Account scope: exactly one selector. "scrapAccounts" resolves at runtime to
+// accountDefault.scrapAccount (getScrapAccountIds in accounting.service.ts).
+export type AnalyticsAccountScope =
+  | { classes: (typeof accountClassTypes)[number][] }
+  | { types: (typeof accountTypes)[number][] }
+  | { source: "scrapAccounts" };
+
+export type AnalyticsReportDefinition = {
+  key: AnalyticsReportKey;
+  accountScope: AnalyticsAccountScope;
+  // Row selections applied when the URL has no pivot params. Entries use the
+  // "et:<entityType>" alias the analytics loader resolves to a dimension id.
+  defaultRows: string[];
+};
+
+export const analyticsReports: Record<
+  AnalyticsReportKey,
+  AnalyticsReportDefinition
+> = {
+  revenue: {
+    key: "revenue",
+    accountScope: { classes: ["Revenue"] },
+    defaultRows: ["et:CustomerType"]
+  },
+  expenses: {
+    key: "expenses",
+    accountScope: { classes: ["Expense"] },
+    defaultRows: ["et:SupplierType"]
+  },
+  cogs: {
+    key: "cogs",
+    accountScope: { types: ["Cost of Goods Sold"] },
+    defaultRows: ["et:ItemPostingGroup"]
+  },
+  "inventory-change": {
+    key: "inventory-change",
+    accountScope: { types: ["Inventory"] },
+    defaultRows: ["et:ItemPostingGroup"]
+  },
+  scrap: {
+    key: "scrap",
+    accountScope: { source: "scrapAccounts" },
+    defaultRows: ["et:ScrapReason"]
+  }
+};
+
+export const pivotMeasures = ["amount", "quantity", "count"] as const;
+export type PivotMeasure = (typeof pivotMeasures)[number];
+
+export const pivotColumnAxisValidator = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("period"),
+    bucket: z.enum(financialReportColumns)
+  }),
+  z.object({ type: z.literal("dimension"), dimensionId: z.string().min(1) })
+]);
+export type PivotColumnAxis = z.infer<typeof pivotColumnAxisValidator>;
+
+// Pivot state, encoded in the URL as:
+//   rows    = comma-separated dimension ids (or "et:<entityType>" aliases), max 2
+//   col     = "period:month|quarter|year" or "dim:<dimensionId>"
+//   measure = amount|quantity|count; pct=1 for percent-of-column-total
+//   filters = URL-encoded JSON [{dimensionId, valueIds}]
+//   startDate/endDate — same params ReportFilters writes
+export const pivotStateValidator = z.object({
+  rows: z.array(z.string().min(1)).max(2).default([]),
+  columnAxis: pivotColumnAxisValidator.default({
+    type: "period",
+    bucket: "month"
+  }),
+  measure: z.enum(pivotMeasures).default("amount"),
+  percentOfTotal: z.boolean().default(false),
+  filters: z
+    .array(
+      z.object({
+        dimensionId: z.string().min(1),
+        valueIds: z.array(z.string()).min(1)
+      })
+    )
+    .default([])
+});
+export type PivotState = z.infer<typeof pivotStateValidator>;
+
+export const reportViewVisibilities = ["Private", "Company"] as const;
+
+// Save-view modal on the analytics reports; config is a JSON-encoded
+// PivotState re-parsed with pivotStateValidator in the route action.
+export const reportViewValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  reportKey: z.enum(analyticsReportKeys),
+  name: z
+    .string()
+    .min(1, { message: "Name is required" })
+    .max(100, { message: "Name must be 100 characters or fewer" }),
+  visibility: z.enum(reportViewVisibilities, {
+    errorMap: () => ({ message: "Visibility is required" })
+  }),
+  config: z.string().min(2, { message: "Config is required" })
+});
+
 export const groupAccountValidator = z
   .object({
     id: zfd.text(z.string().optional()),
