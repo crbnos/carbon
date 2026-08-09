@@ -1926,6 +1926,9 @@ msgstr "안전재고 미만"
 msgid "Beta"
 msgstr "베타"
 
+msgid "Biggest causes of scrap by reason, item, or work center"
+msgstr ""
+
 msgid "Bill of Material"
 msgstr "자재명세서"
 
@@ -3091,6 +3094,9 @@ msgstr "매출원가(COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "매출원가(기본값)"
+
+msgid "Cost of goods sold by item group, item, or any dimension"
+msgstr ""
 
 msgid "Cost of Sales"
 msgstr "매출원가"
@@ -5371,9 +5377,6 @@ msgstr "이연법인세 변동의 비용 측면(이연법인세부채와 짝을 
 msgid "Expenses"
 msgstr ""
 
-msgid "Expenses by Supplier"
-msgstr "공급자별 비용"
-
 msgid "Expert guidance"
 msgstr "전문가 안내"
 
@@ -6959,12 +6962,6 @@ msgstr "인보이스 발행됨"
 
 msgid "Invoiced Amount:"
 msgstr "인보이스 금액:"
-
-msgid "Invoiced revenue per customer with period variance"
-msgstr "기간 차이가 포함된 고객당 청구된 수익"
-
-msgid "Invoiced spend per supplier with period variance"
-msgstr "기간 차이가 포함된 공급자당 청구된 비용"
 
 msgid "Invoiced Statuses"
 msgstr "인보이스 상태"
@@ -10957,9 +10954,6 @@ msgstr "수익"
 msgid "Revenue and expenses over a period"
 msgstr "일정 기간의 수익 및 비용"
 
-msgid "Revenue by Customer"
-msgstr "고객별 수익"
-
 msgid "Reverse all inventory adjustments"
 msgstr "모든 재고 조정 취소"
 
@@ -11297,6 +11291,9 @@ msgstr ""
 
 msgid "Save View"
 msgstr "보기 저장"
+
+msgid "Saved Views"
+msgstr ""
 
 msgid "Saving..."
 msgstr "저장 중..."
@@ -12090,6 +12087,12 @@ msgstr "건너뜀"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Slice expenses by supplier, supplier type, or any dimension"
+msgstr ""
+
+msgid "Slice revenue by customer, customer type, or any dimension"
+msgstr ""
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "핵심 일일 업무 흐름을 처음부터 끝까지 스모크 테스트하세요"
@@ -13868,9 +13871,6 @@ msgstr "이 위치의 모든 저장 단위에 걸친 해당 품목의 총 재고
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "이 작업뿐 아니라 이 위치의 모든 진행 중인 작업과 판매주문에서 필요한 총 수량입니다."
 
-msgid "Total Spend"
-msgstr "총 비용"
-
 msgid "Total Value"
 msgstr "총 가치"
 
@@ -14816,6 +14816,9 @@ msgstr "Carbon으로 전환하면 무엇이 달라지고 그 가치는 대략 �
 
 msgid "What data"
 msgstr "어떤 데이터"
+
+msgid "What drove inventory up or down, by any dimension"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"

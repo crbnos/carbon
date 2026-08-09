@@ -882,7 +882,6 @@ export const path = {
       generatePath(`${x}/accounting/exchange-rates/${id}`),
     exchangeRates: `${x}/accounting/exchange-rates`,
     executivePnl: `${x}/reports/executive-pnl`,
-    expensesBySupplier: `${x}/reports/expenses-by-supplier`,
     external: {
       mes: MES_URL,
       mesJobOperation: (id: string) => `${MES_URL}/x/operation/${id}`,
@@ -1863,7 +1862,6 @@ export const path = {
     resendInvite: `${x}/users/resend-invite`,
     resources: `${x}/resources`,
     resourcesSettings: `${x}/settings/resources`,
-    revenueByCustomer: `${x}/reports/revenue-by-customer`,
     reverseJournalEntry: (id: string) =>
       generatePath(`${x}/journal-entry/${id}/reverse`),
     revision: (id: string) => generatePath(`${x}/items/revisions/${id}`),

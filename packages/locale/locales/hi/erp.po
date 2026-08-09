@@ -1926,6 +1926,9 @@ msgstr "सुरक्षा स्टॉक से नीचे"
 msgid "Beta"
 msgstr "बीटा"
 
+msgid "Biggest causes of scrap by reason, item, or work center"
+msgstr ""
+
 msgid "Bill of Material"
 msgstr "सामग्री की बिल"
 
@@ -3091,6 +3094,9 @@ msgstr "बेची गई वस्तुओं की लागत (COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "बेची गई वस्तुओं की लागत (डिफ़ॉल्ट)"
+
+msgid "Cost of goods sold by item group, item, or any dimension"
+msgstr ""
 
 msgid "Cost of Sales"
 msgstr "बिक्री की लागत"
@@ -5371,9 +5377,6 @@ msgstr "संपत्ति वर्ग बनाने में विफ�
 msgid "Expenses"
 msgstr ""
 
-msgid "Expenses by Supplier"
-msgstr "आपूर्तिकर्ता द्वारा व्यय"
-
 msgid "Expert guidance"
 msgstr "विशेषज्ञ मार्गदर्शन"
 
@@ -6959,12 +6962,6 @@ msgstr "चालान किया गया"
 
 msgid "Invoiced Amount:"
 msgstr "चालान की गई राशि:"
-
-msgid "Invoiced revenue per customer with period variance"
-msgstr "अवधि भिन्नता के साथ प्रति ग्राहक बिल किए गए राजस्व"
-
-msgid "Invoiced spend per supplier with period variance"
-msgstr "अवधि भिन्नता के साथ प्रति आपूर्तिकर्ता बिल किया गया व्यय"
 
 msgid "Invoiced Statuses"
 msgstr "चालान किए गए स्थितियां"
@@ -10957,9 +10954,6 @@ msgstr "राजस्व"
 msgid "Revenue and expenses over a period"
 msgstr "एक अवधि में राजस्व और व्यय"
 
-msgid "Revenue by Customer"
-msgstr "ग्राहक द्वारा राजस्व"
-
 msgid "Reverse all inventory adjustments"
 msgstr "सभी इन्वेंटरी समायोजन को उलट दें"
 
@@ -11297,6 +11291,9 @@ msgstr ""
 
 msgid "Save View"
 msgstr "दृश्य सहेजें"
+
+msgid "Saved Views"
+msgstr ""
 
 msgid "Saving..."
 msgstr "सहेज रहे हैं..."
@@ -12090,6 +12087,12 @@ msgstr "छोड़ा गया"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Slice expenses by supplier, supplier type, or any dimension"
+msgstr ""
+
+msgid "Slice revenue by customer, customer type, or any dimension"
+msgstr ""
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "कोर दैनिक प्रवाह को अंत से अंत तक स्मोक-टेस्ट करें"
@@ -13868,9 +13871,6 @@ msgstr "इस स्थान पर सभी भंडारण इकाइ�
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "इस स्थान पर सभी सक्रिय कार्यों और बिक्री आदेशों में आवश्यक कुल मात्रा — केवल इस कार्य के लिए नहीं।"
 
-msgid "Total Spend"
-msgstr "कुल व्यय"
-
 msgid "Total Value"
 msgstr "कुल मूल्य"
 
@@ -14816,6 +14816,9 @@ msgstr "जब आप Carbon पर जाते हैं तो क्या �
 
 msgid "What data"
 msgstr "कौन सा डेटा"
+
+msgid "What drove inventory up or down, by any dimension"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"

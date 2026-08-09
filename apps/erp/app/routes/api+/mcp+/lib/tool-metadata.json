@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-09T19:03:50.207Z",
-  "totalTools": 1430,
+  "generated": "2026-08-09T19:36:42.631Z",
+  "totalTools": 1428,
   "modules": 15,
   "tools": [
     {
@@ -10621,66 +10621,6 @@
         "required": [
           "asOfDate",
           "options"
-        ]
-      }
-    },
-    {
-      "name": "invoicing_getRevenueByCustomer",
-      "module": "invoicing",
-      "classification": "READ",
-      "description": "get revenue by customer",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "startDate": {
-            "type": "string"
-          },
-          "endDate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "startDate",
-          "endDate"
-        ]
-      }
-    },
-    {
-      "name": "invoicing_getExpensesBySupplier",
-      "module": "invoicing",
-      "classification": "READ",
-      "description": "get expenses by supplier",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "startDate": {
-            "type": "string"
-          },
-          "endDate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "startDate",
-          "endDate"
         ]
       }
     },

@@ -1926,6 +1926,9 @@ msgstr "Emniyet stoğunun altında"
 msgid "Beta"
 msgstr "Beta"
 
+msgid "Biggest causes of scrap by reason, item, or work center"
+msgstr ""
+
 msgid "Bill of Material"
 msgstr "Malzeme Listesi"
 
@@ -3091,6 +3094,9 @@ msgstr "Satılan Malların Maliyeti (COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "Satılan Malların Maliyeti (varsayılan)"
+
+msgid "Cost of goods sold by item group, item, or any dimension"
+msgstr ""
 
 msgid "Cost of Sales"
 msgstr "Satışların Maliyeti"
@@ -5371,9 +5377,6 @@ msgstr "Varlık sınıfı oluşturulamadı: {0}"
 msgid "Expenses"
 msgstr ""
 
-msgid "Expenses by Supplier"
-msgstr "Tedarikçiye Göre Giderler"
-
 msgid "Expert guidance"
 msgstr "Uzman rehberliği"
 
@@ -6959,12 +6962,6 @@ msgstr "Faturalandırıldı"
 
 msgid "Invoiced Amount:"
 msgstr "Fatura Edilmiş Tutar:"
-
-msgid "Invoiced revenue per customer with period variance"
-msgstr "Dönem sapması ile müşteri başına faturalandırılan gelir"
-
-msgid "Invoiced spend per supplier with period variance"
-msgstr "Dönem sapması ile tedarikçi başına faturalandırılan harcama"
 
 msgid "Invoiced Statuses"
 msgstr "Fatura Durumları"
@@ -10957,9 +10954,6 @@ msgstr "Gelir"
 msgid "Revenue and expenses over a period"
 msgstr "Bir dönem içinde gelir ve giderler"
 
-msgid "Revenue by Customer"
-msgstr "Müşteriye Göre Gelir"
-
 msgid "Reverse all inventory adjustments"
 msgstr "Tüm envanter ayarlamalarını geri alır"
 
@@ -11297,6 +11291,9 @@ msgstr ""
 
 msgid "Save View"
 msgstr "Görünümü Kaydet"
+
+msgid "Saved Views"
+msgstr ""
 
 msgid "Saving..."
 msgstr "Kaydediliyor..."
@@ -12090,6 +12087,12 @@ msgstr "Atlanmış"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Slice expenses by supplier, supplier type, or any dimension"
+msgstr ""
+
+msgid "Slice revenue by customer, customer type, or any dimension"
+msgstr ""
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Temel günlük akışları uçtan uca test et"
@@ -13868,9 +13871,6 @@ msgstr "Bu konumdaki tüm depolama birimlerinde öğenin toplam eldeki miktarı.
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Bu konumdaki tüm aktif işler ve satış siparişleri genelinde gereken toplam miktar — yalnızca bu iş için değil."
 
-msgid "Total Spend"
-msgstr "Toplam Harcama"
-
 msgid "Total Value"
 msgstr "Toplam Değer"
 
@@ -14816,6 +14816,9 @@ msgstr "Carbon'a geçtiğinizde neler değişir ve kabaca ne kadar değerli olur
 
 msgid "What data"
 msgstr "Hangi veri"
+
+msgid "What drove inventory up or down, by any dimension"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"

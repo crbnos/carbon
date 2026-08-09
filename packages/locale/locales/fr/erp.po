@@ -1926,6 +1926,9 @@ msgstr "Sous stock de sécurité"
 msgid "Beta"
 msgstr "Bêta"
 
+msgid "Biggest causes of scrap by reason, item, or work center"
+msgstr ""
+
 msgid "Bill of Material"
 msgstr "Nomenclature"
 
@@ -3091,6 +3094,9 @@ msgstr "Coût des marchandises vendues (COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "Coût des Marchandises Vendues (par défaut)"
+
+msgid "Cost of goods sold by item group, item, or any dimension"
+msgstr ""
 
 msgid "Cost of Sales"
 msgstr "Coût des ventes"
@@ -5371,9 +5377,6 @@ msgstr "Échec de la création de la classe d'actif : {0}"
 msgid "Expenses"
 msgstr ""
 
-msgid "Expenses by Supplier"
-msgstr "Dépenses par fournisseur"
-
 msgid "Expert guidance"
 msgstr "Conseils d'experts"
 
@@ -6959,12 +6962,6 @@ msgstr "Facturé"
 
 msgid "Invoiced Amount:"
 msgstr "Montant facturé :"
-
-msgid "Invoiced revenue per customer with period variance"
-msgstr "Revenu facturé par client avec variance périodique"
-
-msgid "Invoiced spend per supplier with period variance"
-msgstr "Dépenses facturées par fournisseur avec variance périodique"
 
 msgid "Invoiced Statuses"
 msgstr "Statuts facturés"
@@ -10957,9 +10954,6 @@ msgstr "Revenu"
 msgid "Revenue and expenses over a period"
 msgstr "Revenus et dépenses au cours d'une période"
 
-msgid "Revenue by Customer"
-msgstr "Revenu par client"
-
 msgid "Reverse all inventory adjustments"
 msgstr "Inverser tous les ajustements d'inventaire"
 
@@ -11297,6 +11291,9 @@ msgstr ""
 
 msgid "Save View"
 msgstr "Enregistrer la vue"
+
+msgid "Saved Views"
+msgstr ""
 
 msgid "Saving..."
 msgstr "Enregistrement..."
@@ -12090,6 +12087,12 @@ msgstr "Ignoré"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Slice expenses by supplier, supplier type, or any dimension"
+msgstr ""
+
+msgid "Slice revenue by customer, customer type, or any dimension"
+msgstr ""
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Tester les flux quotidiens principaux de bout en bout"
@@ -13868,9 +13871,6 @@ msgstr "Quantité totale disponible de l'article sur toutes les unités de stock
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Quantité totale requise sur toutes les tâches actives et commandes clients à cet emplacement — pas seulement cette tâche."
 
-msgid "Total Spend"
-msgstr "Dépenses totales"
-
 msgid "Total Value"
 msgstr "Valeur Totale"
 
@@ -14816,6 +14816,9 @@ msgstr "Ce qui change quand vous passez à Carbon, et à peu près ce que cela v
 
 msgid "What data"
 msgstr "Quelles données"
+
+msgid "What drove inventory up or down, by any dimension"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Qu'est-ce que {translatedTerm} ?"

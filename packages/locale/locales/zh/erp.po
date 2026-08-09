@@ -1926,6 +1926,9 @@ msgstr "低于安全库存"
 msgid "Beta"
 msgstr "测试版"
 
+msgid "Biggest causes of scrap by reason, item, or work center"
+msgstr ""
+
 msgid "Bill of Material"
 msgstr "物料清单"
 
@@ -3091,6 +3094,9 @@ msgstr "销售成本（COGS）"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "销售成本（默认）"
+
+msgid "Cost of goods sold by item group, item, or any dimension"
+msgstr ""
 
 msgid "Cost of Sales"
 msgstr "销售成本"
@@ -5371,9 +5377,6 @@ msgstr "无法创建资产类别: {0}"
 msgid "Expenses"
 msgstr ""
 
-msgid "Expenses by Supplier"
-msgstr "按供应商分类的费用"
-
 msgid "Expert guidance"
 msgstr "专家指导"
 
@@ -6959,12 +6962,6 @@ msgstr "已开票"
 
 msgid "Invoiced Amount:"
 msgstr "已开票金额："
-
-msgid "Invoiced revenue per customer with period variance"
-msgstr "按客户统计的开票收入，含期间差异"
-
-msgid "Invoiced spend per supplier with period variance"
-msgstr "按供应商统计的开票支出，含期间差异"
 
 msgid "Invoiced Statuses"
 msgstr "已开票状态"
@@ -10957,9 +10954,6 @@ msgstr "收入"
 msgid "Revenue and expenses over a period"
 msgstr "期间的收入和费用"
 
-msgid "Revenue by Customer"
-msgstr "按客户分类的收入"
-
 msgid "Reverse all inventory adjustments"
 msgstr "反转所有库存调整"
 
@@ -11297,6 +11291,9 @@ msgstr ""
 
 msgid "Save View"
 msgstr "保存视图"
+
+msgid "Saved Views"
+msgstr ""
 
 msgid "Saving..."
 msgstr "保存中..."
@@ -12090,6 +12087,12 @@ msgstr "已跳过"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Slice expenses by supplier, supplier type, or any dimension"
+msgstr ""
+
+msgid "Slice revenue by customer, customer type, or any dimension"
+msgstr ""
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "端到端烟雾测试核心日常流程"
@@ -13868,9 +13871,6 @@ msgstr "此地点所有存储单元中该物料的现有总数量。当现有数
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "此地点所有活动作业和销售订单所需的总数量——而不仅仅是此作业。"
 
-msgid "Total Spend"
-msgstr "总支出"
-
 msgid "Total Value"
 msgstr "总价值"
 
@@ -14816,6 +14816,9 @@ msgstr "当您迁移到 Carbon 时会发生什么变化，以及大致的价值�
 
 msgid "What data"
 msgstr "什么数据"
+
+msgid "What drove inventory up or down, by any dimension"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"

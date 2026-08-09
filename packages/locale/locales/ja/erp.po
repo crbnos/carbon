@@ -1926,6 +1926,9 @@ msgstr "安全在庫以下"
 msgid "Beta"
 msgstr "ベータ"
 
+msgid "Biggest causes of scrap by reason, item, or work center"
+msgstr ""
+
 msgid "Bill of Material"
 msgstr "材料表"
 
@@ -3091,6 +3094,9 @@ msgstr "売上原価（COGS）"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "売上原価（デフォルト）"
+
+msgid "Cost of goods sold by item group, item, or any dimension"
+msgstr ""
 
 msgid "Cost of Sales"
 msgstr "売上原価"
@@ -5371,9 +5377,6 @@ msgstr "固定資産クラスの作成に失敗しました: {0}"
 msgid "Expenses"
 msgstr ""
 
-msgid "Expenses by Supplier"
-msgstr "仕入先別経費"
-
 msgid "Expert guidance"
 msgstr "専門家によるガイダンス"
 
@@ -6959,12 +6962,6 @@ msgstr "請求済み"
 
 msgid "Invoiced Amount:"
 msgstr "請求済み金額:"
-
-msgid "Invoiced revenue per customer with period variance"
-msgstr "期間差異付き顧客別売上請求額"
-
-msgid "Invoiced spend per supplier with period variance"
-msgstr "期間差異付き仕入先別支出請求額"
 
 msgid "Invoiced Statuses"
 msgstr "請求済みステータス"
@@ -10957,9 +10954,6 @@ msgstr "売上"
 msgid "Revenue and expenses over a period"
 msgstr "期間にわたる収益と費用"
 
-msgid "Revenue by Customer"
-msgstr "顧客別売上"
-
 msgid "Reverse all inventory adjustments"
 msgstr "すべての在庫調整を取り消す"
 
@@ -11297,6 +11291,9 @@ msgstr ""
 
 msgid "Save View"
 msgstr "ビューを保存"
+
+msgid "Saved Views"
+msgstr ""
 
 msgid "Saving..."
 msgstr "保存中..."
@@ -12090,6 +12087,12 @@ msgstr "スキップ"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Slice expenses by supplier, supplier type, or any dimension"
+msgstr ""
+
+msgid "Slice revenue by customer, customer type, or any dimension"
+msgstr ""
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "コア日次フローのスモークテストを端から端まで実施"
@@ -13868,9 +13871,6 @@ msgstr "このロケーションのすべての保管単位における品目の
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "このロケーションのすべての進行中ジョブおよび受注で必要とされる総数量 — このジョブだけではありません。"
 
-msgid "Total Spend"
-msgstr "総支出"
-
 msgid "Total Value"
 msgstr "合計価値"
 
@@ -14816,6 +14816,9 @@ msgstr "Carbonに移行するときに何が変わるか、およびおおよそ
 
 msgid "What data"
 msgstr "どのデータ"
+
+msgid "What drove inventory up or down, by any dimension"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"

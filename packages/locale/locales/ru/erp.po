@@ -1926,6 +1926,9 @@ msgstr "Ниже страховой запас"
 msgid "Beta"
 msgstr "Бета"
 
+msgid "Biggest causes of scrap by reason, item, or work center"
+msgstr ""
+
 msgid "Bill of Material"
 msgstr "Спецификация материалов"
 
@@ -3091,6 +3094,9 @@ msgstr "Себестоимость реализованной продукции
 
 msgid "Cost of Goods Sold (default)"
 msgstr "Себестоимость реализованной продукции (по умолчанию)"
+
+msgid "Cost of goods sold by item group, item, or any dimension"
+msgstr ""
 
 msgid "Cost of Sales"
 msgstr "Себестоимость продаж"
@@ -5371,9 +5377,6 @@ msgstr "Не удалось создать класс активов: {0}"
 msgid "Expenses"
 msgstr ""
 
-msgid "Expenses by Supplier"
-msgstr "Расходы по поставщикам"
-
 msgid "Expert guidance"
 msgstr "Экспертное руководство"
 
@@ -6959,12 +6962,6 @@ msgstr "Счетировано"
 
 msgid "Invoiced Amount:"
 msgstr "Сумма счета:"
-
-msgid "Invoiced revenue per customer with period variance"
-msgstr "Выставленная в счет выручка на каждого клиента с отклонением по периодам"
-
-msgid "Invoiced spend per supplier with period variance"
-msgstr "Выставленные в счет расходы на каждого поставщика с отклонением по периодам"
 
 msgid "Invoiced Statuses"
 msgstr "Статусы счетов"
@@ -10957,9 +10954,6 @@ msgstr "Выручка"
 msgid "Revenue and expenses over a period"
 msgstr "Доход и расходы за период"
 
-msgid "Revenue by Customer"
-msgstr "Выручка по клиентам"
-
 msgid "Reverse all inventory adjustments"
 msgstr "Отменить все корректировки запасов"
 
@@ -11297,6 +11291,9 @@ msgstr ""
 
 msgid "Save View"
 msgstr "Сохранить представление"
+
+msgid "Saved Views"
+msgstr ""
 
 msgid "Saving..."
 msgstr "Сохранение..."
@@ -12090,6 +12087,12 @@ msgstr "Пропущено"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Slice expenses by supplier, supplier type, or any dimension"
+msgstr ""
+
+msgid "Slice revenue by customer, customer type, or any dimension"
+msgstr ""
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Дымовое тестирование основных ежедневных процессов от начала до конца"
@@ -13868,9 +13871,6 @@ msgstr "Общее наличное количество позиции по в�
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Общее требуемое количество по всем активным заданиям и заказам на продажу в этом местоположении — не только по этому заданию."
 
-msgid "Total Spend"
-msgstr "Общие расходы"
-
 msgid "Total Value"
 msgstr "Общая стоимость"
 
@@ -14816,6 +14816,9 @@ msgstr "Что изменится при переходе на Carbon и при�
 
 msgid "What data"
 msgstr "Какие данные"
+
+msgid "What drove inventory up or down, by any dimension"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"

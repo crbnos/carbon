@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import {
+  Badge,
   cn,
   IconButton,
   Input,
@@ -15,12 +16,16 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import type { IconType } from "react-icons";
 import {
+  LuArrowUpDown,
   LuBanknote,
+  LuBookmark,
   LuBoxes,
   LuBriefcase,
+  LuFactory,
   LuFileSpreadsheet,
   LuHandCoins,
   LuPin,
+  LuRecycle,
   LuScale,
   LuSearch,
   LuTrendingUp,
@@ -35,6 +40,7 @@ import type {
 import { data, Link, useFetcher, useLoaderData } from "react-router";
 import {
   getReportPins,
+  getReportViews,
   reportPinValidator,
   upsertReportPin
 } from "~/modules/accounting";
@@ -56,10 +62,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  const pins = await getReportPins(client, userId, companyId);
+  const [pins, savedViews] = await Promise.all([
+    getReportPins(client, userId, companyId),
+    getReportViews(client, { companyId })
+  ]);
 
   return {
-    pinOverrides: pins.data ?? []
+    pinOverrides: pins.data ?? [],
+    savedViews: savedViews.data ?? []
   };
 }
 
@@ -107,7 +117,7 @@ type ReportDefinition = {
 };
 
 export default function ReportsIndexRoute() {
-  const { pinOverrides } = useLoaderData<typeof loader>();
+  const { pinOverrides, savedViews } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const [search, setSearch] = useState("");
   const pinFetcher = useFetcher<typeof action>();
@@ -162,20 +172,47 @@ export default function ReportsIndexRoute() {
         defaultPinned: false
       },
       {
-        key: "revenue-by-customer",
-        name: t`Revenue by Customer`,
-        description: t`Invoiced revenue per customer with period variance`,
-        to: path.to.revenueByCustomer,
+        key: "revenue",
+        name: t`Revenue`,
+        description: t`Slice revenue by customer, customer type, or any dimension`,
+        to: path.to.analyticsReport("revenue"),
         icon: LuUsers,
         category: t`Analytics`,
         defaultPinned: false
       },
       {
-        key: "expenses-by-supplier",
-        name: t`Expenses by Supplier`,
-        description: t`Invoiced spend per supplier with period variance`,
-        to: path.to.expensesBySupplier,
+        key: "expenses",
+        name: t`Expenses`,
+        description: t`Slice expenses by supplier, supplier type, or any dimension`,
+        to: path.to.analyticsReport("expenses"),
         icon: LuTruck,
+        category: t`Analytics`,
+        defaultPinned: false
+      },
+      {
+        key: "cogs",
+        name: t`COGS`,
+        description: t`Cost of goods sold by item group, item, or any dimension`,
+        to: path.to.analyticsReport("cogs"),
+        icon: LuFactory,
+        category: t`Analytics`,
+        defaultPinned: false
+      },
+      {
+        key: "inventory-change",
+        name: t`Inventory Change`,
+        description: t`What drove inventory up or down, by any dimension`,
+        to: path.to.analyticsReport("inventory-change"),
+        icon: LuArrowUpDown,
+        category: t`Analytics`,
+        defaultPinned: false
+      },
+      {
+        key: "scrap",
+        name: t`Scrap`,
+        description: t`Biggest causes of scrap by reason, item, or work center`,
+        to: path.to.analyticsReport("scrap"),
+        icon: LuRecycle,
         category: t`Analytics`,
         defaultPinned: false
       },
@@ -296,39 +333,84 @@ export default function ReportsIndexRoute() {
           </>
         )}
 
-        {categories.map(([category, categoryReports]) => (
-          <div key={category} className="mb-8">
-            <SectionHeading>{category}</SectionHeading>
-            <div className="overflow-hidden rounded-lg border border-border">
-              {categoryReports.map((report, index) => (
-                <Link
-                  key={report.key}
-                  to={report.to}
-                  prefetch="intent"
-                  className={
-                    "flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
-                    (index > 0 ? " border-t border-border" : "")
-                  }
-                >
-                  <report.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="text-sm font-medium">{report.name}</span>
-                  <span className="truncate text-sm text-muted-foreground">
-                    {report.description}
-                  </span>
-                  <span className="ml-auto">
-                    <PinToggle
-                      report={report}
-                      pinned={isPinned(report)}
-                      onToggle={togglePin}
-                      unpinLabel={t`Unpin ${report.name}`}
-                      pinLabel={t`Pin ${report.name}`}
-                    />
-                  </span>
-                </Link>
-              ))}
+        {categories.map(([category, categoryReports]) => {
+          // Saved pivot views belong to a report card (by reportKey); show them
+          // directly beneath the category that hosts that card (Analytics).
+          const categoryViews = savedViews.filter((view) =>
+            categoryReports.some((report) => report.key === view.reportKey)
+          );
+          return (
+            <div key={category} className="mb-8">
+              <SectionHeading>{category}</SectionHeading>
+              <div className="overflow-hidden rounded-lg border border-border">
+                {categoryReports.map((report, index) => (
+                  <Link
+                    key={report.key}
+                    to={report.to}
+                    prefetch="intent"
+                    className={
+                      "flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
+                      (index > 0 ? " border-t border-border" : "")
+                    }
+                  >
+                    <report.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="text-sm font-medium">{report.name}</span>
+                    <span className="truncate text-sm text-muted-foreground">
+                      {report.description}
+                    </span>
+                    <span className="ml-auto">
+                      <PinToggle
+                        report={report}
+                        pinned={isPinned(report)}
+                        onToggle={togglePin}
+                        unpinLabel={t`Unpin ${report.name}`}
+                        pinLabel={t`Pin ${report.name}`}
+                      />
+                    </span>
+                  </Link>
+                ))}
+              </div>
+              {categoryViews.length > 0 && (
+                <div className="mt-4">
+                  <SectionHeading>
+                    <LuBookmark className="h-3 w-3" />
+                    <Trans>Saved Views</Trans>
+                  </SectionHeading>
+                  <div className="overflow-hidden rounded-lg border border-border">
+                    {categoryViews.map((view, index) => (
+                      <Link
+                        key={view.id}
+                        to={`${path.to.analyticsReport(view.reportKey)}?view=${view.id}`}
+                        prefetch="intent"
+                        className={
+                          "flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
+                          (index > 0 ? " border-t border-border" : "")
+                        }
+                      >
+                        <LuBookmark className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="text-sm font-medium">{view.name}</span>
+                        <span className="truncate text-sm text-muted-foreground">
+                          {
+                            categoryReports.find(
+                              (report) => report.key === view.reportKey
+                            )?.name
+                          }
+                        </span>
+                        {view.visibility === "Company" && (
+                          <span className="ml-auto">
+                            <Badge variant="secondary">
+                              <Trans>Shared</Trans>
+                            </Badge>
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {filtered.length === 0 && (
           <p className="text-sm text-muted-foreground">
