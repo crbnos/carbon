@@ -130,12 +130,12 @@ export const analyticsReports: Record<
   revenue: {
     key: "revenue",
     accountScope: { classes: ["Revenue"] },
-    defaultRows: ["et:CustomerType"]
+    defaultRows: ["et:Customer"]
   },
   expenses: {
     key: "expenses",
     accountScope: { classes: ["Expense"] },
-    defaultRows: ["et:SupplierType"]
+    defaultRows: ["et:Supplier"]
   },
   cogs: {
     key: "cogs",
