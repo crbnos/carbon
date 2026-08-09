@@ -552,21 +552,6 @@ msgstr "应收账款"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "客户应付金额的应收账款。"
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr "账户：销售成本"
-
-msgid "Accounts: Expenses"
-msgstr "账户：费用"
-
-msgid "Accounts: Inventory"
-msgstr "账户：库存"
-
-msgid "Accounts: Revenue"
-msgstr "账户：收入"
-
-msgid "Accounts: Scrap"
-msgstr "账户：报废"
-
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
 

@@ -552,21 +552,6 @@ msgstr "Cuentas por cobrar"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Cuentas por cobrar para montos adeudados por clientes."
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr "Cuentas: Costo de Bienes Vendidos"
-
-msgid "Accounts: Expenses"
-msgstr "Cuentas: Gastos"
-
-msgid "Accounts: Inventory"
-msgstr "Cuentas: Inventario"
-
-msgid "Accounts: Revenue"
-msgstr "Cuentas: Ingresos"
-
-msgid "Accounts: Scrap"
-msgstr "Cuentas: Desechos"
-
 msgid "Accumulated Depreciation"
 msgstr "Depreciación acumulada"
 

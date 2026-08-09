@@ -552,21 +552,6 @@ msgstr "प्राप्य खाते"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "ग्राहकों द्वारा देय राशियों के लिए प्राप्य खाते।"
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr ""
-
-msgid "Accounts: Expenses"
-msgstr ""
-
-msgid "Accounts: Inventory"
-msgstr ""
-
-msgid "Accounts: Revenue"
-msgstr ""
-
-msgid "Accounts: Scrap"
-msgstr ""
-
 msgid "Accumulated Depreciation"
 msgstr "संचयी मूल्यह्रास"
 

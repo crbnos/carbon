@@ -380,14 +380,6 @@ export default function AnalyticsReportRoute() {
   const linesFetcher = useFetcher<{ lines: DimensionPivotLine[] }>();
   const [drillTitle, setDrillTitle] = useState<string | null>(null);
 
-  const accountScopeLabels: Record<AnalyticsReportKey, string> = {
-    revenue: t`Accounts: Revenue`,
-    expenses: t`Accounts: Expenses`,
-    cogs: t`Accounts: Cost of Goods Sold`,
-    "inventory-change": t`Accounts: Inventory`,
-    scrap: t`Accounts: Scrap`
-  };
-
   const bucket =
     state.columnAxis.type === "period" ? state.columnAxis.bucket : undefined;
 
@@ -538,7 +530,6 @@ export default function AnalyticsReportRoute() {
         state={state}
         savedViews={savedViews}
         activeViewId={activeViewId}
-        accountScopeLabel={accountScopeLabels[reportKey]}
         onDownload={onDownload}
       />
       <PivotTree

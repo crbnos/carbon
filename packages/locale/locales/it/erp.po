@@ -552,21 +552,6 @@ msgstr "Crediti verso clienti"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Crediti verso clienti per importi dovuti dai clienti."
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr "Conti: Costo dei beni venduti"
-
-msgid "Accounts: Expenses"
-msgstr "Conti: Spese"
-
-msgid "Accounts: Inventory"
-msgstr "Conti: Inventario"
-
-msgid "Accounts: Revenue"
-msgstr "Conti: Ricavi"
-
-msgid "Accounts: Scrap"
-msgstr "Conti: Scarto"
-
 msgid "Accumulated Depreciation"
 msgstr "Fondo di ammortamento"
 

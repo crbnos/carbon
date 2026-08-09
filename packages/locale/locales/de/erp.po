@@ -552,21 +552,6 @@ msgstr "Forderungen aus Lieferungen und Leistungen"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Forderungen aus Lieferungen und Leistungen für Beträge, die Kunden schulden."
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr "Konten: Herstellungskosten"
-
-msgid "Accounts: Expenses"
-msgstr "Konten: Ausgaben"
-
-msgid "Accounts: Inventory"
-msgstr "Konten: Bestand"
-
-msgid "Accounts: Revenue"
-msgstr "Konten: Umsatz"
-
-msgid "Accounts: Scrap"
-msgstr "Konten: Ausschuss"
-
 msgid "Accumulated Depreciation"
 msgstr "Kumulierte Abschreibung"
 

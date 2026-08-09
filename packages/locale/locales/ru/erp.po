@@ -552,21 +552,6 @@ msgstr "Дебиторская задолженность"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Дебиторская задолженность клиентов за задолженные суммы."
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr "Счета: Себестоимость продаж"
-
-msgid "Accounts: Expenses"
-msgstr "Счета: Расходы"
-
-msgid "Accounts: Inventory"
-msgstr "Счета: Инвентаризация"
-
-msgid "Accounts: Revenue"
-msgstr "Счета: Доход"
-
-msgid "Accounts: Scrap"
-msgstr "Счета: Брак"
-
 msgid "Accumulated Depreciation"
 msgstr "Накопленная амортизация"
 

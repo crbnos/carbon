@@ -552,21 +552,6 @@ msgstr "Alacak hesapları"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Müşteriler tarafından borçlu olunan tutarlar için alacak hesapları."
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr ""
-
-msgid "Accounts: Expenses"
-msgstr ""
-
-msgid "Accounts: Inventory"
-msgstr ""
-
-msgid "Accounts: Revenue"
-msgstr ""
-
-msgid "Accounts: Scrap"
-msgstr ""
-
 msgid "Accumulated Depreciation"
 msgstr "Birikmiş amortisman"
 

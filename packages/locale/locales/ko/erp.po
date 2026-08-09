@@ -552,21 +552,6 @@ msgstr "매출채권"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "고객이 지급할 금액에 대한 매출채권"
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr ""
-
-msgid "Accounts: Expenses"
-msgstr ""
-
-msgid "Accounts: Inventory"
-msgstr ""
-
-msgid "Accounts: Revenue"
-msgstr ""
-
-msgid "Accounts: Scrap"
-msgstr ""
-
 msgid "Accumulated Depreciation"
 msgstr "감가상각누계액"
 

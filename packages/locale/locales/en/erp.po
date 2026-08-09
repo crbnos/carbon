@@ -552,21 +552,6 @@ msgstr "Accounts Receivable"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Accounts receivable for amounts owed by customers"
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr "Accounts: Cost of Goods Sold"
-
-msgid "Accounts: Expenses"
-msgstr "Accounts: Expenses"
-
-msgid "Accounts: Inventory"
-msgstr "Accounts: Inventory"
-
-msgid "Accounts: Revenue"
-msgstr "Accounts: Revenue"
-
-msgid "Accounts: Scrap"
-msgstr "Accounts: Scrap"
-
 msgid "Accumulated Depreciation"
 msgstr "Accumulated Depreciation"
 

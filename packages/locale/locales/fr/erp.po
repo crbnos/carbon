@@ -552,21 +552,6 @@ msgstr "Comptes débiteurs"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Comptes débiteurs pour les montants dus par les clients."
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr "Comptes : Coût des marchandises vendues"
-
-msgid "Accounts: Expenses"
-msgstr "Comptes : Dépenses"
-
-msgid "Accounts: Inventory"
-msgstr "Comptes : Inventaire"
-
-msgid "Accounts: Revenue"
-msgstr "Comptes : Chiffre d'affaires"
-
-msgid "Accounts: Scrap"
-msgstr "Comptes : Rebuts"
-
 msgid "Accumulated Depreciation"
 msgstr "Amortissement cumulé"
 

@@ -1,19 +1,14 @@
 import {
-  Badge,
-  BadgeCloseButton,
   Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
-  IconButton,
-  MultiSelect,
   Switch
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -21,11 +16,9 @@ import { useMemo, useState } from "react";
 import {
   LuBookmark,
   LuBookmarkPlus,
-  LuCheck,
   LuColumns3,
   LuCornerDownRight,
   LuDownload,
-  LuListFilter,
   LuRows3,
   LuSigma,
   LuX
@@ -33,7 +26,6 @@ import {
 import { PeriodSelector } from "~/components";
 import { DimensionEntityTypeIcon } from "~/components/Icons";
 import { useUrlParams } from "~/hooks";
-import { useCustomers, useItems, useSuppliers } from "~/stores";
 import type {
   AnalyticsReportKey,
   PivotMeasure,
@@ -48,20 +40,12 @@ export type PivotDimension = NonNullable<
   Awaited<ReturnType<typeof getActiveDimensionsWithValues>>["data"]
 >[number];
 
-/**
- * Entity types with far too many rows to eagerly load into the loader payload.
- * Their filter options are sourced lazily from the client stores
- * (useCustomers / useSuppliers / useItems), exactly like DimensionSelector.
- */
-const HIGH_CARDINALITY_ENTITY_TYPES = new Set(["Customer", "Supplier", "Item"]);
-
 type PivotControlBarProps = {
   reportKey: AnalyticsReportKey;
   dimensions: PivotDimension[];
   state: PivotState;
   savedViews: ReportView[];
   activeViewId?: string;
-  accountScopeLabel: string;
   onDownload: () => void;
 };
 
@@ -71,7 +55,6 @@ const PivotControlBar = ({
   state,
   savedViews,
   activeViewId,
-  accountScopeLabel,
   onDownload
 }: PivotControlBarProps) => {
   const { t } = useLingui();
@@ -80,41 +63,11 @@ const PivotControlBar = ({
   // Transient interaction state only (like modal open/close) — all report
   // state lives in the URL per the pivot param contract.
   const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [pendingFilterId, setPendingFilterId] = useState<string | null>(null);
-
-  const [customers] = useCustomers();
-  const [suppliers] = useSuppliers();
-  const [items] = useItems();
-
-  // Lazily-sourced options for the high-cardinality entity types, keyed by
-  // entityType — the same mechanism DimensionSelector uses.
-  const optionsByEntityType = useMemo(
-    () => ({
-      Customer: customers.map((c) => ({ value: c.id, label: c.name })),
-      Supplier: suppliers.map((s) => ({ value: s.id, label: s.name })),
-      Item: items.map((i) => ({
-        value: i.id,
-        label: i.readableIdWithRevision,
-        helper: i.name
-      }))
-    }),
-    [customers, suppliers, items]
-  );
 
   const dimensionById = useMemo(
     () => new Map(dimensions.map((d) => [d.dimensionId, d])),
     [dimensions]
   );
-
-  const optionsForDimension = (dim: PivotDimension) =>
-    HIGH_CARDINALITY_ENTITY_TYPES.has(dim.entityType)
-      ? (optionsByEntityType[
-          dim.entityType as keyof typeof optionsByEntityType
-        ] ?? [])
-      : dim.values.map((v) => ({ value: v.id, label: v.name }));
-
-  const valueLabel = (dim: PivotDimension, valueId: string) =>
-    optionsForDimension(dim).find((o) => o.value === valueId)?.label ?? valueId;
 
   const columnLabels: Record<(typeof financialReportColumns)[number], string> =
     {
@@ -181,54 +134,6 @@ const PivotControlBar = ({
     }
     // period:month is the default — omit it from the URL like ReportFilters
     setParams({ col: value === "month" ? undefined : `period:${value}` });
-  };
-
-  // -- Filters --
-
-  const filters = state.filters;
-
-  const setFilters = (next: { dimensionId: string; valueIds: string[] }[]) => {
-    setParams({
-      filters: next.length > 0 ? JSON.stringify(next) : undefined
-    });
-  };
-
-  const upsertFilter = (dimensionId: string, valueIds: string[]) => {
-    const exists = filters.some((f) => f.dimensionId === dimensionId);
-    const next = exists
-      ? filters
-          .map((f) =>
-            f.dimensionId === dimensionId ? { dimensionId, valueIds } : f
-          )
-          .filter((f) => f.valueIds.length > 0)
-      : valueIds.length > 0
-        ? [...filters, { dimensionId, valueIds }]
-        : filters;
-    setFilters(next);
-  };
-
-  const pendingFilterDimension = pendingFilterId
-    ? dimensionById.get(pendingFilterId)
-    : undefined;
-
-  const addableFilterDimensions = dimensions.filter(
-    (d) =>
-      !filters.some((f) => f.dimensionId === d.dimensionId) &&
-      d.dimensionId !== pendingFilterId
-  );
-
-  const filterChipLabel = (filter: {
-    dimensionId: string;
-    valueIds: string[];
-  }) => {
-    const dim = dimensionById.get(filter.dimensionId);
-    if (!dim) return filter.dimensionId;
-    if (filter.valueIds.length > 2) {
-      return `${dim.dimensionName}: ${filter.valueIds.length}`;
-    }
-    return `${dim.dimensionName}: ${filter.valueIds
-      .map((id) => valueLabel(dim, id))
-      .join(", ")}`;
   };
 
   // -- Saved views --
@@ -433,84 +338,7 @@ const PivotControlBar = ({
           }
           label={t`% of total`}
         />
-        {addableFilterDimensions.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" leftIcon={<LuListFilter />}>
-                {t`Filter`}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel>
-                <Trans>Dimensions</Trans>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {addableFilterDimensions.map((dim) => (
-                <DropdownMenuItem
-                  key={dim.dimensionId}
-                  onSelect={() => setPendingFilterId(dim.dimensionId)}
-                >
-                  <DropdownMenuIcon
-                    icon={
-                      <DimensionEntityTypeIcon
-                        entityType={dim.entityType as any}
-                      />
-                    }
-                  />
-                  {dim.dimensionName}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-        {pendingFilterDimension && (
-          <div className="flex items-center gap-1">
-            <MultiSelect
-              size="sm"
-              className="w-52"
-              value={
-                filters.find(
-                  (f) => f.dimensionId === pendingFilterDimension.dimensionId
-                )?.valueIds ?? []
-              }
-              options={optionsForDimension(pendingFilterDimension)}
-              placeholder={pendingFilterDimension.dimensionName}
-              onChange={(valueIds) =>
-                upsertFilter(pendingFilterDimension.dimensionId, valueIds)
-              }
-            />
-            <IconButton
-              aria-label={t`Done`}
-              variant="ghost"
-              icon={<LuCheck />}
-              onClick={() => setPendingFilterId(null)}
-            />
-          </div>
-        )}
-        {filters
-          .filter((f) => f.dimensionId !== pendingFilterId)
-          .map((filter) => (
-            <Badge
-              key={filter.dimensionId}
-              role="group"
-              tabIndex={0}
-              variant="outline"
-              className="inline-flex items-center gap-1 cursor-pointer"
-              onClick={() => setPendingFilterId(filter.dimensionId)}
-            >
-              <span>{filterChipLabel(filter)}</span>
-              <BadgeCloseButton
-                tabIndex={0}
-                aria-label={t`Remove filter`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  upsertFilter(filter.dimensionId, []);
-                }}
-              />
-            </Badge>
-          ))}
         <PeriodSelector variant="range" />
-        <Badge variant="secondary">{accountScopeLabel}</Badge>
         {savedViews.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

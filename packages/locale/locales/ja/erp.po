@@ -552,21 +552,6 @@ msgstr "売掛金"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "顧客に支払う金額の売掛金。"
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr "勘定科目: 売上原価"
-
-msgid "Accounts: Expenses"
-msgstr "勘定科目: 経費"
-
-msgid "Accounts: Inventory"
-msgstr "勘定科目: 在庫"
-
-msgid "Accounts: Revenue"
-msgstr "勘定科目: 売上"
-
-msgid "Accounts: Scrap"
-msgstr "勘定科目: スクラップ"
-
 msgid "Accumulated Depreciation"
 msgstr "累計減価償却費"
 

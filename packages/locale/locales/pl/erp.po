@@ -552,21 +552,6 @@ msgstr "Rozrachunki z odbiorcami"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Rozrachunki z odbiorcami za kwoty należne od odbiorców."
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr "Konta: Koszt sprzedanych towarów"
-
-msgid "Accounts: Expenses"
-msgstr "Konta: Wydatki"
-
-msgid "Accounts: Inventory"
-msgstr "Konta: Zapasy"
-
-msgid "Accounts: Revenue"
-msgstr "Konta: Przychody"
-
-msgid "Accounts: Scrap"
-msgstr "Konta: Odpady"
-
 msgid "Accumulated Depreciation"
 msgstr "Skumulowana amortyzacja"
 

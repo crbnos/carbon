@@ -552,21 +552,6 @@ msgstr "Contas a receber"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Contas a receber para valores devidos pelos clientes."
 
-msgid "Accounts: Cost of Goods Sold"
-msgstr "Contas: Custo das Mercadorias Vendidas"
-
-msgid "Accounts: Expenses"
-msgstr "Contas: Despesas"
-
-msgid "Accounts: Inventory"
-msgstr "Contas: Inventário"
-
-msgid "Accounts: Revenue"
-msgstr "Contas: Receita"
-
-msgid "Accounts: Scrap"
-msgstr "Contas: Sucata"
-
 msgid "Accumulated Depreciation"
 msgstr "Depreciação acumulada"
 
