@@ -471,6 +471,9 @@ msgstr "Account"
 msgid "Account & Details"
 msgstr "Account & Details"
 
+msgid "Account balances with debits and credits"
+msgstr "Account balances with debits and credits"
+
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Account for advance payments made before goods or services are received"
 
@@ -507,8 +510,14 @@ msgstr "accounting"
 msgid "Accounting"
 msgstr "Accounting"
 
+msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
+msgstr "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
+
 msgid "Accounting is disabled"
 msgstr "Accounting is disabled"
+
+msgid "Accounting is disabled for this company."
+msgstr "Accounting is disabled for this company."
 
 msgid "Accounting is enabled"
 msgstr "Accounting is enabled"
@@ -980,6 +989,9 @@ msgstr "An operation's position in its work center's queue — the order the flo
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "An unexpected error occurred while connecting to Onshape. Try connecting again."
 
+msgid "Analytics"
+msgstr "Analytics"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 
@@ -1022,6 +1034,9 @@ msgstr "Any item type"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Anything not explicitly listed in scope above"
+
+msgid "AP Aging"
+msgstr "AP Aging"
 
 msgid "AP Clerk"
 msgstr "AP Clerk"
@@ -1134,6 +1149,9 @@ msgstr "AQL"
 
 msgid "AQL (Z1.4 / ISO 2859-1)"
 msgstr "AQL (Z1.4 / ISO 2859-1)"
+
+msgid "AR Aging"
+msgstr "AR Aging"
 
 msgid "AR Clerk"
 msgstr "AR Clerk"
@@ -1630,6 +1648,9 @@ msgstr "Asset ID"
 
 msgid "Assets"
 msgstr "Assets"
+
+msgid "Assets, liabilities and equity as of a date"
+msgstr "Assets, liabilities and equity as of a date"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
@@ -2413,6 +2434,9 @@ msgstr "Close Date"
 msgid "Close Period"
 msgstr "Close Period"
 
+msgid "Close Reports"
+msgstr "Close Reports"
+
 msgid "Close Status"
 msgstr "Close Status"
 
@@ -2556,6 +2580,9 @@ msgstr "Completion Barcode"
 
 msgid "Completion Time"
 msgstr "Completion Time"
+
+msgid "Condensed P&L with margins and key subtotals"
+msgstr "Condensed P&L with margins and key subtotals"
 
 msgid "Conditions"
 msgstr "Conditions"
@@ -3037,6 +3064,9 @@ msgstr "Cost of goods sold (COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "Cost of Goods Sold (default)"
+
+msgid "Cost of Sales"
+msgstr "Cost of Sales"
 
 msgid "Costing"
 msgstr "Costing"
@@ -5238,6 +5268,9 @@ msgstr "Exchanging the authorization code for an access token failed. Try connec
 msgid "Excluded"
 msgstr "Excluded"
 
+msgid "Executive P&L"
+msgstr "Executive P&L"
+
 msgid "Exemption Certificate"
 msgstr "Exemption Certificate"
 
@@ -5307,6 +5340,9 @@ msgstr "Expense GL account debited when inventory is shipped/issued against a sa
 
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Expense side of deferred tax movements (paired with deferred tax liability)."
+
+msgid "Expenses by Supplier"
+msgstr "Expenses by Supplier"
 
 msgid "Expert guidance"
 msgstr "Expert guidance"
@@ -5800,6 +5836,9 @@ msgstr "Finalize"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 
+msgid "Financial Statements"
+msgstr "Financial Statements"
+
 msgid "finish"
 msgstr "finish"
 
@@ -6260,6 +6299,9 @@ msgstr "grades"
 msgid "Grades"
 msgstr "Grades"
 
+msgid "Gross Profit"
+msgstr "Gross Profit"
+
 msgid "Group"
 msgstr "Group"
 
@@ -6618,6 +6660,9 @@ msgstr "Income / Balance (inherited)"
 msgid "Income Statement"
 msgstr "Income Statement"
 
+msgid "Income Tax"
+msgstr "Income Tax"
+
 msgid "Income/Balance"
 msgstr "Income/Balance"
 
@@ -6878,6 +6923,12 @@ msgstr "Invoiced"
 
 msgid "Invoiced Amount:"
 msgstr "Invoiced Amount:"
+
+msgid "Invoiced revenue per customer with period variance"
+msgstr "Invoiced revenue per customer with period variance"
+
+msgid "Invoiced spend per supplier with period variance"
+msgstr "Invoiced spend per supplier with period variance"
 
 msgid "Invoiced Statuses"
 msgstr "Invoiced Statuses"
@@ -7162,6 +7213,9 @@ msgstr "Labor Unit"
 
 msgid "Language"
 msgstr "Language"
+
+msgid "Last 6 Months"
+msgstr "Last 6 Months"
 
 msgid "Last Calibration"
 msgstr "Last Calibration"
@@ -7959,6 +8013,9 @@ msgstr "Money owed to you"
 msgid "Money you owe"
 msgstr "Money you owe"
 
+msgid "Monthly"
+msgstr "Monthly"
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 
@@ -8071,6 +8128,9 @@ msgstr "Net Book Value"
 
 msgid "Net Change"
 msgstr "Net Change"
+
+msgid "Net Income"
+msgstr "Net Income"
 
 msgid "Never"
 msgstr "Never"
@@ -8681,6 +8741,9 @@ msgstr "No reference image"
 msgid "No remaining entities to inspect."
 msgstr "No remaining entities to inspect."
 
+msgid "No reports match your search."
+msgstr "No reports match your search."
+
 msgid "No results"
 msgstr "No results"
 
@@ -8901,6 +8964,9 @@ msgstr "On-hand floor to maintain for service use at this location"
 msgid "On-hand inventory remains"
 msgstr "On-hand inventory remains"
 
+msgid "On-hand value by location or item, with GL tie-out"
+msgstr "On-hand value by location or item, with GL tie-out"
+
 msgid "On-hand value of manufactured goods (Make items)"
 msgstr "On-hand value of manufactured goods (Make items)"
 
@@ -9006,6 +9072,9 @@ msgstr "Open jobs"
 msgid "Open menu"
 msgstr "Open menu"
 
+msgid "Open payables by supplier and age"
+msgstr "Open payables by supplier and age"
+
 msgid "Open Purchase Invoices"
 msgstr "Open Purchase Invoices"
 
@@ -9020,6 +9089,9 @@ msgstr "Open Quotes"
 
 msgid "Open Reactive"
 msgstr "Open Reactive"
+
+msgid "Open receivables by customer and age"
+msgstr "Open receivables by customer and age"
 
 msgid "Open RFQs"
 msgstr "Open RFQs"
@@ -9053,6 +9125,9 @@ msgstr "Opening balance of depreciation already booked before this asset was add
 
 msgid "Operating Expenses"
 msgstr "Operating Expenses"
+
+msgid "Operating Income"
+msgstr "Operating Income"
 
 msgid "Operation"
 msgstr "Operation"
@@ -9168,6 +9243,12 @@ msgstr "Original"
 
 msgid "Original Count"
 msgstr "Original Count"
+
+msgid "Other Expense"
+msgstr "Other Expense"
+
+msgid "Other Income"
+msgstr "Other Income"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
@@ -9553,6 +9634,10 @@ msgstr "Pieces/Minute"
 
 msgid "Pin"
 msgstr "Pin"
+
+#. placeholder {0}: report.name
+msgid "Pin {0}"
+msgstr "Pin {0}"
 
 msgid "Pinned"
 msgstr "Pinned"
@@ -10208,6 +10293,9 @@ msgstr "Quantity-based pricing tiers for this override; the unit price applied i
 msgid "Quantity: {0}"
 msgstr "Quantity: {0}"
 
+msgid "Quarterly"
+msgstr "Quarterly"
+
 msgid "Question"
 msgstr "Question"
 
@@ -10675,6 +10763,9 @@ msgstr "Replenishment System"
 msgid "Report"
 msgstr "Report"
 
+msgid "Reporting"
+msgstr "Reporting"
+
 msgid "Reporting dimension"
 msgstr "Reporting dimension"
 
@@ -10683,6 +10774,9 @@ msgstr "Reports"
 
 msgid "Reprint"
 msgstr "Reprint"
+
+msgid "Request access"
+msgstr "Request access"
 
 msgid "Request Approval"
 msgstr "Request Approval"
@@ -10817,6 +10911,15 @@ msgstr "Returning unused picked material"
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
+
+msgid "Revenue"
+msgstr "Revenue"
+
+msgid "Revenue and expenses over a period"
+msgstr "Revenue and expenses over a period"
+
+msgid "Revenue by Customer"
+msgstr "Revenue by Customer"
 
 msgid "Reverse all inventory adjustments"
 msgstr "Reverse all inventory adjustments"
@@ -11864,6 +11967,9 @@ msgstr "Show sync options"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "Showing {0} of {totalCount} — refine your search"
+
+msgid "Showing in {parentCurrency}"
+msgstr "Showing in {parentCurrency}"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Shown as a faint background behind every page of generated PDFs"
@@ -13582,6 +13688,9 @@ msgstr "Timezone"
 msgid "Title"
 msgstr "Title"
 
+msgid "To Date"
+msgstr "To Date"
+
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "To deactivate, use the row menu and choose Deactivate Account."
 
@@ -13704,6 +13813,9 @@ msgstr "Total quantity on hand for the item across all storage units at this loc
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Total quantity required across all active jobs and sales orders at this location — not just this job."
+
+msgid "Total Spend"
+msgstr "Total Spend"
 
 msgid "Total Value"
 msgstr "Total Value"
@@ -13973,6 +14085,10 @@ msgstr "Unpick"
 msgid "Unpick {0}"
 msgstr "Unpick {0}"
 
+#. placeholder {0}: report.name
+msgid "Unpin {0}"
+msgstr "Unpin {0}"
+
 msgid "Unposted Documents"
 msgstr "Unposted Documents"
 
@@ -14218,9 +14334,6 @@ msgstr "Validated"
 
 msgid "Validating job..."
 msgstr "Validating job..."
-
-msgid "Valuation"
-msgstr "Valuation"
 
 msgid "Value"
 msgstr "Value"
@@ -15042,6 +15155,9 @@ msgstr "Writing an asset's value down over its life — a monthly batch you crea
 
 msgid "Year"
 msgstr "Year"
+
+msgid "Yearly"
+msgstr "Yearly"
 
 msgid "Yes"
 msgstr "Yes"

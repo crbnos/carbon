@@ -41952,6 +41952,168 @@ export default {
         tags: ["customerStatus"]
       }
     },
+    "/reportPin": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reportPin.reportKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.pinned"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/reportPin"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["reportPin"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.reportPin"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["reportPin"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reportPin.reportKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.pinned"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["reportPin"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reportPin.reportKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.pinned"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportPin.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.reportPin"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["reportPin"]
+      }
+    },
     "/storageUnit": {
       get: {
         parameters: [
@@ -85400,6 +85562,28 @@ export default {
       }
     },
     "/rpc/get_companies_with_employee_permission": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "permission",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_companies_with_employee_permission"]
+      },
       post: {
         parameters: [
           {
@@ -85759,6 +85943,28 @@ export default {
       }
     },
     "/rpc/get_permission_companies": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "claim",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_permission_companies"]
+      },
       post: {
         parameters: [
           {
@@ -86536,6 +86742,19 @@ export default {
       }
     },
     "/rpc/get_companies_with_employee_role": {
+      get: {
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_companies_with_employee_role"]
+      },
       post: {
         parameters: [
           {
@@ -86602,6 +86821,61 @@ export default {
           }
         },
         tags: ["(rpc) _xid_machine_id"]
+      }
+    },
+    "/rpc/accountTreeBalancePeriodSeries": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_group_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_period_ends: {
+                  format: "date[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_group_id",
+                "p_company_id",
+                "p_start",
+                "p_period_ends"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) accountTreeBalancePeriodSeries"]
       }
     },
     "/rpc/jsonb_to_text_array": {
@@ -86839,6 +87113,28 @@ export default {
       }
     },
     "/rpc/has_any_company_permission": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "claim",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) has_any_company_permission"]
+      },
       post: {
         parameters: [
           {
@@ -91227,6 +91523,35 @@ export default {
       }
     },
     "/rpc/get_company_id_from_foreign_key": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "foreign_key",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "tbl",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_company_id_from_foreign_key"]
+      },
       post: {
         parameters: [
           {
@@ -92829,6 +93154,35 @@ export default {
       }
     },
     "/rpc/has_role": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "required_role",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) has_role"]
+      },
       post: {
         parameters: [
           {
@@ -93805,6 +94159,51 @@ export default {
           }
         },
         tags: ["(rpc) findLowestCommonParent"]
+      }
+    },
+    "/rpc/sync_webhook_subscription": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_webhook_subscription"]
       }
     },
     "/rpc/get_active_job_operations_by_employee": {
@@ -94803,6 +95202,35 @@ export default {
       }
     },
     "/rpc/get_claims": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "uid",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_claims"]
+      },
       post: {
         parameters: [
           {
@@ -115024,6 +115452,61 @@ export default {
             type: "string"
           },
           type: "array"
+        }
+      },
+      type: "object"
+    },
+    reportPin: {
+      required: [
+        "reportKey",
+        "userId",
+        "companyId",
+        "pinned",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        reportKey: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        pinned: {
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -157606,6 +158089,63 @@ export default {
     },
     "rowFilter.customerStatus.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.reportPin": {
+      name: "reportPin",
+      description: "reportPin",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/reportPin"
+      }
+    },
+    "rowFilter.reportPin.reportKey": {
+      name: "reportKey",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportPin.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportPin.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportPin.pinned": {
+      name: "pinned",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportPin.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportPin.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportPin.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportPin.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

@@ -1,7 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import type { PeriodPostingSource } from "@carbon/utils";
+import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
   datetime,
   fiscalYearAndPeriodFor,
@@ -43,6 +43,8 @@ import type {
 } from "./accounting.models";
 import type {
   AccountLedgerLine,
+  ChartPeriodSeries,
+  PeriodCell,
   Transaction,
   TranslatedBalance
 } from "./types";
@@ -340,6 +342,526 @@ export async function getFinancialStatementBalances(
     data: applyRootSignCorrection(mapped),
     error: null
   };
+}
+
+export async function getAccountPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  args: { start: string; periodEnds: string[] }
+) {
+  // Defined in migration 20260809151458_balance-rpc-period-series.sql.
+  // The contract on p_period_ends (sorted ascending, distinct, >= p_start) is
+  // enforced by computeReportPeriodBuckets — the only producer of this arg.
+  return client.rpc("accountTreeBalancePeriodSeries", {
+    p_company_group_id: companyGroupId,
+    p_company_id: companyId,
+    p_start: args.start,
+    p_period_ends: args.periodEnds
+  });
+}
+
+/**
+ * Recalculates every period cell for system (root) accounts using the same
+ * sign-aware aggregation as applyRootSignCorrection.
+ *
+ * KEEP IN SYNC with applyRootSignCorrection above — identical root/child walk,
+ * applied per period bucket instead of to the single-measure columns.
+ */
+function applyRootSignCorrectionToSeries<
+  T extends {
+    id: string;
+    parentId: string | null;
+    isSystem?: boolean | null;
+    class: string | null;
+    periods: Record<string, PeriodCell>;
+  }
+>(accounts: T[], bucketKeys: string[]): T[] {
+  const roots = accounts.filter((a) => a.isSystem ?? a.parentId === null);
+  if (roots.length === 0) return accounts;
+
+  const rootIds = new Set(roots.map((r) => r.id));
+  const childrenByRoot = new Map<string, T[]>();
+
+  for (const account of accounts) {
+    if (account.parentId && rootIds.has(account.parentId)) {
+      const list = childrenByRoot.get(account.parentId) ?? [];
+      list.push(account);
+      childrenByRoot.set(account.parentId, list);
+    }
+  }
+
+  return accounts.map((account) => {
+    if (!rootIds.has(account.id)) return account;
+
+    const children = childrenByRoot.get(account.id) ?? [];
+    const periods: Record<string, PeriodCell> = {};
+
+    for (const key of bucketKeys) {
+      let netChange = 0;
+      let balanceAtDate = 0;
+      let translatedBalance = 0;
+      let hasTranslated = false;
+
+      for (const child of children) {
+        const sign = rootSignMultiplier(child.class);
+        const cell = child.periods[key];
+        netChange += sign * (cell?.netChange ?? 0);
+        balanceAtDate += sign * (cell?.balanceAtDate ?? 0);
+        if (typeof cell?.translatedBalance === "number") {
+          hasTranslated = true;
+          translatedBalance += sign * cell.translatedBalance;
+        }
+      }
+
+      periods[key] = {
+        netChange,
+        balanceAtDate,
+        ...(hasTranslated ? { translatedBalance } : {})
+      };
+    }
+
+    return { ...account, periods };
+  });
+}
+
+// Overlay per-bucket translated leaf balances onto the series rows.
+function overlayTranslationOnSeries<
+  T extends { id: string; periods: Record<string, PeriodCell> }
+>(
+  rows: T[],
+  byBucket: Record<string, { balances: TranslatedBalance[]; cta: number }>
+): T[] {
+  const maps = new Map<string, Map<string, TranslatedBalance>>();
+  for (const [key, bucket] of Object.entries(byBucket)) {
+    maps.set(key, new Map(bucket.balances.map((b) => [b.accountId, b])));
+  }
+
+  return rows.map((row) => {
+    let changed = false;
+    const periods = { ...row.periods };
+    for (const [key, map] of maps) {
+      const translation = map.get(row.id);
+      if (!translation) continue;
+      changed = true;
+      periods[key] = {
+        ...(periods[key] ?? { netChange: 0, balanceAtDate: 0 }),
+        translatedBalance: Number(translation.translatedBalance),
+        exchangeRate: Number(translation.exchangeRate)
+      };
+    }
+    return changed ? { ...row, periods } : row;
+  });
+}
+
+/**
+ * Per-bucket currency translation for a period series. Calls the existing
+ * translateCompanyBalances once per bucket (bucket end = closing rate date,
+ * bucket start = average-rate window start) on synthetic single-measure rows
+ * built from that bucket's balanceAtDate.
+ */
+export async function translateCompanyPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  targetCurrency: string,
+  buckets: ReportPeriodBucket[],
+  series: Array<{
+    id: string;
+    consolidatedRate: string | null;
+    isGroup: boolean | null;
+    class: string | null;
+    periods: Record<string, PeriodCell>;
+  }>
+): Promise<{
+  byBucket: Record<string, { balances: TranslatedBalance[]; cta: number }>;
+  error: string | null;
+}> {
+  const results = await Promise.all(
+    buckets.map(async (bucket) => {
+      const synthetic = series.map((row) => ({
+        id: row.id,
+        balanceAtDate: row.periods[bucket.key]?.balanceAtDate ?? 0,
+        consolidatedRate: row.consolidatedRate,
+        isGroup: row.isGroup,
+        class: row.class
+      }));
+      const translation = await translateCompanyBalances(
+        client,
+        companyGroupId,
+        companyId,
+        targetCurrency,
+        bucket.end,
+        bucket.start,
+        synthetic
+      );
+      return { key: bucket.key, translation };
+    })
+  );
+
+  const byBucket: Record<
+    string,
+    { balances: TranslatedBalance[]; cta: number }
+  > = {};
+  for (const { key, translation } of results) {
+    if (translation.error) {
+      return { byBucket: {}, error: translation.error };
+    }
+    byBucket[key] = { balances: translation.data ?? [], cta: translation.cta };
+  }
+
+  return { byBucket, error: null };
+}
+
+/**
+ * Multi-period financial statement balances: one column per bucket, powered by
+ * the accountTreeBalancePeriodSeries RPC (snapshot-based, single journal scan).
+ * The multi-period sibling of getFinancialStatementBalances — same accounts
+ * view, same Net Income injection (per bucket), same root sign correction.
+ */
+export async function getFinancialStatementPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  args: {
+    buckets: ReportPeriodBucket[];
+    // Balance sheet only: append a computed "Net Income" equity line per bucket.
+    includeCurrentYearEarnings?: boolean;
+    // When set, per-bucket translated balances are overlaid before the root
+    // sign correction so root rows carry translated values too.
+    translate?: { targetCurrency: string };
+  }
+): Promise<{
+  data: ChartPeriodSeries[] | null;
+  ctaByBucket: Record<string, number>;
+  error: { message: string } | null;
+}> {
+  if (args.buckets.length === 0) {
+    return { data: [], ctaByBucket: {}, error: null };
+  }
+
+  const bucketKeys = args.buckets.map((b) => b.key);
+  const keyByEnd = new Map(args.buckets.map((b) => [b.end, b.key]));
+
+  const accountsQuery = client
+    .from("accounts")
+    .select("*")
+    .eq("companyGroupId", companyGroupId)
+    .eq("active", true)
+    .order("number", { ascending: true });
+
+  // The buckets helper may truncate a very wide range, so the series start is
+  // the FIRST bucket's start — not whatever the caller had before bucketing.
+  const seriesQuery = getAccountPeriodSeries(
+    client,
+    companyGroupId,
+    companyId,
+    {
+      start: args.buckets[0]!.start,
+      periodEnds: args.buckets.map((b) => b.end)
+    }
+  );
+
+  const [accountsResponse, seriesResponse] = await Promise.all([
+    accountsQuery,
+    seriesQuery
+  ]);
+
+  if (accountsResponse.error) {
+    return {
+      data: null,
+      ctaByBucket: {},
+      error: accountsResponse.error
+    };
+  }
+  if (seriesResponse.error) {
+    return { data: null, ctaByBucket: {}, error: seriesResponse.error };
+  }
+
+  const periodsByAccountId = new Map<string, Record<string, PeriodCell>>();
+  for (const row of seriesResponse.data ?? []) {
+    const key = keyByEnd.get(row.periodEnd);
+    if (!key) continue;
+    let record = periodsByAccountId.get(row.accountId);
+    if (!record) {
+      record = {};
+      periodsByAccountId.set(row.accountId, record);
+    }
+    record[key] = {
+      netChange: Number(row.netChange ?? 0),
+      balanceAtDate: Number(row.balanceAtDate ?? 0)
+    };
+  }
+
+  const emptyPeriods = (): Record<string, PeriodCell> =>
+    Object.fromEntries(
+      bucketKeys.map((key) => [key, { netChange: 0, balanceAtDate: 0 }])
+    );
+
+  let mapped = (accountsResponse.data ?? [])
+    .filter((a): a is typeof a & { id: string } => a.id !== null)
+    .map((account) => ({
+      ...account,
+      periods: {
+        ...emptyPeriods(),
+        ...(periodsByAccountId.get(account.id) ?? {})
+      }
+    }));
+
+  // Same Net Income equity line as getFinancialStatementBalances, computed per
+  // bucket: cumulative (balanceAtDate) and per-bucket (netChange) sums over
+  // income-statement LEAF accounts, rolled into the Equity group subtotal.
+  if (args.includeCurrentYearEarnings) {
+    const balanceSheetRoot = mapped.find(
+      (a) =>
+        a.incomeBalance === "Balance Sheet" &&
+        (a.isSystem ?? a.parentId === null)
+    );
+    const equityGroup = mapped.find(
+      (a) =>
+        a.class === "Equity" && a.isGroup && a.parentId === balanceSheetRoot?.id
+    );
+    if (balanceSheetRoot && equityGroup) {
+      const netIncomePeriods: Record<string, PeriodCell> = {};
+      for (const key of bucketKeys) {
+        let balanceAtDate = 0;
+        let netChange = 0;
+        for (const a of mapped) {
+          if (a.incomeBalance !== "Income Statement" || a.isGroup) continue;
+          const sign = rootSignMultiplier(a.class);
+          const cell = a.periods[key];
+          balanceAtDate += sign * (cell?.balanceAtDate ?? 0);
+          netChange += sign * (cell?.netChange ?? 0);
+        }
+        const equityCell = equityGroup.periods[key] ?? {
+          netChange: 0,
+          balanceAtDate: 0
+        };
+        equityGroup.periods[key] = {
+          ...equityCell,
+          netChange: equityCell.netChange + netChange,
+          balanceAtDate: equityCell.balanceAtDate + balanceAtDate
+        };
+        netIncomePeriods[key] = { netChange, balanceAtDate };
+      }
+      // Clone the Equity group to inherit every account column the report
+      // needs. Must NOT be isSystem — a system row is treated as a root by
+      // applyRootSignCorrectionToSeries and recomputed to zero.
+      mapped.push({
+        ...equityGroup,
+        id: NET_INCOME_ACCOUNT_ID,
+        name: "Net Income",
+        isGroup: false,
+        isSystem: false,
+        parentId: equityGroup.id,
+        periods: netIncomePeriods
+      });
+    }
+  }
+
+  let ctaByBucket: Record<string, number> = {};
+
+  if (args.translate) {
+    const translation = await translateCompanyPeriodSeries(
+      client,
+      companyGroupId,
+      companyId,
+      args.translate.targetCurrency,
+      args.buckets,
+      mapped
+    );
+    if (translation.error) {
+      return {
+        data: null,
+        ctaByBucket: {},
+        error: { message: translation.error }
+      };
+    }
+    mapped = overlayTranslationOnSeries(mapped, translation.byBucket);
+    for (const [key, bucket] of Object.entries(translation.byBucket)) {
+      ctaByBucket[key] = bucket.cta;
+    }
+  }
+
+  return {
+    data: applyRootSignCorrectionToSeries(
+      mapped,
+      bucketKeys
+    ) as unknown as ChartPeriodSeries[],
+    ctaByBucket,
+    error: null
+  };
+}
+
+/**
+ * Multi-company, multi-period consolidation — the period-series sibling of
+ * getConsolidatedBalances: per-company series (including auto-resolved
+ * elimination entities) summed per account and bucket, with per-bucket
+ * currency translation and CTA.
+ */
+export async function getConsolidatedPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyIds: string[],
+  targetCurrency: string,
+  args: { buckets: ReportPeriodBucket[] }
+): Promise<{
+  data: ChartPeriodSeries[];
+  ctaByBucket: Record<string, number>;
+}> {
+  const bucketKeys = args.buckets.map((b) => b.key);
+  const allIds = await resolveConsolidationCompanyIds(
+    client,
+    companyGroupId,
+    companyIds
+  );
+
+  const results = await Promise.all(
+    allIds.map(async (id) => {
+      const series = await getFinancialStatementPeriodSeries(
+        client,
+        companyGroupId,
+        id,
+        { buckets: args.buckets }
+      );
+
+      const translation =
+        series.error || !series.data
+          ? {
+              byBucket: {} as Record<
+                string,
+                { balances: TranslatedBalance[]; cta: number }
+              >,
+              error: series.error?.message ?? "Failed to load balances"
+            }
+          : await translateCompanyPeriodSeries(
+              client,
+              companyGroupId,
+              id,
+              targetCurrency,
+              args.buckets,
+              series.data
+            );
+
+      return { series, translation };
+    })
+  );
+
+  // Sum raw cells per (account, bucket) across companies
+  const summedByAccount = new Map<string, Record<string, PeriodCell>>();
+  for (const { series } of results) {
+    if (series.error || !series.data) continue;
+    for (const row of series.data) {
+      let record = summedByAccount.get(row.id);
+      if (!record) {
+        record = {};
+        summedByAccount.set(row.id, record);
+      }
+      for (const key of bucketKeys) {
+        const cell = row.periods[key];
+        if (!cell) continue;
+        const agg = record[key] ?? { netChange: 0, balanceAtDate: 0 };
+        record[key] = {
+          netChange: agg.netChange + cell.netChange,
+          balanceAtDate: agg.balanceAtDate + cell.balanceAtDate
+        };
+      }
+    }
+  }
+
+  // Sum translated leaf balances per (account, bucket) and CTA per bucket
+  const translatedByAccount = new Map<
+    string,
+    Record<string, { translatedBalance: number; exchangeRate: number }>
+  >();
+  const ctaByBucket: Record<string, number> = Object.fromEntries(
+    bucketKeys.map((key) => [key, 0])
+  );
+
+  for (const { translation } of results) {
+    if (translation.error) continue;
+    for (const [key, bucket] of Object.entries(translation.byBucket)) {
+      ctaByBucket[key] = (ctaByBucket[key] ?? 0) + bucket.cta;
+      for (const row of bucket.balances) {
+        let record = translatedByAccount.get(row.accountId);
+        if (!record) {
+          record = {};
+          translatedByAccount.set(row.accountId, record);
+        }
+        const existing = record[key];
+        record[key] = existing
+          ? {
+              translatedBalance:
+                existing.translatedBalance + Number(row.translatedBalance),
+              exchangeRate: existing.exchangeRate
+            }
+          : {
+              translatedBalance: Number(row.translatedBalance),
+              exchangeRate: Number(row.exchangeRate)
+            };
+      }
+    }
+  }
+
+  // Use the first company's account structure as the base (shared chart)
+  const baseAccounts = results.find((r) => r.series.data)?.series.data ?? [];
+
+  const consolidated = baseAccounts.map((account) => {
+    const summed = summedByAccount.get(account.id);
+    const translated = translatedByAccount.get(account.id);
+    const periods: Record<string, PeriodCell> = {};
+    for (const key of bucketKeys) {
+      periods[key] = {
+        netChange: 0,
+        balanceAtDate: 0,
+        ...(summed?.[key] ?? {}),
+        ...(translated?.[key] ?? {})
+      };
+    }
+    return { ...account, periods };
+  });
+
+  return {
+    data: applyRootSignCorrectionToSeries(consolidated, bucketKeys),
+    ctaByBucket
+  };
+}
+
+// Per-user pin overrides for the reports hub. Absent row = the report's
+// default pin state (the core financial statements default to pinned).
+export async function getReportPins(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  return client
+    .from("reportPin")
+    .select("reportKey, pinned")
+    .eq("userId", userId)
+    .eq("companyId", companyId);
+}
+
+export async function upsertReportPin(
+  client: SupabaseClient<Database>,
+  args: {
+    reportKey: string;
+    pinned: boolean;
+    userId: string;
+    companyId: string;
+  }
+) {
+  return client.from("reportPin").upsert(
+    {
+      reportKey: args.reportKey,
+      pinned: args.pinned,
+      userId: args.userId,
+      companyId: args.companyId,
+      createdBy: args.userId,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    },
+    { onConflict: "reportKey,userId,companyId" }
+  );
 }
 
 export async function getCompaniesInGroup(
@@ -2791,18 +3313,16 @@ export async function translateCompanyBalances(
   return { data: rows, cta, error: null };
 }
 
-export async function getConsolidatedBalances(
+// Find elimination entities that should be included automatically in a
+// consolidation. An elimination entity is included when its parentCompanyId is
+// an ancestor of any selected company (i.e. it sits at or above the selected
+// companies in the hierarchy and captures their intercompany eliminations).
+// Returns the operating company ids plus those elimination entity ids.
+async function resolveConsolidationCompanyIds(
   client: SupabaseClient<Database>,
   companyGroupId: string,
-  companyIds: string[],
-  targetCurrency: string,
-  periodEnd: string,
-  periodStart?: string
-) {
-  // Find elimination entities that should be included automatically.
-  // An elimination entity is included when its parentCompanyId is an ancestor
-  // of any selected company (i.e. it sits at or above the selected companies
-  // in the hierarchy and captures their intercompany eliminations).
+  companyIds: string[]
+): Promise<string[]> {
   const { data: allGroupCompanies } = await client
     .from("company")
     .select("id, parentCompanyId, isEliminationEntity")
@@ -2834,8 +3354,23 @@ export async function getConsolidatedBalances(
     )
     .map((c) => c.id);
 
+  return [...companyIds, ...eliminationIds];
+}
+
+export async function getConsolidatedBalances(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyIds: string[],
+  targetCurrency: string,
+  periodEnd: string,
+  periodStart?: string
+) {
   // All companies whose balances we need (operating + elimination entities)
-  const allIds = [...companyIds, ...eliminationIds];
+  const allIds = await resolveConsolidationCompanyIds(
+    client,
+    companyGroupId,
+    companyIds
+  );
 
   // Get balances for all companies, then translate the already-computed
   // balances to the target currency (one ledger scan per company, not two).

@@ -471,6 +471,9 @@ msgstr "खाता"
 msgid "Account & Details"
 msgstr "खाता और विवरण"
 
+msgid "Account balances with debits and credits"
+msgstr "डेबिट और क्रेडिट के साथ खाता शेष"
+
 msgid "Account for advance payments made before goods or services are received"
 msgstr "माल या सेवाएं प्राप्त होने से पहले किए गए अग्रिम भुगतान के लिए खाता।"
 
@@ -507,8 +510,14 @@ msgstr "लेखांकन"
 msgid "Accounting"
 msgstr "लेखांकन"
 
+msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
+msgstr "लेखांकन वर्तमान में बीटा में है। रिपोर्टिंग, जर्नल प्रविष्टियां, लेखांकन अवधि, अचल संपत्ति और अन्य सक्षम करने के लिए प्रवेश का अनुरोध करें।"
+
 msgid "Accounting is disabled"
 msgstr "लेखांकन अक्षम है"
+
+msgid "Accounting is disabled for this company."
+msgstr "इस कंपनी के लिए लेखांकन अक्षम है।"
 
 msgid "Accounting is enabled"
 msgstr "लेखांकन सक्षम है"
@@ -980,6 +989,9 @@ msgstr "एक ऑपरेशन की अपने कार्य कें�
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape से कनेक्ट करते समय एक अनपेक्षित त्रुटि हुई। दोबारा कनेक्ट करने का प्रयास करें।"
 
+msgid "Analytics"
+msgstr "विश्लेषण"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "योजना समयरेखा को वास्तविक तारीखों से जोड़ता है। सापेक्ष, सप्ताह-संख्या वाली समयरेखा के लिए खाली छोड़ें। किसी एक को सेट करने से बाकी भर जाता है।"
 
@@ -1022,6 +1034,9 @@ msgstr "किसी भी आइटम प्रकार"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "स्कोप में ऊपर स्पष्ट रूप से सूचीबद्ध कुछ भी नहीं"
+
+msgid "AP Aging"
+msgstr "AP एजिंग"
 
 msgid "AP Clerk"
 msgstr "AP क्लर्क"
@@ -1134,6 +1149,9 @@ msgstr "AQL"
 
 msgid "AQL (Z1.4 / ISO 2859-1)"
 msgstr "AQL (Z1.4 / ISO 2859-1)"
+
+msgid "AR Aging"
+msgstr "AR एजिंग"
 
 msgid "AR Clerk"
 msgstr "AR क्लर्क"
@@ -1630,6 +1648,9 @@ msgstr "परिसंपत्ति ID"
 
 msgid "Assets"
 msgstr "संपत्तियां"
+
+msgid "Assets, liabilities and equity as of a date"
+msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
@@ -2413,6 +2434,9 @@ msgstr "बंद करने की तारीख"
 msgid "Close Period"
 msgstr "अवधि बंद करें"
 
+msgid "Close Reports"
+msgstr "रिपोर्ट बंद करें"
+
 msgid "Close Status"
 msgstr "स्थिति बंद करें"
 
@@ -2556,6 +2580,9 @@ msgstr "पूर्ण बारकोड"
 
 msgid "Completion Time"
 msgstr "पूर्ण होने का समय"
+
+msgid "Condensed P&L with margins and key subtotals"
+msgstr "मार्जिन और मुख्य उप-योग के साथ संक्षिप्त P&L"
 
 msgid "Conditions"
 msgstr "शर्तें"
@@ -3037,6 +3064,9 @@ msgstr "बेची गई वस्तुओं की लागत (COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "बेची गई वस्तुओं की लागत (डिफ़ॉल्ट)"
+
+msgid "Cost of Sales"
+msgstr "बिक्री की लागत"
 
 msgid "Costing"
 msgstr "लागत"
@@ -5238,6 +5268,9 @@ msgstr "प्राधिकरण कोड को एक्सेस टो�
 msgid "Excluded"
 msgstr "बहिष्कृत"
 
+msgid "Executive P&L"
+msgstr "कार्यकारी P&L"
+
 msgid "Exemption Certificate"
 msgstr "छूट प्रमाणपत्र"
 
@@ -5307,6 +5340,9 @@ msgstr "स्थगित कर आंदोलन का व्यय पक�
 
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "संपत्ति वर्ग बनाने में विफल: {0}"
+
+msgid "Expenses by Supplier"
+msgstr "आपूर्तिकर्ता द्वारा व्यय"
 
 msgid "Expert guidance"
 msgstr "विशेषज्ञ मार्गदर्शन"
@@ -5800,6 +5836,9 @@ msgstr "अंतिम रूप दें"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "खुली → लॉक की गई → बंद जीवनचक्र के माध्यम से एक वित्तीय माह को अंतिम रूप देना; एक बंद अवधि जमी हुई है और इसके संतुलन को स्नैपशॉट किया गया है, केवल स्पष्ट पुनः खुलने से उलटा है।"
 
+msgid "Financial Statements"
+msgstr "वित्तीय विवरण"
+
 msgid "finish"
 msgstr "तैयार माल"
 
@@ -6260,6 +6299,9 @@ msgstr "ग्रेड"
 msgid "Grades"
 msgstr "ग्रेड"
 
+msgid "Gross Profit"
+msgstr "सकल लाभ"
+
 msgid "Group"
 msgstr "समूह"
 
@@ -6618,6 +6660,9 @@ msgstr "आय / बैलेंस (विरासत में मिला)"
 msgid "Income Statement"
 msgstr "आय विवरण"
 
+msgid "Income Tax"
+msgstr "आयकर"
+
 msgid "Income/Balance"
 msgstr "आय/शेष"
 
@@ -6878,6 +6923,12 @@ msgstr "चालान किया गया"
 
 msgid "Invoiced Amount:"
 msgstr "चालान की गई राशि:"
+
+msgid "Invoiced revenue per customer with period variance"
+msgstr "अवधि भिन्नता के साथ प्रति ग्राहक बिल किए गए राजस्व"
+
+msgid "Invoiced spend per supplier with period variance"
+msgstr "अवधि भिन्नता के साथ प्रति आपूर्तिकर्ता बिल किया गया व्यय"
 
 msgid "Invoiced Statuses"
 msgstr "चालान किए गए स्थितियां"
@@ -7162,6 +7213,9 @@ msgstr "श्रम इकाई"
 
 msgid "Language"
 msgstr "भाषा"
+
+msgid "Last 6 Months"
+msgstr "पिछले 6 महीने"
 
 msgid "Last Calibration"
 msgstr "अंतिम अंशांकन"
@@ -7959,6 +8013,9 @@ msgstr "आपको देय धन"
 msgid "Money you owe"
 msgstr "आप जो पैसे देते हैं"
 
+msgid "Monthly"
+msgstr "मासिक"
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "महीनों की संख्या जिसके दौरान यह संपत्ति कर उद्देश्यों के लिए मूल्यह्रास होती है (जब MACRS का उपयोग नहीं किया जा रहा है)।"
 
@@ -8071,6 +8128,9 @@ msgstr "नेट बुक वैल्यू"
 
 msgid "Net Change"
 msgstr "शुद्ध परिवर्तन"
+
+msgid "Net Income"
+msgstr "शुद्ध आय"
 
 msgid "Never"
 msgstr "कभी नहीं"
@@ -8681,6 +8741,9 @@ msgstr "कोई संदर्भ छवि नहीं"
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण के लिए कोई शेष इकाई नहीं है।"
 
+msgid "No reports match your search."
+msgstr "कोई रिपोर्ट आपकी खोज से मेल नहीं खाती।"
+
 msgid "No results"
 msgstr "कोई परिणाम नहीं"
 
@@ -8901,6 +8964,9 @@ msgstr "इस स्थान पर सेवा उपयोग के लि
 msgid "On-hand inventory remains"
 msgstr "हाथ में इन्वेंटरी बची है"
 
+msgid "On-hand value by location or item, with GL tie-out"
+msgstr "स्थान या आइटम के अनुसार हाथ में मूल्य, GL टाई-आउट के साथ"
+
 msgid "On-hand value of manufactured goods (Make items)"
 msgstr "निर्मित माल का मौजूदा मूल्य (Make आइटम)"
 
@@ -9006,6 +9072,9 @@ msgstr "खुली नौकरियां"
 msgid "Open menu"
 msgstr "मेनू खोलें"
 
+msgid "Open payables by supplier and age"
+msgstr "आपूर्तिकर्ता और आयु द्वारा खुले देनदारी"
+
 msgid "Open Purchase Invoices"
 msgstr "खुले क्रय चालान"
 
@@ -9020,6 +9089,9 @@ msgstr "खुली उद्धरणें"
 
 msgid "Open Reactive"
 msgstr "खुली प्रतिक्रियाशील"
+
+msgid "Open receivables by customer and age"
+msgstr "ग्राहक और आयु द्वारा खुली प्राप्य"
 
 msgid "Open RFQs"
 msgstr "खुले RFQ"
@@ -9053,6 +9125,9 @@ msgstr "अवक्षयण का खाता खोलने के सं�
 
 msgid "Operating Expenses"
 msgstr "परिचालन व्यय"
+
+msgid "Operating Income"
+msgstr "परिचालन आय"
 
 msgid "Operation"
 msgstr "ऑपरेशन"
@@ -9168,6 +9243,12 @@ msgstr "मूल"
 
 msgid "Original Count"
 msgstr "मूल गणना"
+
+msgid "Other Expense"
+msgstr "अन्य व्यय"
+
+msgid "Other Income"
+msgstr "अन्य आय"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "विदेशी मुद्रा लाभ के लिए अन्य आय खाता जब कोई भुगतान विदेशी-मुद्रा चालान को अधिक अनुकूल दर पर निपटाता है"
@@ -9553,6 +9634,10 @@ msgstr "Pieces/Minute"
 
 msgid "Pin"
 msgstr "पिन"
+
+#. placeholder {0}: report.name
+msgid "Pin {0}"
+msgstr "{0} को पिन करें"
 
 msgid "Pinned"
 msgstr "पिन किया गया"
@@ -10208,6 +10293,9 @@ msgstr "इस ओवरराइड के लिए मात्रा-आध�
 msgid "Quantity: {0}"
 msgstr "मात्रा: {0}"
 
+msgid "Quarterly"
+msgstr "त्रैमासिक"
+
 msgid "Question"
 msgstr "प्रश्न"
 
@@ -10675,6 +10763,9 @@ msgstr "पुनःपूर्ति प्रणाली"
 msgid "Report"
 msgstr "रिपोर्ट"
 
+msgid "Reporting"
+msgstr "रिपोर्टिंग"
+
 msgid "Reporting dimension"
 msgstr "रिपोर्टिंग आयाम"
 
@@ -10683,6 +10774,9 @@ msgstr "रिपोर्ट"
 
 msgid "Reprint"
 msgstr "दोबारा प्रिंट करें"
+
+msgid "Request access"
+msgstr "प्रवेश का अनुरोध करें"
 
 msgid "Request Approval"
 msgstr "अनुमोदन का अनुरोध करें"
@@ -10817,6 +10911,15 @@ msgstr "अप्रयुक्त सामग्री को वापस �
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
+
+msgid "Revenue"
+msgstr "राजस्व"
+
+msgid "Revenue and expenses over a period"
+msgstr "एक अवधि में राजस्व और व्यय"
+
+msgid "Revenue by Customer"
+msgstr "ग्राहक द्वारा राजस्व"
 
 msgid "Reverse all inventory adjustments"
 msgstr "सभी इन्वेंटरी समायोजन को उलट दें"
@@ -11864,6 +11967,9 @@ msgstr "सिंक विकल्प दिखाएं"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "दिखा रहा है {0} का {totalCount} — अपनी खोज को परिष्कृत करें"
+
+msgid "Showing in {parentCurrency}"
+msgstr "में दिखाई दे रहा है {parentCurrency}"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "जनरेट की गई PDF के हर पेज के पीछे हल्की पृष्ठभूमि के रूप में दिखाया जाता है"
@@ -13582,6 +13688,9 @@ msgstr "समय क्षेत्र"
 msgid "Title"
 msgstr "शीर्षक"
 
+msgid "To Date"
+msgstr "दिनांक तक"
+
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "निष्क्रिय करने के लिए, पंक्ति मेनू का उपयोग करें और खाता निष्क्रिय करें चुनें।"
 
@@ -13704,6 +13813,9 @@ msgstr "इस स्थान पर सभी भंडारण इकाइ�
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "इस स्थान पर सभी सक्रिय कार्यों और बिक्री आदेशों में आवश्यक कुल मात्रा — केवल इस कार्य के लिए नहीं।"
+
+msgid "Total Spend"
+msgstr "कुल व्यय"
 
 msgid "Total Value"
 msgstr "कुल मूल्य"
@@ -13973,6 +14085,10 @@ msgstr "अनपिक करें"
 msgid "Unpick {0}"
 msgstr "अनपिक {0}"
 
+#. placeholder {0}: report.name
+msgid "Unpin {0}"
+msgstr "{0} को अनपिन करें"
+
 msgid "Unposted Documents"
 msgstr "अपोस्ट किए गए दस्तावेज़"
 
@@ -14218,9 +14334,6 @@ msgstr "सत्यापित"
 
 msgid "Validating job..."
 msgstr "नौकरी को मान्य कर रहे हैं..."
-
-msgid "Valuation"
-msgstr "मूल्यांकन"
 
 msgid "Value"
 msgstr "मान"
@@ -15042,6 +15155,9 @@ msgstr "किसी संपत्ति के मूल्य को उस�
 
 msgid "Year"
 msgstr "साल"
+
+msgid "Yearly"
+msgstr "वार्षिक"
 
 msgid "Yes"
 msgstr "हाँ"

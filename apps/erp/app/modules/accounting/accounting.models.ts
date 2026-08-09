@@ -68,6 +68,34 @@ export const accountClassTypes = [
   "Expense"
 ] as const;
 
+export const financialReportColumns = ["month", "quarter", "year"] as const;
+
+// Pin/unpin toggle on the reports hub (/x/accounting/reports)
+export const reportPinValidator = z.object({
+  reportKey: z.string().min(1),
+  pinned: z.enum(["true", "false"])
+});
+
+// URL search params for the /x/reports financial statements. Parsed with
+// safeParse in the loaders — invalid params fall back to defaults rather than
+// failing the report.
+export const financialReportParamsValidator = z.object({
+  companies: z.string().optional(),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  columns: z.enum(financialReportColumns).catch("month").default("month"),
+  showTranslated: z
+    .string()
+    .optional()
+    .transform((v) => v === "true")
+});
+
 export const groupAccountValidator = z
   .object({
     id: zfd.text(z.string().optional()),

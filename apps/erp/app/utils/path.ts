@@ -41,6 +41,7 @@ export const path = {
       generatePath(`${x}/items/methods/versions/activate/${id}`),
     addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
       generatePath(`${x}/maintenance/${dispatchId}/add-and-issue`),
+    apAging: `${x}/reports/ap-aging`,
     api: {
       abilities: `${api}/resources/abilities`,
       accounts: `${api}/accounting/accounts`,
@@ -291,6 +292,7 @@ export const path = {
     approvalRule: (id: string) =>
       generatePath(`${x}/settings/approval-rules/${id}`),
     approvalRules: `${x}/settings/approval-rules`,
+    arAging: `${x}/reports/ar-aging`,
     assemblyInstruction: (id: string) => generatePath(`${x}/assembly/${id}`),
     assemblyInstructionActivate: (id: string) =>
       generatePath(`${x}/assembly/${id}/activate`),
@@ -341,9 +343,9 @@ export const path = {
     autoMatchAssemblyComponents: (id: string) =>
       generatePath(`${x}/assembly/${id}/component-mappings/auto`),
     backups: `${x}/settings/backups`,
-    balanceSheet: `${x}/accounting/balance-sheet`,
+    balanceSheet: `${x}/reports/balance-sheet`,
     balanceSheetLedger: (id: string) =>
-      generatePath(`${x}/accounting/balance-sheet/${id}`),
+      generatePath(`${x}/reports/balance-sheet/${id}`),
     batchProperty: (itemId: string) =>
       generatePath(`${x}/inventory/batch-property/${itemId}/property`),
     batchPropertyOrder: (itemId: string) =>
@@ -875,6 +877,8 @@ export const path = {
     exchangeRate: (id: string) =>
       generatePath(`${x}/accounting/exchange-rates/${id}`),
     exchangeRates: `${x}/accounting/exchange-rates`,
+    executivePnl: `${x}/reports/executive-pnl`,
+    expensesBySupplier: `${x}/reports/expenses-by-supplier`,
     external: {
       mes: MES_URL,
       mesJobOperation: (id: string) => `${MES_URL}/x/operation/${id}`,
@@ -1134,9 +1138,9 @@ export const path = {
     holiday: (id: string) => generatePath(`${x}/people/holidays/${id}`),
     holidays: `${x}/people/holidays`,
     import: (tableId: string) => generatePath(`${x}/shared/import/${tableId}`),
-    incomeStatement: `${x}/accounting/income-statement`,
+    incomeStatement: `${x}/reports/income-statement`,
     incomeStatementLedger: (id: string) =>
-      generatePath(`${x}/accounting/income-statement/${id}`),
+      generatePath(`${x}/reports/income-statement/${id}`),
     inspection: (id: string) => generatePath(`${x}/inspection/${id}`),
     inspectionAccept: (id: string) =>
       generatePath(`${x}/inspection/${id}/accept`),
@@ -1180,8 +1184,8 @@ export const path = {
       generatePath(`${x}/inventory/quantities/${id}/adjustment`),
     inventoryRoot: `${x}/inventory`,
     inventorySettings: `${x}/settings/inventory`,
-    inventoryValuation: `${x}/inventory/valuation`,
-    inventoryValuationReconcile: `${x}/inventory/valuation/reconcile`,
+    inventoryValuation: `${x}/reports/inventory-valuation`,
+    inventoryValuationReconcile: `${x}/reports/inventory-valuation/reconcile`,
     investigationType: (id: string) =>
       generatePath(`${x}/quality/investigation-types/${id}`),
     investigationTypes: `${x}/quality/investigation-types`,
@@ -1848,12 +1852,14 @@ export const path = {
     refreshSession: "/refresh-session",
     repeatDepreciationRun: (id: string) =>
       generatePath(`${x}/depreciation-run/${id}/repeat`),
+    reports: `${x}/accounting/reports`,
     requiredAction: (id: string) =>
       generatePath(`${x}/quality/required-actions/${id}`),
     requiredActions: `${x}/quality/required-actions`,
     resendInvite: `${x}/users/resend-invite`,
     resources: `${x}/resources`,
     resourcesSettings: `${x}/settings/resources`,
+    revenueByCustomer: `${x}/reports/revenue-by-customer`,
     reverseJournalEntry: (id: string) =>
       generatePath(`${x}/journal-entry/${id}/reverse`),
     revision: (id: string) => generatePath(`${x}/items/revisions/${id}`),
@@ -2110,9 +2116,9 @@ export const path = {
     trainingQuestionOrder: (id: string) =>
       generatePath(`${x}/training/${id}/questions/order`),
     trainings: `${x}/resources/training`,
-    trialBalance: `${x}/accounting/trial-balance`,
+    trialBalance: `${x}/reports/trial-balance`,
     trialBalanceLedger: (id: string) =>
-      generatePath(`${x}/accounting/trial-balance/${id}`),
+      generatePath(`${x}/reports/trial-balance/${id}`),
     uom: (id: string) => generatePath(`${x}/items/uom/${id}`),
     uoms: `${x}/items/uom`,
     updateAssemblyUnit: (id: string, unitId: string) =>

@@ -471,6 +471,9 @@ msgstr "계정"
 msgid "Account & Details"
 msgstr "계정 및 세부정보"
 
+msgid "Account balances with debits and credits"
+msgstr "차변과 대변이 포함된 계정 잔액"
+
 msgid "Account for advance payments made before goods or services are received"
 msgstr "재화나 서비스를 받기 전에 지급한 선급금 계정"
 
@@ -507,8 +510,14 @@ msgstr "회계"
 msgid "Accounting"
 msgstr "회계"
 
+msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
+msgstr "회계는 현재 베타 버전입니다. 보고, 분개, 회계 기간, 고정 자산 등을 활성화하려면 액세스를 요청하세요."
+
 msgid "Accounting is disabled"
 msgstr "회계가 비활성화됨"
+
+msgid "Accounting is disabled for this company."
+msgstr "이 회사에서는 회계가 비활성화되어 있습니다."
 
 msgid "Accounting is enabled"
 msgstr "회계가 활성화됨"
@@ -980,6 +989,9 @@ msgstr "작업 센터의 작업 대기열에서 작업의 위치(현장이 작�
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape에 연결하는 중 예기치 않은 오류가 발생했습니다. 다시 연결해 보세요."
 
+msgid "Analytics"
+msgstr "분석"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "계획 타임라인을 실제 날짜에 고정합니다. 비워두면 주 번호 기반의 상대적 타임라인이 됩니다. 둘 중 하나를 설정하면 나머지가 자동으로 채워집니다."
 
@@ -1022,6 +1034,9 @@ msgstr "모든 품목 유형"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "위 범위에 명시적으로 나열되지 않은 모든 사항"
+
+msgid "AP Aging"
+msgstr "AP 에이징"
 
 msgid "AP Clerk"
 msgstr "매입채무 담당자"
@@ -1134,6 +1149,9 @@ msgstr "AQL"
 
 msgid "AQL (Z1.4 / ISO 2859-1)"
 msgstr "AQL(Z1.4 / ISO 2859-1)"
+
+msgid "AR Aging"
+msgstr "AR 에이징"
 
 msgid "AR Clerk"
 msgstr "매출채권 담당자"
@@ -1630,6 +1648,9 @@ msgstr "자산 ID"
 
 msgid "Assets"
 msgstr "자산"
+
+msgid "Assets, liabilities and equity as of a date"
+msgstr "특정 날짜 기준 자산, 부채 및 자본"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "위치에 프린터를 배정하세요. 출하, 입고, 작업장은 재정의되지 않는 한 위치의 기본값을 상속받습니다."
@@ -2413,6 +2434,9 @@ msgstr "마감일"
 msgid "Close Period"
 msgstr "기간 종료"
 
+msgid "Close Reports"
+msgstr "보고서 닫기"
+
 msgid "Close Status"
 msgstr "종료 상태"
 
@@ -2556,6 +2580,9 @@ msgstr "완료 바코드"
 
 msgid "Completion Time"
 msgstr "완료 시간"
+
+msgid "Condensed P&L with margins and key subtotals"
+msgstr "마진 및 주요 소계를 포함한 축약 손익계산"
 
 msgid "Conditions"
 msgstr "조건"
@@ -3037,6 +3064,9 @@ msgstr "매출원가(COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "매출원가(기본값)"
+
+msgid "Cost of Sales"
+msgstr "매출원가"
 
 msgid "Costing"
 msgstr "원가 계산"
@@ -5238,6 +5268,9 @@ msgstr "인증 코드를 액세스 토큰으로 교환하지 못했습니다. �
 msgid "Excluded"
 msgstr "제외됨"
 
+msgid "Executive P&L"
+msgstr "경영진 손익계산"
+
 msgid "Exemption Certificate"
 msgstr "면세 증명서"
 
@@ -5307,6 +5340,9 @@ msgstr "판매에 따라 재고가 출하/불출될 때 차변에 기록되는 �
 
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "이연법인세 변동의 비용 측면(이연법인세부채와 짝을 이룸)입니다."
+
+msgid "Expenses by Supplier"
+msgstr "공급자별 비용"
 
 msgid "Expert guidance"
 msgstr "전문가 안내"
@@ -5800,6 +5836,9 @@ msgstr "확정"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "열림 → 잠김 → 종료 라이프사이클을 통해 회계 월을 마무리하는 것으로서, 종료된 기간은 고정되고 잔액은 스냅샷되며 명시적 재개를 통해서만 취소할 수 있습니다."
 
+msgid "Financial Statements"
+msgstr "재무제표"
+
 msgid "finish"
 msgstr "마감"
 
@@ -6260,6 +6299,9 @@ msgstr "등급"
 msgid "Grades"
 msgstr "등급"
 
+msgid "Gross Profit"
+msgstr "매출총이익"
+
 msgid "Group"
 msgstr "그룹"
 
@@ -6618,6 +6660,9 @@ msgstr "손익/재무상태(상속됨)"
 msgid "Income Statement"
 msgstr "손익계산서"
 
+msgid "Income Tax"
+msgstr "소득세"
+
 msgid "Income/Balance"
 msgstr "손익/재무상태"
 
@@ -6878,6 +6923,12 @@ msgstr "인보이스 발행됨"
 
 msgid "Invoiced Amount:"
 msgstr "인보이스 금액:"
+
+msgid "Invoiced revenue per customer with period variance"
+msgstr "기간 차이가 포함된 고객당 청구된 수익"
+
+msgid "Invoiced spend per supplier with period variance"
+msgstr "기간 차이가 포함된 공급자당 청구된 비용"
 
 msgid "Invoiced Statuses"
 msgstr "인보이스 상태"
@@ -7162,6 +7213,9 @@ msgstr "노무 단위"
 
 msgid "Language"
 msgstr "언어"
+
+msgid "Last 6 Months"
+msgstr "지난 6개월"
 
 msgid "Last Calibration"
 msgstr "마지막 교정"
@@ -7959,6 +8013,9 @@ msgstr "귀사가 받아야 할 금액"
 msgid "Money you owe"
 msgstr "귀사가 지급해야 할 금액"
 
+msgid "Monthly"
+msgstr "월간"
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "MACRS를 사용하지 않을 경우, 이 자산을 세무상 상각하는 개월 수입니다."
 
@@ -8071,6 +8128,9 @@ msgstr "순 장부 가치"
 
 msgid "Net Change"
 msgstr "순변동"
+
+msgid "Net Income"
+msgstr "순이익"
 
 msgid "Never"
 msgstr "안 함"
@@ -8681,6 +8741,9 @@ msgstr "참조 이미지 없음"
 msgid "No remaining entities to inspect."
 msgstr "검사할 개체가 남아 있지 않습니다."
 
+msgid "No reports match your search."
+msgstr "검색 결과와 일치하는 보고서가 없습니다."
+
 msgid "No results"
 msgstr "결과 없음"
 
@@ -8901,6 +8964,9 @@ msgstr "이 위치에서 서비스용으로 유지해야 할 최소 보유 재�
 msgid "On-hand inventory remains"
 msgstr "보유 재고가 남아 있습니다"
 
+msgid "On-hand value by location or item, with GL tie-out"
+msgstr "GL 검증이 포함된 위치 또는 항목별 현재고 가치"
+
 msgid "On-hand value of manufactured goods (Make items)"
 msgstr "제조 상품(완성품)의 현재 재고 가치"
 
@@ -9006,6 +9072,9 @@ msgstr "미결 작업"
 msgid "Open menu"
 msgstr "메뉴 열기"
 
+msgid "Open payables by supplier and age"
+msgstr "공급자 및 기간별 미지급금"
+
 msgid "Open Purchase Invoices"
 msgstr "미결 구매 인보이스"
 
@@ -9020,6 +9089,9 @@ msgstr "미결 견적"
 
 msgid "Open Reactive"
 msgstr "미결 반응형 정비"
+
+msgid "Open receivables by customer and age"
+msgstr "고객 및 기간별 미수금"
 
 msgid "Open RFQs"
 msgstr "미결 견적요청"
@@ -9053,6 +9125,9 @@ msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상�
 
 msgid "Operating Expenses"
 msgstr "영업비용"
+
+msgid "Operating Income"
+msgstr "영업이익"
 
 msgid "Operation"
 msgstr "공정작업"
@@ -9168,6 +9243,12 @@ msgstr "원본"
 
 msgid "Original Count"
 msgstr "원본 계산"
+
+msgid "Other Expense"
+msgstr "기타 비용"
+
+msgid "Other Income"
+msgstr "기타 수익"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "외화 인보이스가 더 유리한 환율로 결제될 때 발생하는 환차익에 대한 기타수익 계정"
@@ -9553,6 +9634,10 @@ msgstr "개/분"
 
 msgid "Pin"
 msgstr "핀"
+
+#. placeholder {0}: report.name
+msgid "Pin {0}"
+msgstr "{0} 고정"
 
 msgid "Pinned"
 msgstr "고정됨"
@@ -10208,6 +10293,9 @@ msgstr "이 재정의에 대한 수량 기반 가격 등급으로, 주문 라인
 msgid "Quantity: {0}"
 msgstr "수량: {0}"
 
+msgid "Quarterly"
+msgstr "분기별"
+
 msgid "Question"
 msgstr "질문"
 
@@ -10675,6 +10763,9 @@ msgstr "보충 시스템"
 msgid "Report"
 msgstr "보고서"
 
+msgid "Reporting"
+msgstr "보고"
+
 msgid "Reporting dimension"
 msgstr "보고 차원"
 
@@ -10683,6 +10774,9 @@ msgstr "보고서"
 
 msgid "Reprint"
 msgstr "재출력"
+
+msgid "Request access"
+msgstr "액세스 요청"
 
 msgid "Request Approval"
 msgstr "승인 요청"
@@ -10817,6 +10911,15 @@ msgstr "미사용 선택 재료 반환 중"
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
+
+msgid "Revenue"
+msgstr "수익"
+
+msgid "Revenue and expenses over a period"
+msgstr "일정 기간의 수익 및 비용"
+
+msgid "Revenue by Customer"
+msgstr "고객별 수익"
 
 msgid "Reverse all inventory adjustments"
 msgstr "모든 재고 조정 취소"
@@ -11864,6 +11967,9 @@ msgstr "동기화 옵션 표시"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "{0}개/총 {totalCount}개 표시 — 검색 범위 좁혀보기"
+
+msgid "Showing in {parentCurrency}"
+msgstr "{parentCurrency}로 표시"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"
@@ -13582,6 +13688,9 @@ msgstr "시간대"
 msgid "Title"
 msgstr "제목"
 
+msgid "To Date"
+msgstr "마감일"
+
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "비활성화하려면 행 메뉴를 사용하여 계정 비활성화를 선택하세요."
 
@@ -13704,6 +13813,9 @@ msgstr "이 위치의 모든 저장 단위에 걸친 해당 품목의 총 재고
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "이 작업뿐 아니라 이 위치의 모든 진행 중인 작업과 판매주문에서 필요한 총 수량입니다."
+
+msgid "Total Spend"
+msgstr "총 비용"
 
 msgid "Total Value"
 msgstr "총 가치"
@@ -13973,6 +14085,10 @@ msgstr "피킹 취소"
 msgid "Unpick {0}"
 msgstr "{0} 피킹 취소"
 
+#. placeholder {0}: report.name
+msgid "Unpin {0}"
+msgstr "{0} 고정 해제"
+
 msgid "Unposted Documents"
 msgstr "미전기 문서"
 
@@ -14218,9 +14334,6 @@ msgstr "검증됨"
 
 msgid "Validating job..."
 msgstr "작업 검증 중..."
-
-msgid "Valuation"
-msgstr "평가"
 
 msgid "Value"
 msgstr "값"
@@ -15042,6 +15155,9 @@ msgstr "자산의 가치를 내용연수에 걸쳐 상각하는 것 — 매월 �
 
 msgid "Year"
 msgstr "연도"
+
+msgid "Yearly"
+msgstr "연간"
 
 msgid "Yes"
 msgstr "예"

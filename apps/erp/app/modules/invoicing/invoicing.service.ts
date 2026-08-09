@@ -3,7 +3,7 @@ import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import {
   getSupplierPayment,
@@ -33,6 +33,8 @@ import type {
   salesInvoiceStatusType,
   salesInvoiceValidator
 } from "./invoicing.models";
+import type { SpendByPartyRow } from "./invoicing.reports";
+import { aggregateSpend, previousPeriod } from "./invoicing.reports";
 
 const PURCHASE_INVOICES_LIST_COLUMNS =
   "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
@@ -2455,4 +2457,84 @@ export async function getApAging(
     _bucket2: b2,
     _bucket3: b3
   });
+}
+
+// Spend-by-party reports (Revenue by Customer / Expenses by Supplier).
+// Each row totals issued invoices for a party over the selected period, plus the
+// immediately-preceding equal-length period, so the UI can render a period-over-
+// period variance. Draft/Voided invoices never represent real revenue or spend,
+// so they are excluded; amounts are the invoice views' line-derived,
+// tax-inclusive `totalAmount` in the document currency. The pure aggregation
+// lives in `invoicing.reports.ts` (unit-tested in isolation).
+
+export async function getRevenueByCustomer(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { startDate: string; endDate: string }
+): Promise<{ data: SpendByPartyRow[]; error: PostgrestError | null }> {
+  const { previousStart, previousEnd } = previousPeriod(
+    args.startDate,
+    args.endDate
+  );
+
+  const { data, error } = await client
+    .from("salesInvoices")
+    .select("customerId, totalAmount, dateIssued")
+    .eq("companyId", companyId)
+    .not("status", "in", "(Draft,Voided)")
+    .gte("dateIssued", previousStart)
+    .lte("dateIssued", args.endDate);
+
+  if (error) return { data: [], error };
+
+  return {
+    data: aggregateSpend(
+      (data ?? []).map((row) => ({
+        partyId: row.customerId,
+        totalAmount: row.totalAmount,
+        date: row.dateIssued ?? ""
+      })),
+      args.startDate,
+      args.endDate,
+      previousStart,
+      previousEnd
+    ),
+    error: null
+  };
+}
+
+export async function getExpensesBySupplier(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { startDate: string; endDate: string }
+): Promise<{ data: SpendByPartyRow[]; error: PostgrestError | null }> {
+  const { previousStart, previousEnd } = previousPeriod(
+    args.startDate,
+    args.endDate
+  );
+
+  const { data, error } = await client
+    .from("purchaseInvoices")
+    .select("supplierId, totalAmount, dateIssued")
+    .eq("companyId", companyId)
+    .not("status", "in", "(Draft,Voided)")
+    .gte("dateIssued", previousStart)
+    .lte("dateIssued", args.endDate);
+
+  if (error) return { data: [], error };
+
+  return {
+    data: aggregateSpend(
+      (data ?? []).map((row) => ({
+        partyId: row.supplierId,
+        totalAmount: row.totalAmount,
+        date: row.dateIssued ?? ""
+      })),
+      args.startDate,
+      args.endDate,
+      previousStart,
+      previousEnd
+    ),
+    error: null
+  };
 }

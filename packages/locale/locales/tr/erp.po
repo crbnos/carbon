@@ -471,6 +471,9 @@ msgstr "Hesap"
 msgid "Account & Details"
 msgstr "Hesap ve ayrıntılar"
 
+msgid "Account balances with debits and credits"
+msgstr "Borç ve alacak bakiyeleri"
+
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Mal veya hizmet alınmadan önce yapılan peşin ödemeleri hesaplayın."
 
@@ -507,8 +510,14 @@ msgstr "muhasebe"
 msgid "Accounting"
 msgstr "Muhasebe"
 
+msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
+msgstr "Muhasebe şu anda beta aşamasındadır. Raporlama, günlük girişler, muhasebe dönemleri, sabit varlıklar ve daha fazlasını etkinleştirmek için erişim isteyin."
+
 msgid "Accounting is disabled"
 msgstr "Muhasebe devre dışı"
+
+msgid "Accounting is disabled for this company."
+msgstr "Bu şirket için muhasebe devre dışı bırakılmıştır."
 
 msgid "Accounting is enabled"
 msgstr "Muhasebe etkinleştirilmiş"
@@ -980,6 +989,9 @@ msgstr "Bir işin iş merkezinin kuyruğundaki konumu — işinin çekildiği s�
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape'e bağlanırken beklenmeyen bir hata oluştu. Yeniden bağlanmayı deneyin."
 
+msgid "Analytics"
+msgstr "Analitik"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Plan zaman çizelgesini gerçek tarihlere sabitleyin. Göreceli, hafta numaralı bir zaman çizelgesi için boş bırakın. Her ikisinden birini ayarlamak geri kalanını doldurur."
 
@@ -1022,6 +1034,9 @@ msgstr "Herhangi bir ürün tipi"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Yukarıda açıkça kapsamda listelenmemiş herhangi bir şey"
+
+msgid "AP Aging"
+msgstr "AP Yaşlandırma"
 
 msgid "AP Clerk"
 msgstr "AP Muhasebesi Görevlisi"
@@ -1134,6 +1149,9 @@ msgstr "AQL"
 
 msgid "AQL (Z1.4 / ISO 2859-1)"
 msgstr "AQL (Z1.4 / ISO 2859-1)"
+
+msgid "AR Aging"
+msgstr "AR Yaşlandırma"
 
 msgid "AR Clerk"
 msgstr "AR Görevlisi"
@@ -1630,6 +1648,9 @@ msgstr "Varlık Kimliği"
 
 msgid "Assets"
 msgstr "Varlıklar"
+
+msgid "Assets, liabilities and equity as of a date"
+msgstr "Bir tarih itibariyle aktif, pasif ve öz kaynak"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
@@ -2413,6 +2434,9 @@ msgstr "Kapatma Tarihi"
 msgid "Close Period"
 msgstr "Dönemi Kapat"
 
+msgid "Close Reports"
+msgstr "Raporları Kapat"
+
 msgid "Close Status"
 msgstr "Kapanış Durumu"
 
@@ -2556,6 +2580,9 @@ msgstr "Tamamlama Barkodu"
 
 msgid "Completion Time"
 msgstr "Tamamlama Süresi"
+
+msgid "Condensed P&L with margins and key subtotals"
+msgstr "Marjlar ve kilit alt toplamlarla sıkıştırılmış P&L"
 
 msgid "Conditions"
 msgstr "Koşullar"
@@ -3037,6 +3064,9 @@ msgstr "Satılan Malların Maliyeti (COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "Satılan Malların Maliyeti (varsayılan)"
+
+msgid "Cost of Sales"
+msgstr "Satışların Maliyeti"
 
 msgid "Costing"
 msgstr "Maliyetlendirme"
@@ -5238,6 +5268,9 @@ msgstr "Yetkilendirme kodunun erişim belirteciyle değiştirilmesi başarısız
 msgid "Excluded"
 msgstr "Hariç Tutulan"
 
+msgid "Executive P&L"
+msgstr "Yönetici P&L"
+
 msgid "Exemption Certificate"
 msgstr "İstisnai Sertifika"
 
@@ -5307,6 +5340,9 @@ msgstr "Ertelenmiş vergi hareketlerinin gider tarafı (ertelenmiş vergi yükü
 
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Varlık sınıfı oluşturulamadı: {0}"
+
+msgid "Expenses by Supplier"
+msgstr "Tedarikçiye Göre Giderler"
 
 msgid "Expert guidance"
 msgstr "Uzman rehberliği"
@@ -5800,6 +5836,9 @@ msgstr "Onayla"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Mali bir ayı Açık → Kilitli → Kapalı yaşam döngüsü aracılığıyla sonlandırma; kapalı bir dönem donmuştur ve bakiyeleri anlık görüntülenmiş, yalnızca açık yeniden açılarak tersine çevrilebilir."
 
+msgid "Financial Statements"
+msgstr "Mali Tablolar"
+
 msgid "finish"
 msgstr "Bitmiş ürünler"
 
@@ -6260,6 +6299,9 @@ msgstr "sınıflar"
 msgid "Grades"
 msgstr "Dereceler"
 
+msgid "Gross Profit"
+msgstr "Brüt Kar"
+
 msgid "Group"
 msgstr "Grup"
 
@@ -6618,6 +6660,9 @@ msgstr "Gelir / Bakiye (Devralınan)"
 msgid "Income Statement"
 msgstr "Gelir Tablosu"
 
+msgid "Income Tax"
+msgstr "Gelir Vergisi"
+
 msgid "Income/Balance"
 msgstr "Gelir/Bakiye"
 
@@ -6878,6 +6923,12 @@ msgstr "Faturalandırıldı"
 
 msgid "Invoiced Amount:"
 msgstr "Fatura Edilmiş Tutar:"
+
+msgid "Invoiced revenue per customer with period variance"
+msgstr "Dönem sapması ile müşteri başına faturalandırılan gelir"
+
+msgid "Invoiced spend per supplier with period variance"
+msgstr "Dönem sapması ile tedarikçi başına faturalandırılan harcama"
 
 msgid "Invoiced Statuses"
 msgstr "Fatura Durumları"
@@ -7162,6 +7213,9 @@ msgstr "İşçilik Birimi"
 
 msgid "Language"
 msgstr "Dil"
+
+msgid "Last 6 Months"
+msgstr "Son 6 Ay"
 
 msgid "Last Calibration"
 msgstr "Son Kalibrasyon"
@@ -7959,6 +8013,9 @@ msgstr "Size borçlu"
 msgid "Money you owe"
 msgstr "Borçlu olduğunuz para"
 
+msgid "Monthly"
+msgstr "Aylık"
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Bu varlığın vergi amaçları için amorti edildiği aylar (MACRS kullanılmıyorsa)."
 
@@ -8071,6 +8128,9 @@ msgstr "Net Defter Değeri"
 
 msgid "Net Change"
 msgstr "Net Değişim"
+
+msgid "Net Income"
+msgstr "Net Gelir"
 
 msgid "Never"
 msgstr "Asla"
@@ -8681,6 +8741,9 @@ msgstr "Referans resim yok"
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
 
+msgid "No reports match your search."
+msgstr "Aramanızla eşleşen rapor yok."
+
 msgid "No results"
 msgstr "Sonuç bulunamadı"
 
@@ -8901,6 +8964,9 @@ msgstr "Bu konumdaki servis kullanımı için korunacak minimum stok seviyesi"
 msgid "On-hand inventory remains"
 msgstr "Eldeki envanter kaldı"
 
+msgid "On-hand value by location or item, with GL tie-out"
+msgstr "Konum veya öğeye göre eldeki değer, GL bağlantılı olarak"
+
 msgid "On-hand value of manufactured goods (Make items)"
 msgstr "Üretilen malların (Üretim ürünleri) eldeki değeri"
 
@@ -9006,6 +9072,9 @@ msgstr "Açık işler"
 msgid "Open menu"
 msgstr "Menüyü aç"
 
+msgid "Open payables by supplier and age"
+msgstr "Tedarikçi ve yaşa göre açık borçlar"
+
 msgid "Open Purchase Invoices"
 msgstr "Açık Satın Alma Faturaları"
 
@@ -9020,6 +9089,9 @@ msgstr "Açık Teklifler"
 
 msgid "Open Reactive"
 msgstr "Açık Reaktif"
+
+msgid "Open receivables by customer and age"
+msgstr "Müşteri ve yaşa göre açık alacaklar"
 
 msgid "Open RFQs"
 msgstr "Açık RFQ'lar"
@@ -9053,6 +9125,9 @@ msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortism
 
 msgid "Operating Expenses"
 msgstr "İşletme Giderleri"
+
+msgid "Operating Income"
+msgstr "İşletme Geliri"
 
 msgid "Operation"
 msgstr "Operasyon"
@@ -9168,6 +9243,12 @@ msgstr "Orijinal"
 
 msgid "Original Count"
 msgstr "Orijinal Sayım"
+
+msgid "Other Expense"
+msgstr "Diğer Gider"
+
+msgid "Other Income"
+msgstr "Diğer Gelir"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Bir ödeme yabancı para birimindeki bir faturayı daha uygun bir oranda kapatırken FX kazançları için Diğer Gelir hesabı"
@@ -9553,6 +9634,10 @@ msgstr "Parça/Dakika"
 
 msgid "Pin"
 msgstr "Sabitle"
+
+#. placeholder {0}: report.name
+msgid "Pin {0}"
+msgstr "Sabitle {0}"
 
 msgid "Pinned"
 msgstr "Sabitlenmiş"
@@ -10208,6 +10293,9 @@ msgstr "Bu geçersiz kılma için miktar tabanlı fiyatlandırma seviyeleri; uyg
 msgid "Quantity: {0}"
 msgstr "Miktar: {0}"
 
+msgid "Quarterly"
+msgstr "Üç Aylık"
+
 msgid "Question"
 msgstr "Soru"
 
@@ -10675,6 +10763,9 @@ msgstr "Yenileştirme Sistemi"
 msgid "Report"
 msgstr "Rapor"
 
+msgid "Reporting"
+msgstr "Raporlama"
+
 msgid "Reporting dimension"
 msgstr "Raporlama boyutu"
 
@@ -10683,6 +10774,9 @@ msgstr "Raporlar"
 
 msgid "Reprint"
 msgstr "Yeniden Yazdır"
+
+msgid "Request access"
+msgstr "Erişim İste"
 
 msgid "Request Approval"
 msgstr "Onay Talebi Oluştur"
@@ -10817,6 +10911,15 @@ msgstr "Kullanılmayan alınan malzeme iade ediliyor"
 
 msgid "Rev {revision}"
 msgstr "Sürüm {revision}"
+
+msgid "Revenue"
+msgstr "Gelir"
+
+msgid "Revenue and expenses over a period"
+msgstr "Bir dönem içinde gelir ve giderler"
+
+msgid "Revenue by Customer"
+msgstr "Müşteriye Göre Gelir"
 
 msgid "Reverse all inventory adjustments"
 msgstr "Tüm envanter ayarlamalarını geri alır"
@@ -11864,6 +11967,9 @@ msgstr "Senkronizasyon seçeneklerini göster"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "{0} / {totalCount} gösteriliyor — aramanızı daraltın"
+
+msgid "Showing in {parentCurrency}"
+msgstr "{parentCurrency} cinsinden gösteriliyor"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Oluşturulan PDF'lerin her sayfasının arkasında soluk bir arka plan olarak gösterilir"
@@ -13582,6 +13688,9 @@ msgstr "Saat Dilim"
 msgid "Title"
 msgstr "Unvan"
 
+msgid "To Date"
+msgstr "Bitiş Tarihi"
+
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "Deaktif hale getirmek için, satır menüsünü kullanın ve Hesabı Deaktif Et'i seçin."
 
@@ -13704,6 +13813,9 @@ msgstr "Bu konumdaki tüm depolama birimlerinde öğenin toplam eldeki miktarı.
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Bu konumdaki tüm aktif işler ve satış siparişleri genelinde gereken toplam miktar — yalnızca bu iş için değil."
+
+msgid "Total Spend"
+msgstr "Toplam Harcama"
 
 msgid "Total Value"
 msgstr "Toplam Değer"
@@ -13973,6 +14085,10 @@ msgstr "Çıkart"
 msgid "Unpick {0}"
 msgstr "Çıkart {0}"
 
+#. placeholder {0}: report.name
+msgid "Unpin {0}"
+msgstr "Sabitlemeyi Kaldır {0}"
+
 msgid "Unposted Documents"
 msgstr "Deftere Geçmemiş Belgeler"
 
@@ -14218,9 +14334,6 @@ msgstr "Doğrulandı"
 
 msgid "Validating job..."
 msgstr "İş doğrulanıyor..."
-
-msgid "Valuation"
-msgstr "Değerleme"
 
 msgid "Value"
 msgstr "Değer"
@@ -15042,6 +15155,9 @@ msgstr "Bir varlığın değerini faydalı kullanım süresi boyunca azaltma —
 
 msgid "Year"
 msgstr "Yıl"
+
+msgid "Yearly"
+msgstr "Yıllık"
 
 msgid "Yes"
 msgstr "Evet"

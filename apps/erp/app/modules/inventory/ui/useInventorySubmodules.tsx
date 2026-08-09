@@ -2,7 +2,6 @@ import { useLingui } from "@lingui/react/macro";
 import {
   LuArrowDownUp,
   LuArrowRightLeft,
-  LuChartBar,
   LuClipboardCheck,
   LuClipboardList,
   LuHandCoins,
@@ -101,19 +100,7 @@ export default function useInventorySubmodules() {
           to: path.to.traceability,
           role: "employee",
           icon: <LuNetwork />
-        },
-        // Valuation exposes unit costs and GL balances — gated on accounting
-        // view, not just the employee role (spec: grill Q6).
-        ...(permissions.can("view", "accounting")
-          ? [
-              {
-                name: t`Valuation`,
-                to: path.to.inventoryValuation,
-                role: "employee" as const,
-                icon: <LuChartBar />
-              }
-            ]
-          : [])
+        }
       ]
     },
     {

@@ -471,6 +471,9 @@ msgstr "Счет"
 msgid "Account & Details"
 msgstr "Счет и детали"
 
+msgid "Account balances with debits and credits"
+msgstr "Остатки счетов с дебетами и кредитами"
+
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Учет авансовых платежей, произведенных до получения товаров или услуг."
 
@@ -507,8 +510,14 @@ msgstr "бухгалтерия"
 msgid "Accounting"
 msgstr "Бухгалтерия"
 
+msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
+msgstr "Учет находится в стадии бета-тестирования. Запросите доступ для включения отчетности, журналов проводок, учетных периодов, основных средств и многого другого."
+
 msgid "Accounting is disabled"
 msgstr "Бухгалтерский учет отключен"
+
+msgid "Accounting is disabled for this company."
+msgstr "Учет отключен для этой компании."
 
 msgid "Accounting is enabled"
 msgstr "Бухгалтерский учет включен"
@@ -980,6 +989,9 @@ msgstr "Положение операции в очереди её рабоче�
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "При подключении к Onshape произошла непредвиденная ошибка. Повторите попытку подключения."
 
+msgid "Analytics"
+msgstr "Аналитика"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Привязывает временную шкалу плана к реальным датам. Оставьте пустым для относительной временной шкалы с номерами недель. Установка одной из них заполнит остальное."
 
@@ -1022,6 +1034,9 @@ msgstr "Любой тип товара"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Все, что не указано явно в области действия выше"
+
+msgid "AP Aging"
+msgstr "Анализ возраста кредиторской задолженности"
 
 msgid "AP Clerk"
 msgstr "Специалист по учету кредиторской задолженности"
@@ -1134,6 +1149,9 @@ msgstr "AQL"
 
 msgid "AQL (Z1.4 / ISO 2859-1)"
 msgstr "АПК (Z1.4 / ISO 2859-1)"
+
+msgid "AR Aging"
+msgstr "Анализ возраста дебиторской задолженности"
 
 msgid "AR Clerk"
 msgstr "Специалист по расчетам с дебиторами"
@@ -1630,6 +1648,9 @@ msgstr "ID активов"
 
 msgid "Assets"
 msgstr "Активы"
+
+msgid "Assets, liabilities and equity as of a date"
+msgstr "Активы, обязательства и капитал на дату"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
@@ -2413,6 +2434,9 @@ msgstr "Дата закрытия"
 msgid "Close Period"
 msgstr "Закрыть период"
 
+msgid "Close Reports"
+msgstr "Закрыть отчеты"
+
 msgid "Close Status"
 msgstr "Статус закрытия"
 
@@ -2556,6 +2580,9 @@ msgstr "Штрихкод завершения"
 
 msgid "Completion Time"
 msgstr "Время завершения"
+
+msgid "Condensed P&L with margins and key subtotals"
+msgstr "Сокращенный П&У с прибыльностью и ключевыми итогами"
 
 msgid "Conditions"
 msgstr "Условия"
@@ -3037,6 +3064,9 @@ msgstr "Себестоимость реализованной продукции
 
 msgid "Cost of Goods Sold (default)"
 msgstr "Себестоимость реализованной продукции (по умолчанию)"
+
+msgid "Cost of Sales"
+msgstr "Себестоимость продаж"
 
 msgid "Costing"
 msgstr "Расчет стоимости"
@@ -5238,6 +5268,9 @@ msgstr "Не удалось обменять код авторизации на 
 msgid "Excluded"
 msgstr "Исключено"
 
+msgid "Executive P&L"
+msgstr "П&У для руководства"
+
 msgid "Exemption Certificate"
 msgstr "Сертификат освобождения"
 
@@ -5307,6 +5340,9 @@ msgstr "Сторона расходов в отношении отложенно
 
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Не удалось создать класс активов: {0}"
+
+msgid "Expenses by Supplier"
+msgstr "Расходы по поставщикам"
 
 msgid "Expert guidance"
 msgstr "Экспертное руководство"
@@ -5800,6 +5836,9 @@ msgstr "Завершить"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Финализация налогового месяца через цикл жизни Открыто → Заблокировано → Закрыто; закрытый период заморожен и его остатки снимаются, обратимо только явным повторным открытием."
 
+msgid "Financial Statements"
+msgstr "Финансовые отчеты"
+
 msgid "finish"
 msgstr "Готовая продукция"
 
@@ -6260,6 +6299,9 @@ msgstr "сорта"
 msgid "Grades"
 msgstr "Сорта"
 
+msgid "Gross Profit"
+msgstr "Валовая прибыль"
+
 msgid "Group"
 msgstr "Группа"
 
@@ -6618,6 +6660,9 @@ msgstr "Доход / Баланс (унаследованный)"
 msgid "Income Statement"
 msgstr "Отчет о прибылях и убытках"
 
+msgid "Income Tax"
+msgstr "Налог на прибыль"
+
 msgid "Income/Balance"
 msgstr "Доход/Баланс"
 
@@ -6878,6 +6923,12 @@ msgstr "Счетировано"
 
 msgid "Invoiced Amount:"
 msgstr "Сумма счета:"
+
+msgid "Invoiced revenue per customer with period variance"
+msgstr "Выставленная в счет выручка на каждого клиента с отклонением по периодам"
+
+msgid "Invoiced spend per supplier with period variance"
+msgstr "Выставленные в счет расходы на каждого поставщика с отклонением по периодам"
 
 msgid "Invoiced Statuses"
 msgstr "Статусы счетов"
@@ -7162,6 +7213,9 @@ msgstr "Единица труда"
 
 msgid "Language"
 msgstr "Язык"
+
+msgid "Last 6 Months"
+msgstr "Последние 6 месяцев"
 
 msgid "Last Calibration"
 msgstr "Последняя калибровка"
@@ -7959,6 +8013,9 @@ msgstr "Деньги, которые вам должны"
 msgid "Money you owe"
 msgstr "Деньги, которые вы должны"
 
+msgid "Monthly"
+msgstr "Ежемесячно"
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Месяцы, в течение которых это имущество амортизируется в налоговых целях (при отсутствии MACRS)."
 
@@ -8071,6 +8128,9 @@ msgstr "Чистая балансовая стоимость"
 
 msgid "Net Change"
 msgstr "Чистое изменение"
+
+msgid "Net Income"
+msgstr "Чистый доход"
 
 msgid "Never"
 msgstr "Никогда"
@@ -8681,6 +8741,9 @@ msgstr "Нет эталонного изображения"
 msgid "No remaining entities to inspect."
 msgstr "Нет оставшихся объектов для проверки."
 
+msgid "No reports match your search."
+msgstr "Никакие отчеты не соответствуют вашему поиску."
+
 msgid "No results"
 msgstr "Нет результатов"
 
@@ -8901,6 +8964,9 @@ msgstr "Минимальный остаток для обслуживания в
 msgid "On-hand inventory remains"
 msgstr "Остаток на складе"
 
+msgid "On-hand value by location or item, with GL tie-out"
+msgstr "Стоимость в наличии по локации или позиции с согласованием главной книги"
+
 msgid "On-hand value of manufactured goods (Make items)"
 msgstr "Текущая стоимость произведённых товаров (Товары на производство)"
 
@@ -9006,6 +9072,9 @@ msgstr "Открытые заказы"
 msgid "Open menu"
 msgstr "Открыть меню"
 
+msgid "Open payables by supplier and age"
+msgstr "Открытые счета к оплате по поставщикам и срокам"
+
 msgid "Open Purchase Invoices"
 msgstr "Открытые счета-фактуры"
 
@@ -9020,6 +9089,9 @@ msgstr "Открытые предложения"
 
 msgid "Open Reactive"
 msgstr "Открытые реактивные"
+
+msgid "Open receivables by customer and age"
+msgstr "Открытые счета к получению по клиентам и срокам"
 
 msgid "Open RFQs"
 msgstr "Открытые РФП"
@@ -9053,6 +9125,9 @@ msgstr "Начальный баланс амортизации, уже учте�
 
 msgid "Operating Expenses"
 msgstr "Операционные расходы"
+
+msgid "Operating Income"
+msgstr "Операционный доход"
 
 msgid "Operation"
 msgstr "Операция"
@@ -9168,6 +9243,12 @@ msgstr "Оригинал"
 
 msgid "Original Count"
 msgstr "Исходный подсчет"
+
+msgid "Other Expense"
+msgstr "Прочие расходы"
+
+msgid "Other Income"
+msgstr "Прочие доходы"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Счет прочих доходов для прибыли от валютных операций при расчете по иностранной валюте по более выгодному курсу"
@@ -9553,6 +9634,10 @@ msgstr "Деталей/Минуту"
 
 msgid "Pin"
 msgstr "Закрепить"
+
+#. placeholder {0}: report.name
+msgid "Pin {0}"
+msgstr "Закрепить {0}"
 
 msgid "Pinned"
 msgstr "Закреплено"
@@ -10208,6 +10293,9 @@ msgstr "Ярусы цен на основе количества для этог
 msgid "Quantity: {0}"
 msgstr "Количество: {0}"
 
+msgid "Quarterly"
+msgstr "Ежеквартально"
+
 msgid "Question"
 msgstr "Вопрос"
 
@@ -10675,6 +10763,9 @@ msgstr "Система пополнения"
 msgid "Report"
 msgstr "Отчет"
 
+msgid "Reporting"
+msgstr "Отчетность"
+
 msgid "Reporting dimension"
 msgstr "Измерение отчётности"
 
@@ -10683,6 +10774,9 @@ msgstr "Отчеты"
 
 msgid "Reprint"
 msgstr "Перепечать"
+
+msgid "Request access"
+msgstr "Запросить доступ"
 
 msgid "Request Approval"
 msgstr "Запросить одобрение"
@@ -10817,6 +10911,15 @@ msgstr "Возврат неиспользованного отобранного
 
 msgid "Rev {revision}"
 msgstr "Ред. {revision}"
+
+msgid "Revenue"
+msgstr "Выручка"
+
+msgid "Revenue and expenses over a period"
+msgstr "Доход и расходы за период"
+
+msgid "Revenue by Customer"
+msgstr "Выручка по клиентам"
 
 msgid "Reverse all inventory adjustments"
 msgstr "Отменить все корректировки запасов"
@@ -11864,6 +11967,9 @@ msgstr "Показать параметры синхронизации"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "Показано {0} из {totalCount} — уточните поиск"
+
+msgid "Showing in {parentCurrency}"
+msgstr "Отображение в {parentCurrency}"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Отображается как бледный фон на каждой странице сгенерированных PDF-файлов"
@@ -13582,6 +13688,9 @@ msgstr "Часовой пояс"
 msgid "Title"
 msgstr "Название"
 
+msgid "To Date"
+msgstr "До даты"
+
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "Чтобы отключить, используйте меню строки и выберите Деактивировать учетную запись."
 
@@ -13704,6 +13813,9 @@ msgstr "Общее наличное количество позиции по в�
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Общее требуемое количество по всем активным заданиям и заказам на продажу в этом местоположении — не только по этому заданию."
+
+msgid "Total Spend"
+msgstr "Общие расходы"
 
 msgid "Total Value"
 msgstr "Общая стоимость"
@@ -13973,6 +14085,10 @@ msgstr "Отменить выбор"
 msgid "Unpick {0}"
 msgstr "Отменить выбор {0}"
 
+#. placeholder {0}: report.name
+msgid "Unpin {0}"
+msgstr "Открепить {0}"
+
 msgid "Unposted Documents"
 msgstr "Неопубликованные документы"
 
@@ -14218,9 +14334,6 @@ msgstr "Проверено"
 
 msgid "Validating job..."
 msgstr "Проверка задания..."
-
-msgid "Valuation"
-msgstr "Оценка"
 
 msgid "Value"
 msgstr "Значение"
@@ -15042,6 +15155,9 @@ msgstr "Снижение стоимости актива в течение ег�
 
 msgid "Year"
 msgstr "Год"
+
+msgid "Yearly"
+msgstr "Ежегодно"
 
 msgid "Yes"
 msgstr "Да"

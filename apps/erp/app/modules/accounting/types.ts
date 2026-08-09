@@ -397,6 +397,22 @@ export type TranslatedTransaction = Transaction & {
   exchangeRate?: number;
 };
 
+// One report column's values for one account, keyed by ReportPeriodBucket.key.
+export type PeriodCell = {
+  netChange: number;
+  balanceAtDate: number;
+  translatedBalance?: number;
+  exchangeRate?: number;
+};
+
+// A chart row with multi-period values for the /x/reports statements. Reads
+// come from the "accounts" view merged with the accountTreeBalancePeriodSeries
+// RPC — only the hierarchy columns and per-period cells, no single-measure
+// balance columns.
+export type ChartPeriodSeries = Account & {
+  periods: Record<string, PeriodCell>;
+};
+
 export type JournalEntry = NonNullable<
   Awaited<ReturnType<typeof getJournalEntry>>["data"]
 >;

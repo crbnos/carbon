@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-08T19:49:36.245Z",
-  "totalTools": 1416,
+  "generated": "2026-08-09T18:38:04.713Z",
+  "totalTools": 1424,
   "modules": 15,
   "tools": [
     {
@@ -490,6 +490,216 @@
         "required": [
           "startDate",
           "endDate"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getAccountPeriodSeries",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get account period series",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyGroupId",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string"
+          },
+          "periodEnds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "start",
+          "periodEnds"
+        ]
+      }
+    },
+    {
+      "name": "accounting_translateCompanyPeriodSeries",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "translate company period series",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyGroupId",
+        "companyId",
+        "targetCurrency",
+        "buckets",
+        "series"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "targetCurrency": {
+            "type": "string"
+          },
+          "buckets": {
+            "type": "array",
+            "items": {}
+          },
+          "series": {}
+        },
+        "required": [
+          "targetCurrency",
+          "buckets",
+          "series"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getFinancialStatementPeriodSeries",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get financial statement period series",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyGroupId",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "buckets": {
+            "type": "array",
+            "items": {}
+          },
+          "includeCurrentYearEarnings": {
+            "type": "boolean"
+          },
+          "translate": {
+            "type": "object",
+            "properties": {
+              "targetCurrency": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "targetCurrency"
+            ]
+          }
+        },
+        "required": [
+          "buckets"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getConsolidatedPeriodSeries",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get consolidated period series",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyGroupId",
+        "companyIds",
+        "targetCurrency",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "companyIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetCurrency": {
+            "type": "string"
+          },
+          "args": {
+            "type": "object",
+            "properties": {
+              "buckets": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "required": [
+              "buckets"
+            ]
+          }
+        },
+        "required": [
+          "companyIds",
+          "targetCurrency",
+          "args"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getReportPins",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get report pins",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_upsertReportPin",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "upsert report pin",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "reportKey": {
+            "type": "string"
+          },
+          "pinned": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reportKey",
+          "pinned"
         ]
       }
     },
@@ -10203,6 +10413,66 @@
         "required": [
           "asOfDate",
           "options"
+        ]
+      }
+    },
+    {
+      "name": "invoicing_getRevenueByCustomer",
+      "module": "invoicing",
+      "classification": "READ",
+      "description": "get revenue by customer",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "endDate"
+        ]
+      }
+    },
+    {
+      "name": "invoicing_getExpensesBySupplier",
+      "module": "invoicing",
+      "classification": "READ",
+      "description": "get expenses by supplier",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "endDate"
         ]
       }
     },

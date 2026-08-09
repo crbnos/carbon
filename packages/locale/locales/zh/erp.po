@@ -471,6 +471,9 @@ msgstr "账户"
 msgid "Account & Details"
 msgstr "账户和详细信息"
 
+msgid "Account balances with debits and credits"
+msgstr "账户借贷余额"
+
 msgid "Account for advance payments made before goods or services are received"
 msgstr "收到商品或服务前支付的预付款的计账。"
 
@@ -507,8 +510,14 @@ msgstr "会计"
 msgid "Accounting"
 msgstr "会计"
 
+msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
+msgstr "会计功能目前处于测试版。请求访问权限以启用报告、日记账、会计期间、固定资产等功能。"
+
 msgid "Accounting is disabled"
 msgstr "会计已禁用"
+
+msgid "Accounting is disabled for this company."
+msgstr "此公司已禁用会计功能。"
 
 msgid "Accounting is enabled"
 msgstr "会计已启用"
@@ -980,6 +989,9 @@ msgstr "一个操作在其工作中心队列中的位置——车间拿起工作
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "连接 Onshape 时发生意外错误。请重新连接。"
 
+msgid "Analytics"
+msgstr "分析"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "将计划时间表锚定到实际日期。留空以获得相对的、按周编号的时间表。设置其中任何一个会填充其余部分。"
 
@@ -1022,6 +1034,9 @@ msgstr "任何物品类型"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "未在上述范围内明确列出的任何内容"
+
+msgid "AP Aging"
+msgstr "应付账款账龄"
 
 msgid "AP Clerk"
 msgstr "应付账款文员"
@@ -1134,6 +1149,9 @@ msgstr "AQL"
 
 msgid "AQL (Z1.4 / ISO 2859-1)"
 msgstr "AQL (Z1.4 / ISO 2859-1)"
+
+msgid "AR Aging"
+msgstr "应收账款账龄"
 
 msgid "AR Clerk"
 msgstr "应收账款文员"
@@ -1630,6 +1648,9 @@ msgstr "资产ID"
 
 msgid "Assets"
 msgstr "资产"
+
+msgid "Assets, liabilities and equity as of a date"
+msgstr "特定日期的资产、负债和权益"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
@@ -2413,6 +2434,9 @@ msgstr "关闭日期"
 msgid "Close Period"
 msgstr "关闭期间"
 
+msgid "Close Reports"
+msgstr "关闭报告"
+
 msgid "Close Status"
 msgstr "关闭状态"
 
@@ -2556,6 +2580,9 @@ msgstr "完成条码"
 
 msgid "Completion Time"
 msgstr "完成时间"
+
+msgid "Condensed P&L with margins and key subtotals"
+msgstr "精简损益表，含利润率和关键小计"
 
 msgid "Conditions"
 msgstr "条件"
@@ -3037,6 +3064,9 @@ msgstr "销售成本（COGS）"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "销售成本（默认）"
+
+msgid "Cost of Sales"
+msgstr "销售成本"
 
 msgid "Costing"
 msgstr "成本"
@@ -5238,6 +5268,9 @@ msgstr "用授权代码交换访问令牌失败。请重新连接。"
 msgid "Excluded"
 msgstr "已排除"
 
+msgid "Executive P&L"
+msgstr "执行损益表"
+
 msgid "Exemption Certificate"
 msgstr "豁免证书"
 
@@ -5307,6 +5340,9 @@ msgstr "递延税款变动的费用方面（与递延税款负债配对）。"
 
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "无法创建资产类别: {0}"
+
+msgid "Expenses by Supplier"
+msgstr "按供应商分类的费用"
 
 msgid "Expert guidance"
 msgstr "专家指导"
@@ -5800,6 +5836,9 @@ msgstr "完成"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "通过打开 → 锁定 → 关闭生命周期完成财政月份；关闭的期间被冻结并其余额快照，仅可通过显式重新打开来反转。"
 
+msgid "Financial Statements"
+msgstr "财务报表"
+
 msgid "finish"
 msgstr "成品"
 
@@ -6260,6 +6299,9 @@ msgstr "等级"
 msgid "Grades"
 msgstr "等级"
 
+msgid "Gross Profit"
+msgstr "毛利润"
+
 msgid "Group"
 msgstr "组"
 
@@ -6618,6 +6660,9 @@ msgstr "收入/余额（已继承）"
 msgid "Income Statement"
 msgstr "利润表"
 
+msgid "Income Tax"
+msgstr "所得税"
+
 msgid "Income/Balance"
 msgstr "收入/余额"
 
@@ -6878,6 +6923,12 @@ msgstr "已开票"
 
 msgid "Invoiced Amount:"
 msgstr "已开票金额："
+
+msgid "Invoiced revenue per customer with period variance"
+msgstr "按客户统计的开票收入，含期间差异"
+
+msgid "Invoiced spend per supplier with period variance"
+msgstr "按供应商统计的开票支出，含期间差异"
 
 msgid "Invoiced Statuses"
 msgstr "已开票状态"
@@ -7162,6 +7213,9 @@ msgstr "劳动单位"
 
 msgid "Language"
 msgstr "语言"
+
+msgid "Last 6 Months"
+msgstr "最近6个月"
 
 msgid "Last Calibration"
 msgstr "最后校准"
@@ -7959,6 +8013,9 @@ msgstr "你欠的钱"
 msgid "Money you owe"
 msgstr "你欠的钱"
 
+msgid "Monthly"
+msgstr "每月"
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "该资产按税务目的折旧的月数（不使用MACRS时）。"
 
@@ -8071,6 +8128,9 @@ msgstr "账面净值"
 
 msgid "Net Change"
 msgstr "净变化"
+
+msgid "Net Income"
+msgstr "净收入"
 
 msgid "Never"
 msgstr "永不"
@@ -8681,6 +8741,9 @@ msgstr "没有参考图像"
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
 
+msgid "No reports match your search."
+msgstr "未找到与搜索条件匹配的报告。"
+
 msgid "No results"
 msgstr "无结果"
 
@@ -8901,6 +8964,9 @@ msgstr "在此位置维护用于服务的最低库存"
 msgid "On-hand inventory remains"
 msgstr "现有库存仍然存在"
 
+msgid "On-hand value by location or item, with GL tie-out"
+msgstr "按地点或物品统计的在手价值，含总账对账"
+
 msgid "On-hand value of manufactured goods (Make items)"
 msgstr "制造商品（制造项）的现有价值"
 
@@ -9006,6 +9072,9 @@ msgstr "未结工单"
 msgid "Open menu"
 msgstr "打开菜单"
 
+msgid "Open payables by supplier and age"
+msgstr "按供应商和账龄统计的未清应付账款"
+
 msgid "Open Purchase Invoices"
 msgstr "未结采购发票"
 
@@ -9020,6 +9089,9 @@ msgstr "未结报价"
 
 msgid "Open Reactive"
 msgstr "开放反应"
+
+msgid "Open receivables by customer and age"
+msgstr "按客户和账龄统计的未清应收账款"
 
 msgid "Open RFQs"
 msgstr "未结RFQ"
@@ -9053,6 +9125,9 @@ msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（
 
 msgid "Operating Expenses"
 msgstr "运营费用"
+
+msgid "Operating Income"
+msgstr "营业收入"
 
 msgid "Operation"
 msgstr "操作"
@@ -9168,6 +9243,12 @@ msgstr "原始"
 
 msgid "Original Count"
 msgstr "原始盘点"
+
+msgid "Other Expense"
+msgstr "其他费用"
+
+msgid "Other Income"
+msgstr "其他收入"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "当付款以更优惠的汇率结清外币发票时，外汇收益的其他收入账户"
@@ -9553,6 +9634,10 @@ msgstr "件/分钟"
 
 msgid "Pin"
 msgstr "固定"
+
+#. placeholder {0}: report.name
+msgid "Pin {0}"
+msgstr "固定{0}"
 
 msgid "Pinned"
 msgstr "已固定"
@@ -10208,6 +10293,9 @@ msgstr "此覆盖的基于数量的定价层；应用的单价是满足订单行
 msgid "Quantity: {0}"
 msgstr "数量：{0}"
 
+msgid "Quarterly"
+msgstr "季度"
+
 msgid "Question"
 msgstr "问题"
 
@@ -10675,6 +10763,9 @@ msgstr "补充系统"
 msgid "Report"
 msgstr "报告"
 
+msgid "Reporting"
+msgstr "报表"
+
 msgid "Reporting dimension"
 msgstr "报告维度"
 
@@ -10683,6 +10774,9 @@ msgstr "报告"
 
 msgid "Reprint"
 msgstr "重新打印"
+
+msgid "Request access"
+msgstr "请求访问"
 
 msgid "Request Approval"
 msgstr "请求批准"
@@ -10817,6 +10911,15 @@ msgstr "返回未使用的拣配物料"
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
+
+msgid "Revenue"
+msgstr "收入"
+
+msgid "Revenue and expenses over a period"
+msgstr "期间的收入和费用"
+
+msgid "Revenue by Customer"
+msgstr "按客户分类的收入"
 
 msgid "Reverse all inventory adjustments"
 msgstr "反转所有库存调整"
@@ -11864,6 +11967,9 @@ msgstr "显示同步选项"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "显示 {0} 个，共 {totalCount} 个 — 优化搜索"
+
+msgid "Showing in {parentCurrency}"
+msgstr "显示货币：{parentCurrency}"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "作为淡色背景显示在每个生成的PDF页面后面"
@@ -13582,6 +13688,9 @@ msgstr "时区"
 msgid "Title"
 msgstr "标题"
 
+msgid "To Date"
+msgstr "截止日期"
+
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "要停用，请使用行菜单并选择停用账户。"
 
@@ -13704,6 +13813,9 @@ msgstr "此地点所有存储单元中该物料的现有总数量。当现有数
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "此地点所有活动作业和销售订单所需的总数量——而不仅仅是此作业。"
+
+msgid "Total Spend"
+msgstr "总支出"
 
 msgid "Total Value"
 msgstr "总价值"
@@ -13973,6 +14085,10 @@ msgstr "取消拣选"
 msgid "Unpick {0}"
 msgstr "取消拣选 {0}"
 
+#. placeholder {0}: report.name
+msgid "Unpin {0}"
+msgstr "取消固定{0}"
+
 msgid "Unposted Documents"
 msgstr "未过账单据"
 
@@ -14218,9 +14334,6 @@ msgstr "已验证"
 
 msgid "Validating job..."
 msgstr "正在验证工作..."
-
-msgid "Valuation"
-msgstr "估值"
 
 msgid "Value"
 msgstr "值"
@@ -15042,6 +15155,9 @@ msgstr "在资产的使用寿命期间降低其价值 — 您创建、作为草�
 
 msgid "Year"
 msgstr "年份"
+
+msgid "Yearly"
+msgstr "年度"
 
 msgid "Yes"
 msgstr "是"
