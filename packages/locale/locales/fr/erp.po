@@ -552,6 +552,21 @@ msgstr "Comptes débiteurs"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Comptes débiteurs pour les montants dus par les clients."
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Amortissement cumulé"
 
@@ -2466,6 +2481,9 @@ msgstr "Cloud, ou votre environnement auto-hébergé."
 
 msgid "Code"
 msgstr "Code"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "Réduire"
@@ -5350,6 +5368,9 @@ msgstr "Côté charges des mouvements d'impôt différé (appairé avec passif d
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Échec de la création de la classe d'actif : {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "Dépenses par fournisseur"
 
@@ -6854,6 +6875,9 @@ msgstr "Inventaire et achats, avec planification automatisée"
 
 msgid "Inventory balances"
 msgstr "Soldes de stock"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "Contrôle des stocks"

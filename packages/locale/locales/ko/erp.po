@@ -552,6 +552,21 @@ msgstr "매출채권"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "고객이 지급할 금액에 대한 매출채권"
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "감가상각누계액"
 
@@ -2466,6 +2481,9 @@ msgstr "클라우드 또는 자체 호스팅 환경."
 
 msgid "Code"
 msgstr "코드"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "접기"
@@ -5350,6 +5368,9 @@ msgstr "판매에 따라 재고가 출하/불출될 때 차변에 기록되는 �
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "이연법인세 변동의 비용 측면(이연법인세부채와 짝을 이룸)입니다."
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "공급자별 비용"
 
@@ -6854,6 +6875,9 @@ msgstr "자동화된 계획을 갖춘 재고 및 구매"
 
 msgid "Inventory balances"
 msgstr "재고 잔액"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "재고 관리"

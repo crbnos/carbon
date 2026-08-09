@@ -552,6 +552,21 @@ msgstr "Crediti verso clienti"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Crediti verso clienti per importi dovuti dai clienti."
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Fondo di ammortamento"
 
@@ -2466,6 +2481,9 @@ msgstr "Cloud, o il tuo ambiente self-hosted."
 
 msgid "Code"
 msgstr "Codice"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "Comprimi"
@@ -5350,6 +5368,9 @@ msgstr "Lato spese dei movimenti di imposte differite (abbinato a passivo d'impo
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Impossibile creare la classe di cespiti: {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "Spese per fornitore"
 
@@ -6854,6 +6875,9 @@ msgstr "Inventario e acquisti, con pianificazione automatizzata"
 
 msgid "Inventory balances"
 msgstr "Saldi di inventario"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "Controllo Inventario"

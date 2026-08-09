@@ -552,6 +552,21 @@ msgstr "Forderungen aus Lieferungen und Leistungen"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Forderungen aus Lieferungen und Leistungen für Beträge, die Kunden schulden."
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Kumulierte Abschreibung"
 
@@ -2466,6 +2481,9 @@ msgstr "Cloud oder Ihre selbst gehostete Umgebung."
 
 msgid "Code"
 msgstr "Code"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "Einklappen"
@@ -5350,6 +5368,9 @@ msgstr "Aufwandseite der aufgeschobenen Steuerbewegungen (gekoppelt mit aufgesch
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Aktivaklasse konnte nicht erstellt werden: {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "Ausgaben nach Lieferant"
 
@@ -6854,6 +6875,9 @@ msgstr "Bestand und Einkauf mit automatisierter Planung"
 
 msgid "Inventory balances"
 msgstr "Bestandssalden"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "Bestandskontrolle"

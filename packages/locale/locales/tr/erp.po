@@ -552,6 +552,21 @@ msgstr "Alacak hesapları"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Müşteriler tarafından borçlu olunan tutarlar için alacak hesapları."
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Birikmiş amortisman"
 
@@ -2466,6 +2481,9 @@ msgstr "Bulut veya kendi barındırılan ortamınız."
 
 msgid "Code"
 msgstr "Kod"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "Daralt"
@@ -5350,6 +5368,9 @@ msgstr "Ertelenmiş vergi hareketlerinin gider tarafı (ertelenmiş vergi yükü
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Varlık sınıfı oluşturulamadı: {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "Tedarikçiye Göre Giderler"
 
@@ -6854,6 +6875,9 @@ msgstr "Envanter ve satın alma, otomatik planlama ile"
 
 msgid "Inventory balances"
 msgstr "Envanter bakiyeleri"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "Envanter Kontrolü"

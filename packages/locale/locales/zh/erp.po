@@ -552,6 +552,21 @@ msgstr "应收账款"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "客户应付金额的应收账款。"
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
 
@@ -2466,6 +2481,9 @@ msgstr "云端或您自托管的环境。"
 
 msgid "Code"
 msgstr "代码"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "折叠"
@@ -5350,6 +5368,9 @@ msgstr "递延税款变动的费用方面（与递延税款负债配对）。"
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "无法创建资产类别: {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "按供应商分类的费用"
 
@@ -6854,6 +6875,9 @@ msgstr "库存和采购，具有自动化规划"
 
 msgid "Inventory balances"
 msgstr "库存余额"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "库存控制"

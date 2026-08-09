@@ -552,6 +552,21 @@ msgstr "Дебиторская задолженность"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Дебиторская задолженность клиентов за задолженные суммы."
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Накопленная амортизация"
 
@@ -2466,6 +2481,9 @@ msgstr "Облако или ваша собственная размещённа
 
 msgid "Code"
 msgstr "Код"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "Свернуть"
@@ -5350,6 +5368,9 @@ msgstr "Сторона расходов в отношении отложенно
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Не удалось создать класс активов: {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "Расходы по поставщикам"
 
@@ -6854,6 +6875,9 @@ msgstr "Инвентаризация и закупки с автоматизир
 
 msgid "Inventory balances"
 msgstr "Остатки запасов"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "Контроль запасов"

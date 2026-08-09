@@ -41,6 +41,8 @@ export const path = {
       generatePath(`${x}/items/methods/versions/activate/${id}`),
     addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
       generatePath(`${x}/maintenance/${dispatchId}/add-and-issue`),
+    analyticsReport: (key: string) =>
+      generatePath(`${x}/reports/analytics/${key}`),
     apAging: `${x}/reports/ap-aging`,
     api: {
       abilities: `${api}/resources/abilities`,
@@ -49,6 +51,8 @@ export const path = {
       agentFeedback: `${api}/agent/feedback`,
       agentThread: (id: string) => `${api}/agent/thread/${id}`,
       agentThreads: `${api}/agent/threads`,
+      analyticsReportLines: (key: string) =>
+        generatePath(`${api}/accounting/analytics-lines?reportKey=${key}`),
       assemblyForItem: (itemId: string) =>
         generatePath(`${api}/production/assembly-for-item/${itemId}`),
       assemblyInstructions: (itemId: string) =>

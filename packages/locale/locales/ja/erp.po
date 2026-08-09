@@ -552,6 +552,21 @@ msgstr "売掛金"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "顧客に支払う金額の売掛金。"
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "累計減価償却費"
 
@@ -2466,6 +2481,9 @@ msgstr "クラウド、またはセルフホストされた環境。"
 
 msgid "Code"
 msgstr "コード"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "折りたたむ"
@@ -5350,6 +5368,9 @@ msgstr "繰延税金負債の動きの費用側（繰延税金負債と対にな
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "固定資産クラスの作成に失敗しました: {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "仕入先別経費"
 
@@ -6854,6 +6875,9 @@ msgstr "在庫と購買、自動計画機能付き"
 
 msgid "Inventory balances"
 msgstr "在庫残高"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "在庫管理"

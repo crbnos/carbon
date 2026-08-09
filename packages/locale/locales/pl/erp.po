@@ -552,6 +552,21 @@ msgstr "Rozrachunki z odbiorcami"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Rozrachunki z odbiorcami za kwoty należne od odbiorców."
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Skumulowana amortyzacja"
 
@@ -2466,6 +2481,9 @@ msgstr "Chmura lub Twoje środowisko hostowane samodzielnie."
 
 msgid "Code"
 msgstr "Kod"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "Zwiń"
@@ -5350,6 +5368,9 @@ msgstr "Strona wydatków ruchu podatku odroczonego (sparowany z zobowiązaniem z
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Nie udało się utworzyć klasy zasobu: {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "Wydatki według dostawcy"
 
@@ -6854,6 +6875,9 @@ msgstr "Zapasy i zakupy z automatycznym planowaniem"
 
 msgid "Inventory balances"
 msgstr "Salda zapasów"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "Kontrola zapasów"

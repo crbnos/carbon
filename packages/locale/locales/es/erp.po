@@ -552,6 +552,21 @@ msgstr "Cuentas por cobrar"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Cuentas por cobrar para montos adeudados por clientes."
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Depreciación acumulada"
 
@@ -2466,6 +2481,9 @@ msgstr "Nube, o tu entorno autohospedado."
 
 msgid "Code"
 msgstr "Código"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "Contraer"
@@ -5350,6 +5368,9 @@ msgstr "Lado de gastos de los movimientos de impuestos diferidos (emparejado con
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Error al crear la clase de activo: {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "Gastos por Proveedor"
 
@@ -6854,6 +6875,9 @@ msgstr "Inventario y compras, con planificación automatizada"
 
 msgid "Inventory balances"
 msgstr "Saldos de inventario"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "Control de Inventario"

@@ -552,6 +552,21 @@ msgstr "Accounts Receivable"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Accounts receivable for amounts owed by customers"
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr "Accounts: Cost of Goods Sold"
+
+msgid "Accounts: Expenses"
+msgstr "Accounts: Expenses"
+
+msgid "Accounts: Inventory"
+msgstr "Accounts: Inventory"
+
+msgid "Accounts: Revenue"
+msgstr "Accounts: Revenue"
+
+msgid "Accounts: Scrap"
+msgstr "Accounts: Scrap"
+
 msgid "Accumulated Depreciation"
 msgstr "Accumulated Depreciation"
 
@@ -2466,6 +2481,9 @@ msgstr "Cloud, or your self-hosted environment."
 
 msgid "Code"
 msgstr "Code"
+
+msgid "COGS"
+msgstr "COGS"
 
 msgid "Collapse"
 msgstr "Collapse"
@@ -5350,6 +5368,9 @@ msgstr "Expense GL account debited when inventory is shipped/issued against a sa
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Expense side of deferred tax movements (paired with deferred tax liability)."
 
+msgid "Expenses"
+msgstr "Expenses"
+
 msgid "Expenses by Supplier"
 msgstr "Expenses by Supplier"
 
@@ -6854,6 +6875,9 @@ msgstr "Inventory and purchasing, with automated planning"
 
 msgid "Inventory balances"
 msgstr "Inventory balances"
+
+msgid "Inventory Change"
+msgstr "Inventory Change"
 
 msgid "Inventory Control"
 msgstr "Inventory Control"

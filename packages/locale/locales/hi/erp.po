@@ -552,6 +552,21 @@ msgstr "प्राप्य खाते"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "ग्राहकों द्वारा देय राशियों के लिए प्राप्य खाते।"
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "संचयी मूल्यह्रास"
 
@@ -2466,6 +2481,9 @@ msgstr "क्लाउड, या आपका स्व-होस्ट कि
 
 msgid "Code"
 msgstr "कोड"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "संक्षिप्त करें"
@@ -5350,6 +5368,9 @@ msgstr "स्थगित कर आंदोलन का व्यय पक�
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "संपत्ति वर्ग बनाने में विफल: {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "आपूर्तिकर्ता द्वारा व्यय"
 
@@ -6854,6 +6875,9 @@ msgstr "इन्वेंटरी और खरीद, स्वचालि�
 
 msgid "Inventory balances"
 msgstr "इन्वेंटरी बैलेंस"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "इन्वेंटरी नियंत्रण"

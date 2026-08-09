@@ -552,6 +552,21 @@ msgstr "Contas a receber"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Contas a receber para valores devidos pelos clientes."
 
+msgid "Accounts: Cost of Goods Sold"
+msgstr ""
+
+msgid "Accounts: Expenses"
+msgstr ""
+
+msgid "Accounts: Inventory"
+msgstr ""
+
+msgid "Accounts: Revenue"
+msgstr ""
+
+msgid "Accounts: Scrap"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Depreciação acumulada"
 
@@ -2466,6 +2481,9 @@ msgstr "Nuvem, ou seu ambiente auto-hospedado."
 
 msgid "Code"
 msgstr "Código"
+
+msgid "COGS"
+msgstr ""
 
 msgid "Collapse"
 msgstr "Recolher"
@@ -5350,6 +5368,9 @@ msgstr "Lado de despesa dos movimentos de imposto diferido (emparelhado com pass
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Falha ao criar classe de ativo: {0}"
 
+msgid "Expenses"
+msgstr ""
+
 msgid "Expenses by Supplier"
 msgstr "Despesas por Fornecedor"
 
@@ -6854,6 +6875,9 @@ msgstr "Inventário e compras, com planejamento automatizado"
 
 msgid "Inventory balances"
 msgstr "Saldos de inventário"
+
+msgid "Inventory Change"
+msgstr ""
 
 msgid "Inventory Control"
 msgstr "Controle de Inventário"
