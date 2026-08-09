@@ -152,7 +152,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# ligne non comptabilisée} other {# lignes non comptabilisées}}"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
-msgstr "{uploadedFileName} importé — champs remplis à partir du document."
+msgstr "{uploadedFileName} téléchargé — champs remplis à partir du document."
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# ligne diffère de la quantité attendue} other {# lignes diffèrent de la quantité attendue}}"
@@ -14095,7 +14095,7 @@ msgid "Upload CSV"
 msgstr "Télécharger CSV"
 
 msgid "Upload failed. Please try again."
-msgstr "Échec de l'importation. Veuillez réessayer."
+msgstr "Échec du téléchargement. Veuillez réessayer."
 
 msgid "Uploaded model"
 msgstr "Modèle téléchargé"
