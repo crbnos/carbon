@@ -8,11 +8,14 @@ import type {
   getCostCentersTree,
   getCurrencies,
   getDimension,
+  getDimensionPivot,
+  getDimensionPivotLines,
   getDimensions,
   getJournalEntries,
   getJournalEntry,
   getPaymentTerms,
-  getPeriodCloseReadiness
+  getPeriodCloseReadiness,
+  getReportViews
 } from "./accounting.service";
 
 export type Account = NonNullable<
@@ -59,6 +62,20 @@ export type Dimension = NonNullable<
 export type DimensionDetail = NonNullable<
   Awaited<ReturnType<typeof getDimension>>["data"]
 >;
+
+// -- Dimensional analytics (pivot) report types --
+
+export type DimensionPivot = NonNullable<
+  Awaited<ReturnType<typeof getDimensionPivot>>["data"]
+>;
+
+export type DimensionPivotLine = NonNullable<
+  Awaited<ReturnType<typeof getDimensionPivotLines>>["data"]
+>[number];
+
+export type ReportView = NonNullable<
+  Awaited<ReturnType<typeof getReportViews>>["data"]
+>[number];
 
 export const currencyCodes = [
   "AFN",

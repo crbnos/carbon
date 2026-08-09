@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-09T18:38:04.713Z",
-  "totalTools": 1424,
+  "generated": "2026-08-09T19:03:50.207Z",
+  "totalTools": 1430,
   "modules": 15,
   "tools": [
     {
@@ -700,6 +700,196 @@
         "required": [
           "reportKey",
           "pinned"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getDimensionPivot",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get dimension pivot",
+      "paramCount": 6,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "report": {},
+          "scrapAccountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          },
+          "periodEnds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "state": {}
+        },
+        "required": [
+          "report",
+          "startDate",
+          "endDate",
+          "state"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getDimensionPivotLines",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get dimension pivot lines",
+      "paramCount": 16,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "report": {},
+          "scrapAccountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          },
+          "filters": {},
+          "rowDimension1": {
+            "type": "string"
+          },
+          "rowValue1": {
+            "type": "string"
+          },
+          "rowValue1IsNull": {
+            "type": "boolean"
+          },
+          "rowDimension2": {
+            "type": "string"
+          },
+          "rowValue2": {
+            "type": "string"
+          },
+          "rowValue2IsNull": {
+            "type": "boolean"
+          },
+          "columnDimension": {
+            "type": "string"
+          },
+          "columnValue": {
+            "type": "string"
+          },
+          "columnValueIsNull": {
+            "type": "boolean"
+          },
+          "columnPeriodStart": {
+            "type": "string"
+          },
+          "columnPeriodEnd": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "report",
+          "startDate",
+          "endDate",
+          "filters"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getReportViews",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get report views",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "reportKey": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_upsertReportView",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "upsert report view",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "view"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "view": {}
+        },
+        "required": [
+          "view"
+        ]
+      }
+    },
+    {
+      "name": "accounting_deleteReportView",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "delete report view",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },
@@ -1622,6 +1812,24 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get default accounts",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_getScrapAccountIds",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get scrap account ids",
       "paramCount": 0,
       "serviceParams": [
         "client",

@@ -20,6 +20,8 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  AnalyticsAccountScope,
+  AnalyticsReportDefinition,
   accountValidator,
   costCenterValidator,
   currencyValidator,
@@ -33,6 +35,7 @@ import type {
   journalEntryValidator,
   macrsConventions,
   macrsPropertyClasses,
+  PivotState,
   paymentTermValidator,
   periodCloseStatuses,
   periodCloseTaskDefinitionValidator,
@@ -862,6 +865,383 @@ export async function upsertReportPin(
     },
     { onConflict: "reportKey,userId,companyId" }
   );
+}
+
+// -- Dimensional analytics (pivot) reports --
+// Spec: .ai/specs/2026-08-09-dimensional-pivot-reporting.md
+// RPCs defined in migration 20260809184714_dimensional-pivot-reporting.sql.
+
+// In `columnKeys` the null column (lines with no tag for the column
+// dimension — the Unassigned bucket) is represented by this string sentinel.
+// Group rows keep their `columnKey` as returned by the RPC (null stays null).
+export const UNASSIGNED_COLUMN_KEY = "__unassigned__";
+
+type DimensionPivotGroup = {
+  rowValue1Id: string | null;
+  rowValue2Id: string | null;
+  columnKey: string | null;
+  amount: number;
+  quantity: number;
+  lineCount: number;
+};
+
+type DimensionPivotData = {
+  groups: DimensionPivotGroup[];
+  columnKeys: string[];
+  hasMore: boolean;
+  valueNames: Record<string, string>;
+};
+
+/**
+ * Maps an AnalyticsAccountScope onto the pivot RPCs' account-scope params.
+ * Exactly one selector is set (the RPCs raise without one); the scrap scope
+ * resolves to the accountDefault.scrapAccount ids the loader fetched via
+ * getScrapAccountIds.
+ */
+function pivotAccountScopeParams(
+  scope: AnalyticsAccountScope,
+  scrapAccountIds: string[] | undefined
+):
+  | { p_account_classes: string[] }
+  | { p_account_types: string[] }
+  | { p_account_ids: string[] } {
+  if ("classes" in scope) return { p_account_classes: [...scope.classes] };
+  if ("types" in scope) return { p_account_types: [...scope.types] };
+  return { p_account_ids: scrapAccountIds ?? [] };
+}
+
+export async function getDimensionPivot(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    report: AnalyticsReportDefinition;
+    // Required when report.accountScope.source === "scrapAccounts"
+    scrapAccountIds?: string[];
+    startDate: string; // YYYY-MM-DD
+    endDate: string;
+    // From computeReportPeriodBuckets, when state.columnAxis is period
+    periodEnds?: string[];
+    // rows are already-resolved dimension ids (the loader resolves et: aliases)
+    state: PivotState;
+  }
+): Promise<{
+  data: DimensionPivotData | null;
+  error: PostgrestError | null;
+}> {
+  const { report, state } = args;
+
+  // Scrap report with no configured scrap account: nothing can match, and the
+  // RPC raises without an account scope — short-circuit to an empty pivot.
+  if (
+    "source" in report.accountScope &&
+    (args.scrapAccountIds ?? []).length === 0
+  ) {
+    return {
+      data: { groups: [], columnKeys: [], hasMore: false, valueNames: {} },
+      error: null
+    };
+  }
+
+  const columnDimensionId =
+    state.columnAxis.type === "dimension"
+      ? state.columnAxis.dimensionId
+      : undefined;
+
+  const result = await client.rpc("journalDimensionPivot", {
+    p_company_group_id: args.companyGroupId,
+    p_company_id: args.companyId,
+    p_start: args.startDate,
+    p_end: args.endDate,
+    ...pivotAccountScopeParams(report.accountScope, args.scrapAccountIds),
+    ...(state.rows[0] ? { p_row_dimension_1: state.rows[0] } : {}),
+    ...(state.rows[1] ? { p_row_dimension_2: state.rows[1] } : {}),
+    ...(columnDimensionId ? { p_column_dimension: columnDimensionId } : {}),
+    ...(state.columnAxis.type === "period" && args.periodEnds
+      ? { p_period_ends: args.periodEnds }
+      : {}),
+    ...(state.filters.length > 0 ? { p_filters: state.filters } : {})
+  });
+
+  if (result.error) return { data: null, error: result.error };
+
+  // The generated Returns can't express nullability: NULL rowValue/columnKey
+  // is the Unassigned bucket (line carries no tag for that dimension).
+  const rows = (result.data ?? []) as Array<{
+    rowValue1Id: string | null;
+    rowValue2Id: string | null;
+    columnKey: string | null;
+    amount: number | string;
+    quantity: number | string;
+    lineCount: number | string;
+    hasMore: boolean;
+  }>;
+
+  const hasMore = rows.some((r) => r.hasMore);
+
+  // Sorted descending by ABS(amount) in TS — never trust RPC ordering.
+  const groups: DimensionPivotGroup[] = rows
+    .map((r) => ({
+      rowValue1Id: r.rowValue1Id,
+      rowValue2Id: r.rowValue2Id,
+      columnKey: r.columnKey,
+      amount: Number(r.amount),
+      quantity: Number(r.quantity),
+      lineCount: Number(r.lineCount)
+    }))
+    .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+
+  // Ordered distinct column keys: period axis follows the periodEnds order;
+  // dimension axis orders by descending ABS(column total). The Unassigned
+  // (null) column always sorts last, as the UNASSIGNED_COLUMN_KEY sentinel.
+  const hasUnassignedColumn = groups.some((g) => g.columnKey === null);
+  let columnKeys: string[];
+  if (state.columnAxis.type === "period") {
+    const present = new Set(
+      groups.flatMap((g) => (g.columnKey === null ? [] : [g.columnKey]))
+    );
+    columnKeys = (args.periodEnds ?? []).filter((pe) => present.has(pe));
+    // Defensive: keep any keys the periodEnds contract didn't cover (e.g. the
+    // literal 'total' when no period ends were provided).
+    for (const key of present) {
+      if (!columnKeys.includes(key)) columnKeys.push(key);
+    }
+  } else {
+    const totalsByColumn = new Map<string, number>();
+    for (const g of groups) {
+      if (g.columnKey === null) continue;
+      totalsByColumn.set(
+        g.columnKey,
+        (totalsByColumn.get(g.columnKey) ?? 0) + g.amount
+      );
+    }
+    columnKeys = [...totalsByColumn.keys()].sort(
+      (a, b) =>
+        Math.abs(totalsByColumn.get(b) ?? 0) -
+        Math.abs(totalsByColumn.get(a) ?? 0)
+    );
+  }
+  if (hasUnassignedColumn) columnKeys.push(UNASSIGNED_COLUMN_KEY);
+
+  // Resolve display names for the value ids actually present, batched by the
+  // owning dimension's entityType.
+  const valueIdsByDimension = new Map<string, Set<string>>();
+  const collect = (dimensionId: string | undefined, valueId: string | null) => {
+    if (!dimensionId || !valueId) return;
+    const set = valueIdsByDimension.get(dimensionId) ?? new Set<string>();
+    set.add(valueId);
+    valueIdsByDimension.set(dimensionId, set);
+  };
+  for (const g of groups) {
+    collect(state.rows[0], g.rowValue1Id);
+    collect(state.rows[1], g.rowValue2Id);
+    collect(columnDimensionId, g.columnKey);
+  }
+
+  let valueNames: Record<string, string> = {};
+  if (valueIdsByDimension.size > 0) {
+    const dimensions = await client
+      .from("dimension")
+      .select("id, entityType")
+      .in("id", [...valueIdsByDimension.keys()]);
+
+    if (dimensions.error) return { data: null, error: dimensions.error };
+
+    valueNames = await resolveDimensionValueNames(
+      client,
+      (dimensions.data ?? []).map((d) => ({
+        entityType: d.entityType,
+        valueIds: [...(valueIdsByDimension.get(d.id) ?? [])]
+      }))
+    );
+  }
+
+  return {
+    data: { groups, columnKeys, hasMore, valueNames },
+    error: null
+  };
+}
+
+type DimensionPivotLineRow =
+  Database["public"]["Functions"]["journalDimensionPivotLines"]["Returns"][number];
+
+/**
+ * Drill-through: the journal lines behind one pivot cell.
+ *
+ * NULL semantics per axis (row 1 / row 2 / column): passing the dimension
+ * param with NO value param means Unassigned (the RPC matches lines with no
+ * tag for that dimension) — so `rowValue1IsNull` maps to "send
+ * p_row_dimension_1, omit p_row_value_1". A period column narrows postingDate
+ * via p_column_period_start/end instead of a dimension match.
+ */
+export async function getDimensionPivotLines(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    report: AnalyticsReportDefinition;
+    scrapAccountIds?: string[];
+    startDate: string;
+    endDate: string;
+    filters: PivotState["filters"];
+    rowDimension1?: string;
+    rowValue1?: string;
+    rowValue1IsNull?: boolean;
+    rowDimension2?: string;
+    rowValue2?: string;
+    rowValue2IsNull?: boolean;
+    columnDimension?: string;
+    columnValue?: string;
+    columnValueIsNull?: boolean;
+    columnPeriodStart?: string;
+    columnPeriodEnd?: string;
+  }
+): Promise<{
+  data: DimensionPivotLineRow[] | null;
+  error: PostgrestError | null;
+}> {
+  // Same short-circuit as getDimensionPivot: no scrap account, no scope.
+  if (
+    "source" in args.report.accountScope &&
+    (args.scrapAccountIds ?? []).length === 0
+  ) {
+    return { data: [], error: null };
+  }
+
+  const result = await client.rpc("journalDimensionPivotLines", {
+    p_company_group_id: args.companyGroupId,
+    p_company_id: args.companyId,
+    p_start: args.startDate,
+    p_end: args.endDate,
+    ...pivotAccountScopeParams(args.report.accountScope, args.scrapAccountIds),
+    ...(args.filters.length > 0 ? { p_filters: args.filters } : {}),
+    ...(args.rowDimension1 ? { p_row_dimension_1: args.rowDimension1 } : {}),
+    ...(args.rowValue1 ? { p_row_value_1: args.rowValue1 } : {}),
+    ...(args.rowDimension2 ? { p_row_dimension_2: args.rowDimension2 } : {}),
+    ...(args.rowValue2 ? { p_row_value_2: args.rowValue2 } : {}),
+    ...(args.columnDimension
+      ? { p_column_dimension: args.columnDimension }
+      : {}),
+    ...(args.columnValue ? { p_column_value: args.columnValue } : {}),
+    ...(args.columnPeriodStart
+      ? { p_column_period_start: args.columnPeriodStart }
+      : {}),
+    ...(args.columnPeriodEnd
+      ? { p_column_period_end: args.columnPeriodEnd }
+      : {})
+  });
+
+  if (result.error) return { data: null, error: result.error };
+
+  // Re-sort authoritatively in TS — never trust RPC ordering.
+  const lines = [...(result.data ?? [])].sort((a, b) => {
+    if (a.postingDate !== b.postingDate) {
+      return a.postingDate < b.postingDate ? -1 : 1;
+    }
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+
+  return { data: lines, error: null };
+}
+
+/**
+ * Batch-resolves dimension value ids to display names, grouped by the owning
+ * dimension's entityType. Entity-backed types resolve through the shared
+ * entityType → source-table mapping (getEntityValuesByIds — the same helper
+ * getJournalLineDimensions uses); Custom resolves from dimensionValue.
+ * Lookup failures degrade to missing entries (callers fall back to the id).
+ */
+async function resolveDimensionValueNames(
+  client: SupabaseClient<Database>,
+  requests: { entityType: string; valueIds: string[] }[]
+): Promise<Record<string, string>> {
+  const batches = await Promise.all(
+    requests.map(async ({ entityType, valueIds }) => {
+      if (valueIds.length === 0) return [];
+      if (entityType === "Custom") {
+        const res = await client
+          .from("dimensionValue")
+          .select("id, name")
+          .in("id", valueIds);
+        return res.data ?? [];
+      }
+      const res = await getEntityValuesByIds(client, entityType, valueIds);
+      return res.data ?? [];
+    })
+  );
+
+  const valueNames: Record<string, string> = {};
+  for (const batch of batches) {
+    for (const item of batch as { id: string; name: string }[]) {
+      valueNames[item.id] = item.name;
+    }
+  }
+  return valueNames;
+}
+
+// Named, shareable saved pivot views for the analytics reports. RLS handles
+// visibility (Company rows are readable by every employee; Private rows only
+// by their creator; writes stay owner-only).
+export async function getReportViews(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; reportKey?: string }
+) {
+  let query = client
+    .from("reportView")
+    .select("*")
+    .eq("companyId", args.companyId);
+
+  if (args.reportKey) {
+    query = query.eq("reportKey", args.reportKey);
+  }
+
+  return query.order("name", { ascending: true });
+}
+
+export async function upsertReportView(
+  client: SupabaseClient<Database>,
+  view:
+    | {
+        reportKey: string;
+        name: string;
+        visibility: Database["public"]["Enums"]["reportViewVisibility"];
+        config: Json;
+        companyId: string;
+        createdBy: string;
+      }
+    | {
+        id: string;
+        reportKey: string;
+        name: string;
+        visibility: Database["public"]["Enums"]["reportViewVisibility"];
+        config: Json;
+        companyId: string;
+        updatedBy: string;
+      }
+) {
+  if ("id" in view) {
+    const { id, companyId, ...update } = view;
+    return client
+      .from("reportView")
+      .update({ ...update, updatedAt: datetime.timestamp() })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("*")
+      .single();
+  }
+  return client.from("reportView").insert([view]).select("*").single();
+}
+
+export async function deleteReportView(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("reportView")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
 }
 
 export async function getCompaniesInGroup(
@@ -2514,6 +2894,30 @@ export async function getDefaultAccounts(
     .select("*")
     .eq("companyId", companyId)
     .single();
+}
+
+/**
+ * The GL account ids scrap postings offset to, for the scrap analytics
+ * report's account scope (accountScope.source === "scrapAccounts"). Empty
+ * when no scrap account is configured — getDimensionPivot short-circuits to
+ * an empty pivot in that case.
+ */
+export async function getScrapAccountIds(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ data: string[]; error: PostgrestError | null }> {
+  const result = await client
+    .from("accountDefault")
+    .select("scrapAccount")
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (result.error) return { data: [], error: result.error };
+
+  return {
+    data: result.data?.scrapAccount ? [result.data.scrapAccount] : [],
+    error: null
+  };
 }
 
 export async function getFiscalYearSettings(
