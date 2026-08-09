@@ -160,6 +160,9 @@ msgstr "{years}yr"
 msgid "/month/user"
 msgstr "/mes/usuario"
 
+msgid "% of total"
+msgstr ""
+
 msgid "% of Total"
 msgstr "% del Total"
 
@@ -2038,6 +2041,9 @@ msgstr "por {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Al aceptar la invitación, aceptas los <0>Términos de Servicio</0> y la <1>Política de Privacidad</1>."
 
+msgid "By dimension"
+msgstr ""
+
 msgid "By Document Date"
 msgstr "Por Fecha de Documento"
 
@@ -2484,6 +2490,9 @@ msgstr "Contraer preparación"
 
 msgid "Collapse subtree"
 msgstr "Contraer subárbol"
+
+msgid "Column dimension"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "Visibilidad y orden de columnas"
@@ -6305,6 +6314,9 @@ msgstr "Ganancia Bruta"
 msgid "Group"
 msgstr "Grupo"
 
+msgid "Group by"
+msgstr ""
+
 msgid "Group Members"
 msgstr "Miembros del Grupo"
 
@@ -8623,6 +8635,9 @@ msgstr "Sin artículos"
 
 msgid "No items have inventory activity here yet."
 msgstr "Aún no hay actividad de inventario de artículos aquí."
+
+msgid "No journal lines in scope for this period"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Sin líneas para mapear"
@@ -11253,6 +11268,9 @@ msgstr "Guardar contactos"
 msgid "Save Method"
 msgstr "Guardar Método"
 
+msgid "Save view"
+msgstr ""
+
 msgid "Save View"
 msgstr "Guardar Vista"
 
@@ -11970,6 +11988,15 @@ msgstr "Mostrando {0} de {totalCount} — refine su búsqueda"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Mostrando en {parentCurrency}"
+
+msgid "Showing the first 500 lines"
+msgstr ""
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr ""
+
+msgid "Showing the top 50 columns"
+msgstr ""
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Se muestra como un fondo tenue detrás de cada página de los PDF generados"
@@ -13446,6 +13473,9 @@ msgstr "Tema"
 msgid "Theme Color"
 msgstr "Color de tema"
 
+msgid "Then by"
+msgstr ""
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "No hay presupuestos de proveedores activos para comparar en esta solicitud de cotización."
 
@@ -14571,6 +14601,9 @@ msgstr "Ver Gráfico de Trazabilidad"
 
 msgid "View Transfer"
 msgstr "Ver Transferencia"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Visibilidades"

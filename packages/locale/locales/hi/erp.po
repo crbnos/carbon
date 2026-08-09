@@ -160,6 +160,9 @@ msgstr "{years}वर्ष"
 msgid "/month/user"
 msgstr "/माह/उपयोगकर्ता"
 
+msgid "% of total"
+msgstr ""
+
 msgid "% of Total"
 msgstr "कुल का %"
 
@@ -2038,6 +2041,9 @@ msgstr "द्वारा {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "आमंत्रण स्वीकार करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
 
+msgid "By dimension"
+msgstr ""
+
 msgid "By Document Date"
 msgstr "दस्तावेज़ तारीख के अनुसार"
 
@@ -2484,6 +2490,9 @@ msgstr "सेटअप को संक्षिप्त करें"
 
 msgid "Collapse subtree"
 msgstr "सबट्री को संक्षिप्त करें"
+
+msgid "Column dimension"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "कॉलम दृश्यता और क्रम"
@@ -6305,6 +6314,9 @@ msgstr "सकल लाभ"
 msgid "Group"
 msgstr "समूह"
 
+msgid "Group by"
+msgstr ""
+
 msgid "Group Members"
 msgstr "समूह सदस्य"
 
@@ -8623,6 +8635,9 @@ msgstr "कोई आइटम नहीं"
 
 msgid "No items have inventory activity here yet."
 msgstr "अभी तक यहाँ कोई आइटम इन्वेंटरी गतिविधि नहीं है।"
+
+msgid "No journal lines in scope for this period"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "मैप करने के लिए कोई लाइनें नहीं"
@@ -11253,6 +11268,9 @@ msgstr "संपर्क सहेजें"
 msgid "Save Method"
 msgstr "विधि सहेजें"
 
+msgid "Save view"
+msgstr ""
+
 msgid "Save View"
 msgstr "दृश्य सहेजें"
 
@@ -11970,6 +11988,15 @@ msgstr "दिखा रहा है {0} का {totalCount} — अपनी �
 
 msgid "Showing in {parentCurrency}"
 msgstr "में दिखाई दे रहा है {parentCurrency}"
+
+msgid "Showing the first 500 lines"
+msgstr ""
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr ""
+
+msgid "Showing the top 50 columns"
+msgstr ""
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "जनरेट की गई PDF के हर पेज के पीछे हल्की पृष्ठभूमि के रूप में दिखाया जाता है"
@@ -13446,6 +13473,9 @@ msgstr "थीम"
 msgid "Theme Color"
 msgstr "थीम रंग"
 
+msgid "Then by"
+msgstr ""
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "इस RFQ के लिए तुलना करने के लिए कोई सक्रिय आपूर्तिकर्ता उद्धरण नहीं हैं।"
 
@@ -14571,6 +14601,9 @@ msgstr "ट्रेसेबिलिटी ग्राफ देखें"
 
 msgid "View Transfer"
 msgstr "ट्रांसफर देखें"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "दृश्यता"

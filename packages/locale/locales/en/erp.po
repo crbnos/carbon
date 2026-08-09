@@ -160,6 +160,9 @@ msgstr "{years}yr"
 msgid "/month/user"
 msgstr "/month/user"
 
+msgid "% of total"
+msgstr "% of total"
+
 msgid "% of Total"
 msgstr "% of Total"
 
@@ -2038,6 +2041,9 @@ msgstr "by {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 
+msgid "By dimension"
+msgstr "By dimension"
+
 msgid "By Document Date"
 msgstr "By Document Date"
 
@@ -2484,6 +2490,9 @@ msgstr "Collapse Setup"
 
 msgid "Collapse subtree"
 msgstr "Collapse subtree"
+
+msgid "Column dimension"
+msgstr "Column dimension"
 
 msgid "Column visibility and order"
 msgstr "Column visibility and order"
@@ -6305,6 +6314,9 @@ msgstr "Gross Profit"
 msgid "Group"
 msgstr "Group"
 
+msgid "Group by"
+msgstr "Group by"
+
 msgid "Group Members"
 msgstr "Group Members"
 
@@ -8623,6 +8635,9 @@ msgstr "No items"
 
 msgid "No items have inventory activity here yet."
 msgstr "No items have inventory activity here yet."
+
+msgid "No journal lines in scope for this period"
+msgstr "No journal lines in scope for this period"
 
 msgid "No lines to map"
 msgstr "No lines to map"
@@ -11253,6 +11268,9 @@ msgstr "Save contacts"
 msgid "Save Method"
 msgstr "Save Method"
 
+msgid "Save view"
+msgstr "Save view"
+
 msgid "Save View"
 msgstr "Save View"
 
@@ -11970,6 +11988,15 @@ msgstr "Showing {0} of {totalCount} — refine your search"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Showing in {parentCurrency}"
+
+msgid "Showing the first 500 lines"
+msgstr "Showing the first 500 lines"
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr "Showing the top 1,000 groups by amount"
+
+msgid "Showing the top 50 columns"
+msgstr "Showing the top 50 columns"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Shown as a faint background behind every page of generated PDFs"
@@ -13446,6 +13473,9 @@ msgstr "Theme"
 msgid "Theme Color"
 msgstr "Theme Color"
 
+msgid "Then by"
+msgstr "Then by"
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "There are no active supplier quotes to compare for this RFQ."
 
@@ -14571,6 +14601,9 @@ msgstr "View Traceability Graph"
 
 msgid "View Transfer"
 msgstr "View Transfer"
+
+msgid "Views"
+msgstr "Views"
 
 msgid "Visibilities"
 msgstr "Visibilities"

@@ -160,6 +160,9 @@ msgstr "{years}год"
 msgid "/month/user"
 msgstr "/месяц/пользователь"
 
+msgid "% of total"
+msgstr ""
+
 msgid "% of Total"
 msgstr "% от всего"
 
@@ -2038,6 +2041,9 @@ msgstr "от {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Принимая приглашение, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности</1>."
 
+msgid "By dimension"
+msgstr ""
+
 msgid "By Document Date"
 msgstr "По дате документа"
 
@@ -2484,6 +2490,9 @@ msgstr "Свернуть настройку"
 
 msgid "Collapse subtree"
 msgstr "Свернуть поддерево"
+
+msgid "Column dimension"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "Видимость и порядок столбцов"
@@ -6305,6 +6314,9 @@ msgstr "Валовая прибыль"
 msgid "Group"
 msgstr "Группа"
 
+msgid "Group by"
+msgstr ""
+
 msgid "Group Members"
 msgstr "Члены группы"
 
@@ -8623,6 +8635,9 @@ msgstr "Нет позиций"
 
 msgid "No items have inventory activity here yet."
 msgstr "Здесь еще нет активности с товарами."
+
+msgid "No journal lines in scope for this period"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Нет строк для сопоставления"
@@ -11253,6 +11268,9 @@ msgstr "Сохранить контакты"
 msgid "Save Method"
 msgstr "Сохранить метод"
 
+msgid "Save view"
+msgstr ""
+
 msgid "Save View"
 msgstr "Сохранить представление"
 
@@ -11970,6 +11988,15 @@ msgstr "Показано {0} из {totalCount} — уточните поиск"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Отображение в {parentCurrency}"
+
+msgid "Showing the first 500 lines"
+msgstr ""
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr ""
+
+msgid "Showing the top 50 columns"
+msgstr ""
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Отображается как бледный фон на каждой странице сгенерированных PDF-файлов"
@@ -13446,6 +13473,9 @@ msgstr "Тема"
 msgid "Theme Color"
 msgstr "Цвет темы"
 
+msgid "Then by"
+msgstr ""
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Нет активных предложений поставщиков для сравнения по этому РФП."
 
@@ -14571,6 +14601,9 @@ msgstr "Просмотр графика отслеживания"
 
 msgid "View Transfer"
 msgstr "Просмотр передачи"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Видимость"

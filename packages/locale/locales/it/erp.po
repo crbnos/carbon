@@ -160,6 +160,9 @@ msgstr "{years}ann"
 msgid "/month/user"
 msgstr "/mese/utente"
 
+msgid "% of total"
+msgstr ""
+
 msgid "% of Total"
 msgstr "% del Totale"
 
@@ -2038,6 +2041,9 @@ msgstr "da {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Accettando l'invito, accetti i <0>Termini di Servizio</0> e l'<1>Informativa sulla Privacy</1>."
 
+msgid "By dimension"
+msgstr ""
+
 msgid "By Document Date"
 msgstr "Per Data Documento"
 
@@ -2484,6 +2490,9 @@ msgstr "Comprimi preparazione"
 
 msgid "Collapse subtree"
 msgstr "Comprimi sottostruttura"
+
+msgid "Column dimension"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "Visibilità e ordine delle colonne"
@@ -6305,6 +6314,9 @@ msgstr "Margine lordo"
 msgid "Group"
 msgstr "Gruppo"
 
+msgid "Group by"
+msgstr ""
+
 msgid "Group Members"
 msgstr "Membri del Gruppo"
 
@@ -8623,6 +8635,9 @@ msgstr "Nessun articolo"
 
 msgid "No items have inventory activity here yet."
 msgstr "Nessun articolo ha attività di inventario qui ancora."
+
+msgid "No journal lines in scope for this period"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Nessuna riga da mappare"
@@ -11253,6 +11268,9 @@ msgstr "Salva contatti"
 msgid "Save Method"
 msgstr "Salva Metodo"
 
+msgid "Save view"
+msgstr ""
+
 msgid "Save View"
 msgstr "Salva Vista"
 
@@ -11970,6 +11988,15 @@ msgstr "Mostrando {0} di {totalCount} — raffina la tua ricerca"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Visualizzazione in {parentCurrency}"
+
+msgid "Showing the first 500 lines"
+msgstr ""
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr ""
+
+msgid "Showing the top 50 columns"
+msgstr ""
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Mostrato come sfondo tenue dietro ogni pagina dei PDF generati"
@@ -13446,6 +13473,9 @@ msgstr "Tema"
 msgid "Theme Color"
 msgstr "Colore Tema"
 
+msgid "Then by"
+msgstr ""
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Non ci sono preventivi fornitori attivi da confrontare per questa RFQ."
 
@@ -14571,6 +14601,9 @@ msgstr "Visualizza Grafico di Tracciabilità"
 
 msgid "View Transfer"
 msgstr "Visualizza Trasferimento"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Visibilità"

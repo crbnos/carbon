@@ -160,6 +160,9 @@ msgstr "{years}년"
 msgid "/month/user"
 msgstr "/월/사용자"
 
+msgid "% of total"
+msgstr ""
+
 msgid "% of Total"
 msgstr "전체의 %"
 
@@ -2038,6 +2041,9 @@ msgstr "{byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "초대를 수락하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
 
+msgid "By dimension"
+msgstr ""
+
 msgid "By Document Date"
 msgstr "문서 날짜 기준"
 
@@ -2484,6 +2490,9 @@ msgstr "셋업 접기"
 
 msgid "Collapse subtree"
 msgstr "하위 트리 접기"
+
+msgid "Column dimension"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "열 표시 여부 및 순서"
@@ -6305,6 +6314,9 @@ msgstr "매출총이익"
 msgid "Group"
 msgstr "그룹"
 
+msgid "Group by"
+msgstr ""
+
 msgid "Group Members"
 msgstr "그룹 구성원"
 
@@ -8623,6 +8635,9 @@ msgstr "품목 없음"
 
 msgid "No items have inventory activity here yet."
 msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
+
+msgid "No journal lines in scope for this period"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "매핑할 라인이 없습니다"
@@ -11253,6 +11268,9 @@ msgstr "연락처 저장"
 msgid "Save Method"
 msgstr "저장 방법"
 
+msgid "Save view"
+msgstr ""
+
 msgid "Save View"
 msgstr "보기 저장"
 
@@ -11970,6 +11988,15 @@ msgstr "{0}개/총 {totalCount}개 표시 — 검색 범위 좁혀보기"
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}로 표시"
+
+msgid "Showing the first 500 lines"
+msgstr ""
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr ""
+
+msgid "Showing the top 50 columns"
+msgstr ""
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"
@@ -13446,6 +13473,9 @@ msgstr "테마"
 msgid "Theme Color"
 msgstr "테마 색상"
 
+msgid "Then by"
+msgstr ""
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "이 RFQ와 비교할 활성 공급업체 견적이 없습니다."
 
@@ -14571,6 +14601,9 @@ msgstr "이력추적 그래프 보기"
 
 msgid "View Transfer"
 msgstr "이동 보기"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "공개 범위"

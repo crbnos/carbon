@@ -160,6 +160,9 @@ msgstr "{years}年"
 msgid "/month/user"
 msgstr "/月/ユーザー"
 
+msgid "% of total"
+msgstr ""
+
 msgid "% of Total"
 msgstr "総量比"
 
@@ -2038,6 +2041,9 @@ msgstr "{byUser}による"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "招待を受け入れることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
 
+msgid "By dimension"
+msgstr ""
+
 msgid "By Document Date"
 msgstr "ドキュメント日付別"
 
@@ -2484,6 +2490,9 @@ msgstr "段取りを折りたたむ"
 
 msgid "Collapse subtree"
 msgstr "サブツリーを折りたたむ"
+
+msgid "Column dimension"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "列の表示と順序"
@@ -6305,6 +6314,9 @@ msgstr "総利益"
 msgid "Group"
 msgstr "グループ"
 
+msgid "Group by"
+msgstr ""
+
 msgid "Group Members"
 msgstr "グループメンバー"
 
@@ -8623,6 +8635,9 @@ msgstr "アイテムなし"
 
 msgid "No items have inventory activity here yet."
 msgstr "ここにはまだアイテムの在庫活動がありません。"
+
+msgid "No journal lines in scope for this period"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "マップするラインがありません"
@@ -11253,6 +11268,9 @@ msgstr "連絡先を保存"
 msgid "Save Method"
 msgstr "メソッドを保存"
 
+msgid "Save view"
+msgstr ""
+
 msgid "Save View"
 msgstr "ビューを保存"
 
@@ -11970,6 +11988,15 @@ msgstr "{0} / {totalCount} を表示中 — 検索を絞り込みます"
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}で表示"
+
+msgid "Showing the first 500 lines"
+msgstr ""
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr ""
+
+msgid "Showing the top 50 columns"
+msgstr ""
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "生成されたPDFの各ページの背景に薄く表示されます"
@@ -13446,6 +13473,9 @@ msgstr "テーマ"
 msgid "Theme Color"
 msgstr "テーマカラー"
 
+msgid "Then by"
+msgstr ""
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "このRFQに比較するアクティブなサプライヤー見積もりがありません。"
 
@@ -14571,6 +14601,9 @@ msgstr "トレーサビリティグラフを表示"
 
 msgid "View Transfer"
 msgstr "転送を表示"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "可視性"

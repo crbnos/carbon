@@ -160,6 +160,9 @@ msgstr "{years}an"
 msgid "/month/user"
 msgstr "/mois/utilisateur"
 
+msgid "% of total"
+msgstr ""
+
 msgid "% of Total"
 msgstr "% du Total"
 
@@ -2038,6 +2041,9 @@ msgstr "par {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "En acceptant l'invitation, vous acceptez les <0>Conditions d'utilisation</0> et la <1>Politique de confidentialité</1>."
 
+msgid "By dimension"
+msgstr ""
+
 msgid "By Document Date"
 msgstr "Par date du document"
 
@@ -2484,6 +2490,9 @@ msgstr "Réduire la configuration"
 
 msgid "Collapse subtree"
 msgstr "Réduire le sous-arbre"
+
+msgid "Column dimension"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "Visibilité et ordre des colonnes"
@@ -6305,6 +6314,9 @@ msgstr "Bénéfice brut"
 msgid "Group"
 msgstr "Groupe"
 
+msgid "Group by"
+msgstr ""
+
 msgid "Group Members"
 msgstr "Membres du groupe"
 
@@ -8623,6 +8635,9 @@ msgstr "Aucun article"
 
 msgid "No items have inventory activity here yet."
 msgstr "Aucun article n'a encore d'activité d'inventaire ici."
+
+msgid "No journal lines in scope for this period"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Aucune ligne à mapper"
@@ -11253,6 +11268,9 @@ msgstr "Enregistrer les contacts"
 msgid "Save Method"
 msgstr "Enregistrer la méthode"
 
+msgid "Save view"
+msgstr ""
+
 msgid "Save View"
 msgstr "Enregistrer la vue"
 
@@ -11970,6 +11988,15 @@ msgstr "Affichage de {0} sur {totalCount} — affinez votre recherche"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Affichage en {parentCurrency}"
+
+msgid "Showing the first 500 lines"
+msgstr ""
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr ""
+
+msgid "Showing the top 50 columns"
+msgstr ""
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Affiché en arrière-plan discret sur chaque page des PDF générés"
@@ -13446,6 +13473,9 @@ msgstr "Thème"
 msgid "Theme Color"
 msgstr "Couleur du thème"
 
+msgid "Then by"
+msgstr ""
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Il n'y a pas de devis fournisseurs actifs à comparer pour cette demande de prix."
 
@@ -14571,6 +14601,9 @@ msgstr "Afficher le graphique de traçabilité"
 
 msgid "View Transfer"
 msgstr "Afficher le transfert"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Visibilités"

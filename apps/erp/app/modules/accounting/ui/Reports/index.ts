@@ -12,6 +12,9 @@ export {
   default as MultiPeriodStatementTree,
   getPeriodColumnLabel
 } from "./MultiPeriodStatementTree";
+export type { PivotDimension } from "./PivotControlBar";
+export { default as PivotControlBar } from "./PivotControlBar";
 export { default as ReportFilters } from "./ReportFilters";
+export { default as SaveViewModal } from "./SaveViewModal";
 export { default as TrialBalanceTable } from "./TrialBalanceTable";
 export { default as TrialBalanceTree } from "./TrialBalanceTree";

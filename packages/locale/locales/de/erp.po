@@ -160,6 +160,9 @@ msgstr "{years}J."
 msgid "/month/user"
 msgstr "/Monat/Benutzer"
 
+msgid "% of total"
+msgstr ""
+
 msgid "% of Total"
 msgstr "% der Gesamtsumme"
 
@@ -2038,6 +2041,9 @@ msgstr "von {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Durch Annahme der Einladung stimmen Sie den <0>Nutzungsbedingungen</0> und der <1>Datenschutzrichtlinie</1> zu."
 
+msgid "By dimension"
+msgstr ""
+
 msgid "By Document Date"
 msgstr "Nach Dokumentdatum"
 
@@ -2484,6 +2490,9 @@ msgstr "Rüsten einklappen"
 
 msgid "Collapse subtree"
 msgstr "Teilbaum einklappen"
+
+msgid "Column dimension"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "Spaltensichtbarkeit und -reihenfolge"
@@ -6305,6 +6314,9 @@ msgstr "Bruttogewinn"
 msgid "Group"
 msgstr "Gruppe"
 
+msgid "Group by"
+msgstr ""
+
 msgid "Group Members"
 msgstr "Gruppenmitglieder"
 
@@ -8623,6 +8635,9 @@ msgstr "Keine Artikel"
 
 msgid "No items have inventory activity here yet."
 msgstr "Hier gibt es noch keine Bestandsbewegungen."
+
+msgid "No journal lines in scope for this period"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Keine Zeilen zum Zuordnen"
@@ -11253,6 +11268,9 @@ msgstr "Kontakte speichern"
 msgid "Save Method"
 msgstr "Methode speichern"
 
+msgid "Save view"
+msgstr ""
+
 msgid "Save View"
 msgstr "Ansicht speichern"
 
@@ -11970,6 +11988,15 @@ msgstr "Zeige {0} von {totalCount} — verfeinern Sie Ihre Suche"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Anzeige in {parentCurrency}"
+
+msgid "Showing the first 500 lines"
+msgstr ""
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr ""
+
+msgid "Showing the top 50 columns"
+msgstr ""
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Wird als schwacher Hintergrund hinter jeder Seite generierter PDFs angezeigt"
@@ -13446,6 +13473,9 @@ msgstr "Design"
 msgid "Theme Color"
 msgstr "Designfarbe"
 
+msgid "Then by"
+msgstr ""
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Es gibt keine aktiven Lieferantenofferten zum Vergleichen für diese Anfrage."
 
@@ -14571,6 +14601,9 @@ msgstr "Rückverfolgbarkeitsgraph anzeigen"
 
 msgid "View Transfer"
 msgstr "Transfer anzeigen"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Sichtbarkeiten"

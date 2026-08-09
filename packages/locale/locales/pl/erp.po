@@ -160,6 +160,9 @@ msgstr "{years}r"
 msgid "/month/user"
 msgstr "/miesiąc/użytkownik"
 
+msgid "% of total"
+msgstr ""
+
 msgid "% of Total"
 msgstr "% całości"
 
@@ -2038,6 +2041,9 @@ msgstr "przez {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Akceptując zaproszenie, zgadzasz się na <0>Warunki Usługi</0> i <1>Politykę Prywatności</1>."
 
+msgid "By dimension"
+msgstr ""
+
 msgid "By Document Date"
 msgstr "Według daty dokumentu"
 
@@ -2484,6 +2490,9 @@ msgstr "Zwiń Setup"
 
 msgid "Collapse subtree"
 msgstr "Zwiń poddrzewo"
+
+msgid "Column dimension"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "Widoczność i kolejność kolumn"
@@ -6305,6 +6314,9 @@ msgstr "Zysk brutto"
 msgid "Group"
 msgstr "Grupa"
 
+msgid "Group by"
+msgstr ""
+
 msgid "Group Members"
 msgstr "Członkowie grupy"
 
@@ -8623,6 +8635,9 @@ msgstr "Brak artykułów"
 
 msgid "No items have inventory activity here yet."
 msgstr "Brak aktywności magazynowej tutaj."
+
+msgid "No journal lines in scope for this period"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Brak linii do mapowania"
@@ -11253,6 +11268,9 @@ msgstr "Zapisz kontakty"
 msgid "Save Method"
 msgstr "Zapisz metodę"
 
+msgid "Save view"
+msgstr ""
+
 msgid "Save View"
 msgstr "Zapisz Widok"
 
@@ -11970,6 +11988,15 @@ msgstr "Wyświetlanie {0} z {totalCount} — uściśl wyszukiwanie"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Wyświetlanie w {parentCurrency}"
+
+msgid "Showing the first 500 lines"
+msgstr ""
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr ""
+
+msgid "Showing the top 50 columns"
+msgstr ""
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Wyświetlany jako delikatne tło za każdą stroną wygenerowanych plików PDF"
@@ -13446,6 +13473,9 @@ msgstr "Motyw"
 msgid "Theme Color"
 msgstr "Kolor motywu"
 
+msgid "Then by"
+msgstr ""
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Brak aktywnych ofert dostawców do porównania dla tego zapytania ofertowego."
 
@@ -14571,6 +14601,9 @@ msgstr "Wyświetl Graf Możliwości Śledzenia"
 
 msgid "View Transfer"
 msgstr "Wyświetl Transfer"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Widoczności"

@@ -160,6 +160,9 @@ msgstr "{years}yr"
 msgid "/month/user"
 msgstr "/ay/kullanıcı"
 
+msgid "% of total"
+msgstr ""
+
 msgid "% of Total"
 msgstr "% Toplam"
 
@@ -2038,6 +2041,9 @@ msgstr "by {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Davetiyeyi kabul ederek, <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılırsınız."
 
+msgid "By dimension"
+msgstr ""
+
 msgid "By Document Date"
 msgstr "Belge Tarihine Göre"
 
@@ -2484,6 +2490,9 @@ msgstr "Kurulumu Daralt"
 
 msgid "Collapse subtree"
 msgstr "Alt ağacı daralt"
+
+msgid "Column dimension"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "Sütun görünürlüğü ve sırası"
@@ -6305,6 +6314,9 @@ msgstr "Brüt Kar"
 msgid "Group"
 msgstr "Grup"
 
+msgid "Group by"
+msgstr ""
+
 msgid "Group Members"
 msgstr "Üye Grupları"
 
@@ -8623,6 +8635,9 @@ msgstr "Öğe yok"
 
 msgid "No items have inventory activity here yet."
 msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
+
+msgid "No journal lines in scope for this period"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Eşlenecek satır yok"
@@ -11253,6 +11268,9 @@ msgstr "Kişileri kaydet"
 msgid "Save Method"
 msgstr "Yöntemi Kaydet"
 
+msgid "Save view"
+msgstr ""
+
 msgid "Save View"
 msgstr "Görünümü Kaydet"
 
@@ -11970,6 +11988,15 @@ msgstr "{0} / {totalCount} gösteriliyor — aramanızı daraltın"
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency} cinsinden gösteriliyor"
+
+msgid "Showing the first 500 lines"
+msgstr ""
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr ""
+
+msgid "Showing the top 50 columns"
+msgstr ""
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Oluşturulan PDF'lerin her sayfasının arkasında soluk bir arka plan olarak gösterilir"
@@ -13446,6 +13473,9 @@ msgstr "Tema"
 msgid "Theme Color"
 msgstr "Tema Rengi"
 
+msgid "Then by"
+msgstr ""
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Bu RFQ için karşılaştırılacak aktif tedarikçi teklifi bulunmamaktadır."
 
@@ -14571,6 +14601,9 @@ msgstr "İzlenebilirlik Grafiğini Görüntüle"
 
 msgid "View Transfer"
 msgstr "Transferi Görüntüle"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Görünürlükler"
