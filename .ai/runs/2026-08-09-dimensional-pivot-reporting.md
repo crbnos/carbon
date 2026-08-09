@@ -18,4 +18,5 @@
 
 
 ## Outcome
-- Awaiting plan approval 🛑 before /execute.
+- Plan approved by Brad; /execute ran Tasks 1–11 (9 commits on financial-reports-module, pushed: 5e8f15541..3f6377a30). All gates green: rolled-back SQL validation (all asserts), 13 pivotData unit tests, scoped typecheck, biome, repo test pass (22 tasks). i18n: 225/300 msgstrs filled; hi/tr/ko deferred per Brad (session limit). Deviations: pivotTree.ts renamed pivotData.ts (case-collision with PivotTree.tsx); drill-through drawer shows journalEntryId as text (RPC lacks journal.id — follow-up candidate); tool-metadata.json rode along in Task-5 commit (schema-derived regen).
+- Task 12 (browser verification): Brad is handling manually.
