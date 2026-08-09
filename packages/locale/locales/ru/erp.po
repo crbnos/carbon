@@ -161,7 +161,7 @@ msgid "/month/user"
 msgstr "/месяц/пользователь"
 
 msgid "% of total"
-msgstr ""
+msgstr "% от общего"
 
 msgid "% of Total"
 msgstr "% от всего"
@@ -553,19 +553,19 @@ msgid "Accounts receivable for amounts owed by customers"
 msgstr "Дебиторская задолженность клиентов за задолженные суммы."
 
 msgid "Accounts: Cost of Goods Sold"
-msgstr ""
+msgstr "Счета: Себестоимость продаж"
 
 msgid "Accounts: Expenses"
-msgstr ""
+msgstr "Счета: Расходы"
 
 msgid "Accounts: Inventory"
-msgstr ""
+msgstr "Счета: Инвентаризация"
 
 msgid "Accounts: Revenue"
-msgstr ""
+msgstr "Счета: Доход"
 
 msgid "Accounts: Scrap"
-msgstr ""
+msgstr "Счета: Брак"
 
 msgid "Accumulated Depreciation"
 msgstr "Накопленная амортизация"
@@ -1927,7 +1927,7 @@ msgid "Beta"
 msgstr "Бета"
 
 msgid "Biggest causes of scrap by reason, item, or work center"
-msgstr ""
+msgstr "Основные причины брака по причине, товару или производственному участку"
 
 msgid "Bill of Material"
 msgstr "Спецификация материалов"
@@ -2060,7 +2060,7 @@ msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>
 msgstr "Принимая приглашение, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности</1>."
 
 msgid "By dimension"
-msgstr ""
+msgstr "По измерению"
 
 msgid "By Document Date"
 msgstr "По дате документа"
@@ -2486,7 +2486,7 @@ msgid "Code"
 msgstr "Код"
 
 msgid "COGS"
-msgstr ""
+msgstr "COGS"
 
 msgid "Collapse"
 msgstr "Свернуть"
@@ -2513,7 +2513,7 @@ msgid "Collapse subtree"
 msgstr "Свернуть поддерево"
 
 msgid "Column dimension"
-msgstr ""
+msgstr "Измерение столбца"
 
 msgid "Column visibility and order"
 msgstr "Видимость и порядок столбцов"
@@ -3096,7 +3096,7 @@ msgid "Cost of Goods Sold (default)"
 msgstr "Себестоимость реализованной продукции (по умолчанию)"
 
 msgid "Cost of goods sold by item group, item, or any dimension"
-msgstr ""
+msgstr "Себестоимость продаж по группе товара, товару или любому измерению"
 
 msgid "Cost of Sales"
 msgstr "Себестоимость продаж"
@@ -5375,7 +5375,7 @@ msgid "Expense side of deferred tax movements (paired with deferred tax liabilit
 msgstr "Не удалось создать класс активов: {0}"
 
 msgid "Expenses"
-msgstr ""
+msgstr "Расходы"
 
 msgid "Expert guidance"
 msgstr "Экспертное руководство"
@@ -6339,7 +6339,7 @@ msgid "Group"
 msgstr "Группа"
 
 msgid "Group by"
-msgstr ""
+msgstr "Группировать по"
 
 msgid "Group Members"
 msgstr "Члены группы"
@@ -6880,7 +6880,7 @@ msgid "Inventory balances"
 msgstr "Остатки запасов"
 
 msgid "Inventory Change"
-msgstr ""
+msgstr "Изменение инвентаризации"
 
 msgid "Inventory Control"
 msgstr "Контроль запасов"
@@ -8658,7 +8658,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Здесь еще нет активности с товарами."
 
 msgid "No journal lines in scope for this period"
-msgstr ""
+msgstr "Нет строк журнала в пределах этого периода"
 
 msgid "No lines to map"
 msgstr "Нет строк для сопоставления"
@@ -11287,13 +11287,13 @@ msgid "Save Method"
 msgstr "Сохранить метод"
 
 msgid "Save view"
-msgstr ""
+msgstr "Сохранить представление"
 
 msgid "Save View"
 msgstr "Сохранить представление"
 
 msgid "Saved Views"
-msgstr ""
+msgstr "Сохраненные представления"
 
 msgid "Saving..."
 msgstr "Сохранение..."
@@ -12011,13 +12011,13 @@ msgid "Showing in {parentCurrency}"
 msgstr "Отображение в {parentCurrency}"
 
 msgid "Showing the first 500 lines"
-msgstr ""
+msgstr "Показано первые 500 строк"
 
 msgid "Showing the top 1,000 groups by amount"
-msgstr ""
+msgstr "Показано топ 1000 групп по сумме"
 
 msgid "Showing the top 50 columns"
-msgstr ""
+msgstr "Показано топ 50 столбцов"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Отображается как бледный фон на каждой странице сгенерированных PDF-файлов"
@@ -12089,10 +12089,10 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice expenses by supplier, supplier type, or any dimension"
-msgstr ""
+msgstr "Разделить расходы по поставщику, типу поставщика или любому измерению"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
-msgstr ""
+msgstr "Разделить доход по клиенту, типу клиента или любому измерению"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Дымовое тестирование основных ежедневных процессов от начала до конца"
@@ -13501,7 +13501,7 @@ msgid "Theme Color"
 msgstr "Цвет темы"
 
 msgid "Then by"
-msgstr ""
+msgstr "Затем по"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Нет активных предложений поставщиков для сравнения по этому РФП."
@@ -14627,7 +14627,7 @@ msgid "View Transfer"
 msgstr "Просмотр передачи"
 
 msgid "Views"
-msgstr ""
+msgstr "Представления"
 
 msgid "Visibilities"
 msgstr "Видимость"
@@ -14818,7 +14818,7 @@ msgid "What data"
 msgstr "Какие данные"
 
 msgid "What drove inventory up or down, by any dimension"
-msgstr ""
+msgstr "Что повлияло на инвентаризацию вверх или вниз, по любому измерению"
 
 msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"

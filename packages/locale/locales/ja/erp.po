@@ -161,7 +161,7 @@ msgid "/month/user"
 msgstr "/月/ユーザー"
 
 msgid "% of total"
-msgstr ""
+msgstr "全体の %"
 
 msgid "% of Total"
 msgstr "総量比"
@@ -553,19 +553,19 @@ msgid "Accounts receivable for amounts owed by customers"
 msgstr "顧客に支払う金額の売掛金。"
 
 msgid "Accounts: Cost of Goods Sold"
-msgstr ""
+msgstr "勘定科目: 売上原価"
 
 msgid "Accounts: Expenses"
-msgstr ""
+msgstr "勘定科目: 経費"
 
 msgid "Accounts: Inventory"
-msgstr ""
+msgstr "勘定科目: 在庫"
 
 msgid "Accounts: Revenue"
-msgstr ""
+msgstr "勘定科目: 売上"
 
 msgid "Accounts: Scrap"
-msgstr ""
+msgstr "勘定科目: スクラップ"
 
 msgid "Accumulated Depreciation"
 msgstr "累計減価償却費"
@@ -1927,7 +1927,7 @@ msgid "Beta"
 msgstr "ベータ"
 
 msgid "Biggest causes of scrap by reason, item, or work center"
-msgstr ""
+msgstr "スクラップの最大原因（理由別、品目別、または作業中心別）"
 
 msgid "Bill of Material"
 msgstr "材料表"
@@ -2060,7 +2060,7 @@ msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>
 msgstr "招待を受け入れることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
 
 msgid "By dimension"
-msgstr ""
+msgstr "ディメンション別"
 
 msgid "By Document Date"
 msgstr "ドキュメント日付別"
@@ -2486,7 +2486,7 @@ msgid "Code"
 msgstr "コード"
 
 msgid "COGS"
-msgstr ""
+msgstr "売上原価"
 
 msgid "Collapse"
 msgstr "折りたたむ"
@@ -2513,7 +2513,7 @@ msgid "Collapse subtree"
 msgstr "サブツリーを折りたたむ"
 
 msgid "Column dimension"
-msgstr ""
+msgstr "列ディメンション"
 
 msgid "Column visibility and order"
 msgstr "列の表示と順序"
@@ -3096,7 +3096,7 @@ msgid "Cost of Goods Sold (default)"
 msgstr "売上原価（デフォルト）"
 
 msgid "Cost of goods sold by item group, item, or any dimension"
-msgstr ""
+msgstr "品目グループ、品目、またはディメンション別の売上原価"
 
 msgid "Cost of Sales"
 msgstr "売上原価"
@@ -5375,7 +5375,7 @@ msgid "Expense side of deferred tax movements (paired with deferred tax liabilit
 msgstr "固定資産クラスの作成に失敗しました: {0}"
 
 msgid "Expenses"
-msgstr ""
+msgstr "経費"
 
 msgid "Expert guidance"
 msgstr "専門家によるガイダンス"
@@ -6339,7 +6339,7 @@ msgid "Group"
 msgstr "グループ"
 
 msgid "Group by"
-msgstr ""
+msgstr "グループ化"
 
 msgid "Group Members"
 msgstr "グループメンバー"
@@ -6880,7 +6880,7 @@ msgid "Inventory balances"
 msgstr "在庫残高"
 
 msgid "Inventory Change"
-msgstr ""
+msgstr "在庫変更"
 
 msgid "Inventory Control"
 msgstr "在庫管理"
@@ -8658,7 +8658,7 @@ msgid "No items have inventory activity here yet."
 msgstr "ここにはまだアイテムの在庫活動がありません。"
 
 msgid "No journal lines in scope for this period"
-msgstr ""
+msgstr "この期間のスコープ内にジャーナルラインがありません"
 
 msgid "No lines to map"
 msgstr "マップするラインがありません"
@@ -11287,13 +11287,13 @@ msgid "Save Method"
 msgstr "メソッドを保存"
 
 msgid "Save view"
-msgstr ""
+msgstr "ビューを保存"
 
 msgid "Save View"
 msgstr "ビューを保存"
 
 msgid "Saved Views"
-msgstr ""
+msgstr "保存済みビュー"
 
 msgid "Saving..."
 msgstr "保存中..."
@@ -12011,13 +12011,13 @@ msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}で表示"
 
 msgid "Showing the first 500 lines"
-msgstr ""
+msgstr "最初の 500 行を表示中"
 
 msgid "Showing the top 1,000 groups by amount"
-msgstr ""
+msgstr "金額別上位 1,000 グループを表示中"
 
 msgid "Showing the top 50 columns"
-msgstr ""
+msgstr "上位 50 列を表示中"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "生成されたPDFの各ページの背景に薄く表示されます"
@@ -12089,10 +12089,10 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice expenses by supplier, supplier type, or any dimension"
-msgstr ""
+msgstr "仕入先、仕入先タイプ、またはディメンション別に経費をスライス"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
-msgstr ""
+msgstr "顧客、顧客タイプ、またはディメンション別に売上をスライス"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "コア日次フローのスモークテストを端から端まで実施"
@@ -13501,7 +13501,7 @@ msgid "Theme Color"
 msgstr "テーマカラー"
 
 msgid "Then by"
-msgstr ""
+msgstr "次に"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "このRFQに比較するアクティブなサプライヤー見積もりがありません。"
@@ -14627,7 +14627,7 @@ msgid "View Transfer"
 msgstr "転送を表示"
 
 msgid "Views"
-msgstr ""
+msgstr "ビュー"
 
 msgid "Visibilities"
 msgstr "可視性"
@@ -14818,7 +14818,7 @@ msgid "What data"
 msgstr "どのデータ"
 
 msgid "What drove inventory up or down, by any dimension"
-msgstr ""
+msgstr "在庫の増減を駆動した要因（ディメンション別）"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"

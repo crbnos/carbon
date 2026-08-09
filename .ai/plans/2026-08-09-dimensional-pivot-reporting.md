@@ -5,18 +5,18 @@
 **Branch:** financial-reports-module
 
 ## Progress
-- [ ] Task 1: Write the migration (reportView + indexes + 2 RPCs + reportPin key migration)
-- [ ] Task 2: Validate the migration in a rolled-back transaction with fixtures
-- [ ] Task 3: Apply migration and regenerate DB types
-- [ ] Task 4: Add the analytics registry + pivot validators to accounting.models.ts
-- [ ] Task 5: Add pivot + reportView service functions to accounting.service.ts
-- [ ] Task 6: Build pivotTree.ts (pure pivot assembly) + unit tests
-- [ ] Task 7: Build PivotControlBar + SaveViewModal components
-- [ ] Task 8: Build PivotTree component + PivotLinesDrawer
-- [ ] Task 9: Add analytics routes + path helpers
-- [ ] Task 10: Redirect old reports, update hub cards, remove dead code
-- [ ] Task 11: i18n extract + lint + scoped typecheck gate
-- [ ] Task 12: Browser verification via /test
+- [x] Task 1: Write the migration (reportView + indexes + 2 RPCs + reportPin key migration)
+- [x] Task 2: Validate the migration in a rolled-back transaction with fixtures
+- [x] Task 3: Apply migration and regenerate DB types
+- [x] Task 4: Add the analytics registry + pivot validators to accounting.models.ts
+- [x] Task 5: Add pivot + reportView service functions to accounting.service.ts
+- [x] Task 6: Build pivotTree.ts (pure pivot assembly) + unit tests
+- [x] Task 7: Build PivotControlBar + SaveViewModal components
+- [x] Task 8: Build PivotTree component + PivotLinesDrawer
+- [x] Task 9: Add analytics routes + path helpers
+- [x] Task 10: Redirect old reports, update hub cards, remove dead code
+- [x] Task 11: i18n extract + lint + scoped typecheck gate (hi/tr/ko translations deferred per Brad)
+- [ ] Task 12: Browser verification via /test (Brad is handling this)
 
 ## Dependencies
 - Task 2 needs Task 1; Task 3 needs Task 2.

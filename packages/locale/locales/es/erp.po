@@ -161,7 +161,7 @@ msgid "/month/user"
 msgstr "/mes/usuario"
 
 msgid "% of total"
-msgstr ""
+msgstr "% del total"
 
 msgid "% of Total"
 msgstr "% del Total"
@@ -553,19 +553,19 @@ msgid "Accounts receivable for amounts owed by customers"
 msgstr "Cuentas por cobrar para montos adeudados por clientes."
 
 msgid "Accounts: Cost of Goods Sold"
-msgstr ""
+msgstr "Cuentas: Costo de Bienes Vendidos"
 
 msgid "Accounts: Expenses"
-msgstr ""
+msgstr "Cuentas: Gastos"
 
 msgid "Accounts: Inventory"
-msgstr ""
+msgstr "Cuentas: Inventario"
 
 msgid "Accounts: Revenue"
-msgstr ""
+msgstr "Cuentas: Ingresos"
 
 msgid "Accounts: Scrap"
-msgstr ""
+msgstr "Cuentas: Desechos"
 
 msgid "Accumulated Depreciation"
 msgstr "Depreciación acumulada"
@@ -1927,7 +1927,7 @@ msgid "Beta"
 msgstr "Beta"
 
 msgid "Biggest causes of scrap by reason, item, or work center"
-msgstr ""
+msgstr "Mayores causas de desechos por razón, artículo o centro de trabajo"
 
 msgid "Bill of Material"
 msgstr "Lista de Materiales"
@@ -2060,7 +2060,7 @@ msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>
 msgstr "Al aceptar la invitación, aceptas los <0>Términos de Servicio</0> y la <1>Política de Privacidad</1>."
 
 msgid "By dimension"
-msgstr ""
+msgstr "Por dimensión"
 
 msgid "By Document Date"
 msgstr "Por Fecha de Documento"
@@ -2486,7 +2486,7 @@ msgid "Code"
 msgstr "Código"
 
 msgid "COGS"
-msgstr ""
+msgstr "COGS"
 
 msgid "Collapse"
 msgstr "Contraer"
@@ -2513,7 +2513,7 @@ msgid "Collapse subtree"
 msgstr "Contraer subárbol"
 
 msgid "Column dimension"
-msgstr ""
+msgstr "Dimensión de columna"
 
 msgid "Column visibility and order"
 msgstr "Visibilidad y orden de columnas"
@@ -3096,7 +3096,7 @@ msgid "Cost of Goods Sold (default)"
 msgstr "Costo de Bienes Vendidos (predeterminado)"
 
 msgid "Cost of goods sold by item group, item, or any dimension"
-msgstr ""
+msgstr "Costo de bienes vendidos por grupo de artículos, artículo o cualquier dimensión"
 
 msgid "Cost of Sales"
 msgstr "Costo de Ventas"
@@ -5375,7 +5375,7 @@ msgid "Expense side of deferred tax movements (paired with deferred tax liabilit
 msgstr "Error al crear la clase de activo: {0}"
 
 msgid "Expenses"
-msgstr ""
+msgstr "Gastos"
 
 msgid "Expert guidance"
 msgstr "Orientación experta"
@@ -6339,7 +6339,7 @@ msgid "Group"
 msgstr "Grupo"
 
 msgid "Group by"
-msgstr ""
+msgstr "Agrupar por"
 
 msgid "Group Members"
 msgstr "Miembros del Grupo"
@@ -6880,7 +6880,7 @@ msgid "Inventory balances"
 msgstr "Saldos de inventario"
 
 msgid "Inventory Change"
-msgstr ""
+msgstr "Cambio de Inventario"
 
 msgid "Inventory Control"
 msgstr "Control de Inventario"
@@ -8658,7 +8658,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Aún no hay actividad de inventario de artículos aquí."
 
 msgid "No journal lines in scope for this period"
-msgstr ""
+msgstr "Sin líneas de diario en alcance para este período"
 
 msgid "No lines to map"
 msgstr "Sin líneas para mapear"
@@ -11287,13 +11287,13 @@ msgid "Save Method"
 msgstr "Guardar Método"
 
 msgid "Save view"
-msgstr ""
+msgstr "Guardar vista"
 
 msgid "Save View"
 msgstr "Guardar Vista"
 
 msgid "Saved Views"
-msgstr ""
+msgstr "Vistas Guardadas"
 
 msgid "Saving..."
 msgstr "Guardando..."
@@ -12011,13 +12011,13 @@ msgid "Showing in {parentCurrency}"
 msgstr "Mostrando en {parentCurrency}"
 
 msgid "Showing the first 500 lines"
-msgstr ""
+msgstr "Mostrando las primeras 500 líneas"
 
 msgid "Showing the top 1,000 groups by amount"
-msgstr ""
+msgstr "Mostrando los 1,000 grupos principales por cantidad"
 
 msgid "Showing the top 50 columns"
-msgstr ""
+msgstr "Mostrando las 50 columnas principales"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Se muestra como un fondo tenue detrás de cada página de los PDF generados"
@@ -12089,10 +12089,10 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice expenses by supplier, supplier type, or any dimension"
-msgstr ""
+msgstr "Dividir gastos por proveedor, tipo de proveedor o cualquier dimensión"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
-msgstr ""
+msgstr "Dividir ingresos por cliente, tipo de cliente o cualquier dimensión"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Prueba de humo de los flujos diarios principales de principio a fin"
@@ -13501,7 +13501,7 @@ msgid "Theme Color"
 msgstr "Color de tema"
 
 msgid "Then by"
-msgstr ""
+msgstr "Luego por"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "No hay presupuestos de proveedores activos para comparar en esta solicitud de cotización."
@@ -14627,7 +14627,7 @@ msgid "View Transfer"
 msgstr "Ver Transferencia"
 
 msgid "Views"
-msgstr ""
+msgstr "Vistas"
 
 msgid "Visibilities"
 msgstr "Visibilidades"
@@ -14818,7 +14818,7 @@ msgid "What data"
 msgstr "Qué datos"
 
 msgid "What drove inventory up or down, by any dimension"
-msgstr ""
+msgstr "Qué impulsó el inventario hacia arriba o hacia abajo, por cualquier dimensión"
 
 msgid "What is {translatedTerm}?"
 msgstr "¿Qué es {translatedTerm}?"

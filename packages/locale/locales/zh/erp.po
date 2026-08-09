@@ -161,7 +161,7 @@ msgid "/month/user"
 msgstr "/月/用户"
 
 msgid "% of total"
-msgstr ""
+msgstr "占总数百分比"
 
 msgid "% of Total"
 msgstr "占总数的 %"
@@ -553,19 +553,19 @@ msgid "Accounts receivable for amounts owed by customers"
 msgstr "客户应付金额的应收账款。"
 
 msgid "Accounts: Cost of Goods Sold"
-msgstr ""
+msgstr "账户：销售成本"
 
 msgid "Accounts: Expenses"
-msgstr ""
+msgstr "账户：费用"
 
 msgid "Accounts: Inventory"
-msgstr ""
+msgstr "账户：库存"
 
 msgid "Accounts: Revenue"
-msgstr ""
+msgstr "账户：收入"
 
 msgid "Accounts: Scrap"
-msgstr ""
+msgstr "账户：报废"
 
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
@@ -1927,7 +1927,7 @@ msgid "Beta"
 msgstr "测试版"
 
 msgid "Biggest causes of scrap by reason, item, or work center"
-msgstr ""
+msgstr "按原因、物料或工作中心显示最大报废原因"
 
 msgid "Bill of Material"
 msgstr "物料清单"
@@ -2060,7 +2060,7 @@ msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>
 msgstr "通过接受邀请，您同意<0>服务条款</0>和<1>隐私政策</1>。"
 
 msgid "By dimension"
-msgstr ""
+msgstr "按维度"
 
 msgid "By Document Date"
 msgstr "按单据日期"
@@ -2486,7 +2486,7 @@ msgid "Code"
 msgstr "代码"
 
 msgid "COGS"
-msgstr ""
+msgstr "COGS"
 
 msgid "Collapse"
 msgstr "折叠"
@@ -2513,7 +2513,7 @@ msgid "Collapse subtree"
 msgstr "折叠子树"
 
 msgid "Column dimension"
-msgstr ""
+msgstr "列维度"
 
 msgid "Column visibility and order"
 msgstr "列的可见性和顺序"
@@ -3096,7 +3096,7 @@ msgid "Cost of Goods Sold (default)"
 msgstr "销售成本（默认）"
 
 msgid "Cost of goods sold by item group, item, or any dimension"
-msgstr ""
+msgstr "按物料组、物料或任何维度的销售成本"
 
 msgid "Cost of Sales"
 msgstr "销售成本"
@@ -5375,7 +5375,7 @@ msgid "Expense side of deferred tax movements (paired with deferred tax liabilit
 msgstr "无法创建资产类别: {0}"
 
 msgid "Expenses"
-msgstr ""
+msgstr "费用"
 
 msgid "Expert guidance"
 msgstr "专家指导"
@@ -6339,7 +6339,7 @@ msgid "Group"
 msgstr "组"
 
 msgid "Group by"
-msgstr ""
+msgstr "分组依据"
 
 msgid "Group Members"
 msgstr "群组成员"
@@ -6880,7 +6880,7 @@ msgid "Inventory balances"
 msgstr "库存余额"
 
 msgid "Inventory Change"
-msgstr ""
+msgstr "库存变化"
 
 msgid "Inventory Control"
 msgstr "库存控制"
@@ -8658,7 +8658,7 @@ msgid "No items have inventory activity here yet."
 msgstr "此处尚无项目的库存活动。"
 
 msgid "No journal lines in scope for this period"
-msgstr ""
+msgstr "本期范围内没有日记账行"
 
 msgid "No lines to map"
 msgstr "没有行需要映射"
@@ -11287,13 +11287,13 @@ msgid "Save Method"
 msgstr "保存方法"
 
 msgid "Save view"
-msgstr ""
+msgstr "保存视图"
 
 msgid "Save View"
 msgstr "保存视图"
 
 msgid "Saved Views"
-msgstr ""
+msgstr "已保存视图"
 
 msgid "Saving..."
 msgstr "保存中..."
@@ -12011,13 +12011,13 @@ msgid "Showing in {parentCurrency}"
 msgstr "显示货币：{parentCurrency}"
 
 msgid "Showing the first 500 lines"
-msgstr ""
+msgstr "显示前500行"
 
 msgid "Showing the top 1,000 groups by amount"
-msgstr ""
+msgstr "按金额显示前1,000个分组"
 
 msgid "Showing the top 50 columns"
-msgstr ""
+msgstr "显示前50列"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "作为淡色背景显示在每个生成的PDF页面后面"
@@ -12089,10 +12089,10 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice expenses by supplier, supplier type, or any dimension"
-msgstr ""
+msgstr "按供应商、供应商类型或任何维度划分费用"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
-msgstr ""
+msgstr "按客户、客户类型或任何维度划分收入"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "端到端烟雾测试核心日常流程"
@@ -13501,7 +13501,7 @@ msgid "Theme Color"
 msgstr "主题颜色"
 
 msgid "Then by"
-msgstr ""
+msgstr "然后按"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "此RFQ没有有效的供应商报价可比较。"
@@ -14627,7 +14627,7 @@ msgid "View Transfer"
 msgstr "查看转移"
 
 msgid "Views"
-msgstr ""
+msgstr "视图"
 
 msgid "Visibilities"
 msgstr "可见性"
@@ -14818,7 +14818,7 @@ msgid "What data"
 msgstr "什么数据"
 
 msgid "What drove inventory up or down, by any dimension"
-msgstr ""
+msgstr "按任何维度推动库存上升或下降的因素"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"
