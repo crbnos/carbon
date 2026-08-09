@@ -44562,6 +44562,144 @@ export type Database = {
           },
         ]
       }
+      reportView: {
+        Row: {
+          companyId: string
+          config: Json
+          createdAt: string
+          createdBy: string
+          id: string
+          name: string
+          reportKey: string
+          updatedAt: string | null
+          updatedBy: string | null
+          visibility: Database["public"]["Enums"]["reportViewVisibility"]
+        }
+        Insert: {
+          companyId: string
+          config: Json
+          createdAt?: string
+          createdBy: string
+          id?: string
+          name: string
+          reportKey: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          visibility?: Database["public"]["Enums"]["reportViewVisibility"]
+        }
+        Update: {
+          companyId?: string
+          config?: Json
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          name?: string
+          reportKey?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          visibility?: Database["public"]["Enums"]["reportViewVisibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reportView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "reportView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "reportView_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportView_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportView_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportView_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportView_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "reportView_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportView_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportView_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportView_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reportView_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       rework: {
         Row: {
           companyId: string
@@ -76254,6 +76392,66 @@ export type Database = {
           similarity: number
         }[]
       }
+      journalDimensionPivot: {
+        Args: {
+          p_account_classes?: string[]
+          p_account_ids?: string[]
+          p_account_types?: string[]
+          p_column_dimension?: string
+          p_company_group_id: string
+          p_company_id: string
+          p_end: string
+          p_filters?: Json
+          p_group_limit?: number
+          p_period_ends?: string[]
+          p_row_dimension_1?: string
+          p_row_dimension_2?: string
+          p_start: string
+        }
+        Returns: {
+          amount: number
+          columnKey: string
+          hasMore: boolean
+          lineCount: number
+          quantity: number
+          rowValue1Id: string
+          rowValue2Id: string
+        }[]
+      }
+      journalDimensionPivotLines: {
+        Args: {
+          p_account_classes?: string[]
+          p_account_ids?: string[]
+          p_account_types?: string[]
+          p_column_dimension?: string
+          p_column_period_end?: string
+          p_column_period_start?: string
+          p_column_value?: string
+          p_company_group_id: string
+          p_company_id: string
+          p_end: string
+          p_filters?: Json
+          p_line_limit?: number
+          p_row_dimension_1?: string
+          p_row_dimension_2?: string
+          p_row_value_1?: string
+          p_row_value_2?: string
+          p_start: string
+        }
+        Returns: {
+          accountId: string
+          accountName: string
+          accountNumber: string
+          amount: number
+          description: string
+          documentId: string
+          documentType: string
+          id: string
+          journalEntryId: string
+          postingDate: string
+          quantity: number
+        }[]
+      }
       journalLinesByAccountNumber: {
         Args: { from_date?: string; to_date?: string }
         Returns: {
@@ -77244,6 +77442,7 @@ export type Database = {
         | "Manufacturing Consumption"
         | "Manufacturing Output"
       receiptStatus: "Draft" | "Pending" | "Posted" | "Voided"
+      reportViewVisibility: "Private" | "Company"
       riskRegisterType: "Risk" | "Opportunity"
       riskSource:
         | "Customer"
@@ -78651,6 +78850,7 @@ export const Constants = {
         "Manufacturing Output",
       ],
       receiptStatus: ["Draft", "Pending", "Posted", "Voided"],
+      reportViewVisibility: ["Private", "Company"],
       riskRegisterType: ["Risk", "Opportunity"],
       riskSource: [
         "Customer",

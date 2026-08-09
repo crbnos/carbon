@@ -49032,6 +49032,186 @@ export default {
         tags: ["customerItemPriceOverride"]
       }
     },
+    "/reportView": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reportView.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.reportKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.config"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.visibility"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/reportView"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["reportView"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.reportView"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["reportView"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reportView.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.reportKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.config"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.visibility"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["reportView"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reportView.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.reportKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.config"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.visibility"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reportView.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.reportView"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["reportView"]
+      }
+    },
     "/companyIntegration": {
       get: {
         parameters: [
@@ -90598,6 +90778,118 @@ export default {
         tags: ["(rpc) sync_finish_job_operation"]
       }
     },
+    "/rpc/journalDimensionPivotLines": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_account_classes: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_account_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_account_types: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_column_dimension: {
+                  format: "text",
+                  type: "string"
+                },
+                p_column_period_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_column_period_start: {
+                  format: "date",
+                  type: "string"
+                },
+                p_column_value: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_group_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_filters: {
+                  format: "jsonb"
+                },
+                p_line_limit: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_row_dimension_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_dimension_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_value_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_value_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_group_id",
+                "p_company_id",
+                "p_start",
+                "p_end"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) journalDimensionPivotLines"]
+      }
+    },
     "/rpc/get_ap_tie_out": {
       post: {
         parameters: [
@@ -95302,6 +95594,105 @@ export default {
           }
         },
         tags: ["(rpc) get_opportunity_with_related_records"]
+      }
+    },
+    "/rpc/journalDimensionPivot": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_account_classes: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_account_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_account_types: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_column_dimension: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_group_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_filters: {
+                  format: "jsonb"
+                },
+                p_group_limit: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_period_ends: {
+                  format: "date[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_row_dimension_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_dimension_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_group_id",
+                "p_company_id",
+                "p_start",
+                "p_end"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) journalDimensionPivot"]
       }
     },
     "/rpc/getConsolidationRates": {
@@ -118680,6 +119071,71 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    reportView: {
+      required: [
+        "id",
+        "companyId",
+        "reportKey",
+        "name",
+        "config",
+        "visibility",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('rv'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        reportKey: {
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        config: {
+          format: "jsonb"
+        },
+        visibility: {
+          default: "Private",
+          enum: ["Private", "Company"],
+          format: 'public."reportViewVisibility"',
           type: "string"
         },
         createdBy: {
@@ -161802,6 +162258,75 @@ export default {
       type: "string"
     },
     "rowFilter.customerItemPriceOverride.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.reportView": {
+      name: "reportView",
+      description: "reportView",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/reportView"
+      }
+    },
+    "rowFilter.reportView.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportView.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportView.reportKey": {
+      name: "reportKey",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportView.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportView.config": {
+      name: "config",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportView.visibility": {
+      name: "visibility",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportView.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportView.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportView.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reportView.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",
