@@ -218,6 +218,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const state: PivotState = { ...rawState, rows: resolvedRows, columnAxis };
 
+  // January is the fallback only for genuinely-unset settings (PGRST116 = no
+  // row); a failed query must not silently mis-bucket a non-January fiscal year.
+  if (
+    fiscalYearSettings.error &&
+    fiscalYearSettings.error.code !== "PGRST116"
+  ) {
+    throw new Error("Failed to load fiscal year settings");
+  }
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
 
@@ -493,10 +501,18 @@ export default function AnalyticsReportRoute() {
     });
     if (rows.length === 0) return;
 
-    // Standalone Blob + anchor download — same mechanism as exportReport.ts
+    // Standalone Blob + anchor download — same mechanism as exportReport.ts.
+    // Label cells (dimension values, saved names) are user-controlled: prefix
+    // formula-trigger characters so spreadsheets treat them as text. Numeric
+    // measure cells (incl. negatives) pass through untouched.
+    const sanitizeCell = (value: string) => {
+      if (value === "" || Number.isFinite(Number(value))) return value;
+      return /^[=+\-@]/.test(value) ? `'${value}` : value;
+    };
     const csvData = rows
       .map((row) =>
         row
+          .map(sanitizeCell)
           .map((value) =>
             /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
           )
