@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
@@ -33,6 +34,7 @@ import {
   unassignCrewWeek,
   upsertCrewAssignment
 } from "~/modules/production";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 /**
@@ -185,7 +187,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const date =
       String(formData.get("date") ?? "") ||
       url.searchParams.get("date") ||
-      new Date().toISOString().slice(0, 10);
+      datetime.today(await getCompanyTimeZone(client, companyId)).toString();
     await notifyForEmployeeDate(
       client,
       companyId,

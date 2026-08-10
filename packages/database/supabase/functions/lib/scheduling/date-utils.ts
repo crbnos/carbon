@@ -1,3 +1,4 @@
+import { parseAbsolute, toCalendarDate } from "@internationalized/date";
 /**
  * Normalize a Postgres DATE column value to "YYYY-MM-DD".
  *
@@ -42,4 +43,15 @@ export function toIsoDateInTimeZone(date: Date, timeZone: string): string {
     isoDateFormatters.set(timeZone, formatter);
   }
   return formatter.format(date);
+}
+
+/**
+ * The business day a UTC instant falls on in the given timezone, as
+ * "YYYY-MM-DD". Same implementation as lib/datetime.ts `datetime.businessDay`
+ * (parseAbsolute -> toCalendarDate) — duplicated here because the scheduling
+ * modules are deliberately pure: importing lib/datetime.ts would drag the DB
+ * client graph into every allocator unit test.
+ */
+export function businessDay(instant: string, timeZone: string): string {
+  return toCalendarDate(parseAbsolute(instant, timeZone)).toString();
 }

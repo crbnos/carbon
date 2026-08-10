@@ -40,7 +40,8 @@ const entityTypeLabels: Record<string, string> = {
   FixedAssetClass: "Asset Class",
   CostCenter: "Cost Center",
   WorkCenter: "Work Center",
-  Process: "Process"
+  Process: "Process",
+  ScrapReason: "Scrap Reason"
 };
 
 const DimensionForm = ({ initialValues, onClose }: DimensionFormProps) => {
@@ -122,7 +123,7 @@ const DimensionForm = ({ initialValues, onClose }: DimensionFormProps) => {
                   termId="dimension-values"
                 />
               )}
-              <Boolean name="active" label={t`Active`} />
+              <Boolean name="active" label={t`Active`} bordered />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import type { Database, Json } from "@carbon/database";
 import {
+  ASSEMBLER_JOB_CONCURRENCY,
   ASSEMBLER_SERVICE_API_KEY,
   ASSEMBLER_SERVICE_URL,
   ASSEMBLER_STORAGE_PUBLIC_URL,
@@ -35,6 +36,30 @@ export const assemblerAuthHeaders: Record<string, string> =
     ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
     : {};
 
+// Shared bounded concurrency queue for EVERY assembler-backed function
+// (optimize, compact, convert, plan). They all park on the assembler completion
+// event (`runAssemblerJob` → `step.waitForEvent`, up to 15 min), and a parked run
+// holds its concurrency slot the whole wait — so without a cap a burst (e.g. the
+// viewer's per-view optimise auto-fire) exhausts account concurrency and starves
+// the `event-queue` drainer + its handlers. One shared `env`-scoped key across all
+// four functions bounds the TOTAL in flight, leaving the rest of the account free.
+// The cap ≈ how many assembler jobs should run at once (the service 429s past its
+// real capacity, so more parked runs buy nothing); the WASM raw tier renders while
+// an optimise waits, so a low cap never blocks a user from viewing a model.
+// Default 5: a per-function limit above the Inngest plan's account concurrency
+// fails app sync outright ("function has higher concurrency limits than your
+// plan"), and 5 is the smallest plan cap in play. Override via
+// ASSEMBLER_JOB_CONCURRENCY where the plan allows more.
+export const ASSEMBLER_CONCURRENCY: [
+  { scope: "env"; key: string; limit: number }
+] = [
+  {
+    scope: "env",
+    key: '"assembler"',
+    limit: Number(ASSEMBLER_JOB_CONCURRENCY) || 5
+  }
+];
+
 /**
  * The assembler feature flag IS the config: unset `ASSEMBLER_SERVICE_URL` means
  * the whole pipeline is off. Gate the Inngest functions on this so triggered
@@ -50,6 +75,61 @@ export function assemblerBaseUrl(): string {
     throw new Error("ASSEMBLER_SERVICE_URL is not configured");
   }
   return ASSEMBLER_SERVICE_URL;
+}
+
+// Where a retained raw lands: uploads/compaction stage in `temp-staging`
+// (EPHEMERAL, 2.5 GB), and the retained raw is relocated to `private` (DURABLE,
+// 50 MB served cap) so it survives — or pruned when it can't fit and a GLB
+// preview already exists. The 50 MB gate is `MODEL_RAW_KEEP_MAX_BYTES`.
+export const RAW_STAGING_BUCKET = "temp-staging";
+export const RAW_DURABLE_BUCKET = "private";
+
+/**
+ * COPY a staged object into the durable bucket, same key, server-side (no
+ * download — storage-js `copy` with `destinationBucket`). Deliberately not a
+ * move: a move deletes the staging object instantly, and a concurrent
+ * optimize/convert/plan that already resolved `temp-staging` as its source
+ * bucket then signs a path that no longer exists ("Object not found") and
+ * fails. The staged copy stays behind and the scheduled cleanup prunes it once
+ * it's stale (see cleanup.ts `prune-staged-raw-models`). Idempotent: an
+ * already-existing durable copy counts as success. Returns null on success,
+ * else the storage error message.
+ */
+export async function copyRawToDurable(
+  client: SupabaseClient<Database>,
+  path: string
+): Promise<string | null> {
+  const { error } = await client.storage
+    .from(RAW_STAGING_BUCKET)
+    .copy(path, path, { destinationBucket: RAW_DURABLE_BUCKET });
+  if (!error) return null;
+  return /already exists|duplicate/i.test(error.message) ? null : error.message;
+}
+
+/**
+ * Sign a read URL for a job's source object. A missing object throws
+ * `NonRetriableError` — the source is gone for good (deleted, staging cleared,
+ * or the upload never completed), so retrying only delays the Failed stamp the
+ * viewer needs before it can settle. Any other signing failure stays retriable.
+ */
+export async function signSourceUrl(
+  client: SupabaseClient<Database>,
+  bucket: string,
+  path: string,
+  expiresInSeconds: number
+): Promise<string> {
+  const source = await client.storage
+    .from(bucket)
+    .createSignedUrl(path, expiresInSeconds);
+  if (source.error) {
+    if (/not.?found/i.test(source.error.message)) {
+      throw new NonRetriableError(
+        `Source file no longer exists in storage: ${bucket}/${path}`
+      );
+    }
+    throw new Error(`Failed to sign source URL: ${source.error.message}`);
+  }
+  return source.data.signedUrl;
 }
 
 /**
@@ -367,6 +447,24 @@ export async function runAssemblerJob(
       uploadUrls
     });
   });
+
+  // Fast jobs (small models, warm/cached assembler) can complete — and fire
+  // their callback — in the gap between the submit step finishing and this
+  // run registering its waitForEvent; the event then matches nothing and the
+  // run parks for the FULL timeout. Poll once up front so an already-terminal
+  // job returns immediately; the wait only covers genuinely in-flight work.
+  const early: PollOutcome = await step.run(`${idPrefix}-early-poll`, () =>
+    pollAssemblerJobOnce({ jobId, mintUploadUrls, baseUrl })
+  );
+  if (early.status === "done") {
+    return { result: early.result, stats: early.stats };
+  }
+  if (early.status === "error") {
+    if (early.error === "Job canceled") {
+      throw new NonRetriableError(`assembler ${action} canceled`);
+    }
+    throw new Error(early.error);
+  }
 
   const done = await step.waitForEvent(`${idPrefix}-wait`, {
     event: "carbon/assembler-job-done",

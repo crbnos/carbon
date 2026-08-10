@@ -24,8 +24,20 @@ export function SearchResultItem({
       )}
     >
       {/* Icon */}
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-        {Icon && <Icon className="w-4 h-4 text-muted-foreground" />}
+      <div
+        className={cn(
+          "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
+          config.bgColor || "bg-muted"
+        )}
+      >
+        {Icon && (
+          <Icon
+            className={cn(
+              "w-4 h-4",
+              config.textColor || "text-muted-foreground"
+            )}
+          />
+        )}
       </div>
 
       {/* Content */}

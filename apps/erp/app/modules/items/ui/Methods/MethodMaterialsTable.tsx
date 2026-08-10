@@ -62,7 +62,12 @@ const MethodMaterialsTable = memo(
         {
           accessorKey: "item.name",
           header: t`Description`,
-          cell: ({ row }) => row.original.item?.name
+          cell: ({ row }) => row.original.item?.name,
+          meta: {
+            // The accessor is a dot path; the exporter does a flat `row[key]`
+            // read, so without this the column exports blank.
+            exportValue: (row) => row.item?.name ?? null
+          }
         },
         {
           accessorKey: "methodType",

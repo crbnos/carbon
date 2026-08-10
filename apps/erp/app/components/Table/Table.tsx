@@ -102,9 +102,20 @@ interface TableProps<T extends object> {
     label: string;
   }[];
   primaryAction?: ReactNode;
+  // Optional override for the "no rows" state. When provided and the table is
+  // empty (and not loading), this is rendered instead of the default
+  // "No results found" / "No data exists" blocks. Use it when the generic
+  // filtered empty state would be misleading — e.g. a table pre-filtered to a
+  // parent entity that simply has no child records yet.
+  emptyState?: ReactNode;
   // Optional controls rendered in the toolbar row next to the search/filter
   // (e.g. quick filter toggles that write their own `filter` URL params).
   headerActions?: ReactNode;
+  // Set when the caller narrows `data` itself (local search/filter state the
+  // table can't see in the URL). Without it a caller-filtered-to-zero table
+  // looks "genuinely empty" and the toolbar — including the caller's own search
+  // box in `headerActions` — is hidden, leaving no way to undo the filter.
+  isFiltered?: boolean;
   table?: string;
   title?: string;
   // Optional node rendered immediately after the title (e.g. a status badge).
@@ -117,6 +128,9 @@ interface TableProps<T extends object> {
   withSavedView?: boolean;
   withSearch?: boolean;
   withSelectableRows?: boolean;
+  // Forwarded to TableHeader — hide the app-sidebar toggle when this Table is
+  // rendered inside a drawer or modal.
+  withSidebarTrigger?: boolean;
   withSimpleSorting?: boolean;
   sort?: ReactNode;
   getRowId?: (originalRow: T, index: number) => string;
@@ -255,7 +269,9 @@ const Table = <T extends object>({
   editableComponents,
   importCSV,
   primaryAction,
+  emptyState,
   headerActions,
+  isFiltered = false,
   table: tableName,
   title,
   titleBadge,
@@ -265,6 +281,7 @@ const Table = <T extends object>({
   withSavedView = false,
   withSearch = true,
   withSelectableRows = false,
+  withSidebarTrigger = true,
   withSimpleSorting = true,
   sort,
   getRowId,
@@ -536,7 +553,7 @@ const Table = <T extends object>({
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCell, setSelectedCell] = useState<Position>(null);
 
-  // forceEditMode follows the document's state (e.g. Rectify flips a Posted
+  // forceEditMode follows the document's state (e.g. Reopen flips a Pending
   // count back to Draft via revalidation, without remounting the table) — and
   // the Edit/Lock toggle is hidden while it's set, so a stale editMode would
   // strand the table with no way to recover. Keep them in sync.
@@ -926,6 +943,61 @@ const Table = <T extends object>({
   //   .getLeftVisibleLeafColumns()
   //   .findLast((c) => c.getIsPinned() === "left");
 
+  // Horizontal scroll affordance: without it a pinned column simply truncates
+  // the row and nothing signals that more columns exist. Track which edges have
+  // content scrolled past them so pinned cells can cast a shadow over it.
+  const [scrolledEdges, setScrolledEdges] = useState({
+    left: false,
+    right: false
+  });
+
+  // The extra deps are deliberate re-attach triggers rather than values read in
+  // the body: `tableRef` is null on first mount (the table only renders once
+  // there are rows), so the observer must be re-registered when the structure
+  // changes, or the overflow is never detected.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-attach triggers
+  useEffect(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      setScrolledEdges((prev) => {
+        const next = {
+          left: el.scrollLeft > 1,
+          right: maxScroll > 1 && el.scrollLeft < maxScroll - 1
+        };
+        return prev.left === next.left && prev.right === next.right
+          ? prev
+          : next;
+      });
+    };
+
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    // Observe the table as well as the container: rendering rows widens the
+    // table without resizing its scroll parent, so observing only the parent
+    // would never see the overflow appear.
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(el);
+    if (tableRef.current) resizeObserver.observe(tableRef.current);
+    return () => {
+      el.removeEventListener("scroll", update);
+      resizeObserver.disconnect();
+    };
+  }, [visibleColumns, columnOrder, pinnedColumnsKey]);
+
+  // Primitive the memoized Row/Cell comparators can compare — see Cell.tsx.
+  // `getPinnedStyles` is a fresh closure every render, so this has to encode
+  // everything it can return: the scrolled edges that drive the shadow, and
+  // each pinned column's sticky offset out of `columnSizeMap` (the resize
+  // observer replaces that Map wholesale, so comparing the Map itself would
+  // re-render every row on every observation).
+  const pinnedStyleKey = `${scrolledEdges.left}:${scrolledEdges.right}|${visibleColumns
+    .filter((col) => col.getIsPinned())
+    .map((col) => `${col.id}@${columnSizeMap.get(col.id)?.startX ?? 0}`)
+    .join(",")}`;
+
   const getPinnedStyles = (column: Column<T>): CSSProperties => {
     const isPinned = column.getIsPinned();
     if (!isPinned) return {};
@@ -933,11 +1005,22 @@ const Table = <T extends object>({
     const pinnedPosition = columnSizeMap.get(column.id);
     const startX = pinnedPosition?.startX ?? 0;
 
+    // Only shadow the side that actually has content hidden behind it.
+    const castsShadow =
+      isPinned === "left" ? scrolledEdges.left : scrolledEdges.right;
+
     return {
       position: "sticky",
       left: isPinned === "left" ? startX : undefined,
       right: isPinned === "right" ? 0 : undefined,
       zIndex: 2,
+      // Negative spread keeps the shadow on the offset side only, so no
+      // clip-path is needed to stop it leaking over neighbouring cells.
+      boxShadow: castsShadow
+        ? isPinned === "left"
+          ? "8px 0 10px -6px hsl(var(--foreground) / 0.35)"
+          : "-8px 0 10px -6px hsl(var(--foreground) / 0.35)"
+        : undefined,
       maxWidth:
         isPinned === "right" &&
         column.columnDef.header?.toString() === "Actions"
@@ -959,6 +1042,7 @@ const Table = <T extends object>({
   // the title bar + primary action.
   const isTableEmpty =
     data.length === 0 &&
+    !isFiltered &&
     !hasFilters &&
     params.getAll("sort").filter(Boolean).length === 0 &&
     !params.get("search")?.trim();
@@ -1003,6 +1087,7 @@ const Table = <T extends object>({
         withSavedView={withSavedView}
         withSearch={withSearch}
         withSelectableRows={withSelectableRows}
+        withSidebarTrigger={withSidebarTrigger}
         sort={sort}
       />
 
@@ -1053,6 +1138,10 @@ const Table = <T extends object>({
                     ))}
                   </Tbody>
                 </TableBase>
+              </div>
+            ) : emptyState ? (
+              <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+                {emptyState}
               </div>
             ) : hasFilters ? (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">
@@ -1120,7 +1209,13 @@ const Table = <T extends object>({
                             (sortable ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <div className="group flex justify-start items-center gap-2">
+                                  <div
+                                    className={cn(
+                                      "group flex items-center gap-2",
+                                      header.column.columnDef.meta
+                                        ?.headerClassName ?? "justify-start"
+                                    )}
+                                  >
                                     {header.column.columnDef.meta?.icon}
                                     {typeof header.column.columnDef.header ===
                                     "string"
@@ -1181,7 +1276,13 @@ const Table = <T extends object>({
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             ) : (
-                              <div className="flex justify-start items-center gap-2">
+                              <div
+                                className={cn(
+                                  "flex items-center gap-2",
+                                  header.column.columnDef.meta
+                                    ?.headerClassName ?? "justify-start"
+                                )}
+                              >
                                 {header.column.columnDef.meta?.icon}
                                 {typeof header.column.columnDef.header ===
                                 "string"
@@ -1222,11 +1323,12 @@ const Table = <T extends object>({
                               row.index in rowSelection &&
                               !!rowSelection[row.index]
                             }
-                            pinnedColumns={pinnedColumnsKey}
+                            visibleColumns={visibleColumns}
                             selectedCell={selectedCell}
                             row={row}
                             rowIsSelected={selectedCell?.row === row.index}
                             getPinnedStyles={getPinnedStyles}
+                            pinnedStyleKey={pinnedStyleKey}
                             onCellClick={onCellClick}
                             onCellUpdate={onCellUpdate}
                             onClick={handleRowClick}
@@ -1250,11 +1352,12 @@ const Table = <T extends object>({
                       isRowSelected={
                         row.index in rowSelection && !!rowSelection[row.index]
                       }
-                      pinnedColumns={pinnedColumnsKey}
+                      visibleColumns={visibleColumns}
                       selectedCell={selectedCell}
                       row={row}
                       rowIsSelected={selectedCell?.row === row.index}
                       getPinnedStyles={getPinnedStyles}
+                      pinnedStyleKey={pinnedStyleKey}
                       onCellClick={onCellClick}
                       onCellUpdate={onCellUpdate}
                       onClick={handleRowClick}

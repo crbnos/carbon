@@ -3,10 +3,12 @@ import type { Json } from "@carbon/database";
 import { modelPathOptimizeFormat } from "@carbon/utils";
 import { inngest } from "../../client";
 import {
+  ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
   resolveModelSourceBucket,
-  runAssemblerJob
+  runAssemblerJob,
+  signSourceUrl
 } from "./assembler-client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
@@ -24,8 +26,15 @@ export const modelOptimizeFunction = inngest.createFunction(
   {
     id: "model-optimize",
     retries: 2,
+    concurrency: ASSEMBLER_CONCURRENCY,
+    // Collapse the viewer's per-view auto-fire: while one optimise for a model is
+    // in flight, duplicate triggers (repeated views, drag re-attach) are skipped
+    // rather than spawning redundant runs. A later Retry after it settles still
+    // runs (nothing in flight). The `alreadyOptimized` guard covers re-fires on an
+    // already-optimised model; this covers the in-flight duplicates.
+    singleton: { key: "event.data.modelUploadId", mode: "skip" },
     onFailure: async ({ event }) => {
-      const { modelUploadId } = event.data.event.data;
+      const { modelUploadId, companyId } = event.data.event.data;
       const client = getCarbonServiceRole();
       await client
         .from("modelUpload")
@@ -34,15 +43,29 @@ export const modelOptimizeFunction = inngest.createFunction(
           optimizeError: event.data.error.message
         })
         .eq("id", modelUploadId);
+      // A failed optimise must not strand the fat raw for the prune — compact
+      // is cheaper than optimise (no simplify ladder) and often still succeeds.
+      await inngest.send({
+        name: "carbon/model-compact",
+        data: { modelUploadId, companyId }
+      });
     }
   },
   { event: "carbon/model-optimize" },
   async ({ event, step, logger }) => {
     const { modelUploadId, companyId } = event.data;
+    const force = event.data.force === true;
 
     // Feature-gated: no assembler configured -> skip before touching the row,
     // so the viewer just serves the raw model tier (optimizeStatus stays null).
+    // Still fire model-compact: it relocates the raw from ephemeral staging to
+    // the durable bucket (no assembler needed for a plain relocation) so an
+    // assembler-off model isn't lost when staging is cleared.
     if (!assemblerEnabled()) {
+      await step.sendEvent("compact", {
+        name: "carbon/model-compact",
+        data: { modelUploadId, companyId }
+      });
       logger.info("model optimise skipped — assembler is not configured", {
         modelUploadId
       });
@@ -68,6 +91,7 @@ export const modelOptimizeFunction = inngest.createFunction(
       // client auto-fire, an errant retry — re-running the assembler on a model
       // that already has its GLB.
       if (
+        !force &&
         upload.data.optimizeStatus === "Success" &&
         upload.data.optimizedModelPath
       ) {
@@ -99,6 +123,13 @@ export const modelOptimizeFunction = inngest.createFunction(
     });
 
     if (model.alreadyOptimized) {
+      // Still fire compact — legacy rows optimised before the compact pipeline
+      // (or after a compact failure) may hold an uncompacted fat raw; the
+      // compact function no-ops on already-`.zst` paths.
+      await step.sendEvent("compact", {
+        name: "carbon/model-compact",
+        data: { modelUploadId, companyId }
+      });
       logger.info("model optimise skipped — already optimised", {
         modelUploadId
       });
@@ -117,8 +148,15 @@ export const modelOptimizeFunction = inngest.createFunction(
     // Where the optimised GLB lands. The service late-mint uploads to this via a
     // signed URL minted fresh on each poll (below).
     const optimizedPath = `${companyId}/models/${modelUploadId}/optimized.glb`;
-    // Idempotent per model — a re-run attaches to the in-flight optimise.
-    const jobId = `optimize-${modelUploadId}`;
+    // Idempotent per model — a re-run attaches to the in-flight optimise. A
+    // FORCED regen must not: the assembler's job store keeps completed results
+    // (24h TTL), so the stable id would attach to the previous run's cached
+    // result and "finish" instantly. Salt the id with the triggering event so
+    // each forced regen is a fresh assembler job (retries of the same event
+    // keep the same id and still attach to their own in-flight run).
+    const jobId = force
+      ? `optimize-${modelUploadId}-${event.id ?? event.ts ?? "forced"}`
+      : `optimize-${modelUploadId}`;
 
     // Router: sync inline on Lambda (default when enabled) or async submit->poll
     // on the standing service / dev container. Sync off => today's async path.
@@ -131,18 +169,21 @@ export const modelOptimizeFunction = inngest.createFunction(
       buildBody: async () => {
         const client = getCarbonServiceRole();
         // Optimised artifacts are written to `private` (50 MB served cap) below.
-        const source = await client.storage
-          .from(model.sourceBucket)
-          .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
-        if (source.error) {
-          throw new Error(`Failed to sign source URL: ${source.error.message}`);
-        }
+        const signedUrl = await signSourceUrl(
+          client,
+          model.sourceBucket,
+          model.modelPath,
+          SIGNED_URL_EXPIRY
+        );
         return {
-          source: { url: internalizeStorageUrl(source.data.signedUrl), format },
+          source: { url: internalizeStorageUrl(signedUrl), format },
           output: { path: optimizedPath }
-          // quality omitted → the service defaults apply (codec meshopt, merge on,
-          // normal quant on, auto simplify tolerance, aggressive ladder to fit the
-          // size + render-weight gates).
+          // quality omitted → the service applies its size-adaptive policy: codec
+          // meshopt, merge on, normal quant on, and an auto simplify budget that
+          // scales with the model's tessellated weight (small models keep the
+          // baseline high-quality budget; large ones decimate harder, still
+          // error-bounded), then the ladder + size/render-weight gates as the
+          // final fit. Passing any explicit quality knob disables the scaling.
         };
       },
       mintUploadUrls: async () => {
@@ -183,92 +224,24 @@ export const modelOptimizeFunction = inngest.createFunction(
         .eq("id", modelUploadId);
     });
 
-    // Compact the retained raw so it never lingers as the fat upload. Every
-    // optimisable source (any size) is zstd-compressed IN ITS ORIGINAL FORMAT —
-    // `raw.<ext>.zst` stays a valid STEP/glTF/… that the download route
-    // decompresses back to the source file, and the assembler reads it back
-    // transparently (zstd-decoded on fetch), so plan/convert/reoptimise need no
-    // change. Already-compacted (`.zst`) raws are skipped. Best-effort: a
-    // compaction failure must not fail the already-succeeded optimise (the
-    // scheduled big-raw TTL prune is the safety net).
-    // Only temp-staging sources compact: the flow writes the .zst there, deletes
-    // the fat original there, and the TTL prune covers strays there. Legacy
-    // `private` raws predate the pipeline — leave them where they are.
-    const alreadyCompacted = model.modelPath.toLowerCase().endsWith(".zst");
-    if (!alreadyCompacted && model.sourceBucket === "temp-staging") {
-      // Flat, mirroring the original raw (`${id}.step` → `${id}.step.zst`), so the
-      // model id stays recoverable from the path (CadModel's `modelIdFromPath`)
-      // and the download route resolves the underlying format from the extension.
-      const compactPath = `${companyId}/models/${modelUploadId}.${format}.zst`;
-      const compactJobId = `compact-${modelUploadId}`;
-      try {
-        const compact = await runAssemblerJob(step, {
-          idPrefix: "compact",
-          action: "compact",
-          jobId: compactJobId,
-          maxWaitMs: MAX_OPTIMIZE_WAIT_MS,
-          logger,
-          buildBody: async () => {
-            const client = getCarbonServiceRole();
-            const source = await client.storage
-              .from("temp-staging")
-              .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
-            if (source.error) {
-              throw new Error(`sign source: ${source.error.message}`);
-            }
-            return {
-              source: { url: internalizeStorageUrl(source.data.signedUrl) },
-              mode: "zstd",
-              output: { path: compactPath }
-            };
-          },
-          mintUploadUrls: async () => {
-            const client = getCarbonServiceRole();
-            const upload = await client.storage
-              .from("temp-staging")
-              .createSignedUploadUrl(compactPath, { upsert: true });
-            const urls: Record<string, string> = {};
-            if (upload.data)
-              urls.raw = internalizeStorageUrl(upload.data.signedUrl);
-            return urls;
-          }
-        });
-        const compactedSize =
-          (compact.stats as { outputBytes?: number } | null)?.outputBytes ??
-          null;
+    // Compact the retained raw (STEP → `.xbf.zst`, mesh → `.{ext}.zst`) in its
+    // own function with its own retries — decoupled so this optimise's outcome
+    // never decides whether the raw survives (see model-compact.ts; onFailure
+    // fires the same event).
+    await step.sendEvent("compact", {
+      name: "carbon/model-compact",
+      data: { modelUploadId, companyId }
+    });
 
-        await step.run("compact-persist", async () => {
-          const client = getCarbonServiceRole();
-          // Repoint modelPath at the compacted raw and record its (compressed)
-          // stored size so the files list reflects what's actually on disk, then
-          // drop the fat original. Freeze the as-uploaded bytes into
-          // originalSize first (rows from before the column exist with null) —
-          // the viewer's reduction badge compares the ORIGINAL, not the .zst.
-          const existing = await client
-            .from("modelUpload")
-            .select("size, originalSize")
-            .eq("id", modelUploadId)
-            .maybeSingle();
-          await client
-            .from("modelUpload")
-            .update({
-              modelPath: compactPath,
-              ...(existing.data && existing.data.originalSize == null
-                ? { originalSize: existing.data.size }
-                : {}),
-              ...(compactedSize != null ? { size: compactedSize } : {})
-            })
-            .eq("id", modelUploadId);
-          await client.storage.from("temp-staging").remove([model.modelPath]);
-        });
-        logger.info("raw compacted", { modelUploadId, compactPath });
-      } catch (err) {
-        logger.warn("raw compaction skipped", {
-          modelUploadId,
-          error: (err as Error).message
-        });
-      }
-    }
+    // Generate the preview thumbnail now that the optimised GLB exists — the
+    // thumbnail renderer (/file/model/:id) draws only the assembler GLB, so
+    // firing this at upload time (before the GLB) always failed. Chaining it to
+    // optimise success means it has something to render, and a re-optimise
+    // (viewer Retry / regenerate) refreshes the thumbnail for free.
+    await step.sendEvent("thumbnail", {
+      name: "carbon/model-thumbnail",
+      data: { modelId: modelUploadId, companyId }
+    });
 
     logger.info("model optimise finalized", { modelUploadId, stats });
     return { modelUploadId, status: "Success" as const };

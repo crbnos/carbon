@@ -20,7 +20,7 @@ import {
   findSlot,
 } from "./calendar-utils.ts";
 import type { WaitAttribution } from "./conflict-messages.ts";
-import { toIsoDateInTimeZone } from "./date-utils.ts";
+import { businessDay } from "./date-utils.ts";
 
 const HOUR_MS = 3_600_000;
 
@@ -453,10 +453,10 @@ export function allocateAttendedOperation(args: {
     conflict:
       handsOnHours > 0
         ? `No slot with both an open work center and a qualified operator available before ${
-            toIsoDateInTimeZone(horizonEnd, timeZone)
+            businessDay(horizonEnd.toISOString(), timeZone)
           }`
         : `No work center capacity available before ${
-            toIsoDateInTimeZone(horizonEnd, timeZone)
+            businessDay(horizonEnd.toISOString(), timeZone)
           }`,
   };
 
@@ -496,7 +496,7 @@ export function allocateAttendedOperation(args: {
     if (!sim) {
       return {
         conflict: `No qualified operator availability before ${
-          toIsoDateInTimeZone(horizonEnd, timeZone)
+          businessDay(horizonEnd.toISOString(), timeZone)
         }`,
       };
     }
@@ -581,7 +581,7 @@ export function allocateOperation(args: {
   if (windows.length === 0) {
     return {
       conflict: `No working time available at work center before ${
-        toIsoDateInTimeZone(horizonEnd, timeZone)
+        businessDay(horizonEnd.toISOString(), timeZone)
       }`,
     };
   }
@@ -601,7 +601,7 @@ export function allocateOperation(args: {
   if (!slot) {
     return {
       conflict: `No work center capacity available before ${
-        toIsoDateInTimeZone(horizonEnd, timeZone)
+        businessDay(horizonEnd.toISOString(), timeZone)
       }`,
     };
   }

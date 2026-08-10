@@ -31,6 +31,7 @@ import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
 import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 import { Enumerable } from "~/components/Enumerable";
 import {
+  DatePicker,
   Hidden,
   Input,
   Location,
@@ -89,6 +90,7 @@ function DailyScheduleOptions() {
         name="skipHolidays"
         label={t`Skip Holidays`}
         description={t`Skip scheduled maintenance on company holidays`}
+        bordered
       />
     </>
   );
@@ -198,12 +200,16 @@ const MaintenanceScheduleForm = ({
                   termId="maintenance-schedule-estimated-duration"
                   minValue={0}
                 />
+                {/* When the next preventive-maintenance dispatch should be
+                    generated. Blank on a new schedule → the first one is
+                    scheduled automatically from today. */}
+                <DatePicker name="nextDueAt" label={t`Next Due Date`} />
                 <Procedure
                   name="procedureId"
                   label={t`Procedure`}
                   termId="maintenance-schedule-procedure"
                 />
-                <Boolean name="active" label={t`Active`} />
+                <Boolean name="active" label={t`Active`} bordered />
                 <DailyScheduleOptions />
               </VStack>
             </ModalDrawerBody>

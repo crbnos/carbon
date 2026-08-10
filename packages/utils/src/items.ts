@@ -30,7 +30,10 @@ export function getItemReadableId(
  * @param itemId - The item ID to look up
  * @returns The item, or undefined if not found
  */
-export function getItemById(items: Item[], itemId: string): Item | undefined {
+export function getItemById<T extends Item>(
+  items: T[],
+  itemId: string
+): T | undefined {
   const len = items.length;
   for (let i = 0; i < len; i++) {
     const item = items[i]!;

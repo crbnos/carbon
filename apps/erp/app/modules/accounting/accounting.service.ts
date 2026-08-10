@@ -1,7 +1,9 @@
 import type { Database, Json } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import type { PeriodPostingSource } from "@carbon/utils";
+import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
+  datetime,
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
   MONTH_NUMBER,
@@ -9,6 +11,7 @@ import {
   toDisplayDebit,
   toStoredAmount
 } from "@carbon/utils";
+import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
@@ -17,6 +20,8 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  AnalyticsAccountScope,
+  AnalyticsReportDefinition,
   accountValidator,
   costCenterValidator,
   currencyValidator,
@@ -30,6 +35,7 @@ import type {
   journalEntryValidator,
   macrsConventions,
   macrsPropertyClasses,
+  PivotState,
   paymentTermValidator,
   periodCloseStatuses,
   periodCloseTaskDefinitionValidator,
@@ -40,6 +46,8 @@ import type {
 } from "./accounting.models";
 import type {
   AccountLedgerLine,
+  ChartPeriodSeries,
+  PeriodCell,
   Transaction,
   TranslatedBalance
 } from "./types";
@@ -339,13 +347,1151 @@ export async function getFinancialStatementBalances(
   };
 }
 
+export async function getAccountPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  args: { start: string; periodEnds: string[] }
+) {
+  // Defined in migration 20260809151458_balance-rpc-period-series.sql.
+  // The contract on p_period_ends (sorted ascending, distinct, >= p_start) is
+  // enforced by computeReportPeriodBuckets — the only producer of this arg.
+  return client.rpc("accountTreeBalancePeriodSeries", {
+    p_company_group_id: companyGroupId,
+    p_company_id: companyId,
+    p_start: args.start,
+    p_period_ends: args.periodEnds
+  });
+}
+
+/**
+ * Recalculates every period cell for system (root) accounts using the same
+ * sign-aware aggregation as applyRootSignCorrection.
+ *
+ * KEEP IN SYNC with applyRootSignCorrection above — identical root/child walk,
+ * applied per period bucket instead of to the single-measure columns.
+ */
+function applyRootSignCorrectionToSeries<
+  T extends {
+    id: string;
+    parentId: string | null;
+    isSystem?: boolean | null;
+    class: string | null;
+    periods: Record<string, PeriodCell>;
+  }
+>(accounts: T[], bucketKeys: string[]): T[] {
+  const roots = accounts.filter((a) => a.isSystem ?? a.parentId === null);
+  if (roots.length === 0) return accounts;
+
+  const rootIds = new Set(roots.map((r) => r.id));
+  const childrenByRoot = new Map<string, T[]>();
+
+  for (const account of accounts) {
+    if (account.parentId && rootIds.has(account.parentId)) {
+      const list = childrenByRoot.get(account.parentId) ?? [];
+      list.push(account);
+      childrenByRoot.set(account.parentId, list);
+    }
+  }
+
+  return accounts.map((account) => {
+    if (!rootIds.has(account.id)) return account;
+
+    const children = childrenByRoot.get(account.id) ?? [];
+    const periods: Record<string, PeriodCell> = {};
+
+    for (const key of bucketKeys) {
+      let netChange = 0;
+      let balanceAtDate = 0;
+      let translatedBalance = 0;
+      let translatedNetChange = 0;
+      let hasTranslated = false;
+
+      for (const child of children) {
+        const sign = rootSignMultiplier(child.class);
+        const cell = child.periods[key];
+        netChange += sign * (cell?.netChange ?? 0);
+        balanceAtDate += sign * (cell?.balanceAtDate ?? 0);
+        if (typeof cell?.translatedBalance === "number") {
+          hasTranslated = true;
+          translatedBalance += sign * cell.translatedBalance;
+        }
+        if (typeof cell?.translatedNetChange === "number") {
+          hasTranslated = true;
+          translatedNetChange += sign * cell.translatedNetChange;
+        }
+      }
+
+      periods[key] = {
+        netChange,
+        balanceAtDate,
+        ...(hasTranslated ? { translatedBalance, translatedNetChange } : {})
+      };
+    }
+
+    return { ...account, periods };
+  });
+}
+
+// Overlay per-bucket translated leaf balances onto the series rows.
+function overlayTranslationOnSeries<
+  T extends { id: string; periods: Record<string, PeriodCell> }
+>(
+  rows: T[],
+  byBucket: Record<string, { balances: TranslatedBalance[]; cta: number }>
+): T[] {
+  const maps = new Map<string, Map<string, TranslatedBalance>>();
+  for (const [key, bucket] of Object.entries(byBucket)) {
+    maps.set(key, new Map(bucket.balances.map((b) => [b.accountId, b])));
+  }
+
+  return rows.map((row) => {
+    let changed = false;
+    const periods = { ...row.periods };
+    for (const [key, map] of maps) {
+      const translation = map.get(row.id);
+      if (!translation) continue;
+      changed = true;
+      const existing = periods[key] ?? { netChange: 0, balanceAtDate: 0 };
+      const exchangeRate = Number(translation.exchangeRate);
+      periods[key] = {
+        ...existing,
+        translatedBalance: Number(translation.translatedBalance),
+        // Translated period delta: apply the same per-account rate to netChange
+        // so flow reads (income statement / executive P&L) get a translated
+        // activity figure rather than the translated cumulative balance.
+        translatedNetChange:
+          Math.round(existing.netChange * exchangeRate * 10000) / 10000,
+        exchangeRate
+      };
+    }
+    return changed ? { ...row, periods } : row;
+  });
+}
+
+/**
+ * Per-bucket currency translation for a period series. Calls the existing
+ * translateCompanyBalances once per bucket (bucket end = closing rate date,
+ * bucket start = average-rate window start) on synthetic single-measure rows
+ * built from that bucket's balanceAtDate.
+ */
+export async function translateCompanyPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  targetCurrency: string,
+  buckets: ReportPeriodBucket[],
+  series: Array<{
+    id: string;
+    consolidatedRate: string | null;
+    isGroup: boolean | null;
+    class: string | null;
+    periods: Record<string, PeriodCell>;
+  }>
+): Promise<{
+  byBucket: Record<string, { balances: TranslatedBalance[]; cta: number }>;
+  error: string | null;
+}> {
+  const results = await Promise.all(
+    buckets.map(async (bucket) => {
+      const synthetic = series.map((row) => ({
+        id: row.id,
+        balanceAtDate: row.periods[bucket.key]?.balanceAtDate ?? 0,
+        consolidatedRate: row.consolidatedRate,
+        isGroup: row.isGroup,
+        class: row.class
+      }));
+      const translation = await translateCompanyBalances(
+        client,
+        companyGroupId,
+        companyId,
+        targetCurrency,
+        bucket.end,
+        bucket.start,
+        synthetic
+      );
+      return { key: bucket.key, translation };
+    })
+  );
+
+  const byBucket: Record<
+    string,
+    { balances: TranslatedBalance[]; cta: number }
+  > = {};
+  for (const { key, translation } of results) {
+    if (translation.error) {
+      return { byBucket: {}, error: translation.error };
+    }
+    byBucket[key] = { balances: translation.data ?? [], cta: translation.cta };
+  }
+
+  return { byBucket, error: null };
+}
+
+/**
+ * Multi-period financial statement balances: one column per bucket, powered by
+ * the accountTreeBalancePeriodSeries RPC (snapshot-based, single journal scan).
+ * The multi-period sibling of getFinancialStatementBalances — same accounts
+ * view, same Net Income injection (per bucket), same root sign correction.
+ */
+export async function getFinancialStatementPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  args: {
+    buckets: ReportPeriodBucket[];
+    // Balance sheet only: append a computed "Net Income" equity line per bucket.
+    includeCurrentYearEarnings?: boolean;
+    // When set, per-bucket translated balances are overlaid before the root
+    // sign correction so root rows carry translated values too.
+    translate?: { targetCurrency: string };
+  }
+): Promise<{
+  data: ChartPeriodSeries[] | null;
+  ctaByBucket: Record<string, number>;
+  error: { message: string } | null;
+}> {
+  if (args.buckets.length === 0) {
+    return { data: [], ctaByBucket: {}, error: null };
+  }
+
+  const bucketKeys = args.buckets.map((b) => b.key);
+  const keyByEnd = new Map(args.buckets.map((b) => [b.end, b.key]));
+
+  const accountsQuery = client
+    .from("accounts")
+    .select("*")
+    .eq("companyGroupId", companyGroupId)
+    .eq("active", true)
+    .order("number", { ascending: true });
+
+  // The buckets helper may truncate a very wide range, so the series start is
+  // the FIRST bucket's start — not whatever the caller had before bucketing.
+  const seriesQuery = getAccountPeriodSeries(
+    client,
+    companyGroupId,
+    companyId,
+    {
+      start: args.buckets[0]!.start,
+      periodEnds: args.buckets.map((b) => b.end)
+    }
+  );
+
+  const [accountsResponse, seriesResponse] = await Promise.all([
+    accountsQuery,
+    seriesQuery
+  ]);
+
+  if (accountsResponse.error) {
+    return {
+      data: null,
+      ctaByBucket: {},
+      error: accountsResponse.error
+    };
+  }
+  if (seriesResponse.error) {
+    return { data: null, ctaByBucket: {}, error: seriesResponse.error };
+  }
+
+  const periodsByAccountId = new Map<string, Record<string, PeriodCell>>();
+  for (const row of seriesResponse.data ?? []) {
+    const key = keyByEnd.get(row.periodEnd);
+    if (!key) continue;
+    let record = periodsByAccountId.get(row.accountId);
+    if (!record) {
+      record = {};
+      periodsByAccountId.set(row.accountId, record);
+    }
+    record[key] = {
+      netChange: Number(row.netChange ?? 0),
+      balanceAtDate: Number(row.balanceAtDate ?? 0)
+    };
+  }
+
+  const emptyPeriods = (): Record<string, PeriodCell> =>
+    Object.fromEntries(
+      bucketKeys.map((key) => [key, { netChange: 0, balanceAtDate: 0 }])
+    );
+
+  let mapped = (accountsResponse.data ?? [])
+    .filter((a): a is typeof a & { id: string } => a.id !== null)
+    .map((account) => ({
+      ...account,
+      periods: {
+        ...emptyPeriods(),
+        ...(periodsByAccountId.get(account.id) ?? {})
+      }
+    }));
+
+  // Same Net Income equity line as getFinancialStatementBalances, computed per
+  // bucket: cumulative (balanceAtDate) and per-bucket (netChange) sums over
+  // income-statement LEAF accounts, rolled into the Equity group subtotal.
+  if (args.includeCurrentYearEarnings) {
+    const balanceSheetRoot = mapped.find(
+      (a) =>
+        a.incomeBalance === "Balance Sheet" &&
+        (a.isSystem ?? a.parentId === null)
+    );
+    const equityGroup = mapped.find(
+      (a) =>
+        a.class === "Equity" && a.isGroup && a.parentId === balanceSheetRoot?.id
+    );
+    if (balanceSheetRoot && equityGroup) {
+      const netIncomePeriods: Record<string, PeriodCell> = {};
+      for (const key of bucketKeys) {
+        let balanceAtDate = 0;
+        let netChange = 0;
+        for (const a of mapped) {
+          if (a.incomeBalance !== "Income Statement" || a.isGroup) continue;
+          const sign = rootSignMultiplier(a.class);
+          const cell = a.periods[key];
+          balanceAtDate += sign * (cell?.balanceAtDate ?? 0);
+          netChange += sign * (cell?.netChange ?? 0);
+        }
+        const equityCell = equityGroup.periods[key] ?? {
+          netChange: 0,
+          balanceAtDate: 0
+        };
+        equityGroup.periods[key] = {
+          ...equityCell,
+          netChange: equityCell.netChange + netChange,
+          balanceAtDate: equityCell.balanceAtDate + balanceAtDate
+        };
+        netIncomePeriods[key] = { netChange, balanceAtDate };
+      }
+      // Clone the Equity group to inherit every account column the report
+      // needs. Must NOT be isSystem — a system row is treated as a root by
+      // applyRootSignCorrectionToSeries and recomputed to zero.
+      mapped.push({
+        ...equityGroup,
+        id: NET_INCOME_ACCOUNT_ID,
+        name: "Net Income",
+        isGroup: false,
+        isSystem: false,
+        parentId: equityGroup.id,
+        periods: netIncomePeriods
+      });
+    }
+  }
+
+  let ctaByBucket: Record<string, number> = {};
+
+  if (args.translate) {
+    const translation = await translateCompanyPeriodSeries(
+      client,
+      companyGroupId,
+      companyId,
+      args.translate.targetCurrency,
+      args.buckets,
+      mapped
+    );
+    if (translation.error) {
+      return {
+        data: null,
+        ctaByBucket: {},
+        error: { message: translation.error }
+      };
+    }
+    mapped = overlayTranslationOnSeries(mapped, translation.byBucket);
+    for (const [key, bucket] of Object.entries(translation.byBucket)) {
+      ctaByBucket[key] = bucket.cta;
+    }
+  }
+
+  return {
+    data: applyRootSignCorrectionToSeries(
+      mapped,
+      bucketKeys
+    ) as unknown as ChartPeriodSeries[],
+    ctaByBucket,
+    error: null
+  };
+}
+
+/**
+ * Multi-company, multi-period consolidation — the period-series sibling of
+ * getConsolidatedBalances: per-company series (including auto-resolved
+ * elimination entities) summed per account and bucket, with per-bucket
+ * currency translation and CTA.
+ */
+export async function getConsolidatedPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyIds: string[],
+  targetCurrency: string,
+  args: { buckets: ReportPeriodBucket[] }
+): Promise<{
+  data: ChartPeriodSeries[];
+  ctaByBucket: Record<string, number>;
+}> {
+  const bucketKeys = args.buckets.map((b) => b.key);
+  const allIds = await resolveConsolidationCompanyIds(
+    client,
+    companyGroupId,
+    companyIds
+  );
+
+  const results = await Promise.all(
+    allIds.map(async (id) => {
+      const series = await getFinancialStatementPeriodSeries(
+        client,
+        companyGroupId,
+        id,
+        { buckets: args.buckets }
+      );
+
+      const translation =
+        series.error || !series.data
+          ? {
+              byBucket: {} as Record<
+                string,
+                { balances: TranslatedBalance[]; cta: number }
+              >,
+              error: series.error?.message ?? "Failed to load balances"
+            }
+          : await translateCompanyPeriodSeries(
+              client,
+              companyGroupId,
+              id,
+              targetCurrency,
+              args.buckets,
+              series.data
+            );
+
+      return { series, translation };
+    })
+  );
+
+  // Sum raw cells per (account, bucket) across companies
+  const summedByAccount = new Map<string, Record<string, PeriodCell>>();
+  for (const { series } of results) {
+    if (series.error || !series.data) continue;
+    for (const row of series.data) {
+      let record = summedByAccount.get(row.id);
+      if (!record) {
+        record = {};
+        summedByAccount.set(row.id, record);
+      }
+      for (const key of bucketKeys) {
+        const cell = row.periods[key];
+        if (!cell) continue;
+        const agg = record[key] ?? { netChange: 0, balanceAtDate: 0 };
+        record[key] = {
+          netChange: agg.netChange + cell.netChange,
+          balanceAtDate: agg.balanceAtDate + cell.balanceAtDate
+        };
+      }
+    }
+  }
+
+  // Sum translated leaf balances per (account, bucket) and CTA per bucket
+  const translatedByAccount = new Map<
+    string,
+    Record<string, { translatedBalance: number; exchangeRate: number }>
+  >();
+  const ctaByBucket: Record<string, number> = Object.fromEntries(
+    bucketKeys.map((key) => [key, 0])
+  );
+
+  for (const { translation } of results) {
+    if (translation.error) continue;
+    for (const [key, bucket] of Object.entries(translation.byBucket)) {
+      ctaByBucket[key] = (ctaByBucket[key] ?? 0) + bucket.cta;
+      for (const row of bucket.balances) {
+        let record = translatedByAccount.get(row.accountId);
+        if (!record) {
+          record = {};
+          translatedByAccount.set(row.accountId, record);
+        }
+        const existing = record[key];
+        record[key] = existing
+          ? {
+              translatedBalance:
+                existing.translatedBalance + Number(row.translatedBalance),
+              exchangeRate: existing.exchangeRate
+            }
+          : {
+              translatedBalance: Number(row.translatedBalance),
+              exchangeRate: Number(row.exchangeRate)
+            };
+      }
+    }
+  }
+
+  // Use the first company's account structure as the base (shared chart)
+  const baseAccounts = results.find((r) => r.series.data)?.series.data ?? [];
+
+  const consolidated = baseAccounts.map((account) => {
+    const summed = summedByAccount.get(account.id);
+    const translated = translatedByAccount.get(account.id);
+    const periods: Record<string, PeriodCell> = {};
+    for (const key of bucketKeys) {
+      periods[key] = {
+        netChange: 0,
+        balanceAtDate: 0,
+        ...(summed?.[key] ?? {}),
+        ...(translated?.[key] ?? {})
+      };
+    }
+    return { ...account, periods };
+  });
+
+  return {
+    data: applyRootSignCorrectionToSeries(consolidated, bucketKeys),
+    ctaByBucket
+  };
+}
+
+// Per-user pin overrides for the reports hub. Absent row = the report's
+// default pin state (the core financial statements default to pinned).
+export async function getReportPins(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  return client
+    .from("reportPin")
+    .select("reportKey, pinned")
+    .eq("userId", userId)
+    .eq("companyId", companyId);
+}
+
+export async function upsertReportPin(
+  client: SupabaseClient<Database>,
+  args: {
+    reportKey: string;
+    pinned: boolean;
+    userId: string;
+    companyId: string;
+  }
+) {
+  return client.from("reportPin").upsert(
+    {
+      reportKey: args.reportKey,
+      pinned: args.pinned,
+      userId: args.userId,
+      companyId: args.companyId,
+      createdBy: args.userId,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    },
+    { onConflict: "reportKey,userId,companyId" }
+  );
+}
+
+// -- Dimensional analytics (pivot) reports --
+// Spec: .ai/specs/2026-08-09-dimensional-pivot-reporting.md
+// RPCs defined in migration 20260809184714_dimensional-pivot-reporting.sql.
+
+// In `columnKeys` the null column (lines with no tag for the column
+// dimension — the Unassigned bucket) is represented by this string sentinel.
+// Group rows keep their `columnKey` as returned by the RPC (null stays null).
+export const UNASSIGNED_COLUMN_KEY = "__unassigned__";
+
+type DimensionPivotGroup = {
+  rowValue1Id: string | null;
+  rowValue2Id: string | null;
+  columnKey: string | null;
+  amount: number;
+  quantity: number;
+  lineCount: number;
+};
+
+type DimensionPivotData = {
+  groups: DimensionPivotGroup[];
+  columnKeys: string[];
+  hasMore: boolean;
+  valueNames: Record<string, string>;
+};
+
+/**
+ * Maps an AnalyticsAccountScope onto the pivot RPCs' account-scope params.
+ * Exactly one selector is set (the RPCs raise without one); the scrap scope
+ * resolves to the accountDefault.scrapAccount ids the loader fetched via
+ * getScrapAccountIds.
+ */
+function pivotAccountScopeParams(
+  scope: AnalyticsAccountScope,
+  scrapAccountIds: string[] | undefined
+):
+  | { p_account_classes: string[] }
+  | { p_account_types: string[] }
+  | { p_account_ids: string[] } {
+  if ("classes" in scope) return { p_account_classes: [...scope.classes] };
+  if ("types" in scope) return { p_account_types: [...scope.types] };
+  return { p_account_ids: scrapAccountIds ?? [] };
+}
+
+/**
+ * The leaf accounts inside a report's account scope — the universe the
+ * per-report account multi-select filters within. Mirrors the scope selectors
+ * pivotAccountScopeParams uses: class-scoped and type-scoped reports resolve to
+ * the matching active, non-group accounts; the scrap scope resolves to the
+ * scrapAccount ids the loader already fetched. Returns the raw supabase
+ * response so callers keep the `{ data, error }` convention.
+ */
+export async function getAccountsInScope(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  scope: AnalyticsAccountScope,
+  scrapAccountIds?: string[]
+) {
+  let query = client
+    .from("account")
+    .select("id, number, name")
+    .eq("companyGroupId", companyGroupId)
+    .eq("active", true)
+    .eq("isGroup", false);
+
+  if ("classes" in scope) {
+    query = query.in("class", scope.classes);
+  } else if ("types" in scope) {
+    query = query.in("accountType", scope.types);
+  } else {
+    query = query.in("id", scrapAccountIds ?? []);
+  }
+
+  return query.order("number", { ascending: true });
+}
+
+export async function getDimensionPivot(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    report: AnalyticsReportDefinition;
+    // Required when report.accountScope.source === "scrapAccounts"
+    scrapAccountIds?: string[];
+    startDate: string; // YYYY-MM-DD
+    endDate: string;
+    // From computeReportPeriodBuckets, when state.columnAxis is period
+    periodEnds?: string[];
+    // rows are already-resolved dimension ids (the loader resolves et: aliases)
+    state: PivotState;
+  }
+): Promise<{
+  data: DimensionPivotData | null;
+  error: PostgrestError | null;
+}> {
+  const { report, state } = args;
+
+  // Scrap report with no configured scrap account: nothing can match, and the
+  // RPC raises without an account scope — short-circuit to an empty pivot.
+  if (
+    "source" in report.accountScope &&
+    (args.scrapAccountIds ?? []).length === 0
+  ) {
+    return {
+      data: { groups: [], columnKeys: [], hasMore: false, valueNames: {} },
+      error: null
+    };
+  }
+
+  const columnDimensionId =
+    state.columnAxis.type === "dimension"
+      ? state.columnAxis.dimensionId
+      : undefined;
+
+  const result = await client.rpc("journalDimensionPivot", {
+    p_company_group_id: args.companyGroupId,
+    p_company_id: args.companyId,
+    p_start: args.startDate,
+    p_end: args.endDate,
+    ...pivotAccountScopeParams(report.accountScope, args.scrapAccountIds),
+    ...(state.rows[0] ? { p_row_dimension_1: state.rows[0] } : {}),
+    ...(state.rows[1] ? { p_row_dimension_2: state.rows[1] } : {}),
+    ...(columnDimensionId ? { p_column_dimension: columnDimensionId } : {}),
+    ...(state.columnAxis.type === "period" && args.periodEnds
+      ? { p_period_ends: args.periodEnds }
+      : {}),
+    ...(state.filters.length > 0 ? { p_filters: state.filters } : {}),
+    ...(state.accountIds.length > 0
+      ? { p_filter_account_ids: state.accountIds }
+      : {})
+  });
+
+  if (result.error) return { data: null, error: result.error };
+
+  // The generated Returns can't express nullability: NULL rowValue/columnKey
+  // is the Unassigned bucket (line carries no tag for that dimension).
+  const rows = (result.data ?? []) as Array<{
+    rowValue1Id: string | null;
+    rowValue2Id: string | null;
+    columnKey: string | null;
+    amount: number | string;
+    quantity: number | string;
+    lineCount: number | string;
+    hasMore: boolean;
+  }>;
+
+  const hasMore = rows.some((r) => r.hasMore);
+
+  // Sorted descending by ABS(amount) in TS — never trust RPC ordering.
+  const groups: DimensionPivotGroup[] = rows
+    .map((r) => ({
+      rowValue1Id: r.rowValue1Id,
+      rowValue2Id: r.rowValue2Id,
+      columnKey: r.columnKey,
+      amount: Number(r.amount),
+      quantity: Number(r.quantity),
+      lineCount: Number(r.lineCount)
+    }))
+    .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+
+  // Ordered distinct column keys: period axis follows the periodEnds order;
+  // dimension axis orders by descending ABS(column total). The Unassigned
+  // (null) column always sorts last, as the UNASSIGNED_COLUMN_KEY sentinel.
+  const hasUnassignedColumn = groups.some((g) => g.columnKey === null);
+  let columnKeys: string[];
+  if (state.columnAxis.type === "period") {
+    // Every bucket in the selected range renders as a column, including
+    // buckets with no journal lines — a 6-month range always shows 6 columns.
+    columnKeys = [...(args.periodEnds ?? [])];
+    // Defensive: keep any keys the periodEnds contract didn't cover (e.g. the
+    // literal 'total' when no period ends were provided).
+    for (const g of groups) {
+      if (g.columnKey !== null && !columnKeys.includes(g.columnKey)) {
+        columnKeys.push(g.columnKey);
+      }
+    }
+  } else {
+    const totalsByColumn = new Map<string, number>();
+    for (const g of groups) {
+      if (g.columnKey === null) continue;
+      totalsByColumn.set(
+        g.columnKey,
+        (totalsByColumn.get(g.columnKey) ?? 0) + g.amount
+      );
+    }
+    columnKeys = [...totalsByColumn.keys()].sort(
+      (a, b) =>
+        Math.abs(totalsByColumn.get(b) ?? 0) -
+        Math.abs(totalsByColumn.get(a) ?? 0)
+    );
+  }
+  if (hasUnassignedColumn) columnKeys.push(UNASSIGNED_COLUMN_KEY);
+
+  // Resolve display names for the value ids actually present, batched by the
+  // owning dimension's entityType.
+  const valueIdsByDimension = new Map<string, Set<string>>();
+  const collect = (dimensionId: string | undefined, valueId: string | null) => {
+    if (!dimensionId || !valueId) return;
+    const set = valueIdsByDimension.get(dimensionId) ?? new Set<string>();
+    set.add(valueId);
+    valueIdsByDimension.set(dimensionId, set);
+  };
+  for (const g of groups) {
+    collect(state.rows[0], g.rowValue1Id);
+    collect(state.rows[1], g.rowValue2Id);
+    collect(columnDimensionId, g.columnKey);
+  }
+
+  let valueNames: Record<string, string> = {};
+  if (valueIdsByDimension.size > 0) {
+    const dimensions = await client
+      .from("dimension")
+      .select("id, entityType")
+      .in("id", [...valueIdsByDimension.keys()]);
+
+    if (dimensions.error) return { data: null, error: dimensions.error };
+
+    valueNames = await resolveDimensionValueNames(
+      client,
+      (dimensions.data ?? []).map((d) => ({
+        entityType: d.entityType,
+        valueIds: [...(valueIdsByDimension.get(d.id) ?? [])]
+      }))
+    );
+  }
+
+  return {
+    data: { groups, columnKeys, hasMore, valueNames },
+    error: null
+  };
+}
+
+type DimensionPivotLineRow =
+  Database["public"]["Functions"]["journalDimensionPivotLines"]["Returns"][number];
+
+/**
+ * Drill-through: the journal lines behind one pivot cell.
+ *
+ * NULL semantics per axis (row 1 / row 2 / column): passing the dimension
+ * param with NO value param means Unassigned (the RPC matches lines with no
+ * tag for that dimension) — so `rowValue1IsNull` maps to "send
+ * p_row_dimension_1, omit p_row_value_1". A period column narrows postingDate
+ * via p_column_period_start/end instead of a dimension match.
+ */
+export async function getDimensionPivotLines(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    report: AnalyticsReportDefinition;
+    scrapAccountIds?: string[];
+    startDate: string;
+    endDate: string;
+    filters: PivotState["filters"];
+    rowDimension1?: string;
+    rowValue1?: string;
+    rowValue1IsNull?: boolean;
+    rowDimension2?: string;
+    rowValue2?: string;
+    rowValue2IsNull?: boolean;
+    columnDimension?: string;
+    columnValue?: string;
+    columnValueIsNull?: boolean;
+    columnPeriodStart?: string;
+    columnPeriodEnd?: string;
+    accountIds?: string[];
+  }
+): Promise<{
+  data: DimensionPivotLineRow[] | null;
+  error: PostgrestError | null;
+}> {
+  // Same short-circuit as getDimensionPivot: no scrap account, no scope.
+  if (
+    "source" in args.report.accountScope &&
+    (args.scrapAccountIds ?? []).length === 0
+  ) {
+    return { data: [], error: null };
+  }
+
+  const result = await client.rpc("journalDimensionPivotLines", {
+    p_company_group_id: args.companyGroupId,
+    p_company_id: args.companyId,
+    p_start: args.startDate,
+    p_end: args.endDate,
+    ...pivotAccountScopeParams(args.report.accountScope, args.scrapAccountIds),
+    ...(args.filters.length > 0 ? { p_filters: args.filters } : {}),
+    ...(args.rowDimension1 ? { p_row_dimension_1: args.rowDimension1 } : {}),
+    ...(args.rowValue1 ? { p_row_value_1: args.rowValue1 } : {}),
+    ...(args.rowDimension2 ? { p_row_dimension_2: args.rowDimension2 } : {}),
+    ...(args.rowValue2 ? { p_row_value_2: args.rowValue2 } : {}),
+    ...(args.columnDimension
+      ? { p_column_dimension: args.columnDimension }
+      : {}),
+    ...(args.columnValue ? { p_column_value: args.columnValue } : {}),
+    ...(args.columnPeriodStart
+      ? { p_column_period_start: args.columnPeriodStart }
+      : {}),
+    ...(args.columnPeriodEnd
+      ? { p_column_period_end: args.columnPeriodEnd }
+      : {}),
+    ...((args.accountIds ?? []).length > 0
+      ? { p_filter_account_ids: args.accountIds }
+      : {})
+  });
+
+  if (result.error) return { data: null, error: result.error };
+
+  // Re-sort authoritatively in TS — never trust RPC ordering.
+  const lines = [...(result.data ?? [])].sort((a, b) => {
+    if (a.postingDate !== b.postingDate) {
+      return a.postingDate < b.postingDate ? -1 : 1;
+    }
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+
+  return { data: lines, error: null };
+}
+
+// -- Purchases analytics (purchase invoice subledger) --
+// RPCs in 20260809211324_purchases-pivot-report.sql. Gross invoiced spend
+// from purchaseInvoiceLine — NOT the GL journal (AP nets on payment; item
+// tags don't live on AP lines). Output matches DimensionPivotData so the
+// existing PivotTree renders it unchanged.
+
+// Grouping-field key → the entityType used to resolve value ids to names.
+const PURCHASE_FIELD_ENTITY_TYPE: Record<string, string> = {
+  supplier: "Supplier",
+  supplierType: "SupplierType",
+  item: "Item",
+  itemPostingGroup: "ItemPostingGroup",
+  costCenter: "CostCenter"
+};
+
+export async function getPurchaseLinePivot(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    startDate: string;
+    endDate: string;
+    periodEnds?: string[];
+    state: PivotState;
+  }
+): Promise<{
+  data: DimensionPivotData | null;
+  error: PostgrestError | null;
+}> {
+  const { state } = args;
+  const columnField =
+    state.columnAxis.type === "dimension"
+      ? state.columnAxis.dimensionId
+      : undefined;
+
+  const result = await client.rpc("purchaseLineDimensionPivot", {
+    p_company_id: args.companyId,
+    p_start: args.startDate,
+    p_end: args.endDate,
+    ...(state.rows[0] ? { p_row_field_1: state.rows[0] } : {}),
+    ...(state.rows[1] ? { p_row_field_2: state.rows[1] } : {}),
+    ...(columnField ? { p_column_field: columnField } : {}),
+    ...(state.columnAxis.type === "period" && args.periodEnds
+      ? { p_period_ends: args.periodEnds }
+      : {})
+  });
+
+  if (result.error) return { data: null, error: result.error };
+
+  const rows = (result.data ?? []) as Array<{
+    rowValue1Id: string | null;
+    rowValue2Id: string | null;
+    columnKey: string | null;
+    amount: number | string;
+    quantity: number | string;
+    lineCount: number | string;
+    hasMore: boolean;
+  }>;
+
+  const hasMore = rows.some((r) => r.hasMore);
+
+  const groups: DimensionPivotGroup[] = rows
+    .map((r) => ({
+      rowValue1Id: r.rowValue1Id,
+      rowValue2Id: r.rowValue2Id,
+      columnKey: r.columnKey,
+      amount: Number(r.amount),
+      quantity: Number(r.quantity),
+      lineCount: Number(r.lineCount)
+    }))
+    .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+
+  const hasUnassignedColumn = groups.some((g) => g.columnKey === null);
+  let columnKeys: string[];
+  if (state.columnAxis.type === "period") {
+    columnKeys = [...(args.periodEnds ?? [])];
+    for (const g of groups) {
+      if (g.columnKey !== null && !columnKeys.includes(g.columnKey)) {
+        columnKeys.push(g.columnKey);
+      }
+    }
+  } else {
+    const totalsByColumn = new Map<string, number>();
+    for (const g of groups) {
+      if (g.columnKey === null) continue;
+      totalsByColumn.set(
+        g.columnKey,
+        (totalsByColumn.get(g.columnKey) ?? 0) + g.amount
+      );
+    }
+    columnKeys = [...totalsByColumn.keys()].sort(
+      (a, b) =>
+        Math.abs(totalsByColumn.get(b) ?? 0) -
+        Math.abs(totalsByColumn.get(a) ?? 0)
+    );
+  }
+  if (hasUnassignedColumn) columnKeys.push(UNASSIGNED_COLUMN_KEY);
+
+  // Resolve value ids to names, batched by each grouping field's entityType.
+  const valueIdsByField = new Map<string, Set<string>>();
+  const collect = (field: string | undefined, valueId: string | null) => {
+    if (!field || !valueId) return;
+    const set = valueIdsByField.get(field) ?? new Set<string>();
+    set.add(valueId);
+    valueIdsByField.set(field, set);
+  };
+  for (const g of groups) {
+    collect(state.rows[0], g.rowValue1Id);
+    collect(state.rows[1], g.rowValue2Id);
+    collect(columnField, g.columnKey);
+  }
+
+  let valueNames: Record<string, string> = {};
+  if (valueIdsByField.size > 0) {
+    valueNames = await resolveDimensionValueNames(
+      client,
+      [...valueIdsByField.entries()]
+        .map(([field, ids]) => ({
+          entityType: PURCHASE_FIELD_ENTITY_TYPE[field] ?? "",
+          valueIds: [...ids]
+        }))
+        .filter((request) => request.entityType)
+    );
+  }
+
+  return {
+    data: { groups, columnKeys, hasMore, valueNames },
+    error: null
+  };
+}
+
+type PurchaseLinePivotRow =
+  Database["public"]["Functions"]["purchaseLinePivotLines"]["Returns"][number];
+
+export async function getPurchaseLinePivotLines(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    startDate: string;
+    endDate: string;
+    // A field is passed ONLY when the cell constrains that axis: with a value
+    // for a normal cell, or without one for the Unassigned bucket (the RPC
+    // then matches rows whose field IS NULL). Omit the field for row totals /
+    // parent cells to leave the axis unconstrained.
+    rowField1?: string;
+    rowValue1?: string;
+    rowField2?: string;
+    rowValue2?: string;
+    columnField?: string;
+    columnValue?: string;
+    columnPeriodStart?: string;
+    columnPeriodEnd?: string;
+  }
+): Promise<{
+  data: PurchaseLinePivotRow[] | null;
+  error: PostgrestError | null;
+}> {
+  const result = await client.rpc("purchaseLinePivotLines", {
+    p_company_id: args.companyId,
+    p_start: args.startDate,
+    p_end: args.endDate,
+    ...(args.rowField1 ? { p_row_field_1: args.rowField1 } : {}),
+    ...(args.rowValue1 ? { p_row_value_1: args.rowValue1 } : {}),
+    ...(args.rowField2 ? { p_row_field_2: args.rowField2 } : {}),
+    ...(args.rowValue2 ? { p_row_value_2: args.rowValue2 } : {}),
+    ...(args.columnField ? { p_column_field: args.columnField } : {}),
+    ...(args.columnValue ? { p_column_value: args.columnValue } : {}),
+    ...(args.columnPeriodStart
+      ? { p_column_period_start: args.columnPeriodStart }
+      : {}),
+    ...(args.columnPeriodEnd
+      ? { p_column_period_end: args.columnPeriodEnd }
+      : {})
+  });
+
+  if (result.error) return { data: null, error: result.error };
+
+  // Re-sort authoritatively in TS — never trust RPC ordering.
+  const lines = [...(result.data ?? [])].sort((a, b) => {
+    if (a.postingDate !== b.postingDate) {
+      return a.postingDate < b.postingDate ? -1 : 1;
+    }
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+
+  return { data: lines, error: null };
+}
+
+/**
+ * Batch-resolves dimension value ids to display names, grouped by the owning
+ * dimension's entityType. Entity-backed types resolve through the shared
+ * entityType → source-table mapping (getEntityValuesByIds — the same helper
+ * getJournalLineDimensions uses); Custom resolves from dimensionValue.
+ * Lookup failures degrade to missing entries (callers fall back to the id).
+ */
+async function resolveDimensionValueNames(
+  client: SupabaseClient<Database>,
+  requests: { entityType: string; valueIds: string[] }[]
+): Promise<Record<string, string>> {
+  const batches = await Promise.all(
+    requests.map(async ({ entityType, valueIds }) => {
+      if (valueIds.length === 0) return [];
+      if (entityType === "Custom") {
+        const res = await client
+          .from("dimensionValue")
+          .select("id, name")
+          .in("id", valueIds);
+        return res.data ?? [];
+      }
+      const res = await getEntityValuesByIds(client, entityType, valueIds);
+      return res.data ?? [];
+    })
+  );
+
+  const valueNames: Record<string, string> = {};
+  for (const batch of batches) {
+    for (const item of batch as { id: string; name: string }[]) {
+      valueNames[item.id] = item.name;
+    }
+  }
+  return valueNames;
+}
+
+// Named, shareable saved pivot views for the analytics reports. RLS handles
+// visibility (Company rows are readable by every employee; Private rows only
+// by their creator; writes stay owner-only).
+export async function getReportViews(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; reportKey?: string }
+) {
+  let query = client
+    .from("reportView")
+    .select("*")
+    .eq("companyId", args.companyId);
+
+  if (args.reportKey) {
+    query = query.eq("reportKey", args.reportKey);
+  }
+
+  return query.order("name", { ascending: true });
+}
+
+export async function upsertReportView(
+  client: SupabaseClient<Database>,
+  view:
+    | {
+        reportKey: string;
+        name: string;
+        visibility: Database["public"]["Enums"]["reportViewVisibility"];
+        config: Json;
+        companyId: string;
+        createdBy: string;
+      }
+    | {
+        id: string;
+        reportKey: string;
+        name: string;
+        visibility: Database["public"]["Enums"]["reportViewVisibility"];
+        config: Json;
+        companyId: string;
+        updatedBy: string;
+      }
+) {
+  if ("id" in view) {
+    const { id, companyId, ...update } = view;
+    return client
+      .from("reportView")
+      .update({ ...update, updatedAt: datetime.timestamp() })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("*")
+      .single();
+  }
+  return client.from("reportView").insert([view]).select("*").single();
+}
+
+export async function deleteReportView(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("reportView")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
 export async function getCompaniesInGroup(
   client: SupabaseClient<Database>,
   companyGroupId: string
 ) {
   return client
     .from("company")
-    .select("id, name, baseCurrencyCode, parentCompanyId, isEliminationEntity")
+    .select(
+      "id, name, baseCurrencyCode, timezone, parentCompanyId, isEliminationEntity"
+    )
     .eq("companyGroupId", companyGroupId)
     .eq("active", true)
     .eq("isEliminationEntity", false)
@@ -656,18 +1802,22 @@ export async function getOrCreateAccountingPeriod(
     return { data: existing.data.id, error: null };
   }
 
-  // Create a new period for the month of the given date
-  const d = new Date(date);
-  const year = d.getFullYear();
-  const month = d.getMonth(); // 0-indexed
-  const startDate = new Date(year, month, 1).toISOString().split("T")[0];
-  const endDate = new Date(year, month + 1, 0).toISOString().split("T")[0];
+  // Create a new period for the month of the given date. Pure calendar math on
+  // the date string — a JS Date round-trip shifts the month near midnight on
+  // non-UTC processes.
+  const d = parseDate(date.slice(0, 10));
+  const startDate = startOfMonth(d).toString();
+  const endDate = endOfMonth(d).toString();
 
   const settings = await getFiscalYearSettings(client, companyId);
   const startMonth = settings.data?.startMonth
     ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
     : 1;
-  const { fiscalYear, periodNumber } = fiscalYearAndPeriodFor(d, startMonth);
+  const { fiscalYear, periodNumber } = fiscalYearAndPeriodFor(
+    d.year,
+    d.month,
+    startMonth
+  );
 
   await client
     .from("accountingPeriod")
@@ -1256,7 +2406,9 @@ async function computePeriodReadiness(
   // document with no postingDate can only land in this period if the period is
   // still running (or in the future) when it posts — closing an already-ended
   // period is not blocked by new drafts, which would post into a later period.
-  const todayDate = new Date().toISOString().slice(0, 10);
+  const todayDate = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
   const unpostedDateFilter =
     endDate >= todayDate
       ? `postingDate.is.null,and(postingDate.gte.${startDate},postingDate.lte.${endDate})`
@@ -1983,6 +3135,30 @@ export async function getDefaultAccounts(
     .single();
 }
 
+/**
+ * The GL account ids scrap postings offset to, for the scrap analytics
+ * report's account scope (accountScope.source === "scrapAccounts"). Empty
+ * when no scrap account is configured — getDimensionPivot short-circuits to
+ * an empty pivot in that case.
+ */
+export async function getScrapAccountIds(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ data: string[]; error: PostgrestError | null }> {
+  const result = await client
+    .from("accountDefault")
+    .select("scrapAccount")
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (result.error) return { data: [], error: result.error };
+
+  return {
+    data: result.data?.scrapAccount ? [result.data.scrapAccount] : [],
+    error: null
+  };
+}
+
 export async function getFiscalYearSettings(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2500,6 +3676,12 @@ function getEntityDimensionValues(
         .select("id, name")
         .eq("companyId", companyId)
         .order("name");
+    case "ScrapReason":
+      return client
+        .from("scrapReason")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .order("name");
     // Customer / Supplier / Item are high-cardinality: intentionally NOT
     // eager-loaded here. The DimensionSelector sources their options lazily
     // from the client stores (useCustomers / useSuppliers / useItems).
@@ -2624,6 +3806,8 @@ function getEntityValuesByIds(
       return client.from("itemPostingGroup").select("id, name").in("id", ids);
     case "CostCenter":
       return client.from("costCenter").select("id, name").in("id", ids);
+    case "ScrapReason":
+      return client.from("scrapReason").select("id, name").in("id", ids);
     case "FixedAssetClass":
       return client.from("fixedAssetClass").select("id, name").in("id", ids);
     case "Customer":
@@ -2772,18 +3956,16 @@ export async function translateCompanyBalances(
   return { data: rows, cta, error: null };
 }
 
-export async function getConsolidatedBalances(
+// Find elimination entities that should be included automatically in a
+// consolidation. An elimination entity is included when its parentCompanyId is
+// an ancestor of any selected company (i.e. it sits at or above the selected
+// companies in the hierarchy and captures their intercompany eliminations).
+// Returns the operating company ids plus those elimination entity ids.
+async function resolveConsolidationCompanyIds(
   client: SupabaseClient<Database>,
   companyGroupId: string,
-  companyIds: string[],
-  targetCurrency: string,
-  periodEnd: string,
-  periodStart?: string
-) {
-  // Find elimination entities that should be included automatically.
-  // An elimination entity is included when its parentCompanyId is an ancestor
-  // of any selected company (i.e. it sits at or above the selected companies
-  // in the hierarchy and captures their intercompany eliminations).
+  companyIds: string[]
+): Promise<string[]> {
   const { data: allGroupCompanies } = await client
     .from("company")
     .select("id, parentCompanyId, isEliminationEntity")
@@ -2815,8 +3997,23 @@ export async function getConsolidatedBalances(
     )
     .map((c) => c.id);
 
+  return [...companyIds, ...eliminationIds];
+}
+
+export async function getConsolidatedBalances(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyIds: string[],
+  targetCurrency: string,
+  periodEnd: string,
+  periodStart?: string
+) {
   // All companies whose balances we need (operating + elimination entities)
-  const allIds = [...companyIds, ...eliminationIds];
+  const allIds = await resolveConsolidationCompanyIds(
+    client,
+    companyGroupId,
+    companyIds
+  );
 
   // Get balances for all companies, then translate the already-computed
   // balances to the target currency (one ledger scan per company, not two).
@@ -2971,7 +4168,9 @@ export async function createIntercompanyTransaction(
     userId: string;
   }
 ) {
-  const today = new Date().toISOString().split("T")[0];
+  const today = datetime
+    .today(await getCompanyTimeZone(client, input.sourceCompanyId))
+    .toString();
   const postingDate = input.postingDate || today;
 
   const nextSequence = await getNextSequence(
@@ -3407,10 +4606,17 @@ export async function postJournalEntry(
   // 2b. Enforce the period lifecycle. A manual JE posts as an "accounting"
   // source, so a Locked period still accepts it (adjustments are allowed);
   // only a Closed period rejects. Stamp the resolved period on the entry.
+  // The fallback date is persisted with the flip below so the posted journal
+  // can never carry a period from one day and a postingDate from another.
+  const postingDate =
+    entry.data.postingDate ??
+    datetime
+      .today(await getCompanyTimeZone(client, entry.data.companyId))
+      .toString();
   const period = await getOrCreateAccountingPeriod(
     client,
     entry.data.companyId,
-    entry.data.postingDate ?? new Date().toISOString().split("T")[0],
+    postingDate,
     "accounting"
   );
   if (period.error) {
@@ -3425,6 +4631,7 @@ export async function postJournalEntry(
       postedAt: new Date().toISOString(),
       postedBy: userId,
       accountingPeriodId: period.data,
+      postingDate,
       updatedBy: userId
     })
     .eq("id", id)
@@ -3474,7 +4681,9 @@ export async function reverseJournalEntry(
   // 2b. The reversing entry is dated today and posts as an "accounting" source,
   // so it lands in the current period (never the original's, which may be
   // Closed). A Closed current period rejects; a Locked one still accepts.
-  const postingDate = new Date().toISOString().split("T")[0];
+  const postingDate = datetime
+    .today(await getCompanyTimeZone(client, data.companyId))
+    .toString();
   const period = await getOrCreateAccountingPeriod(
     client,
     data.companyId,

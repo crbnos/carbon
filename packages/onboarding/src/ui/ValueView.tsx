@@ -35,10 +35,7 @@ export function ValueView() {
 
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {VALUE_METRICS.map((metric) => (
-          <div
-            key={metric.key}
-            className="rounded-2xl border bg-card shadow-button-base p-5 flex flex-col gap-1"
-          >
+          <Panel key={metric.key} className="gap-1">
             <EditableField
               fieldKey={`${metric.key}.value`}
               value={fields.get(`${metric.key}.value`)}
@@ -53,7 +50,7 @@ export function ValueView() {
               placeholder={t`Metric`}
               className="text-xs text-muted-foreground"
             />
-          </div>
+          </Panel>
         ))}
       </section>
       {canEdit ? (

@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { raiseMoment } from "@carbon/lib/workflows";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
 
@@ -107,6 +108,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       message: "Failed to post purchase invoice"
     };
   }
+
+  // Must stay below the rollback catch above — a post that got reverted to
+  // Draft must not fire workflows.
+  await raiseMoment("invoicing.purchaseInvoicePosted", {
+    outputs: { purchaseInvoice: { id: invoiceId }, postedBy: { id: userId } },
+    companyId,
+    actorId: userId
+  });
 
   const receiptId =
     skipReceiptPost && receiptIds?.[0] ? receiptIds[0] : undefined;

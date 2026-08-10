@@ -1,4 +1,4 @@
-import { toIsoDateInTimeZone } from "./date-utils.ts";
+import { businessDay } from "./date-utils.ts";
 import type { ScheduledOperation, WorkCenterSelection } from "./types.ts";
 
 /**
@@ -11,6 +11,16 @@ import type { ScheduledOperation, WorkCenterSelection } from "./types.ts";
  * onto the date-only operation columns as the FACTORY's calendar day (an op
  * ending 03:04 local on the 21st must not be stored as due the 20th).
  */
+/**
+ * True when an operation already has a non-empty work center assignment
+ * (user drag on ops board, method default, prior schedule, etc.).
+ */
+export function hasPreassignedWorkCenter(
+  workCenterId: string | null | undefined
+): boolean {
+  return workCenterId != null && workCenterId !== "";
+}
+
 export function applyWorkCenterSelections(
   operations: Map<string, ScheduledOperation>,
   selections: Map<string, WorkCenterSelection>,
@@ -26,7 +36,9 @@ export function applyWorkCenterSelections(
     }
 
     const updated: ScheduledOperation = { ...op };
-    if (selection.workCenterId) {
+    // Never clobber a pre-assigned work center (user or method default) —
+    // auto-selection may only fill empty ones.
+    if (selection.workCenterId && !hasPreassignedWorkCenter(op.workCenterId)) {
       updated.workCenterId = selection.workCenterId;
     }
 
@@ -35,14 +47,8 @@ export function applyWorkCenterSelections(
     // backward-scheduled dates this placement just replaced. Outside
     // operations have a placement but no work center.
     if (selection.placedStart && selection.placedEnd) {
-      updated.startDate = toIsoDateInTimeZone(
-        new Date(selection.placedStart),
-        timeZone
-      );
-      updated.dueDate = toIsoDateInTimeZone(
-        new Date(selection.placedEnd),
-        timeZone
-      );
+      updated.startDate = businessDay(selection.placedStart, timeZone);
+      updated.dueDate = businessDay(selection.placedEnd, timeZone);
       updated.hasConflict = false;
       updated.conflictReason = null;
     }

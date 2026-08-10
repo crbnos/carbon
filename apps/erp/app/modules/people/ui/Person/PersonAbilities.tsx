@@ -10,7 +10,8 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus, LuPencil } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { DateTime } from "~/components";
+import { usePermissions } from "~/hooks";
 import { EmployeeAbilityStatus } from "~/modules/resources";
 import type { EmployeeAbility } from "~/modules/resources/types";
 import { path } from "~/utils/path";
@@ -22,7 +23,6 @@ type PersonAbilitiesProps = {
 
 const PersonAbilities = ({ personId, abilities }: PersonAbilitiesProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "resources");
@@ -72,10 +72,14 @@ const PersonAbilities = ({ personId, abilities }: PersonAbilitiesProps) => {
                     </HStack>
                     <HStack spacing={2}>
                       <p className="text-sm text-muted-foreground">
-                        {formatDate(employeeAbility.lastTrainingDate, {
-                          month: "short",
-                          year: "numeric"
-                        })}
+                        <DateTime
+                          value={employeeAbility.lastTrainingDate}
+                          variant="date"
+                          dateOptions={{
+                            month: "short",
+                            year: "numeric"
+                          }}
+                        />
                       </p>
                       {canUpdate && (
                         <IconButton

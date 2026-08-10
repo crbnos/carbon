@@ -20,7 +20,12 @@ export function MainHeader({ active, mobileNav }: { active?: Active; mobileNav?:
   return (
     <header
       className="fixed inset-x-0 top-0 z-[60] h-16"
-      style={{ background: "#F5F5F2", borderBottom: "1px solid #E8E7E6", boxShadow: "0 1px 0 0 #fff" }}
+      style={{
+        // Guides keeps the warm paper chrome; every other surface is neutral.
+        background: active === "guides" ? "#F5F5F2" : "#F5F5F5",
+        borderBottom: `1px solid ${active === "guides" ? "#E8E7E6" : "#E8E8E8"}`,
+        boxShadow: "0 1px 0 0 #fff"
+      }}
     >
       {/* Inner row capped to the content width so the logo/CTA don't drift to the
           screen edges on large displays — aligns with the docs/api/mcp containers. */}

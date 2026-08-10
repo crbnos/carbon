@@ -22,6 +22,13 @@ import {
   DropdownMenuTrigger,
   Heading,
   HStack,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
   SidebarTrigger,
   Skeleton,
   Tooltip,
@@ -51,6 +58,7 @@ import { ShortPickModal } from "~/components/ShortPickModal";
 import type { PickingListRecommendation } from "~/services/inventory.service";
 import { getPickingListRecommendations } from "~/services/inventory.service";
 import { isPickingListLocked } from "~/services/models";
+import type { UnresolvedPickingListLine } from "~/services/picking.service";
 import { getPickingListForExecution } from "~/services/picking.service";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -164,6 +172,14 @@ export default function PickingExecutionRoute() {
   );
 }
 
+type FinishStatusResponse = {
+  success: boolean;
+  message?: string;
+  blocked?: boolean;
+  needsAcknowledgement?: boolean;
+  unresolvedLines?: UnresolvedPickingListLine[];
+};
+
 function PickingListControls({
   pickingListId,
   status
@@ -171,52 +187,161 @@ function PickingListControls({
   pickingListId: string;
   status: string;
 }) {
-  const fetcher = useFetcher<{ success: boolean; message?: string }>();
+  const fetcher = useFetcher<FinishStatusResponse>();
   const isSubmitting = fetcher.state !== "idle";
+  const [acknowledgeLines, setAcknowledgeLines] = useState<
+    UnresolvedPickingListLine[] | null
+  >(null);
 
   useEffect(() => {
-    if (fetcher.data && fetcher.data.success === false) {
-      toast.error(fetcher.data.message ?? "Failed to update status");
+    if (!fetcher.data) return;
+    // 'warn' policy → server asks the operator to confirm the shortfall.
+    if (fetcher.data.needsAcknowledgement && fetcher.data.unresolvedLines) {
+      setAcknowledgeLines(fetcher.data.unresolvedLines);
+      return;
+    }
+    if (fetcher.data.success === true) {
+      setAcknowledgeLines(null);
+      return;
+    }
+    if (fetcher.data.success === false) {
+      // 'error' policy → hard block; name the material that's still unpicked.
+      if (fetcher.data.blocked && fetcher.data.unresolvedLines?.length) {
+        toast.error(
+          `Can't finish — still unpicked: ${fetcher.data.unresolvedLines
+            .map((l) => l.itemName)
+            .join(", ")}`
+        );
+      } else {
+        toast.error(fetcher.data.message ?? "Failed to update status");
+      }
     }
   }, [fetcher.data]);
 
-  const setStatus = (next: string) => {
+  const setStatus = (next: string, acknowledged?: boolean) => {
     const formData = new FormData();
     formData.append("status", next);
+    if (acknowledged) formData.append("acknowledged", "true");
     fetcher.submit(formData, {
       method: "post",
       action: path.to.pickingStatus(pickingListId)
     });
   };
 
-  if (status === "Completed" || status === "Cancelled") return null;
+  if (isPickingListLocked(status)) return null;
 
   return (
-    <HStack spacing={2}>
-      {status === "Draft" && (
-        <Button
-          size="md"
-          leftIcon={<LuPlay />}
-          isLoading={isSubmitting}
-          isDisabled={isSubmitting}
-          onClick={() => setStatus("In Progress")}
-        >
-          <Trans>Start</Trans>
-        </Button>
+    <>
+      <HStack spacing={2}>
+        {status === "Draft" && (
+          <Button
+            size="md"
+            leftIcon={<LuPlay />}
+            isLoading={isSubmitting}
+            isDisabled={isSubmitting}
+            onClick={() => setStatus("In Progress")}
+          >
+            <Trans>Start</Trans>
+          </Button>
+        )}
+        {status === "In Progress" && (
+          <Button
+            size="md"
+            variant="secondary"
+            leftIcon={<LuCheck />}
+            isLoading={isSubmitting}
+            isDisabled={isSubmitting}
+            onClick={() => setStatus("Completed")}
+          >
+            <Trans>Finish</Trans>
+          </Button>
+        )}
+      </HStack>
+      {acknowledgeLines && (
+        <IncompletePickAcknowledgeModal
+          lines={acknowledgeLines}
+          isSubmitting={isSubmitting}
+          onCancel={() => setAcknowledgeLines(null)}
+          onAcknowledge={() => setStatus("Completed", true)}
+        />
       )}
-      {status === "In Progress" && (
-        <Button
-          size="md"
-          variant="secondary"
-          leftIcon={<LuCheck />}
-          isLoading={isSubmitting}
-          isDisabled={isSubmitting}
-          onClick={() => setStatus("Completed")}
-        >
-          <Trans>Finish</Trans>
-        </Button>
-      )}
-    </HStack>
+    </>
+  );
+}
+
+// Shown when a Finish is attempted on a short-picked list under the 'warn'
+// policy: lists the still-unpicked material and lets the operator acknowledge &
+// finish (which flags the list Partial) or back out and keep picking.
+function IncompletePickAcknowledgeModal({
+  lines,
+  isSubmitting,
+  onCancel,
+  onAcknowledge
+}: {
+  lines: UnresolvedPickingListLine[];
+  isSubmitting: boolean;
+  onCancel: () => void;
+  onAcknowledge: () => void;
+}) {
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>
+            <span className="flex items-center gap-2">
+              <LuTriangleAlert className="text-amber-500 h-5 w-5" />
+              <Trans>Finish with material unpicked?</Trans>
+            </span>
+          </ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <div className="flex flex-col gap-3 text-sm">
+            <p className="text-muted-foreground">
+              <Trans>
+                These items still have material to pick. Finishing now marks the
+                list Partial.
+              </Trans>
+            </p>
+            <ul className="flex flex-col gap-1">
+              {lines.map((line, index) => (
+                <li
+                  key={`${line.itemName}-${index}`}
+                  className="flex items-center justify-between gap-4 rounded-md border px-3 py-2"
+                >
+                  <span className="font-medium">{line.itemName}</span>
+                  <span className="text-muted-foreground tabular-nums">
+                    {line.outstanding} <Trans>short</Trans>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={onCancel}
+            isDisabled={isSubmitting}
+          >
+            <Trans>Keep picking</Trans>
+          </Button>
+          <Button
+            variant="solid"
+            onClick={onAcknowledge}
+            isLoading={isSubmitting}
+            isDisabled={isSubmitting}
+          >
+            <Trans>Acknowledge & finish</Trans>
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 }
 

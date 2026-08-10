@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
@@ -112,6 +113,14 @@ export async function action(args: ActionFunctionArgs) {
       message: "You are not authorized to confirm this sales invoice"
     };
   }
+
+  // Must stay below the tenant guard and the rollback catch above — a post that
+  // got reverted to Draft must not fire workflows.
+  await raiseMoment("invoicing.salesInvoicePosted", {
+    outputs: { salesInvoice: { id: invoiceId }, postedBy: { id: userId } },
+    companyId,
+    actorId: userId
+  });
 
   const acceptLanguage = request.headers.get("accept-language");
   const locales = parseAcceptLanguage(acceptLanguage, {

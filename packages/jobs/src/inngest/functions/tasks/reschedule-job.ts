@@ -14,7 +14,7 @@ export const rescheduleJobFunction = inngest.createFunction(
       // cross-job, so concurrent runs could double-book a work center.
       // env scope + the shared "schedule:" key serializes with the
       // schedule-replan-wave function, not just other runs of this one.
-      // (limit: 0 means zero capacity: runs queue forever and never execute.)
+      // (a zero limit is zero capacity: runs queue forever and never execute.)
       limit: 1,
       scope: "env",
       key: '"schedule:" + event.data.companyId'

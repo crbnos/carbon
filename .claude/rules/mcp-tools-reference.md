@@ -101,6 +101,15 @@ and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 
 ## Gotchas
 
+- The generator reads a service's **parameter list textually**. A parameter typed
+  with a named alias (`prices: QuoteLinePriceInput[]`) publishes as an untyped
+  `{"type":"array","items":{}}` — only literal object types get inlined — and a
+  `//` comment inside the parameter list is parsed as a property name. Spell the
+  object type out inline and keep comments above the function.
+- A service whose first parameter is `db` (a Kysely transaction client) is served
+  `getDatabaseClient()` by `direct-executor.ts`, the same way `client` is served
+  the supabase one. A first parameter named anything else falls through to the
+  positional-argument branches and receives a business argument as its client.
 - Don't enumerate individual tools in docs — `search_tools` is the source of truth.
   Names follow `<module>_<verb><Entity>` (e.g. `sales_getCustomers`,
   `inventory_upsertStorageUnit`).

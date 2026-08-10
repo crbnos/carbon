@@ -2,13 +2,15 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
-import { useRouteData, useUser } from "~/hooks";
+import { useCompanyToday, useRouteData, useUser } from "~/hooks";
 import type { GaugeType } from "~/modules/quality";
 import { gaugeValidator, insertGauge } from "~/modules/quality";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
@@ -35,8 +37,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
+  const companyToday = datetime.today(
+    await getCompanyTimeZone(client, companyId)
+  );
   const gaugeCalibrationStatus = d.nextCalibrationDate
-    ? parseDate(d.nextCalibrationDate) < today(getLocalTimeZone())
+    ? parseDate(d.nextCalibrationDate).compare(companyToday) < 0
       ? "Out-of-Calibration"
       : d.lastCalibrationDate
         ? "In-Calibration"
@@ -73,6 +78,7 @@ export default function GaugeNewRoute() {
     gaugeTypes: GaugeType[];
   }>(path.to.gauges);
 
+  const companyToday = useCompanyToday();
   const initialValues = {
     id: undefined,
     gaugeId: undefined,
@@ -80,7 +86,7 @@ export default function GaugeNewRoute() {
     modelNumber: "",
     serialNumber: "",
     description: "",
-    dateAcquired: today(getLocalTimeZone()).toString(),
+    dateAcquired: companyToday,
     gaugeTypeId: "",
     gaugeCalibrationStatus: "Pending" as const,
     gaugeStatus: "Active" as const,

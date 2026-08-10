@@ -1,5 +1,7 @@
-import { functions, inngest } from "@carbon/jobs/inngest";
+import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
 import { serve } from "inngest/remix";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { executeFunction } from "./mcp+/lib/direct-executor";
 
 /**
  * Inngest API endpoint.
@@ -22,6 +24,24 @@ const handler = serve({
   serveHost: process.env.INNGEST_SERVE_HOST || process.env.ERP_URL
 });
 
+// packages/jobs cannot import ~/modules, so the ERP app hands it the dispatcher.
+// Wired on first request rather than at module scope: a top-level side effect is
+// not removable by the client build, which would drag the server-only jobs graph
+// into the browser bundle.
+let dispatchWired = false;
+function wireWorkflowDispatch() {
+  if (dispatchWired) return;
+  setWorkflowDispatch(executeFunction);
+  dispatchWired = true;
+}
+
 // In connect mode, we still serve for discovery but can log/track differently
-export const loader = handler;
-export const action = handler;
+export function loader(args: LoaderFunctionArgs) {
+  wireWorkflowDispatch();
+  return handler(args);
+}
+
+export function action(args: ActionFunctionArgs) {
+  wireWorkflowDispatch();
+  return handler(args);
+}

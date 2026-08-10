@@ -30,6 +30,7 @@ import {
   companyValidator,
   updateCompany
 } from "~/modules/settings";
+import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -62,6 +63,9 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error(update.error, "Failed to update company"))
     );
 
+  // company.timezone may have changed — drop the cached resolution.
+  await invalidateCompanyTimeZone(companyId);
+
   return data({}, await flash(request, success("Updated company")));
 }
 
@@ -83,12 +87,14 @@ export default function Company() {
     taxId: company.taxId ?? undefined,
     vatNumber: company.vatNumber ?? undefined,
     eori: company.eori ?? undefined,
+    registrationNumber: company.registrationNumber ?? undefined,
     addressLine1: company.addressLine1 ?? "",
     addressLine2: company.addressLine2 ?? undefined,
     city: company.city ?? "",
     stateProvince: company.stateProvince ?? "",
     postalCode: company.postalCode ?? "",
     countryCode: company.countryCode ?? "",
+    timezone: company.timezone ?? "UTC",
     baseCurrencyCode: company.baseCurrencyCode ?? undefined,
     phone: company.phone ?? undefined,
     email: company.email ?? undefined,

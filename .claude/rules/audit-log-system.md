@@ -52,7 +52,9 @@ Other config knobs:
 - `skipFields: ["updatedAt", "updatedBy", "embedding"]` — excluded from diffs (matched top-level and as nested `.suffix`).
 - `retentionDays: 30`
 - `archivePath: "audit-logs/{companyId}/{year}/{month}.jsonl.gz"` and `archiveBucket: "private"`.
-- `createFields` (allowlist of columns surfaced on INSERT) and `snapshotFields` (FK display values frozen into the diff) are declared per table.
+- `createFields` (allowlist of columns surfaced on INSERT) is declared per table.
+- `fkDisplayRegistry` — display columns per FK *target* table (e.g. `supplier: ["name"]`, `user: ["fullName"]`, ~64 targets). FK columns are discovered from the schema at runtime via the `get_foreign_key_map` RPC (reads `pg_constraint`; only FKs referencing the target's `id`; returns `targetHasCompanyId` so non-tenant targets like `user` skip the companyId filter). Any changed FK column whose target is in the registry gets its display values frozen into the diff automatically; targets missing from the registry degrade to showing the raw id. Per-column `snapshotFields` on a table config still exist as overrides and win over the registry — they're REQUIRED for columns with no FK constraint in the DB (e.g. `salesOrder.salesPersonId`, several line-level `locationId`s), which `get_foreign_key_map` cannot see. An override target's tenancy is inherited from any schema FK referencing the same table (so a `user` override is correctly unscoped).
+- `fkDisplayHops` — junction targets whose display value lives one hop away (`customerContact`/`supplierContact` → `contact.fullName`). The handler resolves these in two batched lookups (junction id → hop column → display row); hops win over the registry for the same target.
 
 Types live in `audit.types.ts`: `AuditLogEntry`, `CreateAuditLogEntry`, `AuditDiff`, `AuditDiffEntry`,
 `AuditMetadata`, `AuditOperation`, `AuditLogFilters`, `AuditLogResponse`, `AuditLogArchive`, `AuditLogConfig`.
@@ -65,8 +67,10 @@ DB triggers added via `attach_event_trigger(...)` push table changes onto a PGMQ
 `handlerType = 'AUDIT'`. The queue dispatcher (`packages/jobs/src/inngest/.../queue.ts`) batches AUDIT
 records and emits `carbon/event-audit`. `auditFunction` in
 `packages/jobs/src/inngest/functions/events/audit.ts` (Inngest id `event-handler-audit`) computes diffs
-(`computeDiff` / `computeCreateDiff` / `computeNestedDiff`, honoring `skipFields`), resolves snapshot FKs,
-and writes via `client.rpc("insert_audit_log_batch", { p_company_id, p_entries })`.
+(`computeDiff` / `computeCreateDiff` / `computeNestedDiff` in `events/diff.ts` — pure, unit-tested; honors `skipFields` and suppresses empty↔empty transitions like `null → {}` / `null → ""`), resolves FK snapshots
+(`applyFkSnapshots`: FK topology from `get_foreign_key_map` cached per process, display columns from
+`fkDisplayRegistry`, override precedence in `events/fk-snapshots.ts` → `resolveSnapshotSpec`, one batched
+lookup per target table), and writes via `client.rpc("insert_audit_log_batch", { p_company_id, p_entries })`.
 
 ## Query / management functions
 
@@ -97,7 +101,10 @@ than from config.
   Unknown prefixes render as plain text.
 - `.../AuditLog/AuditLogSettings.tsx` — enable/disable + archive download list.
 - `apps/erp/app/components/AuditLog/` — per-entity history `AuditLogDrawer.tsx` + `useAuditLog.tsx` hook,
-  fetching `api+/audit-log.ts` by `entityType`/`entityId`/`recordId`.
+  fetching `api+/audit-log.ts` by `entityType`/`entityId`/`recordId`. `AuditLogDrawer.tsx` also exports
+  `ChangeRow`, the snapshot-aware diff-row renderer (FK name from `diff[col].snapshot`, raw id on hover)
+  used by BOTH the drawer and the global `AuditLogTable` expanded rows — don't render `change.old/new`
+  raw or FKs regress to bare ids.
 - Actor column: `<EmployeeAvatar employeeId={actorId} />` linked to `path.to.employeeAccount`; null actor → "System".
   (`actorName` column was removed; the UI resolves names from `actorId`.)
 

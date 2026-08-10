@@ -22,10 +22,12 @@ import {
   HStack,
   ScrollArea,
   toast,
+  useDisclosure,
   VStack
 } from "@carbon/react";
-import { convertKbToString, isInternalEmail } from "@carbon/utils";
+import { convertKbToString } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuLoaderCircle } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -33,10 +35,13 @@ import {
   data,
   redirect,
   useFetcher,
+  useFetchers,
   useLoaderData,
   useRevalidator
 } from "react-router";
 import { z } from "zod";
+import { DateTime } from "~/components";
+import { Confirm } from "~/components/Modals";
 import type { CompanyBackupSummary } from "~/modules/settings";
 import {
   deleteCompanyBackup,
@@ -62,6 +67,7 @@ import {
   RestoreReviewRow,
   RestoreSubmit
 } from "~/modules/settings/ui/Backups";
+import { canAccessBackups } from "~/utils/backups";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -86,9 +92,10 @@ const restoreValidator = z.object({
   includeStorage: z.enum(["none", "all"])
 });
 
-function requireInternal(email: string | null) {
-  // Internal-only while multi-tenant hardening is pending.
-  if (!isInternalEmail(email)) {
+function requireBackupAccess(email: string | null) {
+  // Internal-only in real deployments while multi-tenant hardening is pending;
+  // open to everyone on a local dev stack.
+  if (!canAccessBackups(email)) {
     throw redirect(path.to.settings);
   }
 }
@@ -97,7 +104,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {
     update: "settings"
   });
-  requireInternal(email);
+  requireBackupAccess(email);
 
   const [backupsList, restoreRuns, exportRun] = await Promise.all([
     listCompanyBackups(client, companyId),
@@ -121,7 +128,7 @@ export async function action({ request }: ActionFunctionArgs) {
       update: "settings"
     }
   );
-  requireInternal(email);
+  requireBackupAccess(email);
 
   const formData = await request.formData();
   const intent = formData.get("intent");
@@ -571,12 +578,20 @@ export default function BackupsRoute() {
   );
 }
 
-// One backup row. Its own fetcher so Delete shows a spinner and dims the row
-// while the (async, storage-recursing) delete runs; the row drops out of the
-// list on the revalidation that follows.
 function BackupRow({ file }: { file: CompanyBackupSummary }) {
-  const deleteFetcher = useFetcher();
-  const isDeleting = deleteFetcher.state !== "idle";
+  const { t } = useLingui();
+  const deleteDisclosure = useDisclosure();
+  const isDeleting = useFetchers().some((fetcher) => {
+    const intent = fetcher.formData?.get("intent");
+    const backupName = fetcher.formData?.get("name");
+    return (
+      fetcher.state !== "idle" &&
+      fetcher.formAction === path.to.backups &&
+      intent === "delete" &&
+      backupName === file.name
+    );
+  });
+  const name = file.label || formatBackupName(file.name);
 
   return (
     <HStack
@@ -585,9 +600,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
       }`}
     >
       <VStack spacing={0}>
-        <span className="text-sm font-medium">
-          {file.label || formatBackupName(file.name)}
-        </span>
+        <span className="text-sm font-medium">{name}</span>
         <span className="text-xs text-muted-foreground">
           {file.status === "pending" ? (
             // A pending folder with no running export is a dead partial — never
@@ -595,7 +608,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
             <>Incomplete backup — not restorable</>
           ) : (
             <>
-              {formatBackupDate(file.exportedAt)}
+              <DateTime value={file.exportedAt} variant="absolute" />
               {file.sizeBytes ? (
                 <>
                   {" · "}
@@ -607,7 +620,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
         </span>
       </VStack>
       <HStack spacing={2}>
-        {file.status === "ready" ? (
+        {file.status === "ready" && !isDeleting ? (
           <Button asChild variant="secondary">
             <a
               href={`/api/settings/backup-archive/${encodeURIComponent(
@@ -623,18 +636,31 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
             Download
           </Button>
         )}
-        <deleteFetcher.Form method="post">
+        <Button
+          type="button"
+          variant="destructive"
+          isLoading={isDeleting}
+          isDisabled={isDeleting}
+          onClick={deleteDisclosure.onOpen}
+        >
+          <Trans>Delete</Trans>
+        </Button>
+        <Confirm
+          action={path.to.backups}
+          isOpen={deleteDisclosure.isOpen}
+          title={t`Delete ${name}`}
+          text={t`Are you sure you want to delete ${
+            name
+          }? This cannot be undone.`}
+          confirmText={t`Delete`}
+          cancelText={isDeleting ? t`Close` : t`Cancel`}
+          confirmVariant="destructive"
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
+        >
           <input type="hidden" name="intent" value="delete" />
           <input type="hidden" name="name" value={file.name} />
-          <Button
-            type="submit"
-            variant="destructive"
-            isLoading={isDeleting}
-            isDisabled={isDeleting}
-          >
-            Delete
-          </Button>
-        </deleteFetcher.Form>
+        </Confirm>
       </HStack>
     </HStack>
   );

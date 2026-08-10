@@ -12,6 +12,7 @@ import {
   getBaseCurrency,
   getCompaniesInGroup
 } from "~/modules/accounting";
+import AccountingBetaGate from "~/modules/accounting/ui/AccountingBetaGate";
 import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -66,8 +67,9 @@ export default function AccountingRoute() {
     <CollapsibleSidebarProvider>
       <div className="grid grid-cols-[auto_1fr] w-full h-full bg-card">
         <GroupedContentSidebar groups={groups} />
-        <VStack spacing={0} className="h-full">
+        <VStack spacing={0} className="relative h-full">
           <Outlet />
+          <AccountingBetaGate />
         </VStack>
       </div>
     </CollapsibleSidebarProvider>

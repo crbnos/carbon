@@ -7,6 +7,9 @@ export const MES_URL = getMESUrl();
 const x = "/x";
 const api = "/api";
 const file = `/file`;
+// Wall-mounted work center displays live outside `/x` so they don't inherit the
+// operator chrome (sidebar, pin-in overlay, time-card warning).
+const display = "/display";
 
 export const path = {
   to: {
@@ -21,6 +24,8 @@ export const path = {
       failureModes: `${api}/failure-modes`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
+      modelDownload: (modelUploadId: string) =>
+        generatePath(`${api}/model/download/${modelUploadId}`),
       modelOptimizeCancel: `${api}/model/optimize-cancel`,
       modelReoptimize: `${api}/model/reoptimize`,
       pickedAllocation: (jobMaterialId: string) =>
@@ -37,20 +42,22 @@ export const path = {
           `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}`
         )
     },
+    assembly: (id: string) => generatePath(`${x}/assembly/${id}`),
     assigned: `${x}/assigned`,
     authenticatedRoot: x,
     callback: "/callback",
     companySwitch: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
     complete: `${x}/complete`,
+    completeAllSteps: `${x}/steps/complete-all`,
     consolePinIn: `${x}/console/pin-in`,
     consolePinOut: `${x}/console/pin-out`,
     consoleToggle: `${x}/console/toggle`,
     convertEntity: (id: string) => generatePath(`${x}/entity/${id}/convert`),
     crewOverride: `${x}/crew-override`,
+    displays: display,
     endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     endShift: `${x}/end-shift`,
-    feedback: `${x}/feedback`,
     file: {
       jobTraveler: (id: string) => `${getAppUrl()}${file}/traveler/${id}.pdf`,
       operationLabelsPdf: (
@@ -123,6 +130,16 @@ export const path = {
     },
     finish: `${x}/finish`,
     health: "/health",
+    inspection: (operationId: string) =>
+      generatePath(`${x}/inspection/${operationId}`),
+    inspectionCompletePassed: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/complete-passed`),
+    inspectionDisposition: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/disposition`),
+    inspectionMeasurement: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/measurement`),
+    inspectionSample: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/sample`),
     inspectionSteps: `${x}/steps/inspection`,
     inventoryAdjustment: `${x}/adjustment`,
     issue: `${x}/issue`,
@@ -140,6 +157,8 @@ export const path = {
     maintenanceDetail: (id: string) => generatePath(`${x}/dispatch/${id}`),
     maintenanceDispatchItem: (id: string) =>
       generatePath(`${x}/dispatch/${id}/item`),
+    maintenanceDisplay: (workCenterId: string) =>
+      generatePath(`${display}/${workCenterId}/maintenance`),
     maintenanceEvent: `${x}/maintenance-event`,
     manualPrint: `${x}/print`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
@@ -167,8 +186,8 @@ export const path = {
       generatePath(`${x}/rework-targets/${operationId}`),
     root: "/",
     scrap: `${x}/scrap`,
-    scrapEntity: (operationId: string, id: string, parentId?: string) => {
-      const basePath = generatePath(`${x}/entity/${operationId}/${id}/scrap`);
+    scrapEntity: (materialId: string, id: string, parentId?: string) => {
+      const basePath = generatePath(`${x}/entity/${materialId}/${id}/scrap`);
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
     scrapReasons: `${api}/scrap-reasons`,
@@ -181,7 +200,9 @@ export const path = {
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>
-      generatePath(`${x}/operations/${workCenter}`)
+      generatePath(`${x}/operations/${workCenter}`),
+    workDisplay: (workCenterId: string) =>
+      generatePath(`${display}/${workCenterId}/work`)
   }
 } as const;
 

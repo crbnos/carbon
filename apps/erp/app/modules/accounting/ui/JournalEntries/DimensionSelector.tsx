@@ -16,6 +16,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import { LuPlus } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -66,6 +67,8 @@ const entityTypeColors: Record<string, string> = {
     "bg-teal-100 text-teal-800 dark:bg-teal-500/15 dark:text-teal-400 border-teal-500/20",
   Process:
     "bg-cyan-100 text-cyan-800 dark:bg-cyan-500/15 dark:text-cyan-400 border-cyan-500/20",
+  ScrapReason:
+    "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-400 border-rose-500/20",
   Custom: ""
 };
 
@@ -80,6 +83,7 @@ const DimensionSelector = ({
   onChange,
   autoSave = false
 }: DimensionSelectorProps) => {
+  const { t } = useLingui();
   const fetcher = useFetcher();
 
   const [customers] = useCustomers();
@@ -246,12 +250,16 @@ const DimensionSelector = ({
               variant="secondary"
               className="inline-flex items-center cursor-pointer gap-1"
             >
-              <span>Dimension</span>
+              <span>
+                <Trans>Dimension</Trans>
+              </span>
               <LuPlus />
             </Badge>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel>Dimensions</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              <Trans>Dimensions</Trans>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {addableHighCardinalityDimensions.map((dim) => (
               <DropdownMenuItem
@@ -351,7 +359,7 @@ const DimensionSelector = ({
             <BadgeCloseButton
               tabIndex={0}
               onClick={() => handleRemove(dim.dimensionId)}
-              aria-label={`Remove ${label}`}
+              aria-label={t`Remove ${label}`}
             />
           </Badge>
         );

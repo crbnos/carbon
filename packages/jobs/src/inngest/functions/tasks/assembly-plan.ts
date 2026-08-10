@@ -3,10 +3,12 @@ import type { Json } from "@carbon/database";
 import type { AssemblyPlan } from "@carbon/viewer/steps";
 import { inngest } from "../../client";
 import {
+  ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
   resolveModelSourceBucket,
-  runAssemblerJob
+  runAssemblerJob,
+  signSourceUrl
 } from "./assembler-client";
 import { loadPlanUnits } from "./plan-units";
 import { updateAssemblyStepMotionsFromPlan } from "./update-step-motions";
@@ -32,6 +34,7 @@ export const assemblyPlanFunction = inngest.createFunction(
   {
     id: "assembly-plan",
     retries: 2,
+    concurrency: ASSEMBLER_CONCURRENCY,
     onFailure: async ({ event }) => {
       const { modelUploadId } = event.data.event.data;
       const client = getCarbonServiceRole();
@@ -199,15 +202,15 @@ export const assemblyPlanFunction = inngest.createFunction(
           client,
           job.modelPath
         );
-        const source = await client.storage
-          .from(sourceBucket)
-          .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
-        if (source.error) {
-          throw new Error(`Failed to sign source URL: ${source.error.message}`);
-        }
+        const signedUrl = await signSourceUrl(
+          client,
+          sourceBucket,
+          job.modelPath,
+          SIGNED_URL_EXPIRY
+        );
         return {
           source: {
-            url: internalizeStorageUrl(source.data.signedUrl),
+            url: internalizeStorageUrl(signedUrl),
             format: "step"
           },
           // The service reads planPath (completion pointer) and modelUploadId

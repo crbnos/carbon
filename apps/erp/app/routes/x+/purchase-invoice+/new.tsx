@@ -3,12 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { useUrlParams, useUser } from "~/hooks";
+import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import { upsertDocument } from "~/modules/documents";
 import {
   createPurchaseInvoiceFromPurchaseOrder,
@@ -19,6 +18,7 @@ import {
   upsertPurchaseInvoiceLine
 } from "~/modules/invoicing";
 import { resolveItemIdFromExtractedText } from "~/modules/items";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -57,7 +57,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
           request.headers.get("Referer") ?? path.to.purchaseOrders,
           await flash(
             request,
-            error(result.error, "Failed to create purchase invoice")
+            error(
+              result.error,
+              await getEdgeFunctionErrorMessage(
+                result.error,
+                "Failed to create purchase invoice"
+              )
+            )
           )
         );
       }
@@ -215,12 +221,13 @@ export default function PurchaseInvoiceNewRoute() {
   const supplierId = params.get("supplierId");
   const { defaults } = useUser();
 
+  const companyToday = useCompanyToday();
   const initialValues = {
     id: undefined,
     invoiceId: undefined,
     supplierId: supplierId ?? "",
     locationId: defaults?.locationId ?? "",
-    dateIssued: today(getLocalTimeZone()).toString()
+    dateIssued: companyToday
   };
 
   return (

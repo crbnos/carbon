@@ -18,11 +18,11 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useItems } from "~/stores/items";
 import { usePeople } from "~/stores/people";
@@ -46,7 +46,6 @@ type IssuesTableProps = {
 const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
   const navigate = useNavigate();
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const permissions = usePermissions();
   const deleteDisclosure = useDisclosure();
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -253,7 +252,9 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
       {
         accessorKey: "openDate",
         header: t`Open Date`,
-        cell: ({ row }) => formatDate(row.original.openDate),
+        cell: ({ row }) => (
+          <DateTime value={row.original.openDate} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -261,7 +262,9 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
       {
         accessorKey: "closeDate",
         header: t`Closed Date`,
-        cell: ({ row }) => formatDate(row.original.closeDate),
+        cell: ({ row }) => (
+          <DateTime value={row.original.closeDate} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -286,14 +289,16 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, items, locations, people, types, t, formatDate]);
+  }, [customColumns, items, locations, people, types, t]);
 
   const renderContextMenu = useCallback(
     (row: Issue) => {

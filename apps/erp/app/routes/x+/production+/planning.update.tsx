@@ -214,7 +214,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 manufacturing.data?.scrapPercentage ?? 0;
               const updateScrapQuantity =
                 updateScrapPercentage > 0
-                  ? Math.ceil(order.quantity * (updateScrapPercentage / 100))
+                  ? Math.ceil(order.quantity * updateScrapPercentage)
                   : 0;
 
               const updateJob = await client

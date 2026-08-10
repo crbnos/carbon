@@ -8,12 +8,18 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { upsertDocument } from "~/modules/documents";
+import {
+  getCompanyTimeZone,
+  getLocationTimeZone
+} from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/shipment+/$id[.]pdf";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
@@ -49,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // fire here too.
   const { data: shipmentForSurface } = await serviceRole
     .from("shipment")
-    .select("sourceDocument")
+    .select("sourceDocument, locationId")
     .eq("id", shipmentId)
     .single();
   const surfaces: ("shipment" | "warehouseTransfer")[] = ["shipment"];
@@ -131,7 +137,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .eq("attributes ->> Shipment", shipmentId)
     .eq("companyId", companyId);
 
-  const todayLocal = today(getLocalTimeZone());
+  // Expiry is judged on the shipping site's calendar, not the server's — a lot
+  // that expires today must not read as expired at a plant still on yesterday.
+  // No location on the shipment → the company calendar.
+  const shipmentLocationId = shipmentForSurface?.locationId as string | null;
+  const todayLocal = datetime.today(
+    shipmentLocationId
+      ? await getLocationTimeZone(serviceRole, shipmentLocationId, companyId)
+      : await getCompanyTimeZone(serviceRole, companyId)
+  );
   const expiredEntities = (shipmentTrackedEntities ?? []).filter((e) => {
     if (!e.expirationDate) return false;
     try {
@@ -305,13 +319,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       logger.error("Auto-print failed", { error: e });
     }
 
-    // Auto-print labels for batch split entities
+    // Auto-print labels for batch split entities. splitEntityIds carries the
+    // RETAINED shelf lots (their quantity changed in the split) — existing
+    // entities being reprinted, hence sourceDocument "Entity". The shipped
+    // child departed Consumed and gets no label.
     const splitEntityIds = postShipment.data?.splitEntityIds || [];
     if (splitEntityIds.length > 0) {
       try {
         for (const entityId of splitEntityIds) {
           await trigger("print-job", {
-            sourceDocument: "Split",
+            sourceDocument: "Entity",
             sourceDocumentId: entityId,
             companyId,
             userId
@@ -330,6 +347,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       })
       .eq("id", shipmentId);
   }
+
+  // Must stay below the rollback catch above — a post that got reverted to
+  // Draft must not fire workflows.
+  await raiseMoment("inventory.shipmentPosted", {
+    outputs: { shipment: { id: shipmentId }, postedBy: { id: userId } },
+    companyId,
+    actorId: userId
+  });
 
   if (expiredWarning) {
     throw redirect(

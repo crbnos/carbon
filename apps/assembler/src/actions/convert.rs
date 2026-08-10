@@ -78,9 +78,17 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                 let cache_ins = Arc::clone(&cache);
                 let (lin, ang, optimize) = (req.lin, req.ang, req.optimize);
                 let res = tokio::task::spawn_blocking(move || {
-                    // Unit detection scans at most the first 32MB of STEP text.
-                    let text = read_head_lossy(&tmp_str, 32 * 1024 * 1024)?;
-                    converter::convert::convert_step(&tmp_str, &text, lin, ang).map(|conv| {
+                    // Compacted retained raws are BinXCAF (`.xbf`) — binary, no
+                    // STEP header to unit-detect (already mm); running the lossy
+                    // text scan on them is wasted work at best.
+                    if converter::convert::is_xbf(&tmp_str) {
+                        converter::convert::convert_xbf(&tmp_str, lin, ang)
+                    } else {
+                        // Unit detection scans at most the first 32MB of STEP text.
+                        let text = read_head_lossy(&tmp_str, 32 * 1024 * 1024)?;
+                        converter::convert::convert_step(&tmp_str, &text, lin, ang)
+                    }
+                    .map(|conv| {
                         let glb = if optimize {
                             optimize_glb(conv.glb)
                         } else {

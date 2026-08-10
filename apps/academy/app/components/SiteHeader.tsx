@@ -31,8 +31,8 @@ export function SiteHeader({ mobileNav }: { mobileNav?: ReactNode }) {
     <header
       className="fixed inset-x-0 top-0 z-[60] h-16"
       style={{
-        background: "#F5F5F2",
-        borderBottom: "1px solid #E8E7E6",
+        background: "#F5F5F5",
+        borderBottom: "1px solid #E8E8E8",
         boxShadow: "0 1px 0 0 #fff"
       }}
     >

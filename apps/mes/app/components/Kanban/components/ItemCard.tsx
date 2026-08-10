@@ -35,6 +35,7 @@ import { Link } from "react-router";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
+import { DateTime } from "~/components";
 import Avatar from "~/components/Avatar";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { DeadlineIcon } from "~/components/Icons";
@@ -87,7 +88,7 @@ export function ItemCard({
   showThumbnail
 }: ItemCardProps) {
   const { t } = useLingui();
-  const { formatDate, formatRelativeTime } = useDateFormatter();
+  const { formatRelativeTime } = useDateFormatter();
   const routeData = useRouteData<{
     customers: { id: string; name: string }[];
   }>("/x/operations");
@@ -271,7 +272,9 @@ export function ItemCard({
           {showDueDate && item.dueDate && (
             <HStack className="justify-start space-x-2">
               <LuCalendarDays />
-              <span className="text-sm">{formatDate(item.dueDate)}</span>
+              <span className="text-sm">
+                <DateTime value={item.dueDate} variant="date" />
+              </span>
             </HStack>
           )}
 

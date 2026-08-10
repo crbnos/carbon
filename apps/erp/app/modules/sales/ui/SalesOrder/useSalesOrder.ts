@@ -8,12 +8,13 @@ export const useSalesOrder = () => {
   const submit = useSubmit();
 
   const edit = useCallback(
-    (salesOrder: SalesOrder) => navigate(path.to.salesOrder(salesOrder.id!)),
+    (salesOrder: Pick<SalesOrder, "id">) =>
+      navigate(path.to.salesOrder(salesOrder.id!)),
     [navigate]
   );
 
   const invoice = useCallback(
-    (salesOrder: SalesOrder) =>
+    (salesOrder: Pick<SalesOrder, "id">) =>
       navigate(
         `${path.to.newSalesInvoice}?sourceDocument=Sales Order&sourceDocumentId=${salesOrder.id}`
       ),
@@ -21,7 +22,7 @@ export const useSalesOrder = () => {
   );
 
   const ship = useCallback(
-    (salesOrder: SalesOrder) => {
+    (salesOrder: Pick<SalesOrder, "id">) => {
       const formData = new FormData();
       formData.set("sourceDocument", "Sales Order");
       formData.set("sourceDocumentId", salesOrder.id!);

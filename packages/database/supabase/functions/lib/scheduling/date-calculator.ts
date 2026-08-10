@@ -2,13 +2,18 @@ import {
   calculateDurationDays,
   calculateDurationHours,
 } from "./duration-calculator.ts";
-import { toIsoDateInTimeZone } from "./date-utils.ts";
 import type {
   BaseOperation,
   DependencyGraph,
   ScheduledOperation,
   SchedulingDirection,
 } from "./types.ts";
+
+// All Date math in this module is UTC-based pure calendar arithmetic on
+// "yyyy-MM-dd" strings — date-only strings parse as UTC midnight, so UTC
+// getters keep the walk independent of the process timezone. The only
+// wall-clock input is `today`, which the engine derives in the job location's
+// timezone.
 
 /**
  * Subtract business days from a date (skips weekends)
@@ -18,9 +23,9 @@ function subtractBusinessDays(date: Date, days: number): Date {
   let remainingDays = days;
 
   while (remainingDays > 0) {
-    result.setDate(result.getDate() - 1);
+    result.setUTCDate(result.getUTCDate() - 1);
     // Skip weekends (0 = Sunday, 6 = Saturday)
-    const dayOfWeek = result.getDay();
+    const dayOfWeek = result.getUTCDay();
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
       remainingDays--;
     }
@@ -37,9 +42,9 @@ function addBusinessDays(date: Date, days: number): Date {
   let remainingDays = days;
 
   while (remainingDays > 0) {
-    result.setDate(result.getDate() + 1);
+    result.setUTCDate(result.getUTCDate() + 1);
     // Skip weekends (0 = Sunday, 6 = Saturday)
-    const dayOfWeek = result.getDay();
+    const dayOfWeek = result.getUTCDay();
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
       remainingDays--;
     }
@@ -49,23 +54,10 @@ function addBusinessDays(date: Date, days: number): Date {
 }
 
 /**
- * Format date to ISO date string (YYYY-MM-DD).
- *
- * Deliberately UTC: this round-trips DATE-ONLY strings that were parsed to
- * UTC midnight for business-day math — re-interpreting them through a time
- * zone would shift every backward-pass date by a day in zones behind UTC.
- * Only "now" (a real instant) is zone-sensitive; see getTodayString.
+ * Format date to ISO date string (YYYY-MM-DD)
  */
 function formatDate(date: Date): string {
   return date.toISOString().split("T")[0];
-}
-
-/**
- * Today's calendar date at the job's location ("what day is it at the
- * factory"), not UTC's.
- */
-function getTodayString(timeZone = "UTC"): string {
-  return toIsoDateInTimeZone(new Date(), timeZone);
 }
 
 /**
@@ -77,7 +69,7 @@ export interface SchedulingStrategy {
     operationMap: Map<string, BaseOperation>,
     graph: DependencyGraph,
     anchorDate: string | null,
-    timeZone?: string
+    today: string
   ): Map<string, ScheduledOperation>;
 }
 
@@ -90,10 +82,9 @@ export class BackwardSchedulingStrategy implements SchedulingStrategy {
     operationMap: Map<string, BaseOperation>,
     graph: DependencyGraph,
     jobDueDate: string | null,
-    timeZone = "UTC"
+    today: string
   ): Map<string, ScheduledOperation> {
     const scheduled = new Map<string, ScheduledOperation>();
-    const today = getTodayString(timeZone);
     const finalDueDate = jobDueDate || today;
 
     // Topological sort in reverse order (leaf nodes first)
@@ -219,7 +210,7 @@ export class BackwardSchedulingStrategy implements SchedulingStrategy {
       const startDateObj = subtractBusinessDays(dueDateObj, durationDays);
       const startDate = formatDate(startDateObj);
 
-      // Check for conflicts (start date in the past). Without a job due
+      // Check for conflicts (start date in the past). Without a real job due
       // date the anchor is synthetic ("today"), so lateness against it is
       // meaningless — only a real due date produces conflicts.
       const hasConflict = !!jobDueDate && startDate < today;
@@ -256,10 +247,9 @@ export class ForwardSchedulingStrategy implements SchedulingStrategy {
     operationMap: Map<string, BaseOperation>,
     graph: DependencyGraph,
     jobStartDate: string | null,
-    timeZone = "UTC"
+    today: string
   ): Map<string, ScheduledOperation> {
     const scheduled = new Map<string, ScheduledOperation>();
-    const today = getTodayString(timeZone);
     const startDate = jobStartDate || today;
 
     // Topological sort in forward order (root nodes first)
@@ -392,8 +382,8 @@ export function calculateOperationDates(
   operations: BaseOperation[],
   graph: DependencyGraph,
   anchorDate: string | null,
-  direction: SchedulingDirection = "backward",
-  timeZone = "UTC"
+  today: string,
+  direction: SchedulingDirection = "backward"
 ): Map<string, ScheduledOperation> {
   // Build operation map for quick lookup
   const operationMap = new Map<string, BaseOperation>();
@@ -409,8 +399,8 @@ export function calculateOperationDates(
     operationMap,
     graph,
     anchorDate,
-    timeZone
+    today
   );
 }
 
-export { addBusinessDays, formatDate, getTodayString, subtractBusinessDays };
+export { addBusinessDays, formatDate, subtractBusinessDays };

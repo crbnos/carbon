@@ -15,6 +15,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";
+import { DateTime } from "~/components";
 import type { loader as cancelPreviewLoader } from "~/routes/x+/sales-order+/$orderId.cancel-preview";
 import { path } from "~/utils/path";
 
@@ -153,7 +154,11 @@ export function CancelSalesOrderModal({
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Badge variant="outline">{job.status}</Badge>
-                        {job.dueDate && <span>Due {job.dueDate}</span>}
+                        {job.dueDate && (
+                          <span>
+                            Due <DateTime value={job.dueDate} variant="date" />
+                          </span>
+                        )}
                       </div>
                     </HStack>
                   </label>

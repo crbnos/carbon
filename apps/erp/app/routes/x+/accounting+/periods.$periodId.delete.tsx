@@ -15,6 +15,7 @@ import {
   ModalTitle
 } from "@carbon/react";
 import { formatPeriodLabel } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuTrash, LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -33,7 +34,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Delete Period",
+  breadcrumb: msg`Delete Period`,
   to: path.to.accountingPeriods
 };
 

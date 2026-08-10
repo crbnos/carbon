@@ -1,4 +1,4 @@
-import { toIsoDateInTimeZone } from "./date-utils.ts";
+import { businessDay } from "./date-utils.ts";
 
 export type QualifiedEmployee = {
   employeeId: string;
@@ -22,7 +22,7 @@ export function isEligibleOperator(
 ): boolean {
   // Expiry is a calendar date at the factory — compare against the start
   // instant's date in the factory's zone, not UTC's
-  const startDateStr = toIsoDateInTimeZone(earliestStart, timeZone);
+  const startDateStr = businessDay(earliestStart.toISOString(), timeZone);
   return (
     employee.active &&
     !!employee.trainingCompleted &&

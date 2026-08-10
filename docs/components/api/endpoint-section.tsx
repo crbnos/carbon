@@ -28,7 +28,7 @@ export async function EndpointSection({ endpoint, base }: { endpoint: ApiEndpoin
             {endpoint.path}
           </code>
         </div>
-        <h2 className="m-0 mt-3.5 text-ed-24 font-semi leading-[130%] text-ed-ink">
+        <h2 className="m-0 mt-3.5 text-ed-24 font-semibold tracking-tight leading-[130%] text-ed-ink">
           {endpoint.title}
         </h2>
         <p className="m-0 mt-2.5 text-ed-15 leading-[160%] text-ed-ink/80">

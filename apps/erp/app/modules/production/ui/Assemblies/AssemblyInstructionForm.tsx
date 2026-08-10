@@ -173,8 +173,8 @@ const AssemblyInstructionForm = ({
                 <VStack spacing={1} className="w-full">
                   <Item
                     name="itemId"
-                    label="Item"
-                    type="Item"
+                    label="Part"
+                    type="Part"
                     replenishmentSystem="Make"
                     onChange={(selected) => {
                       checkModel(selected?.value ?? "");

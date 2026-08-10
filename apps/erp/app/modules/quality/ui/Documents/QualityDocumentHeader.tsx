@@ -6,9 +6,6 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -24,17 +21,15 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useState } from "react";
 import {
   LuCheckCheck,
-  LuChevronDown,
-  LuCirclePlus,
   LuClipboardCheck,
   LuEllipsisVertical,
-  LuGitPullRequestArrow,
   LuPanelLeft,
   LuPanelRight,
   LuTrash,
   LuX
 } from "react-icons/lu";
-import { Await, useFetcher, useNavigate, useParams } from "react-router";
+import { Await, useFetcher, useParams } from "react-router";
+import { VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -59,7 +54,6 @@ const QualityDocumentHeader = () => {
     isApprovalRequired: boolean;
   }>(path.to.qualityDocument(id));
 
-  const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
   const { toggleExplorer, toggleProperties } = usePanels();
@@ -207,65 +201,33 @@ const QualityDocumentHeader = () => {
         )}
         <Suspense fallback={null}>
           <Await resolve={routeData?.versions}>
-            {(versions) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    leftIcon={<LuGitPullRequestArrow />}
-                    rightIcon={<LuChevronDown />}
-                  >
-                    <Trans>Versions</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {permissions.can("create", "quality") && (
+            {(versions) => {
+              const allVersions =
+                versions?.data ??
+                (routeData?.document ? [routeData.document] : []);
+              return (
+                <VersionMenu
+                  versions={allVersions}
+                  currentVersionId={id}
+                  getKey={(v) => v.id}
+                  getHref={(v) => path.to.qualityDocument(v.id)}
+                  renderLabel={(v) => (
                     <>
-                      <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
-                        <DropdownMenuIcon icon={<LuCirclePlus />} />
-                        <Trans>New Version</Trans>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      <Badge variant="outline">V{v.version}</Badge>
+                      <span>{v.name}</span>
                     </>
                   )}
-                  <DropdownMenuRadioGroup
-                    value={id}
-                    onValueChange={(value) =>
-                      navigate(path.to.qualityDocument(value))
-                    }
-                  >
-                    {routeData?.document && (
-                      <DropdownMenuRadioItem
-                        key={routeData.document.id}
-                        value={routeData.document.id}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <Badge variant="outline">
-                          V{routeData.document.version}
-                        </Badge>
-                        <span>{routeData.document.name}</span>
-                        <QualityDocumentStatus
-                          status={routeData.document.status}
-                        />
-                      </DropdownMenuRadioItem>
-                    )}
-                    {versions?.data
-                      ?.filter((v) => v.id !== id)
-                      .map((version) => (
-                        <DropdownMenuRadioItem
-                          key={version.id}
-                          value={version.id}
-                          className="flex items-center justify-between gap-2"
-                        >
-                          <Badge variant="outline">V{version.version}</Badge>
-                          <span>{version.name}</span>
-                          <QualityDocumentStatus status={version.status} />
-                        </DropdownMenuRadioItem>
-                      ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                  renderStatus={(v) => (
+                    <QualityDocumentStatus status={v.status} />
+                  )}
+                  onNewVersion={
+                    permissions.can("create", "quality")
+                      ? newVersionDisclosure.onOpen
+                      : undefined
+                  }
+                />
+              );
+            }}
           </Await>
         </Suspense>
         <IconButton

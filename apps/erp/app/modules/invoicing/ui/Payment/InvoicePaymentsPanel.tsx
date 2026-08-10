@@ -13,9 +13,9 @@ import {
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router";
-import { Empty } from "~/components";
+import { DateTime, Empty } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useCurrencyFormatter, useDateFormatter } from "~/hooks";
+import { useCurrencyFormatter } from "~/hooks";
 import type { InvoiceSettlementForInvoice } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
@@ -26,7 +26,6 @@ type InvoiceSettlementsPanelProps = {
 // Everything applied to the invoice — cash payments AND credit/debit memos —
 // in one list. (Export name kept as InvoicePaymentsPanel for its callers.)
 const InvoicePaymentsPanel = ({ rows }: InvoiceSettlementsPanelProps) => {
-  const { formatDate } = useDateFormatter();
   // FX gain/loss is recorded in base currency.
   const currencyFormatter = useCurrencyFormatter();
 
@@ -76,7 +75,9 @@ const InvoicePaymentsPanel = ({ rows }: InvoiceSettlementsPanelProps) => {
             <Tbody>
               {rows.map((r) => (
                 <Tr key={r.id}>
-                  <Td>{formatDate(r.appliedDate)}</Td>
+                  <Td>
+                    <DateTime value={r.appliedDate} variant="date" />
+                  </Td>
                   <Td>
                     <Enumerable
                       value={

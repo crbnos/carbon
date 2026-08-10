@@ -4,6 +4,7 @@ import type {
   getCustomField,
   getCustomFieldsTables,
   getIntegrations,
+  getItemSerialSequences,
   getSequences,
   getSubsidiaries,
   getWebhooks
@@ -35,6 +36,10 @@ export type Subsidiary = NonNullable<
 
 export type Sequence = NonNullable<
   Awaited<ReturnType<typeof getSequences>>["data"]
+>[number];
+
+export type ItemSerialSequence = NonNullable<
+  Awaited<ReturnType<typeof getItemSerialSequences>>["data"]
 >[number];
 
 export type Webhook = NonNullable<

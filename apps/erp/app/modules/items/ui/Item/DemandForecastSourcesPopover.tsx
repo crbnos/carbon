@@ -14,7 +14,7 @@ import { Trans } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { useDateFormatter } from "~/hooks";
+import { DateTime } from "~/components";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import { path } from "~/utils/path";
 
@@ -32,7 +32,6 @@ export function DemandForecastSourcesPopover({
   children
 }: Props) {
   const numberFormatter = useNumberFormatter();
-  const { formatDate } = useDateFormatter();
 
   // Non-MRP forecasts (manual / statistical / ml) have no traceable sources.
   if (forecastMethod !== "mrp") {
@@ -231,7 +230,7 @@ export function DemandForecastSourcesPopover({
                     </Td>
                     <Td className="whitespace-nowrap">
                       {sourceDate ? (
-                        formatDate(sourceDate)
+                        <DateTime value={sourceDate} variant="date" />
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}

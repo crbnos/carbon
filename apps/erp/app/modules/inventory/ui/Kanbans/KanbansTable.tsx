@@ -21,7 +21,6 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -44,7 +43,9 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
+  exportOnlyColumn,
   Hyperlink,
   ItemThumbnail,
   MethodItemTypeIcon,
@@ -121,9 +122,17 @@ const KanbansTable = memo(
                 label: item.readableIdWithRevision
               }))
             },
-            icon: <LuBlocks />
+            icon: <LuBlocks />,
+            // Without this the exporter substitutes the item's name for the id
+            // (Download.tsx idNameMaps), losing the readable id.
+            exportValue: (row) => row.readableIdWithRevision ?? null
           }
         },
+        exportOnlyColumn<Kanban>({
+          id: "itemName",
+          header: t`Item Name`,
+          value: (row) => row.name ?? null
+        }),
         {
           id: "job",
           header: "",
@@ -493,7 +502,9 @@ const KanbansTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: ({ row }) => formatDate(row.original.createdAt),
+          cell: ({ row }) => (
+            <DateTime value={row.original.createdAt} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -518,7 +529,9 @@ const KanbansTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: ({ row }) => formatDate(row.original.updatedAt),
+          cell: ({ row }) => (
+            <DateTime value={row.original.updatedAt} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }

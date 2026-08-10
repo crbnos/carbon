@@ -1,5 +1,8 @@
 import type { Database } from "@carbon/database";
 import { checkApiKeyRateLimit } from "@carbon/database/ratelimit";
+import { redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
+import { oncePerRequest } from "@carbon/logger/middleware.server";
 import { Edition, Plan } from "@carbon/utils";
 import type {
   AuthSession as SupabaseAuthSession,
@@ -28,6 +31,16 @@ import {
 import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
+const log = getLogger("auth");
+
+// Each matched loader used to build its own Supabase client for identical
+// credentials; `createClient` is not free and they are interchangeable.
+const carbonForRequest = (accessToken: string) =>
+  oncePerRequest(`carbon:${accessToken}`, () => getCarbon(accessToken));
+
+const serviceRoleForRequest = () =>
+  oncePerRequest("carbon:service-role", () => getCarbonServiceRole());
+
 export async function createEmailAuthAccount(
   email: string,
   password: string,
@@ -51,12 +64,22 @@ export async function deleteAuthAccount(
   client: SupabaseClient<Database>,
   userId: string
 ) {
-  const [supabaseDelete, carbonDelete] = await Promise.all([
-    client.auth.admin.deleteUser(userId),
-    client.from("user").delete().eq("id", userId)
-  ]);
+  // Sequential: a failed auth delete leaves both records intact and retryable.
+  const supabaseDelete = await client.auth.admin.deleteUser(userId);
+  if (supabaseDelete.error) return null;
 
-  if (supabaseDelete.error || carbonDelete.error) return null;
+  const carbonDelete = await client.from("user").delete().eq("id", userId);
+  if (carbonDelete.error) {
+    // Auth user is gone but the app row remains; log so it can be found and cleaned up.
+    log.error(
+      "deleteAuthAccount: user table cleanup failed after auth delete",
+      {
+        userId,
+        error: carbonDelete.error
+      }
+    );
+    return null;
+  }
 
   return true;
 }
@@ -312,8 +335,8 @@ export async function requirePermissions(
     return {
       client:
         requiredPermissions.bypassRls && myClaims.role === "employee"
-          ? getCarbonServiceRole()
-          : getCarbon(accessToken),
+          ? serviceRoleForRequest()
+          : carbonForRequest(accessToken),
       companyId,
       companyGroupId,
       email,
@@ -370,8 +393,8 @@ export async function requirePermissions(
   return {
     client:
       !!requiredPermissions.bypassRls && myClaims.role === "employee"
-        ? getCarbonServiceRole()
-        : getCarbon(accessToken),
+        ? serviceRoleForRequest()
+        : carbonForRequest(accessToken),
     companyId,
     companyGroupId,
     email,
@@ -484,12 +507,46 @@ export async function refreshAccessToken(
   return makeAuthSession(data.session, companyId!, companyGroupId!);
 }
 
+// `requireAuthSession(request, { verify: true })` costs a full GoTrue round-trip
+// on the critical path of every authenticated request, and the ERP/MES shells
+// re-run it on every navigation. 60s takes it off the hot path while bounding
+// how long a revoked account keeps being accepted. (Signing out doesn't revoke
+// an access token either way — a JWT stays valid until it expires — so the
+// window that actually matters here is admin deletion/deactivation.)
+const AUTH_VERIFY_CACHE_TTL_SECONDS = 60;
+
+function getAuthVerifyCacheKey(accessToken: string) {
+  return `auth:verify:${createHash("sha256")
+    .update(accessToken)
+    .digest("hex")}`;
+}
+
 export async function verifyAuthSession(authSession: AuthSession) {
+  const cacheKey = getAuthVerifyCacheKey(authSession.accessToken);
+
+  try {
+    if (await redis.get(cacheKey)) return true;
+  } catch (e) {
+    log.error("Failed to read cached auth verification", { error: e });
+  }
+
   const authAccount = await getAuthAccountByAccessToken(
     authSession.accessToken
   );
+  const isValid = Boolean(authAccount);
 
-  return Boolean(authAccount);
+  // Only positive verdicts are cached. `getAuthAccountByAccessToken` also
+  // returns null on a transient network error, so caching a failure would turn
+  // one blip into a minute of forced logouts.
+  if (isValid) {
+    try {
+      await redis.set(cacheKey, "1", "EX", AUTH_VERIFY_CACHE_TTL_SECONDS);
+    } catch (e) {
+      log.error("Failed to cache auth verification", { error: e });
+    }
+  }
+
+  return isValid;
 }
 
 export async function signInWithPasskey(

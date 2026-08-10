@@ -59,7 +59,8 @@ export const trackedEntityStatus = [
   "Consumed",
   "On Hold",
   "Reserved",
-  "Rejected"
+  "Rejected",
+  "Scrapped"
 ] as const;
 
 export const replenishmentSystemTypes = [
@@ -153,15 +154,31 @@ export const inventoryCountLineValidator = z.object({
 export const inventoryAdjustmentValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
-    locationId: z.string().min(1, { message: "Location is required" }),
+    // Required for every adjustment except Unscrap, where the edge function
+    // resolves the location from the original scrap movement (a Scrapped
+    // tracked-entity row carries no location). Enforced in the refine below.
+    locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
-    adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
+    adjustmentType: z.enum([
+      ...itemLedgerTypes,
+      "Set Quantity",
+      "Scrap",
+      "Unscrap"
+    ]),
     quantity: zfd.numeric(z.number()),
     trackedEntityId: zfd.text(z.string().optional()),
     readableId: zfd.text(z.string().optional()),
     expirationDate: zfd.text(z.string().optional()),
     comment: zfd.text(z.string().optional()),
+    // Required for Scrap (enforced below); lands on the itemLedger row and,
+    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
+    // omits it — the edge function inherits the reason from the original scrap
+    // movement it reverses.
+    scrapReasonId: zfd.text(z.string().optional()),
+    // Unscrap: the original scrap movement to reverse against (resolved
+    // server-side from the tracked entity when omitted).
+    unscrapOfItemLedgerId: zfd.text(z.string().optional()),
     // Set by serial-tracked forms so the quantity can be capped server-side.
     requiresSerialTracking: zfd
       .text(z.string().optional())
@@ -177,7 +194,30 @@ export const inventoryAdjustmentValidator = z
         message: "Serial items can only have a quantity of 1"
       });
     }
+    if (data.adjustmentType === "Scrap" && !data.scrapReasonId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["scrapReasonId"],
+        message: "Scrap reason is required"
+      });
+    }
+    if (data.adjustmentType !== "Unscrap" && !data.locationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["locationId"],
+        message: "Location is required"
+      });
+    }
   });
+
+// Corrects a posted stock movement: the user enters the SIGNED quantity the
+// movement should have been; the edge function derives the delta against the
+// movement's current effective quantity and books one opposite movement linked
+// via correctionOfItemLedgerId.
+export const stockMovementCorrectionValidator = z.object({
+  correctedQuantity: zfd.numeric(z.number()),
+  comment: zfd.text(z.string().optional())
+});
 
 export const itemLedgerValidator = z.object({
   postingDate: zfd.text(z.string().optional()),
@@ -494,6 +534,7 @@ export const pickingListStatusType = [
   "Draft",
   "In Progress",
   "Completed",
+  "Partial",
   "Cancelled"
 ] as const;
 
@@ -504,13 +545,15 @@ export const pickingListLineStatusType = [
   "Cancelled"
 ] as const;
 
-// A picking list locks once it is Completed or Cancelled: no further picks or
-// unpicks are allowed until it is reopened (which requires the inventory
-// `delete` permission, ERP-only).
+// A picking list locks once it is Completed, Partial, or Cancelled — all
+// terminal outcomes: no further picks or unpicks are allowed until it is
+// reopened (which requires the inventory `delete` permission, ERP-only).
 export function isPickingListLocked(
   status: string | null | undefined
 ): boolean {
-  return status === "Completed" || status === "Cancelled";
+  return (
+    status === "Completed" || status === "Partial" || status === "Cancelled"
+  );
 }
 
 export const pickingListValidator = z.object({

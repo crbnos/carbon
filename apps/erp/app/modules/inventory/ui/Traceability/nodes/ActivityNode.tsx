@@ -3,7 +3,7 @@ import { Handle, type NodeProps, Position, useStore } from "@xyflow/react";
 import { memo } from "react";
 import { NODE_RADIUS, NODE_SIZE } from "../constants";
 import { ACTIVITY_KIND_META, activityKindFor } from "../metadata";
-import type { ActivityNodeData } from "../utils";
+import { type ActivityNodeData, formatQuantity } from "../utils";
 
 type Props = NodeProps & {
   data: ActivityNodeData & {
@@ -12,7 +12,12 @@ type Props = NodeProps & {
   };
 };
 
-function ActivityNodeImpl({ data, selected }: Props) {
+function ActivityNodeImpl({
+  data,
+  selected,
+  sourcePosition,
+  targetPosition
+}: Props) {
   const activity = data.activity;
   const kind = activityKindFor(activity.type);
   const meta = ACTIVITY_KIND_META[kind];
@@ -33,12 +38,12 @@ function ActivityNodeImpl({ data, selected }: Props) {
     >
       <Handle
         type="target"
-        position={Position.Top}
+        position={targetPosition ?? Position.Top}
         className="!opacity-0 !pointer-events-none !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-1 !h-1 !min-w-0 !min-h-0 !border-0"
       />
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={sourcePosition ?? Position.Bottom}
         className="!opacity-0 !pointer-events-none !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-1 !h-1 !min-w-0 !min-h-0 !border-0"
       />
       <svg
@@ -76,6 +81,14 @@ function ActivityNodeImpl({ data, selected }: Props) {
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white drop-shadow-sm">
         <Icon style={{ width: iconSize, height: iconSize }} />
       </div>
+      {data.movementQuantity != null && (
+        <div
+          className="absolute -top-1 -right-1 rounded-full bg-card border border-border text-[9px] tabular-nums px-1 leading-tight pointer-events-none"
+          title={`Quantity moved: ${data.movementQuantity}`}
+        >
+          {formatQuantity(data.movementQuantity)}
+        </div>
+      )}
       {showLabel && (
         <div
           className={cn(

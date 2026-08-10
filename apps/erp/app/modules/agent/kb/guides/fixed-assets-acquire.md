@@ -1,0 +1,33 @@
+# Acquire and depreciate
+
+> Put a machine on the books and write its value down over time.
+
+Job costing followed the money a job spends. The books also carry the machines that do the building. Carbon tracks those as **fixed assets**: a press, a CNC, a forklift, anything you capitalize and depreciate rather than expense. These last two chapters follow one asset from the day it lands on the books to the day it leaves them.
+
+A fixed asset is an accounting record, not a production resource. It belongs to an **asset class**, which carries the general-ledger accounts every asset of that kind posts to: the asset account, accumulated depreciation, depreciation expense, and the accounts used when it's written off.
+
+The machine you schedule production on is a work center; the machine you depreciate is a fixed asset. Carbon keeps these independent (there's no link between them), so the same physical press can be a work center on the floor and a fixed asset in the books without the two being wired together.
+
+## Onto the books
+
+An asset comes onto the books one of two ways, and both start at **"Draft"**.
+
+**Register one you already have.** Create the asset, then register it, supplying its acquisition cost, acquisition date, and the date depreciation should start. Registering moves it to **"Active"**. No money posts; you're recording something you already own.
+
+**Buy one through purchasing.** Put a **"Fixed Asset"** line on a purchase order pointed at the asset, then receive it. When the receipt posts, and only if accounting is enabled, Carbon debits the asset account, credits goods-received-not-invoiced, **adds** the cost to the asset, stamps the dates, and flips it from **"Draft"** to **"Active"**. Because the cost is added, an asset can accumulate value across several receipts.
+
+The purchase-receipt path posts the acquisition entry and the Draft → Active flip inside the same gate as every other ledger posting. With accounting off, the PO line is received but the asset itself is left untouched. Register it manually instead.
+
+## Depreciate it
+
+Once an asset is **"Active"**, it depreciates. Carbon runs depreciation as a **monthly batch you trigger** — there's no background job quietly posting in the night. You create a depreciation run for a period, Carbon pulls every active asset and computes each one's charge, and you review it as a **"Draft"** before posting.
+
+The book charge follows the asset's method (**straight line**, **declining balance**, or **units of production**), and posting the run debits depreciation expense and credits accumulated depreciation, period by period.
+
+Each run's amounts are calculated when you create it and held as a draft, so you can check the period's charges before they hit the ledger. When an asset's net book value reaches its residual value, posting flips it to **"Fully Depreciated"** and it stops accruing.
+
+## Two books at once
+
+The depreciation you report on the books and the depreciation you claim for tax rarely match, so Carbon keeps both. Every asset runs a **book** schedule and a separate **tax** schedule, each free to use its own method, the tax side including full **MACRS** with the IRS property-class tables. The two accumulate independently against the same asset.
+
+With tax depreciation enabled, posting a run can also book the **deferred tax** the gap between the two creates, so that timing difference shows up in the ledger as it happens rather than as a year-end surprise.

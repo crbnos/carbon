@@ -34,6 +34,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   ItemThumbnail,
@@ -45,14 +46,9 @@ import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions,
-  useRealtime
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { PurchaseOrder } from "~/modules/purchasing";
+import type { PurchaseOrderListItem } from "~/modules/purchasing";
 import { purchaseOrderStatusType } from "~/modules/purchasing";
 import type { action } from "~/routes/x+/purchase-order+/update";
 import { usePeople, useSuppliers } from "~/stores";
@@ -61,7 +57,7 @@ import PurchasingStatus from "./PurchasingStatus";
 import { usePurchaseOrder } from "./usePurchaseOrder";
 
 type PurchaseOrdersTableProps = {
-  data: PurchaseOrder[];
+  data: PurchaseOrderListItem[];
   count: number;
 };
 
@@ -72,10 +68,9 @@ const PurchaseOrdersTable = memo(
     const { t } = useLingui();
     const permissions = usePermissions();
     const currencyFormatter = useCurrencyFormatter();
-    const { formatDate } = useDateFormatter();
 
     const [selectedPurchaseOrder, setSelectedPurchaseOrder] =
-      useState<PurchaseOrder | null>(null);
+      useState<PurchaseOrderListItem | null>(null);
 
     const deletePurchaseOrderModal = useDisclosure();
 
@@ -86,10 +81,11 @@ const PurchaseOrdersTable = memo(
 
     const { edit, receive } = usePurchaseOrder();
 
-    const customColumns = useCustomColumns<PurchaseOrder>("purchaseOrder");
+    const customColumns =
+      useCustomColumns<PurchaseOrderListItem>("purchaseOrder");
 
-    const columns = useMemo<ColumnDef<PurchaseOrder>[]>(() => {
-      const defaultColumns: ColumnDef<PurchaseOrder>[] = [
+    const columns = useMemo<ColumnDef<PurchaseOrderListItem>[]>(() => {
+      const defaultColumns: ColumnDef<PurchaseOrderListItem>[] = [
         {
           accessorKey: "purchaseOrderId",
           header: t`PO Number`,
@@ -164,7 +160,7 @@ const PurchaseOrdersTable = memo(
           meta: {
             filterHeader: t`Received`,
             icon: <LuPackageCheck />,
-            exportValue: (row: PurchaseOrder) =>
+            exportValue: (row: PurchaseOrderListItem) =>
               (row.receivableQuantity ?? 0) > 0
                 ? `${row.receivedQuantity ?? 0}/${row.receivableQuantity}`
                 : null
@@ -181,7 +177,9 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "orderDate",
           header: t`Order Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -189,7 +187,9 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "receiptRequestedDate",
           header: t`Requested Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -219,7 +219,10 @@ const PurchaseOrdersTable = memo(
                       : ""
                 }
               >
-                {formatDate(row.original.receiptPromisedDate)}
+                <DateTime
+                  value={row.original.receiptPromisedDate}
+                  variant="date"
+                />
               </span>
             );
           },
@@ -324,7 +327,9 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -349,7 +354,9 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -364,8 +371,7 @@ const PurchaseOrdersTable = memo(
       currencyFormatter,
       shippingMethods,
       paymentTerms,
-      t,
-      formatDate
+      t
     ]);
 
     const fetcher = useFetcher<typeof action>();
@@ -421,7 +427,7 @@ const PurchaseOrdersTable = memo(
     );
 
     const renderContextMenu = useCallback(
-      (row: PurchaseOrder) => (
+      (row: PurchaseOrderListItem) => (
         <>
           <MenuItem
             disabled={!permissions.can("view", "purchasing")}
@@ -479,7 +485,7 @@ const PurchaseOrdersTable = memo(
 
     return (
       <>
-        <Table<PurchaseOrder>
+        <Table<PurchaseOrderListItem>
           count={count}
           columns={columns}
           data={data}

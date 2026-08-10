@@ -18,6 +18,7 @@ import {
   HStack,
   IconButton,
   Label,
+  ScrollArea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -28,7 +29,7 @@ import {
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -40,9 +41,7 @@ import {
   LuExternalLink,
   LuGitPullRequest,
   LuGitPullRequestCreate,
-  LuGitPullRequestCreateArrow,
-  LuSettings2,
-  LuX
+  LuGitPullRequestCreateArrow
 } from "react-icons/lu";
 import { Link, useFetcher, useFetchers, useParams } from "react-router";
 import type { z } from "zod";
@@ -69,7 +68,12 @@ import type {
   Item as SortableItem,
   SortableItemRenderProps
 } from "~/components/SortableList";
-import { SortableList, SortableListItem } from "~/components/SortableList";
+import {
+  SortableList,
+  SortableListItem,
+  SortableListItemPanel,
+  SortableListItemToggle
+} from "~/components/SortableList";
 import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
 import { ItemTrackingType } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
@@ -92,7 +96,11 @@ type Material = z.infer<typeof jobMaterialValidator> & {
   } | null;
 };
 
-type Operation = z.infer<typeof jobOperationValidator>;
+type Operation = z.infer<typeof jobOperationValidator> & {
+  // The same operations data BillOfProcess gets — carries its steps at runtime, so the BoM
+  // editor can offer a per-step assignment. Narrow type, optional here.
+  jobOperationStep?: { id: string; name: string | null }[];
+};
 
 type ItemWithData = SortableItem & {
   data: Material;
@@ -482,122 +490,54 @@ const JobBillOfMaterial = ({
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
         renderExtra={(item) => (
-          <div key={`${isOpen}`}>
-            <motion.button
-              layout
-              onClick={
-                isOpen
-                  ? () => {
-                      if (temporaryItems[item.id]) {
-                        setTemporaryItems((prev) => {
-                          const { [item.id]: _, ...rest } = prev;
-                          return rest;
-                        });
+          <div>
+            <SortableListItemToggle
+              isOpen={isOpen}
+              className="mt-3.5"
+              onToggle={() => {
+                if (isOpen) {
+                  if (temporaryItems[item.id]) {
+                    setTemporaryItems((prev) => {
+                      const { [item.id]: _, ...rest } = prev;
+                      return rest;
+                    });
 
-                        setOrderState((prev) => {
-                          const order = prev[item.id];
-                          const { [item.id]: _, ...rest } = prev;
-                          return {
-                            ...rest,
-                            [item.id]: order
-                          };
-                        });
-                      }
-                      onSelectItem(null);
-                    }
-                  : () => {
-                      onSelectItem(item.id);
-                    }
-              }
-              key="collapse"
-              className={cn("absolute right-3 top-3 z-10")}
-            >
-              {isOpen ? (
-                <motion.span
-                  initial={{ opacity: 0, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{
-                    type: "spring",
-                    duration: 1.95
-                  }}
-                >
-                  <LuX className="h-5 w-5 text-foreground" />
-                </motion.span>
-              ) : (
-                <motion.span
-                  initial={{ opacity: 0, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{
-                    type: "spring",
-                    duration: 0.95
-                  }}
-                >
-                  <LuSettings2 className="stroke-1 mt-3.5 h-5 w-5 text-foreground/80  hover:stroke-primary/70 " />
-                </motion.span>
-              )}
-            </motion.button>
-
-            <LayoutGroup id={`${item.id}`}>
-              <AnimatePresence mode="popLayout">
-                {isOpen ? (
-                  <motion.div className="flex w-full flex-col ">
-                    <div className=" w-full p-2">
-                      <motion.div
-                        initial={{
-                          y: 0,
-                          opacity: 0,
-                          filter: "blur(4px)"
-                        }}
-                        animate={{
-                          y: 0,
-                          opacity: 1,
-                          filter: "blur(0px)"
-                        }}
-                        transition={{
-                          type: "spring",
-                          duration: 0.15
-                        }}
-                        layout
-                        className="w-full "
-                      >
-                        <motion.div
-                          initial={{ opacity: 0, filter: "blur(4px)" }}
-                          animate={{ opacity: 1, filter: "blur(0px)" }}
-                          transition={{
-                            type: "spring",
-                            bounce: 0.2,
-                            duration: 0.75,
-                            delay: 0.15
-                          }}
-                        >
-                          <MaterialForm
-                            item={item}
-                            isDisabled={isDisabled}
-                            job={jobData?.job}
-                            setSelectedItemId={setSelectedItemId}
-                            jobOperations={operations}
-                            temporaryItems={temporaryItems}
-                            setTemporaryItems={setTemporaryItems}
-                            orderState={orderState}
-                            setOrderState={setOrderState}
-                            onSubmit={() => {
-                              setSelectedItemId(null);
-                              addItemButtonRef.current?.scrollIntoView({
-                                behavior: "smooth",
-                                block: "nearest",
-                                inline: "center"
-                              });
-                            }}
-                          />
-                        </motion.div>
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </LayoutGroup>
+                    setOrderState((prev) => {
+                      const order = prev[item.id];
+                      const { [item.id]: _, ...rest } = prev;
+                      return {
+                        ...rest,
+                        [item.id]: order
+                      };
+                    });
+                  }
+                  onSelectItem(null);
+                } else {
+                  onSelectItem(item.id);
+                }
+              }}
+            />
+            <SortableListItemPanel isOpen={isOpen}>
+              <MaterialForm
+                item={item}
+                isDisabled={isDisabled}
+                job={jobData?.job}
+                setSelectedItemId={setSelectedItemId}
+                jobOperations={operations}
+                temporaryItems={temporaryItems}
+                setTemporaryItems={setTemporaryItems}
+                orderState={orderState}
+                setOrderState={setOrderState}
+                onSubmit={() => {
+                  setSelectedItemId(null);
+                  addItemButtonRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
+              />
+            </SortableListItemPanel>
           </div>
         )}
       />
@@ -625,13 +565,15 @@ const JobBillOfMaterial = ({
         </CardAction>
       </HStack>
       <CardContent>
-        <SortableList
-          items={items}
-          onReorder={onReorder}
-          onToggleItem={onToggleItem}
-          onRemoveItem={onRemoveItem}
-          renderItem={renderListItem}
-        />
+        <ScrollArea type="auto" className="max-h-[60dvh]">
+          <SortableList
+            items={items}
+            onReorder={onReorder}
+            onToggleItem={onToggleItem}
+            onRemoveItem={onRemoveItem}
+            renderItem={renderListItem}
+          />
+        </ScrollArea>
       </CardContent>
     </Card>
   );
@@ -703,6 +645,7 @@ function MaterialForm({
     methodType: MethodType;
     description: string;
     jobOperationId: string;
+    jobOperationStepIds?: string[];
     unitCost: number;
     unitOfMeasureCode: string;
     quantity: number;
@@ -716,6 +659,10 @@ function MaterialForm({
     methodType: item.data.methodType ?? "Pull from Inventory",
     description: item.data.description ?? "",
     jobOperationId: item.data.jobOperationId ?? "",
+    jobOperationStepIds: (
+      (item.data as { jobMaterialStep?: { jobOperationStepId: string }[] })
+        .jobMaterialStep ?? []
+    ).map((s) => s.jobOperationStepId),
     unitCost: item.data.unitCost ?? 0,
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     quantity: item.data.quantity ?? 1,
@@ -1050,10 +997,14 @@ function MaterialForm({
             onChange={(newValue) => {
               setItemData((d) => ({
                 ...d,
-                jobOperationId: newValue?.value as string
+                jobOperationId: newValue?.value as string,
+                // Steps belong to an operation — clear them when the operation changes.
+                jobOperationStepIds: []
               }));
             }}
           />
+          {/* Part ↔ step assignment now lives on the STEP (the BoP step editor's "Parts"
+              picker), not here — so there is no per-material "Steps" dropdown in the BOM. */}
         </div>
       </div>
 

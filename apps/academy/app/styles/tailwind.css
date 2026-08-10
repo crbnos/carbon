@@ -16,37 +16,37 @@
     /* Warm paper editorial palette — matches the docs Guide (#F5F5F2 paper, #262323 ink).
      * @carbon/react components (dropdowns, toasts, auth forms) read these tokens, so they
      * pick up the warm surface automatically. Light-only. */
-    --background: 60 11% 95%;
+    --background: 0 0% 96%;
     --foreground: 0 4% 14%;
-    --card: 60 33% 98%;
+    --card: 0 0% 99%;
     --card-foreground: 0 4% 14%;
-    --popover: 60 20% 99%;
+    --popover: 0 0% 99%;
     --popover-foreground: 0 4% 14%;
-    --active: 60 8% 90%;
+    --active: 0 0% 90%;
     --active-foreground: 0 4% 14%;
     --primary: 0 4% 14%;
-    --primary-foreground: 60 11% 96%;
-    --secondary: 60 9% 93%;
+    --primary-foreground: 0 0% 96%;
+    --secondary: 0 0% 93%;
     --secondary-foreground: 0 4% 14%;
-    --muted: 60 9% 93%;
-    --muted-foreground: 24 4% 44%;
-    --accent: 60 8% 90%;
+    --muted: 0 0% 93%;
+    --muted-foreground: 0 0% 44%;
+    --accent: 0 0% 90%;
     --accent-foreground: 0 4% 14%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 60 8% 90%;
-    --input: 60 8% 90%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
     --ring: 0 4% 30%;
     --success: 142 60% 40%;
     --success-foreground: 0 0% 98%;
     --radius: 0.5rem;
-    --sidebar-background: 60 33% 98%;
+    --sidebar-background: 0 0% 99%;
     --sidebar-foreground: 0 4% 26%;
     --sidebar-primary: 0 4% 14%;
-    --sidebar-primary-foreground: 60 11% 96%;
-    --sidebar-accent: 60 8% 90%;
+    --sidebar-primary-foreground: 0 0% 96%;
+    --sidebar-accent: 0 0% 90%;
     --sidebar-accent-foreground: 0 4% 14%;
-    --sidebar-border: 60 8% 90%;
+    --sidebar-border: 0 0% 90%;
     --sidebar-ring: 199 100% 50%;
 
     /* Editorial highlight accent — the docs #00B0FF blue. */
@@ -97,4 +97,17 @@
 
 .font-display {
   font-family: "DM Sans", sans-serif;
+}
+
+@keyframes spinner-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.animate-spinner {
+  animation: spinner-fade 1.2s linear infinite;
 }

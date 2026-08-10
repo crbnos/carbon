@@ -3,10 +3,12 @@ import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import { z } from "npm:zod@^3.24.1";
 import { Buffer } from "node:buffer";
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse } from "../lib/response.ts";
 
 import {
   ImageMagick,
   MagickColor,
+  MagickFormat,
   initializeImageMagick,
 } from "npm:@imagemagick/magick-wasm@0.0.30";
 
@@ -22,12 +24,15 @@ const payloadSchema = z.object({
   url: z.string(),
 });
 
-const browserWSEndpoint = `ws://5.161.255.30?token=59ecf910-aaa8-4c7e-aedb-7c18b34e266e`;
+// Remote browserless in prod; a local Chromium container (ws://chrome:3000) in
+// dev via BROWSERLESS_WS_URL, so the thumbnail flow is testable end-to-end locally.
+const browserWSEndpoint =
+  Deno.env.get("BROWSERLESS_WS_URL") ??
+  `ws://5.161.255.30?token=59ecf910-aaa8-4c7e-aedb-7c18b34e266e`;
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   let browser;
   try {
@@ -41,6 +46,9 @@ serve(async (req: Request) => {
 
     browser = await puppeteer.connect({
       browserWSEndpoint,
+      // Locally the target is the portless erp host (self-signed CA); prod uses a
+      // valid cert so this is a no-op there.
+      ignoreHTTPSErrors: true,
     });
     console.log("browser connected");
     const page = await browser.newPage();
@@ -70,7 +78,12 @@ serve(async (req: Request) => {
       img.transparent(new MagickColor("white"));
 
       img.resize(300, 300);
-      return img.write((data) => data);
+      // Set the output format explicitly and COPY the bytes out of the callback:
+      // the `data` handed to `write` is a view into ImageMagick's WASM heap that is
+      // reused/freed once the callback returns — returning it directly yields a
+      // corrupt PNG (valid header, garbage body → "200 but invalid image").
+      img.format = MagickFormat.Png;
+      return img.write((data) => new Uint8Array(data));
     });
 
     return new Response(result, {
@@ -78,11 +91,7 @@ serve(async (req: Request) => {
       status: 200,
     });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    return errorResponse(err, 400);
   } finally {
     if (browser) {
       await browser.close();

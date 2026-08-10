@@ -6,22 +6,45 @@
 # (.dump) — the format is auto-detected. Optionally upgrades one user to
 # Admin in the companies they already belong to.
 #
-# ⚠ NOTE: emails are NOT scrubbed — real production email addresses will be
-#   present in the local DB. Make sure local email sending is disabled or
-#   pointed at a sandbox (e.g. Mailpit) before triggering any email flows.
+# ⚠ NOTE: by default emails are NOT scrubbed — real production email addresses
+#   will be present in the local DB. Make sure local email sending is disabled
+#   or pointed at a sandbox (e.g. Mailpit) before triggering any email flows,
+#   or pass SCRUB_EMAILS=1 to rewrite every email to *@example.test.
 #
 # Usage:
-#   ./packages/database/scripts/restore-prod-backup.sh /path/to/db_cluster-XX.backup
-#   ./packages/database/scripts/restore-prod-backup.sh /path/to/postgres_YYYYMMDD.dump
+#   ./scripts/restore-database.sh /path/to/db_cluster-XX.backup
+#   ./scripts/restore-database.sh /path/to/postgres_YYYYMMDD.dump
 #
 # Optional env vars:
 #   ADMIN_EMAIL     your prod email — script looks it up, upgrades you to
 #                   Admin in the companies you ALREADY belong to, then
 #                   resets the password
 #   ADMIN_PASSWORD  password to set on that account locally (default: localpass)
+#   SCRUB_EMAILS    set to any non-empty value to scrub every email address
+#                   (auth.users, auth.identities, public.user, company,
+#                   contact, invite, companySettings, quote) to @example.test
+#                   so no production emails can be contacted from local.
+#                   The ADMIN_EMAIL account is preserved so you can still log in.
+#   KEEP_STORAGE_OBJECTS
+#                   set to any non-empty value to KEEP the dump's
+#                   storage.objects/prefixes rows and its buckets instead of
+#                   clearing them. File downloads still 404 (the bytes live in
+#                   the source environment's backend, not the DB) — this is for
+#                   work that needs realistic storage metadata volume, such as
+#                   profiling RLS on storage listings.
+#   RESTORE_MODE    'local' (default) or 'prod'.
+#                   local: after restoring, localize environment-sensitive state —
+#                     re-seed the config row to local Kong, deactivate webhooks /
+#                     integrations / printer routes, blank printJob URLs, clear
+#                     vault secrets, flush the Redis permission cache.
+#                   prod: restore the data exactly as-is and skip ALL of the
+#                     above — use when the target should keep behaving like
+#                     the source environment (e.g. cloning into a real stack).
 #
 # Examples:
-#   ADMIN_EMAIL=me@prod.com ./packages/database/scripts/restore-prod-backup.sh ~/Downloads/db_cluster.backup
+#   ADMIN_EMAIL=me@prod.com ./scripts/restore-database.sh ~/Downloads/db_cluster.backup
+#   ADMIN_EMAIL=me@prod.com SCRUB_EMAILS=1 ./scripts/restore-database.sh ~/Downloads/db_cluster.backup
+#   RESTORE_MODE=prod ./scripts/restore-database.sh ~/Downloads/db_cluster.backup
 #
 # Safety:
 #   - Only ever connects to 127.0.0.1 on the port crbn assigned this worktree.
@@ -30,6 +53,13 @@
 set -euo pipefail
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-localpass}"
+SCRUB_EMAILS="${SCRUB_EMAILS:-}"
+KEEP_STORAGE_OBJECTS="${KEEP_STORAGE_OBJECTS:-}"
+RESTORE_MODE="${RESTORE_MODE:-local}"
+if [[ "$RESTORE_MODE" != "local" && "$RESTORE_MODE" != "prod" ]]; then
+  echo "RESTORE_MODE must be 'local' or 'prod' (got '$RESTORE_MODE')" >&2
+  exit 1
+fi
 BACKUP_FILE="${1:-}"
 if [[ -z "$BACKUP_FILE" || ! -f "$BACKUP_FILE" ]]; then
   echo "usage: $0 <path-to-.backup-file>" >&2
@@ -81,7 +111,19 @@ $PSQL_PG -At -c "
             WHERE n.nspname='public' AND t.typcategory IN ('E','C')
   UNION ALL SELECT format('DROP SEQUENCE IF EXISTS public.%I CASCADE;', sequencename) FROM pg_sequences WHERE schemaname='public'
 " | $PSQL_PG -v ON_ERROR_STOP=0 >/dev/null
-$PSQL_PG -c "TRUNCATE auth.users CASCADE; TRUNCATE storage.objects CASCADE; TRUNCATE storage.buckets CASCADE;" >/dev/null
+# Guarded the same way as the storage reset in step 5: on a stack that has only
+# ever booted postgres (e.g. `crbn restore` right after a `crbn reset`), the
+# service schemas do not exist yet -- storage.objects is created by the storage
+# service's own migrations, not by the postgres image. A bare TRUNCATE there
+# aborts the whole restore under `set -e`.
+$PSQL_PG -c "
+DO \$\$
+BEGIN
+  IF to_regclass('auth.users') IS NOT NULL THEN TRUNCATE auth.users CASCADE; END IF;
+  IF to_regclass('storage.objects') IS NOT NULL THEN TRUNCATE storage.objects CASCADE; END IF;
+  IF to_regclass('storage.buckets') IS NOT NULL THEN TRUNCATE storage.buckets CASCADE; END IF;
+END \$\$;
+" >/dev/null
 # ── 3. Restore ───────────────────────────────────────────────────────────────
 # Supports both plain-text SQL dumps (Supabase cluster .backup files) and
 # custom-format pg_dump archives (.dump, magic bytes 'PGDMP').
@@ -151,10 +193,20 @@ ON CONFLICT (queue_name) DO NOTHING;
 # the actual file bytes live in prod's storage backend, not in the DB — so
 # those rows would point at files that don't exist locally and downloads
 # would 404. Clear the metadata, keep/create the buckets the app expects.
-echo "▶ Resetting storage metadata + ensuring buckets (fixed + per-company)"
-# Guard each TRUNCATE with to_regclass so a table that doesn't exist in this
-# Supabase version can't abort — and thereby roll back — the whole block.
-$PSQL_SA -v ON_ERROR_STOP=0 -c "
+if [[ -n "$KEEP_STORAGE_OBJECTS" ]]; then
+  # Opt-in: keep the dump's storage rows AND its buckets. Downloads still 404
+  # (the bytes are in the source environment's backend, not the DB) — this
+  # exists for work that needs realistic storage.objects volume, e.g. profiling
+  # the RLS on storage listings, which is unmeasurable against an empty table.
+  # Buckets are kept too: the objects reference buckets that the re-seed below
+  # does not recreate (`temp-staging` is neither a fixed bucket nor a company),
+  # so truncating them would strand those rows on a missing FK.
+  echo "▶ Keeping storage metadata (KEEP_STORAGE_OBJECTS) — downloads will 404 locally"
+else
+  echo "▶ Resetting storage metadata + ensuring buckets (fixed + per-company)"
+  # Guard each TRUNCATE with to_regclass so a table that doesn't exist in this
+  # Supabase version can't abort — and thereby roll back — the whole block.
+  $PSQL_SA -v ON_ERROR_STOP=0 -c "
 DO \$\$
 BEGIN
   IF to_regclass('storage.objects') IS NOT NULL THEN TRUNCATE storage.objects CASCADE; END IF;
@@ -164,6 +216,7 @@ BEGIN
   IF to_regclass('storage.buckets') IS NOT NULL THEN TRUNCATE storage.buckets CASCADE; END IF;
 END \$\$;
 " >/dev/null 2>&1 || true
+fi
 # Re-seed buckets in a SEPARATE statement so the TRUNCATE outcome above can never
 # roll it back: the fixed app buckets plus one private bucket per restored
 # company (id = company id), matching the bucket-seeding migrations.
@@ -181,6 +234,78 @@ ON CONFLICT (id) DO NOTHING;
 " >/dev/null 2>&1 || true
 BUCKET_COUNT=$($PSQL_PG -At -c "SELECT count(*) FROM storage.buckets;" 2>/dev/null || echo "?")
 echo "  ✓ $BUCKET_COUNT storage buckets present (5 fixed + one per company)"
+# ── 3b. Localize environment-sensitive rows (RESTORE_MODE=local only) ───────
+if [[ "$RESTORE_MODE" == "local" ]]; then
+# The dump carries prod's singleton "config" row (the pg_net push target that
+# SECURITY DEFINER functions like util.wake_event_queue and the webhook
+# triggers POST through), plus live webhook URLs, integration OAuth tokens,
+# and printer-route ProxyBox URLs. Left as-is, the local event queue never
+# drains (audit logs stay empty — the doorbell rings PROD's edge function),
+# and local edits can deliver real webhooks / Slack / Xero posts / print jobs.
+echo "▶ Localizing config row + deactivating webhooks, integrations, printer routes"
+ANON_KEY=$(grep '^SUPABASE_ANON_KEY=' "$REPO_ROOT/.env.local" 2>/dev/null | cut -d= -f2- || true)
+if [[ -n "$ANON_KEY" ]]; then
+  # Same values crbn seeds (packages/dev/src/services/migrations.ts
+  # ensureConfigRow): apiUrl must be the in-network Kong URL — pg_net runs
+  # inside the postgres container and can't reach host ports.
+  $PSQL_PG -v ON_ERROR_STOP=0 -v anon_key="$ANON_KEY" <<'SQL' >/dev/null
+INSERT INTO "config" ("id", "apiUrl", "anonKey")
+VALUES (TRUE, 'http://kong:8000', :'anon_key')
+ON CONFLICT ("id") DO UPDATE
+  SET "apiUrl" = EXCLUDED."apiUrl", "anonKey" = EXCLUDED."anonKey";
+SQL
+  echo "  ✓ config row → http://kong:8000 with local anon key"
+else
+  echo "  ⚠ SUPABASE_ANON_KEY not found in $REPO_ROOT/.env.local — config row still"
+  echo "    points at prod: the event queue (audit logs, webhooks) will NOT process"
+  echo "    locally until 'crbn up' reseeds it or you update public.config manually."
+fi
+$PSQL_PG -v ON_ERROR_STOP=0 <<'SQL' >/dev/null
+SET session_replication_role = 'replica';
+DO $$
+BEGIN
+  IF to_regclass('public.webhook') IS NOT NULL THEN
+    EXECUTE 'UPDATE public.webhook SET active = false WHERE active';
+  END IF;
+  IF to_regclass('public."companyIntegration"') IS NOT NULL THEN
+    EXECUTE 'UPDATE public."companyIntegration" SET active = false WHERE active';
+  END IF;
+  IF to_regclass('public."printerRoute"') IS NOT NULL THEN
+    EXECUTE 'UPDATE public."printerRoute" SET "printerUrl" = '''', "apiKey" = NULL WHERE COALESCE("printerUrl", '''') <> ''''';
+  END IF;
+  -- Old prod print jobs keep their delivered-to ProxyBox URL; blank it so a
+  -- local "reprint" can never target a real printer.
+  IF to_regclass('public."printJob"') IS NOT NULL THEN
+    EXECUTE 'UPDATE public."printJob" SET "printerUrl" = '''' WHERE COALESCE("printerUrl", '''') <> ''''';
+  END IF;
+  -- The dump carries prod vault rows (e.g. AWS credentials). They are
+  -- encrypted with prod's root key so they can't be decrypted locally,
+  -- but there is no reason to keep them around.
+  IF to_regclass('vault.secrets') IS NOT NULL THEN
+    EXECUTE 'DELETE FROM vault.secrets';
+  END IF;
+END $$;
+SQL
+echo "  ✓ webhooks, integrations, printer routes/jobs deactivated; vault secrets cleared"
+# Flush cached permission claims: requirePermissions serves claims from Redis
+# (permissions:<userId>), so anyone logged in before the restore would keep
+# their PRE-restore permissions silently. Same failure shape as the stale
+# config row — the DB is right but a side channel serves old data.
+REDIS_URL_LOCAL=$(grep '^REDIS_URL=' "$REPO_ROOT/.env.local" 2>/dev/null | cut -d= -f2- || true)
+if [[ -n "$REDIS_URL_LOCAL" ]] && command -v redis-cli >/dev/null 2>&1; then
+  STALE_KEYS=$(redis-cli -u "$REDIS_URL_LOCAL" --scan --pattern 'permissions:*' 2>/dev/null || true)
+  if [[ -n "$STALE_KEYS" ]]; then
+    echo "$STALE_KEYS" | xargs redis-cli -u "$REDIS_URL_LOCAL" DEL >/dev/null 2>&1 || true
+  fi
+  echo "  ✓ Redis permission cache flushed ($REDIS_URL_LOCAL)"
+else
+  echo "  ⚠ redis-cli or REDIS_URL not available — if you were logged in before the"
+  echo "    restore, log OUT and back IN so cached permissions are refreshed."
+fi
+else
+  echo "▶ RESTORE_MODE=prod — restoring as-is: keeping config row, webhooks,"
+  echo "  integrations, printer routes, vault secrets, and caches untouched."
+fi
 # ── 4. If ADMIN_EMAIL is set, resolve the user_id ───────────────────────────
 ADMIN_USER_ID=""
 if [[ -n "$ADMIN_EMAIL" ]]; then
@@ -190,6 +315,76 @@ if [[ -n "$ADMIN_EMAIL" ]]; then
   else
     echo "  ✓ Found user $ADMIN_USER_ID for $ADMIN_EMAIL — will upgrade to Admin in existing companies"
   fi
+fi
+# ── 4a. Scrub every real email → @example.test (opt-in via SCRUB_EMAILS) ────
+# (skips the ADMIN_USER_ID user across all auth + public.user tables so the
+#  admin can keep logging in with their real prod email)
+if [[ -n "$SCRUB_EMAILS" ]]; then
+  echo "▶ Scrubbing emails → *@example.test  (preserving admin account)"
+  $PSQL_PG -v ON_ERROR_STOP=0 -v admin_uid="${ADMIN_USER_ID:-}" <<'SQL' >/dev/null
+-- Disable triggers during scrub: the event-system queue would otherwise
+-- fire for each updated row and we don't need those side effects.
+SET session_replication_role = 'replica';
+
+-- auth.users: replace email + clear pending email-change / token state
+-- (skip the admin so they keep their real prod email)
+UPDATE auth.users SET
+  email                       = 'u_' || left(md5(id::text), 10) || '@example.test',
+  email_change                = NULL,
+  email_change_token_new      = '',
+  email_change_token_current  = '',
+  recovery_token              = '',
+  confirmation_token          = '',
+  raw_user_meta_data          = COALESCE(raw_user_meta_data - 'email', '{}'::jsonb)
+                                || jsonb_build_object('email', 'u_' || left(md5(id::text), 10) || '@example.test')
+WHERE (email IS NOT NULL OR raw_user_meta_data ? 'email')
+  AND (:'admin_uid' = '' OR id::text <> :'admin_uid');
+
+-- auth.identities.email is GENERATED from identity_data->>'email' —
+-- update the source JSON only, and skip the admin's identities.
+UPDATE auth.identities SET
+  identity_data = COALESCE(identity_data - 'email', '{}'::jsonb)
+                  || jsonb_build_object('email', 'u_' || left(md5(user_id::text), 10) || '@example.test')
+WHERE identity_data ? 'email'
+  AND (:'admin_uid' = '' OR user_id::text <> :'admin_uid');
+
+-- public.user: same skip
+UPDATE public."user" SET
+  email = 'u_' || left(md5(id::text), 10) || '@example.test'
+WHERE email IS NOT NULL
+  AND (:'admin_uid' = '' OR id <> :'admin_uid');
+
+-- Helper: scrub a (table, column) pair only if the column exists and is not generated.
+-- public.user is handled above so we don't need an admin-skip inside the loop.
+DO $$
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN
+    SELECT * FROM (VALUES
+      ('public', 'company',         'email',                       'co_'),
+      ('public', 'contact',         'email',                       'ct_'),
+      ('public', 'invite',          'email',                       'inv_'),
+      ('public', 'companySettings', 'accountsPayableEmail',        'ap_'),
+      ('public', 'companySettings', 'accountsReceivableEmail',     'ar_'),
+      ('public', 'quote',           'digitalQuoteAcceptedByEmail', 'qa_'),
+      ('public', 'quote',           'digitalQuoteRejectedByEmail', 'qr_')
+    ) AS t(schema_name, table_name, column_name, prefix)
+  LOOP
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = r.schema_name AND table_name = r.table_name
+        AND column_name = r.column_name AND is_generated = 'NEVER'
+    ) THEN
+      EXECUTE format(
+        'UPDATE %I.%I SET %I = %L || left(md5(id::text), 10) || %L WHERE %I IS NOT NULL',
+        r.schema_name, r.table_name, r.column_name,
+        r.prefix, '@example.test', r.column_name
+      );
+    END IF;
+  END LOOP;
+END $$;
+SQL
 fi
 # ── 5. Upgrade admin in user's existing companies ───────────────────────────
 # Scope is intentionally narrow: only the companies the user already
@@ -268,5 +463,14 @@ SQL
   echo "  ✓ Login as:  $LOGIN_EMAIL  /  $ADMIN_PASSWORD"
   echo "  ℹ If you were already logged in: log OUT and back IN — the permission"
   echo "    cache (Redis: permissions:$ADMIN_USER_ID) is cleared on logout."
+fi
+if [[ -n "$SCRUB_EMAILS" ]]; then
+  echo "▶ Verifying scrub (the admin account is expected to remain, if preserved)"
+  $PSQL_PG -c "
+    SELECT 'auth.users leaked'  AS check, count(*) FROM auth.users      WHERE email IS NOT NULL AND email NOT LIKE '%@example.test'
+    UNION ALL SELECT 'public.user leaked',  count(*) FROM public.\"user\"     WHERE email IS NOT NULL AND email NOT LIKE '%@example.test'
+    UNION ALL SELECT 'public.company leaked', count(*) FROM public.company   WHERE email IS NOT NULL AND email NOT LIKE '%@example.test'
+    UNION ALL SELECT 'public.contact leaked', count(*) FROM public.contact   WHERE email IS NOT NULL AND email NOT LIKE '%@example.test';
+  "
 fi
 echo "✅ Done — Studio: http://127.0.0.1:$((PORT_DB+2))   (port_db+2 is the Studio port crbn assigned)"

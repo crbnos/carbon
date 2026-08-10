@@ -1,3 +1,4 @@
+import type { Operator } from "@carbon/utils";
 import {
   getFieldDef,
   isFieldAvailableOnSurfaces,
@@ -10,6 +11,7 @@ import { zfd } from "zod-form-data";
 
 export const storageRuleSeverities = ["error", "warn"] as const;
 
+/** The subset of the shared `Operator` union storage rules accept on the wire. */
 export const storageRuleOperators = [
   "eq",
   "neq",
@@ -19,7 +21,7 @@ export const storageRuleOperators = [
   "isNotSet",
   "gt",
   "lt"
-] as const;
+] as const satisfies readonly Operator[];
 
 const storageRuleConditionValueSchema = z.union([
   z.string(),

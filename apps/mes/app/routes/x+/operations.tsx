@@ -1,6 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
@@ -8,12 +9,12 @@ import {
   Heading,
   HStack,
   IconButton,
+  LoadingBars,
   Popover,
   PopoverContent,
   PopoverTrigger,
   Separator,
   SidebarTrigger,
-  Spinner,
   Switch,
   toast,
   useInterval,
@@ -22,6 +23,7 @@ import {
   useRealtimeChannel,
   VStack
 } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -150,17 +152,9 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   let crewStation: { workCenterId: string; name: string } | null = null;
   let crewDate: string | null = null;
   if (selectedWorkCenterIds.length === 0 && effectiveUserId && locationId) {
-    const location = await serviceRole
-      .from("location")
-      .select("timezone")
-      .eq("id", locationId)
-      .single();
-    const timezone = location.data?.timezone;
-    const today = timezone
-      ? new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(
-          new Date()
-        )
-      : new Date().toISOString().slice(0, 10);
+    const today = datetime
+      .today(await getLocationTimeZone(serviceRole, locationId, companyId))
+      .toString();
     crewDate = today;
     const dismissed = await getCrewOverride(request);
     if (dismissed !== today) {
@@ -233,6 +227,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       (op) =>
         op.jobReadableId.toLowerCase().includes(search.toLowerCase()) ||
         op.itemReadableId.toLowerCase().includes(search.toLowerCase()) ||
+        op.itemDescription?.toLowerCase().includes(search.toLowerCase()) ||
         op.description?.toLowerCase().includes(search.toLowerCase())
     );
   }
@@ -337,7 +332,7 @@ export default function ScheduleRoute() {
     <ClientOnly
       fallback={
         <div className="flex h-screen w-[calc(100dvw-var(--sidebar-width-icon))] items-center justify-center">
-          <Spinner className="h-8 w-8" />
+          <LoadingBars />
         </div>
       }
     >

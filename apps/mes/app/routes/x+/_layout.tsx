@@ -19,13 +19,12 @@ import {
   SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,
-  useMount,
   useNProgress
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import { Edition, isSearchParamOnlyNavigation } from "@carbon/utils";
 import posthog from "posthog-js";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import type {
   LoaderFunctionArgs,
   MiddlewareFunction,
@@ -57,6 +56,8 @@ import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
+  nextUrl,
+  formMethod,
   defaultShouldRevalidate
 }) => {
   if (
@@ -64,6 +65,18 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     currentUrl.pathname.startsWith("/switch-company")
   ) {
     return true;
+  }
+
+  // This loader is the app shell: 9 queries plus an auth round-trip. Without
+  // this it re-ran on every filter, sort and page click, none of which can
+  // change anything it returns.
+  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
+  // also looks like a same-pathname GET, so the shell does not re-run for
+  // realtime events either. Leaf loaders still refresh, which is the intent.
+  // Shell data that must react to a realtime change needs an explicit case
+  // above.
+  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
+    return false;
   }
 
   return defaultShouldRevalidate;
@@ -238,15 +251,37 @@ export default function AuthenticatedRoute() {
     }
   });
 
-  useMount(() => {
-    posthog.identify(user?.id, {
-      email: user?.email,
-      name: `${user?.firstName} ${user?.lastName}`
-    });
-  });
+  const userId = user?.id;
+  const userEmail = user?.email;
+  const userFullName = user ? `${user.firstName} ${user.lastName}` : undefined;
+  const companyId = company?.companyId;
+  const companyName = company?.name;
 
+  // Keyed on the identity rather than run once on mount: switching company
+  // redirects back into x+/_layout without unmounting it, so a mount-only
+  // effect would leave the previous company attached to every later event.
+  // The deps are primitives because `user`/`company` get fresh object
+  // identities on every revalidation, and group() re-sends $groupidentify
+  // each time it is called.
+  useEffect(() => {
+    if (!userId) return;
+
+    posthog.identify(userId, { email: userEmail, name: userFullName });
+
+    if (!companyId) return;
+
+    // Adoption is measured per customer, and a user can belong to more than one
+    // company — so the company rides on the events rather than on the person.
+    // register() puts companyId on every event including autocapture; group()
+    // is what lets PostHog aggregate by customer.
+    posthog.register({ companyId });
+    posthog.group("company", companyId, { name: companyName });
+  }, [userId, userEmail, userFullName, companyId, companyName]);
+
+  // Scroll stays unlocked until lg, where the controls dock beside the content
+  // instead of stacking below it.
   return (
-    <div className="h-screen w-screen overflow-y-auto md:overflow-hidden">
+    <div className="h-screen w-full overflow-y-auto lg:overflow-hidden">
       {user?.acknowledgedITAR === false && CONTROLLED_ENVIRONMENT ? (
         <ItarPopup
           acknowledgeAction={path.to.acknowledge}

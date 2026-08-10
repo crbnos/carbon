@@ -111,6 +111,8 @@ import {
   DateTimePicker,
   TimePicker
 } from "./Date";
+import type { DateTimeProps } from "./DateTime";
+import { DateTime } from "./DateTime";
 import {
   Drawer,
   DrawerBody,
@@ -250,6 +252,7 @@ import {
 import { Paragraph } from "./Paragraph";
 import {
   Popover,
+  PopoverAnchor,
   PopoverClose,
   PopoverContent,
   PopoverFooter,
@@ -428,6 +431,7 @@ export {
   Calendar,
   DatePicker,
   DateRangePicker,
+  DateTime,
   DateTimePicker,
   Drawer,
   DrawerBody,
@@ -536,6 +540,7 @@ export {
   OperatingSystemContextProvider,
   Paragraph,
   Popover,
+  PopoverAnchor,
   PopoverClose,
   PopoverContent,
   PopoverFooter,
@@ -642,6 +647,7 @@ export type {
   ComboboxProps,
   CreatableComboboxProps,
   CreatableMultiSelectProps,
+  DateTimeProps,
   InputProps,
   JSONContent,
   Modifier,

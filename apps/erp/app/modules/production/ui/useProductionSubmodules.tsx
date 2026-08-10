@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { IoBalloonOutline } from "react-icons/io5";
 import {
   LuChartLine,
   LuCirclePlay,
@@ -9,17 +10,13 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
-import { useFlags } from "~/hooks/useFlags";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
-const internalOnlyRoutes = new Set<string>([path.to.assemblyInstructions]);
-
 export default function useProductionSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const { isInternal } = useFlags();
 
   const productionRoutes: AuthenticatedRouteGroup[] = [
     {
@@ -65,6 +62,12 @@ export default function useProductionSubmodules() {
           role: "employee"
         },
         {
+          name: t`Inspection Plans`,
+          to: path.to.inspectionDocuments,
+          icon: <IoBalloonOutline />,
+          permission: "quality"
+        },
+        {
           name: t`Procedures`,
           to: path.to.procedures,
           icon: <LuListChecks />,
@@ -89,7 +92,8 @@ export default function useProductionSubmodules() {
 
   const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
     if (route.role && !permissions.is(route.role)) return false;
-    if (!isInternal && internalOnlyRoutes.has(route.to)) return false;
+    if (route.permission && !permissions.can("view", route.permission))
+      return false;
     return true;
   };
 

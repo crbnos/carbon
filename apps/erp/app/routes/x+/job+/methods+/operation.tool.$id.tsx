@@ -27,6 +27,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
+  // Tool↔step links are managed by the step editor (jobOperationStepTool route), so this
+  // edit deliberately leaves them untouched.
   const update = await upsertJobOperationTool(client, {
     id,
     ...d,

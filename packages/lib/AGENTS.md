@@ -31,6 +31,7 @@ pnpm --filter @carbon/lib typecheck   # tsgo --noEmit
 - **Trigger helper**: `trigger(taskId, payload)` / `batchTrigger(taskId, items)` — typed dispatch
 - **Events**: `src/events.ts` — full `Events` type map (`carbon/notify`, `carbon/send-email`, `carbon/send-slack`, etc.)
 - **Exports**: `./events`, `./inngest`, `./trigger`, `./resend.server`, `./slack.server`, `./twenty.server`
+- **Workflow moments**: `src/workflows/raise-moment.ts` — `raiseMoment()` announces a business moment (as opposed to a row change) to the workflow matcher. Two rules it must keep: it **never throws into the caller** (a failed announcement must not fail the business operation that raised it — it logs instead), and the `momentId` it mints is used twice, as the Inngest event id *and* as the matcher's `sourceEventId`, which is what makes a redelivery idempotent. See `.claude/rules/workflow-matcher.md`
 
 ## Cross-References
 

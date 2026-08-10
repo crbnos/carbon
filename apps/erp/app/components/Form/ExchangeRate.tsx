@@ -1,17 +1,8 @@
-import {
-  cn,
-  HStack,
-  IconButton,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  VStack
-} from "@carbon/react";
+import { cn, HStack, IconButton, VStack } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import type React from "react";
-import { useMemo } from "react";
 import { LuInfo, LuLoaderCircle } from "react-icons/lu";
+import { DateTime } from "~/components";
 import { NumberControlled } from "~/components/Form";
 
 interface ExchangeRateProps
@@ -29,20 +20,6 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
   ...props
 }) => {
   const { t } = useLingui();
-  const { locale } = useLocale();
-
-  const formatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        dateStyle: "medium",
-        timeStyle: "short"
-      }),
-    [locale]
-  );
-
-  const formattedDate = exchangeRateUpdatedAt
-    ? formatter.format(new Date(exchangeRateUpdatedAt))
-    : "";
 
   return (
     <div className="relative">
@@ -54,14 +31,13 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
                 <Trans>Exchange Rate</Trans>
               </span>
               {exchangeRateUpdatedAt && (
-                <Tooltip>
-                  <TooltipTrigger tabIndex={-1}>
-                    <LuInfo className="w-4 h-4" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <Trans>Last updated: {formattedDate}</Trans>
-                  </TooltipContent>
-                </Tooltip>
+                <DateTime
+                  value={exchangeRateUpdatedAt}
+                  variant="absolute"
+                  side="bottom"
+                >
+                  <LuInfo className="h-4 w-4 text-muted-foreground" />
+                </DateTime>
               )}
             </HStack>
             <HStack className="w-full justify-between">
@@ -76,14 +52,13 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
                   <Trans>Exchange Rate</Trans>
                 </span>
                 {exchangeRateUpdatedAt && (
-                  <Tooltip>
-                    <TooltipTrigger tabIndex={-1}>
-                      <LuInfo className="w-4 h-4" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <Trans>Last updated: {formattedDate}</Trans>
-                    </TooltipContent>
-                  </Tooltip>
+                  <DateTime
+                    value={exchangeRateUpdatedAt}
+                    variant="absolute"
+                    side="bottom"
+                  >
+                    <LuInfo className="h-4 w-4 text-muted-foreground" />
+                  </DateTime>
                 )}
               </HStack>
             }

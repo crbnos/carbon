@@ -15,10 +15,12 @@ import {
   VStack
 } from "@carbon/react";
 import {
+  datetime,
   fiscalYearAndPeriodFor,
   formatDate,
   MONTH_NUMBER
 } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -34,11 +36,12 @@ import {
   generateFiscalYearPeriodsValidator,
   getFiscalYearSettings
 } from "~/modules/accounting";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Generate Fiscal Year",
+  breadcrumb: msg`Generate Fiscal Year`,
   to: path.to.accountingPeriods
 };
 
@@ -52,8 +55,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const startMonth = settings.data?.startMonth
     ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
     : 1;
+  const companyToday = datetime.today(
+    await getCompanyTimeZone(client, companyId)
+  );
   const defaultFiscalYear = fiscalYearAndPeriodFor(
-    new Date(),
+    companyToday.year,
+    companyToday.month,
     startMonth
   ).fiscalYear;
 

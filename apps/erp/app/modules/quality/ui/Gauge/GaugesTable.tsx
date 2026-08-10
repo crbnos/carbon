@@ -22,6 +22,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   New,
@@ -31,7 +32,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores/people";
 import { useSuppliers } from "~/stores/suppliers";
@@ -61,7 +62,6 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const permissions = usePermissions();
 
   const deleteDisclosure = useDisclosure();
@@ -205,7 +205,9 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
       {
         accessorKey: "nextCalibrationDate",
         header: t`Next Calibration`,
-        cell: ({ row }) => formatDate(row.original.nextCalibrationDate),
+        cell: ({ row }) => (
+          <DateTime value={row.original.nextCalibrationDate} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -213,7 +215,9 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
       {
         accessorKey: "lastCalibrationDate",
         header: t`Last Calibration`,
-        cell: ({ row }) => formatDate(row.original.lastCalibrationDate),
+        cell: ({ row }) => (
+          <DateTime value={row.original.lastCalibrationDate} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -261,7 +265,9 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuFileText />
         }
@@ -286,14 +292,16 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuFileText />
         }
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, locations, people, suppliers, types, t, formatDate]);
+  }, [customColumns, locations, people, suppliers, types, t]);
 
   const renderContextMenu = useCallback(
     (row: Gauge) => {

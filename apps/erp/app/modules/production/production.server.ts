@@ -1,8 +1,5 @@
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
-import { isInternalEmail } from "@carbon/utils";
-import { redirect } from "react-router";
-import { path } from "~/utils/path";
 
 // The geometry (assembler) service backs model conversion and motion planning.
 // When it's unreachable those actions can't run, so loaders probe its health and
@@ -51,16 +48,6 @@ export async function isAssemblerServiceHealthy(): Promise<boolean> {
       now + (healthy ? ASSEMBLER_HEALTHY_TTL_MS : ASSEMBLER_UNHEALTHY_TTL_MS)
   };
   return healthy;
-}
-
-/**
- * Assemblies (animated work instructions) are internal-only while the module
- * matures. Mirrors the backups gate in settings.
- */
-export function requireAssembliesInternal(email: string | null) {
-  if (!isInternalEmail(email)) {
-    throw redirect(path.to.production);
-  }
 }
 
 /**

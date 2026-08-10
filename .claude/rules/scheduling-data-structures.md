@@ -33,7 +33,9 @@ first match.
   required before any lexicographic date comparison (operator expiry).
 - **ERP authoring boards** (`apps/erp/app/routes/x+/schedule+/`): `operations.tsx`
   (ops Kanban; drag → `operations.update.tsx` writes `jobOperation.workCenterId` +
-  `priority`, no reschedule) and `dates.tsx` (jobs-by-due-date Kanban; drag →
+  `priority`, no reschedule — the board header carries a tooltip: *"Reorders dispatch
+  sequence and work center only — does not reschedule. Change dates on the Dates board."*;
+  only the Dates board calls `triggerJobSchedule`) and `dates.tsx` (jobs-by-due-date Kanban; drag →
   `dates.update.tsx` writes `job.dueDate` + `priority`, **then calls
   `triggerJobSchedule(...)`** to re-run the engine). `crew.tsx` is the Crew
   page with a segmented view switcher (`?view=`): the Crew **board** (manning

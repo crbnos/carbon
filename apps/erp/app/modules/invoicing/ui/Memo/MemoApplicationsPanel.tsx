@@ -13,9 +13,9 @@ import {
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router";
-import { Empty } from "~/components";
+import { DateTime, Empty } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useCurrencyFormatter, useDateFormatter } from "~/hooks";
+import { useCurrencyFormatter } from "~/hooks";
 import type { MemoApplication } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
@@ -48,7 +48,6 @@ const MemoApplicationsPanel = ({
   rows,
   currencyCode
 }: MemoApplicationsPanelProps) => {
-  const { formatDate } = useDateFormatter();
   const currencyFormatter = useCurrencyFormatter({ currency: currencyCode });
 
   return (
@@ -88,7 +87,9 @@ const MemoApplicationsPanel = ({
             <Tbody>
               {rows.map((r) => (
                 <Tr key={r.id}>
-                  <Td>{formatDate(r.appliedDate)}</Td>
+                  <Td>
+                    <DateTime value={r.appliedDate} variant="date" />
+                  </Td>
                   <Td>
                     <Enumerable value={TARGET_LABEL[r.target.type]} />
                   </Td>

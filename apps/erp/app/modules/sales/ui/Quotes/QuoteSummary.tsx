@@ -25,13 +25,8 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { CustomerAvatar } from "~/components";
-import {
-  useDateFormatter,
-  usePercentFormatter,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { CustomerAvatar, DateTime } from "~/components";
+import { usePercentFormatter, useRouteData, useUser } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
 import type {
@@ -116,9 +111,16 @@ const LineItems = ({
           if (!line.id) {
             return acc;
           }
+          // Scope to the breaks the line still offers — a removed break can
+          // leave an orphaned price row behind.
           acc[line.id!] =
             routeData?.prices
-              ?.filter((p) => p.quoteLineId === line.id)
+              ?.filter(
+                (p) =>
+                  p.quoteLineId === line.id &&
+                  Array.isArray(line.quantity) &&
+                  line.quantity.includes(p.quantity)
+              )
               .sort((a, b) => a.quantity - b.quantity) ?? [];
           return acc;
         },
@@ -219,7 +221,7 @@ const LineItems = ({
                       </motion.div>
                     </HStack>
                   </div>
-                  <span className="text-muted-foreground text-base truncate">
+                  <span className="text-muted-foreground text-sm truncate">
                     {line.description}
                   </span>
                 </div>
@@ -672,7 +674,6 @@ const QuoteSummary = ({
 }) => {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quote id");
-  const { formatDate } = useDateFormatter();
   const routeData = useRouteData<{
     quote: Quotation;
     lines: QuotationLine[];
@@ -860,8 +861,12 @@ const QuoteSummary = ({
           <div className="flex flex-col gap-1 items-end">
             <CustomerAvatar customerId={routeData?.quote.customerId ?? null} />
             {routeData?.quote?.expirationDate && (
-              <span className="text-muted-foreground text-sm">
-                Expires {formatDate(routeData?.quote.expirationDate)}
+              <span className="text-xs text-muted-foreground tracking-tight">
+                Expires{" "}
+                <DateTime
+                  value={routeData?.quote.expirationDate}
+                  variant="date"
+                />
               </span>
             )}
           </div>
@@ -877,7 +882,7 @@ const QuoteSummary = ({
         />
 
         <VStack spacing={2} className="mt-8">
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Subtotal:</span>
             <MotionNumber
               value={subtotal + totalDiscount}
@@ -889,7 +894,7 @@ const QuoteSummary = ({
             />
           </HStack>
           {totalDiscount > 0 && (
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>Discount:</span>
               <span className="text-muted-foreground">
                 -
@@ -904,7 +909,7 @@ const QuoteSummary = ({
               </span>
             </HStack>
           )}
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Tax:</span>
             <MotionNumber
               value={tax}
@@ -915,7 +920,7 @@ const QuoteSummary = ({
               locales={locale}
             />
           </HStack>
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             {convertedShippingCost > 0 ? (
               <>
                 <VStack spacing={0}>
@@ -942,14 +947,14 @@ const QuoteSummary = ({
               <Button
                 variant="link"
                 size="sm"
-                className="text-muted-foreground"
+                className="text-primary"
                 onClick={onEditShippingCost}
               >
                 <Trans>Add Shipping</Trans>
               </Button>
             ) : null}
           </HStack>
-          <HStack className="justify-between text-xl font-bold w-full">
+          <HStack className="justify-between text-xl font-semibold w-full">
             <span>Total:</span>
             <MotionNumber
               value={total}

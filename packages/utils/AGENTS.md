@@ -12,7 +12,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 ## Ask First
 
 - Adding new dependencies — this package is imported everywhere; new deps increase bundle size across all apps.
-- Modifying `storage-rules.ts` — affects Supabase storage bucket policies and file access patterns.
+- Modifying `storage-rules.ts` — the `Operator` union is shared with `@carbon/workflows`, and the evaluator gates real inventory transactions.
 - Changing `Edition` enum or `isBrowser` detection — used by `@carbon/env` and auth logic.
 
 ## Never
@@ -36,13 +36,16 @@ pnpm --filter @carbon/utils typecheck
 | `arrays` | Array manipulation, grouping, deduplication |
 | `bom` | Bill of Materials traversal and level computation |
 | `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`) |
+| `datetime` | Server-side date derivation with mandatory explicit timezone: `timestamp()`, `today(tz)`, `now(tz)`, `businessDay(instant, tz)`, `weekBounds(tz, offset?, anchor?)` (DST-safe Monday→Sunday instant bounds), `weekNumber(date)`. DST/exotic-zone stress suite in `datetime.test.ts` (gap/overlap disambiguation, midnight-skipping zones, 167/169h weeks, ±30/45-min offsets). Mirrored for Deno at `packages/database/supabase/functions/lib/datetime.ts` — keep in sync |
+| `hash` | The repo's stable content hashes — `fnv1a32`/`fnv1a64` (cache and idempotency keys) and `getBucket`. Browser-safe; never add `node:crypto` here |
 | `math` | Rounding, precision, numeric utilities |
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
+| `revalidate` | `isSearchParamOnlyNavigation` — shared by both apps' shell `shouldRevalidate` |
 | `status` | Status resolution, status color mapping |
-| `storage-rules` | Supabase storage bucket access policies |
+| `storage-rules` | Inventory/storage rule engine: condition AST, the shared `Operator` vocabulary, JIT-compiled evaluator |
 | `supabase` | Typed Supabase query helpers |
 | `types` | Shared TypeScript types (`Edition`, generic utility types) |
-| `field-registry` | Dynamic field registration for custom fields |
+| `field-registry` | Fields a storage rule may test, and which operators each one allows |
 | `labels` | Human-readable label generation |
 | `url` | URL construction and manipulation |
 

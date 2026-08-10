@@ -13,10 +13,10 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
@@ -34,7 +34,6 @@ const PurchasingRFQsTable = memo(
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
-    const { formatDate } = useDateFormatter();
     const [suppliers] = useSuppliers();
 
     const [selectedPurchasingRFQ, setSelectedPurchasingRFQ] =
@@ -120,7 +119,9 @@ const PurchasingRFQsTable = memo(
         {
           accessorKey: "rfqDate",
           header: t`RFQ Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -128,7 +129,9 @@ const PurchasingRFQsTable = memo(
         {
           accessorKey: "expirationDate",
           header: t`Due Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -187,7 +190,9 @@ const PurchasingRFQsTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -212,7 +217,9 @@ const PurchasingRFQsTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -220,7 +227,7 @@ const PurchasingRFQsTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [people, customColumns, suppliers.find, suppliers.map, t, formatDate]);
+    }, [people, customColumns, suppliers.find, suppliers.map, t]);
 
     const renderContextMenu = useMemo(() => {
       return (row: PurchasingRFQ) => (

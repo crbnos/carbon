@@ -29,6 +29,8 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
+import { datetime } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
@@ -50,6 +52,7 @@ import {
   useLoaderData,
   useParams
 } from "react-router";
+import { DateTime } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useDateFormatter } from "~/hooks";
 import {
@@ -65,26 +68,8 @@ import {
   updateTimeCardEntryValidator
 } from "~/modules/people";
 import { getCompanySettings } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
-
-function getWeekBounds(offset: number = 0) {
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 = Sunday
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7) + offset * 7);
-  monday.setHours(0, 0, 0, 0);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-
-  return {
-    from: monday.toISOString(),
-    to: sunday.toISOString(),
-    monday,
-    sunday
-  };
-}
 
 function formatDuration(clockIn: string, clockOut: string | null) {
   const end = clockOut ? new Date(clockOut).getTime() : Date.now();
@@ -107,13 +92,6 @@ function formatTotalHours(
   const hours = Math.floor(totalMs / 3600000);
   const minutes = Math.floor((totalMs % 3600000) / 60000);
   return `${hours}h ${minutes}m`;
-}
-
-function formatTime(dateStr: string, locale: string) {
-  return new Date(dateStr).toLocaleTimeString(locale, {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
 }
 
 function formatDay(dateStr: string, locale: string) {
@@ -145,7 +123,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const weekOffset = parseInt(url.searchParams.get("week") ?? "0", 10);
-  const { from, to } = getWeekBounds(weekOffset);
+  // Week runs Monday → Sunday on the company calendar (one payroll boundary
+  // per books, not the server's zone).
+  const tz = await getCompanyTimeZone(client, companyId);
+  const { from, to } = datetime.weekBounds(tz, weekOffset);
+  // Calendar days of the window on the COMPANY calendar — the client renders
+  // these directly so the header and day picker never shift a day in a
+  // different browser tz.
+  const weekStart = datetime.businessDay(from, tz).toString();
+  const weekEnd = datetime.businessDay(to, tz).toString();
 
   const [entries, openEntry, companySettings, employeeShift] =
     await Promise.all([
@@ -187,8 +173,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     entries: entries.data ?? [],
     openEntry: openEntry.data,
     weekOffset,
-    from,
-    to,
+    weekStart,
+    weekEnd,
     shift
   };
 }
@@ -360,7 +346,7 @@ export default function PersonTimecardRoute() {
   const { t } = useLingui();
   const { locale } = useLocale();
   const { formatDate } = useDateFormatter();
-  const { entries, openEntry, weekOffset, from, to, shift } =
+  const { entries, openEntry, weekOffset, weekStart, weekEnd, shift } =
     useLoaderData<typeof loader>();
   const { personId } = useParams();
   const fetcher = useFetcher<typeof action>();
@@ -384,8 +370,6 @@ export default function PersonTimecardRoute() {
     return () => clearInterval(interval);
   }, []);
 
-  const monday = new Date(from);
-  const sunday = new Date(to);
   const isCurrentWeek = weekOffset === 0;
 
   useEffect(() => {
@@ -473,7 +457,8 @@ export default function PersonTimecardRoute() {
         {openEntry && (
           <Badge variant="green" className="w-fit">
             <Trans>
-              Clocked in since {formatTime(openEntry.clockIn, locale)}
+              Clocked in since{" "}
+              <DateTime value={openEntry.clockIn} variant="time" />
             </Trans>
           </Badge>
         )}
@@ -488,8 +473,17 @@ export default function PersonTimecardRoute() {
             </Link>
           </Button>
           <span className="text-sm text-muted-foreground">
-            {formatDate(monday.toISOString(), { dateStyle: "medium" })} —{" "}
-            {formatDate(sunday.toISOString(), { dateStyle: "medium" })}
+            <DateTime
+              value={weekStart}
+              variant="date"
+              dateOptions={{ dateStyle: "medium" }}
+            />{" "}
+            —{" "}
+            <DateTime
+              value={weekEnd}
+              variant="date"
+              dateOptions={{ dateStyle: "medium" }}
+            />
           </span>
           <Button
             variant="outline"
@@ -549,12 +543,12 @@ export default function PersonTimecardRoute() {
                     </SelectTrigger>
                     <SelectContent>
                       {Array.from({ length: 7 }, (_, i) => {
-                        const d = new Date(monday);
-                        d.setDate(monday.getDate() + i);
-                        const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                        const val = parseDate(weekStart)
+                          .add({ days: i })
+                          .toString();
                         return (
                           <SelectItem key={val} value={val}>
-                            {d.toLocaleDateString(locale, {
+                            {formatDate(val, {
                               weekday: "short",
                               month: "short",
                               day: "numeric"
@@ -707,10 +701,12 @@ export default function PersonTimecardRoute() {
                     <Td className="whitespace-nowrap">
                       {formatDay(entry.clockIn, locale)}
                     </Td>
-                    <Td>{formatTime(entry.clockIn, locale)}</Td>
+                    <Td>
+                      <DateTime value={entry.clockIn} variant="time" />
+                    </Td>
                     <Td>
                       {entry.clockOut ? (
-                        formatTime(entry.clockOut, locale)
+                        <DateTime value={entry.clockOut} variant="time" />
                       ) : (
                         <Badge variant="green">
                           <Trans>Active</Trans>

@@ -1,5 +1,5 @@
 import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -15,7 +15,7 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { JournalEntrySourceTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
@@ -46,6 +46,7 @@ const defaultColumnVisibility = {
 
 const JournalEntriesTable = memo(
   ({ data, count, primaryAction }: JournalEntriesTableProps) => {
+    const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
     const { company } = useUser();
@@ -61,7 +62,7 @@ const JournalEntriesTable = memo(
       const defaultColumns: ColumnDef<JournalEntryListItem>[] = [
         {
           accessorKey: "journalEntryId",
-          header: "Journal Entry",
+          header: t`Journal Entry`,
           cell: ({ row }) => (
             <Hyperlink
               to={path.to.journalEntryDetails(row.original.id?.toString()!)}
@@ -75,15 +76,17 @@ const JournalEntriesTable = memo(
         },
         {
           accessorKey: "postingDate",
-          header: "Date",
-          cell: ({ row }) => formatDate(row.original.postingDate),
+          header: t`Date`,
+          cell: ({ row }) => (
+            <DateTime value={row.original.postingDate} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
         },
         {
           accessorKey: "description",
-          header: "Description",
+          header: t`Description`,
           cell: ({ row }) => (
             <HStack className="py-1" spacing={2}>
               <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 p-1">
@@ -109,7 +112,7 @@ const JournalEntriesTable = memo(
         },
         {
           accessorKey: "sourceType",
-          header: "Source",
+          header: t`Source`,
           cell: ({ row }) => <Enumerable value={row.original.sourceType} />,
           meta: {
             icon: <LuTag />,
@@ -124,7 +127,7 @@ const JournalEntriesTable = memo(
         },
         {
           accessorKey: "status",
-          header: "Status",
+          header: t`Status`,
           cell: ({ row }) => (
             <JournalEntryStatus
               status={
@@ -145,7 +148,7 @@ const JournalEntriesTable = memo(
         },
         {
           accessorKey: "totalDebits",
-          header: "Debits",
+          header: t`Debits`,
           cell: ({ row }) =>
             currencyFormatter.format(Number(row.original.totalDebits)),
           meta: {
@@ -154,7 +157,7 @@ const JournalEntriesTable = memo(
         },
         {
           accessorKey: "totalCredits",
-          header: "Credits",
+          header: t`Credits`,
           cell: ({ row }) =>
             currencyFormatter.format(Number(row.original.totalCredits)),
           meta: {
@@ -163,7 +166,7 @@ const JournalEntriesTable = memo(
         },
         {
           accessorKey: "createdBy",
-          header: "Created By",
+          header: t`Created By`,
           cell: ({ row }) => (
             <EmployeeAvatar employeeId={row.original.createdBy} />
           ),
@@ -180,15 +183,17 @@ const JournalEntriesTable = memo(
         },
         {
           accessorKey: "createdAt",
-          header: "Created At",
-          cell: ({ row }) => formatDate(row.original.createdAt),
+          header: t`Created At`,
+          cell: ({ row }) => (
+            <DateTime value={row.original.createdAt} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
         },
         {
           accessorKey: "updatedBy",
-          header: "Updated By",
+          header: t`Updated By`,
           cell: ({ row }) => (
             <EmployeeAvatar employeeId={row.original.updatedBy} />
           ),
@@ -205,15 +210,17 @@ const JournalEntriesTable = memo(
         },
         {
           accessorKey: "updatedAt",
-          header: "Updated At",
-          cell: ({ row }) => formatDate(row.original.updatedAt),
+          header: t`Updated At`,
+          cell: ({ row }) => (
+            <DateTime value={row.original.updatedAt} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
         }
       ];
       return defaultColumns;
-    }, [currencyFormatter, people.map]);
+    }, [currencyFormatter, people, t]);
 
     const renderContextMenu = useCallback(
       (row: JournalEntryListItem) => {
@@ -227,7 +234,7 @@ const JournalEntriesTable = memo(
               }}
             >
               <MenuIcon icon={<LuPencil />} />
-              {isDraft ? "Edit Journal Entry" : "View Journal Entry"}
+              {isDraft ? t`Edit Journal Entry` : t`View Journal Entry`}
             </MenuItem>
             <MenuItem
               disabled={!isDraft || !permissions.can("delete", "accounting")}
@@ -238,12 +245,12 @@ const JournalEntriesTable = memo(
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              Delete Journal Entry
+              <Trans>Delete Journal Entry</Trans>
             </MenuItem>
           </>
         );
       },
-      [deleteModal, navigate, permissions]
+      [deleteModal, navigate, permissions, t]
     );
 
     return (
@@ -255,14 +262,14 @@ const JournalEntriesTable = memo(
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
-          title="Journal Entries"
+          title={t`Journal Entries`}
         />
         {selectedEntry && selectedEntry.id && (
           <ConfirmDelete
             action={path.to.deleteJournalEntry(selectedEntry.id.toString())}
             isOpen={deleteModal.isOpen}
             name={selectedEntry.journalEntryId ?? ""}
-            text={`Are you sure you want to delete ${selectedEntry.journalEntryId}?`}
+            text={t`Are you sure you want to delete ${selectedEntry.journalEntryId}?`}
             onCancel={() => {
               deleteModal.onClose();
               setSelectedEntry(null);

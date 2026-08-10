@@ -14,29 +14,29 @@
   --color-ed-ink: #262323;
   --color-ed-ink-78: rgba(38, 35, 35, 0.86);
   --color-ed-ink-66: rgba(38, 35, 35, 0.74);
-  --color-ed-ink-60: rgba(38, 35, 35, 0.68);
-  --color-ed-ink-45: rgba(38, 35, 35, 0.52);
-  --color-ed-hairline: #e7e7e3;
-  --color-ed-paper: #fbfbf8;
-  --color-ed-svg-line: #d8d7d2;
+  --color-ed-ink-60: rgba(38, 35, 35, 0.6);
+  --color-ed-ink-45: rgba(38, 35, 35, 0.45);
+  --color-ed-hairline: #e7e7e7;
+  --color-ed-paper: #fbfbfb;
+  --color-ed-svg-line: #d8d8d8;
   --color-ed-brand: #00b0ff;
   --color-ed-brand-ink: #1e84b0;
   --color-ed-accent-fill: #eaf8ff;
   --color-ed-amber-fill: #fff2d8;
   --color-ed-amber-stroke: #e6cfa3;
   --color-ed-amber-text: #9c7136;
-  --color-ed-header: #f1f1ec; /* table header strip */
-  --color-ed-inset: #f6f6f1; /* expanded row panel */
+  --color-ed-header: #f1f1f1; /* table header strip */
+  --color-ed-inset: #f6f6f6; /* expanded row panel */
   --color-ed-row-hover: rgba(38, 35, 35, 0.025); /* row hover */
 
   /* Warm-gray ramp + status + dark-surface + link families. Light-only. */
-  --color-ed-warm-100: #f5f5f2;
-  --color-ed-warm-150: #ecece7;
-  --color-ed-warm-300: #e3e3df;
-  --color-ed-warm-400: #dadad5;
-  --color-ed-warm-500: #d2d2cc;
-  --color-ed-text-faint: #c9c9c5;
-  --color-ed-text-muted: #9a9a96;
+  --color-ed-warm-100: #f5f5f5;
+  --color-ed-warm-150: #ececec;
+  --color-ed-warm-300: #e3e3e3;
+  --color-ed-warm-400: #dadada;
+  --color-ed-warm-500: #d2d2d2;
+  --color-ed-text-faint: #c9c9c9;
+  --color-ed-text-muted: #9a9a9a;
   --color-ed-graphite: #4b4b4a;
   --color-ed-dark-bg: #1b1b1a;
   --color-ed-dark-surface: #262624;

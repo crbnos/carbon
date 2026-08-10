@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { clearConsolePinIn } from "~/services/console.server";
@@ -14,13 +14,12 @@ export async function action({ request }: ActionFunctionArgs) {
     request,
     {}
   );
-  const formData = await request.formData();
-  const timezone = formData.get("timezone") as string | null;
+  await request.formData();
 
   const updates = await endProductionEvents(client, {
     companyId,
     employeeId: userId,
-    endTime: now(timezone ?? getLocalTimeZone()).toAbsoluteString()
+    endTime: datetime.timestamp()
   });
 
   if (updates.error) {
@@ -42,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const clockOutResult = await serviceRole
       .from("timeCardEntry")
       .update({
-        clockOut: now(timezone ?? getLocalTimeZone()).toAbsoluteString(),
+        clockOut: datetime.timestamp(),
         updatedBy: userId
       } as any)
       .eq("employeeId", userId)

@@ -1,6 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
-import { buildColumnMaps } from "./utils";
+import {
+  buildColumnMaps,
+  exportOnlyColumn,
+  selectExportColumns
+} from "./utils";
 
 type Row = {
   id: string;
@@ -96,5 +100,74 @@ describe("buildColumnMaps", () => {
     expect(accessors).toEqual({ supplierTypeId: "TYPE" });
     expect(exportValues.supplierTypeId).toBe(exportValue);
     expect(sortKeyToLabel).toEqual({ type: "TYPE" });
+  });
+});
+
+describe("exportOnlyColumn", () => {
+  it("exports under filterHeader, is flagged export-only, and never sorts", () => {
+    const value = (row: Row) => row.type;
+    const column = exportOnlyColumn<Row>({
+      id: "itemName",
+      header: "Item Name",
+      value
+    });
+
+    const { accessors, exportValues, sortKeyToLabel, exportOnlyColumns } =
+      buildColumnMaps(cols(column), upper);
+
+    expect(accessors).toEqual({ itemName: "ITEM NAME" });
+    expect(exportValues.itemName).toBe(value);
+    expect(exportOnlyColumns).toEqual(["itemName"]);
+    // no accessorKey, so it can never reach the server-sort picker
+    expect(sortKeyToLabel).toEqual({});
+  });
+});
+
+describe("selectExportColumns", () => {
+  const columnAccessors = { type: "Type", itemName: "Item Name" };
+
+  it("falls back to accessor order when the view has no column order", () => {
+    expect(
+      selectExportColumns({
+        columnAccessors,
+        columnOrder: [],
+        columnVisibility: {},
+        exportOnlyColumns: ["itemName"]
+      })
+    ).toEqual(["type", "itemName"]);
+  });
+
+  it("appends an export-only column a stale saved view's order omits", () => {
+    expect(
+      selectExportColumns({
+        columnAccessors,
+        // saved before itemName existed
+        columnOrder: ["type"],
+        columnVisibility: {},
+        exportOnlyColumns: ["itemName"]
+      })
+    ).toEqual(["type", "itemName"]);
+  });
+
+  it("keeps export-only columns despite being hidden, drops hidden normal ones", () => {
+    expect(
+      selectExportColumns({
+        columnAccessors,
+        columnOrder: ["type", "itemName"],
+        columnVisibility: { type: false, itemName: false },
+        exportOnlyColumns: ["itemName"]
+      })
+    ).toEqual(["itemName"]);
+  });
+
+  it("drops ids with no accessor (selection, expand, actions)", () => {
+    expect(
+      selectExportColumns({
+        columnAccessors,
+        columnOrder: ["select", "type", "actions"],
+        columnVisibility: {},
+        exportOnlyColumns: []
+      })
+    ).toEqual(["type"]);
   });
 });

@@ -1,6 +1,7 @@
+import { isValidTimeZone } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { processTypes, standardFactorType } from "../shared";
+import { operationTypes, standardFactorType } from "../shared";
 
 export const abilityCurveValidator = z.object({
   data: z
@@ -74,13 +75,17 @@ export const locationValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     name: z.string().min(1, { message: "Name is required" }),
+    code: zfd.text(z.string().optional()),
     addressLine1: z.string().min(1, { message: "Address is required" }),
     addressLine2: z.string().optional(),
     city: z.string().min(1, { message: "City is required" }),
     stateProvince: zfd.text(z.string().optional()),
     postalCode: z.string().min(1, { message: "Postal Code is required" }),
     countryCode: z.string().min(1, { message: "Country is required" }),
-    timezone: z.string().min(1, { message: "Timezone is required" }),
+    timezone: z
+      .string()
+      .min(1, { message: "Timezone is required" })
+      .refine(isValidTimeZone, { message: "Invalid timezone" }),
     latitude: zfd.numeric(z.number().optional()),
     longitude: zfd.numeric(z.number().optional())
   })
@@ -249,6 +254,7 @@ export const maintenanceScheduleValidator = z.object({
   frequency: z.enum(maintenanceFrequency),
   priority: z.enum(maintenanceDispatchPriority),
   estimatedDuration: zfd.numeric(z.number().optional()),
+  nextDueAt: zfd.text(z.string().optional()),
   active: zfd.checkbox(),
   // Day-of-week fields for daily frequency
   monday: zfd.checkbox(),
@@ -292,7 +298,7 @@ export const processValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     name: z.string().min(1, { message: "Process name is required" }),
-    processType: z.enum(processTypes, {
+    processType: z.enum(operationTypes, {
       errorMap: () => ({ message: "Process type is required" })
     }),
     defaultStandardFactor: z
@@ -307,13 +313,16 @@ export const processValidator = z
     requiresAbility: zfd.checkbox()
   })
   .refine((data) => {
-    if (data.processType !== "Outside" && !data.workCenters) {
+    if (data.processType !== "Outside Processing" && !data.workCenters) {
       return { workCenters: ["Work center is required for inside process"] };
     }
     return true;
   })
   .refine((data) => {
-    if (data.processType !== "Outside" && !data.defaultStandardFactor) {
+    if (
+      data.processType !== "Outside Processing" &&
+      !data.defaultStandardFactor
+    ) {
       return { defaultStandardFactor: ["Standard factor is required"] };
     }
     return true;

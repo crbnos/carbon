@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LuCirclePlus } from "react-icons/lu";
 import type { ListItem } from "~/types";
 
-// The shared "Add Actions" affordance used by Quality issues and Change Orders:
+// The shared "Add Actions" affordance used by Quality issues and Change Notices:
 // a dashed button opening a modal that picks from the entity's required-action
 // templates. Submission is delegated to `onAdd` (each caller wires its route);
 // `isSubmitting` drives the button state and closing on success is the caller's

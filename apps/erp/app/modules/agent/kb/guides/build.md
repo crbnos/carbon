@@ -1,0 +1,40 @@
+# Inside the build
+
+> How each robot part is made or bought.
+
+Open the job you just released and look at what it actually takes to build a robot. This is where the product structure you set up in PLM meets the reality of the floor.
+
+> PLM specifies the parts. The method adds the clarity: how each part is obtained, and whether it's built, bought, or pulled from the shelf.
+
+## The bill of materials
+
+A robot's bill of materials (BoM) is a tree. The robot is built from an arm and a leg; each of those is built from a machined part and a motor. Carbon shows the whole structure at a glance, with every node carrying an icon for how it's obtained.
+
+## Method types
+
+Every item in that tree carries a method type, and it's the single most load-bearing field in your whole catalog. There are three values, and each one routes the item down a completely different path:
+
+- Make to Order: you manufacture it. The arm part and leg part are machined in-house, so each becomes its own job with its own operations.
+- Purchase to Order: you purchase it. The motors come from a supplier, so they flow through `guides/rfq-to-po` as a purchase order, never touching the floor.
+- Pull from Inventory: you pull it from stock when the parent is built, whether you originally made it or bought it.
+
+You don't tag this on each BoM line by hand. The method type lives on `docs/reference/items`, and every BoM that uses that item mirrors it. Switch a part's method type once, and it cascades everywhere the part appears.
+
+Method type answers "how does this part get into its parent?": Make to Order, Purchase to Order, or Pull from Inventory. The replenishment system, Buy, Make, or Buy and Make, answers "how is this part stocked overall, and which planning queue does it land in?" A part can be made for one parent and pulled from stock for another.
+
+## Kits & subassemblies
+
+Because the arm and leg are Make to Order parts, they aren't just line items — they're built things. But Carbon gives a made item in a BoM two flavors, and the choice changes how the floor handles it:
+
+- Subassembly: built as its own job, with its own routing and its own completion. You can release the left arm independently of the final robot, and Carbon keeps the hierarchy in sync.
+- Kit: not built separately at all. Its components are issued together straight into the parent job, as a set. There's no kit job and no kit operation — just the parts, grouped.
+
+Reach for a subassembly when the thing is genuinely manufactured and worth tracking on its own. Reach for a kit when a cluster of parts always goes in together and a separate build would just be ceremony.
+
+## Methods on the job
+
+Back on the job, you're looking at that working copy of the method from the last chapter, and you can drill the whole way down. The robot's method lists the arm and leg; open the arm and you're in the arm's method, its machined part set to Make to Order and its motor set to Purchase to Order. The tree is as deep as the product.
+
+Methods are versioned, which is what keeps a busy shop sane. A method is Draft, Active, or Archived, and only a Draft can be edited. An Active method is frozen, the jobs running against it won't shift under anyone's feet, so you revise by publishing a new version, not by editing a live one.
+
+Draft is the workbench; Active is the published, locked recipe; Archived is history. Changes flow forward into the next version and the next job — never backward into a build that's already moving.

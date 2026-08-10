@@ -29,12 +29,7 @@ import {
   TabsTrigger,
   VStack
 } from "@carbon/react";
-import {
-  getLocalTimeZone,
-  now,
-  parseDate,
-  toCalendarDate
-} from "@internationalized/date";
+import { now, parseDate, toCalendarDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -87,11 +82,9 @@ import { CrewFilter } from "~/modules/production/ui/Schedule/Crew/CrewFilter";
 import { CrewMatrix } from "~/modules/production/ui/Schedule/Crew/CrewMatrix";
 import { CrewWeekBoard } from "~/modules/production/ui/Schedule/Crew/CrewWeekBoard";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
-import {
-  getLocationsList,
-  getWorkCentersByLocation
-} from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getWorkCentersByLocation } from "~/modules/resources";
+import { resolveLocationId } from "~/modules/shared/location.server";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { makeDurations } from "~/utils/duration";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -171,7 +164,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const requestedDepartment =
     departmentParam !== null ? departmentParam : cookieDepartment;
 
-  const timezone = getLocalTimeZone();
+  const locationId = await resolveLocationId(client, request, {
+    searchParams,
+    userId,
+    companyId,
+    onDefaultsError: path.to.production,
+    onNoLocations: path.to.production
+  });
+
+  // The board's "today" belongs to the plant being crewed, not the server —
+  // resolved after locationId settles.
+  const timezone = await getLocationTimeZone(client, locationId, companyId);
   const date = (
     dateParam ? parseDate(dateParam) : toCalendarDate(now(timezone))
   ).toString();
@@ -193,36 +196,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const weekDates = Array.from({ length: 7 }, (_, i) =>
     weekStart.add({ days: i }).toString()
   );
-
-  let locationId = searchParams.get("location");
-
-  if (!locationId) {
-    const userDefaults = await getUserDefaults(client, userId, companyId);
-    if (userDefaults.error) {
-      throw redirect(
-        path.to.production,
-        await flash(
-          request,
-          error(userDefaults.error, "Failed to load default location")
-        )
-      );
-    }
-    locationId = userDefaults.data?.locationId ?? null;
-  }
-
-  if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
-    if (locations.error || !locations.data?.length) {
-      throw redirect(
-        path.to.production,
-        await flash(
-          request,
-          error(locations.error, "Failed to load any locations")
-        )
-      );
-    }
-    locationId = locations.data?.[0].id as string;
-  }
 
   const [
     assignments,

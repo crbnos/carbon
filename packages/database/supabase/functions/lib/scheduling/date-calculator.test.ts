@@ -2,7 +2,11 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import { calculateOperationDates, getTodayString } from "./date-calculator.ts";
+import { calculateOperationDates } from "./date-calculator.ts";
+import { businessDay } from "./date-utils.ts";
+
+/** Today's calendar day in UTC — the fixed reference the assertions compare against. */
+const TODAY = businessDay(new Date().toISOString(), "UTC");
 import type {
   BaseOperation,
   DependencyGraph,
@@ -51,6 +55,7 @@ Deno.test("backward scheduling with no job due date never flags lateness conflic
     ids.map((id) => op(id)),
     chainGraph(ids),
     null,
+    TODAY,
     "backward"
   );
 
@@ -61,7 +66,7 @@ Deno.test("backward scheduling with no job due date never flags lateness conflic
     assertEquals(s.conflictReason, null);
   }
   const first = scheduled.get("op-1")!;
-  assert(first.startDate! < getTodayString());
+  assert(first.startDate! < TODAY);
 });
 
 Deno.test("backward scheduling with a too-close due date flags the past start", () => {
@@ -69,7 +74,8 @@ Deno.test("backward scheduling with a too-close due date flags the past start", 
   const scheduled = calculateOperationDates(
     ids.map((id) => op(id)),
     chainGraph(ids),
-    getTodayString(),
+    TODAY,
+    TODAY,
     "backward"
   );
 

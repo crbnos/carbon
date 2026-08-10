@@ -1,11 +1,15 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { jobCompleteValidator } from "~/modules/production";
+import {
+  jobCompleteValidator,
+  returnPickedRemaindersForJob
+} from "~/modules/production";
 import type { Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -59,6 +63,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // fulfills the linked sales-order line — completion is also reachable via
   // the sync_finish_job_operation interceptor, so the SQL function is the
   // single choke point for fulfillment.
+
+  // Return picked-but-unconsumed material from lineside to the warehouse.
+  // Runs after the RPC (backflush inside it must consume first). A sweep
+  // failure never fails the completion — the sweep is idempotent and can be
+  // re-triggered — so warn instead.
+  const sweep = await returnPickedRemaindersForJob(getCarbonServiceRole(), {
+    jobId,
+    userId,
+    companyId
+  });
+  if (sweep.error) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.job(jobId),
+      await flash(
+        request,
+        error(
+          sweep.error,
+          "Job completed, but returning picked material failed"
+        )
+      )
+    );
+  }
 
   throw redirect(
     requestReferrer(request) ?? path.to.job(jobId),

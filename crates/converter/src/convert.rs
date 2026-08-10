@@ -82,7 +82,7 @@ fn to_node(tree: &occt_bridge::Tree, index: u64) -> AssemblyNode {
 /// OCCT BinXCAF (`.xbf`) files start with the ASCII `BINFILE` magic. Content
 /// sniff (not extension): transparent zstd means a `.step`-named temp can hold
 /// xbf bytes, so the loader must be chosen by what's actually on disk.
-fn is_xbf(path: &str) -> bool {
+pub fn is_xbf(path: &str) -> bool {
     use std::io::Read;
     let mut head = [0u8; 7];
     std::fs::File::open(path)

@@ -36,13 +36,33 @@ function InlineLink({
 
 const SKIPPED_ATTRIBUTE_KEYS = new Set([
   "Job Material",
+  "Picking List Line",
   "Purchase Order Line",
   "Receipt Line",
   "Sales Order Line",
   "Shipment Line",
   "Inventory Adjustment",
-  "expiryOverrides"
+  "expiryOverrides",
+  // Injected by the lineage loader for the graph's edge badges; the stored
+  // "From Shelf"/"To Shelf" ids already render as "From/To Storage Unit".
+  "From Storage Unit Name",
+  "To Storage Unit Name"
 ]);
+
+// The edge functions still write "Shelf" keys into trackedActivity/trackedEntity
+// attributes. Renaming them there would mean every historical row keeps the old
+// key and every reader needs a fallback (post-picking reads "From Shelf" back to
+// decide where to return stock), so the rename is display-only: stored key on the
+// left, the storageUnit label users see on the right. `locationKey` names the
+// sibling attribute holding the location, so the link can scope to it.
+const STORAGE_UNIT_ATTRIBUTES: Record<
+  string,
+  { label: string; locationKey?: string }
+> = {
+  "From Shelf": { label: "From Storage Unit", locationKey: "From Location" },
+  "To Shelf": { label: "To Storage Unit", locationKey: "To Location" },
+  Shelf: { label: "Storage Unit" }
+};
 
 export function hasRenderedAttributes(attrs: Record<string, any>): boolean {
   for (const [key, value] of Object.entries(attrs)) {
@@ -61,6 +81,22 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([key, value]) => {
           if (key.startsWith("Operation ")) return null;
+          const storageUnitAttribute = STORAGE_UNIT_ATTRIBUTES[key];
+          if (storageUnitAttribute) {
+            if (value === null || value === undefined) return null;
+            return (
+              <StorageUnitAttribute
+                key={key}
+                label={storageUnitAttribute.label}
+                storageUnitId={value}
+                locationId={
+                  storageUnitAttribute.locationKey
+                    ? attrs[storageUnitAttribute.locationKey]
+                    : undefined
+                }
+              />
+            );
+          }
           switch (
             key as keyof (TrackedEntityAttributes & TrackedActivityAttributes)
           ) {
@@ -103,6 +139,10 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
                   operationId={value}
                 />
               );
+            case "Picking List":
+              return <PickingListAttribute key={key} pickingListId={value} />;
+            case "Picking List Line":
+              return null;
             case "Purchase Order":
               return (
                 <PurchaseOrderAttribute key={key} purchaseOrderId={value} />
@@ -120,6 +160,12 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
             case "Shipment":
               return <ShipmentAttribute key={key} shipmentId={value} />;
             case "Shipment Line":
+              return null;
+            case "Stock Transfer":
+              return (
+                <StockTransferAttribute key={key} stockTransferId={value} />
+              );
+            case "Stock Transfer Line":
               return null;
             case "Production Event":
               return (
@@ -181,6 +227,103 @@ function Row({
         {children}
       </dd>
     </div>
+  );
+}
+
+function PickingListAttribute({ pickingListId }: { pickingListId: string }) {
+  const [readableId, setReadableId] = useState<string | null>(null);
+  const { carbon } = useCarbon();
+
+  const getPickingList = async () => {
+    const response = await carbon
+      ?.from("pickingList")
+      .select("pickingListId")
+      .eq("id", pickingListId)
+      .single();
+    setReadableId(response?.data?.pickingListId ?? null);
+  };
+
+  useMount(() => {
+    getPickingList();
+  });
+
+  return (
+    <Row label="Picking List">
+      <InlineLink to={path.to.pickingList(pickingListId)}>
+        {readableId ?? pickingListId}
+      </InlineLink>
+    </Row>
+  );
+}
+
+function StockTransferAttribute({
+  stockTransferId
+}: {
+  stockTransferId: string;
+}) {
+  const [readableId, setReadableId] = useState<string | null>(null);
+  const { carbon } = useCarbon();
+
+  const getStockTransfer = async () => {
+    const response = await carbon
+      ?.from("stockTransfer")
+      .select("stockTransferId")
+      .eq("id", stockTransferId)
+      .single();
+    setReadableId(response?.data?.stockTransferId ?? null);
+  };
+
+  useMount(() => {
+    getStockTransfer();
+  });
+
+  return (
+    <Row label="Stock Transfer">
+      <InlineLink to={path.to.stockTransfer(stockTransferId)}>
+        {readableId ?? stockTransferId}
+      </InlineLink>
+    </Row>
+  );
+}
+
+function StorageUnitAttribute({
+  label,
+  storageUnitId,
+  locationId
+}: {
+  label: string;
+  storageUnitId: string;
+  locationId?: string;
+}) {
+  const [name, setName] = useState<string | null>(null);
+  const { carbon } = useCarbon();
+
+  const getStorageUnit = async () => {
+    const response = await carbon
+      ?.from("storageUnit")
+      .select("name")
+      .eq("id", storageUnitId)
+      .single();
+    setName(response?.data?.name ?? null);
+  };
+
+  useMount(() => {
+    getStorageUnit();
+  });
+
+  // Deep-link to the quantities screen pre-filtered to this bin. The filter
+  // param shape is the shared table's: `<accessorKey>:<operator>:<value>`, and
+  // storageUnitIds is an array column so it uses `contains`.
+  const params = new URLSearchParams();
+  if (locationId) params.set("location", locationId);
+  params.append("filter", `storageUnitIds:contains:${storageUnitId}`);
+
+  return (
+    <Row label={label}>
+      <InlineLink to={`${path.to.inventory}?${params.toString()}`}>
+        {name ?? storageUnitId}
+      </InlineLink>
+    </Row>
   );
 }
 

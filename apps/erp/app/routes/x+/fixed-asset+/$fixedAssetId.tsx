@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
   useDisclosure
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import {
   LuChevronDown,
   LuCircleX,
@@ -38,7 +38,7 @@ import {
   useNavigate,
   useParams
 } from "react-router";
-import { DocumentHeader } from "~/components";
+import { DateTime, DocumentHeader } from "~/components";
 import { AuditLogDrawer } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
@@ -59,7 +59,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
-    { breadcrumb: "Fixed Assets", to: path.to.fixedAssets },
+    { breadcrumb: msg`Fixed Assets`, to: path.to.fixedAssets },
     (data) => data?.asset?.fixedAssetId
   )
 };
@@ -327,14 +327,18 @@ export default function FixedAssetDetailRoute() {
                 </>
               )}
               <DetailRow label="Acquisition Date">
-                {asset.acquisitionDate
-                  ? formatDate(asset.acquisitionDate)
-                  : "—"}
+                <DateTime
+                  value={asset.acquisitionDate}
+                  variant="date"
+                  fallback="—"
+                />
               </DetailRow>
               <DetailRow label="Depreciation Start">
-                {asset.depreciationStartDate
-                  ? formatDate(asset.depreciationStartDate)
-                  : "—"}
+                <DateTime
+                  value={asset.depreciationStartDate}
+                  variant="date"
+                  fallback="—"
+                />
               </DetailRow>
             </div>
           </CardContent>
@@ -406,7 +410,11 @@ export default function FixedAssetDetailRoute() {
                               </Link>
                             </td>
                             <td className="py-3 sm:py-2.5">
-                              {run?.periodEnd ? formatDate(run.periodEnd) : "—"}
+                              <DateTime
+                                value={run?.periodEnd}
+                                variant="date"
+                                fallback="—"
+                              />
                             </td>
                             <td className="py-3 sm:py-2.5">
                               <DepreciationRunStatus
@@ -450,7 +458,7 @@ export default function FixedAssetDetailRoute() {
                   {disposal.disposalMethod}
                 </DetailRow>
                 <DetailRow label="Disposal Date">
-                  {formatDate(disposal.disposalDate)}
+                  <DateTime value={disposal.disposalDate} variant="date" />
                 </DetailRow>
                 <DetailRow label="NBV at Disposal">
                   <span className="tabular-nums">

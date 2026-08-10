@@ -5,12 +5,19 @@ export interface Props {
   enabled?: boolean;
   ref: React.RefObject<HTMLElement>;
   handler?: (e: Event) => void;
+  /**
+   * Fire on the press rather than the release. Needed inside a surface that swallows
+   * `mouseup` — React Flow's canvas stops it at window capture, so a press-and-release
+   * pair never completes and the default never fires at all.
+   */
+  immediate?: boolean;
 }
 
 export default function useOutsideClick({
   ref,
   handler,
-  enabled = true
+  enabled = true,
+  immediate = false
 }: Props) {
   const savedHandler = useCallbackRef(handler);
 
@@ -24,9 +31,12 @@ export default function useOutsideClick({
   useEffect(() => {
     if (!enabled) return;
     const onPointerDown: any = (e: PointerEvent) => {
-      if (isValidEvent(e, ref)) {
-        state.isPointerDown = true;
+      if (!isValidEvent(e, ref)) return;
+      if (immediate) {
+        savedHandler(e);
+        return;
       }
+      state.isPointerDown = true;
     };
 
     const onMouseUp: any = (event: MouseEvent) => {
@@ -61,7 +71,7 @@ export default function useOutsideClick({
       doc.removeEventListener("touchstart", onPointerDown, true);
       doc.removeEventListener("touchend", onTouchEnd, true);
     };
-  }, [handler, ref, savedHandler, state, enabled]);
+  }, [handler, ref, savedHandler, state, enabled, immediate]);
 }
 
 function isValidEvent(event: Event, ref: React.RefObject<HTMLElement>) {

@@ -25,7 +25,12 @@ import { LuCopy, LuKeySquare, LuLink, LuTriangleAlert } from "react-icons/lu";
 import { Await, Link, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
+import {
+  DateTime,
+  MethodBadge,
+  MethodIcon,
+  TrackingTypeIcon
+} from "~/components";
 import {
   Boolean,
   ItemPostingGroup,
@@ -175,8 +180,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         | "finishId"
         | "materialTypeId"
         | "materialId"
-        | "mpn"
-        | "requiresInspection",
+        | "mpn",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -730,27 +734,6 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") && (
           <ValidatedForm
             defaultValues={{
-              requiresInspection:
-                routeData?.materialSummary?.requiresInspection ?? false
-            }}
-            validator={z.object({
-              requiresInspection: zfd.checkbox()
-            })}
-            className="w-full"
-          >
-            <Boolean
-              label={t`Requires Inspection`}
-              name="requiresInspection"
-              variant="small"
-              onChange={(value) => {
-                onUpdate("requiresInspection", value ? "on" : "off");
-              }}
-            />
-          </ValidatedForm>
-        )}
-        {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") && (
-          <ValidatedForm
-            defaultValues={{
               mpn: routeData?.materialSummary?.mpn ?? undefined
             }}
             validator={z.object({
@@ -787,7 +770,12 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
               <p className="text-xs text-muted-foreground">
                 <Trans>
                   From{" "}
-                  {routeDataFromRoute.supersession.successorEffectivityDate}
+                  <DateTime
+                    value={
+                      routeDataFromRoute.supersession.successorEffectivityDate
+                    }
+                    variant="date"
+                  />
                 </Trans>
               </p>
             )}

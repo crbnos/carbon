@@ -15,6 +15,7 @@ import {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
+import { datetime } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
@@ -62,19 +63,15 @@ const defaultDestinations: Partial<
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
-  [NotificationEvent.ChangeOrderApproved]: [
+  [NotificationEvent.ChangeNoticeStarted]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
-  [NotificationEvent.ChangeOrderRejected]: [
+  [NotificationEvent.ChangeNoticeImplementation]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
-  [NotificationEvent.ChangeOrderReleased]: [
-    NotificationDestination.Email,
-    NotificationDestination.Slack
-  ],
-  [NotificationEvent.ChangeOrderSubmittedForReview]: [
+  [NotificationEvent.ChangeNoticeDone]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
@@ -142,6 +139,10 @@ const defaultDestinations: Partial<
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
+  [NotificationEvent.PurchasingRfqAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
   [NotificationEvent.SalesRfqAssignment]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
@@ -183,6 +184,10 @@ const defaultDestinations: Partial<
   [NotificationEvent.ResourceTrainingAssignment]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
+  ],
+  [NotificationEvent.Workflow]: [
+    NotificationDestination.InApp,
+    NotificationDestination.Email
   ]
 };
 
@@ -196,7 +201,8 @@ export const notifyFunction = inngest.createFunction(
     const payload = event.data as Events["carbon/notify"]["data"];
 
     // Single-document events pass documentId; digest events pass documentIds
-    // with the first entry as the fallback link target.
+    // with the first entry as the fallback link target. Workflow notifications
+    // always supply one too — the run id when the customer named no record.
     const primaryDocumentId = payload.documentId ?? payload.documentIds?.[0];
     if (!primaryDocumentId) {
       throw new NonRetriableError(
@@ -227,8 +233,10 @@ export const notifyFunction = inngest.createFunction(
         payload.from,
         payload.documentType,
         {
+          body: payload.body,
           companyId: payload.companyId,
           documentIds: payload.documentIds,
+          title: payload.title,
           userId:
             payload.recipient.type === "user"
               ? payload.recipient.userId
@@ -285,12 +293,65 @@ export const notifyFunction = inngest.createFunction(
       }
       // Don't notify the sender about their own action.
       if (payload.from) ids = ids.filter((id) => id !== payload.from);
-      return [...new Set(ids)];
+      ids = [...new Set(ids)];
+
+      if (ids.length > 0) {
+        const members = await client
+          .from("userToCompany")
+          .select("userId")
+          .eq("companyId", payload.companyId)
+          .in("userId", ids);
+        if (members.error) {
+          console.error(
+            "Failed to filter recipients by company membership",
+            members.error
+          );
+          throw members.error;
+        }
+        const memberIds = new Set(members.data.map((m) => m.userId));
+        ids = ids.filter((id) => memberIds.has(id));
+      }
+      return ids;
     });
 
     if (userIds.length === 0) {
       return;
     }
+
+    const topic = getNotificationTopic(payload.event);
+
+    const wantsEmail = destinations.includes(NotificationDestination.Email);
+    const wantsSlack = destinations.includes(NotificationDestination.Slack);
+
+    // Per-user channel opt-outs: absence of a row = enabled; enabled=false
+    // mutes that (topic, channel). In-app delivery is never filtered.
+    const { emailRecipientIds, slackRecipientIds } =
+      wantsEmail || wantsSlack
+        ? await step.run("filter-recipients-by-preference", async () => {
+            const { data: prefs, error } = await client
+              .from("notificationPreference")
+              .select("userId, channel, enabled")
+              .in("userId", userIds)
+              .eq("companyId", payload.companyId)
+              .eq("topic", topic);
+            if (error) {
+              console.error("Failed to load notification preferences", error);
+              throw error;
+            }
+            const mutedFor = (channel: "email" | "slack") =>
+              new Set(
+                (prefs ?? [])
+                  .filter((p) => p.channel === channel && !p.enabled)
+                  .map((p) => p.userId)
+              );
+            const emailMuted = mutedFor("email");
+            const slackMuted = mutedFor("slack");
+            return {
+              emailRecipientIds: userIds.filter((id) => !emailMuted.has(id)),
+              slackRecipientIds: userIds.filter((id) => !slackMuted.has(id))
+            };
+          })
+        : { emailRecipientIds: userIds, slackRecipientIds: userIds };
 
     // Existing EE hook for non-conformance assignment — keep as a separate
     // path because it handles cross-system task linking (Linear/Jira), not
@@ -335,8 +396,6 @@ export const notifyFunction = inngest.createFunction(
       });
     }
 
-    const topic = getNotificationTopic(payload.event);
-
     // ---- In-app fan-out ----
     if (destinations.includes(NotificationDestination.InApp)) {
       await step.run("write-in-app-notifications", async () => {
@@ -348,7 +407,7 @@ export const notifyFunction = inngest.createFunction(
         // ON DELETE SET NULL, so deleting a parent would resurface its hidden
         // children. Cron digests (no sourceEvent) are intentionally untouched.
         if (content.digest) {
-          const supersededAt = new Date().toISOString();
+          const supersededAt = datetime.timestamp();
 
           const [supersededDigests, supersededFlat] = await Promise.all([
             client
@@ -474,27 +533,27 @@ export const notifyFunction = inngest.createFunction(
     // The plan check gates only the email channel — Slack fan-out below must
     // still run for companies without EMAIL_NOTIFICATIONS.
     const emailAllowed =
-      destinations.includes(NotificationDestination.Email) &&
+      wantsEmail &&
       (await step.run("check-email-plan", () =>
         companyHasPlan(client, payload.companyId, {
           feature: "EMAIL_NOTIFICATIONS"
         })
       ));
 
-    if (destinations.includes(NotificationDestination.Email) && !emailAllowed) {
+    if (wantsEmail && !emailAllowed) {
       console.warn(
         `EMAIL_NOTIFICATIONS not enabled for company ${payload.companyId}; skipping email fan-out`
       );
     }
 
-    if (emailAllowed) {
+    if (emailAllowed && emailRecipientIds.length > 0) {
       const emailEvents = await step.run(
         "resolve-email-recipients",
         async () => {
           const { data: users, error } = await client
             .from("user")
             .select("id, email, fullName")
-            .in("id", userIds);
+            .in("id", emailRecipientIds);
           if (error) {
             console.error("Failed to resolve email recipients", error);
             throw error;
@@ -532,6 +591,7 @@ export const notifyFunction = inngest.createFunction(
             recipients.map(async (u) => {
               const html = await render(
                 getNotificationEmailComponent({
+                  companyId: payload.companyId,
                   content,
                   ctaLabel,
                   ctaUrl,
@@ -587,7 +647,7 @@ export const notifyFunction = inngest.createFunction(
     // ---- Slack DM fan-out ----
     // Per-user DMs via the company's linked Slack workspace. Users without a
     // matching Slack account in that workspace are silently skipped.
-    if (destinations.includes(NotificationDestination.Slack)) {
+    if (wantsSlack && slackRecipientIds.length > 0) {
       const slackEvents = await step.run(
         "resolve-slack-recipients",
         async () => {
@@ -633,7 +693,7 @@ export const notifyFunction = inngest.createFunction(
               }\n<${ctaUrl}|View in Carbon>`;
 
           const slackUserIds = await Promise.all(
-            userIds.map((userId) =>
+            slackRecipientIds.map((userId) =>
               getSlackUserIdByCarbonId(client, accessToken, userId)
             )
           );

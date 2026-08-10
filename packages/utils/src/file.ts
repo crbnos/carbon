@@ -79,6 +79,18 @@ export function modelPathOptimizeFormat(modelPath: string) {
   return optimizableModelFormat(ext);
 }
 
+// Whether the retained raw is worth offering as a download. STEP raws are
+// compacted to OCCT BinXCAF (`{id}.xbf.zst`) — an OCCT-internal container no
+// CAD tool opens, so downloading it would hand the user garbage bytes under the
+// original `.step` filename. Mesh raws stay zstd'd in their original format and
+// decompress back to the openable source file.
+export function isModelRawDownloadable(modelPath: string | null | undefined) {
+  if (!modelPath) return false;
+  const lower = modelPath.toLowerCase();
+  const base = lower.endsWith(".zst") ? lower.slice(0, -4) : lower;
+  return !base.endsWith(".xbf");
+}
+
 // Every format here is renderable in the browser (viewer raw tier: three-stdlib
 // loaders + occt/rhino3dm WASM). ifc and fcstd were dropped 2026-07-18: nothing
 // in the stack can preview them (each needs its own heavy WASM dep) and both

@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { credit, debit, journalReference } from "../lib/utils.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
@@ -20,17 +20,16 @@ const payloadValidator = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   const payload = await req.json();
-  const today = format(new Date(), "yyyy-MM-dd");
 
   try {
     const { jobId, userId, companyId } = payloadValidator.parse(payload);
 
     const client = await requirePermissions(req, companyId, userId, { update: "production" });
+    const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
     const [accountingSettings, companyRecord] = await Promise.all([
       client
@@ -48,9 +47,7 @@ serve(async (req: Request) => {
     const accountingEnabled = accountingSettings.data?.accountingEnabled ?? false;
 
     if (!accountingEnabled) {
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true });
     }
 
     if (companyRecord.error) throw new Error("Failed to fetch company");
@@ -142,7 +139,8 @@ serve(async (req: Request) => {
       const accountingPeriodId = await getCurrentAccountingPeriod(
         client,
         companyId,
-        trx
+        trx,
+        today
       );
 
       const journalEntryId = await getNextSequence(
@@ -226,14 +224,8 @@ serve(async (req: Request) => {
       }
     });
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ success: true });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse(err, 500);
   }
 });

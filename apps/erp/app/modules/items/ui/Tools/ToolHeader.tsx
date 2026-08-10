@@ -26,7 +26,7 @@ import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Tool } from "../../types";
-import { CreateChangeOrderModal } from "../ChangeOrder";
+import { CreateChangeNoticeModal } from "../ChangeNotice";
 import { getItemLifecycleStatus } from "../Item/ItemSupersessionForm";
 import { useToolNavigation } from "./useToolNavigation";
 
@@ -39,7 +39,7 @@ const ToolHeader = () => {
   const { company } = useUser();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
-  const changeOrderModal = useDisclosure();
+  const changeNoticeModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "item",
     entityId: itemId,
@@ -93,10 +93,10 @@ const ToolHeader = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={!permissions.can("create", "parts")}
-                  onClick={changeOrderModal.onOpen}
+                  onClick={changeNoticeModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
-                  <Trans>Create Change Order</Trans>
+                  <Trans>Create Change Notice</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -132,10 +132,10 @@ const ToolHeader = () => {
           />
         )}
       </div>
-      {changeOrderModal.isOpen && (
-        <CreateChangeOrderModal
+      {changeNoticeModal.isOpen && (
+        <CreateChangeNoticeModal
           itemId={itemId}
-          onClose={changeOrderModal.onClose}
+          onClose={changeNoticeModal.onClose}
         />
       )}
       {auditLogDrawer}

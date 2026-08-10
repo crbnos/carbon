@@ -19,8 +19,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useState } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import z from "zod";
+import { DateTime } from "~/components";
 import { Tags } from "~/components/Form";
-import { useDateFormatter } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type { Suggestion } from "~/modules/resources";
 import { path } from "~/utils/path";
@@ -41,7 +41,6 @@ export default function SuggestionDetails({
   tags
 }: SuggestionDetailsProps) {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
   const fetcher = useFetcher();
@@ -147,7 +146,9 @@ export default function SuggestionDetails({
               <h3 className="text-xs text-muted-foreground">
                 <Trans>Date</Trans>
               </h3>
-              <span>{formatDate(suggestion.createdAt)}</span>
+              <span>
+                <DateTime value={suggestion.createdAt} variant="date" />
+              </span>
             </VStack>
 
             <VStack spacing={2} className="w-full">

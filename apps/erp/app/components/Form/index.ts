@@ -22,14 +22,14 @@ import {
   SelectControlled,
   Submit,
   TextArea,
-  TimePicker,
-  Timezone
+  TimePicker
 } from "@carbon/form";
 
 import Abilities from "./Abilities";
 import Ability from "./Ability";
 import Account, { AccountControlled } from "./Account";
 import AddressAutocomplete from "./AddressAutocomplete";
+import AssemblyInstruction from "./AssemblyInstruction";
 import AssetClass, { useAssetClasses } from "./AssetClass";
 import Color from "./Color";
 import ConversionFactor from "./ConversionFactor";
@@ -51,9 +51,11 @@ import EmojiPicker from "./EmojiPicker";
 import Employee from "./Employee";
 import Employees from "./Employees";
 import { useEmptyState } from "./emptyStates";
+import InspectionDocument from "./InspectionDocument";
 import Item, { useConfigurableItems } from "./Item";
 import ItemPostingGroup from "./ItemPostingGroup";
 import Items from "./Items";
+import JobSalesOrderLine from "./JobSalesOrderLine";
 import Location from "./Location";
 import MaterialType from "./MaterialType";
 import Part from "./Part";
@@ -81,6 +83,7 @@ import SupplierStatus from "./SupplierStatus";
 import Suppliers from "./Suppliers";
 import SupplierType from "./SupplierType";
 import Tags from "./Tags";
+import Timezone from "./Timezone";
 import Tool from "./Tool";
 import UnitHint from "./UnitHint";
 import UnitOfMeasure from "./UnitOfMeasure";
@@ -99,6 +102,7 @@ export {
   AddressAutocomplete,
   Array,
   ArrayNumeric,
+  AssemblyInstruction,
   Boolean,
   Color,
   Combobox,
@@ -130,9 +134,11 @@ export {
   Hidden,
   Input,
   InputControlled,
+  InspectionDocument,
   Item,
   ItemPostingGroup,
   Items,
+  JobSalesOrderLine,
   useConfigurableItems,
   Location,
   MaterialType,

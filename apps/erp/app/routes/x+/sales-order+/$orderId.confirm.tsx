@@ -2,8 +2,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
-import { getSalesOrderStatus } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime, getSalesOrderStatus } from "@carbon/utils";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
 import { runMRP } from "~/modules/production/production.service";
@@ -16,6 +15,7 @@ import {
   generateAndAttachSalesOrderPdf,
   sendSalesOrderEmail
 } from "~/modules/shared/shared.server";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
 
 export async function action(args: ActionFunctionArgs) {
@@ -150,8 +150,11 @@ export async function action(args: ActionFunctionArgs) {
       .update({
         status,
         orderDate:
-          salesOrder.data.orderDate ?? today(getLocalTimeZone()).toString(),
-        updatedAt: today(getLocalTimeZone()).toString(),
+          salesOrder.data.orderDate ??
+          datetime
+            .today(await getCompanyTimeZone(client, companyId))
+            .toString(),
+        updatedAt: datetime.timestamp(),
         updatedBy: userId
       })
       .eq("id", orderId);

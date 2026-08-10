@@ -8,7 +8,7 @@ import {
   composeLateConflict,
   composePlacementNote,
 } from "./conflict-messages.ts";
-import { toIsoDateInTimeZone } from "./date-utils.ts";
+import { businessDay } from "./date-utils.ts";
 import type { CalendarWindow } from "./calendar-utils.ts";
 import type { CrewDayRow } from "./crew-utils.ts";
 import { clipWindowsToStation } from "./crew-utils.ts";
@@ -276,7 +276,7 @@ export class WorkCenterSelector {
     });
 
     for (const op of sorted) {
-      if (op.operationType === "Outside") {
+      if (op.operationType === "Outside Processing") {
         // Outside operations consume no internal capacity, but they DO
         // occupy calendar time: place them after their predecessors so
         // successors wait for the outsourced turnaround and the timeline
@@ -311,7 +311,7 @@ export class WorkCenterSelector {
         placedEndByOperation.set(op.id, end);
 
         let outsideConflict: string | null = null;
-        const outsideEndDate = toIsoDateInTimeZone(end, ctx.timeZone);
+        const outsideEndDate = businessDay(end.toISOString(), ctx.timeZone);
         if (jobDueDate && outsideEndDate > jobDueDate) {
           outsideConflict = composeLateConflict(outsideEndDate, jobDueDate, {
             kind: "outside-processing",
@@ -654,7 +654,7 @@ export class WorkCenterSelector {
 
         // Late vs the JOB due date => surface as a conflict naming the cause
         let conflict: string | null = null;
-        const placedEndDate = toIsoDateInTimeZone(slot.end, ctx.timeZone);
+        const placedEndDate = businessDay(slot.end.toISOString(), ctx.timeZone);
         if (jobDueDate && placedEndDate > jobDueDate) {
           conflict = composeLateConflict(placedEndDate, jobDueDate, cause);
         }
@@ -712,4 +712,7 @@ export class WorkCenterSelector {
   }
 }
 
-export { applyWorkCenterSelections } from "./apply-work-center-selections.ts";
+export {
+  applyWorkCenterSelections,
+  hasPreassignedWorkCenter,
+} from "./apply-work-center-selections.ts";

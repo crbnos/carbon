@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import {
   accountDefaults,
   accounts,
@@ -31,9 +31,8 @@ const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const { companyId: id, userId, parentCompanyId, identityOnly } =
     await req.json();
 
@@ -77,13 +76,7 @@ serve(async (req: Request) => {
       .eq("companyId", companyId);
       
     if ((existingLink.count ?? 0) > 0) {
-      return new Response(
-        JSON.stringify({ success: true, alreadySeeded: true }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
+      return jsonResponse({ success: true, alreadySeeded: true });
     }
 
     // Determine if this is a new root company or joining an existing group
@@ -540,20 +533,8 @@ serve(async (req: Request) => {
       }
     });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return jsonResponse({ success: true });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });
