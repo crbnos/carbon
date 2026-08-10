@@ -77,10 +77,6 @@ msgstr "{0} obcinki poniżej minimum {minRemnantLength} {unitOfDimension} będą
 msgid "{0} lines to map"
 msgstr "{0} linii do mapowania"
 
-#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
-msgid "{0} material(s) in this group"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} zamówień"
@@ -3172,9 +3168,6 @@ msgstr "Utwórz wpisy dziennika audytu"
 msgid "Create Change Notice"
 msgstr "Utwórz Zgłoszenie Zmian"
 
-msgid "Create cut list"
-msgstr "Utwórz Listę Cięć"
-
 msgid "Create Issue"
 msgstr "Utwórz problem"
 
@@ -3589,9 +3582,6 @@ msgstr "Dostosuj układ swoich dokumentów PDF — zmień kolejność sekcji, uk
 msgid "Cut"
 msgstr "Cięcie"
 
-msgid "Cut length"
-msgstr "Długość cięcia"
-
 msgid "Cut Length"
 msgstr "Długość Cięcia"
 
@@ -3633,9 +3623,6 @@ msgstr ""
 
 msgid "Cutting Process"
 msgstr "Proces Cięcia"
-
-msgid "Cutting Runs"
-msgstr "Przebiegi Cięcia"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "Inwentaryzacja cykliczna i korekta ze ścieżką audytu"
@@ -6371,9 +6358,6 @@ msgstr "Marża uchwytu"
 msgid "Group"
 msgstr "Grupa"
 
-msgid "Group by"
-msgstr ""
-
 msgid "Group Members"
 msgstr "Członkowie grupy"
 
@@ -7417,9 +7401,6 @@ msgstr "Opcje linii"
 
 msgid "Line Status"
 msgstr "Status linii"
-
-msgid "line(s)"
-msgstr "linia(e)"
 
 msgid "Linear Team"
 msgstr "Zespół Linear"
@@ -8744,9 +8725,6 @@ msgstr "Brak nowych powiadomień"
 msgid "No notes"
 msgstr "Brak notek"
 
-msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr "Brak otwartego zapotrzebowania na cięcie. Materiał zadania musi mieć długość cięcia, zanim pojawi się tutaj."
-
 msgid "No open invoices"
 msgstr "Brak otwartych faktur"
 
@@ -8812,9 +8790,6 @@ msgstr "Brak skonfigurowanej drukarki"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Brak skonfigurowanych drukarek. Kliknij „Dodaj drukarkę\", aby utworzyć jedną."
-
-msgid "No process"
-msgstr "Brak procesu"
 
 msgid "No process selected"
 msgstr "Nie wybrano procesu"
@@ -9135,9 +9110,6 @@ msgstr "Otwórz dziennik audytu"
 msgid "Open change notices affecting this part"
 msgstr "Otwórz zgłoszenia zmian dotyczące tej części"
 
-msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr "Otwarte zapotrzebowanie na cięcie na wszystkich wydanych zadaniach. Wybierz, co działa razem na jednej maszynie."
-
 msgid "Open Date"
 msgstr "Data otwarcia"
 
@@ -9275,9 +9247,6 @@ msgstr "Opcjonalna stała stawka używana przy tłumaczeniu sald kapitału włas
 
 msgid "Optional pages & sections"
 msgstr "Opcjonalne strony i sekcje"
-
-msgid "Optional. Split across the jobs this run served, by the length each took."
-msgstr ""
 
 msgid "Options"
 msgstr "Opcje"
@@ -9731,9 +9700,6 @@ msgstr "Kawałki"
 msgid "Pieces cut"
 msgstr "Kawałki przycięte"
 
-msgid "Pieces owed"
-msgstr "Kawałki należne"
-
 msgid "Pieces/Hour"
 msgstr "Sztuk/Godzina"
 
@@ -9748,9 +9714,6 @@ msgstr "Przypięte"
 
 msgid "Plan"
 msgstr "Plan"
-
-msgid "Plan a cutting run"
-msgstr "Zaplanuj przebieg cięcia"
 
 msgid "Plan the work"
 msgstr "Zaplanuj pracę"
@@ -11173,9 +11136,6 @@ msgstr "Reguły, które automatycznie dostosowują ceny na podstawie ilości lub
 msgid "Rules that decide where each item gets stored"
 msgstr "Reguły decydujące o tym, gdzie każdy element jest przechowywany"
 
-msgid "Run (minutes)"
-msgstr ""
-
 msgid "Run acceptance testing"
 msgstr "Przeprowadź testy akceptacyjne"
 
@@ -11202,9 +11162,6 @@ msgstr "Uruchom listę kontrolną akceptacji do pozytywnego wyniku"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Zarządzaj halą produkcyjną na tabletach: rejestruj pracę, raportuj postęp, przeglądaj instrukcje"
-
-msgid "Run time"
-msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Zapasy uruchomiane po tygodniowej podaży i popycie — linia."
@@ -11854,9 +11811,6 @@ msgstr "Ustawienia"
 
 msgid "Setup"
 msgstr "Konfiguracja"
-
-msgid "Setup (minutes)"
-msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Konfiguracja i kontrole"

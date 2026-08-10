@@ -77,10 +77,6 @@ msgstr "{0} damla(ları) {minRemnantLength} {unitOfDimension} minimumundan aşa�
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
 
-#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
-msgid "{0} material(s) in this group"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} sipariş"
@@ -3172,9 +3168,6 @@ msgstr "Denetim izi girdileri oluştur"
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
 
-msgid "Create cut list"
-msgstr "Kesme listesi oluştur"
-
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
 
@@ -3589,9 +3582,6 @@ msgstr "PDF belgelerinizin düzenini özelleştirin — bölümleri yeniden sır
 msgid "Cut"
 msgstr "Kes"
 
-msgid "Cut length"
-msgstr "Kesme uzunluğu"
-
 msgid "Cut Length"
 msgstr "Kesme Uzunluğu"
 
@@ -3633,9 +3623,6 @@ msgstr ""
 
 msgid "Cutting Process"
 msgstr "Kesme İşlemi"
-
-msgid "Cutting Runs"
-msgstr "Kesme Çalışmaları"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "Dönem sayımı yapın ve denetim izlemesiyle ayarlayın"
@@ -6371,9 +6358,6 @@ msgstr "Tutuş marjı"
 msgid "Group"
 msgstr "Grup"
 
-msgid "Group by"
-msgstr ""
-
 msgid "Group Members"
 msgstr "Üye Grupları"
 
@@ -7417,9 +7401,6 @@ msgstr "Satır seçenekleri"
 
 msgid "Line Status"
 msgstr "Satır Durumu"
-
-msgid "line(s)"
-msgstr "satır(lar)"
 
 msgid "Linear Team"
 msgstr "Lineer Takım"
@@ -8744,9 +8725,6 @@ msgstr "Yeni bildirim yok"
 msgid "No notes"
 msgstr "Notlar yok"
 
-msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr "Açık kesme talebi yok. Bir iş malzemesinin burada görünmesi için bir kesme uzunluğu gerekir."
-
 msgid "No open invoices"
 msgstr "Açık fatura yok"
 
@@ -8812,9 +8790,6 @@ msgstr "Yazıcı yapılandırılmadı"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Yapılandırılmış yazıcı yok. Bir tane oluşturmak için \"Yazıcı Ekle\"'ye tıklayın."
-
-msgid "No process"
-msgstr "İşlem yok"
 
 msgid "No process selected"
 msgstr "Hiçbir işlem seçilmedi"
@@ -9135,9 +9110,6 @@ msgstr "Denetim Kaydını Aç"
 msgid "Open change notices affecting this part"
 msgstr "Bu parçayı etkileyen açık değişiklik bildirimlerini aç"
 
-msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr "Serbest bırakılmış işlerde açık kesme talebi. Tek bir makineye birlikte çalışacak olanları seçin."
-
 msgid "Open Date"
 msgstr "Açılış Tarihi"
 
@@ -9275,9 +9247,6 @@ msgstr "IAS 21'e göre özsermaye bakiyelerini çevirirken kullanılan isteğe b
 
 msgid "Optional pages & sections"
 msgstr "İsteğe bağlı sayfalar ve bölümler"
-
-msgid "Optional. Split across the jobs this run served, by the length each took."
-msgstr ""
 
 msgid "Options"
 msgstr "Seçenekler"
@@ -9731,9 +9700,6 @@ msgstr "Parçalar"
 msgid "Pieces cut"
 msgstr "Kesilen parçalar"
 
-msgid "Pieces owed"
-msgstr "Ödenmesi gereken parçalar"
-
 msgid "Pieces/Hour"
 msgstr "Adet/Saat"
 
@@ -9748,9 +9714,6 @@ msgstr "Sabitlenmiş"
 
 msgid "Plan"
 msgstr "Plan"
-
-msgid "Plan a cutting run"
-msgstr "Bir kesme çalışmasını planla"
 
 msgid "Plan the work"
 msgstr "Çalışmayı planlayın"
@@ -11173,9 +11136,6 @@ msgstr "Fiyatları miktara veya müşteriye göre otomatik olarak ayarlayan kura
 msgid "Rules that decide where each item gets stored"
 msgstr "Her öğenin nereye depolanacağını belirleyen kurallar"
 
-msgid "Run (minutes)"
-msgstr ""
-
 msgid "Run acceptance testing"
 msgstr "Kabul testini çalıştır"
 
@@ -11202,9 +11162,6 @@ msgstr "Kabul kontrol listesini başarıyla tamamlayın"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Tabletlerde üretim katını yönetin: işçi saatini kaydedin, ilerlemeyi bildirin, talimatları görüntüleyin"
-
-msgid "Run time"
-msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Her haftalık arz ve talep sonrası çalışan envanter — satır."
@@ -11854,9 +11811,6 @@ msgstr "Ayarlar"
 
 msgid "Setup"
 msgstr "Kurulum"
-
-msgid "Setup (minutes)"
-msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Kurulum ve Kontroller"

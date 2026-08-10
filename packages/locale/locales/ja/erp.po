@@ -77,10 +77,6 @@ msgstr "{0}個のドロップが{minRemnantLength} {unitOfDimension}の最小値
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
 
-#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
-msgid "{0} material(s) in this group"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
@@ -3172,9 +3168,6 @@ msgstr "監査証跡エントリを作成"
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
 
-msgid "Create cut list"
-msgstr "カットリストを作成"
-
 msgid "Create Issue"
 msgstr "問題を作成"
 
@@ -3589,9 +3582,6 @@ msgstr "PDFドキュメントのレイアウトをカスタマイズ — セク�
 msgid "Cut"
 msgstr "カット"
 
-msgid "Cut length"
-msgstr "カット長"
-
 msgid "Cut Length"
 msgstr "カット長"
 
@@ -3633,9 +3623,6 @@ msgstr ""
 
 msgid "Cutting Process"
 msgstr "カッティングプロセス"
-
-msgid "Cutting Runs"
-msgstr "カッティングラン"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "サイクルカウントを実施し、監査証跡で調整"
@@ -6371,9 +6358,6 @@ msgstr "グリップマージン"
 msgid "Group"
 msgstr "グループ"
 
-msgid "Group by"
-msgstr ""
-
 msgid "Group Members"
 msgstr "グループメンバー"
 
@@ -7417,9 +7401,6 @@ msgstr "行オプション"
 
 msgid "Line Status"
 msgstr "ラインステータス"
-
-msgid "line(s)"
-msgstr "行"
 
 msgid "Linear Team"
 msgstr "Linear Team"
@@ -8744,9 +8725,6 @@ msgstr "新しい通知はありません"
 msgid "No notes"
 msgstr "ノートなし"
 
-msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr "オープンカット需要がありません。ジョブマテリアルがここに表示される前に、カット長が必要です。"
-
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
 
@@ -8812,9 +8790,6 @@ msgstr "プリンターが設定されていません"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "プリンターが設定されていません。「プリンターを追加」をクリックして作成してください。"
-
-msgid "No process"
-msgstr "プロセスなし"
 
 msgid "No process selected"
 msgstr "プロセスが選択されていません"
@@ -9135,9 +9110,6 @@ msgstr "監査ログを開く"
 msgid "Open change notices affecting this part"
 msgstr "このパーツに影響する開いた変更通知を開く"
 
-msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr "リリースされたジョブ全体のオープンカット需要。1つのマシンで一緒に実行されるものを選択します。"
-
 msgid "Open Date"
 msgstr "開始日"
 
@@ -9275,9 +9247,6 @@ msgstr "IAS 21に従って資本残高を変換する際に使用される任意
 
 msgid "Optional pages & sections"
 msgstr "オプションページとセクション"
-
-msgid "Optional. Split across the jobs this run served, by the length each took."
-msgstr ""
 
 msgid "Options"
 msgstr "オプション"
@@ -9731,9 +9700,6 @@ msgstr "ピース"
 msgid "Pieces cut"
 msgstr "カットされたピース"
 
-msgid "Pieces owed"
-msgstr "負債のあるピース"
-
 msgid "Pieces/Hour"
 msgstr "個/時間"
 
@@ -9748,9 +9714,6 @@ msgstr "ピン留め"
 
 msgid "Plan"
 msgstr "計画"
-
-msgid "Plan a cutting run"
-msgstr "カッティングランを計画する"
 
 msgid "Plan the work"
 msgstr "作業を計画する"
@@ -11173,9 +11136,6 @@ msgstr "数量または顧客に基づいて価格を自動的に調整するル
 msgid "Rules that decide where each item gets stored"
 msgstr "各アイテムがどこに保存されるかを決定するルール"
 
-msgid "Run (minutes)"
-msgstr ""
-
 msgid "Run acceptance testing"
 msgstr "受け入れテストを実行する"
 
@@ -11202,9 +11162,6 @@ msgstr "受け入れチェックリストを実行してパスする"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "タブレットでフロアを運用：労働時間を記録、進捗を報告、指示を確認"
-
-msgid "Run time"
-msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "毎週の需給の後に実行されるインベントリ — ラインです。"
@@ -11854,9 +11811,6 @@ msgstr "設定"
 
 msgid "Setup"
 msgstr "セットアップ"
-
-msgid "Setup (minutes)"
-msgstr ""
 
 msgid "Setup & Controls"
 msgstr "セットアップとコントロール"

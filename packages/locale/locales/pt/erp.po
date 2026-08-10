@@ -77,10 +77,6 @@ msgstr "{0} retalho(s) abaixo do mínimo de {minRemnantLength} {unitOfDimension}
 msgid "{0} lines to map"
 msgstr "{0} linhas para mapear"
 
-#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
-msgid "{0} material(s) in this group"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} pedidos"
@@ -3172,9 +3168,6 @@ msgstr "Criar entradas de trilha de auditoria"
 msgid "Create Change Notice"
 msgstr "Criar Aviso de Mudança"
 
-msgid "Create cut list"
-msgstr "Criar lista de corte"
-
 msgid "Create Issue"
 msgstr "Criar Problema"
 
@@ -3589,9 +3582,6 @@ msgstr "Personalize o layout dos seus documentos PDF — reordene seções, ocul
 msgid "Cut"
 msgstr "Corte"
 
-msgid "Cut length"
-msgstr "Comprimento do corte"
-
 msgid "Cut Length"
 msgstr "Comprimento do Corte"
 
@@ -3633,9 +3623,6 @@ msgstr ""
 
 msgid "Cutting Process"
 msgstr "Processo de Corte"
-
-msgid "Cutting Runs"
-msgstr "Execuções de Corte"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "Contagem cíclica e ajuste com trilha de auditoria"
@@ -6371,9 +6358,6 @@ msgstr "Margem de preensão"
 msgid "Group"
 msgstr "Grupo"
 
-msgid "Group by"
-msgstr ""
-
 msgid "Group Members"
 msgstr "Membros do Grupo"
 
@@ -7417,9 +7401,6 @@ msgstr "Opções de linha"
 
 msgid "Line Status"
 msgstr "Status da Linha"
-
-msgid "line(s)"
-msgstr "linha(s)"
 
 msgid "Linear Team"
 msgstr "Equipe Linear"
@@ -8744,9 +8725,6 @@ msgstr "Sem notificações novas"
 msgid "No notes"
 msgstr "Sem notas"
 
-msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr "Nenhuma demanda de corte aberta. Um material de trabalho precisa de um comprimento de corte antes de aparecer aqui."
-
 msgid "No open invoices"
 msgstr "Nenhuma fatura aberta"
 
@@ -8812,9 +8790,6 @@ msgstr "Nenhuma impressora configurada"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Nenhuma impressora configurada. Clique em \"Adicionar Impressora\" para criar uma."
-
-msgid "No process"
-msgstr "Nenhum processo"
 
 msgid "No process selected"
 msgstr "Nenhum processo selecionado"
@@ -9135,9 +9110,6 @@ msgstr "Abrir Registro de Auditoria"
 msgid "Open change notices affecting this part"
 msgstr "Abrir avisos de mudança que afetam esta parte"
 
-msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr "Demanda de corte aberta em trabalhos liberados. Escolha o que corre junto em uma máquina."
-
 msgid "Open Date"
 msgstr "Data de Abertura"
 
@@ -9275,9 +9247,6 @@ msgstr "Taxa fixa opcional usada ao traduzir saldos de patrimônio líquido de a
 
 msgid "Optional pages & sections"
 msgstr "Páginas e seções opcionais"
-
-msgid "Optional. Split across the jobs this run served, by the length each took."
-msgstr ""
 
 msgid "Options"
 msgstr "Opções"
@@ -9731,9 +9700,6 @@ msgstr "Peças"
 msgid "Pieces cut"
 msgstr "Peças cortadas"
 
-msgid "Pieces owed"
-msgstr "Peças devidas"
-
 msgid "Pieces/Hour"
 msgstr "Peças/Hora"
 
@@ -9748,9 +9714,6 @@ msgstr "Fixado"
 
 msgid "Plan"
 msgstr "Plano"
-
-msgid "Plan a cutting run"
-msgstr "Planejar uma execução de corte"
 
 msgid "Plan the work"
 msgstr "Planejar o trabalho"
@@ -11173,9 +11136,6 @@ msgstr "Regras que ajustam preços automaticamente por quantidade ou cliente"
 msgid "Rules that decide where each item gets stored"
 msgstr "Regras que decidem onde cada item é armazenado"
 
-msgid "Run (minutes)"
-msgstr ""
-
 msgid "Run acceptance testing"
 msgstr "Executar testes de aceitação"
 
@@ -11202,9 +11162,6 @@ msgstr "Executar a lista de verificação de aceitação até passar"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Executar o chão de fábrica em tablets: registrar mão de obra, relatar progresso, ver instruções"
-
-msgid "Run time"
-msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Inventário em execução após o suprimento e demanda de cada semana — a linha."
@@ -11854,9 +11811,6 @@ msgstr "Configurações"
 
 msgid "Setup"
 msgstr "Configuração"
-
-msgid "Setup (minutes)"
-msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Configuração e Controles"

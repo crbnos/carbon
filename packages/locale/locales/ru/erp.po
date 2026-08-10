@@ -77,10 +77,6 @@ msgstr "{0} обрезков ниже минимума {minRemnantLength} {unitO
 msgid "{0} lines to map"
 msgstr "{0} строк для сопоставления"
 
-#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
-msgid "{0} material(s) in this group"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} заказов"
@@ -3172,9 +3168,6 @@ msgstr "Создать записи в журнале аудита"
 msgid "Create Change Notice"
 msgstr "Создать уведомление об изменении"
 
-msgid "Create cut list"
-msgstr "Создать список резки"
-
 msgid "Create Issue"
 msgstr "Создать проблему"
 
@@ -3589,9 +3582,6 @@ msgstr "Настройте макет ваших PDF-документов — п
 msgid "Cut"
 msgstr "Резка"
 
-msgid "Cut length"
-msgstr "Длина резки"
-
 msgid "Cut Length"
 msgstr "Длина резки"
 
@@ -3633,9 +3623,6 @@ msgstr ""
 
 msgid "Cutting Process"
 msgstr "Процесс резки"
-
-msgid "Cutting Runs"
-msgstr "Проходы резки"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "Инвентаризация и корректировка с журналом аудита"
@@ -6371,9 +6358,6 @@ msgstr "Поле зажима"
 msgid "Group"
 msgstr "Группа"
 
-msgid "Group by"
-msgstr ""
-
 msgid "Group Members"
 msgstr "Члены группы"
 
@@ -7417,9 +7401,6 @@ msgstr "Параметры строки"
 
 msgid "Line Status"
 msgstr "Статус строки"
-
-msgid "line(s)"
-msgstr "строка(и)"
 
 msgid "Linear Team"
 msgstr "Команда Linear"
@@ -8744,9 +8725,6 @@ msgstr "Нет новых уведомлений"
 msgid "No notes"
 msgstr "Нет заметок"
 
-msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr "Нет открытого спроса на резку. Материал работы должен иметь длину резки, прежде чем он появится здесь."
-
 msgid "No open invoices"
 msgstr "Нет открытых счетов"
 
@@ -8812,9 +8790,6 @@ msgstr "Принтер не настроен"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Принтеры не настроены. Нажмите «Добавить принтер» для создания."
-
-msgid "No process"
-msgstr "Нет процесса"
 
 msgid "No process selected"
 msgstr "Процесс не выбран"
@@ -9135,9 +9110,6 @@ msgstr "Открыть журнал аудита"
 msgid "Open change notices affecting this part"
 msgstr "Открытые уведомления об изменении, влияющие на эту деталь"
 
-msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr "Открытый спрос на резку для выпущенных работ. Выберите, что должно работать вместе на одной машине."
-
 msgid "Open Date"
 msgstr "Дата открытия"
 
@@ -9275,9 +9247,6 @@ msgstr "Дополнительный фиксированный курс, исп
 
 msgid "Optional pages & sections"
 msgstr "Дополнительные страницы и разделы"
-
-msgid "Optional. Split across the jobs this run served, by the length each took."
-msgstr ""
 
 msgid "Options"
 msgstr "Параметры"
@@ -9731,9 +9700,6 @@ msgstr "Детали"
 msgid "Pieces cut"
 msgstr "Порезанные детали"
 
-msgid "Pieces owed"
-msgstr "Причитающиеся детали"
-
 msgid "Pieces/Hour"
 msgstr "Штук/час"
 
@@ -9748,9 +9714,6 @@ msgstr "Закреплено"
 
 msgid "Plan"
 msgstr "План"
-
-msgid "Plan a cutting run"
-msgstr "Спланировать запуск резки"
 
 msgid "Plan the work"
 msgstr "Спланируйте работу"
@@ -11173,9 +11136,6 @@ msgstr "Правила, которые автоматически коррект
 msgid "Rules that decide where each item gets stored"
 msgstr "Правила, определяющие, где хранится каждый товар"
 
-msgid "Run (minutes)"
-msgstr ""
-
 msgid "Run acceptance testing"
 msgstr "Провести приемочное тестирование"
 
@@ -11202,9 +11162,6 @@ msgstr "Запустить контрольный список приемки д
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Управляйте цехом с планшетов: учитывайте рабочее время, отслеживайте прогресс, просматривайте инструкции"
-
-msgid "Run time"
-msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Инвентарь, обновляемый после еженедельного спроса и предложения — строка."
@@ -11854,9 +11811,6 @@ msgstr "Параметры"
 
 msgid "Setup"
 msgstr "Настройка"
-
-msgid "Setup (minutes)"
-msgstr ""
 
 msgid "Setup & Controls"
 msgstr "Настройка и управление"

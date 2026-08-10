@@ -77,10 +77,6 @@ msgstr "{0} ड्रॉप्स जो {minRemnantLength} {unitOfDimension} �
 msgid "{0} lines to map"
 msgstr "{0} लाइनें मैप करने के लिए"
 
-#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
-msgid "{0} material(s) in this group"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
@@ -3172,9 +3168,6 @@ msgstr "ऑडिट ट्रेल प्रविष्टियां बन
 msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
 
-msgid "Create cut list"
-msgstr "कट सूची बनाएं"
-
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
 
@@ -3589,9 +3582,6 @@ msgstr "अपने PDF दस्तावेज़ों के लेआउ�
 msgid "Cut"
 msgstr "कट"
 
-msgid "Cut length"
-msgstr "कट की लंबाई"
-
 msgid "Cut Length"
 msgstr "कट की लंबाई"
 
@@ -3633,9 +3623,6 @@ msgstr ""
 
 msgid "Cutting Process"
 msgstr "कटिंग प्रक्रिया"
-
-msgid "Cutting Runs"
-msgstr "कटिंग रन्स"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "चक्र गणना करें और ऑडिट ट्रेल के साथ समायोजित करें"
@@ -6371,9 +6358,6 @@ msgstr "पकड़ मार्जिन"
 msgid "Group"
 msgstr "समूह"
 
-msgid "Group by"
-msgstr ""
-
 msgid "Group Members"
 msgstr "समूह सदस्य"
 
@@ -7417,9 +7401,6 @@ msgstr "पंक्ति विकल्प"
 
 msgid "Line Status"
 msgstr "लाइन स्थिति"
-
-msgid "line(s)"
-msgstr "लाइन(ें)"
 
 msgid "Linear Team"
 msgstr "Linear Team"
@@ -8744,9 +8725,6 @@ msgstr "कोई नई सूचनाएं नहीं"
 msgid "No notes"
 msgstr "कोई नोट नहीं"
 
-msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr "कोई खुली कट डिमांड नहीं है। एक जॉब सामग्री को यहां दिखाई देने से पहले एक कट लंबाई की आवश्यकता है।"
-
 msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
 
@@ -8812,9 +8790,6 @@ msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं किया गया है। एक बनाने के लिए \"प्रिंटर जोड़ें\" पर क्लिक करें।"
-
-msgid "No process"
-msgstr "कोई प्रक्रिया नहीं"
 
 msgid "No process selected"
 msgstr "कोई प्रक्रिया चयनित नहीं है"
@@ -9135,9 +9110,6 @@ msgstr "ऑडिट लॉग खोलें"
 msgid "Open change notices affecting this part"
 msgstr "इस भाग को प्रभावित करने वाली परिवर्तन सूचनाएं खोलें"
 
-msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr "जारी किए गए जॉब्स में खुली कट डिमांड। चुनें कि एक मशीन पर क्या एक साथ चलता है।"
-
 msgid "Open Date"
 msgstr "खुली तारीख"
 
@@ -9275,9 +9247,6 @@ msgstr "वैकल्पिक निर्धारित दर का उ�
 
 msgid "Optional pages & sections"
 msgstr "वैकल्पिक पृष्ठ और अनुभाग"
-
-msgid "Optional. Split across the jobs this run served, by the length each took."
-msgstr ""
 
 msgid "Options"
 msgstr "विकल्प"
@@ -9731,9 +9700,6 @@ msgstr "पीस"
 msgid "Pieces cut"
 msgstr "कटे हुए पीस"
 
-msgid "Pieces owed"
-msgstr "देय पीस"
-
 msgid "Pieces/Hour"
 msgstr "Pieces/Hour"
 
@@ -9748,9 +9714,6 @@ msgstr "पिन किया गया"
 
 msgid "Plan"
 msgstr "योजना"
-
-msgid "Plan a cutting run"
-msgstr "एक कटिंग रन की योजना बनाएं"
 
 msgid "Plan the work"
 msgstr "काम की योजना बनाएं"
@@ -11173,9 +11136,6 @@ msgstr "नियम जो मात्रा या ग्राहक के 
 msgid "Rules that decide where each item gets stored"
 msgstr "नियम जो तय करते हैं कि प्रत्येक आइटम कहाँ संग्रहीत होता है"
 
-msgid "Run (minutes)"
-msgstr ""
-
 msgid "Run acceptance testing"
 msgstr "स्वीकृति परीक्षण चलाएं"
 
@@ -11202,9 +11162,6 @@ msgstr "स्वीकृति चेकलिस्ट को पास क�
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "टैबलेट पर फ़्लोर चलाएं: श्रम घड़ी, प्रगति रिपोर्ट करें, निर्देश देखें"
-
-msgid "Run time"
-msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "प्रत्येक सप्ताह की आपूर्ति और मांग के बाद चलाई जाने वाली इन्वेंटरी — पंक्ति।"
@@ -11854,9 +11811,6 @@ msgstr "सेटिंग्स"
 
 msgid "Setup"
 msgstr "सेटअप"
-
-msgid "Setup (minutes)"
-msgstr ""
 
 msgid "Setup & Controls"
 msgstr "सेटअप और नियंत्रण"

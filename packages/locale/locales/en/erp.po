@@ -77,10 +77,6 @@ msgstr "{0} drop(s) below the {minRemnantLength} {unitOfDimension} minimum will 
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
 
-#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
-msgid "{0} material(s) in this group"
-msgstr "{0} material(s) in this group"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} orders"
@@ -3172,9 +3168,6 @@ msgstr "Create audit trail entries"
 msgid "Create Change Notice"
 msgstr "Create Change Notice"
 
-msgid "Create cut list"
-msgstr "Create cut list"
-
 msgid "Create Issue"
 msgstr "Create Issue"
 
@@ -3589,9 +3582,6 @@ msgstr "Customize the layout of your PDF documents — reorder sections, hide wh
 msgid "Cut"
 msgstr "Cut"
 
-msgid "Cut length"
-msgstr "Cut length"
-
 msgid "Cut Length"
 msgstr "Cut Length"
 
@@ -3633,9 +3623,6 @@ msgstr "Cuts stock to length"
 
 msgid "Cutting Process"
 msgstr "Cutting Process"
-
-msgid "Cutting Runs"
-msgstr "Cutting Runs"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "Cycle count and adjust with an audit trail"
@@ -6371,9 +6358,6 @@ msgstr "Grip margin"
 msgid "Group"
 msgstr "Group"
 
-msgid "Group by"
-msgstr "Group by"
-
 msgid "Group Members"
 msgstr "Group Members"
 
@@ -7417,9 +7401,6 @@ msgstr "Line options"
 
 msgid "Line Status"
 msgstr "Line Status"
-
-msgid "line(s)"
-msgstr "line(s)"
 
 msgid "Linear Team"
 msgstr "Linear Team"
@@ -8744,9 +8725,6 @@ msgstr "No new notifications"
 msgid "No notes"
 msgstr "No notes"
 
-msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr "No open cut demand. A job material needs a cut length before it shows up here."
-
 msgid "No open invoices"
 msgstr "No open invoices"
 
@@ -8812,9 +8790,6 @@ msgstr "No printer configured"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "No printers configured. Click \"Add Printer\" to create one."
-
-msgid "No process"
-msgstr "No process"
 
 msgid "No process selected"
 msgstr "No process selected"
@@ -9135,9 +9110,6 @@ msgstr "Open Audit Log"
 msgid "Open change notices affecting this part"
 msgstr "Open change notices affecting this part"
 
-msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr "Open cut demand across released jobs. Pick what runs together on one machine."
-
 msgid "Open Date"
 msgstr "Open Date"
 
@@ -9275,9 +9247,6 @@ msgstr "Optional fixed rate used when translating equity balances per IAS 21 (in
 
 msgid "Optional pages & sections"
 msgstr "Optional pages & sections"
-
-msgid "Optional. Split across the jobs this run served, by the length each took."
-msgstr "Optional. Split across the jobs this run served, by the length each took."
 
 msgid "Options"
 msgstr "Options"
@@ -9731,9 +9700,6 @@ msgstr "Pieces"
 msgid "Pieces cut"
 msgstr "Pieces cut"
 
-msgid "Pieces owed"
-msgstr "Pieces owed"
-
 msgid "Pieces/Hour"
 msgstr "Pieces/Hour"
 
@@ -9748,9 +9714,6 @@ msgstr "Pinned"
 
 msgid "Plan"
 msgstr "Plan"
-
-msgid "Plan a cutting run"
-msgstr "Plan a cutting run"
 
 msgid "Plan the work"
 msgstr "Plan the work"
@@ -11173,9 +11136,6 @@ msgstr "Rules that adjust prices automatically by quantity or customer"
 msgid "Rules that decide where each item gets stored"
 msgstr "Rules that decide where each item gets stored"
 
-msgid "Run (minutes)"
-msgstr "Run (minutes)"
-
 msgid "Run acceptance testing"
 msgstr "Run acceptance testing"
 
@@ -11202,9 +11162,6 @@ msgstr "Run the acceptance checklist to a pass"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Run the floor on tablets: clock labor, report progress, see instructions"
-
-msgid "Run time"
-msgstr "Run time"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Running inventory after each week's supply and demand — the line."
@@ -11854,9 +11811,6 @@ msgstr "Settings"
 
 msgid "Setup"
 msgstr "Setup"
-
-msgid "Setup (minutes)"
-msgstr "Setup (minutes)"
 
 msgid "Setup & Controls"
 msgstr "Setup & Controls"

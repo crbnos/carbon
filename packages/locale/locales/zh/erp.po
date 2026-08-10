@@ -77,10 +77,6 @@ msgstr "{0}根掉料低于{minRemnantLength}{unitOfDimension}最小值将被记�
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
 
-#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
-msgid "{0} material(s) in this group"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} 个订单"
@@ -3172,9 +3168,6 @@ msgstr "创建审计跟踪条目"
 msgid "Create Change Notice"
 msgstr "创建更改单"
 
-msgid "Create cut list"
-msgstr "创建切割清单"
-
 msgid "Create Issue"
 msgstr "创建问题"
 
@@ -3589,9 +3582,6 @@ msgstr "自定义您的 PDF 文档布局 — 重新排列部分、隐藏不需�
 msgid "Cut"
 msgstr "切割"
 
-msgid "Cut length"
-msgstr "切割长度"
-
 msgid "Cut Length"
 msgstr "切割长度"
 
@@ -3633,9 +3623,6 @@ msgstr ""
 
 msgid "Cutting Process"
 msgstr "切割过程"
-
-msgid "Cutting Runs"
-msgstr "切割批次"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "循环盘点并通过审计跟踪进行调整"
@@ -6371,9 +6358,6 @@ msgstr "夹持边距"
 msgid "Group"
 msgstr "组"
 
-msgid "Group by"
-msgstr ""
-
 msgid "Group Members"
 msgstr "群组成员"
 
@@ -7417,9 +7401,6 @@ msgstr "行选项"
 
 msgid "Line Status"
 msgstr "行状态"
-
-msgid "line(s)"
-msgstr "行"
 
 msgid "Linear Team"
 msgstr "Linear 团队"
@@ -8744,9 +8725,6 @@ msgstr "没有新通知"
 msgid "No notes"
 msgstr "没有备注"
 
-msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr "没有待处理的裁切需求。工作物料需要有裁切长度才能显示在这里。"
-
 msgid "No open invoices"
 msgstr "没有未结发票"
 
@@ -8812,9 +8790,6 @@ msgstr "未配置打印机"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "未配置打印机。点击\"添加打印机\"创建一个。"
-
-msgid "No process"
-msgstr "无工艺"
 
 msgid "No process selected"
 msgstr "未选择工艺"
@@ -9135,9 +9110,6 @@ msgstr "打开审计日志"
 msgid "Open change notices affecting this part"
 msgstr "打开影响此零件的更改单"
 
-msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr "已发放工作中的待处理裁切需求。选择在一台机器上一起运行的内容。"
-
 msgid "Open Date"
 msgstr "开放日期"
 
@@ -9275,9 +9247,6 @@ msgstr "根据IAS 21翻译股权余额时使用的可选固定汇率（而不是
 
 msgid "Optional pages & sections"
 msgstr "可选页面和部分"
-
-msgid "Optional. Split across the jobs this run served, by the length each took."
-msgstr ""
 
 msgid "Options"
 msgstr "选项"
@@ -9731,9 +9700,6 @@ msgstr "件"
 msgid "Pieces cut"
 msgstr "裁切的件数"
 
-msgid "Pieces owed"
-msgstr "欠缺的件数"
-
 msgid "Pieces/Hour"
 msgstr "件/小时"
 
@@ -9748,9 +9714,6 @@ msgstr "已固定"
 
 msgid "Plan"
 msgstr "计划"
-
-msgid "Plan a cutting run"
-msgstr "计划裁切运行"
 
 msgid "Plan the work"
 msgstr "规划工作"
@@ -11173,9 +11136,6 @@ msgstr "根据数量或客户自动调整价格的规则"
 msgid "Rules that decide where each item gets stored"
 msgstr "决定每个项目存储位置的规则"
 
-msgid "Run (minutes)"
-msgstr ""
-
 msgid "Run acceptance testing"
 msgstr "运行验收测试"
 
@@ -11202,9 +11162,6 @@ msgstr "运行验收清单直到通过"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "在平板电脑上运行车间：记录劳动力、报告进度、查看说明"
-
-msgid "Run time"
-msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "每周供应和需求后运行的库存 — 该行。"
@@ -11854,9 +11811,6 @@ msgstr "设置"
 
 msgid "Setup"
 msgstr "设置"
-
-msgid "Setup (minutes)"
-msgstr ""
 
 msgid "Setup & Controls"
 msgstr "设置和控制"

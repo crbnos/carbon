@@ -77,10 +77,6 @@ msgstr "{0}개의 드롭이 {minRemnantLength} {unitOfDimension} 최소값 아�
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
 
-#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
-msgid "{0} material(s) in this group"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "주문 {0}건"
@@ -3172,9 +3168,6 @@ msgstr "감사 추적 항목 생성"
 msgid "Create Change Notice"
 msgstr "변경 공지 만들기"
 
-msgid "Create cut list"
-msgstr "절단 목록 생성"
-
 msgid "Create Issue"
 msgstr "이슈 생성"
 
@@ -3589,9 +3582,6 @@ msgstr "PDF 문서의 레이아웃을 사용자 지정하세요 — 섹션 순�
 msgid "Cut"
 msgstr "절단"
 
-msgid "Cut length"
-msgstr "절단 길이"
-
 msgid "Cut Length"
 msgstr "절단 길이"
 
@@ -3633,9 +3623,6 @@ msgstr ""
 
 msgid "Cutting Process"
 msgstr "절단 프로세스"
-
-msgid "Cutting Runs"
-msgstr "절단 실행"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "감사 추적과 함께 순환 재고조사 및 조정"
@@ -6371,9 +6358,6 @@ msgstr "그립 여백"
 msgid "Group"
 msgstr "그룹"
 
-msgid "Group by"
-msgstr ""
-
 msgid "Group Members"
 msgstr "그룹 구성원"
 
@@ -7417,9 +7401,6 @@ msgstr "라인 옵션"
 
 msgid "Line Status"
 msgstr "라인 상태"
-
-msgid "line(s)"
-msgstr "줄"
 
 msgid "Linear Team"
 msgstr "Linear 팀"
@@ -8744,9 +8725,6 @@ msgstr "새 알림이 없습니다"
 msgid "No notes"
 msgstr "메모 없음"
 
-msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr "열린 절단 수요가 없습니다. 작업 재료가 여기에 표시되려면 절단 길이가 필요합니다."
-
 msgid "No open invoices"
 msgstr "미결 인보이스가 없습니다"
 
@@ -8812,9 +8790,6 @@ msgstr "설정된 프린터가 없습니다"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "설정된 프린터가 없습니다. \"프린터 추가\"를 클릭하여 생성하세요."
-
-msgid "No process"
-msgstr "공정 없음"
 
 msgid "No process selected"
 msgstr "프로세스를 선택하지 않았습니다"
@@ -9135,9 +9110,6 @@ msgstr "감사 로그 열기"
 msgid "Open change notices affecting this part"
 msgstr "이 부품에 영향을 주는 미완료 변경 공지 열기"
 
-msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr "릴리스된 작업 전체의 열린 절단 수요. 한 기계에서 함께 실행되는 것을 선택하세요."
-
 msgid "Open Date"
 msgstr "개설일"
 
@@ -9275,9 +9247,6 @@ msgstr "IAS 21에 따라 자본 잔액을 환산할 때 사용하는 선택적 �
 
 msgid "Optional pages & sections"
 msgstr "선택적 페이지 및 섹션"
-
-msgid "Optional. Split across the jobs this run served, by the length each took."
-msgstr ""
 
 msgid "Options"
 msgstr "옵션"
@@ -9731,9 +9700,6 @@ msgstr "피스"
 msgid "Pieces cut"
 msgstr "절단된 피스"
 
-msgid "Pieces owed"
-msgstr "빚진 피스"
-
 msgid "Pieces/Hour"
 msgstr "개/시간"
 
@@ -9748,9 +9714,6 @@ msgstr "고정됨"
 
 msgid "Plan"
 msgstr "계획"
-
-msgid "Plan a cutting run"
-msgstr "절단 실행 계획"
 
 msgid "Plan the work"
 msgstr "작업 계획 수립"
@@ -11173,9 +11136,6 @@ msgstr "수량이나 고객에 따라 가격을 자동으로 조정하는 규칙
 msgid "Rules that decide where each item gets stored"
 msgstr "각 품목의 보관 위치를 결정하는 규칙"
 
-msgid "Run (minutes)"
-msgstr ""
-
 msgid "Run acceptance testing"
 msgstr "인수 테스트 실행"
 
@@ -11202,9 +11162,6 @@ msgstr "인수 체크리스트를 통과할 때까지 진행하세요"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "태블릿으로 현장을 운영하세요: 근무 시간 기록, 진행 상황 보고, 작업 지시 확인"
-
-msgid "Run time"
-msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "매주 공급과 수요를 반영해 갱신되는 재고 — 그 라인입니다."
@@ -11854,9 +11811,6 @@ msgstr "설정"
 
 msgid "Setup"
 msgstr "설정"
-
-msgid "Setup (minutes)"
-msgstr ""
 
 msgid "Setup & Controls"
 msgstr "설정 및 관리"
