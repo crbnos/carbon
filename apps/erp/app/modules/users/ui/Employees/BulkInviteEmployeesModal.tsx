@@ -56,10 +56,12 @@ const emptyEmployee = (locationId?: string | null): EmployeeRow => ({
 
 function EmployeeRows({
   defaultLocationId,
-  resultsByIndex
+  resultsByIndex,
+  onRowsChange
 }: {
   defaultLocationId?: string | null;
   resultsByIndex: Map<number, BulkInviteResult>;
+  onRowsChange: () => void;
 }) {
   const { t } = useLingui();
   const employeeTypeFetcher =
@@ -79,9 +81,15 @@ function EmployeeRows({
     useFieldArray<EmployeeRow>("employees");
 
   const onAdd = () => {
+    onRowsChange();
     flushSync(() => {
       push(emptyEmployee(defaultLocationId));
     });
+  };
+
+  const onRemove = (index: number) => {
+    onRowsChange();
+    remove(index);
   };
 
   return (
@@ -113,7 +121,7 @@ function EmployeeRows({
                       aria-label={t`Remove employee`}
                       icon={<IoMdClose />}
                       variant="ghost"
-                      onClick={() => remove(index)}
+                      onClick={() => onRemove(index)}
                     />
                   )}
                 </HStack>
@@ -225,6 +233,7 @@ const BulkInviteEmployeesModal = () => {
             <EmployeeRows
               defaultLocationId={defaultLocationId}
               resultsByIndex={resultsByIndex}
+              onRowsChange={() => setResults([])}
             />
           </ModalBody>
           <ModalFooter>
