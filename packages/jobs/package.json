@@ -35,6 +35,7 @@
     "sst": "catalog:",
     "supabase": "catalog:",
     "tsup": "catalog:",
+    "undici": "^8.10.0",
     "zod": "catalog:"
   },
   "devDependencies": {

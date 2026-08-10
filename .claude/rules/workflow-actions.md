@@ -255,9 +255,25 @@ the guard behind. Non-2xx reports the status. On success the action outputs
   `0xfe` (link-local). An IPv4-mapped `::ffff:a.b.c.d` is re-tested as v4 — it is
   only as safe as the address it wraps.
 
-There is no re-check between the DNS lookup and `fetch`, so this is not a
-guarantee against DNS rebinding; it is a guard against the ordinary cases
-(`localhost`, RFC1918, metadata).
+`checkOutboundUrl` alone would not stop DNS rebinding — its answer and `fetch`'s are
+two separate resolutions, and whoever owns the name controls both. So the same range
+check runs a second time as `guardedLookup`, installed as `connect.lookup` on the
+exported `outboundDispatcher` (an undici `Agent`) that `webhook.ts` passes to `fetch`.
+That is the lookup the socket itself performs, so the address approved is the address
+dialled. It validates **every** address the resolver returns, not just the one it
+hands back, and fails closed on an empty answer.
+
+`webhook.ts` imports `fetch` from `undici` rather than using the global one **on
+purpose**: the global is backed by whichever undici Node bundled (6.22 on Node 22),
+and a dispatcher from a different major is rejected at request time with
+`invalid onRequestStart method`. Importing both from the same package keeps them in
+step across Node upgrades.
+
+The dispatcher is not reached for a **literal IP** — `net.connect` skips `lookup`
+when the host is already an address. That case is covered by `checkOutboundUrl`, and
+covered completely: a literal cannot rebind, because there is no name to re-resolve.
+The two layers are what make the guard whole, so don't drop the pre-check as
+"redundant".
 
 ## The two older webhook systems are untouched
 

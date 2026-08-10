@@ -1,4 +1,5 @@
 import dns from "node:dns";
+import { Agent } from "undici";
 
 export type UrlVerdict = { ok: true; url: URL } | { ok: false; reason: string };
 
@@ -70,3 +71,39 @@ export async function checkOutboundUrl(raw: string): Promise<UrlVerdict> {
 
   return { ok: true, url };
 }
+
+type LookupCallback = (
+  err: NodeJS.ErrnoException | null,
+  address: string | dns.LookupAddress[],
+  family?: number
+) => void;
+
+/**
+ * The lookup the socket itself performs, so the address we approve is the address
+ * we dial. `checkOutboundUrl` alone cannot promise that: its answer and `fetch`'s
+ * are two separate resolutions, and whoever owns the name controls both.
+ */
+export function guardedLookup(
+  hostname: string,
+  options: dns.LookupOptions,
+  callback: LookupCallback
+): void {
+  dns.lookup(hostname, { ...options, all: true }, (err, addresses) => {
+    if (err) return callback(err, "");
+    if (addresses.length === 0) {
+      return callback(new Error(NOT_FOUND), "");
+    }
+    for (const { address, family } of addresses) {
+      if (isPrivate(address, family)) return callback(new Error(PRIVATE), "");
+    }
+    if (options.all === true) return callback(null, addresses);
+    const [first] = addresses;
+    if (first === undefined) return callback(new Error(NOT_FOUND), "");
+    callback(null, first.address, first.family);
+  });
+}
+
+/** Hand to `fetch` as `dispatcher`. This, not `checkOutboundUrl`, is the enforcement. */
+export const outboundDispatcher = new Agent({
+  connect: { lookup: guardedLookup }
+});

@@ -6,7 +6,10 @@ import {
   type RuntimeValue
 } from "@carbon/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { checkOutboundUrl } from "./url-guard";
+// undici's own fetch, not the global one: the global is whatever undici Node bundled,
+// and a dispatcher from a different major is rejected at request time.
+import { fetch, type Response } from "undici";
+import { checkOutboundUrl, outboundDispatcher } from "./url-guard";
 
 const TIMEOUT_MS = 10_000;
 /** Only an excerpt is kept, and only for the step summary. */
@@ -94,7 +97,8 @@ export async function runWebhookAction(params: {
       // `fetch` throws on a GET carrying a body, which would read as a network fault.
       ...(carriesBody ? { body: asText(inputs.body) ?? "" } : {}),
       redirect: "manual",
-      signal: AbortSignal.timeout(TIMEOUT_MS)
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      dispatcher: outboundDispatcher
     });
   } catch {
     return { ok: false, error: UNREACHABLE };

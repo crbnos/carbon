@@ -1,6 +1,6 @@
 import dns from "node:dns";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { checkOutboundUrl } from "./url-guard";
+import { checkOutboundUrl, guardedLookup } from "./url-guard";
 
 /** Stubbed so no test performs real DNS. */
 function resolvesTo(...addresses: { address: string; family: number }[]) {
@@ -98,5 +98,83 @@ describe("checkOutboundUrl", () => {
       ok: false,
       reason: "That address could not be found."
     });
+  });
+});
+
+/** The callback form, since `guardedLookup` uses `dns.lookup` not `dns.promises`. */
+function lookupResolvesTo(...addresses: { address: string; family: number }[]) {
+  return vi.spyOn(dns, "lookup").mockImplementation(((
+    _host: string,
+    _opts: unknown,
+    cb: unknown
+  ) => {
+    (cb as (e: null, a: unknown) => void)(null, addresses);
+  }) as never);
+}
+
+function lookup(
+  options: dns.LookupOptions = {}
+): Promise<{ err: Error | null; address: unknown; family?: number }> {
+  return new Promise((resolve) => {
+    guardedLookup("host.example.com", options, (err, address, family) =>
+      resolve({ err, address, family })
+    );
+  });
+}
+
+describe("guardedLookup", () => {
+  it("passes a public address through as a single answer", async () => {
+    lookupResolvesTo({ address: "93.184.216.34", family: 4 });
+    expect(await lookup()).toEqual({
+      err: null,
+      address: "93.184.216.34",
+      family: 4
+    });
+  });
+
+  it("passes the whole list through when the socket asked for all", async () => {
+    lookupResolvesTo(
+      { address: "93.184.216.34", family: 4 },
+      { address: "93.184.216.35", family: 4 }
+    );
+    const { err, address } = await lookup({ all: true });
+    expect(err).toBeNull();
+    expect(address).toEqual([
+      { address: "93.184.216.34", family: 4 },
+      { address: "93.184.216.35", family: 4 }
+    ]);
+  });
+
+  it("refuses a private address at connection time", async () => {
+    lookupResolvesTo({ address: "169.254.169.254", family: 4 });
+    const { err } = await lookup();
+    expect(err?.message).toBe("That address is inside a private network.");
+  });
+
+  it("refuses when only the second address is private", async () => {
+    lookupResolvesTo(
+      { address: "93.184.216.34", family: 4 },
+      { address: "10.0.0.5", family: 4 }
+    );
+    const { err } = await lookup({ all: true });
+    expect(err?.message).toBe("That address is inside a private network.");
+  });
+
+  it("refuses an empty answer", async () => {
+    lookupResolvesTo();
+    const { err } = await lookup();
+    expect(err?.message).toBe("That address could not be found.");
+  });
+
+  it("hands back the resolver's own failure", async () => {
+    vi.spyOn(dns, "lookup").mockImplementation(((
+      _host: string,
+      _opts: unknown,
+      cb: unknown
+    ) => {
+      (cb as (e: Error) => void)(new Error("ENOTFOUND"));
+    }) as never);
+    const { err } = await lookup();
+    expect(err?.message).toBe("ENOTFOUND");
   });
 });

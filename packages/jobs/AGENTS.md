@@ -113,7 +113,7 @@ Routing is off the catalog's `getActionRoute(id)`, never off the shape of an id.
 | `search.ts` | `runSearch` — one Lookup node's search, translated to PostgREST filters that mean exactly what `runtime/compare.ts` says (`contains`/`startsWith`/`endsWith` → `ilike`). Reads `MAX_LIST_ITEMS + 1` so an over-cap list is detectable |
 | `operations.ts` | `runOperation` — the 15 read-only computations, one `COMPUTATIONS` entry per catalog operation id. An id with no implementation refuses rather than falls through; a throw becomes a failed node, never a thrown walk |
 | `webhook.ts` | `runWebhookAction` — the chosen method (POST when unset) to the configured URL with the customer's headers, SSRF-guarded, `redirect: "manual"`, 10s timeout, 2 KB response excerpt for the step summary. Only POST/PUT/PATCH carry a body; eight framing header names are refused |
-| `url-guard.ts` | `checkOutboundUrl` — https only, DNS-resolves the host and rejects if **any** returned address is private/loopback/link-local (169.254.0.0/16 covers cloud metadata) |
+| `url-guard.ts` | `checkOutboundUrl` — https only, DNS-resolves the host and rejects if **any** returned address is private/loopback/link-local (169.254.0.0/16 covers cloud metadata). Plus `outboundDispatcher`, an undici `Agent` running the same check as the socket's own `connect.lookup` — that, not the pre-check, is what closes DNS rebinding |
 | `index.ts` | Barrel; `engine/execute.ts` imports `createWorkflowServices` from here |
 
 ### The dispatch seam

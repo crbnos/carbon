@@ -5,6 +5,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runWebhookAction } from "./webhook";
 
+const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
+
+// Only `fetch` is faked — `url-guard` needs the real `Agent` from the same module.
+vi.mock("undici", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("undici")>()),
+  fetch: fetchMock
+}));
+
 function fakeClient() {
   return {} as unknown as SupabaseClient<Database>;
 }
@@ -52,19 +60,16 @@ function sent() {
   return { init, headers: init.headers as Record<string, string> };
 }
 
-let fetchMock: ReturnType<typeof vi.fn>;
-
 beforeEach(() => {
   vi.spyOn(dns.promises, "lookup").mockResolvedValue([
     { address: "93.184.216.34", family: 4 }
   ] as never);
-  fetchMock = vi.fn(async () => new Response("thanks", { status: 200 }));
-  vi.stubGlobal("fetch", fetchMock);
+  fetchMock.mockReset();
+  fetchMock.mockResolvedValue(new Response("thanks", { status: 200 }));
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
-  vi.unstubAllGlobals();
 });
 
 describe("runWebhookAction", () => {
@@ -76,6 +81,11 @@ describe("runWebhookAction", () => {
     expect(init.method).toBe("POST");
     expect(headers["Content-Type"]).toBe("application/json");
     expect(init.body).toBe('{"hello":"world"}');
+  });
+
+  it("goes out through the guarded dispatcher", async () => {
+    await run();
+    expect((sent().init as { dispatcher?: unknown }).dispatcher).toBeDefined();
   });
 
   it("sends no signing headers", async () => {
