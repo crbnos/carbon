@@ -117,16 +117,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   //    (auto-select here on arrival, and in the client after each completion);
   //  - later operations: every unit already has a label → the operator
   //    scans/selects each unit (no auto-select, here or in the client).
-  // An operation is "first" when nothing precedes it in the routing — i.e. it has
-  // no jobOperationDependency (a row means this op depends on / comes after
-  // another). `order` is only a display/sort field and isn't a reliable
-  // precedence signal, so it's not used here. A first op has no printed labels
-  // yet (they print on its completion), so its units are auto-selected; later
-  // ops already have labels, so the operator scans/selects.
+  // An operation is "first" when nothing precedes it in THIS make method's
+  // routing — i.e. it has no jobOperationDependency whose predecessor lives in
+  // the same jobMakeMethod. Dependencies also model subassembly ordering (a
+  // parent-assembly op waits on its child subassembly's ops), and those cross
+  // make-method dependencies must NOT count: the parent serial still has no
+  // printed label just because a subassembly finished first. `order` is only a
+  // display/sort field and isn't a reliable precedence signal, so it's not used.
   const priorDependency = await serviceRole
     .from("jobOperationDependency")
-    .select("operationId")
+    .select(
+      "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
+    )
     .eq("operationId", operationId)
+    .eq("dependsOn.jobMakeMethodId", op.jobMakeMethodId)
     .limit(1)
     .maybeSingle();
   // Fail closed: a query error also returns null data, so treat an errored lookup

@@ -59,7 +59,8 @@ export const trackedEntityStatus = [
   "Consumed",
   "On Hold",
   "Reserved",
-  "Rejected"
+  "Rejected",
+  "Scrapped"
 ] as const;
 
 export const replenishmentSystemTypes = [
@@ -153,15 +154,31 @@ export const inventoryCountLineValidator = z.object({
 export const inventoryAdjustmentValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
-    locationId: z.string().min(1, { message: "Location is required" }),
+    // Required for every adjustment except Unscrap, where the edge function
+    // resolves the location from the original scrap movement (a Scrapped
+    // tracked-entity row carries no location). Enforced in the refine below.
+    locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
-    adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
+    adjustmentType: z.enum([
+      ...itemLedgerTypes,
+      "Set Quantity",
+      "Scrap",
+      "Unscrap"
+    ]),
     quantity: zfd.numeric(z.number()),
     trackedEntityId: zfd.text(z.string().optional()),
     readableId: zfd.text(z.string().optional()),
     expirationDate: zfd.text(z.string().optional()),
     comment: zfd.text(z.string().optional()),
+    // Required for Scrap (enforced below); lands on the itemLedger row and,
+    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
+    // omits it — the edge function inherits the reason from the original scrap
+    // movement it reverses.
+    scrapReasonId: zfd.text(z.string().optional()),
+    // Unscrap: the original scrap movement to reverse against (resolved
+    // server-side from the tracked entity when omitted).
+    unscrapOfItemLedgerId: zfd.text(z.string().optional()),
     // Set by serial-tracked forms so the quantity can be capped server-side.
     requiresSerialTracking: zfd
       .text(z.string().optional())
@@ -175,6 +192,20 @@ export const inventoryAdjustmentValidator = z
         code: z.ZodIssueCode.custom,
         path: ["quantity"],
         message: "Serial items can only have a quantity of 1"
+      });
+    }
+    if (data.adjustmentType === "Scrap" && !data.scrapReasonId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["scrapReasonId"],
+        message: "Scrap reason is required"
+      });
+    }
+    if (data.adjustmentType !== "Unscrap" && !data.locationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["locationId"],
+        message: "Location is required"
       });
     }
   });

@@ -14,7 +14,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (companySettings.data as { accountingEnabled?: boolean } | null)
       ?.accountingEnabled ?? false;
 
-  throw redirect(
-    accountingEnabled ? path.to.balanceSheet : path.to.chartOfAccounts
-  );
+  throw redirect(accountingEnabled ? path.to.reports : path.to.chartOfAccounts);
 }

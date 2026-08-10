@@ -18,7 +18,7 @@
     {
       "slug": "docs/building/webhooks",
       "title": "Webhooks",
-      "description": "Get an HTTP callback the moment a Carbon record is created, changed, or deleted.",
+      "description": "Get an HTTP callback when a Carbon record is created, changed, or deleted.",
       "keywords": ["webhooks", "docs", "building"],
       "headings": [
         "Subscribable tables",
@@ -1311,6 +1311,20 @@
         "A pinned operation's due date didn't move after a reschedule",
         "The new dates didn't appear right after I saved",
         "I can't edit dates on the board",
+        "Related"
+      ]
+    },
+    {
+      "slug": "docs/reference/scrap",
+      "title": "Scrap and unscrap",
+      "description": "Writing off defective or lost material, and restoring it if the write-off was a mistake.",
+      "keywords": ["scrap", "and", "unscrap", "docs", "reference"],
+      "headings": [
+        "Scrapping a unit on the floor",
+        "Scrapping a subcomponent",
+        "Scrapping stock",
+        "Unscrap",
+        "Accounting for scrap",
         "Related"
       ]
     },

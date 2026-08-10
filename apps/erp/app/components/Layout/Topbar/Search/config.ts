@@ -16,10 +16,11 @@ import {
   RiProgress4Line,
   RiProgress8Line
 } from "react-icons/ri";
+import type { EntityType } from "~/components/Layout/Topbar/Search/types";
 
-// Entity type styling configuration
+// Entity type styling configuration (keys must match EntityType)
 export const entityTypeConfig: Record<
-  string,
+  EntityType,
   { bgColor: string; textColor: string; icon: IconType }
 > = {
   customer: {
@@ -33,13 +34,13 @@ export const entityTypeConfig: Record<
     icon: PiShareNetworkFill
   },
   gauge: {
-    bgColor: "",
-    textColor: "",
+    bgColor: "bg-amber-100 dark:bg-amber-900/30",
+    textColor: "text-amber-600 dark:text-amber-400",
     icon: LuGauge
   },
   issue: {
-    bgColor: "",
-    textColor: "",
+    bgColor: "bg-rose-100 dark:bg-rose-900/30",
+    textColor: "text-rose-600 dark:text-rose-400",
     icon: LuOctagonAlert
   },
   item: {
@@ -96,7 +97,7 @@ export const entityTypeConfig: Record<
 
 export function getEntityTypeConfig(entityType: string) {
   return (
-    entityTypeConfig[entityType] ?? {
+    entityTypeConfig[entityType as EntityType] ?? {
       bgColor: "bg-muted",
       textColor: "text-muted-foreground",
       icon: null

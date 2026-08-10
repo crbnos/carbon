@@ -26,7 +26,7 @@ That material reaches WIP one of two ways, and the difference is *when*. **Issui
 
 The posting is identical either way (cost out of inventory, into WIP), so the choice is about floor discipline, not accounting. Issue as you go when you need tight control over what's consumed; lean on backflush for the routine material you'd rather not hand-count.
 
-Scrap and rework are recorded as their own production quantities, but scrapping a tracked part posts the same consumption: out of inventory, into the job's WIP. There's no separate scrap account; the cost of what you ruined rides along in the job until it settles at close.
+Scrap and rework are recorded as their own production quantities. Scrapping a tracked part relieves its cost from the job: debited to a dedicated scrap account and credited out of WIP (or straight out of inventory, for a part still in stock), tagged with the reason, work center, and operator. The ruined value leaves the job rather than riding along to close, and the scrap reopens the routing so a replacement gets built. See `docs/reference/scrap`.
 
 ## WIP isn't a table
 

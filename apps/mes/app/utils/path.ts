@@ -185,8 +185,8 @@ export const path = {
       generatePath(`${x}/rework-targets/${operationId}`),
     root: "/",
     scrap: `${x}/scrap`,
-    scrapEntity: (operationId: string, id: string, parentId?: string) => {
-      const basePath = generatePath(`${x}/entity/${operationId}/${id}/scrap`);
+    scrapEntity: (materialId: string, id: string, parentId?: string) => {
+      const basePath = generatePath(`${x}/entity/${materialId}/${id}/scrap`);
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
     scrapReasons: `${api}/scrap-reasons`,

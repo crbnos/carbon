@@ -354,7 +354,11 @@ export function InspectionView({
   const opAttrKey = `Operation ${operationId}`;
   const entityOpenAtOp = useCallback(
     (entity: TrackedEntity) => {
-      if (entity.status === "Consumed" || entity.status === "Rejected") {
+      if (
+        entity.status === "Consumed" ||
+        entity.status === "Rejected" ||
+        entity.status === "Scrapped"
+      ) {
         return false;
       }
       const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
@@ -383,11 +387,13 @@ export function InspectionView({
     return ids;
   }, [samples, sampleStatuses]);
 
+  // Remaining GOOD work: scrap no longer counts toward targetQuantity
+  // (20260807090629), so a scrapped unit doesn't reduce what's left to make —
+  // its replacement still has to be completed.
   const opRemaining = Math.max(
     0,
     (operation.targetQuantity ?? operation.operationQuantity ?? 0) -
       (operation.quantityComplete ?? 0) -
-      (operation.quantityScrapped ?? 0) -
       (operation.quantityReworked ?? 0)
   );
 

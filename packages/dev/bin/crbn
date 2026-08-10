@@ -450,6 +450,7 @@ crbn — Carbon dev CLI
     crbn reset                      Wipe volumes + redis, then up.
     crbn status                     Port assignment + container health.
     crbn migrate                    Apply DB migrations (loads .env.local).
+    crbn restore <file>             Restore a prod backup, then apply migrations it predates.
     crbn reload <service...>        Recreate compose services (apply compose/env edits, apps untouched).
 
   Files:
@@ -481,7 +482,7 @@ case "$cmd" in
   checkout)
     cmd_checkout "$@"
     ;;
-  copy|env|up|down|reset|status|migrate|new|init|list|remove|reload|complete)
+  copy|env|up|down|reset|status|migrate|restore|new|init|list|remove|reload|complete)
     delegate_ts "$cmd" "$@"
     ;;
   *)

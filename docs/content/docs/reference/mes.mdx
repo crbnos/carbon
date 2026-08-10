@@ -65,7 +65,7 @@ Good, bad, and reworked units are reported separately, so yield stays honest:
 
 <FieldTable>
   <Field name="Log Completed">Records good units off this operation. **"Complete All"** fills the remaining quantity; **"Total Quantity"** sets it explicitly.</Field>
-  <Field name="Log Scrap">Records scrapped units against a required **"Scrap Reason"**, so the loss is attributable.</Field>
+  <Field name="Log Scrap">Records scrapped units against a required **"Scrap Reason"**, so the loss is attributable. The unit flips to **"Scrapped"**, a replacement is spawned, and the routing reopens — see [scrap and unscrap](/docs/reference/scrap).</Field>
   <Field name="Log Rework">Records units reworked in place at this operation, without sending them anywhere.</Field>
 </FieldTable>
 

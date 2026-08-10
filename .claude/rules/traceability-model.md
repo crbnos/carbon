@@ -27,7 +27,7 @@ avoid an entity appearing as its own ancestor/descendant within a single activit
 | --- | --- |
 | `id` TEXT | default `nanoid()` (was `xid()` originally, changed in `20250304230616`) |
 | `quantity` NUMERIC | serial entities = 1 |
-| `status` `trackedEntityStatus` | enum `'Available' \| 'Reserved' \| 'On Hold' \| 'Consumed'`, default `Available` |
+| `status` `trackedEntityStatus` | enum `'Available' \| 'Reserved' \| 'On Hold' \| 'Consumed' \| 'Rejected' \| 'Scrapped'`, default `Available`. `Scrapped` (`20260807090400`) is terminal but **recoverable** via ERP Unscrap (unlike `Consumed`); excluded from on-hand/availability like `Rejected` |
 | `sourceDocument` TEXT, `sourceDocumentId` TEXT | polymorphic provenance; for batch/serial/job-seed entities it is `'Item'` + the item id |
 | `sourceDocumentReadableId` TEXT | denormalized `item.readableIdWithRevision`; kept in sync by an `item` AFTER-UPDATE interceptor `sync_propagate_item_readable_id_to_tracked_entity` (`20260428100000`) |
 | `readableId` TEXT | the serial OR batch number (promoted out of `attributes` in `20251220013724`/`20251220021403`) |
@@ -69,6 +69,21 @@ and MES services — NOT a single `post-production`:
   `trigger-rework` insert `trackedActivity` + input/output link rows on posting.
 - MES `startProductionEvent` (`apps/mes/app/services/operations.service.ts`) inserts a
   `trackedActivity` and a `trackedActivityOutput` for the production event.
+- **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `issue` case
+  `jobOperationScrap` scraps the serial being made — `type: 'Scrap'` activity,
+  entity → `Scrapped`, then **spawns the next serial** (same `getNextSerialNumbers`
+  path as `jobOperationSerialComplete`) and reopens the make method's Done ops
+  (`issue/scrap-replacement.ts`) so the replacement runs the full routing. `issue`
+  case `scrapTrackedEntity` scraps a subcomponent, branching on entity **state**:
+  an `Available` part posts a `Scrap` (`Negative Adjmt.`) `itemLedger` at its
+  on-hand bin (`quantityIssued` untouched); a `Consumed` part posts Dr scrap /
+  Cr WIP at the item's unit cost and **decrements `quantityIssued`** to reopen
+  the requirement. Make-to-Order can additionally spawn a replacement + `rework`
+  row (`makeReplacement`). ERP stock **Scrap/Unscrap** run through
+  `post-inventory-adjustment` (`type: 'Unscrap'` activity restores a `Scrapped`
+  entity at the original scrapped cost via `correctionOfItemLedgerId`). Every scrap
+  journal is offset to `accountDefault.scrapAccount` and tagged with ScrapReason /
+  WorkCenter / Employee `journalLineDimension` rows.
 
 Pattern: insert `trackedActivity`, then `trackedActivityInput` for each consumed entity and
 `trackedActivityOutput` for each produced entity; post `itemLedger` rows
@@ -94,7 +109,10 @@ Non-strict variants exist but include same-activity siblings — prefer strict.
   `getTrackedEntitiesByMakeMethodId`, `getTrackedEntitiesByOperationId`,
   `updateTrackedEntityExpiry`, `getTrackedEntityExpirations`.
 - MES `operations.service.ts`: `getTrackedEntity`, `getTrackedEntitiesByMakeMethodId`,
-  `getTrackedInputs` (wraps the strict RPCs), `startProductionEvent`.
+  `getTrackedInputs` (wraps the strict RPCs; **filters out `Scrapped` descendants** so a
+  scrapped subcomponent no longer appears in the issue modal's Unconsume/Scrap lists — the
+  scrap already relieved its WIP and reopened the requirement; the lineage graph still shows
+  it), `startProductionEvent`.
 
 **Serial sibling clustering (display only).** A serial item at qty N produces N
 qty-1 entities by design, so one job fans out into N identical nodes. The graph

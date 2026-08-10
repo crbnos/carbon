@@ -3,7 +3,7 @@ import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { Spinner } from "@carbon/react";
 import { useEffect } from "react";
-import { LuCircleCheck, LuFlag } from "react-icons/lu";
+import { LuCircleCheck, LuFlag, LuVideoOff } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, useFetcher, useParams } from "react-router";
 import { Breadcrumb } from "~/components/Breadcrumb";
@@ -17,8 +17,11 @@ import { path } from "~/utils/path";
 import {
   formatDuration,
   getLessonContext,
+  getLessonSiblings,
+  getLoomEmbedId,
   getNextLesson,
-  getPreviousLesson
+  getPreviousLesson,
+  isLessonComingSoon
 } from "~/utils/video";
 
 const log = getLogger("academy");
@@ -102,6 +105,9 @@ export default function LessonRoute() {
   const { module, course, topic, lesson } = context;
   const nextLesson = getNextLesson(id);
   const previousLesson = getPreviousLesson(id);
+  const siblingLessons = getLessonSiblings(id) ?? topic.lessons;
+  const embedId = getLoomEmbedId(lesson.loomUrl);
+  const isComingSoon = isLessonComingSoon(lesson);
   const hasChallenge = topic.challenge && topic.challenge.length > 0;
 
   const completedLessons = lessonCompletions
@@ -196,7 +202,7 @@ export default function LessonRoute() {
             </span>
             <span className="inline-flex items-center gap-[5px] font-mono text-ed-12 leading-4 text-ed-ink/42">
               <ClockIcon />
-              {formatDuration(lesson.duration)}
+              {isComingSoon ? "Coming soon" : formatDuration(lesson.duration)}
             </span>
           </div>
 
@@ -212,25 +218,38 @@ export default function LessonRoute() {
                 height: "0"
               }}
             >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Spinner className="h-8 w-8 text-white/70" />
-              </div>
-              <iframe
-                key={id}
-                id="loom-embed"
-                title={lesson.name}
-                src={`https://www.loom.com/embed/${
-                  lesson.loomUrl.split(/(?:share|embed)\//)[1]?.split("?")[0]
-                }?hideEmbedTopBar=true`}
-                allowFullScreen
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%"
-                }}
-              />
+              {isComingSoon || !embedId ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
+                  <LuVideoOff className="size-6 text-white/50" />
+                  <p className="font-mono text-ed-12 font-semibold uppercase tracking-[0.08em] text-white/70">
+                    Coming soon
+                  </p>
+                  <p className="max-w-sm text-ed-14 text-white/50">
+                    This lesson hasn&apos;t been recorded yet. The rest of the
+                    course is ready to watch.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Spinner className="h-8 w-8 text-white/70" />
+                  </div>
+                  <iframe
+                    key={id}
+                    id="loom-embed"
+                    title={lesson.name}
+                    src={`https://www.loom.com/embed/${embedId}?hideEmbedTopBar=true`}
+                    allowFullScreen
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%"
+                    }}
+                  />
+                </>
+              )}
             </div>
           </div>
 
@@ -273,10 +292,12 @@ export default function LessonRoute() {
 
           <div>
             <p className="mb-2 px-1 font-mono text-ed-11 font-semibold uppercase tracking-[0.08em] text-ed-ink/50">
-              Lessons in this topic
+              {context.lessonType === "supplemental"
+                ? "Supplemental videos"
+                : "Lessons in this topic"}
             </p>
             <div className="flex flex-col gap-0.5">
-              {topic.lessons.map((topicLesson) => {
+              {siblingLessons.map((topicLesson) => {
                 const isCompleted = completedLessons.includes(topicLesson.id);
                 const isCurrent = topicLesson.id === lesson.id;
                 return (
@@ -294,7 +315,9 @@ export default function LessonRoute() {
                       <span className="truncate">{topicLesson.name}</span>
                     </span>
                     <span className="shrink-0 font-mono text-ed-11 text-ed-ink/60">
-                      {formatDuration(topicLesson.duration)}
+                      {isLessonComingSoon(topicLesson)
+                        ? "Soon"
+                        : formatDuration(topicLesson.duration)}
                     </span>
                   </Link>
                 );

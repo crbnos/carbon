@@ -2,13 +2,14 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import { datetime, defaultReportRange } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Chart } from "~/modules/accounting";
 import {
+  financialReportParamsValidator,
   getCompaniesInGroup,
   getConsolidatedBalances,
   getFinancialStatementBalances,
@@ -16,6 +17,7 @@ import {
   translateCompanyBalances
 } from "~/modules/accounting";
 import {
+  exportTrialBalance,
   ReportFilters,
   TrialBalanceTree
 } from "~/modules/accounting/ui/Reports";
@@ -42,11 +44,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const companiesParam = searchParams.get("companies");
-  const startDate = searchParams.get("startDate") || null;
-  const endDate = searchParams.get("endDate") || null;
-  const showTranslated = searchParams.get("showTranslated") === "true";
+  // Invalid params fall back to defaults — a bad bookmark must not 500
+  const parsed = financialReportParamsValidator.safeParse(
+    Object.fromEntries(url.searchParams.entries())
+  );
+  const companiesParam = parsed.success
+    ? (parsed.data.companies ?? null)
+    : null;
+  const startDateParam = parsed.success
+    ? (parsed.data.startDate ?? null)
+    : null;
+  const endDateParam = parsed.success ? (parsed.data.endDate ?? null) : null;
+  const showTranslatedParam = parsed.success
+    ? parsed.data.showTranslated
+    : false;
 
   const [companies, fiscalYearSettings] = await Promise.all([
     getCompaniesInGroup(client, companyGroupId),
@@ -66,17 +77,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
         : [companyId];
   const isMultiCompany = selectedCompanyIds.length > 1;
 
+  // Default to the trailing six months, matching every other range report
+  // (previously trial balance alone defaulted to all-time).
+  const range = defaultReportRange(
+    endDateParam ??
+      datetime.today(await getCompanyTimeZone(client, companyId)).toString()
+  );
+  const startDate = startDateParam ?? range.startDate;
+  const endDate = endDateParam ?? range.endDate;
+
   if (isMultiCompany && parentCurrency) {
-    const periodEnd =
-      endDate ??
-      datetime.today(await getCompanyTimeZone(client, companyId)).toString();
     const consolidated = await getConsolidatedBalances(
       client,
       companyGroupId,
       selectedCompanyIds,
       parentCurrency,
-      periodEnd,
-      startDate ?? undefined
+      endDate,
+      startDate
     );
 
     return {
@@ -124,17 +141,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     exchangeRate?: number;
   })[];
 
-  if (showTranslated && isForeignCurrency && parentCurrency) {
-    const periodEnd =
-      endDate ??
-      datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  if (showTranslatedParam && isForeignCurrency && parentCurrency) {
     const translation = await translateCompanyBalances(
       client,
       companyGroupId,
       selectedCompanyId!,
       parentCurrency,
-      periodEnd,
-      startDate ?? undefined,
+      endDate,
+      startDate,
       balances.data ?? []
     );
 
@@ -161,7 +175,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     trialBalance: accounts,
     companies: companiesList,
     selectedCompanyIds,
-    showTranslated: showTranslated && isForeignCurrency,
+    showTranslated: showTranslatedParam && isForeignCurrency,
     isMultiCompany: false,
     isForeignCurrency,
     parentCurrency,
@@ -191,6 +205,15 @@ export default function TrialBalanceRoute() {
         isForeignCurrency={isForeignCurrency}
         parentCurrency={parentCurrency}
         fiscalStartMonth={fiscalStartMonth}
+        onDownload={() =>
+          exportTrialBalance({
+            accounts: trialBalance,
+            showTranslated,
+            parentCurrency,
+            search,
+            filename: "trial-balance.csv"
+          })
+        }
         search={search}
         onSearchChange={setSearch}
       />

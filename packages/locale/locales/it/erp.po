@@ -48,6 +48,10 @@ msgstr "(escluso per questo cliente)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {Questa parte è in 1 avviso di modifica aperto} other {Questa parte è in # avvisi di modifica aperti}}"
 
+#. placeholder {0}: selectedAccountIds.length
+msgid "{0} accounts"
+msgstr "{0} conti"
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} fa"
@@ -155,6 +159,9 @@ msgstr "{totalQuantity, plural, one {# unità} other {# unità}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# riga non conteggiata} other {# righe non conteggiate}}"
 
+msgid "{uploadedFileName} uploaded — fields filled from the document."
+msgstr "{uploadedFileName} caricato — campi compilati dal documento."
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# riga differisce dalla quantità prevista} other {# righe differiscono dalla quantità prevista}}"
 
@@ -163,6 +170,9 @@ msgstr "{years}ann"
 
 msgid "/month/user"
 msgstr "/mese/utente"
+
+msgid "% of total"
+msgstr "% del totale"
 
 msgid "% of Total"
 msgstr "% del Totale"
@@ -750,6 +760,9 @@ msgstr "Conto"
 msgid "Account & Details"
 msgstr "Conto e dettagli"
 
+msgid "Account balances with debits and credits"
+msgstr "Saldi dei conti con debiti e crediti"
+
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Contabilizzate i pagamenti anticipati effettuati prima della ricezione di beni o servizi."
 
@@ -789,8 +802,14 @@ msgstr "contabilità"
 msgid "Accounting"
 msgstr "Contabilità"
 
+msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
+msgstr "La contabilità è attualmente in beta. Richiedi l'accesso per abilitare report, voci di diario, periodi contabili, cespiti e altro."
+
 msgid "Accounting is disabled"
 msgstr "La contabilità è disabilitata"
+
+msgid "Accounting is disabled for this company."
+msgstr "La contabilità è disabilitata per questa azienda."
 
 msgid "Accounting is enabled"
 msgstr "La contabilità è abilitata"
@@ -1162,6 +1181,9 @@ msgstr "Dopo"
 msgid "After (calculation method)"
 msgstr "Dopo (metodo di calcolo)"
 
+msgid "Aging"
+msgstr "Scadenza"
+
 msgid "Agree on the scope"
 msgstr "Concordare sull'ambito"
 
@@ -1179,6 +1201,9 @@ msgstr "Tutti"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Tutte le {total} fasi sono completate. Ottimo lavoro — il tuo team è operativo."
+
+msgid "All accounts"
+msgstr "Tutti i conti"
 
 msgid "All actions selected"
 msgstr "Tutte le azioni selezionate"
@@ -1318,6 +1343,8 @@ msgstr ""
 
 msgid "An issue's type changes"
 msgstr ""
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "Un invito è in sospeso. Diventano attivi una volta che lo accettano."
 
 msgid "An item cannot be added to itself."
 msgstr "Un articolo non può essere aggiunto a se stesso."
@@ -1360,6 +1387,9 @@ msgstr "La posizione di un'operazione nella coda del suo centro di lavoro, l'ord
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Si è verificato un errore inatteso durante la connessione a Onshape. Riprova a connetterti."
+
+msgid "Analytics"
+msgstr "Analitiche"
 
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Ancora la cronologia del Piano alle date reali. Lascia vuoto per una cronologia relativa, numerata per settimane. Impostando uno qualsiasi dei due, il resto viene compilato automaticamente."
@@ -1406,6 +1436,9 @@ msgstr "Qualsiasi tipo di articolo"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Qualsiasi cosa non esplicitamente elencata nell'ambito di cui sopra"
+
+msgid "AP Aging"
+msgstr "Anzianità dei Debiti"
 
 msgid "AP Clerk"
 msgstr "Addetto Contabilità Fornitori"
@@ -1522,6 +1555,9 @@ msgstr "AQL"
 msgid "AQL (Z1.4 / ISO 2859-1)"
 msgstr "AQL (Z1.4 / ISO 2859-1)"
 
+msgid "AR Aging"
+msgstr "Anzianità dei Crediti"
+
 msgid "AR Clerk"
 msgstr "Addetto Contabilità Clienti"
 
@@ -1628,6 +1664,11 @@ msgstr "Sei sicuro di voler eliminare {0}? Questa azione non può essere annulla
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare {name}? Questa azione non può essere annullata."
+
+#. placeholder {0}: activeView.name
+#. placeholder {0}: viewPendingDelete.name
+msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
+msgstr "Sei sicuro di voler eliminare la visualizzazione \"{0}\"? Questa azione non può essere annullata."
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2024,6 +2065,9 @@ msgstr "ID Bene"
 msgid "Assets"
 msgstr "Cespiti"
 
+msgid "Assets, liabilities and equity as of a date"
+msgstr "Attività, passività e patrimonio netto a una data"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assegna stampanti alle posizioni. Spedizione, ricezione e centri di lavoro ereditano l'impostazione predefinita della posizione se non sovrascritti."
 
@@ -2296,6 +2340,9 @@ msgstr "Sotto stock di sicurezza"
 msgid "Beta"
 msgstr "Beta"
 
+msgid "Biggest causes of scrap by reason, item, or work center"
+msgstr "Cause principali di scarto per motivo, articolo o centro di lavoro"
+
 msgid "Bill of Material"
 msgstr "Distinta Base"
 
@@ -2438,11 +2485,17 @@ msgstr "da {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Accettando l'invito, accetti i <0>Termini di Servizio</0> e l'<1>Informativa sulla Privacy</1>."
 
+msgid "By dimension"
+msgstr "Per dimensione"
+
 msgid "By Document Date"
 msgstr "Per Data Documento"
 
 msgid "By Due Date"
 msgstr "Per Data di Scadenza"
+
+msgid "By field"
+msgstr "Per campo"
 
 msgid "By Item"
 msgstr "Per Articolo"
@@ -2816,6 +2869,9 @@ msgstr "Cancella ricerca"
 msgid "Clear search query"
 msgstr "Cancella query di ricerca"
 
+msgid "Clear selection"
+msgstr "Cancella selezione"
+
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Cancella questa fattura con i crediti registrati della parte nonché in contanti. I crediti si applicano direttamente — nessuna registrazione necessaria."
 
@@ -2860,6 +2916,9 @@ msgstr "Data di chiusura"
 
 msgid "Close Period"
 msgstr "Chiudi Periodo"
+
+msgid "Close Reports"
+msgstr "Chiudi Report"
 
 msgid "Close Status"
 msgstr "Stato Chiusura"
@@ -2914,6 +2973,12 @@ msgstr "Comprimi preparazione"
 
 msgid "Collapse subtree"
 msgstr "Comprimi sottostruttura"
+
+msgid "Column dimension"
+msgstr "Dimensione colonna"
+
+msgid "Column field"
+msgstr "Campo colonna"
 
 msgid "Column visibility and order"
 msgstr "Visibilità e ordine delle colonne"
@@ -3013,6 +3078,9 @@ msgstr "Codice a barre di completamento"
 
 msgid "Completion Time"
 msgstr "Tempo di completamento"
+
+msgid "Condensed P&L with margins and key subtotals"
+msgstr "Conto economico condensato con margini e subtotali chiave"
 
 msgid "Conditions"
 msgstr "Condizioni"
@@ -3515,6 +3583,9 @@ msgstr "Costo dei beni venduti (COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "Costo dei Beni Venduti (predefinito)"
+
+msgid "Cost of Sales"
+msgstr "Costo del venduto"
 
 msgid "Costing"
 msgstr "Calcolo dei costi"
@@ -4394,6 +4465,10 @@ msgstr "Definire distinte base multi-livello e Bill of Process (metodi di produz
 msgid "Delete"
 msgstr "Elimina"
 
+#. placeholder {0}: view.name
+msgid "Delete {0}"
+msgstr "Elimina {0}"
+
 msgid "Delete {name}"
 msgstr "Elimina {name}"
 
@@ -4679,6 +4754,9 @@ msgstr "Elimina Tipo"
 
 msgid "Delete Unit of Measure"
 msgstr "Elimina unità di misura"
+
+msgid "Delete view"
+msgstr "Elimina visualizzazione"
 
 msgid "Delete View"
 msgstr "Elimina Vista"
@@ -5846,6 +5924,9 @@ msgstr "Lo scambio del codice di autorizzazione con un token di accesso non è r
 msgid "Excluded"
 msgstr "Escluso"
 
+msgid "Executive P&L"
+msgstr "Conto economico direttivo"
+
 msgid "Exemption Certificate"
 msgstr "Certificato di Esenzione"
 
@@ -5915,6 +5996,9 @@ msgstr "Lato spese dei movimenti di imposte differite (abbinato a passivo d'impo
 
 msgid "Expense side of deferred tax movements (paired with deferred tax liability)."
 msgstr "Impossibile creare la classe di cespiti: {0}"
+
+msgid "Expenses"
+msgstr "Spese"
 
 msgid "Expert guidance"
 msgstr "Guida di esperti"
@@ -6429,6 +6513,9 @@ msgstr "Finalizza"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Finalizzazione di un mese fiscale attraverso il ciclo di vita Open → Locked → Closed; un periodo chiuso è bloccato e i suoi saldi vengono acquisiti, reversibili solo mediante una riapertura esplicita."
 
+msgid "Financial Statements"
+msgstr "Rendiconti Finanziari"
+
 msgid "finish"
 msgstr "Prodotti finiti"
 
@@ -6904,8 +6991,14 @@ msgstr "gradi"
 msgid "Grades"
 msgstr "Gradi"
 
+msgid "Gross Profit"
+msgstr "Margine lordo"
+
 msgid "Group"
 msgstr "Gruppo"
+
+msgid "Group by"
+msgstr "Raggruppa per"
 
 msgid "Group Members"
 msgstr "Membri del Gruppo"
@@ -7282,6 +7375,9 @@ msgstr "Reddito / Bilancio (ereditato)"
 
 msgid "Income Statement"
 msgstr "Conto Economico"
+
+msgid "Income Tax"
+msgstr "Imposta sul reddito"
 
 msgid "Income/Balance"
 msgstr "Reddito/Saldo"
@@ -7914,6 +8010,9 @@ msgstr "Unità di Lavoro"
 
 msgid "Language"
 msgstr "Lingua"
+
+msgid "Last 6 Months"
+msgstr "Ultimi 6 Mesi"
 
 msgid "Last Calibration"
 msgstr "Ultima Calibrazione"
@@ -8760,6 +8859,7 @@ msgstr "Denaro che devi"
 
 msgid "Monthly"
 msgstr ""
+msgstr "Mensile"
 
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Mesi in cui questo asset si deprezza a fini fiscali (quando non si utilizza MACRS)."
@@ -8876,6 +8976,9 @@ msgstr "Valore di Bilancio Netto"
 
 msgid "Net Change"
 msgstr "Variazione netta"
+
+msgid "Net Income"
+msgstr "Utile netto"
 
 msgid "Never"
 msgstr "Mai"
@@ -9384,6 +9487,9 @@ msgstr "Nessun articolo"
 msgid "No items have inventory activity here yet."
 msgstr "Nessun articolo ha attività di inventario qui ancora."
 
+msgid "No journal lines in scope for this period"
+msgstr "Nessuna riga di diario nell'ambito per questo periodo"
+
 msgid "No lines to map"
 msgstr "Nessuna riga da mappare"
 
@@ -9489,6 +9595,9 @@ msgstr "Nessun processo selezionato"
 msgid "No production events recorded for this operation yet"
 msgstr "Nessun evento di produzione ancora registrato per questa operazione"
 
+msgid "No purchases in this period"
+msgstr "Nessun acquisto in questo periodo"
+
 msgid "No Quote"
 msgstr "Nessuna offerta"
 
@@ -9509,6 +9618,9 @@ msgstr "Nessuna immagine di riferimento"
 
 msgid "No remaining entities to inspect."
 msgstr "Nessuna entità rimanente da ispezionare."
+
+msgid "No reports match your search."
+msgstr "Nessun report corrisponde alla tua ricerca."
 
 msgid "No results"
 msgstr "Nessun risultato"
@@ -9775,6 +9887,9 @@ msgstr "Quantità minima da mantenere per uso in servizio presso questa ubicazio
 msgid "On-hand inventory remains"
 msgstr "L'inventario disponibile rimane"
 
+msgid "On-hand value by location or item, with GL tie-out"
+msgstr "Valore disponibile per ubicazione o articolo, con riconciliazione contabile"
+
 msgid "On-hand value of manufactured goods (Make items)"
 msgstr "Valore disponibile dei beni fabbricati (articoli Make)"
 
@@ -9886,6 +10001,9 @@ msgstr "Lavori aperti"
 msgid "Open menu"
 msgstr "Apri menu"
 
+msgid "Open payables by supplier and age"
+msgstr "Debiti aperti per fornitore e anzianità"
+
 msgid "Open Purchase Invoices"
 msgstr "Fatture di acquisto aperte"
 
@@ -9900,6 +10018,9 @@ msgstr "Preventivi Aperti"
 
 msgid "Open Reactive"
 msgstr "Reattivo Aperto"
+
+msgid "Open receivables by customer and age"
+msgstr "Crediti aperti per cliente e anzianità"
 
 msgid "Open RFQs"
 msgstr "RFQ Aperti"
@@ -9936,6 +10057,9 @@ msgstr "Saldo di apertura dell'ammortamento già contabilizzato prima dell'aggiu
 
 msgid "Operating Expenses"
 msgstr "Spese Operative"
+
+msgid "Operating Income"
+msgstr "Utile operativo"
 
 msgid "Operation"
 msgstr "Operazione"
@@ -10075,6 +10199,12 @@ msgstr "Originale"
 
 msgid "Original Count"
 msgstr "Conteggio Originale"
+
+msgid "Other Expense"
+msgstr "Altre spese"
+
+msgid "Other Income"
+msgstr "Altre entrate"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Account di Altro Reddito per guadagni in valuta estera quando un pagamento regola una fattura in valuta estera a un tasso più favorevole"
@@ -10490,6 +10620,11 @@ msgstr "Pezzi/Minuto"
 
 msgid "Pin"
 msgstr "Fissa"
+
+#. placeholder {0}: report.name
+#. placeholder {0}: view.name
+msgid "Pin {0}"
+msgstr "Fissa {0}"
 
 msgid "Pinned"
 msgstr "Fissato"
@@ -11043,6 +11178,9 @@ msgstr "Unità di acquisto:"
 msgid "Purchased"
 msgstr "Acquistato"
 
+msgid "Purchases"
+msgstr "Acquisti"
+
 msgid "purchasing"
 msgstr "Acquisti e Costo del Venduto"
 
@@ -11191,6 +11329,9 @@ msgstr "Livelli di prezzo basati sulla quantità per questo override; il prezzo 
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "Quantità: {0}"
+
+msgid "Quarterly"
+msgstr "Trimestrale"
 
 msgid "Question"
 msgstr "Domanda"
@@ -11696,6 +11837,9 @@ msgstr "Sistema di Rifornimento"
 msgid "Report"
 msgstr "Rapporto"
 
+msgid "Reporting"
+msgstr "Report"
+
 msgid "Reporting dimension"
 msgstr "Dimensione di reporting"
 
@@ -11704,6 +11848,9 @@ msgstr "Rapporti"
 
 msgid "Reprint"
 msgstr "Ristampa"
+
+msgid "Request access"
+msgstr "Richiedi accesso"
 
 msgid "Request Approval"
 msgstr "Richiedi Approvazione"
@@ -11800,6 +11947,9 @@ msgstr "Risorse"
 msgid "Restore from Trash"
 msgstr "Ripristina dal Cestino"
 
+msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
+msgstr "Ripristina questa entità al magazzino disponibile nel bin e al costo da cui è stata scartata."
+
 msgid "Restore tracked entities to available"
 msgstr "Ripristina le entità tracciate come disponibili"
 
@@ -11841,6 +11991,12 @@ msgstr ""
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
+
+msgid "Revenue"
+msgstr "Ricavi"
+
+msgid "Revenue and expenses over a period"
+msgstr "Ricavi e spese in un periodo"
 
 msgid "Reverse all inventory adjustments"
 msgstr "Annulla tutti gli adeguamenti dell'inventario"
@@ -12216,11 +12372,16 @@ msgstr "Salva contatti"
 msgid "Save Method"
 msgstr "Salva Metodo"
 
+msgid "Save view"
+msgstr "Salva vista"
+
 msgid "Save View"
 msgstr "Salva Vista"
 
 msgid "Saved"
 msgstr ""
+msgid "Saved Views"
+msgstr "Viste salvate"
 
 msgid "Saving..."
 msgstr "Salvataggio in corso..."
@@ -12326,6 +12487,9 @@ msgstr "Motivi dello scarto"
 
 msgid "Scrap Reasons"
 msgstr "Motivi di Scarto"
+
+msgid "Scrapped"
+msgstr "Scartato"
 
 msgid "Search"
 msgstr "Cerca"
@@ -12991,6 +13155,15 @@ msgstr "Mostra opzioni di sincronizzazione"
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "Mostrando {0} di {totalCount} — raffina la tua ricerca"
 
+msgid "Showing in {parentCurrency}"
+msgstr "Visualizzazione in {parentCurrency}"
+
+msgid "Showing the first 500 lines"
+msgstr "Visualizzazione delle prime 500 righe"
+
+msgid "Showing the top 1,000 groups by amount"
+msgstr "Visualizzazione dei primi 1.000 gruppi per importo"
+
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Mostrato come sfondo tenue dietro ogni pagina dei PDF generati"
 
@@ -13059,6 +13232,15 @@ msgstr "Saltato"
 
 msgid "Slack"
 msgstr "Slack"
+
+msgid "Slice asset activity by location, item, or any dimension"
+msgstr "Suddividi l'attività dei cespiti per ubicazione, articolo o qualsiasi dimensione"
+
+msgid "Slice expenses by location, cost center, or any dimension"
+msgstr "Suddividi le spese per ubicazione, centro di costo o qualsiasi dimensione"
+
+msgid "Slice revenue by customer, customer type, or any dimension"
+msgstr "Seziona ricavi per cliente, tipo cliente o qualsiasi dimensione"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Smoke-test dei flussi giornalieri principali da inizio a fine"
@@ -13152,6 +13334,9 @@ msgstr "Clienti Specifici"
 
 msgid "Specific Items"
 msgstr "Articoli Specifici"
+
+msgid "Spend by supplier, item, or category — your biggest cost drivers"
+msgstr "Spesa per fornitore, articolo o categoria — i tuoi principali driver di costo"
 
 msgid "Split"
 msgstr "Dividi"
@@ -14568,6 +14753,9 @@ msgstr "Tema"
 msgid "Theme Color"
 msgstr "Colore Tema"
 
+msgid "Then by"
+msgstr "Quindi per"
+
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Non ci sono preventivi fornitori attivi da confrontare per questa RFQ."
 
@@ -14834,8 +15022,17 @@ msgstr "Fuso orario"
 msgid "Title"
 msgstr "Titolo"
 
+msgid "To Date"
+msgstr "A data"
+
+msgid "To deactivate, use the row menu and choose Deactivate Account."
+msgstr "Per disattivare, usa il menu della riga e scegli Disattiva Account."
+
 msgid "To Location"
 msgstr "Ubicazione di destinazione"
+
+msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
+msgstr "Per riattivare, usa il menu della riga e scegli Invia Invito. Il dipendente diventa attivo una volta che accetta."
 
 msgid "To Receive"
 msgstr "Da Ricevere"
@@ -15261,6 +15458,11 @@ msgstr "Annulla prelievo"
 msgid "Unpick {0}"
 msgstr "Annulla prelievo {0}"
 
+#. placeholder {0}: report.name
+#. placeholder {0}: view.name
+msgid "Unpin {0}"
+msgstr "Rimuovi {0}"
+
 msgid "Unposted Documents"
 msgstr "Documenti Non Registrati"
 
@@ -15269,6 +15471,12 @@ msgstr "PO non ricevuti"
 
 msgid "Unsaved changes"
 msgstr "Modifiche non salvate"
+
+msgid "Unscrap"
+msgstr "Annulla scarto"
+
+msgid "Unscrap {label}"
+msgstr "Annulla scarto {label}"
 
 msgid "Unshipped orders"
 msgstr "Ordini non spediti"
@@ -15403,6 +15611,9 @@ msgstr "Caricamento completato ma nessun percorso file restituito"
 msgid "Upload CSV"
 msgstr "Carica CSV"
 
+msgid "Upload failed. Please try again."
+msgstr "Caricamento non riuscito. Riprova."
+
 msgid "Uploaded model"
 msgstr "Modello caricato"
 
@@ -15533,9 +15744,6 @@ msgstr "Convalidato"
 
 msgid "Validating job..."
 msgstr "Convalida processo..."
-
-msgid "Valuation"
-msgstr "Valutazione"
 
 msgid "Value"
 msgstr "Valore"
@@ -15981,6 +16189,9 @@ msgstr "Cosa cambia quando passi a Carbon e approssimativamente quanto vale. Sti
 msgid "What data"
 msgstr "Quali dati"
 
+msgid "What drove inventory up or down, by any dimension"
+msgstr "Cosa ha fatto aumentare o diminuire l'inventario, per qualsiasi dimensione"
+
 msgid "What is {translatedTerm}?"
 msgstr "Cos'è {translatedTerm}?"
 
@@ -16397,6 +16608,9 @@ msgstr "Ridurre il valore di un bene nel corso della sua vita utile — un batch
 
 msgid "Year"
 msgstr "Anno"
+
+msgid "Yearly"
+msgstr "Annuale"
 
 msgid "Yes"
 msgstr "Sì"

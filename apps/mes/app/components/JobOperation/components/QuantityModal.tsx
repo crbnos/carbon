@@ -54,6 +54,7 @@ export function QuantityModal({
   parentIsBatch = false,
   setupProductionEvent,
   trackedEntityId,
+  trackedEntityReadableId,
   type,
   onClose
 }: {
@@ -66,6 +67,9 @@ export function QuantityModal({
   parentIsBatch?: boolean;
   setupProductionEvent: ProductionEvent | undefined;
   trackedEntityId: string;
+  // Serial parents: the selected unit's serial number, shown in the scrap
+  // confirmation so the operator knows exactly which unit is being scrapped.
+  trackedEntityReadableId?: string;
   type: "scrap" | "rework" | "complete" | "finish";
   onClose: () => void;
 }) {
@@ -288,6 +292,26 @@ export function QuantityModal({
               )}
               {type === "scrap" ? (
                 <>
+                  {parentIsSerial && (
+                    <Alert>
+                      <LuTriangleAlert className="h-4 w-4" />
+                      <AlertTitle>
+                        {trackedEntityReadableId ? (
+                          <Trans>
+                            Scrapping serial {trackedEntityReadableId}
+                          </Trans>
+                        ) : (
+                          <Trans>Scrapping the selected serial</Trans>
+                        )}
+                      </AlertTitle>
+                      <AlertDescription>
+                        <Trans>
+                          This unit will be permanently scrapped and a
+                          replacement serial number will be created.
+                        </Trans>
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   <ScrapReason
                     name="scrapReasonId"
                     label={t`Scrap Reason`}

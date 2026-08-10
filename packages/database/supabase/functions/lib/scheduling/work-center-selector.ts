@@ -242,8 +242,9 @@ export class WorkCenterSelector {
 
   /**
    * Select work centers for multiple operations
-   * Re-evaluates all work center assignments based on scheduled dates
-   * Tracks in-memory load to ensure proper load balancing within same scheduling run
+   * Re-evaluates work center assignments based on scheduled dates for ops that
+   * do not already have a work center. Pre-assigned work centers (user/method)
+   * are preserved; their load is still counted for balancing remaining ops.
    */
   async selectWorkCentersForOperations(
     operations: ScheduledOperation[]
@@ -267,6 +268,18 @@ export class WorkCenterSelector {
         continue;
       }
 
+      // Preserve user/method pre-assigned work centers; still track load so
+      // load balancing for unassigned ops accounts for this work.
+      if (hasPreassignedWorkCenter(op.workCenterId)) {
+        selections.set(op.id, {
+          workCenterId: op.workCenterId!,
+          priority: 0,
+        });
+        const opDuration = op.durationHours ?? calculateDurationHours(op);
+        this.addInMemoryLoad(op.workCenterId!, opDuration);
+        continue;
+      }
+
       const selection = await this.selectWorkCenter(
         op.processId,
         op.startDate
@@ -285,7 +298,18 @@ export class WorkCenterSelector {
 }
 
 /**
- * Apply work center selections to scheduled operations
+ * True when an operation already has a non-empty work center assignment
+ * (user drag on ops board, method default, prior schedule, etc.).
+ */
+export function hasPreassignedWorkCenter(
+  workCenterId: string | null | undefined
+): boolean {
+  return workCenterId != null && workCenterId !== "";
+}
+
+/**
+ * Apply work center selections to scheduled operations.
+ * Never overwrites an existing non-empty workCenterId.
  */
 export function applyWorkCenterSelections(
   operations: Map<string, ScheduledOperation>,
@@ -294,6 +318,12 @@ export function applyWorkCenterSelections(
   const result = new Map<string, ScheduledOperation>();
 
   for (const [opId, op] of operations) {
+    // Do not clobber a pre-assigned work center (user or method default)
+    if (hasPreassignedWorkCenter(op.workCenterId)) {
+      result.set(opId, op);
+      continue;
+    }
+
     const selection = selections.get(opId);
     if (selection?.workCenterId) {
       result.set(opId, {

@@ -2,21 +2,27 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import {
+  computeReportPeriodBuckets,
+  datetime,
+  defaultReportRange
+} from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import type { Chart } from "~/modules/accounting";
 import {
+  financialReportParamsValidator,
   getCompaniesInGroup,
-  getConsolidatedBalances,
-  getFinancialStatementBalances,
-  getFiscalYearSettings,
-  translateCompanyBalances
+  getConsolidatedPeriodSeries,
+  getFinancialStatementPeriodSeries,
+  getFiscalYearSettings
 } from "~/modules/accounting";
 import {
-  FinancialStatementTree,
+  exportPeriodReport,
+  getPeriodColumnLabel,
+  MultiPeriodStatementTree,
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
 import { months } from "~/modules/shared";
@@ -42,11 +48,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const companiesParam = searchParams.get("companies");
-  const startDate = searchParams.get("startDate") || null;
-  const endDate = searchParams.get("endDate") || null;
-  const showTranslated = searchParams.get("showTranslated") === "true";
+  // Invalid params fall back to defaults — a bad bookmark must not 500
+  const parsed = financialReportParamsValidator.safeParse(
+    Object.fromEntries(url.searchParams.entries())
+  );
+  const companiesParam = parsed.success
+    ? (parsed.data.companies ?? null)
+    : null;
+  const startDateParam = parsed.success
+    ? (parsed.data.startDate ?? null)
+    : null;
+  const endDateParam = parsed.success ? (parsed.data.endDate ?? null) : null;
+  const columns = parsed.success ? parsed.data.columns : ("month" as const);
+  const showTranslatedParam = parsed.success
+    ? parsed.data.showTranslated
+    : false;
 
   const [companies, fiscalYearSettings] = await Promise.all([
     getCompaniesInGroup(client, companyGroupId),
@@ -66,28 +82,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
         : [companyId];
   const isMultiCompany = selectedCompanyIds.length > 1;
 
+  // Default range: last 6 months to date (in the company's business timezone) —
+  // the current partial month plus the five preceding whole months.
+  const range = defaultReportRange(
+    endDateParam ??
+      datetime.today(await getCompanyTimeZone(client, companyId)).toString()
+  );
+  const endDate = range.endDate;
+  const startDate = startDateParam ?? range.startDate;
+
+  const buckets = computeReportPeriodBuckets(
+    startDate,
+    endDate,
+    columns,
+    fiscalStartMonth
+  );
+
   if (isMultiCompany && parentCurrency) {
-    const periodEnd =
-      endDate ??
-      datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-    const consolidated = await getConsolidatedBalances(
+    const consolidated = await getConsolidatedPeriodSeries(
       client,
       companyGroupId,
       selectedCompanyIds,
       parentCurrency,
-      periodEnd,
-      startDate ?? undefined
-    );
-
-    const incomeStatementAccounts = consolidated.data.filter(
-      (a) => a.incomeBalance === "Income Statement"
+      { buckets }
     );
 
     return {
-      incomeStatement: incomeStatementAccounts as (Chart & {
-        translatedBalance?: number;
-        exchangeRate?: number;
-      })[],
+      incomeStatement: consolidated.data.filter(
+        (a) => a.incomeBalance === "Income Statement"
+      ),
+      periods: buckets,
+      columns,
       companies: companiesList,
       selectedCompanyIds,
       showTranslated: true,
@@ -99,72 +124,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // Single company
-  const selectedCompanyId = selectedCompanyIds[0];
-  const balances = await getFinancialStatementBalances(
-    client,
-    companyGroupId,
-    selectedCompanyId,
-    { startDate, endDate }
-  );
-
-  if (balances.error) {
-    throw redirect(
-      path.to.accounting,
-      await flash(
-        request,
-        error(balances.error, "Failed to load income statement")
-      )
-    );
-  }
-
+  const selectedCompanyId = selectedCompanyIds[0]!;
   const selectedCompany = companiesList.find((c) => c.id === selectedCompanyId);
   const isForeignCurrency =
     !!parentCurrency &&
     !!selectedCompany?.baseCurrencyCode &&
     selectedCompany.baseCurrencyCode !== parentCurrency;
+  const showTranslated = showTranslatedParam && isForeignCurrency;
 
-  let incomeStatementAccounts = (balances.data ?? []).filter(
-    (a) => a.incomeBalance === "Income Statement"
-  ) as (Chart & { translatedBalance?: number; exchangeRate?: number })[];
-
-  if (showTranslated && isForeignCurrency && parentCurrency) {
-    const periodEnd =
-      endDate ??
-      datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-    const translation = await translateCompanyBalances(
-      client,
-      companyGroupId,
-      selectedCompanyId!,
-      parentCurrency,
-      periodEnd,
-      startDate ?? undefined,
-      balances.data ?? []
-    );
-
-    if (translation.data) {
-      const translationMap = new Map(
-        translation.data.map((t) => [t.accountId, t])
-      );
-
-      incomeStatementAccounts = incomeStatementAccounts.map((account) => {
-        const t = translationMap.get(account.id);
-        if (t) {
-          return {
-            ...account,
-            translatedBalance: Number(t.translatedBalance),
-            exchangeRate: Number(t.exchangeRate)
-          };
-        }
-        return account;
-      });
+  const series = await getFinancialStatementPeriodSeries(
+    client,
+    companyGroupId,
+    selectedCompanyId,
+    {
+      buckets,
+      ...(showTranslated && parentCurrency
+        ? { translate: { targetCurrency: parentCurrency } }
+        : {})
     }
+  );
+
+  if (series.error) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(series.error, "Failed to load income statement")
+      )
+    );
   }
 
   return {
-    incomeStatement: incomeStatementAccounts,
+    incomeStatement: (series.data ?? []).filter(
+      (a) => a.incomeBalance === "Income Statement"
+    ),
+    periods: buckets,
+    columns,
     companies: companiesList,
     selectedCompanyIds,
-    showTranslated: showTranslated && isForeignCurrency,
+    showTranslated,
     isMultiCompany: false,
     isForeignCurrency,
     parentCurrency,
@@ -175,6 +173,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function IncomeStatementRoute() {
   const {
     incomeStatement,
+    periods,
+    columns,
     companies,
     selectedCompanyIds,
     showTranslated,
@@ -184,6 +184,7 @@ export default function IncomeStatementRoute() {
     fiscalStartMonth
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
+  const { locale } = useLocale();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -193,12 +194,31 @@ export default function IncomeStatementRoute() {
         isMultiCompany={isMultiCompany}
         isForeignCurrency={isForeignCurrency}
         parentCurrency={parentCurrency}
+        periodVariant="range"
         fiscalStartMonth={fiscalStartMonth}
+        showColumns
+        onDownload={() =>
+          exportPeriodReport({
+            accounts: incomeStatement,
+            periods: periods.map((bucket) => ({
+              ...bucket,
+              label:
+                getPeriodColumnLabel(bucket, columns, locale) +
+                (bucket.isPartial ? " (To Date)" : "")
+            })),
+            measure: "netChange",
+            showTranslated,
+            search,
+            filename: "income-statement.csv"
+          })
+        }
         search={search}
         onSearchChange={setSearch}
       />
-      <FinancialStatementTree
+      <MultiPeriodStatementTree
         data={incomeStatement}
+        periods={periods}
+        columns={columns}
         measure="netChange"
         showTranslated={showTranslated}
         parentCurrency={parentCurrency}

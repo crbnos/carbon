@@ -1202,9 +1202,12 @@ export function isSerialEntityIncompleteForOperation(
   jobOperationId: string
 ): boolean {
   const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
+  // Scrapped is terminal like Consumed — a scrapped unit is never a work
+  // candidate; its replacement is the spawned Reserved entity.
   return (
     !(`Operation ${jobOperationId}` in attributes) &&
-    entity.status !== "Consumed"
+    entity.status !== "Consumed" &&
+    entity.status !== "Scrapped"
   );
 }
 
@@ -1221,10 +1224,20 @@ export function getNextIncompleteSerialEntity<
   T extends SerialEntityForSelection
 >(entities: T[], jobOperationId: string): T | undefined {
   if (entities.length === 0) return undefined;
+  // Prefer a non-terminal (not Consumed/Scrapped) unit for the end-state
+  // fallback so we never seed work onto a scrapped/consumed serial. But keep
+  // the guaranteed last-entity fallback for a fully-terminal make method (every
+  // unit Consumed on a finished subassembly), preserving the prior behavior of
+  // always returning something when entities exist.
+  const selectable = entities.filter(
+    (entity) => entity.status !== "Consumed" && entity.status !== "Scrapped"
+  );
   return (
-    entities.find((entity) =>
+    selectable.find((entity) =>
       isSerialEntityIncompleteForOperation(entity, jobOperationId)
-    ) ?? entities[entities.length - 1]
+    ) ??
+    selectable[selectable.length - 1] ??
+    entities[entities.length - 1]
   );
 }
 
@@ -1270,6 +1283,15 @@ export async function getTrackedInputs(
       p_tracked_entity_id: trackedEntityId
     })
   ]);
+
+  // A scrapped descendant is no longer a live consumed input — the scrap flow
+  // relieved its WIP and reopened the material requirement — so it must not
+  // surface in the Unconsume/Scrap lists (which are built from these inputs).
+  // Genealogy still sees it via the traceability lineage RPCs; this MES helper
+  // intentionally hides it.
+  if (inputs.data) {
+    inputs.data = inputs.data.filter((input) => input.status !== "Scrapped");
+  }
 
   if (outputs.error || outputs.data.length === 0) return inputs;
 

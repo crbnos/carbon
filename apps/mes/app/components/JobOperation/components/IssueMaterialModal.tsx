@@ -49,6 +49,7 @@ import {
   LuCirclePlus,
   LuList,
   LuQrCode,
+  LuTrash2,
   LuUndo2,
   LuX
 } from "react-icons/lu";
@@ -62,6 +63,9 @@ import { issueValidator } from "~/services/models";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { ScrapEntityModal } from "./ScrapEntityModal";
+import type { ScrappableEntity } from "./ScrapTab";
+import { ScrapTab } from "./ScrapTab";
 
 type TrackingType = "Serial" | "Batch" | "Inventory" | "Non-Inventory" | null;
 
@@ -287,6 +291,33 @@ export function IssueMaterialModal({
     }));
   }, [trackedInputs]);
 
+  // Scrappable entities for this material: available (picked / in stock,
+  // pulled from the item's available serials) + already-consumed (trackedInputs).
+  const scrappableEntities = useMemo<ScrappableEntity[]>(() => {
+    const consumed: ScrappableEntity[] = trackedInputs.map((input) => ({
+      id: input.id,
+      readableId: input.readableId,
+      state: "Consumed" as const
+    }));
+    const consumedIds = new Set(consumed.map((e) => e.id));
+    const availableSource =
+      trackingType === "Batch"
+        ? (batchNumbers?.data ?? [])
+        : (serialNumbers?.data ?? []);
+    const available: ScrappableEntity[] = availableSource
+      // Batch numbers are not pre-filtered by status at the query, so guard here
+      // (serial numbers already come back Available-only) — Reserved/On Hold/
+      // Scrapped entities must never appear as scrap-from-stock targets.
+      .filter((s) => s.status === "Available")
+      .filter((s) => !consumedIds.has(s.id))
+      .map((s) => ({
+        id: s.id,
+        readableId: s.readableId,
+        state: "Available" as const
+      }));
+    return [...available, ...consumed];
+  }, [trackedInputs, trackingType, serialNumbers?.data, batchNumbers?.data]);
+
   // Default issue quantity. Serial parents always issue per-unit
   // (material.quantity is the per-unit requirement and quantityIssued is
   // scoped to the parent entity). The assembly view issues per-unit for
@@ -316,6 +347,10 @@ export function IssueMaterialModal({
       .map((_, index) => ({ index, id: "" }))
   );
   const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
+  const [scrapEntityTarget, setScrapEntityTarget] = useState<{
+    id: string;
+    readableId?: string | null;
+  } | null>(null);
   const [selectedTrackedInputs, setSelectedTrackedInputs] = useState<string[]>(
     []
   );
@@ -1295,8 +1330,8 @@ export function IssueMaterialModal({
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                       <TabsList
                         className={cn(
-                          "grid w-full grid-cols-2 mb-4",
-                          hasTrackedInputs && "grid-cols-3"
+                          "grid w-full grid-cols-3 mb-4",
+                          hasTrackedInputs && "grid-cols-4"
                         )}
                       >
                         <TabsTrigger value="scan">
@@ -1307,6 +1342,10 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
+                        <TabsTrigger value="scrap">
+                          <LuTrash2 className="mr-2" />
+                          Scrap
+                        </TabsTrigger>
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1314,6 +1353,18 @@ export function IssueMaterialModal({
                           </TabsTrigger>
                         )}
                       </TabsList>
+
+                      <TabsContent value="scrap">
+                        <ScrapTab
+                          entities={scrappableEntities}
+                          onScrap={(entity) =>
+                            setScrapEntityTarget({
+                              id: entity.id,
+                              readableId: entity.readableId
+                            })
+                          }
+                        />
+                      </TabsContent>
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
@@ -1548,8 +1599,8 @@ export function IssueMaterialModal({
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                       <TabsList
                         className={cn(
-                          "grid w-full grid-cols-2 mb-4",
-                          hasTrackedInputs && "grid-cols-3"
+                          "grid w-full grid-cols-3 mb-4",
+                          hasTrackedInputs && "grid-cols-4"
                         )}
                       >
                         <TabsTrigger value="scan">
@@ -1560,6 +1611,10 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
+                        <TabsTrigger value="scrap">
+                          <LuTrash2 className="mr-2" />
+                          Scrap
+                        </TabsTrigger>
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1567,6 +1622,18 @@ export function IssueMaterialModal({
                           </TabsTrigger>
                         )}
                       </TabsList>
+
+                      <TabsContent value="scrap">
+                        <ScrapTab
+                          entities={scrappableEntities}
+                          onScrap={(entity) =>
+                            setScrapEntityTarget({
+                              id: entity.id,
+                              readableId: entity.readableId
+                            })
+                          }
+                        />
+                      </TabsContent>
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
@@ -1886,6 +1953,16 @@ export function IssueMaterialModal({
           )}
         </ModalContent>
       </Modal>
+      {scrapEntityTarget && (
+        <ScrapEntityModal
+          materialId={material?.id ?? ""}
+          trackedEntityId={scrapEntityTarget.id}
+          readableId={scrapEntityTarget.readableId}
+          parentId={parentId}
+          isMakeToOrder={material?.methodType === "Make to Order"}
+          onClose={() => setScrapEntityTarget(null)}
+        />
+      )}
     </>
   );
 }

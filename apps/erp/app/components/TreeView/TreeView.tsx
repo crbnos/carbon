@@ -24,6 +24,14 @@ export type TreeViewProps<TData> = {
   parentRef?: MutableRefObject<HTMLElement | null>;
   scrollRef?: MutableRefObject<HTMLElement | null>;
   onScroll?: (scrollTop: number) => void;
+  /**
+   * Minimum content width in px for horizontally scrollable trees (rows wider
+   * than the viewport). Without it the inner containers clamp to 100% and the
+   * per-row overflow-clip wrapper clips wide rows, so the tree can never
+   * scroll horizontally. Pair with an `overflow-x-auto` parentClassName;
+   * sticky (pinned) cells inside rows stick to this component's scroller.
+   */
+  contentMinWidth?: number;
 } & Pick<UseTreeStateOutput, "getTreeProps" | "getNodeProps">;
 
 export type GetTreePropsFn = UseTreeStateOutput["getTreeProps"];
@@ -40,7 +48,8 @@ export function TreeView<TData>({
   virtualizer,
   parentRef,
   scrollRef,
-  onScroll
+  onScroll,
+  contentMinWidth
 }: TreeViewProps<TData>) {
   useEffect(() => {
     if (autoFocus) {
@@ -89,6 +98,7 @@ export function TreeView<TData>({
         style={{
           height: `${virtualizer.getTotalSize()}px`,
           width: "100%",
+          minWidth: contentMinWidth,
           position: "relative",
           overflowY: "visible"
         }}
@@ -100,6 +110,7 @@ export function TreeView<TData>({
             top: 0,
             left: 0,
             width: "100%",
+            minWidth: contentMinWidth,
             transform: `translateY(${virtualItems.at(0)?.start ?? 0}px)`
           }}
         >

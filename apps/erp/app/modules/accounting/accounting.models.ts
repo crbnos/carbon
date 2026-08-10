@@ -68,6 +68,212 @@ export const accountClassTypes = [
   "Expense"
 ] as const;
 
+export const financialReportColumns = ["month", "quarter", "year"] as const;
+
+// Pin/unpin toggle on the reports hub (/x/accounting/reports)
+export const reportPinValidator = z.object({
+  reportKey: z.string().min(1),
+  pinned: z.enum(["true", "false"])
+});
+
+// URL search params for the /x/reports financial statements. Parsed with
+// safeParse in the loaders — invalid params fall back to defaults rather than
+// failing the report.
+export const financialReportParamsValidator = z.object({
+  companies: z.string().optional(),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  columns: z.enum(financialReportColumns).catch("month").default("month"),
+  showTranslated: z
+    .string()
+    .optional()
+    .transform((v) => v === "true")
+});
+
+// -- Dimensional analytics (pivot) reports --
+// Spec: .ai/specs/2026-08-09-dimensional-pivot-reporting.md
+
+export const analyticsReportKeys = [
+  "revenue",
+  "expenses",
+  "assets",
+  "inventory-change",
+  "scrap"
+] as const;
+export type AnalyticsReportKey = (typeof analyticsReportKeys)[number];
+
+// Account scope: exactly one selector. "scrapAccounts" resolves at runtime to
+// accountDefault.scrapAccount (getScrapAccountIds in accounting.service.ts).
+export type AnalyticsAccountScope =
+  | { classes: (typeof accountClassTypes)[number][] }
+  | { types: (typeof accountTypes)[number][] }
+  | { source: "scrapAccounts" };
+
+export type AnalyticsReportDefinition = {
+  key: AnalyticsReportKey;
+  accountScope: AnalyticsAccountScope;
+  // Row selections applied when the URL has no pivot params. Entries use the
+  // "et:<entityType>" alias the analytics loader resolves to a dimension id.
+  defaultRows: string[];
+};
+
+export const analyticsReports: Record<
+  AnalyticsReportKey,
+  AnalyticsReportDefinition
+> = {
+  revenue: {
+    key: "revenue",
+    accountScope: { classes: ["Revenue"] },
+    defaultRows: ["et:Customer"]
+  },
+  expenses: {
+    key: "expenses",
+    accountScope: { classes: ["Expense"] },
+    defaultRows: ["et:Location"]
+  },
+  assets: {
+    key: "assets",
+    accountScope: { classes: ["Asset"] },
+    defaultRows: ["et:Location"]
+  },
+  "inventory-change": {
+    key: "inventory-change",
+    accountScope: { types: ["Inventory"] },
+    defaultRows: ["et:Location"]
+  },
+  scrap: {
+    key: "scrap",
+    accountScope: { source: "scrapAccounts" },
+    defaultRows: ["et:ScrapReason"]
+  }
+};
+
+export const pivotMeasures = ["amount", "quantity", "count"] as const;
+export type PivotMeasure = (typeof pivotMeasures)[number];
+
+// Purchases report — grouping fields (columns on the purchase invoice line /
+// its header), NOT journal dimensions. The purchases pivot RPC resolves each
+// to a value id; the report reuses the shared PivotState (rows/columnAxis hold
+// these field keys).
+export const purchaseGroupingFields = [
+  "supplier",
+  "supplierType",
+  "item",
+  "itemPostingGroup",
+  "costCenter"
+] as const;
+export type PurchaseGroupingField = (typeof purchaseGroupingFields)[number];
+
+export const pivotColumnAxisValidator = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("period"),
+    bucket: z.enum(financialReportColumns)
+  }),
+  z.object({ type: z.literal("dimension"), dimensionId: z.string().min(1) })
+]);
+export type PivotColumnAxis = z.infer<typeof pivotColumnAxisValidator>;
+
+// Pivot state, encoded in the URL as:
+//   rows    = comma-separated dimension ids (or "et:<entityType>" aliases), max 2
+//   col     = "period:month|quarter|year" or "dim:<dimensionId>"
+//   measure = amount|quantity|count; pct=1 for percent-of-column-total
+//   filters = URL-encoded JSON [{dimensionId, valueIds}]
+//   accounts = comma-separated account ids narrowing the report's account scope
+//   sort    = "<columnKey|__total__|__label__>:asc|desc" (row sort; omit for the
+//             default ABS(measure) descending)
+//   startDate/endDate — same params ReportFilters writes
+export const pivotStateValidator = z.object({
+  rows: z.array(z.string().min(1)).max(2).default([]),
+  columnAxis: pivotColumnAxisValidator.default({
+    type: "period",
+    bucket: "month"
+  }),
+  measure: z.enum(pivotMeasures).default("amount"),
+  percentOfTotal: z.boolean().default(false),
+  // Row sort. null (the default) means ABS(measure) descending, Unassigned last.
+  sort: z
+    .object({
+      key: z.string().min(1),
+      direction: z.enum(["asc", "desc"])
+    })
+    .nullable()
+    .default(null),
+  filters: z
+    .array(
+      z.object({
+        dimensionId: z.string().min(1),
+        valueIds: z.array(z.string()).min(1)
+      })
+    )
+    .default([]),
+  // Optional narrowing to specific accounts WITHIN the report's account scope
+  // (base classes/types define the universe; these intersect it).
+  accountIds: z.array(z.string().min(1)).default([])
+});
+export type PivotState = z.infer<typeof pivotStateValidator>;
+
+/**
+ * Overlay the client-only display params (`measure` / `pct` / `sort`) from the
+ * URL onto a loader-derived PivotState. The analytics report loaders skip
+ * revalidation when only these change (see `revalidateIgnoringPivotDisplay`), so
+ * the route component re-derives them here to stay in sync without a refetch.
+ * A server-affecting change always re-runs the loader, so the passed `state` is
+ * the correct base (saved view / default) for any display param absent from the
+ * URL — including after the user clears a sort.
+ */
+export function applyPivotDisplayParams(
+  state: PivotState,
+  searchParams: URLSearchParams
+): PivotState {
+  const measureParam = searchParams.get("measure");
+  const measure = (pivotMeasures as readonly string[]).includes(
+    measureParam ?? ""
+  )
+    ? (measureParam as PivotMeasure)
+    : state.measure;
+
+  const pctParam = searchParams.get("pct");
+  const percentOfTotal =
+    pctParam !== null ? pctParam === "1" : state.percentOfTotal;
+
+  const sortParam = searchParams.get("sort");
+  let sort = state.sort;
+  if (sortParam !== null) {
+    const separator = sortParam.lastIndexOf(":");
+    const key = separator > 0 ? sortParam.slice(0, separator) : "";
+    const direction = separator > 0 ? sortParam.slice(separator + 1) : "";
+    sort =
+      key && (direction === "asc" || direction === "desc")
+        ? { key, direction }
+        : state.sort;
+  }
+
+  return { ...state, measure, percentOfTotal, sort };
+}
+
+export const reportViewVisibilities = ["Private", "Company"] as const;
+
+// Save-view modal on the analytics reports; config is a JSON-encoded
+// PivotState re-parsed with pivotStateValidator in the route action.
+export const reportViewValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  reportKey: z.enum(analyticsReportKeys),
+  name: z
+    .string()
+    .min(1, { message: "Name is required" })
+    .max(100, { message: "Name must be 100 characters or fewer" }),
+  visibility: z.enum(reportViewVisibilities, {
+    errorMap: () => ({ message: "Visibility is required" })
+  }),
+  config: z.string().min(2, { message: "Config is required" })
+});
+
 export const groupAccountValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -589,6 +795,7 @@ export const dimensionEntityTypes = [
   "ItemPostingGroup",
   "Location",
   "Process",
+  "ScrapReason",
   "Supplier",
   "SupplierType",
   "WorkCenter"

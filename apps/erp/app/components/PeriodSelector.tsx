@@ -5,6 +5,7 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@carbon/react";
+import { defaultReportRange } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import {
   endOfMonth,
@@ -35,6 +36,12 @@ type PeriodSelectorProps = {
   variant?: PeriodSelectorVariant;
   /** Fiscal year start month (1-12) from fiscalYearSettings; defaults to January */
   fiscalStartMonth?: number;
+  /**
+   * Preset id shown as active when no date params are set — mirrors the
+   * report loader's default range so the trigger label isn't misleading
+   * (e.g. "last-6-months" instead of "All Time").
+   */
+  defaultPresetId?: string;
 };
 
 function quarterStart(date: CalendarDate): CalendarDate {
@@ -72,7 +79,8 @@ function presetDates(preset: PeriodPreset): string | null {
 
 const PeriodSelector = ({
   variant = "range",
-  fiscalStartMonth = 1
+  fiscalStartMonth = 1,
+  defaultPresetId
 }: PeriodSelectorProps) => {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
@@ -145,6 +153,13 @@ const PeriodSelector = ({
         endDate: thisQuarterStart.subtract({ days: 1 }).toString()
       },
       {
+        id: "last-6-months",
+        label: t`Last 6 Months`,
+        // Shares its bounds with the loaders' `defaultReportRange`, so the
+        // default label and the queried window can never drift.
+        ...defaultReportRange(now.toString())
+      },
+      {
         id: "this-year",
         label: t`This Fiscal Year`,
         startDate: fyStart.toString(),
@@ -161,19 +176,27 @@ const PeriodSelector = ({
         label: t`Fiscal Year to Date`,
         startDate: fyStart.toString(),
         endDate: now.toString()
-      },
-      {
-        id: "all-time",
-        label: t`All Time`
       }
     ];
   }, [variant, fiscalStartMonth, t]);
 
-  const activePreset = presets.find((preset) =>
-    variant === "asOf"
-      ? preset.endDate === endDate
-      : preset.startDate === startDate && preset.endDate === endDate
-  );
+  // Every range report opens on the trailing six months and every as-of report
+  // on today; the loaders default their data to the matching window. Callers may
+  // override, but the point is that no report has to wire this up one-by-one.
+  const effectiveDefaultPresetId =
+    defaultPresetId ?? (variant === "asOf" ? "today" : "last-6-months");
+
+  // No date params → the loader falls back to its default range; reflect that
+  // default preset as active so the trigger isn't mislabeled "All Time".
+  const hasDateParams =
+    variant === "asOf" ? !!endDate : !!(startDate || endDate);
+  const activePreset = hasDateParams
+    ? presets.find((preset) =>
+        variant === "asOf"
+          ? preset.endDate === endDate
+          : preset.startDate === startDate && preset.endDate === endDate
+      )
+    : presets.find((preset) => preset.id === effectiveDefaultPresetId);
 
   const triggerLabel = activePreset
     ? activePreset.label

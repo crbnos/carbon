@@ -680,6 +680,8 @@ export const DimensionEntityTypeIcon = ({
       return <LuWrench className={className} />;
     case "Process":
       return <LuCog className={className} />;
+    case "ScrapReason":
+      return <LuTriangleAlert className={className} />;
   }
 };
 

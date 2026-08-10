@@ -208,6 +208,17 @@ export const scrapQuantityValidator = baseQuantityValidator.extend({
   notes: zfd.text(z.string().optional())
 });
 
+// Scrapping an already-made/staged BOM entity from the Materials section.
+// makeReplacement (Make-to-Order materials only) reopens the subassembly's
+// routing and spawns a replacement unit.
+export const scrapTrackedEntityValidator = z.object({
+  scrapReasonId: zfd.text(z.string()),
+  makeReplacement: zfd
+    .text(z.string().optional())
+    .transform((v) => v === "true" || v === "on"),
+  notes: zfd.text(z.string().optional())
+});
+
 export const triggerReworkValidator = z.object({
   jobId: z.string().min(1),
   triggeredAtJobOperationId: z.string().min(1),

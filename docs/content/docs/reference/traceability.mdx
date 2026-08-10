@@ -15,6 +15,7 @@ A **tracked entity** is a tracked quantity of an item. A **<Term id="serial">Ser
   <Status name="On Hold" branch>Received but not yet released (awaiting inspection).</Status>
   <Status name="Consumed" accent>Issued to a job or shipped out.</Status>
   <Status name="Rejected" terminal>Failed inspection.</Status>
+  <Status name="Scrapped" terminal>Written off as unrecoverable, with a reason. Unlike Consumed and Rejected, it can be reversed with [Unscrap](/docs/reference/scrap#unscrap).</Status>
 </StatusFlow>
 
 ## Where entities come from
@@ -41,5 +42,8 @@ Tracked items can carry a **shelf life**: a fixed duration, a date set at receip
   </Card>
   <Card title="Quality" href="/docs/reference/quality">
     Inspection holds and rejects tracked entities.
+  </Card>
+  <Card title="Scrap and unscrap" href="/docs/reference/scrap">
+    Writing an entity off to Scrapped, and restoring it.
   </Card>
 </Cards>

@@ -27,7 +27,8 @@ Key service functions (verified):
 - `getItemLedgerPage` — paginated item-ledger history for an item at a location.
 - `insertManualInventoryAdjustment` — thin wrapper over the **`post-inventory-adjustment`
   edge function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
-  The edge function owns positive/negative/set-quantity resolution, tracked-entity storage-unit
+  The edge function owns positive/negative/set-quantity **plus Scrap/Unscrap**
+  (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`) resolution, tracked-entity storage-unit
   transfers, expiry override, batch/serial assignment — and, in one Kysely transaction, maintains
   `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
@@ -36,6 +37,29 @@ Key service functions (verified):
   (`functions/shared/post-adjustment.ts`). Storage-unit transfers post no GL. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
+  **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +
+  `itemLedger.scrapReasonId`, offset to `accountDefault.scrapAccount` (fallback
+  `inventoryAdjustmentVarianceAccount`), tracked entity → `Scrapped` (keeps its
+  quantity; partial batch scrap splits per the identity-flip convention).
+  **Unscrap** (Oracle Return-from-Scrap) restores a `Scrapped` entity to
+  `Available` at the **original scrapped cost** (resolved from the scrap
+  movement's `costLedger` via `resolve-unscrap-cost.ts`) and bin, linked by
+  `correctionOfItemLedgerId`; ERP UI = the Unscrap row action on the tracked-
+  entities table (`UnscrapModal`, no location and **no scrap reason** submitted —
+  both resolved server-side; the reason is inherited from the original scrap
+  movement so unscrap can't be mis-classified, and the UI collects only an
+  optional comment).
+  Scrap journals carry ScrapReason/WorkCenter/Employee dimensions; the single
+  `scrapAccount` + dimensions replaces per-reason account mapping by design.
+  The **ScrapReason** dimension is seeded active by default (a `dimension` row per
+  company group, from `functions/lib/seed.data.ts`; backfilled to existing groups by
+  `20260808114732_backfill-scrap-reason-dimension.sql`). Like CustomerType/ItemPostingGroup
+  it is entity-backed — its values resolve live from the `scrapReason` table via
+  `getEntityDimensionValues`/`getEntityValuesByIds` (accounting.service.ts), so adding a
+  scrap reason immediately makes it a selectable/taggable dimension value with no sync step.
+  A tag is only written when the entity type has an **active** `dimension` row — a scrap
+  posting's ScrapReason `extraDimension` is dropped in `post-adjustment.ts` if the dimension
+  was deleted/deactivated for that company group.
 - `correctStockMovement` — wraps the **`correct-stock-movement` edge function**: fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
   correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
@@ -110,8 +134,9 @@ item identity + material props, planning fields, and quantities `quantityOnHand`
 Aggregates from `itemLedger`, open `purchaseOrder(Line)`, `salesOrder(Line)`, `job`/`jobMaterial`,
 and `demandForecast`/`demandActual`.
 
-Relevant enums: `itemLedgerType`, `itemLedgerDocumentType`, `trackedEntityStatus`
-(`Available`, `Reserved`, `On Hold`, `Consumed`, `Rejected`), `warehouseTransferStatus`,
+Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
+`20260807090400`), `trackedEntityStatus`
+(`Available`, `Reserved`, `On Hold`, `Consumed`, `Rejected`, `Scrapped`), `warehouseTransferStatus`,
 `itemTrackingType`, `itemReplenishmentSystem`, `itemReorderingPolicy`.
 
 ## Gotchas

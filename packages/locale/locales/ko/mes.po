@@ -153,6 +153,9 @@ msgstr "인증 오류"
 msgid "available"
 msgstr "사용 가능"
 
+msgid "Available"
+msgstr "사용 가능"
+
 msgid "Batch"
 msgstr "배치"
 
@@ -267,6 +270,9 @@ msgstr "콘솔"
 
 msgid "Console Mode"
 msgstr "콘솔 모드"
+
+msgid "Consumed"
+msgstr "소비됨"
 
 msgid "Consumed expired"
 msgstr "만료 후 소모됨"
@@ -678,6 +684,9 @@ msgstr "유지보수 완료"
 msgid "Maintenance overdue"
 msgstr "기한이 지난 유지보수"
 
+msgid "Make a replacement"
+msgstr "교체품 만들기"
+
 msgid "Manually add items to inventory"
 msgstr "재고에 품목을 수동으로 추가"
 
@@ -868,6 +877,9 @@ msgstr "실행 중인 것 없음"
 msgid "Nothing scheduled at this work center"
 msgstr "이 작업 센터에서 예정된 것 없음"
 
+msgid "Nothing to scrap"
+msgstr "폐기할 것이 없습니다"
+
 msgid "OEE Impact"
 msgstr "OEE 영향"
 
@@ -1053,6 +1065,9 @@ msgstr "재고 제거"
 msgid "Remove part"
 msgstr "품목 제거"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "부분 조립품을 다시 열고 교체 단위를 생성합니다"
+
 msgid "Result"
 msgstr "결과"
 
@@ -1101,6 +1116,12 @@ msgstr "일정"
 msgid "Scrap"
 msgstr "스크랩"
 
+msgid "Scrap {readableId}"
+msgstr "{readableId} 폐기"
+
+msgid "Scrap material"
+msgstr "자재 폐기"
+
 msgid "Scrap quantity"
 msgstr "폐기 수량"
 
@@ -1109,6 +1130,12 @@ msgstr "스크랩 사유"
 
 msgid "Scrapped"
 msgstr "스크랩됨"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "일련번호 {trackedEntityReadableId} 폐기"
+
+msgid "Scrapping the selected serial"
+msgstr "선택한 일련번호 폐기"
 
 msgid "Search"
 msgstr "검색"
@@ -1294,6 +1321,9 @@ msgstr "로트가 합격으로 표시되고 {remaining}개의 남은 단위가 �
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 구성될 때까지 NCR을 생성할 수 없습니다."
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "이 재료에 대해 사용 가능하거나 소비된 추적된 부품이 없습니다."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "자재명세서(BOM)에 아직 완전히 출고되지 않은 일련번호 또는 배치 추적 자재가 있습니다. 출고하지 않고 완료하면 이력추적 기록이 부정확해질 수 있습니다."
 
@@ -1302,6 +1332,15 @@ msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료�
 
 msgid "This lot is expired and can't be picked."
 msgstr "이 로트는 만료되어 피킹할 수 없습니다."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "이 부품은 주문 제작되었습니다. 폐기하면 교체품을 만들기 위해 라우팅을 다시 열 수 있습니다."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으므로 교체품을 발급할 수 있습니다."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "이 단위는 영구적으로 폐기되며 교체 일련번호가 생성됩니다."
 
 msgid "Thumbnail"
 msgstr "썸네일"
