@@ -93,35 +93,36 @@ function EmployeeRows({
             key={item.key}
             className="w-full rounded-lg border border-border p-4 space-y-3"
           >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                <Trans>Employee</Trans> {index + 1}
-              </span>
-              <HStack>
-                {result &&
-                  (result.success ? (
-                    <Badge variant="green" className="gap-1">
-                      <LuCheck className="h-3 w-3" />
-                      {result.message}
-                    </Badge>
-                  ) : (
-                    <Badge variant="red" className="gap-1">
-                      <LuCircleAlert className="h-3 w-3" />
-                      {result.message}
-                    </Badge>
-                  ))}
-                {items.length > 1 && (
-                  <IconButton
-                    aria-label={t`Remove employee`}
-                    icon={<IoMdClose />}
-                    variant="ghost"
-                    onClick={() => remove(index)}
-                  />
-                )}
-              </HStack>
-            </div>
+            {(result || items.length > 1) && (
+              <div className="flex items-center justify-end gap-2">
+                <HStack>
+                  {result &&
+                    (result.success ? (
+                      <Badge variant="green" className="gap-1">
+                        <LuCheck className="h-3 w-3" />
+                        {result.message}
+                      </Badge>
+                    ) : (
+                      <Badge variant="red" className="gap-1">
+                        <LuCircleAlert className="h-3 w-3" />
+                        {result.message}
+                      </Badge>
+                    ))}
+                  {items.length > 1 && (
+                    <IconButton
+                      aria-label={t`Remove employee`}
+                      icon={<IoMdClose />}
+                      variant="ghost"
+                      onClick={() => remove(index)}
+                    />
+                  )}
+                </HStack>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
-              <Input name={`employees[${index}].email`} label={t`Email`} />
+              <div className="md:col-span-2">
+                <Input name={`employees[${index}].email`} label={t`Email`} />
+              </div>
               <Input
                 name={`employees[${index}].firstName`}
                 label={t`First Name`}

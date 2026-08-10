@@ -8379,8 +8379,6 @@ msgstr "Invitation expirée"
 msgid "Invite All"
 msgstr "Tout inviter"
 
-msgid "Invite Multiple"
-msgstr "Inviter plusieurs"
 
 msgid "Invite Multiple Employees"
 msgstr "Inviter plusieurs employés"

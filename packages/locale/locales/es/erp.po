@@ -8380,8 +8380,6 @@ msgstr "Invitación Expirada"
 msgid "Invite All"
 msgstr "Invitar a todos"
 
-msgid "Invite Multiple"
-msgstr "Invitar varios"
 
 msgid "Invite Multiple Employees"
 msgstr "Invitar varios empleados"

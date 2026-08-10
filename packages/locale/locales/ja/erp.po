@@ -8381,8 +8381,6 @@ msgstr "招待が期限切れになりました"
 msgid "Invite All"
 msgstr "すべて招待"
 
-msgid "Invite Multiple"
-msgstr "一括招待"
 
 msgid "Invite Multiple Employees"
 msgstr "複数の従業員を招待"
