@@ -108,7 +108,7 @@ CREATE TABLE "itemRuleAssignment" (
 );
 ```
 
-RLS: `SELECT` any employee; writes `parts_*` (same shape as `itemRule`).
+RLS: `SELECT` any employee; writes `parts_*` (same shape as `itemRule`). Tenant matching: the rule side is enforced by the composite FK `(ruleId, companyId) → itemRule(id, companyId)`; `item.id` is globally unique (its FK is single-column by necessity), so item-side tenancy is enforced by the `companyId` column + RLS — the same invariant the original `itemRuleAssignment` table relied on.
 
 ### `itemRuleAcknowledgment` (append-only override/block evidence)
 
@@ -155,10 +155,12 @@ DB enum note: the DB-side `surfaces` uses the new `itemRuleSurface` enum — do 
 
 ## Evaluator (`packages/ee/src/item-rules/`)
 
-Mirror `storage-rules/`: `service.ts` (cross-app queries: active rules for items incl. broadcasts + filters, assignments for target, list, assign/unassign), `server.ts` (`evaluateItemRulesForLines({ client, companyId, surface, lines, customer })` → violations; reuse `isBlocked`/`dedupeViolations` from storage-rules or re-export), `context.ts` (build line context: item fields loaded batch, customer context resolved once per document — customer row + `customerLocation.addressId → address.countryCode` alpha2), `index.ts`. Package exports `./item-rules` and `./item-rules.server` in `packages/ee/package.json`.
+Mirror `storage-rules/`: `service.ts` (cross-app queries: active rules for items incl. broadcasts + filters, assignments for target, list, assign/unassign), `server.ts` (**`evaluateItemRuleLines({ client, companyId, userId, surface, lines, customerId, customerLocationId })`** → `{ violations, ruleNames }` — the one canonical evaluator name, used by barrels and route actions alike; `userId` is required because the service-role client cannot infer the acting user, and it lands in `transaction.userId`; `isBlocked`/`dedupeViolations` re-exported from storage-rules, not duplicated), `context.ts` (build line context: item fields batch-loaded incl. `customFields` + flattened `itemPostingGroupId`, customer context resolved once per document — customer row with `customerTypeId`/`customerStatusId`/`customFields` + `customerLocation.addressId → address.countryCode` alpha2), `index.ts`. Package exports `./item-rules` and `./item-rules.server` in `packages/ee/package.json`.
+
+**Rule selection contract:** every active `itemRule` is a broadcast; empty filters match all items; `filteredItemMatchAll` chooses OR (false) or AND (true) across the type/group dimensions; an explicit `itemRuleAssignment` bypasses the broadcast filters. Per line, assignments and broadcasts merge by `ruleId` before evaluation; violations are deduplicated by `ruleId` + message. A line whose item row fails to load matches explicit assignments only (mirrors the storage evaluator).
 
 - Evaluation client: **service role** (`getCarbonServiceRole()`), same as storage rules; the route's `requirePermissions` remains the action gate.
-- Plan gate: new `ITEM_RULES` feature key in `packages/ee/src/plan.ts`, same plans as `STORAGE_RULES`. Evaluation returns no violations when gate off (mirror `isStorageRulesEnabledForCompany`).
+- Plan gate: the **existing** `ITEM_RULES` feature key (`packages/ee/src/plan.ts:12` already defines it for Business/Partner — do not add a duplicate). Evaluation returns no violations when the gate is off (mirror `isStorageRulesEnabledForCompany`).
 - Missing ship-to: rules referencing `customer.location.countryCode` rely on the engine's required-field semantics — empty → "Customer location is required" violation inheriting rule severity.
 - Violation UI: **reuse** `useStorageRuleViolations` + `StorageRuleViolationModal` from `@carbon/ee/storage-rules` (they are generic over `Violation`); do not fork.
 
@@ -179,17 +181,20 @@ Mirror `storage-rules/`: `service.ts` (cross-app queries: active rules for items
 
 ## Enforcement (Phase 1)
 
-- `x+/quote+/$quoteId.new.tsx` — after validation, before `upsertQuoteLine`: read `acknowledged` from formData; resolve customer context (quote → `quoteCustomerDetails.customerCountryCode` or `getCustomerLocation`); `evaluateItemRulesForLines(surface: 'quoteLine')`; on `isBlocked` → return `{ violations, ruleNames }`.
-- `x+/sales-order+/$orderId.new.tsx` — same, before `upsertSalesOrderLine`, surface `salesOrderLine`; country via `getCustomerLocation(client, salesOrder.customerLocationId)`.
+- `x+/quote+/$quoteId.new.tsx` — after validation, before `upsertQuoteLine`: read `acknowledged` from formData; `evaluateItemRuleLines(surface: 'quoteLine')` with the header's `customerId`/`customerLocationId`; on `isBlocked` → return `{ violations, ruleNames }`.
+- `x+/sales-order+/$orderId.new.tsx` — same, before `upsertSalesOrderLine`, surface `salesOrderLine`.
+- **Item-only guard:** lines without an `itemId` (e.g. `Comment` sales-order lines, whose create action clears `itemId`) skip evaluation entirely — the guard wraps only the evaluation block, never the action.
 - Line **edit** actions (`$quoteId.$lineId.details.tsx`, `$orderId.$lineId.details.tsx`) — same evaluation so edits can't dodge rules.
 - Client: `QuoteLineForm` / `SalesOrderLineForm` submit via `useStorageRuleViolations({ action })`, render `<rules.ViolationModal/>`. Coexists with the inline supersession notice (unchanged) and ConfiguratorModal.
 
 ## Notifications + acknowledgment log (Phase 2)
 
 - `packages/notifications`: new `NotificationEvent` (e.g. `ItemRuleViolation`) + topic assignment; default destinations InApp (+Email optional).
-- `packages/jobs` notify handler: handle the event (recipients from company setting group; payload rule name, severity, document type/id/line, item, customer, acting user, outcome `blocked|acknowledged`). Fire via `trigger("notify", …)` from the enforcement actions AFTER the outcome is known (blocked attempt, or acknowledged proceed). Dedupe per document+rule (skip duplicate notify if same rule+document already notified — acceptable v1: fire on each block/acknowledge action, not on re-render).
+- `packages/jobs` notify handler: handle the event (recipients from company setting group; payload rule name, severity, document type/id/line, item, customer, acting user, outcome `blocked|acknowledged`). Fire via `trigger("notify", …)` from the enforcement actions AFTER the outcome is known (blocked attempt, or acknowledged proceed).
+- **Notification scope & idempotency (decided):** one notification per enforcement-action outcome — a repeated blocked attempt re-notifies deliberately (repeat attempts are signal for compliance, not noise); no cross-attempt dedup key in v1. Violations within one action are already deduplicated (`ruleId` + message) before the single notify fires. Delivery retries follow the existing notify function's semantics; a durable per-document dedup/idempotency key is a recorded follow-up, not v1.
 - Settings: `itemRuleNotificationGroup` in `apps/erp/app/modules/settings/settings.models.ts` + settings UI where the other `*NotificationGroup` fields live.
-- Acknowledgment persistence: when a warn-only violation set is acknowledged and the action proceeds, insert `itemRuleAcknowledgment` rows (one per acknowledged violation) in the same action.
+- **Acknowledgment persistence (both outcomes):** insert `itemRuleAcknowledgment` rows — one per deduped violation — on **blocked** returns (`outcome: 'blocked'`; no document line exists, `documentLineId` stays null) and on **acknowledged** proceeds (`outcome: 'acknowledged'`). On create actions the acknowledged-path insert runs after the line write so `documentLineId` captures the new line's id; edit actions pass the route's `lineId`. `itemId` is set whenever the line references an item (item-less lines skip evaluation, so in practice it is always set).
+- **Evidence atomicity (decided):** best-effort, never blocking — a blocked return writes only evidence (no line write, so no atomicity concern); on acknowledged proceeds an evidence-insert failure is logged and the sale proceeds (the business action must never fail because the audit write did). Duplicate evidence rows from client retries are acceptable in an append-only table (timestamps + actor disambiguate); a unique idempotency constraint is a recorded follow-up.
 
 ## Also in scope
 
