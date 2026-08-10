@@ -47,25 +47,102 @@ Reference enforcement wiring: `apps/erp/app/routes/x+/shipment+/$shipmentId.post
 
 Storage-rules admin module to clone: `apps/erp/app/modules/storage-rules/` (models with `.superRefine` surface/field cross-validation, service CRUD, `ui/RuleBuilder.tsx` + `ConditionRow` + `FieldCombobox`/`OperatorCombobox`/`ValueCombobox`/`ValueInput`/`MultiValueCombobox` + `SurfacesField` + `SeveritySelect` + `MessageWithTokens` + `ItemFilterSelector` + `RuleAssignmentsList`).
 
-## Data model (new migration)
+## Data Model Changes
 
-### `itemRule`
-Clone of `storageRule` shape with deliberate divergences:
-- `id TEXT NOT NULL DEFAULT id()`, composite PK `("id","companyId")` (house convention — NOT storageRule's legacy `xid()` single-col PK)
-- `companyId` FK → company ON DELETE CASCADE
-- `name` (unique per company), `description`, `message` (token interpolation), `severity` TEXT CHECK `('error','warn')`
-- `conditionAst` JSONB NOT NULL
-- `surfaces` — new enum `itemRuleSurface` values `('quoteLine','salesOrderLine')`, array, CHECK non-empty
-- `filteredItemTypes TEXT[]`, `filteredItemGroupIds TEXT[]`, `filteredItemMatchAll BOOLEAN` (same scoping as storageRule)
-- `active BOOLEAN DEFAULT TRUE`, audit columns (`createdBy` NOT NULL + `updatedBy` nullable, both FK `"user"(id)` inline), `customFields` JSONB
-- Indexes: companyId, partial active, FK columns. Register in `customFieldTable` as `('itemRule','Item Rule')`.
-- RLS: SELECT `get_companies_with_employee_role()`; INSERT/UPDATE/DELETE `get_companies_with_employee_permission('parts_<action>')`.
+Two migrations, all additive: `20260810214426_item-rules-sales.sql` and `20260810221652_item-rule-notification-group.sql`. `pnpm run generate:types` after.
 
-### `itemRuleAssignment`
-PK `(itemId, ruleId)`; FKs to item / itemRule / company. SELECT any employee; writes `parts_*`.
+### Enum
 
-### `itemRuleAcknowledgment` (Phase 2)
-Persisted override evidence: `id` (id()), `companyId`, `ruleId`, `documentType` TEXT CHECK `('quote','salesOrder')`, `documentId`, `documentLineId` (nullable), `itemId` (nullable), `message`, `severity`, `createdBy` NOT NULL, `createdAt`, `updatedBy` nullable (required by audit-injection convention even on append-only tables). SELECT any employee; INSERT `parts_create`… actually INSERT should be permitted for anyone who can create sales lines — use `sales_create` for INSERT; no UPDATE/DELETE policies (append-only).
+```sql
+-- Deliberately separate from the storage "transactionSurface" enum
+CREATE TYPE "itemRuleSurface" AS ENUM ('quoteLine', 'salesOrderLine');
+```
+
+### `itemRule` (rule definitions)
+
+Clone of `storageRule`'s shape with deliberate divergences: house PK convention (`id()` + composite `("id","companyId")` — not storageRule's legacy `xid()` single-column PK) and `parts_*` RLS (Items module) instead of `inventory_*`.
+
+```sql
+CREATE TABLE "itemRule" (
+  "id" TEXT NOT NULL DEFAULT id(),
+  "companyId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "description" TEXT,
+  "message" TEXT NOT NULL,                                    -- violation text, {token} interpolation
+  "severity" TEXT NOT NULL CHECK ("severity" IN ('error', 'warn')),
+  "conditionAst" JSONB NOT NULL,                              -- {kind: all|any|none, conditions:[{field,op,value}]}
+  "surfaces" "itemRuleSurface"[] NOT NULL DEFAULT ARRAY['quoteLine', 'salesOrderLine']::"itemRuleSurface"[],
+  "filteredItemTypes" TEXT[] NOT NULL DEFAULT '{}',           -- broadcast scoping (empty = all items)
+  "filteredItemGroupIds" TEXT[] NOT NULL DEFAULT '{}',
+  "filteredItemMatchAll" BOOLEAN NOT NULL DEFAULT FALSE,      -- false = OR, true = AND across the two dimensions
+  "active" BOOLEAN NOT NULL DEFAULT TRUE,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "customFields" JSONB,
+
+  PRIMARY KEY ("id", "companyId"),
+  FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+  CONSTRAINT "itemRule_surfaces_nonempty" CHECK (array_length("surfaces", 1) >= 1)
+);
+
+ALTER TABLE "itemRule" ADD CONSTRAINT "itemRule_companyId_name_key" UNIQUE ("companyId", "name");
+```
+
+RLS: the standard four policies — `SELECT` via `get_companies_with_employee_role()`, `INSERT`/`UPDATE`/`DELETE` via `get_companies_with_employee_permission('parts_<action>')`. Registered in `customFieldTable` as `('itemRule', 'Item Rule', 'Items')`.
+
+### `itemRuleAssignment` (explicit per-item pins)
+
+```sql
+CREATE TABLE "itemRuleAssignment" (
+  "itemId" TEXT NOT NULL REFERENCES "item"("id") ON DELETE CASCADE,
+  "ruleId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL REFERENCES "company"("id") ON DELETE CASCADE,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT "itemRuleAssignment_pkey" PRIMARY KEY ("itemId", "ruleId"),
+  CONSTRAINT "itemRuleAssignment_rule_fkey" FOREIGN KEY ("ruleId", "companyId")
+    REFERENCES "itemRule"("id", "companyId") ON DELETE CASCADE
+);
+```
+
+RLS: `SELECT` any employee; writes `parts_*` (same shape as `itemRule`).
+
+### `itemRuleAcknowledgment` (append-only override/block evidence)
+
+The improvement over storage rules, where an acknowledgment is only a transient form flag: one persisted row per deduped violation, on blocked attempts and acknowledged overrides.
+
+```sql
+CREATE TABLE "itemRuleAcknowledgment" (
+  "id" TEXT NOT NULL DEFAULT id(),
+  "companyId" TEXT NOT NULL,
+  "ruleId" TEXT,
+  "documentType" TEXT NOT NULL CHECK ("documentType" IN ('quote', 'salesOrder')),
+  "documentId" TEXT NOT NULL,
+  "documentLineId" TEXT,                                      -- null on create-line evaluations
+  "itemId" TEXT,
+  "severity" TEXT NOT NULL CHECK ("severity" IN ('error', 'warn')),
+  "outcome" TEXT NOT NULL CHECK ("outcome" IN ('blocked', 'acknowledged')),
+  "message" TEXT NOT NULL,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),                   -- audit-injection convention; stays NULL (append-only)
+
+  PRIMARY KEY ("id", "companyId"),
+  FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+```
+
+RLS: `SELECT` any employee; `INSERT` via `sales_create` (the acknowledgment is written by the sales action); **no UPDATE/DELETE policies** — append-only.
+
+### `companySettings` (notification recipient group)
+
+```sql
+ALTER TABLE "companySettings"
+  ADD COLUMN IF NOT EXISTS "itemRuleNotificationGroup" text[] NOT NULL DEFAULT '{}';
+```
 
 ## Engine extensions (`@carbon/utils`)
 
