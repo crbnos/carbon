@@ -16,7 +16,7 @@ import {
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -36,7 +36,6 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { INVOICE_DUST_THRESHOLD } from "~/modules/invoicing";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isPurchaseOrderLocked } from "../../purchasing.models";
@@ -483,10 +482,12 @@ const PurchaseOrderSummary = ({
 
   const paidAmount = routeData?.invoiceSummary?.paidAmount ?? 0;
   const balanceRemaining = routeData?.invoiceSummary?.balanceRemaining ?? 0;
+  const currencyMismatchCount =
+    routeData?.invoiceSummary?.currencyMismatchCount ?? 0;
   // Sub-cent dust matches invoice view forgiveness (INVOICE_DUST_THRESHOLD).
   const isFullyPaid =
-    balanceRemaining < INVOICE_DUST_THRESHOLD &&
-    paidAmount >= INVOICE_DUST_THRESHOLD &&
+    balanceRemaining < 0.01 &&
+    paidAmount >= 0.01 &&
     (routeData?.invoiceSummary?.invoicedAmount ?? 0) > 0;
 
   return (
@@ -614,23 +615,21 @@ const PurchaseOrderSummary = ({
               <Trans>Invoiced Amount:</Trans>
             </span>
             <span>
-              {presentationCurrencyFormatter.format(
-                routeData?.invoiceSummary?.invoicedAmount ?? 0
-              )}
+              {formatter.format(routeData?.invoiceSummary?.invoicedAmount ?? 0)}
             </span>
           </HStack>
           <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>
               <Trans>Paid:</Trans>
             </span>
-            <span>{presentationCurrencyFormatter.format(paidAmount)}</span>
+            <span>{formatter.format(paidAmount)}</span>
           </HStack>
           <HStack
             className={cn(
               "justify-between text-sm w-full",
               isFullyPaid
                 ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                : balanceRemaining >= INVOICE_DUST_THRESHOLD
+                : balanceRemaining >= 0.01
                   ? "text-amber-600 dark:text-amber-400 font-medium"
                   : "text-muted-foreground"
             )}
@@ -643,19 +642,16 @@ const PurchaseOrderSummary = ({
                 <Trans>Paid</Trans>
               </Badge>
             ) : (
-              <span>
-                {presentationCurrencyFormatter.format(balanceRemaining)}
-              </span>
+              <span>{formatter.format(balanceRemaining)}</span>
             )}
           </HStack>
-          {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 0 && (
+          {currencyMismatchCount > 0 && (
             <span className="text-xs text-muted-foreground">
-              Excludes {routeData?.invoiceSummary?.currencyMismatchCount}{" "}
-              invoice
-              {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 1
-                ? "s"
-                : ""}{" "}
-              in a different currency.
+              <Plural
+                value={currencyMismatchCount}
+                one="Excludes # invoice in a different currency."
+                other="Excludes # invoices in a different currency."
+              />
             </span>
           )}
         </VStack>
