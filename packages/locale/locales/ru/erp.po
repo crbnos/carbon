@@ -159,6 +159,9 @@ msgstr "{chainLabel}. Рассмотрите возможность указан
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
@@ -2384,7 +2387,7 @@ msgid "Balance"
 msgstr "Баланс"
 
 msgid "Balance Remaining:"
-msgstr "Остаток к оплате:"
+msgstr "Остаток:"
 
 msgid "Balance Sheet"
 msgstr "Баланс"
