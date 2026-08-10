@@ -15,9 +15,9 @@ Carbon cannot enforce commercial/compliance restrictions when an item is added t
 - **New enum** `itemRuleSurface` = `'quoteLine' | 'salesOrderLine'` (deliberately separate from the storage `transactionSurface` enum).
 - **New table `itemRule`** — rule definitions: `name`, `description`, `message` (token interpolation), `severity` (`error|warn`), `conditionAst` JSONB, `surfaces itemRuleSurface[]` (CHECK non-empty), item scoping (`filteredItemTypes`, `filteredItemGroupIds`, `filteredItemMatchAll`), `active`, audit columns, `customFields`. House PK `("id","companyId")`; RLS: SELECT any employee, writes `parts_*`. Registered in `customFieldTable` as `('itemRule','Item Rule','Items')`.
 - **New table `itemRuleAssignment`** — explicit per-item pins, PK `(itemId, ruleId)`, composite FK to `itemRule`.
-- **New table `itemRuleAcknowledgment`** — append-only override/block evidence: `ruleId`, `documentType 'quote'|'salesOrder'`, `documentId`, `documentLineId`, `itemId`, `severity`, `outcome 'blocked'|'acknowledged'`, `message`, `createdBy`. SELECT any employee; INSERT via `sales_create`; no UPDATE/DELETE policies.
+- **New table `itemRuleAcknowledgment`** — append-only override/block evidence: `ruleId` (soft reference, no FK) + denormalized `ruleName`, `documentType 'quote'|'salesOrder'`, `documentId`, `documentLineId`, `itemId`, `severity`, `outcome 'blocked'|'acknowledged'`, `message`, `createdBy`. SELECT any employee; INSERT via `sales_create`; no UPDATE/DELETE policies. Evidence survives rule rename/deletion.
 - **New column** `companySettings.itemRuleNotificationGroup text[] NOT NULL DEFAULT '{}'` — the compliance-owner notification group.
-- Migrations: `20260810214426_item-rules-sales.sql`, `20260810221652_item-rule-notification-group.sql`.
+- Migrations: `20260810214426_item-rules-sales.sql`, `20260810221652_item-rule-notification-group.sql`, `20260810223831_item-rule-acknowledgment-rule-name.sql`.
 
 ### API / server changes
 
@@ -118,7 +118,8 @@ The improvement over storage rules, where an acknowledgment is only a transient 
 CREATE TABLE "itemRuleAcknowledgment" (
   "id" TEXT NOT NULL DEFAULT id(),
   "companyId" TEXT NOT NULL,
-  "ruleId" TEXT,
+  "ruleId" TEXT,                                              -- deliberate SOFT reference (no FK) — see deletion behavior below
+  "ruleName" TEXT,                                            -- denormalized at write time; evidence survives rule rename/deletion
   "documentType" TEXT NOT NULL CHECK ("documentType" IN ('quote', 'salesOrder')),
   "documentId" TEXT NOT NULL,
   "documentLineId" TEXT,                                      -- null on create-line evaluations
@@ -136,6 +137,8 @@ CREATE TABLE "itemRuleAcknowledgment" (
 ```
 
 RLS: `SELECT` any employee; `INSERT` via `sales_create` (the acknowledgment is written by the sales action); **no UPDATE/DELETE policies** — append-only.
+
+**Rule deletion behavior (decided):** the item-rule delete route hard-deletes the rule; assignments cascade (composite FK), but **evidence is never touched** — `ruleId` on acknowledgments is a deliberate soft reference with *no* FK, so a rule delete can neither cascade evidence away (CASCADE) nor be blocked by it (RESTRICT). Evidence stays self-contained through the denormalized `ruleName` plus the verbatim violation `message` captured per row. The recommended lifecycle for retiring a rule that has fired is deactivation (`active = false`); deletion remains available without audit loss. (Rules carry no version column — the rendered message per row is the point-in-time record.)
 
 ### `companySettings` (notification recipient group)
 
@@ -160,6 +163,7 @@ Mirror `storage-rules/`: `service.ts` (cross-app queries: active rules for items
 **Rule selection contract:** every active `itemRule` is a broadcast; empty filters match all items; `filteredItemMatchAll` chooses OR (false) or AND (true) across the type/group dimensions; an explicit `itemRuleAssignment` bypasses the broadcast filters. Per line, assignments and broadcasts merge by `ruleId` before evaluation; violations are deduplicated by `ruleId` + message. A line whose item row fails to load matches explicit assignments only (mirrors the storage evaluator).
 
 - Evaluation client: **service role** (`getCarbonServiceRole()`), same as storage rules; the route's `requirePermissions` remains the action gate.
+- **Tenant isolation below the service-role boundary (required):** RLS is bypassed on this client, so every query the evaluator/service issues — rules, assignments, items, customer, customerLocation — carries an explicit `companyId` predicate (or joins through a company-scoped row). These predicates ARE the tenant isolation; a service-role query without one is a defect, not a style choice. Mirrors the storage evaluator.
 - Plan gate: the **existing** `ITEM_RULES` feature key (`packages/ee/src/plan.ts:12` already defines it for Business/Partner — do not add a duplicate). Evaluation returns no violations when the gate is off (mirror `isStorageRulesEnabledForCompany`).
 - Missing ship-to: rules referencing `customer.location.countryCode` rely on the engine's required-field semantics — empty → "Customer location is required" violation inheriting rule severity.
 - Violation UI: **reuse** `useStorageRuleViolations` + `StorageRuleViolationModal` from `@carbon/ee/storage-rules` (they are generic over `Violation`); do not fork.
@@ -192,6 +196,7 @@ Mirror `storage-rules/`: `service.ts` (cross-app queries: active rules for items
 - `packages/notifications`: new `NotificationEvent` (e.g. `ItemRuleViolation`) + topic assignment; default destinations InApp (+Email optional).
 - `packages/jobs` notify handler: handle the event (recipients from company setting group; payload rule name, severity, document type/id/line, item, customer, acting user, outcome `blocked|acknowledged`). Fire via `trigger("notify", …)` from the enforcement actions AFTER the outcome is known (blocked attempt, or acknowledged proceed).
 - **Notification scope & idempotency (decided):** one notification per enforcement-action outcome — a repeated blocked attempt re-notifies deliberately (repeat attempts are signal for compliance, not noise); no cross-attempt dedup key in v1. Violations within one action are already deduplicated (`ruleId` + message) before the single notify fires. Delivery retries follow the existing notify function's semantics; a durable per-document dedup/idempotency key is a recorded follow-up, not v1.
+- **Multi-violation payload contract (decided):** the notification is a **document-level summary**, not a per-violation fan-out. The payload identifies the document via a compound id — `<quote|salesOrder>:<documentId>:<blocked|acknowledged>` (the JobOperation compound-id precedent; the notify payload's `documentType` field is a narrower DB enum and cannot carry quote/salesOrder) — and the rendered content summarizes document reference, customer, outcome, and actor, linking to the document. Per-violation detail (rule id, denormalized rule name, severity, message) is deliberately NOT in the notification: it lives in the `itemRuleAcknowledgment` rows written by the same action, one per violation — the notification is the pointer, the evidence table is the record.
 - Settings: `itemRuleNotificationGroup` in `apps/erp/app/modules/settings/settings.models.ts` + settings UI where the other `*NotificationGroup` fields live.
 - **Acknowledgment persistence (both outcomes):** insert `itemRuleAcknowledgment` rows — one per deduped violation — on **blocked** returns (`outcome: 'blocked'`; no document line exists, `documentLineId` stays null) and on **acknowledged** proceeds (`outcome: 'acknowledged'`). On create actions the acknowledged-path insert runs after the line write so `documentLineId` captures the new line's id; edit actions pass the route's `lineId`. `itemId` is set whenever the line references an item (item-less lines skip evaluation, so in practice it is always set).
 - **Evidence atomicity (decided):** best-effort, never blocking — a blocked return writes only evidence (no line write, so no atomicity concern); on acknowledged proceeds an evidence-insert failure is logged and the sale proceeds (the business action must never fail because the audit write did). Duplicate evidence rows from client retries are acceptable in an append-only table (timestamps + actor disambiguate); a unique idempotency constraint is a recorded follow-up.
