@@ -8379,8 +8379,6 @@ msgstr "आमंत्रण समाप्त हो गया"
 msgid "Invite All"
 msgstr "सभी को आमंत्रित करें"
 
-msgid "Invite Multiple"
-msgstr "एकाधिक आमंत्रित करें"
 
 msgid "Invite Multiple Employees"
 msgstr "एकाधिक कर्मचारी आमंत्रित करें"

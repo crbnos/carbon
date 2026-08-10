@@ -8381,8 +8381,6 @@ msgstr "Zaproszenie wygasło"
 msgid "Invite All"
 msgstr "Zaproś wszystkich"
 
-msgid "Invite Multiple"
-msgstr "Zaproś wielu"
 
 msgid "Invite Multiple Employees"
 msgstr "Zaproś wielu pracowników"

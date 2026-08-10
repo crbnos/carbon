@@ -8380,8 +8380,6 @@ msgstr "Приглашение истекло"
 msgid "Invite All"
 msgstr "Пригласить всех"
 
-msgid "Invite Multiple"
-msgstr "Пригласить нескольких"
 
 msgid "Invite Multiple Employees"
 msgstr "Пригласить нескольких сотрудников"

@@ -8379,8 +8379,6 @@ msgstr "邀请已过期"
 msgid "Invite All"
 msgstr "全部邀请"
 
-msgid "Invite Multiple"
-msgstr "批量邀请"
 
 msgid "Invite Multiple Employees"
 msgstr "邀请多名员工"

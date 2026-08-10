@@ -8379,8 +8379,6 @@ msgstr "초대권 만료됨"
 msgid "Invite All"
 msgstr "모두 초대"
 
-msgid "Invite Multiple"
-msgstr "여러 명 초대"
 
 msgid "Invite Multiple Employees"
 msgstr "여러 직원 초대"

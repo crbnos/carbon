@@ -8380,8 +8380,6 @@ msgstr "Davet Süresi Doldu"
 msgid "Invite All"
 msgstr "Tümünü davet et"
 
-msgid "Invite Multiple"
-msgstr "Toplu davet"
 
 msgid "Invite Multiple Employees"
 msgstr "Birden fazla çalışan davet et"
