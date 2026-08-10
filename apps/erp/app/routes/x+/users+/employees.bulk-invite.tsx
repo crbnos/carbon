@@ -161,8 +161,11 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateUserSelectQueries(getCompanyId());
-  return await serverAction();
+  try {
+    return await serverAction();
+  } finally {
+    invalidateUserSelectQueries(getCompanyId());
+  }
 }
 
 export default function () {
