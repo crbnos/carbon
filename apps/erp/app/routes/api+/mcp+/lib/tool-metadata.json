@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-06T18:03:55.514Z",
-  "totalTools": 1433,
+  "generated": "2026-08-10T22:27:05.742Z",
+  "totalTools": 1431,
   "modules": 15,
   "tools": [
     {
@@ -24428,61 +24428,6 @@
       }
     },
     {
-      "name": "production_getOpenCutDemand",
-      "module": "production",
-      "classification": "READ",
-      "description": "get open cut demand",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "locationId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "production_getMaterialCharacteristics",
-      "module": "production",
-      "classification": "READ",
-      "description": "get material characteristics",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "readableIds",
-        "companyId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "readableIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "readableIds"
-        ]
-      }
-    },
-    {
       "name": "production_runCutOptimization",
       "module": "production",
       "classification": "WRITE",
@@ -24513,7 +24458,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "confirm cut list",
-      "paramCount": 8,
+      "paramCount": 6,
       "serviceParams": [
         "client",
         "params"
@@ -24574,12 +24519,6 @@
           "scrap: {\n      fromTrackedEntityId": {
             "type": "array",
             "items": {}
-          },
-          "setupSeconds": {
-            "type": "number"
-          },
-          "machineSeconds": {
-            "type": "number"
           }
         },
         "required": [

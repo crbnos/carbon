@@ -7629,8 +7629,6 @@ export async function upsertCutListLine(
     | (Omit<z.infer<typeof cutListLineValidator>, "id"> & {
         companyId: string;
         createdBy: string;
-        jobOperationId?: string | null;
-        piecesPerParent?: number;
       })
     | (Omit<z.infer<typeof cutListLineValidator>, "id"> & {
         id: string;
@@ -7742,68 +7740,6 @@ export async function getCuttingProcessesList(
 }
 
 /**
- * Open cut demand across released jobs — the input to a cutting run.
- *
- * A job material qualifies when it carries a cutLength and still owes
- * quantity. Lines already covered by an open cut list are netted off in the
- * caller (the builder route), which knows which cut lists to exclude.
- */
-export async function getOpenCutDemand(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: { locationId?: string | null }
-) {
-  let query = client
-    .from("jobMaterial")
-    .select(
-      `id, jobId, itemId, cutLength, cutWidth, grainLocked, estimatedQuantity,
-       quantity, quantityIssued, quantityToIssue, unitOfMeasureCode, description,
-       jobOperationId,
-       job!inner(jobId, status, locationId, dueDate),
-       item(readableIdWithRevision, name, readableId),
-       jobOperation(id, description, status, processId)`
-    )
-    .eq("companyId", companyId)
-    .not("cutLength", "is", null)
-    .gt("quantityToIssue", 0)
-    .in("job.status", ["Ready", "In Progress", "Paused", "Planned"]);
-
-  if (args?.locationId) {
-    query = query.eq("job.locationId", args.locationId);
-  }
-
-  return query.order("cutLength", { ascending: false });
-}
-
-/**
- * Material characteristics for a set of items, so cut demand can be grouped by
- * something other than the exact item — "all 4130", "all round tube", "all
- * 2.0 mm wall". Brad's framing: group by a characteristic, of which the
- * material itself is only one example.
- *
- * `material` is a property sidecar keyed by `item.readableId` (NOT item.id) —
- * every revision of a size shares one taxonomy row.
- */
-export async function getMaterialCharacteristics(
-  client: SupabaseClient<Database>,
-  readableIds: string[],
-  companyId: string
-) {
-  if (readableIds.length === 0) {
-    return { data: [], error: null };
-  }
-  return client
-    .from("material")
-    .select(
-      `id, materialSubstanceId, materialFormId, gradeId, dimensionId, finishId,
-       materialSubstance(name), materialForm(name), materialGrade(name),
-       materialDimension(name), materialFinish(name)`
-    )
-    .in("id", readableIds)
-    .eq("companyId", companyId);
-}
-
-/**
  * Runs the 1D optimizer over a cut list's demand and available stock.
  * Rewrites every cutPattern for the list — see the optimize-cuts function.
  */
@@ -7850,8 +7786,6 @@ export async function confirmCutList(
       quantity: number;
       scrapReasonId?: string;
     }[];
-    setupSeconds?: number;
-    machineSeconds?: number;
   }
 ) {
   return client.functions.invoke("issue", {

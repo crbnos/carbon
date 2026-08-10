@@ -35,7 +35,6 @@ import type {
   getMaintenanceSchedule,
   getMaintenanceScheduleItems,
   getMaintenanceSchedules,
-  getOpenCutDemand,
   getProcedure,
   getProcedureParameters,
   getProcedureSteps,
@@ -216,10 +215,6 @@ export type CutListLine = NonNullable<
 
 export type CutPattern = NonNullable<
   Awaited<ReturnType<typeof getCutPatterns>>["data"]
->[number];
-
-export type OpenCutDemand = NonNullable<
-  Awaited<ReturnType<typeof getOpenCutDemand>>["data"]
 >[number];
 
 /** One cut in a pattern's ordered `pattern` JSONB array. */

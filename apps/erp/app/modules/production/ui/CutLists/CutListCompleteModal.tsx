@@ -71,10 +71,6 @@ const CutListCompleteModal = ({
   );
   const [consumed, setConsumed] = useState<Record<string, number>>({});
   const [remnants, setRemnants] = useState<Record<string, number>>({});
-  // Whole-run time in minutes; the run splits it across served operations by
-  // nested length. Operators think in minutes, the payload carries seconds.
-  const [setupMinutes, setSetupMinutes] = useState(0);
-  const [machineMinutes, setMachineMinutes] = useState(0);
 
   const isSubmitting = fetcher.state !== "idle";
 
@@ -113,9 +109,7 @@ const CutListCompleteModal = ({
       scrap: scrapDrops.map((drop) => ({
         fromTrackedEntityId: drop.fromTrackedEntityId,
         quantity: drop.length
-      })),
-      setupSeconds: Math.round(setupMinutes * 60),
-      machineSeconds: Math.round(machineMinutes * 60)
+      }))
     };
 
     fetcher.submit(
@@ -265,45 +259,6 @@ const CutListCompleteModal = ({
                   {t`${scrapDrops.length} drop(s) below the ${minRemnantLength} ${unitOfDimension} minimum will post as scrap.`}
                 </p>
               )}
-            </div>
-
-            <div className="w-full">
-              <h3 className="text-sm font-medium mb-1">{t`Run time`}</h3>
-              <p className="text-xs text-muted-foreground mb-2">
-                {t`Optional. Split across the jobs this run served, by the length each took.`}
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-muted-foreground">
-                    {t`Setup (minutes)`}
-                  </label>
-                  <NumberField
-                    value={setupMinutes}
-                    minValue={0}
-                    onChange={setSetupMinutes}
-                  >
-                    <NumberInputGroup className="relative">
-                      <NumberInput size="sm" />
-                      <NumberInputStepper />
-                    </NumberInputGroup>
-                  </NumberField>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">
-                    {t`Run (minutes)`}
-                  </label>
-                  <NumberField
-                    value={machineMinutes}
-                    minValue={0}
-                    onChange={setMachineMinutes}
-                  >
-                    <NumberInputGroup className="relative">
-                      <NumberInput size="sm" />
-                      <NumberInputStepper />
-                    </NumberInputGroup>
-                  </NumberField>
-                </div>
-              </div>
             </div>
           </VStack>
         </ModalBody>

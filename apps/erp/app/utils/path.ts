@@ -538,7 +538,6 @@ export const path = {
     cutListPdf: (id: string) => generatePath(`${file}/cut-list/${id}.pdf`),
     cutListStatus: (id: string) => generatePath(`${x}/cut-list/${id}/status`),
     cutLists: `${x}/production/cut-lists`,
-    cuttingRuns: `${x}/production/cutting-runs`,
 
     deactivateUsers: `${x}/users/deactivate`,
     defaultRevision: (id: string) =>
