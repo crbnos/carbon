@@ -142,7 +142,6 @@ import {
   StepsListItem
 } from "./components/Step";
 import { TableSkeleton } from "./components/TableSkeleton";
-import { DETAILS_SCROLLPORT_CLASSNAME } from "./detailsScrollport";
 import { useFiles } from "./hooks/useFiles";
 import { useOperation } from "./hooks/useOperation";
 
@@ -650,7 +649,7 @@ export const JobOperation = ({
             At lg+ a fixed height + overflow-y-auto docks beside absolute Controls.
             See detailsScrollport.ts / #959.
           */}
-          <div className={DETAILS_SCROLLPORT_CLASSNAME}>
+          <div className="w-full min-w-0 lg:pr-[var(--controls-gutter)] h-auto lg:h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-visible lg:overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
             <div className="flex items-start justify-between gap-4 p-4 lg:p-6">
               <HStack className="min-w-0">
                 {thumbnailPath && (
