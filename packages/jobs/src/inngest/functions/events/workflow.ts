@@ -23,11 +23,7 @@ export const workflowFunction = inngest.createFunction(
   {
     id: "event-handler-workflow",
     retries: 3,
-    idempotency: "event.data.msgId",
-    concurrency: {
-      limit: 5,
-      key: "event.data.companyId"
-    }
+    idempotency: "event.data.msgId"
   },
   { event: "carbon/event-workflow" },
   async ({ event, step }) => {
