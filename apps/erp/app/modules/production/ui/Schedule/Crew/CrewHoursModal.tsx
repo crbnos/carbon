@@ -20,7 +20,7 @@ import type { ReactElement } from "react";
 import { useMemo, useState } from "react";
 import { LuMinus, LuPlus, LuX } from "react-icons/lu";
 import { useSubmit } from "react-router";
-import { EmployeeAvatar } from "~/components";
+import { DateTime, EmployeeAvatar } from "~/components";
 import { path } from "~/utils/path";
 
 export type CrewDayRowInput = {
@@ -52,6 +52,7 @@ type CrewHoursModalProps = {
   date: string;
   shiftId: string | null;
   locationId: string;
+  locationTimeZone?: string;
   workCenters: { id: string; name: string }[];
   /** the person's assignments for this date (empty = nothing scheduled) */
   rows: CrewDayRowInput[];
@@ -107,6 +108,7 @@ export function CrewHoursModal({
   date,
   shiftId,
   locationId,
+  locationTimeZone,
   workCenters,
   rows,
   note,
@@ -281,11 +283,14 @@ export function CrewHoursModal({
     (workCenter) => !draft.some((row) => row.workCenterId === workCenter.id)
   );
 
-  const dayLabel = new Date(`${date}T00:00:00`).toLocaleDateString(locale, {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
-  });
+  const dayLabel = (
+    <DateTime
+      value={date}
+      variant="date"
+      dateOptions={{ weekday: "short", month: "short", day: "numeric" }}
+      locationTimeZone={locationTimeZone}
+    />
+  );
 
   const shiftWindow =
     dayStartTime && dayEndTime

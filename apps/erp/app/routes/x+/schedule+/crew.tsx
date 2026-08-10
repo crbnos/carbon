@@ -29,7 +29,16 @@ import {
   TabsTrigger,
   VStack
 } from "@carbon/react";
-import { now, parseDate, toCalendarDate } from "@internationalized/date";
+import { formatDate } from "@carbon/utils";
+import {
+  getDayOfWeek,
+  getLocalTimeZone,
+  now,
+  parseDate,
+  startOfWeek,
+  toCalendarDate,
+  today
+} from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -56,6 +65,7 @@ import {
   useSearchParams,
   useSubmit
 } from "react-router";
+import { DateTime } from "~/components";
 import { CrewEmployee, DatePicker, Hidden, Submit } from "~/components/Form";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions } from "~/hooks";
@@ -190,9 +200,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const range: "day" | "week" =
     view === "board" && rangeParam !== "week" ? "day" : "week";
 
-  const weekStart = parseDate(date).subtract({
-    days: (new Date(`${date}T00:00:00`).getDay() + 6) % 7
-  });
+  const weekStart = startOfWeek(parseDate(date), "en-GB"); // en-GB uses Monday as first day
   const weekDates = Array.from({ length: 7 }, (_, i) =>
     weekStart.add({ days: i }).toString()
   );
@@ -300,7 +308,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // the uncrewed station's machine window on the capacity view
   const calendarHoursByDate: Record<string, number> = {};
   for (const day of weekDates) {
-    const weekday = WEEKDAY_KEYS[new Date(`${day}T00:00:00`).getDay()];
+    const weekday = WEEKDAY_KEYS[getDayOfWeek(parseDate(day), "en-US")]; // en-US: 0 = Sunday
     if (shiftRows.length === 0) {
       calendarHoursByDate[day] =
         weekday === "saturday" || weekday === "sunday"
@@ -348,11 +356,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // overdue open operations count toward a "Past due" bucket like the
     // classic capacity board's Past Weeks column
     const lookbackStart = weekStart.subtract({ days: 28 }).toString();
-    // reservation window in server-local time, matching the day bucketing below
-    const weekWindowStart = new Date(`${weekStartDate}T00:00:00`);
-    const weekWindowEnd = new Date(
-      new Date(`${weekEndDate}T00:00:00`).getTime() + 24 * HOUR_MS
-    );
+    // reservation window on the plant's calendar, matching the day bucketing
+    // below — day boundaries via CalendarDate.toDate(tz) so DST weeks bucket
+    // correctly
+    const weekWindowStart = parseDate(weekStartDate).toDate(timezone);
+    const weekWindowEnd = parseDate(weekEndDate)
+      .add({ days: 1 })
+      .toDate(timezone);
 
     const [rangeAssignments, rangeAbsences, capacityOperations, reservations] =
       await Promise.all([
@@ -418,10 +428,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
           ? reservation.workHours * HOUR_MS
           : spanMs;
       for (const day of weekDates) {
-        const dayStartMs = new Date(`${day}T00:00:00`).getTime();
+        const dayDate = parseDate(day);
+        const dayStartMs = dayDate.toDate(timezone).getTime();
+        const dayEndMs = dayDate.add({ days: 1 }).toDate(timezone).getTime();
         const overlapMs =
-          Math.min(endMs, dayStartMs + 24 * HOUR_MS) -
-          Math.max(startMs, dayStartMs);
+          Math.min(endMs, dayEndMs) - Math.max(startMs, dayStartMs);
         if (overlapMs > 0) {
           const byDay = (scheduledByWorkCenter[reservation.resourceId] ??= {});
           byDay[day] =
@@ -433,6 +444,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     locationId,
+    locationTimeZone: timezone,
     date,
     shiftId,
     view,
@@ -483,6 +495,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function ScheduleCrewRoute() {
   const {
     locationId,
+    locationTimeZone,
     date,
     shiftId,
     view,
@@ -646,10 +659,7 @@ export default function ScheduleCrewRoute() {
 
   const parsedDate = parseDate(date);
   const shortDate = (value: string) =>
-    new Date(`${value}T00:00:00`).toLocaleDateString(locale, {
-      month: "short",
-      day: "numeric"
-    });
+    formatDate(value, { month: "short", day: "numeric" }, locale);
   // "03 Aug 2026" — the month name stays localized, but the order is fixed so
   // the date can't be misread as day/month or month/day on the shop floor
   const fullDate = (value: string) => {
@@ -657,18 +667,18 @@ export default function ScheduleCrewRoute() {
       day: "2-digit",
       month: "short",
       year: "numeric"
-    }).formatToParts(new Date(`${value}T00:00:00`));
+    }).formatToParts(parseDate(value).toDate(getLocalTimeZone()));
     const part = (type: Intl.DateTimeFormatPartTypes) =>
       parts.find((p) => p.type === type)?.value ?? "";
     return `${part("day")} ${part("month")} ${part("year")}`;
   };
   const dateLabel =
     range === "day"
-      ? new Date(`${date}T00:00:00`).toLocaleDateString(locale, {
-          weekday: "short",
-          month: "short",
-          day: "numeric"
-        })
+      ? formatDate(
+          date,
+          { weekday: "short", month: "short", day: "numeric" },
+          locale
+        )
       : `${shortDate(weekDates[0])} – ${shortDate(
           weekDates[weekDates.length - 1]
         )}`;
@@ -687,10 +697,10 @@ export default function ScheduleCrewRoute() {
   const weekOptions = useMemo(() => {
     if (range === "day") return [];
     const selectedStart = weekDates[0];
-    const now = new Date();
-    const currentWeekStart = parseDate(now.toLocaleDateString("en-CA"))
-      .subtract({ days: (now.getDay() + 6) % 7 })
-      .toString();
+    const currentWeekStart = startOfWeek(
+      today(getLocalTimeZone()),
+      "en-GB"
+    ).toString();
     const base = parseDate(selectedStart);
     return Array.from({ length: 16 }, (_, i) => {
       const start = base.add({ days: (i - 4) * 7 });
@@ -1083,6 +1093,7 @@ export default function ScheduleCrewRoute() {
               date={date}
               shiftId={shiftId}
               locationId={locationId}
+              locationTimeZone={locationTimeZone}
               employees={employeesForBoard}
               workCenters={displayedWorkCenters}
               assignments={boardAssignments}
@@ -1104,6 +1115,7 @@ export default function ScheduleCrewRoute() {
         {view === "matrix" && (
           <CrewMatrix
             weekDates={weekDates}
+            locationTimeZone={locationTimeZone}
             employees={employeesForMatrix}
             workCenters={displayedWorkCenters}
             assignments={matrixAssignments}
@@ -1126,6 +1138,7 @@ export default function ScheduleCrewRoute() {
         {view === "capacity" && (
           <CrewCapacity
             weekDates={weekDates}
+            locationTimeZone={locationTimeZone}
             workCenters={displayedWorkCenters}
             assignments={matrixAssignments}
             absences={weekAbsences}
@@ -1171,9 +1184,14 @@ export default function ScheduleCrewRoute() {
               {/* the horizon sets the unit: one visible day needs no picker, a
                   week horizon picks a WEEK — the same list the header uses */}
               {range === "day" ? (
-                <span className="text-sm font-medium">
+                <DateTime
+                  value={overtimeDate}
+                  variant="date"
+                  locationTimeZone={locationTimeZone}
+                  className="text-sm font-medium"
+                >
                   {fullDate(overtimeDate)}
-                </span>
+                </DateTime>
               ) : (
                 <div className="w-full">
                   <Combobox

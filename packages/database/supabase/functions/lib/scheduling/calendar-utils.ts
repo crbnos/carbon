@@ -8,6 +8,13 @@
  * assignment is treated as always available.
  */
 
+import {
+  CalendarDateTime,
+  parseAbsolute,
+  toCalendarDate,
+  toZoned
+} from "@internationalized/date";
+
 export type CalendarShiftRow = {
   dayOfWeek: number; // 0 = Sunday .. 6 = Saturday
   startTime: string; // "HH:MM" or "HH:MM:SS", local to the shift's timezone
@@ -22,53 +29,21 @@ export type CalendarWindow = {
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
 
-/** Timezone offset (ms to ADD to a UTC instant to get local wall time). */
-function tzOffsetMs(date: Date, timeZone: string): number {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  const parts = dtf.formatToParts(date);
-  const get = (t: string) =>
-    Number(parts.find((p) => p.type === t)?.value ?? 0);
-  const asUTC = Date.UTC(
-    get("year"),
-    get("month") - 1,
-    get("day"),
-    get("hour") % 24,
-    get("minute"),
-    get("second")
-  );
-  return asUTC - date.getTime();
-}
-
 /** Local calendar date (y/m/d) of a UTC instant in a timezone. */
 function localDateParts(
   date: Date,
   timeZone: string
 ): { year: number; month: number; day: number } {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const parts = dtf.formatToParts(date);
-  const get = (t: string) =>
-    Number(parts.find((p) => p.type === t)?.value ?? 0);
-  return { year: get("year"), month: get("month"), day: get("day") };
+  const local = toCalendarDate(parseAbsolute(date.toISOString(), timeZone));
+  return { year: local.year, month: local.month, day: local.day };
 }
 
 /**
  * Convert a local wall-clock time on a local calendar day to the UTC instant.
  * `dayDate` is UTC midnight representing the local calendar day (its UTC
- * y/m/d fields ARE the local date). Two-pass offset correction handles DST.
+ * y/m/d fields ARE the local date). `toZoned`'s default "compatible"
+ * disambiguation handles DST: a time inside the spring-forward gap shifts to
+ * the post-gap hour; a repeated fall-back time takes its first occurrence.
  */
 export function shiftTimeToDate(
   dayDate: Date,
@@ -76,20 +51,17 @@ export function shiftTimeToDate(
   timezone: string
 ): Date {
   const [h, m, s] = time.split(":").map((v) => Number(v));
-  const naive = new Date(
-    Date.UTC(
+  return toZoned(
+    new CalendarDateTime(
       dayDate.getUTCFullYear(),
-      dayDate.getUTCMonth(),
+      dayDate.getUTCMonth() + 1,
       dayDate.getUTCDate(),
       h ?? 0,
       m ?? 0,
       s ?? 0
-    )
-  );
-  const offset1 = tzOffsetMs(naive, timezone);
-  const corrected = new Date(naive.getTime() - offset1);
-  const offset2 = tzOffsetMs(corrected, timezone);
-  return new Date(naive.getTime() - offset2);
+    ),
+    timezone
+  ).toDate();
 }
 
 /** Clip an interval to [rangeStart, rangeEnd); null if empty. */

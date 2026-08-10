@@ -81,5 +81,5 @@ Deno.test("backward scheduling with a too-close due date flags the past start", 
 
   const first = scheduled.get("op-1")!;
   assertEquals(first.hasConflict, true);
-  assert(first.conflictReason?.startsWith("Operation must start on"));
+  assert(first.conflictReason?.startsWith("Planned start"));
 });

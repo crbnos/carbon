@@ -5067,9 +5067,7 @@ async function copyCrewDayInTransaction(
 }
 
 const addIsoDays = (date: string, days: number) =>
-  new Date(new Date(`${date}T00:00:00Z`).getTime() + days * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
+  parseDate(date).add({ days }).toString();
 
 const WEEKDAY_COLUMNS = [
   "monday",
@@ -5311,9 +5309,7 @@ export async function copyCrewWeek(
   }
 ) {
   const addDays = (date: string, days: number) =>
-    new Date(new Date(`${date}T00:00:00Z`).getTime() + days * 86_400_000)
-      .toISOString()
-      .slice(0, 10);
+    parseDate(date).add({ days }).toString();
   return db.transaction().execute(async (trx) => {
     let copied = 0;
     let skipped = 0;

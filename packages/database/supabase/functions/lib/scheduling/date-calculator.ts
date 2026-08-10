@@ -105,7 +105,7 @@ export class BackwardSchedulingStrategy implements SchedulingStrategy {
 
         const hasConflict = startDate < today;
         const conflictReason = hasConflict
-          ? `Operation must start on ${startDate} but current date is ${today}`
+          ? `Planned start ${startDate} was already in the past when this was scheduled`
           : null;
 
         const scheduledOp: ScheduledOperation = {
@@ -215,7 +215,7 @@ export class BackwardSchedulingStrategy implements SchedulingStrategy {
       // meaningless — only a real due date produces conflicts.
       const hasConflict = !!jobDueDate && startDate < today;
       const conflictReason = hasConflict
-        ? `Operation must start on ${startDate} but current date is ${today}`
+        ? `Planned start ${startDate} was already in the past when this was scheduled`
         : null;
 
       const scheduledOp: ScheduledOperation = {

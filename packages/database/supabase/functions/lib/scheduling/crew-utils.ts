@@ -5,7 +5,9 @@
  * Date keys are local calendar dates ("YYYY-MM-DD") in the company/location
  * timezone; availability windows are UTC instants (CalendarWindow).
  */
+import { parseDate } from "@internationalized/date";
 import type { CalendarWindow } from "./calendar-utils.ts";
+import { businessDay } from "./date-utils.ts";
 
 /** A manning-board row: person crewed at a work center for a date. */
 export type CrewAssignmentRow = {
@@ -30,56 +32,20 @@ export type CrewAbsenceRow = {
 
 /** Local calendar date (YYYY-MM-DD) of a UTC instant in a timezone. */
 export function dateKeyInTimeZone(instant: Date, timeZone: string): string {
-  // en-CA formats as YYYY-MM-DD
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(instant);
-}
-
-/** Timezone offset (ms to ADD to a UTC instant to get local wall time). */
-function tzOffsetMs(date: Date, timeZone: string): number {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  const parts = dtf.formatToParts(date);
-  const get = (t: string) =>
-    Number(parts.find((p) => p.type === t)?.value ?? 0);
-  const asUTC = Date.UTC(
-    get("year"),
-    get("month") - 1,
-    get("day"),
-    get("hour") % 24,
-    get("minute"),
-    get("second")
-  );
-  return asUTC - date.getTime();
+  return businessDay(instant.toISOString(), timeZone);
 }
 
 /** dateKey + n days (pure calendar arithmetic). */
 function addDaysToKey(dateKey: string, days: number): string {
-  const [y, m, d] = dateKey.split("-").map(Number);
-  const next = new Date(Date.UTC(y, m - 1, d + days));
-  return next.toISOString().slice(0, 10);
+  return parseDate(dateKey).add({ days }).toString();
 }
 
-/** The UTC instant of local midnight on `dateKey` (two-pass DST correction). */
+/**
+ * The UTC instant the local day starts on `dateKey` — CalendarDate.toDate(tz)
+ * resolves a midnight skipped by DST to the day's true first instant.
+ */
 function zonedMidnight(dateKey: string, timeZone: string): Date {
-  const [y, m, d] = dateKey.split("-").map(Number);
-  const naive = Date.UTC(y, m - 1, d);
-  const offset1 = tzOffsetMs(new Date(naive), timeZone);
-  const corrected = new Date(naive - offset1);
-  const offset2 = tzOffsetMs(corrected, timeZone);
-  return new Date(naive - offset2);
+  return parseDate(dateKey).toDate(timeZone);
 }
 
 type DaySegment = { start: Date; end: Date; dateKey: string };

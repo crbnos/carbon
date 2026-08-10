@@ -13,11 +13,14 @@ import {
   TooltipTrigger,
   Tr
 } from "@carbon/react";
+import {
+  today as calendarToday,
+  getLocalTimeZone
+} from "@internationalized/date";
 import { Trans } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import { LuInfo } from "react-icons/lu";
-import { EmployeeAvatar } from "~/components";
+import { DateTime, EmployeeAvatar } from "~/components";
 import { usePermissions } from "~/hooks";
 import { CrewChip } from "./CrewChip";
 import { CrewHoursModal } from "./CrewHoursModal";
@@ -58,6 +61,7 @@ type MatrixAssignment = {
 
 type CrewMatrixProps = {
   weekDates: string[];
+  locationTimeZone?: string;
   employees: { id: string; name: string | null; avatarUrl: string | null }[];
   workCenters: MatrixWorkCenter[];
   assignments: MatrixAssignment[];
@@ -80,6 +84,7 @@ type CrewMatrixProps = {
 
 export function CrewMatrix({
   weekDates,
+  locationTimeZone,
   employees,
   workCenters,
   assignments,
@@ -98,12 +103,11 @@ export function CrewMatrix({
   defaultShiftStart,
   defaultShiftEnd
 }: CrewMatrixProps) {
-  const { locale } = useLocale();
   const permissions = usePermissions();
   const canEdit = permissions.can("update", "production");
   const [tab, setTab] = useState<"assignments" | "coverage">("assignments");
 
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = calendarToday(getLocalTimeZone()).toString();
 
   const workCenterById = useMemo(
     () => new Map(workCenters.map((wc) => [wc.id, wc])),
@@ -161,13 +165,6 @@ export function CrewMatrix({
     [employees]
   );
 
-  const dayLabel = (date: string) =>
-    new Date(`${date}T00:00:00`).toLocaleDateString(locale, {
-      weekday: "short",
-      month: "short",
-      day: "numeric"
-    });
-
   // assignment's shift → the person's own shift (employeeShift) →
   // most-common shift length at the location
   const assignmentHours = (assignment: MatrixAssignment) =>
@@ -213,7 +210,12 @@ export function CrewMatrix({
         date === today && "text-primary"
       )}
     >
-      {dayLabel(date)}
+      <DateTime
+        value={date}
+        variant="date"
+        dateOptions={{ weekday: "short", month: "short", day: "numeric" }}
+        locationTimeZone={locationTimeZone}
+      />
     </Th>
   ));
 
@@ -376,6 +378,7 @@ export function CrewMatrix({
                           date={date}
                           shiftId={employeeShiftId[employee.id] ?? shiftId}
                           locationId={locationId}
+                          locationTimeZone={locationTimeZone}
                           workCenters={workCenters}
                           rows={dayAssignments.map((assignment) => ({
                             workCenterId: assignment.workCenterId,

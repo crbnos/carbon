@@ -3,13 +3,28 @@ import type { Kysely } from "kysely";
 import type { DB } from "../database.ts";
 import { getJobMethodTree, type JobMethodTreeItem } from "../methods.ts";
 import type { Database } from "../types.ts";
-import { toIsoDate } from "./date-utils.ts";
+import { parseDate } from "@internationalized/date";
+import { businessDay, toIsoDate } from "./date-utils.ts";
 import {
   capacityHoldingJobStatuses,
   type BaseOperation,
   type Job,
   type JobOperationDependency,
 } from "./types.ts";
+
+// crewAssignment.date is a plant-calendar day — resolve the range instants to
+// days in the plant's own timezone, padded one day each side so an overnight
+// shift row whose windows spill past its calendar day is never cut at the
+// range boundary.
+const crewDateLowerBound = (instant: Date, timeZone: string) =>
+  parseDate(businessDay(instant.toISOString(), timeZone))
+    .subtract({ days: 1 })
+    .toString();
+
+const crewDateUpperBound = (instant: Date, timeZone: string) =>
+  parseDate(businessDay(instant.toISOString(), timeZone))
+    .add({ days: 1 })
+    .toString();
 
 export type JobMaterialWithMakeMethod = {
   jobMaterialMakeMethodId: string | null;
@@ -156,9 +171,14 @@ export interface MasterDataProvider {
   ): Promise<EmployeeShiftRow[]>;
   getCrewAssignments(
     rangeStart: Date,
-    rangeEnd: Date
+    rangeEnd: Date,
+    timeZone: string
   ): Promise<CrewAssignmentRow[]>;
-  getCrewAbsences(rangeStart: Date, rangeEnd: Date): Promise<CrewAbsenceRow[]>;
+  getCrewAbsences(
+    rangeStart: Date,
+    rangeEnd: Date,
+    timeZone: string
+  ): Promise<CrewAbsenceRow[]>;
 }
 
 /**
@@ -608,17 +628,19 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
 
   async getCrewAssignments(
     rangeStart: Date,
-    rangeEnd: Date
+    rangeEnd: Date,
+    timeZone: string
   ): Promise<CrewAssignmentRow[]> {
     return this.cached(
-      `crewAssignments:${rangeStart.toISOString()}:${rangeEnd.toISOString()}`,
-      () => this.loadCrewAssignments(rangeStart, rangeEnd)
+      `crewAssignments:${rangeStart.toISOString()}:${rangeEnd.toISOString()}:${timeZone}`,
+      () => this.loadCrewAssignments(rangeStart, rangeEnd, timeZone)
     );
   }
 
   private async loadCrewAssignments(
     rangeStart: Date,
-    rangeEnd: Date
+    rangeEnd: Date,
+    timeZone: string
   ): Promise<CrewAssignmentRow[]> {
     const rows = await this.db
       .selectFrom("crewAssignment as ca")
@@ -631,8 +653,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "ca.hours",
       ])
       .where("ca.companyId", "=", this.companyId)
-      .where("ca.date", ">=", rangeStart.toISOString().slice(0, 10))
-      .where("ca.date", "<=", rangeEnd.toISOString().slice(0, 10))
+      .where("ca.date", ">=", crewDateLowerBound(rangeStart, timeZone))
+      .where("ca.date", "<=", crewDateUpperBound(rangeEnd, timeZone))
       // stable order so split days deal their hours out deterministically
       .orderBy("ca.date")
       .orderBy("ca.id")
@@ -642,51 +664,53 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       const date = toIsoDate(r.date);
       return date
         ? [
-            {
-              workCenterId: r.workCenterId,
-              employeeId: r.employeeId,
-              date,
-              shiftId: r.shiftId,
-              overtimeHours: Number(r.overtimeHours ?? 0),
-              hours: r.hours == null ? null : Number(r.hours),
-            },
-          ]
+          {
+            workCenterId: r.workCenterId,
+            employeeId: r.employeeId,
+            date,
+            shiftId: r.shiftId,
+            overtimeHours: Number(r.overtimeHours ?? 0),
+            hours: r.hours == null ? null : Number(r.hours),
+          },
+        ]
         : [];
     });
   }
 
   async getCrewAbsences(
     rangeStart: Date,
-    rangeEnd: Date
+    rangeEnd: Date,
+    timeZone: string
   ): Promise<CrewAbsenceRow[]> {
     return this.cached(
-      `crewAbsences:${rangeStart.toISOString()}:${rangeEnd.toISOString()}`,
-      () => this.loadCrewAbsences(rangeStart, rangeEnd)
+      `crewAbsences:${rangeStart.toISOString()}:${rangeEnd.toISOString()}:${timeZone}`,
+      () => this.loadCrewAbsences(rangeStart, rangeEnd, timeZone)
     );
   }
 
   private async loadCrewAbsences(
     rangeStart: Date,
-    rangeEnd: Date
+    rangeEnd: Date,
+    timeZone: string
   ): Promise<CrewAbsenceRow[]> {
     const rows = await this.db
       .selectFrom("crewAbsence as ca")
       .select(["ca.employeeId", "ca.date", "ca.shiftId"])
       .where("ca.companyId", "=", this.companyId)
-      .where("ca.date", ">=", rangeStart.toISOString().slice(0, 10))
-      .where("ca.date", "<=", rangeEnd.toISOString().slice(0, 10))
+      .where("ca.date", ">=", crewDateLowerBound(rangeStart, timeZone))
+      .where("ca.date", "<=", crewDateUpperBound(rangeEnd, timeZone))
       .execute();
 
     return rows.flatMap((r) => {
       const date = toIsoDate(r.date);
       return date
         ? [
-            {
-              employeeId: r.employeeId,
-              date,
-              shiftId: r.shiftId,
-            },
-          ]
+          {
+            employeeId: r.employeeId,
+            date,
+            shiftId: r.shiftId,
+          },
+        ]
         : [];
     });
   }

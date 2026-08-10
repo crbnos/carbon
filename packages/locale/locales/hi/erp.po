@@ -13760,9 +13760,9 @@ msgstr "शुरू किया गया"
 msgid "Starts"
 msgstr "शुरू होता है"
 
-#. placeholder {0}: new Date(trace.rootStartedAt).toLocaleString()
-msgid "Starts {0}"
-msgstr "शुरू होता है {0}"
+#. placeholder {0}: formatTimelineDate( trace.rootStartedAt.toISOString(), locale )
+msgid "Starts <0>{0}</0>"
+msgstr "शुरू होता है <0>{0}</0>"
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"

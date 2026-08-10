@@ -10,11 +10,15 @@ import {
   TooltipTrigger,
   Tr
 } from "@carbon/react";
+import {
+  today as calendarToday,
+  getLocalTimeZone
+} from "@internationalized/date";
 import { Trans } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Fragment, useCallback, useMemo } from "react";
 import { LuInfo } from "react-icons/lu";
+import { DateTime } from "~/components";
 import { CrewChip } from "./CrewChip";
 
 const STICKY_HEADER =
@@ -41,13 +45,14 @@ type CapacityWorkCenter = {
 // internal column shape (one per day) so the sums are written once
 type CapacityColumn = {
   key: string;
-  label: string;
+  label: ReactNode;
   dates: string[];
   isCurrent?: boolean;
 };
 
 type CrewCapacityProps = {
   weekDates: string[];
+  locationTimeZone?: string;
   workCenters: CapacityWorkCenter[];
   assignments: {
     employeeId: string;
@@ -118,6 +123,7 @@ function LoadCell({
 
 export function CrewCapacity({
   weekDates,
+  locationTimeZone,
   workCenters,
   assignments,
   absences,
@@ -128,8 +134,6 @@ export function CrewCapacity({
   defaultShiftHours,
   calendarHoursByDate
 }: CrewCapacityProps) {
-  const { locale } = useLocale();
-
   const absentSet = useMemo(
     () => new Set(absences.map((a) => `${a.employeeId}:${a.date}`)),
     [absences]
@@ -184,26 +188,24 @@ export function CrewCapacity({
     [crewHours, calendarHoursByDate]
   );
 
-  const today = new Date().toLocaleDateString("en-CA");
-  const dayLabel = useCallback(
-    (date: string) =>
-      new Date(`${date}T00:00:00`).toLocaleDateString(locale, {
-        weekday: "short",
-        month: "short",
-        day: "numeric"
-      }),
-    [locale]
-  );
+  const today = calendarToday(getLocalTimeZone()).toString();
 
   const columns: CapacityColumn[] = useMemo(
     () =>
       weekDates.map((date) => ({
         key: date,
-        label: dayLabel(date),
+        label: (
+          <DateTime
+            value={date}
+            variant="date"
+            dateOptions={{ weekday: "short", month: "short", day: "numeric" }}
+            locationTimeZone={locationTimeZone}
+          />
+        ),
         dates: [date],
         isCurrent: date === today
       })),
-    [weekDates, dayLabel, today]
+    [weekDates, locationTimeZone, today]
   );
 
   const demandForColumn = useCallback(

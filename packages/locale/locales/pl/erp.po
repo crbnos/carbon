@@ -13760,9 +13760,9 @@ msgstr "Rozpoczęto"
 msgid "Starts"
 msgstr "Rozpoczyna się"
 
-#. placeholder {0}: new Date(trace.rootStartedAt).toLocaleString()
-msgid "Starts {0}"
-msgstr "Rozpoczyna się {0}"
+#. placeholder {0}: formatTimelineDate( trace.rootStartedAt.toISOString(), locale )
+msgid "Starts <0>{0}</0>"
+msgstr "Zaczyna się <0>{0}</0>"
 
 msgid "State / Province"
 msgstr "Stan / Prowincja"

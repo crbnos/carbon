@@ -77,6 +77,7 @@ type CrewBoardProps = {
   date: string;
   shiftId: string | null;
   locationId: string;
+  locationTimeZone?: string;
   employees: CrewEmployee[];
   workCenters: { id: string; name: string }[];
   assignments: CrewAssignment[];
@@ -456,6 +457,7 @@ const CrewBoard = ({
   date,
   shiftId,
   locationId,
+  locationTimeZone,
   employees,
   workCenters,
   assignments,
@@ -888,6 +890,7 @@ const CrewBoard = ({
           date={date}
           shiftId={shiftForEmployee(editorItem.employee.id)}
           locationId={locationId}
+          locationTimeZone={locationTimeZone}
           workCenters={workCenters}
           rows={editorItem.dayRows}
           note={editorItem.note}

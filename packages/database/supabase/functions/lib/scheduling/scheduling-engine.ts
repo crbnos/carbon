@@ -482,8 +482,8 @@ export class SchedulingEngine {
       await Promise.all([
         this.provider.getLiveReservations(now, this.jobId),
         this.provider.getProcessRequirements(processIds),
-        this.provider.getCrewAssignments(rangeStart, rangeEnd),
-        this.provider.getCrewAbsences(rangeStart, rangeEnd),
+        this.provider.getCrewAssignments(rangeStart, rangeEnd, this.timezone),
+        this.provider.getCrewAbsences(rangeStart, rangeEnd, this.timezone),
       ]);
 
     const abilityIds = Array.from(

@@ -21,6 +21,7 @@ import {
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import {
   LuBoxes,
@@ -30,7 +31,7 @@ import {
 } from "react-icons/lu";
 import type { LoaderFunctionArgs, Location } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { Empty } from "~/components";
+import { DateTime, Empty } from "~/components";
 import { Gantt } from "~/components/Gantt";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
@@ -43,7 +44,11 @@ import {
 } from "~/modules/production";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
-import { TimelineDetail } from "~/modules/production/ui/Schedule/TimelineDetail";
+import {
+  formatTimelineDate,
+  TIMELINE_DATE_TRIGGER_CLASSES,
+  TimelineDetail
+} from "~/modules/production/ui/Schedule/TimelineDetail";
 import type {
   TimelineGroupBy,
   TimelineNodeDetail
@@ -340,6 +345,7 @@ export default function GanttView() {
     workCenterOptions,
     resizeSettings
   } = useLoaderData<typeof loader>();
+  const { locale } = useLocale();
   const { t } = useLingui();
   const navigate = useNavigate();
   const { formatDate } = useDateFormatter();
@@ -478,7 +484,17 @@ export default function GanttView() {
           {trace?.rootStartedAt && (
             <span className="whitespace-nowrap">
               <Trans>
-                Starts {new Date(trace.rootStartedAt).toLocaleString()}
+                Starts{" "}
+                <DateTime
+                  value={trace.rootStartedAt.toISOString()}
+                  variant="absolute"
+                  className={TIMELINE_DATE_TRIGGER_CLASSES}
+                >
+                  {formatTimelineDate(
+                    trace.rootStartedAt.toISOString(),
+                    locale
+                  )}
+                </DateTime>
               </Trans>
             </span>
           )}

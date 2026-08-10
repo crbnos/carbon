@@ -13760,9 +13760,9 @@ msgstr "시작됨"
 msgid "Starts"
 msgstr "시작"
 
-#. placeholder {0}: new Date(trace.rootStartedAt).toLocaleString()
-msgid "Starts {0}"
-msgstr "다음에 시작: {0}"
+#. placeholder {0}: formatTimelineDate( trace.rootStartedAt.toISOString(), locale )
+msgid "Starts <0>{0}</0>"
+msgstr "시작: <0>{0}</0>"
 
 msgid "State / Province"
 msgstr "주/도"
