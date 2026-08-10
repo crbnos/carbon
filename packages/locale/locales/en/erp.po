@@ -159,6 +159,9 @@ msgstr "{chainLabel}. Consider pointing this part directly at the final successo
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} of {total} phases complete"
 
