@@ -268,8 +268,13 @@ const MultiPeriodStatementTree = memo(
                 {/* One cell per period bucket */}
                 {periods.map((bucket) => {
                   const cell = account.periods?.[bucket.key];
+                  // Translated: the Income Statement (netChange) must read the
+                  // translated period delta; the Balance Sheet (balanceAtDate)
+                  // reads the translated cumulative balance.
                   const value = showTranslated
-                    ? cell?.translatedBalance
+                    ? measure === "netChange"
+                      ? cell?.translatedNetChange
+                      : cell?.translatedBalance
                     : (cell?.[measure] ?? 0);
                   return (
                     <span

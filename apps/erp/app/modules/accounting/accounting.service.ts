@@ -404,6 +404,7 @@ function applyRootSignCorrectionToSeries<
       let netChange = 0;
       let balanceAtDate = 0;
       let translatedBalance = 0;
+      let translatedNetChange = 0;
       let hasTranslated = false;
 
       for (const child of children) {
@@ -415,12 +416,16 @@ function applyRootSignCorrectionToSeries<
           hasTranslated = true;
           translatedBalance += sign * cell.translatedBalance;
         }
+        if (typeof cell?.translatedNetChange === "number") {
+          hasTranslated = true;
+          translatedNetChange += sign * cell.translatedNetChange;
+        }
       }
 
       periods[key] = {
         netChange,
         balanceAtDate,
-        ...(hasTranslated ? { translatedBalance } : {})
+        ...(hasTranslated ? { translatedBalance, translatedNetChange } : {})
       };
     }
 
