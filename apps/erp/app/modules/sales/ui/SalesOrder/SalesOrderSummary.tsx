@@ -28,7 +28,7 @@ import {
   parseDate,
   today
 } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
@@ -132,6 +132,8 @@ const SalesOrderSummary = ({
 
   const paidAmount = routeData?.invoiceSummary?.paidAmount ?? 0;
   const balanceRemaining = routeData?.invoiceSummary?.balanceRemaining ?? 0;
+  const currencyMismatchCount =
+    routeData?.invoiceSummary?.currencyMismatchCount ?? 0;
   // Sub-cent dust matches invoice view forgiveness (INVOICE_DUST_THRESHOLD).
   const isFullyPaid =
     balanceRemaining < INVOICE_DUST_THRESHOLD &&
@@ -347,14 +349,13 @@ const SalesOrderSummary = ({
                 />
               )}
             </HStack>
-            {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 0 && (
+            {currencyMismatchCount > 0 && (
               <span className="text-xs text-muted-foreground">
-                Excludes {routeData?.invoiceSummary?.currencyMismatchCount}{" "}
-                invoice
-                {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 1
-                  ? "s"
-                  : ""}{" "}
-                in a different currency.
+                <Plural
+                  value={currencyMismatchCount}
+                  one="Excludes # invoice in a different currency."
+                  other="Excludes # invoices in a different currency."
+                />
               </span>
             )}
           </VStack>
