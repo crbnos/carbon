@@ -26,7 +26,7 @@ export async function getWorkflows(
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
+      { column: "createdAt", ascending: false }
     ]);
   }
 
