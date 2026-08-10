@@ -107,8 +107,8 @@ per-entity (`sourceDocument="Entity"`, `trackedEntityLabel*`). See
 
 - CSS vars: **`--controls-width: 220px`** (260px at xl, in `apps/mes/app/styles/tailwind.css`),
   `--controls-height` set inline from a computed `controlsHeight` memo, `--header-height`
-  from `@carbon/react`. Details scrollport classes live in
-  `detailsScrollport.ts` (`DETAILS_SCROLLPORT_CLASSNAME`):
+  from `@carbon/react`. Details scrollport classes live **inline on the details
+  container in `JobOperation.tsx`** (no separate helper):
   - **Below `lg`:** `h-auto` + page scroll — Controls/Times stack inline under content so
     Files / Serial Numbers stay reachable (do **not** put a viewport-filling fixed height
     here; that nested-scroll trap was #959).
