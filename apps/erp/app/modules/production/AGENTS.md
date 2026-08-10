@@ -76,7 +76,7 @@ pnpm --filter @carbon/erp test
 - `triggerJobSchedule` — fires the scheduling engine via Inngest
 - `runMRP` — triggers Material Requirements Planning via `mrp` edge function
 - `calculateJobPriority` — computes priority from deadline type and due date
-- `getCutLists` / `getCutList` / `getCutListLines` / `getCutPatterns` / `upsertCutList` / `upsertCutListLine` / `updateCutListStatus` — cut list CRUD; `getOpenCutDemand` feeds the cutting-run board (released-job materials with a `cutLength` still owing quantity); `getCuttingProcessesList` / `getCuttingProcessDefaults` resolve saw parameters from the machine
+- `getCutLists` / `getCutList` / `getCutListLines` / `getCutPatterns` / `upsertCutList` / `upsertCutListLine` / `updateCutListStatus` — cut list CRUD; `getCuttingProcessesList` / `getCuttingProcessDefaults` resolve saw parameters from the machine. Cross-job grouping is the batch board's (Job Operation Batching, #1010), not a cut-list board
 - `runCutOptimization` — invokes the `optimize-cuts` edge function (1D best-fit-decreasing with kerf/trim/grip/min-remnant); rewrites every `cutPattern` for the list and stamps `plannedYieldPct`
 - `confirmCutList` — invokes `issue` with `type: "cutListComplete"`: consumes stock split across served jobs by nested length, creates remnant lots carrying the parent's heat number, scraps sub-minimum drops
 - `getActiveJobOperationsByLocation` — schedule board data (RPC `get_active_job_operations_by_location`)

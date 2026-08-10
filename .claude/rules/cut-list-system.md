@@ -3,7 +3,6 @@ paths:
   - "apps/erp/app/modules/production/ui/CutLists/**"
   - "apps/erp/app/routes/x+/cut-list+/**"
   - "apps/erp/app/routes/x+/production+/cut-lists*"
-  - "apps/erp/app/routes/x+/production+/cutting-runs.tsx"
   - "packages/database/supabase/functions/lib/cutting/**"
   - "packages/database/supabase/functions/optimize-cuts/**"
   - "packages/database/supabase/functions/issue/cut-list-confirm.ts"
@@ -16,6 +15,15 @@ from which stock. It is the bridge between demand in **pieces** and supply in
 **stock units**: a job needs 40 pieces of 1" 4140 at 5.7"; inventory holds 20 ft
 bars and a rack of drops.
 
+A cut list is a **specialization of a `jobOperationBatch`** (Job Operation
+Batching, issue #1010), not a parallel system. The batch owns cross-job
+grouping, operation membership (`jobOperation.jobOperationBatchId`), per-operation
+completion, and the run's time/cost split. The cut list adds only the
+cutting-specific layer on top: dimensioned stock, the 1D optimizer, `cutPattern`,
+length-aware consumption, and remnant/heat return. A stitching cut list is backed
+by one batch via `cutList.jobOperationBatchId`; completion delegates to the
+`batch-operations` `complete` function.
+
 Design spec: `.ai/specs/2026-08-04-cut-lists.md`.
 Research (~60 primary sources): `.ai/research/2026-08-04-cut-lists.md`.
 
@@ -23,8 +31,8 @@ Research (~60 primary sources): `.ai/research/2026-08-04-cut-lists.md`.
 
 | Table | Purpose |
 |---|---|
-| `cutList` | The stateful document. Saw parameters (`kerf`, `endTrim`, `gripMargin`, `minRemnantLength`, `unitOfDimension`) live on the header, seeded from the process defaults but editable per run. `status` enum `cutListStatus`. `plannedYieldPct` / `actualYieldPct`. Readable id `CL000001` from the `cutList` sequence. |
-| `cutListLine` | Demand: N pieces of one `pieceLength` (+ `pieceWidth` for 2D). Carries `jobId` + `jobMaterialId` + **`jobOperationId`** — the **demand pedigree** that lets one run serve many jobs and still settle cost, traceability, *and operation completion* per job. `piecesPerParent` (snapshotted from the BOM line) converts pieces to finished parts: 4-per-part means 40 pieces completes 10 parts, not 40. |
+| `cutList` | The stateful document. Saw parameters (`kerf`, `endTrim`, `gripMargin`, `minRemnantLength`, `unitOfDimension`) live on the header, seeded from the process defaults but editable per run. `status` enum `cutListStatus`. `plannedYieldPct` / `actualYieldPct`. Readable id `CL000001` from the `cutList` sequence. **`jobOperationBatchId`** (nullable composite FK) backs a stitching cut list with one `jobOperationBatch`; a standalone cut list has none. |
+| `cutListLine` | Demand: N pieces of one `pieceLength` (+ `pieceWidth` for 2D). Carries `jobId` + `jobMaterialId` — the **demand pedigree** that lets one run serve many jobs and still settle cost + traceability per job. Operation membership and per-operation completion live on the **batch** (`jobOperation.jobOperationBatchId`), not on the line. |
 | `cutPattern` | One stock unit's cut sequence, produced by the optimizer. `pattern` JSONB is `[{ cutListLineId, pieceLength }]` in cut order. **Rewritten wholesale** on every optimize run — never hold a long-lived reference to a pattern id. |
 | `itemStockDimension` | 1:1 with a material size-item: `stockLength` / `stockWidth` / `stockThickness` + `unitOfDimension`. Without a row here an item contributes **no stock** to the optimizer (it can't know whether a piece fits). |
 | `cutLists` (view) | List read: joins location/process/work center names and aggregates line counts. |
@@ -101,23 +109,16 @@ edge-function case does the I/O. What it gets right:
 4. **Below-minimum drops post as scrap**, not inventory.
 5. Partial confirmations leave the run `In Progress`; it completes only when
    every line is fully cut.
-6. **The run closes the work orders it served.** For every line carrying a
-   `jobOperationId`, confirmation inserts a `productionQuantity` (`Production`)
-   for the parts those pieces complete; Carbon's existing
-   `sync_update_job_operation_quantities` trigger then advances
-   `quantityComplete` and flips the operation to `Done`. Do **not** hand-roll
-   operation completion — post the quantity and let the trigger run. Parts are
-   counted from the line's cumulative cut, not this run's slice, so partial
-   confirmations across a part boundary don't lose one (4-per-part, 6 then 6 =
-   3 parts, not 1 + 1).
-
-7. **The run's time splits across the operations too.** When the operator enters
-   setup and/or run (machine) minutes on the confirmation, they divide across the
-   served operations by nested length — the same basis as material — and post as
-   `productionEvent` rows (`Setup` / `Machine`, `duration` in seconds) carrying
-   each operation's own work center, then cost out via `post-production-event`
-   after commit. Whole seconds, last operation absorbs the rounding so the parts
-   sum to exactly the run's time. Zero minutes → no events.
+6. **Completion is the batch's job, not the cut list's.** Operation completion
+   and the run's setup/machine time split used to live here; they were a
+   duplicate of Job Operation Batching and were removed (#1010). When the whole
+   list is cut **and** it backs a batch (`cutList.jobOperationBatchId`),
+   confirmation invokes `batch-operations` `complete` after commit — which
+   credits each member operation and splits the run's time from the timers that
+   ran while the batch was active. A partial confirmation leaves the batch open
+   for the operator to finish on the batch board. The cut-list confirm itself now
+   posts **only** material consumption + remnants; it inserts no
+   `productionQuantity` and no `productionEvent`.
 
 Yield counts only material actually used up: a returned drop is still stock, so
 200" of parts from a 240" bar with a 40" returned drop is **100%**, not 83%.
@@ -127,7 +128,6 @@ Yield counts only material actually used up: a returned drop is still stock, so
 | Route | Purpose |
 |---|---|
 | `x+/production+/cut-lists.tsx` (+ `.new`) | List + create modal |
-| `x+/production+/cutting-runs.tsx` | Cross-job planning board. Demand pools by a **selectable characteristic** — material, substance, shape, grade, size or finish — so a planner can batch "everything in 4130" across diameters, not only exact-item matches. Rows with no value for the characteristic bucket under "Unspecified" rather than disappearing. Select → create + auto-optimize. |
 | `x+/cut-list+/$id.tsx` | Full-screen detail: header, actions, lines, pattern diagram |
 | `x+/cut-list+/$id.{status,optimize,complete}.tsx` | Action-only routes |
 | `x+/cut-list+/$id.lines.*` | Line CRUD |
