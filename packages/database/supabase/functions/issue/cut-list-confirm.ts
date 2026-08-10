@@ -3,15 +3,15 @@
 // so `deno test` type-checks it cleanly and the logic is testable without a
 // database.
 //
-// PLANNED REFACTOR — build on top of Job Operation Batching (issue #1010).
-// Two concerns below are a DUPLICATE of what `jobOperationBatch` already owns and
-// will be DELETED here and delegated to `batch-operations` `complete` once
-// batching lands on main:
-//   • operationCompletions (OperationCompletion) — closing each served operation
-//   • timeAllocations (TimeAllocation, splitTime) — splitting the run's setup +
-//     machine time across served operations
-// Kept here (the genuine cut-list layer): line-quantity clamping, `allocations`
-// (material split), remnants/scrap, status, actualYieldPct. See
+// Cut lists build ON Job Operation Batching (issue #1010). Two concerns that
+// used to live here are the batch's, not the cut list's, and have been removed:
+//   • operation completion — closing each served operation. The batch owns
+//     membership (jobOperation.jobOperationBatchId) and completion.
+//   • the run's setup + machine time split across served operations. The batch's
+//     `complete` splits time from the timers that ran while it was active.
+// Both now go through `batch-operations` `complete`; this plan keeps only the
+// genuine cut-list layer: line-quantity clamping, `allocations` (material split),
+// remnants/scrap, status, actualYieldPct. See
 // .ai/plans/2026-08-11-cut-lists-on-operation-batching.md, Task 2.
 //
 // What a confirmation has to get right:
@@ -33,14 +33,10 @@ export type ConfirmLineInput = {
 export type ConfirmLineRow = {
   id: string;
   jobId: string | null;
-  /** the cutting operation this demand came from, when the BOM line was pinned to one */
-  jobOperationId: string | null;
   itemId: string;
   pieceLength: number;
   quantity: number;
   quantityCut: number;
-  /** pieces of this material consumed by one finished part */
-  piecesPerParent: number;
 };
 
 export type ConsumedInput = {
@@ -71,23 +67,6 @@ export type JobAllocation = {
   nestedLength: number;
 };
 
-export type OperationCompletion = {
-  jobOperationId: string;
-  jobId: string | null;
-  /** pieces of material cut for this operation in this confirmation */
-  piecesCut: number;
-  /** finished parts those pieces complete — what the operation is credited with */
-  partsComplete: number;
-};
-
-export type TimeAllocation = {
-  jobOperationId: string;
-  jobId: string | null;
-  type: "Setup" | "Machine";
-  /** whole seconds of the run's time attributed to this operation */
-  seconds: number;
-};
-
 export type CutListPostingPlan = {
   /** per-line quantityCut after this confirmation */
   lineUpdates: { id: string; quantityCut: number }[];
@@ -97,10 +76,6 @@ export type CutListPostingPlan = {
   remnants: RemnantInput[];
   /** drops too short to keep, plus any explicit scrap */
   scrap: ScrapInput[];
-  /** production to post against each served operation, closing the work orders */
-  operationCompletions: OperationCompletion[];
-  /** the run's setup + machine time split across the operations it served */
-  timeAllocations: TimeAllocation[];
   /** Completed once every line is fully cut; otherwise the run stays open */
   status: "In Progress" | "Completed";
   /** used length / consumed length, as a percentage */
@@ -117,10 +92,6 @@ export type BuildPlanArgs = {
   minRemnantLength: number;
   /** physical length of each consumed lot, keyed by tracked entity id */
   stockLengthByEntity?: Record<string, number>;
-  /** total setup time for the whole run, in seconds, to split across operations */
-  setupSeconds?: number;
-  /** total run (machine) time for the whole run, in seconds */
-  machineSeconds?: number;
 };
 
 export function buildCutListPostingPlan(
@@ -133,9 +104,7 @@ export function buildCutListPostingPlan(
     remnants,
     scrap,
     minRemnantLength,
-    stockLengthByEntity = {},
-    setupSeconds = 0,
-    machineSeconds = 0
+    stockLengthByEntity = {}
   } = args;
 
   const lineById = new Map(lines.map((line) => [line.id, line]));
@@ -163,51 +132,6 @@ export function buildCutListPostingPlan(
     lineUpdates.push({
       id: line.id,
       quantityCut: line.quantityCut + applied
-    });
-  }
-
-  // Credit each served operation with the parts its pieces complete.
-  //
-  // Counting from the cumulative total, not this run's slice, is what makes
-  // partial confirmations add up: at 4 pieces per part, cutting 6 then 6 is
-  // 3 parts, but flooring each slice on its own would credit 1 + 1 and quietly
-  // lose the third.
-  const operationCompletions: OperationCompletion[] = [];
-  const byOperation = new Map<
-    string,
-    { jobId: string | null; before: number; after: number; perParent: number; piecesCut: number }
-  >();
-
-  for (const entry of cutThisRun) {
-    const operationId = entry.line.jobOperationId;
-    if (!operationId) continue;
-    const perParent = entry.line.piecesPerParent > 0 ? entry.line.piecesPerParent : 1;
-    const existing = byOperation.get(operationId);
-    if (existing) {
-      existing.before += entry.line.quantityCut;
-      existing.after += entry.line.quantityCut + entry.quantity;
-      existing.piecesCut += entry.quantity;
-    } else {
-      byOperation.set(operationId, {
-        jobId: entry.line.jobId,
-        before: entry.line.quantityCut,
-        after: entry.line.quantityCut + entry.quantity,
-        perParent,
-        piecesCut: entry.quantity
-      });
-    }
-  }
-
-  for (const [jobOperationId, entry] of byOperation) {
-    const partsComplete =
-      Math.floor(entry.after / entry.perParent) -
-      Math.floor(entry.before / entry.perParent);
-    if (partsComplete <= 0) continue;
-    operationCompletions.push({
-      jobOperationId,
-      jobId: entry.jobId,
-      piecesCut: entry.piecesCut,
-      partsComplete
     });
   }
 
@@ -261,58 +185,6 @@ export function buildCutListPostingPlan(
     });
   }
 
-  // Split the run's setup and machine time across the operations it served, on
-  // the same nested-length basis as material: an operation that cut 40" of bar
-  // carries twice the time of one that cut 20". Material cost splitting on its
-  // own leaves the saw's minutes stranded on the run; this puts them on the
-  // jobs, where they cost out against the work-center rate.
-  const lengthByOperation = new Map<
-    string,
-    { jobId: string | null; length: number }
-  >();
-  let operationNestedLength = 0;
-  for (const entry of cutThisRun) {
-    const operationId = entry.line.jobOperationId;
-    if (!operationId) continue;
-    const length = entry.line.pieceLength * entry.quantity;
-    operationNestedLength += length;
-    const existing = lengthByOperation.get(operationId);
-    if (existing) {
-      existing.length += length;
-    } else {
-      lengthByOperation.set(operationId, {
-        jobId: entry.line.jobId,
-        length
-      });
-    }
-  }
-
-  const timeAllocations: TimeAllocation[] = [];
-  const splitTime = (total: number, type: "Setup" | "Machine") => {
-    if (total <= 0 || operationNestedLength <= 0) return;
-    const entries = [...lengthByOperation.entries()];
-    let assigned = 0;
-    entries.forEach(([jobOperationId, entry], index) => {
-      const isLast = index === entries.length - 1;
-      // Whole seconds, with the last operation absorbing the rounding so the
-      // parts sum to exactly the run's time — no lost or invented minutes.
-      const seconds = isLast
-        ? total - assigned
-        : Math.round((entry.length / operationNestedLength) * total);
-      assigned += seconds;
-      if (seconds > 0) {
-        timeAllocations.push({
-          jobOperationId,
-          jobId: entry.jobId,
-          type,
-          seconds
-        });
-      }
-    });
-  };
-  splitTime(Math.round(setupSeconds), "Setup");
-  splitTime(Math.round(machineSeconds), "Machine");
-
   // Sort a drop into "back on the rack" or "scrap" by the run's threshold.
   const keptRemnants: RemnantInput[] = [];
   const derivedScrap: ScrapInput[] = [...scrap];
@@ -357,8 +229,6 @@ export function buildCutListPostingPlan(
     allocations,
     remnants: keptRemnants,
     scrap: derivedScrap,
-    operationCompletions,
-    timeAllocations,
     status: isComplete ? "Completed" : "In Progress",
     actualYieldPct,
     totalConsumed
