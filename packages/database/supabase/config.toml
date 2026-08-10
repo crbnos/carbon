@@ -246,3 +246,10 @@ entrypoint = "./functions/assign-serial-numbers/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/optimize-cuts/index.ts"
+
+# VENDORED with issue #1010 (job operation batching). Remove when #1010 lands on
+# main — the real batching branch registers this function itself.
+[functions.batch-operations]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/batch-operations/index.ts"
