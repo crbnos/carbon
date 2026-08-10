@@ -4,6 +4,7 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import {
   isJobLocked,
+  JOB_LOCKED_STATUSES,
   scheduleJobUpdateValidator
 } from "~/modules/production/production.models";
 import { triggerJobSchedule } from "~/modules/production/production.service";
@@ -69,14 +70,25 @@ export async function action({ request }: ActionFunctionArgs) {
     updatedAt: new Date().toISOString()
   };
 
-  const { error } = await client
+  const { data: updatedJob, error } = await client
     .from("job")
     .update(updateData)
     .eq("id", validation.data.id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
+    .select("id")
+    .single();
 
   if (error) {
     return { success: false, message: error.message };
+  }
+
+  if (!updatedJob) {
+    // No row updated — job was locked by a concurrent request
+    return {
+      success: false,
+      message: "This job is locked and cannot be rescheduled"
+    };
   }
 
   // Trigger background job rescheduling
