@@ -50,7 +50,7 @@ msgstr "{0, plural, one {Эта деталь находится на 1 откр�
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
-msgstr ""
+msgstr "{0} счётов"
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -867,7 +867,7 @@ msgid "After (calculation method)"
 msgstr "После (способ расчета)"
 
 msgid "Aging"
-msgstr ""
+msgstr "Возраст"
 
 msgid "Agree on the scope"
 msgstr "Согласовать область охвата"
@@ -888,7 +888,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Все {total} этапов завершены. Отличная работа — ваша команда готова к работе."
 
 msgid "All accounts"
-msgstr ""
+msgstr "Все счёта"
 
 msgid "All actions selected"
 msgstr "Все действия выбраны"
@@ -1276,7 +1276,7 @@ msgstr "Вы уверены, что хотите удалить {name}? Это �
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
-msgstr ""
+msgstr "Вы уверены, что хотите удалить представление \"{0}\"? Это действие невозможно отменить."
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2069,7 +2069,7 @@ msgid "By Due Date"
 msgstr "По дате платежа"
 
 msgid "By field"
-msgstr ""
+msgstr "По полю"
 
 msgid "By Item"
 msgstr "По товару"
@@ -2429,7 +2429,7 @@ msgid "Clear search query"
 msgstr "Очистить поисковый запрос"
 
 msgid "Clear selection"
-msgstr ""
+msgstr "Очистить выделение"
 
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Погасите этот счет с помощью опубликованных кредитов стороны, а также наличных средств. Кредиты применяются напрямую — публикация не требуется."
@@ -2519,7 +2519,7 @@ msgid "Column dimension"
 msgstr "Измерение столбца"
 
 msgid "Column field"
-msgstr ""
+msgstr "Поле столбца"
 
 msgid "Column visibility and order"
 msgstr "Видимость и порядок столбцов"
@@ -3917,7 +3917,7 @@ msgstr "Удалить"
 
 #. placeholder {0}: view.name
 msgid "Delete {0}"
-msgstr ""
+msgstr "Удалить {0}"
 
 msgid "Delete {name}"
 msgstr "Удалить {name}"
@@ -4206,7 +4206,7 @@ msgid "Delete Unit of Measure"
 msgstr "Удалить единицу измерения"
 
 msgid "Delete view"
-msgstr ""
+msgstr "Удалить представление"
 
 msgid "Delete View"
 msgstr "Удалить представление"
@@ -8767,7 +8767,7 @@ msgid "No production events recorded for this operation yet"
 msgstr "Для этой операции еще не записано ни одного производственного события"
 
 msgid "No purchases in this period"
-msgstr ""
+msgstr "Нет покупок в этом периоде"
 
 msgid "No Quote"
 msgstr "Нет предложения"
@@ -10213,7 +10213,7 @@ msgid "Purchased"
 msgstr "Закупленный"
 
 msgid "Purchases"
-msgstr ""
+msgstr "Покупки"
 
 msgid "purchasing"
 msgstr "Закупки и стоимость проданных товаров"
@@ -12100,10 +12100,10 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice asset activity by location, item, or any dimension"
-msgstr ""
+msgstr "Разбить активность активов по местоположению, товару или любому измерению"
 
 msgid "Slice expenses by location, cost center, or any dimension"
-msgstr ""
+msgstr "Разбить расходы по местоположению, центру затрат или любому измерению"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Разделить доход по клиенту, типу клиента или любому измерению"
@@ -12190,7 +12190,7 @@ msgid "Specific Items"
 msgstr "Конкретные товары"
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
-msgstr ""
+msgstr "Расходы по поставщику, товару или категории — ваши основные драйверы затрат"
 
 msgid "Split"
 msgstr "Разделить"

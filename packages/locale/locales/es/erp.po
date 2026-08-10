@@ -50,7 +50,7 @@ msgstr "{0, plural, one {Esta parte está en 1 aviso de cambio abierto} other {E
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
-msgstr ""
+msgstr "{0} cuentas"
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -867,7 +867,7 @@ msgid "After (calculation method)"
 msgstr "Después (método de cálculo)"
 
 msgid "Aging"
-msgstr ""
+msgstr "Antigüedad"
 
 msgid "Agree on the scope"
 msgstr "Acordar sobre el alcance"
@@ -888,7 +888,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Todas las {total} fases están completadas. Buen trabajo — tu equipo está en funcionamiento."
 
 msgid "All accounts"
-msgstr ""
+msgstr "Todas las cuentas"
 
 msgid "All actions selected"
 msgstr "Todas las acciones seleccionadas"
@@ -1276,7 +1276,7 @@ msgstr "¿Estás seguro de que deseas eliminar {name}? Esto no se puede deshacer
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
-msgstr ""
+msgstr "¿Está seguro de que desea eliminar la vista \"{0}\"? Esto no se puede deshacer."
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2069,7 +2069,7 @@ msgid "By Due Date"
 msgstr "Por Fecha de Vencimiento"
 
 msgid "By field"
-msgstr ""
+msgstr "Por campo"
 
 msgid "By Item"
 msgstr "Por Artículo"
@@ -2429,7 +2429,7 @@ msgid "Clear search query"
 msgstr "Borrar consulta de búsqueda"
 
 msgid "Clear selection"
-msgstr ""
+msgstr "Limpiar selección"
 
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Liquida esta factura con los créditos registrados de la parte así como con efectivo. Los créditos se aplican directamente — no se requiere registro."
@@ -2519,7 +2519,7 @@ msgid "Column dimension"
 msgstr "Dimensión de columna"
 
 msgid "Column field"
-msgstr ""
+msgstr "Campo de columna"
 
 msgid "Column visibility and order"
 msgstr "Visibilidad y orden de columnas"
@@ -3917,7 +3917,7 @@ msgstr "Eliminar"
 
 #. placeholder {0}: view.name
 msgid "Delete {0}"
-msgstr ""
+msgstr "Eliminar {0}"
 
 msgid "Delete {name}"
 msgstr "Eliminar {name}"
@@ -4206,7 +4206,7 @@ msgid "Delete Unit of Measure"
 msgstr "Eliminar unidad de medida"
 
 msgid "Delete view"
-msgstr ""
+msgstr "Eliminar vista"
 
 msgid "Delete View"
 msgstr "Eliminar Vista"
@@ -8767,7 +8767,7 @@ msgid "No production events recorded for this operation yet"
 msgstr "Aún no se han registrado eventos de producción para esta operación"
 
 msgid "No purchases in this period"
-msgstr ""
+msgstr "Sin compras en este período"
 
 msgid "No Quote"
 msgstr "Sin Cotización"
@@ -10213,7 +10213,7 @@ msgid "Purchased"
 msgstr "Comprado"
 
 msgid "Purchases"
-msgstr ""
+msgstr "Compras"
 
 msgid "purchasing"
 msgstr "Compras y Costo de Bienes Vendidos"
@@ -12100,10 +12100,10 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice asset activity by location, item, or any dimension"
-msgstr ""
+msgstr "Dividir actividad de activos por ubicación, artículo o cualquier dimensión"
 
 msgid "Slice expenses by location, cost center, or any dimension"
-msgstr ""
+msgstr "Dividir gastos por ubicación, centro de costos o cualquier dimensión"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Dividir ingresos por cliente, tipo de cliente o cualquier dimensión"
@@ -12190,7 +12190,7 @@ msgid "Specific Items"
 msgstr "Artículos Específicos"
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
-msgstr ""
+msgstr "Gasto por proveedor, artículo o categoría — sus mayores generadores de costos"
 
 msgid "Split"
 msgstr "Dividir"

@@ -50,7 +50,7 @@ msgstr "{0, plural, one {이 부품은 1개의 미완료 변경 공지에 포함
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
-msgstr ""
+msgstr "{0} 계정"
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -165,7 +165,7 @@ msgid "/month/user"
 msgstr "/월/사용자"
 
 msgid "% of total"
-msgstr ""
+msgstr "총계의 %"
 
 msgid "% of Total"
 msgstr "전체의 %"
@@ -867,7 +867,7 @@ msgid "After (calculation method)"
 msgstr "이후(계산 방법)"
 
 msgid "Aging"
-msgstr ""
+msgstr "연령 분석"
 
 msgid "Agree on the scope"
 msgstr "범위에 합의"
@@ -888,7 +888,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "{total}단계가 모두 완료되었습니다. 수고하셨습니다 — 팀이 이제 정상 가동 중입니다."
 
 msgid "All accounts"
-msgstr ""
+msgstr "모든 계정"
 
 msgid "All actions selected"
 msgstr "모든 조치가 선택됨"
@@ -1276,7 +1276,7 @@ msgstr "{name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
-msgstr ""
+msgstr "정말로 \"{0}\" 보기를 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -1927,7 +1927,7 @@ msgid "Beta"
 msgstr "베타"
 
 msgid "Biggest causes of scrap by reason, item, or work center"
-msgstr ""
+msgstr "이유, 품목 또는 작업 센터별 스크랩의 가장 큰 원인"
 
 msgid "Bill of Material"
 msgstr "자재명세서"
@@ -2060,7 +2060,7 @@ msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>
 msgstr "초대를 수락하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
 
 msgid "By dimension"
-msgstr ""
+msgstr "차원별"
 
 msgid "By Document Date"
 msgstr "문서 날짜 기준"
@@ -2069,7 +2069,7 @@ msgid "By Due Date"
 msgstr "만기일 기준"
 
 msgid "By field"
-msgstr ""
+msgstr "필드별"
 
 msgid "By Item"
 msgstr "항목별"
@@ -2429,7 +2429,7 @@ msgid "Clear search query"
 msgstr "검색 쿼리 지우기"
 
 msgid "Clear selection"
-msgstr ""
+msgstr "선택 해제"
 
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "이 인보이스를 현금뿐 아니라 거래처의 전기된 크레딧으로도 정리하세요. 크레딧은 별도 전기 없이 바로 적용됩니다."
@@ -2516,10 +2516,10 @@ msgid "Collapse subtree"
 msgstr "하위 트리 접기"
 
 msgid "Column dimension"
-msgstr ""
+msgstr "열 차원"
 
 msgid "Column field"
-msgstr ""
+msgstr "열 필드"
 
 msgid "Column visibility and order"
 msgstr "열 표시 여부 및 순서"
@@ -3917,7 +3917,7 @@ msgstr "삭제"
 
 #. placeholder {0}: view.name
 msgid "Delete {0}"
-msgstr ""
+msgstr "{0} 삭제"
 
 msgid "Delete {name}"
 msgstr "{name} 삭제"
@@ -4206,7 +4206,7 @@ msgid "Delete Unit of Measure"
 msgstr "측정 단위 삭제"
 
 msgid "Delete view"
-msgstr ""
+msgstr "보기 삭제"
 
 msgid "Delete View"
 msgstr "보기 삭제"
@@ -5385,7 +5385,7 @@ msgid "Expense side of deferred tax movements (paired with deferred tax liabilit
 msgstr "이연법인세 변동의 비용 측면(이연법인세부채와 짝을 이룸)입니다."
 
 msgid "Expenses"
-msgstr ""
+msgstr "비용"
 
 msgid "Expert guidance"
 msgstr "전문가 안내"
@@ -6349,7 +6349,7 @@ msgid "Group"
 msgstr "그룹"
 
 msgid "Group by"
-msgstr ""
+msgstr "그룹화 기준"
 
 msgid "Group Members"
 msgstr "그룹 구성원"
@@ -8665,7 +8665,7 @@ msgid "No items have inventory activity here yet."
 msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 
 msgid "No journal lines in scope for this period"
-msgstr ""
+msgstr "이 기간에 대한 범위 내 분개선이 없습니다"
 
 msgid "No lines to map"
 msgstr "매핑할 라인이 없습니다"
@@ -8767,7 +8767,7 @@ msgid "No production events recorded for this operation yet"
 msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습니다"
 
 msgid "No purchases in this period"
-msgstr ""
+msgstr "이 기간에 구매가 없습니다"
 
 msgid "No Quote"
 msgstr "견적 없음"
@@ -10213,7 +10213,7 @@ msgid "Purchased"
 msgstr "구매됨"
 
 msgid "Purchases"
-msgstr ""
+msgstr "구매"
 
 msgid "purchasing"
 msgstr "구매"
@@ -11301,13 +11301,13 @@ msgid "Save Method"
 msgstr "저장 방법"
 
 msgid "Save view"
-msgstr ""
+msgstr "보기 저장"
 
 msgid "Save View"
 msgstr "보기 저장"
 
 msgid "Saved Views"
-msgstr ""
+msgstr "저장된 보기"
 
 msgid "Saving..."
 msgstr "저장 중..."
@@ -12025,10 +12025,10 @@ msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}로 표시"
 
 msgid "Showing the first 500 lines"
-msgstr ""
+msgstr "처음 500줄을 표시하고 있습니다"
 
 msgid "Showing the top 1,000 groups by amount"
-msgstr ""
+msgstr "금액별 상위 1,000개 그룹을 표시하고 있습니다"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"
@@ -12100,13 +12100,13 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice asset activity by location, item, or any dimension"
-msgstr ""
+msgstr "위치, 품목 또는 모든 차원별 자산 활동 분석"
 
 msgid "Slice expenses by location, cost center, or any dimension"
-msgstr ""
+msgstr "위치, 비용 센터 또는 모든 차원별 비용 분석"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
-msgstr ""
+msgstr "고객, 고객 유형 또는 모든 차원별 수익 분석"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "핵심 일일 업무 흐름을 처음부터 끝까지 스모크 테스트하세요"
@@ -12190,7 +12190,7 @@ msgid "Specific Items"
 msgstr "특정 품목"
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
-msgstr ""
+msgstr "공급업체, 품목 또는 카테고리별 지출 — 가장 큰 비용 동인"
 
 msgid "Split"
 msgstr "분할"
@@ -13518,7 +13518,7 @@ msgid "Theme Color"
 msgstr "테마 색상"
 
 msgid "Then by"
-msgstr ""
+msgstr "그 다음"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "이 RFQ와 비교할 활성 공급업체 견적이 없습니다."
@@ -14833,7 +14833,7 @@ msgid "What data"
 msgstr "어떤 데이터"
 
 msgid "What drove inventory up or down, by any dimension"
-msgstr ""
+msgstr "모든 차원별 재고를 높이거나 낮춘 요인"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"

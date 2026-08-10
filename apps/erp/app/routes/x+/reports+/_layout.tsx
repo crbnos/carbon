@@ -1,10 +1,16 @@
 import { msg } from "@lingui/core/macro";
 import { Outlet } from "react-router";
-import type { Handle } from "~/utils/handle";
+import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Reports`,
+  // Report pages live in their own full-screen namespace, not under the
+  // accounting module layout, so surface the full Accounting > Reports trail
+  // here rather than just "Reports".
+  breadcrumb: (): BreadcrumbSegment[] => [
+    { breadcrumb: msg`Accounting`, to: path.to.accounting },
+    { breadcrumb: msg`Reports`, to: path.to.reports }
+  ],
   to: path.to.reports,
   module: "accounting"
 };

@@ -50,7 +50,7 @@ msgstr "{0, plural, one {Bu parça 1 açık değişiklik bildirisinde yer alıyo
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
-msgstr ""
+msgstr "{0} hesaplar"
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -165,7 +165,7 @@ msgid "/month/user"
 msgstr "/ay/kullanıcı"
 
 msgid "% of total"
-msgstr ""
+msgstr "Toplamın %"
 
 msgid "% of Total"
 msgstr "% Toplam"
@@ -867,7 +867,7 @@ msgid "After (calculation method)"
 msgstr "Sonra (hesaplama yöntemi)"
 
 msgid "Aging"
-msgstr ""
+msgstr "Yaşlandırma"
 
 msgid "Agree on the scope"
 msgstr "Kapsamda anlaş"
@@ -888,7 +888,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Tüm {total} aşama tamamlandı. Harika iş — ekibiniz çalışmaya başladı."
 
 msgid "All accounts"
-msgstr ""
+msgstr "Tüm hesaplar"
 
 msgid "All actions selected"
 msgstr "Tüm eylemler seçildi"
@@ -1276,7 +1276,7 @@ msgstr "{name} adlı yedeği silmek istediğinizden emin misiniz? Bu işlem geri
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
-msgstr ""
+msgstr "\"{0}\" görünümünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -1927,7 +1927,7 @@ msgid "Beta"
 msgstr "Beta"
 
 msgid "Biggest causes of scrap by reason, item, or work center"
-msgstr ""
+msgstr "Nedene, ürüne veya iş merkezine göre ıskartanın en büyük nedenleri"
 
 msgid "Bill of Material"
 msgstr "Malzeme Listesi"
@@ -2060,7 +2060,7 @@ msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>
 msgstr "Davetiyeyi kabul ederek, <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılırsınız."
 
 msgid "By dimension"
-msgstr ""
+msgstr "Boyuta göre"
 
 msgid "By Document Date"
 msgstr "Belge Tarihine Göre"
@@ -2069,7 +2069,7 @@ msgid "By Due Date"
 msgstr "Vade Tarihine Göre"
 
 msgid "By field"
-msgstr ""
+msgstr "Alana göre"
 
 msgid "By Item"
 msgstr "Ürüne Göre"
@@ -2429,7 +2429,7 @@ msgid "Clear search query"
 msgstr "Arama sorgusunu temizle"
 
 msgid "Clear selection"
-msgstr ""
+msgstr "Seçimi temizle"
 
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Bu faturayı tarafın deftere nakledilmiş kredileri ve nakit ile kapatın. Krediler doğrudan uygulanır — deftere nakil gerekmez."
@@ -2516,10 +2516,10 @@ msgid "Collapse subtree"
 msgstr "Alt ağacı daralt"
 
 msgid "Column dimension"
-msgstr ""
+msgstr "Sütun boyutu"
 
 msgid "Column field"
-msgstr ""
+msgstr "Sütun alanı"
 
 msgid "Column visibility and order"
 msgstr "Sütun görünürlüğü ve sırası"
@@ -3917,7 +3917,7 @@ msgstr "Sil"
 
 #. placeholder {0}: view.name
 msgid "Delete {0}"
-msgstr ""
+msgstr "{0} Sil"
 
 msgid "Delete {name}"
 msgstr "{name} sil"
@@ -4206,7 +4206,7 @@ msgid "Delete Unit of Measure"
 msgstr "Ölçü Birimini Sil"
 
 msgid "Delete view"
-msgstr ""
+msgstr "Görünümü sil"
 
 msgid "Delete View"
 msgstr "Görünümü Sil"
@@ -5385,7 +5385,7 @@ msgid "Expense side of deferred tax movements (paired with deferred tax liabilit
 msgstr "Varlık sınıfı oluşturulamadı: {0}"
 
 msgid "Expenses"
-msgstr ""
+msgstr "Giderler"
 
 msgid "Expert guidance"
 msgstr "Uzman rehberliği"
@@ -6349,7 +6349,7 @@ msgid "Group"
 msgstr "Grup"
 
 msgid "Group by"
-msgstr ""
+msgstr "Grupla"
 
 msgid "Group Members"
 msgstr "Üye Grupları"
@@ -8665,7 +8665,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
 
 msgid "No journal lines in scope for this period"
-msgstr ""
+msgstr "Bu dönem için kapsam içinde günlük satırı yok"
 
 msgid "No lines to map"
 msgstr "Eşlenecek satır yok"
@@ -8767,7 +8767,7 @@ msgid "No production events recorded for this operation yet"
 msgstr "Bu işlem için henüz üretim etkinliği kaydedilmedi"
 
 msgid "No purchases in this period"
-msgstr ""
+msgstr "Bu dönemde satın alma yok"
 
 msgid "No Quote"
 msgstr "Teklif Yok"
@@ -10213,7 +10213,7 @@ msgid "Purchased"
 msgstr "Satın Alındı"
 
 msgid "Purchases"
-msgstr ""
+msgstr "Satın almalar"
 
 msgid "purchasing"
 msgstr "Satın Alma ve Satılan Malların Maliyeti"
@@ -11301,13 +11301,13 @@ msgid "Save Method"
 msgstr "Yöntemi Kaydet"
 
 msgid "Save view"
-msgstr ""
+msgstr "Görünümü kaydet"
 
 msgid "Save View"
 msgstr "Görünümü Kaydet"
 
 msgid "Saved Views"
-msgstr ""
+msgstr "Kaydedilen Görünümler"
 
 msgid "Saving..."
 msgstr "Kaydediliyor..."
@@ -12025,10 +12025,10 @@ msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency} cinsinden gösteriliyor"
 
 msgid "Showing the first 500 lines"
-msgstr ""
+msgstr "İlk 500 satır gösteriliyor"
 
 msgid "Showing the top 1,000 groups by amount"
-msgstr ""
+msgstr "Miktar açısından ilk 1.000 grup gösteriliyor"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Oluşturulan PDF'lerin her sayfasının arkasında soluk bir arka plan olarak gösterilir"
@@ -12100,13 +12100,13 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice asset activity by location, item, or any dimension"
-msgstr ""
+msgstr "Konum, ürün veya herhangi bir boyuta göre varlık aktivitesini böl"
 
 msgid "Slice expenses by location, cost center, or any dimension"
-msgstr ""
+msgstr "Konum, maliyet merkezi veya herhangi bir boyuta göre giderleri böl"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
-msgstr ""
+msgstr "Müşteri, müşteri türü veya herhangi bir boyuta göre geliri böl"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Temel günlük akışları uçtan uca test et"
@@ -12190,7 +12190,7 @@ msgid "Specific Items"
 msgstr "Belirli Ürünler"
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
-msgstr ""
+msgstr "Tedarikçi, ürün veya kategoriye göre harcama — en büyük maliyet sürücüleriniz"
 
 msgid "Split"
 msgstr "Bölünmüş"
@@ -13518,7 +13518,7 @@ msgid "Theme Color"
 msgstr "Tema Rengi"
 
 msgid "Then by"
-msgstr ""
+msgstr "Sonra"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Bu RFQ için karşılaştırılacak aktif tedarikçi teklifi bulunmamaktadır."
@@ -14833,7 +14833,7 @@ msgid "What data"
 msgstr "Hangi veri"
 
 msgid "What drove inventory up or down, by any dimension"
-msgstr ""
+msgstr "Envanterin yükselmesine veya düşmesine neyin sebep olduğu, herhangi bir boyuta göre"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"

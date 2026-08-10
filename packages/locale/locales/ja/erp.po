@@ -50,7 +50,7 @@ msgstr "{0, plural, one {このパーツは1つの開いた変更通知に含ま
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
-msgstr ""
+msgstr "{0} 件のアカウント"
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -867,7 +867,7 @@ msgid "After (calculation method)"
 msgstr "後（計算方法）"
 
 msgid "Aging"
-msgstr ""
+msgstr "経過日数"
 
 msgid "Agree on the scope"
 msgstr "スコープに同意する"
@@ -888,7 +888,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "すべての{total}フェーズが完了しました。素晴らしい仕事です。チームが稼働しています。"
 
 msgid "All accounts"
-msgstr ""
+msgstr "すべてのアカウント"
 
 msgid "All actions selected"
 msgstr "すべてのアクションが選択されました"
@@ -1276,7 +1276,7 @@ msgstr "本当に{name}を削除してもよろしいですか？この操作は
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
-msgstr ""
+msgstr "「{0}」ビューを削除してもよろしいですか？この操作は元に戻せません。"
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2069,7 +2069,7 @@ msgid "By Due Date"
 msgstr "支払期日別"
 
 msgid "By field"
-msgstr ""
+msgstr "フィールド別"
 
 msgid "By Item"
 msgstr "品目別"
@@ -2429,7 +2429,7 @@ msgid "Clear search query"
 msgstr "検索クエリをクリア"
 
 msgid "Clear selection"
-msgstr ""
+msgstr "選択をクリア"
 
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "このインボイスをパーティの転記済みクレジットおよび現金でクリアします。クレジットは直接適用されます — 転記は不要です。"
@@ -2519,7 +2519,7 @@ msgid "Column dimension"
 msgstr "列ディメンション"
 
 msgid "Column field"
-msgstr ""
+msgstr "列フィールド"
 
 msgid "Column visibility and order"
 msgstr "列の表示と順序"
@@ -3917,7 +3917,7 @@ msgstr "削除"
 
 #. placeholder {0}: view.name
 msgid "Delete {0}"
-msgstr ""
+msgstr "{0} を削除"
 
 msgid "Delete {name}"
 msgstr "{name}を削除"
@@ -4206,7 +4206,7 @@ msgid "Delete Unit of Measure"
 msgstr "測定単位を削除"
 
 msgid "Delete view"
-msgstr ""
+msgstr "ビューを削除"
 
 msgid "Delete View"
 msgstr "ビューを削除"
@@ -8767,7 +8767,7 @@ msgid "No production events recorded for this operation yet"
 msgstr "この操作で記録された生産イベントはまだありません"
 
 msgid "No purchases in this period"
-msgstr ""
+msgstr "この期間に購入がありません"
 
 msgid "No Quote"
 msgstr "見積なし"
@@ -10213,7 +10213,7 @@ msgid "Purchased"
 msgstr "購入済み"
 
 msgid "Purchases"
-msgstr ""
+msgstr "購買"
 
 msgid "purchasing"
 msgstr "購買と売上原価"
@@ -12100,10 +12100,10 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice asset activity by location, item, or any dimension"
-msgstr ""
+msgstr "資産活動を場所、品目、または任意のディメンション別に表示"
 
 msgid "Slice expenses by location, cost center, or any dimension"
-msgstr ""
+msgstr "経費を場所、コスト センター、または任意のディメンション別に表示"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "顧客、顧客タイプ、またはディメンション別に売上をスライス"
@@ -12190,7 +12190,7 @@ msgid "Specific Items"
 msgstr "特定の品目"
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
-msgstr ""
+msgstr "仕入先、品目、またはカテゴリー別の支出 — 最大のコスト ドライバー"
 
 msgid "Split"
 msgstr "分割"

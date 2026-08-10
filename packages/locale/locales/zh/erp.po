@@ -50,7 +50,7 @@ msgstr "{0, plural, one {此零件包含在1个开放的更改单中} other {此
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
-msgstr ""
+msgstr "{0} 个账户"
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -867,7 +867,7 @@ msgid "After (calculation method)"
 msgstr "之后（计算方法）"
 
 msgid "Aging"
-msgstr ""
+msgstr "账龄分析"
 
 msgid "Agree on the scope"
 msgstr "就范围达成一致"
@@ -888,7 +888,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "所有 {total} 个阶段已完成。做得很好——你的团队已启动并运行。"
 
 msgid "All accounts"
-msgstr ""
+msgstr "所有账户"
 
 msgid "All actions selected"
 msgstr "所有操作已选中"
@@ -1276,7 +1276,7 @@ msgstr "您确定要删除 {name} 吗？此操作无法撤销。"
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
-msgstr ""
+msgstr "您确定要删除\"{0}\"视图吗？此操作无法撤销。"
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2069,7 +2069,7 @@ msgid "By Due Date"
 msgstr "按到期日期"
 
 msgid "By field"
-msgstr ""
+msgstr "按字段"
 
 msgid "By Item"
 msgstr "按物品"
@@ -2429,7 +2429,7 @@ msgid "Clear search query"
 msgstr "清除搜索查询"
 
 msgid "Clear selection"
-msgstr ""
+msgstr "清除选择"
 
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "用该方的已过账贷项和现金清算此发票。贷项直接应用——无需过账。"
@@ -2519,7 +2519,7 @@ msgid "Column dimension"
 msgstr "列维度"
 
 msgid "Column field"
-msgstr ""
+msgstr "列字段"
 
 msgid "Column visibility and order"
 msgstr "列的可见性和顺序"
@@ -3917,7 +3917,7 @@ msgstr "删除"
 
 #. placeholder {0}: view.name
 msgid "Delete {0}"
-msgstr ""
+msgstr "删除 {0}"
 
 msgid "Delete {name}"
 msgstr "删除 {name}"
@@ -4206,7 +4206,7 @@ msgid "Delete Unit of Measure"
 msgstr "删除计量单位"
 
 msgid "Delete view"
-msgstr ""
+msgstr "删除视图"
 
 msgid "Delete View"
 msgstr "删除视图"
@@ -8767,7 +8767,7 @@ msgid "No production events recorded for this operation yet"
 msgstr "此操作尚未记录任何生产事件"
 
 msgid "No purchases in this period"
-msgstr ""
+msgstr "此期间无采购"
 
 msgid "No Quote"
 msgstr "无报价"
@@ -10213,7 +10213,7 @@ msgid "Purchased"
 msgstr "已购买"
 
 msgid "Purchases"
-msgstr ""
+msgstr "采购"
 
 msgid "purchasing"
 msgstr "采购和已售商品成本"
@@ -12100,10 +12100,10 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice asset activity by location, item, or any dimension"
-msgstr ""
+msgstr "按位置、项目或任何维度细分资产活动"
 
 msgid "Slice expenses by location, cost center, or any dimension"
-msgstr ""
+msgstr "按位置、成本中心或任何维度细分支出"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "按客户、客户类型或任何维度划分收入"
@@ -12190,7 +12190,7 @@ msgid "Specific Items"
 msgstr "特定项目"
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
-msgstr ""
+msgstr "按供应商、项目或类别的支出 — 您最大的成本驱动因素"
 
 msgid "Split"
 msgstr "分割"

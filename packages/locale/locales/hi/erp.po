@@ -50,7 +50,7 @@ msgstr "{0, plural, one {यह भाग 1 खुली परिवर्त�
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
-msgstr ""
+msgstr "{0} खाते"
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -165,7 +165,7 @@ msgid "/month/user"
 msgstr "/माह/उपयोगकर्ता"
 
 msgid "% of total"
-msgstr ""
+msgstr "कुल का %"
 
 msgid "% of Total"
 msgstr "कुल का %"
@@ -867,7 +867,7 @@ msgid "After (calculation method)"
 msgstr "बाद में (गणना विधि)"
 
 msgid "Aging"
-msgstr ""
+msgstr "उम्र"
 
 msgid "Agree on the scope"
 msgstr "दायरे पर सहमति दें"
@@ -888,7 +888,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "सभी {total} चरण पूरे हो गए। शानदार काम — आपकी टीम चल रही है।"
 
 msgid "All accounts"
-msgstr ""
+msgstr "सभी खाते"
 
 msgid "All actions selected"
 msgstr "सभी कार्य चयनित"
@@ -1276,7 +1276,7 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
-msgstr ""
+msgstr "क्या आप सुनिश्चित हैं कि आप \"{0}\" दृश्य को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -1927,7 +1927,7 @@ msgid "Beta"
 msgstr "बीटा"
 
 msgid "Biggest causes of scrap by reason, item, or work center"
-msgstr ""
+msgstr "कारण, आइटम, या कार्य केंद्र द्वारा स्क्रैप के सबसे बड़े कारण"
 
 msgid "Bill of Material"
 msgstr "सामग्री की बिल"
@@ -2060,7 +2060,7 @@ msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>
 msgstr "आमंत्रण स्वीकार करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
 
 msgid "By dimension"
-msgstr ""
+msgstr "आयाम द्वारा"
 
 msgid "By Document Date"
 msgstr "दस्तावेज़ तारीख के अनुसार"
@@ -2069,7 +2069,7 @@ msgid "By Due Date"
 msgstr "देय तारीख के अनुसार"
 
 msgid "By field"
-msgstr ""
+msgstr "क्षेत्र द्वारा"
 
 msgid "By Item"
 msgstr "आइटम के अनुसार"
@@ -2429,7 +2429,7 @@ msgid "Clear search query"
 msgstr "खोज क्वेरी साफ़ करें"
 
 msgid "Clear selection"
-msgstr ""
+msgstr "चयन साफ करें"
 
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "इस चालान को पार्टी के पोस्ट किए गए क्रेडिट के साथ-साथ नकद से साफ़ करें। क्रेडिट सीधे लागू होते हैं — कोई पोस्टिंग की आवश्यकता नहीं है।"
@@ -2516,10 +2516,10 @@ msgid "Collapse subtree"
 msgstr "सबट्री को संक्षिप्त करें"
 
 msgid "Column dimension"
-msgstr ""
+msgstr "कॉलम आयाम"
 
 msgid "Column field"
-msgstr ""
+msgstr "कॉलम क्षेत्र"
 
 msgid "Column visibility and order"
 msgstr "कॉलम दृश्यता और क्रम"
@@ -3917,7 +3917,7 @@ msgstr "हटाएं"
 
 #. placeholder {0}: view.name
 msgid "Delete {0}"
-msgstr ""
+msgstr "{0} हटाएं"
 
 msgid "Delete {name}"
 msgstr "{name} को हटाएं"
@@ -4206,7 +4206,7 @@ msgid "Delete Unit of Measure"
 msgstr "माप की इकाई हटाएं"
 
 msgid "Delete view"
-msgstr ""
+msgstr "दृश्य हटाएं"
 
 msgid "Delete View"
 msgstr "दृश्य हटाएं"
@@ -5385,7 +5385,7 @@ msgid "Expense side of deferred tax movements (paired with deferred tax liabilit
 msgstr "संपत्ति वर्ग बनाने में विफल: {0}"
 
 msgid "Expenses"
-msgstr ""
+msgstr "खर्च"
 
 msgid "Expert guidance"
 msgstr "विशेषज्ञ मार्गदर्शन"
@@ -6349,7 +6349,7 @@ msgid "Group"
 msgstr "समूह"
 
 msgid "Group by"
-msgstr ""
+msgstr "द्वारा समूह"
 
 msgid "Group Members"
 msgstr "समूह सदस्य"
@@ -8665,7 +8665,7 @@ msgid "No items have inventory activity here yet."
 msgstr "अभी तक यहाँ कोई आइटम इन्वेंटरी गतिविधि नहीं है।"
 
 msgid "No journal lines in scope for this period"
-msgstr ""
+msgstr "इस अवधि के लिए दायरे में कोई जर्नल लाइन नहीं"
 
 msgid "No lines to map"
 msgstr "मैप करने के लिए कोई लाइनें नहीं"
@@ -8767,7 +8767,7 @@ msgid "No production events recorded for this operation yet"
 msgstr "इस ऑपरेशन के लिए अभी तक कोई उत्पादन घटना रिकॉर्ड नहीं की गई है"
 
 msgid "No purchases in this period"
-msgstr ""
+msgstr "इस अवधि में कोई खरीद नहीं"
 
 msgid "No Quote"
 msgstr "कोई उद्धरण नहीं"
@@ -10213,7 +10213,7 @@ msgid "Purchased"
 msgstr "खरीदा गया"
 
 msgid "Purchases"
-msgstr ""
+msgstr "खरीद"
 
 msgid "purchasing"
 msgstr "क्रय और बेचे गए माल की लागत"
@@ -11301,13 +11301,13 @@ msgid "Save Method"
 msgstr "विधि सहेजें"
 
 msgid "Save view"
-msgstr ""
+msgstr "दृश्य सहेजें"
 
 msgid "Save View"
 msgstr "दृश्य सहेजें"
 
 msgid "Saved Views"
-msgstr ""
+msgstr "सहेजे गए दृश्य"
 
 msgid "Saving..."
 msgstr "सहेज रहे हैं..."
@@ -12025,10 +12025,10 @@ msgid "Showing in {parentCurrency}"
 msgstr "में दिखाई दे रहा है {parentCurrency}"
 
 msgid "Showing the first 500 lines"
-msgstr ""
+msgstr "पहली 500 लाइनें दिखा रहे हैं"
 
 msgid "Showing the top 1,000 groups by amount"
-msgstr ""
+msgstr "राशि द्वारा शीर्ष 1,000 समूह दिखा रहे हैं"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "जनरेट की गई PDF के हर पेज के पीछे हल्की पृष्ठभूमि के रूप में दिखाया जाता है"
@@ -12100,13 +12100,13 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slice asset activity by location, item, or any dimension"
-msgstr ""
+msgstr "स्थान, आइटम, या किसी भी आयाम द्वारा संपत्ति गतिविधि को स्लाइस करें"
 
 msgid "Slice expenses by location, cost center, or any dimension"
-msgstr ""
+msgstr "स्थान, लागत केंद्र, या किसी भी आयाम द्वारा खर्चों को स्लाइस करें"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
-msgstr ""
+msgstr "ग्राहक, ग्राहक प्रकार, या किसी भी आयाम द्वारा राजस्व को स्लाइस करें"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "कोर दैनिक प्रवाह को अंत से अंत तक स्मोक-टेस्ट करें"
@@ -12190,7 +12190,7 @@ msgid "Specific Items"
 msgstr "विशिष्ट आइटम"
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
-msgstr ""
+msgstr "आपूर्तिकर्ता, आइटम, या श्रेणी द्वारा व्यय — आपके सबसे बड़े लागत ड्राइवर"
 
 msgid "Split"
 msgstr "विभाजित करें"
@@ -13518,7 +13518,7 @@ msgid "Theme Color"
 msgstr "थीम रंग"
 
 msgid "Then by"
-msgstr ""
+msgstr "फिर द्वारा"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "इस RFQ के लिए तुलना करने के लिए कोई सक्रिय आपूर्तिकर्ता उद्धरण नहीं हैं।"
@@ -14833,7 +14833,7 @@ msgid "What data"
 msgstr "कौन सा डेटा"
 
 msgid "What drove inventory up or down, by any dimension"
-msgstr ""
+msgstr "किस चीज़ ने इन्वेंटरी को किसी भी आयाम द्वारा ऊपर या नीचे ले जाया"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"
