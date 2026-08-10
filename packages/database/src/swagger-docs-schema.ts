@@ -39937,6 +39937,9 @@ export default {
             $ref: "#/parameters/rowFilter.workflowRun.statusReason"
           },
           {
+            $ref: "#/parameters/rowFilter.workflowRun.isTest"
+          },
+          {
             $ref: "#/parameters/rowFilter.workflowRun.rootRunId"
           },
           {
@@ -40059,6 +40062,9 @@ export default {
             $ref: "#/parameters/rowFilter.workflowRun.statusReason"
           },
           {
+            $ref: "#/parameters/rowFilter.workflowRun.isTest"
+          },
+          {
             $ref: "#/parameters/rowFilter.workflowRun.rootRunId"
           },
           {
@@ -40133,6 +40139,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workflowRun.statusReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflowRun.isTest"
           },
           {
             $ref: "#/parameters/rowFilter.workflowRun.rootRunId"
@@ -116164,6 +116173,7 @@ export default {
         "sourceEventId",
         "ownerId",
         "status",
+        "isTest",
         "depth",
         "path",
         "createdAt"
@@ -116219,6 +116229,11 @@ export default {
         statusReason: {
           format: "text",
           type: "string"
+        },
+        isTest: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         },
         rootRunId: {
           format: "text",
@@ -159394,6 +159409,12 @@ export default {
     },
     "rowFilter.workflowRun.statusReason": {
       name: "statusReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflowRun.isTest": {
+      name: "isTest",
       required: false,
       in: "query",
       type: "string"

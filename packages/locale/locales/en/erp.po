@@ -1311,6 +1311,9 @@ msgstr "An https request Carbon sends to a system of yours when a workflow reach
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "An integration or a custom change — the small slice that's actually custom."
 
+msgid "An invitation is pending. They become active once they accept it."
+msgstr "An invitation is pending. They become active once they accept it."
+
 msgid "An issue is created"
 msgstr "An issue is created"
 
@@ -1343,8 +1346,6 @@ msgstr "An issue's status changes"
 
 msgid "An issue's type changes"
 msgstr "An issue's type changes"
-msgid "An invitation is pending. They become active once they accept it."
-msgstr "An invitation is pending. They become active once they accept it."
 
 msgid "An item cannot be added to itself."
 msgstr "An item cannot be added to itself."
@@ -12379,6 +12380,7 @@ msgstr "Save View"
 
 msgid "Saved"
 msgstr "Saved"
+
 msgid "Saved Views"
 msgstr "Saved Views"
 
