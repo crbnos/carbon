@@ -72,8 +72,11 @@ function cellValue(
   showTranslated: boolean
 ): number {
   if (!cell) return 0;
-  if (showTranslated && typeof cell.translatedBalance === "number") {
-    return cell.translatedBalance;
+  // Income-statement lines are period activity, so the translated value must be
+  // the translated netChange (period delta), NOT translatedBalance (the
+  // translated cumulative balance). Fall back to the untranslated netChange.
+  if (showTranslated && typeof cell.translatedNetChange === "number") {
+    return cell.translatedNetChange;
   }
   return cell.netChange ?? 0;
 }

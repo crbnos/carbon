@@ -74,6 +74,63 @@ describe("computeExecutivePnl", () => {
     expect(map.netIncome).toBe(320); // 400 + 50 − 30 − 100
   });
 
+  it("translated: uses the translated period delta, not the cumulative balance", () => {
+    // balanceAtDate is fiscal-YTD cumulative and differs from the period's
+    // netChange; translatedBalance (cumulative × rate) must NOT leak into the P&L.
+    const accounts = [
+      leaf({
+        accountType: "Income",
+        class: "Revenue",
+        periods: {
+          "2026-01": {
+            netChange: 1000,
+            balanceAtDate: 3000,
+            translatedNetChange: 1500, // 1000 × 1.5
+            translatedBalance: 4500 // 3000 × 1.5
+          }
+        }
+      }),
+      leaf({
+        accountType: "Cost of Goods Sold",
+        class: "Expense",
+        periods: {
+          "2026-01": {
+            netChange: 400,
+            balanceAtDate: 1200,
+            translatedNetChange: 600, // 400 × 1.5
+            translatedBalance: 1800
+          }
+        }
+      })
+    ];
+
+    const rows = computeExecutivePnl(accounts, BUCKETS, {
+      showTranslated: true
+    });
+    const map = {} as Record<ExecutivePnlRowKey, number>;
+    for (const row of rows) map[row.key] = row.values["2026-01"]!;
+
+    expect(map.revenue).toBe(1500); // translatedNetChange, not 4500 (balance)
+    expect(map.cogs).toBe(600);
+    expect(map.grossProfit).toBe(900); // 1500 − 600
+  });
+
+  it("translated: falls back to untranslated netChange when no translated delta", () => {
+    const accounts = [
+      leaf({
+        accountType: "Income",
+        class: "Revenue",
+        // showTranslated requested but the cell carries no translatedNetChange.
+        periods: { "2026-01": { netChange: 800, balanceAtDate: 2400 } }
+      })
+    ];
+
+    const rows = computeExecutivePnl(accounts, BUCKETS, {
+      showTranslated: true
+    });
+    expect(rows.find((r) => r.key === "revenue")?.values["2026-01"]).toBe(800);
+  });
+
   it("ties Net Income out to the class-based root (rootSignMultiplier)", () => {
     const accounts = [
       leaf({

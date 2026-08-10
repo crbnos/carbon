@@ -447,10 +447,17 @@ function overlayTranslationOnSeries<
       const translation = map.get(row.id);
       if (!translation) continue;
       changed = true;
+      const existing = periods[key] ?? { netChange: 0, balanceAtDate: 0 };
+      const exchangeRate = Number(translation.exchangeRate);
       periods[key] = {
-        ...(periods[key] ?? { netChange: 0, balanceAtDate: 0 }),
+        ...existing,
         translatedBalance: Number(translation.translatedBalance),
-        exchangeRate: Number(translation.exchangeRate)
+        // Translated period delta: apply the same per-account rate to netChange
+        // so flow reads (income statement / executive P&L) get a translated
+        // activity figure rather than the translated cumulative balance.
+        translatedNetChange:
+          Math.round(existing.netChange * exchangeRate * 10000) / 10000,
+        exchangeRate
       };
     }
     return changed ? { ...row, periods } : row;

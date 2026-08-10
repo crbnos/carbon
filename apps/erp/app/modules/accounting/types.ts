@@ -420,10 +420,14 @@ export type TranslatedTransaction = Transaction & {
 };
 
 // One report column's values for one account, keyed by ReportPeriodBucket.key.
+// `translatedBalance` is the translated cumulative balance (balanceAtDate × rate,
+// for balance-sheet/stock reads); `translatedNetChange` is the translated period
+// delta (netChange × rate, for income-statement/flow reads).
 export type PeriodCell = {
   netChange: number;
   balanceAtDate: number;
   translatedBalance?: number;
+  translatedNetChange?: number;
   exchangeRate?: number;
 };
 
