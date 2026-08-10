@@ -2464,7 +2464,12 @@ serve(async (req: Request) => {
                     ) {
                       const attributes = await Promise.all(
                         methodOperationStep.map(
-                          async ({ id, ...attribute }) => ({
+                          async ({
+                            id,
+                            // quoteOperationStep has no provenance marker
+                            assemblyInstructionStepId: _assemblyInstructionStepId,
+                            ...attribute
+                          }) => ({
                             ...attribute,
                             description: toTiptapDoc(attribute.description),
                             operationId,
@@ -2992,7 +2997,13 @@ serve(async (req: Request) => {
                         .insertInto("quoteOperationStep")
                         .values(
                           methodOperationStep.map(
-                            ({ id: _id, ...attribute }) => ({
+                            ({
+                              id: _id,
+                              // quoteOperationStep has no provenance marker
+                              assemblyInstructionStepId:
+                                _assemblyInstructionStepId,
+                              ...attribute
+                            }) => ({
                               ...attribute,
                               description: toTiptapDoc(attribute.description),
                               operationId,
