@@ -8,6 +8,33 @@
 
 Carbon cannot enforce commercial/compliance restrictions when an item is added to a quote or sales order (e.g. "if item type is X and customer location is Y → error"). Checks must resolve into **one combined error interface** — not stacked modals.
 
+## Change summary — data model / API / UI
+
+### Data model changes
+
+- **New enum** `itemRuleSurface` = `'quoteLine' | 'salesOrderLine'` (deliberately separate from the storage `transactionSurface` enum).
+- **New table `itemRule`** — rule definitions: `name`, `description`, `message` (token interpolation), `severity` (`error|warn`), `conditionAst` JSONB, `surfaces itemRuleSurface[]` (CHECK non-empty), item scoping (`filteredItemTypes`, `filteredItemGroupIds`, `filteredItemMatchAll`), `active`, audit columns, `customFields`. House PK `("id","companyId")`; RLS: SELECT any employee, writes `parts_*`. Registered in `customFieldTable` as `('itemRule','Item Rule','Items')`.
+- **New table `itemRuleAssignment`** — explicit per-item pins, PK `(itemId, ruleId)`, composite FK to `itemRule`.
+- **New table `itemRuleAcknowledgment`** — append-only override/block evidence: `ruleId`, `documentType 'quote'|'salesOrder'`, `documentId`, `documentLineId`, `itemId`, `severity`, `outcome 'blocked'|'acknowledged'`, `message`, `createdBy`. SELECT any employee; INSERT via `sales_create`; no UPDATE/DELETE policies.
+- **New column** `companySettings.itemRuleNotificationGroup text[] NOT NULL DEFAULT '{}'` — the compliance-owner notification group.
+- Migrations: `20260810214426_item-rules-sales.sql`, `20260810221652_item-rule-notification-group.sql`.
+
+### API / server changes
+
+- **`@carbon/utils`** (shared rule engine, additive): `RuleContext` gains a `customer` root; new `ITEM_RULE_SURFACES` / `ItemRuleSurface` / `RuleSurface`, `ItemRuleRow` + `compileItemRuleWithCache`, `ITEM_RULE_SURFACE_CONTEXT_AVAILABILITY`, `isFieldAvailableOnItemRuleSurfaces`, `getFieldsForItemRuleSurfaces`; field registry gains the `customer` context, a separate `ITEM_RULE_FIELD_REGISTRY` (customer type, customer status, ship-to country as alpha-2) + `getFieldsForItemRules`, synthesized `customer.customFields.*`, and `customerTypes|customerStatuses|countries` value-options loaders. Storage-rule behavior unchanged.
+- **`@carbon/ee`** — new package exports `./item-rules` (client-safe: `getActiveItemRulesForItems`, `getItemRuleAssignmentsForItem`, `getItemRulesList`, `assignItemRule`, `unassignItemRule`, `buildItemRuleLineContext`) and `./item-rules.server` (`evaluateItemRuleLines`, `isItemRulesEnabledForCompany`, re-exported `isBlocked`/`dedupeViolations`). Evaluation runs with the service-role client, gated on the existing `ITEM_RULES` plan feature. Storage `LOADERS` upgraded so `{condition[n].name}` tokens resolve customer-type/status/country labels.
+- **ERP** — new module `~/modules/item-rules` (`itemRuleValidator`, service CRUD + assignment counts); enforcement in four route actions (`quote` new/edit, `sales-order` new/edit) returning `{ violations, ruleNames }` when blocked, exactly like shipment posting; new routes `x+/items+/item-rules*` + assign/unassign; `path.to.itemRule*` helpers; `itemRulesQuery` cache key.
+- **Notifications** — new `NotificationEvent.ItemRuleViolation` (topic Sales; in-app + email), notify fan-out branch resolving recipients from `itemRuleNotificationGroup`, fired on blocked attempts and acknowledged overrides; `updateItemRuleNotificationSetting` in the settings service. Acknowledgment rows inserted per deduped violation, never failing the action.
+- No public REST surface changes beyond regenerated OpenAPI/types for the new tables.
+
+### UI changes
+
+- **Items sidebar → "Item Rules"** (Configure group): plan-gated list page with upgrade overlay, table (Name / Severity / Surfaces / Status / Items), create/edit drawer reusing the shared rule builder — surface picker (Quote line / Sales order line), condition builder with the customer fields (country picker saves alpha-2), severity select, message editor with tokens, item-type/group filters, custom fields.
+- **Part detail → Inventory tab**: new "Item rules" card beneath the storage-rules card, listing explicit + broadcast rules with assign/unassign.
+- **Quote & sales-order line forms**: submissions route through the shared violation hook; violations render in the **one combined modal** — errors block, warnings show "Acknowledge & continue".
+- **Settings → Sales**: "Item Rule Violations" notification-group card.
+- **Notifications**: in-app row (shield icon, links to the quote/order) and email for item-rule violations.
+
 ## Existing infrastructure (reuse, do not rebuild)
 
 The storage-rules feature (born as `itemRule`, renamed via `customRule` → `storageRule`) is a generic predicate engine in three layers:
