@@ -134,6 +134,7 @@ const UserPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
     value={value}
     usersOnly
     isMulti={false}
+    insideCanvas
     disabled={isDisabled}
     onChange={(items) => handleUserChange(items, onChange)}
   />
@@ -145,6 +146,7 @@ const GroupPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
   <UserSelect
     value={value}
     isMulti={false}
+    insideCanvas
     disabled={isDisabled}
     onChange={(items) => handleUserChange(items, onChange)}
   />

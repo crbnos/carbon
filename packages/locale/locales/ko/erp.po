@@ -14697,6 +14697,9 @@ msgstr "이 개정본이 릴리스되었습니다(프로덕션). 변경 사항�
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "이 개정본이 릴리스되었습니다(프로덕션). 수정하려면 변경 공지를 열어주십시오."
 
+msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
+msgstr ""
+
 msgid "This runs the workflow for real. It will create records, send notifications and call any webhooks exactly as a live run would. This cannot be undone."
 msgstr ""
 

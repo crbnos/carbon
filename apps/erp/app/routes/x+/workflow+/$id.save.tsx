@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Json } from "@carbon/database";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   workflowDefinitionSchema
@@ -15,6 +16,8 @@ import {
 } from "~/modules/workflows";
 import { checkWorkflowVersionLock } from "~/modules/workflows/workflows.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "workflow-save");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -62,12 +65,17 @@ export async function action({ request }: ActionFunctionArgs) {
   // means the canvas sent something genuinely corrupt, so name the field.
   const definition = workflowDefinitionSchema.safeParse(parsed);
   if (!definition.success) {
-    console.error(
-      "[workflow save] invalid definition",
-      JSON.stringify(definition.error.issues, null, 2)
-    );
     const first = definition.error.issues[0];
     const where = first?.path.join(".");
+    // Paths and codes, never the definition itself: the payload is customer data
+    // and this is a plain server log.
+    logger.error("Invalid workflow definition on save", {
+      versionId,
+      issues: definition.error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        code: issue.code
+      }))
+    });
     return data(
       {
         ok: false,

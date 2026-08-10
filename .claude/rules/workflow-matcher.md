@@ -68,7 +68,7 @@ always survives.
 The tag comes from the `workflow_run_id` claim on the caller's JWT.
 `getUserScopedClient(userId, { workflowRunId })` (`packages/auth`) mints it;
 `dispatch_event_batch()` reads it out of `request.jwt.claims` and stamps it on every queue
-message (migration `20260730135206_workflows-run-tag.sql`), and `QueueMessage.workflowRunId`
+message (migration `20260810100000_workflows-run-tag.sql`), and `QueueMessage.workflowRunId`
 carries it to the handler. **A workflow action that writes through anything but the
 owner-scoped client is untagged** — it will look like a person's write, so the origin filter
 and both loop guards go blind. The engine mints it: `getOwnerClient(ownerId, runId)` in
@@ -118,7 +118,7 @@ replay can never double-fire:
   `eventSystemSubscription` per distinct table, `operations` the exact union those events
   need. Moments resolve to no table and contribute nothing.
 - `findTriggerSchedule(nodes)` — returns the `Schedule` from the trigger node, or `null`.
-- `syncWorkflowTriggers(db, companyId, workflowId)` — rewrite one workflow's trigger rows
+- `syncWorkflowTriggers(db, companyId, workflowId, lockCompany)` — rewrite one workflow's trigger rows
   (delete-then-insert; the table has no UPDATE policy by design), **write `workflow.nextRunAt`**
   (the scheduler's bookmark, or null for event-triggered workflows), and reconcile the company's
   subscriptions. Returns `{ eventIds, tables, scheduled }`. Call it on promote, on trigger edit,
@@ -135,6 +135,14 @@ reverse edge is a package cycle Turborepo rejects. Kysely is imported **type-onl
 (`import type { Kysely, Transaction }`), so the package gains no runtime dependency; node-pg
 serializes plain objects/arrays for the JSONB and `TEXT[]` columns, so no runtime `sql` tag
 is needed.
+
+`lockCompany` is a **required** `CompanyLock` callback, run as the first statement inside the
+transaction. Reconciliation reads the company's ENTIRE subscription set inside a per-workflow
+transaction, so two overlapping publishes would each compute `desired` from pre-commit state and
+one could delete a subscription the other still needs — silently stopping delivery for that table.
+The caller owns it because `@carbon/workflows` imports Kysely **type-only** (the package is bundled
+for the browser) and cannot run raw SQL; `workflows.server.ts` supplies
+`` sql`SELECT pg_advisory_xact_lock(hashtext(${companyId}))` ``.
 
 Kysely bypasses RLS. **The caller authorizes first** — phase 7's activation route gates on
 `workflows_update` before calling.

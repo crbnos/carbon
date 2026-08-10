@@ -185,7 +185,11 @@ export {
   resolveRef,
   resolveValue
 } from "./runtime";
-export type { DesiredSubscription, DesiredTriggerRow } from "./sync";
+export type {
+  CompanyLock,
+  DesiredSubscription,
+  DesiredTriggerRow
+} from "./sync";
 export {
   deriveWorkflowSubscriptions,
   deriveWorkflowTriggerRows,

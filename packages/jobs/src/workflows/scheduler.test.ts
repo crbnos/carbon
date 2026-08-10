@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { PlannedRun } from "./matcher";
 import {
+  type DueWorkflow,
   MAX_DUE_PER_WAKE,
   OVERFLOW_WAKE_MS,
   PREVIOUS_RUN_ACTIVE,
+  planClaims,
   planWakeAt,
   SCHEDULE_EVENT_ID,
   STALE_AFTER_MS,
@@ -108,5 +110,74 @@ describe("scheduler constants", () => {
   it("PREVIOUS_RUN_ACTIVE message is defined", () => {
     expect(typeof PREVIOUS_RUN_ACTIVE).toBe("string");
     expect(PREVIOUS_RUN_ACTIVE.length).toBeGreaterThan(0);
+  });
+});
+
+// ---- planClaims ----
+
+describe("planClaims", () => {
+  const now = new Date("2026-08-01T10:00:00Z");
+
+  const dueRow = (id: string, nodes: unknown): DueWorkflow => ({
+    id,
+    companyId: "cmp_1",
+    ownerId: "usr_1",
+    activeVersionId: "wfv_1",
+    nextRunAt: new Date("2026-08-01T09:00:00Z"),
+    nodes
+  });
+
+  const scheduledNodes = [
+    {
+      id: "trigger",
+      name: "trigger",
+      type: "trigger",
+      position: { x: 0, y: 0 },
+      data: {
+        events: [],
+        schedule: { freq: "Daily", hour: 9, minute: 0, tz: "UTC" }
+      }
+    }
+  ];
+
+  const eventNodes = [
+    {
+      id: "trigger",
+      name: "trigger",
+      type: "trigger",
+      position: { x: 0, y: 0 },
+      data: { events: ["purchaseOrder.status.changed"] }
+    }
+  ];
+
+  it("re-books a scheduled workflow from now, not from its due time", () => {
+    const { claims, unscheduled } = planClaims(
+      [dueRow("wf_1", scheduledNodes)],
+      now
+    );
+    expect(unscheduled).toEqual([]);
+    expect(claims).toHaveLength(1);
+    // Computed from `now`, so a long outage cannot queue a cascade of catch-ups.
+    expect(new Date(claims[0]!.recomputed).getTime()).toBeGreaterThan(
+      now.getTime()
+    );
+  });
+
+  it("clears a workflow whose promoted version is no longer scheduled", () => {
+    const { claims, unscheduled } = planClaims(
+      [dueRow("wf_2", eventNodes)],
+      now
+    );
+    expect(claims).toEqual([]);
+    expect(unscheduled.map((row) => row.id)).toEqual(["wf_2"]);
+  });
+
+  it("keeps both kinds apart in one wake", () => {
+    const { claims, unscheduled } = planClaims(
+      [dueRow("wf_1", scheduledNodes), dueRow("wf_2", eventNodes)],
+      now
+    );
+    expect(claims.map((claim) => claim.row.id)).toEqual(["wf_1"]);
+    expect(unscheduled.map((row) => row.id)).toEqual(["wf_2"]);
   });
 });

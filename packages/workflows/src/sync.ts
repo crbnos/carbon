@@ -135,12 +135,32 @@ async function reconcileWorkflowSubscriptions(
 }
 
 /** Kysely bypasses RLS here: the caller must authorize before calling. */
+/**
+ * Serialises the whole transaction against others for the same company.
+ *
+ * Required, not optional: this reconciles the company's ENTIRE subscription set
+ * inside a per-workflow transaction, so two overlapping publishes each compute
+ * their desired set from pre-commit state and one can delete a subscription the
+ * other still needs — after which that table stops triggering any workflow, with
+ * no error anywhere. The caller owns the lock because `@carbon/workflows` imports
+ * Kysely type-only (it is bundled for the browser) and cannot run raw SQL.
+ */
+export type CompanyLock = (
+  trx: Transaction<KyselyDatabase>,
+  companyId: string
+) => Promise<unknown>;
+
 export async function syncWorkflowTriggers(
   db: Kysely<KyselyDatabase>,
   companyId: string,
-  workflowId: string
+  workflowId: string,
+  lockCompany: CompanyLock
 ): Promise<{ eventIds: string[]; tables: string[]; scheduled: boolean }> {
   return db.transaction().execute(async (trx) => {
+    // First statement in the transaction — everything below reads company-wide
+    // state and must not interleave with another publish or toggle.
+    await lockCompany(trx, companyId);
+
     const workflow = await trx
       .selectFrom("workflow")
       .select(["active", "activeVersionId"])

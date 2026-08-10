@@ -18,7 +18,8 @@ export function Autosave({
   const store = useBuilderStoreApi();
   const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
   const { submit } = fetcher;
-  const savedRef = useRef(false);
+  /** The snapshot of the in-flight save, or null when nothing is pending. */
+  const submittedRef = useRef<string | null>(null);
 
   const nodes = useBuilderStore((state) => state.nodes);
   const edges = useBuilderStore((state) => state.edges);
@@ -30,7 +31,8 @@ export function Autosave({
     const timer = setTimeout(() => {
       const state = store.getState();
       const definition = fromReactFlow(nodes, edges);
-      if (JSON.stringify(definition) === state.baseline) return;
+      const submitted = JSON.stringify(definition);
+      if (submitted === state.baseline) return;
 
       const formData = new FormData();
       formData.append("versionId", versionId);
@@ -38,7 +40,7 @@ export function Autosave({
       formData.append("edges", JSON.stringify(definition.edges));
       formData.append("formatVersion", String(definition.formatVersion));
 
-      savedRef.current = true;
+      submittedRef.current = submitted;
       state.setSaveState("saving");
       submit(formData, {
         method: "post",
@@ -52,12 +54,13 @@ export function Autosave({
   }, [nodes, edges, isReadOnly, store, versionId, workflowId, submit]);
 
   useEffect(() => {
-    if (!savedRef.current || fetcher.state !== "idle") return;
-    savedRef.current = false;
+    const submitted = submittedRef.current;
+    if (submitted === null || fetcher.state !== "idle") return;
+    submittedRef.current = null;
 
     const state = store.getState();
     if (fetcher.data?.ok) {
-      state.rebaseline();
+      state.rebaseline(submitted);
       state.setSaveState("saved");
     } else {
       state.setSaveState("error");

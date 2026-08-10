@@ -14,7 +14,8 @@ import {
   getWorkflowRun,
   getWorkflowRunChain,
   getWorkflowRunRecordNames,
-  getWorkflowRunSteps
+  getWorkflowRunSteps,
+  MAX_RUN_STEPS
 } from "~/modules/workflows";
 import { collectEntityRefs } from "~/modules/workflows/ui/Runs/entityRefs";
 import { WorkflowRunDetail } from "~/modules/workflows/ui/Runs/WorkflowRunDetail";
@@ -40,8 +41,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const run = runResult.data;
   if (!run) throw new Error("Run not found");
 
+  // One row past the cap tells us it truncated without a second COUNT query.
   const stepsResult = await getWorkflowRunSteps(client, runId, companyId);
-  const steps = stepsResult.data ?? [];
+  const allSteps = stepsResult.data ?? [];
+  const truncated = allSteps.length > MAX_RUN_STEPS;
+  const steps = truncated ? allSteps.slice(0, MAX_RUN_STEPS) : allSteps;
 
   const refs = collectEntityRefs([
     ...steps.map((s) => s.input),
@@ -62,11 +66,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     chain = chainResult.data ?? null;
   }
 
-  return { run, steps, chain, recordNames };
+  return { run, steps, chain, recordNames, truncated };
 }
 
 export default function WorkflowRunDetailRoute() {
-  const { run, steps, chain, recordNames } = useLoaderData<typeof loader>();
+  const { run, steps, chain, recordNames, truncated } =
+    useLoaderData<typeof loader>();
   const navigate = useNavigate();
   return (
     <Drawer
@@ -87,6 +92,7 @@ export default function WorkflowRunDetailRoute() {
             steps={steps}
             chain={chain}
             recordNames={recordNames}
+            truncated={truncated}
           />
         </DrawerBody>
       </DrawerContent>

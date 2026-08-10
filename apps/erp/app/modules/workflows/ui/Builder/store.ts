@@ -73,7 +73,8 @@ export type BuilderState = {
   closeTestRun: () => void;
   setTestRunStatus: (status: "idle" | "running") => void;
   setTestRunResult: (result: TestRunResult | null) => void;
-  rebaseline: () => void;
+  /** Mark `saved` (the snapshot that was actually persisted) as the new baseline. */
+  rebaseline: (saved: string) => void;
   /** Merge a patch into one node's `data`. The only way node configuration changes. */
   updateNodeData: (id: string, patch: Record<string, unknown>) => void;
   /** Rename a node. Slugifies the value and picks the nearest unique name if taken. */
@@ -250,10 +251,9 @@ export function createBuilderStore(initial: {
     closeTestRun: () => set({ testRunFor: null }),
     setTestRunStatus: (testRunStatus) => set({ testRunStatus }),
     setTestRunResult: (testRunResult) => set({ testRunResult }),
-    rebaseline: () => {
-      const { nodes, edges } = get();
-      set({ baseline: snapshot(nodes, edges) });
-    },
+    // Takes the submitted snapshot, never `get()` — edits made while the save was
+    // in flight must stay dirty or the next autosave skips them.
+    rebaseline: (saved) => set({ baseline: saved }),
 
     updateNodeData: (id, patch) =>
       set(({ nodes }) => ({

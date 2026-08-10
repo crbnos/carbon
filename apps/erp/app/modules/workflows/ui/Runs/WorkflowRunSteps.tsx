@@ -3,7 +3,7 @@ import { topologicalNodeOrder } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
-import type { WorkflowRunStep } from "../../workflows.service";
+import { MAX_RUN_STEPS, type WorkflowRunStep } from "../../workflows.service";
 import { useWorkflowLabel } from "../Builder/catalog";
 import {
   actionInputLabelKey,
@@ -37,6 +37,8 @@ type WorkflowRunStepsProps = {
   definition: WorkflowDefinition | null;
   compacted: boolean;
   stepsPurged: boolean;
+  /** More steps exist than the loader returned — say so rather than cap silently. */
+  truncated: boolean;
   /** Record ids resolved to the name a person recognises, keyed `${table}:${id}`. */
   recordNames: Record<string, string>;
 };
@@ -300,6 +302,7 @@ export function WorkflowRunSteps({
   definition,
   compacted,
   stepsPurged,
+  truncated,
   recordNames
 }: WorkflowRunStepsProps) {
   const nodeLabel = useNodeLabel();
@@ -341,8 +344,8 @@ export function WorkflowRunSteps({
   if (!definition) {
     const sorted = [...steps]
       .filter((s) => !s.itemKey || s.itemKey === "")
-      // The trigger row shares `sequence: 0` with the first real node, so break the
-      // tie in its favour — a run always starts at its trigger.
+      // New runs reserve sequence 0 for the trigger and start the walk at 1, so
+      // this tiebreak only still matters for runs recorded before that change.
       .sort((a, b) =>
         a.sequence === b.sequence
           ? Number(b.nodeType === "trigger") - Number(a.nodeType === "trigger")
@@ -373,6 +376,14 @@ export function WorkflowRunSteps({
           <Trans>
             Values in this run have been summarised. Full detail is kept for 7
             days.
+          </Trans>
+        </div>
+      )}
+      {truncated && (
+        <div className="px-4 py-2 text-xs text-muted-foreground border-b border-border/50">
+          <Trans>
+            This run has more steps than we show here. Only the first{" "}
+            {MAX_RUN_STEPS} are listed.
           </Trans>
         </div>
       )}

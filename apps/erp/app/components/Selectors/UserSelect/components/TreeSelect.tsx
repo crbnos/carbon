@@ -12,7 +12,7 @@ const UserTreeSelect = () => {
   const {
     aria: { listBoxProps },
     viewModel,
-    innerProps: { isMulti },
+    innerProps: { isMulti, insideCanvas },
     loading,
     loadMore,
     onMouseOver,
@@ -26,10 +26,9 @@ const UserTreeSelect = () => {
       aria-multiselectable={isMulti}
       ref={listBoxRef}
       onMouseOver={onMouseOver}
-      // Or the surrounding surface eats the wheel: a drawer's scroll lock swallows it,
-      // and the workflow canvas zooms instead of scrolling this list.
-      onWheel={(e) => e.stopPropagation()}
-      onTouchMove={(e) => e.stopPropagation()}
+      // The canvas zooms on wheel, so this list would never scroll inside it.
+      onWheel={insideCanvas ? (e) => e.stopPropagation() : undefined}
+      onTouchMove={insideCanvas ? (e) => e.stopPropagation() : undefined}
       className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-h-[300px] my-1 flex flex-col gap-1"
     >
       {loading ? (

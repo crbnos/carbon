@@ -5,6 +5,7 @@ import { requirePlan } from "@carbon/ee/plan.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { deleteWorkflow } from "~/modules/workflows";
+import { syncAfterWorkflowDelete } from "~/modules/workflows/workflows.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -29,6 +30,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(mutation.error, "Failed to delete workflow"))
     );
   }
+
+  // The cascade takes the trigger rows; only this drops the now-unused
+  // eventSystemSubscription rows the company no longer has a workflow for.
+  await syncAfterWorkflowDelete(companyId, id);
 
   throw redirect(
     path.to.workflows,

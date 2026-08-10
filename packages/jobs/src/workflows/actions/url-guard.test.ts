@@ -51,6 +51,52 @@ describe("checkOutboundUrl", () => {
     });
   });
 
+  it("refuses carrier-grade NAT (100.64.0.0/10)", async () => {
+    resolvesTo({ address: "100.100.0.1", family: 4 });
+    expect(await checkOutboundUrl("https://cgnat.example.com")).toEqual({
+      ok: false,
+      reason: "That address is inside a private network."
+    });
+  });
+
+  it("accepts the public addresses either side of the CGNAT range", async () => {
+    resolvesTo({ address: "100.63.255.255", family: 4 });
+    expect((await checkOutboundUrl("https://a.example.com")).ok).toBe(true);
+    resolvesTo({ address: "100.128.0.1", family: 4 });
+    expect((await checkOutboundUrl("https://b.example.com")).ok).toBe(true);
+  });
+
+  it("refuses the benchmarking range (198.18.0.0/15)", async () => {
+    resolvesTo({ address: "198.19.100.1", family: 4 });
+    expect(await checkOutboundUrl("https://bench.example.com")).toEqual({
+      ok: false,
+      reason: "That address is inside a private network."
+    });
+  });
+
+  it("accepts 198.17 and 198.20, which are ordinary public space", async () => {
+    resolvesTo({ address: "198.17.0.1", family: 4 });
+    expect((await checkOutboundUrl("https://c.example.com")).ok).toBe(true);
+    resolvesTo({ address: "198.20.0.1", family: 4 });
+    expect((await checkOutboundUrl("https://d.example.com")).ok).toBe(true);
+  });
+
+  it("refuses an address carrying embedded credentials", async () => {
+    resolvesTo({ address: "93.184.216.34", family: 4 });
+    expect(
+      await checkOutboundUrl("https://user:pass@example.com/hook")
+    ).toEqual({
+      ok: false,
+      reason:
+        "Remove the username and password from the address; use a header instead."
+    });
+  });
+
+  it("refuses a username with no password too", async () => {
+    resolvesTo({ address: "93.184.216.34", family: 4 });
+    expect((await checkOutboundUrl("https://user@example.com")).ok).toBe(false);
+  });
+
   it("refuses a private range behind a public-looking name", async () => {
     resolvesTo({ address: "10.0.0.5", family: 4 });
     expect(await checkOutboundUrl("https://inside.example.com")).toEqual({

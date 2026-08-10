@@ -4,7 +4,7 @@ import type { Updateable } from "kysely";
 import type { JobDatabase } from "../../db";
 import type { FinishRunInput } from "./log";
 
-const INTERRUPTED = "This step was interrupted and did not finish.";
+export const INTERRUPTED = "This step was interrupted and did not finish.";
 
 export type StepClaim =
   | { claimed: true; stepRunId: string }
@@ -140,14 +140,22 @@ export async function settleStep(
     error: redactText(params.error),
     branchTaken: params.branchTaken ?? null,
     completedAt,
-    durationMs: Date.parse(completedAt) - new Date(params.startedAt).getTime()
+    // Clamped like finishRun: clock skew between SQL now() and process time can
+    // otherwise write a negative duration into an INTEGER column.
+    durationMs: Math.max(
+      0,
+      Date.parse(completedAt) - new Date(params.startedAt).getTime()
+    )
   };
 
   if (params.input !== undefined)
     patch.input = toJson(redactForLog(params.input));
   if (params.output !== undefined)
     patch.output = toJson(redactForLog(params.output));
-  if (params.detail !== undefined) patch.detail = toJson(params.detail);
+  // detail is documented as diagnostics-only, but nothing enforces that at the
+  // write, and condition diagnostics carry resolved values.
+  if (params.detail !== undefined)
+    patch.detail = toJson(redactForLog(params.detail));
 
   await db
     .updateTable("workflowStepRun")

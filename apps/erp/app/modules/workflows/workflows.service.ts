@@ -4,7 +4,7 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { workflowValidator } from "./workflows.models";
 
 export async function getWorkflows(
@@ -222,7 +222,9 @@ export async function getWorkflowRuns(
     .from("workflowRun")
     .select(
       "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, createdAt, workflow(name)",
-      { count: "exact" }
+      // Estimated, not exact: this table grows with event volume, and `exact` is a
+      // COUNT(*) over the company's whole retained history on every page load.
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -250,6 +252,13 @@ export async function getWorkflowRun(
     .maybeSingle();
 }
 
+/**
+ * A batched node writes one row per item, so a 100-item batch alone is 100+ rows
+ * each carrying input, output and detail JSONB. Cap what reaches the browser; the
+ * caller reads one row past the cap to know it truncated.
+ */
+export const MAX_RUN_STEPS = 200;
+
 export async function getWorkflowRunSteps(
   client: SupabaseClient<Database>,
   runId: string,
@@ -263,7 +272,8 @@ export async function getWorkflowRunSteps(
     .eq("runId", runId)
     .eq("companyId", companyId)
     .order("sequence", { ascending: true })
-    .order("itemKey", { ascending: true });
+    .order("itemKey", { ascending: true })
+    .limit(MAX_RUN_STEPS + 1);
 }
 
 export async function getWorkflowRunChain(
@@ -389,3 +399,22 @@ export type WorkflowRunChainEntry = NonNullable<
 export type WorkflowLastRun = NonNullable<
   Awaited<ReturnType<typeof getWorkflowLastRuns>>["data"]
 >[number];
+
+/**
+ * The one question `checkWorkflowVersionLock` asks, in one round trip.
+ *
+ * It runs on every autosave — roughly once a second while editing — so it must
+ * not pull the version's whole `nodes`/`edges` JSONB just to read a workflow id.
+ */
+export async function getWorkflowVersionLockState(
+  client: SupabaseClient<Database>,
+  versionId: string,
+  companyId: string
+) {
+  return client
+    .from("workflowVersion")
+    .select("workflowId, workflow(activeVersionId)")
+    .eq("id", versionId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}

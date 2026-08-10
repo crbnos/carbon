@@ -87,6 +87,11 @@ export function planRuns(input: {
     [...byWorkflow.values()],
     input.workflowRunId
   );
+  // A null causingRun means either a genuinely fresh firing or a causing run the
+  // retention job already purged, and the two are indistinguishable here. So the
+  // chain cap is best-effort across a 90-day boundary: a chain that outlives its
+  // own root's history restarts at depth 0. Acceptable — the depth cap is 10 hops
+  // and a chain cannot plausibly take 90 days to reach them.
   const trace = input.causingRun
     ? deriveNextTrace(input.causingRun)
     : FRESH_TRACE;

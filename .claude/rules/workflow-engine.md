@@ -89,8 +89,16 @@ A workflow must never be able to do something its owner could not do by hand.
   of the run rather than leaving it silent.
 - `itemKey` is a record's own id, or a hash of the value. **Never a position in a
   list** — a list that comes back in a different order would re-run everything.
-- A node reached from two branches runs **once**. The second arrival is skipped
-  in the walk; the unique constraint means a second row cannot exist anyway.
+- A node reached from two branches runs **once, and only after both branches
+  settle**. `walk.ts` tracks a state per *edge* — `live` when its source took
+  that handle, `dead` when it took another or was never reached, absent while
+  still pending. A node is queued when every incoming edge has settled and at
+  least one is `live`; it is **skipped** when they are all `dead`, and a skip
+  settles its own outgoing edges dead, so one untaken condition branch retires
+  the whole subgraph behind it rather than deadlocking the join below. Without
+  this, a shorter branch into a join would run it before a longer branch had
+  produced the value it reads — silently, as an unresolved reference. Skipped
+  nodes get no step row; the run detail shows them as "Not reached".
 
 ## `RunTrigger` — three variants
 

@@ -36,6 +36,7 @@ pnpm --filter @carbon/checks baseline      # regenerate baseline (careful!)
 - **Clobber detection**: `findClobbers(branch, main)` — identifies DB objects redefined on both sides
 - **Baseline**: `src/baseline.ts` — grandfathered violations keyed by `checkId + file + line + snippet`
 - **Invariants**: SQL queries loaded from directory, injected `Query` for testability
+- **Workflows**: `src/invariants/workflow-trigger-event-drift.sql` fails when a `workflowTriggerEvent` row names an event id the catalog no longer has — the shape that makes a workflow silently stop firing. `src/scripts/check-workflow-events.ts` (`pnpm --filter @carbon/checks workflow-events`) is the static counterpart, comparing the generated catalog against the registry. Note the SQL invariant runs in CI via the invariants gate; the script does **not** — `.github/workflows/check.yml` only runs `check:workflow-catalog`
 
 ## Cross-References
 

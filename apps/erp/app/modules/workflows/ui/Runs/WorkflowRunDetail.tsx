@@ -24,6 +24,8 @@ type WorkflowRunDetailProps = {
   chain: WorkflowRunChainEntry[] | null;
   /** Record ids resolved to the name a person recognises, keyed `${table}:${id}`. */
   recordNames: Record<string, string>;
+  /** The loader capped the step list; the notice says so. */
+  truncated: boolean;
 };
 
 function HeaderRow({
@@ -73,7 +75,8 @@ export function WorkflowRunDetail({
   run,
   steps,
   chain,
-  recordNames
+  recordNames,
+  truncated
 }: WorkflowRunDetailProps) {
   const { t } = useLingui();
 
@@ -266,6 +269,7 @@ export function WorkflowRunDetail({
           definition={definition}
           compacted={compacted}
           stepsPurged={stepsPurged}
+          truncated={truncated}
           recordNames={recordNames}
         />
       </div>

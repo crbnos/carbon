@@ -14697,6 +14697,9 @@ msgstr "This revision is released (Production). Changes should normally flow thr
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "This revision is released (Production). Open a change notice to modify it."
 
+msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
+msgstr "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
+
 msgid "This runs the workflow for real. It will create records, send notifications and call any webhooks exactly as a live run would. This cannot be undone."
 msgstr "This runs the workflow for real. It will create records, send notifications and call any webhooks exactly as a live run would. This cannot be undone."
 

@@ -67,9 +67,9 @@ pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
 | `workflow-run-retention` | cron `0 4 * * *` | Nightly: reap stale runs, purge 90-day headers, drop 30-day step detail, compact 7-day payloads via `compactForLog` |
 
 The scheduler's Inngest-free core lives in `src/workflows/scheduler.ts` — same pattern as
-`matcher.ts`. `ensureSchedulerChain()` (exported from `@carbon/jobs/inngest`) kick-starts
-the chain immediately when a scheduled workflow is first activated; the backstop revives it
-if it ever goes quiet.
+`matcher.ts`. The chain is kick-started by `trigger("workflow-scheduler-wake", { bookedFor: null })`
+inside `syncAndWake` (`apps/erp/app/modules/workflows/workflows.server.ts`), so activating a
+scheduled workflow starts it within minutes; the hourly backstop revives it if it goes quiet.
 
 All entry points call one shared core in `src/workflows/` (`event-ids.ts`, `matcher.ts`,
 `scheduler.ts`, `types.ts`), which imports no Inngest and is unit-tested directly. See

@@ -235,7 +235,12 @@ export function VariableTreeMenu({
                               <LuInfo className="h-3 w-3" />
                             </span>
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-xs whitespace-pre-wrap">
+                          {/* elevated — this menu is itself a popover, so the
+                              default tooltip layer would paint underneath it. */}
+                          <TooltipContent
+                            elevated
+                            className="max-w-xs whitespace-pre-wrap"
+                          >
                             {row.description}
                           </TooltipContent>
                         </Tooltip>

@@ -7,6 +7,8 @@ const NOT_A_URL = "That is not a valid web address.";
 const NOT_HTTPS = "Only https addresses are allowed.";
 const NOT_FOUND = "That address could not be found.";
 const PRIVATE = "That address is inside a private network.";
+const HAS_CREDENTIALS =
+  "Remove the username and password from the address; use a header instead.";
 
 function isPrivateV4(address: string): boolean {
   const parts = address.split(".").map(Number);
@@ -21,6 +23,11 @@ function isPrivateV4(address: string): boolean {
   if (a === 192 && b === 168) return true;
   // Covers the cloud metadata address 169.254.169.254 along with all link-local.
   if (a === 169 && b === 254) return true;
+  // 100.64.0.0/10 carrier-grade NAT: routable inside a provider network, and the
+  // range some container platforms hand out.
+  if (a === 100 && b >= 64 && b <= 127) return true;
+  // 198.18.0.0/15 benchmarking, reserved and never legitimately reachable.
+  if (a === 198 && (b === 18 || b === 19)) return true;
   if (a >= 224) return true;
   return false;
 }
@@ -55,6 +62,11 @@ export async function checkOutboundUrl(raw: string): Promise<UrlVerdict> {
 
   if (url.protocol !== "https:") return { ok: false, reason: NOT_HTTPS };
   if (url.hostname.length === 0) return { ok: false, reason: NOT_A_URL };
+  // Credentials in the URL are sent as basic auth on every redirect-free hop and
+  // are invisible in the builder, so they cannot be reviewed or redacted.
+  if (url.username.length > 0 || url.password.length > 0) {
+    return { ok: false, reason: HAS_CREDENTIALS };
+  }
 
   let addresses: { address: string; family: number }[];
   try {

@@ -5,7 +5,8 @@ import {
   nullValue,
   primitiveValue,
   type RuntimeValue,
-  type SearchCriterion
+  type SearchCriterion,
+  WORKFLOW_ENTITIES
 } from "@carbon/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
@@ -110,23 +111,23 @@ describe("runSearch operators", () => {
     ],
     [
       "gt",
-      criterion("gt", amount, "total"),
-      { method: "gt", args: ["total", 10] }
+      criterion("gt", amount, "exchangeRate"),
+      { method: "gt", args: ["exchangeRate", 10] }
     ],
     [
       "gte",
-      criterion("gte", amount, "total"),
-      { method: "gte", args: ["total", 10] }
+      criterion("gte", amount, "exchangeRate"),
+      { method: "gte", args: ["exchangeRate", 10] }
     ],
     [
       "lt",
-      criterion("lt", amount, "total"),
-      { method: "lt", args: ["total", 10] }
+      criterion("lt", amount, "exchangeRate"),
+      { method: "lt", args: ["exchangeRate", 10] }
     ],
     [
       "lte",
-      criterion("lte", amount, "total"),
-      { method: "lte", args: ["total", 10] }
+      criterion("lte", amount, "exchangeRate"),
+      { method: "lte", args: ["exchangeRate", 10] }
     ],
     [
       "contains",
@@ -307,5 +308,58 @@ describe("runSearch results", () => {
       error: "We no longer know what a unicorn is."
     });
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe("runSearch column selection", () => {
+  it("selects the catalog's declared columns, never *", async () => {
+    // select("*") put every column of every match into workflowStepRun.output,
+    // retained 30 days — a payload-size and data-minimisation problem.
+    const { client, calls } = createStub({ rows: [row] });
+    await search(client);
+
+    const selected = called(calls, "select")[0]?.args[0] as string;
+    expect(selected).not.toBe("*");
+    const columns = selected.split(", ");
+    expect(columns).toContain("id");
+    expect(columns).toEqual(
+      expect.arrayContaining(Object.keys(WORKFLOW_ENTITIES.purchaseOrder ?? {}))
+    );
+  });
+
+  it("always includes id, since the row is keyed by it", async () => {
+    const { client, calls } = createStub({ rows: [row] });
+    await search(client, { entity: "supplier" });
+
+    const selected = called(calls, "select")[0]?.args[0] as string;
+    expect(selected.split(", ")).toContain("id");
+  });
+
+  it("refuses an entity the catalog no longer describes", async () => {
+    const { client } = createStub({ rows: [row] });
+    const result = await search(client, { entity: "notAThing" });
+    expect(result).toEqual({
+      ok: false,
+      error: "We no longer know what a notAThing is."
+    });
+  });
+});
+
+describe("runSearch field validation", () => {
+  it("refuses a field the catalog does not declare", async () => {
+    // Defence in depth: the field goes straight into a PostgREST filter, and a
+    // definition saved before a catalog change never gets re-validated.
+    const { client, calls } = createStub({ rows: [row] });
+    const outcome = await search(client, {
+      criteria: [criterion("eq", primitiveValue("string", "x"), "password")]
+    });
+
+    expect(outcome).toEqual({
+      ok: false,
+      error: 'We cannot search a purchaseOrder by "password".'
+    });
+    expect(called(calls, "eq").map((call) => call.args[0])).not.toContain(
+      "password"
+    );
   });
 });

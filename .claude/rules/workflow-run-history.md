@@ -8,7 +8,7 @@ paths:
 Observability layer for the workflow engine. Grounded against the implementation in
 `packages/jobs/src/workflows/engine/`, `packages/jobs/src/workflows/retention.ts`,
 `apps/erp/app/routes/x+/workflows+/runs*.tsx`, and the migration
-`20260731130044_workflow-run-history.sql`.
+`20260810100200_workflow-run-history.sql`.
 
 ## Routes
 
@@ -69,7 +69,19 @@ The `detail` JSON shape is `NodeDetail` (`packages/workflows/src/runtime/types.t
 Pass 3 runs **before** pass 4 so `compactedAt` is always set on the `workflowRun` row before its step rows are deleted. The UI uses `run.compactedAt !== null` to distinguish "steps purged" from "run has no steps yet".
 
 Age is always `COALESCE("completedAt", "createdAt")` — `Blocked` and `Skipped` runs never set
-`completedAt`. Pass 4 only touches rows where `compactedAt IS NULL`.
+`completedAt`, and `workflowRun_retention_idx` is the index for it.
+
+Every pass selects `ORDER BY` that age ascending, so a backlog drains oldest-first instead of
+re-reading the same page each night. Each pass must also be able to *leave* its own candidate
+set, or it never advances: pass 2 deletes the rows, pass 3 filters `compactedAt IS NULL`, and
+pass 4 requires **both** `compactedAt IS NOT NULL` and `EXISTS (SELECT 1 FROM "workflowStepRun" …)`.
+That EXISTS is what makes pass 4 self-advancing; the `compactedAt` requirement stops it
+outrunning pass 3 (500/night vs 200/night) and deleting steps before the run is marked compacted,
+which is the flag the UI reads to tell "steps purged" from "run has no steps yet".
+
+Pass 3 writes its truncated payloads with one `UPDATE … FROM (VALUES …)` per 500 rows, not one
+statement per row — `getJobDatabaseClient(5)` is a five-connection pool with a 10 s acquisition
+timeout, and an unbounded `Promise.all` over a company's step rows exhausts it.
 
 ## `compactForLog` — value shrinker
 

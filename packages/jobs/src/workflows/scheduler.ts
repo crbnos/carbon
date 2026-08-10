@@ -1,6 +1,6 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { findTriggerSchedule, nextRunAfter } from "@carbon/workflows";
-import type { Kysely } from "kysely";
+import { type Kysely, sql } from "kysely";
 import type { MatchResult } from "./matcher";
 import { insertRunsAndBuildEvents, type PlannedRun } from "./matcher";
 
@@ -100,55 +100,110 @@ export function planWakeAt(params: {
   );
 }
 
+const workflowKey = (companyId: string, workflowId: string) =>
+  `${companyId}:${workflowId}`;
+
+export type DueClaim = { row: DueWorkflow; recomputed: string };
+
 /**
- * Writes the recomputed nextRunAt only if the row still holds the value we read. Zero rows back
- * means another wake won the race. The new value is computed from NOW, not from dueAt, so a long
- * outage can never queue a cascade of catch-up runs.
+ * Splits a wake's due rows into the ones to re-book and the ones whose promoted
+ * version stopped being schedule-triggered. The new time is computed from NOW,
+ * not from dueAt, so a long outage can never queue a cascade of catch-up runs.
  */
-export async function claimDue(
-  db: Kysely<KyselyDatabase>,
-  row: DueWorkflow,
+export function planClaims(
+  rows: DueWorkflow[],
   now: Date
-): Promise<boolean> {
-  const schedule = findTriggerSchedule(row.nodes);
-  if (!schedule) {
-    // Promoted version is no longer schedule-triggered — clear the due time.
-    await db
-      .updateTable("workflow")
-      .set({ nextRunAt: null })
-      .where("id", "=", row.id)
-      .where("companyId", "=", row.companyId)
-      .where("nextRunAt", "=", row.nextRunAt.toISOString())
-      .execute();
-    return false;
+): { unscheduled: DueWorkflow[]; claims: DueClaim[] } {
+  const unscheduled: DueWorkflow[] = [];
+  const claims: DueClaim[] = [];
+
+  for (const row of rows) {
+    const schedule = findTriggerSchedule(row.nodes);
+    if (schedule) {
+      claims.push({
+        row,
+        recomputed: nextRunAfter(schedule, row.id, now).toISOString()
+      });
+    } else {
+      unscheduled.push(row);
+    }
   }
 
-  const recomputed = nextRunAfter(schedule, row.id, now).toISOString();
-  const claimed = await db
-    .updateTable("workflow")
-    .set({ nextRunAt: recomputed })
-    .where("id", "=", row.id)
-    .where("companyId", "=", row.companyId)
-    .where("nextRunAt", "=", row.nextRunAt.toISOString())
-    .returning(["id"])
-    .executeTakeFirst();
-  return claimed !== undefined;
+  return { unscheduled, claims };
 }
 
-async function hasActiveRun(
+/**
+ * `claimDue` for the whole wake in two statements. Each row needs its own
+ * recomputed time, so the new values ride in as a VALUES join rather than a
+ * single SET. The compare-and-set on the old `nextRunAt` is unchanged and still
+ * per row, so a losing wake still claims nothing.
+ */
+export async function claimDueBatch(
   db: Kysely<KyselyDatabase>,
-  workflowId: string,
-  companyId: string
-): Promise<boolean> {
-  const row = await db
+  rows: DueWorkflow[],
+  now: Date
+): Promise<Set<string>> {
+  const { unscheduled, claims } = planClaims(rows, now);
+
+  // Promoted version is no longer schedule-triggered — clear the due time.
+  if (unscheduled.length > 0) {
+    const values = unscheduled.map(
+      (row) =>
+        sql`(${row.id}::text, ${row.companyId}::text, ${row.nextRunAt.toISOString()}::timestamptz)`
+    );
+    await sql`
+      UPDATE "workflow" AS w
+      SET "nextRunAt" = NULL
+      FROM (VALUES ${sql.join(values)}) AS v("id", "companyId", "expected")
+      WHERE w."id" = v."id"
+        AND w."companyId" = v."companyId"
+        AND w."nextRunAt" = v."expected"
+    `.execute(db);
+  }
+
+  if (claims.length === 0) return new Set();
+
+  const values = claims.map(
+    ({ row, recomputed }) =>
+      sql`(${row.id}::text, ${row.companyId}::text, ${row.nextRunAt.toISOString()}::timestamptz, ${recomputed}::timestamptz)`
+  );
+  const claimed = await sql<{ id: string; companyId: string }>`
+    UPDATE "workflow" AS w
+    SET "nextRunAt" = v."next"
+    FROM (VALUES ${sql.join(values)}) AS v("id", "companyId", "expected", "next")
+    WHERE w."id" = v."id"
+      AND w."companyId" = v."companyId"
+      AND w."nextRunAt" = v."expected"
+    RETURNING w."id", w."companyId"
+  `.execute(db);
+
+  return new Set(claimed.rows.map((row) => workflowKey(row.companyId, row.id)));
+}
+
+/**
+ * One read for the whole wake instead of one per due workflow. Served by the
+ * partial index `workflowRun_active_idx`; the pair is re-checked in JS because
+ * the query filters workflowId as a list, not as (companyId, workflowId) pairs.
+ */
+async function activeRunKeys(
+  db: Kysely<KyselyDatabase>,
+  rows: DueWorkflow[]
+): Promise<Set<string>> {
+  if (rows.length === 0) return new Set();
+  const found = await db
     .selectFrom("workflowRun")
-    .select("id")
-    .where("workflowId", "=", workflowId)
-    .where("companyId", "=", companyId)
+    .select(["companyId", "workflowId"])
+    .where(
+      "workflowId",
+      "in",
+      rows.map((row) => row.id)
+    )
     .where("status", "in", ["Queued", "Running"])
-    .limit(1)
-    .executeTakeFirst();
-  return row !== undefined;
+    .execute();
+
+  return new Set(
+    found.map((row) => workflowKey(row.companyId, row.workflowId))
+  );
 }
 
 export async function dispatchDue(
@@ -167,12 +222,17 @@ export async function dispatchDue(
   let skipped = 0;
   const events: MatchResult["events"] = [];
 
-  for (const row of due) {
+  // The run insert below stays per workflow: each has its own sourceEventId, and
+  // that is what the dedupe constraint keys on.
+  const claimedKeys = await claimDueBatch(db, due, now);
+  const claimedRows = due.filter((row) =>
+    claimedKeys.has(workflowKey(row.companyId, row.id))
+  );
+  const activeKeys = await activeRunKeys(db, claimedRows);
+
+  for (const row of claimedRows) {
     const dueAt = row.nextRunAt;
     const dueAtIso = dueAt.toISOString();
-
-    const claimed = await claimDue(db, row, now);
-    if (!claimed) continue;
 
     let status: "Queued" | "Skipped";
     let statusReason: string | null = null;
@@ -180,7 +240,7 @@ export async function dispatchDue(
     if (now.getTime() - dueAt.getTime() > STALE_AFTER_MS) {
       status = "Skipped";
       statusReason = TOO_LATE;
-    } else if (await hasActiveRun(db, row.id, row.companyId)) {
+    } else if (activeKeys.has(workflowKey(row.companyId, row.id))) {
       status = "Skipped";
       statusReason = PREVIOUS_RUN_ACTIVE;
     } else {

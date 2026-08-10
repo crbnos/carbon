@@ -8,7 +8,8 @@ import {
   REGISTRY_ENTRIES,
   type RuntimeValue,
   type SearchCriterion,
-  type SearchOutcome
+  type SearchOutcome,
+  WORKFLOW_ENTITIES
 } from "@carbon/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -17,6 +18,25 @@ function scalarOf(value: RuntimeValue): string | number | boolean | undefined {
   if (value.kind === "entity") return value.id;
   if (value.kind === "list" || value.kind === "pairs") return undefined;
   return value.value === null ? undefined : value.value;
+}
+
+/**
+ * The columns the catalog declares for this entity, and nothing else.
+ *
+ * The row rides along on the entity value and lands in `workflowStepRun.output`,
+ * kept for 30 days — so `select("*")` would be both a payload-size problem on wide
+ * tables and a data-minimisation one on `supplier`, `user` and `salesOrder`. A
+ * dot-path can only reach a declared property anyway. `id` is forced in because
+ * the row is keyed by it.
+ */
+function selectedColumns(entity: string): string | undefined {
+  const properties = WORKFLOW_ENTITIES[entity];
+  if (properties === undefined) return undefined;
+  const columns = Object.keys(properties);
+  if (columns.length === 0) return undefined;
+  return columns.includes("id")
+    ? columns.join(", ")
+    : ["id", ...columns].join(", ");
 }
 
 function foundNothing(entity: string, returns: "one" | "list"): SearchOutcome {
@@ -39,17 +59,28 @@ export async function runSearch(params: {
   const { client, companyId, entity, returns, criteria } = params;
 
   const table = REGISTRY_ENTRIES[entity]?.table;
-  if (table === undefined) {
+  const columns = selectedColumns(entity);
+  if (table === undefined || columns === undefined) {
     return { ok: false, error: `We no longer know what a ${entity} is.` };
   }
 
   // The entity is only known at run time; typing it costs a 350-way instantiation.
   const untyped = client as unknown as SupabaseClient;
   // Row-level security already scopes this read; the filter is the second lock.
-  let query = untyped.from(table).select("*").eq("companyId", companyId);
+  let query = untyped.from(table).select(columns).eq("companyId", companyId);
 
   for (const criterion of criteria) {
     const { field, operator, value } = criterion;
+
+    // Checked at publish time too (definition/nodes.ts). Repeated here because a
+    // field name goes straight into a PostgREST filter, and a definition saved
+    // before a catalog change was validated against a catalog that no longer exists.
+    if (!(field in (WORKFLOW_ENTITIES[entity] ?? {}))) {
+      return {
+        ok: false,
+        error: `We cannot search a ${entity} by "${field}".`
+      };
+    }
 
     if (isNull(value)) {
       // Nothing is only ever equal or unequal to nothing; it is never ordered.
@@ -117,7 +148,8 @@ export async function runSearch(params: {
 
   if (error) return { ok: false, error: error.message };
 
-  const rows = (data ?? []) as Record<string, unknown>[];
+  // A run-time column list makes PostgREST's return type unresolvable.
+  const rows = (data ?? []) as unknown as Record<string, unknown>[];
   const found: RuntimeValue[] = [];
   for (const row of rows) {
     // The row rides along, so a later dot-path costs no second read.
