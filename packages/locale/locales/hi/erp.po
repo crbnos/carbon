@@ -159,6 +159,9 @@ msgstr "{chainLabel}. इस भाग को सीधे अंतिम उ�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
@@ -10679,7 +10682,7 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "पृष्ठ {pdfViewPage} का {documentPageCount}"
 
 msgid "Paid"
-msgstr "भुगतान किया गया"
+msgstr "भुगतान किया"
 
 msgid "Paid Date"
 msgstr "भुगतान की गई तारीख"
