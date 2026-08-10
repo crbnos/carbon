@@ -160,7 +160,7 @@ msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# curso} other {# cursos}}"
 
 msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
-msgstr ""
+msgstr "{currencyMismatchCount, plural, one {Excluye # factura en una moneda diferente.} other {Excluye # facturas en una moneda diferente.}}"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} de {total} fases completadas"
