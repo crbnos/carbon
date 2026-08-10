@@ -3,6 +3,17 @@
 // so `deno test` type-checks it cleanly and the logic is testable without a
 // database.
 //
+// PLANNED REFACTOR — build on top of Job Operation Batching (issue #1010).
+// Two concerns below are a DUPLICATE of what `jobOperationBatch` already owns and
+// will be DELETED here and delegated to `batch-operations` `complete` once
+// batching lands on main:
+//   • operationCompletions (OperationCompletion) — closing each served operation
+//   • timeAllocations (TimeAllocation, splitTime) — splitting the run's setup +
+//     machine time across served operations
+// Kept here (the genuine cut-list layer): line-quantity clamping, `allocations`
+// (material split), remnants/scrap, status, actualYieldPct. See
+// .ai/plans/2026-08-11-cut-lists-on-operation-batching.md, Task 2.
+//
 // What a confirmation has to get right:
 //   1. One saw run serves many jobs. The stock consumed must be split across
 //      those jobs in proportion to the material each one actually took, or the
