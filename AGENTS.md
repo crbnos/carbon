@@ -28,6 +28,8 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Never use `npm` — always `pnpm`.
 - Never use JavaScript `Date` for parsing, formatting, or arithmetic — use `@internationalized/date` + `@carbon/utils` `formatDate` (see `.claude/rules/date-handling.md`).
 - Never expose cross-tenant data or skip `companyId` scoping.
+- Never query inside a loop (N+1) — collect the ids and make one `.in()` call, an embed, or a view (see `.claude/rules/database-patterns.md`).
+- Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction, or an RPC when it must also be callable from an edge function.
 - Never hand-edit generated DB types (`@carbon/database` types).
 - Never scatter service/models files — one `{module}.service.ts` and one `{module}.models.ts` per module.
 - Never rebuild the database to test changes — wait for the user.
