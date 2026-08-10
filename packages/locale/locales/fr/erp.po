@@ -5816,6 +5816,12 @@ msgstr "Chaque tâche requise doit être terminée ou ignorée avant que la pér
 msgid "Every row was imported successfully."
 msgstr "Chaque ligne a été importée avec succès."
 
+msgid "Everything else"
+msgstr ""
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr ""
+
 msgid "Everything from Starter"
 msgstr "Tout de Starter"
 

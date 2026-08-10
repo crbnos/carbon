@@ -72,14 +72,18 @@ const NOT_AVAILABLE = "This kind of step is not available yet.";
 const TOO_MANY_STEPS = "This workflow ran too many steps.";
 const NOTHING_TO_RUN = "That list was empty, so there was nothing to do.";
 
-function noAccess(module: string): string {
+const BATCH_CONCURRENCY = 5;
+
+/** The one wording for a lost permission. Exported because the builder's test-run
+ * route gates on the same permission before the walk, and two copies would drift. */
+export function noAccess(module: string): string {
   const area = module.charAt(0).toUpperCase() + module.slice(1);
   return `The owner of this workflow no longer has access to ${area}.`;
 }
 
 /** The durable ledger: the two run-log tables, with the run's scope folded in. Lives
  * here rather than in `ledger.ts` so that module keeps exporting only free functions. */
-function createDatabaseLedger(
+export function createDatabaseLedger(
   db: JobDatabase,
   scope: { runId: string; companyId: string }
 ): RunLedger {
@@ -89,8 +93,7 @@ function createDatabaseLedger(
       settleStep(db, { ...input, companyId: scope.companyId }),
     failInterruptedSteps: () =>
       failInterruptedSteps(db, scope.runId, scope.companyId),
-    finishRun: (input) => finishRun(db, { ...input, ...scope }),
-    records: () => []
+    finishRun: (input) => finishRun(db, { ...input, ...scope })
   };
 }
 
@@ -281,15 +284,24 @@ async function runBatchedNode(
     );
   }
 
+  // Items are independent, so they go in groups rather than one at a time. Bounded,
+  // not unbounded: the run-log pool is small, and a 100-item batch fired at once is
+  // the same pool exhaustion the retention job had to be rewritten to avoid.
   const results: StepOutcome[] = [];
-  for (const item of plan.items) {
-    const itemKey = itemKeyFor(item);
+  for (let i = 0; i < plan.items.length; i += BATCH_CONCURRENCY) {
+    const group = plan.items.slice(i, i + BATCH_CONCURRENCY);
+    // Order is load-bearing: the node's outputs are defined to be in item order.
     results.push(
-      await step.run(`node:${node.id}:${itemKey}`, () =>
-        recordStep({ ...args, item }, itemKey, (record) =>
-          runExecutor({ ...args, item, record })
-        )
-      )
+      ...(await Promise.all(
+        group.map((item) => {
+          const itemKey = itemKeyFor(item);
+          return step.run(`node:${node.id}:${itemKey}`, () =>
+            recordStep({ ...args, item }, itemKey, (record) =>
+              runExecutor({ ...args, item, record })
+            )
+          );
+        })
+      ))
     );
   }
 

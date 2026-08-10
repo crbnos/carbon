@@ -6,7 +6,8 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getCompanies } from "~/modules/settings";
-import { getWorkflowRecordPath, path } from "~/utils/path";
+import { getRecordPath } from "~/utils/entity";
+import { path } from "~/utils/path";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
 
@@ -80,7 +81,7 @@ function resolve(
     case NotificationEvent.SuggestionResponse:
       return path.to.suggestion(documentId);
     case NotificationEvent.Workflow:
-      return getWorkflowRecordPath(documentType, documentId);
+      return getRecordPath(documentType, documentId);
     case NotificationEvent.ApprovalApproved:
     case NotificationEvent.ApprovalRejected:
     case NotificationEvent.ApprovalRequested:

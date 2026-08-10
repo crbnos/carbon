@@ -19,6 +19,27 @@ Observability layer for the workflow engine. Grounded against the implementation
   `getWorkflowRunSteps`, then `getWorkflowRunChain` when `run.rootRunId` is set. All data
   flows as props; the component fetches nothing.
 
+## Test runs
+
+A builder test run (`engine/manual.ts`) has real side effects, so it writes real history:
+one `workflowRun` row with `isTest = true`, plus the ordinary step rows, through the same
+`createDatabaseLedger` a queued run uses. There is no in-memory ledger — `$id.test-run.tsx`
+reads the steps back with `getWorkflowRunSteps`, the reader the run-history page already
+uses, so the panel and that page cannot disagree about a run the customer can open in both.
+The run is recorded against the version open in the builder (`versionId`, sent by
+`TestRunDialog` and re-checked against the workflow in `$id.test-run.tsx`) — the canvas can
+be a second ahead of it, but it is a definition a reader can actually open.
+
+`executeManualWorkflowRun` owns the crash exit itself: the run row exists before the walk
+does, so it wraps the walk and calls `failCrashedRun` on a throw. The durable path gets that
+from Inngest's failure hook; a manual run has no such hook, and without it the row would sit
+`Running` until the nightly reaper.
+
+The run id is a real `wfr` id, so the `workflow_run_id` claim on every write points at a
+row the matcher can read: a workflow the test triggers is chained and loop-guarded exactly
+as in production. `sourceEventId` keeps the `manual:` prefix. The `workflowLastRun` view
+filters `isTest = false` — a test is the author's experiment, not the workflow's health.
+
 ## Step list ordering
 
 `WorkflowRunSteps` builds its row list using `topologicalNodeOrder(definition)` from

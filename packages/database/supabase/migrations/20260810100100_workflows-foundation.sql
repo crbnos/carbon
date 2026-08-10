@@ -119,6 +119,9 @@ CREATE TABLE "workflowRun" (
     "status" TEXT NOT NULL DEFAULT 'Queued'
         CHECK ("status" IN ('Queued', 'Running', 'Succeeded', 'Failed', 'Blocked', 'Skipped')),
     "statusReason" TEXT,
+    -- A builder test run has real side effects, so it gets a real row. This flag is
+    -- the only thing separating it from a run the matcher queued.
+    "isTest" BOOLEAN NOT NULL DEFAULT FALSE,
     -- Not FKs: a retention purge of an aged-out ancestor would cascade to newer
     -- descendants, and SET NULL would make NULL ambiguous with "I am the root".
     "rootRunId" TEXT,
@@ -192,13 +195,21 @@ CREATE INDEX "workflowTriggerEvent_workflowId_idx"
 
 CREATE INDEX "workflowRun_companyId_workflowId_idx"
     ON "workflowRun" ("companyId", "workflowId", "createdAt" DESC);
+-- The global run log at /x/workflows/runs filters companyId alone and sorts
+-- createdAt DESC, which the index above cannot serve: it orders by workflowId first.
+CREATE INDEX "workflowRun_companyId_createdAt_idx"
+    ON "workflowRun" ("companyId", "createdAt" DESC);
 CREATE INDEX "workflowRun_companyId_status_idx" ON "workflowRun" ("companyId", "status");
 CREATE INDEX "workflowRun_rootRunId_idx" ON "workflowRun" ("rootRunId");
-CREATE INDEX "workflowRun_purge_idx" ON "workflowRun" ("status", "completedAt");
+-- hasActiveRun runs once per due workflow per scheduler wake. Partial, because
+-- non-terminal runs are a tiny fraction of the table and this stays hot.
+CREATE INDEX "workflowRun_active_idx" ON "workflowRun" ("companyId", "workflowId")
+    WHERE "status" IN ('Queued', 'Running');
 CREATE INDEX "workflowRun_eventId_idx" ON "workflowRun" ("companyId", "eventId");
 CREATE INDEX "workflowRun_ownerId_idx" ON "workflowRun" ("ownerId");
 
-CREATE INDEX "workflowStepRun_companyId_idx" ON "workflowStepRun" ("companyId");
+-- No companyId-alone index on workflowStepRun: every query filters runId (covered
+-- below) or id (the PK), and this is the highest-insert table in the subsystem.
 CREATE INDEX "workflowStepRun_runId_idx"
     ON "workflowStepRun" ("runId", "companyId", "sequence");
 

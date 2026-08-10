@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
-import { executeManualWorkflowRun } from "@carbon/jobs/inngest";
+import { executeManualWorkflowRun, noAccess } from "@carbon/jobs/inngest";
 import { datetime } from "@carbon/utils";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
@@ -17,7 +17,14 @@ import {
 } from "@carbon/workflows";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getWorkflow, workflowTestRunValidator } from "~/modules/workflows";
+import { getUserClaims } from "~/modules/users/users.server";
+import {
+  getWorkflow,
+  getWorkflowRunSteps,
+  getWorkflowVersionOwnership,
+  MAX_RUN_STEPS,
+  workflowTestRunValidator
+} from "~/modules/workflows";
 import { workflowTestRunInputSchema } from "~/modules/workflows/workflows.models";
 import { path } from "~/utils/path";
 
@@ -118,8 +125,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return refuse(first ?? "That test run could not be started");
   }
 
-  const { nodes, edges, eventId, triggerNodeId, triggerInput, previousValue } =
-    validation.data;
+  const {
+    versionId,
+    nodes,
+    edges,
+    eventId,
+    triggerNodeId,
+    triggerInput,
+    previousValue
+  } = validation.data;
+
+  // The run row points at this version, so a forged id would file one workflow's
+  // history under another's. The FK only enforces the company.
+  const version = await getWorkflowVersionOwnership(
+    gate.client,
+    versionId,
+    gate.companyId
+  );
+  if (version.error || version.data?.workflowId !== gate.workflow.id) {
+    return refuse("That version does not belong to this workflow", 404);
+  }
 
   let parsed: unknown;
   try {
@@ -157,6 +182,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return refuse("Unknown event");
   }
 
+  // The gate comes before the read, not only inside the walk: `buildTrigger` fetches
+  // the record with service role, and an ordering that only happens to be safe is one
+  // an edit can quietly break. The walk re-checks against live claims.
+  const module = event?.permission;
+  if (module !== undefined) {
+    const claims = await getUserClaims(gate.userId, gate.companyId);
+    const granted = claims.permissions[module]?.view ?? [];
+    if (!granted.includes("0") && !granted.includes(gate.companyId)) {
+      return refuse(noAccess(module), 403);
+    }
+  }
+
   let input: unknown;
   try {
     input = workflowTestRunInputSchema.parse(JSON.parse(triggerInput));
@@ -180,17 +217,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyGroupId: gate.companyGroupId,
     ownerId: gate.userId,
     workflowId: gate.workflow.id,
+    workflowVersionId: versionId,
     eventId: eventId ?? "",
     triggerNodeId,
     trigger: built.trigger,
     logger: console
   });
 
+  // Read back through the same reader the run-history page uses, so the panel and
+  // that page can never disagree about a run the customer can open in both.
+  const steps = await getWorkflowRunSteps(
+    gate.client,
+    result.runId,
+    gate.companyId
+  );
+  const rows = steps.data ?? [];
+
   return data({
     ok: true as const,
+    runId: result.runId,
     status: result.status,
     error: result.error,
-    steps: result.steps
+    steps: rows.slice(0, MAX_RUN_STEPS),
+    truncated: rows.length > MAX_RUN_STEPS
   });
 }
 

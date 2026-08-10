@@ -344,4 +344,43 @@ describe("batch mode", () => {
       item: entityValue("job", "j1")
     });
   });
+
+  // Items are independent; running them one at a time made a 100-item batch take
+  // 100x longer than it needed to. Bounded, though — unbounded fan-out is what
+  // exhausts the run-log pool.
+  it("runs items in overlapping groups without exceeding the cap", async () => {
+    const { ids, step } = harness();
+    let inFlight = 0;
+    let peak = 0;
+
+    vi.mocked(createWorkflowServices).mockReturnValue({
+      runAction: async (_id, inputs) => {
+        inFlight += 1;
+        peak = Math.max(peak, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        inFlight -= 1;
+        const job = inputs.job;
+        return job === undefined
+          ? { ok: false, error: "This turn had no item." }
+          : { ok: true, outputs: { record: job } };
+      },
+      runOperation: async () => ({ ok: false, error: "not stubbed" }),
+      search: async () => ({
+        ok: true,
+        value: jobs(12),
+        matched: 12,
+        dropped: 0
+      })
+    });
+
+    await executeWorkflowRun({ payload, step, logger });
+
+    expect(peak).toBeGreaterThan(1);
+    expect(peak).toBeLessThanOrEqual(5);
+    // Concurrency must not reorder the items: the node's output list is defined to
+    // be in item order, and the step ids are the record of that order.
+    expect(ids.filter((id) => id.startsWith("node:act:"))).toEqual(
+      Array.from({ length: 12 }, (_, i) => `node:act:j${i + 1}`)
+    );
+  });
 });

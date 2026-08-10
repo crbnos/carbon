@@ -221,7 +221,7 @@ export async function getWorkflowRuns(
   let query = client
     .from("workflowRun")
     .select(
-      "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, createdAt, workflow(name)",
+      "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, isTest, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, createdAt, workflow(name)",
       // Estimated, not exact: this table grows with event volume, and `exact` is a
       // COUNT(*) over the company's whole retained history on every page load.
       { count: LIST_COUNT }
@@ -245,7 +245,7 @@ export async function getWorkflowRun(
   return client
     .from("workflowRun")
     .select(
-      "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, compactedAt, createdAt, workflow(name), workflowVersion(versionNumber, formatVersion, nodes, edges)"
+      "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, isTest, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, compactedAt, createdAt, workflow(name), workflowVersion(versionNumber, formatVersion, nodes, edges)"
     )
     .eq("id", id)
     .eq("companyId", companyId)
@@ -401,12 +401,14 @@ export type WorkflowLastRun = NonNullable<
 >[number];
 
 /**
- * The one question `checkWorkflowVersionLock` asks, in one round trip.
+ * Which workflow a version belongs to, and whether that workflow has promoted it.
+ * Answers both "may I write to this version" (the autosave lock) and "is this
+ * version really this workflow's" (the test run) in one round trip.
  *
  * It runs on every autosave — roughly once a second while editing — so it must
  * not pull the version's whole `nodes`/`edges` JSONB just to read a workflow id.
  */
-export async function getWorkflowVersionLockState(
+export async function getWorkflowVersionOwnership(
   client: SupabaseClient<Database>,
   versionId: string,
   companyId: string

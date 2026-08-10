@@ -5816,6 +5816,12 @@ msgstr "अवधि बंद करने से पहले प्रत्�
 msgid "Every row was imported successfully."
 msgstr "हर पंक्ति सफलतापूर्वक आयात की गई।"
 
+msgid "Everything else"
+msgstr ""
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr ""
+
 msgid "Everything from Starter"
 msgstr "स्टार्टर से सब कुछ"
 

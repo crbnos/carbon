@@ -6,7 +6,7 @@ ALTER TABLE "workflowStepRun" ADD COLUMN "detail" JSONB;
 COMMENT ON COLUMN "workflowStepRun"."detail" IS
   'Diagnostics only (per-clause condition evaluation). Never node data - that is "output".';
 
--- The stale-run reaper's predicate is the complement of "workflowRun_purge_idx".
+-- The stale-run reaper needs the non-terminal runs, ordered by age.
 CREATE INDEX "workflowRun_stale_idx" ON "workflowRun" ("createdAt")
   WHERE "status" IN ('Queued', 'Running');
 
@@ -16,7 +16,8 @@ CREATE INDEX "workflowRun_retention_idx"
   ON "workflowRun" (COALESCE("completedAt", "createdAt"))
   WHERE "status" IN ('Succeeded', 'Failed', 'Blocked', 'Skipped');
 
--- Latest run per workflow. PostgREST cannot express latest-per-group.
+-- Latest run per workflow. PostgREST cannot express latest-per-group. Test runs are
+-- excluded: a test is the author's own experiment, not the workflow's health.
 CREATE VIEW "workflowLastRun" WITH (security_invoker = true) AS
 SELECT DISTINCT ON ("companyId", "workflowId")
   "companyId",
@@ -29,4 +30,5 @@ SELECT DISTINCT ON ("companyId", "workflowId")
   "completedAt",
   "durationMs"
 FROM "workflowRun"
+WHERE "isTest" = FALSE
 ORDER BY "companyId", "workflowId", "createdAt" DESC;

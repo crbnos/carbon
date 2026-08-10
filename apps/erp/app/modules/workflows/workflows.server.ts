@@ -14,7 +14,7 @@ import { sql } from "kysely";
 import { getDatabaseClient } from "~/services/database.server";
 import {
   getWorkflowVersion,
-  getWorkflowVersionLockState
+  getWorkflowVersionOwnership
 } from "./workflows.service";
 
 const logger = getLogger("erp", "workflows");
@@ -42,7 +42,7 @@ export async function checkWorkflowVersionLock(
   client: SupabaseClient<Database>,
   { versionId, companyId }: { versionId: string; companyId: string }
 ): Promise<{ ok: boolean; message?: string }> {
-  const state = await getWorkflowVersionLockState(client, versionId, companyId);
+  const state = await getWorkflowVersionOwnership(client, versionId, companyId);
   if (state.error || !state.data) return { ok: true };
 
   const workflow = state.data.workflow as {

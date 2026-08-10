@@ -206,7 +206,7 @@ export default function WorkflowBuilderRoute() {
           </div>
           <Autosave workflowId={workflow.id} versionId={versionId} />
           <LiveValidation />
-          <TestRunDialog workflowId={workflow.id} />
+          <TestRunDialog workflowId={workflow.id} versionId={versionId} />
         </div>
       </WorkflowBuilderProvider>
     </ReactFlowProvider>

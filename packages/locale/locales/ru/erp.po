@@ -5816,6 +5816,12 @@ msgstr "Каждая требуемая задача должна быть за�
 msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
 
+msgid "Everything else"
+msgstr ""
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr ""
+
 msgid "Everything from Starter"
 msgstr "Всё из Starter"
 

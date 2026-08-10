@@ -5816,6 +5816,12 @@ msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
 
+msgid "Everything else"
+msgstr ""
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr ""
+
 msgid "Everything from Starter"
 msgstr "Starter 中的所有功能"
 

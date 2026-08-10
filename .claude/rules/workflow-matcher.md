@@ -62,8 +62,13 @@ returns `[]` and nothing is written at all. An unknown table returns `[]`.
 
 A trigger node declares `Person`, `Automation` or `Both`. The decision is purely the
 presence of the run tag on the announcement: `workflowRunId` set → the write came from a
-running workflow (`Automation`), absent → a person or an integration (`Person`). `Both`
-always survives.
+running workflow (`Automation`), absent → `Person`. `Both` always survives.
+
+`Person` is a misnomer kept for the stored value: it means **not a workflow**, so a human,
+an import, an integration, an API key and a background job all land there. The builder
+shows it as **"Everything else"** for that reason (`TriggerForm.tsx`). Telling those apart
+would need `actorId`, which the queue carries for the audit handler and which neither
+`events/workflow.ts` nor `workflows/moment.ts` parses.
 
 The tag comes from the `workflow_run_id` claim on the caller's JWT.
 `getUserScopedClient(userId, { workflowRunId })` (`packages/auth`) mints it;

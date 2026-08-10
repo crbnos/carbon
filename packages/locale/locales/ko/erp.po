@@ -5816,6 +5816,12 @@ msgstr "기간을 종료하기 전에 모든 필수 작업을 완료하거나 �
 msgid "Every row was imported successfully."
 msgstr "모든 행이 성공적으로 가져와졌습니다."
 
+msgid "Everything else"
+msgstr ""
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr ""
+
 msgid "Everything from Starter"
 msgstr "스타터의 모든 기능 포함"
 

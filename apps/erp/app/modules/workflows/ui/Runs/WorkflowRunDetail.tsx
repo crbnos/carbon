@@ -14,7 +14,7 @@ import type {
 import { useWorkflowLabel } from "../Builder/catalog";
 import { EntityRecordLink } from "./EntityRecordLink";
 import { RunLiveUpdates } from "./RunLiveUpdates";
-import { RunStatus } from "./RunStatus";
+import { RunStatus, TestRunBadge } from "./RunStatus";
 import { runOutcome } from "./runOutcome";
 import { WorkflowRunSteps } from "./WorkflowRunSteps";
 
@@ -122,6 +122,7 @@ export function WorkflowRunDetail({
             <Badge variant="outline">v{versionRow.versionNumber}</Badge>
           )}
           <RunStatus status={run.status} />
+          {run.isTest && <TestRunBadge />}
         </div>
 
         <p

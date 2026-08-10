@@ -30,6 +30,7 @@ type TestRunResponse =
       status: "Succeeded" | "Failed";
       error: string | null;
       steps: TestRunResult["steps"];
+      truncated: boolean;
     }
   | { ok: false; error: string; issues: WorkflowIssue[] };
 
@@ -49,7 +50,13 @@ function entityOutputs(outputs: Record<string, ValueType>) {
  * fetcher whose component unmounts is never told the result, so the run would go out,
  * really happen, and report nothing back.
  */
-export function TestRunDialog({ workflowId }: { workflowId: string }) {
+export function TestRunDialog({
+  workflowId,
+  versionId
+}: {
+  workflowId: string;
+  versionId: string;
+}) {
   const store = useBuilderStoreApi();
   const testRunFor = useBuilderStore((s) => s.testRunFor);
   const fetcher = useFetcher<TestRunResponse>();
@@ -62,12 +69,14 @@ export function TestRunDialog({ workflowId }: { workflowId: string }) {
         ? {
             status: fetcher.data.status,
             steps: fetcher.data.steps,
+            truncated: fetcher.data.truncated,
             error: fetcher.data.error,
             issues: []
           }
         : {
             status: "Failed",
             steps: [],
+            truncated: false,
             error: fetcher.data.error,
             issues: fetcher.data.issues
           }
@@ -81,12 +90,15 @@ export function TestRunDialog({ workflowId }: { workflowId: string }) {
       state.setTestRunStatus("running");
       state.setTestRunResult(null);
       state.closeTestRun();
+      // The run is recorded against the version being edited, so its history row
+      // points at a definition someone can actually open.
+      formData.append("versionId", versionId);
       fetcher.submit(formData, {
         method: "post",
         action: path.to.workflowTestRun(workflowId)
       });
     },
-    [fetcher, store, workflowId]
+    [fetcher, store, versionId, workflowId]
   );
 
   if (testRunFor === null) return null;

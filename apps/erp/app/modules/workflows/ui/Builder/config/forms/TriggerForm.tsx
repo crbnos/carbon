@@ -488,7 +488,7 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
                 value={"Person" satisfies Origin}
                 className="text-xs"
               >
-                <Trans>People</Trans>
+                <Trans>Everything else</Trans>
               </ToggleGroupItem>
               <ToggleGroupItem
                 value={"Automation" satisfies Origin}
@@ -503,6 +503,12 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
                 <Trans>Both</Trans>
               </ToggleGroupItem>
             </ToggleGroup>
+            <p className="text-xs text-muted-foreground">
+              <Trans>
+                Everything else covers people, imports, integrations and the API
+                — anything that is not one of your workflows.
+              </Trans>
+            </p>
           </div>
         </>
       ) : (

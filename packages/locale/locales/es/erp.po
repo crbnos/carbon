@@ -5816,6 +5816,12 @@ msgstr "Todas las tareas requeridas deben estar Completadas u Omitidas antes de 
 msgid "Every row was imported successfully."
 msgstr "Cada fila se importó correctamente."
 
+msgid "Everything else"
+msgstr ""
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr ""
+
 msgid "Everything from Starter"
 msgstr "Todo de Starter"
 

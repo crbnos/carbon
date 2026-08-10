@@ -5816,6 +5816,12 @@ msgstr "Każde wymagane zadanie musi być oznaczone jako Wykonane lub Pominięte
 msgid "Every row was imported successfully."
 msgstr "Każdy wiersz został pomyślnie zaimportowany."
 
+msgid "Everything else"
+msgstr ""
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr ""
+
 msgid "Everything from Starter"
 msgstr "Wszystko z pakietu Starter"
 

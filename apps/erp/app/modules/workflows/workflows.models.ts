@@ -15,6 +15,9 @@ export const workflowDefinitionSaveValidator = z.object({
 });
 
 export const workflowTestRunValidator = z.object({
+  /** The version the run is recorded against. The canvas can be a step ahead of it
+   * — autosave is a second behind — but it is what a reader can open afterwards. */
+  versionId: z.string().min(1),
   nodes: z.string().min(1),
   edges: z.string().min(1),
   formatVersion: zfd.numeric(z.number().int()),

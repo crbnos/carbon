@@ -15,7 +15,14 @@ export const MAX_LIST_ITEMS = 100;
 /** Hop cap, shared with the matcher. */
 export const MAX_CHAIN_DEPTH = 10;
 
-/** Who made the change being watched — a person, the system, or either. */
+/**
+ * Whether the change being watched came from one of this company's workflows.
+ *
+ * The only signal is the run tag on the write, so `Person` means "not a workflow"
+ * — a human, an import, an integration, an API key or a background job all land
+ * there. It is shown as "Everything else", not "People". Telling those apart would
+ * need `actorId`, which nothing here reads.
+ */
 export const originSchema = z.enum(["Person", "Automation", "Both"]);
 export type Origin = z.infer<typeof originSchema>;
 

@@ -94,6 +94,37 @@ the review at all.
 
 ---
 
+## Decisions taken (do not re-raise)
+
+- **P2-4** — test runs write a real `workflowRun` row flagged `isTest`, plus step rows, recorded
+  against the version open in the builder. Folded into the unshipped foundation migration.
+- **P2-6** — keep the two-way origin split as built. `Person` is renamed only in the UI
+  ("Everything else"); actor-level classification would confuse customers more than it helps.
+  Dead `actorId` parses dropped from the two workflow handlers.
+- **P2-9** — **WON'T FIX.** Last-write-wins on the shared canvas is accepted. A stale-version
+  reject is not the right answer; a genuine fix is live collaborative editing over sockets,
+  which is its own project.
+- **P2-10** — **SKIPPED.** Synchronous delete cascade stays. Retention already caps history at
+  90 days, so the row count a delete can face is bounded; revisit only if a delete times out.
+- **P2-15** — batched items run in groups of `BATCH_CONCURRENCY = 5`, not one at a time. Bounded
+  on purpose: unbounded fan-out is the P0-3 pool exhaustion again.
+- **P3-1** — went further than proposed: `records()` AND the whole memory ledger are gone.
+  The durable ledger writes every step row, so `$id.test-run.tsx` reads them back with
+  `getWorkflowRunSteps` — one reader for the panel and the run-history page.
+  `executeManualWorkflowRun` returns `{ runId, status, error }` and closes its own row via
+  `failCrashedRun` on a throw.
+- **P3-2** — `getEntityPath` and `getWorkflowRecordPath` collapsed into one table in
+  `apps/erp/app/utils/entity.ts` (`getRecordPath` by entity name, `getEntityPath` by id prefix).
+  `getItemDetailPath` is **not** merged: it maps an item's *type* to one of five item routes,
+  which is a different question. The review was wrong to group it.
+- **P3-3** — **CANNOT BE WIRED AS REVIEWED.** `workflow-events` needs a live Postgres connection,
+  and no CI job has database credentials; it is also **not** interchangeable with
+  `workflow-trigger-event-drift.sql`, which asks a different question. Both are operational
+  scripts. `packages/checks/AGENTS.md` corrected — it wrongly claimed the SQL invariant ran in CI.
+  Open decision: give the deploy workflow a connection string, or accept manual runs.
+- **P3-5** — **LEAVE AS IS.** Live step updates stay; the run-detail page depends on them and the
+  cost needs production traffic to measure.
+
 ## Suggested order of work
 
 1. **New-2** — resolve the migration-ordering question first; it gates the merge itself.

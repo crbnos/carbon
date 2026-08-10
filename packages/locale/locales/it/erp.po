@@ -5816,6 +5816,12 @@ msgstr "Ogni attività richiesta deve essere Completata o Saltata prima che il p
 msgid "Every row was imported successfully."
 msgstr "Ogni riga è stata importata correttamente."
 
+msgid "Everything else"
+msgstr ""
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr ""
+
 msgid "Everything from Starter"
 msgstr "Tutto da Starter"
 

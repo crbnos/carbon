@@ -9,7 +9,8 @@ const workflowPayloadSchema = z.object({
   // pgmq msg_id is BIGINT, which node-pg hands back as a string.
   msgId: z.coerce.number(),
   companyId: z.string(),
-  actorId: z.string().nullish(),
+  // No `actorId`: origin is decided by the run tag alone, so who the actor was
+  // changes nothing here. The audit handler is what reads it off the queue.
   workflowRunId: z.string().nullish(),
   data: EventSchema
 });

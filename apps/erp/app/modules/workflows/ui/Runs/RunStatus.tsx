@@ -59,6 +59,13 @@ export function RunStatus({ status }: { status: string }) {
   return <Status color={color}>{label}</Status>;
 }
 
+/** A test run really happened and really wrote, so it sits in the same list — this
+ * is what stops it being read as production traffic. */
+export function TestRunBadge() {
+  const { t } = useLingui();
+  return <Status color="yellow">{t`Test`}</Status>;
+}
+
 export function StepStatus({ status }: { status: string }) {
   const { t } = useLingui();
   const s = status as StepStatusValue;

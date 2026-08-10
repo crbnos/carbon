@@ -51,7 +51,8 @@ import { useNotifications, useUser } from "~/hooks";
 import type { ApprovalDocumentType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import type { Notification as NotificationRecord } from "~/types";
-import { getWorkflowRecordPath, path } from "~/utils/path";
+import { getRecordPath } from "~/utils/entity";
+import { path } from "~/utils/path";
 
 type OutstandingTraining = {
   trainingAssignmentId: string;
@@ -412,9 +413,7 @@ function GenericNotification({
       return (
         <Notification
           icon={<LuGitPullRequestArrow />}
-          to={
-            getWorkflowRecordPath(documentType, id) ?? path.to.authenticatedRoot
-          }
+          to={getRecordPath(documentType, id) ?? path.to.authenticatedRoot}
           {...props}
         />
       );

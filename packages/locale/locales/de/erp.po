@@ -5816,6 +5816,12 @@ msgstr "Jede erforderliche Aufgabe muss erledigt oder übersprungen werden, bevo
 msgid "Every row was imported successfully."
 msgstr "Jede Zeile wurde erfolgreich importiert."
 
+msgid "Everything else"
+msgstr ""
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr ""
+
 msgid "Everything from Starter"
 msgstr "Alles aus dem Starter-Plan"
 

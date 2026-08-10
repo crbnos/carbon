@@ -1,3 +1,4 @@
+import { HStack } from "@carbon/react";
 import { formatDateTime, formatDurationMilliseconds } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -17,7 +18,7 @@ import type { WorkflowRun } from "../../workflows.service";
 import { labelText } from "../Builder/nodes/meta";
 import { EntityRecordLink } from "./EntityRecordLink";
 import { RunsLiveUpdates } from "./RunLiveUpdates";
-import { RunStatus } from "./RunStatus";
+import { RunStatus, TestRunBadge } from "./RunStatus";
 
 type WorkflowRunsTableProps = {
   data: WorkflowRun[];
@@ -39,7 +40,10 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
         header: t`Status`,
         cell: ({ row }) => (
           <Hyperlink to={path.to.workflowRun(row.original.id)}>
-            <RunStatus status={row.original.status} />
+            <HStack spacing={2}>
+              <RunStatus status={row.original.status} />
+              {row.original.isTest && <TestRunBadge />}
+            </HStack>
           </Hyperlink>
         ),
         meta: { icon: <LuHash /> }

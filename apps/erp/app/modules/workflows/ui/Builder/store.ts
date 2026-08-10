@@ -29,6 +29,8 @@ export type SaveState = "idle" | "saving" | "saved" | "error";
 export type TestRunResult = {
   status: "Succeeded" | "Failed";
   steps: RunStepView[];
+  /** More steps were written than the reader returned — say so rather than cap silently. */
+  truncated: boolean;
   /** Why it failed — a refused request, or a run that failed before any step ran. */
   error: string | null;
   /** What has to be fixed before it can run at all. Listed in the run panel, not the

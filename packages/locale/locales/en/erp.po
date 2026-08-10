@@ -5816,6 +5816,12 @@ msgstr "Every required task must be Done or Skipped before the period can be clo
 msgid "Every row was imported successfully."
 msgstr "Every row was imported successfully."
 
+msgid "Everything else"
+msgstr "Everything else"
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+
 msgid "Everything from Starter"
 msgstr "Everything from Starter"
 

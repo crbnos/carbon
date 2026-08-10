@@ -5816,6 +5816,12 @@ msgstr "Dönem kapatılmadan önce gerekli tüm görevler Tamamlandı veya Atlan
 msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
 
+msgid "Everything else"
+msgstr ""
+
+msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
+msgstr ""
+
 msgid "Everything from Starter"
 msgstr "Başlangıç'tan her şey"
 

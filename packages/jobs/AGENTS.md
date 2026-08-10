@@ -76,7 +76,9 @@ All entry points call one shared core in `src/workflows/` (`event-ids.ts`, `matc
 `.claude/rules/workflow-matcher.md`.
 
 The engine lives in `src/workflows/engine/` (`walk.ts`, `owner.ts`, `loader.ts`,
-`ledger.ts`, `log.ts`, `execute.ts`) and imports no Inngest either. **A running workflow
+`ledger.ts`, `log.ts`, `execute.ts`, `manual.ts`) and imports no Inngest either.
+`manual.ts` is the builder's test run: the same walk and the same real side effects, so
+it writes the same run history with `workflowRun.isTest = true`. **A running workflow
 acts as its owner**: every business read goes through `getOwnerClient(ownerId, runId)`,
 minted per step and always carrying the run tag. `getJobDatabaseClient()` is allowed in
 the engine only for the two run-log tables — a business read through it bypasses the

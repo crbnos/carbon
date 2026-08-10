@@ -95,7 +95,7 @@ export function TestRunPanel() {
                 definition={definition}
                 compacted={false}
                 stepsPurged={false}
-                truncated={false}
+                truncated={result.truncated}
                 recordNames={{}}
               />
             </>
