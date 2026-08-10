@@ -318,7 +318,7 @@ export default function ReportsIndexRoute() {
   const hasPinned = pinnedReports.length > 0 || pinnedViews.length > 0;
 
   return (
-    <div className="h-[calc(100dvh-var(--header-height))] w-full overflow-y-auto bg-background">
+    <div className="h-[calc(100dvh-var(--header-height))] w-full overflow-y-auto bg-card">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-8">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">
