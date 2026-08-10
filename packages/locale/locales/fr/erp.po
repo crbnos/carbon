@@ -159,6 +159,9 @@ msgstr "{chainLabel}. Envisagez de pointer cette pièce directement vers le succ
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# cours} other {# cours}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} sur {total} phases terminées"
 
@@ -10679,7 +10682,7 @@ msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Page {pdfViewPage} of {documentPageCount}"
 
 msgid "Paid"
-msgstr "Payée"
+msgstr "Payé"
 
 msgid "Paid Date"
 msgstr "Date de paiement"
