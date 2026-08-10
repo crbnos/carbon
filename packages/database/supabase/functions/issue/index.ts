@@ -1009,10 +1009,6 @@ const payloadValidator = z.discriminatedUnion("type", [
         })
       )
       .default([]),
-    // Total time for the whole run, in seconds. Split across served operations
-    // by nested length and posted as production events.
-    setupSeconds: z.number().min(0).optional(),
-    machineSeconds: z.number().min(0).optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -3830,8 +3826,6 @@ serve(async (req: Request) => {
           untrackedConsumed,
           remnants,
           scrap,
-          setupSeconds,
-          machineSeconds,
           companyId,
           userId,
         } = validatedPayload;
@@ -3943,8 +3937,6 @@ serve(async (req: Request) => {
             lines: lineRows.map((line) => ({
               id: line.id,
               jobId: line.jobId ?? null,
-              jobOperationId: line.jobOperationId ?? null,
-              piecesPerParent: Number(line.piecesPerParent ?? 1),
               itemId: line.itemId,
               pieceLength: Number(line.pieceLength),
               quantity: Number(line.quantity),
@@ -3956,8 +3948,6 @@ serve(async (req: Request) => {
             scrap,
             minRemnantLength: Number(cutList.minRemnantLength ?? 0),
             stockLengthByEntity,
-            setupSeconds: setupSeconds ?? 0,
-            machineSeconds: machineSeconds ?? 0,
           });
 
           const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
@@ -4244,75 +4234,12 @@ serve(async (req: Request) => {
               .execute();
           }
 
-          // 5. Close the work orders this run served. Posting a production
-          //    quantity is all that is needed — sync_update_job_operation_quantities
-          //    advances quantityComplete and flips the operation to Done once
-          //    complete + scrapped covers the target.
-          let operationsCredited = 0;
-          for (const completion of plan.operationCompletions) {
-            await trx
-              .insertInto("productionQuantity")
-              .values({
-                id: nanoid(),
-                jobOperationId: completion.jobOperationId,
-                type: "Production",
-                quantity: completion.partsComplete,
-                notes: `Cut list ${cutList.cutListId}`,
-                companyId,
-                createdBy: userId,
-              })
-              .execute();
-            operationsCredited += 1;
-          }
-
-          // Post the run's setup + machine time onto each served operation.
-          // Each allocation becomes a productionEvent carrying the operation's
-          // own work center, so it costs out at that center's rate through the
-          // normal post-production-event path. duration is in seconds.
-          const timeEventIds: string[] = [];
-          if (plan.timeAllocations.length > 0) {
-            const operationIds = [
-              ...new Set(plan.timeAllocations.map((a) => a.jobOperationId)),
-            ];
-            const operations = await trx
-              .selectFrom("jobOperation")
-              .where("id", "in", operationIds)
-              .select(["id", "workCenterId"])
-              .execute();
-            const workCenterByOperation = new Map(
-              operations.map((op) => [op.id, op.workCenterId])
-            );
-
-            for (const allocation of plan.timeAllocations) {
-              const workCenterId = workCenterByOperation.get(
-                allocation.jobOperationId
-              );
-              // No work center means no rate to cost against — skip rather than
-              // post an event that can never settle.
-              if (!workCenterId) continue;
-              const endTime = new Date();
-              const startTime = new Date(
-                endTime.getTime() - allocation.seconds * 1000
-              );
-              const eventId = nanoid();
-              await trx
-                .insertInto("productionEvent")
-                .values({
-                  id: eventId,
-                  jobOperationId: allocation.jobOperationId,
-                  type: allocation.type,
-                  startTime: startTime.toISOString(),
-                  endTime: endTime.toISOString(),
-                  duration: allocation.seconds,
-                  workCenterId,
-                  notes: `Cut list ${cutList.cutListId}`,
-                  companyId,
-                  createdBy: userId,
-                })
-                .execute();
-              timeEventIds.push(eventId);
-            }
-          }
+          // Operation completion and the run's time split are the batch's
+          // concern now, not the cut list's — that was the duplicate of Job
+          // Operation Batching we removed (#1010). When the whole list is cut
+          // and it backs a batch, we hand off to batch-operations `complete`
+          // after commit (below). The cut list itself owns only the material
+          // consumption + remnants posted above.
 
           await trx
             .updateTable("cutList")
@@ -4331,28 +4258,50 @@ serve(async (req: Request) => {
 
           return {
             status: plan.status,
+            jobOperationBatchId: cutList.jobOperationBatchId ?? null,
             remnantsCreated,
             actualYieldPct: plan.actualYieldPct,
             allocations: plan.allocations.length,
             scrapped: plan.scrap.length,
-            operationsCredited,
-            timeEventIds,
           };
         });
 
-        // Cost the time events to the GL after commit, the same path MES uses
-        // when an operator ends a production event. Kept outside the
-        // transaction: a GL posting failure shouldn't roll back the confirmed
-        // cut — the events remain and can be reposted.
-        for (const productionEventId of outcome.timeEventIds) {
-          const posted = await client.functions.invoke("post-production-event", {
-            body: { productionEventId, userId, companyId },
-          });
-          if (posted.error) {
-            console.error(
-              `Cut list ${cutListId}: failed to post production event ${productionEventId}`,
-              posted.error
-            );
+        // When the whole list is cut and it backs an operation batch, close the
+        // batch: batch-operations `complete` credits each member operation and
+        // splits the run's time across them from the timers that ran while the
+        // batch was active. A partial confirmation leaves the batch open for the
+        // operator to finish on the batch board. Kept outside the transaction: a
+        // completion failure shouldn't roll back the confirmed cut.
+        if (outcome.status === "Completed" && outcome.jobOperationBatchId) {
+          const members = await db
+            .selectFrom("jobOperation")
+            .where("jobOperationBatchId", "=", outcome.jobOperationBatchId)
+            .where("companyId", "=", companyId)
+            .select(["id", "operationQuantity"])
+            .execute();
+
+          if (members.length > 0) {
+            const completed = await client.functions.invoke("batch-operations", {
+              body: {
+                type: "complete",
+                batchId: outcome.jobOperationBatchId,
+                members: members.map((op) => ({
+                  jobOperationId: op.id,
+                  quantity: Math.max(
+                    0,
+                    Math.round(Number(op.operationQuantity ?? 0))
+                  ),
+                })),
+                companyId,
+                userId,
+              },
+            });
+            if (completed.error) {
+              console.error(
+                `Cut list ${cutListId}: failed to complete batch ${outcome.jobOperationBatchId}`,
+                completed.error
+              );
+            }
           }
         }
 
@@ -4363,7 +4312,6 @@ serve(async (req: Request) => {
               ? "Cut list completed"
               : "Cut list progress recorded",
           ...outcome,
-          timeEventsPosted: outcome.timeEventIds.length,
         });
       }
     }
