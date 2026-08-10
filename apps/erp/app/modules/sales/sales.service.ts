@@ -5756,6 +5756,7 @@ export async function upsertSalesOrderPayment(
 
 export async function insertSalesRFQ(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     customerId: string;
     companyId: string;
@@ -5766,6 +5767,8 @@ export async function insertSalesRFQ(
     locationId?: string;
     salesPersonId?: string;
     customerContactId?: string;
+    customerEngineeringContactId?: string;
+    customerLocationId?: string;
     customerReference?: string;
     status?: "Draft" | "Ready for Quote" | "Quoted" | "Closed";
     notes?: string;
@@ -5796,46 +5799,60 @@ export async function insertSalesRFQ(
     rfqId = seq.data;
   }
 
-  const opportunity = await client
-    .from("opportunity")
-    .insert({
-      companyId: input.companyId,
-      customerId: input.customerId
-    })
-    .select("id")
-    .single();
+  const rfqDate =
+    input.rfqDate ??
+    datetime
+      .today(await getCompanyTimeZone(client, input.companyId))
+      .toString();
 
-  if (opportunity.error) return { data: null, error: opportunity.error };
+  // The opportunity and the RFQ are created together or not at all — a failed
+  // RFQ insert must not leave an orphaned opportunity behind.
+  try {
+    const rfq = await db.transaction().execute(async (trx) => {
+      const opportunity = await trx
+        .insertInto("opportunity")
+        .values({
+          companyId: input.companyId,
+          customerId: input.customerId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
 
-  const rfq = await client
-    .from("salesRfq")
-    .insert({
-      rfqId,
-      customerId: input.customerId,
-      customerContactId: input.customerContactId,
-      customerReference: input.customerReference,
-      rfqDate:
-        input.rfqDate ??
-        datetime
-          .today(await getCompanyTimeZone(client, input.companyId))
-          .toString(),
-      expirationDate: input.expirationDate,
-      locationId: input.locationId,
-      salesPersonId: input.salesPersonId,
-      status: input.status ?? "Draft",
-      internalNotes: input.notes ?? null,
-      customFields: input.customFields,
-      opportunityId: opportunity.data.id,
-      companyId: input.companyId,
-      createdBy: input.createdBy,
-      updatedBy: input.createdBy
-    })
-    .select("id, rfqId")
-    .single();
+      return trx
+        .insertInto("salesRfq")
+        .values({
+          rfqId,
+          customerId: input.customerId,
+          customerContactId: input.customerContactId,
+          customerEngineeringContactId: input.customerEngineeringContactId,
+          customerLocationId: input.customerLocationId,
+          customerReference: input.customerReference,
+          rfqDate,
+          expirationDate: input.expirationDate,
+          locationId: input.locationId,
+          salesPersonId: input.salesPersonId,
+          status: input.status ?? "Draft",
+          internalNotes: input.notes ?? null,
+          customFields: input.customFields,
+          opportunityId: opportunity.id,
+          companyId: input.companyId,
+          createdBy: input.createdBy,
+          updatedBy: input.createdBy
+        })
+        .returning(["id", "rfqId"])
+        .executeTakeFirstOrThrow();
+    });
 
-  if (rfq.error) return { data: null, error: rfq.error };
-
-  return { data: { id: rfq.data.id, rfqId: rfq.data.rfqId }, error: null };
+    return { data: { id: rfq.id, rfqId: rfq.rfqId }, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error ? err.message : "Failed to insert sales RFQ"
+      } as PostgrestError
+    };
+  }
 }
 
 export async function updateSalesRFQ(
@@ -5845,6 +5862,8 @@ export async function updateSalesRFQ(
     updatedBy: string;
     customerId?: string;
     customerContactId?: string | null;
+    customerEngineeringContactId?: string | null;
+    customerLocationId?: string | null;
     customerReference?: string | null;
     rfqDate?: string;
     expirationDate?: string | null;
