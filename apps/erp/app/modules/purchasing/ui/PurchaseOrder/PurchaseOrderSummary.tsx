@@ -6,7 +6,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  cn,
   Heading,
   HStack,
   Table,
@@ -624,16 +623,7 @@ const PurchaseOrderSummary = ({
             </span>
             <span>{formatter.format(paidAmount)}</span>
           </HStack>
-          <HStack
-            className={cn(
-              "justify-between text-sm w-full",
-              isFullyPaid
-                ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                : balanceRemaining >= 0.01
-                  ? "text-amber-600 dark:text-amber-400 font-medium"
-                  : "text-muted-foreground"
-            )}
-          >
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>
               <Trans>Balance Remaining:</Trans>
             </span>
