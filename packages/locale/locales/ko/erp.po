@@ -159,6 +159,9 @@ msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
