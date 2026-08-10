@@ -102,7 +102,7 @@ export const financialReportParamsValidator = z.object({
 export const analyticsReportKeys = [
   "revenue",
   "expenses",
-  "cogs",
+  "assets",
   "inventory-change",
   "scrap"
 ] as const;
@@ -135,17 +135,17 @@ export const analyticsReports: Record<
   expenses: {
     key: "expenses",
     accountScope: { classes: ["Expense"] },
-    defaultRows: ["et:Supplier"]
+    defaultRows: ["et:Location"]
   },
-  cogs: {
-    key: "cogs",
-    accountScope: { types: ["Cost of Goods Sold"] },
-    defaultRows: ["et:ItemPostingGroup"]
+  assets: {
+    key: "assets",
+    accountScope: { classes: ["Asset"] },
+    defaultRows: ["et:Location"]
   },
   "inventory-change": {
     key: "inventory-change",
     accountScope: { types: ["Inventory"] },
-    defaultRows: ["et:ItemPostingGroup"]
+    defaultRows: ["et:Location"]
   },
   scrap: {
     key: "scrap",
@@ -156,6 +156,19 @@ export const analyticsReports: Record<
 
 export const pivotMeasures = ["amount", "quantity", "count"] as const;
 export type PivotMeasure = (typeof pivotMeasures)[number];
+
+// Purchases report — grouping fields (columns on the purchase invoice line /
+// its header), NOT journal dimensions. The purchases pivot RPC resolves each
+// to a value id; the report reuses the shared PivotState (rows/columnAxis hold
+// these field keys).
+export const purchaseGroupingFields = [
+  "supplier",
+  "supplierType",
+  "item",
+  "itemPostingGroup",
+  "costCenter"
+] as const;
+export type PurchaseGroupingField = (typeof purchaseGroupingFields)[number];
 
 export const pivotColumnAxisValidator = z.discriminatedUnion("type", [
   z.object({
@@ -171,6 +184,9 @@ export type PivotColumnAxis = z.infer<typeof pivotColumnAxisValidator>;
 //   col     = "period:month|quarter|year" or "dim:<dimensionId>"
 //   measure = amount|quantity|count; pct=1 for percent-of-column-total
 //   filters = URL-encoded JSON [{dimensionId, valueIds}]
+//   accounts = comma-separated account ids narrowing the report's account scope
+//   sort    = "<columnKey|__total__|__label__>:asc|desc" (row sort; omit for the
+//             default ABS(measure) descending)
 //   startDate/endDate — same params ReportFilters writes
 export const pivotStateValidator = z.object({
   rows: z.array(z.string().min(1)).max(2).default([]),
@@ -180,6 +196,14 @@ export const pivotStateValidator = z.object({
   }),
   measure: z.enum(pivotMeasures).default("amount"),
   percentOfTotal: z.boolean().default(false),
+  // Row sort. null (the default) means ABS(measure) descending, Unassigned last.
+  sort: z
+    .object({
+      key: z.string().min(1),
+      direction: z.enum(["asc", "desc"])
+    })
+    .nullable()
+    .default(null),
   filters: z
     .array(
       z.object({
@@ -187,9 +211,51 @@ export const pivotStateValidator = z.object({
         valueIds: z.array(z.string()).min(1)
       })
     )
-    .default([])
+    .default([]),
+  // Optional narrowing to specific accounts WITHIN the report's account scope
+  // (base classes/types define the universe; these intersect it).
+  accountIds: z.array(z.string().min(1)).default([])
 });
 export type PivotState = z.infer<typeof pivotStateValidator>;
+
+/**
+ * Overlay the client-only display params (`measure` / `pct` / `sort`) from the
+ * URL onto a loader-derived PivotState. The analytics report loaders skip
+ * revalidation when only these change (see `revalidateIgnoringPivotDisplay`), so
+ * the route component re-derives them here to stay in sync without a refetch.
+ * A server-affecting change always re-runs the loader, so the passed `state` is
+ * the correct base (saved view / default) for any display param absent from the
+ * URL — including after the user clears a sort.
+ */
+export function applyPivotDisplayParams(
+  state: PivotState,
+  searchParams: URLSearchParams
+): PivotState {
+  const measureParam = searchParams.get("measure");
+  const measure = (pivotMeasures as readonly string[]).includes(
+    measureParam ?? ""
+  )
+    ? (measureParam as PivotMeasure)
+    : state.measure;
+
+  const pctParam = searchParams.get("pct");
+  const percentOfTotal =
+    pctParam !== null ? pctParam === "1" : state.percentOfTotal;
+
+  const sortParam = searchParams.get("sort");
+  let sort = state.sort;
+  if (sortParam !== null) {
+    const separator = sortParam.lastIndexOf(":");
+    const key = separator > 0 ? sortParam.slice(0, separator) : "";
+    const direction = separator > 0 ? sortParam.slice(separator + 1) : "";
+    sort =
+      key && (direction === "asc" || direction === "desc")
+        ? { key, direction }
+        : state.sort;
+  }
+
+  return { ...state, measure, percentOfTotal, sort };
+}
 
 export const reportViewVisibilities = ["Private", "Company"] as const;
 

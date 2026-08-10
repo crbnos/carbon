@@ -15,6 +15,7 @@ import type {
   getJournalEntry,
   getPaymentTerms,
   getPeriodCloseReadiness,
+  getPurchaseLinePivotLines,
   getReportViews
 } from "./accounting.service";
 
@@ -71,6 +72,10 @@ export type DimensionPivot = NonNullable<
 
 export type DimensionPivotLine = NonNullable<
   Awaited<ReturnType<typeof getDimensionPivotLines>>["data"]
+>[number];
+
+export type PurchaseLinePivotLine = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseLinePivotLines>>["data"]
 >[number];
 
 export type ReportView = NonNullable<

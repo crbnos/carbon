@@ -48,6 +48,10 @@ msgstr "(исключено для этого клиента)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {Эта деталь находится на 1 открытой уведомлении об изменении} other {Эта деталь находится на # открытых уведомлениях об изменении}}"
 
+#. placeholder {0}: selectedAccountIds.length
+msgid "{0} accounts"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} назад"
@@ -862,6 +866,9 @@ msgstr "После"
 msgid "After (calculation method)"
 msgstr "После (способ расчета)"
 
+msgid "Aging"
+msgstr ""
+
 msgid "Agree on the scope"
 msgstr "Согласовать область охвата"
 
@@ -879,6 +886,9 @@ msgstr "Все"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Все {total} этапов завершены. Отличная работа — ваша команда готова к работе."
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "Все действия выбраны"
@@ -1262,6 +1272,11 @@ msgstr "Вы уверены, что хотите удалить {0}? Это де
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить {name}? Это действие невозможно отменить."
+
+#. placeholder {0}: activeView.name
+#. placeholder {0}: viewPendingDelete.name
+msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2053,6 +2068,9 @@ msgstr "По дате документа"
 msgid "By Due Date"
 msgstr "По дате платежа"
 
+msgid "By field"
+msgstr ""
+
 msgid "By Item"
 msgstr "По товару"
 
@@ -2410,6 +2428,9 @@ msgstr "Очистить поиск"
 msgid "Clear search query"
 msgstr "Очистить поисковый запрос"
 
+msgid "Clear selection"
+msgstr ""
+
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Погасите этот счет с помощью опубликованных кредитов стороны, а также наличных средств. Кредиты применяются напрямую — публикация не требуется."
 
@@ -2470,9 +2491,6 @@ msgstr "Облако или ваша собственная размещённа
 msgid "Code"
 msgstr "Код"
 
-msgid "COGS"
-msgstr "COGS"
-
 msgid "Collapse"
 msgstr "Свернуть"
 
@@ -2499,6 +2517,9 @@ msgstr "Свернуть поддерево"
 
 msgid "Column dimension"
 msgstr "Измерение столбца"
+
+msgid "Column field"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "Видимость и порядок столбцов"
@@ -3079,9 +3100,6 @@ msgstr "Себестоимость реализованной продукции
 
 msgid "Cost of Goods Sold (default)"
 msgstr "Себестоимость реализованной продукции (по умолчанию)"
-
-msgid "Cost of goods sold by item group, item, or any dimension"
-msgstr "Себестоимость продаж по группе товара, товару или любому измерению"
 
 msgid "Cost of Sales"
 msgstr "Себестоимость продаж"
@@ -3897,6 +3915,10 @@ msgstr "Определите многоуровневые спецификаци
 msgid "Delete"
 msgstr "Удалить"
 
+#. placeholder {0}: view.name
+msgid "Delete {0}"
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "Удалить {name}"
 
@@ -4182,6 +4204,9 @@ msgstr "Удалить тип"
 
 msgid "Delete Unit of Measure"
 msgstr "Удалить единицу измерения"
+
+msgid "Delete view"
+msgstr ""
 
 msgid "Delete View"
 msgstr "Удалить представление"
@@ -6864,9 +6889,6 @@ msgstr "Инвентаризация и закупки с автоматизир
 msgid "Inventory balances"
 msgstr "Остатки запасов"
 
-msgid "Inventory Change"
-msgstr "Изменение инвентаризации"
-
 msgid "Inventory Control"
 msgstr "Контроль запасов"
 
@@ -8744,6 +8766,9 @@ msgstr "Процесс не выбран"
 msgid "No production events recorded for this operation yet"
 msgstr "Для этой операции еще не записано ни одного производственного события"
 
+msgid "No purchases in this period"
+msgstr ""
+
 msgid "No Quote"
 msgstr "Нет предложения"
 
@@ -9657,6 +9682,7 @@ msgid "Pin"
 msgstr "Закрепить"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Pin {0}"
 msgstr "Закрепить {0}"
 
@@ -10185,6 +10211,9 @@ msgstr "Единица покупки:"
 
 msgid "Purchased"
 msgstr "Закупленный"
+
+msgid "Purchases"
+msgstr ""
 
 msgid "purchasing"
 msgstr "Закупки и стоимость проданных товаров"
@@ -12001,9 +12030,6 @@ msgstr "Показано первые 500 строк"
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Показано топ 1000 групп по сумме"
 
-msgid "Showing the top 50 columns"
-msgstr "Показано топ 50 столбцов"
-
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Отображается как бледный фон на каждой странице сгенерированных PDF-файлов"
 
@@ -12073,8 +12099,11 @@ msgstr "Пропущено"
 msgid "Slack"
 msgstr "Slack"
 
-msgid "Slice expenses by supplier, supplier type, or any dimension"
-msgstr "Разделить расходы по поставщику, типу поставщика или любому измерению"
+msgid "Slice asset activity by location, item, or any dimension"
+msgstr ""
+
+msgid "Slice expenses by location, cost center, or any dimension"
+msgstr ""
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Разделить доход по клиенту, типу клиента или любому измерению"
@@ -12159,6 +12188,9 @@ msgstr "Конкретные клиенты"
 
 msgid "Specific Items"
 msgstr "Конкретные товары"
+
+msgid "Spend by supplier, item, or category — your biggest cost drivers"
+msgstr ""
 
 msgid "Split"
 msgstr "Разделить"
@@ -14125,6 +14157,7 @@ msgid "Unpick {0}"
 msgstr "Отменить выбор {0}"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Открепить {0}"
 
@@ -14610,9 +14643,6 @@ msgstr "Просмотр графика отслеживания"
 
 msgid "View Transfer"
 msgstr "Просмотр передачи"
-
-msgid "Views"
-msgstr "Представления"
 
 msgid "Visibilities"
 msgstr "Видимость"

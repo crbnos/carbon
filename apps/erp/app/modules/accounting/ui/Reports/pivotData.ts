@@ -32,7 +32,12 @@ export type PivotRowNode = {
 
 export const UNASSIGNED_COLUMN_KEY = "__unassigned__";
 
-const DEFAULT_MAX_COLUMNS = 50;
+// Sentinel sort keys for the non-value columns. Any other sort key is a real
+// columnKey. See buildPivotTree's `sort` arg.
+export const TOTAL_SORT_KEY = "__total__";
+export const LABEL_SORT_KEY = "__label__";
+
+export type PivotSort = { key: string; direction: "asc" | "desc" };
 
 function zeroCell(): PivotCellValue {
   return { amount: 0, quantity: 0, lineCount: 0 };
@@ -90,7 +95,8 @@ export function buildPivotTree(args: {
   measure: PivotMeasure; // used for sorting by ABS(total[measure])
   unassignedLabel?: string; // default "Unassigned" — caller passes the localized string
   totalLabel?: string; // default "Total" — label of the single row when rowCount is 0
-  maxColumns?: number; // default 50
+  maxColumns?: number; // optional; omit for no cap. Keeps the top-N by ABS(measure).
+  sort?: PivotSort | null; // row sort; omit/null for the default ABS(measure) desc
 }): {
   flatTree: FlatTreeItem<PivotRowNode>[];
   columnKeys: string[];
@@ -101,7 +107,8 @@ export function buildPivotTree(args: {
   const { groups, valueNames, rowCount, measure } = args;
   const unassignedLabel = args.unassignedLabel ?? "Unassigned";
   const totalLabel = args.totalLabel ?? "Total";
-  const maxColumns = args.maxColumns ?? DEFAULT_MAX_COLUMNS;
+  const maxColumns = args.maxColumns;
+  const sort = args.sort ?? null;
 
   // Column totals + grand total over ALL data (hidden columns included).
   const columnTotals: Record<string, PivotCellValue> = {};
@@ -120,7 +127,7 @@ export function buildPivotTree(args: {
   // chosen measure) — but always keep the Unassigned column when present.
   let visibleColumnKeys = args.columnKeys;
   let columnsTruncated = false;
-  if (args.columnKeys.length > maxColumns) {
+  if (maxColumns !== undefined && args.columnKeys.length > maxColumns) {
     columnsTruncated = true;
     const hasUnassigned = args.columnKeys.includes(UNASSIGNED_COLUMN_KEY);
     const ranked = args.columnKeys
@@ -150,8 +157,16 @@ export function buildPivotTree(args: {
   const labelFor = (id: string | null): string =>
     id === null ? unassignedLabel : (valueNames[id] ?? id);
 
-  // Sort: Unassigned last at its level, then ABS(total[measure]) descending,
-  // then label ascending for determinism.
+  // Value read for the active column sort (signed, unlike the ABS default).
+  const sortValue = (agg: RowAgg): number =>
+    sort && sort.key === TOTAL_SORT_KEY
+      ? getPivotMeasureValue(agg.total, measure)
+      : getPivotMeasureValue(agg.cells[sort?.key ?? ""], measure);
+
+  // Sort: Unassigned always last at its level. With no explicit sort, order by
+  // ABS(total[measure]) descending, then label ascending for determinism. With
+  // an explicit sort, order by the chosen column/total (signed) or label in the
+  // requested direction, tie-broken by label ascending.
   const sortRowEntries = (
     entries: [string | null, RowAgg][]
   ): [string | null, RowAgg][] =>
@@ -159,10 +174,23 @@ export function buildPivotTree(args: {
       const [aId, aAgg] = a;
       const [bId, bAgg] = b;
       if ((aId === null) !== (bId === null)) return aId === null ? 1 : -1;
-      const diff =
-        Math.abs(getPivotMeasureValue(bAgg.total, measure)) -
-        Math.abs(getPivotMeasureValue(aAgg.total, measure));
-      if (diff !== 0) return diff;
+
+      if (!sort) {
+        const diff =
+          Math.abs(getPivotMeasureValue(bAgg.total, measure)) -
+          Math.abs(getPivotMeasureValue(aAgg.total, measure));
+        if (diff !== 0) return diff;
+        return labelFor(aId).localeCompare(labelFor(bId));
+      }
+
+      const direction = sort.direction === "asc" ? 1 : -1;
+
+      if (sort.key === LABEL_SORT_KEY) {
+        return direction * labelFor(aId).localeCompare(labelFor(bId));
+      }
+
+      const diff = sortValue(aAgg) - sortValue(bAgg);
+      if (diff !== 0) return direction * diff;
       return labelFor(aId).localeCompare(labelFor(bId));
     });
 

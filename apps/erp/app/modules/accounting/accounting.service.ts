@@ -910,6 +910,38 @@ function pivotAccountScopeParams(
   return { p_account_ids: scrapAccountIds ?? [] };
 }
 
+/**
+ * The leaf accounts inside a report's account scope — the universe the
+ * per-report account multi-select filters within. Mirrors the scope selectors
+ * pivotAccountScopeParams uses: class-scoped and type-scoped reports resolve to
+ * the matching active, non-group accounts; the scrap scope resolves to the
+ * scrapAccount ids the loader already fetched. Returns the raw supabase
+ * response so callers keep the `{ data, error }` convention.
+ */
+export async function getAccountsInScope(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  scope: AnalyticsAccountScope,
+  scrapAccountIds?: string[]
+) {
+  let query = client
+    .from("account")
+    .select("id, number, name")
+    .eq("companyGroupId", companyGroupId)
+    .eq("active", true)
+    .eq("isGroup", false);
+
+  if ("classes" in scope) {
+    query = query.in("class", scope.classes);
+  } else if ("types" in scope) {
+    query = query.in("accountType", scope.types);
+  } else {
+    query = query.in("id", scrapAccountIds ?? []);
+  }
+
+  return query.order("number", { ascending: true });
+}
+
 export async function getDimensionPivot(
   client: SupabaseClient<Database>,
   args: {
@@ -960,7 +992,10 @@ export async function getDimensionPivot(
     ...(state.columnAxis.type === "period" && args.periodEnds
       ? { p_period_ends: args.periodEnds }
       : {}),
-    ...(state.filters.length > 0 ? { p_filters: state.filters } : {})
+    ...(state.filters.length > 0 ? { p_filters: state.filters } : {}),
+    ...(state.accountIds.length > 0
+      ? { p_filter_account_ids: state.accountIds }
+      : {})
   });
 
   if (result.error) return { data: null, error: result.error };
@@ -1096,6 +1131,7 @@ export async function getDimensionPivotLines(
     columnValueIsNull?: boolean;
     columnPeriodStart?: string;
     columnPeriodEnd?: string;
+    accountIds?: string[];
   }
 ): Promise<{
   data: DimensionPivotLineRow[] | null;
@@ -1123,6 +1159,196 @@ export async function getDimensionPivotLines(
     ...(args.columnDimension
       ? { p_column_dimension: args.columnDimension }
       : {}),
+    ...(args.columnValue ? { p_column_value: args.columnValue } : {}),
+    ...(args.columnPeriodStart
+      ? { p_column_period_start: args.columnPeriodStart }
+      : {}),
+    ...(args.columnPeriodEnd
+      ? { p_column_period_end: args.columnPeriodEnd }
+      : {}),
+    ...((args.accountIds ?? []).length > 0
+      ? { p_filter_account_ids: args.accountIds }
+      : {})
+  });
+
+  if (result.error) return { data: null, error: result.error };
+
+  // Re-sort authoritatively in TS — never trust RPC ordering.
+  const lines = [...(result.data ?? [])].sort((a, b) => {
+    if (a.postingDate !== b.postingDate) {
+      return a.postingDate < b.postingDate ? -1 : 1;
+    }
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+
+  return { data: lines, error: null };
+}
+
+// -- Purchases analytics (purchase invoice subledger) --
+// RPCs in 20260809211324_purchases-pivot-report.sql. Gross invoiced spend
+// from purchaseInvoiceLine — NOT the GL journal (AP nets on payment; item
+// tags don't live on AP lines). Output matches DimensionPivotData so the
+// existing PivotTree renders it unchanged.
+
+// Grouping-field key → the entityType used to resolve value ids to names.
+const PURCHASE_FIELD_ENTITY_TYPE: Record<string, string> = {
+  supplier: "Supplier",
+  supplierType: "SupplierType",
+  item: "Item",
+  itemPostingGroup: "ItemPostingGroup",
+  costCenter: "CostCenter"
+};
+
+export async function getPurchaseLinePivot(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    startDate: string;
+    endDate: string;
+    periodEnds?: string[];
+    state: PivotState;
+  }
+): Promise<{
+  data: DimensionPivotData | null;
+  error: PostgrestError | null;
+}> {
+  const { state } = args;
+  const columnField =
+    state.columnAxis.type === "dimension"
+      ? state.columnAxis.dimensionId
+      : undefined;
+
+  const result = await client.rpc("purchaseLineDimensionPivot", {
+    p_company_id: args.companyId,
+    p_start: args.startDate,
+    p_end: args.endDate,
+    ...(state.rows[0] ? { p_row_field_1: state.rows[0] } : {}),
+    ...(state.rows[1] ? { p_row_field_2: state.rows[1] } : {}),
+    ...(columnField ? { p_column_field: columnField } : {}),
+    ...(state.columnAxis.type === "period" && args.periodEnds
+      ? { p_period_ends: args.periodEnds }
+      : {})
+  });
+
+  if (result.error) return { data: null, error: result.error };
+
+  const rows = (result.data ?? []) as Array<{
+    rowValue1Id: string | null;
+    rowValue2Id: string | null;
+    columnKey: string | null;
+    amount: number | string;
+    quantity: number | string;
+    lineCount: number | string;
+    hasMore: boolean;
+  }>;
+
+  const hasMore = rows.some((r) => r.hasMore);
+
+  const groups: DimensionPivotGroup[] = rows
+    .map((r) => ({
+      rowValue1Id: r.rowValue1Id,
+      rowValue2Id: r.rowValue2Id,
+      columnKey: r.columnKey,
+      amount: Number(r.amount),
+      quantity: Number(r.quantity),
+      lineCount: Number(r.lineCount)
+    }))
+    .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+
+  const hasUnassignedColumn = groups.some((g) => g.columnKey === null);
+  let columnKeys: string[];
+  if (state.columnAxis.type === "period") {
+    columnKeys = [...(args.periodEnds ?? [])];
+    for (const g of groups) {
+      if (g.columnKey !== null && !columnKeys.includes(g.columnKey)) {
+        columnKeys.push(g.columnKey);
+      }
+    }
+  } else {
+    const totalsByColumn = new Map<string, number>();
+    for (const g of groups) {
+      if (g.columnKey === null) continue;
+      totalsByColumn.set(
+        g.columnKey,
+        (totalsByColumn.get(g.columnKey) ?? 0) + g.amount
+      );
+    }
+    columnKeys = [...totalsByColumn.keys()].sort(
+      (a, b) =>
+        Math.abs(totalsByColumn.get(b) ?? 0) -
+        Math.abs(totalsByColumn.get(a) ?? 0)
+    );
+  }
+  if (hasUnassignedColumn) columnKeys.push(UNASSIGNED_COLUMN_KEY);
+
+  // Resolve value ids to names, batched by each grouping field's entityType.
+  const valueIdsByField = new Map<string, Set<string>>();
+  const collect = (field: string | undefined, valueId: string | null) => {
+    if (!field || !valueId) return;
+    const set = valueIdsByField.get(field) ?? new Set<string>();
+    set.add(valueId);
+    valueIdsByField.set(field, set);
+  };
+  for (const g of groups) {
+    collect(state.rows[0], g.rowValue1Id);
+    collect(state.rows[1], g.rowValue2Id);
+    collect(columnField, g.columnKey);
+  }
+
+  let valueNames: Record<string, string> = {};
+  if (valueIdsByField.size > 0) {
+    valueNames = await resolveDimensionValueNames(
+      client,
+      [...valueIdsByField.entries()]
+        .map(([field, ids]) => ({
+          entityType: PURCHASE_FIELD_ENTITY_TYPE[field] ?? "",
+          valueIds: [...ids]
+        }))
+        .filter((request) => request.entityType)
+    );
+  }
+
+  return {
+    data: { groups, columnKeys, hasMore, valueNames },
+    error: null
+  };
+}
+
+type PurchaseLinePivotRow =
+  Database["public"]["Functions"]["purchaseLinePivotLines"]["Returns"][number];
+
+export async function getPurchaseLinePivotLines(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    startDate: string;
+    endDate: string;
+    // A field is passed ONLY when the cell constrains that axis: with a value
+    // for a normal cell, or without one for the Unassigned bucket (the RPC
+    // then matches rows whose field IS NULL). Omit the field for row totals /
+    // parent cells to leave the axis unconstrained.
+    rowField1?: string;
+    rowValue1?: string;
+    rowField2?: string;
+    rowValue2?: string;
+    columnField?: string;
+    columnValue?: string;
+    columnPeriodStart?: string;
+    columnPeriodEnd?: string;
+  }
+): Promise<{
+  data: PurchaseLinePivotRow[] | null;
+  error: PostgrestError | null;
+}> {
+  const result = await client.rpc("purchaseLinePivotLines", {
+    p_company_id: args.companyId,
+    p_start: args.startDate,
+    p_end: args.endDate,
+    ...(args.rowField1 ? { p_row_field_1: args.rowField1 } : {}),
+    ...(args.rowValue1 ? { p_row_value_1: args.rowValue1 } : {}),
+    ...(args.rowField2 ? { p_row_field_2: args.rowField2 } : {}),
+    ...(args.rowValue2 ? { p_row_value_2: args.rowValue2 } : {}),
+    ...(args.columnField ? { p_column_field: args.columnField } : {}),
     ...(args.columnValue ? { p_column_value: args.columnValue } : {}),
     ...(args.columnPeriodStart
       ? { p_column_period_start: args.columnPeriodStart }

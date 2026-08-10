@@ -18,6 +18,7 @@ import {
  * - reportKey            — one of analyticsReportKeys
  * - startDate / endDate  — YYYY-MM-DD report range (required)
  * - filters              — JSON-encoded [{ dimensionId, valueIds }] (optional)
+ * - accounts             — comma-separated account ids narrowing the scope (optional)
  * - r1d / r1 / r1null=1  — row dimension 1 id + value id; r1null (with no r1)
  *                          means the Unassigned bucket — the dimension is sent
  *                          to the RPC without a value. Omitting r1d leaves the
@@ -90,7 +91,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     columnValue: optional("colv"),
     columnValueIsNull: searchParams.get("colvnull") === "1",
     columnPeriodStart: optional("colstart"),
-    columnPeriodEnd: optional("colend")
+    columnPeriodEnd: optional("colend"),
+    accountIds: searchParams.get("accounts")?.split(",").filter(Boolean) ?? []
   });
 
   // The drawer shows its empty state rather than a route error boundary

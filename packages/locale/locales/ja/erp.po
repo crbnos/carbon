@@ -48,6 +48,10 @@ msgstr "(このお客様では除外されています)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {このパーツは1つの開いた変更通知に含まれています} other {このパーツは#つの開いた変更通知に含まれています}}"
 
+#. placeholder {0}: selectedAccountIds.length
+msgid "{0} accounts"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0}前"
@@ -862,6 +866,9 @@ msgstr "後"
 msgid "After (calculation method)"
 msgstr "後（計算方法）"
 
+msgid "Aging"
+msgstr ""
+
 msgid "Agree on the scope"
 msgstr "スコープに同意する"
 
@@ -879,6 +886,9 @@ msgstr "すべて"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "すべての{total}フェーズが完了しました。素晴らしい仕事です。チームが稼働しています。"
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "すべてのアクションが選択されました"
@@ -1262,6 +1272,11 @@ msgstr "本当に{0}を削除してもよろしいですか？この操作は取
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "本当に{name}を削除してもよろしいですか？この操作は取り消せません。"
+
+#. placeholder {0}: activeView.name
+#. placeholder {0}: viewPendingDelete.name
+msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2053,6 +2068,9 @@ msgstr "ドキュメント日付別"
 msgid "By Due Date"
 msgstr "支払期日別"
 
+msgid "By field"
+msgstr ""
+
 msgid "By Item"
 msgstr "品目別"
 
@@ -2410,6 +2428,9 @@ msgstr "検索をクリア"
 msgid "Clear search query"
 msgstr "検索クエリをクリア"
 
+msgid "Clear selection"
+msgstr ""
+
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "このインボイスをパーティの転記済みクレジットおよび現金でクリアします。クレジットは直接適用されます — 転記は不要です。"
 
@@ -2470,9 +2491,6 @@ msgstr "クラウド、またはセルフホストされた環境。"
 msgid "Code"
 msgstr "コード"
 
-msgid "COGS"
-msgstr "売上原価"
-
 msgid "Collapse"
 msgstr "折りたたむ"
 
@@ -2499,6 +2517,9 @@ msgstr "サブツリーを折りたたむ"
 
 msgid "Column dimension"
 msgstr "列ディメンション"
+
+msgid "Column field"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "列の表示と順序"
@@ -3079,9 +3100,6 @@ msgstr "売上原価（COGS）"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "売上原価（デフォルト）"
-
-msgid "Cost of goods sold by item group, item, or any dimension"
-msgstr "品目グループ、品目、またはディメンション別の売上原価"
 
 msgid "Cost of Sales"
 msgstr "売上原価"
@@ -3897,6 +3915,10 @@ msgstr "複数レベルのBOMおよびプロセス表(製造方法)を定義す�
 msgid "Delete"
 msgstr "削除"
 
+#. placeholder {0}: view.name
+msgid "Delete {0}"
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "{name}を削除"
 
@@ -4182,6 +4204,9 @@ msgstr "タイプを削除"
 
 msgid "Delete Unit of Measure"
 msgstr "測定単位を削除"
+
+msgid "Delete view"
+msgstr ""
 
 msgid "Delete View"
 msgstr "ビューを削除"
@@ -6864,9 +6889,6 @@ msgstr "在庫と購買、自動計画機能付き"
 msgid "Inventory balances"
 msgstr "在庫残高"
 
-msgid "Inventory Change"
-msgstr "在庫変更"
-
 msgid "Inventory Control"
 msgstr "在庫管理"
 
@@ -8744,6 +8766,9 @@ msgstr "プロセスが選択されていません"
 msgid "No production events recorded for this operation yet"
 msgstr "この操作で記録された生産イベントはまだありません"
 
+msgid "No purchases in this period"
+msgstr ""
+
 msgid "No Quote"
 msgstr "見積なし"
 
@@ -9657,6 +9682,7 @@ msgid "Pin"
 msgstr "ピン"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Pin {0}"
 msgstr "{0}をピン留"
 
@@ -10185,6 +10211,9 @@ msgstr "購入単位:"
 
 msgid "Purchased"
 msgstr "購入済み"
+
+msgid "Purchases"
+msgstr ""
 
 msgid "purchasing"
 msgstr "購買と売上原価"
@@ -12001,9 +12030,6 @@ msgstr "最初の 500 行を表示中"
 msgid "Showing the top 1,000 groups by amount"
 msgstr "金額別上位 1,000 グループを表示中"
 
-msgid "Showing the top 50 columns"
-msgstr "上位 50 列を表示中"
-
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "生成されたPDFの各ページの背景に薄く表示されます"
 
@@ -12073,8 +12099,11 @@ msgstr "スキップ"
 msgid "Slack"
 msgstr "Slack"
 
-msgid "Slice expenses by supplier, supplier type, or any dimension"
-msgstr "仕入先、仕入先タイプ、またはディメンション別に経費をスライス"
+msgid "Slice asset activity by location, item, or any dimension"
+msgstr ""
+
+msgid "Slice expenses by location, cost center, or any dimension"
+msgstr ""
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "顧客、顧客タイプ、またはディメンション別に売上をスライス"
@@ -12159,6 +12188,9 @@ msgstr "特定の顧客"
 
 msgid "Specific Items"
 msgstr "特定の品目"
+
+msgid "Spend by supplier, item, or category — your biggest cost drivers"
+msgstr ""
 
 msgid "Split"
 msgstr "分割"
@@ -14125,6 +14157,7 @@ msgid "Unpick {0}"
 msgstr "ピック解除 {0}"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "{0}をピン留め解除"
 
@@ -14610,9 +14643,6 @@ msgstr "トレーサビリティグラフを表示"
 
 msgid "View Transfer"
 msgstr "転送を表示"
-
-msgid "Views"
-msgstr "ビュー"
 
 msgid "Visibilities"
 msgstr "可視性"

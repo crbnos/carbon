@@ -48,6 +48,10 @@ msgstr "(이 고객에게는 제외됨)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {이 부품은 1개의 미완료 변경 공지에 포함되어 있습니다} other {이 부품은 #개의 미완료 변경 공지에 포함되어 있습니다}}"
 
+#. placeholder {0}: selectedAccountIds.length
+msgid "{0} accounts"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} 전"
@@ -862,6 +866,9 @@ msgstr "이후"
 msgid "After (calculation method)"
 msgstr "이후(계산 방법)"
 
+msgid "Aging"
+msgstr ""
+
 msgid "Agree on the scope"
 msgstr "범위에 합의"
 
@@ -879,6 +886,9 @@ msgstr "전체"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "{total}단계가 모두 완료되었습니다. 수고하셨습니다 — 팀이 이제 정상 가동 중입니다."
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "모든 조치가 선택됨"
@@ -1262,6 +1272,11 @@ msgstr "{0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "{name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+
+#. placeholder {0}: activeView.name
+#. placeholder {0}: viewPendingDelete.name
+msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2053,6 +2068,9 @@ msgstr "문서 날짜 기준"
 msgid "By Due Date"
 msgstr "만기일 기준"
 
+msgid "By field"
+msgstr ""
+
 msgid "By Item"
 msgstr "항목별"
 
@@ -2410,6 +2428,9 @@ msgstr "검색어 지우기"
 msgid "Clear search query"
 msgstr "검색 쿼리 지우기"
 
+msgid "Clear selection"
+msgstr ""
+
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "이 인보이스를 현금뿐 아니라 거래처의 전기된 크레딧으로도 정리하세요. 크레딧은 별도 전기 없이 바로 적용됩니다."
 
@@ -2470,9 +2491,6 @@ msgstr "클라우드 또는 자체 호스팅 환경."
 msgid "Code"
 msgstr "코드"
 
-msgid "COGS"
-msgstr ""
-
 msgid "Collapse"
 msgstr "접기"
 
@@ -2498,6 +2516,9 @@ msgid "Collapse subtree"
 msgstr "하위 트리 접기"
 
 msgid "Column dimension"
+msgstr ""
+
+msgid "Column field"
 msgstr ""
 
 msgid "Column visibility and order"
@@ -3079,9 +3100,6 @@ msgstr "매출원가(COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "매출원가(기본값)"
-
-msgid "Cost of goods sold by item group, item, or any dimension"
-msgstr ""
 
 msgid "Cost of Sales"
 msgstr "매출원가"
@@ -3897,6 +3915,10 @@ msgstr "다단계 자재명세서(BOM)와 공정(BOP)을 정의하세요(제작 
 msgid "Delete"
 msgstr "삭제"
 
+#. placeholder {0}: view.name
+msgid "Delete {0}"
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "{name} 삭제"
 
@@ -4182,6 +4204,9 @@ msgstr "유형 삭제"
 
 msgid "Delete Unit of Measure"
 msgstr "측정 단위 삭제"
+
+msgid "Delete view"
+msgstr ""
 
 msgid "Delete View"
 msgstr "보기 삭제"
@@ -6864,9 +6889,6 @@ msgstr "자동화된 계획을 갖춘 재고 및 구매"
 msgid "Inventory balances"
 msgstr "재고 잔액"
 
-msgid "Inventory Change"
-msgstr ""
-
 msgid "Inventory Control"
 msgstr "재고 관리"
 
@@ -8744,6 +8766,9 @@ msgstr "프로세스를 선택하지 않았습니다"
 msgid "No production events recorded for this operation yet"
 msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습니다"
 
+msgid "No purchases in this period"
+msgstr ""
+
 msgid "No Quote"
 msgstr "견적 없음"
 
@@ -9657,6 +9682,7 @@ msgid "Pin"
 msgstr "핀"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Pin {0}"
 msgstr "{0} 고정"
 
@@ -10185,6 +10211,9 @@ msgstr "구매 단위:"
 
 msgid "Purchased"
 msgstr "구매됨"
+
+msgid "Purchases"
+msgstr ""
 
 msgid "purchasing"
 msgstr "구매"
@@ -12001,9 +12030,6 @@ msgstr ""
 msgid "Showing the top 1,000 groups by amount"
 msgstr ""
 
-msgid "Showing the top 50 columns"
-msgstr ""
-
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"
 
@@ -12073,7 +12099,10 @@ msgstr "건너뜀"
 msgid "Slack"
 msgstr "Slack"
 
-msgid "Slice expenses by supplier, supplier type, or any dimension"
+msgid "Slice asset activity by location, item, or any dimension"
+msgstr ""
+
+msgid "Slice expenses by location, cost center, or any dimension"
 msgstr ""
 
 msgid "Slice revenue by customer, customer type, or any dimension"
@@ -12159,6 +12188,9 @@ msgstr "특정 고객"
 
 msgid "Specific Items"
 msgstr "특정 품목"
+
+msgid "Spend by supplier, item, or category — your biggest cost drivers"
+msgstr ""
 
 msgid "Split"
 msgstr "분할"
@@ -14125,6 +14157,7 @@ msgid "Unpick {0}"
 msgstr "{0} 피킹 취소"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "{0} 고정 해제"
 
@@ -14610,9 +14643,6 @@ msgstr "이력추적 그래프 보기"
 
 msgid "View Transfer"
 msgstr "이동 보기"
-
-msgid "Views"
-msgstr ""
 
 msgid "Visibilities"
 msgstr "공개 범위"

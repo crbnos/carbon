@@ -48,6 +48,10 @@ msgstr "(इस ग्राहक के लिए बाहर रखा ग�
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {यह भाग 1 खुली परिवर्तन सूचना पर है} other {यह भाग # खुली परिवर्तन सूचनाओं पर है}}"
 
+#. placeholder {0}: selectedAccountIds.length
+msgid "{0} accounts"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} पहले"
@@ -862,6 +866,9 @@ msgstr "के बाद"
 msgid "After (calculation method)"
 msgstr "बाद में (गणना विधि)"
 
+msgid "Aging"
+msgstr ""
+
 msgid "Agree on the scope"
 msgstr "दायरे पर सहमति दें"
 
@@ -879,6 +886,9 @@ msgstr "सभी"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "सभी {total} चरण पूरे हो गए। शानदार काम — आपकी टीम चल रही है।"
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "सभी कार्य चयनित"
@@ -1262,6 +1272,11 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप {name} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
+
+#. placeholder {0}: activeView.name
+#. placeholder {0}: viewPendingDelete.name
+msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2053,6 +2068,9 @@ msgstr "दस्तावेज़ तारीख के अनुसार"
 msgid "By Due Date"
 msgstr "देय तारीख के अनुसार"
 
+msgid "By field"
+msgstr ""
+
 msgid "By Item"
 msgstr "आइटम के अनुसार"
 
@@ -2410,6 +2428,9 @@ msgstr "खोज साफ़ करें"
 msgid "Clear search query"
 msgstr "खोज क्वेरी साफ़ करें"
 
+msgid "Clear selection"
+msgstr ""
+
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "इस चालान को पार्टी के पोस्ट किए गए क्रेडिट के साथ-साथ नकद से साफ़ करें। क्रेडिट सीधे लागू होते हैं — कोई पोस्टिंग की आवश्यकता नहीं है।"
 
@@ -2470,9 +2491,6 @@ msgstr "क्लाउड, या आपका स्व-होस्ट कि
 msgid "Code"
 msgstr "कोड"
 
-msgid "COGS"
-msgstr ""
-
 msgid "Collapse"
 msgstr "संक्षिप्त करें"
 
@@ -2498,6 +2516,9 @@ msgid "Collapse subtree"
 msgstr "सबट्री को संक्षिप्त करें"
 
 msgid "Column dimension"
+msgstr ""
+
+msgid "Column field"
 msgstr ""
 
 msgid "Column visibility and order"
@@ -3079,9 +3100,6 @@ msgstr "बेची गई वस्तुओं की लागत (COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "बेची गई वस्तुओं की लागत (डिफ़ॉल्ट)"
-
-msgid "Cost of goods sold by item group, item, or any dimension"
-msgstr ""
 
 msgid "Cost of Sales"
 msgstr "बिक्री की लागत"
@@ -3897,6 +3915,10 @@ msgstr "बहु-स्तरीय BOMs और Bill of Process (make methods) 
 msgid "Delete"
 msgstr "हटाएं"
 
+#. placeholder {0}: view.name
+msgid "Delete {0}"
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "{name} को हटाएं"
 
@@ -4182,6 +4204,9 @@ msgstr "प्रकार हटाएं"
 
 msgid "Delete Unit of Measure"
 msgstr "माप की इकाई हटाएं"
+
+msgid "Delete view"
+msgstr ""
 
 msgid "Delete View"
 msgstr "दृश्य हटाएं"
@@ -6864,9 +6889,6 @@ msgstr "इन्वेंटरी और खरीद, स्वचालि�
 msgid "Inventory balances"
 msgstr "इन्वेंटरी बैलेंस"
 
-msgid "Inventory Change"
-msgstr ""
-
 msgid "Inventory Control"
 msgstr "इन्वेंटरी नियंत्रण"
 
@@ -8744,6 +8766,9 @@ msgstr "कोई प्रक्रिया चयनित नहीं ह�
 msgid "No production events recorded for this operation yet"
 msgstr "इस ऑपरेशन के लिए अभी तक कोई उत्पादन घटना रिकॉर्ड नहीं की गई है"
 
+msgid "No purchases in this period"
+msgstr ""
+
 msgid "No Quote"
 msgstr "कोई उद्धरण नहीं"
 
@@ -9657,6 +9682,7 @@ msgid "Pin"
 msgstr "पिन"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Pin {0}"
 msgstr "{0} को पिन करें"
 
@@ -10185,6 +10211,9 @@ msgstr "खरीद इकाई:"
 
 msgid "Purchased"
 msgstr "खरीदा गया"
+
+msgid "Purchases"
+msgstr ""
 
 msgid "purchasing"
 msgstr "क्रय और बेचे गए माल की लागत"
@@ -12001,9 +12030,6 @@ msgstr ""
 msgid "Showing the top 1,000 groups by amount"
 msgstr ""
 
-msgid "Showing the top 50 columns"
-msgstr ""
-
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "जनरेट की गई PDF के हर पेज के पीछे हल्की पृष्ठभूमि के रूप में दिखाया जाता है"
 
@@ -12073,7 +12099,10 @@ msgstr "छोड़ा गया"
 msgid "Slack"
 msgstr "Slack"
 
-msgid "Slice expenses by supplier, supplier type, or any dimension"
+msgid "Slice asset activity by location, item, or any dimension"
+msgstr ""
+
+msgid "Slice expenses by location, cost center, or any dimension"
 msgstr ""
 
 msgid "Slice revenue by customer, customer type, or any dimension"
@@ -12159,6 +12188,9 @@ msgstr "विशिष्ट ग्राहक"
 
 msgid "Specific Items"
 msgstr "विशिष्ट आइटम"
+
+msgid "Spend by supplier, item, or category — your biggest cost drivers"
+msgstr ""
 
 msgid "Split"
 msgstr "विभाजित करें"
@@ -14125,6 +14157,7 @@ msgid "Unpick {0}"
 msgstr "अनपिक {0}"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "{0} को अनपिन करें"
 
@@ -14610,9 +14643,6 @@ msgstr "ट्रेसेबिलिटी ग्राफ देखें"
 
 msgid "View Transfer"
 msgstr "ट्रांसफर देखें"
-
-msgid "Views"
-msgstr ""
 
 msgid "Visibilities"
 msgstr "दृश्यता"

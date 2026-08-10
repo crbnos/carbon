@@ -76401,6 +76401,7 @@ export type Database = {
           p_company_group_id: string
           p_company_id: string
           p_end: string
+          p_filter_account_ids?: string[]
           p_filters?: Json
           p_group_limit?: number
           p_period_ends?: string[]
@@ -76430,6 +76431,7 @@ export type Database = {
           p_company_group_id: string
           p_company_id: string
           p_end: string
+          p_filter_account_ids?: string[]
           p_filters?: Json
           p_line_limit?: number
           p_row_dimension_1?: string
@@ -76506,6 +76508,53 @@ export type Database = {
       prevent_posted_sales_invoice_deletion: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
+      }
+      purchaseLineDimensionPivot: {
+        Args: {
+          p_column_field?: string
+          p_company_id: string
+          p_end: string
+          p_group_limit?: number
+          p_period_ends?: string[]
+          p_row_field_1?: string
+          p_row_field_2?: string
+          p_start: string
+        }
+        Returns: {
+          amount: number
+          columnKey: string
+          hasMore: boolean
+          lineCount: number
+          quantity: number
+          rowValue1Id: string
+          rowValue2Id: string
+        }[]
+      }
+      purchaseLinePivotLines: {
+        Args: {
+          p_column_field?: string
+          p_column_period_end?: string
+          p_column_period_start?: string
+          p_column_value?: string
+          p_company_id: string
+          p_end: string
+          p_line_limit?: number
+          p_row_field_1?: string
+          p_row_field_2?: string
+          p_row_value_1?: string
+          p_row_value_2?: string
+          p_start: string
+        }
+        Returns: {
+          amount: number
+          description: string
+          id: string
+          invoiceReadableId: string
+          itemReadableId: string
+          postingDate: string
+          quantity: number
+          supplierName: string
+        }[]
       }
       recompute_service_line_fulfillment: {
         Args: {

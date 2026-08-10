@@ -21,13 +21,13 @@ import {
   LuBookmark,
   LuBoxes,
   LuBriefcase,
-  LuFactory,
   LuFileSpreadsheet,
   LuHandCoins,
   LuPin,
   LuRecycle,
   LuScale,
   LuSearch,
+  LuTrash2,
   LuTrendingUp,
   LuTruck,
   LuUsers
@@ -38,6 +38,7 @@ import type {
   MetaFunction
 } from "react-router";
 import { data, Link, useFetcher, useLoaderData } from "react-router";
+import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import {
   getReportPins,
   getReportViews,
@@ -68,6 +69,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   return {
+    currentUserId: userId,
     pinOverrides: pins.data ?? [],
     savedViews: savedViews.data ?? []
   };
@@ -116,10 +118,20 @@ type ReportDefinition = {
   defaultPinned: boolean;
 };
 
+type SavedView = Awaited<ReturnType<typeof loader>>["savedViews"][number];
+
+// Saved views reuse the reportPin table (free-text reportKey) via a namespaced
+// key, so pinning a view needs no separate schema. Views default to unpinned.
+const viewPinKey = (view: SavedView) => `view:${view.id}`;
+
 export default function ReportsIndexRoute() {
-  const { pinOverrides, savedViews } = useLoaderData<typeof loader>();
+  const { currentUserId, pinOverrides, savedViews } =
+    useLoaderData<typeof loader>();
   const { t } = useLingui();
   const [search, setSearch] = useState("");
+  const [viewPendingDelete, setViewPendingDelete] = useState<SavedView | null>(
+    null
+  );
   const pinFetcher = useFetcher<typeof action>();
 
   // The core financial statements default to pinned; users can pin/unpin from
@@ -183,24 +195,33 @@ export default function ReportsIndexRoute() {
       {
         key: "expenses",
         name: t`Expenses`,
-        description: t`Slice expenses by supplier, supplier type, or any dimension`,
+        description: t`Slice expenses by location, cost center, or any dimension`,
         to: path.to.analyticsReport("expenses"),
         icon: LuTruck,
         category: t`Analytics`,
         defaultPinned: false
       },
       {
-        key: "cogs",
-        name: t`COGS`,
-        description: t`Cost of goods sold by item group, item, or any dimension`,
-        to: path.to.analyticsReport("cogs"),
-        icon: LuFactory,
+        key: "purchases",
+        name: t`Purchases`,
+        description: t`Spend by supplier, item, or category — your biggest cost drivers`,
+        to: path.to.purchasesReport,
+        icon: LuHandCoins,
+        category: t`Analytics`,
+        defaultPinned: false
+      },
+      {
+        key: "assets",
+        name: t`Assets`,
+        description: t`Slice asset activity by location, item, or any dimension`,
+        to: path.to.analyticsReport("assets"),
+        icon: LuBanknote,
         category: t`Analytics`,
         defaultPinned: false
       },
       {
         key: "inventory-change",
-        name: t`Inventory Change`,
+        name: t`Inventory`,
         description: t`What drove inventory up or down, by any dimension`,
         to: path.to.analyticsReport("inventory-change"),
         icon: LuArrowUpDown,
@@ -222,7 +243,7 @@ export default function ReportsIndexRoute() {
         description: t`Open receivables by customer and age`,
         to: path.to.arAging,
         icon: LuHandCoins,
-        category: t`Analytics`,
+        category: t`Aging`,
         defaultPinned: false
       },
       {
@@ -231,7 +252,7 @@ export default function ReportsIndexRoute() {
         description: t`Open payables by supplier and age`,
         to: path.to.apAging,
         icon: LuBanknote,
-        category: t`Analytics`,
+        category: t`Aging`,
         defaultPinned: false
       }
     ],
@@ -257,6 +278,21 @@ export default function ReportsIndexRoute() {
     );
   };
 
+  const isViewPinned = (view: SavedView): boolean => {
+    const key = viewPinKey(view);
+    if (pinFetcher.formData && pinFetcher.formData.get("reportKey") === key) {
+      return pinFetcher.formData.get("pinned") === "true";
+    }
+    return pinOverrides.find((p) => p.reportKey === key)?.pinned ?? false;
+  };
+
+  const toggleViewPin = (view: SavedView, pinned: boolean) => {
+    pinFetcher.submit(
+      { reportKey: viewPinKey(view), pinned: String(pinned) },
+      { method: "post", action: path.to.reports }
+    );
+  };
+
   const filtered = useMemo(() => {
     const lower = search.trim().toLowerCase();
     if (!lower) return reports;
@@ -277,12 +313,14 @@ export default function ReportsIndexRoute() {
     return [...result.entries()];
   }, [filtered]);
 
-  const pinned = reports.filter(isPinned);
+  const pinnedReports = reports.filter(isPinned);
+  const pinnedViews = savedViews.filter(isViewPinned);
+  const hasPinned = pinnedReports.length > 0 || pinnedViews.length > 0;
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-background">
-      <div className="mx-auto flex w-full max-w-6xl flex-col p-8">
-        <div className="mb-8 flex items-center justify-between gap-4">
+    <div className="h-[calc(100dvh-var(--header-height))] w-full overflow-y-auto bg-background">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-8">
+        <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">
             <Trans>Reporting</Trans>
           </h1>
@@ -298,39 +336,39 @@ export default function ReportsIndexRoute() {
           </InputGroup>
         </div>
 
-        {pinned.length > 0 && (
-          <>
+        {hasPinned && (
+          <div>
             <SectionHeading>
               <LuPin className="h-3 w-3" />
               <Trans>Pinned</Trans>
             </SectionHeading>
-            <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {pinned.map((report) => (
-                <Link
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {pinnedReports.map((report) => (
+                <PinnedCard
                   key={report.key}
                   to={report.to}
-                  prefetch="intent"
-                  className="group flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-border bg-card/70 p-4 backdrop-blur-md transition-colors duration-200 hover:border-foreground/20 hover:bg-accent/40"
-                >
-                  <span className="flex items-center gap-3 overflow-hidden">
-                    <span className="shrink-0 rounded-lg border border-border p-2.5 transition-colors group-hover:border-foreground/20">
-                      <report.icon className="text-xl" />
-                    </span>
-                    <span className="truncate text-sm font-medium tracking-tight">
-                      {report.name}
-                    </span>
-                  </span>
-                  <PinToggle
-                    report={report}
-                    pinned
-                    onToggle={togglePin}
-                    unpinLabel={t`Unpin ${report.name}`}
-                    pinLabel={t`Pin ${report.name}`}
-                  />
-                </Link>
+                  icon={report.icon}
+                  name={report.name}
+                  pinned
+                  onToggle={(next) => togglePin(report, next)}
+                  pinLabel={t`Pin ${report.name}`}
+                  unpinLabel={t`Unpin ${report.name}`}
+                />
+              ))}
+              {pinnedViews.map((view) => (
+                <PinnedCard
+                  key={view.id}
+                  to={`${path.to.analyticsReport(view.reportKey)}?view=${view.id}`}
+                  icon={LuBookmark}
+                  name={view.name}
+                  pinned
+                  onToggle={(next) => toggleViewPin(view, next)}
+                  pinLabel={t`Pin ${view.name}`}
+                  unpinLabel={t`Unpin ${view.name}`}
+                />
               ))}
             </div>
-          </>
+          </div>
         )}
 
         {categories.map(([category, categoryReports]) => {
@@ -340,38 +378,39 @@ export default function ReportsIndexRoute() {
             categoryReports.some((report) => report.key === view.reportKey)
           );
           return (
-            <div key={category} className="mb-8">
-              <SectionHeading>{category}</SectionHeading>
-              <div className="overflow-hidden rounded-lg border border-border">
-                {categoryReports.map((report, index) => (
-                  <Link
-                    key={report.key}
-                    to={report.to}
-                    prefetch="intent"
-                    className={
-                      "flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
-                      (index > 0 ? " border-t border-border" : "")
-                    }
-                  >
-                    <report.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="text-sm font-medium">{report.name}</span>
-                    <span className="truncate text-sm text-muted-foreground">
-                      {report.description}
-                    </span>
-                    <span className="ml-auto">
-                      <PinToggle
-                        report={report}
-                        pinned={isPinned(report)}
-                        onToggle={togglePin}
-                        unpinLabel={t`Unpin ${report.name}`}
-                        pinLabel={t`Pin ${report.name}`}
-                      />
-                    </span>
-                  </Link>
-                ))}
+            <div key={category} className="flex flex-col gap-8">
+              <div>
+                <SectionHeading>{category}</SectionHeading>
+                <div className="overflow-hidden rounded-lg border border-border">
+                  {categoryReports.map((report, index) => (
+                    <Link
+                      key={report.key}
+                      to={report.to}
+                      prefetch="intent"
+                      className={
+                        "flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
+                        (index > 0 ? " border-t border-border" : "")
+                      }
+                    >
+                      <report.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="text-sm font-medium">{report.name}</span>
+                      <span className="truncate text-sm text-muted-foreground">
+                        {report.description}
+                      </span>
+                      <span className="ml-auto">
+                        <PinToggle
+                          pinned={isPinned(report)}
+                          onToggle={(next) => togglePin(report, next)}
+                          unpinLabel={t`Unpin ${report.name}`}
+                          pinLabel={t`Pin ${report.name}`}
+                        />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
               </div>
               {categoryViews.length > 0 && (
-                <div className="mt-4">
+                <div>
                   <SectionHeading>
                     <LuBookmark className="h-3 w-3" />
                     <Trans>Saved Views</Trans>
@@ -396,13 +435,33 @@ export default function ReportsIndexRoute() {
                             )?.name
                           }
                         </span>
-                        {view.visibility === "Company" && (
-                          <span className="ml-auto">
+                        <span className="ml-auto flex items-center gap-1">
+                          {view.visibility === "Company" && (
                             <Badge variant="secondary">
                               <Trans>Shared</Trans>
                             </Badge>
-                          </span>
-                        )}
+                          )}
+                          <PinToggle
+                            pinned={isViewPinned(view)}
+                            onToggle={(next) => toggleViewPin(view, next)}
+                            unpinLabel={t`Unpin ${view.name}`}
+                            pinLabel={t`Pin ${view.name}`}
+                          />
+                          {view.createdBy === currentUserId && (
+                            <IconButton
+                              aria-label={t`Delete ${view.name}`}
+                              variant="ghost"
+                              size="sm"
+                              className="text-muted-foreground/50 hover:text-destructive-foreground"
+                              icon={<LuTrash2 />}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setViewPendingDelete(view);
+                              }}
+                            />
+                          )}
+                        </span>
                       </Link>
                     ))}
                   </div>
@@ -418,22 +477,69 @@ export default function ReportsIndexRoute() {
           </p>
         )}
       </div>
+      {viewPendingDelete && (
+        <ConfirmDelete
+          action={path.to.deleteReportView(viewPendingDelete.id)}
+          name={viewPendingDelete.name}
+          text={t`Are you sure you want to delete the "${viewPendingDelete.name}" view? This cannot be undone.`}
+          onCancel={() => setViewPendingDelete(null)}
+          onSubmit={() => setViewPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }
 
-// Sits inside the card/row Link, so it must not trigger navigation. Pinned
-// shows a solid pin; unpinned shows a muted pin that fills in on hover.
-const PinToggle = ({
-  report,
+// A pinned item (report or saved view) rendered as a card in the Pinned grid.
+const PinnedCard = ({
+  to,
+  icon: Icon,
+  name,
   pinned,
   onToggle,
   pinLabel,
   unpinLabel
 }: {
-  report: ReportDefinition;
+  to: string;
+  icon: IconType;
+  name: string;
   pinned: boolean;
-  onToggle: (report: ReportDefinition, pinned: boolean) => void;
+  onToggle: (pinned: boolean) => void;
+  pinLabel: string;
+  unpinLabel: string;
+}) => (
+  <Link
+    to={to}
+    prefetch="intent"
+    className="group flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-border bg-card/70 p-4 backdrop-blur-md transition-colors duration-200 hover:border-foreground/20 hover:bg-accent/40"
+  >
+    <span className="flex items-center gap-3 overflow-hidden">
+      <span className="shrink-0 rounded-lg border border-border p-2.5 transition-colors group-hover:border-foreground/20">
+        <Icon className="text-xl" />
+      </span>
+      <span className="truncate text-sm font-medium tracking-tight">
+        {name}
+      </span>
+    </span>
+    <PinToggle
+      pinned={pinned}
+      onToggle={onToggle}
+      pinLabel={pinLabel}
+      unpinLabel={unpinLabel}
+    />
+  </Link>
+);
+
+// Sits inside the card/row Link, so it must not trigger navigation. Pinned
+// shows a solid pin; unpinned shows a muted pin that fills in on hover.
+const PinToggle = ({
+  pinned,
+  onToggle,
+  pinLabel,
+  unpinLabel
+}: {
+  pinned: boolean;
+  onToggle: (pinned: boolean) => void;
   pinLabel: string;
   unpinLabel: string;
 }) => (
@@ -450,7 +556,7 @@ const PinToggle = ({
     onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
-      onToggle(report, !pinned);
+      onToggle(!pinned);
     }}
   />
 );

@@ -48,6 +48,10 @@ msgstr "(bu müşteri için hariç tutulmuş)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {Bu parça 1 açık değişiklik bildirisinde yer alıyor} other {Bu parça # açık değişiklik bildirisinde yer alıyor}}"
 
+#. placeholder {0}: selectedAccountIds.length
+msgid "{0} accounts"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} önce"
@@ -862,6 +866,9 @@ msgstr "Sonra"
 msgid "After (calculation method)"
 msgstr "Sonra (hesaplama yöntemi)"
 
+msgid "Aging"
+msgstr ""
+
 msgid "Agree on the scope"
 msgstr "Kapsamda anlaş"
 
@@ -879,6 +886,9 @@ msgstr "Tümü"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Tüm {total} aşama tamamlandı. Harika iş — ekibiniz çalışmaya başladı."
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "Tüm eylemler seçildi"
@@ -1262,6 +1272,11 @@ msgstr "Emin misiniz ki {0}'ı silmek istiyorsunuz? Bu geri alınamaz."
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "{name} adlı yedeği silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+
+#. placeholder {0}: activeView.name
+#. placeholder {0}: viewPendingDelete.name
+msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2053,6 +2068,9 @@ msgstr "Belge Tarihine Göre"
 msgid "By Due Date"
 msgstr "Vade Tarihine Göre"
 
+msgid "By field"
+msgstr ""
+
 msgid "By Item"
 msgstr "Ürüne Göre"
 
@@ -2410,6 +2428,9 @@ msgstr "Aramayı temizle"
 msgid "Clear search query"
 msgstr "Arama sorgusunu temizle"
 
+msgid "Clear selection"
+msgstr ""
+
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Bu faturayı tarafın deftere nakledilmiş kredileri ve nakit ile kapatın. Krediler doğrudan uygulanır — deftere nakil gerekmez."
 
@@ -2470,9 +2491,6 @@ msgstr "Bulut veya kendi barındırılan ortamınız."
 msgid "Code"
 msgstr "Kod"
 
-msgid "COGS"
-msgstr ""
-
 msgid "Collapse"
 msgstr "Daralt"
 
@@ -2498,6 +2516,9 @@ msgid "Collapse subtree"
 msgstr "Alt ağacı daralt"
 
 msgid "Column dimension"
+msgstr ""
+
+msgid "Column field"
 msgstr ""
 
 msgid "Column visibility and order"
@@ -3079,9 +3100,6 @@ msgstr "Satılan Malların Maliyeti (COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "Satılan Malların Maliyeti (varsayılan)"
-
-msgid "Cost of goods sold by item group, item, or any dimension"
-msgstr ""
 
 msgid "Cost of Sales"
 msgstr "Satışların Maliyeti"
@@ -3897,6 +3915,10 @@ msgstr "Çok seviyeli BOM'ları ve Bill of Process'i (üretim yöntemlerini) tan
 msgid "Delete"
 msgstr "Sil"
 
+#. placeholder {0}: view.name
+msgid "Delete {0}"
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "{name} sil"
 
@@ -4182,6 +4204,9 @@ msgstr "Türü Sil"
 
 msgid "Delete Unit of Measure"
 msgstr "Ölçü Birimini Sil"
+
+msgid "Delete view"
+msgstr ""
 
 msgid "Delete View"
 msgstr "Görünümü Sil"
@@ -6864,9 +6889,6 @@ msgstr "Envanter ve satın alma, otomatik planlama ile"
 msgid "Inventory balances"
 msgstr "Envanter bakiyeleri"
 
-msgid "Inventory Change"
-msgstr ""
-
 msgid "Inventory Control"
 msgstr "Envanter Kontrolü"
 
@@ -8744,6 +8766,9 @@ msgstr "Hiçbir işlem seçilmedi"
 msgid "No production events recorded for this operation yet"
 msgstr "Bu işlem için henüz üretim etkinliği kaydedilmedi"
 
+msgid "No purchases in this period"
+msgstr ""
+
 msgid "No Quote"
 msgstr "Teklif Yok"
 
@@ -9657,6 +9682,7 @@ msgid "Pin"
 msgstr "Sabitle"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Pin {0}"
 msgstr "Sabitle {0}"
 
@@ -10185,6 +10211,9 @@ msgstr "Satın Alma Birimi:"
 
 msgid "Purchased"
 msgstr "Satın Alındı"
+
+msgid "Purchases"
+msgstr ""
 
 msgid "purchasing"
 msgstr "Satın Alma ve Satılan Malların Maliyeti"
@@ -12001,9 +12030,6 @@ msgstr ""
 msgid "Showing the top 1,000 groups by amount"
 msgstr ""
 
-msgid "Showing the top 50 columns"
-msgstr ""
-
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Oluşturulan PDF'lerin her sayfasının arkasında soluk bir arka plan olarak gösterilir"
 
@@ -12073,7 +12099,10 @@ msgstr "Atlanmış"
 msgid "Slack"
 msgstr "Slack"
 
-msgid "Slice expenses by supplier, supplier type, or any dimension"
+msgid "Slice asset activity by location, item, or any dimension"
+msgstr ""
+
+msgid "Slice expenses by location, cost center, or any dimension"
 msgstr ""
 
 msgid "Slice revenue by customer, customer type, or any dimension"
@@ -12159,6 +12188,9 @@ msgstr "Belirli Müşteriler"
 
 msgid "Specific Items"
 msgstr "Belirli Ürünler"
+
+msgid "Spend by supplier, item, or category — your biggest cost drivers"
+msgstr ""
 
 msgid "Split"
 msgstr "Bölünmüş"
@@ -14125,6 +14157,7 @@ msgid "Unpick {0}"
 msgstr "Çıkart {0}"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Sabitlemeyi Kaldır {0}"
 
@@ -14610,9 +14643,6 @@ msgstr "İzlenebilirlik Grafiğini Görüntüle"
 
 msgid "View Transfer"
 msgstr "Transferi Görüntüle"
-
-msgid "Views"
-msgstr ""
 
 msgid "Visibilities"
 msgstr "Görünürlükler"

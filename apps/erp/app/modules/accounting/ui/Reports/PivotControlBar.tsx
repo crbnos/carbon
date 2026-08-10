@@ -1,8 +1,11 @@
 import {
+  ActionMenu,
   Button,
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuIcon,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -14,18 +17,21 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
-  LuBookmark,
   LuBookmarkPlus,
   LuColumns3,
   LuCornerDownRight,
   LuDownload,
+  LuListFilter,
   LuRows3,
   LuSigma,
+  LuTrash2,
   LuX
 } from "react-icons/lu";
 import { PeriodSelector } from "~/components";
 import { DimensionEntityTypeIcon } from "~/components/Icons";
+import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { useUrlParams } from "~/hooks";
+import { path } from "~/utils/path";
 import type {
   AnalyticsReportKey,
   PivotMeasure,
@@ -40,12 +46,20 @@ export type PivotDimension = NonNullable<
   Awaited<ReturnType<typeof getActiveDimensionsWithValues>>["data"]
 >[number];
 
+export type PivotAccount = {
+  id: string;
+  number: string | null;
+  name: string;
+};
+
 type PivotControlBarProps = {
   reportKey: AnalyticsReportKey;
   dimensions: PivotDimension[];
   state: PivotState;
   savedViews: ReportView[];
   activeViewId?: string;
+  currentUserId: string;
+  accounts: PivotAccount[];
   onDownload: () => void;
 };
 
@@ -55,6 +69,8 @@ const PivotControlBar = ({
   state,
   savedViews,
   activeViewId,
+  currentUserId,
+  accounts,
   onDownload
 }: PivotControlBarProps) => {
   const { t } = useLingui();
@@ -63,6 +79,7 @@ const PivotControlBar = ({
   // Transient interaction state only (like modal open/close) — all report
   // state lives in the URL per the pivot param contract.
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const dimensionById = useMemo(
     () => new Map(dimensions.map((d) => [d.dimensionId, d])),
@@ -136,6 +153,38 @@ const PivotControlBar = ({
     setParams({ col: value === "month" ? undefined : `period:${value}` });
   };
 
+  // -- Accounts --
+  // A subset of the report's account scope. Empty = the full scope (all
+  // accounts); a non-empty set narrows the report to those accounts.
+
+  const accountById = useMemo(
+    () => new Map(accounts.map((a) => [a.id, a])),
+    [accounts]
+  );
+  const selectedAccountIds = state.accountIds.filter((id) =>
+    accountById.has(id)
+  );
+
+  const setAccounts = (ids: string[]) => {
+    setParams({ accounts: ids.length > 0 ? ids.join(",") : undefined });
+  };
+
+  const toggleAccount = (id: string) => {
+    setAccounts(
+      selectedAccountIds.includes(id)
+        ? selectedAccountIds.filter((a) => a !== id)
+        : [...selectedAccountIds, id]
+    );
+  };
+
+  const accountsLabel =
+    selectedAccountIds.length === 0
+      ? t`All accounts`
+      : selectedAccountIds.length === 1
+        ? (accountById.get(selectedAccountIds[0])?.name ??
+          selectedAccountIds[0])
+        : t`${selectedAccountIds.length} accounts`;
+
   // -- Saved views --
 
   const privateViews = savedViews.filter((v) => v.visibility === "Private");
@@ -153,7 +202,9 @@ const PivotControlBar = ({
       col: undefined,
       measure: undefined,
       pct: undefined,
-      filters: undefined
+      filters: undefined,
+      accounts: undefined,
+      sort: undefined
     });
   };
 
@@ -164,6 +215,8 @@ const PivotControlBar = ({
       measure: undefined,
       pct: undefined,
       filters: undefined,
+      accounts: undefined,
+      sort: undefined,
       view: undefined,
       startDate: undefined,
       endDate: undefined
@@ -173,6 +226,7 @@ const PivotControlBar = ({
   return (
     <div className="flex flex-wrap px-4 py-3 items-center gap-2 justify-between bg-card border-b border-border w-full">
       <HStack className="flex-wrap gap-y-2">
+        <PeriodSelector variant="range" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" leftIcon={<LuRows3 />}>
@@ -330,6 +384,46 @@ const PivotControlBar = ({
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+        {accounts.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" leftIcon={<LuListFilter />}>
+                {accountsLabel}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="max-h-80 overflow-y-auto"
+            >
+              <DropdownMenuLabel>
+                <Trans>Accounts</Trans>
+              </DropdownMenuLabel>
+              {selectedAccountIds.length > 0 && (
+                <>
+                  <DropdownMenuItem onClick={() => setAccounts([])}>
+                    <DropdownMenuIcon icon={<LuX />} />
+                    <Trans>Clear selection</Trans>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {accounts.map((account) => (
+                <DropdownMenuCheckboxItem
+                  key={account.id}
+                  checked={selectedAccountIds.includes(account.id)}
+                  onSelect={(event) => {
+                    // Keep the menu open so several accounts can be toggled.
+                    event.preventDefault();
+                    toggleAccount(account.id);
+                  }}
+                >
+                  {account.number ? `${account.number} · ` : ""}
+                  {account.name}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <Switch
           variant="small"
           checked={state.percentOfTotal}
@@ -338,15 +432,37 @@ const PivotControlBar = ({
           }
           label={t`% of total`}
         />
-        <PeriodSelector variant="range" />
-        {savedViews.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" leftIcon={<LuBookmark />}>
-                {activeView?.name ?? t`Views`}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+        {[...params.entries()].length > 0 && (
+          <Button variant="secondary" rightIcon={<LuX />} onClick={onReset}>
+            {t`Reset`}
+          </Button>
+        )}
+      </HStack>
+      <HStack className="gap-2">
+        <Button
+          variant="secondary"
+          leftIcon={<LuDownload />}
+          onClick={onDownload}
+        >
+          {t`Download`}
+        </Button>
+        <ActionMenu>
+          <DropdownMenuItem onClick={() => setSaveModalOpen(true)}>
+            <DropdownMenuIcon icon={<LuBookmarkPlus />} />
+            <Trans>Save view</Trans>
+          </DropdownMenuItem>
+          {activeView && activeView.createdBy === currentUserId && (
+            <DropdownMenuItem
+              destructive
+              onClick={() => setDeleteModalOpen(true)}
+            >
+              <DropdownMenuIcon icon={<LuTrash2 />} />
+              <Trans>Delete view</Trans>
+            </DropdownMenuItem>
+          )}
+          {savedViews.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
               <DropdownMenuRadioGroup
                 value={activeViewId ?? ""}
                 onValueChange={onSelectView}
@@ -379,35 +495,25 @@ const PivotControlBar = ({
                   </>
                 )}
               </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-        <Button
-          variant="secondary"
-          leftIcon={<LuBookmarkPlus />}
-          onClick={() => setSaveModalOpen(true)}
-        >
-          {t`Save view`}
-        </Button>
-        {[...params.entries()].length > 0 && (
-          <Button variant="secondary" rightIcon={<LuX />} onClick={onReset}>
-            {t`Reset`}
-          </Button>
-        )}
+            </>
+          )}
+        </ActionMenu>
       </HStack>
-      <Button
-        variant="secondary"
-        leftIcon={<LuDownload />}
-        onClick={onDownload}
-      >
-        {t`Download`}
-      </Button>
       {saveModalOpen && (
         <SaveViewModal
           reportKey={reportKey}
           state={state}
           view={activeView}
           onClose={() => setSaveModalOpen(false)}
+        />
+      )}
+      {deleteModalOpen && activeView && (
+        <ConfirmDelete
+          action={path.to.deleteReportView(activeView.id)}
+          name={activeView.name}
+          text={t`Are you sure you want to delete the "${activeView.name}" view? This cannot be undone.`}
+          onCancel={() => setDeleteModalOpen(false)}
+          onSubmit={() => setDeleteModalOpen(false)}
         />
       )}
     </div>

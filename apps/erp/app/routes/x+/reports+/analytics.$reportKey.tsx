@@ -16,6 +16,7 @@ import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useFetcher, useLoaderData } from "react-router";
+import { useUrlParams } from "~/hooks";
 import type {
   AnalyticsReportKey,
   DimensionPivotLine,
@@ -24,7 +25,9 @@ import type {
 import {
   analyticsReportKeys,
   analyticsReports,
+  applyPivotDisplayParams,
   deleteReportView,
+  getAccountsInScope,
   getActiveDimensionsWithValues,
   getDimensionPivot,
   getFiscalYearSettings,
@@ -48,23 +51,45 @@ import {
 } from "~/modules/accounting/ui/Reports/pivotData";
 import { months } from "~/modules/shared";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import type { Handle } from "~/utils/handle";
+import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { revalidateIgnoringPivotDisplay } from "~/utils/revalidate";
 
 const breadcrumbByReportKey: Record<AnalyticsReportKey, MessageDescriptor> = {
   revenue: msg`Revenue`,
   expenses: msg`Expenses`,
-  cogs: msg`COGS`,
-  "inventory-change": msg`Inventory Change`,
+  assets: msg`Assets`,
+  "inventory-change": msg`Inventory`,
   scrap: msg`Scrap`
 };
 
 export const handle: Handle = {
   // handle is static per route module, so the per-report label comes from the
-  // function form (Breadcrumbs calls it with the route params).
-  breadcrumb: (params: { reportKey?: string }) =>
-    breadcrumbByReportKey[params.reportKey as AnalyticsReportKey] ??
-    msg`Analytics`
+  // function form (Breadcrumbs calls it with the route params + loader data).
+  // With a saved view active, the view name becomes the leaf segment and the
+  // report name links back to the bare report (inspection-document pattern).
+  breadcrumb: (
+    params: { reportKey?: string },
+    data:
+      | { savedViews?: { id: string; name: string }[]; activeViewId?: string }
+      | undefined
+  ): BreadcrumbSegment[] => {
+    const report =
+      breadcrumbByReportKey[params.reportKey as AnalyticsReportKey] ??
+      msg`Analytics`;
+    const activeView = data?.activeViewId
+      ? data.savedViews?.find((view) => view.id === data.activeViewId)
+      : undefined;
+    return activeView
+      ? [
+          {
+            breadcrumb: report,
+            to: path.to.analyticsReport(params.reportKey ?? "")
+          },
+          { breadcrumb: activeView.name }
+        ]
+      : [{ breadcrumb: report }];
+  }
 };
 
 /**
@@ -116,17 +141,37 @@ function parsePivotUrlParams(
     }
   }
 
+  const accounts = searchParams.get("accounts");
+  if (accounts !== null) {
+    partial.accountIds = accounts.split(",").filter(Boolean);
+  }
+
+  const sort = searchParams.get("sort");
+  if (sort !== null) {
+    // Split on the LAST colon: column keys (period ends, value ids) never
+    // contain one, but be defensive so ids that might are handled correctly.
+    const separator = sort.lastIndexOf(":");
+    const key = separator > 0 ? sort.slice(0, separator) : "";
+    const direction = separator > 0 ? sort.slice(separator + 1) : "";
+    if (key && (direction === "asc" || direction === "desc")) {
+      partial.sort = { key, direction };
+    }
+  }
+
   return partial;
 }
 
+// measure / % of total / sort are applied client-side by buildPivotTree, so a
+// change to only those skips the (expensive) pivot refetch; the component
+// re-derives them from the URL via applyPivotDisplayParams.
+export const shouldRevalidate = revalidateIgnoringPivotDisplay;
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
       view: "accounting",
       role: "employee"
-    }
-  );
+    });
 
   const reportKey = analyticsReportKeys.find((key) => key === params.reportKey);
   if (!reportKey) {
@@ -162,6 +207,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const dimensions = dimensionsResult.data ?? [];
   const savedViews = savedViewsResult.data ?? [];
+
+  // The account universe the per-report account filter narrows within. Scrap
+  // resolves through the ids just fetched; class/type scopes query directly.
+  const scopeAccounts =
+    (
+      await getAccountsInScope(
+        client,
+        companyGroupId,
+        report.accountScope,
+        scrapAccounts.data ?? undefined
+      )
+    ).data ?? [];
 
   // -- Resolve the pivot state --
   // Precedence: explicit URL pivot params > the selected saved view's config >
@@ -271,7 +328,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     startDate,
     endDate,
     reportKey,
-    activeViewId: activeView?.id
+    activeViewId: activeView?.id,
+    currentUserId: userId,
+    scopeAccounts
   };
 }
 
@@ -367,15 +426,27 @@ export default function AnalyticsReportRoute() {
     pivot,
     dimensions,
     savedViews,
-    state,
+    state: loaderState,
     periods,
     startDate,
     endDate,
     reportKey,
-    activeViewId
+    activeViewId,
+    currentUserId,
+    scopeAccounts
   } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const { locale } = useLocale();
+  const [searchParams] = useUrlParams();
+
+  // measure / % of total / sort are applied client-side; when only those change
+  // the loader is skipped (revalidateIgnoringPivotDisplay), so overlay them from
+  // the URL to keep the pivot in sync without a refetch.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed by the URL string, not the unstable URLSearchParams identity
+  const state = useMemo(
+    () => applyPivotDisplayParams(loaderState, searchParams),
+    [loaderState, searchParams.toString()]
+  );
 
   const linesFetcher = useFetcher<{ lines: DimensionPivotLine[] }>();
   const [drillTitle, setDrillTitle] = useState<string | null>(null);
@@ -423,6 +494,9 @@ export default function AnalyticsReportRoute() {
     const searchParams = new URLSearchParams({ startDate, endDate });
     if (state.filters.length > 0) {
       searchParams.set("filters", JSON.stringify(state.filters));
+    }
+    if (state.accountIds.length > 0) {
+      searchParams.set("accounts", state.accountIds.join(","));
     }
 
     // NULL semantics per getDimensionPivotLines: sending the dimension WITHOUT
@@ -480,7 +554,8 @@ export default function AnalyticsReportRoute() {
       rowCount: Math.min(state.rows.length, 2) as 0 | 1 | 2,
       measure: state.measure,
       unassignedLabel: t`Unassigned`,
-      totalLabel: t`Total`
+      totalLabel: t`Total`,
+      sort: state.sort
     });
 
     const rows = pivotToCsvRows({
@@ -530,6 +605,8 @@ export default function AnalyticsReportRoute() {
         state={state}
         savedViews={savedViews}
         activeViewId={activeViewId}
+        currentUserId={currentUserId}
+        accounts={scopeAccounts}
         onDownload={onDownload}
       />
       <PivotTree

@@ -4,7 +4,9 @@ import {
   applyPercentOfTotal,
   buildPivotTree,
   getPivotMeasureValue,
+  LABEL_SORT_KEY,
   pivotToCsvRows,
+  TOTAL_SORT_KEY,
   UNASSIGNED_COLUMN_KEY
 } from "./pivotData";
 
@@ -322,6 +324,130 @@ describe("buildPivotTree", () => {
 
     expect(result.columnsTruncated).toBe(true);
     expect(result.columnKeys).toEqual(["c2"]);
+  });
+
+  it("does not cap columns when maxColumns is omitted", () => {
+    const columnKeys = Array.from({ length: 120 }, (_, i) => `c${i}`);
+    const groups = columnKeys.map((key, i) => group("a", null, key, i + 1));
+
+    const result = buildPivotTree({
+      groups,
+      valueNames: VALUE_NAMES,
+      columnKeys,
+      rowCount: 1,
+      measure: "amount"
+    });
+
+    expect(result.columnsTruncated).toBe(false);
+    expect(result.columnKeys).toEqual(columnKeys);
+  });
+
+  it("sorts rows by a specific column, ascending and descending (signed)", () => {
+    const groups = [
+      group("a", null, "c1", 100),
+      group("b", null, "c1", -300),
+      group("c", null, "c1", 200)
+    ];
+
+    const desc = buildPivotTree({
+      groups,
+      valueNames: VALUE_NAMES,
+      columnKeys: ["c1"],
+      rowCount: 1,
+      measure: "amount",
+      sort: { key: "c1", direction: "desc" }
+    });
+    // Signed, not ABS: 200 > 100 > -300.
+    expect(desc.flatTree.map((n) => n.data.rowValue1Id)).toEqual([
+      "c",
+      "a",
+      "b"
+    ]);
+
+    const asc = buildPivotTree({
+      groups,
+      valueNames: VALUE_NAMES,
+      columnKeys: ["c1"],
+      rowCount: 1,
+      measure: "amount",
+      sort: { key: "c1", direction: "asc" }
+    });
+    expect(asc.flatTree.map((n) => n.data.rowValue1Id)).toEqual([
+      "b",
+      "a",
+      "c"
+    ]);
+  });
+
+  it("sorts by total and keeps Unassigned last even under an explicit sort", () => {
+    const groups = [
+      group("a", null, "c1", 100),
+      group("b", null, "c1", 300),
+      group(null, null, "c1", 999) // Unassigned biggest, must still sort last
+    ];
+
+    const result = buildPivotTree({
+      groups,
+      valueNames: VALUE_NAMES,
+      columnKeys: ["c1"],
+      rowCount: 1,
+      measure: "amount",
+      sort: { key: TOTAL_SORT_KEY, direction: "asc" }
+    });
+
+    expect(result.flatTree.map((n) => n.data.label)).toEqual([
+      "Alpha",
+      "Beta",
+      "Unassigned"
+    ]);
+  });
+
+  it("sorts by row label alphabetically", () => {
+    const groups = [group("b", null, "c1", 100), group("a", null, "c1", 100)];
+
+    const asc = buildPivotTree({
+      groups,
+      valueNames: VALUE_NAMES,
+      columnKeys: ["c1"],
+      rowCount: 1,
+      measure: "amount",
+      sort: { key: LABEL_SORT_KEY, direction: "asc" }
+    });
+    expect(asc.flatTree.map((n) => n.data.label)).toEqual(["Alpha", "Beta"]);
+
+    const desc = buildPivotTree({
+      groups,
+      valueNames: VALUE_NAMES,
+      columnKeys: ["c1"],
+      rowCount: 1,
+      measure: "amount",
+      sort: { key: LABEL_SORT_KEY, direction: "desc" }
+    });
+    expect(desc.flatTree.map((n) => n.data.label)).toEqual(["Beta", "Alpha"]);
+  });
+
+  it("applies the column sort within a nested level too", () => {
+    const groups = [
+      group("a", "x", "c1", 100),
+      group("a", "y", "c1", 300),
+      group("a", "z", "c1", 200)
+    ];
+
+    const result = buildPivotTree({
+      groups,
+      valueNames: { ...VALUE_NAMES, z: "Zulu" },
+      columnKeys: ["c1"],
+      rowCount: 2,
+      measure: "amount",
+      sort: { key: "c1", direction: "asc" }
+    });
+
+    // Children of Alpha ordered by c1 ascending: x(100), z(200), y(300).
+    expect(
+      result.flatTree
+        .filter((n) => n.parentId === "a")
+        .map((n) => n.data.rowValue2Id)
+    ).toEqual(["x", "z", "y"]);
   });
 });
 

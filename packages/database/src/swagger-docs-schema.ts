@@ -89593,6 +89593,72 @@ export default {
         tags: ["(rpc) prevent_posted_sales_invoice_deletion"]
       }
     },
+    "/rpc/purchaseLineDimensionPivot": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_column_field: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_group_limit: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_period_ends: {
+                  format: "date[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_row_field_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_field_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_start", "p_end"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) purchaseLineDimensionPivot"]
+      }
+    },
     "/rpc/sync_create_make_method_related_records": {
       post: {
         parameters: [
@@ -90835,6 +90901,13 @@ export default {
                 p_end: {
                   format: "date",
                   type: "string"
+                },
+                p_filter_account_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
                 },
                 p_filters: {
                   format: "jsonb"
@@ -94925,6 +94998,85 @@ export default {
         tags: ["(rpc) sync_update_quote_line_make_method_item_id"]
       }
     },
+    "/rpc/purchaseLinePivotLines": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_column_field: {
+                  format: "text",
+                  type: "string"
+                },
+                p_column_period_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_column_period_start: {
+                  format: "date",
+                  type: "string"
+                },
+                p_column_value: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_line_limit: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_row_field_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_field_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_value_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_value_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_start", "p_end"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) purchaseLinePivotLines"]
+      }
+    },
     "/rpc/update_receipt_line_batch_tracking": {
       post: {
         parameters: [
@@ -95641,6 +95793,13 @@ export default {
                 p_end: {
                   format: "date",
                   type: "string"
+                },
+                p_filter_account_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
                 },
                 p_filters: {
                   format: "jsonb"

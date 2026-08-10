@@ -17,6 +17,8 @@ export { default as PivotControlBar } from "./PivotControlBar";
 export { default as PivotLinesDrawer } from "./PivotLinesDrawer";
 export type { PivotCellCoordinates } from "./PivotTree";
 export { default as PivotTree } from "./PivotTree";
+export { default as PurchaseLinesDrawer } from "./PurchaseLinesDrawer";
+export { default as PurchasesControlBar } from "./PurchasesControlBar";
 export { default as ReportFilters } from "./ReportFilters";
 export { default as SaveViewModal } from "./SaveViewModal";
 export { default as TrialBalanceTable } from "./TrialBalanceTable";

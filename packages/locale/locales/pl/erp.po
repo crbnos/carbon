@@ -48,6 +48,10 @@ msgstr "(wykluczone dla tego klienta)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {Ta część znajduje się na 1 otwartym zgłoszeniu zmian} other {Ta część znajduje się na # otwartych zgłoszeniach zmian}}"
 
+#. placeholder {0}: selectedAccountIds.length
+msgid "{0} accounts"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} temu"
@@ -862,6 +866,9 @@ msgstr "Po"
 msgid "After (calculation method)"
 msgstr "Po (metoda obliczenia)"
 
+msgid "Aging"
+msgstr ""
+
 msgid "Agree on the scope"
 msgstr "Uzgodnij zakres"
 
@@ -879,6 +886,9 @@ msgstr "Wszystko"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Wszystkie {total} fazy są gotowe. Świetna robota — Twój zespół jest już w pełni operacyjny."
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "Wszystkie akcje zaznaczone"
@@ -1262,6 +1272,11 @@ msgstr "Czy na pewno chcesz usunąć {0}? Tej operacji nie można cofnąć."
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć {name}? Tej operacji nie można cofnąć."
+
+#. placeholder {0}: activeView.name
+#. placeholder {0}: viewPendingDelete.name
+msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -2053,6 +2068,9 @@ msgstr "Według daty dokumentu"
 msgid "By Due Date"
 msgstr "Według daty wymagalności"
 
+msgid "By field"
+msgstr ""
+
 msgid "By Item"
 msgstr "Wg pozycji"
 
@@ -2410,6 +2428,9 @@ msgstr "Wyczyść wyszukiwanie"
 msgid "Clear search query"
 msgstr "Wyczyść zapytanie wyszukiwania"
 
+msgid "Clear selection"
+msgstr ""
+
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Wyczyść tę fakturę za pomocą zaksięgowanych kredytów strony oraz gotówki. Kredyty są stosowane bezpośrednio — nie jest wymagane żadne zaksięgowanie."
 
@@ -2470,9 +2491,6 @@ msgstr "Chmura lub Twoje środowisko hostowane samodzielnie."
 msgid "Code"
 msgstr "Kod"
 
-msgid "COGS"
-msgstr "COGS"
-
 msgid "Collapse"
 msgstr "Zwiń"
 
@@ -2499,6 +2517,9 @@ msgstr "Zwiń poddrzewo"
 
 msgid "Column dimension"
 msgstr "Wymiar kolumny"
+
+msgid "Column field"
+msgstr ""
 
 msgid "Column visibility and order"
 msgstr "Widoczność i kolejność kolumn"
@@ -3079,9 +3100,6 @@ msgstr "Koszt Sprzedanych Towarów (COGS)"
 
 msgid "Cost of Goods Sold (default)"
 msgstr "Koszt Sprzedanych Towarów (domyślny)"
-
-msgid "Cost of goods sold by item group, item, or any dimension"
-msgstr "Koszt sprzedanych towarów wg grupy pozycji, pozycji lub dowolnego wymiaru"
 
 msgid "Cost of Sales"
 msgstr "Koszt sprzedaży"
@@ -3897,6 +3915,10 @@ msgstr "Definiuj wielopoziomowe BOM i Bill of Process (metody produkcji)"
 msgid "Delete"
 msgstr "Usuń"
 
+#. placeholder {0}: view.name
+msgid "Delete {0}"
+msgstr ""
+
 msgid "Delete {name}"
 msgstr "Usuń {name}"
 
@@ -4182,6 +4204,9 @@ msgstr "Usuń typ"
 
 msgid "Delete Unit of Measure"
 msgstr "Usuń jednostkę miary"
+
+msgid "Delete view"
+msgstr ""
 
 msgid "Delete View"
 msgstr "Usuń widok"
@@ -6864,9 +6889,6 @@ msgstr "Zapasy i zakupy z automatycznym planowaniem"
 msgid "Inventory balances"
 msgstr "Salda zapasów"
 
-msgid "Inventory Change"
-msgstr "Zmiana zapasów"
-
 msgid "Inventory Control"
 msgstr "Kontrola zapasów"
 
@@ -8744,6 +8766,9 @@ msgstr "Nie wybrano procesu"
 msgid "No production events recorded for this operation yet"
 msgstr "Brak zarejestrowanych zdarzeń produkcyjnych dla tej operacji"
 
+msgid "No purchases in this period"
+msgstr ""
+
 msgid "No Quote"
 msgstr "Brak oferty"
 
@@ -9657,6 +9682,7 @@ msgid "Pin"
 msgstr "Przypnij"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Pin {0}"
 msgstr "Przypnij {0}"
 
@@ -10185,6 +10211,9 @@ msgstr "Jednostka zakupu:"
 
 msgid "Purchased"
 msgstr "Zakupione"
+
+msgid "Purchases"
+msgstr ""
 
 msgid "purchasing"
 msgstr "Zakupy i Koszt Sprzedanych Towarów"
@@ -12001,9 +12030,6 @@ msgstr "Pokazywanie pierwszych 500 linii"
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Pokazywanie 1000 najlepszych grup wg kwoty"
 
-msgid "Showing the top 50 columns"
-msgstr "Pokazywanie 50 najlepszych kolumn"
-
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Wyświetlany jako delikatne tło za każdą stroną wygenerowanych plików PDF"
 
@@ -12073,8 +12099,11 @@ msgstr "Pominięte"
 msgid "Slack"
 msgstr "Slack"
 
-msgid "Slice expenses by supplier, supplier type, or any dimension"
-msgstr "Podziel wydatki wg dostawcy, typu dostawcy lub dowolnego wymiaru"
+msgid "Slice asset activity by location, item, or any dimension"
+msgstr ""
+
+msgid "Slice expenses by location, cost center, or any dimension"
+msgstr ""
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Podziel przychody wg klienta, typu klienta lub dowolnego wymiaru"
@@ -12159,6 +12188,9 @@ msgstr "Konkretni klienci"
 
 msgid "Specific Items"
 msgstr "Określone artykuły"
+
+msgid "Spend by supplier, item, or category — your biggest cost drivers"
+msgstr ""
 
 msgid "Split"
 msgstr "Podziel"
@@ -14125,6 +14157,7 @@ msgid "Unpick {0}"
 msgstr "Cofnij {0}"
 
 #. placeholder {0}: report.name
+#. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Odepnij {0}"
 
@@ -14610,9 +14643,6 @@ msgstr "Wyświetl Graf Możliwości Śledzenia"
 
 msgid "View Transfer"
 msgstr "Wyświetl Transfer"
-
-msgid "Views"
-msgstr "Widoki"
 
 msgid "Visibilities"
 msgstr "Widoczności"

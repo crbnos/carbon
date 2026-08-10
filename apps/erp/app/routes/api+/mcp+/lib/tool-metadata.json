@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-09T21:07:09.516Z",
-  "totalTools": 1428,
+  "generated": "2026-08-10T01:29:05.761Z",
+  "totalTools": 1431,
   "modules": 15,
   "tools": [
     {
@@ -704,6 +704,37 @@
       }
     },
     {
+      "name": "accounting_getAccountsInScope",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get accounts in scope",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyGroupId",
+        "scope",
+        "scrapAccountIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "scope": {},
+          "scrapAccountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      }
+    },
+    {
       "name": "accounting_getDimensionPivot",
       "module": "accounting",
       "classification": "READ",
@@ -753,7 +784,7 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get dimension pivot lines",
-      "paramCount": 16,
+      "paramCount": 17,
       "serviceParams": [
         "client",
         "args"
@@ -810,6 +841,12 @@
           },
           "columnPeriodEnd": {
             "type": "string"
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -817,6 +854,96 @@
           "startDate",
           "endDate",
           "filters"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getPurchaseLinePivot",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get purchase line pivot",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          },
+          "periodEnds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "state": {}
+        },
+        "required": [
+          "startDate",
+          "endDate",
+          "state"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getPurchaseLinePivotLines",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get purchase line pivot lines",
+      "paramCount": 10,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          },
+          "rowField1": {
+            "type": "string"
+          },
+          "rowValue1": {
+            "type": "string"
+          },
+          "rowField2": {
+            "type": "string"
+          },
+          "rowValue2": {
+            "type": "string"
+          },
+          "columnField": {
+            "type": "string"
+          },
+          "columnValue": {
+            "type": "string"
+          },
+          "columnPeriodStart": {
+            "type": "string"
+          },
+          "columnPeriodEnd": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "endDate"
         ]
       }
     },
