@@ -84,7 +84,10 @@ const WorkflowForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={isDisabled}>
+                {/* Saving navigates to the new workflow's builder, and the form is
+                    still mounted and dirty at that moment — the default blocker
+                    reads that as leaving with unsaved work. */}
+                <Submit isDisabled={isDisabled} withBlocker={false}>
                   <Trans>Save</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose()}>
