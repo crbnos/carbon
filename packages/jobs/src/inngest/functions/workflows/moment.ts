@@ -20,7 +20,7 @@ export const workflowMomentFunction = inngest.createFunction(
     retries: 3,
     idempotency: "event.data.momentId",
     concurrency: {
-      limit: 10,
+      limit: 5,
       key: "event.data.companyId"
     }
   },

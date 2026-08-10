@@ -27,7 +27,7 @@ export const workflowRunFunction = inngest.createFunction(
     retries: 3,
     idempotency: "event.data.runId",
     concurrency: [
-      { limit: 10, key: "event.data.companyId" },
+      { limit: 5, key: "event.data.companyId" },
       { limit: 5, key: "event.data.workflowId" }
     ],
     onFailure: async ({ event, logger }) => {

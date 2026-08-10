@@ -111,7 +111,7 @@ replay can never double-fire:
   sends nothing.
 - The Inngest event id is `` `${workflowId}:${workflowVersionId}:${sourceEventId}` ``.
 - Both entry points also set Inngest `idempotency` (`event.data.msgId` /
-  `event.data.momentId`) and a `limit: 10` per-`companyId` concurrency key.
+  `event.data.momentId`) and a `limit: 5` per-`companyId` concurrency key.
 
 ## Subscriptions are derived, never hand-managed
 
@@ -159,7 +159,7 @@ Kysely bypasses RLS. **The caller authorizes first** — phase 7's activation ro
 - `events/workflow.ts` returns early on `TRUNCATE`; `record` is `new ?? old`, and
   `before`/`after` are populated only for UPDATE.
 - `workflows/run.ts` hands the payload to `src/workflows/engine/` and declares
-  `idempotency: "event.data.runId"` plus per-`companyId` (10) and per-`workflowId` (5)
+  `idempotency: "event.data.runId"` plus per-`companyId` (5) and per-`workflowId` (5)
   concurrency keys. See `workflow-engine.md`.
 - Deploy-time drift checks live with `packages/checks`: the `workflow-trigger-event-drift`
   SQL invariant and `pnpm --filter @carbon/checks workflow-events`.
