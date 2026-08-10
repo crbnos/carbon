@@ -96,7 +96,16 @@ msgstr "{0}이(가) 업로드되었습니다"
 msgid "{0} values missing"
 msgstr "{0}개 값 누락"
 
+#. placeholder {0}: item.days
+msgid "{0}d"
+msgstr "{0}d"
+
+#. placeholder {0}: item.daysOff
+msgid "{0}d off"
+msgstr "{0}일 쉼"
+
 #. placeholder {0}: formatHours(-delta)
+#. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}시간 여유"
 
@@ -693,6 +702,9 @@ msgstr "공정작업 추가"
 msgid "Add options above first"
 msgstr "먼저 위에서 옵션을 추가하세요"
 
+msgid "Add overtime"
+msgstr "초과 근무 추가"
+
 msgid "Add Pair"
 msgstr "쌍 추가"
 
@@ -737,6 +749,9 @@ msgstr "배송비 추가"
 
 msgid "Add Spare Part"
 msgstr "예비 부품 추가"
+
+msgid "Add station"
+msgstr "스테이션 추가"
 
 msgid "Add Step"
 msgstr "단계 추가"
@@ -829,9 +844,6 @@ msgstr "감사 대상 개체에 대한 모든 변경 사항이 기록되고 있�
 msgid "All Customers"
 msgstr "모든 고객"
 
-msgid "All departments"
-msgstr "모든 부서"
-
 msgid "All Documents"
 msgstr "모든 문서"
 
@@ -853,9 +865,6 @@ msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 �
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "모든 행을 가져왔습니다 — {inserted}개 추가, {updated}개 업데이트."
 
-msgid "All shifts"
-msgstr "모든 교대"
-
 msgid "All Suppliers"
 msgstr "모든 공급업체"
 
@@ -871,11 +880,17 @@ msgstr "모든 사용자"
 msgid "All Work Centers"
 msgstr "모든 작업장"
 
+msgid "Allocated"
+msgstr "할당됨"
+
 msgid "Allows acknowledge & continue"
 msgstr "확인 후 계속 진행 허용"
 
 msgid "Alpha"
 msgstr "알파"
+
+msgid "also at {otherStationNames}"
+msgstr "{otherStationNames}에서도"
 
 msgid "Always"
 msgstr "항상"
@@ -959,6 +974,9 @@ msgstr "모든 품목 유형"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "위 범위에 명시적으로 나열되지 않은 모든 사항"
+
+msgid "Anything the crew should know"
+msgstr "크루가 알아야 할 사항"
 
 msgid "AP Clerk"
 msgstr "매입채무 담당자"
@@ -1563,8 +1581,8 @@ msgstr "그룹에 배정"
 msgid "Assigned"
 msgstr "배정됨"
 
-msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
-msgstr "스테이션별 배치/필요 인원. 필요 = 그날 마감 업무 시간 ÷ {defaultShiftHours}시간 교대, 올림. 빨간색은 부족, 녹색은 충분, 노란색은 과잉."
+msgid "Assigned {employeeName} to {targetName} for the week"
+msgstr "{employeeName}을(를) 주간으로 {targetName}에 배정"
 
 msgid "Assigned to Me"
 msgstr "나에게 배정됨"
@@ -1631,6 +1649,9 @@ msgstr "감사 로그"
 
 msgid "Authentication Error"
 msgstr "인증 오류"
+
+msgid "Authorized overtime on top of the shift"
+msgstr "교대 시간 외에 초과 근무 승인"
 
 msgid "Auto apply"
 msgstr "자동 적용"
@@ -2258,9 +2279,6 @@ msgstr "마이그레이션된 데이터를 정리하고 승인하세요"
 msgid "Clear"
 msgstr "지우기"
 
-msgid "Clear absence"
-msgstr "부재 제거"
-
 msgid "Clear due date"
 msgstr "기한 지우기"
 
@@ -2880,6 +2898,9 @@ msgstr "교육 이름 복사"
 
 msgid "Copy training unique identifier"
 msgstr "교육 고유 식별자 복사"
+
+msgid "Copy week"
+msgstr "주간 복사"
 
 msgid "Correct Answer"
 msgstr "정답"
@@ -3506,6 +3527,12 @@ msgstr "지급일"
 msgid "Dates"
 msgstr "날짜"
 
+msgid "Day"
+msgstr "요일"
+
+msgid "Day off"
+msgstr "휴무일"
+
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "도입 후 일상적인 질문 대응 및 하이퍼케어"
 
@@ -3994,9 +4021,6 @@ msgstr "배송지"
 msgid "Demand"
 msgstr "수요"
 
-msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
-msgstr "수요 = 마감 업무 시간 · 스케줄됨 = 스케줄러가 배치한 근무 시간 · 가용 = 배치된 크루의 교대 시간(무인 스테이션은 위치의 교대 달력 사용) · 부하 = 초과(+) 또는 여유 시간"
-
 msgid "Demand forecast"
 msgstr "수요예측"
 
@@ -4260,6 +4284,9 @@ msgstr "구매주문 PDF를 여기에 드래그 앤 드롭하거나 클릭하여
 msgid "Drag handle"
 msgstr "드래그 핸들"
 
+msgid "Drag to assign"
+msgstr "드래그하여 배정"
+
 msgid "Drag to place on drawing"
 msgstr "드래그하여 도면에 배치"
 
@@ -4363,6 +4390,9 @@ msgstr "예: 처음 3~4주"
 
 msgid "e.g. Zebra 2x1"
 msgstr "예: Zebra 2x1"
+
+msgid "Each cell is the people assigned against the people the day's work needs."
+msgstr "각 셀은 그 날짜에 필요한 인력과 배정된 인력을 비교합니다."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "각 실물 유닛은 고유한 추적 개체와 번호를 부여받습니다 — 하나의 개체, 하나의 유닛."
@@ -5004,6 +5034,12 @@ msgstr "기간을 종료하기 전에 모든 필수 작업을 완료하거나 �
 msgid "Every row was imported successfully."
 msgstr "모든 행이 성공적으로 가져와졌습니다."
 
+msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
+msgstr "선택한 주의 어느 날을 근무하는 모든 사람이 설정한 시간만큼 교대 시간을 초과합니다. 필터링하는 부서와 교대만 영향을 받습니다."
+
+msgid "Everyone working this day stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
+msgstr "이 날을 근무하는 모든 사람이 설정한 시간만큼 교대 시간을 초과합니다. 필터링하는 부서와 교대만 영향을 받습니다."
+
 msgid "Everything from Starter"
 msgstr "스타터의 모든 기능 포함"
 
@@ -5172,6 +5208,9 @@ msgstr "외부 참조"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Carbon이 기본적으로 추적하지 않는 데이터를 담기 위한 추가 필드"
+
+msgid "Extra hours on the whole day"
+msgstr "하루 종일 추가 시간"
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "총계정원장 보고를 세분화하기 위한 추가 태그"
@@ -5560,6 +5599,9 @@ msgstr "여기에 첨부한 파일은 이 공급업체에 전송되는 모든 �
 msgid "Filter"
 msgstr "필터"
 
+msgid "Filter ({appliedCount} applied)"
+msgstr "필터 ({appliedCount}개 적용됨)"
+
 msgid "Finalize"
 msgstr "확정"
 
@@ -5687,6 +5729,9 @@ msgstr "빈도"
 msgid "Friday"
 msgstr "금요일"
 
+msgid "From"
+msgstr "출발지"
+
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
 msgid "From {0}"
@@ -5700,6 +5745,9 @@ msgstr "출발 위치"
 
 msgid "from on-account credit"
 msgstr "미수금 크레딧에서"
+
+msgid "From previous week"
+msgstr "이전 주에서"
 
 msgid "From Storage Unit"
 msgstr "출발 저장 단위"
@@ -6083,6 +6131,12 @@ msgstr "플랫폼 호스팅, 보안, 백업"
 msgid "Hours"
 msgstr "시간"
 
+msgid "Hours at this station"
+msgstr "이 스테이션의 시간"
+
+msgid "Hours not yet assigned"
+msgstr "아직 배정되지 않은 시간"
+
 msgid "Hours per Week"
 msgstr "주당 시간"
 
@@ -6106,6 +6160,12 @@ msgstr "품목이 공정(BOP) 또는 BOM 라인에 추가될 때 조달되는 �
 
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "품목의 단가가 평가되는 방식: 표준, 평균, FIFO, 또는 LIFO. 품목별로 설정됩니다."
+
+msgid "How coverage is worked out"
+msgstr "배치가 어떻게 계산되는지"
+
+msgid "how far over capacity the day is (+) or how many hours are still free."
+msgstr "그 날이 용량보다 얼마나 초과했는지(+) 또는 아직 남은 시간이 몇 시간인지."
 
 msgid "How items roll up for posting and reporting"
 msgstr "품목이 전기 및 보고를 위해 합산되는 방식"
@@ -6944,6 +7004,9 @@ msgstr "수작업 감소"
 msgid "Less manual work, fewer errors"
 msgstr "수작업 감소, 오류 감소"
 
+msgid "Less overtime"
+msgstr "초과 근무 감소"
+
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
 
@@ -7314,8 +7377,8 @@ msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
 msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\"을(를) 합격으로 표시하시겠습니까?"
 
-msgid "Mark absent today"
-msgstr "오늘 부재로 표시"
+msgid "Mark absent"
+msgstr "부재 표시"
 
 msgid "Mark all as configured"
 msgstr "모두 설정됨으로 표시"
@@ -7367,6 +7430,9 @@ msgstr "부족으로 표시"
 
 msgid "Mark to delete"
 msgstr "삭제 대상으로 표시"
+
+msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
+msgstr "범위 내의 모든 날짜에 대해 해당 사람을 표시합니다. 그들은 휴무 중에 스케줄되지 않습니다."
 
 msgid "Master records"
 msgstr "마스터 레코드"
@@ -7668,8 +7734,14 @@ msgstr "더 보기"
 msgid "More actions"
 msgstr "추가 작업"
 
+msgid "More hours than the shift has."
+msgstr "교대보다 더 많은 시간."
+
 msgid "More options"
 msgstr "추가 옵션"
+
+msgid "More overtime"
+msgstr "초과 근무 증가"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "대부분의 문제는 여기서 발견되고 해결됩니다. 명확하게 이름을 붙이세요."
@@ -7699,6 +7771,12 @@ msgstr "휴지통으로 이동"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0}을(를) {1} 버킷으로 이동함"
+
+msgid "Moved {employeeName} to {targetName}"
+msgstr "{employeeName}을(를) {targetName}으로 이동"
+
+msgid "Moved {employeeName}'s week to {targetName}"
+msgstr "{employeeName}의 주간을 {targetName}으로 이동"
 
 msgid "Movements"
 msgstr "이동"
@@ -7741,6 +7819,9 @@ msgstr "필요일"
 
 msgid "Need the right columns?"
 msgstr "적절한 열이 필요하신가요?"
+
+msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
+msgstr "필요한 인력은 그 날의 작업 시간을 {personDayHours}h로 나눈 값을 올림한 것입니다. 필터링하는 교대 또는 이 위치에서 가장 일반적인 교대 길이입니다."
 
 msgid "Needs fixing"
 msgstr "수정 필요"
@@ -8273,6 +8354,12 @@ msgstr "새 알림이 없습니다"
 msgid "No notes"
 msgstr "메모 없음"
 
+msgid "No one crewed"
+msgstr "배치된 사람이 없습니다"
+
+msgid "No one to assign"
+msgstr "배정할 사람이 없습니다"
+
 msgid "No open invoices"
 msgstr "미결 인보이스가 없습니다"
 
@@ -8453,6 +8540,9 @@ msgstr "시작되지 않음"
 msgid "Not Started"
 msgstr "시작하지 않음"
 
+msgid "Not working today"
+msgstr "오늘 근무하지 않음"
+
 msgid "Not yet"
 msgstr "아직 아님"
 
@@ -8470,6 +8560,9 @@ msgstr "메모(선택)"
 
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
+
+msgid "Nothing scheduled — add a station below."
+msgstr "일정이 없습니다 — 아래에서 스테이션을 추가하세요."
 
 msgid "Notification"
 msgstr "알림"
@@ -8491,6 +8584,10 @@ msgstr "OEM(주문자상표부착생산)"
 
 msgid "of"
 msgstr "중"
+
+#. placeholder {0}: formatHours(baseHours)
+msgid "of {0}h"
+msgstr "{0}h 중"
 
 msgid "Off — released revisions stay editable"
 msgstr "꺼짐 — 릴리스된 리비전은 편집 가능한 상태로 유지됨"
@@ -10085,6 +10182,9 @@ msgstr "수정 {rectifyNumber}"
 msgid "Rectify"
 msgstr "수정"
 
+msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
+msgstr "빨강은 인력 부족, 초록은 배치됨, 주황은 일이 필요로 하는 사람보다 많음."
+
 msgid "Redirecting to verification page..."
 msgstr "인증 페이지로 이동 중..."
 
@@ -10191,11 +10291,11 @@ msgstr "필터 제거"
 msgid "Remove Filters"
 msgstr "필터 제거"
 
+msgid "Remove from board"
+msgstr "보드에서 제거"
+
 msgid "Remove from Price List"
 msgstr "가격표에서 제거"
-
-msgid "Remove from station"
-msgstr "스테이션에서 제거"
 
 msgid "Remove item"
 msgstr "품목 제거"
@@ -10208,6 +10308,9 @@ msgstr "쌍 제거"
 
 msgid "Remove sort by column"
 msgstr "열 정렬 제거"
+
+msgid "Remove station"
+msgstr "스테이션 제거"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "이 저장 유형을 참조하는 모든 저장 단위에서 제거하고 삭제합니다. 이 작업은 되돌릴 수 없습니다."
@@ -11028,6 +11131,9 @@ msgstr "행 선택"
 msgid "Select scope"
 msgstr "범위 선택"
 
+msgid "Select station"
+msgstr "역 선택"
+
 msgid "Select Supplier Status"
 msgstr "공급업체 상태 선택"
 
@@ -11655,6 +11761,9 @@ msgstr "다음에 시작: {0}"
 
 msgid "State / Province"
 msgstr "주/도"
+
+msgid "Station"
+msgstr "역"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -12451,6 +12560,9 @@ msgstr "이 작업장에서 기계를 가동하는 시간당 비용입니다. �
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "이 작업장에 적용되는 시간당 간접비 부담률입니다. 노무비+기계비와 전체 견적 요율의 차이를 간접비가 흡수합니다."
 
+msgid "the hours the scheduler actually placed."
+msgstr "스케줄러가 실제로 배치한 시간입니다."
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "고객이 자사 PO에서 이 품목에 사용하는 식별자입니다. Carbon은 주문을 가져올 때 이를 내부 품목 ID로 변환합니다."
 
@@ -12477,6 +12589,9 @@ msgstr "출하가 전기될 때 인식되는 재고 원가로, 품목의 원가 
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 등급(3, 5, 7, 10, 15, 20, 27.5, 39년)입니다."
+
+msgid "the job hours due that day."
+msgstr "그 날의 작업 마감 시간입니다."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "이 외주 라인이 처리하는 공정작업이 속한 작업입니다. 이 라인의 입고는 해당 작업의 공정작업을 마감합니다."
@@ -12700,6 +12815,9 @@ msgstr "이 자산의 원가를 내용연수에 걸쳐 배분하는 데 사용�
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
+
+msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgstr "배정된 크루의 근무 시간입니다. 아무도 없는 역은 위치의 근무 달력으로 돌아갑니다."
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "보유하고 있는 공장 소모품 및 소모재"
@@ -12987,8 +13105,14 @@ msgstr "이 저장 유형은 현재 저장 단위 {usageCount}개{0}에서 사�
 msgid "this supplier"
 msgstr "이 공급업체"
 
+msgid "This takes {employeeName} off the board for the day. Save again to confirm."
+msgstr "이것은 {employeeName}을 그 날의 보드에서 제거합니다. 확인하려면 다시 저장하세요."
+
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
+
+msgid "This week"
+msgstr "이번 주"
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "이렇게 하면 이 버전이 읽기 전용으로 전환되고, 자재 제조 방법이 모두 이 버전으로 교체됩니다."
@@ -13015,6 +13139,15 @@ msgstr "다른 리비전의 모든 방법 자재가 이 리비전으로 교체�
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "다른 사이즈의 모든 방법 자재가 이 사이즈로 교체됩니다."
+
+msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
+msgstr "이것은 {overtimePreviewCount}명을 위해 +{overtimeHoursInput}시간의 초과 근무를 설정합니다."
+
+msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
+msgstr "이것은 그 주에 배정된 모든 사람을 위해 +{overtimeHoursInput}시간의 초과 근무를 설정합니다."
+
+msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
+msgstr "이것은 {overtimePreviewCount}명-일에 대해 +{overtimeHoursInput}시간의 초과 근무를 설정합니다."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "제조 방법의 현재 버전을 활성으로 설정하여 읽기 전용으로 만듭니다."
@@ -13056,6 +13189,9 @@ msgstr "빠듯함"
 msgid "Tightened"
 msgstr "강화됨"
 
+msgid "Time off"
+msgstr "휴무"
+
 msgid "Timecard"
 msgstr "근무기록"
 
@@ -13077,8 +13213,14 @@ msgstr "시간대"
 msgid "Title"
 msgstr "제목"
 
+msgid "To"
+msgstr "까지"
+
 msgid "To Location"
 msgstr "대상 위치"
+
+msgid "To next week"
+msgstr "다음 주까지"
 
 msgid "To Receive"
 msgstr "입고 예정"
@@ -14162,6 +14304,9 @@ msgstr "이 차원이 허용 값을 가져오는 소스입니다(사용자 정�
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "만기일 카운트다운이 시작되는 기준입니다(인보이스 날짜, 월말 등)."
+
+msgid "What these rows mean"
+msgstr "이 행들의 의미"
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "이 입고가 이행하는 대상입니다 — 구매주문, 반품, 입고 이동, 또는 상위 항목이 없는 수동 입고 중 하나입니다."

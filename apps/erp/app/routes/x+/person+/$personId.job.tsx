@@ -85,6 +85,7 @@ export default function PersonJobRoute() {
     startDate: job.startDate ?? "",
     locationId: job.locationId ?? "",
     shiftId: job.shiftId ?? "",
+    departmentId: job.departmentId ?? "",
     managerId: job.managerId ?? "",
     ...getCustomFields(job.customFields)
   };

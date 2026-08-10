@@ -96,7 +96,16 @@ msgstr "{0}が正常にアップロードされました"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+#. placeholder {0}: item.days
+msgid "{0}d"
+msgstr "{0}日"
+
+#. placeholder {0}: item.daysOff
+msgid "{0}d off"
+msgstr "{0}日休み"
+
 #. placeholder {0}: formatHours(-delta)
+#. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}h 余裕あり"
 
@@ -693,6 +702,9 @@ msgstr "操作を追加"
 msgid "Add options above first"
 msgstr "上記のオプションを追加してください"
 
+msgid "Add overtime"
+msgstr "残業を追加"
+
 msgid "Add Pair"
 msgstr "ペアを追加"
 
@@ -737,6 +749,9 @@ msgstr "配送を追加"
 
 msgid "Add Spare Part"
 msgstr "スペアパーツを追加"
+
+msgid "Add station"
+msgstr "ステーションを追加"
 
 msgid "Add Step"
 msgstr "ステップを追加"
@@ -829,9 +844,6 @@ msgstr "監査対象エンティティへのすべての変更が記録されて
 msgid "All Customers"
 msgstr "すべての顧客"
 
-msgid "All departments"
-msgstr "全部門"
-
 msgid "All Documents"
 msgstr "すべてのドキュメント"
 
@@ -853,9 +865,6 @@ msgstr "選択されたグループのすべてのメンバーと選択された
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "すべての行をインポート—{inserted}行挿入、{updated}行更新。"
 
-msgid "All shifts"
-msgstr "全シフト"
-
 msgid "All Suppliers"
 msgstr "すべてのサプライヤー"
 
@@ -871,11 +880,17 @@ msgstr "すべてのユーザー"
 msgid "All Work Centers"
 msgstr "すべての作業センター"
 
+msgid "Allocated"
+msgstr "配置済み"
+
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
 
 msgid "Alpha"
 msgstr "アルファ"
+
+msgid "also at {otherStationNames}"
+msgstr "{otherStationNames}でも実施中"
 
 msgid "Always"
 msgstr "常に"
@@ -959,6 +974,9 @@ msgstr "任意のアイテムタイプ"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "上記の範囲に明示的にリストされていないもの"
+
+msgid "Anything the crew should know"
+msgstr "クルーが知っておくべきこと"
 
 msgid "AP Clerk"
 msgstr "AP クラーク"
@@ -1563,8 +1581,8 @@ msgstr "グループに割り当て"
 msgid "Assigned"
 msgstr "割り当て済み"
 
-msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
-msgstr "ステーション当たりの割り当て/必要人数。必要 = その日の予定就業時間 ÷ {defaultShiftHours}h シフト(切り上げ)。赤は人員不足、緑はカバー済み、黄色は過剰配置。"
+msgid "Assigned {employeeName} to {targetName} for the week"
+msgstr "{employeeName}を1週間の{targetName}に配置しました"
 
 msgid "Assigned to Me"
 msgstr "私に割り当てられた"
@@ -1631,6 +1649,9 @@ msgstr "監査ログ"
 
 msgid "Authentication Error"
 msgstr "認証エラー"
+
+msgid "Authorized overtime on top of the shift"
+msgstr "シフトを超えた認可残業"
 
 msgid "Auto apply"
 msgstr "自動適用"
@@ -2258,9 +2279,6 @@ msgstr "移行されたデータをクリーンアップして承認する"
 msgid "Clear"
 msgstr "クリア"
 
-msgid "Clear absence"
-msgstr "不在をクリア"
-
 msgid "Clear due date"
 msgstr "期限をクリア"
 
@@ -2880,6 +2898,9 @@ msgstr "トレーニング名をコピー"
 
 msgid "Copy training unique identifier"
 msgstr "トレーニングの一意の識別子をコピー"
+
+msgid "Copy week"
+msgstr "週をコピー"
 
 msgid "Correct Answer"
 msgstr "正解"
@@ -3506,6 +3527,12 @@ msgstr "支払日"
 msgid "Dates"
 msgstr "日付"
 
+msgid "Day"
+msgstr "日"
+
+msgid "Day off"
+msgstr "休日"
+
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "日々の質問とローンチ後のハイパーケア"
 
@@ -3994,9 +4021,6 @@ msgstr "配送先"
 msgid "Demand"
 msgstr "需要"
 
-msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
-msgstr "需要 = 予定されている就業時間 · スケジュール = スケジューラが配置した稼働時間 · 利用可能 = 割り当てられたクルーのシフト時間(クルーなしのステーションはロケーションのシフトカレンダーを使用) · 負荷 = 時間超過(+)または余裕"
-
 msgid "Demand forecast"
 msgstr "需要予測"
 
@@ -4260,6 +4284,9 @@ msgstr "購入発注書のPDFをここにドラッグアンドドロップする
 msgid "Drag handle"
 msgstr "ドラッグハンドル"
 
+msgid "Drag to assign"
+msgstr "ドラッグして配置"
+
 msgid "Drag to place on drawing"
 msgstr "図面上に配置するためにドラッグしてください"
 
@@ -4363,6 +4390,9 @@ msgstr "例：最初の3～4週間"
 
 msgid "e.g. Zebra 2x1"
 msgstr "例：Zebra 2x1"
+
+msgid "Each cell is the people assigned against the people the day's work needs."
+msgstr "各セルは、その日の作業に必要な人員に対して配置された人員です"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理ユニットは独自の追跡エンティティと一意の番号を取得します — 1つのエンティティ、1つのユニット。"
@@ -5004,6 +5034,12 @@ msgstr "期間を閉じる前に、すべての必須タスクが完了または
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
 
+msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
+msgstr "選択した週のどの日でも勤務している全員が、設定した時間分シフトを超えて勤務します。フィルタリングしている部門とシフトのみが影響を受けます。"
+
+msgid "Everyone working this day stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
+msgstr "この日勤務している全員が、設定した時間分シフトを超えて勤務します。フィルタリングしている部門とシフトのみが影響を受けます。"
+
 msgid "Everything from Starter"
 msgstr "スターターのすべての機能"
 
@@ -5172,6 +5208,9 @@ msgstr "外部参照"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Carbonがデフォルトで追跡しないデータをキャプチャするための追加フィールド"
+
+msgid "Extra hours on the whole day"
+msgstr "1日全体の追加時間"
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "GL レポートをスライスするための追加タグ"
@@ -5560,6 +5599,9 @@ msgstr "ここに添付されたファイルは、このサプライヤーに送
 msgid "Filter"
 msgstr "フィルター"
 
+msgid "Filter ({appliedCount} applied)"
+msgstr "フィルター({appliedCount}適用)"
+
 msgid "Finalize"
 msgstr "確定"
 
@@ -5687,6 +5729,9 @@ msgstr "頻度"
 msgid "Friday"
 msgstr "金曜日"
 
+msgid "From"
+msgstr "開始"
+
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
 msgid "From {0}"
@@ -5700,6 +5745,9 @@ msgstr "出発地"
 
 msgid "from on-account credit"
 msgstr "オンアカウントクレジットから"
+
+msgid "From previous week"
+msgstr "前の週から"
 
 msgid "From Storage Unit"
 msgstr "保管場所から"
@@ -6083,6 +6131,12 @@ msgstr "プラットフォームをホストし、保護し、バックアップ
 msgid "Hours"
 msgstr "時間"
 
+msgid "Hours at this station"
+msgstr "このステーションの時間"
+
+msgid "Hours not yet assigned"
+msgstr "未配置の時間"
+
 msgid "Hours per Week"
 msgstr "週間あたりの時間"
 
@@ -6106,6 +6160,12 @@ msgstr "メソッドまたはBOMラインに追加されるときにアイテム
 
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "アイテムの単価コストがどのように評価されるか：標準、平均、FIFO、またはLIFO。アイテムごとに設定。"
+
+msgid "How coverage is worked out"
+msgstr "カバレッジの計算方法"
+
+msgid "how far over capacity the day is (+) or how many hours are still free."
+msgstr "その日の容量をどの程度超過しているか（+）、またはまだ利用可能な時間がいくつあるか"
 
 msgid "How items roll up for posting and reporting"
 msgstr "アイテムが転記とレポートにどのようにロールアップされるか"
@@ -6944,6 +7004,9 @@ msgstr "手作業を減らす"
 msgid "Less manual work, fewer errors"
 msgstr "手作業を減らし、エラーを削減"
 
+msgid "Less overtime"
+msgstr "残業を減らす"
+
 msgid "Let's build something"
 msgstr "何か作ってみましょう"
 
@@ -7314,8 +7377,8 @@ msgstr "現在のプロセス、システム、データをマップする"
 msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\"をパスしたとしてマークしますか？"
 
-msgid "Mark absent today"
-msgstr "本日を不在にマーク"
+msgid "Mark absent"
+msgstr "欠席をマーク"
 
 msgid "Mark all as configured"
 msgstr "すべてを設定済みとしてマーク"
@@ -7367,6 +7430,9 @@ msgstr "短い数量をマーク"
 
 msgid "Mark to delete"
 msgstr "削除対象にマーク"
+
+msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
+msgstr "範囲内のすべての日について、その人を休止します。外出中はスケジュール設定されません。"
 
 msgid "Master records"
 msgstr "マスターレコード"
@@ -7668,8 +7734,14 @@ msgstr "もっと"
 msgid "More actions"
 msgstr "その他のアクション"
 
+msgid "More hours than the shift has."
+msgstr "シフトが持つ時間以上。"
+
 msgid "More options"
 msgstr "その他のオプション"
+
+msgid "More overtime"
+msgstr "残業を増やす"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "ほとんどのことはここで発見され、解決されます。明確に名前を付けてください。"
@@ -7699,6 +7771,12 @@ msgstr "ゴミ箱に移動"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0}を{1}バケットに移動しました"
+
+msgid "Moved {employeeName} to {targetName}"
+msgstr "{employeeName}を{targetName}に移動しました"
+
+msgid "Moved {employeeName}'s week to {targetName}"
+msgstr "{employeeName}の週を{targetName}に移動しました"
 
 msgid "Movements"
 msgstr "移動"
@@ -7741,6 +7819,9 @@ msgstr "必要日"
 
 msgid "Need the right columns?"
 msgstr "正しい列が必要ですか？"
+
+msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
+msgstr "必要人数は、その日の予定作業時間を{personDayHours}hで除した値を四捨五入したものです。フィルタリングしているシフト、またはこの場所で最も一般的なシフト長です。"
 
 msgid "Needs fixing"
 msgstr "修理が必要です"
@@ -8273,6 +8354,12 @@ msgstr "新しい通知はありません"
 msgid "No notes"
 msgstr "ノートなし"
 
+msgid "No one crewed"
+msgstr "クルーなし"
+
+msgid "No one to assign"
+msgstr "配置する人がいません"
+
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
 
@@ -8453,6 +8540,9 @@ msgstr "未開始"
 msgid "Not Started"
 msgstr "未開始"
 
+msgid "Not working today"
+msgstr "今日は勤務していません"
+
 msgid "Not yet"
 msgstr "まだ"
 
@@ -8470,6 +8560,9 @@ msgstr "メモ（オプション）"
 
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
+
+msgid "Nothing scheduled — add a station below."
+msgstr "スケジュールがありません。以下にステーションを追加してください。"
 
 msgid "Notification"
 msgstr "通知"
@@ -8491,6 +8584,10 @@ msgstr "OEM (オリジナル機器メーカー)"
 
 msgid "of"
 msgstr "の"
+
+#. placeholder {0}: formatHours(baseHours)
+msgid "of {0}h"
+msgstr "{0}h中"
 
 msgid "Off — released revisions stay editable"
 msgstr "オフ - リリースされたリビジョンは編集可能なままです"
@@ -10085,6 +10182,9 @@ msgstr "修正 {rectifyNumber}"
 msgid "Rectify"
 msgstr "修正"
 
+msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
+msgstr "赤は人手不足、緑は充足、琥珀色は必要人数以上の人員です。"
+
 msgid "Redirecting to verification page..."
 msgstr "検証ページにリダイレクト中..."
 
@@ -10191,11 +10291,11 @@ msgstr "フィルターを削除"
 msgid "Remove Filters"
 msgstr "フィルターを削除"
 
+msgid "Remove from board"
+msgstr "ボードから削除"
+
 msgid "Remove from Price List"
 msgstr "価格リストから削除"
-
-msgid "Remove from station"
-msgstr "ステーションから削除"
 
 msgid "Remove item"
 msgstr "アイテムを削除"
@@ -10208,6 +10308,9 @@ msgstr "ペアを削除"
 
 msgid "Remove sort by column"
 msgstr "列でソートを削除"
+
+msgid "Remove station"
+msgstr "ステーションを削除"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "このストレージタイプをすべての参照ストレージユニットから削除し、削除します。これは元に戻すことはできません。"
@@ -11028,6 +11131,9 @@ msgstr "行を選択"
 msgid "Select scope"
 msgstr "スコープを選択"
 
+msgid "Select station"
+msgstr "ステーションを選択"
+
 msgid "Select Supplier Status"
 msgstr "仕入先ステータスを選択"
 
@@ -11655,6 +11761,9 @@ msgstr "開始 {0}"
 
 msgid "State / Province"
 msgstr "都道府県"
+
+msgid "Station"
+msgstr "ステーション"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -12451,6 +12560,9 @@ msgstr "このワークセンターの機械の実行の時間当たり費用。
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "このワークセンターに適用される時間当たりの間接費負荷。労働+機械と完全な見積もり率の差は、オーバーヘッドが吸収するものです。"
 
+msgid "the hours the scheduler actually placed."
+msgstr "スケジューラーが実際に配置した時間。"
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "顧客がこの部品をPOで使用する識別子。Carbon は注文インポート時に内部部品IDに解決します。"
 
@@ -12477,6 +12589,9 @@ msgstr "出荷が転記されるときに認識されるインベントリコス
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS（3、5、7、10、15、20、27.5、39年）に基づくこのアセットのIRS回収期間クラス。"
+
+msgid "the job hours due that day."
+msgstr "その日に予定されている作業時間。"
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "この外部加工明細が対象とする作業。行の受領はこの作業に対して操作を閉じます。"
@@ -12700,6 +12815,9 @@ msgstr "このアセットの費用を耐用年数にわたって分散するた
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "在物理上存放库存的货架和箱子"
+
+msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgstr "割り当てたクルーのシフト時間。誰もいないステーションは、ロケーションのシフトカレンダーにフォールバックします。"
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "手元に保管する店舗用品と消耗品"
@@ -12987,8 +13105,14 @@ msgstr "このストレージタイプは現在{usageCount}個のストレージ
 msgid "this supplier"
 msgstr "このサプライヤー"
 
+msgid "This takes {employeeName} off the board for the day. Save again to confirm."
+msgstr "これは{employeeName}をその日のボードから削除します。確認するために再度保存します。"
+
 msgid "This updates the theme for all users of the application"
 msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
+
+msgid "This week"
+msgstr "今週"
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "このバージョンは読み取り専用になり、すべての材料製造方法がこのバージョンに置き換わります。"
@@ -13015,6 +13139,15 @@ msgstr "これにより、他のリビジョンのすべてのメソッドマテ
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "これにより、他のサイズのすべてのメソッドマテリアルがこのサイズに置き換わります。"
+
+msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
+msgstr "これで{overtimePreviewCount}人の超過勤務を+{overtimeHoursInput}h設定します。"
+
+msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
+msgstr "これでその週にクルーされた全員の超過勤務を+{overtimeHoursInput}h設定します。"
+
+msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
+msgstr "これで{overtimePreviewCount}人日の超過勤務を+{overtimeHoursInput}h設定します。"
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "これにより、製造方法の現在のバージョンがアクティブに設定され、読み取り専用になります。"
@@ -13056,6 +13189,9 @@ msgstr "逼迫"
 msgid "Tightened"
 msgstr "厳しい"
 
+msgid "Time off"
+msgstr "休み時間"
+
 msgid "Timecard"
 msgstr "タイムカード"
 
@@ -13077,8 +13213,14 @@ msgstr "タイムゾーン"
 msgid "Title"
 msgstr "タイトル"
 
+msgid "To"
+msgstr "へ"
+
 msgid "To Location"
 msgstr "到着地"
+
+msgid "To next week"
+msgstr "来週へ"
 
 msgid "To Receive"
 msgstr "受け取り予定"
@@ -14162,6 +14304,9 @@ msgstr "この次元が許可される値をどの出所から取得するか(�
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "期日カウントダウンが開始される内容(請求書日付、月末など)。"
+
+msgid "What these rows mean"
+msgstr "これらの行が何を意味するか"
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "この領収書が満たしているもの — 発注書、返品、受信転送、または親のない手動領収書。"

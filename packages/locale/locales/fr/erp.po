@@ -96,7 +96,16 @@ msgstr "{0} téléchargé avec succès"
 msgid "{0} values missing"
 msgstr "{0} valeurs manquantes"
 
+#. placeholder {0}: item.days
+msgid "{0}d"
+msgstr "{0}j"
+
+#. placeholder {0}: item.daysOff
+msgid "{0}d off"
+msgstr "{0}j congé"
+
 #. placeholder {0}: formatHours(-delta)
+#. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}h libre"
 
@@ -693,6 +702,9 @@ msgstr "Ajouter une opération"
 msgid "Add options above first"
 msgstr "Ajoutez d'abord les options ci-dessus"
 
+msgid "Add overtime"
+msgstr "Ajouter des heures supplémentaires"
+
 msgid "Add Pair"
 msgstr "Ajouter une paire"
 
@@ -737,6 +749,9 @@ msgstr "Ajouter l'expédition"
 
 msgid "Add Spare Part"
 msgstr "Ajouter une pièce de rechange"
+
+msgid "Add station"
+msgstr "Ajouter une station"
 
 msgid "Add Step"
 msgstr "Ajouter une étape"
@@ -829,9 +844,6 @@ msgstr "Tous les changements apportés aux entités vérifiables sont enregistr�
 msgid "All Customers"
 msgstr "Tous les clients"
 
-msgid "All departments"
-msgstr "Tous les départements"
-
 msgid "All Documents"
 msgstr "Tous les documents"
 
@@ -853,9 +865,6 @@ msgstr "Tous les membres des groupes sélectionnés et les individus sélectionn
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Toutes les lignes importées — {inserted} insérées, {updated} mises à jour."
 
-msgid "All shifts"
-msgstr "Tous les quarts"
-
 msgid "All Suppliers"
 msgstr "Tous les fournisseurs"
 
@@ -871,11 +880,17 @@ msgstr "Tous les utilisateurs"
 msgid "All Work Centers"
 msgstr "Tous les centres de travail"
 
+msgid "Allocated"
+msgstr "Alloué"
+
 msgid "Allows acknowledge & continue"
 msgstr "Permet d'accuser réception et de continuer"
 
 msgid "Alpha"
 msgstr "Alpha"
+
+msgid "also at {otherStationNames}"
+msgstr "aussi à {otherStationNames}"
 
 msgid "Always"
 msgstr "Toujours"
@@ -959,6 +974,9 @@ msgstr "Tout type d'article"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Tout ce qui n'est pas explicitement listé dans le périmètre ci-dessus"
+
+msgid "Anything the crew should know"
+msgstr "Toute information que l'équipe devrait connaître"
 
 msgid "AP Clerk"
 msgstr "Commis aux comptes créditeurs"
@@ -1563,8 +1581,8 @@ msgstr "Assigner aux groupes"
 msgid "Assigned"
 msgstr "Assigné"
 
-msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
-msgstr "Personnel affecté / Nécessaire par station. Nécessaire = heures de travail prévues ce jour-là ÷ quart de {defaultShiftHours}h, arrondi. Le rouge indique un manque d'effectifs, le vert indique une couverture complète, le jaune indique un sureffectif."
+msgid "Assigned {employeeName} to {targetName} for the week"
+msgstr "{employeeName} assigné à {targetName} pour la semaine"
 
 msgid "Assigned to Me"
 msgstr "Assigné à moi"
@@ -1631,6 +1649,9 @@ msgstr "Journaux d'audit"
 
 msgid "Authentication Error"
 msgstr "Erreur d'authentification"
+
+msgid "Authorized overtime on top of the shift"
+msgstr "Heures supplémentaires autorisées en sus du quart"
 
 msgid "Auto apply"
 msgstr "Appliquer automatiquement"
@@ -2258,9 +2279,6 @@ msgstr "Nettoyer et approuver les données migrées"
 msgid "Clear"
 msgstr "Effacer"
 
-msgid "Clear absence"
-msgstr "Effacer l'absence"
-
 msgid "Clear due date"
 msgstr "Effacer la date d'échéance"
 
@@ -2880,6 +2898,9 @@ msgstr "Copier le nom de la formation"
 
 msgid "Copy training unique identifier"
 msgstr "Copier l'identifiant unique de la formation"
+
+msgid "Copy week"
+msgstr "Copier la semaine"
 
 msgid "Correct Answer"
 msgstr "Réponse correcte"
@@ -3506,6 +3527,12 @@ msgstr "Date de paiement"
 msgid "Dates"
 msgstr "Dates"
 
+msgid "Day"
+msgstr "Jour"
+
+msgid "Day off"
+msgstr "Jour de repos"
+
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "Questions quotidiennes et hypercare après le lancement"
 
@@ -3994,9 +4021,6 @@ msgstr "Lieu de livraison"
 msgid "Demand"
 msgstr "Demande"
 
-msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
-msgstr "Demande = heures de travail prévues · Planifié = heures de travail placées par le planificateur · Disponible = heures de quart de l'équipe affectée (les stations sans équipe utilisent le calendrier de quart de l'emplacement) · Charge = heures supplémentaires (+) ou libres"
-
 msgid "Demand forecast"
 msgstr "Prévision de la Demande"
 
@@ -4260,6 +4284,9 @@ msgstr "Glissez-déposez un PDF de bon de commande ici, ou cliquez pour sélecti
 msgid "Drag handle"
 msgstr "Poignée de déplacement"
 
+msgid "Drag to assign"
+msgstr "Glissez pour assigner"
+
 msgid "Drag to place on drawing"
 msgstr "Faites glisser pour placer sur le dessin"
 
@@ -4363,6 +4390,9 @@ msgstr "par exemple les 3 à 4 premières semaines"
 
 msgid "e.g. Zebra 2x1"
 msgstr "p. ex. Zebra 2x1"
+
+msgid "Each cell is the people assigned against the people the day's work needs."
+msgstr "Chaque cellule affiche les personnes assignées par rapport aux personnes que le travail du jour nécessite."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Chaque unité physique obtient sa propre entité suivie et un numéro unique — une entité, une unité."
@@ -5004,6 +5034,12 @@ msgstr "Chaque tâche requise doit être terminée ou ignorée avant que la pér
 msgid "Every row was imported successfully."
 msgstr "Chaque ligne a été importée avec succès."
 
+msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
+msgstr "Toute personne travaillant n'importe quel jour de la semaine choisie prolonge son quart des heures que vous définissez. Seuls les départements et quarts que vous filtrez sont affectés."
+
+msgid "Everyone working this day stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
+msgstr "Toute personne travaillant ce jour prolonge son quart des heures que vous définissez. Seuls les départements et quarts que vous filtrez sont affectés."
+
 msgid "Everything from Starter"
 msgstr "Tout de Starter"
 
@@ -5172,6 +5208,9 @@ msgstr "Référence externe"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Champs supplémentaires pour capturer les données que Carbon ne suit pas par défaut"
+
+msgid "Extra hours on the whole day"
+msgstr "Heures supplémentaires sur l'ensemble de la journée"
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Balises supplémentaires pour segmenter vos rapports GL"
@@ -5560,6 +5599,9 @@ msgstr "Les fichiers joints ici sont inclus dans chaque email de bon de commande
 msgid "Filter"
 msgstr "Filtre"
 
+msgid "Filter ({appliedCount} applied)"
+msgstr "Filtre ({appliedCount} appliqué)"
+
 msgid "Finalize"
 msgstr "Finaliser"
 
@@ -5687,6 +5729,9 @@ msgstr "Fréquence"
 msgid "Friday"
 msgstr "Vendredi"
 
+msgid "From"
+msgstr "De"
+
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
 msgid "From {0}"
@@ -5700,6 +5745,9 @@ msgstr "De l'emplacement"
 
 msgid "from on-account credit"
 msgstr "du crédit en compte"
+
+msgid "From previous week"
+msgstr "De la semaine précédente"
 
 msgid "From Storage Unit"
 msgstr "Unité de stockage source"
@@ -6083,6 +6131,12 @@ msgstr "Héberger, sécuriser et sauvegarder la plateforme"
 msgid "Hours"
 msgstr "Heures"
 
+msgid "Hours at this station"
+msgstr "Heures à cette station"
+
+msgid "Hours not yet assigned"
+msgstr "Heures non encore affectées"
+
 msgid "Hours per Week"
 msgstr "Heures par semaine"
 
@@ -6106,6 +6160,12 @@ msgstr "Comment un article est approvisionné lorsqu'il est ajouté à une ligne
 
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "Comment le coût unitaire d'un article est évalué : Standard, Moyenne, FIFO ou LIFO. Défini par article."
+
+msgid "How coverage is worked out"
+msgstr "Comment la couverture est calculée"
+
+msgid "how far over capacity the day is (+) or how many hours are still free."
+msgstr "combien de fois la journée dépasse la capacité (+) ou combien d'heures sont encore disponibles."
 
 msgid "How items roll up for posting and reporting"
 msgstr "Comment les articles se regroupent pour la comptabilisation et la génération de rapports"
@@ -6944,6 +7004,9 @@ msgstr "Moins de travail manuel"
 msgid "Less manual work, fewer errors"
 msgstr "Moins de travail manuel, moins d'erreurs"
 
+msgid "Less overtime"
+msgstr "Moins d'heures supplémentaires"
+
 msgid "Let's build something"
 msgstr "Construisons quelque chose"
 
@@ -7314,8 +7377,8 @@ msgstr "Cartographiez votre processus actuel, vos systèmes et vos données"
 msgid "Mark \"{0}\" as passed?"
 msgstr "Marquer « {0} » comme réussi ?"
 
-msgid "Mark absent today"
-msgstr "Marquer comme absent aujourd'hui"
+msgid "Mark absent"
+msgstr "Marquer comme absent"
 
 msgid "Mark all as configured"
 msgstr "Marquer tout comme configuré"
@@ -7367,6 +7430,9 @@ msgstr "Marquer comme manquant"
 
 msgid "Mark to delete"
 msgstr "Marquer pour supprimer"
+
+msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
+msgstr "Marque la personne comme absente pour chaque jour de la plage. Ils ne seront pas programmés pendant leur absence."
 
 msgid "Master records"
 msgstr "Enregistrements principaux"
@@ -7668,8 +7734,14 @@ msgstr "Plus"
 msgid "More actions"
 msgstr "Plus d'actions"
 
+msgid "More hours than the shift has."
+msgstr "Plus d'heures que le quart ne peut en contenir."
+
 msgid "More options"
 msgstr "Plus d'options"
+
+msgid "More overtime"
+msgstr "Plus d'heures supplémentaires"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "La plupart des choses sont détectées et résolues ici. Nommez-les clairement."
@@ -7699,6 +7771,12 @@ msgstr "Déplacer vers la corbeille"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "Déplacé {0} vers le bucket {1}"
+
+msgid "Moved {employeeName} to {targetName}"
+msgstr "{employeeName} déplacé vers {targetName}"
+
+msgid "Moved {employeeName}'s week to {targetName}"
+msgstr "La semaine de {employeeName} déplacée vers {targetName}"
 
 msgid "Movements"
 msgstr "Mouvements"
@@ -7741,6 +7819,9 @@ msgstr "Requis le"
 
 msgid "Need the right columns?"
 msgstr "Besoin des bonnes colonnes ?"
+
+msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
+msgstr "Nécessaire = les heures de travail dues ce jour divisées par {personDayHours}h, arrondies à la hausse — le quart que vous filtrez, ou la durée de quart la plus courante à cet endroit."
 
 msgid "Needs fixing"
 msgstr "Doit être réparé"
@@ -8273,6 +8354,12 @@ msgstr "Aucune nouvelle notification"
 msgid "No notes"
 msgstr "Aucune note"
 
+msgid "No one crewed"
+msgstr "Aucun membre d'équipe"
+
+msgid "No one to assign"
+msgstr "Personne à assigner"
+
 msgid "No open invoices"
 msgstr "Aucune facture ouverte"
 
@@ -8453,6 +8540,9 @@ msgstr "Non commencé"
 msgid "Not Started"
 msgstr "Non commencé"
 
+msgid "Not working today"
+msgstr "Ne travaille pas aujourd'hui"
+
 msgid "Not yet"
 msgstr "Pas encore"
 
@@ -8470,6 +8560,9 @@ msgstr "Notes (facultatif)"
 
 msgid "Nothing in the archive"
 msgstr "Rien dans l'archive"
+
+msgid "Nothing scheduled — add a station below."
+msgstr "Rien de programmé — ajoutez une station ci-dessous."
 
 msgid "Notification"
 msgstr "Notification"
@@ -8491,6 +8584,10 @@ msgstr "OEM (fabricant d'équipement d'origine)"
 
 msgid "of"
 msgstr "de"
+
+#. placeholder {0}: formatHours(baseHours)
+msgid "of {0}h"
+msgstr "de {0}h"
 
 msgid "Off — released revisions stay editable"
 msgstr "Désactivé — les révisions publiées restent modifiables"
@@ -10085,6 +10182,9 @@ msgstr "Rectification {rectifyNumber}"
 msgid "Rectify"
 msgstr "Rectifier"
 
+msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
+msgstr "Le rouge indique un sous-effectif, le vert indique une couverture complète, l'ambre indique un sureffectif."
+
 msgid "Redirecting to verification page..."
 msgstr "Redirection vers la page de vérification..."
 
@@ -10191,11 +10291,11 @@ msgstr "Supprimer le filtre"
 msgid "Remove Filters"
 msgstr "Supprimer les filtres"
 
+msgid "Remove from board"
+msgstr "Supprimer du tableau"
+
 msgid "Remove from Price List"
 msgstr "Supprimer de la liste de prix"
-
-msgid "Remove from station"
-msgstr "Retirer de la station"
 
 msgid "Remove item"
 msgstr "Supprimer l'article"
@@ -10208,6 +10308,9 @@ msgstr "Supprimer la paire"
 
 msgid "Remove sort by column"
 msgstr "Supprimer le tri par colonne"
+
+msgid "Remove station"
+msgstr "Supprimer la station"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Supprimez ce type de stockage de toutes les unités de stockage qui le référencent et supprimez-le. Cette action ne peut pas être annulée."
@@ -11028,6 +11131,9 @@ msgstr "Sélectionner la ligne"
 msgid "Select scope"
 msgstr "Sélectionner la portée"
 
+msgid "Select station"
+msgstr "Sélectionner une station"
+
 msgid "Select Supplier Status"
 msgstr "Sélectionner le statut du fournisseur"
 
@@ -11655,6 +11761,9 @@ msgstr "Commence {0}"
 
 msgid "State / Province"
 msgstr "État / Province"
+
+msgid "Station"
+msgstr "Station"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -12451,6 +12560,9 @@ msgstr "Le coût horaire de fonctionnement de la machinerie à ce centre de trav
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "La charge de coût indirect horaire appliquée à ce centre de travail; la différence entre main-d'œuvre + machine et le taux de devis complet est ce que les frais généraux absorbent."
 
+msgid "the hours the scheduler actually placed."
+msgstr "les heures que l'ordonnanceur a réellement placées."
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "L'identifiant que le client utilise pour cette pièce sur ses POs; Carbon le résout à notre ID de pièce interne lors de l'importation de commandes."
 
@@ -12477,6 +12589,9 @@ msgstr "Le coût de l'inventaire reconnu lors de l'enregistrement d'une expédit
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "La classe de période de récupération IRS pour cet actif selon MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 ans)."
+
+msgid "the job hours due that day."
+msgstr "les heures de travail dues ce jour-là."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Le travail dont l'opération couvre cette ligne de traitement externe; le reçu de la ligne ferme l'opération contre ce travail."
@@ -12700,6 +12815,9 @@ msgstr "L'échéance utilisée pour répartir le coût de cet actif sur sa duré
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "Les étagères et bacs où le stock se trouve physiquement"
+
+msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgstr "les heures de quart de l'équipe que vous avez assignée. Les stations sans personne reviennent au calendrier de quart de la localité."
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Les fournitures de magasin et les consommables que vous gardez à portée de main"
@@ -12987,8 +13105,14 @@ msgstr "Ce type de stockage est actuellement utilisé par {usageCount} unité de
 msgid "this supplier"
 msgstr "ce fournisseur"
 
+msgid "This takes {employeeName} off the board for the day. Save again to confirm."
+msgstr "Cela retire {employeeName} du tableau pour la journée. Enregistrer à nouveau pour confirmer."
+
 msgid "This updates the theme for all users of the application"
 msgstr "Cela met à jour le thème pour tous les utilisateurs de l'application"
+
+msgid "This week"
+msgstr "Cette semaine"
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Cela rendra cette version en lecture seule et remplacera toutes les méthodes de fabrication de matériaux par cette version."
@@ -13015,6 +13139,15 @@ msgstr "Cela remplacera tous les matériaux de méthode des autres révisions pa
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Cela remplacera tous les matériaux de méthode d'autres tailles par cette taille."
+
+msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
+msgstr "Cela définira +{overtimeHoursInput}h de travail supplémentaire pour {overtimePreviewCount} personnes."
+
+msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
+msgstr "Cela définira +{overtimeHoursInput}h de travail supplémentaire pour tous les membres de l'équipage cette semaine."
+
+msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
+msgstr "Cela définira +{overtimeHoursInput}h de travail supplémentaire sur {overtimePreviewCount} journées-personnes."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "Cela définira la version actuelle de la méthode de fabrication sur Active, la rendant en lecture seule."
@@ -13056,6 +13189,9 @@ msgstr "serré"
 msgid "Tightened"
 msgstr "Serré"
 
+msgid "Time off"
+msgstr "Congé"
+
 msgid "Timecard"
 msgstr "Feuille de temps"
 
@@ -13077,8 +13213,14 @@ msgstr "Fuseau horaire"
 msgid "Title"
 msgstr "Titre"
 
+msgid "To"
+msgstr "À"
+
 msgid "To Location"
 msgstr "Vers l'emplacement"
+
+msgid "To next week"
+msgstr "À la semaine prochaine"
 
 msgid "To Receive"
 msgstr "À recevoir"
@@ -14162,6 +14304,9 @@ msgstr "De quelle source cette dimension tire ses valeurs autorisées (liste per
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "À partir de quoi commence le compte à rebours de la date d'échéance (date de facture, fin du mois, etc.)."
+
+msgid "What these rows mean"
+msgstr "Ce que ces lignes signifient"
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Ce que ce reçu fulfille — une commande d'achat, un retour, un transfert entrant ou un reçu manuel sans parent."

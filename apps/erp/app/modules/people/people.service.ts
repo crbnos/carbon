@@ -451,6 +451,16 @@ export async function getEmployeeShifts(
     .eq("companyId", companyId);
 }
 
+export async function getEmployeeDepartments(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("employeeJob")
+    .select("id, departmentId")
+    .eq("companyId", companyId);
+}
+
 export async function getShiftsWithTimes(
   client: SupabaseClient<Database>,
   companyId: string,

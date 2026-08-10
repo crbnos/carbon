@@ -334,3 +334,113 @@ watching the mark function + DB stamps, not the wave, locally.
   - Header: shift filter is a dedicated clock-icon popover ("All shifts"
     replaces "All day"; active-filter dot); location stays in ⚙; controls wrap
     on small screens.
+- 2026-07-31 — Within-shift SPLIT allocation implemented per the drag-UX
+  research (`.ai/research/crew-split-allocation-departments.md`):
+  - Schema: `crewAssignment.hours NUMERIC NULL` (null = whole shift) and the
+    person/day uniqueness now includes `workCenterId` (one row per station per
+    shift; migration `20260731192616_crew-split-hours.sql`, applied directly —
+    `crbn migrate` hung).
+  - Board cards are now ASSIGNMENT-identified (a split person appears in two
+    columns); Unassigned is the free-hours pool — untouched people show as
+    plain cards, partially-allocated people reappear with an "Xh free" chip
+    whose drag assigns the remainder.
+  - Dropping an assigned card on a second station opens the Move-or-Split
+    dialog: [Move] [Split evenly] [Custom hours…] (WhenToWork-style semantic
+    fork; splits are single Kysely transactions with same-station merge).
+  - New intents move/split; assign accepts optional hours (remainder);
+    matrix/capacity/coverage math and chips honor per-row hours.
+  - Typecheck pending the DB-repair + types-regen blocker (columns exist,
+    runtime verified paths; generated types stale).
+- 2026-08-01 — Move-or-Split dialog REMOVED after UX research round 2
+  (user: "modal feels overwhelming"; findings in
+  `.ai/research/crew-split-allocation-departments.md`, Float/Runn/NN-g
+  consensus: drops act immediately, hours edited on the artifact, N-way
+  splits are independent blocks not a split operation):
+  - Drag now always MOVES an assigned card (instant, success toast); the
+    `split` intent, `crewSplitValidator`, and `splitCrewAssignment` txn were
+    deleted.
+  - Splitting = the hours chip on every assigned card (blue `{h}h`, always
+    visible) → anchored popover with a ±0.5h stepper (capped at shift minus
+    the person's other rows), Apply, and Whole shift (sole-row only, stores
+    null). Lowering hours releases the remainder to the Unassigned
+    free-hours pool; dragging the "Xh free" card to stations 2…N completes
+    an N-way split — one light gesture per station, no dialogs.
+  - New `hours` intent (`crewHoursValidator` → `setCrewAssignmentHours`).
+  - Typecheck still gated on the stale-generated-types blocker (15 errors,
+    all the missing hours/overtimeHours column class).
+- 2026-08-01 — Planning-horizon expansion (research:
+  `.ai/research/crew-planning-horizons.md` — industry consensus: week is the
+  editing atom, month is a read-only coverage/absence overview, months are
+  filled by projecting weeks forward):
+  - Header date label is now a DatePicker (jump to any date); arrows step
+    day (Board), week, or month with matching aria labels.
+  - `?range=month` on Matrix/Capacity (Week | Month tabs): Capacity renders
+    the same Demand/Scheduled/Available/Load table with WEEK-bucket columns
+    (SAP CM01-shaped; `CapacityColumn[]` prop generalizes the table); Matrix
+    renders the new read-only `CrewMonthMatrix` (person × week: hours, +OT,
+    days off, week/month totals). Week headers drill down to the week view.
+    Loader loads the month's full Monday-aligned span (28–42 days).
+  - "Copy previous week" button on week-range Matrix/Capacity → `copy-week`
+    intent → `copyCrewWeek` (one txn, per-day skip rules shared with the day
+    copy via `copyCrewDayInTransaction`; day copy now preserves split
+    `hours`, overtime intentionally never copies).
+  - "Time off" header button → `absent-range` intent → `setCrewAbsenceRange`
+    (employee + from/to ≤62 days, one `crewAbsence` row per date, existing
+    dates skipped).
+  - Typecheck: 16 errors, all still the stale-generated-types class.
+- 2026-08-01 (later) — Week-basis assignment + horizon tab fixes (feedback:
+  "why do I get redirected to matrix when I select week", "assign per week
+  basis"):
+  - Period tabs are now per-view: Board shows Day | Week (both editable),
+    Matrix/Capacity show Week | Month — no cross-view redirects.
+  - New `CrewWeekBoard` (Board + Week): drag a person onto a station once =
+    crewed there all week. `assign-week` inserts one row per working day
+    (shift's weekday flags, Mon–Fri fallback; absent/already-assigned days
+    skipped), `unassign-week` clears the station's week, `move-week` moves
+    the week station-to-station (target-day collisions keep the target row).
+    All Kysely txns. Cards show "Nd" day counts + "Nd off"; day detail
+    (splits/OT/notes) stays on the Day board.
+  - Header date button now opens the real `Calendar` (newly exported from
+    @carbon/react — additive barrel change, flagged to Naveen) in a plain
+    popover; the DatePicker inline-preview misrender is gone.
+- 2026-08-01 (latest) — Month range REMOVED on Naveen's request ("remove the
+  month date filter"): `CrewMonthMatrix` deleted, `?range=month` and the
+  Month tab gone, `CrewCapacity`'s column override prop reverted to an
+  internal per-day shape. Horizons now: Board = Day | Week (both editable),
+  Matrix/Capacity = week only. Date-picker jump, copy previous day/week,
+  and the Time off range dialog all stay.
+- 2026-08-02 — ENGINE CONSUMPTION of overtime + splits (the deferred part 3
+  of the overtime/split/department build) implemented as pure window edits —
+  zero allocator changes:
+  - `crew-utils.ts`: `buildOvertimeByEmployee` (per person/date sum),
+    `extendWindowsByOvertime` (the date's last window ends OT hours later;
+    merges if it reaches the next window), `buildCrewBudgets` +
+    `clipWindowsToStation` (a split day's attended time dealt out
+    sequentially in row order; sole whole-shift row = identical to
+    `clipWindowsToDates`). 12 new deno tests; suite 100/100.
+  - `master-data-provider` selects `overtimeHours`/`hours` (stable
+    date+id order); `scheduling-engine.buildFiniteContext` extends windows
+    after absence subtraction and exposes `crewBudgets` on the context;
+    `work-center-selector` clips crew members per STATION via
+    `clipWindowsToStation` in both the gated and ungated team paths.
+  - `deno check` on the three DB-touching engine files fails until types
+    regen (stale `functions/lib/types.ts` lacks the columns) — no CI runs
+    deno, runtime unaffected; clears with the DB repair regen.
+- 2026-08-03 — "Working hours" editor popover (Connecteam-shaped,
+  duration-first per `.ai/research/crew-hours-editor-popover.md`):
+  - New `CrewHoursPopover`: Set-as-OFF-day toggle (absent/clear-absence),
+    one row per station (hours + OT inputs, ✕, "+ Add station" with
+    remainder default), derived clock-time echo from the shift start
+    (sequential — matches engine dealing), live footer total with amber
+    non-blocking over-capacity warning, atomic Save via new `day-hours`
+    intent → `crewDayValidator` (jsonField rows) → `setCrewDay` (one Kysely
+    txn reconciling update/insert/delete of the person's day, shift-scoped).
+  - Day board: the hours chip opens the editor; the per-card Overtime modal,
+    Absent action (assigned cards), and the Actions expander are gone —
+    cards show Note + Remove inline. Loader now threads shift START times
+    (`shiftStartById`/`employeeShiftStart`/`defaultShiftStart`).
+  - Matrix: employee×day cells are click targets opening the same editor
+    (grid-cell anchor) — the matrix is now an editing surface; absences prop
+    carries ids for the OFF-day toggle.
+  - Typecheck 18 errors — all stale-generated-types class (+2 from
+    setCrewDay's hours/overtimeHours writes).

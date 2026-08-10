@@ -55,6 +55,15 @@ first match.
   over/free (+Xh / Xh free), not %. Shift + location filters live in header
   popovers; the shift filter's "All shifts" option (`shiftId` null on
   drag) creates shift-less assignments that resolve hours via the ladder.
+  The Board has Day | Week period tabs — Week renders `CrewWeekBoard`
+  (drag once = crewed all week via `assign-week`/`unassign-week`/`move-week`
+  → `assignCrewWeek` etc., one row per working day from the shift's weekday
+  flags; matrix/capacity are week-only, no month range — removed on
+  request). Header also has a Calendar date-jump popover (Calendar is
+  exported from @carbon/react for this), copy previous day/week
+  (`copy`/`copy-week` — day copy preserves split `hours`, overtime never
+  copies), and a "Time off" range dialog
+  (`absent-range` → `setCrewAbsenceRange`).
 - **MES display** (`apps/mes/app/routes/x+/operations.tsx`): the "Schedule" page is
   a **Kanban** (columns = work centers, cards = operations sorted by `priority`),
   not a Gantt. Read-only re display; operators execute via `operation.$operationId.tsx`.
@@ -112,7 +121,12 @@ selectWorkCenters → calculatePriorities → persistChanges`.
   the full qualified pool in classic single-person relay mode. Ungated ops
   at a crewed station are manned the same way with machine-only fallback.
   Absences subtract the person's windows for that date everywhere
-  (`subtractAbsences`). A blank board is byte-identical to pre-crew
+  (`subtractAbsences`). Authorized overtime (`crewAssignment.overtimeHours`)
+  extends the person's last window on that date (`extendWindowsByOvertime`),
+  and split days (`crewAssignment.hours`, several stations per shift) deal
+  the person's attended day out sequentially per station
+  (`buildCrewBudgets` + `clipWindowsToStation` — a sole whole-shift row is
+  byte-identical to the old `clipWindowsToDates`). A blank board is byte-identical to pre-crew
   behavior (single-member team mode ≡ legacy relay). The allocator attributes
   each wait to its binding resource (machine queue vs operator pool vs the
   assigned crew — `crew-wait` cause) for the

@@ -14,6 +14,10 @@ export type CrewAssignmentRow = {
   /** YYYY-MM-DD */
   date: string;
   shiftId: string | null;
+  /** authorized extra hours on top of the shift for this station/date */
+  overtimeHours?: number;
+  /** partial-day hours at this station; null/undefined = the whole shift */
+  hours?: number | null;
 };
 
 /** Person out for a date (shift-scoped absences count as the whole day). */
@@ -202,5 +206,213 @@ export function clipWindowsToDates(
       }
     }
   }
+  return mergeSegments(kept);
+}
+
+const HOUR_MS = 3_600_000;
+
+/**
+ * employeeId -> dateKey -> authorized overtime hours that day.
+ *
+ * Overtime is a property of the person's DAY, not of a station: 2h of overtime
+ * is 2h however many stations they split across. The column lives on every
+ * assignment row (writers stamp the same day value on each), so this takes the
+ * MAX across a day's rows rather than summing them — summing would multiply a
+ * split person's overtime by their station count.
+ * Callers should exclude absent people's rows first.
+ */
+export function buildOvertimeByEmployee(
+  rows: CrewAssignmentRow[]
+): Map<string, Map<string, number>> {
+  const map = new Map<string, Map<string, number>>();
+  for (const row of rows) {
+    const overtime = row.overtimeHours ?? 0;
+    if (overtime <= 0) continue;
+    let byDate = map.get(row.employeeId);
+    if (!byDate) {
+      byDate = new Map();
+      map.set(row.employeeId, byDate);
+    }
+    byDate.set(row.date, Math.max(byDate.get(row.date) ?? 0, overtime));
+  }
+  return map;
+}
+
+/** Sort + merge overlapping/touching windows (never mutates the input). */
+function normalizeWindows(windows: CalendarWindow[]): CalendarWindow[] {
+  const sorted = windows
+    .map((w) => ({ start: w.start, end: w.end }))
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+  const out: CalendarWindow[] = [];
+  for (const window of sorted) {
+    const prev = out[out.length - 1];
+    if (prev && window.start.getTime() <= prev.end.getTime()) {
+      if (window.end.getTime() > prev.end.getTime()) prev.end = window.end;
+    } else {
+      out.push(window);
+    }
+  }
+  return out;
+}
+
+/**
+ * Authorized overtime = a longer day: each overtime date's LAST window is
+ * extended by that day's hours (an extension that reaches into a following
+ * window merges with it). Dates where the person has no window (absent, not
+ * working) get no extension. Empty map returns the input untouched.
+ */
+export function extendWindowsByOvertime(
+  windows: CalendarWindow[],
+  overtimeByDate: Map<string, number>,
+  timeZone: string
+): CalendarWindow[] {
+  if (overtimeByDate.size === 0) return windows;
+
+  // the window "belongs" to the local date it ends on (end - 1ms so a window
+  // ending exactly at midnight counts toward the day before)
+  const lastWindowIndexByDate = new Map<string, number>();
+  windows.forEach((window, index) => {
+    const dateKey = dateKeyInTimeZone(
+      new Date(window.end.getTime() - 1),
+      timeZone
+    );
+    const current = lastWindowIndexByDate.get(dateKey);
+    if (
+      current === undefined ||
+      window.end.getTime() > windows[current].end.getTime()
+    ) {
+      lastWindowIndexByDate.set(dateKey, index);
+    }
+  });
+
+  const extended = windows.map((window, index) => {
+    for (const [dateKey, hours] of overtimeByDate) {
+      if (hours > 0 && lastWindowIndexByDate.get(dateKey) === index) {
+        return {
+          start: window.start,
+          end: new Date(window.end.getTime() + hours * HOUR_MS)
+        };
+      }
+    }
+    return window;
+  });
+  return normalizeWindows(extended);
+}
+
+/** One station's share of a person's day, in row order. */
+export type CrewDayRow = { workCenterId: string; hours: number | null };
+
+/**
+ * employeeId -> dateKey -> that day's station rows in input order (the
+ * provider orders rows deterministically, so "the first rows get the first
+ * hours" is stable across runs).
+ */
+export function buildCrewBudgets(
+  rows: CrewAssignmentRow[]
+): Map<string, Map<string, CrewDayRow[]>> {
+  const map = new Map<string, Map<string, CrewDayRow[]>>();
+  for (const row of rows) {
+    let byDate = map.get(row.employeeId);
+    if (!byDate) {
+      byDate = new Map();
+      map.set(row.employeeId, byDate);
+    }
+    let dayRows = byDate.get(row.date);
+    if (!dayRows) {
+      dayRows = [];
+      byDate.set(row.date, dayRows);
+    }
+    dayRows.push({ workCenterId: row.workCenterId, hours: row.hours ?? null });
+  }
+  return map;
+}
+
+/**
+ * A member's availability AT ONE STATION: windows clipped to their crewed
+ * dates there and, on split days, to their hours budget at that station.
+ * The day's attended time is dealt out sequentially in row order — the first
+ * row gets the first hours of the day, the next row the following hours.
+ * A sole whole-shift row keeps the full day (identical to
+ * clipWindowsToDates), so unsplit boards behave exactly as before.
+ */
+export function clipWindowsToStation(
+  windows: CalendarWindow[],
+  workCenterId: string,
+  dates: Set<string>,
+  dayRowsByDate: Map<string, CrewDayRow[]> | undefined,
+  timeZone: string
+): CalendarWindow[] {
+  if (dates.size === 0) return [];
+
+  // chronological day segments, grouped per local date
+  const segmentsByDate = new Map<string, DaySegment[]>();
+  for (const window of windows) {
+    for (const segment of splitWindowByLocalDays(window, timeZone)) {
+      if (!dates.has(segment.dateKey)) continue;
+      const list = segmentsByDate.get(segment.dateKey) ?? [];
+      list.push(segment);
+      segmentsByDate.set(segment.dateKey, list);
+    }
+  }
+
+  const kept: DaySegment[] = [];
+  for (const [dateKey, segments] of segmentsByDate) {
+    segments.sort((a, b) => a.start.getTime() - b.start.getTime());
+    const dayRows = dayRowsByDate?.get(dateKey);
+    const isWholeDay =
+      !dayRows || (dayRows.length === 1 && dayRows[0].hours === null);
+    if (isWholeDay) {
+      kept.push(...segments);
+      continue;
+    }
+
+    // walk earlier rows to find this station's slice of the attended day
+    let offsetMs = 0;
+    let budgetMs: number | null = null;
+    let found = false;
+    for (const row of dayRows) {
+      if (row.workCenterId === workCenterId) {
+        budgetMs = row.hours === null ? null : row.hours * HOUR_MS;
+        found = true;
+        break;
+      }
+      if (row.hours === null) {
+        // an earlier whole-shift row consumes the rest of the day
+        offsetMs = Number.POSITIVE_INFINITY;
+        break;
+      }
+      offsetMs += row.hours * HOUR_MS;
+    }
+    if (!found && offsetMs !== Number.POSITIVE_INFINITY) {
+      // dates come from this station's rows, so this shouldn't happen —
+      // fall back to the whole day rather than silently dropping the person
+      kept.push(...segments);
+      continue;
+    }
+
+    let toSkip = offsetMs;
+    let toKeep = budgetMs === null ? Number.POSITIVE_INFINITY : budgetMs;
+    for (const segment of segments) {
+      const lengthMs = segment.end.getTime() - segment.start.getTime();
+      if (toSkip >= lengthMs) {
+        toSkip -= lengthMs;
+        continue;
+      }
+      if (toKeep <= 0) break;
+      const startMs = segment.start.getTime() + toSkip;
+      toSkip = 0;
+      const takeMs = Math.min(segment.end.getTime() - startMs, toKeep);
+      if (takeMs > 0) {
+        kept.push({
+          start: new Date(startMs),
+          end: new Date(startMs + takeMs),
+          dateKey
+        });
+        toKeep -= takeMs;
+      }
+    }
+  }
+
+  kept.sort((a, b) => a.start.getTime() - b.start.getTime());
   return mergeSegments(kept);
 }

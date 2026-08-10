@@ -1418,7 +1418,9 @@ export const crewAssignmentValidator = z.object({
   locationId: z.string().min(1, { message: "Location is required" }),
   date: z.string().min(1, { message: "Date is required" }), // YYYY-MM-DD
   shiftId: zfd.text(z.string().optional()),
-  note: zfd.text(z.string().optional())
+  note: zfd.text(z.string().optional()),
+  // set when assigning a partial-day remainder; absent = whole shift
+  hours: zfd.numeric(z.number().gt(0).max(24).optional())
 });
 
 export const crewAbsenceValidator = z.object({
@@ -1435,6 +1437,105 @@ export const copyCrewBoardValidator = z.object({
   toDate: z.string().min(1),
   shiftId: zfd.text(z.string().optional())
 });
+
+export const crewWeekAssignValidator = z.object({
+  locationId: z.string().min(1),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  weekStart: z.string().min(1), // Monday, YYYY-MM-DD
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const crewWeekUnassignValidator = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  weekStart: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const crewWeekMoveValidator = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  fromWorkCenterId: z.string().min(1),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  weekStart: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const copyCrewWeekValidator = z.object({
+  locationId: z.string().min(1),
+  fromWeekStart: z.string().min(1), // Monday, YYYY-MM-DD
+  toWeekStart: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const crewAbsenceRangeValidator = z
+  .object({
+    employeeId: z.string().min(1, { message: "Employee is required" }),
+    fromDate: z.string().min(1, { message: "Start date is required" }),
+    toDate: z.string().min(1, { message: "End date is required" }),
+    shiftId: zfd.text(z.string().optional()),
+    note: zfd.text(z.string().optional())
+  })
+  .refine((value) => value.toDate >= value.fromDate, {
+    message: "End date must be on or after the start date",
+    path: ["toDate"]
+  })
+  .refine(
+    (value) =>
+      new Date(`${value.toDate}T00:00:00Z`).getTime() -
+        new Date(`${value.fromDate}T00:00:00Z`).getTime() <=
+      62 * 24 * 3_600_000,
+    { message: "Range is limited to 62 days", path: ["toDate"] }
+  );
+
+export const crewMoveValidator = z.object({
+  id: z.string().min(1, { message: "Assignment is required" }),
+  workCenterId: z.string().min(1, { message: "Work center is required" })
+});
+
+// One atomic edit of a person's whole day: the given rows become the day's
+// assignments (update/insert/delete reconciliation in one transaction)
+export const crewDayValidator = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  locationId: z.string().min(1),
+  date: z.string().min(1),
+  shiftId: zfd.text(z.string().optional()),
+  // day-scoped note: written to every row of the person's day
+  note: zfd.text(z.string().optional()),
+  // day-scoped overtime: a longer DAY, not extra hours per station
+  overtimeHours: zfd.numeric(z.number().min(0).max(16)),
+  rows: jsonField(
+    z
+      .array(
+        z.object({
+          workCenterId: z.string().min(1),
+          hours: z.number().gt(0).max(24).nullable()
+        })
+      )
+      .max(20)
+  )
+});
+
+// Absent hours = back to the whole shift (stored as null)
+export const crewHoursValidator = z.object({
+  id: z.string().min(1, { message: "Assignment is required" }),
+  hours: zfd.numeric(z.number().gt(0).max(24).optional())
+});
+
+export const crewOvertimeBulkValidator = z
+  .object({
+    locationId: z.string().min(1),
+    date: z.string().min(1),
+    /** inclusive end of the range; omitted = the single `date` only */
+    toDate: zfd.text(z.string().optional()),
+    hours: zfd.numeric(z.number().min(0).max(16)),
+    departmentId: zfd.text(z.string().optional()),
+    shiftId: zfd.text(z.string().optional())
+  })
+  .refine((value) => !value.toDate || value.toDate >= value.date, {
+    message: "End date must be on or after the start date",
+    path: ["toDate"]
+  });
 
 export type Motion = z.infer<typeof motionSchema>;
 export type CameraPose = z.infer<typeof cameraSchema>;

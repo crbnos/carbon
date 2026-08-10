@@ -10,7 +10,8 @@ import {
 } from "./conflict-messages.ts";
 import { toIsoDateInTimeZone } from "./date-utils.ts";
 import type { CalendarWindow } from "./calendar-utils.ts";
-import { clipWindowsToDates } from "./crew-utils.ts";
+import type { CrewDayRow } from "./crew-utils.ts";
+import { clipWindowsToStation } from "./crew-utils.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
   isEligibleOperator,
@@ -80,9 +81,15 @@ export type FiniteSchedulingContext = {
    */
   crewByWorkCenter: Map<string, Map<string, string[]>>;
   /**
-   * Availability windows (post-absence) for ALL known people — qualified and
-   * crew-assigned alike. employeesByAbility members reference the same
-   * (already-subtracted) window arrays.
+   * Split days: employeeId -> dateKey -> that day's station rows in order.
+   * Each station's clip gets only its budgeted share of the person's day; a
+   * sole whole-shift row keeps the full day (pre-split behavior).
+   */
+  crewBudgets: Map<string, Map<string, CrewDayRow[]>>;
+  /**
+   * Availability windows (post-absence, post-overtime-extension) for ALL
+   * known people — qualified and crew-assigned alike. employeesByAbility
+   * members reference the same window arrays.
    */
   windowsByEmployee: Map<string, CalendarWindow[]>;
   /**
@@ -466,9 +473,11 @@ export class WorkCenterSelector {
               const crewQualified = (members ?? []).flatMap((m) => {
                 const dates = crew.memberCrewDates.get(m.employeeId);
                 if (!dates) return [];
-                const windows = clipWindowsToDates(
+                const windows = clipWindowsToStation(
                   m.windows,
+                  wcId,
                   dates,
+                  ctx.crewBudgets.get(m.employeeId),
                   ctx.timeZone
                 );
                 return windows.length > 0
@@ -523,9 +532,11 @@ export class WorkCenterSelector {
             if (crew && attendedHours > 0) {
               const crewMembers: EligibleMember[] = [];
               for (const [employeeId, dates] of crew.memberCrewDates) {
-                const windows = clipWindowsToDates(
+                const windows = clipWindowsToStation(
                   ctx.windowsByEmployee.get(employeeId) ?? [],
+                  wcId,
                   dates,
+                  ctx.crewBudgets.get(employeeId),
                   ctx.timeZone
                 );
                 if (windows.length > 0) {

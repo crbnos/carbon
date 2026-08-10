@@ -15,7 +15,10 @@ import {
 } from "./calendar-utils.ts";
 import {
   buildAbsencesByEmployee,
+  buildCrewBudgets,
   buildCrewByWorkCenter,
+  buildOvertimeByEmployee,
+  extendWindowsByOvertime,
   subtractAbsences,
 } from "./crew-utils.ts";
 import { calculateOperationDates } from "./date-calculator.ts";
@@ -571,11 +574,26 @@ export class SchedulingEngine {
     }
 
     // An absent person is never that day's crew
-    const crewByWorkCenter = buildCrewByWorkCenter(
-      crewRows.filter(
-        (row) => !absentByEmployee.get(row.employeeId)?.has(row.date)
-      )
+    const presentCrewRows = crewRows.filter(
+      (row) => !absentByEmployee.get(row.employeeId)?.has(row.date)
     );
+    const crewByWorkCenter = buildCrewByWorkCenter(presentCrewRows);
+
+    // Authorized overtime = a longer day: extend the person's last window on
+    // each overtime date so the allocator can pack work into the extra hours
+    const overtimeByEmployee = buildOvertimeByEmployee(presentCrewRows);
+    for (const [employeeId, overtimeByDate] of overtimeByEmployee) {
+      const windows = windowsByEmployee.get(employeeId);
+      if (windows) {
+        windowsByEmployee.set(
+          employeeId,
+          extendWindowsByOvertime(windows, overtimeByDate, timeZone)
+        );
+      }
+    }
+
+    // Split days: each station only gets its budgeted share of the person
+    const crewBudgets = buildCrewBudgets(presentCrewRows);
 
     const employeesByAbility = new Map<string, PoolEmployee[]>();
     for (const e of employees) {
@@ -617,6 +635,7 @@ export class SchedulingEngine {
       employeesByAbility,
       reservationsByEmployee,
       crewByWorkCenter,
+      crewBudgets,
       windowsByEmployee,
       dependencies: this.dependencies,
       now,

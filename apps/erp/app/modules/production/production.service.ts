@@ -3887,7 +3887,9 @@ export async function getCrewAssignments(
 ) {
   let query = client
     .from("crewAssignment")
-    .select("id, workCenterId, employeeId, shiftId, note, date")
+    .select(
+      "id, workCenterId, employeeId, shiftId, note, date, overtimeHours, hours"
+    )
     .eq("companyId", companyId)
     .eq("locationId", args.locationId)
     .eq("date", args.date);
@@ -3914,7 +3916,9 @@ export async function getCrewAssignmentsRange(
 ) {
   return client
     .from("crewAssignment")
-    .select("id, workCenterId, employeeId, shiftId, date")
+    .select(
+      "id, workCenterId, employeeId, shiftId, date, note, overtimeHours, hours"
+    )
     .eq("companyId", companyId)
     .eq("locationId", args.locationId)
     .gte("date", args.startDate)
@@ -4123,13 +4127,78 @@ export async function upsertCrewAssignment(
     date: string;
     shiftId: string | null;
     note?: string;
+    /** partial-day remainder; undefined = whole shift (replaces other rows) */
+    hours?: number;
     createdBy: string;
   }
 ) {
+  if (assignment.hours !== undefined) {
+    // remainder assignment: ADD hours at this station without touching the
+    // person's other stations; same-station rows merge their hours
+    return db.transaction().execute(async (trx) => {
+      let existing = trx
+        .selectFrom("crewAssignment")
+        .select(["id", "hours"])
+        .where("companyId", "=", assignment.companyId)
+        .where("employeeId", "=", assignment.employeeId)
+        .where("date", "=", assignment.date)
+        .where("workCenterId", "=", assignment.workCenterId);
+      existing = assignment.shiftId
+        ? existing.where("shiftId", "=", assignment.shiftId)
+        : existing.where("shiftId", "is", null);
+      const row = await existing.executeTakeFirst();
+      if (row) {
+        return trx
+          .updateTable("crewAssignment")
+          .set({
+            hours:
+              row.hours === null
+                ? null
+                : Number(row.hours) + (assignment.hours ?? 0)
+          })
+          .where("id", "=", row.id)
+          .where("companyId", "=", assignment.companyId)
+          .returning(["id", "workCenterId"])
+          .executeTakeFirstOrThrow();
+      }
+      return trx
+        .insertInto("crewAssignment")
+        .values({
+          companyId: assignment.companyId,
+          locationId: assignment.locationId,
+          workCenterId: assignment.workCenterId,
+          employeeId: assignment.employeeId,
+          date: assignment.date,
+          shiftId: assignment.shiftId,
+          note: assignment.note ?? null,
+          hours: assignment.hours,
+          createdBy: assignment.createdBy
+        })
+        .returning(["id", "workCenterId"])
+        .executeTakeFirstOrThrow();
+    });
+  }
   return db.transaction().execute(async (trx) => {
+    // Every read AND write here is location-scoped: the board is per-location,
+    // so a person crewed at another site must never be read from or deleted by
+    // an action taken on this one.
+    let existing = trx
+      .selectFrom("crewAssignment")
+      .select("overtimeHours")
+      .where("companyId", "=", assignment.companyId)
+      .where("locationId", "=", assignment.locationId)
+      .where("employeeId", "=", assignment.employeeId)
+      .where("date", "=", assignment.date);
+    existing = assignment.shiftId
+      ? existing.where("shiftId", "=", assignment.shiftId)
+      : existing.where("shiftId", "is", null);
+    // moving stations keeps the person's authorized overtime for that day
+    const carriedOvertime = (await existing.executeTakeFirst())?.overtimeHours;
+
     let del = trx
       .deleteFrom("crewAssignment")
       .where("companyId", "=", assignment.companyId)
+      .where("locationId", "=", assignment.locationId)
       .where("employeeId", "=", assignment.employeeId)
       .where("date", "=", assignment.date);
     del = assignment.shiftId
@@ -4146,6 +4215,7 @@ export async function upsertCrewAssignment(
         date: assignment.date,
         shiftId: assignment.shiftId,
         note: assignment.note ?? null,
+        overtimeHours: carriedOvertime ?? 0,
         createdBy: assignment.createdBy
       })
       .returning(["id", "workCenterId"])
@@ -4164,30 +4234,6 @@ export async function deleteCrewAssignment(
     .eq("id", id)
     .eq("companyId", companyId)
     .select("id, workCenterId, employeeId")
-    .single();
-}
-
-export async function updateCrewAssignmentNote(
-  client: SupabaseClient<Database>,
-  args: {
-    id: string;
-    companyId: string;
-    note: string | null;
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("crewAssignment")
-    .update(
-      sanitize({
-        note: args.note,
-        updatedBy: args.updatedBy,
-        updatedAt: new Date().toISOString()
-      })
-    )
-    .eq("id", args.id)
-    .eq("companyId", args.companyId)
-    .select("id")
     .single();
 }
 
@@ -4223,6 +4269,237 @@ export async function clearCrewAbsence(
  * Copy one day's crew board to another date, skipping people already assigned
  * on the target date or marked absent there.
  */
+/**
+ * Move one assignment row to another station (drag = move). If the person
+ * already has a row at the target station for the same shift/date, the rows
+ * merge (hours add; a whole-shift row absorbs the other).
+ */
+export async function moveCrewAssignment(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; workCenterId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const source = await trx
+      .selectFrom("crewAssignment")
+      .selectAll()
+      .where("id", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirstOrThrow();
+
+    let targetQuery = trx
+      .selectFrom("crewAssignment")
+      .select(["id", "hours"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", source.employeeId)
+      .where("date", "=", source.date)
+      .where("workCenterId", "=", args.workCenterId);
+    targetQuery = source.shiftId
+      ? targetQuery.where("shiftId", "=", source.shiftId)
+      : targetQuery.where("shiftId", "is", null);
+    const target = await targetQuery.executeTakeFirst();
+
+    if (target) {
+      const mergedHours =
+        source.hours === null || target.hours === null
+          ? null
+          : Number(source.hours) + Number(target.hours);
+      await trx
+        .updateTable("crewAssignment")
+        .set({ hours: mergedHours })
+        .where("id", "=", target.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      await trx
+        .deleteFrom("crewAssignment")
+        .where("id", "=", source.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      return { id: target.id, workCenterId: args.workCenterId };
+    }
+
+    return trx
+      .updateTable("crewAssignment")
+      .set({ workCenterId: args.workCenterId })
+      .where("id", "=", source.id)
+      .where("companyId", "=", args.companyId)
+      .returning(["id", "workCenterId"])
+      .executeTakeFirstOrThrow();
+  });
+}
+
+/**
+ * Atomically make the given rows a person's day: existing rows at kept
+ * stations are updated (hours/overtime), new stations inserted, stations
+ * not in `rows` deleted. Scoped to the shift when one is given. One
+ * transaction — the Working-hours popover's Save.
+ */
+export async function setCrewDay(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    employeeId: string;
+    date: string;
+    shiftId: string | null;
+    /** day-scoped note, written to every surviving row of the day */
+    note: string | null;
+    /**
+     * Day-scoped overtime, written to every surviving row of the day. The
+     * scheduler reads the MAX across a day's rows (never the sum), so 2h of
+     * overtime stays 2h however many stations the person splits across.
+     */
+    overtimeHours: number;
+    rows: {
+      workCenterId: string;
+      hours: number | null;
+    }[];
+    createdBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    // location-scoped: the rows this reconciliation may DELETE must be limited
+    // to the board the edit was made on
+    let existingQuery = trx
+      .selectFrom("crewAssignment")
+      .select(["id", "workCenterId"])
+      .where("companyId", "=", args.companyId)
+      .where("locationId", "=", args.locationId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date);
+    if (args.shiftId) {
+      existingQuery = existingQuery.where("shiftId", "=", args.shiftId);
+    }
+    const existing = await existingQuery.execute();
+    const existingByStation = new Map(
+      existing.map((row) => [row.workCenterId, row.id])
+    );
+    const keptStations = new Set(args.rows.map((row) => row.workCenterId));
+
+    for (const row of args.rows) {
+      const id = existingByStation.get(row.workCenterId);
+      if (id) {
+        await trx
+          .updateTable("crewAssignment")
+          .set({
+            hours: row.hours,
+            overtimeHours: args.overtimeHours,
+            note: args.note,
+            updatedBy: args.createdBy,
+            updatedAt: new Date().toISOString()
+          })
+          .where("id", "=", id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+      } else {
+        await trx
+          .insertInto("crewAssignment")
+          .values({
+            companyId: args.companyId,
+            locationId: args.locationId,
+            workCenterId: row.workCenterId,
+            employeeId: args.employeeId,
+            date: args.date,
+            shiftId: args.shiftId,
+            hours: row.hours,
+            overtimeHours: args.overtimeHours,
+            note: args.note,
+            createdBy: args.createdBy
+          })
+          .execute();
+      }
+    }
+
+    const removed = existing.filter(
+      (row) => !keptStations.has(row.workCenterId)
+    );
+    for (const row of removed) {
+      await trx
+        .deleteFrom("crewAssignment")
+        .where("id", "=", row.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+    return {
+      updated: args.rows.length,
+      removed: removed.length
+    };
+  });
+}
+
+/**
+ * Set the hours an assignment occupies at its station (null = the whole
+ * shift). Lowering hours releases the remainder back to the board's
+ * free-hours pool; splitting across stations = lower here, then drag the
+ * remainder card to the next station.
+ */
+export async function setCrewAssignmentHours(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { id: string; hours: number | null; updatedBy: string }
+) {
+  return client
+    .from("crewAssignment")
+    .update({
+      hours: args.hours,
+      updatedBy: args.updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", args.id)
+    .eq("companyId", companyId)
+    .select("id, workCenterId, date")
+    .single();
+}
+
+/**
+ * Authorize overtime for every assignment on a date, optionally scoped to a
+ * department (via the location's work centers) and/or a shift. One UPDATE so
+ * partial application can't happen; department resolves server-side (never a
+ * client-supplied work-center list).
+ */
+export async function setCrewOvertimeBulk(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    date: string;
+    /** inclusive end of the range; omitted = the single `date` only */
+    toDate?: string | null;
+    hours: number;
+    shiftId?: string | null;
+    departmentId?: string | null;
+    updatedBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    let query = trx
+      .updateTable("crewAssignment")
+      .set({
+        overtimeHours: args.hours,
+        updatedBy: args.updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .where("companyId", "=", args.companyId)
+      .where("locationId", "=", args.locationId);
+    query = args.toDate
+      ? query.where("date", ">=", args.date).where("date", "<=", args.toDate)
+      : query.where("date", "=", args.date);
+    if (args.shiftId) {
+      query = query.where("shiftId", "=", args.shiftId);
+    }
+    if (args.departmentId) {
+      const departmentId = args.departmentId;
+      query = query.where("workCenterId", "in", (eb) =>
+        eb
+          .selectFrom("workCenter")
+          .select("id")
+          .where("companyId", "=", args.companyId)
+          .where("departmentId", "=", departmentId)
+      );
+    }
+    return query.returning(["id", "workCenterId"]).execute();
+  });
+}
+
 export async function copyCrewBoard(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -4235,52 +4512,410 @@ export async function copyCrewBoard(
   }
 ) {
   return db.transaction().execute(async (trx) => {
-    let sourceQuery = trx
+    const result = await copyCrewDayInTransaction(trx, args);
+    return result;
+  });
+}
+
+/** One day's copy inside an open transaction — shared by day and week copy.
+ * Splits (`hours`) copy with the assignment; overtime deliberately does not
+ * (it's a per-day authorization). */
+async function copyCrewDayInTransaction(
+  trx: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    fromDate: string;
+    toDate: string;
+    shiftId: string | null;
+    createdBy: string;
+  }
+) {
+  let sourceQuery = trx
+    .selectFrom("crewAssignment")
+    .select(["workCenterId", "employeeId", "shiftId", "note", "hours"])
+    .where("companyId", "=", args.companyId)
+    .where("locationId", "=", args.locationId)
+    .where("date", "=", args.fromDate);
+  if (args.shiftId) {
+    sourceQuery = sourceQuery.where("shiftId", "=", args.shiftId);
+  }
+  const source = await sourceQuery.execute();
+
+  const [existing, absences] = await Promise.all([
+    // location-scoped: a person crewed at ANOTHER site on the target date must
+    // not silently suppress the copy on this board
+    trx
       .selectFrom("crewAssignment")
-      .select(["workCenterId", "employeeId", "shiftId", "note"])
+      .select(["employeeId"])
       .where("companyId", "=", args.companyId)
       .where("locationId", "=", args.locationId)
-      .where("date", "=", args.fromDate);
+      .where("date", "=", args.toDate)
+      .execute(),
+    // crewAbsence has no locationId — a person is absent company-wide
+    trx
+      .selectFrom("crewAbsence")
+      .select(["employeeId"])
+      .where("companyId", "=", args.companyId)
+      .where("date", "=", args.toDate)
+      .execute()
+  ]);
+  const skip = new Set([
+    ...existing.map((r) => r.employeeId),
+    ...absences.map((r) => r.employeeId)
+  ]);
+
+  const rows = source
+    .filter((r) => !skip.has(r.employeeId))
+    .map((r) => ({
+      companyId: args.companyId,
+      locationId: args.locationId,
+      workCenterId: r.workCenterId,
+      employeeId: r.employeeId,
+      date: args.toDate,
+      shiftId: r.shiftId,
+      note: r.note,
+      hours: r.hours,
+      createdBy: args.createdBy
+    }));
+  if (rows.length > 0) {
+    await trx.insertInto("crewAssignment").values(rows).execute();
+  }
+  return { copied: rows.length, skipped: source.length - rows.length };
+}
+
+const addIsoDays = (date: string, days: number) =>
+  new Date(new Date(`${date}T00:00:00Z`).getTime() + days * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+
+const WEEKDAY_COLUMNS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday"
+] as const;
+
+/**
+ * Assign a person to a station for a whole Monday-start week: one row per
+ * working day (the shift's weekdays when a shift is given, Mon–Fri
+ * otherwise), skipping days where they're absent or already assigned.
+ */
+export async function assignCrewWeek(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    employeeId: string;
+    workCenterId: string;
+    weekStart: string;
+    shiftId: string | null;
+    createdBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    // working days: the chosen shift's weekdays → the person's own shift's
+    // weekdays → Mon–Fri
+    let activeWeekdays: readonly string[] = WEEKDAY_COLUMNS.slice(0, 5);
+    let shift: Record<string, boolean | null> | undefined;
+    if (args.shiftId) {
+      shift = await trx
+        .selectFrom("shift")
+        .select([
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ])
+        .where("id", "=", args.shiftId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+    } else {
+      shift = await trx
+        .selectFrom("employeeShift")
+        .innerJoin("shift", "shift.id", "employeeShift.shiftId")
+        .select([
+          "shift.monday",
+          "shift.tuesday",
+          "shift.wednesday",
+          "shift.thursday",
+          "shift.friday",
+          "shift.saturday",
+          "shift.sunday"
+        ])
+        .where("employeeShift.employeeId", "=", args.employeeId)
+        .where("shift.companyId", "=", args.companyId)
+        .executeTakeFirst();
+    }
+    if (shift) {
+      activeWeekdays = WEEKDAY_COLUMNS.filter((day) => shift?.[day]);
+    }
+    const weekEnd = addIsoDays(args.weekStart, 6);
+    const [existing, absences] = await Promise.all([
+      // location-scoped, for the same reason as the day copy
+      trx
+        .selectFrom("crewAssignment")
+        .select(["date"])
+        .where("companyId", "=", args.companyId)
+        .where("locationId", "=", args.locationId)
+        .where("employeeId", "=", args.employeeId)
+        .where("date", ">=", args.weekStart)
+        .where("date", "<=", weekEnd)
+        .execute(),
+      trx
+        .selectFrom("crewAbsence")
+        .select(["date"])
+        .where("companyId", "=", args.companyId)
+        .where("employeeId", "=", args.employeeId)
+        .where("date", ">=", args.weekStart)
+        .where("date", "<=", weekEnd)
+        .execute()
+    ]);
+    const toIso = (value: unknown) => {
+      if (typeof value === "string") return value.slice(0, 10);
+      const date = new Date(value as Date);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(date.getDate()).padStart(2, "0")}`;
+    };
+    const skip = new Set([
+      ...existing.map((row) => toIso(row.date)),
+      ...absences.map((row) => toIso(row.date))
+    ]);
+
+    const rows = [];
+    for (let offset = 0; offset < 7; offset++) {
+      const date = addIsoDays(args.weekStart, offset);
+      // weekStart is a Monday, so offset maps 1:1 onto WEEKDAY_COLUMNS
+      if (!activeWeekdays.includes(WEEKDAY_COLUMNS[offset])) continue;
+      if (skip.has(date)) continue;
+      rows.push({
+        companyId: args.companyId,
+        locationId: args.locationId,
+        workCenterId: args.workCenterId,
+        employeeId: args.employeeId,
+        date,
+        shiftId: args.shiftId,
+        createdBy: args.createdBy
+      });
+    }
+    if (rows.length > 0) {
+      await trx.insertInto("crewAssignment").values(rows).execute();
+    }
+    return { assigned: rows.length, skipped: skip.size };
+  });
+}
+
+/** Remove a person from a station for the whole week (their other stations
+ * and other weeks are untouched). */
+export async function unassignCrewWeek(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    employeeId: string;
+    workCenterId: string;
+    weekStart: string;
+    shiftId: string | null;
+  }
+) {
+  let query = db
+    .deleteFrom("crewAssignment")
+    .where("companyId", "=", args.companyId)
+    .where("employeeId", "=", args.employeeId)
+    .where("workCenterId", "=", args.workCenterId)
+    .where("date", ">=", args.weekStart)
+    .where("date", "<=", addIsoDays(args.weekStart, 6));
+  if (args.shiftId) {
+    query = query.where("shiftId", "=", args.shiftId);
+  }
+  return query.execute();
+}
+
+/**
+ * Move a person's whole week from one station to another. Days where they
+ * already have a row at the target station keep the target row (the source
+ * row is dropped); other days simply change station.
+ */
+export async function moveCrewWeek(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    employeeId: string;
+    fromWorkCenterId: string;
+    workCenterId: string;
+    weekStart: string;
+    shiftId: string | null;
+  }
+) {
+  const weekEnd = addIsoDays(args.weekStart, 6);
+  return db.transaction().execute(async (trx) => {
+    let sourceQuery = trx
+      .selectFrom("crewAssignment")
+      .select(["id", "date", "shiftId"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("workCenterId", "=", args.fromWorkCenterId)
+      .where("date", ">=", args.weekStart)
+      .where("date", "<=", weekEnd);
     if (args.shiftId) {
       sourceQuery = sourceQuery.where("shiftId", "=", args.shiftId);
     }
     const source = await sourceQuery.execute();
 
-    const [existing, absences] = await Promise.all([
-      trx
-        .selectFrom("crewAssignment")
-        .select(["employeeId"])
-        .where("companyId", "=", args.companyId)
-        .where("date", "=", args.toDate)
-        .execute(),
-      trx
-        .selectFrom("crewAbsence")
-        .select(["employeeId"])
-        .where("companyId", "=", args.companyId)
-        .where("date", "=", args.toDate)
-        .execute()
-    ]);
-    const skip = new Set([
-      ...existing.map((r) => r.employeeId),
-      ...absences.map((r) => r.employeeId)
-    ]);
+    const target = await trx
+      .selectFrom("crewAssignment")
+      .select(["date", "shiftId"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("workCenterId", "=", args.workCenterId)
+      .where("date", ">=", args.weekStart)
+      .where("date", "<=", weekEnd)
+      .execute();
+    const toIso = (value: unknown) => {
+      if (typeof value === "string") return value.slice(0, 10);
+      const date = new Date(value as Date);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(date.getDate()).padStart(2, "0")}`;
+    };
+    const occupied = new Set(
+      target.map((row) => `${toIso(row.date)}:${row.shiftId ?? ""}`)
+    );
 
-    const rows = source
-      .filter((r) => !skip.has(r.employeeId))
-      .map((r) => ({
+    let moved = 0;
+    for (const row of source) {
+      if (occupied.has(`${toIso(row.date)}:${row.shiftId ?? ""}`)) {
+        await trx
+          .deleteFrom("crewAssignment")
+          .where("id", "=", row.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+      } else {
+        await trx
+          .updateTable("crewAssignment")
+          .set({ workCenterId: args.workCenterId })
+          .where("id", "=", row.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+        moved += 1;
+      }
+    }
+    return { moved, merged: source.length - moved };
+  });
+}
+
+/**
+ * Copy a whole Monday-start week of crew assignments onto another week,
+ * day by day, with the same skip rules as the day copy (people already
+ * assigned or absent on the target date are left alone). One transaction.
+ */
+export async function copyCrewWeek(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    fromWeekStart: string;
+    toWeekStart: string;
+    shiftId: string | null;
+    createdBy: string;
+  }
+) {
+  const addDays = (date: string, days: number) =>
+    new Date(new Date(`${date}T00:00:00Z`).getTime() + days * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+  return db.transaction().execute(async (trx) => {
+    let copied = 0;
+    let skipped = 0;
+    for (let offset = 0; offset < 7; offset++) {
+      const result = await copyCrewDayInTransaction(trx, {
         companyId: args.companyId,
         locationId: args.locationId,
-        workCenterId: r.workCenterId,
-        employeeId: r.employeeId,
-        date: args.toDate,
-        shiftId: r.shiftId,
-        note: r.note,
+        fromDate: addDays(args.fromWeekStart, offset),
+        toDate: addDays(args.toWeekStart, offset),
+        shiftId: args.shiftId,
         createdBy: args.createdBy
-      }));
-    if (rows.length > 0) {
-      await trx.insertInto("crewAssignment").values(rows).execute();
+      });
+      copied += result.copied;
+      skipped += result.skipped;
     }
-    return { copied: rows.length, skipped: source.length - rows.length };
+    return { copied, skipped };
+  });
+}
+
+/**
+ * Mark a person absent for every date in [fromDate, toDate] (vacation as one
+ * action). Dates that already carry an absence for the person are skipped.
+ */
+export async function setCrewAbsenceRange(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    employeeId: string;
+    fromDate: string;
+    toDate: string;
+    shiftId: string | null;
+    note?: string;
+    createdBy: string;
+  }
+) {
+  // pg DATE comes back as a JS Date at server-local midnight — normalize
+  // with local getters, never toISOString (UTC shift can move the day)
+  const toIso = (value: unknown) => {
+    if (typeof value === "string") return value.slice(0, 10);
+    const date = new Date(value as Date);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(date.getDate()).padStart(2, "0")}`;
+  };
+  return db.transaction().execute(async (trx) => {
+    const existing = await trx
+      .selectFrom("crewAbsence")
+      .select(["date"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", ">=", args.fromDate)
+      .where("date", "<=", args.toDate)
+      .execute();
+    const have = new Set(existing.map((row) => toIso(row.date)));
+
+    const rows: {
+      companyId: string;
+      employeeId: string;
+      date: string;
+      shiftId: string | null;
+      note: string | null;
+      createdBy: string;
+    }[] = [];
+    for (
+      let ms = new Date(`${args.fromDate}T00:00:00Z`).getTime();
+      ms <= new Date(`${args.toDate}T00:00:00Z`).getTime();
+      ms += 86_400_000
+    ) {
+      const date = new Date(ms).toISOString().slice(0, 10);
+      if (have.has(date)) continue;
+      rows.push({
+        companyId: args.companyId,
+        employeeId: args.employeeId,
+        date,
+        shiftId: args.shiftId,
+        note: args.note ?? null,
+        createdBy: args.createdBy
+      });
+    }
+    if (rows.length > 0) {
+      await trx.insertInto("crewAbsence").values(rows).execute();
+    }
+    return { created: rows.length, skipped: have.size };
   });
 }
 

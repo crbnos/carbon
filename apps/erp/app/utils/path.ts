@@ -63,6 +63,8 @@ export const path = {
       costCenters: `${api}/accounting/cost-centers`,
       countries: `${api}/countries`,
       createCsvLookup: `${api}/csv/create-lookup`,
+      crewEmployees: (locationId: string) =>
+        generatePath(`${api}/people/crew-employees/${locationId}`),
       currencies: `${api}/accounting/currencies`,
       customerContacts: (id: string) =>
         generatePath(`${api}/sales/customer-contacts/${id}`),

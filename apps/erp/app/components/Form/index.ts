@@ -34,6 +34,7 @@ import AssetClass, { useAssetClasses } from "./AssetClass";
 import Color from "./Color";
 import ConversionFactor from "./ConversionFactor";
 import CostCenter from "./CostCenter";
+import CrewEmployee from "./CrewEmployee";
 import Currency from "./Currency";
 import Customer from "./Customer";
 import CustomerContact from "./CustomerContact";
@@ -105,6 +106,7 @@ export {
   ConversionFactor,
   CreatableCombobox,
   CreatableMultiSelect,
+  CrewEmployee,
   Currency,
   Customer,
   CustomerContact,

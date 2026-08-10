@@ -1,11 +1,21 @@
-import { cn, Table, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
+import {
+  cn,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  Tr
+} from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ComponentProps } from "react";
 import { Fragment, useCallback, useMemo } from "react";
-
-const CHIP_BASE =
-  "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-black/5 dark:ring-white/10";
+import { LuInfo } from "react-icons/lu";
+import { CrewChip } from "./CrewChip";
 
 const STICKY_HEADER =
   "sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]";
@@ -28,6 +38,14 @@ type CapacityWorkCenter = {
   departmentName: string | null;
 };
 
+// internal column shape (one per day) so the sums are written once
+type CapacityColumn = {
+  key: string;
+  label: string;
+  dates: string[];
+  isCurrent?: boolean;
+};
+
 type CrewCapacityProps = {
   weekDates: string[];
   workCenters: CapacityWorkCenter[];
@@ -36,6 +54,8 @@ type CrewCapacityProps = {
     workCenterId: string;
     date: string;
     shiftId: string | null;
+    overtimeHours: number;
+    hours: number | null;
   }[];
   absences: { employeeId: string; date: string }[];
   demandByWorkCenter: Record<
@@ -80,10 +100,9 @@ function LoadCell({
     ? `${Math.round(pct * 100)}% loaded (${formatHours(demand)}h due / ${formatHours(available)}h available)`
     : `${formatHours(demand)}h due with no available hours`;
   return (
-    <span
-      title={title}
+    <CrewChip
+      tooltip={title}
       className={cn(
-        CHIP_BASE,
         "min-w-[52px] justify-center tabular-nums",
         loadCellClass(pct)
       )}
@@ -93,7 +112,7 @@ function LoadCell({
       ) : (
         <Trans>{formatHours(-delta)}h free</Trans>
       )}
-    </span>
+    </CrewChip>
   );
 }
 
@@ -120,16 +139,31 @@ export function CrewCapacity({
   // absent), using each assignment's real shift duration
   const crewHours = useMemo(() => {
     const map = new Map<string, number>();
+    // Overtime is day-scoped and stamped on every row of the person's day, so
+    // it's added ONCE — to their last station of the day, mirroring the
+    // scheduler, which extends the last window of the day.
+    const lastRowByPersonDate = new Map<string, (typeof assignments)[number]>();
     for (const assignment of assignments) {
       if (absentSet.has(`${assignment.employeeId}:${assignment.date}`)) {
         continue;
       }
       const hours =
+        assignment.hours ??
         (assignment.shiftId ? shiftHoursById[assignment.shiftId] : undefined) ??
         employeeShiftHours[assignment.employeeId] ??
         defaultShiftHours;
       const key = `${assignment.workCenterId}:${assignment.date}`;
       map.set(key, (map.get(key) ?? 0) + hours);
+      lastRowByPersonDate.set(
+        `${assignment.employeeId}:${assignment.date}`,
+        assignment
+      );
+    }
+    for (const assignment of lastRowByPersonDate.values()) {
+      const overtime = assignment.overtimeHours ?? 0;
+      if (overtime <= 0) continue;
+      const key = `${assignment.workCenterId}:${assignment.date}`;
+      map.set(key, (map.get(key) ?? 0) + overtime);
     }
     return map;
   }, [
@@ -150,6 +184,54 @@ export function CrewCapacity({
     [crewHours, calendarHoursByDate]
   );
 
+  const today = new Date().toLocaleDateString("en-CA");
+  const dayLabel = useCallback(
+    (date: string) =>
+      new Date(`${date}T00:00:00`).toLocaleDateString(locale, {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      }),
+    [locale]
+  );
+
+  const columns: CapacityColumn[] = useMemo(
+    () =>
+      weekDates.map((date) => ({
+        key: date,
+        label: dayLabel(date),
+        dates: [date],
+        isCurrent: date === today
+      })),
+    [weekDates, dayLabel, today]
+  );
+
+  const demandForColumn = useCallback(
+    (workCenterId: string, column: CapacityColumn) =>
+      column.dates.reduce(
+        (sum, date) =>
+          sum + (demandByWorkCenter[workCenterId]?.days[date] ?? 0),
+        0
+      ),
+    [demandByWorkCenter]
+  );
+  const scheduledForColumn = useCallback(
+    (workCenterId: string, column: CapacityColumn) =>
+      column.dates.reduce(
+        (sum, date) => sum + (scheduledByWorkCenter[workCenterId]?.[date] ?? 0),
+        0
+      ),
+    [scheduledByWorkCenter]
+  );
+  const availableForColumn = useCallback(
+    (workCenterId: string, column: CapacityColumn) =>
+      column.dates.reduce(
+        (sum, date) => sum + availableHours(workCenterId, date),
+        0
+      ),
+    [availableHours]
+  );
+
   const byDepartment = useMemo(() => {
     const groups = new Map<string, CapacityWorkCenter[]>();
     for (const workCenter of workCenters) {
@@ -161,15 +243,15 @@ export function CrewCapacity({
     return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [workCenters]);
 
-  // traffic-light totals across every work-center/day load cell
+  // traffic-light totals across every work-center/column load cell
   const summary = useMemo(() => {
     let green = 0;
     let amber = 0;
     let red = 0;
     for (const workCenter of workCenters) {
-      for (const date of weekDates) {
-        const demand = demandByWorkCenter[workCenter.id]?.days[date] ?? 0;
-        const available = availableHours(workCenter.id, date);
+      for (const column of columns) {
+        const demand = demandForColumn(workCenter.id, column);
+        const available = availableForColumn(workCenter.id, column);
         if (demand === 0) continue;
         const pct = available > 0 ? demand / available : Infinity;
         if (pct > 1.2) red += 1;
@@ -178,27 +260,58 @@ export function CrewCapacity({
       }
     }
     return { green, amber, red };
-  }, [workCenters, weekDates, demandByWorkCenter, availableHours]);
-
-  const dayLabel = (date: string) =>
-    new Date(`${date}T00:00:00`).toLocaleDateString(locale, {
-      weekday: "short",
-      month: "short",
-      day: "numeric"
-    });
-
-  const today = new Date().toLocaleDateString("en-CA");
+  }, [workCenters, columns, demandForColumn, availableForColumn]);
 
   return (
     <div className="flex flex-col w-full h-full min-h-0 overflow-hidden p-4 gap-4">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-xs text-muted-foreground text-pretty">
-          <Trans>
-            Demand = job hours due · Scheduled = work hours the scheduler placed
-            · Available = assigned crew's shift hours (uncrewed stations use the
-            location's shift calendar) · Load = hours over (+) or free
-          </Trans>
-        </p>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <LuInfo className="h-3.5 w-3.5" />
+              <Trans>What these rows mean</Trans>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent align="start" className="max-w-[320px]">
+            <div className="flex flex-col gap-1.5 text-xs">
+              <p>
+                <span className="font-medium">
+                  <Trans>Demand</Trans>
+                </span>{" "}
+                — <Trans>the job hours due that day.</Trans>
+              </p>
+              <p>
+                <span className="font-medium">
+                  <Trans>Scheduled</Trans>
+                </span>{" "}
+                — <Trans>the hours the scheduler actually placed.</Trans>
+              </p>
+              <p>
+                <span className="font-medium">
+                  <Trans>Available</Trans>
+                </span>{" "}
+                —{" "}
+                <Trans>
+                  the shift hours of the crew you've assigned. Stations with
+                  nobody on them fall back to the location's shift calendar.
+                </Trans>
+              </p>
+              <p>
+                <span className="font-medium">
+                  <Trans>Load</Trans>
+                </span>{" "}
+                —{" "}
+                <Trans>
+                  how far over capacity the day is (+) or how many hours are
+                  still free.
+                </Trans>
+              </p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
         <div className="flex items-center gap-2 text-xs tabular-nums">
           <span className="inline-flex items-center rounded-md bg-emerald-500/15 px-2 py-0.5 text-emerald-700 dark:text-emerald-400">
             {summary.green} <Trans>ok</Trans>
@@ -227,16 +340,16 @@ export function CrewCapacity({
               >
                 <Trans>Past due</Trans>
               </CapacityTh>
-              {weekDates.map((date) => (
+              {columns.map((column) => (
                 <CapacityTh
-                  key={date}
+                  key={column.key}
                   className={cn(
                     STICKY_HEADER,
                     "text-center min-w-[110px]",
-                    date === today && "text-primary"
+                    column.isCurrent && "text-primary"
                   )}
                 >
-                  {dayLabel(date)}
+                  {column.label}
                 </CapacityTh>
               ))}
               <CapacityTh
@@ -252,7 +365,7 @@ export function CrewCapacity({
                 <Tbody>
                   <Tr>
                     <Td
-                      colSpan={weekDates.length + 4}
+                      colSpan={columns.length + 4}
                       className="bg-muted/50 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                     >
                       {departmentName}
@@ -262,17 +375,18 @@ export function CrewCapacity({
               )}
               {group.map((workCenter) => {
                 const demand = demandByWorkCenter[workCenter.id];
-                const scheduled = scheduledByWorkCenter[workCenter.id] ?? {};
-                const demandWeek = weekDates.reduce(
-                  (sum, date) => sum + (demand?.days[date] ?? 0),
+                const demandWeek = columns.reduce(
+                  (sum, column) => sum + demandForColumn(workCenter.id, column),
                   0
                 );
-                const scheduledWeek = weekDates.reduce(
-                  (sum, date) => sum + (scheduled[date] ?? 0),
+                const scheduledWeek = columns.reduce(
+                  (sum, column) =>
+                    sum + scheduledForColumn(workCenter.id, column),
                   0
                 );
-                const availableWeek = weekDates.reduce(
-                  (sum, date) => sum + availableHours(workCenter.id, date),
+                const availableWeek = columns.reduce(
+                  (sum, column) =>
+                    sum + availableForColumn(workCenter.id, column),
                   0
                 );
                 const pastDue = demand?.pastDue ?? 0;
@@ -303,17 +417,17 @@ export function CrewCapacity({
                       >
                         {pastDue > 0 ? formatHours(pastDue) : "—"}
                       </Td>
-                      {weekDates.map((date) => {
-                        const value = demand?.days[date] ?? 0;
+                      {columns.map((column) => {
+                        const value = demandForColumn(workCenter.id, column);
                         return (
                           <Td
-                            key={date}
+                            key={column.key}
                             className={cn(
                               "text-center text-sm tabular-nums",
                               value === 0
                                 ? "text-muted-foreground/50"
                                 : "font-medium",
-                              date === today && "bg-muted/30"
+                              column.isCurrent && "bg-muted/30"
                             )}
                           >
                             {value === 0 ? "—" : formatHours(value)}
@@ -331,17 +445,17 @@ export function CrewCapacity({
                       <Td className="text-center text-sm text-muted-foreground/50">
                         —
                       </Td>
-                      {weekDates.map((date) => {
-                        const value = scheduled[date] ?? 0;
+                      {columns.map((column) => {
+                        const value = scheduledForColumn(workCenter.id, column);
                         return (
                           <Td
-                            key={date}
+                            key={column.key}
                             className={cn(
                               "text-center text-sm tabular-nums",
                               value === 0
                                 ? "text-muted-foreground/50"
                                 : "text-muted-foreground",
-                              date === today && "bg-muted/30"
+                              column.isCurrent && "bg-muted/30"
                             )}
                           >
                             {value === 0 ? "—" : formatHours(value)}
@@ -359,15 +473,17 @@ export function CrewCapacity({
                       <Td className="text-center text-sm text-muted-foreground/50">
                         —
                       </Td>
-                      {weekDates.map((date) => (
+                      {columns.map((column) => (
                         <Td
-                          key={date}
+                          key={column.key}
                           className={cn(
                             "text-center text-sm tabular-nums text-muted-foreground",
-                            date === today && "bg-muted/30"
+                            column.isCurrent && "bg-muted/30"
                           )}
                         >
-                          {formatHours(availableHours(workCenter.id, date))}
+                          {formatHours(
+                            availableForColumn(workCenter.id, column)
+                          )}
                         </Td>
                       ))}
                       <Td className="border-l border-border/60 text-center text-sm tabular-nums text-muted-foreground">
@@ -381,15 +497,21 @@ export function CrewCapacity({
                       <Td className="text-center text-sm text-muted-foreground/50">
                         —
                       </Td>
-                      {weekDates.map((date) => {
-                        const dayDemand = demand?.days[date] ?? 0;
-                        const available = availableHours(workCenter.id, date);
+                      {columns.map((column) => {
+                        const dayDemand = demandForColumn(
+                          workCenter.id,
+                          column
+                        );
+                        const available = availableForColumn(
+                          workCenter.id,
+                          column
+                        );
                         return (
                           <Td
-                            key={date}
+                            key={column.key}
                             className={cn(
                               "text-center",
-                              date === today && "bg-muted/30"
+                              column.isCurrent && "bg-muted/30"
                             )}
                           >
                             <LoadCell

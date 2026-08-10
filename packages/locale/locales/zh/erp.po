@@ -96,7 +96,16 @@ msgstr "{0} 上传成功"
 msgid "{0} values missing"
 msgstr "{0} 个值缺失"
 
+#. placeholder {0}: item.days
+msgid "{0}d"
+msgstr "{0}天"
+
+#. placeholder {0}: item.daysOff
+msgid "{0}d off"
+msgstr "{0}天假"
+
 #. placeholder {0}: formatHours(-delta)
+#. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}h 空闲"
 
@@ -693,6 +702,9 @@ msgstr "添加操作"
 msgid "Add options above first"
 msgstr "先添加选项"
 
+msgid "Add overtime"
+msgstr "添加加班"
+
 msgid "Add Pair"
 msgstr "添加配对"
 
@@ -737,6 +749,9 @@ msgstr "添加运费"
 
 msgid "Add Spare Part"
 msgstr "添加备件"
+
+msgid "Add station"
+msgstr "添加工位"
 
 msgid "Add Step"
 msgstr "添加步骤"
@@ -829,9 +844,6 @@ msgstr "所有可审计实体的更改都正在被记录。"
 msgid "All Customers"
 msgstr "所有客户"
 
-msgid "All departments"
-msgstr "所有部门"
-
 msgid "All Documents"
 msgstr "所有文档"
 
@@ -853,9 +865,6 @@ msgstr "所选组的所有成员和所选个人将能够批准请求"
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
 
-msgid "All shifts"
-msgstr "所有班次"
-
 msgid "All Suppliers"
 msgstr "所有供应商"
 
@@ -871,11 +880,17 @@ msgstr "所有用户"
 msgid "All Work Centers"
 msgstr "所有工作中心"
 
+msgid "Allocated"
+msgstr "已分配"
+
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
 
 msgid "Alpha"
 msgstr "Alpha"
+
+msgid "also at {otherStationNames}"
+msgstr "也在 {otherStationNames}"
 
 msgid "Always"
 msgstr "始终"
@@ -959,6 +974,9 @@ msgstr "任何物品类型"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "未在上述范围内明确列出的任何内容"
+
+msgid "Anything the crew should know"
+msgstr "工作人员应该知道的任何信息"
 
 msgid "AP Clerk"
 msgstr "应付账款文员"
@@ -1563,8 +1581,8 @@ msgstr "分配给组"
 msgid "Assigned"
 msgstr "已分配"
 
-msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
-msgstr "每个工作站分配/需要的人数。需要人数 = 该天应完成的工作时数 ÷ {defaultShiftHours}h 班次，向上取整。红色表示人数不足，绿色表示已覆盖，黄色表示人数过多。"
+msgid "Assigned {employeeName} to {targetName} for the week"
+msgstr "将 {employeeName} 分配给 {targetName}，为期一周"
 
 msgid "Assigned to Me"
 msgstr "分配给我"
@@ -1631,6 +1649,9 @@ msgstr "审计日志"
 
 msgid "Authentication Error"
 msgstr "身份验证错误"
+
+msgid "Authorized overtime on top of the shift"
+msgstr "班次之外的授权加班"
 
 msgid "Auto apply"
 msgstr "自动应用"
@@ -2258,9 +2279,6 @@ msgstr "清理并批准迁移的数据"
 msgid "Clear"
 msgstr "清除"
 
-msgid "Clear absence"
-msgstr "清除缺席"
-
 msgid "Clear due date"
 msgstr "清除截止日期"
 
@@ -2880,6 +2898,9 @@ msgstr "复制培训名称"
 
 msgid "Copy training unique identifier"
 msgstr "复制培训唯一标识符"
+
+msgid "Copy week"
+msgstr "复制周"
 
 msgid "Correct Answer"
 msgstr "正确答案"
@@ -3506,6 +3527,12 @@ msgstr "支付日期"
 msgid "Dates"
 msgstr "日期"
 
+msgid "Day"
+msgstr "天"
+
+msgid "Day off"
+msgstr "休息日"
+
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "日常问题和上线后的超级护理"
 
@@ -3994,9 +4021,6 @@ msgstr "送货地点"
 msgid "Demand"
 msgstr "需求"
 
-msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
-msgstr "需求 = 应完成的工作时数 · 已排班 = 调度人员安排的工作时数 · 可用 = 分配班组的班次时数（无班组的工作站使用该地点的班次日历）· 负荷 = 超出时数 (+) 或空闲时数"
-
 msgid "Demand forecast"
 msgstr "需求预测"
 
@@ -4260,6 +4284,9 @@ msgstr "将采购订单 PDF 拖放到此处，或点击选择文件"
 msgid "Drag handle"
 msgstr "拖动手柄"
 
+msgid "Drag to assign"
+msgstr "拖动以分配"
+
 msgid "Drag to place on drawing"
 msgstr "拖动以在图纸上放置"
 
@@ -4363,6 +4390,9 @@ msgstr "例如前3到4周"
 
 msgid "e.g. Zebra 2x1"
 msgstr "例如 Zebra 2x1"
+
+msgid "Each cell is the people assigned against the people the day's work needs."
+msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理单位都获得自己的跟踪实体和唯一编号 — 一个实体、一个单位。"
@@ -5004,6 +5034,12 @@ msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
 
+msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
+msgstr "您选择的该周任何一天工作的所有人都将在他们的班次后延长您设置的小时数。只有您筛选的部门和班次会受到影响。"
+
+msgid "Everyone working this day stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
+msgstr "当天工作的所有人都将在他们的班次后延长您设置的小时数。只有您筛选的部门和班次会受到影响。"
+
 msgid "Everything from Starter"
 msgstr "Starter 中的所有功能"
 
@@ -5172,6 +5208,9 @@ msgstr "外部参考"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "用于捕获 Carbon 默认不跟踪的额外数据的字段"
+
+msgid "Extra hours on the whole day"
+msgstr "整天额外时数"
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "用于切分总账报告的额外标签"
@@ -5560,6 +5599,9 @@ msgstr "此处附加的文件将随附在发送给此供应商的每份采购订
 msgid "Filter"
 msgstr "筛选"
 
+msgid "Filter ({appliedCount} applied)"
+msgstr "筛选（已应用 {appliedCount} 个）"
+
 msgid "Finalize"
 msgstr "完成"
 
@@ -5687,6 +5729,9 @@ msgstr "频率"
 msgid "Friday"
 msgstr "星期五"
 
+msgid "From"
+msgstr "从"
+
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
 msgid "From {0}"
@@ -5700,6 +5745,9 @@ msgstr "从位置"
 
 msgid "from on-account credit"
 msgstr "从应收账款信用额度"
+
+msgid "From previous week"
+msgstr "从上周"
 
 msgid "From Storage Unit"
 msgstr "从存储单位"
@@ -6083,6 +6131,12 @@ msgstr "托管、保护和备份平台"
 msgid "Hours"
 msgstr "时数"
 
+msgid "Hours at this station"
+msgstr "此工位的小时数"
+
+msgid "Hours not yet assigned"
+msgstr "未分配的小时数"
+
 msgid "Hours per Week"
 msgstr "每周小时数"
 
@@ -6106,6 +6160,12 @@ msgstr "将物品添加到方法或BOM行时如何采购。"
 
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "物品单位成本的估值方式：标准、平均、FIFO或LIFO。按物品设置。"
+
+msgid "How coverage is worked out"
+msgstr "如何计算覆盖范围"
+
+msgid "how far over capacity the day is (+) or how many hours are still free."
+msgstr "该天超过容量的幅度 (+) 或仍有多少小时空闲。"
 
 msgid "How items roll up for posting and reporting"
 msgstr "项目如何汇总用于过账和报告"
@@ -6944,6 +7004,9 @@ msgstr "更少的手动工作"
 msgid "Less manual work, fewer errors"
 msgstr "更少的手动工作，更少的错误"
 
+msgid "Less overtime"
+msgstr "较少加班"
+
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
 
@@ -7314,8 +7377,8 @@ msgstr "映射您当前的流程、系统和数据"
 msgid "Mark \"{0}\" as passed?"
 msgstr "将\"{0}\"标记为已通过？"
 
-msgid "Mark absent today"
-msgstr "标记今天缺席"
+msgid "Mark absent"
+msgstr "标记缺席"
 
 msgid "Mark all as configured"
 msgstr "全部标记为已配置"
@@ -7367,6 +7430,9 @@ msgstr "标记短缺"
 
 msgid "Mark to delete"
 msgstr "标记删除"
+
+msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
+msgstr "在范围内的每一天都标记该人缺席。他们在外出期间不会被安排。"
 
 msgid "Master records"
 msgstr "主记录"
@@ -7668,8 +7734,14 @@ msgstr "更多"
 msgid "More actions"
 msgstr "更多操作"
 
+msgid "More hours than the shift has."
+msgstr "超过班次的小时数。"
+
 msgid "More options"
 msgstr "更多选项"
+
+msgid "More overtime"
+msgstr "更多加班"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "大多数问题在这里都会被发现和解决。直言不讳地说出来。"
@@ -7699,6 +7771,12 @@ msgstr "移至垃圾箱"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "已将 {0} 移至 {1} 存储桶"
+
+msgid "Moved {employeeName} to {targetName}"
+msgstr "将 {employeeName} 移至 {targetName}"
+
+msgid "Moved {employeeName}'s week to {targetName}"
+msgstr "将 {employeeName} 的周移至 {targetName}"
 
 msgid "Movements"
 msgstr "移动"
@@ -7741,6 +7819,9 @@ msgstr "需要日期"
 
 msgid "Need the right columns?"
 msgstr "需要正确的列吗？"
+
+msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
+msgstr "需要的是该天的工作小时数除以 {personDayHours} 小时，向上舍入——您筛选的班次或此位置最常见的班次时长。"
 
 msgid "Needs fixing"
 msgstr "需要修复"
@@ -8273,6 +8354,12 @@ msgstr "没有新通知"
 msgid "No notes"
 msgstr "没有备注"
 
+msgid "No one crewed"
+msgstr "没有人员配备"
+
+msgid "No one to assign"
+msgstr "没有人员可分配"
+
 msgid "No open invoices"
 msgstr "没有未结发票"
 
@@ -8453,6 +8540,9 @@ msgstr "未开始"
 msgid "Not Started"
 msgstr "未开始"
 
+msgid "Not working today"
+msgstr "今天不工作"
+
 msgid "Not yet"
 msgstr "还未"
 
@@ -8470,6 +8560,9 @@ msgstr "备注（可选）"
 
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
+
+msgid "Nothing scheduled — add a station below."
+msgstr "未安排任何事项——在下方添加工位。"
 
 msgid "Notification"
 msgstr "通知"
@@ -8491,6 +8584,10 @@ msgstr "OEM (原始设备制造商)"
 
 msgid "of"
 msgstr "的"
+
+#. placeholder {0}: formatHours(baseHours)
+msgid "of {0}h"
+msgstr "共 {0}h"
 
 msgid "Off — released revisions stay editable"
 msgstr "关闭 — 已发布的版本保持可编辑"
@@ -10085,6 +10182,9 @@ msgstr "纠正 {rectifyNumber}"
 msgid "Rectify"
 msgstr "纠正"
 
+msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
+msgstr "红色表示人手不足，绿色表示已覆盖，琥珀色表示人数超过工作需要。"
+
 msgid "Redirecting to verification page..."
 msgstr "正在重定向到验证页面..."
 
@@ -10191,11 +10291,11 @@ msgstr "移除筛选"
 msgid "Remove Filters"
 msgstr "移除筛选"
 
+msgid "Remove from board"
+msgstr "从看板中删除"
+
 msgid "Remove from Price List"
 msgstr "从价格列表中移除"
-
-msgid "Remove from station"
-msgstr "从工作站移除"
 
 msgid "Remove item"
 msgstr "删除项目"
@@ -10208,6 +10308,9 @@ msgstr "移除配对"
 
 msgid "Remove sort by column"
 msgstr "删除按列排序"
+
+msgid "Remove station"
+msgstr "删除工位"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "从所有引用此存储类型的存储单元中移除它并将其删除。此操作无法撤销。"
@@ -11028,6 +11131,9 @@ msgstr "选择行"
 msgid "Select scope"
 msgstr "选择范围"
 
+msgid "Select station"
+msgstr "选择工作站"
+
 msgid "Select Supplier Status"
 msgstr "选择供应商状态"
 
@@ -11655,6 +11761,9 @@ msgstr "开始于 {0}"
 
 msgid "State / Province"
 msgstr "州/省"
+
+msgid "Station"
+msgstr "工作站"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -12451,6 +12560,9 @@ msgstr "此工作中心运行机械的每小时成本；与记录的机器小时
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "应用于此工作中心的每小时间接成本负担；劳动+机器与完整报价率之间的差异就是间接费用吸收的内容。"
 
+msgid "the hours the scheduler actually placed."
+msgstr "调度程序实际分配的小时数。"
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "客户在其采购单上用于此零件的标识符；Carbon在订单导入时将其解析为我们的内部零件ID。"
 
@@ -12477,6 +12589,9 @@ msgstr "发货过账时确认的库存成本，按物品的成本计算方法评
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15、20、27.5、39年）。"
+
+msgid "the job hours due that day."
+msgstr "该天应完成的工作小时数。"
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "该外部处理行所涵盖的操作工作；行的收据关闭对该工作的操作。"
@@ -12700,6 +12815,9 @@ msgstr "用于在资产的使用寿命内分配该资产成本的折旧方法（
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "库存物理上存放的货架和箱子"
+
+msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgstr "您分配的工作团队的班次小时数。没有人员的工作站将回退到该位置的班次日历。"
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "您随时准备的店铺用品和消耗品"
@@ -12987,8 +13105,14 @@ msgstr "此存储类型当前被 {usageCount} 个存储单元{0}使用。"
 msgid "this supplier"
 msgstr "此供应商"
 
+msgid "This takes {employeeName} off the board for the day. Save again to confirm."
+msgstr "这将从今天的日程表中移除{employeeName}。再次保存以确认。"
+
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"
+
+msgid "This week"
+msgstr "本周"
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "这将使此版本为只读，并用此版本替换任何物料制造方法。"
@@ -13015,6 +13139,15 @@ msgstr "这将用此修订版本替换其他修订版本的所有方法材料。
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "这将用此尺寸替换其他尺寸的所有方法材料。"
+
+msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
+msgstr "这将为{overtimePreviewCount}个人设置+{overtimeHoursInput}h的加班时间。"
+
+msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
+msgstr "这将为该周所有工作人员设置+{overtimeHoursInput}h的加班时间。"
+
+msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
+msgstr "这将在{overtimePreviewCount}个人天设置+{overtimeHoursInput}h的加班时间。"
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "这将把制造方法的当前版本设置为活跃状态，使其变为只读。"
@@ -13056,6 +13189,9 @@ msgstr "紧张"
 msgid "Tightened"
 msgstr "紧张"
 
+msgid "Time off"
+msgstr "休息时间"
+
 msgid "Timecard"
 msgstr "时间卡"
 
@@ -13077,8 +13213,14 @@ msgstr "时区"
 msgid "Title"
 msgstr "标题"
 
+msgid "To"
+msgstr "至"
+
 msgid "To Location"
 msgstr "至位置"
+
+msgid "To next week"
+msgstr "至下周"
 
 msgid "To Receive"
 msgstr "待接收"
@@ -14162,6 +14304,9 @@ msgstr "该维度从哪个来源获取其允许的值(自定义列表或现有�
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "到期日期倒计时从何开始(发票日期、月末等)。"
+
+msgid "What these rows mean"
+msgstr "这些行的含义"
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "此收据正在履行 — 采购订单、退货、入库转移或无父级的手动收据。"

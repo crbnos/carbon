@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-30T19:21:36.805Z",
-  "totalTools": 1401,
+  "generated": "2026-08-10T18:04:20.298Z",
+  "totalTools": 1410,
   "modules": 15,
   "tools": [
     {
@@ -16445,6 +16445,24 @@
       }
     },
     {
+      "name": "people_getEmployeeDepartments",
+      "module": "people",
+      "classification": "READ",
+      "description": "get employee departments",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
       "name": "people_getShiftsWithTimes",
       "module": "people",
       "classification": "READ",
@@ -21922,7 +21940,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert crew assignment",
-      "paramCount": 6,
+      "paramCount": 7,
       "serviceParams": [
         "db",
         "assignment"
@@ -21955,6 +21973,9 @@
           },
           "note": {
             "type": "string"
+          },
+          "undefined = whole shift (replaces other rows) */\n    hours": {
+            "type": "number"
           }
         },
         "required": [
@@ -21989,39 +22010,6 @@
         },
         "required": [
           "id"
-        ]
-      }
-    },
-    {
-      "name": "production_updateCrewAssignmentNote",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "update crew assignment note",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "note": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "note"
         ]
       }
     },
@@ -22092,6 +22080,196 @@
       }
     },
     {
+      "name": "production_moveCrewAssignment",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "move crew assignment",
+      "paramCount": 2,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workCenterId"
+        ]
+      }
+    },
+    {
+      "name": "production_setCrewDay",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set crew day",
+      "paramCount": 7,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "/** day-scoped note, written to every surviving row of the day */\n    note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "/**\n     * Day-scoped overtime, written to every surviving row of the day. The\n     * scheduler reads the MAX across a day's rows (never the sum), so 2h of\n     * overtime stays 2h however many stations the person splits across.\n     */\n    overtimeHours": {
+            "type": "number"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "workCenterId": {
+                  "type": "string"
+                },
+                "hours": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "workCenterId",
+                "hours"
+              ]
+            }
+          }
+        },
+        "required": [
+          "locationId",
+          "employeeId",
+          "date",
+          "shiftId",
+          "/** day-scoped note, written to every surviving row of the day */\n    note",
+          "/**\n     * Day-scoped overtime, written to every surviving row of the day. The\n     * scheduler reads the MAX across a day's rows (never the sum), so 2h of\n     * overtime stays 2h however many stations the person splits across.\n     */\n    overtimeHours",
+          "rows"
+        ]
+      }
+    },
+    {
+      "name": "production_setCrewAssignmentHours",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set crew assignment hours",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "hours": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "hours"
+        ]
+      }
+    },
+    {
+      "name": "production_setCrewOvertimeBulk",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set crew overtime bulk",
+      "paramCount": 6,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "omitted = the single `date` only */\n    toDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hours": {
+            "type": "number"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "departmentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "locationId",
+          "date",
+          "hours"
+        ]
+      }
+    },
+    {
       "name": "production_copyCrewBoard",
       "module": "production",
       "classification": "WRITE",
@@ -22127,6 +22305,221 @@
         },
         "required": [
           "locationId",
+          "fromDate",
+          "toDate",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_assignCrewWeek",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "assign crew week",
+      "paramCount": 5,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "weekStart": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "locationId",
+          "employeeId",
+          "workCenterId",
+          "weekStart",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_unassignCrewWeek",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "unassign crew week",
+      "paramCount": 4,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "weekStart": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "employeeId",
+          "workCenterId",
+          "weekStart",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_moveCrewWeek",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "move crew week",
+      "paramCount": 5,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "fromWorkCenterId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "weekStart": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "employeeId",
+          "fromWorkCenterId",
+          "workCenterId",
+          "weekStart",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_copyCrewWeek",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "copy crew week",
+      "paramCount": 4,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "fromWeekStart": {
+            "type": "string"
+          },
+          "toWeekStart": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "locationId",
+          "fromWeekStart",
+          "toWeekStart",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_setCrewAbsenceRange",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set crew absence range",
+      "paramCount": 5,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "fromDate": {
+            "type": "string"
+          },
+          "toDate": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
           "fromDate",
           "toDate",
           "shiftId"

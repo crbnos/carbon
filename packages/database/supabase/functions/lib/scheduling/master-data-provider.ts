@@ -622,10 +622,20 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   ): Promise<CrewAssignmentRow[]> {
     const rows = await this.db
       .selectFrom("crewAssignment as ca")
-      .select(["ca.workCenterId", "ca.employeeId", "ca.date", "ca.shiftId"])
+      .select([
+        "ca.workCenterId",
+        "ca.employeeId",
+        "ca.date",
+        "ca.shiftId",
+        "ca.overtimeHours",
+        "ca.hours",
+      ])
       .where("ca.companyId", "=", this.companyId)
       .where("ca.date", ">=", rangeStart.toISOString().slice(0, 10))
       .where("ca.date", "<=", rangeEnd.toISOString().slice(0, 10))
+      // stable order so split days deal their hours out deterministically
+      .orderBy("ca.date")
+      .orderBy("ca.id")
       .execute();
 
     return rows.flatMap((r) => {
@@ -637,6 +647,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
               employeeId: r.employeeId,
               date,
               shiftId: r.shiftId,
+              overtimeHours: Number(r.overtimeHours ?? 0),
+              hours: r.hours == null ? null : Number(r.hours),
             },
           ]
         : [];
