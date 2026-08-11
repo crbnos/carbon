@@ -47,6 +47,26 @@ Reference enforcement wiring: `apps/erp/app/routes/x+/shipment+/$shipmentId.post
 
 Storage-rules admin module to clone: `apps/erp/app/modules/storage-rules/` (models with `.superRefine` surface/field cross-validation, service CRUD, `ui/RuleBuilder.tsx` + `ConditionRow` + `FieldCombobox`/`OperatorCombobox`/`ValueCombobox`/`ValueInput`/`MultiValueCombobox` + `SurfacesField` + `SeveritySelect` + `MessageWithTokens` + `ItemFilterSelector` + `RuleAssignmentsList`).
 
+## Follow-on refactor — rules code-layer unification
+
+Once item rules land as a sibling of storage rules, unify the shared code under `rules` naming ("Option A": unify the **code** layer, keep the **DB** layer separate). The paths throughout this spec already use the unified names (`rules.ts`, `rules/storage`, `rules/item`).
+
+**Decision.** Keep the `storageRule*` and `itemRule*` tables separate — separate RLS surfaces are simpler to reason about, self-hosted instances run migrations unattended (a table merge is a risky data migration), and the two schemas are under divergence pressure (different surfaces, filters, evidence models). Unify only the code so the shared engine, evaluators, and violation UI live under one name. A table merge (Option B/B′) is deliberately deferred until a real cross-family requirement appears (e.g. one rule targeting both storage and sales surfaces).
+
+**Scope** (all renames via `git mv`; symbols unchanged unless noted):
+
+- `packages/utils/src/storage-rules.ts` → `packages/utils/src/rules.ts` (exported symbols unchanged).
+- `packages/ee/src/storage-rules/` + `packages/ee/src/item-rules/` → `packages/ee/src/rules/{storage,item}/`, with the shared violation modal + hook hoisted to the `rules/` root.
+- Package exports: `./rules` + `./rules.server` **replace** `./storage-rules(.server)` + `./item-rules(.server)` — no back-compat aliases.
+- Component/hook renames: `StorageRuleViolationModal` → `RuleViolationModal`, `useStorageRuleViolations` → `useRuleViolations`.
+- Full import sweep across ERP, MES, and packages — no residual old-path or old-name references may remain.
+- Collision note: `isBlocked`/`dedupeViolations` are re-exported by both evaluator dirs; resolve with explicit named re-exports in `rules/server.ts` (single source, storage impl).
+- Sync docs in the same change (utils/ee/item-rules AGENTS.md + affected `.claude/rules` files).
+
+**Untouched:** tables, RLS policies, enums, plan feature keys (`STORAGE_RULES` / `ITEM_RULES`), and both admin modules (`~/modules/storage-rules`, `~/modules/item-rules`) — the ERP module split mirrors the table split on purpose.
+
+**Verification:** scoped typechecks for `@carbon/utils`, `@carbon/ee`, `erp`, `mes`; `@carbon/utils` + `@carbon/ee` test suites; lint; grep for residual `storage-rules`/`item-rules` import paths and old component/hook names returns nothing.
+
 ## Data Model Changes
 
 Three migrations, all additive: `20260810214426_item-rules-sales.sql`, `20260810221652_item-rule-notification-group.sql`, `20260810223831_item-rule-acknowledgment-rule-name.sql`. `pnpm run generate:types` after.
