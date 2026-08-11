@@ -159,8 +159,6 @@ const PurchaseOrderLineForm = ({
     supplierShippingCost: initialValues.supplierShippingCost ?? 0,
     supplierTaxAmount: initialValues.supplierTaxAmount ?? 0,
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
-    // The stored rate is the source of truth — never re-derived from the
-    // cents-rounded amount
     taxPercent: initialValues.taxPercent ?? 0
   });
 
@@ -205,8 +203,6 @@ const PurchaseOrderLineForm = ({
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
     supplierShippingCost: initialValues.supplierShippingCost ?? 0,
     supplierTaxAmount: initialValues.supplierTaxAmount ?? 0,
-    // The stored rate is the source of truth — never re-derived from the
-    // cents-rounded amount
     taxPercent: initialValues.taxPercent ?? 0
   });
 

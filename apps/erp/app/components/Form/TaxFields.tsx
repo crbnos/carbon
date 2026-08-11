@@ -4,13 +4,10 @@ import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 
 /**
- * Re-derives the tax amount from the stored rate when the line's BASE changes
- * (quantity, unit price, shipping) — the other half of the value pair's rule.
- *
- * Deliberately skips the first run. A saved line arrives with both halves
- * already stored, and a manual amount override is legitimately inconsistent
- * with its rate; recomputing on mount would silently discard that override on
- * screen and write the derived figure back on the next save.
+ * Re-derives the tax amount from the stored rate when the base changes
+ * (quantity, unit price, shipping). Skips the first run so a saved line's
+ * stored pair — which may hold a manual amount override — is not recomputed
+ * on mount.
  */
 export function useDerivedTaxAmount(
   subtotal: number,
@@ -19,8 +16,7 @@ export function useDerivedTaxAmount(
   onDerive: (amount: number) => void
 ) {
   const isMounted = useRef(false);
-  // Held in a ref so callers can pass an inline closure without the effect
-  // re-firing on every render.
+  // In a ref so an inline closure doesn't re-fire the effect every render.
   const derive = useRef(onDerive);
   useEffect(() => {
     derive.current = onDerive;
@@ -54,23 +50,9 @@ type TaxFieldsProps = {
 };
 
 /**
- * The tax value pair: one rate, one absolute amount — every edit sets BOTH, in
- * either direction, so the stored pair is always internally consistent.
- *
- * The precision only flows cleanly one way. A rate carries more decimals than a
- * settlement amount does, so deriving the rate back from the amount is limited
- * by the amount's scale — 0.56 on a 9.00 subtotal is 6.222%, not the 6.25% that
- * produced it. That is inherent to money having fewer decimals than a rate, and
- * is why the derived rate is rounded to internal scale here.
- *
- * What it is NOT is the old 6.25% → 6.22% corruption: that came from deriving
- * the amount UNROUNDED (0.5625), which the money input then re-committed as a
- * changed value on blur and fed back through the coupling. The amount is now
- * derived through applyRate at the currency's decimals, so blurring the field
- * commits an identical value and triggers nothing.
- *
- * Base-change re-derivation (quantity/price/shipping edits) stays in the
- * caller's useDerivedTaxAmount — this component is controlled and stateless.
+ * The tax value pair: one rate, one absolute amount. Every edit sets both, in
+ * either direction. Controlled and stateless — base-change re-derivation is the
+ * caller's useDerivedTaxAmount.
  */
 export function TaxFields({
   percentName,
@@ -96,9 +78,7 @@ export function TaxFields({
         isReadOnly={isReadOnly}
         onChange={(value) =>
           onChange({
-            // Rounded to internal scale so the stored rate is exactly what the
-            // percent input can render (3 percent-digits); a raw quotient like
-            // 0.0622222… would display as one value and store another.
+            // Rounded to internal scale so the stored rate is what the input renders.
             percent: subtotal > 0 ? round(value / subtotal) : percent,
             amount: value
           })

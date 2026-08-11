@@ -615,7 +615,6 @@ serve(async (req: Request) => {
             // - For Buy/Pick parts: estimatedQuantity = target + scrap (what we need to procure)
             // - scrapQuantity = targetQuantity * scrapRate (the extra needed for scrap)
             // - totalForChildren = target + scrap (passed to children for cascade)
-            // Whole-unit scrap allowance; the target itself is never rounded
             const nodeScrapQuantity = round(
               targetQuantity * nodeScrapPercentage,
               0,
@@ -1098,7 +1097,6 @@ serve(async (req: Request) => {
               // targetQuantity for this child = parent's total (including scrap) * quantity per parent
               const childTargetQuantity = totalQuantityForChildren * quantity;
               // scrapQuantity = portion attributable to scrap
-              // Whole-unit scrap allowance; the target itself is never rounded
               const childScrapQuantity = round(
                 childTargetQuantity * itemScrapPercentage,
                 0,
@@ -1535,7 +1533,6 @@ serve(async (req: Request) => {
             // Calculate quantities:
             // - For Make parts: estimatedQuantity = targetQuantity (good quantity, NOT including scrap)
             // - For Buy/Pick parts: estimatedQuantity = target + scrap (what we need to procure)
-            // Whole-unit scrap allowance; the target itself is never rounded
             const nodeScrapQuantity = round(
               targetQuantity * nodeScrapPercentage,
               0,
@@ -1796,7 +1793,6 @@ serve(async (req: Request) => {
               // Use totalQuantityForChildren (parent's total including scrap) for child calculations
               const childTargetQuantity =
                 totalQuantityForChildren * (child.data.quantity ?? 1);
-              // Whole-unit scrap allowance; the target itself is never rounded
               const childScrapQuantity = round(
                 childTargetQuantity * itemScrapPercentage,
                 0,
@@ -4916,7 +4912,6 @@ serve(async (req: Request) => {
                 );
                 const rootTarget = job.data?.quantity ?? 1;
                 // Scrap applies to every method type (mirrors itemToJob)
-                // Whole-unit scrap allowance; the target itself is never rounded
                 const rootScrapQuantity = round(
                   rootTarget * rootScrapPercentage,
                   0,
@@ -4966,7 +4961,6 @@ serve(async (req: Request) => {
                 const childTargetQuantity =
                   nodeTotalForChildren * (child.data.quantity ?? 1);
                 // Scrap applies to every method type (mirrors itemToJob)
-                // Whole-unit scrap allowance; the target itself is never rounded
                 const childScrapQuantity = round(
                   childTargetQuantity * itemScrapPercentage,
                   0,
