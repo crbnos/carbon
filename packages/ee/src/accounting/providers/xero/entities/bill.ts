@@ -5,6 +5,7 @@ import { type Accounting, BaseEntitySyncer } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
+import { xeroMoney, xeroUnitAmount } from "../serialize";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "bill"
@@ -368,13 +369,14 @@ export class BillSyncer extends BaseEntitySyncer<
 
         return {
           Description: description,
-          Quantity: line.quantity,
-          UnitAmount: line.unitPrice,
+          Quantity: xeroUnitAmount(line.quantity),
+          UnitAmount: xeroUnitAmount(line.unitPrice),
           ItemCode: itemCode?.slice(0, 30) ?? undefined,
           // Use line's account number if specified, otherwise use default from settings
           AccountCode: line.accountNumber ?? defaultAccountCode,
-          TaxAmount: line.taxAmount ?? undefined,
-          LineAmount: line.totalAmount,
+          TaxAmount:
+            line.taxAmount != null ? xeroMoney(line.taxAmount) : undefined,
+          LineAmount: xeroMoney(line.totalAmount),
           // TaxType is required by Xero: INPUT for purchase tax, NONE for zero tax
           TaxType: hasTax ? "INPUT" : "NONE"
         };
@@ -406,9 +408,9 @@ export class BillSyncer extends BaseEntitySyncer<
       CurrencyCode: local.currencyCode,
       CurrencyRate: local.exchangeRate !== 1 ? local.exchangeRate : undefined,
       LineItems: lineItems,
-      SubTotal: local.subtotal,
-      TotalTax: local.totalTax,
-      Total: local.totalAmount
+      SubTotal: xeroMoney(local.subtotal),
+      TotalTax: xeroMoney(local.totalTax),
+      Total: xeroMoney(local.totalAmount)
     };
   }
 

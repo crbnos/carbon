@@ -7,6 +7,7 @@ import {
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
   MONTH_NUMBER,
+  round,
   toDisplayCredit,
   toDisplayDebit,
   toStoredAmount
@@ -460,8 +461,7 @@ function overlayTranslationOnSeries<
         // Translated period delta: apply the same per-account rate to netChange
         // so flow reads (income statement / executive P&L) get a translated
         // activity figure rather than the translated cumulative balance.
-        translatedNetChange:
-          Math.round(existing.netChange * exchangeRate * 10000) / 10000,
+        translatedNetChange: round(existing.netChange * exchangeRate),
         exchangeRate
       };
     }
@@ -3930,8 +3930,7 @@ export async function translateCompanyBalances(
 
     const exchangeRate = rateFor(account.consolidatedRate);
     const localBalance = Number(account.balanceAtDate ?? 0);
-    const translatedBalance =
-      Math.round(localBalance * exchangeRate * 10000) / 10000;
+    const translatedBalance = round(localBalance * exchangeRate);
 
     rows.push({
       accountId: account.id,

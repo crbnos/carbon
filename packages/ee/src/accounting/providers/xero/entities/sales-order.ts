@@ -6,6 +6,7 @@ import {
 } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
+import { xeroMoney, xeroUnitAmount } from "../serialize";
 
 // Note: This is a push-only syncer (Carbon -> Xero).
 // Carbon sales orders are pushed as Xero Quotes since Xero
@@ -272,10 +273,10 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
 
       const lineItem: Xero.QuoteLineItem = {
         Description: line.description ?? undefined,
-        Quantity: line.quantity,
-        UnitAmount: line.unitPrice,
+        Quantity: xeroUnitAmount(line.quantity),
+        UnitAmount: xeroUnitAmount(line.unitPrice),
         AccountCode: line.accountNumber ?? undefined,
-        LineAmount: line.lineAmount
+        LineAmount: xeroMoney(line.lineAmount)
       };
 
       // If line has an item, ensure it's synced and set ItemCode

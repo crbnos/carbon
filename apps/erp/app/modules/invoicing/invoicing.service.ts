@@ -1,7 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -1651,7 +1651,7 @@ export async function getAvailableOnAccountCredit(
       Number(p.totalAmount) * Number(p.exchangeRate) -
       (appliedBaseByPayment.get(p.id) ?? 0);
   }
-  return Math.max(0, Math.round(baseCredit * 10000) / 10000);
+  return Math.max(0, round(baseCredit));
 }
 
 export async function upsertPayment(

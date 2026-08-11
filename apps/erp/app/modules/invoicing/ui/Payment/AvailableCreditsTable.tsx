@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import { LuSave } from "react-icons/lu";
@@ -64,9 +65,6 @@ type CreditRow = {
   amount: number;
 };
 
-function round4(n: number): number {
-  return Math.round(n * 10000) / 10000;
-}
 
 const GRID =
   "grid grid-cols-[2rem_minmax(8rem,1fr)_7rem_minmax(9rem,1fr)_8rem] gap-3";
@@ -118,7 +116,7 @@ const AvailableCreditsTable = ({
   // invoice's open balance.
   const capFor = useCallback(
     (remaining: number, invoiceId: string) =>
-      round4(Math.min(remaining, Number(balanceByInvoice.get(invoiceId) ?? 0))),
+      round(Math.min(remaining, Number(balanceByInvoice.get(invoiceId) ?? 0))),
     [balanceByInvoice]
   );
 
@@ -162,7 +160,7 @@ const AvailableCreditsTable = ({
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== id) return r;
-          const amount = round4(Math.max(0, value));
+          const amount = round(Math.max(0, value));
           return { ...r, amount, checked: amount > 0 };
         })
       ),

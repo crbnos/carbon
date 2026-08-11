@@ -8,6 +8,7 @@ import {
   type BuildPaymentJournalInput,
   type PaymentJournalAccounts,
 } from "./build-payment-journal.ts";
+import { round } from "../shared/precision.ts";
 
 // Golden-master tests for the GL journal a payment posts. Each asserts the exact
 // natural-balance-signed `amount` on each line (asset/expense debits are +,
@@ -76,7 +77,6 @@ const line = <T extends { description: string }>(
   description: string
 ) => lines.find((l) => l.description === description);
 
-const round4 = (n: number) => Math.round(n * 10000) / 10000;
 
 // Magnitude posted to the control account for a specific invoice (the lines are
 // natural-balance signed, so take the absolute value to compare to the
@@ -742,7 +742,7 @@ Deno.test("control posting ties out to subledger settled per invoice (AR & AP)",
     });
 
     apps.forEach((a, i) => {
-      const expected = round4((a.applied + a.discount + a.writeOff) * a.invRate);
+      const expected = round((a.applied + a.discount + a.writeOff) * a.invRate);
       assertEquals(controlMagnitudeFor(lines, `inv_${i}`), expected);
     });
     assert(balanced(signedDebitTotal));
@@ -800,7 +800,7 @@ Deno.test("matrix: every scenario balances with the correct FX side", () => {
             assert(line(lines, side) !== undefined, `missing ${side}`);
             assert(line(lines, wrong) === undefined, `unexpected ${wrong}`);
           }
-          assert(Math.abs(round4(totalFxImpact) - round4(expectedFx)) < 1e-9);
+          assert(Math.abs(round(totalFxImpact) - round(expectedFx)) < 1e-9);
         }
       }
     }

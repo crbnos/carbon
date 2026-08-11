@@ -9,6 +9,7 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
+import { xeroMoney, xeroUnitAmount } from "../serialize";
 
 const logger = getLogger("ee", "accounting", "xero");
 
@@ -339,10 +340,10 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
 
       const lineItem: Xero.InvoiceLineItem = {
         Description: line.description ?? undefined,
-        Quantity: line.quantity,
-        UnitAmount: line.unitPrice,
-        TaxAmount: taxAmount,
-        LineAmount: line.quantity * line.unitPrice,
+        Quantity: xeroUnitAmount(line.quantity),
+        UnitAmount: xeroUnitAmount(line.unitPrice),
+        TaxAmount: xeroMoney(taxAmount),
+        LineAmount: xeroMoney(line.quantity * line.unitPrice),
         // Use default account code from settings if no account specified
         AccountCode: defaultAccountCode,
         // TaxType is required by Xero: OUTPUT for sales tax, NONE for zero tax
@@ -388,11 +389,11 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       Status: CARBON_TO_XERO_STATUS[local.status],
       LineAmountTypes: "Exclusive", // Tax is calculated separately
       LineItems: lineItems,
-      SubTotal: local.subtotal,
-      TotalTax: local.totalTax,
-      Total: local.totalAmount,
-      AmountDue: local.balance,
-      AmountPaid: local.totalAmount - local.balance,
+      SubTotal: xeroMoney(local.subtotal),
+      TotalTax: xeroMoney(local.totalTax),
+      Total: xeroMoney(local.totalAmount),
+      AmountDue: xeroMoney(local.balance),
+      AmountPaid: xeroMoney(local.totalAmount - local.balance),
       CurrencyCode: local.currencyCode,
       CurrencyRate: local.exchangeRate !== 1 ? local.exchangeRate : undefined
     };

@@ -13,6 +13,7 @@ import {
   NumberInput,
   NumberInputGroup
 } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { CSSProperties } from "react";
 import { useCallback, useMemo, useState } from "react";
@@ -75,9 +76,6 @@ type PaymentApplyTableProps = {
   existingApplications: ExistingApplication[];
 };
 
-function round4(n: number): number {
-  return Math.round(n * 10000) / 10000;
-}
 
 // Shared grid template so the header labels stay aligned with the rows. Wide
 // enough to scroll horizontally on small screens rather than cramp the inputs.
@@ -185,7 +183,7 @@ const PaymentApplyTable = ({
               checked: true,
               appliedAmount:
                 r.appliedAmount === 0
-                  ? round4(Math.min(r.balance, maxApplicable))
+                  ? round(Math.min(r.balance, maxApplicable))
                   : r.appliedAmount
             };
           }
@@ -208,7 +206,7 @@ const PaymentApplyTable = ({
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== id) return r;
-          const next = { ...r, [field]: round4(Math.max(0, value)) };
+          const next = { ...r, [field]: round(Math.max(0, value)) };
           next.checked =
             next.appliedAmount + next.discountAmount + next.writeOffAmount > 0;
           return next;
@@ -227,8 +225,8 @@ const PaymentApplyTable = ({
           return { ...r, checked: false, appliedAmount: 0 };
         }
         const take = Math.min(remaining, r.balance);
-        remaining = round4(remaining - take);
-        return { ...r, checked: true, appliedAmount: round4(take) };
+        remaining = round(remaining - take);
+        return { ...r, checked: true, appliedAmount: round(take) };
       })
     );
   }, [paymentTotal]);

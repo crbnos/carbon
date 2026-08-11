@@ -10,6 +10,7 @@ import { credit, debit, journalReference } from "../lib/utils.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -231,7 +232,7 @@ serve(async (req: Request) => {
       ...reversalLines.map((line) => ({
         accountId: line.accountId,
         description: "Production Event Reversal",
-        amount: -Number(line.amount),
+        amount: round(-Number(line.amount)),
         quantity: 1,
         documentType: "Production Event",
         documentId: jobId,
@@ -244,7 +245,7 @@ serve(async (req: Request) => {
             {
               accountId: accountDefaults.data.workInProgressAccount,
               description: "WIP Account",
-              amount: debit("asset", cost),
+              amount: round(debit("asset", cost)),
               quantity: 1,
               documentType: "Production Event",
               documentId: jobId,
@@ -255,7 +256,7 @@ serve(async (req: Request) => {
             {
               accountId: accountDefaults.data.laborAbsorptionAccount!,
               description: "Labor/Machine Absorption",
-              amount: credit("expense", cost),
+              amount: round(credit("expense", cost)),
               quantity: 1,
               documentType: "Production Event",
               documentId: jobId,
@@ -270,7 +271,7 @@ serve(async (req: Request) => {
             {
               accountId: accountDefaults.data.workInProgressAccount,
               description: "WIP Account (Overhead)",
-              amount: debit("asset", overheadCost),
+              amount: round(debit("asset", overheadCost)),
               quantity: 1,
               documentType: "Production Event",
               documentId: jobId,
@@ -281,7 +282,7 @@ serve(async (req: Request) => {
             {
               accountId: overheadAbsorptionAccount!,
               description: "Overhead Absorption",
-              amount: credit("expense", overheadCost),
+              amount: round(credit("expense", overheadCost)),
               quantity: 1,
               documentType: "Production Event",
               documentId: jobId,
