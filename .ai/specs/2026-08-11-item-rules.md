@@ -2,7 +2,7 @@
 
 - Status: **Finalized** (converted from approved PRD; all design questions resolved)
 - Date: 2026-08-11
-- Scope: Phase 1 (engine + table + admin UI + sales-line enforcement) + Phase 2 (notifications + acknowledgment log)
+- Scope: Phase 1 (engine + table + admin UI + sales-line enforcement) + Phase 2 (notifications + acknowledgment log) + Phase 3 (enforcement completeness — terminal gates, unbypassable hard errors, Phase 1 defect fixes)
 
 ## Problem
 
@@ -252,6 +252,53 @@ Item rules is Items-domain functionality, not its own domain — it lives inside
 
 
 
+## Enforcement completeness (Phase 3)
+
+Audit: `.ai/research/2026-08-12-item-rules-enforcement-surface.md`.
+
+Phase 1 puts the check in four route actions. That is the right place for *early feedback* and the wrong place for *the guarantee*: 14 entry points can put an `itemId` on a sales line, and three of them (direct PostgREST with an API key, `SECURITY DEFINER` RPCs, service-role paths like the unauthenticated digital-quote accept) execute no Carbon TypeScript at all. The MCP executor resolves any named export of `sales.service.ts` by name, so the very function the enforced route protects is reachable unprotected.
+
+**Principle: a compliance control fails at the document, not the line.** Enforcement that is per-write must be exhaustive to be worth anything, and this write surface is provably non-exhaustible. Enforcement that is per-*gate* only has to cover the transitions, and a gate re-reads the whole document — so it catches lines from writers nobody instrumented, and catches staleness (rule authored later, ship-to changed, item attributes changed) for free.
+
+### Terminal gates
+
+Copy the shipped pattern from `x+/shipment+/$shipmentId.post.tsx:33-109` verbatim — service-role client, load **all** lines on the document, evaluate, `dedupeViolations`, `isBlocked(deduped, acknowledged)`, **return** `{ violations, ruleNames }`, client renders the existing `useRuleViolations` + `RuleViolationModal`. Already running at seven sites; no new infrastructure.
+
+| Gate | Route | Note |
+|---|---|---|
+| Sales order confirm | `x+/sales-order+/$orderId.confirm.tsx` | cleanest — already returns objects rather than redirecting |
+| Quote finalize / send | `x+/quote+/$quoteId.finalize.tsx` | add the returned-violations branch **before** the existing `throw redirect(...)` paths |
+| Quote → order convert | `x+/quote+/$quoteId.convert.tsx` | gate **in the route, before** `convertQuoteToOrder` |
+| RFQ → quote convert | `x+/sales-rfq+/$rfqId.convert.tsx` | same; evaluate the resulting quote lines' items |
+| Shipment post | `x+/shipment+/$shipmentId.post.tsx` | last physical checkpoint; catches orders confirmed before a rule existed. Add item-rule violations to the array the storage-rule loop already builds. First point a real shipped quantity exists |
+
+Gating the two convert routes **in the route** is deliberate: it achieves the same protection as a Deno-side evaluator with none of the cost. The engine is portable, but the evaluator imports `companyHasPlan` → `@carbon/auth` (module-load `process.env`) → `react-router`, and CI runs zero `deno` invocations, so a Node/Deno divergence would be silent. Do not port the evaluator.
+
+**`api+/sales.digital-quote.$id.tsx` is hard-block-on-error only** — there is no employee session, nobody may acknowledge, and internal compliance text must not reach the customer. Log and proceed on warns.
+
+### Unbypassable hard errors
+
+Move the **error-severity** half of the check into `upsertQuoteLine` (`sales.service.ts:3788`) and `upsertSalesOrderLine` (`:5528`) so the MCP surface is covered — an `error` violation throws. Warn handling stays in the route actions, where `acknowledged` and the modal live. Blocklist `sales_insertSalesOrderLines` in `apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools.ts`; it has no in-app caller, so nothing breaks.
+
+### Defects to fix (Phase 1 bugs)
+
+- **Drop-ship reads the wrong destination.** Evaluation passes `salesOrder.customerLocationId`, but a drop shipment's real ship-to is `salesOrderShipment.customerLocationId` (required when `dropShipment` is set, `sales.models.ts:757-776`). Resolve the effective ship-to — drop-ship location when present, else the header — before evaluating. Without this a country rule clears orders that ship to the restricted country.
+- **`acknowledged` is spoofable.** It is read straight off client FormData with no server-side record that a violation was displayed, so a crafted first submit skips every `warn`. Errors are unaffected (they block unconditionally). Fix or accept explicitly.
+- **Quote quantity is hardcoded to `1`**, so quantity rules cannot fire on quotes; the real quantity is first chosen at conversion. The convert gate is the natural place to evaluate it.
+- **`itemRuleAcknowledgment` has six writers and no reader** — either surface it or note it as write-only audit.
+
+### Supporting change
+
+`Violation` (`packages/utils/src/rules.ts`) is `{ruleId, severity, message}` with no line reference. A document-level gate needs per-line attribution so the modal can group violations and deep-link to the offending line. Extend it and key the modal by line.
+
+### Deliberately excluded
+
+- **No nightly sweep.** Drafts are a scratchpad — users must be free to experiment, and the confirm gate catches it before it counts. Avoids a cron, a violation-state table, and notification-fatigue tuning.
+- **No rule-impact preview** ("what does my new rule break?").
+- **No invoice-post gate — known gap.** Services are `Non-Inventory` items that are never shipped, so a service-only order skips shipment and goes straight to `To Invoice` (`convert/index.ts:552-560`); shipment post never fires for it. Deferred until a rule needs to apply to a service, at which point invoice posting is the hook.
+- **No Postgres trigger.** It could enforce only the error-severity subset (no warn/acknowledge, no interpolated messages), and plan gating has no DB precedent across 898 migrations while `CarbonEdition`/`STRIPE_BYPASS_COMPANY_IDS` are invisible to Postgres. A second evaluator in a second language that disagrees with the first is worse than a known gap. Revisit only if a real bypass survives the gates.
+- **Standalone sales invoices** (`x+/sales-invoice+/new.tsx` has a no-source-document branch with item-bearing lines) reach revenue with no upstream document. Out of scope here; recorded as a follow-up.
+
 ## Also in scope
 
 - Fix stale `packages/utils/AGENTS.md` line describing `storage-rules.ts` as "Supabase storage bucket access policies" → it is the rule-evaluation engine.
@@ -263,6 +310,8 @@ Item rules is Items-domain functionality, not its own domain — it lives inside
 ## Out of scope (explicitly)
 
 Line-value (price/qty/date) context; purchasing surfaces / AVL; supersession fold-in; export-licence entity; MES surfaces. Configurator rules and storage rules untouched except shared-component parameterization.
+
+Deferred with reasons in "Enforcement completeness (Phase 3) → Deliberately excluded": nightly violation sweep, rule-impact preview, invoice-post gate for service-only orders, Postgres-trigger enforcement, standalone sales invoices.
 
 ## Verification
 
