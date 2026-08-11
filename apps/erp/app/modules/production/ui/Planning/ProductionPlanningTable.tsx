@@ -34,7 +34,7 @@ import {
   LuCirclePlay,
   LuSquareChartGantt
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { Link, useFetcher } from "react-router";
 import {
   exportOnlyColumn,
   ItemThumbnail,
@@ -109,10 +109,84 @@ const ProductionPlanningTable = ({
       bulkUpdateFetcher?.data?.message
     ) {
       toast.error(bulkUpdateFetcher.data.message);
+      return;
     }
 
     if (bulkUpdateFetcher.data?.success === true) {
-      toast.success(t`Orders submitted`);
+      const {
+        jobs = [],
+        updatedJobCount = 0,
+        alreadyPlannedItemCount = 0,
+        noDemandItemCount = 0
+      } = bulkUpdateFetcher.data as {
+        jobs?: { id: string; readableId: string }[];
+        updatedJobCount?: number;
+        alreadyPlannedItemCount?: number;
+        noDemandItemCount?: number;
+      };
+
+      const skipped: string[] = [];
+      if (alreadyPlannedItemCount > 0) {
+        skipped.push(
+          alreadyPlannedItemCount === 1
+            ? t`1 part skipped — it already has an open job`
+            : t`${alreadyPlannedItemCount} parts skipped — they already have open jobs`
+        );
+      }
+      if (noDemandItemCount > 0) {
+        skipped.push(
+          noDemandItemCount === 1
+            ? t`1 part skipped — nothing to make`
+            : t`${noDemandItemCount} parts skipped — nothing to make`
+        );
+      }
+
+      if (jobs.length === 0 && updatedJobCount === 0) {
+        toast.info(
+          skipped.length > 0 ? skipped.join(" · ") : t`No jobs were created`
+        );
+        return;
+      }
+
+      const created =
+        jobs.length === 1 ? t`1 job created` : t`${jobs.length} jobs created`;
+      const updated =
+        updatedJobCount > 0
+          ? updatedJobCount === 1
+            ? t`1 job updated`
+            : t`${updatedJobCount} jobs updated`
+          : null;
+
+      toast.success(
+        <VStack spacing={1}>
+          <span>{[created, updated].filter(Boolean).join(" · ")}</span>
+          {jobs.length > 0 && (
+            <span className="flex flex-wrap gap-2 text-xs">
+              {jobs.slice(0, 2).map((job) => (
+                <Link
+                  key={job.id}
+                  to={path.to.job(job.id)}
+                  className="underline underline-offset-2 hover:opacity-80"
+                >
+                  {job.readableId}
+                </Link>
+              ))}
+              {jobs.length > 2 && (
+                <Link
+                  to={path.to.jobs}
+                  className="underline underline-offset-2 hover:opacity-80"
+                >
+                  {t`View all`}
+                </Link>
+              )}
+            </span>
+          )}
+          {skipped.length > 0 && (
+            <span className="text-xs opacity-80">{skipped.join(" · ")}</span>
+          )}
+        </VStack>,
+        { duration: 8000 }
+      );
     }
   }, [bulkUpdateFetcher.data?.success]);
 

@@ -102,6 +102,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
       try {
         const allJobIds: string[] = [];
+        const createdJobs: { id: string; readableId: string }[] = [];
+        const itemsWithoutOrders: string[] = [];
+        let updatedJobCount = 0;
         const allSupplyForecasts: Array<{
           itemId: string;
           locationId: string;
@@ -118,6 +121,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
         for (const item of itemsToOrder) {
           const orders = item.orders;
+
+          // Nothing to make for this item — existing supply already covers demand
+          if (orders.length === 0) {
+            itemsWithoutOrders.push(item.id);
+            continue;
+          }
+
           const jobIds: string[] = [];
           const supplyForecastByPeriod: Record<string, number> = {};
 
@@ -182,6 +192,7 @@ export async function action({ request }: ActionFunctionArgs) {
               }
 
               const id = createJob.data?.id;
+              const readableId = createJob.data?.jobId ?? "";
               if (!id) {
                 const errorMsg = `Job was not returned after creation for item ${item.id}`;
                 logger.error(errorMsg);
@@ -204,6 +215,7 @@ export async function action({ request }: ActionFunctionArgs) {
               }
 
               jobIds.push(id);
+              createdJobs.push({ id, readableId });
               itemProcessed = true;
             } else {
               // Update existing job
@@ -238,6 +250,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 continue;
               }
 
+              updatedJobCount++;
               itemProcessed = true;
             }
 
@@ -315,6 +328,29 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         }
 
+        // Split the skipped items into "a job already covers it" vs "nothing to make"
+        // so the client can say which, instead of reporting them as failures
+        const alreadyPlannedItemIds = new Set<string>();
+        if (itemsWithoutOrders.length > 0) {
+          const openJobs = await client
+            .from("job")
+            .select("itemId")
+            .eq("companyId", companyId)
+            .eq("locationId", locationId)
+            .in("itemId", itemsWithoutOrders)
+            .in("status", [
+              "Draft",
+              "Planned",
+              "Ready",
+              "In Progress",
+              "Paused"
+            ]);
+
+          openJobs.data?.forEach((job) => {
+            if (job.itemId) alreadyPlannedItemIds.add(job.itemId);
+          });
+        }
+
         if (errors.length > 0 && processedItems === 0) {
           return data(
             {
@@ -340,8 +376,13 @@ export async function action({ request }: ActionFunctionArgs) {
               }`;
 
         return {
-          success: processedItems > 0,
+          success: processedItems > 0 || errors.length === 0,
           message,
+          jobs: createdJobs,
+          updatedJobCount,
+          alreadyPlannedItemCount: alreadyPlannedItemIds.size,
+          noDemandItemCount:
+            itemsWithoutOrders.length - alreadyPlannedItemIds.size,
           processedItems,
           totalItems: itemsToOrder.length,
           errors: errors.length > 0 ? errors : undefined
