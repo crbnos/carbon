@@ -1,6 +1,41 @@
 import { NumberControlled } from "@carbon/form";
 import { applyRate, INPUT_FORMAT } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
+import { useEffect, useRef } from "react";
+
+/**
+ * Re-derives the tax amount from the stored rate when the line's BASE changes
+ * (quantity, unit price, shipping) — the other half of the value pair's rule.
+ *
+ * Deliberately skips the first run. A saved line arrives with both halves
+ * already stored, and a manual amount override is legitimately inconsistent
+ * with its rate; recomputing on mount would silently discard that override on
+ * screen and write the derived figure back on the next save.
+ */
+export function useDerivedTaxAmount(
+  subtotal: number,
+  percent: number,
+  currencyDecimals: number,
+  onDerive: (amount: number) => void
+) {
+  const isMounted = useRef(false);
+  // Held in a ref so callers can pass an inline closure without the effect
+  // re-firing on every render.
+  const derive = useRef(onDerive);
+  useEffect(() => {
+    derive.current = onDerive;
+  });
+
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+    if (percent !== 0) {
+      derive.current(applyRate(subtotal, percent, currencyDecimals));
+    }
+  }, [subtotal, percent, currencyDecimals]);
+}
 
 type TaxFieldsProps = {
   /** Form field name for the stored rate, e.g. "taxPercent" */

@@ -82,7 +82,7 @@ import SupplierStatus from "./SupplierStatus";
 import Suppliers from "./Suppliers";
 import SupplierType from "./SupplierType";
 import Tags from "./Tags";
-import { TaxFields } from "./TaxFields";
+import { TaxFields, useDerivedTaxAmount } from "./TaxFields";
 import Timezone from "./Timezone";
 import Tool from "./Tool";
 import UnitHint from "./UnitHint";
@@ -174,6 +174,7 @@ export {
   SupplierType,
   Tags,
   TaxFields,
+  useDerivedTaxAmount,
   TextArea,
   TimePicker,
   Timezone,

@@ -31,7 +31,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { applyRate, getItemReadableId } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -52,7 +52,8 @@ import {
   StorageUnit,
   Submit,
   TaxFields,
-  UnitOfMeasure
+  UnitOfMeasure,
+  useDerivedTaxAmount
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
@@ -163,30 +164,18 @@ const PurchaseOrderLineForm = ({
     taxPercent: initialValues.taxPercent ?? 0
   });
 
-  // update tax amount when quantity or unit price changes
-  useEffect(() => {
-    const subtotal = getLineSubtotal(
+  // Re-derive the tax amount when the line's base changes — never on mount, so
+  // a saved manual override survives being reopened.
+  useDerivedTaxAmount(
+    getLineSubtotal(
       itemData.supplierUnitPrice,
       itemData.purchaseQuantity,
       itemData.supplierShippingCost
-    );
-    if (itemData.taxPercent !== 0) {
-      setItemData((d) => ({
-        ...d,
-        supplierTaxAmount: applyRate(
-          subtotal,
-          itemData.taxPercent,
-          currencyDecimals
-        )
-      }));
-    }
-  }, [
-    itemData.supplierUnitPrice,
-    itemData.purchaseQuantity,
-    itemData.supplierShippingCost,
+    ),
     itemData.taxPercent,
-    currencyDecimals
-  ]);
+    currencyDecimals,
+    (supplierTaxAmount) => setItemData((d) => ({ ...d, supplierTaxAmount }))
+  );
 
   const isEditing = initialValues.id !== undefined;
   const isGLAccount = initialValues.purchaseOrderLineType === "G/L Account";
@@ -221,29 +210,16 @@ const PurchaseOrderLineForm = ({
     taxPercent: initialValues.taxPercent ?? 0
   });
 
-  useEffect(() => {
-    const subtotal = getLineSubtotal(
+  useDerivedTaxAmount(
+    getLineSubtotal(
       indirectData.supplierUnitPrice,
       indirectData.purchaseQuantity,
       indirectData.supplierShippingCost
-    );
-    if (indirectData.taxPercent !== 0) {
-      setIndirectData((d) => ({
-        ...d,
-        supplierTaxAmount: applyRate(
-          subtotal,
-          indirectData.taxPercent,
-          currencyDecimals
-        )
-      }));
-    }
-  }, [
-    indirectData.supplierUnitPrice,
-    indirectData.purchaseQuantity,
-    indirectData.supplierShippingCost,
+    ),
     indirectData.taxPercent,
-    currencyDecimals
-  ]);
+    currencyDecimals,
+    (supplierTaxAmount) => setIndirectData((d) => ({ ...d, supplierTaxAmount }))
+  );
 
   const costsDisclosure = useDisclosure();
   const indirectCostsDisclosure = useDisclosure();

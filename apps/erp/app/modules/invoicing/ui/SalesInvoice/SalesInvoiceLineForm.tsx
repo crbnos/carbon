@@ -28,9 +28,9 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { applyRate, getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
+import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   LuBox,
   LuChevronRight,
@@ -52,7 +52,8 @@ import {
   SelectControlled,
   StorageUnit,
   Submit,
-  TaxFields
+  TaxFields,
+  useDerivedTaxAmount
 } from "~/components/Form";
 import {
   useCurrencyFormatter,
@@ -138,23 +139,13 @@ const SalesInvoiceLineForm = ({
     taxPercent: initialValues.taxPercent ?? 0
   });
 
-  // update tax amount when quantity or unit price changes
-  useEffect(() => {
-    const subtotal =
-      itemData.unitPrice * itemData.quantity + itemData.shippingCost;
-    if (itemData.taxPercent !== 0) {
-      setItemData((d) => ({
-        ...d,
-        taxAmount: applyRate(subtotal, itemData.taxPercent, currencyDecimals)
-      }));
-    }
-  }, [
-    itemData.unitPrice,
-    itemData.quantity,
-    itemData.shippingCost,
+  // Re-derive the tax amount when the line's base changes — never on mount.
+  useDerivedTaxAmount(
+    itemData.unitPrice * itemData.quantity + itemData.shippingCost,
     itemData.taxPercent,
-    currencyDecimals
-  ]);
+    currencyDecimals,
+    (taxAmount) => setItemData((d) => ({ ...d, taxAmount }))
+  );
 
   const isFixedAsset = initialValues.invoiceLineType === "Fixed Asset";
   const [activeTab, setActiveTab] = useState<"item" | "asset">(
