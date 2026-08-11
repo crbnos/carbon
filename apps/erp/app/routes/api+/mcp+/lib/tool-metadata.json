@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-11T11:05:29.792Z",
-  "totalTools": 1431,
+  "generated": "2026-08-11T22:40:31.205Z",
+  "totalTools": 1432,
   "modules": 15,
   "tools": [
     {
@@ -4058,6 +4058,38 @@
         },
         "required": [
           "data"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getJournalSyncCompleteness",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get journal sync completeness",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "/** companyIntegration id, e.g. \"xero\" | \"quickbooks\" | \"rillet\". */\n    integrationId": {
+            "type": "string"
+          },
+          "journals dated before this are out of scope. */\n    syncFromDate": {
+            "type": "string"
+          },
+          "/** Restrict to one accounting period (the close auto-check). */\n    accountingPeriodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "/** companyIntegration id, e.g. \"xero\" | \"quickbooks\" | \"rillet\". */\n    integrationId",
+          "journals dated before this are out of scope. */\n    syncFromDate"
         ]
       }
     },

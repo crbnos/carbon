@@ -1641,6 +1641,174 @@ export type Database = {
           },
         ]
       }
+      accountingSyncOperation: {
+        Row: {
+          attemptCount: number
+          companyId: string
+          completedAt: string | null
+          createdAt: string
+          createdBy: string
+          direction: string
+          entityId: string
+          entityType: string
+          errorCode: string | null
+          errorMessage: string | null
+          externalId: string | null
+          id: string
+          idempotencyKey: string
+          integration: string
+          lastAttemptAt: string | null
+          metadata: Json | null
+          status: Database["public"]["Enums"]["syncOperationStatus"]
+          trigger: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          attemptCount?: number
+          companyId: string
+          completedAt?: string | null
+          createdAt?: string
+          createdBy: string
+          direction: string
+          entityId: string
+          entityType: string
+          errorCode?: string | null
+          errorMessage?: string | null
+          externalId?: string | null
+          id?: string
+          idempotencyKey: string
+          integration: string
+          lastAttemptAt?: string | null
+          metadata?: Json | null
+          status?: Database["public"]["Enums"]["syncOperationStatus"]
+          trigger: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          attemptCount?: number
+          companyId?: string
+          completedAt?: string | null
+          createdAt?: string
+          createdBy?: string
+          direction?: string
+          entityId?: string
+          entityType?: string
+          errorCode?: string | null
+          errorMessage?: string | null
+          externalId?: string | null
+          id?: string
+          idempotencyKey?: string
+          integration?: string
+          lastAttemptAt?: string | null
+          metadata?: Json | null
+          status?: Database["public"]["Enums"]["syncOperationStatus"]
+          trigger?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accountingSyncOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountingSyncOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       address: {
         Row: {
           addressLine1: string | null
@@ -66115,14 +66283,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -67761,14 +67929,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71147,7 +71315,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71161,7 +71329,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71708,14 +71876,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -78315,6 +78483,14 @@ export type Database = {
         | "Cancelled"
       supplierStatusType: "Active" | "Inactive" | "Pending" | "Rejected"
       supplySourceType: "Purchase Order" | "Production Order"
+      syncOperationStatus:
+        | "Pending"
+        | "In Flight"
+        | "Completed"
+        | "Failed"
+        | "Warning"
+        | "Skipped"
+        | "Excluded"
       tableViewType: "Public" | "Private"
       taxDepreciationMethod: "Straight Line" | "Declining Balance" | "MACRS"
       taxExemptionReason:
@@ -79734,6 +79910,15 @@ export const Constants = {
       ],
       supplierStatusType: ["Active", "Inactive", "Pending", "Rejected"],
       supplySourceType: ["Purchase Order", "Production Order"],
+      syncOperationStatus: [
+        "Pending",
+        "In Flight",
+        "Completed",
+        "Failed",
+        "Warning",
+        "Skipped",
+        "Excluded",
+      ],
       tableViewType: ["Public", "Private"],
       taxDepreciationMethod: ["Straight Line", "Declining Balance", "MACRS"],
       taxExemptionReason: [
