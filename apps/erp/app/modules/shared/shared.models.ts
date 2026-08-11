@@ -443,7 +443,10 @@ export const operationParameterValidator = z.object({
 export const savedViewValidator = z.object({
   id: zfd.text(z.string().optional()),
   table: z.string(),
-  name: z.string().trim().min(1, { message: "A name is required to save a view" }),
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "A name is required to save a view" }),
   description: z.string().optional(),
   filter: z.string().optional(),
   sort: z.string().optional(),
