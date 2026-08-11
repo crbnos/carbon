@@ -12,6 +12,7 @@ import {
   ModalCardTitle,
   toast
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useRef } from "react";
@@ -196,11 +197,7 @@ const CustomerForm = ({
                     minValue={0}
                     maxValue={1}
                     step={0.0001}
-                    formatOptions={{
-                      style: "percent",
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 2
-                    }}
+                    formatOptions={INPUT_FORMAT.rate}
                   />
 
                   <Input name="website" label={t`Website`} />

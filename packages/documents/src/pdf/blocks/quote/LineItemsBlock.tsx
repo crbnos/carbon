@@ -1,6 +1,6 @@
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { pluralize } from "@carbon/utils";
+import { formatPercent, pluralize } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -195,7 +195,7 @@ export function LineItemsBlock({
                                   ))}
                                 {taxPercent > 0 && (
                                   <Text style={tw("text-[8px] text-gray-400")}>
-                                    - Tax ({(taxPercent * 100).toFixed(2)}%)
+                                    - Tax ({formatPercent(taxPercent, locale)})
                                   </Text>
                                 )}
                               </View>

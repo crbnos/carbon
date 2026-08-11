@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { memo, useMemo } from "react";
@@ -35,6 +36,9 @@ type IntercompanyTransactionTableProps = {
 const IntercompanyTransactionTable = memo(
   ({ data, count, primaryAction }: IntercompanyTransactionTableProps) => {
     const { t } = useLingui();
+    // Currency varies per row, so the formatter is built per cell from the
+    // app locale rather than a single-currency hook instance.
+    const { locale } = useLocale();
     const columns = useMemo<ColumnDef<IntercompanyTransaction>[]>(() => {
       const defaultColumns: ColumnDef<IntercompanyTransaction>[] = [
         {
@@ -57,7 +61,7 @@ const IntercompanyTransactionTable = memo(
           accessorKey: "amount",
           header: t`Amount`,
           cell: ({ row }) => {
-            const formatted = new Intl.NumberFormat("en-US", {
+            const formatted = new Intl.NumberFormat(locale, {
               style: "currency",
               currency: row.original.currencyCode || "USD"
             }).format(row.original.amount);
@@ -110,7 +114,7 @@ const IntercompanyTransactionTable = memo(
         }
       ];
       return defaultColumns;
-    }, [t]);
+    }, [t, locale]);
 
     return (
       <Table<IntercompanyTransaction>

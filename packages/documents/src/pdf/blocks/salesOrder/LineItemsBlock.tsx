@@ -1,4 +1,5 @@
 import type { JSONContent } from "@carbon/react";
+import { formatPercent } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -23,7 +24,7 @@ export function LineItemsBlock({
   data: SalesOrderData;
 }) {
   const tw = useTw();
-  const { salesOrderLines, thumbnails, numberFormatter, theme } = data;
+  const { salesOrderLines, thumbnails, numberFormatter, theme, locale } = data;
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const overflow = itemTextOverflowStyle(opts);
   let rowIndex = 0;
@@ -122,7 +123,7 @@ export function LineItemsBlock({
                       )}
                       {lineTaxPercent > 0 && (
                         <Text style={tw("text-[9px] text-gray-600")}>
-                          - Tax ({(lineTaxPercent * 100).toFixed(2)}%)
+                          - Tax ({formatPercent(lineTaxPercent, locale)})
                         </Text>
                       )}
                     </View>

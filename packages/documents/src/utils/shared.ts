@@ -1,3 +1,4 @@
+import { formatPercent } from "@carbon/utils";
 import type { ResolvedSection } from "../template";
 import { DEFAULT_REGISTRATION_NUMBER, interpolateString } from "../template";
 
@@ -75,10 +76,11 @@ export const resolveRegistrationLine = ({
 };
 
 export const formatTaxPercent = (
-  taxPercent: number | null | undefined
+  taxPercent: number | null | undefined,
+  locale: string
 ): string | null => {
   if (!taxPercent) return null;
-  return `${(taxPercent * 100).toFixed(2)}%`;
+  return formatPercent(taxPercent, locale);
 };
 
 export const getCurrencyFormatter = (

@@ -31,6 +31,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -833,10 +834,7 @@ const QuoteLinePricing = ({
                       {cost > 0 ? (
                         <EditableNumberCell
                           value={markup}
-                          formatOptions={{
-                            style: "percent",
-                            maximumFractionDigits: 2
-                          }}
+                          formatOptions={INPUT_FORMAT.rate}
                           minValue={0}
                           isEditable={isEditable}
                           onChange={(value) =>
@@ -899,10 +897,7 @@ const QuoteLinePricing = ({
                                 <VStack spacing={0}>
                                   <EditableNumberCell
                                     value={markupValue / 100}
-                                    formatOptions={{
-                                      style: "percent",
-                                      maximumFractionDigits: 2
-                                    }}
+                                    formatOptions={INPUT_FORMAT.rate}
                                     minValue={0}
                                     isEditable={isEditable}
                                     onChange={(value) =>
@@ -970,10 +965,7 @@ const QuoteLinePricing = ({
                   <Td key={index}>
                     <EditableNumberCell
                       value={discount}
-                      formatOptions={{
-                        style: "percent",
-                        maximumFractionDigits: 2
-                      }}
+                      formatOptions={INPUT_FORMAT.rate}
                       minValue={0}
                       maxValue={1}
                       isEditable={isEditable}
@@ -1265,10 +1257,7 @@ const QuoteLinePricing = ({
                   <Td key={index} className="group-hover:bg-muted/50">
                     <EditableNumberCell
                       value={taxPercent}
-                      formatOptions={{
-                        style: "percent",
-                        maximumFractionDigits: 2
-                      }}
+                      formatOptions={INPUT_FORMAT.rate}
                       minValue={0}
                       isEditable={isEditable}
                       onChange={(value) => {

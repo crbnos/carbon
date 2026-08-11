@@ -171,9 +171,9 @@ export function LineItemsBlock({
                       <Text style={tw("text-gray-600")}>
                         {numberFormatter.format(line.supplierTaxAmount ?? 0)}
                       </Text>
-                      {formatTaxPercent(line.taxPercent) && (
+                      {formatTaxPercent(line.taxPercent, locale) && (
                         <Text style={tw("text-[6px] text-gray-400")}>
-                          {formatTaxPercent(line.taxPercent)}
+                          {formatTaxPercent(line.taxPercent, locale)}
                         </Text>
                       )}
                     </View>

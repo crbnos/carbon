@@ -1,3 +1,4 @@
+import { EPSILON } from "./math";
 import type { Violation } from "./storage-rules";
 
 export type OverReceiptReceiptLine = {
@@ -49,7 +50,7 @@ export function getOverReceiptViolations(
     const total = alreadyReceived + incoming;
     // Small tolerance so float artifacts from unit conversion don't flag an
     // exact receipt as over.
-    if (total > ordered + 1e-6) {
+    if (total > ordered + EPSILON) {
       const ruleId = `over-receipt:${poLine.id}`;
       violations.push({
         ruleId,

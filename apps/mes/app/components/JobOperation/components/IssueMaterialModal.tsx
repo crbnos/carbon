@@ -37,7 +37,11 @@ import {
   TabsTrigger,
   toast
 } from "@carbon/react";
-import { formatDate, getItemReadableId } from "@carbon/utils";
+import {
+  formatDate,
+  getItemReadableId,
+  quantityFormatOptions
+} from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -130,7 +134,7 @@ export function IssueMaterialModal({
   const { carbon } = useCarbon();
   const { t } = useLingui();
   const [items] = useItems();
-  const numberFormatter = useNumberFormatter({ maximumFractionDigits: 4 });
+  const numberFormatter = useNumberFormatter(quantityFormatOptions());
 
   // Item selection state
   const [selectedItemId, setSelectedItemId] = useState<string>(

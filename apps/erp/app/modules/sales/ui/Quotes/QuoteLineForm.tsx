@@ -23,7 +23,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -497,11 +497,7 @@ const QuoteLineForm = ({
                         minValue={0}
                         maxValue={1}
                         step={0.0001}
-                        formatOptions={{
-                          style: "percent",
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 2
-                        }}
+                        formatOptions={INPUT_FORMAT.rate}
                       />
 
                       <CustomFormFields table="quoteLine" />

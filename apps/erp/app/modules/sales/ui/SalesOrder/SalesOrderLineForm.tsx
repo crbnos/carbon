@@ -34,7 +34,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -798,11 +798,7 @@ const SalesOrderLineForm = ({
                                 minValue={0}
                                 maxValue={1}
                                 step={0.0001}
-                                formatOptions={{
-                                  style: "percent",
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 2
-                                }}
+                                formatOptions={INPUT_FORMAT.rate}
                               />
                               <Number
                                 name="shippingCost"
@@ -973,11 +969,7 @@ const SalesOrderLineForm = ({
                               minValue={0}
                               maxValue={1}
                               step={0.0001}
-                              formatOptions={{
-                                style: "percent",
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 2
-                              }}
+                              formatOptions={INPUT_FORMAT.rate}
                               onChange={(value) =>
                                 setAssetData((d) => ({
                                   ...d,

@@ -30,7 +30,12 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRouteData, useUrlParams } from "~/hooks";
+import {
+  usePercentFormatter,
+  usePermissions,
+  useRouteData,
+  useUrlParams
+} from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
 import type { ListItem } from "~/types";
@@ -81,11 +86,7 @@ const GaugeCalibrationRecordsTable = memo(
       style: "unit",
       unit: isMetric ? "celsius" : "fahrenheit"
     });
-    const humidityFormatter = useNumberFormatter({
-      maximumFractionDigits: 2,
-      style: "percent",
-      minimumFractionDigits: 0
-    });
+    const humidityFormatter = usePercentFormatter();
 
     const columns = useMemo<ColumnDef<GaugeCalibrationRecord>[]>(() => {
       const defaultColumns: ColumnDef<GaugeCalibrationRecord>[] = [

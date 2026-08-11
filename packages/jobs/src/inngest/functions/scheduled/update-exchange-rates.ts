@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Rates } from "@carbon/ee/exchange-rates.server";
+import { round } from "@carbon/utils";
 import { getExchangeRatesClient } from "@carbon/ee/exchange-rates.server";
 import { EXCHANGE_RATES_API_KEY } from "@carbon/env";
 import { inngest } from "../../client";
@@ -196,10 +197,11 @@ export const updateExchangeRatesFunction = inngest.createFunction(
           const updates = data
             .map((currency) => ({
               ...currency,
-              exchangeRate: Number(
-                rates[currency.code as CurrencyCode]?.toFixed(
-                  currency.decimalPlaces
-                )
+              // Rates carry internal scale — never the currency's DISPLAY
+              // decimals, which zeroed every 0-decimal currency's fraction and
+              // silently froze rates that rounded to 0
+              exchangeRate: round(
+                Number(rates[currency.code as CurrencyCode])
               ),
               updatedAt
             }))

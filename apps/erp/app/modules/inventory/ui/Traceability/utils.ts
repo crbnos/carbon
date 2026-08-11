@@ -1,3 +1,4 @@
+import { EPSILON } from "@carbon/utils";
 import type { Edge, Node } from "@xyflow/react";
 import type {
   Activity,
@@ -157,7 +158,7 @@ type LotTimeline = {
   wiring: LotEventWiring[];
 };
 
-const QTY_EPSILON = 1e-6;
+const QTY_EPSILON = EPSILON;
 
 /**
  * Replay an entity's visible events backward from its current quantity to

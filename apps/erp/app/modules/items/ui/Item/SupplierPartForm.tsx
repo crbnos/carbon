@@ -36,6 +36,7 @@ import {
   CarouselPrevious
 } from "@carbon/react/Carousel";
 
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -55,7 +56,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import Grid from "~/components/Grid";
-import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, usePriceFormatter, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { supplierPartValidator } from "../../items.models";
 
@@ -180,14 +181,13 @@ const SupplierPartForm = ({
                   label={t`Supplier Part ID`}
                   termId="supplier-part-id"
                 />
+                {/* 0 minimum: the currency's decimalPlaces isn't loaded on
+                    this route — the display side pads via usePriceFormatter */}
                 <Number
                   name="unitPrice"
                   label={t`Unit Price`}
                   minValue={0}
-                  formatOptions={{
-                    style: "currency",
-                    currency: baseCurrency
-                  }}
+                  formatOptions={INPUT_FORMAT.price(baseCurrency, 0)}
                 />
                 <UnitOfMeasure
                   name="supplierUnitOfMeasureCode"
@@ -261,6 +261,7 @@ function PurchaseHistory({
   baseCurrency: string;
 }) {
   const { t } = useLingui();
+  const priceFormatter = usePriceFormatter({ currency: baseCurrency });
   if (history.length === 0) return null;
 
   return (
@@ -319,10 +320,7 @@ function PurchaseHistory({
                           <Tr>
                             <Td>{line.purchaseQuantity}</Td>
                             <Td>
-                              {new Intl.NumberFormat("en-US", {
-                                style: "currency",
-                                currency: baseCurrency
-                              }).format(line.unitPrice ?? 0)}
+                              {priceFormatter.format(line.unitPrice ?? 0)}
                             </Td>
                           </Tr>
                         </Tbody>
@@ -357,7 +355,7 @@ function PriceBreaks({
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
-  const formatter = useCurrencyFormatter();
+  const formatter = usePriceFormatter();
 
   const removeRow = useCallback(
     (index: number) => {
@@ -386,7 +384,7 @@ function PriceBreaks({
     () => ({
       quantity: EditableNumber(noOpMutation),
       unitPrice: EditableNumber(noOpMutation, {
-        formatOptions: { style: "currency", currency: baseCurrency }
+        formatOptions: INPUT_FORMAT.price(baseCurrency, 0)
       })
     }),
     [noOpMutation, baseCurrency]

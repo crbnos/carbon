@@ -10,6 +10,7 @@ import {
 import type { KyselifyDatabase } from "./kysely-supabase.types.ts";
 // Aliased it as pg so can be imported as-is in Node environment
 import { Pool } from "pg";
+import * as pg from "pg";
 import type { Database as SupabaseDatabase } from "../../../../src/types.ts";
 
 export type KyselyDatabase = KyselifyDatabase<SupabaseDatabase>;
@@ -62,8 +63,47 @@ function createPostgresConnectionPool(connections: number): Pool {
       const connectionPoolerUrl = url.includes("supabase.co")
         ? url.replace("5432", "6543")
         : url;
-      // @ts-ignore Compat
-      return new Pool(connectionPoolerUrl, connections);
+      // deno-postgres accepts EITHER a URI string OR a ClientOptions object —
+      // the NUMERIC decoder (`controls`) only fits on the object form, so
+      // parse the URL ourselves. sslmode mapping mirrors the driver's own:
+      // disable -> off; require/verify-* -> enforce; otherwise attempt TLS
+      // and fall back (its default).
+      const u = new URL(connectionPoolerUrl);
+      const sslmode = u.searchParams.get("sslmode");
+      // "pg" resolves to node-postgres types in the Node build, so cast the
+      // deno-postgres (options, size) constructor shape explicitly.
+      const DenoPool = Pool as unknown as new (
+        options: unknown,
+        size: number
+      ) => Pool;
+      return new DenoPool(
+        {
+          user: decodeURIComponent(u.username),
+          password: decodeURIComponent(u.password),
+          hostname: decodeURIComponent(u.hostname),
+          port: u.port || 5432,
+          database: u.pathname.replace(/^\//, "") || undefined,
+          ...(sslmode
+            ? {
+                tls: {
+                  enabled: sslmode !== "disable",
+                  enforce: ["require", "verify-ca", "verify-full"].includes(
+                    sslmode
+                  ),
+                },
+              }
+            : {}),
+          controls: {
+            decoders: {
+              // NUMERIC (OID 1700) arrives as text; decode to a JS number so
+              // runtime values match the generated types. The driver applies
+              // this element-wise to numeric[] via the base-type fallback.
+              1700: (value: string) => Number(value),
+            },
+          },
+        },
+        connections
+      );
     }
     case "node": {
       const url = process.env.SUPABASE_DB_URL!;
@@ -85,6 +125,17 @@ function createPostgresConnectionPool(connections: number): Pool {
       pool.on("error", (err) => {
         console.error("postgres pool: idle client error", err);
       });
+      // node-postgres returns NUMERIC as text by default; parse to a JS number
+      // so runtime values match the generated types (mirrors the Deno branch's
+      // custom decoder). `types` only exists on node-postgres — on Deno the
+      // namespace has no such export and this no-ops.
+      (
+        pg as unknown as {
+          types?: {
+            setTypeParser: (oid: number, fn: (v: string) => unknown) => void;
+          };
+        }
+      ).types?.setTypeParser(1700, (v: string) => Number(v));
       return pool;
     }
 
