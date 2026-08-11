@@ -15,6 +15,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { applyRate, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router";
@@ -68,7 +69,10 @@ const SupplierQuoteLinePricing = ({
 
   const routeData = useRouteData<{
     quote: SupplierQuote;
+    presentationCurrency: { decimalPlaces: number } | null;
   }>(path.to.supplierQuote(id));
+  // Settlement decimals come from the quote currency's row (loader data)
+  const currencyDecimals = routeData?.presentationCurrency?.decimalPlaces ?? 2;
   const isEditable =
     permissions.can("update", "purchasing") &&
     ["Draft"].includes(routeData?.quote?.status ?? "");
@@ -121,6 +125,71 @@ const SupplierQuoteLinePricing = ({
           ?.from("supplierQuoteLinePrice")
           .update({
             [key]: value,
+            supplierQuoteLineId: lineId,
+            quantity,
+            updatedBy: userId
+          })
+          .eq("supplierQuoteLineId", lineId)
+          .eq("quantity", quantity);
+
+        if (update?.error) {
+          logger.error(update.error);
+          toast.error(t`Failed to update supplier quote line`);
+          setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
+        }
+      } else {
+        const insert = await carbon?.from("supplierQuoteLinePrice").insert({
+          ...newPrices[quantity],
+          supplierQuoteLineId: lineId,
+          quantity
+        });
+
+        if (insert?.error) {
+          logger.error(insert.error);
+          toast.error(t`Failed to insert supplier quote line`);
+          setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
+        }
+      }
+    },
+    [editableFields.prices, id, lineId, exchangeRate, userId, carbon, t]
+  );
+
+  // The tax value pair: any edit writes BOTH the rate and the amount
+  const onUpdateTaxPair = useCallback(
+    async (
+      quantity: number,
+      pair: { taxPercent: number; supplierTaxAmount: number }
+    ) => {
+      const hasPrice = !!editableFields.prices[quantity];
+
+      const oldPrices = { ...editableFields.prices };
+      const newPrices = { ...oldPrices };
+      if (!hasPrice) {
+        newPrices[quantity] = {
+          supplierQuoteId: id,
+          supplierQuoteLineId: lineId,
+          quantity,
+          leadTime: 0,
+          exchangeRate: exchangeRate ?? 1,
+          supplierUnitPrice: 0,
+          supplierShippingCost: 0,
+          supplierTaxAmount: 0,
+          taxPercent: 0,
+          createdBy: userId
+        } as unknown as SupplierQuoteLinePrice;
+      }
+      newPrices[quantity] = { ...newPrices[quantity], ...pair };
+
+      setEditableFields((prev) => ({
+        ...prev,
+        prices: newPrices
+      }));
+
+      if (hasPrice) {
+        const update = await carbon
+          ?.from("supplierQuoteLinePrice")
+          .update({
+            ...pair,
             supplierQuoteLineId: lineId,
             quantity,
             updatedBy: userId
@@ -302,18 +371,60 @@ const SupplierQuoteLinePricing = ({
               {quantities.map((quantity, index) => {
                 const taxAmount =
                   editableFields.prices[quantity]?.supplierTaxAmount ?? 0;
+                const taxPercent =
+                  editableFields.prices[quantity]?.taxPercent ?? 0;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <EditableNumberCell
                       value={taxAmount}
-                      formatOptions={{
-                        style: "currency",
-                        currency: routeData?.quote?.currencyCode ?? baseCurrency
-                      }}
+                      formatOptions={INPUT_FORMAT.money(
+                        routeData?.quote?.currencyCode ?? baseCurrency,
+                        currencyDecimals
+                      )}
                       minValue={0}
                       isEditable={isEditable}
                       onChange={(value) =>
-                        onUpdatePrice("supplierTaxAmount", quantity, value)
+                        // Amount edits never rewrite the stored rate
+                        onUpdateTaxPair(quantity, {
+                          taxPercent,
+                          supplierTaxAmount: value
+                        })
+                      }
+                    />
+                  </Td>
+                );
+              })}
+            </Tr>
+
+            <Tr>
+              <Td className="border-r border-border group-hover:bg-muted/50">
+                <HStack className="w-full justify-between ">
+                  <span>Tax Percent</span>
+                </HStack>
+              </Td>
+              {quantities.map((quantity, index) => {
+                const price = editableFields.prices[quantity];
+                const taxPercent = price?.taxPercent ?? 0;
+                const breakSubtotal =
+                  (price?.supplierUnitPrice ?? 0) * quantity +
+                  (price?.supplierShippingCost ?? 0);
+                return (
+                  <Td key={index} className="group-hover:bg-muted/50">
+                    <EditableNumberCell
+                      value={taxPercent}
+                      formatOptions={INPUT_FORMAT.rate}
+                      minValue={0}
+                      maxValue={1}
+                      isEditable={isEditable}
+                      onChange={(value) =>
+                        onUpdateTaxPair(quantity, {
+                          taxPercent: value,
+                          supplierTaxAmount: applyRate(
+                            breakSubtotal,
+                            value,
+                            currencyDecimals
+                          )
+                        })
                       }
                     />
                   </Td>

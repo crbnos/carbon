@@ -103,6 +103,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     quote: quote.data,
+    presentationCurrency: presentationCurrency.data ?? null,
     lines: lines.data ?? [],
     prices: prices.data ?? [],
     files: getSupplierInteractionDocuments(

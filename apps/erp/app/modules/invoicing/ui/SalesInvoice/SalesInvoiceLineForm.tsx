@@ -28,7 +28,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { applyRate, getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import {
@@ -51,7 +51,8 @@ import {
   NumberControlled,
   SelectControlled,
   StorageUnit,
-  Submit
+  Submit,
+  TaxFields
 } from "~/components/Form";
 import {
   useCurrencyFormatter,
@@ -96,7 +97,12 @@ const SalesInvoiceLineForm = ({
   const [items] = useItems();
   const routeData = useRouteData<{
     salesInvoice: SalesInvoice;
+    currency: { decimalPlaces: number } | null;
   }>(path.to.salesInvoice(invoiceId));
+
+  // Settlement decimals come from the document currency's row (loader data);
+  // 2 is only the last resort for a currency-less document
+  const currencyDecimals = routeData?.currency?.decimalPlaces ?? 2;
 
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isEditable = !isLocked;
@@ -139,14 +145,15 @@ const SalesInvoiceLineForm = ({
     if (itemData.taxPercent !== 0) {
       setItemData((d) => ({
         ...d,
-        taxAmount: subtotal * itemData.taxPercent
+        taxAmount: applyRate(subtotal, itemData.taxPercent, currencyDecimals)
       }));
     }
   }, [
     itemData.unitPrice,
     itemData.quantity,
     itemData.shippingCost,
-    itemData.taxPercent
+    itemData.taxPercent,
+    currencyDecimals
   ]);
 
   const isFixedAsset = initialValues.invoiceLineType === "Fixed Asset";
@@ -688,48 +695,24 @@ const SalesInvoiceLineForm = ({
                               costsDisclosure.isOpen ? "" : "hidden"
                             }`}
                           >
-                            <NumberControlled
-                              name="taxPercent"
-                              label={t`Tax Percent`}
-                              value={itemData.taxPercent}
-                              minValue={0}
-                              maxValue={1}
-                              step={0.0001}
-                              formatOptions={{
-                                style: "percent",
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 2
-                              }}
-                              onChange={(value) => {
-                                const subtotal =
-                                  itemData.unitPrice * itemData.quantity +
-                                  itemData.shippingCost;
+                            <TaxFields
+                              amountName="taxAmount"
+                              percentName="taxPercent"
+                              subtotal={
+                                itemData.unitPrice * itemData.quantity +
+                                itemData.shippingCost
+                              }
+                              currency={invoiceCurrency}
+                              currencyDecimals={currencyDecimals}
+                              percent={itemData.taxPercent}
+                              amount={itemData.taxAmount}
+                              onChange={({ percent, amount }) =>
                                 setItemData((d) => ({
                                   ...d,
-                                  taxPercent: value,
-                                  taxAmount: subtotal * value
-                                }));
-                              }}
-                            />
-                            <NumberControlled
-                              name="taxAmount"
-                              label={t`Tax Amount`}
-                              value={itemData.taxAmount}
-                              formatOptions={{
-                                style: "currency",
-                                currency: invoiceCurrency
-                              }}
-                              onChange={(value) => {
-                                const subtotal =
-                                  itemData.unitPrice * itemData.quantity +
-                                  itemData.shippingCost;
-                                setItemData((d) => ({
-                                  ...d,
-                                  taxAmount: value,
-                                  taxPercent:
-                                    subtotal > 0 ? value / subtotal : 0
-                                }));
-                              }}
+                                  taxPercent: percent,
+                                  taxAmount: amount
+                                }))
+                              }
                             />
                             <NumberControlled
                               name="shippingCost"
@@ -880,11 +863,7 @@ const SalesInvoiceLineForm = ({
                             minValue={0}
                             maxValue={1}
                             step={0.0001}
-                            formatOptions={{
-                              style: "percent",
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 2
-                            }}
+                            formatOptions={INPUT_FORMAT.rate}
                             onChange={(value) =>
                               setAssetData((d) => ({
                                 ...d,

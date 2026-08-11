@@ -31,7 +31,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { applyRate, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuBox, LuChevronRight, LuLandmark, LuReceipt } from "react-icons/lu";
@@ -48,6 +48,7 @@ import {
   NumberControlled,
   StorageUnit,
   Submit,
+  TaxFields,
   UnitOfMeasure
 } from "~/components/Form";
 import {
@@ -95,11 +96,15 @@ const PurchaseInvoiceLineForm = ({
 
   const routeData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
+    currency: { decimalPlaces: number } | null;
   }>(path.to.purchaseInvoice(invoiceId));
 
   const isEditable = ["Draft"].includes(
     routeData?.purchaseInvoice?.status ?? ""
   );
+  // Settlement decimals come from the document currency's row (loader data);
+  // 2 is only the last resort for a currency-less document
+  const currencyDecimals = routeData?.currency?.decimalPlaces ?? 2;
 
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.invoiceLineType as ItemType
@@ -145,14 +150,15 @@ const PurchaseInvoiceLineForm = ({
     if (itemData.taxPercent !== 0) {
       setItemData((d) => ({
         ...d,
-        taxAmount: subtotal * itemData.taxPercent
+        taxAmount: applyRate(subtotal, itemData.taxPercent, currencyDecimals)
       }));
     }
   }, [
     itemData.supplierUnitPrice,
     itemData.quantity,
     itemData.supplierShippingCost,
-    itemData.taxPercent
+    itemData.taxPercent,
+    currencyDecimals
   ]);
 
   const isEditing = initialValues.id !== undefined;
@@ -730,49 +736,27 @@ const PurchaseInvoiceLineForm = ({
                             }))
                           }
                         />
-                        <NumberControlled
-                          name="supplierTaxAmount"
-                          label={t`Tax Amount`}
-                          value={itemData.taxAmount}
-                          formatOptions={{
-                            style: "currency",
-                            currency:
-                              routeData?.purchaseInvoice?.currencyCode ??
-                              company.baseCurrencyCode
-                          }}
-                          onChange={(value) => {
-                            const subtotal =
-                              itemData.supplierUnitPrice * itemData.quantity +
-                              itemData.supplierShippingCost;
+                        <TaxFields
+                          amountName="supplierTaxAmount"
+                          percentName="taxPercent"
+                          subtotal={
+                            itemData.supplierUnitPrice * itemData.quantity +
+                            itemData.supplierShippingCost
+                          }
+                          currency={
+                            routeData?.purchaseInvoice?.currencyCode ??
+                            company.baseCurrencyCode
+                          }
+                          currencyDecimals={currencyDecimals}
+                          percent={itemData.taxPercent}
+                          amount={itemData.taxAmount}
+                          onChange={({ percent, amount }) =>
                             setItemData((d) => ({
                               ...d,
-                              taxAmount: value,
-                              taxPercent: subtotal > 0 ? value / subtotal : 0
-                            }));
-                          }}
-                        />
-                        <NumberControlled
-                          name="taxPercent"
-                          label={t`Tax Percent`}
-                          value={itemData.taxPercent}
-                          minValue={0}
-                          maxValue={1}
-                          step={0.0001}
-                          formatOptions={{
-                            style: "percent",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 2
-                          }}
-                          onChange={(value) => {
-                            const subtotal =
-                              itemData.supplierUnitPrice * itemData.quantity +
-                              itemData.supplierShippingCost;
-                            setItemData((d) => ({
-                              ...d,
-                              taxPercent: value,
-                              taxAmount: subtotal * value
-                            }));
-                          }}
+                              taxPercent: percent,
+                              taxAmount: amount
+                            }))
+                          }
                         />
                       </div>
                     </div>
@@ -965,51 +949,28 @@ const PurchaseInvoiceLineForm = ({
                               }))
                             }
                           />
-                          <NumberControlled
-                            name="supplierTaxAmount"
-                            label={t`Tax Amount`}
-                            value={indirectData.taxAmount}
-                            formatOptions={{
-                              style: "currency",
-                              currency:
-                                routeData?.purchaseInvoice?.currencyCode ??
-                                company.baseCurrencyCode
-                            }}
-                            onChange={(value) => {
-                              const subtotal =
-                                indirectData.supplierUnitPrice *
-                                  indirectData.quantity +
-                                indirectData.supplierShippingCost;
+                          <TaxFields
+                            amountName="supplierTaxAmount"
+                            percentName="taxPercent"
+                            subtotal={
+                              indirectData.supplierUnitPrice *
+                                indirectData.quantity +
+                              indirectData.supplierShippingCost
+                            }
+                            currency={
+                              routeData?.purchaseInvoice?.currencyCode ??
+                              company.baseCurrencyCode
+                            }
+                            currencyDecimals={currencyDecimals}
+                            percent={indirectData.taxPercent}
+                            amount={indirectData.taxAmount}
+                            onChange={({ percent, amount }) =>
                               setIndirectData((d) => ({
                                 ...d,
-                                taxAmount: value,
-                                taxPercent: subtotal > 0 ? value / subtotal : 0
-                              }));
-                            }}
-                          />
-                          <NumberControlled
-                            name="taxPercent"
-                            label={t`Tax Percent`}
-                            value={indirectData.taxPercent}
-                            minValue={0}
-                            maxValue={1}
-                            step={0.0001}
-                            formatOptions={{
-                              style: "percent",
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 2
-                            }}
-                            onChange={(value) => {
-                              const subtotal =
-                                indirectData.supplierUnitPrice *
-                                  indirectData.quantity +
-                                indirectData.supplierShippingCost;
-                              setIndirectData((d) => ({
-                                ...d,
-                                taxPercent: value,
-                                taxAmount: subtotal * value
-                              }));
-                            }}
+                                taxPercent: percent,
+                                taxAmount: amount
+                              }))
+                            }
                           />
                         </div>
                       </div>

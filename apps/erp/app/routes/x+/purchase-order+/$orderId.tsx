@@ -14,7 +14,7 @@ import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
   getDefaultAttachmentsForPO,
@@ -370,10 +370,11 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "purchasing",
-    bypassRls: true
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      view: "purchasing",
+      bypassRls: true
+    });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
@@ -476,7 +477,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   );
   const supplierInteractionId = purchaseOrder.data?.supplierInteractionId;
-  const [defaultAttachments, adHocDocs] = await Promise.all([
+  const [defaultAttachments, adHocDocs, currency] = await Promise.all([
     getDefaultAttachmentsForPO(serviceRole, {
       companyId,
       supplierId: purchaseOrder.data?.supplierId ?? null,
@@ -488,7 +489,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyId,
           supplierInteractionId
         )
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    purchaseOrder.data?.currencyCode
+      ? getCurrencyByCode(
+          serviceRole,
+          companyGroupId,
+          purchaseOrder.data.currencyCode
+        )
+      : null
   ]);
   const adHocAttachments = adHocDocs.map((d) => ({
     source: "po" as const,
@@ -504,6 +512,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     purchaseOrder: purchaseOrder.data,
     purchaseOrderDelivery: purchaseOrderDelivery.data,
+    currency: currency?.data ?? null,
     lines: lines.data ?? [],
     files: getSupplierInteractionDocuments(
       client,
