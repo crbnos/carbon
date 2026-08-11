@@ -15,7 +15,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { applyRate, INPUT_FORMAT } from "@carbon/utils";
+import { applyRate, INPUT_FORMAT, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router";
@@ -369,10 +369,12 @@ const SupplierQuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
-                const taxAmount =
-                  editableFields.prices[quantity]?.supplierTaxAmount ?? 0;
-                const taxPercent =
-                  editableFields.prices[quantity]?.taxPercent ?? 0;
+                const price = editableFields.prices[quantity];
+                const taxAmount = price?.supplierTaxAmount ?? 0;
+                const taxPercent = price?.taxPercent ?? 0;
+                const breakSubtotal =
+                  (price?.supplierUnitPrice ?? 0) * quantity +
+                  (price?.supplierShippingCost ?? 0);
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <EditableNumberCell
@@ -384,9 +386,13 @@ const SupplierQuoteLinePricing = ({
                       minValue={0}
                       isEditable={isEditable}
                       onChange={(value) =>
-                        // Amount edits never rewrite the stored rate
+                        // Two-way: an amount edit restates the rate for this
+                        // break, so the stored pair stays consistent
                         onUpdateTaxPair(quantity, {
-                          taxPercent,
+                          taxPercent:
+                            breakSubtotal > 0
+                              ? round(value / breakSubtotal)
+                              : taxPercent,
                           supplierTaxAmount: value
                         })
                       }

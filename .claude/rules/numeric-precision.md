@@ -65,9 +65,23 @@ row has one (duplicate, convert); derive it once (`amount / subtotal`, the
 canonical denominator `unitPrice × qty + shippingCost`) when only an amount
 exists (AI extraction, supplier portal). Never a GENERATED column that divides
 (`no-derived-percent-column`) — the old derived echo turned a typed 6.25% into
-6.22% via the cents-rounded amount. Amount edits never rewrite the rate
-(`TaxFields` one-way coupling); base changes re-derive the amount via
-`applyRate`.
+6.22% via the cents-rounded amount.
+
+In the UI the pair is coupled BOTH ways (`TaxFields`), so what is stored is
+always internally consistent: a percent edit derives the amount via
+`applyRate` at `currency.decimalPlaces`; an amount edit derives the rate via
+`round(amount / subtotal)` at internal scale; a base change (qty, price,
+shipping) re-derives the amount from the rate. Precision only flows cleanly
+one way — a rate carries more decimals than a settlement amount, so a rate
+derived back from an amount is limited by that amount's scale (0.56 on a 9.00
+subtotal is 6.222%, not 6.25%). That is inherent, and distinct from the old
+corruption, which came from deriving the amount UNROUNDED so the money input
+re-committed a changed value on blur. Derive the amount through `applyRate`
+and blur commits an identical value, triggering nothing.
+
+`useDerivedTaxAmount` (exported from `TaxFields`) owns the base-change
+re-derivation and deliberately skips its first run — a saved line's stored
+pair is displayed as stored rather than silently recomputed on mount.
 
 ## Display digits = input digits (named kinds)
 

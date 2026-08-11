@@ -1,5 +1,5 @@
 import { NumberControlled } from "@carbon/form";
-import { applyRate, INPUT_FORMAT } from "@carbon/utils";
+import { applyRate, INPUT_FORMAT, round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 
@@ -54,13 +54,23 @@ type TaxFieldsProps = {
 };
 
 /**
- * The tax value pair: one rate, one absolute amount — any edit sets both.
- * Coupling is one-way: a percent edit derives the amount; an amount edit
- * NEVER rewrites the percent (the old bidirectional coupling let the
- * currency input's cents-rounding blur overwrite a typed 6.25% with
- * amount/subtotal = 6.22%). Base-change re-derivation (quantity/price/
- * shipping edits) stays in the caller's effect — this component is
- * controlled and stateless.
+ * The tax value pair: one rate, one absolute amount — every edit sets BOTH, in
+ * either direction, so the stored pair is always internally consistent.
+ *
+ * The precision only flows cleanly one way. A rate carries more decimals than a
+ * settlement amount does, so deriving the rate back from the amount is limited
+ * by the amount's scale — 0.56 on a 9.00 subtotal is 6.222%, not the 6.25% that
+ * produced it. That is inherent to money having fewer decimals than a rate, and
+ * is why the derived rate is rounded to internal scale here.
+ *
+ * What it is NOT is the old 6.25% → 6.22% corruption: that came from deriving
+ * the amount UNROUNDED (0.5625), which the money input then re-committed as a
+ * changed value on blur and fed back through the coupling. The amount is now
+ * derived through applyRate at the currency's decimals, so blurring the field
+ * commits an identical value and triggers nothing.
+ *
+ * Base-change re-derivation (quantity/price/shipping edits) stays in the
+ * caller's useDerivedTaxAmount — this component is controlled and stateless.
  */
 export function TaxFields({
   percentName,
@@ -84,7 +94,15 @@ export function TaxFields({
         minValue={0}
         formatOptions={INPUT_FORMAT.money(currency, currencyDecimals)}
         isReadOnly={isReadOnly}
-        onChange={(value) => onChange({ percent, amount: value })}
+        onChange={(value) =>
+          onChange({
+            // Rounded to internal scale so the stored rate is exactly what the
+            // percent input can render (3 percent-digits); a raw quotient like
+            // 0.0622222… would display as one value and store another.
+            percent: subtotal > 0 ? round(value / subtotal) : percent,
+            amount: value
+          })
+        }
       />
       <NumberControlled
         name={percentName}
