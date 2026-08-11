@@ -11,7 +11,6 @@ import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useSuppliers } from "~/stores/suppliers";
-import { SUPPLIER_PART_PRICE_PRECISION } from "../../../items.models";
 import type { SupplierPart } from "../../../types";
 
 type Part = Pick<
@@ -49,9 +48,7 @@ const SupplierParts = ({
   const permissions = usePermissions();
   const canEdit = permissions.can("update", "parts") && !isReadOnly;
   const canDelete = permissions.can("delete", "parts") && !isReadOnly;
-  const formatter = useCurrencyFormatter({
-    maximumFractionDigits: SUPPLIER_PART_PRICE_PRECISION
-  });
+  const formatter = useCurrencyFormatter();
   const customColumns = useCustomColumns<Part>("supplierPart");
   const [suppliers] = useSuppliers();
 

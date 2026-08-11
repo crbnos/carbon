@@ -57,10 +57,7 @@ import {
 import Grid from "~/components/Grid";
 import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
-import {
-  SUPPLIER_PART_PRICE_PRECISION,
-  supplierPartValidator
-} from "../../items.models";
+import { supplierPartValidator } from "../../items.models";
 
 type PriceBreak = {
   quantity: number;
@@ -189,8 +186,7 @@ const SupplierPartForm = ({
                   minValue={0}
                   formatOptions={{
                     style: "currency",
-                    currency: baseCurrency,
-                    maximumFractionDigits: SUPPLIER_PART_PRICE_PRECISION
+                    currency: baseCurrency
                   }}
                 />
                 <UnitOfMeasure
@@ -265,10 +261,6 @@ function PurchaseHistory({
   baseCurrency: string;
 }) {
   const { t } = useLingui();
-  const priceFormatter = useCurrencyFormatter({
-    currency: baseCurrency,
-    maximumFractionDigits: SUPPLIER_PART_PRICE_PRECISION
-  });
   if (history.length === 0) return null;
 
   return (
@@ -327,7 +319,10 @@ function PurchaseHistory({
                           <Tr>
                             <Td>{line.purchaseQuantity}</Td>
                             <Td>
-                              {priceFormatter.format(line.unitPrice ?? 0)}
+                              {new Intl.NumberFormat("en-US", {
+                                style: "currency",
+                                currency: baseCurrency
+                              }).format(line.unitPrice ?? 0)}
                             </Td>
                           </Tr>
                         </Tbody>
@@ -362,9 +357,7 @@ function PriceBreaks({
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
-  const formatter = useCurrencyFormatter({
-    maximumFractionDigits: SUPPLIER_PART_PRICE_PRECISION
-  });
+  const formatter = useCurrencyFormatter();
 
   const removeRow = useCallback(
     (index: number) => {
@@ -393,11 +386,7 @@ function PriceBreaks({
     () => ({
       quantity: EditableNumber(noOpMutation),
       unitPrice: EditableNumber(noOpMutation, {
-        formatOptions: {
-          style: "currency",
-          currency: baseCurrency,
-          maximumFractionDigits: SUPPLIER_PART_PRICE_PRECISION
-        }
+        formatOptions: { style: "currency", currency: baseCurrency }
       })
     }),
     [noOpMutation, baseCurrency]
