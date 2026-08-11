@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
+import { RoundingMode, round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -226,7 +227,11 @@ export async function action({ request }: ActionFunctionArgs) {
                 manufacturing.data?.scrapPercentage ?? 0;
               const updateScrapQuantity =
                 updateScrapPercentage > 0
-                  ? Math.ceil(order.quantity * updateScrapPercentage)
+                  ? round(
+                      order.quantity * updateScrapPercentage,
+                      0,
+                      RoundingMode.Up
+                    )
                   : 0;
 
               const updateJob = await client

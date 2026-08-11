@@ -1,0 +1,92 @@
+import { describe, expect, it } from "vitest";
+import {
+  applyRate,
+  assertBalanced,
+  equals,
+  RoundingMode,
+  round,
+  sum,
+  withScrap
+} from "./math";
+
+describe("round", () => {
+  it("rounds 1.005 to 1.01 at 2dp (exponent-shift beats the float artifact)", () => {
+    expect(round(1.005, 2)).toBe(1.01);
+  });
+
+  it("rounds ties away from zero like Postgres (round(-2.5, 0) === -3)", () => {
+    expect(round(-2.5, 0)).toBe(-3);
+    expect(round(2.5, 0)).toBe(3);
+  });
+
+  it("defaults to scale 5", () => {
+    expect(round(4.33333333)).toBe(4.33333);
+  });
+
+  it("passes non-finite values through", () => {
+    expect(round(Infinity)).toBe(Infinity);
+    expect(round(-Infinity)).toBe(-Infinity);
+    expect(Number.isNaN(round(NaN))).toBe(true);
+  });
+
+  it("rounds up away from zero in Up mode", () => {
+    expect(round(0.31, 0, RoundingMode.Up)).toBe(1);
+    expect(round(-0.31, 0, RoundingMode.Up)).toBe(-1);
+    expect(round(2.00001, 0, RoundingMode.Up)).toBe(3);
+  });
+});
+
+describe("withScrap", () => {
+  it("never rounds the target — the consumed-quantity regression", () => {
+    expect(withScrap(4.5, 0)).toBe(4.5);
+  });
+
+  it("still ceils the scrap allowance to whole units", () => {
+    expect(withScrap(31, 0.31)).toBe(32);
+  });
+});
+
+describe("applyRate", () => {
+  it("rounds to settlement decimals", () => {
+    expect(applyRate(9, 0.0625, 2)).toBe(0.56);
+  });
+
+  it("handles 0-decimal currencies", () => {
+    expect(applyRate(1000, 0.0625, 0)).toBe(63);
+  });
+
+  it("handles 3-decimal currencies", () => {
+    expect(applyRate(9, 0.0625, 3)).toBe(0.563);
+  });
+});
+
+describe("sum", () => {
+  it("accumulates at full precision and rounds once", () => {
+    expect(sum([0.1, 0.2, 0.3], 2)).toBe(0.6);
+  });
+});
+
+describe("equals", () => {
+  it("absorbs float noise", () => {
+    expect(equals(0.1 + 0.2, 0.3)).toBe(true);
+  });
+
+  it("distinguishes adjacent scale-5 values", () => {
+    expect(equals(1.00002, 1.00003)).toBe(false);
+  });
+});
+
+describe("assertBalanced", () => {
+  it("throws on drift beyond the default EPSILON", () => {
+    expect(() => assertBalanced(100, 100.001)).toThrow(/does not balance/);
+  });
+
+  it("passes equal debits and credits", () => {
+    expect(() => assertBalanced(100, 100)).not.toThrow();
+  });
+
+  it("honors an explicit business tolerance", () => {
+    expect(() => assertBalanced(100, 100.005, 0.01)).not.toThrow();
+    expect(() => assertBalanced(100, 100.02, 0.01)).toThrow(/does not balance/);
+  });
+});

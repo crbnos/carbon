@@ -25,6 +25,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
+import { RoundingMode, round } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -109,7 +110,7 @@ export function SalesOrderLineJobs({
       : quantityRequired;
     return {
       quantity,
-      scrapQuantity: Math.ceil(quantity * scrapPercentage)
+      scrapQuantity: round(quantity * scrapPercentage, 0, RoundingMode.Up)
     };
   });
 
@@ -227,7 +228,11 @@ export function SalesOrderLineJobs({
                       setQuantities((prev) => ({
                         ...prev,
                         quantity: value,
-                        scrapQuantity: Math.ceil(value * scrapPercentage)
+                        scrapQuantity: round(
+                          value * scrapPercentage,
+                          0,
+                          RoundingMode.Up
+                        )
                       }));
                     }}
                     minValue={0}
