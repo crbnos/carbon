@@ -58,10 +58,19 @@ Setup: new purchase invoice, line: quantity 1, unit price **$9.00**, no shipping
 
 ## 6. Currency decimal places
 
-- [ ] 6.1 Purchase invoice in **JPY**: amounts show **0** fraction digits (¥1,000, never ¥1,000.00); 6.25% of ¥1,000 → **¥63**.
+> **Status as of 2026-08-12 — read before running this suite.** Only the **tax
+> amount** field currently honours `currency.decimalPlaces`. Unit price,
+> shipping and add-on entry fields, and all read-only per-unit displays, still
+> fall back to Intl's CLDR default (2 for most currencies). So on a 0-decimal
+> currency, 6.1 and 6.4 **will fail on every field except Tax Amount** — that is
+> a known open gap (plan → Open items 1), not a new bug. Record it as
+> *expected-fail* rather than filing it. Run the suite anyway: it is the
+> acceptance test for that work when it lands.
+
+- [ ] 6.1 Purchase invoice in **JPY**: amounts show **0** fraction digits (¥1,000, never ¥1,000.00); 6.25% of ¥1,000 → **¥63**. *(Today: passes on Tax Amount only.)*
 - [ ] 6.2 Purchase invoice in **BHD**: **3** digits; 6.25% of BHD 9.000 → **0.563**.
 - [ ] 6.3 USD amounts pad: "$4.50", never "$4.5".
-- [ ] 6.4 Edit a currency's decimalPlaces (e.g. set a test currency to 0) — documents in it follow the column in both inputs and displays.
+- [ ] 6.4 Edit a currency's decimalPlaces (e.g. set a test currency to 0) — documents in it follow the column in both inputs and displays. *(Today: the Tax Amount field follows; the unit price does not.)*
 
 ## 7. Exchange rate precision (nightly-sync bug)
 
@@ -80,13 +89,125 @@ Setup: new purchase invoice, line: quantity 1, unit price **$9.00**, no shipping
 
 ## 9. Payments, memos & settlement (5dp GL, settlement decimals)
 
-- [ ] 9.1 Payment against two invoices in a foreign currency (rate ≠ 1.0), partial applications: posts with no "journal does not balance" error.
-- [ ] 9.2 PaymentApplyTable auto-apply still fills/clears correctly; remaining balance reaches exactly 0.
-- [ ] 9.3 Credit memo with an exchange rate posts; GL entries balance.
-- [ ] 9.4 Same-currency payment (rate 1.0) posts identically to before.
-- [ ] 9.5 Settlement values stay at currency decimals: after a payment posts, the invoice balance/amountDue shows a clean settlement amount (e.g. $12.34), never a 5-decimal value — only internal GL journal lines carry 5dp.
-- [ ] 9.6 Dust forgiveness intact: pay an invoice to within less than $0.01 of its balance — it is treated as paid (INVOICE_DUST_THRESHOLD), and no spurious on-account line appears for sub-0.0001 unapplied dust.
-- [ ] 9.7 Period close on a period containing the above postings: the close audit passes (no debit/credit drift flagged at 0.001).
+### Orientation — where these live
+
+Two separate screens, both under **Invoicing** in the left sidebar, in the
+**Payments** group at the bottom of that menu:
+
+| Screen | Sidebar item | URL |
+|---|---|---|
+| Payments (cash in/out) | **Payments** | `/x/invoicing/payments` |
+| Credit & debit memos (non-cash adjustments) | **Credits & Debits** | `/x/invoicing/credits` |
+
+Both follow the same lifecycle: **Draft → Posted → Voided.** A document only
+writes GL entries when you press **Post**. While it is Draft you can edit it;
+once Posted it is immutable and the header's primary button changes from
+**Post** to a red **Void**.
+
+Two vocabulary points that decide which fields you get:
+
+- **Payment Type** — `Receipt` means money coming IN, so the form asks for a
+  **Customer**. `Disbursement` means money going OUT, so it asks for a
+  **Supplier**. Picking the wrong one and then hunting for the missing field is
+  the usual first stumble.
+- **Memo Direction** — party × direction gives four combinations:
+  Customer + Credit → AR down · Customer + Debit → AR up ·
+  Supplier + Debit → AP down · Supplier + Credit → AP up.
+  For 9.3 you want **Customer + Credit** (the customer owes you less).
+
+### Setup — you need an open invoice to pay first
+
+A payment with nothing to apply to proves nothing, so build the target first.
+
+1. Go to **Invoicing → Sales Invoices**, press **New**.
+2. Pick your customer. Set **Currency** to **EUR** (any currency that is not
+   your base USD) — this is what makes 9.1 a foreign-currency test.
+3. Set **Exchange Rate** to `1.25`.
+4. Add a line: quantity `10`, unit price `100.00`. Save.
+5. Press **Post** in the header. The invoice must reach **Posted** with an open
+   balance — if it is still Draft, the payment screen will not offer it.
+6. Repeat 1–5 for a **second** EUR invoice (quantity `4`, unit price `50.00`)
+   so 9.1 has two invoices to split across.
+
+Note the two balances shown on the invoice list; you will reconcile against
+them at the end.
+
+### 9.1 Foreign-currency payment across two invoices
+
+- [ ] 9.1 **Invoicing → Payments → New.** Fill in, top to bottom:
+  - **Payment ID** — leave it; the sequence fills it in.
+  - **Type** — `Receipt`. (A **Customer** field appears once you pick this.)
+  - **Customer** — the customer from setup.
+  - **Payment Date** — today.
+  - **Currency** — `EUR`.
+  - **Exchange Rate** — `1.25`.
+  - **Total Amount** — `900.00` (less than the 1200 + 200 = 1400 open, so the
+    applications are deliberately partial).
+  - **Bank / Cash Account** — pick any Asset account.
+  - **Reference** — `PRECISION-9.1`.
+
+  Save. You land on the payment detail page in **Draft**.
+
+  On that page, find the **Apply to invoices** panel. Both EUR invoices are
+  listed with their open balances. Type an applied amount against each —
+  `700.00` on the first, `200.00` on the second (900 total, matching the
+  payment). Then press **Post** in the header.
+
+  **Expected:** it posts. **No "journal does not balance" error.** This is the
+  case that broke when the JS balance check ran at 5dp while the column still
+  rounded to 4 — if you see that error, stop and record the exact message.
+
+- [ ] 9.2 On the same screen before posting (use a fresh Draft payment if 9.1 is
+  already Posted), press **Auto apply**. It should fill the rows top-down until
+  the payment is exhausted, and the unapplied remainder should read exactly
+  `0.00` — not `0.00001` or `-0.00`. Clear it and re-apply to confirm it
+  round-trips.
+
+- [ ] 9.3 **Invoicing → Credits & Debits → New.**
+  - **Memo ID** — leave it.
+  - **Direction** — `Credit`.
+  - **Customer** — same customer.
+  - **Memo Date** — today.
+  - **Currency** — `EUR`, **Exchange Rate** `1.25`.
+  - **Amount** — `150.00`.
+  - **Reference** — `PRECISION-9.3`.
+
+  Save, then **Post**. **Expected:** posts cleanly; the GL entries balance.
+  To see them: **Accounting → Journal Entries**, find the newest entry, and
+  confirm total debits equal total credits.
+
+- [ ] 9.4 Repeat 9.1 with a **USD** payment at **Exchange Rate `1.0`** against a
+  USD invoice. **Expected:** identical behaviour to before this branch — this is
+  the no-FX control case.
+
+- [ ] 9.5 **The settlement-vs-internal distinction — the point of the suite.**
+  After the 9.1 payment posts, open each invoice it touched and read the
+  **balance / amount due**. **Expected:** a clean settlement figure at the
+  currency's decimals — `€500.00`, never `€500.00000` or `€499.99998`.
+  Then open the GL entry behind it (**Accounting → Journal Entries** → the
+  entry for that payment). **Expected:** the internal journal lines there
+  *may* carry up to 5 decimals. That asymmetry is correct and deliberate:
+  settlement values round to the currency, internal GL lines carry scale 5.
+  A 5-decimal figure on the *invoice balance* is the bug; a 5-decimal figure on
+  a *journal line* is not.
+
+- [ ] 9.6 **Dust forgiveness.** Create a payment for `0.995` less than an
+  invoice's full open balance (e.g. balance `€500.00`, pay `€499.01`), apply it
+  all to that invoice, and post. **Expected:** the invoice flips to **Paid**
+  anyway — that is `INVOICE_DUST_THRESHOLD` (a penny or two of difference is
+  forgiven when deciding paid status, an existing Carbon concept, not something
+  this branch introduced). Also confirm no spurious on-account credit line was
+  created for sub-`0.0001` unapplied dust.
+
+- [ ] 9.7 **Period close.** Go to **Accounting → Periods**, find the period
+  containing today's postings, and close it. **Expected:** the close audit
+  passes with no debit/credit drift flagged. The close check uses a `0.001`
+  tolerance (manual journals and period close), deliberately tighter than the
+  `0.01` used by payment/memo posting — do not "fix" one to match the other.
+
+**If a post fails:** capture the full error text and the payment/memo ID before
+retrying. "Journal does not balance (off by …)" with a drift smaller than
+`0.01` is the specific regression this suite exists to catch.
 
 ## 10. Tax value pair propagation (any write that sets one sets both)
 
@@ -141,6 +262,25 @@ Generate a quote, a sales order, and a sales invoice PDF, each with a taxed line
 - [ ] 16.4 `grep -rn "round4" apps packages --include="*.ts" --include="*.tsx" | grep -v node_modules` → no output.
 - [ ] 16.5 `grep -rn "SUPPLIER_PART_PRICE_PRECISION" apps --include="*.ts" --include="*.tsx"` → no output (the constant never landed; the price kind covers those sites).
 - [ ] 16.6 Smoke: load each core ERP module (sales, purchasing, invoicing, production, inventory, accounting, quality) — no console errors.
+
+## Known gaps as of 2026-08-12 (expected-fail, already tracked)
+
+Distinct from the by-design list below: these are things the branch intends to
+do and does not do yet. Mark them expected-fail; don't file them.
+
+- **Currency decimals outside tax fields** — see the banner on suite 6. Affects
+  6.1 and 6.4, and any unit-price display in suites 8 and 11 on a non-2-decimal
+  currency. Three commits attempting this were reverted on 2026-08-12 for
+  hardcoding `?? 2` against the plan's own rule; the fix needs `decimalPlaces`
+  exposed client-side first (plan → Open items 1).
+- **`SupplierQuoteLinePricing` is not on `TaxFields`** — suite 4 exercises a
+  hand-rolled percent/amount pair there, so its two-way coupling behaviour may
+  differ from the other three forms (plan → Open items 3).
+- **Exchange Rate input caps at 4 decimals** (`PaymentForm`), while exchange
+  rates are scale-5 internal values. Typing a 5-decimal rate truncates on blur.
+  Relevant to suite 7 and to the 9.x setup steps (plan → Open items 5).
+- **10 unclassified `Math.round` sites in MES** — suite 12 may show rounded
+  quantities on those screens (plan → Open items 4).
 
 ## Known-acceptable outcomes (do not file as bugs)
 

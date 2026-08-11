@@ -37,6 +37,65 @@
 | 17 | Rule doc + AGENTS.md | `.claude/rules/numeric-precision.md` |
 | 18 | Xero boundary rounding | `packages/ee/src/accounting` payload builders |
 
+## Execution status — verified 2026-08-12 at `f25c4f088`
+
+Every ✅ below was confirmed by running the change's own verify command against
+the branch, not from the commit log. `pnpm --filter @carbon/checks test` reports
+**0 new violations**; scoped typecheck (`erp`, `@carbon/utils`) is clean; 160
+utils tests pass.
+
+| # | Status | Evidence / gap |
+|---|---|---|
+| 1 | ✅ | `functions/shared/precision.ts` present |
+| 2 | ✅ | re-export in place, `roundAmount` 0 refs |
+| 3 | ⚠️ | `Math.ceil` gone from `recalculate`/`get-method` and the target is never rounded — but written inline as `round(scrap, 0, Up)` + addition. **`withScrap()` has zero real call sites** despite being specified here and pinned in `precision.test.ts` |
+| 4 | ✅ | `20260811123612_flip-purchasing-tax-percent-writable.sql` |
+| 5 | 🟡 | validators carry `taxPercent`; duplicate PO copies it; `convert/index.ts` carries it. Two paths in the original six don't apply as written: `planning.update.tsx` writes no tax at all, and there is no `digital-quote.$id.tsx` route (the portal path is `share+/quote.$id.tsx`) |
+| 6 | ✅ | `format.ts` + `format.test.ts` |
+| 7 | ⚠️ | **3 of 4 forms.** `SupplierQuoteLinePricing` keeps a hand-rolled percent/amount pair instead of the component |
+| 8 | ✅ | price/percent/quantity hooks present |
+| 9 | ✅ | 0 refs of `round4` or `*10000/10000`; `post-receipt`/`post-shipment`/`post-sales-invoice`/`post-purchase-invoice` carry 38/20/33/58 explicit `round()` calls |
+| 10 | ✅ | only geometry `1e-6` remains (inspection-overlay clamps — correctly excluded, same reasoning as `packages/viewer`) |
+| 11 | ✅ | 0 `toFixed` in `lib/methods.ts` and `update-exchange-rates.ts` |
+| 12 | ✅ | 0 hardcoded `new Intl.NumberFormat("en-US"` outside a test that pins a locale deliberately |
+| 13 | 🟡 | PDF done (0 `taxPercent * 100`, 8 `formatPercent` uses). **10 `Math.round` sites in `apps/mes` were never classified display-vs-count** |
+| 14 | ✅ | both drivers registered in `functions/lib/postgres/index.ts` |
+| 15 | ✅ | 3 widening migrations applied; `journalLine.amount` is now bare NUMERIC (confirmed against the DB catalog), so change 9's 5dp is real and not re-rounded |
+| 16 | ✅ | 3 checks + `sources/typescript.ts`; `newViolations()` returns 0 |
+| 17 | ✅ | rule doc + Task Router row |
+| 18 | 🟡 | `xero/serialize.ts` with `xeroMoney`/`xeroUnitAmount`, consumed by 6 files. The answer's first half — *post-payment writes balance/amountDue at the currency's decimals* — could not be confirmed: `balance` is read from a **view** in `post-payment/index.ts`, not written by it |
+
+### Open items
+
+1. **Currency decimals are not reachable client-side.** `decimalPlaces` lives only
+   on the per-company `currency` table; `getCurrenciesList` selects `code, name`
+   only, and there is no currencies store. Consequence today: tax amount fields
+   honour the currency's decimals (via `TaxFields`), but **unit price, shipping
+   and add-on entry fields do not** — a 0-decimal CAD still renders 2 decimals
+   there. Read-only per-unit displays (document summaries, tables) and ~24
+   base-currency cost/rate inputs likewise cap at 2.
+   Three commits attempting this (`3901f4498`, `850b1e211`, `f508e843d`) were
+   **reverted** on 2026-08-12 for diverging from this plan: they hardcoded `?? 2`
+   (forbidden by change 7's rule) and loosened `priceFormatOptions` to make
+   `decimalPlaces` optional, which removed the type-level pressure forcing call
+   sites to supply real currency data. Recovery hash `f508e843d` (reflog).
+   **Decision needed before re-attempting:** expose decimals client-side (add
+   `decimalPlaces` to the currencies read + resolve in `usePriceFormatter`), or
+   flag the sites and leave them.
+2. `withScrap()` unused (change 3) — either route the sites through it or drop
+   the helper; a specified-and-tested-but-uncalled helper is worse than neither.
+3. `SupplierQuoteLinePricing` not on `TaxFields` (change 7).
+4. 10 unclassified `Math.round` sites in `apps/mes` (change 13).
+5. `PaymentForm.tsx` has an editable **Exchange Rate** input with inline
+   `minimumFractionDigits: 2, maximumFractionDigits: 4`. Exchange rates are
+   internal scale-5 values in this standard, so that input truncates a 5-decimal
+   rate on blur — the same class change 11 fixed server-side. Verify whether it
+   is baselined deliberately or was missed by change 12. Its **Total Amount**
+   input formats with the *base* currency while the form has its own Currency
+   field — worth confirming that is intended.
+6. **Final validation not run repo-wide** — scoped typecheck plus utils/checks
+   tests only; `pnpm run test` and `pnpm run build` still outstanding.
+
 ## Digit standard (reference)
 
 Display digits equal input digits for every kind. Editable fields MUST use `INPUT_FORMAT` (react-aria's blur commit runs `parse(format(x))` — the input formatter is part of arithmetic).
