@@ -24,6 +24,15 @@ import { DateTime, EmployeeAvatar } from "~/components";
 import { usePermissions } from "~/hooks";
 import { CrewChip } from "./CrewChip";
 import { CrewHoursModal } from "./CrewHoursModal";
+import {
+  assignmentHours,
+  buildAbsentSet,
+  dayOvertime,
+  ladderShiftHours,
+  ladderShiftTime,
+  STICKY_FIRST_COL,
+  STICKY_HEADER
+} from "./crewShared";
 
 // deterministic per-work-center chip colors (cycled by stable index)
 const WC_CHIP_CLASSES = [
@@ -36,10 +45,6 @@ const WC_CHIP_CLASSES = [
   "bg-lime-500/15 text-lime-700 dark:text-lime-400",
   "bg-amber-500/15 text-amber-700 dark:text-amber-400"
 ];
-
-const STICKY_HEADER =
-  "sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]";
-const STICKY_FIRST_COL = "sticky left-0 z-[1] bg-card";
 
 type MatrixWorkCenter = {
   id: string;
@@ -148,10 +153,7 @@ export function CrewMatrix({
     return map;
   }, [visibleAssignments]);
 
-  const absentSet = useMemo(
-    () => new Set(absences.map((a) => `${a.employeeId}:${a.date}`)),
-    [absences]
-  );
+  const absentSet = useMemo(() => buildAbsentSet(absences), [absences]);
   const absenceIdByKey = useMemo(
     () => new Map(absences.map((a) => [`${a.employeeId}:${a.date}`, a.id])),
     [absences]
@@ -165,21 +167,9 @@ export function CrewMatrix({
     [employees]
   );
 
-  // assignment's shift → the person's own shift (employeeShift) →
-  // most-common shift length at the location
-  const assignmentHours = (assignment: MatrixAssignment) =>
-    assignment.hours ??
-    (assignment.shiftId ? shiftHoursById[assignment.shiftId] : undefined) ??
-    employeeShiftHours[assignment.employeeId] ??
-    defaultShiftHours;
-
-  // Overtime lengthens the DAY and is stamped on each of the day's rows —
-  // take the max, never the sum, or a split person's overtime multiplies.
-  const dayOvertime = (dayAssignments: MatrixAssignment[]) =>
-    dayAssignments.reduce(
-      (max, assignment) => Math.max(max, assignment.overtimeHours ?? 0),
-      0
-    );
+  const hoursLadder = { shiftHoursById, employeeShiftHours, defaultShiftHours };
+  const hoursFor = (assignment: MatrixAssignment) =>
+    assignmentHours(assignment, hoursLadder);
 
   const assignedCount = (workCenterId: string, date: string) =>
     visibleAssignments.filter(
@@ -313,7 +303,7 @@ export function CrewMatrix({
                   const dayAssignments = byDate?.get(date) ?? [];
                   if (!absent) {
                     for (const assignment of dayAssignments) {
-                      assignedHours += assignmentHours(assignment);
+                      assignedHours += hoursFor(assignment);
                     }
                     assignedHours += dayOvertime(dayAssignments);
                   }
@@ -388,25 +378,29 @@ export function CrewMatrix({
                             dayAssignments.find((a) => a.note)?.note ?? null
                           }
                           overtimeHours={dayOvertime(dayAssignments)}
-                          baseHours={
-                            (shiftId ? shiftHoursById[shiftId] : undefined) ??
-                            employeeShiftHours[employee.id] ??
-                            defaultShiftHours
-                          }
-                          dayStartTime={
-                            (dayAssignments[0]?.shiftId
-                              ? shiftStartById[dayAssignments[0].shiftId]
-                              : undefined) ??
-                            employeeShiftStart[employee.id] ??
-                            defaultShiftStart
-                          }
-                          dayEndTime={
-                            (dayAssignments[0]?.shiftId
-                              ? shiftEndById[dayAssignments[0].shiftId]
-                              : undefined) ??
-                            employeeShiftEnd[employee.id] ??
-                            defaultShiftEnd
-                          }
+                          baseHours={ladderShiftHours(
+                            shiftId,
+                            employee.id,
+                            hoursLadder
+                          )}
+                          dayStartTime={ladderShiftTime(
+                            dayAssignments[0]?.shiftId,
+                            employee.id,
+                            {
+                              byShift: shiftStartById,
+                              byEmployee: employeeShiftStart,
+                              fallback: defaultShiftStart
+                            }
+                          )}
+                          dayEndTime={ladderShiftTime(
+                            dayAssignments[0]?.shiftId,
+                            employee.id,
+                            {
+                              byShift: shiftEndById,
+                              byEmployee: employeeShiftEnd,
+                              fallback: defaultShiftEnd
+                            }
+                          )}
                           isAbsent={absent}
                           absenceId={
                             absenceIdByKey.get(`${employee.id}:${date}`) ?? null

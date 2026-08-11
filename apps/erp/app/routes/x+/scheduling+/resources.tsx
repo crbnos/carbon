@@ -11,7 +11,6 @@ import {
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs, Location } from "react-router";
 import { useLoaderData } from "react-router";
@@ -22,8 +21,7 @@ import { getCapacityReservationsForResources } from "~/modules/production";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import { buildResourceTimeline } from "~/modules/production/ui/Schedule/resourceTimeline";
 import {
-  formatTimelineDate,
-  TIMELINE_DATE_TRIGGER_CLASSES,
+  TIMELINE_DATE_OPTIONS,
   TimelineDetail
 } from "~/modules/production/ui/Schedule/TimelineDetail";
 import type { TimelineNodeDetail } from "~/modules/production/ui/Schedule/timeline";
@@ -160,7 +158,6 @@ export default function ResourceGanttView() {
     detailsById,
     resizeSettings
   } = useLoaderData<typeof loader>();
-  const { locale } = useLocale();
 
   const { location, replaceSearchParam } = useReplaceLocation();
   const selectedSpanId = getSpanId(location);
@@ -213,14 +210,9 @@ export default function ResourceGanttView() {
                 Starts{" "}
                 <DateTime
                   value={trace.rootStartedAt.toISOString()}
-                  variant="absolute"
-                  className={TIMELINE_DATE_TRIGGER_CLASSES}
-                >
-                  {formatTimelineDate(
-                    trace.rootStartedAt.toISOString(),
-                    locale
-                  )}
-                </DateTime>
+                  variant="date"
+                  dateOptions={TIMELINE_DATE_OPTIONS}
+                />
               </Trans>
             </span>
           )}

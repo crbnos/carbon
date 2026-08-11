@@ -7,7 +7,7 @@
  */
 import { parseDate } from "@internationalized/date";
 import type { CalendarWindow } from "./calendar-utils.ts";
-import { businessDay } from "./date-utils.ts";
+import { HOUR_MS, businessDay } from "./date-utils.ts";
 
 /** A manning-board row: person crewed at a work center for a date. */
 export type CrewAssignmentRow = {
@@ -175,7 +175,6 @@ export function clipWindowsToDates(
   return mergeSegments(kept);
 }
 
-const HOUR_MS = 3_600_000;
 
 /**
  * employeeId -> dateKey -> authorized overtime hours that day.

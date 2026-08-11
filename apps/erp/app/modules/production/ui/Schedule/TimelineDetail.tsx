@@ -1,8 +1,6 @@
 import { Badge, Heading, HStack, IconButton, VStack } from "@carbon/react";
-import { formatDurationMilliseconds } from "@carbon/utils";
-import { getLocalTimeZone, parseDate } from "@internationalized/date";
+import { DAY_MS, formatDurationMilliseconds } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
 import { LuClock, LuTriangleAlert, LuX } from "react-icons/lu";
 import { Link } from "react-router";
@@ -10,35 +8,12 @@ import { DateTime } from "~/components";
 import { path } from "~/utils/path";
 import type { TimelineNodeDetail } from "./timeline";
 
-const DAY_MS = 24 * 3_600_000;
-
-// Custom trigger children replace DateTime's default <time> element, so the
-// dotted-underline hover affordance has to come along explicitly.
-export const TIMELINE_DATE_TRIGGER_CLASSES =
-  "cursor-pointer whitespace-nowrap underline decoration-muted-foreground/50 decoration-dotted underline-offset-[3px] transition-colors hover:decoration-foreground/70";
-
-const partOf = (
-  parts: Intl.DateTimeFormatPart[],
-  type: Intl.DateTimeFormatPartTypes
-) => parts.find((p) => p.type === type)?.value ?? "";
-
-/**
- * "11 Aug 2026" — fixed day-month-year order so the panel can't be misread as
- * month/day across locales; the month name itself stays localized. Accepts a
- * bare `YYYY-MM-DD` date or an ISO instant (shown as the viewer's local day —
- * the popover carries the exact times).
- */
-export function formatTimelineDate(value: string, locale: string): string {
-  const date = value.includes("T")
-    ? new Date(value)
-    : parseDate(value).toDate(getLocalTimeZone());
-  const parts = new Intl.DateTimeFormat(locale, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }).formatToParts(date);
-  return `${partOf(parts, "day")} ${partOf(parts, "month")} ${partOf(parts, "year")}`;
-}
+/** Date-only inline text ("11 Aug 2026"); exact times live in the popover. */
+export const TIMELINE_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
+  day: "2-digit",
+  month: "short",
+  year: "numeric"
+};
 
 /**
  * Detail side panel for a selected Gantt row. Shared by the single-job
@@ -55,7 +30,6 @@ export function TimelineDetail({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const { locale } = useLocale();
 
   // Approximate rows carry date-only values stored as UTC midnight; slice to
   // the bare date so no invented clock time (e.g. "05:30" in IST) leaks into
@@ -164,23 +138,13 @@ export function TimelineDetail({
               <DetailRow
                 label={t`Starts`}
                 value={
-                  detail.approximate ? (
-                    <DateTime
-                      value={dateOnly(detail.start)}
-                      variant="date"
-                      className={TIMELINE_DATE_TRIGGER_CLASSES}
-                    >
-                      {formatTimelineDate(dateOnly(detail.start), locale)}
-                    </DateTime>
-                  ) : (
-                    <DateTime
-                      value={detail.start}
-                      variant="absolute"
-                      className={TIMELINE_DATE_TRIGGER_CLASSES}
-                    >
-                      {formatTimelineDate(detail.start, locale)}
-                    </DateTime>
-                  )
+                  <DateTime
+                    value={
+                      detail.approximate ? dateOnly(detail.start) : detail.start
+                    }
+                    variant="date"
+                    dateOptions={TIMELINE_DATE_OPTIONS}
+                  />
                 }
               />
             )}
@@ -188,23 +152,11 @@ export function TimelineDetail({
               <DetailRow
                 label={t`Ends`}
                 value={
-                  detail.approximate ? (
-                    <DateTime
-                      value={approximateEndDate}
-                      variant="date"
-                      className={TIMELINE_DATE_TRIGGER_CLASSES}
-                    >
-                      {formatTimelineDate(approximateEndDate, locale)}
-                    </DateTime>
-                  ) : (
-                    <DateTime
-                      value={detail.end}
-                      variant="absolute"
-                      className={TIMELINE_DATE_TRIGGER_CLASSES}
-                    >
-                      {formatTimelineDate(detail.end, locale)}
-                    </DateTime>
-                  )
+                  <DateTime
+                    value={detail.approximate ? approximateEndDate : detail.end}
+                    variant="date"
+                    dateOptions={TIMELINE_DATE_OPTIONS}
+                  />
                 }
               />
             ) : (

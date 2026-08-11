@@ -1937,3 +1937,31 @@ export const inspectionSaveAnchorsPayloadValidator = z
     delete: z.array(z.string().min(1)).default([])
   })
   .strict();
+
+/**
+ * Weekday flag columns on `shift`, Monday-first — the order crew week rows
+ * are dealt out in.
+ */
+export const WEEKDAYS_MONDAY_FIRST = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday"
+] as const;
+
+/**
+ * The same weekday names Sunday-first — indexable directly by
+ * `getDayOfWeek(date, "en-US")` (0 = Sunday).
+ */
+export const WEEKDAYS_SUNDAY_FIRST = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday"
+] as const;

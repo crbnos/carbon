@@ -13760,9 +13760,8 @@ msgstr "시작됨"
 msgid "Starts"
 msgstr "시작"
 
-#. placeholder {0}: formatTimelineDate( trace.rootStartedAt.toISOString(), locale )
-msgid "Starts <0>{0}</0>"
-msgstr "시작: <0>{0}</0>"
+msgid "Starts <0/>"
+msgstr "시작 <0/>"
 
 msgid "State / Province"
 msgstr "주/도"
@@ -15317,14 +15316,14 @@ msgstr "다른 리비전의 모든 방법 자재가 이 리비전으로 교체�
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "다른 사이즈의 모든 방법 자재가 이 사이즈로 교체됩니다."
 
-msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
-msgstr "이것은 {overtimePreviewCount}명을 위해 +{overtimeHoursInput}시간의 초과 근무를 설정합니다."
+msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
+msgstr "이는 {previewCount}명을 위해 +{hoursInput}h의 초과 근무를 설정합니다."
 
-msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
-msgstr "이것은 그 주에 배정된 모든 사람을 위해 +{overtimeHoursInput}시간의 초과 근무를 설정합니다."
+msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgstr "이는 그 주에 배치된 모든 사람을 위해 +{hoursInput}h의 초과 근무를 설정합니다."
 
-msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
-msgstr "이것은 {overtimePreviewCount}명-일에 대해 +{overtimeHoursInput}시간의 초과 근무를 설정합니다."
+msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
+msgstr "이는 {previewCount}개 인원-일에 대해 +{hoursInput}h의 초과 근무를 설정합니다."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "제조 방법의 현재 버전을 활성으로 설정하여 읽기 전용으로 만듭니다."

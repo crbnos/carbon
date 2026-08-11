@@ -1,3 +1,4 @@
+import { DAY_MS } from "@carbon/utils";
 import type { GanttEvent } from "~/components/Gantt";
 
 /**
@@ -11,8 +12,6 @@ import type { GanttEvent } from "~/components/Gantt";
  *   date, so a date-derived span ends at dueDate + 1 day. Date-derived spans
  *   are marked isPartial (approximate).
  */
-
-const DAY_MS = 24 * 3_600_000;
 
 export type TimelineJob = {
   id: string;

@@ -14,6 +14,7 @@ import {
   toCalendarDate,
   toZoned
 } from "@internationalized/date";
+import { DAY_MS, HOUR_MS } from "./date-utils.ts";
 
 export type CalendarShiftRow = {
   dayOfWeek: number; // 0 = Sunday .. 6 = Saturday
@@ -26,8 +27,6 @@ export type CalendarWindow = {
   end: Date;
 };
 
-const HOUR_MS = 3_600_000;
-const DAY_MS = 24 * HOUR_MS;
 
 /** Local calendar date (y/m/d) of a UTC instant in a timezone. */
 function localDateParts(

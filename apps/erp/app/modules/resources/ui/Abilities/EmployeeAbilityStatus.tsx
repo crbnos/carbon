@@ -1,4 +1,5 @@
 import { Status } from "@carbon/react";
+import { DAY_MS } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter } from "~/hooks";
 import {
@@ -6,7 +7,6 @@ import {
   getTrainingStatus
 } from "~/modules/resources/types";
 
-const DAY_MS = 24 * 3_600_000;
 const EXPIRING_SOON_DAYS = 90;
 
 type EmployeeAbilityStatusRow = {

@@ -13760,9 +13760,8 @@ msgstr "開始"
 msgid "Starts"
 msgstr "開始"
 
-#. placeholder {0}: formatTimelineDate( trace.rootStartedAt.toISOString(), locale )
-msgid "Starts <0>{0}</0>"
-msgstr "開始 <0>{0}</0>"
+msgid "Starts <0/>"
+msgstr "開始 <0/>"
 
 msgid "State / Province"
 msgstr "都道府県"
@@ -15317,14 +15316,14 @@ msgstr "これにより、他のリビジョンのすべてのメソッドマテ
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "これにより、他のサイズのすべてのメソッドマテリアルがこのサイズに置き換わります。"
 
-msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
-msgstr "これで{overtimePreviewCount}人の超過勤務を+{overtimeHoursInput}h設定します。"
+msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
+msgstr "これは{previewCount}人に+{hoursInput}時間の残業を設定します。"
 
-msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
-msgstr "これでその週にクルーされた全員の超過勤務を+{overtimeHoursInput}h設定します。"
+msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgstr "その週のクルーの全員に+{hoursInput}時間の残業を設定します。"
 
-msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
-msgstr "これで{overtimePreviewCount}人日の超過勤務を+{overtimeHoursInput}h設定します。"
+msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
+msgstr "これは{previewCount}人日に+{hoursInput}時間の残業を設定します。"
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "これにより、製造方法の現在のバージョンがアクティブに設定され、読み取り専用になります。"

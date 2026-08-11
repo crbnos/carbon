@@ -20,9 +20,12 @@ import { Fragment, useCallback, useMemo } from "react";
 import { LuInfo } from "react-icons/lu";
 import { DateTime } from "~/components";
 import { CrewChip } from "./CrewChip";
-
-const STICKY_HEADER =
-  "sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]";
+import {
+  assignmentHours,
+  buildAbsentSet,
+  formatHours,
+  STICKY_HEADER
+} from "./crewShared";
 
 // the base Th ships with group-hover:bg-muted (Tr has class "group");
 // keep headers hover-inert while data rows use the default row hover
@@ -81,10 +84,6 @@ function loadCellClass(loadPct: number | null) {
   return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400";
 }
 
-function formatHours(hours: number) {
-  return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
-}
-
 /**
  * The load verdict in hours, not percentages: "+34h" = 34 hours more work due
  * than the station has; "6h free" = headroom. The load % lives in the tooltip.
@@ -134,10 +133,7 @@ export function CrewCapacity({
   defaultShiftHours,
   calendarHoursByDate
 }: CrewCapacityProps) {
-  const absentSet = useMemo(
-    () => new Set(absences.map((a) => `${a.employeeId}:${a.date}`)),
-    [absences]
-  );
+  const absentSet = useMemo(() => buildAbsentSet(absences), [absences]);
 
   // present crew labor hours per work center per date (all shifts, minus
   // absent), using each assignment's real shift duration
@@ -151,11 +147,11 @@ export function CrewCapacity({
       if (absentSet.has(`${assignment.employeeId}:${assignment.date}`)) {
         continue;
       }
-      const hours =
-        assignment.hours ??
-        (assignment.shiftId ? shiftHoursById[assignment.shiftId] : undefined) ??
-        employeeShiftHours[assignment.employeeId] ??
-        defaultShiftHours;
+      const hours = assignmentHours(assignment, {
+        shiftHoursById,
+        employeeShiftHours,
+        defaultShiftHours
+      });
       const key = `${assignment.workCenterId}:${assignment.date}`;
       map.set(key, (map.get(key) ?? 0) + hours);
       lastRowByPersonDate.set(

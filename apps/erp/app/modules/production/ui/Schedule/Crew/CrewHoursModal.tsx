@@ -14,6 +14,7 @@ import {
   Switch,
   Textarea
 } from "@carbon/react";
+import { formatTimeOfDay } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactElement } from "react";
@@ -22,6 +23,7 @@ import { LuMinus, LuPlus, LuX } from "react-icons/lu";
 import { useSubmit } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { path } from "~/utils/path";
+import { formatHours } from "./crewShared";
 
 export type CrewDayRowInput = {
   workCenterId: string;
@@ -70,27 +72,6 @@ type CrewHoursModalProps = {
   absenceId: string | null;
   disabled?: boolean;
 };
-
-/**
- * "14:00" -> "2:00 PM".
- *
- * `hour12` is forced rather than left to the locale: a shop-floor supervisor on
- * an en-GB browser would otherwise get 24h, and there is no in-app setting that
- * can change it (the language picker stores a bare code like "en", and
- * getPreferenceHeaders then resolves the region from accept-language). The rest
- * of the app formats by locale — this is a deliberate, board-local exception.
- */
-function formatTime(time: string, locale: string) {
-  const [hour, minute] = time.split(":").map(Number);
-  return new Date(2000, 0, 1, hour ?? 0, minute ?? 0).toLocaleTimeString(
-    locale,
-    { hour: "numeric", minute: "2-digit", hour12: true }
-  );
-}
-
-function formatHours(hours: number) {
-  return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
-}
 
 /**
  * The person's-day editor: read-only shift line, "Not working today" toggle,
@@ -173,16 +154,12 @@ export function CrewHoursModal({
     const [startHour, startMinute] = dayStartTime.split(":").map(Number);
     const startMinutes = (startHour ?? 0) * 60 + (startMinute ?? 0);
     const format = (minutes: number) =>
-      new Date(
-        `${date}T${String(Math.floor(minutes / 60) % 24).padStart(
-          2,
-          "0"
-        )}:${String(Math.round(minutes % 60)).padStart(2, "0")}:00`
-      ).toLocaleTimeString(locale, {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true
-      });
+      formatTimeOfDay(
+        `${String(Math.floor(minutes / 60) % 24).padStart(2, "0")}:${String(
+          Math.round(minutes % 60)
+        ).padStart(2, "0")}`,
+        locale
+      );
     return (index: number) => {
       let cursor = startMinutes;
       for (let i = 0; i < index; i++) {
@@ -191,7 +168,7 @@ export function CrewHoursModal({
       const end = cursor + (draft[index]?.hours ?? 0) * 60;
       return `${format(cursor)} – ${format(end)}`;
     };
-  }, [dayStartTime, date, draft, locale]);
+  }, [dayStartTime, draft, locale]);
 
   const updateRow = (index: number, patch: Partial<DraftRow>) => {
     setConfirmingRemoval(false);
@@ -294,7 +271,7 @@ export function CrewHoursModal({
 
   const shiftWindow =
     dayStartTime && dayEndTime
-      ? `${formatTime(dayStartTime, locale)} – ${formatTime(dayEndTime, locale)}`
+      ? `${formatTimeOfDay(dayStartTime, locale)} – ${formatTimeOfDay(dayEndTime, locale)}`
       : null;
 
   const removingLastRow =

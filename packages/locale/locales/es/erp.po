@@ -13760,9 +13760,8 @@ msgstr "Comenzó"
 msgid "Starts"
 msgstr "Comienza"
 
-#. placeholder {0}: formatTimelineDate( trace.rootStartedAt.toISOString(), locale )
-msgid "Starts <0>{0}</0>"
-msgstr "Comienza <0>{0}</0>"
+msgid "Starts <0/>"
+msgstr "Comienza <0/>"
 
 msgid "State / Province"
 msgstr "Estado / Provincia"
@@ -15317,14 +15316,14 @@ msgstr "Esto reemplazará todos los materiales de método de otras revisiones co
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Esto reemplazará todos los materiales de método de otros tamaños con este tamaño."
 
-msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
-msgstr "Esto establecerá +{overtimeHoursInput}h de horas extra para {overtimePreviewCount} personas."
+msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
+msgstr "Esto establecerá +{hoursInput}h de tiempo extra para {previewCount} personas."
 
-msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
-msgstr "Esto establecerá +{overtimeHoursInput}h de horas extra para todos los tripulantes esa semana."
+msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgstr "Esto establecerá +{hoursInput}h de tiempo extra para todo el equipo esa semana."
 
-msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
-msgstr "Esto establecerá +{overtimeHoursInput}h de horas extra en {overtimePreviewCount} jornadas de persona."
+msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
+msgstr "Esto establecerá +{hoursInput}h de tiempo extra en {previewCount} días-persona."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "Esto establecerá la versión actual del método de fabricación como Activa, haciéndola de solo lectura."

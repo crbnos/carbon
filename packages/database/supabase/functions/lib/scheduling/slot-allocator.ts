@@ -20,9 +20,8 @@ import {
   findSlot,
 } from "./calendar-utils.ts";
 import type { WaitAttribution } from "./conflict-messages.ts";
-import { businessDay } from "./date-utils.ts";
+import { HOUR_MS, businessDay } from "./date-utils.ts";
 
-const HOUR_MS = 3_600_000;
 
 export type ReservationInterval = {
   startAt: Date;

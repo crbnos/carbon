@@ -1,9 +1,7 @@
 import type { BaseOperation, FactorUnit } from "./types.ts";
+import { HOUR_MS, MINUTE_MS, SECOND_MS } from "./date-utils.ts";
 
 const HOURS_PER_WORKDAY = 8;
-const MS_PER_HOUR = 3600000;
-const MS_PER_MINUTE = 60000;
-const MS_PER_SECOND = 1000;
 
 /**
  * Convert time value to hours based on the unit type
@@ -55,27 +53,27 @@ function convertToMilliseconds(
 
   switch (unit) {
     case "Total Hours":
-      return time * MS_PER_HOUR;
+      return time * HOUR_MS;
     case "Total Minutes":
-      return time * MS_PER_MINUTE;
+      return time * MINUTE_MS;
     case "Hours/Piece":
-      return time * quantity * MS_PER_HOUR;
+      return time * quantity * HOUR_MS;
     case "Hours/100 Pieces":
-      return (time / 100) * quantity * MS_PER_HOUR;
+      return (time / 100) * quantity * HOUR_MS;
     case "Hours/1000 Pieces":
-      return (time / 1000) * quantity * MS_PER_HOUR;
+      return (time / 1000) * quantity * HOUR_MS;
     case "Minutes/Piece":
-      return time * quantity * MS_PER_MINUTE;
+      return time * quantity * MINUTE_MS;
     case "Minutes/100 Pieces":
-      return (time / 100) * quantity * MS_PER_MINUTE;
+      return (time / 100) * quantity * MINUTE_MS;
     case "Minutes/1000 Pieces":
-      return (time / 1000) * quantity * MS_PER_MINUTE;
+      return (time / 1000) * quantity * MINUTE_MS;
     case "Pieces/Hour":
-      return time > 0 ? (quantity / time) * MS_PER_HOUR : 0;
+      return time > 0 ? (quantity / time) * HOUR_MS : 0;
     case "Pieces/Minute":
-      return time > 0 ? (quantity / time) * MS_PER_MINUTE : 0;
+      return time > 0 ? (quantity / time) * MINUTE_MS : 0;
     case "Seconds/Piece":
-      return time * quantity * MS_PER_SECOND;
+      return time * quantity * SECOND_MS;
     default:
       return 0;
   }
@@ -200,7 +198,7 @@ export function calculateDurationBreakdown(operation: BaseOperation): {
 
   const totalHours = setupHours + Math.max(laborHours, machineHours);
   const totalDays = Math.max(Math.ceil(totalHours / HOURS_PER_WORKDAY), 1);
-  const totalMs = totalHours * MS_PER_HOUR;
+  const totalMs = totalHours * HOUR_MS;
 
   return {
     setupHours,

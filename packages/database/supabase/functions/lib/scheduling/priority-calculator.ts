@@ -4,6 +4,7 @@ import type {
   OperationWithJobInfo,
   ScheduledOperation,
 } from "./types.ts";
+import { HOUR_MS } from "./date-utils.ts";
 
 /**
  * Deadline type priority order (lower number = higher priority)
@@ -88,7 +89,6 @@ function compareByDispatchRule(
   b: OperationWithJobInfo,
   rule: DispatchRule
 ): number {
-  const HOUR_MS = 3_600_000;
   const now = Date.now();
   const due = (op: OperationWithJobInfo) =>
     op.dueDate ? new Date(op.dueDate).getTime() : null;

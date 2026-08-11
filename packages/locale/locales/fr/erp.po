@@ -13760,9 +13760,8 @@ msgstr "Commencé"
 msgid "Starts"
 msgstr "Commence"
 
-#. placeholder {0}: formatTimelineDate( trace.rootStartedAt.toISOString(), locale )
-msgid "Starts <0>{0}</0>"
-msgstr "Commence <0>{0}</0>"
+msgid "Starts <0/>"
+msgstr "Commence <0/>"
 
 msgid "State / Province"
 msgstr "État / Province"
@@ -15317,14 +15316,14 @@ msgstr "Cela remplacera tous les matériaux de méthode des autres révisions pa
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Cela remplacera tous les matériaux de méthode d'autres tailles par cette taille."
 
-msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
-msgstr "Cela définira +{overtimeHoursInput}h de travail supplémentaire pour {overtimePreviewCount} personnes."
+msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
+msgstr "Ceci définira +{hoursInput}h de temps supplémentaire pour {previewCount} personnes."
 
-msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
-msgstr "Cela définira +{overtimeHoursInput}h de travail supplémentaire pour tous les membres de l'équipage cette semaine."
+msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgstr "Ceci définira +{hoursInput}h de temps supplémentaire pour tous les employés assignés cette semaine."
 
-msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
-msgstr "Cela définira +{overtimeHoursInput}h de travail supplémentaire sur {overtimePreviewCount} journées-personnes."
+msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
+msgstr "Ceci définira +{hoursInput}h de temps supplémentaire sur {previewCount} jours-personnes."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "Cela définira la version actuelle de la méthode de fabrication sur Active, la rendant en lecture seule."

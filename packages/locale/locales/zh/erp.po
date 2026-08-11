@@ -13760,9 +13760,8 @@ msgstr "开始于"
 msgid "Starts"
 msgstr "开始"
 
-#. placeholder {0}: formatTimelineDate( trace.rootStartedAt.toISOString(), locale )
-msgid "Starts <0>{0}</0>"
-msgstr "开始于 <0>{0}</0>"
+msgid "Starts <0/>"
+msgstr "开始 <0/>"
 
 msgid "State / Province"
 msgstr "州/省"
@@ -15317,14 +15316,14 @@ msgstr "这将用此修订版本替换其他修订版本的所有方法材料。
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "这将用此尺寸替换其他尺寸的所有方法材料。"
 
-msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
-msgstr "这将为{overtimePreviewCount}个人设置+{overtimeHoursInput}h的加班时间。"
+msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
+msgstr "这将为 {previewCount} 人设置 +{hoursInput} 小时加班。"
 
-msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
-msgstr "这将为该周所有工作人员设置+{overtimeHoursInput}h的加班时间。"
+msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgstr "这将为该周所有组员设置 +{hoursInput} 小时加班。"
 
-msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
-msgstr "这将在{overtimePreviewCount}个人天设置+{overtimeHoursInput}h的加班时间。"
+msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
+msgstr "这将为 {previewCount} 个人工作日设置 +{hoursInput} 小时加班。"
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "这将把制造方法的当前版本设置为活跃状态，使其变为只读。"

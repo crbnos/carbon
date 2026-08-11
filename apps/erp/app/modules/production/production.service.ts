@@ -83,7 +83,8 @@ import {
   JOB_SUPPLY_STATUS_PRIORITY,
   motionSchema,
   PO_STATUS_PRIORITY,
-  stepPlanWarningsSchema
+  stepPlanWarningsSchema,
+  WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
 import type {
   AssemblyInstructionStepRow,
@@ -5069,15 +5070,16 @@ async function copyCrewDayInTransaction(
 const addIsoDays = (date: string, days: number) =>
   parseDate(date).add({ days }).toString();
 
-const WEEKDAY_COLUMNS = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday"
-] as const;
+// pg returns DATE columns as JS Date objects at server-local midnight —
+// normalize with local getters, never toISOString (UTC shift can move the day)
+const toIsoDate = (value: unknown) => {
+  if (typeof value === "string") return value.slice(0, 10);
+  const date = new Date(value as Date);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(date.getDate()).padStart(2, "0")}`;
+};
 
 /**
  * Assign a person to a station for a whole Monday-start week: one row per
@@ -5099,7 +5101,7 @@ export async function assignCrewWeek(
   return db.transaction().execute(async (trx) => {
     // working days: the chosen shift's weekdays → the person's own shift's
     // weekdays → Mon–Fri
-    let activeWeekdays: readonly string[] = WEEKDAY_COLUMNS.slice(0, 5);
+    let activeWeekdays: readonly string[] = WEEKDAYS_MONDAY_FIRST.slice(0, 5);
     let shift: Record<string, boolean | null> | undefined;
     if (args.shiftId) {
       shift = await trx
@@ -5134,7 +5136,7 @@ export async function assignCrewWeek(
         .executeTakeFirst();
     }
     if (shift) {
-      activeWeekdays = WEEKDAY_COLUMNS.filter((day) => shift?.[day]);
+      activeWeekdays = WEEKDAYS_MONDAY_FIRST.filter((day) => shift?.[day]);
     }
     const weekEnd = addIsoDays(args.weekStart, 6);
     const [existing, absences] = await Promise.all([
@@ -5157,24 +5159,16 @@ export async function assignCrewWeek(
         .where("date", "<=", weekEnd)
         .execute()
     ]);
-    const toIso = (value: unknown) => {
-      if (typeof value === "string") return value.slice(0, 10);
-      const date = new Date(value as Date);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-        2,
-        "0"
-      )}-${String(date.getDate()).padStart(2, "0")}`;
-    };
     const skip = new Set([
-      ...existing.map((row) => toIso(row.date)),
-      ...absences.map((row) => toIso(row.date))
+      ...existing.map((row) => toIsoDate(row.date)),
+      ...absences.map((row) => toIsoDate(row.date))
     ]);
 
     const rows = [];
     for (let offset = 0; offset < 7; offset++) {
       const date = addIsoDays(args.weekStart, offset);
-      // weekStart is a Monday, so offset maps 1:1 onto WEEKDAY_COLUMNS
-      if (!activeWeekdays.includes(WEEKDAY_COLUMNS[offset])) continue;
+      // weekStart is a Monday, so offset maps 1:1 onto WEEKDAYS_MONDAY_FIRST
+      if (!activeWeekdays.includes(WEEKDAYS_MONDAY_FIRST[offset])) continue;
       if (skip.has(date)) continue;
       rows.push({
         companyId: args.companyId,
@@ -5258,21 +5252,13 @@ export async function moveCrewWeek(
       .where("date", ">=", args.weekStart)
       .where("date", "<=", weekEnd)
       .execute();
-    const toIso = (value: unknown) => {
-      if (typeof value === "string") return value.slice(0, 10);
-      const date = new Date(value as Date);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-        2,
-        "0"
-      )}-${String(date.getDate()).padStart(2, "0")}`;
-    };
     const occupied = new Set(
-      target.map((row) => `${toIso(row.date)}:${row.shiftId ?? ""}`)
+      target.map((row) => `${toIsoDate(row.date)}:${row.shiftId ?? ""}`)
     );
 
     let moved = 0;
     for (const row of source) {
-      if (occupied.has(`${toIso(row.date)}:${row.shiftId ?? ""}`)) {
+      if (occupied.has(`${toIsoDate(row.date)}:${row.shiftId ?? ""}`)) {
         await trx
           .deleteFrom("crewAssignment")
           .where("id", "=", row.id)
@@ -5345,16 +5331,6 @@ export async function setCrewAbsenceRange(
     createdBy: string;
   }
 ) {
-  // pg DATE comes back as a JS Date at server-local midnight — normalize
-  // with local getters, never toISOString (UTC shift can move the day)
-  const toIso = (value: unknown) => {
-    if (typeof value === "string") return value.slice(0, 10);
-    const date = new Date(value as Date);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}-${String(date.getDate()).padStart(2, "0")}`;
-  };
   return db.transaction().execute(async (trx) => {
     const existing = await trx
       .selectFrom("crewAbsence")
@@ -5364,7 +5340,7 @@ export async function setCrewAbsenceRange(
       .where("date", ">=", args.fromDate)
       .where("date", "<=", args.toDate)
       .execute();
-    const have = new Set(existing.map((row) => toIso(row.date)));
+    const have = new Set(existing.map((row) => toIsoDate(row.date)));
 
     const rows: {
       companyId: string;

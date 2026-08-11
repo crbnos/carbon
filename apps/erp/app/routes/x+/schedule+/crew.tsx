@@ -1,34 +1,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ValidatedForm } from "@carbon/form";
-import {
-  Button,
-  Calendar,
-  Combobox,
-  cn,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  HStack,
-  IconButton,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  VStack
-} from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import {
   getDayOfWeek,
@@ -40,42 +12,16 @@ import {
   today
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
-import {
-  LuBuilding2,
-  LuCalendarDays,
-  LuChevronDown,
-  LuChevronLeft,
-  LuChevronRight,
-  LuClock,
-  LuCopy,
-  LuEllipsisVertical,
-  LuMapPin,
-  LuTimer,
-  LuUserX
-} from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useSearchParams,
-  useSubmit
-} from "react-router";
-import { DateTime } from "~/components";
-import { CrewEmployee, DatePicker, Hidden, Submit } from "~/components/Form";
-import { useLocations } from "~/components/Form/Location";
-import { usePermissions } from "~/hooks";
+import { redirect, useLoaderData } from "react-router";
 import {
   getEmployeeDepartments,
   getEmployeeShifts,
   getShiftsWithTimes
 } from "~/modules/people";
 import {
-  crewAbsenceRangeValidator,
   getActiveEmployeeAbilities,
   getCrewAbsences,
   getCrewAbsencesRange,
@@ -84,37 +30,28 @@ import {
   getCrewCapacityOperations,
   getCrewEmployees,
   getWorkCenterRequiredAbilities,
-  getWorkCenterReservationsRange
+  getWorkCenterReservationsRange,
+  WEEKDAYS_SUNDAY_FIRST
 } from "~/modules/production";
+import { buildCrewCapacityBuckets } from "~/modules/production/crewCapacity.server";
 import { CrewBoard } from "~/modules/production/ui/Schedule/Crew/CrewBoard";
 import { CrewCapacity } from "~/modules/production/ui/Schedule/Crew/CrewCapacity";
-import { CrewFilter } from "~/modules/production/ui/Schedule/Crew/CrewFilter";
+import { CrewHeader } from "~/modules/production/ui/Schedule/Crew/CrewHeader";
 import { CrewMatrix } from "~/modules/production/ui/Schedule/Crew/CrewMatrix";
 import { CrewWeekBoard } from "~/modules/production/ui/Schedule/Crew/CrewWeekBoard";
-import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
+import { OvertimeDialog } from "~/modules/production/ui/Schedule/Crew/OvertimeDialog";
+import { TimeOffDialog } from "~/modules/production/ui/Schedule/Crew/TimeOffDialog";
 import { getWorkCentersByLocation } from "~/modules/resources";
 import { resolveLocationId } from "~/modules/shared/location.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
-import { makeDurations } from "~/utils/duration";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-const HOUR_MS = 3_600_000;
 const CREW_VIEWS = ["board", "matrix", "capacity"] as const;
 type CrewView = (typeof CREW_VIEWS)[number];
 
 // last-resort default when a location has no shifts configured
 const FALLBACK_SHIFT_HOURS = 8;
-
-const WEEKDAY_KEYS = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday"
-] as const;
 
 function shiftDurationHours(
   startTime: string | null,
@@ -308,7 +245,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // the uncrewed station's machine window on the capacity view
   const calendarHoursByDate: Record<string, number> = {};
   for (const day of weekDates) {
-    const weekday = WEEKDAY_KEYS[getDayOfWeek(parseDate(day), "en-US")]; // en-US: 0 = Sunday
+    const weekday =
+      WEEKDAYS_SUNDAY_FIRST[getDayOfWeek(parseDate(day), "en-US")]; // en-US: 0 = Sunday
     if (shiftRows.length === 0) {
       calendarHoursByDate[day] =
         weekday === "saturday" || weekday === "sunday"
@@ -344,11 +282,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hours: number | null;
   }[] = [];
   let weekAbsences: { id: string; employeeId: string; date: string }[] = [];
-  const demandByWorkCenter: Record<
+  let demandByWorkCenter: Record<
     string,
     { pastDue: number; days: Record<string, number> }
   > = {};
-  const scheduledByWorkCenter: Record<string, Record<string, number>> = {};
+  let scheduledByWorkCenter: Record<string, Record<string, number>> = {};
 
   if (view !== "board" || range === "week") {
     const weekStartDate = weekDates[0];
@@ -394,52 +332,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     weekAssignments = rangeAssignments.data ?? [];
     weekAbsences = rangeAbsences.data ?? [];
 
-    for (const operation of capacityOperations.data ?? []) {
-      if (!operation.workCenterId || !operation.dueDate) continue;
-      const durations = makeDurations(operation);
-      const hours =
-        (durations.setupDuration +
-          durations.laborDuration +
-          durations.machineDuration) /
-        HOUR_MS;
-      if (hours <= 0) continue;
-      const bucket = (demandByWorkCenter[operation.workCenterId] ??= {
-        pastDue: 0,
-        days: {}
-      });
-      if (operation.dueDate < weekStartDate) {
-        bucket.pastDue += hours;
-      } else {
-        bucket.days[operation.dueDate] =
-          (bucket.days[operation.dueDate] ?? 0) + hours;
-      }
-    }
-
-    for (const reservation of reservations.data ?? []) {
-      const startMs = new Date(reservation.startAt).getTime();
-      const endMs = new Date(reservation.endAt).getTime();
-      const spanMs = endMs - startMs;
-      if (spanMs <= 0) continue;
-      // a reservation holds the station for its full span (including idle
-      // overnight stretches) — distribute its actual work content
-      // (workHours) across the span so a spanning op doesn't read as 24h/day
-      const workMs =
-        reservation.workHours != null
-          ? reservation.workHours * HOUR_MS
-          : spanMs;
-      for (const day of weekDates) {
-        const dayDate = parseDate(day);
-        const dayStartMs = dayDate.toDate(timezone).getTime();
-        const dayEndMs = dayDate.add({ days: 1 }).toDate(timezone).getTime();
-        const overlapMs =
-          Math.min(endMs, dayEndMs) - Math.max(startMs, dayStartMs);
-        if (overlapMs > 0) {
-          const byDay = (scheduledByWorkCenter[reservation.resourceId] ??= {});
-          byDay[day] =
-            (byDay[day] ?? 0) + (overlapMs / spanMs) * (workMs / HOUR_MS);
-        }
-      }
-    }
+    const buckets = buildCrewCapacityBuckets({
+      weekDates,
+      timezone,
+      operations: capacityOperations.data ?? [],
+      reservations: reservations.data ?? []
+    });
+    demandByWorkCenter = buckets.demandByWorkCenter;
+    scheduledByWorkCenter = buckets.scheduledByWorkCenter;
   }
 
   return {
@@ -526,22 +426,9 @@ export default function ScheduleCrewRoute() {
     defaultShiftHours,
     calendarHoursByDate
   } = useLoaderData<typeof loader>();
-  const { t } = useLingui();
   const { locale } = useLocale();
-  const permissions = usePermissions();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const submit = useSubmit();
-  const locations = useLocations();
-
   const [overtimeOpen, setOvertimeOpen] = useState(false);
-  const [overtimeDate, setOvertimeDate] = useState(date);
-  const [overtimeHoursInput, setOvertimeHoursInput] = useState("2");
-  const [absenceOpen, setAbsenceOpen] = useState(false);
-  const [absenceFrom, setAbsenceFrom] = useState(date);
-  const [absenceTo, setAbsenceTo] = useState(date);
-  const absenceFetcher = useFetcher<{}>();
-  const [dateOpen, setDateOpen] = useState(false);
+  const [timeOffOpen, setTimeOffOpen] = useState(false);
 
   const departments = useMemo(() => {
     const seen = new Map<string, string>();
@@ -624,54 +511,8 @@ export default function ScheduleCrewRoute() {
     employeeShiftId
   ]);
 
-  // overtime is per PERSON per day, so preview distinct people — not rows
-  // (a split person has several assignment rows for the same day)
-  // only the week on screen is loaded, so a count for any other week would be
-  // invented — the dialog says so instead of showing a wrong number
-  const overtimeWeekIsLoaded = overtimeDate === weekDates[0];
-  const overtimePreviewCount = useMemo(() => {
-    const source =
-      range === "day"
-        ? boardAssignments.filter(() => overtimeDate === date)
-        : matrixAssignments.filter((assignment) =>
-            weekDates.includes(assignment.date)
-          );
-    // one day = distinct people; a whole week = person-DAYS, since the same
-    // person crewed Mon–Fri is five separate authorizations
-    return new Set(
-      source
-        .filter((assignment) => !shiftId || assignment.shiftId === shiftId)
-        .map((assignment) =>
-          range === "day"
-            ? assignment.employeeId
-            : `${assignment.employeeId}:${assignment.date}`
-        )
-    ).size;
-  }, [
-    range,
-    boardAssignments,
-    matrixAssignments,
-    overtimeDate,
-    weekDates,
-    date,
-    shiftId
-  ]);
-
-  const parsedDate = parseDate(date);
   const shortDate = (value: string) =>
     formatDate(value, { month: "short", day: "numeric" }, locale);
-  // "03 Aug 2026" — the month name stays localized, but the order is fixed so
-  // the date can't be misread as day/month or month/day on the shop floor
-  const fullDate = (value: string) => {
-    const parts = new Intl.DateTimeFormat(locale, {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    }).formatToParts(parseDate(value).toDate(getLocalTimeZone()));
-    const part = (type: Intl.DateTimeFormatPartTypes) =>
-      parts.find((p) => p.type === type)?.value ?? "";
-    return `${part("day")} ${part("month")} ${part("year")}`;
-  };
   const dateLabel =
     range === "day"
       ? formatDate(
@@ -682,15 +523,6 @@ export default function ScheduleCrewRoute() {
       : `${shortDate(weekDates[0])} – ${shortDate(
           weekDates[weekDates.length - 1]
         )}`;
-
-  const navigateDate = (direction: number) => {
-    const newParams = new URLSearchParams(searchParams);
-    const next = parsedDate.add({
-      days: range === "day" ? direction : direction * 7
-    });
-    newParams.set("date", next.toString());
-    navigate(`?${newParams.toString()}`);
-  };
 
   // week-range date dropdown: pick a week span, like the schedule's week
   // columns — 4 weeks back through 11 ahead around the selected week
@@ -715,366 +547,25 @@ export default function ScheduleCrewRoute() {
       };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, weekDates, locale]);
-
-  // Day | Week horizon on the board (assign per day or per whole week)
-  const setPeriod = (value: string) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (value === "week") {
-      newParams.set("range", "week");
-    } else {
-      newParams.delete("range");
-    }
-    navigate(`?${newParams.toString()}`);
-  };
-
-  const setView = (value: string) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (value === "board") {
-      newParams.delete("view");
-    } else {
-      newParams.set("view", value);
-    }
-    navigate(`?${newParams.toString()}`);
-  };
-
-  const goToToday = () => {
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete("date");
-    navigate(`?${newParams.toString()}`);
-  };
-
-  const setShift = (value: string) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (value === "all") {
-      newParams.delete("shift");
-    } else {
-      newParams.set("shift", value);
-    }
-    navigate(`?${newParams.toString()}`);
-  };
-
-  const setDepartment = (value: string) => {
-    const next = value === "all" ? "" : value;
-    document.cookie = `crewDepartment=${encodeURIComponent(
-      next
-    )}; path=/; max-age=31536000; samesite=lax`;
-    const newParams = new URLSearchParams(searchParams);
-    if (next) {
-      newParams.set("department", next);
-    } else {
-      newParams.delete("department");
-    }
-    navigate(`?${newParams.toString()}`);
-  };
-
-  const openOvertime = () => {
-    setOvertimeDate(range === "day" ? date : weekDates[0]);
-    setOvertimeHoursInput("2");
-    setOvertimeOpen(true);
-  };
-
-  const submitBulkOvertime = () => {
-    const hours = Number(overtimeHoursInput);
-    if (!Number.isFinite(hours) || hours < 0) return;
-    submit(
-      {
-        intent: "overtime-bulk",
-        locationId,
-        date: overtimeDate,
-        ...(range === "day"
-          ? {}
-          : {
-              toDate: parseDate(overtimeDate).add({ days: 6 }).toString()
-            }),
-        hours: String(hours),
-        ...(departmentId ? { departmentId } : {}),
-        ...(shiftId ? { shiftId } : {})
-      },
-      {
-        method: "post",
-        action: path.to.scheduleCrewUpdate,
-        navigate: false,
-        fetcherKey: "crew:overtime-bulk"
-      }
-    );
-    setOvertimeOpen(false);
-  };
-
-  const copyPreviousDay = () => {
-    submit(
-      {
-        intent: "copy",
-        locationId,
-        fromDate: parsedDate.add({ days: -1 }).toString(),
-        toDate: date,
-        ...(shiftId ? { shiftId } : {})
-      },
-      {
-        method: "post",
-        action: path.to.scheduleCrewUpdate,
-        navigate: false,
-        fetcherKey: "crew:copy"
-      }
-    );
-  };
-
-  const copyPreviousWeek = () => {
-    submit(
-      {
-        intent: "copy-week",
-        locationId,
-        fromWeekStart: parseDate(weekDates[0]).subtract({ days: 7 }).toString(),
-        toWeekStart: weekDates[0],
-        ...(shiftId ? { shiftId } : {})
-      },
-      {
-        method: "post",
-        action: path.to.scheduleCrewUpdate,
-        navigate: false,
-        fetcherKey: "crew:copy-week"
-      }
-    );
-  };
-
-  // same crews next week: push this week forward, then follow it
-  const copyToNextWeek = () => {
-    const nextWeekStart = parseDate(weekDates[0]).add({ days: 7 }).toString();
-    submit(
-      {
-        intent: "copy-week",
-        locationId,
-        fromWeekStart: weekDates[0],
-        toWeekStart: nextWeekStart,
-        ...(shiftId ? { shiftId } : {})
-      },
-      {
-        method: "post",
-        action: path.to.scheduleCrewUpdate,
-        navigate: false,
-        fetcherKey: "crew:copy-week"
-      }
-    );
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set("date", nextWeekStart);
-    navigate(`?${newParams.toString()}`);
-  };
-
-  const openAbsence = () => {
-    setAbsenceFrom(date);
-    setAbsenceTo(date);
-    setAbsenceOpen(true);
-  };
+  }, [range, weekDates, shortDate]);
 
   return (
     <div className="flex flex-col h-full max-h-full overflow-auto relative">
-      <HStack className="px-4 py-2 flex flex-wrap gap-y-2 justify-between bg-card border-b border-border">
-        <HStack className="flex-wrap gap-y-2">
-          <ScheduleNavigation />
-          <CrewFilter
-            categories={[
-              {
-                key: "location",
-                header: t`Location`,
-                icon: <LuMapPin />,
-                options: locations,
-                value: locationId,
-                clearable: false
-              },
-              ...(departments.length > 0
-                ? [
-                    {
-                      key: "department",
-                      header: t`Department`,
-                      icon: <LuBuilding2 />,
-                      options: departments,
-                      value: departmentId,
-                      clearable: true
-                    }
-                  ]
-                : []),
-              ...(view !== "capacity" && shifts.length > 1
-                ? [
-                    {
-                      key: "shift",
-                      header: t`Shift`,
-                      icon: <LuClock />,
-                      options: shifts.map((shift) => ({
-                        value: shift.id,
-                        label: shift.name
-                      })),
-                      value: shiftId,
-                      clearable: true
-                    }
-                  ]
-                : [])
-            ]}
-            onChange={(key, value) => {
-              if (key === "location") {
-                if (!value) return;
-                const newParams = new URLSearchParams(searchParams);
-                newParams.set("location", value);
-                window.location.href = `${
-                  path.to.scheduleCrew
-                }?${newParams.toString()}`;
-              } else if (key === "department") {
-                setDepartment(value ?? "all");
-              } else if (key === "shift") {
-                setShift(value ?? "all");
-              }
-            }}
-          />
-          <Tabs value={view} onValueChange={setView}>
-            <TabsList>
-              <TabsTrigger value="board">
-                <Trans>Board</Trans>
-              </TabsTrigger>
-              <TabsTrigger value="matrix">
-                <Trans>Matrix</Trans>
-              </TabsTrigger>
-              <TabsTrigger value="capacity">
-                <Trans>Capacity</Trans>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {view === "board" && (
-            <Tabs value={range} onValueChange={setPeriod}>
-              <TabsList>
-                <TabsTrigger value="day">
-                  <Trans>Day</Trans>
-                </TabsTrigger>
-                <TabsTrigger value="week">
-                  <Trans>Week</Trans>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
-        </HStack>
-
-        <HStack className="flex-wrap gap-y-2">
-          {range === "day" && permissions.can("update", "production") && (
-            <Button
-              variant="secondary"
-              leftIcon={<LuCopy />}
-              onClick={copyPreviousDay}
-            >
-              <Trans>Copy previous day</Trans>
-            </Button>
-          )}
-          {range === "week" && permissions.can("update", "production") && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  leftIcon={<LuCopy />}
-                  rightIcon={<LuChevronDown />}
-                >
-                  <Trans>Copy week</Trans>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={copyPreviousWeek}>
-                  <Trans>From previous week</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={copyToNextWeek}>
-                  <Trans>To next week</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          <HStack>
-            <Button variant="secondary" onClick={goToToday}>
-              <Trans>Today</Trans>
-            </Button>
-            <IconButton
-              variant="secondary"
-              onClick={() => navigateDate(-1)}
-              icon={<LuChevronLeft />}
-              aria-label={range === "day" ? t`Previous Day` : t`Previous Week`}
-            />
-            <Popover open={dateOpen} onOpenChange={setDateOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="secondary"
-                  className="min-w-[150px]"
-                  leftIcon={<LuCalendarDays />}
-                >
-                  {dateLabel}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className={range === "day" ? "w-auto p-4" : "w-64 p-2"}
-              >
-                {range === "day" ? (
-                  <Calendar
-                    value={parsedDate}
-                    onChange={(value) => {
-                      if (!value) return;
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.set("date", value.toString());
-                      setDateOpen(false);
-                      navigate(`?${newParams.toString()}`);
-                    }}
-                  />
-                ) : (
-                  <div className="flex max-h-80 flex-col gap-0.5 overflow-auto">
-                    {weekOptions.map((week) => (
-                      <button
-                        key={week.start}
-                        type="button"
-                        className={cn(
-                          "flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted",
-                          week.isSelected && "bg-muted font-medium"
-                        )}
-                        onClick={() => {
-                          const newParams = new URLSearchParams(searchParams);
-                          newParams.set("date", week.start);
-                          setDateOpen(false);
-                          navigate(`?${newParams.toString()}`);
-                        }}
-                      >
-                        <span className="tabular-nums">{week.label}</span>
-                        {week.isCurrent && (
-                          <span className="text-[11px] font-medium text-primary">
-                            <Trans>This week</Trans>
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
-            <IconButton
-              variant="secondary"
-              onClick={() => navigateDate(1)}
-              icon={<LuChevronRight />}
-              aria-label={range === "day" ? t`Next Day` : t`Next Week`}
-            />
-            {permissions.can("update", "production") && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    variant="secondary"
-                    icon={<LuEllipsisVertical />}
-                    aria-label={t`More options`}
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={openOvertime}>
-                    <DropdownMenuIcon icon={<LuTimer />} />
-                    <Trans>Overtime</Trans>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={openAbsence}>
-                    <DropdownMenuIcon icon={<LuUserX />} />
-                    <Trans>Time off</Trans>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </HStack>
-        </HStack>
-      </HStack>
+      <CrewHeader
+        view={view}
+        range={range}
+        date={date}
+        dateLabel={dateLabel}
+        weekDates={weekDates}
+        weekOptions={weekOptions}
+        locationId={locationId}
+        departmentId={departmentId}
+        shiftId={shiftId}
+        departments={departments}
+        shifts={shifts}
+        onOpenOvertime={() => setOvertimeOpen(true)}
+        onOpenTimeOff={() => setTimeOffOpen(true)}
+      />
       <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
         {view === "board" &&
           (range === "week" ? (
@@ -1152,187 +643,29 @@ export default function ScheduleCrewRoute() {
         )}
       </div>
 
-      <Modal
-        open={overtimeOpen}
-        onOpenChange={(open) => {
-          if (!open) setOvertimeOpen(false);
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Add overtime</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <p className="text-sm text-muted-foreground text-pretty">
-                {range === "day" ? (
-                  <Trans>
-                    Everyone working this day stays on past their shift by the
-                    hours you set. Only the departments and shifts you're
-                    filtering by are affected.
-                  </Trans>
-                ) : (
-                  <Trans>
-                    Everyone working any day of the week you pick stays on past
-                    their shift by the hours you set. Only the departments and
-                    shifts you're filtering by are affected.
-                  </Trans>
-                )}
-              </p>
-              {/* the horizon sets the unit: one visible day needs no picker, a
-                  week horizon picks a WEEK — the same list the header uses */}
-              {range === "day" ? (
-                <DateTime
-                  value={overtimeDate}
-                  variant="date"
-                  locationTimeZone={locationTimeZone}
-                  className="text-sm font-medium"
-                >
-                  {fullDate(overtimeDate)}
-                </DateTime>
-              ) : (
-                <div className="w-full">
-                  <Combobox
-                    asButton
-                    size="sm"
-                    value={overtimeDate}
-                    options={weekOptions.map((week) => ({
-                      value: week.start,
-                      label: week.isCurrent
-                        ? `${week.label} · ${t`This week`}`
-                        : week.label
-                    }))}
-                    onChange={(value) => setOvertimeDate(value || weekDates[0])}
-                  />
-                </div>
-              )}
-              <Input
-                type="number"
-                min={0}
-                max={16}
-                step={0.5}
-                value={overtimeHoursInput}
-                onChange={(event) => setOvertimeHoursInput(event.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                {range === "day" ? (
-                  <Trans>
-                    This will set +{overtimeHoursInput}h of overtime for{" "}
-                    {overtimePreviewCount} people.
-                  </Trans>
-                ) : overtimeWeekIsLoaded ? (
-                  // person-days, not people — the same person crewed Mon–Fri is
-                  // five separate authorizations
-                  <Trans>
-                    This will set +{overtimeHoursInput}h of overtime on{" "}
-                    {overtimePreviewCount} person-days.
-                  </Trans>
-                ) : (
-                  // that week's crew isn't loaded, so any number here would be
-                  // invented
-                  <Trans>
-                    This will set +{overtimeHoursInput}h of overtime for
-                    everyone crewed that week.
-                  </Trans>
-                )}
-              </p>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <HStack>
-              <Button
-                variant="secondary"
-                onClick={() => setOvertimeOpen(false)}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button onClick={submitBulkOvertime}>
-                <Trans>Apply</Trans>
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      <Modal
-        open={absenceOpen}
-        onOpenChange={(open) => {
-          if (!open) setAbsenceOpen(false);
-        }}
-      >
-        <ModalContent>
-          <ValidatedForm
-            validator={crewAbsenceRangeValidator}
-            method="post"
-            action={path.to.scheduleCrewUpdate}
-            fetcher={absenceFetcher}
-            defaultValues={{
-              employeeId: "",
-              fromDate: absenceFrom,
-              toDate: absenceTo
-            }}
-            onSubmit={() => setAbsenceOpen(false)}
-          >
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Time off</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <Hidden name="intent" value="absent-range" />
-              <Hidden name="shiftId" value={shiftId ?? ""} />
-              <VStack spacing={4}>
-                <p className="text-sm text-muted-foreground text-pretty">
-                  <Trans>
-                    Marks the person off for every day in the range. They won't
-                    be scheduled while they're away.
-                  </Trans>
-                </p>
-                <CrewEmployee
-                  name="employeeId"
-                  label={t`Employee`}
-                  locationId={locationId}
-                />
-                <HStack className="w-full items-start" spacing={4}>
-                  <DatePicker
-                    name="fromDate"
-                    label={t`From`}
-                    value={absenceFrom}
-                    maxValue={parseDate(absenceTo)}
-                    onChange={(value) => {
-                      if (value) setAbsenceFrom(value);
-                    }}
-                  />
-                  <DatePicker
-                    name="toDate"
-                    label={t`To`}
-                    value={absenceTo}
-                    minValue={parseDate(absenceFrom)}
-                    onChange={(value) => {
-                      if (value) setAbsenceTo(value);
-                    }}
-                  />
-                </HStack>
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <HStack>
-                <Button
-                  variant="secondary"
-                  onClick={() => setAbsenceOpen(false)}
-                >
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit>
-                  <Trans>Mark absent</Trans>
-                </Submit>
-              </HStack>
-            </ModalFooter>
-          </ValidatedForm>
-        </ModalContent>
-      </Modal>
+      {overtimeOpen && (
+        <OvertimeDialog
+          onClose={() => setOvertimeOpen(false)}
+          range={range}
+          date={date}
+          weekDates={weekDates}
+          weekOptions={weekOptions}
+          locationId={locationId}
+          locationTimeZone={locationTimeZone}
+          departmentId={departmentId}
+          shiftId={shiftId}
+          dayAssignments={boardAssignments}
+          weekAssignments={matrixAssignments}
+        />
+      )}
+      {timeOffOpen && (
+        <TimeOffDialog
+          onClose={() => setTimeOffOpen(false)}
+          date={date}
+          locationId={locationId}
+          shiftId={shiftId}
+        />
+      )}
     </div>
   );
 }

@@ -25,7 +25,9 @@ first match.
   `assembly-handler.ts`, `master-data-provider.ts`, `calendar-utils.ts`,
   `slot-allocator.ts`, `types.ts`). All engine READS go
   through the `MasterDataProvider` interface (`KyselyMasterDataProvider` is the
-  live impl); writes stay on Kysely. `resource-manager.ts` was dead code and
+  live impl); writes stay on Kysely. The crew reads (`getCrewAssignments`/`getCrewAbsences`)
+  take the plant `timeZone` so `crewAssignment.date` range bounds resolve on the
+  plant's calendar, not UTC's. `resource-manager.ts` was dead code and
   has been deleted. `calendar-utils.ts` / `slot-allocator.ts` /
   `date-utils.ts` / `operator-eligibility.ts` / `crew-utils.ts` are pure and have Deno tests
   (`deno test lib/scheduling/` from the functions dir). `date-utils.toIsoDate`
@@ -65,7 +67,13 @@ first match.
   exported from @carbon/react for this), copy previous day/week
   (`copy`/`copy-week` — day copy preserves split `hours`, overtime never
   copies), and a "Time off" range dialog
-  (`absent-range` → `setCrewAbsenceRange`).
+  (`absent-range` → `setCrewAbsenceRange`). The route delegates its pieces to
+  `ui/Schedule/Crew/`: `CrewHeader` (filters/tabs/date nav/copy/menu),
+  `OvertimeDialog` + `TimeOffDialog` (conditionally mounted), `CrewCard` +
+  `CrewColumn` (extracted from `CrewBoard`), with the shift-hours/time ladders
+  shared via `crewShared.ts`; the Capacity view's demand/scheduled buckets are
+  computed server-side by `buildCrewCapacityBuckets`
+  (`modules/production/crewCapacity.server.ts`).
 - **MES display** (`apps/mes/app/routes/x+/operations.tsx`): the "Schedule" page is
   a **Kanban** (columns = work centers, cards = operations sorted by `priority`),
   not a Gantt. Read-only re display; operators execute via `operation.$operationId.tsx`.

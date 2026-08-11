@@ -13760,9 +13760,8 @@ msgstr "Rozpoczęto"
 msgid "Starts"
 msgstr "Rozpoczyna się"
 
-#. placeholder {0}: formatTimelineDate( trace.rootStartedAt.toISOString(), locale )
-msgid "Starts <0>{0}</0>"
-msgstr "Zaczyna się <0>{0}</0>"
+msgid "Starts <0/>"
+msgstr "Zaczyna <0/>"
 
 msgid "State / Province"
 msgstr "Stan / Prowincja"
@@ -15317,14 +15316,14 @@ msgstr "To zastąpi wszystkie materiały metody innych wersji tą wersją."
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "To zastąpi wszystkie materiały metody innych rozmiarów tym rozmiarem."
 
-msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
-msgstr "To ustawi +{overtimeHoursInput}h nadgodzin dla {overtimePreviewCount} osób."
+msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
+msgstr "To ustawi +{hoursInput}h nadgodzin dla {previewCount} osób."
 
-msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
-msgstr "To ustawi +{overtimeHoursInput}h nadgodzin dla wszystkich przydzielonych w tym tygodniu."
+msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgstr "To ustawi +{hoursInput}h nadgodzin dla wszystkich przydzielonych pracowników w tym tygodniu."
 
-msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
-msgstr "To ustawi +{overtimeHoursInput}h nadgodzin na {overtimePreviewCount} osobodniach."
+msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
+msgstr "To ustawi +{hoursInput}h nadgodzin na {previewCount} dni pracownika."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "Ustawi to bieżącą wersję metody wytwarzania na Aktywną, czyniąc ją tylko do odczytu."

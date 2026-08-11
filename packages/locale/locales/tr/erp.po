@@ -13760,9 +13760,8 @@ msgstr "Başlangıç"
 msgid "Starts"
 msgstr "Başlar"
 
-#. placeholder {0}: formatTimelineDate( trace.rootStartedAt.toISOString(), locale )
-msgid "Starts <0>{0}</0>"
-msgstr "Başlar <0>{0}</0>"
+msgid "Starts <0/>"
+msgstr "Başlar <0/>"
 
 msgid "State / Province"
 msgstr "Eyalet / İl"
@@ -15317,14 +15316,14 @@ msgstr "Bu, diğer revizyonlardaki tüm yöntem malzemelerini bu revizyonla değ
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Bu, diğer boyutlardaki tüm yöntem malzemelerini bu boyutuyla değiştirecektir."
 
-msgid "This will set +{overtimeHoursInput}h of overtime for {overtimePreviewCount} people."
-msgstr "Bu, {overtimePreviewCount} kişi için +{overtimeHoursInput}h fazla mesai ayarlayacaktır."
+msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
+msgstr "Bu, {previewCount} kişi için +{hoursInput}h fazla mesai ayarlayacak."
 
-msgid "This will set +{overtimeHoursInput}h of overtime for everyone crewed that week."
-msgstr "Bu, o hafta ekibi oluşturulan herkes için +{overtimeHoursInput}h fazla mesai ayarlayacaktır."
+msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgstr "Bu, o hafta görevli herkes için +{hoursInput}h fazla mesai ayarlayacak."
 
-msgid "This will set +{overtimeHoursInput}h of overtime on {overtimePreviewCount} person-days."
-msgstr "Bu, {overtimePreviewCount} kişi-gün üzerinde +{overtimeHoursInput}h fazla mesai ayarlayacaktır."
+msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
+msgstr "Bu, {previewCount} kişi-güne +{hoursInput}h fazla mesai ayarlayacak."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "Bu, üretim yönteminin mevcut sürümünü Etkin olarak ayarlayacak ve salt okunur hale getirecektir."
