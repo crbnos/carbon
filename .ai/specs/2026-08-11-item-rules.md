@@ -22,7 +22,7 @@ Carbon cannot enforce commercial/compliance restrictions when an item is added t
 ### API / server changes
 
 - **`@carbon/utils`** (shared rule engine, additive): `RuleContext` gains a `customer` root; new `ITEM_RULE_SURFACES` / `ItemRuleSurface` / `RuleSurface`, `ItemRuleRow` + `compileItemRuleWithCache`, `ITEM_RULE_SURFACE_CONTEXT_AVAILABILITY`, `isFieldAvailableOnItemRuleSurfaces`, `getFieldsForItemRuleSurfaces`; field registry gains the `customer` context, a separate `ITEM_RULE_FIELD_REGISTRY` (customer type, customer status, ship-to country as alpha-2) + `getFieldsForItemRules`, synthesized `customer.customFields.*`, and `customerTypes|customerStatuses|countries` value-options loaders. Storage-rule behavior unchanged.
-- **`@carbon/ee`** — new package exports `./item-rules` (client-safe: `getActiveItemRulesForItems`, `getItemRuleAssignmentsForItem`, `getItemRulesList`, `assignItemRule`, `unassignItemRule`, `buildItemRuleLineContext`) and `./item-rules.server` (`evaluateItemRuleLines`, `isItemRulesEnabledForCompany`, re-exported `isBlocked`/`dedupeViolations`). Evaluation runs with the service-role client, gated on the existing `ITEM_RULES` plan feature. Storage `LOADERS` upgraded so `{condition[n].name}` tokens resolve customer-type/status/country labels.
+- **`@carbon/ee`** — new package exports `./rules` (client-safe: `getActiveItemRulesForItems`, `getItemRuleAssignmentsForItem`, `getItemRulesList`, `assignItemRule`, `unassignItemRule`, `buildItemRuleLineContext`) and `./rules.server` (`evaluateItemRuleLines`, `isItemRulesEnabledForCompany`, re-exported `isBlocked`/`dedupeViolations`). Evaluation runs with the service-role client, gated on the existing `ITEM_RULES` plan feature. Storage `LOADERS` upgraded so `{condition[n].name}` tokens resolve customer-type/status/country labels.
 - **ERP** — new module `~/modules/item-rules` (`itemRuleValidator`, service CRUD + assignment counts); enforcement in four route actions (`quote` new/edit, `sales-order` new/edit) returning `{ violations, ruleNames }` when blocked, exactly like shipment posting; new routes `x+/items+/item-rules*` + assign/unassign; `path.to.itemRule*` helpers; `itemRulesQuery` cache key.
 - **Notifications** — new `NotificationEvent.ItemRuleViolation` (topic Sales; in-app + email), notify fan-out branch resolving recipients from `itemRuleNotificationGroup`, fired on blocked attempts and acknowledged overrides; `updateItemRuleNotificationSetting` in the settings service. Acknowledgment rows inserted per deduped violation, never failing the action.
 - No public REST surface changes beyond regenerated OpenAPI/types for the new tables.
@@ -39,9 +39,9 @@ Carbon cannot enforce commercial/compliance restrictions when an item is added t
 
 The storage-rules feature (born as `itemRule`, renamed via `customRule` → `storageRule`) is a generic predicate engine in three layers:
 
-1. **Pure engine** — `packages/utils/src/storage-rules.ts` + `packages/utils/src/field-registry.ts`. `ConditionAst = {kind: all|any|none, conditions: [{field, op, value}]}`; operators `eq, neq, in, notIn, isSet, isNotSet, gt, lt`; `compileRule`/`compileWithCache` (LRU); `evaluateRules`; required-field semantics (`findFirstMissingRequiredField` emits "{label} is required" when a referenced field is empty); `interpolateMessage` `{token}` support; `itemRuleAppliesToItem` filter matcher; `SURFACE_CONTEXT_AVAILABILITY`.
-2. **Server evaluator** — `packages/ee/src/storage-rules/server.ts`: `evaluateLinesForSurface()`, `isBlocked(violations, acknowledged)` (any `error` blocks; `warn` blocks until acknowledged), `dedupeViolations`. Context building in `context.ts` (`buildLineContext`). Plan gate `isStorageRulesEnabledForCompany`.
-3. **Common error interface** — `packages/ee/src/storage-rules/violation-modal.tsx` (`StorageRuleViolationModal`: one modal, Errors + Warnings sections, confirm disabled on any error, "Acknowledge & continue" re-posts with `acknowledged=true`) + `use-violations.tsx` (`useStorageRuleViolations` hook wrapping useFetcher).
+1. **Pure engine** — `packages/utils/src/rules.ts` (renamed from `storage-rules.ts`) + `packages/utils/src/field-registry.ts`. `ConditionAst = {kind: all|any|none, conditions: [{field, op, value}]}`; operators `eq, neq, in, notIn, isSet, isNotSet, gt, lt`; `compileRule`/`compileWithCache` (LRU); `evaluateRules`; required-field semantics (`findFirstMissingRequiredField` emits "{label} is required" when a referenced field is empty); `interpolateMessage` `{token}` support; `itemRuleAppliesToItem` filter matcher; `SURFACE_CONTEXT_AVAILABILITY`.
+2. **Server evaluator** — `packages/ee/src/rules/storage/server.ts`: `evaluateLinesForSurface()`, `isBlocked(violations, acknowledged)` (any `error` blocks; `warn` blocks until acknowledged), `dedupeViolations`. Context building in `context.ts` (`buildLineContext`). Plan gate `isStorageRulesEnabledForCompany`.
+3. **Common error interface** — `packages/ee/src/rules/violation-modal.tsx` (`RuleViolationModal`: one modal, Errors + Warnings sections, confirm disabled on any error, "Acknowledge & continue" re-posts with `acknowledged=true`) + `use-violations.tsx` (`useRuleViolations` hook wrapping useFetcher).
 
 Reference enforcement wiring: `apps/erp/app/routes/x+/shipment+/$shipmentId.post.tsx:34-111` (read `acknowledged` → evaluate → dedupe → `isBlocked` → return `{violations, ruleNames}` on block).
 
@@ -49,7 +49,7 @@ Storage-rules admin module to clone: `apps/erp/app/modules/storage-rules/` (mode
 
 ## Data Model Changes
 
-Two migrations, all additive: `20260810214426_item-rules-sales.sql` and `20260810221652_item-rule-notification-group.sql`. `pnpm run generate:types` after.
+Three migrations, all additive: `20260810214426_item-rules-sales.sql`, `20260810221652_item-rule-notification-group.sql`, `20260810223831_item-rule-acknowledgment-rule-name.sql`. `pnpm run generate:types` after.
 
 ### Enum
 
@@ -149,16 +149,16 @@ ALTER TABLE "companySettings"
 
 ## Engine extensions (`@carbon/utils`)
 
-In `packages/utils/src/storage-rules.ts` (shared engine — extend, don't fork):
+In `packages/utils/src/rules.ts` (shared engine — extend, don't fork):
 - Add surfaces `quoteLine`, `salesOrderLine` to the surface type + `SURFACE_CONTEXT_AVAILABILITY` (context roots available: `item`, `customer`, `transaction`).
 - Add `customer` root to `RuleContext`: `{ id, typeId, statusId, location: { countryCode (alpha2) }, customFields }`.
 - Field registry (`field-registry.ts`): add `customer.typeId` (options: customer types), `customer.statusId` (options: customer statuses), `customer.location.countryCode` (options: countries by alpha2 — matches app-wide convention since `20240928155702_country-codes.sql`; the `Country` selector already uses alpha2 values), plus synthesized `customer.customFields.*` mirroring `item.customFields.*`.
 
 DB enum note: the DB-side `surfaces` uses the new `itemRuleSurface` enum — do NOT extend the storage `transactionSurface` enum (item rules have their own table).
 
-## Evaluator (`packages/ee/src/item-rules/`)
+## Evaluator (`packages/ee/src/rules/item/`)
 
-Mirror `storage-rules/`: `service.ts` (cross-app queries: active rules for items incl. broadcasts + filters, assignments for target, list, assign/unassign), `server.ts` (**`evaluateItemRuleLines({ client, companyId, userId, surface, lines, customerId, customerLocationId })`** → `{ violations, ruleNames }` — the one canonical evaluator name, used by barrels and route actions alike; `userId` is required because the service-role client cannot infer the acting user, and it lands in `transaction.userId`; `isBlocked`/`dedupeViolations` re-exported from storage-rules, not duplicated), `context.ts` (build line context: item fields batch-loaded incl. `customFields` + flattened `itemPostingGroupId`, customer context resolved once per document — customer row with `customerTypeId`/`customerStatusId`/`customFields` + `customerLocation.addressId → address.countryCode` alpha2), `index.ts`. Package exports `./item-rules` and `./item-rules.server` in `packages/ee/package.json`.
+Mirror `storage-rules/`: `service.ts` (cross-app queries: active rules for items incl. broadcasts + filters, assignments for target, list, assign/unassign), `server.ts` (**`evaluateItemRuleLines({ client, companyId, userId, surface, lines, customerId, customerLocationId })`** → `{ violations, ruleNames }` — the one canonical evaluator name, used by barrels and route actions alike; `userId` is required because the service-role client cannot infer the acting user, and it lands in `transaction.userId`; `isBlocked`/`dedupeViolations` re-exported from storage-rules, not duplicated), `context.ts` (build line context: item fields batch-loaded incl. `customFields` + flattened `itemPostingGroupId`, customer context resolved once per document — customer row with `customerTypeId`/`customerStatusId`/`customFields` + `customerLocation.addressId → address.countryCode` alpha2), `index.ts`. Consolidated ee package: `packages/ee/src/rules/` holds `storage/` + `item/` evaluator dirs with the shared violation modal + hook at the root; package exports are `./rules` and `./rules.server`.
 
 **Rule selection contract:** every active `itemRule` is a broadcast; empty filters match all items; `filteredItemMatchAll` chooses OR (false) or AND (true) across the type/group dimensions; an explicit `itemRuleAssignment` bypasses the broadcast filters. Per line, assignments and broadcasts merge by `ruleId` before evaluation; violations are deduplicated by `ruleId` + message. A line whose item row fails to load matches explicit assignments only (mirrors the storage evaluator).
 
@@ -166,7 +166,7 @@ Mirror `storage-rules/`: `service.ts` (cross-app queries: active rules for items
 - **Tenant isolation below the service-role boundary (required):** RLS is bypassed on this client, so every query the evaluator/service issues — rules, assignments, items, customer, customerLocation — carries an explicit `companyId` predicate (or joins through a company-scoped row). These predicates ARE the tenant isolation; a service-role query without one is a defect, not a style choice. Mirrors the storage evaluator.
 - Plan gate: the **existing** `ITEM_RULES` feature key (`packages/ee/src/plan.ts:12` already defines it for Business/Partner — do not add a duplicate). Evaluation returns no violations when the gate is off (mirror `isStorageRulesEnabledForCompany`).
 - Missing ship-to: rules referencing `customer.location.countryCode` rely on the engine's required-field semantics — empty → "Customer location is required" violation inheriting rule severity.
-- Violation UI: **reuse** `useStorageRuleViolations` + `StorageRuleViolationModal` from `@carbon/ee/storage-rules` (they are generic over `Violation`); do not fork.
+- Violation UI: **reuse** `useRuleViolations` + `RuleViolationModal` from `@carbon/ee/rules` (they are generic over `Violation`); do not fork.
 
 ## ERP module (`apps/erp/app/modules/item-rules/`)
 
@@ -189,7 +189,7 @@ Mirror `storage-rules/`: `service.ts` (cross-app queries: active rules for items
 - `x+/sales-order+/$orderId.new.tsx` — same, before `upsertSalesOrderLine`, surface `salesOrderLine`.
 - **Item-only guard:** lines without an `itemId` (e.g. `Comment` sales-order lines, whose create action clears `itemId`) skip evaluation entirely — the guard wraps only the evaluation block, never the action.
 - Line **edit** actions (`$quoteId.$lineId.details.tsx`, `$orderId.$lineId.details.tsx`) — same evaluation so edits can't dodge rules.
-- Client: `QuoteLineForm` / `SalesOrderLineForm` submit via `useStorageRuleViolations({ action })`, render `<rules.ViolationModal/>`. Coexists with the inline supersession notice (unchanged) and ConfiguratorModal.
+- Client: `QuoteLineForm` / `SalesOrderLineForm` submit via `useRuleViolations({ action })`, render `<rules.ViolationModal/>`. Coexists with the inline supersession notice (unchanged) and ConfiguratorModal.
 
 ## Notifications + acknowledgment log (Phase 2)
 
@@ -205,7 +205,7 @@ Mirror `storage-rules/`: `service.ts` (cross-app queries: active rules for items
 
 - Fix stale `packages/utils/AGENTS.md` line describing `storage-rules.ts` as "Supabase storage bucket access policies" → it is the rule-evaluation engine.
 - Update `apps/erp/app/modules/items/AGENTS.md` (new sibling feature) or create `modules/item-rules/AGENTS.md`.
-- Unit tests: context building (customer root, alpha2 country), field-registry additions, evaluator happy-path + required-field (missing ship-to) + acknowledged flow. Mirror `packages/ee/src/storage-rules/context.test.ts`.
+- Unit tests: context building (customer root, alpha2 country), field-registry additions, evaluator happy-path + required-field (missing ship-to) + acknowledged flow. Mirror `packages/ee/src/rules/storage/context.test.ts`.
 
 ## Out of scope (explicitly)
 
