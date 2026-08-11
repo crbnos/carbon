@@ -946,6 +946,10 @@ export const serviceValidator = applyStorageAndShelfLifeRefines(
   )
 );
 
+// Distributors quote small components in thousandths (e.g. DKK 0.164/ea at MOQ 10,000),
+// so the 2-decimal currency default would round the price away on entry and on display.
+export const SUPPLIER_PART_PRICE_PRECISION = 5;
+
 export const supplierPartValidator = z.object({
   id: zfd.text(z.string().optional()),
   itemId: z.string().min(1, { message: "Item ID is required" }),

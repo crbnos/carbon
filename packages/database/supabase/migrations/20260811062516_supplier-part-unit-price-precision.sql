@@ -4,3 +4,8 @@
 -- and silently rounded distributor prices (0.164 -> 0.16). Widen it for real.
 ALTER TABLE "supplierPart"
 ALTER COLUMN "unitPrice" TYPE NUMERIC;
+
+-- The price-break rows are the same price on the same screen, so they can't stay
+-- capped at 5 decimals while their parent is unbounded.
+ALTER TABLE "supplierPartPrice"
+ALTER COLUMN "unitPrice" TYPE NUMERIC;

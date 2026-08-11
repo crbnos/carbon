@@ -57,11 +57,10 @@ import {
 import Grid from "~/components/Grid";
 import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
-import { supplierPartValidator } from "../../items.models";
-
-// Distributors quote small components in thousandths (e.g. DKK 0.164/ea at MOQ 10,000),
-// so a 2-decimal currency default silently rounds the price away on entry.
-const UNIT_PRICE_FRACTION_DIGITS = 5;
+import {
+  SUPPLIER_PART_PRICE_PRECISION,
+  supplierPartValidator
+} from "../../items.models";
 
 type PriceBreak = {
   quantity: number;
@@ -191,7 +190,7 @@ const SupplierPartForm = ({
                   formatOptions={{
                     style: "currency",
                     currency: baseCurrency,
-                    maximumFractionDigits: UNIT_PRICE_FRACTION_DIGITS
+                    maximumFractionDigits: SUPPLIER_PART_PRICE_PRECISION
                   }}
                 />
                 <UnitOfMeasure
@@ -266,6 +265,10 @@ function PurchaseHistory({
   baseCurrency: string;
 }) {
   const { t } = useLingui();
+  const priceFormatter = useCurrencyFormatter({
+    currency: baseCurrency,
+    maximumFractionDigits: SUPPLIER_PART_PRICE_PRECISION
+  });
   if (history.length === 0) return null;
 
   return (
@@ -324,10 +327,7 @@ function PurchaseHistory({
                           <Tr>
                             <Td>{line.purchaseQuantity}</Td>
                             <Td>
-                              {new Intl.NumberFormat("en-US", {
-                                style: "currency",
-                                currency: baseCurrency
-                              }).format(line.unitPrice ?? 0)}
+                              {priceFormatter.format(line.unitPrice ?? 0)}
                             </Td>
                           </Tr>
                         </Tbody>
@@ -362,7 +362,9 @@ function PriceBreaks({
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
-  const formatter = useCurrencyFormatter();
+  const formatter = useCurrencyFormatter({
+    maximumFractionDigits: SUPPLIER_PART_PRICE_PRECISION
+  });
 
   const removeRow = useCallback(
     (index: number) => {
@@ -394,7 +396,7 @@ function PriceBreaks({
         formatOptions: {
           style: "currency",
           currency: baseCurrency,
-          maximumFractionDigits: UNIT_PRICE_FRACTION_DIGITS
+          maximumFractionDigits: SUPPLIER_PART_PRICE_PRECISION
         }
       })
     }),
