@@ -75,7 +75,7 @@ msgstr "{0} taslak muhasebe kaydı"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
-msgstr ""
+msgstr "{0} iş oluşturuldu"
 
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
@@ -114,7 +114,7 @@ msgid "{0} values missing"
 msgstr "{0} değeri eksik"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
-msgstr ""
+msgstr "{alreadyPlannedItemCount} parça atlandı — zaten açık işleri var"
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% borç"
@@ -149,7 +149,7 @@ msgid "{name} deleted"
 msgstr "{name} silindi"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
-msgstr ""
+msgstr "{noDemandItemCount} parça atlandı — yapılacak bir şey yok"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
@@ -170,7 +170,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
 
 msgid "{updatedJobCount} jobs updated"
-msgstr ""
+msgstr "{updatedJobCount} iş güncellendi"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} yüklendi — alanlar belgeden dolduruldu."
@@ -208,16 +208,16 @@ msgid "1 draft journal entry"
 msgstr "1 taslak muhasebe kaydı"
 
 msgid "1 job created"
-msgstr ""
+msgstr "1 iş oluşturuldu"
 
 msgid "1 job updated"
-msgstr ""
+msgstr "1 iş güncellendi"
 
 msgid "1 part skipped — it already has an open job"
-msgstr ""
+msgstr "1 parça atlandı — zaten açık bir işi var"
 
 msgid "1 part skipped — nothing to make"
-msgstr ""
+msgstr "1 parça atlandı — yapılacak bir şey yok"
 
 msgid "1 problem — not published"
 msgstr "1 sorun — yayınlanmadı"
@@ -9507,7 +9507,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
 
 msgid "No jobs were created"
-msgstr ""
+msgstr "Hiçbir iş oluşturulmadı"
 
 msgid "No journal lines in scope for this period"
 msgstr "Bu dönem için kapsam içinde günlük satırı yok"
@@ -15860,7 +15860,7 @@ msgid "View Active Quotes"
 msgstr "Aktif Teklifleri Görüntüle"
 
 msgid "View all"
-msgstr ""
+msgstr "Tümünü Görüntüle"
 
 msgid "View All"
 msgstr "Tümünü Gör"

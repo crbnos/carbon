@@ -75,7 +75,7 @@ msgstr "{0} Entwurfs-Journaleinträge"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
-msgstr ""
+msgstr "{0} Aufträge erstellt"
 
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
@@ -114,7 +114,7 @@ msgid "{0} values missing"
 msgstr "{0} Werte fehlen"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
-msgstr ""
+msgstr "{alreadyPlannedItemCount} Teile übersprungen — sie haben bereits offene Aufträge"
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% der Verbindlichkeiten"
@@ -149,7 +149,7 @@ msgid "{name} deleted"
 msgstr "{name} gelöscht"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
-msgstr ""
+msgstr "{noDemandItemCount} Teile übersprungen — es gibt nichts zu produzieren"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# Phase verbleibend} other {# Phasen verbleibend}}"
@@ -170,7 +170,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# nicht gezählte Zeile} other {# nicht gezählte Zeilen}}"
 
 msgid "{updatedJobCount} jobs updated"
-msgstr ""
+msgstr "{updatedJobCount} Aufträge aktualisiert"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} hochgeladen — Felder wurden aus dem Dokument ausgefüllt."
@@ -208,16 +208,16 @@ msgid "1 draft journal entry"
 msgstr "1 Entwurfs-Journaleintrag"
 
 msgid "1 job created"
-msgstr ""
+msgstr "1 Auftrag erstellt"
 
 msgid "1 job updated"
-msgstr ""
+msgstr "1 Auftrag aktualisiert"
 
 msgid "1 part skipped — it already has an open job"
-msgstr ""
+msgstr "1 Teil übersprungen — es hat bereits einen offenen Auftrag"
 
 msgid "1 part skipped — nothing to make"
-msgstr ""
+msgstr "1 Teil übersprungen — es gibt nichts zu produzieren"
 
 msgid "1 problem — not published"
 msgstr "1 Problem — nicht veröffentlicht"
@@ -9507,7 +9507,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Hier gibt es noch keine Bestandsbewegungen."
 
 msgid "No jobs were created"
-msgstr ""
+msgstr "Keine Aufträge wurden erstellt"
 
 msgid "No journal lines in scope for this period"
 msgstr "Keine Journalzeilen im Bereich für diesen Zeitraum"
@@ -15860,7 +15860,7 @@ msgid "View Active Quotes"
 msgstr "Aktive Angebote anzeigen"
 
 msgid "View all"
-msgstr ""
+msgstr "Alle anzeigen"
 
 msgid "View All"
 msgstr "Alle anzeigen"

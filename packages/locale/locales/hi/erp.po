@@ -75,7 +75,7 @@ msgstr "{0} ड्राफ्ट जर्नल प्रविष्टिय
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
-msgstr ""
+msgstr "{0} नौकरियाँ बनाई गई"
 
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
@@ -114,7 +114,7 @@ msgid "{0} values missing"
 msgstr "{0} मान गायब हैं"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
-msgstr ""
+msgstr "{alreadyPlannedItemCount} भाग छोड़ दिए गए — उनके पास पहले से ही खुली नौकरियाँ हैं"
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% देय राशि का"
@@ -149,7 +149,7 @@ msgid "{name} deleted"
 msgstr "{name} हटाया गया"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
-msgstr ""
+msgstr "{noDemandItemCount} भाग छोड़ दिए गए — कुछ नहीं बनाना है"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
@@ -170,7 +170,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# अनगिनती लाइनें}}"
 
 msgid "{updatedJobCount} jobs updated"
-msgstr ""
+msgstr "{updatedJobCount} नौकरियाँ अपडेट की गईं"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} अपलोड हो गया — दस्तावेज़ से फ़ील्ड भर दिए गए हैं।"
@@ -208,16 +208,16 @@ msgid "1 draft journal entry"
 msgstr "1 ड्राफ्ट जर्नल प्रविष्टि"
 
 msgid "1 job created"
-msgstr ""
+msgstr "1 नौकरी बनाई गई"
 
 msgid "1 job updated"
-msgstr ""
+msgstr "1 नौकरी अपडेट की गई"
 
 msgid "1 part skipped — it already has an open job"
-msgstr ""
+msgstr "1 भाग छोड़ दिया गया — इसके पास पहले से ही एक खुली नौकरी है"
 
 msgid "1 part skipped — nothing to make"
-msgstr ""
+msgstr "1 भाग छोड़ दिया गया — कुछ नहीं बनाना है"
 
 msgid "1 problem — not published"
 msgstr "1 समस्या — प्रकाशित नहीं"
@@ -9507,7 +9507,7 @@ msgid "No items have inventory activity here yet."
 msgstr "अभी तक यहाँ कोई आइटम इन्वेंटरी गतिविधि नहीं है।"
 
 msgid "No jobs were created"
-msgstr ""
+msgstr "कोई नौकरी नहीं बनाई गई"
 
 msgid "No journal lines in scope for this period"
 msgstr "इस अवधि के लिए दायरे में कोई जर्नल लाइन नहीं"
@@ -15860,7 +15860,7 @@ msgid "View Active Quotes"
 msgstr "सक्रिय उद्धरण देखें"
 
 msgid "View all"
-msgstr ""
+msgstr "सभी को देखें"
 
 msgid "View All"
 msgstr "सभी देखें"

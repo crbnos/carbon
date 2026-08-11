@@ -75,7 +75,7 @@ msgstr "{0} черновых записей в журнале"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
-msgstr ""
+msgstr "{0} заданий создано"
 
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
@@ -114,7 +114,7 @@ msgid "{0} values missing"
 msgstr "{0} значений отсутствует"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
-msgstr ""
+msgstr "{alreadyPlannedItemCount} деталей пропущено — у них уже есть открытые задания"
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% кредиторской задолженности"
@@ -149,7 +149,7 @@ msgid "{name} deleted"
 msgstr "{name} удален"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
-msgstr ""
+msgstr "{noDemandItemCount} деталей пропущено — нечего делать"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
@@ -170,7 +170,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
 
 msgid "{updatedJobCount} jobs updated"
-msgstr ""
+msgstr "{updatedJobCount} заданий обновлено"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "Файл {uploadedFileName} загружен — поля заполнены из документа."
@@ -208,16 +208,16 @@ msgid "1 draft journal entry"
 msgstr "1 черновая запись в журнале"
 
 msgid "1 job created"
-msgstr ""
+msgstr "1 задание создано"
 
 msgid "1 job updated"
-msgstr ""
+msgstr "1 задание обновлено"
 
 msgid "1 part skipped — it already has an open job"
-msgstr ""
+msgstr "1 деталь пропущена — у неё уже есть открытое задание"
 
 msgid "1 part skipped — nothing to make"
-msgstr ""
+msgstr "1 деталь пропущена — нечего делать"
 
 msgid "1 problem — not published"
 msgstr "1 проблема — не опубликовано"
@@ -9507,7 +9507,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Здесь еще нет активности с товарами."
 
 msgid "No jobs were created"
-msgstr ""
+msgstr "Никаких заданий не было создано"
 
 msgid "No journal lines in scope for this period"
 msgstr "Нет строк журнала в пределах этого периода"
@@ -15860,7 +15860,7 @@ msgid "View Active Quotes"
 msgstr "Просмотреть активные предложения"
 
 msgid "View all"
-msgstr ""
+msgstr "Показать все"
 
 msgid "View All"
 msgstr "Просмотреть все"
