@@ -11,5 +11,4 @@ export * from "./core/service";
 export * from "./core/sync";
 export * from "./core/types";
 export * from "./core/utils";
-export * from "./entity-sync-view";
 export * from "./providers";

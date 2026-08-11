@@ -164,9 +164,6 @@ msgstr "{missingCount} eksik yevmiye ve {mismatchCount} tutarları uyuşmazlığ
 msgid "{name} deleted"
 msgstr "{name} silindi"
 
-msgid "{providerName} data overwrites Carbon data"
-msgstr "{providerName} verileri Carbon verilerini üzerine yazıyor"
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
@@ -2257,9 +2254,6 @@ msgstr "Carbon istemcisi bulunamadı"
 
 msgid "Carbon column"
 msgstr "Carbon sütunu"
-
-msgid "Carbon data overwrites {providerName} data"
-msgstr "Carbon verileri {providerName} verilerini üzerine yazıyor"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon, şirketinizin çalışma şekline göre yapılandırılmış, verileriniz yüklenmiş ve ekibiniz bunu kullanmakta kendinden emin. Bu doğru olduğunda, canlı yayına geçmeye hazırsınız."
@@ -12264,12 +12258,6 @@ msgstr "Kaynak Ürün"
 msgid "Source Method"
 msgstr "Kaynak Yöntem"
 
-msgid "Source of truth"
-msgstr "Gerçeğin kaynağı"
-
-msgid "Source of Truth"
-msgstr "Gerçeğin Kaynağı"
-
 msgid "Source types"
 msgstr "Kaynak türleri"
 
@@ -15177,9 +15165,6 @@ msgstr "Bu öğe için her inceleme akışını hangi belge yönlendirir."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Hangi üretim olayı raf ömrü saatini başlatır — örneğin, doldurma, mühürleme veya nihai QC."
-
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
-msgstr "Carbon ve {providerName} aynı kaydı değiştirdiğinde hangisinin verisi geçerli olur? {providerName}'in kendi yetenekleriyle düzelttiği girişler gösterilir ancak değiştirilemez."
 
 msgid "Who Can Approve"
 msgstr "Kimler Onaylayabilir"

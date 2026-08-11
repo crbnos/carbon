@@ -164,9 +164,6 @@ msgstr "{missingCount} fehlende Journale und {mismatchCount} Monate mit Abweichu
 msgid "{name} deleted"
 msgstr "{name} gelöscht"
 
-msgid "{providerName} data overwrites Carbon data"
-msgstr "{providerName}-Daten überschreiben Carbon-Daten"
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# Phase verbleibend} other {# Phasen verbleibend}}"
 
@@ -2257,9 +2254,6 @@ msgstr "Carbon-Client nicht gefunden"
 
 msgid "Carbon column"
 msgstr "Carbon-Spalte"
-
-msgid "Carbon data overwrites {providerName} data"
-msgstr "Carbon-Daten überschreiben {providerName}-Daten"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon ist so konfiguriert, wie Ihr Unternehmen läuft, Ihre Daten sind geladen, und Ihr Team nutzt es sicher. Wenn das der Fall ist, sind Sie bereit, live zu gehen."
@@ -12264,12 +12258,6 @@ msgstr "Quellartikel"
 msgid "Source Method"
 msgstr "Quellmethode"
 
-msgid "Source of truth"
-msgstr "Wahrheitsquelle"
-
-msgid "Source of Truth"
-msgstr "Wahrheitsquelle"
-
 msgid "Source types"
 msgstr "Quellentypen"
 
@@ -15177,9 +15165,6 @@ msgstr "Welches Dokument bestimmt jeden Inspektionsfluss für diesen Artikel."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Welches Fertigungsereignis die Lagerfrist-Uhr startet — z. B. Füllen, Versiegeln oder endgültiges QS."
-
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
-msgstr "Welche Systemdaten gewinnen, wenn sowohl Carbon als auch {providerName} denselben Datensatz geändert haben. Einträge, die {providerName} durch seine eigenen Funktionen behebt, werden angezeigt, können aber nicht geändert werden."
 
 msgid "Who Can Approve"
 msgstr "Wer kann genehmigen"

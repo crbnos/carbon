@@ -525,26 +525,6 @@ export const postingSyncSettingsValidator = z.object({
 });
 
 /**
- * Saves per-entity "source of truth" owner overrides (Source of Truth tab):
- * which system's data wins when both Carbon and the provider have changed
- * the same customer/vendor/item/invoice/bill record. `entityOwners` is a
- * repeated "<entityType>|<owner>" hidden field (per the posting-settings
- * `sourceTypeConfigs` precedent) — the UI only ever submits an entry for an
- * entity the provider's capability check marked configurable; the action
- * ignores any entry for a provider-forced entity as defense in depth.
- */
-export const entitySyncSettingsValidator = z.object({
-  intent: z.literal("update-entity-sync"),
-  entityOwners: zfd.repeatable(
-    z.array(
-      z
-        .string()
-        .regex(/^[^|]+\|(carbon|accounting)$/, "Malformed entity owner config")
-    )
-  )
-});
-
-/**
  * Saves the dimension-slot configuration (Dimensions tab): which Carbon
  * dimensions ride along on pushed journals and which provider analytics
  * target each one maps to. `slots` is a repeated JSON-encoded hidden field

@@ -8,9 +8,10 @@ keeps multi-currency math honest. Exchange Rates is available on every plan; Xer
 
 ## Xero
 
-Connect over **OAuth**, then choose what Carbon and Xero share. Once connected, Carbon syncs **customers**,
-**vendors**, **items**, **sales invoices**, and **bills** with Xero and keeps the two ledgers aligned, with
-several of those entities syncing both ways.
+Connect over **OAuth**, then choose what Carbon and Xero share. Once connected, Carbon pushes **customers**,
+**vendors**, **items**, **sales invoices**, and **bills** to Xero as the downstream ledger — **Carbon is the
+source of truth**, so its edits always win and the two ledgers stay aligned. Payments recorded in Xero flow
+back to settle the matching Carbon invoice or bill.
 
   
   ### Connect over OAuth
@@ -20,7 +21,7 @@ several of those entities syncing both ways.
   
   ### Choose what's shared
 
-  Set backfill, the per-entity source of truth, and the default account mapping (below).
+  Set backfill and the default account mapping (below).
   
   
   ### Run the initial sync
@@ -29,7 +30,6 @@ several of those entities syncing both ways.
   
 
   - **Backfill**: Whether to seed Xero with your existing **customers**, **vendors**, and **items** on first connect.
-  - **Source of truth**: Per entity (customer, vendor, item, invoice, bill): whether **Carbon** or the **accounting system** wins on conflict.
   - **Account mapping**: The default **sales** and **purchase** account codes, picked from your Xero chart of accounts.
 
 Xero only appears when its OAuth client is configured server-side (`XERO_CLIENT_ID`). Without it the

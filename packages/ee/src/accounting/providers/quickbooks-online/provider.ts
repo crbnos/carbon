@@ -296,10 +296,30 @@ export const QBO_PULL_ONLY_ENTITIES = [
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
- * Overlay the QBO pull-only forcing on a resolved sync config: `payment` is
- * forced to direction "pull-from-accounting", owner "accounting", enabled.
- * Every other entity keeps its resolved (default/company-overridden) config —
- * unlike Rillet, QBO leaves its master/transaction entities two-way.
+ * Master + document entities for which Carbon is the system of record:
+ * customers, vendors, items, sales invoices, and bills. Forced
+ * `push-to-accounting` / `owner: "carbon"` so QBO is a downstream mirror —
+ * Carbon's edits always win, and an inbound QBO change to a linked record is
+ * skipped by BaseEntitySyncer's owner guard. This is the standardized "Carbon
+ * owns everything" stance that replaced the per-entity Source of Truth setting;
+ * it mirrors Rillet's RILLET_PUSH_ONLY_ENTITIES. Their per-company `enabled`
+ * flag survives — this constrains ownership, not whether they sync. `payment`
+ * is deliberately excluded: the accounting system owns payments (see
+ * QBO_PULL_ONLY_ENTITIES).
+ */
+export const QBO_CARBON_OWNED_ENTITIES = [
+  "customer",
+  "vendor",
+  "item",
+  "invoice",
+  "bill"
+] as const satisfies readonly AccountingEntityType[];
+
+/**
+ * Overlay QBO's capability + ownership forcing on a resolved sync config:
+ * customers/vendors/items/invoices/bills forced push-only + owner "carbon"
+ * (Carbon owns them); `payment` forced pull-only + enabled (the accounting
+ * system owns it). Every other entity keeps its resolved config.
  */
 export function buildQboSyncConfig(
   resolved: GlobalSyncConfig
@@ -310,6 +330,14 @@ export function buildQboSyncConfig(
       { ...entityConfig }
     ])
   ) as GlobalSyncConfig["entities"];
+
+  for (const entityType of QBO_CARBON_OWNED_ENTITIES) {
+    entities[entityType] = {
+      ...entities[entityType],
+      direction: "push-to-accounting",
+      owner: "carbon"
+    };
+  }
 
   for (const entityType of QBO_PULL_ONLY_ENTITIES) {
     entities[entityType] = {

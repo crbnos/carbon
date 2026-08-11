@@ -291,3 +291,53 @@ describe("buildXeroSyncConfig — payment force-enable (pull-only)", () => {
     });
   });
 });
+
+describe("buildXeroSyncConfig — Carbon-owned master + documents", () => {
+  it.each([
+    "customer",
+    "vendor",
+    "item",
+    "invoice",
+    "bill"
+  ] as const)("forces `%s` to push-only + owner carbon regardless of the stored config", (entityType) => {
+    const stored = structuredClone(DEFAULT_SYNC_CONFIG);
+    // Pretend the company had previously set this entity accounting-owned
+    // two-way (the old Source of Truth default) — the force must override it.
+    stored.entities[entityType] = {
+      enabled: true,
+      direction: "two-way",
+      owner: "accounting"
+    };
+
+    expect(buildXeroSyncConfig(stored).entities[entityType]).toEqual({
+      enabled: true,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    });
+  });
+
+  it("preserves the per-company `enabled` flag while forcing ownership", () => {
+    const stored = structuredClone(DEFAULT_SYNC_CONFIG);
+    stored.entities.bill = {
+      enabled: false,
+      direction: "two-way",
+      owner: "accounting"
+    };
+
+    expect(buildXeroSyncConfig(stored).entities.bill).toEqual({
+      enabled: false,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    });
+  });
+
+  it("leaves payment accounting-owned and does not touch unforced entities", () => {
+    const applied = buildXeroSyncConfig(structuredClone(DEFAULT_SYNC_CONFIG));
+    // payment stays the accounting-owned pull-only exception
+    expect(applied.entities.payment.owner).toBe("accounting");
+    // purchaseOrder is neither Carbon-owned-forced nor payment — passes through
+    expect(applied.entities.purchaseOrder).toEqual(
+      DEFAULT_SYNC_CONFIG.entities.purchaseOrder
+    );
+  });
+});

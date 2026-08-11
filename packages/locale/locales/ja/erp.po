@@ -164,9 +164,6 @@ msgstr "{missingCount}件のジャーナルが見つからず、{mismatchCount}�
 msgid "{name} deleted"
 msgstr "{name}が削除されました"
 
-msgid "{providerName} data overwrites Carbon data"
-msgstr "{providerName}のデータがCarbonのデータを上書きします"
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
 
@@ -2257,9 +2254,6 @@ msgstr "Carbonクライアントが見つかりません"
 
 msgid "Carbon column"
 msgstr "Carbonカラム"
-
-msgid "Carbon data overwrites {providerName} data"
-msgstr "Carbonのデータが{providerName}のデータを上書きします"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbonがあなたの会社の運営方法に合わせて設定され、データが読み込まれ、チームがそれを自信を持って使用できるようになっています。その状態になれば、本番環境への移行準備が整っています。"
@@ -12264,12 +12258,6 @@ msgstr "ソースアイテム"
 msgid "Source Method"
 msgstr "ソース方法"
 
-msgid "Source of truth"
-msgstr "信頼できる情報源"
-
-msgid "Source of Truth"
-msgstr "信頼できる情報源"
-
 msgid "Source types"
 msgstr "ソースタイプ"
 
@@ -15177,9 +15165,6 @@ msgstr "このアイテムの各検査フローを駆動するドキュメント
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "どの製造イベントが保存期間時計を開始するか — たとえば、塗りつぶし、シール、または最終QC。"
-
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
-msgstr "Carbon と {providerName} の両方が同じレコードを変更した場合、どちらのシステムのデータが優先されますか。{providerName} が独自の機能で修正したエントリは表示されていますが、変更することはできません。"
 
 msgid "Who Can Approve"
 msgstr "誰が承認できるか"

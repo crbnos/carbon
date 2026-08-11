@@ -164,9 +164,6 @@ msgstr "{missingCount} отсутствующих журналов и {mismatchC
 msgid "{name} deleted"
 msgstr "{name} удален"
 
-msgid "{providerName} data overwrites Carbon data"
-msgstr "Данные {providerName} перезаписывают данные Carbon"
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
 
@@ -2257,9 +2254,6 @@ msgstr "Клиент Carbon не найден"
 
 msgid "Carbon column"
 msgstr "Столбец Carbon"
-
-msgid "Carbon data overwrites {providerName} data"
-msgstr "Данные Carbon перезаписывают данные {providerName}"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon настроена в соответствии с тем, как работает ваша компания, ваши данные загружены, и ваша команда уверенно её использует. Когда это произойдёт, вы будете готовы к запуску."
@@ -12264,12 +12258,6 @@ msgstr "Исходный элемент"
 msgid "Source Method"
 msgstr "Исходный метод"
 
-msgid "Source of truth"
-msgstr "источник истины"
-
-msgid "Source of Truth"
-msgstr "Источник истины"
-
 msgid "Source types"
 msgstr "Типы источников"
 
@@ -15177,9 +15165,6 @@ msgstr "Какой документ определяет каждый проце
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."
-
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
-msgstr "Какая система выигрывает, когда и Carbon, и {providerName} изменили одну и ту же запись. Записи, которые {providerName} исправляет своими возможностями, отображаются, но не могут быть изменены."
 
 msgid "Who Can Approve"
 msgstr "Кто может одобрить"

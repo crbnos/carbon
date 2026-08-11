@@ -3,7 +3,6 @@ import {
   buildAccountMappingMetadata,
   collectAccountDefaultAccountIds,
   getAccountMappingDisplayMetadata,
-  mergeUnmappedAccountIds,
   proposeAccountMatchesByCode
 } from "./account-mapping";
 
@@ -50,51 +49,6 @@ describe("collectAccountDefaultAccountIds", () => {
     ).toEqual(["acc-ap"]);
     expect(collectAccountDefaultAccountIds(null)).toEqual([]);
     expect(collectAccountDefaultAccountIds(undefined)).toEqual([]);
-  });
-});
-
-describe("mergeUnmappedAccountIds", () => {
-  it("unions accountDefault and journalLine ids minus mapped ids", () => {
-    const unmapped = mergeUnmappedAccountIds({
-      accountDefaultRow: {
-        salesAccount: "acc-sales",
-        inventoryAccount: "acc-inventory"
-      },
-      journalLineAccountIds: ["acc-inventory", "acc-manual", null, undefined],
-      mappedAccountIds: ["acc-sales"]
-    });
-
-    expect(unmapped.sort()).toEqual(["acc-inventory", "acc-manual"]);
-  });
-
-  it("dedupes ids that appear in both sources", () => {
-    const unmapped = mergeUnmappedAccountIds({
-      accountDefaultRow: { salesAccount: "acc-1" },
-      journalLineAccountIds: ["acc-1", "acc-1"],
-      mappedAccountIds: []
-    });
-
-    expect(unmapped).toEqual(["acc-1"]);
-  });
-
-  it("returns an empty list when everything is mapped", () => {
-    const unmapped = mergeUnmappedAccountIds({
-      accountDefaultRow: { salesAccount: "acc-1" },
-      journalLineAccountIds: ["acc-2"],
-      mappedAccountIds: ["acc-1", "acc-2"]
-    });
-
-    expect(unmapped).toEqual([]);
-  });
-
-  it("handles a company with no accountDefault row", () => {
-    const unmapped = mergeUnmappedAccountIds({
-      accountDefaultRow: null,
-      journalLineAccountIds: ["acc-1"],
-      mappedAccountIds: []
-    });
-
-    expect(unmapped).toEqual(["acc-1"]);
   });
 });
 

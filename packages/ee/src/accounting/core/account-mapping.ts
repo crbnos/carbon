@@ -46,8 +46,11 @@ export interface AccountMapping {
 }
 
 /**
- * A Carbon account referenced by posting configuration or journal history
- * that has no mapping for the integration yet.
+ * A Carbon account referenced by an accountDefault column that has no mapping
+ * for the integration yet. Automated (synced) postings always run through an
+ * accountDefault account, so this is the complete set that needs mapping —
+ * accounts seen only on historical/manual journal lines are intentionally
+ * excluded (they never sync).
  */
 export interface UnmappedPostingAccount {
   id: string;
@@ -123,30 +126,6 @@ export function collectAccountDefaultAccountIds(
   }
 
   return [...ids];
-}
-
-/**
- * Union of posting-relevant account ids (accountDefault columns + accounts
- * used on journal lines), minus already-mapped ids, deduped. Pure merge
- * logic for getUnmappedPostingAccounts.
- */
-export function mergeUnmappedAccountIds(args: {
-  accountDefaultRow: Record<string, unknown> | null | undefined;
-  journalLineAccountIds: Array<string | null | undefined>;
-  mappedAccountIds: Iterable<string>;
-}): string[] {
-  const mapped = new Set(args.mappedAccountIds);
-  const unmapped = new Set<string>();
-
-  for (const id of collectAccountDefaultAccountIds(args.accountDefaultRow)) {
-    if (!mapped.has(id)) unmapped.add(id);
-  }
-
-  for (const id of args.journalLineAccountIds) {
-    if (id && !mapped.has(id)) unmapped.add(id);
-  }
-
-  return [...unmapped];
 }
 
 /**
@@ -363,33 +342,43 @@ export async function upsertAccountMapping(
 }
 
 /**
- * Carbon accounts that posting can hit but that have no mapping yet:
- * accounts referenced by accountDefault columns plus accounts used on at
- * least one journalLine, minus already-mapped ids, minus group headers.
- *
- * Gathered with three scoped queries and merged in TypeScript. (The plan's
- * third source — itemPostingGroup account columns — no longer exists: the
- * posting-group matrix was dropped in 20260229000000_drop-posting-groups
- * and itemPostingGroup carries no account columns.)
+ * The Carbon account ids referenced by the company's accountDefault row —
+ * the complete set of accounts automated postings run through, and the only
+ * accounts the mapping tab manages. Loads the row and collects every
+ * *Account / *AccountId FK on it.
+ */
+export async function loadAccountDefaultAccountIds(
+  db: Db,
+  companyId: string
+): Promise<string[]> {
+  const row = await db
+    .selectFrom("accountDefault")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+
+  return collectAccountDefaultAccountIds(row ? { ...row } : null);
+}
+
+/**
+ * Carbon accounts that automated postings hit but that have no mapping yet:
+ * the accounts referenced by accountDefault columns, minus already-mapped
+ * ids, minus group headers. accountDefault is the whole mappable set —
+ * every synced transaction posts through one of these accounts — so accounts
+ * seen only on historical/manual journal lines are intentionally excluded.
  */
 export async function getUnmappedPostingAccounts(
   db: Db,
   args: { companyId: string; integration: string }
 ): Promise<{ data: UnmappedPostingAccount[] | null; error: string | null }> {
   try {
-    const accountDefaultRow = await db
-      .selectFrom("accountDefault")
-      .selectAll()
-      .where("companyId", "=", args.companyId)
-      .executeTakeFirst();
-
-    const journalLineRows = await db
-      .selectFrom("journalLine")
-      .select("accountId")
-      .distinct()
-      .where("companyId", "=", args.companyId)
-      .where("accountId", "is not", null)
-      .execute();
+    const accountDefaultIds = await loadAccountDefaultAccountIds(
+      db,
+      args.companyId
+    );
+    if (accountDefaultIds.length === 0) {
+      return { data: [], error: null };
+    }
 
     const mappedRows = await db
       .selectFrom("externalIntegrationMapping")
@@ -398,13 +387,9 @@ export async function getUnmappedPostingAccounts(
       .where("integration", "=", args.integration)
       .where("companyId", "=", args.companyId)
       .execute();
+    const mapped = new Set(mappedRows.map((row) => row.entityId));
 
-    const unmappedIds = mergeUnmappedAccountIds({
-      accountDefaultRow: accountDefaultRow ? { ...accountDefaultRow } : null,
-      journalLineAccountIds: journalLineRows.map((row) => row.accountId),
-      mappedAccountIds: mappedRows.map((row) => row.entityId)
-    });
-
+    const unmappedIds = accountDefaultIds.filter((id) => !mapped.has(id));
     if (unmappedIds.length === 0) {
       return { data: [], error: null };
     }
@@ -435,8 +420,10 @@ export async function getUnmappedPostingAccounts(
 /**
  * Propose (not write) exact matches between Carbon account numbers and the
  * provider's chart-of-accounts codes. Only active, non-group, numbered
- * accounts without an existing mapping are considered; the UI confirms
- * each proposal and calls upsertAccountMapping.
+ * accountDefault accounts without an existing mapping are considered — the
+ * same set getUnmappedPostingAccounts surfaces — so proposals never suggest
+ * an account outside the mappable set; the UI confirms each proposal and
+ * calls upsertAccountMapping.
  */
 export async function matchAccountsByCode(
   db: Db,
@@ -455,6 +442,16 @@ export async function matchAccountsByCode(
       };
     }
 
+    // Only accountDefault accounts are mappable (automated postings run
+    // through them), so an account outside that set is never proposed.
+    const accountDefaultIds = await loadAccountDefaultAccountIds(
+      db,
+      args.companyId
+    );
+    if (accountDefaultIds.length === 0) {
+      return { data: [], error: null };
+    }
+
     const accounts = await db
       .selectFrom("account")
       .select(["id", "number", "name"])
@@ -462,6 +459,7 @@ export async function matchAccountsByCode(
       .where("isGroup", "=", false)
       .where("active", "=", true)
       .where("number", "is not", null)
+      .where("id", "in", accountDefaultIds)
       .execute();
 
     const mappings = await db

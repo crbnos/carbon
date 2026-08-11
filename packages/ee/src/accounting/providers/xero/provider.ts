@@ -91,9 +91,30 @@ export const XERO_PULL_ONLY_ENTITIES = [
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
- * Constrain a resolved sync config to Xero's payment capability: force
- * `payment` to direction "pull-from-accounting", owner "accounting", enabled.
- * Everything else passes through as resolved.
+ * Master + document entities for which Carbon is the system of record:
+ * customers, vendors, items, sales invoices, and bills. Forced
+ * `push-to-accounting` / `owner: "carbon"` so Xero is a downstream mirror —
+ * Carbon's edits always win, and an inbound Xero change to a linked record is
+ * skipped by BaseEntitySyncer's owner guard. This is the standardized "Carbon
+ * owns everything" stance that replaced the per-entity Source of Truth setting;
+ * it mirrors Rillet's RILLET_PUSH_ONLY_ENTITIES. Their per-company `enabled`
+ * flag survives — this constrains ownership, not whether they sync. `payment`
+ * is deliberately excluded: the accounting system owns payments (see
+ * XERO_PULL_ONLY_ENTITIES).
+ */
+export const XERO_CARBON_OWNED_ENTITIES = [
+  "customer",
+  "vendor",
+  "item",
+  "invoice",
+  "bill"
+] as const satisfies readonly AccountingEntityType[];
+
+/**
+ * Constrain a resolved sync config to Xero's capabilities and Carbon's
+ * ownership stance: customers/vendors/items/invoices/bills forced push-only +
+ * owner "carbon" (Carbon owns them); `payment` forced pull-only + enabled (the
+ * accounting system owns it). Everything else passes through as resolved.
  */
 export function buildXeroSyncConfig(
   resolved: GlobalSyncConfig
@@ -104,6 +125,14 @@ export function buildXeroSyncConfig(
       { ...entityConfig }
     ])
   ) as GlobalSyncConfig["entities"];
+
+  for (const entityType of XERO_CARBON_OWNED_ENTITIES) {
+    entities[entityType] = {
+      ...entities[entityType],
+      direction: "push-to-accounting",
+      owner: "carbon"
+    };
+  }
 
   for (const entityType of XERO_PULL_ONLY_ENTITIES) {
     entities[entityType] = {

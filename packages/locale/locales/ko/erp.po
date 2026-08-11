@@ -164,9 +164,6 @@ msgstr "{missingCount}개 누락된 분개 및 {mismatchCount}개 일치하지 �
 msgid "{name} deleted"
 msgstr "{name} 삭제됨"
 
-msgid "{providerName} data overwrites Carbon data"
-msgstr "{providerName} 데이터가 Carbon 데이터를 덮어씁니다"
-
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
 
@@ -2257,9 +2254,6 @@ msgstr "Carbon 클라이언트를 찾을 수 없음"
 
 msgid "Carbon column"
 msgstr "Carbon 열"
-
-msgid "Carbon data overwrites {providerName} data"
-msgstr "Carbon 데이터가 {providerName} 데이터를 덮어씁니다"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon이 귀사의 운영 방식에 맞게 설정되었고, 데이터가 적재되었으며, 팀이 자신 있게 사용할 수 있는 상태입니다. 이 조건이 충족되면 실제 운영을 시작할 준비가 된 것입니다."
@@ -12264,12 +12258,6 @@ msgstr "소스 품목"
 msgid "Source Method"
 msgstr "소스 방법"
 
-msgid "Source of truth"
-msgstr "신뢰할 수 있는 데이터 출처"
-
-msgid "Source of Truth"
-msgstr "신뢰할 수 있는 데이터 출처"
-
 msgid "Source types"
 msgstr "소스 유형"
 
@@ -15177,9 +15165,6 @@ msgstr "이 항목에 대한 각 검사 흐름을 운영하는 문서입니다."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
-
-msgid "Which system's data wins when both Carbon and {providerName} have changed the same record. Entries {providerName} fixes by its own capabilities are shown but can't be changed."
-msgstr "Carbon과 {providerName}이 같은 레코드를 모두 변경한 경우 어느 시스템의 데이터를 우선하는지 결정합니다. {providerName}이 자체 기능으로 수정한 항목은 표시되지만 변경할 수 없습니다."
 
 msgid "Who Can Approve"
 msgstr "승인 가능자"

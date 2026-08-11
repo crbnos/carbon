@@ -499,9 +499,12 @@ describe("listChanges (SupportsIncrementalPull)", () => {
     expect(provider.pullLookbackDays).toBe(29);
   });
 
-  it("fetches only pull-direction entities and normalizes changes", async () => {
+  it("excludes Carbon-owned entities from the CDC sweep, ignoring provider-side changes to them", async () => {
     const { provider } = makeProvider();
 
+    // QBO reports changes to a customer and an invoice — but Carbon owns those
+    // (buildQboSyncConfig forces customer/vendor/item/invoice/bill push-only),
+    // so the sweep must neither request nor ingest them.
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
         CDCResponse: [
@@ -526,27 +529,16 @@ describe("listChanges (SupportsIncrementalPull)", () => {
       since: "2026-07-08T00:00:00.000Z"
     });
 
-    // DEFAULT_SYNC_CONFIG: customer/vendor/invoice/bill are two-way; item
-    // and purchaseOrder are push-only and never requested
-    const cdcUrl = fetchMock.mock.calls[0]?.[0] as string;
-    expect(cdcUrl).toContain(
-      `entities=${encodeURIComponent("Customer,Vendor,Invoice,Bill")}`
-    );
+    // Only the accounting-owned payment entities are swept; the Carbon-owned
+    // master/document entities are absent from the request…
+    const cdcUrl = decodeURIComponent(fetchMock.mock.calls[0]?.[0] as string);
+    expect(cdcUrl).toContain("entities=Payment,BillPayment");
+    expect(cdcUrl).not.toContain("Customer");
+    expect(cdcUrl).not.toContain("Invoice");
 
-    expect(result.changes).toEqual([
-      {
-        entityType: "customer",
-        remoteId: "63",
-        updatedAt: "2026-07-08T13:07:59-07:00",
-        deleted: false
-      },
-      {
-        entityType: "invoice",
-        remoteId: "7",
-        updatedAt: null,
-        deleted: true
-      }
-    ]);
+    // …and because they aren't requested, changeDataCapture ignores them:
+    // provider-side edits to Carbon-owned records never flow back.
+    expect(result.changes).toEqual([]);
   });
 
   it("still requests the forced-pull payment entities even when every stored entity is push-only", async () => {
@@ -612,5 +604,55 @@ describe("buildQboSyncConfig — payment force-enable (pull-only)", () => {
       direction: "pull-from-accounting",
       owner: "accounting"
     });
+  });
+});
+
+describe("buildQboSyncConfig — Carbon-owned master + documents", () => {
+  it.each([
+    "customer",
+    "vendor",
+    "item",
+    "invoice",
+    "bill"
+  ] as const)("forces `%s` to push-only + owner carbon regardless of the stored config", (entityType) => {
+    const stored = structuredClone(DEFAULT_SYNC_CONFIG);
+    // Pretend the company had previously set this entity accounting-owned
+    // two-way (the old Source of Truth default) — the force must override it.
+    stored.entities[entityType] = {
+      enabled: true,
+      direction: "two-way",
+      owner: "accounting"
+    };
+
+    expect(buildQboSyncConfig(stored).entities[entityType]).toEqual({
+      enabled: true,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    });
+  });
+
+  it("preserves the per-company `enabled` flag while forcing ownership", () => {
+    const stored = structuredClone(DEFAULT_SYNC_CONFIG);
+    stored.entities.bill = {
+      enabled: false,
+      direction: "two-way",
+      owner: "accounting"
+    };
+
+    expect(buildQboSyncConfig(stored).entities.bill).toEqual({
+      enabled: false,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    });
+  });
+
+  it("leaves payment accounting-owned and does not touch unforced entities", () => {
+    const applied = buildQboSyncConfig(structuredClone(DEFAULT_SYNC_CONFIG));
+    // payment stays the accounting-owned pull-only exception
+    expect(applied.entities.payment.owner).toBe("accounting");
+    // purchaseOrder is neither Carbon-owned-forced nor payment — passes through
+    expect(applied.entities.purchaseOrder).toEqual(
+      DEFAULT_SYNC_CONFIG.entities.purchaseOrder
+    );
   });
 });

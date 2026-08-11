@@ -10,12 +10,12 @@ import {
   getAccountingIntegration,
   getAccountMappings,
   getDimensionValueMappings,
-  getEntitySyncView,
   getProviderIntegration,
   getSyncOperations,
   getUnmappedPostingAccounts,
   getUnmappedSlottedDimensionValues,
   JOURNAL_ENTRY_SOURCE_TYPES,
+  loadAccountDefaultAccountIds,
   matchAccountsByCode,
   matchDimensionValuesByName,
   POSTING_POLICY,
@@ -75,7 +75,6 @@ import {
   dimensionSlotsUpdateValidator,
   dimensionValueMappingBulkUpsertValidator,
   dimensionValueMappingUpsertValidator,
-  entitySyncSettingsValidator,
   postingSyncSettingsValidator
 } from "~/modules/settings/settings.models";
 import {
@@ -86,7 +85,6 @@ import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMappin
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
-import { SourceOfTruth } from "~/modules/settings/ui/Integrations/SourceOfTruth";
 import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -182,7 +180,7 @@ async function getAccountMappingTabData(
 ) {
   const db = getDatabaseClient();
 
-  const [mappings, unmapped, proposals] = await Promise.all([
+  const [mappings, unmapped, proposals, accountDefaultIds] = await Promise.all([
     getAccountMappings(db, { companyId, integration: integrationId }),
     getUnmappedPostingAccounts(db, { companyId, integration: integrationId }),
     chart.length > 0
@@ -191,7 +189,8 @@ async function getAccountMappingTabData(
           integration: integrationId,
           providerAccounts: chart
         })
-      : Promise.resolve({ data: [], error: null })
+      : Promise.resolve({ data: [], error: null }),
+    loadAccountDefaultAccountIds(db, companyId)
   ]);
 
   // Don't block the settings drawer on a mapping load failure — render
@@ -202,8 +201,19 @@ async function getAccountMappingTabData(
     }
   }
 
+  // The tab manages only accountDefault accounts (the mappable set — every
+  // automated posting runs through one), so hide any legacy mapping for an
+  // account outside that set: it never syncs and would only inflate the list.
+  // getAccountMappings itself is left untouched so the journal/bill/invoice
+  // syncers' account resolution keeps seeing every mapping. Unmapped and
+  // proposals are already accountDefault-scoped in @carbon/ee.
+  const mappableIds = new Set(accountDefaultIds);
+  const scopedMappings = (mappings.data ?? []).filter((mapping) =>
+    mappableIds.has(mapping.accountId)
+  );
+
   return {
-    mappings: mappings.data ?? [],
+    mappings: scopedMappings,
     unmapped: unmapped.data ?? [],
     chart,
     proposals: proposals.data ?? []
@@ -510,7 +520,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       dynamicOptions: {},
       syncActivity: null,
       accountMapping: null,
-      entitySync: null,
       postingSync: null,
       dimensionSync: null
     };
@@ -699,16 +708,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? await getAccountMappingTabData(companyId, integrationId, chartAccounts)
     : null;
 
-  // Source of Truth tab data — per-entity owner view, capability-driven via
-  // the provider's sync-config force function (replaces Xero's old bespoke
-  // customerOwner/vendorOwner/itemOwner/invoiceOwner/billOwner settings).
-  const entitySync = isAccountingInstalled
-    ? {
-        providerName: integration.name,
-        entities: getEntitySyncView(integrationId, metadata)
-      }
-    : null;
-
   const resolvedPostingSettings = isAccountingInstalled
     ? resolvePostingSyncSettings(metadata)
     : null;
@@ -755,7 +754,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dynamicOptions,
     syncActivity,
     accountMapping,
-    entitySync,
     postingSync,
     dimensionSync
   };
@@ -947,98 +945,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         ? "account mapping"
         : `${mappings.length} account mappings`;
     return data({}, await flash(request, success(`Saved ${mappingNoun}`)));
-  }
-
-  // Persist per-entity Source of Truth owner overrides (Source of Truth
-  // tab): read-modify-write syncConfig.entities.<entity>.owner for the
-  // entities the provider's capability-forcing (getEntitySyncView) marks
-  // configurable. Any submitted entry for a provider-forced entity is
-  // ignored — the UI never renders a control for one, but the server
-  // re-checks so a forced entity's owner can never be overridden. Stays on
-  // the page so the tab revalidates in place.
-  if (formData.get("intent") === "update-entity-sync") {
-    const validation = await validator(entitySyncSettingsValidator).validate(
-      formData
-    );
-
-    if (validation.error) {
-      return validationError(validation.error);
-    }
-
-    const { entityOwners } = validation.data;
-
-    const existing = await getIntegration(client, integrationId, companyId);
-    if (existing.error || !existing.data) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(existing.error, "Failed to load integration settings")
-        )
-      );
-    }
-
-    const existingMetadata =
-      (existing.data.metadata as Record<string, unknown>) ?? {};
-
-    const configurableEntityTypes = new Set<string>(
-      getEntitySyncView(integrationId, existingMetadata)
-        .filter((entry) => entry.configurable)
-        .map((entry) => entry.entityType)
-    );
-
-    const existingSyncConfig =
-      (existingMetadata.syncConfig as Record<string, unknown> | undefined) ??
-      {};
-    const existingEntities =
-      (existingSyncConfig.entities as Record<string, unknown> | undefined) ??
-      {};
-
-    const updatedEntities: Record<string, unknown> = { ...existingEntities };
-    for (const entry of entityOwners) {
-      const separator = entry.lastIndexOf("|");
-      const entityType = entry.slice(0, separator);
-      const owner = entry.slice(separator + 1);
-      if (!configurableEntityTypes.has(entityType)) continue;
-
-      updatedEntities[entityType] = {
-        ...(existingEntities[entityType] as Record<string, unknown>),
-        owner
-      };
-    }
-
-    const metadata = {
-      ...existingMetadata,
-      syncConfig: {
-        ...existingSyncConfig,
-        entities: updatedEntities
-      }
-    };
-
-    const update = await upsertCompanyIntegration(client, {
-      id: integrationId,
-      active: existing.data.active ?? true,
-      metadata: metadata as Json,
-      companyId,
-      updatedBy: userId
-    });
-
-    if (update.error) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(update.error, "Failed to update source of truth settings")
-        )
-      );
-    }
-
-    await invalidateIntegrationHealthCache(integrationId, companyId);
-
-    return data(
-      {},
-      await flash(request, success("Updated source of truth settings"))
-    );
   }
 
   // Save the dimension-slot configuration (Dimensions tab): validate the
@@ -1561,7 +1467,6 @@ export default function IntegrationRoute() {
     dynamicOptions,
     syncActivity,
     accountMapping,
-    entitySync,
     postingSync,
     dimensionSync
   } = useLoaderData<typeof loader>();
@@ -1569,23 +1474,10 @@ export default function IntegrationRoute() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Accounting-category integrations get Source of Truth, Account Mapping,
-  // Posting and Sync Activity tabs next to the Settings form (deep-linkable
-  // via ?tab=<value>).
+  // Accounting-category integrations get Account Mapping, Posting, Dimensions
+  // and Sync Activity tabs next to the Settings form (deep-linkable via
+  // ?tab=<value>).
   const tabs: IntegrationFormTab[] = [];
-  if (entitySync) {
-    tabs.push({
-      value: "source-of-truth",
-      label: <Trans>Source of Truth</Trans>,
-      content: (tabBar) => (
-        <SourceOfTruth
-          tabs={tabBar}
-          providerName={entitySync.providerName}
-          entities={entitySync.entities}
-        />
-      )
-    });
-  }
   if (accountMapping) {
     tabs.push({
       value: "account-mapping",
