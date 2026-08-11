@@ -1,0 +1,113 @@
+paths:
+  - "packages/database/supabase/functions/shared/precision.ts"
+  - "packages/utils/src/math.ts"
+  - "packages/utils/src/format.ts"
+  - "packages/checks/src/conformance/no-derived-percent-column.ts"
+  - "packages/checks/src/conformance/no-raw-rounding.ts"
+  - "packages/checks/src/conformance/no-inline-fraction-digits.ts"
+  - "packages/checks/src/sources/typescript.ts"
+  - "packages/ee/src/accounting/providers/xero/serialize.ts"
+  - "apps/erp/app/components/Form/TaxFields.tsx"
+  - "apps/erp/app/hooks/usePriceFormatter.tsx"
+
+# Numeric Precision & Formatting
+
+The numeric standard for every price, rate, quantity, and amount in Carbon.
+Source of truth: `packages/database/supabase/functions/shared/precision.ts`
+(Deno-side because the edge runtime only mounts `supabase/functions/`;
+`packages/utils/src/math.ts` re-exports it for Node/browser — that relative
+import is BY DESIGN, not an import to "fix").
+
+## Two storage scales
+
+| Class | Scale | Examples |
+|---|---|---|
+| Internal values | `SCALE = 5` | per-unit prices, rates (0–1 fractions), quantities, GL journal lines, exchange rates |
+| Settlement values | `currency.decimalPlaces` (DB column — authoritative over Intl/CLDR) | invoice balance/amountDue, applied payment amounts, document totals, tax amounts |
+
+Settlement values NEVER carry 5 decimals — `post-payment` writes balances at
+the currency's decimals, and only internal GL journal lines carry scale 5.
+Invoice paid-status dust forgiveness (`INVOICE_DUST_THRESHOLD = 0.01`,
+`invoicing.models.ts`) and post-payment's `0.0001` unapplied-dust band are
+deliberate business behavior layered on top.
+
+## Three-boundary rule
+
+Round only at **persist**, **display**, and **compare**. Intermediates stay at
+full float precision; Postgres computes derived values (generated columns);
+`sum()` accumulates first and rounds once.
+
+## The API (flat, no namespaces)
+
+- `round(value, scale = SCALE, mode = HalfUp)` — exponent-shift rounding
+  (`round(1.005, 2) === 1.01`), ties away from zero to match Postgres.
+- `withScrap(target, scrap)` — scrap allowance ceils to whole units; the
+  target itself is NEVER rounded (`withScrap(4.5, 0) === 4.5`).
+- `applyRate(base, rate, decimals)` — tax/discount → settlement amount;
+  `decimals` comes from `currency.decimalPlaces` — data, never a literal.
+- `equals(a, b)` / `EPSILON = 1e-6` — the one float-noise tolerance.
+- `assertBalanced(debits, credits, tolerance = EPSILON)` — ledger invariant.
+  `tolerance` is a BUSINESS refusal threshold: payment/memo posting passes
+  `0.01`, manual journals and period close use `0.001`. Do not unify them and
+  do not tighten to EPSILON — FX journals carry genuine sub-cent residuals.
+
+**No scale literals**: a numeric literal as the `scale` argument outside
+`precision.ts` is a violation — internal values use the default, settlement
+passes `currency.decimalPlaces`. (Whole-unit ceils use `round(x, 0, Up)`;
+external boundaries like Xero use the adapter's named contract constants in
+`packages/ee/src/accounting/providers/xero/serialize.ts`.)
+
+## Percentages are stored facts
+
+`taxPercent` and its amount are ONE VALUE PAIR — one relative, one absolute.
+**Any write that sets one must set both**: copy the percent when the source
+row has one (duplicate, convert); derive it once (`amount / subtotal`, the
+canonical denominator `unitPrice × qty + shippingCost`) when only an amount
+exists (AI extraction, supplier portal). Never a GENERATED column that divides
+(`no-derived-percent-column`) — the old derived echo turned a typed 6.25% into
+6.22% via the cents-rounded amount. Amount edits never rewrite the rate
+(`TaxFields` one-way coupling); base changes re-derive the amount via
+`applyRate`.
+
+## Display digits = input digits (named kinds)
+
+`packages/utils/src/format.ts` defines the ONLY digit choices:
+
+| Kind | Digits | Notes |
+|---|---|---|
+| Percent / rate | min 0, max 3 | "5%", "6.25%", "6.255%" |
+| Quantity | min 0, max 5 | "3", "4.33333", "0.00125" — no "<0.01" placeholder |
+| Money (settlement) | min = max = `currency.decimalPlaces` | "$4.50", "¥63" — always padded |
+| Price (per-unit) | min = `currency.decimalPlaces`, max 5 | "$0.164", "$4.50" |
+
+Call sites pick a kind (`formatMoney/Price/Percent/Quantity`, the
+`useCurrencyFormatter`/`usePriceFormatter`/`usePercentFormatter`/
+`useQuantityFormatter` hooks) — never `minimumFractionDigits`/
+`maximumFractionDigits` inline (`no-inline-fraction-digits`), and module-local
+`*_PRECISION` constants are the same violation. **Editable inputs MUST use
+`INPUT_FORMAT.*`**: react-aria's blur commit runs `parse(format(x))`, so the
+input formatter is part of arithmetic. (`packages/react/src/Number.tsx`
+stabilizes `formatOptions` by value, so inline `INPUT_FORMAT.money(c, d)`
+calls are safe.)
+
+## Raw rounding is banned
+
+`Math.round/ceil/floor` and `.toFixed` on value-bearing numbers fail the
+`no-raw-rounding` check — use the API above. Genuinely-integer sites (serial
+counts, pagination, lead-time buckets, AQL ladders, geometry) live in the
+`@carbon/checks` baseline, not in exemption lists.
+
+## Runtime NUMERIC decoding
+
+Both Postgres drivers decode NUMERIC (OID 1700) to JS numbers so runtime
+matches the generated types: node-postgres via `setTypeParser`, deno-postgres
+(v0.19.x, aliased `"pg"` in `functions/deno.json`) via `controls.decoders` —
+both registered in `functions/lib/postgres/index.ts`. Existing `Number(...)`
+coercions are harmless no-ops; float8 columns still arrive as strings.
+
+## Conformance
+
+Three checks in `@carbon/checks` guard the standard: `no-derived-percent-column`
+(SQL migrations), `no-raw-rounding` and `no-inline-fraction-digits` (all app
+TS via `sources/typescript.ts`). Fix new hits — baseline only NOT-IN-CLASS
+sites.
