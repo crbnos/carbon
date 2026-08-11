@@ -11,6 +11,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useFetcher, useParams } from "react-router";
@@ -153,7 +154,7 @@ const WarehouseTransferLineForm = ({
                 name="quantity"
                 label={t`Quantity`}
                 minValue={0.0001}
-                step={0.0001}
+                step={INPUT_STEP.quantity}
               />
               <StorageUnit
                 name="fromStorageUnitId"

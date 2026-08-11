@@ -104,6 +104,15 @@ input formatter is part of arithmetic. (`packages/react/src/Number.tsx`
 stabilizes `formatOptions` by value, so inline `INPUT_FORMAT.money(c, d)`
 calls are safe.)
 
+**A `step` is arithmetic too** — react-aria SNAPS the committed value to the
+nearest multiple of it, so a step coarser than the field's scale silently
+truncates what the formatter would otherwise display: `step={0.0001}` on a
+rate turned a typed 6.255% into 6.25%, and 12.345% into 12.34%. Take the step
+from `INPUT_STEP.*` (paired with the kinds above — `rate`/`quantity`/`price`
+at 1e-5, `money(decimalPlaces)` at the currency's own unit) or omit the prop.
+A step literal at a call site is a violation for the same reason a digit
+literal is.
+
 ## Raw rounding is banned
 
 `Math.round/ceil/floor` and `.toFixed` on value-bearing numbers fail the

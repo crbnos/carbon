@@ -28,7 +28,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
+import { getItemReadableId, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
@@ -853,7 +853,7 @@ const SalesInvoiceLineForm = ({
                             value={assetData.taxPercent}
                             minValue={0}
                             maxValue={1}
-                            step={0.0001}
+                            step={INPUT_STEP.rate}
                             formatOptions={INPUT_FORMAT.rate}
                             onChange={(value) =>
                               setAssetData((d) => ({

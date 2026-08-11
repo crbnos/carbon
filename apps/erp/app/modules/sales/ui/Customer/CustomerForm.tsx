@@ -12,7 +12,7 @@ import {
   ModalCardTitle,
   toast
 } from "@carbon/react";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useRef } from "react";
@@ -196,7 +196,7 @@ const CustomerForm = ({
                     termId="customer-default-tax-percent"
                     minValue={0}
                     maxValue={1}
-                    step={0.0001}
+                    step={INPUT_STEP.rate}
                     formatOptions={INPUT_FORMAT.rate}
                   />
 

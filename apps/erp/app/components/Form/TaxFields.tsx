@@ -1,5 +1,5 @@
 import { NumberControlled } from "@carbon/form";
-import { applyRate, INPUT_FORMAT, round } from "@carbon/utils";
+import { applyRate, INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 
@@ -110,7 +110,7 @@ export function TaxFields({
         value={percent}
         minValue={0}
         maxValue={1}
-        step={0.0001}
+        step={INPUT_STEP.rate}
         formatOptions={INPUT_FORMAT.rate}
         isReadOnly={isReadOnly}
         onChange={(value) =>

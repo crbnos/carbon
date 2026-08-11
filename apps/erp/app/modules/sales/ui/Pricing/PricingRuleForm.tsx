@@ -12,7 +12,7 @@ import {
   ModalDrawerTitle,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import {
@@ -136,7 +136,7 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
                     label={t`Amount`}
                     minValue={0}
                     maxValue={1}
-                    step={0.01}
+                    step={INPUT_STEP.rate}
                     formatOptions={INPUT_FORMAT.rate}
                   />
                 ) : (

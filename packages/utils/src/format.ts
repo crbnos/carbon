@@ -52,6 +52,27 @@ export const INPUT_FORMAT = {
     priceFormatOptions(currency, decimalPlaces)
 };
 
+/** One step of the smallest unit the scale can hold: 1e-5. */
+const SCALE_STEP = 1 / 10 ** SCALE;
+
+/**
+ * Stepper granularity, paired with the kinds above — a `step` is not a UI
+ * nicety, it SNAPS the committed value. react-aria rounds to the nearest
+ * multiple of `step` on commit, so a step coarser than the field's scale
+ * silently truncates: `step: 0.0001` on a rate snapped a typed 6.255%
+ * (0.06255) down to 6.25%, which no amount of formatting could reveal.
+ * Never write a step literal at a call site — take it from here, or omit the
+ * prop entirely.
+ */
+export const INPUT_STEP = {
+  /** 1e-5 as a fraction = 0.001% — matches the rate kind's 3 percent-digits. */
+  rate: SCALE_STEP,
+  quantity: SCALE_STEP,
+  price: SCALE_STEP,
+  /** Settlement money steps in its own smallest unit (1 for JPY, 0.01 for USD). */
+  money: (decimalPlaces: number) => 1 / 10 ** decimalPlaces
+};
+
 export function formatMoney(
   value: number,
   locale: string,
