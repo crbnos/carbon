@@ -26,6 +26,7 @@ Carbon cannot enforce commercial/compliance restrictions when an item is added t
 - **ERP** — new module `~/modules/item-rules` (`itemRuleValidator`, service CRUD + assignment counts); enforcement in four route actions (`quote` new/edit, `sales-order` new/edit) returning `{ violations, ruleNames }` when blocked, exactly like shipment posting; new routes `x+/items+/item-rules*` + assign/unassign; `path.to.itemRule*` helpers; `itemRulesQuery` cache key.
 - **Notifications** — new `NotificationEvent.ItemRuleViolation` (topic Sales; in-app + email), notify fan-out branch resolving recipients from `itemRuleNotificationGroup`, fired on blocked attempts and acknowledged overrides; `updateItemRuleNotificationSetting` in the settings service. Acknowledgment rows inserted per deduped violation, never failing the action.
 - No public REST surface changes beyond regenerated OpenAPI/types for the new tables.
+- **Follow-on refactor (shared-code unification):** item rules reuses the storage-rules engine, evaluator structure, and violation modal/hook instead of duplicating them; the shared code is therefore renamed from `storage-rules*` to neutral `rules` naming (`packages/utils/src/rules.ts`, `packages/ee/src/rules/{storage,item}`, exports `./rules` + `./rules.server`, `RuleViolationModal`/`useRuleViolations`). Tables stay separate. Details in the "Follow-on refactor" section below.
 
 ### UI changes
 
@@ -49,7 +50,7 @@ Storage-rules admin module to clone: `apps/erp/app/modules/storage-rules/` (mode
 
 ## Follow-on refactor — rules code-layer unification
 
-Once item rules land as a sibling of storage rules, unify the shared code under `rules` naming ("Option A": unify the **code** layer, keep the **DB** layer separate). The paths throughout this spec already use the unified names (`rules.ts`, `rules/storage`, `rules/item`).
+Item rules does not get its own rule machinery — it **shares** the storage-rules code: the pure engine (AST compile/evaluate, field registry), the evaluator structure, and the one violation modal + hook. That leaves a naming problem: a sales feature importing from `storage-rules`-named files/exports misreads as a dependency on the storage *feature* rather than on a shared engine. So, once item rules lands as a sibling of storage rules, refactor the shared code under neutral `rules` naming ("Option A": unify the **code** layer, keep the **DB** layer separate). The paths throughout this spec already use the unified names (`rules.ts`, `rules/storage`, `rules/item`).
 
 **Decision.** Keep the `storageRule*` and `itemRule*` tables separate — separate RLS surfaces are simpler to reason about, self-hosted instances run migrations unattended (a table merge is a risky data migration), and the two schemas are under divergence pressure (different surfaces, filters, evidence models). Unify only the code so the shared engine, evaluators, and violation UI live under one name. A table merge (Option B/B′) is deliberately deferred until a real cross-family requirement appears (e.g. one rule targeting both storage and sales surfaces).
 
