@@ -37,6 +37,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { getItemById } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -260,6 +261,7 @@ const BillOfProcess = ({
   const { id: userId } = useUser();
 
   const [allItems] = useItems();
+  const itemName = getItemById(allItems, makeMethod.itemId)?.name;
 
   const materialItemIds = useMemo(
     () => new Set((materials ?? []).map((m) => m.itemId)),
@@ -818,6 +820,11 @@ const BillOfProcess = ({
         <CardHeader>
           <CardTitle className="flex flex-row items-center gap-2">
             <Trans>Bill of Process</Trans>
+            {itemName && (
+              <span className="text-xs text-muted-foreground font-normal">
+                {itemName}
+              </span>
+            )}
             {isReadOnly && (
               <Tooltip>
                 <TooltipTrigger className="text-muted-foreground">
