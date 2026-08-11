@@ -12,9 +12,8 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuMoveDown, LuMoveUp, LuPencil, LuPlus } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 import type { StockMovement } from "../../types";
 
@@ -26,12 +25,13 @@ type InventoryCountHistoryProps = {
 // One posting round. Every ledger row written by a single post shares the same
 // `createdAt` (Postgres `now()` = transaction_timestamp, constant per txn), so a
 // distinct `createdAt` is exactly one post — the original count or a later
-// rectification.
+// stock-movement correction of one of its movements (corrections copy the
+// count's documentType/documentId, so they show up here).
 type Version = {
   createdAt: string;
   createdBy: string | null;
   movements: StockMovement[];
-  isRectification: boolean;
+  isCorrection: boolean;
 };
 
 // Deep-link to the item's Activity panel with this exact ledger row flashed.
@@ -59,7 +59,7 @@ const QuantityDelta = ({ value }: { value: number | string | null }) => {
 };
 
 // Group movements into posting rounds and order them newest-first. The earliest
-// round is the original count; every later round is a rectification (it also
+// round is the original count; every later round is a correction (it also
 // carries `correctionOfItemLedgerId` links back to the rows it fixes).
 function toVersions(movements: StockMovement[]): Version[] {
   const byCreatedAt = new Map<string, StockMovement[]>();
@@ -76,8 +76,8 @@ function toVersions(movements: StockMovement[]): Version[] {
       createdAt,
       createdBy: rows[0]?.createdBy ?? null,
       movements: rows,
-      // First round = original post; anything after is a rectification.
-      isRectification: index > 0
+      // First round = original post; anything after is a correction.
+      isCorrection: index > 0
     }))
     .reverse();
 }
@@ -87,10 +87,9 @@ const InventoryCountHistory = ({
   onClose
 }: InventoryCountHistoryProps) => {
   const { t } = useLingui();
-  const { formatDateTime } = useDateFormatter();
 
   const versions = useMemo(() => toVersions(movements), [movements]);
-  const rectifications = versions.filter((v) => v.isRectification).length;
+  const corrections = versions.filter((v) => v.isCorrection).length;
 
   return (
     <Drawer
@@ -107,19 +106,19 @@ const InventoryCountHistory = ({
         <DrawerHeader>
           <DrawerTitle>{t`Count History`}</DrawerTitle>
           <DrawerDescription>
-            {rectifications === 0
-              ? t`Posted once, no rectifications.`
-              : rectifications === 1
-                ? t`Posted once, rectified 1 time.`
-                : t`Posted once, rectified ${rectifications} times.`}
+            {corrections === 0
+              ? t`Posted once, no corrections.`
+              : corrections === 1
+                ? t`Posted once, corrected 1 time.`
+                : t`Posted once, corrected ${corrections} times.`}
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody>
           <div className="w-full space-y-6">
             {versions.map((version, index) => {
-              // versions are newest-first; the rectification number counts up
+              // versions are newest-first; the correction number counts up
               // from the oldest, so derive it from the tail distance.
-              const rectifyNumber = versions.length - 1 - index;
+              const correctionNumber = versions.length - 1 - index;
               return (
                 <div key={version.createdAt} className="relative w-full">
                   {/* timeline rail */}
@@ -130,12 +129,12 @@ const InventoryCountHistory = ({
                   <HStack spacing={3} className="mb-3 items-start">
                     <div
                       className={
-                        version.isRectification
+                        version.isCorrection
                           ? "z-10 flex size-8 items-center justify-center rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-500"
                           : "z-10 flex size-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-500"
                       }
                     >
-                      {version.isRectification ? (
+                      {version.isCorrection ? (
                         <LuPencil className="size-4" />
                       ) : (
                         <LuPlus className="size-4" />
@@ -145,23 +144,26 @@ const InventoryCountHistory = ({
                       <HStack className="justify-between">
                         <HStack spacing={2}>
                           <span className="font-semibold text-sm">
-                            {version.isRectification
-                              ? t`Rectification ${rectifyNumber}`
+                            {version.isCorrection
+                              ? t`Correction ${correctionNumber}`
                               : t`Original Count`}
                           </span>
-                          {version.isRectification && (
+                          {version.isCorrection && (
                             <Badge variant="yellow">{t`Correction`}</Badge>
                           )}
                         </HStack>
                         <span className="whitespace-nowrap text-muted-foreground text-xs tabular-nums">
-                          {formatDateTime(version.createdAt)}
+                          <DateTime
+                            value={version.createdAt}
+                            variant="absolute"
+                          />
                         </span>
                       </HStack>
                       <EmployeeAvatar employeeId={version.createdBy} />
                     </VStack>
                   </HStack>
 
-                  <div className="ml-11 rounded-xl border border-border divide-y divide-border">
+                  <div className="ml-11 rounded-lg border border-border divide-y divide-border">
                     {version.movements.map((m) => (
                       <div
                         key={m.id}

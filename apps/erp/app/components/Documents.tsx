@@ -21,24 +21,27 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import {
-  convertKbToString,
-  isModelRawDownloadable,
-  MODEL_RAW_KEEP_MAX_BYTES
-} from "@carbon/utils";
+import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
-import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
+import {
+  DocumentPreview,
+  FileDropzone,
+  Hyperlink,
+  ModelOptimizedIndicator
+} from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { useDateFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload, StorageItem } from "~/types";
+import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+import { DateTime } from "./DateTime";
 
 const logger = getLogger("erp", "documents");
 
@@ -62,7 +65,6 @@ const Documents = ({
   writeBucketPermission
 }: DocumentsProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const permissions = usePermissions();
   const revalidator = useRevalidator();
   const { carbon } = useCarbon();
@@ -123,26 +125,11 @@ const Documents = ({
 
   const downloadModel = useCallback(
     async (model: ModelUpload) => {
-      if (!model.modelPath || !model.modelName) {
-        toast.error(t`Model data is missing`);
-        return;
-      }
-
-      const url = path.to.file.previewFile(`temp-staging/${model.modelPath}`);
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = model.modelName;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
-      } catch (error) {
+      const result = await downloadModelFile(model);
+      if (result === "unavailable") {
+        toast.error(t`The original model file is no longer available`);
+      } else if (result === "error") {
         toast.error(t`Error downloading file`);
-        logger.error("Error", { error: error });
       }
     },
 
@@ -311,6 +298,9 @@ const Documents = ({
                       >
                         {modelUpload.modelName}
                       </Hyperlink>
+                      <ModelOptimizedIndicator
+                        modelPath={modelUpload.modelPath}
+                      />
                     </HStack>
                   </Td>
                   <Td className="text-xs font-mono">
@@ -332,13 +322,14 @@ const Documents = ({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          {isModelRawDownloadable(modelUpload.modelPath) && (
-                            <DropdownMenuItem
-                              onClick={() => downloadModel(modelUpload)}
-                            >
-                              <Trans>Download</Trans>
-                            </DropdownMenuItem>
-                          )}
+                          {/* Always offered: the server resolves the retained
+                              original (xbf rows included); only legacy rows
+                              404 → surfaced as a toast. */}
+                          <DropdownMenuItem
+                            onClick={() => downloadModel(modelUpload)}
+                          >
+                            <Trans>Download</Trans>
+                          </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link
                               to={
@@ -407,7 +398,11 @@ const Documents = ({
                     )}
                   </Td>
                   <Td className="text-xs font-mono">
-                    {file.created_at ? formatDate(file.created_at) : "--"}
+                    {file.created_at ? (
+                      <DateTime value={file.created_at} variant="date" />
+                    ) : (
+                      "--"
+                    )}
                   </Td>
                   <Td>
                     <div className="flex justify-end w-full">

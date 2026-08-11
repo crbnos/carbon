@@ -14,6 +14,7 @@
     "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@carbon/viewer": "workspace:*",
+    "@carbon/workflows": "workspace:*",
     "@internationalized/date": "catalog:",
     "@react-email/components": "catalog:",
     "@react-pdf/renderer": "catalog:",
@@ -34,6 +35,7 @@
     "sst": "catalog:",
     "supabase": "catalog:",
     "tsup": "catalog:",
+    "undici": "^8.10.0",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -27,7 +27,7 @@ Quotes (with cost rollup and pricing), sales orders, sales RFQs, customer manage
 
 ### Never
 - Bypass the `convert` edge function for quote→order or RFQ→quote conversions.
-- Delete `quoteLinePrice` rows without preserving `discountPercent`, `leadTime`, and `categoryMarkups` — use `upsertQuoteLinePrices`.
+- Delete `quoteLinePrice` rows when *rewriting* a line's pricing — that must preserve `discountPercent`, `leadTime`, `shippingCost`, and `categoryMarkups` via `upsertQuoteLinePrices`. Deleting rows for a quantity break the line no longer offers is different and required: see `reconcileQuantityBreaks` (`sales.utils.ts`) and its use in `x+/quote+/$quoteId.$lineId.details.tsx`. Orphaned rows render as selectable options on the customer share page.
 - Store `discountPercent` as a whole number (e.g., 10 instead of 0.10).
 
 ## Validation Commands
@@ -62,6 +62,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=sales
 - `closeSalesOrder` / `releaseSalesOrder` / `finalizeQuote` — status transitions
 - `getQuote` / `getQuoteLines` / `getQuoteLinePrices` / `getQuoteMaterials` / `getQuoteOperations` — quote reads
 - `getSalesOrder(s)` / `getSalesOrderLines` / `getExternalSalesOrderLines` — order reads
+- `getOpenSalesOrderLinesForItem` — sales order lines a job can link to (open orders, matching item); `isSalesOrderClosed` / `OPEN_SALES_ORDER_STATUSES` gate eligibility
 - `getCustomer(s)` / `getCustomerContacts` / `getCustomerLocations` — customer reads
 - `getPricingRules` / `createPricingRule` / `duplicatePricingRule` — rule management
 - `getOpportunity` / `getOpportunityDocuments` — deal tracking

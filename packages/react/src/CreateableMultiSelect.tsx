@@ -5,15 +5,12 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useId, useMemo, useRef, useState } from "react";
 import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
 import { LuCirclePlus, LuSettings2 } from "react-icons/lu";
-import { RxMagnifyingGlass } from "react-icons/rx";
-import { Badge, BadgeCloseButton } from "./Badge";
-import { Button } from "./Button";
 import {
   Command,
   CommandGroup,
   CommandInput,
   CommandItem,
-  multiSelectTriggerVariants
+  CommandTrigger
 } from "./Command";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
@@ -85,24 +82,22 @@ const CreatableMultiSelect = forwardRef<
 
     const id = useId();
 
-    const handleUnselect = (item: string) => {
-      onChange(value.filter((i) => i !== item));
-    };
-
     const hasSelections = value.length > 0;
     const isInlinePreview = !!inline;
-    const dropdownContentWidthCh = useMemo(() => {
-      if (options.length === 0) return undefined;
 
-      const maxOptionChars = options.reduce((longest, option) => {
+    const selectedLabels = value
+      .map((item) => options.find((option) => option.value === item)?.label)
+      .filter((label): label is string => Boolean(label));
+    const selectedLabelText = selectedLabels.join(", ");
+    // Real-text sizer instead of a ch estimate — see Combobox.tsx.
+    const longestOptionText = useMemo(() => {
+      return options.reduce((longest, option) => {
         const combined = [option.label, option.helper]
           .filter(Boolean)
           .join(" ");
 
-        return Math.max(longest, combined.length);
-      }, 0);
-
-      return Math.min(72, Math.max(36, maxOptionChars + 8));
+        return combined.length > longest.length ? combined : longest;
+      }, "");
     }, [options]);
 
     return (
@@ -140,62 +135,47 @@ const CreatableMultiSelect = forwardRef<
                 onClick={() => setOpen(true)}
               />
             ) : (
-              <Button
+              <CommandTrigger
                 aria-controls={id}
                 aria-expanded={open}
                 role="combobox"
-                tabIndex={0}
-                variant="secondary"
-                className={cn(
-                  multiSelectTriggerVariants({ size, hasSelections }),
-                  "bg-transparent px-2",
-                  className
-                )}
-                isDisabled={isReadOnly}
+                size={size}
+                className={cn("min-w-[160px]", className)}
+                ref={ref}
+                disabled={isReadOnly}
                 onClick={() => {
                   if (!isReadOnly) setOpen(!open);
                 }}
-                onKeyDown={(e) => {
-                  if ((e.key === "Enter" || e.key === " ") && !isReadOnly) {
-                    setOpen(!open);
-                  }
-                }}
-                asChild
               >
-                <div>
-                  {hasSelections ? (
-                    <div className="flex gap-1 flex-wrap">
-                      {value.map((item) => (
-                        <SelectedOption
-                          key={item.toString()}
-                          item={item}
-                          options={options}
-                          onUnselect={handleUnselect}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      {placeholder ?? t`Search...`}
-                    </span>
-                  )}
-
-                  <RxMagnifyingGlass className="h-4 w-4 shrink-0 opacity-50" />
-                </div>
-              </Button>
+                {hasSelections ? (
+                  <TruncatedTooltipText
+                    className="block min-w-0 flex-1 truncate text-left"
+                    tooltip={selectedLabelText}
+                  >
+                    {selectedLabelText}
+                  </TruncatedTooltipText>
+                ) : (
+                  <span className="!text-muted-foreground">
+                    {placeholder ?? t`Search...`}
+                  </span>
+                )}
+              </CommandTrigger>
             )}
           </PopoverTrigger>
           <PopoverContent
             align="end"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
-            className="min-w-[max(var(--radix-popover-trigger-width),11rem)] max-w-[min(560px,calc(100vw-2rem))] p-1"
-            style={{
-              width: dropdownContentWidthCh
-                ? `min(560px, max(var(--radix-popover-trigger-width), 11rem, ${dropdownContentWidthCh}ch))`
-                : "max(var(--radix-popover-trigger-width), 11rem)"
-            }}
+            className="w-auto min-w-[max(var(--radix-popover-trigger-width),11rem)] max-w-[min(560px,calc(100vw-2rem))] p-1"
           >
+            {/* Zero-height sizer: the widest option, so the auto width fits it
+                even when virtualization keeps it unrendered. */}
+            <div
+              aria-hidden
+              className="invisible h-0 overflow-hidden whitespace-nowrap px-8 text-sm"
+            >
+              {longestOptionText}
+            </div>
             {emptyMessage && options.length === 0 ? (
               emptyMessage
             ) : (
@@ -289,7 +269,7 @@ function VirtualizedCommand({
     count: filteredOptions.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => itemHeight,
-    overscan: 5
+    overscan: 12
   });
 
   const items = virtualizer.getVirtualItems();
@@ -401,42 +381,5 @@ function VirtualizedCommand({
         </CommandGroup>
       </div>
     </Command>
-  );
-}
-
-function SelectedOption({
-  isReadOnly,
-  item,
-  options,
-  onUnselect
-}: {
-  isReadOnly?: boolean;
-  item: string;
-  options: CreatableMultiSelectProps["options"];
-  onUnselect: (item: string) => void;
-}) {
-  return (
-    <Badge key={item} variant="secondary" className="border border-card">
-      {options.find((option) => option.value === item)?.label}
-      <BadgeCloseButton
-        disabled={isReadOnly}
-        tabIndex={-1}
-        type="button"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !isReadOnly) {
-            onUnselect(item);
-          }
-        }}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!isReadOnly) onUnselect(item);
-        }}
-      />
-    </Badge>
   );
 }

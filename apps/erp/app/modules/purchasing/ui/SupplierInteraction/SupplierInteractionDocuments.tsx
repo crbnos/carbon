@@ -28,9 +28,9 @@ import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Outlet, useFetchers, useRevalidator, useSubmit } from "react-router";
-import { DocumentPreview, FileDropzone } from "~/components";
+import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { useDateFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
@@ -64,7 +64,6 @@ const SupplierInteractionDocuments = ({
     });
 
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       upload(acceptedFiles);
@@ -135,9 +134,11 @@ const SupplierInteractionDocuments = ({
                       )}
                     </Td>
                     <Td className="text-xs font-mono">
-                      {attachment.created_at
-                        ? formatDate(attachment.created_at)
-                        : "--"}
+                      <DateTime
+                        value={attachment.created_at}
+                        variant="date"
+                        fallback="--"
+                      />
                     </Td>
                     <Td>
                       <div className="flex justify-end gap-2">

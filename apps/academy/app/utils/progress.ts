@@ -1,4 +1,5 @@
 import { modules } from "~/config";
+import { isLessonComingSoon } from "~/utils/video";
 
 type Module = (typeof modules)[number];
 type Course = Module["courses"][number];
@@ -39,6 +40,7 @@ export function getCourseProgress(
 
   for (const topic of course.topics) {
     for (const lesson of topic.lessons) {
+      if (isLessonComingSoon(lesson)) continue;
       lessonsTotal += 1;
       if (completedLessonIds.has(lesson.id)) lessonsDone += 1;
     }
@@ -95,6 +97,7 @@ export function getResumeLesson(
     for (const course of module.courses) {
       for (const topic of course.topics) {
         for (const lesson of topic.lessons) {
+          if (isLessonComingSoon(lesson)) continue;
           if (!completedLessonIds.has(lesson.id)) {
             return { module, course, topic, lesson };
           }
@@ -112,6 +115,7 @@ export function getNextLessonInCourse(
 ): Lesson | null {
   for (const topic of course.topics) {
     for (const lesson of topic.lessons) {
+      if (isLessonComingSoon(lesson)) continue;
       if (!completedLessonIds.has(lesson.id)) return lesson;
     }
   }

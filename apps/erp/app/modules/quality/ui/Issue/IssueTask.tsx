@@ -1,5 +1,4 @@
 import { useCarbon } from "@carbon/auth";
-import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   BarProgress,
@@ -30,6 +29,9 @@ import {
   type ActionTaskStatus
 } from "~/components/ActionTasks/ActionTaskCard";
 import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
+import { JiraIssueDialog } from "~/components/ActionTasks/Jira/IssueDialog";
+import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
+import { syncActionTaskNotes } from "~/components/ActionTasks/syncNotes";
 import { useProcesses } from "~/components/Form/Process";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import {
@@ -48,12 +50,8 @@ import type {
 } from "~/modules/quality";
 import { useSuppliers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
-import { JiraIssueDialog } from "./Jira/IssueDialog";
-import { LinearIssueDialog } from "./Linear/IssueDialog";
 
-const logger = getLogger("erp", "issuetask");
-
-// TaskProgress moved to the shared ActionTasks folder (SSOT with Change Orders);
+// TaskProgress moved to the shared ActionTasks folder (SSOT with Change Notices);
 // re-exported here so existing `~/modules/quality/ui/Issue` importers keep working.
 export { ActionTaskProgress as TaskProgress } from "~/components/ActionTasks/ActionTaskProgress";
 
@@ -303,10 +301,22 @@ export function TaskItem({
       }
       headerExtras={
         <>
-          {/* @ts-expect-error TS2322 */}
-          {integrations.has("linear") && <LinearIssueDialog task={task} />}
-          {/* @ts-expect-error TS2322 */}
-          {integrations.has("jira") && <JiraIssueDialog task={task} />}
+          {/* Only action tasks live in `nonConformanceActionTask` — linking any
+              other task type would send an id from a different table. */}
+          {type === "action" && integrations.has("linear") && (
+            <LinearIssueDialog
+              entityType="nonConformanceActionTask"
+              taskId={task.id!}
+              linkedIssue={(task as IssueActionTask).linearIssue}
+            />
+          )}
+          {type === "action" && integrations.has("jira") && (
+            <JiraIssueDialog
+              entityType="nonConformanceActionTask"
+              taskId={task.id!}
+              linkedIssue={(task as IssueActionTask).jiraIssue}
+            />
+          )}
         </>
       }
       footerExtras={
@@ -393,36 +403,20 @@ function useTaskNotes({
 
       // Sync to Linear if this is an action task with a linked Linear issue
       if (type === "action" && hasLinearLink) {
-        try {
-          await fetch(path.to.api.linearSyncNotes, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              actionId: taskId,
-              notes: JSON.stringify(content)
-            })
-          });
-        } catch (e) {
-          // Silently fail Linear sync - not critical
-          logger.error("Failed to sync notes to Linear", { error: e });
-        }
+        await syncActionTaskNotes("Linear", {
+          actionId: taskId,
+          entityType: "nonConformanceActionTask",
+          notes: content
+        });
       }
 
       // Sync to Jira if this is an action task with a linked Jira issue
       if (type === "action" && hasJiraLink) {
-        try {
-          await fetch(path.to.api.jiraSyncNotes, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              actionId: taskId,
-              notes: JSON.stringify(content)
-            })
-          });
-        } catch (e) {
-          // Silently fail Jira sync - not critical
-          logger.error("Failed to sync notes to Jira", { error: e });
-        }
+        await syncActionTaskNotes("Jira", {
+          actionId: taskId,
+          entityType: "nonConformanceActionTask",
+          notes: content
+        });
       }
     },
     2500,

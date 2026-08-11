@@ -44,6 +44,8 @@ export default $config({
         memoryUtilization: 80,
       },
       environment: {
+        ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
+        ASSEMBLER_SERVICE_URL: process.env.ASSEMBLER_SERVICE_URL,
         AUTH_PROVIDERS: process.env.AUTH_PROVIDERS,
         CARBON_EDITION: process.env.CARBON_EDITION,
         CLOUDFLARE_TURNSTILE_SECRET_KEY:
@@ -64,6 +66,7 @@ export default $config({
         JIRA_STATE_SECRET: process.env.JIRA_STATE_SECRET,
         MES_URL: process.env.URL_MES ? `https://${process.env.URL_MES}` : "https://mes.itar.carbon.ms",
         NODE_ENV: "production",
+        TZ: "UTC",
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
         ONSHAPE_CLIENT_ID: process.env.ONSHAPE_CLIENT_ID,
         ONSHAPE_CLIENT_SECRET: process.env.ONSHAPE_CLIENT_SECRET,
@@ -141,6 +144,8 @@ export default $config({
         memoryUtilization: 80,
       },
       environment: {
+        ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
+        ASSEMBLER_SERVICE_URL: process.env.ASSEMBLER_SERVICE_URL,
         AUTH_PROVIDERS: process.env.AUTH_PROVIDERS,
         CARBON_EDITION: process.env.CARBON_EDITION,
         CLOUDFLARE_TURNSTILE_SECRET_KEY:
@@ -156,6 +161,7 @@ export default $config({
         INNGEST_SIGNING_KEY: process.env.INNGEST_SIGNING_KEY,
         MES_URL: process.env.URL_MES ? `https://${process.env.URL_MES}` : "https://mes.itar.carbon.ms",
         NODE_ENV: "production",
+        TZ: "UTC",
         ONSHAPE_CLIENT_ID: process.env.ONSHAPE_CLIENT_ID,
         ONSHAPE_CLIENT_SECRET: process.env.ONSHAPE_CLIENT_SECRET,
         ONSHAPE_OAUTH_REDIRECT_URL: process.env.ONSHAPE_OAUTH_REDIRECT_URL,

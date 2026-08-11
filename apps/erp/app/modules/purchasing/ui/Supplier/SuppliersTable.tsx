@@ -26,6 +26,7 @@ import {
 } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   New,
@@ -35,7 +36,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCompanySettings, useDateFormatter, usePermissions } from "~/hooks";
+import { useCompanySettings, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Supplier } from "~/modules/purchasing";
 import { supplierStatusType } from "~/modules/purchasing";
@@ -53,7 +54,6 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
   const [people] = usePeople();
   const deleteModal = useDisclosure();
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
@@ -222,7 +222,9 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -247,7 +249,9 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -255,15 +259,7 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [
-    supplierTypes,
-    people,
-    tags,
-    customColumns,
-    t,
-    formatDate,
-    showSupplierReadableId
-  ]);
+  }, [supplierTypes, people, tags, customColumns, t, showSupplierReadableId]);
 
   const renderContextMenu = useMemo(
     () => (row: Supplier) => (

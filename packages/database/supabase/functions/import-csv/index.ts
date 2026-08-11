@@ -4,11 +4,12 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { sql } from "npm:kysely@0.27.6";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
 import { classifyImportRow } from "./classify-import-row.ts";
+import { importMaterialProperties } from "./material-property-import.ts";
 import { importMethods } from "./method-import.ts";
 
 const pool = getConnectionPool(1);
@@ -30,6 +31,12 @@ const importCsvValidator = z.object({
     "tool",
     "workCenter",
     "process",
+    "materialSubstance",
+    "materialForm",
+    "materialFinish",
+    "materialGrade",
+    "materialType",
+    "materialDimension",
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string()),
@@ -296,6 +303,108 @@ async function upsertCsvMappings(
         }))
     )
     .execute();
+}
+
+/**
+ * Key for a scoped material-taxonomy lookup: the parent scope id (substance
+ * for finish/grade, form for dimensions) plus the case-insensitively
+ * normalized name.
+ */
+function materialTaxonomyKey(scopeId: string, name: string): string {
+  return `${scopeId.trim()}:${name.trim().toLowerCase()}`;
+}
+
+/**
+ * Resolve raw Finish / Grade / Dimensions CSV text to material-taxonomy ids.
+ * The taxonomy tables are scoped — materialFinish/materialGrade by substance,
+ * materialDimension by form — so names are matched within the row's scope
+ * against both global (companyId IS NULL) and company rows; a company row wins
+ * a name clash. Unmatched names create a company-scoped row, mirroring the
+ * creatable comboboxes on the material form. Returns ids keyed by
+ * materialTaxonomyKey.
+ */
+async function resolveMaterialTaxonomyIds(
+  trx: typeof db,
+  taxonomyTable: "materialFinish" | "materialGrade" | "materialDimension",
+  scopeColumn: "materialSubstanceId" | "materialFormId",
+  pairs: Array<{ scopeId: string; name: string }>,
+  cId: string
+): Promise<Map<string, string>> {
+  const needed = new Map<string, { scopeId: string; name: string }>();
+  for (const pair of pairs) {
+    const scopeId = pair.scopeId?.trim();
+    const name = pair.name?.trim();
+    if (!scopeId || !name) continue;
+    const key = materialTaxonomyKey(scopeId, name);
+    if (!needed.has(key)) {
+      needed.set(key, { scopeId, name });
+    }
+  }
+
+  const idByKey = new Map<string, string>();
+  if (needed.size === 0) return idByKey;
+
+  const scopeIds = [...new Set([...needed.values()].map((p) => p.scopeId))];
+
+  const selectMatches = async () => {
+    const rows = await trx
+      .selectFrom(taxonomyTable)
+      .select(["id", "name", "companyId", scopeColumn] as never)
+      .where(trx.dynamic.ref<string>(scopeColumn), "in", scopeIds)
+      .where(sql<boolean>`("companyId" = ${cId} OR "companyId" IS NULL)`)
+      .$castTo<Record<string, string | null>>()
+      .execute();
+    return rows.map((row) => ({
+      id: row.id as string,
+      name: row.name as string,
+      companyId: row.companyId ?? null,
+      scopeId: row[scopeColumn] as string,
+    }));
+  };
+
+  const collect = (rows: Awaited<ReturnType<typeof selectMatches>>) => {
+    for (const row of rows) {
+      const key = materialTaxonomyKey(row.scopeId, row.name);
+      // Company-scoped rows win over global (NULL companyId) rows.
+      if (!idByKey.has(key) || row.companyId === cId) {
+        idByKey.set(key, row.id);
+      }
+    }
+  };
+
+  collect(await selectMatches());
+
+  const missing = [...needed.values()].filter(
+    (pair) => !idByKey.has(materialTaxonomyKey(pair.scopeId, pair.name))
+  );
+
+  if (missing.length > 0) {
+    await trx
+      .insertInto(taxonomyTable)
+      .values(
+        missing.map((pair) => ({
+          name: pair.name,
+          companyId: cId,
+          [scopeColumn]: pair.scopeId,
+        })) as never
+      )
+      // A concurrent import may have created the same name first; the
+      // re-select below picks up whichever row won. The unique constraint is
+      // exact-match, so two concurrent imports inserting different CASINGS of
+      // the same new name can both land, leaving a case-variant duplicate —
+      // the same duplicate the app's creatable comboboxes permit. Closing
+      // that window needs a case-insensitive unique index on
+      // (scope, lower(name), companyId), which requires a migration plus a
+      // dedupe of existing case-variant rows.
+      .onConflict((oc) =>
+        oc.columns([scopeColumn, "name", "companyId"] as never).doNothing()
+      )
+      .execute();
+
+    collect(await selectMatches());
+  }
+
+  return idByKey;
 }
 
 /**
@@ -821,9 +930,8 @@ async function upsertTaxIdentifiers(
 }
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
 
   try {
@@ -1408,7 +1516,98 @@ serve(async (req: Request) => {
             finishId: z.string().optional(),
             dimensionId: z.string().optional(),
             gradeId: z.string().optional(),
+            // Raw text from the mapping UI; resolved to the *Id columns below.
+            finish: z.string().optional(),
+            grade: z.string().optional(),
+            dimensions: z.string().optional(),
           });
+
+          // The mapping UI sends Finish / Grade / Dimensions as raw CSV text —
+          // materialFinish/materialGrade are scoped by substance and
+          // materialDimension by form, so a flat enum mapping can't target
+          // them. Resolve the text to taxonomy ids up front (creating
+          // company-scoped rows for unmatched names). Rows without a resolved
+          // substance/form keep the attribute unset, since the taxonomy
+          // tables require the scope.
+          let finishIdByKey = new Map<string, string>();
+          let gradeIdByKey = new Map<string, string>();
+          let dimensionIdByKey = new Map<string, string>();
+
+          if (table === "material") {
+            const finishPairs: Array<{ scopeId: string; name: string }> = [];
+            const gradePairs: Array<{ scopeId: string; name: string }> = [];
+            const dimensionPairs: Array<{ scopeId: string; name: string }> =
+              [];
+
+            for (const record of mappedRecords) {
+              const substanceId = record.materialSubstanceId;
+              const formId = record.materialFormId;
+              // An explicit *Id (possible via direct invocation) wins over the
+              // raw text, so don't resolve — and possibly create — a taxonomy
+              // row that nothing would reference.
+              if (substanceId && record.finish && !record.finishId) {
+                finishPairs.push({ scopeId: substanceId, name: record.finish });
+              }
+              if (substanceId && record.grade && !record.gradeId) {
+                gradePairs.push({ scopeId: substanceId, name: record.grade });
+              }
+              if (formId && record.dimensions && !record.dimensionId) {
+                dimensionPairs.push({ scopeId: formId, name: record.dimensions });
+              }
+            }
+
+            finishIdByKey = await resolveMaterialTaxonomyIds(
+              trx,
+              "materialFinish",
+              "materialSubstanceId",
+              finishPairs,
+              companyId
+            );
+            gradeIdByKey = await resolveMaterialTaxonomyIds(
+              trx,
+              "materialGrade",
+              "materialSubstanceId",
+              gradePairs,
+              companyId
+            );
+            dimensionIdByKey = await resolveMaterialTaxonomyIds(
+              trx,
+              "materialDimension",
+              "materialFormId",
+              dimensionPairs,
+              companyId
+            );
+          }
+
+          const resolveFinishId = (data: {
+            materialSubstanceId?: string;
+            finish?: string;
+          }) =>
+            data.materialSubstanceId && data.finish
+              ? finishIdByKey.get(
+                  materialTaxonomyKey(data.materialSubstanceId, data.finish)
+                )
+              : undefined;
+
+          const resolveGradeId = (data: {
+            materialSubstanceId?: string;
+            grade?: string;
+          }) =>
+            data.materialSubstanceId && data.grade
+              ? gradeIdByKey.get(
+                  materialTaxonomyKey(data.materialSubstanceId, data.grade)
+                )
+              : undefined;
+
+          const resolveDimensionId = (data: {
+            materialFormId?: string;
+            dimensions?: string;
+          }) =>
+            data.materialFormId && data.dimensions
+              ? dimensionIdByKey.get(
+                  materialTaxonomyKey(data.materialFormId, data.dimensions)
+                )
+              : undefined;
 
           // Rows on the INSERT path whose Unique ID already exists in this
           // company's catalog (e.g. a re-import after the item was deleted,
@@ -1533,9 +1732,18 @@ serve(async (req: Request) => {
                       materialSubstanceId:
                         material.data.materialSubstanceId || undefined,
                       materialFormId: material.data.materialFormId || undefined,
-                      dimensionId: material.data.dimensionId || undefined,
-                      gradeId: material.data.gradeId || undefined,
-                      finishId: material.data.finishId || undefined,
+                      dimensionId:
+                        material.data.dimensionId ||
+                        resolveDimensionId(material.data) ||
+                        undefined,
+                      gradeId:
+                        material.data.gradeId ||
+                        resolveGradeId(material.data) ||
+                        undefined,
+                      finishId:
+                        material.data.finishId ||
+                        resolveFinishId(material.data) ||
+                        undefined,
                       companyId,
                       updatedAt: new Date().toISOString(),
                       updatedBy: userId,
@@ -1604,6 +1812,13 @@ serve(async (req: Request) => {
                   materialPartialInserts[material.data.readableId!] = {
                     ...material.data,
                     id: material.data.readableId,
+                    dimensionId:
+                      material.data.dimensionId ||
+                      resolveDimensionId(material.data),
+                    gradeId:
+                      material.data.gradeId || resolveGradeId(material.data),
+                    finishId:
+                      material.data.finishId || resolveFinishId(material.data),
                     companyId,
                     createdAt: new Date().toISOString(),
                     createdBy: userId,
@@ -1800,6 +2015,7 @@ serve(async (req: Request) => {
                   .updateTable("material")
                   .set(update.data)
                   .where("id", "=", update.id)
+                  .where("companyId", "=", companyId)
                   .execute();
               }
             }
@@ -2194,6 +2410,21 @@ serve(async (req: Request) => {
             data: Database["public"]["Tables"]["process"]["Update"];
           }[] = [];
 
+          // Legacy CSV templates may still use the old Inside/Outside process types.
+          const normalizeProcessType = (value: string) =>
+            (value === "Inside"
+              ? "Process"
+              : value === "Outside" || value === "Inside and Outside"
+                ? "Outside Processing"
+                : value) as Database["public"]["Enums"]["processType"];
+
+          const validProcessTypes = [
+            "Process",
+            "Assembly",
+            "Inspection",
+            "Outside Processing",
+          ];
+
           const isProcessValid = (
             record: Record<string, string>
           ): record is { name: string; processType: string } => {
@@ -2201,8 +2432,9 @@ serve(async (req: Request) => {
               typeof record.name === "string" &&
               record.name.trim() !== "" &&
               typeof record.processType === "string" &&
-              (record.processType === "Inside" ||
-                record.processType === "Outside")
+              validProcessTypes.includes(
+                normalizeProcessType(record.processType)
+              )
             );
           };
 
@@ -2216,6 +2448,7 @@ serve(async (req: Request) => {
                   id: existingEntityId,
                   data: {
                     ...rest,
+                    processType: normalizeProcessType(rest.processType),
                     completeAllOnScan:
                       rest.completeAllOnScan?.toLowerCase() === "true" ?? false,
                     updatedAt: new Date().toISOString(),
@@ -2227,6 +2460,7 @@ serve(async (req: Request) => {
               processIds.add(id);
               processInserts.push({
                 ...rest,
+                processType: normalizeProcessType(rest.processType),
                 completeAllOnScan:
                   rest.completeAllOnScan?.toLowerCase() === "true" ?? false,
                 companyId,
@@ -2284,6 +2518,21 @@ serve(async (req: Request) => {
         });
         break;
       }
+      case "materialSubstance":
+      case "materialForm":
+      case "materialFinish":
+      case "materialGrade":
+      case "materialType":
+      case "materialDimension": {
+        await importMaterialProperties(db, {
+          table,
+          mappedRecords,
+          companyId,
+          userId,
+          summary,
+        });
+        break;
+      }
       default: {
         throw new Error(`Invalid table: ${table}`);
       }
@@ -2296,25 +2545,15 @@ serve(async (req: Request) => {
     const withValues = (issues: Array<{ row: number; reason: string }>) =>
       issues.map((issue) => ({ ...issue, values: parsedCsv[issue.row] ?? {} }));
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        inserted: summary.inserted,
-        updated: summary.updated,
-        errors: withValues(summary.errors),
-        skipped: withValues(summary.skipped),
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+    return jsonResponse({
+      success: true,
+      inserted: summary.inserted,
+      updated: summary.updated,
+      errors: withValues(summary.errors),
+      skipped: withValues(summary.skipped),
     });
+  } catch (err) {
+    return errorResponse(err, 500);
   }
 });
 

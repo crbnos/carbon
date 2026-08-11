@@ -7,7 +7,10 @@ import {
 } from "@carbon/auth/middleware/flash.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
-import { requestIdMiddleware } from "@carbon/logger/middleware.server";
+import {
+  requestContextMiddleware,
+  requestIdMiddleware
+} from "@carbon/logger/middleware.server";
 import {
   OperatingSystemContextProvider,
   Toaster,
@@ -42,10 +45,16 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import "@carbon/lib/shims";
 import type { Route } from "./+types/root";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [requestIdMiddleware, flashMiddleware];
+export const middleware = [
+  // First: publishes the request context so server code can reach it via ALS.
+  requestContextMiddleware,
+  requestIdMiddleware,
+  flashMiddleware
+];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: Route.LinksFunction = () => [
@@ -216,7 +225,7 @@ function Document({
             }}
           />
         ) : null}
-        <Toaster position="bottom-right" visibleToasts={5} />
+        <Toaster position="bottom-left" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
         {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}

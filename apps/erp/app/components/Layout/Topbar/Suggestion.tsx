@@ -24,12 +24,13 @@ import data from "@emoji-mart/data";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { LuImage, LuMegaphone } from "react-icons/lu";
 import { useFetcher, useLocation } from "react-router";
 import { useUser } from "~/hooks";
 import { suggestionValidator } from "~/modules/shared";
 import type { action } from "~/routes/x+/resources+/suggestions.new";
+import { useUIStore } from "~/stores/ui";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "suggestion");
@@ -49,7 +50,7 @@ const Suggestion = () => {
   const { t } = useLingui();
   const fetcher = useFetcher<typeof action>();
   const location = useLocation();
-  const popoverTriggerRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
   const [suggestion, setSuggestion] = useState("");
   const [emoji, setEmoji] = useState(defaultEmoji);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
@@ -64,6 +65,10 @@ const Suggestion = () => {
   const { carbon } = useCarbon();
   const user = useUser();
   const companyId = user.company.id;
+  const suggestionPrefill = useUIStore((state) => state.suggestionPrefill);
+  const clearSuggestionRequest = useUIStore(
+    (state) => state.clearSuggestionRequest
+  );
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -73,11 +78,22 @@ const Suggestion = () => {
       setAttachment(null);
       setAnonymous(true);
       setSendToCarbon(CARBON_SLACK_ENABLED);
-      popoverTriggerRef.current?.click();
+      setOpen(false);
     } else if (fetcher.data?.message) {
       toast.error(fetcher.data.message);
     }
   }, [fetcher.data]);
+
+  useEffect(() => {
+    if (!suggestionPrefill) return;
+    setSuggestion(suggestionPrefill.suggestion);
+    setAnonymous(suggestionPrefill.anonymous);
+    setSendToCarbon(suggestionPrefill.sendToCarbon);
+    setEmoji(defaultEmoji);
+    setAttachment(null);
+    setOpen(true);
+    clearSuggestionRequest();
+  }, [suggestionPrefill, clearSuggestionRequest]);
 
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && carbon) {
@@ -119,8 +135,8 @@ const Suggestion = () => {
   };
 
   return (
-    <Popover>
-      <PopoverTrigger ref={popoverTriggerRef} asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button
           variant="secondary"
           className="hover:scale-100"
@@ -224,7 +240,7 @@ const Suggestion = () => {
                   setSuggestion("");
                   setEmoji(defaultEmoji);
                   setAttachment(null);
-                  popoverTriggerRef.current?.click();
+                  setOpen(false);
                 }}
               >
                 <Trans>Cancel</Trans>

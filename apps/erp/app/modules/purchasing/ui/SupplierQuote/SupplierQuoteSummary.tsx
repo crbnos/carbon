@@ -22,15 +22,10 @@ import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { SupplierAvatar } from "~/components";
+import { DateTime, SupplierAvatar } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { useCurrencyFormatter, useRouteData, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
@@ -156,7 +151,7 @@ const LineItems = ({
                       </motion.div>
                     </HStack>
                   </div>
-                  <span className="text-muted-foreground text-base truncate">
+                  <span className="text-muted-foreground text-sm truncate">
                     {isGlAccount
                       ? (accounts.find((a) => a.id === line.accountId)?.name ??
                         "G/L Account")
@@ -311,7 +306,6 @@ const LinePricingOptions = ({
 const SupplierQuoteSummary = () => {
   const { id } = useParams();
   if (!id) throw new Error("Could not find quote id");
-  const { formatDate } = useDateFormatter();
   const routeData = useRouteData<{
     quote: SupplierQuote;
     lines: SupplierQuoteLine[];
@@ -335,8 +329,12 @@ const SupplierQuoteSummary = () => {
           <div className="flex flex-col gap-1 items-end">
             <SupplierAvatar supplierId={routeData?.quote.supplierId ?? null} />
             {routeData?.quote?.expirationDate && (
-              <span className="text-muted-foreground text-sm">
-                Expires {formatDate(routeData?.quote.expirationDate)}
+              <span className="text-xs text-muted-foreground tracking-tight">
+                Expires{" "}
+                <DateTime
+                  value={routeData?.quote.expirationDate}
+                  variant="date"
+                />
               </span>
             )}
           </div>

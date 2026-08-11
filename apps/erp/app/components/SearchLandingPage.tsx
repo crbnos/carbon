@@ -44,7 +44,7 @@ export function SearchLandingPage({
         )}
       >
         <div className="flex flex-col items-center gap-4">
-          <div className="relative flex items-center justify-center size-14 rounded-2xl bg-background border border-border text-foreground shadow-sm before:absolute before:inset-0 before:rounded-2xl before:bg-linear-to-b before:from-foreground/5 before:to-transparent before:pointer-events-none">
+          <div className="relative flex items-center justify-center size-14 rounded-lg bg-background border border-border text-foreground shadow-sm before:absolute before:inset-0 before:rounded-lg before:bg-linear-to-b before:from-foreground/5 before:to-transparent before:pointer-events-none">
             <Icon className="size-6" />
           </div>
           <div className="flex flex-col items-center gap-1.5 text-center">

@@ -305,11 +305,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         };
       }
       break;
-    case "inboundInspections": {
+    case "inspections": {
       const inspection = await (client as any)
-        .from("inboundInspection")
+        .from("inspection")
         .select(
-          "id, itemId, lotSize, receiptLineId, inboundInspectionSample(trackedEntityId)"
+          "id, itemId, lotSize, receiptLineId, inspectionSample(trackedEntityId)"
         )
         .eq("id", id)
         .single();
@@ -324,10 +324,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
 
       const linkResult = await (client as any)
-        .from("nonConformanceInboundInspection")
+        .from("nonConformanceInspection")
         .insert({
           nonConformanceId,
-          inboundInspectionId: inspection.data.id,
+          inspectionId: inspection.data.id,
           createdBy: userId,
           companyId: companyId
         });
@@ -342,7 +342,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
 
       const sampledIds = (
-        (inspection.data.inboundInspectionSample ?? []) as {
+        (inspection.data.inspectionSample ?? []) as {
           trackedEntityId: string;
         }[]
       )
@@ -367,7 +367,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
       }
 
-      await autoLinkInboundInspectionContext(client, {
+      await autoLinkInspectionContext(client, {
         nonConformanceId,
         companyId,
         userId,
@@ -436,7 +436,7 @@ async function autoLinkJobOperationContext(
   });
 }
 
-async function autoLinkInboundInspectionContext(
+async function autoLinkInspectionContext(
   client: Awaited<ReturnType<typeof requirePermissions>>["client"],
   args: {
     nonConformanceId: string;

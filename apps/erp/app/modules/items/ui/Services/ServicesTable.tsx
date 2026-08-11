@@ -43,7 +43,9 @@ import {
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { Link, useFetcher, useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
+  exportOnlyColumn,
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
@@ -54,17 +56,17 @@ import {
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { serviceReplenishmentSystems } from "../../items.models";
-import type { Service } from "../../types";
+import type { ServiceListItem } from "../../types";
 
 type ServicesTableProps = {
-  data: Service[];
+  data: ServiceListItem[];
   tags: { name: string }[];
   count: number;
 };
@@ -78,7 +80,6 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
 
   const translateReplenishment = useCallback(
     (v: string) => (v === "Buy" ? t`Buy` : t`Make`),
@@ -91,14 +92,16 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
   );
 
   const deleteItemModal = useDisclosure();
-  const [selectedItem, setSelectedItem] = useState<Service | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ServiceListItem | null>(
+    null
+  );
 
   const [people] = usePeople();
   const itemPostingGroups = useItemPostingGroups();
-  const customColumns = useCustomColumns<Service>("service");
+  const customColumns = useCustomColumns<ServiceListItem>("service");
 
-  const columns = useMemo<ColumnDef<Service>[]>(() => {
-    const defaultColumns: ColumnDef<Service>[] = [
+  const columns = useMemo<ColumnDef<ServiceListItem>[]>(() => {
+    const defaultColumns: ColumnDef<ServiceListItem>[] = [
       {
         accessorKey: "id",
         header: t`Service ID`,
@@ -120,9 +123,17 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
           </HStack>
         ),
         meta: {
-          icon: <LuBookMarked />
+          icon: <LuBookMarked />,
+          // The accessor is the raw item id — export the readable id
+          // the cell shows instead of a UUID.
+          exportValue: (row) => row.readableIdWithRevision ?? null
         }
       },
+      exportOnlyColumn<ServiceListItem>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) => row.name ?? null
+      }),
       {
         accessorKey: "description",
         header: t`Description`,
@@ -306,7 +317,9 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -331,7 +344,9 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -345,8 +360,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
     itemPostingGroups,
     t,
     translateMethodType,
-    translateReplenishment,
-    formatDate
+    translateReplenishment
   ]);
 
   const fetcher = useFetcher<typeof action>();
@@ -438,7 +452,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
   );
 
   const renderContextMenu = useMemo(() => {
-    return (row: Service) => {
+    return (row: ServiceListItem) => {
       const revisions =
         (row.revisions as {
           id: string;
@@ -487,7 +501,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
 
   return (
     <>
-      <Table<Service>
+      <Table<ServiceListItem>
         count={count}
         columns={columns}
         data={data}

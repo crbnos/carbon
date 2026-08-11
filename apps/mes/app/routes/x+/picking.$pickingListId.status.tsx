@@ -3,8 +3,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { userContext } from "~/context";
+import { getCompanySettings } from "~/services/inventory.service";
 import { isPickingListLocked, pickingListStatus } from "~/services/models";
-import { updatePickingListStatus } from "~/services/picking.service";
+import {
+  getUnresolvedPickingListLines,
+  updatePickingListStatus
+} from "~/services/picking.service";
 
 type PickingListStatus = (typeof pickingListStatus)[number];
 
@@ -40,6 +44,76 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
       success: false,
       message: "Reopen this picking list from the ERP."
     };
+  }
+
+  // Finishing a list must not silently complete with material still unpicked.
+  // Enforce the company policy server-side and pick the terminal status:
+  // fully picked → Completed, any shortfall → Partial.
+  if (status === "Completed") {
+    const [lineResult, settings] = await Promise.all([
+      getUnresolvedPickingListLines(serviceRole, pickingListId, companyId),
+      getCompanySettings(serviceRole, companyId)
+    ]);
+
+    if (lineResult.error) {
+      return {
+        success: false,
+        message: "Failed to check picking list lines"
+      };
+    }
+
+    // Fail closed: if the policy can't be read, don't silently fall back to
+    // 'warn' (which an `acknowledged=true` submit could bypass). Refuse the
+    // finish instead.
+    if (settings.error || !settings.data) {
+      return {
+        success: false,
+        message: "Failed to read the picking list completion policy"
+      };
+    }
+
+    const policy =
+      settings.data.incompletePickingListPolicy === "error" ? "error" : "warn";
+    const { unresolved, hasShort } = lineResult;
+    const acknowledged = formData.get("acknowledged") === "true";
+
+    if (unresolved.length > 0) {
+      if (policy === "error") {
+        return {
+          success: false,
+          blocked: true,
+          unresolvedLines: unresolved,
+          message: "Some material is still unpicked."
+        };
+      }
+      if (!acknowledged) {
+        return {
+          success: false,
+          needsAcknowledgement: true,
+          unresolvedLines: unresolved
+        };
+      }
+    }
+
+    const finalStatus: PickingListStatus =
+      unresolved.length === 0 && !hasShort ? "Completed" : "Partial";
+
+    const finishResult = await updatePickingListStatus(
+      serviceRole,
+      pickingListId,
+      finalStatus,
+      effectiveUserId,
+      companyId
+    );
+
+    if (finishResult.error) {
+      return {
+        success: false,
+        message: "Failed to update picking list status"
+      };
+    }
+
+    return { success: true };
   }
 
   const result = await updatePickingListStatus(

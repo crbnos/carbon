@@ -41,6 +41,12 @@ function TrackedEntityStatus({ status }: TrackedEntityStatusProps) {
           <Trans>Consumed</Trans>
         </Status>
       );
+    case "Scrapped":
+      return (
+        <Status color={color}>
+          <Trans>Scrapped</Trans>
+        </Status>
+      );
     default:
       return null;
   }

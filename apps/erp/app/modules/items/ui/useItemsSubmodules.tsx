@@ -63,23 +63,23 @@ export default function useItemsSubmodules() {
       ]
     },
     {
-      name: t`Change Orders`,
+      name: t`Change Notices`,
       routes: [
         {
-          name: t`Change Orders`,
-          to: path.to.changeOrders,
+          name: t`Change Notices`,
+          to: path.to.changeNotices,
           icon: <LuGitPullRequestArrow />,
           table: "changeOrder"
         },
         {
-          name: t`Change Order Types`,
-          to: path.to.changeOrderTypes,
+          name: t`Change Notice Types`,
+          to: path.to.changeNoticeTypes,
           icon: <LuTags />,
           role: "employee"
         },
         {
-          name: t`Change Order Actions`,
-          to: path.to.changeOrderRequiredActions,
+          name: t`Change Notice Actions`,
+          to: path.to.changeNoticeRequiredActions,
           icon: <LuListChecks />,
           role: "employee"
         }

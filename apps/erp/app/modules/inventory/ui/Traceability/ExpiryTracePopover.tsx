@@ -16,6 +16,7 @@ import {
   LuShieldCheck
 } from "react-icons/lu";
 import { Link } from "react-router";
+import { DateTime } from "~/components";
 import { useDateFormatter } from "~/hooks";
 import type { TrackedEntity } from "~/modules/inventory";
 import { path } from "~/utils/path";
@@ -187,7 +188,11 @@ export function ExpiryTracePopover({
                       : "text-muted-foreground")
                   }
                 >
-                  {step.date ? formatDate(step.date) : ""}
+                  {step.date ? (
+                    <DateTime value={step.date} variant="date" />
+                  ) : (
+                    ""
+                  )}
                 </div>
               </li>
             );
@@ -215,7 +220,11 @@ function buildSteps(
   // the Source row's date — that's when the receipt / production / split
   // happened. For receipt-source entities this is the goods-in date.
   const sourceDate = entity.createdAt ?? null;
-  const splitFrom = attrs["Split Entity ID"];
+  // "Split From Entity ID" points at the parent the entity was drawn from.
+  // The legacy "Split Entity ID" key names the CHILD that departed, not the
+  // parent — rendering it as "Parent {id}" would be wrong, so legacy-only
+  // entities fall through to their real provenance rows below.
+  const splitFrom = attrs["Split From Entity ID"];
   const receiptId = attrs.Receipt;
   const jobId = attrs.Job;
   const adjustment = attrs["Inventory Adjustment"] as

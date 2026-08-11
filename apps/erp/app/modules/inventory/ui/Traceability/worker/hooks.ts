@@ -22,16 +22,24 @@ export function useAsyncLayout(
   direction: LayoutDirection,
   spacing: number,
   rejectIds: Set<string>,
+  rootIds: string[],
   layoutVersion: number
 ): LayoutResult | null {
   const [result, setResult] = useState<LayoutResult | null>(null);
   const rejectIdsArray = useMemo(() => Array.from(rejectIds), [rejectIds]);
+  const rootKey = rootIds.join("|");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: layoutVersion is a manual relayout trigger
+  // biome-ignore lint/correctness/useExhaustiveDependencies: layoutVersion is a manual relayout trigger; rootIds is keyed by rootKey
   useEffect(() => {
     let cancelled = false;
     manager
-      .layout({ payload, direction, spacing, rejectIds: rejectIdsArray })
+      .layout({
+        payload,
+        direction,
+        spacing,
+        rejectIds: rejectIdsArray,
+        rootIds
+      })
       .then((r) => {
         if (cancelled || r === null) return;
         setResult(r);
@@ -39,7 +47,15 @@ export function useAsyncLayout(
     return () => {
       cancelled = true;
     };
-  }, [manager, payload, direction, spacing, rejectIdsArray, layoutVersion]);
+  }, [
+    manager,
+    payload,
+    direction,
+    spacing,
+    rejectIdsArray,
+    rootKey,
+    layoutVersion
+  ]);
 
   return result;
 }
@@ -63,14 +79,31 @@ export function useAsyncSelectionPath(
     [additionalRootIds]
   );
 
+  // Pathfinding reads only topology and which nodes are selected, but `edges`
+  // and `selectedIds` are rebuilt whenever ANY node state changes — a drag frame
+  // included. Keying on the values instead of the array identities keeps the
+  // worker from re-running (and repainting the graph a frame later) for edits it
+  // would answer identically.
+  const topologyKey = useMemo(
+    () => edges.map((e) => `${e.id}>${e.source}>${e.target}`).join("|"),
+    [edges]
+  );
+  const selectedKey = selectedIds.join("|");
+
+  const latest = useRef({ edges, selectedIds });
+  latest.current = { edges, selectedIds };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on topologyKey/selectedKey, not the array identities they summarize
   useEffect(() => {
-    if (selectedIds.length === 0 && additionalArray.length === 0) {
+    const { edges: currentEdges, selectedIds: currentSelected } =
+      latest.current;
+    if (currentSelected.length === 0 && additionalArray.length === 0) {
       setPath(null);
       return;
     }
     let cancelled = false;
     manager
-      .selection(edges, selectedIds, excludedArray, additionalArray)
+      .selection(currentEdges, currentSelected, excludedArray, additionalArray)
       .then((r) => {
         if (cancelled || r === null) return;
         setPath({
@@ -81,7 +114,7 @@ export function useAsyncSelectionPath(
     return () => {
       cancelled = true;
     };
-  }, [manager, edges, selectedIds, excludedArray, additionalArray]);
+  }, [manager, topologyKey, selectedKey, excludedArray, additionalArray]);
 
   return path;
 }

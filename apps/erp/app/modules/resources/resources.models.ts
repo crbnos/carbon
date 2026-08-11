@@ -1,6 +1,7 @@
+import { isValidTimeZone } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { processTypes, standardFactorType } from "../shared";
+import { operationTypes, standardFactorType } from "../shared";
 
 export const abilityCurveValidator = z.object({
   data: z
@@ -13,12 +14,12 @@ export const abilityCurveValidator = z.object({
 });
 
 export const abilityNameValidator = z.object({
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const abilityValidator = z
   .object({
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     startingPoint: zfd.numeric(
       z.number().min(0, { message: "Learning curve is required" })
     ),
@@ -63,21 +64,25 @@ export const maintenanceFailureModeType = [
 
 export const failureModeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   type: z.enum(maintenanceFailureModeType)
 });
 
 export const locationValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    code: zfd.text(z.string().optional()),
     addressLine1: z.string().min(1, { message: "Address is required" }),
     addressLine2: z.string().optional(),
     city: z.string().min(1, { message: "City is required" }),
     stateProvince: zfd.text(z.string().optional()),
     postalCode: z.string().min(1, { message: "Postal Code is required" }),
     countryCode: z.string().min(1, { message: "Country is required" }),
-    timezone: z.string().min(1, { message: "Timezone is required" }),
+    timezone: z
+      .string()
+      .min(1, { message: "Timezone is required" })
+      .refine(isValidTimeZone, { message: "Invalid timezone" }),
     latitude: zfd.numeric(z.number().optional()),
     longitude: zfd.numeric(z.number().optional())
   })
@@ -239,13 +244,14 @@ export const maintenanceScheduleItemValidator = z.object({
 
 export const maintenanceScheduleValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   description: zfd.text(z.string().optional()),
   workCenterId: z.string().min(1, { message: "Work center is required" }),
   locationId: z.string().min(1, { message: "Location is required" }),
   frequency: z.enum(maintenanceFrequency),
   priority: z.enum(maintenanceDispatchPriority),
   estimatedDuration: zfd.numeric(z.number().optional()),
+  nextDueAt: zfd.text(z.string().optional()),
   active: zfd.checkbox(),
   // Day-of-week fields for daily frequency
   monday: zfd.checkbox(),
@@ -288,8 +294,8 @@ export const partnerValidator = z.object({
 export const processValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Process name is required" }),
-    processType: z.enum(processTypes, {
+    name: z.string().trim().min(1, { message: "Process name is required" }),
+    processType: z.enum(operationTypes, {
       errorMap: () => ({ message: "Process type is required" })
     }),
     defaultStandardFactor: z
@@ -303,13 +309,16 @@ export const processValidator = z
     completeAllOnScan: zfd.checkbox()
   })
   .refine((data) => {
-    if (data.processType !== "Outside" && !data.workCenters) {
+    if (data.processType !== "Outside Processing" && !data.workCenters) {
       return { workCenters: ["Work center is required for inside process"] };
     }
     return true;
   })
   .refine((data) => {
-    if (data.processType !== "Outside" && !data.defaultStandardFactor) {
+    if (
+      data.processType !== "Outside Processing" &&
+      !data.defaultStandardFactor
+    ) {
       return { defaultStandardFactor: ["Standard factor is required"] };
     }
     return true;
@@ -472,13 +481,13 @@ export const trainingType = ["Mandatory", "Optional"] as const;
 
 export const trainingValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   content: zfd.text(z.string().optional())
 });
 
 export const workCenterValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   description: z.string(),
   defaultStandardFactor: z.enum(standardFactorType, {
     errorMap: () => ({ message: "Standard factor is required" })

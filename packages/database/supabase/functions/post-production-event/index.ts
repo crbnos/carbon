@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 
 import { credit, debit, journalReference } from "../lib/utils.ts";
@@ -24,18 +24,17 @@ const payloadValidator = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   const payload = await req.json();
-  const today = format(new Date(), "yyyy-MM-dd");
 
   try {
     const { productionEventId, userId, companyId, reverse } =
       payloadValidator.parse(payload);
 
     const client = await requirePermissions(req, companyId, userId, { update: "production" });
+    const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
     const [accountingSettings, companyRecord] = await Promise.all([
       client
@@ -53,9 +52,7 @@ serve(async (req: Request) => {
     const accountingEnabled = accountingSettings.data?.accountingEnabled ?? false;
 
     if (!accountingEnabled) {
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true });
     }
 
     if (companyRecord.error) throw new Error("Failed to fetch company");
@@ -90,9 +87,7 @@ serve(async (req: Request) => {
 
     if (reverse && !event.postedToGL) {
       // Nothing was posted for this event, so there is nothing to reverse.
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true });
     }
 
     if (!reverse && (!event.endTime || !event.duration || !event.workCenterId)) {
@@ -103,9 +98,9 @@ serve(async (req: Request) => {
         : !event.duration
         ? "event has no duration"
         : "event has no work center";
-      return new Response(JSON.stringify({ success: false, reason }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // FIXME: returns { success: false } at HTTP 200, so callers (error === null)
+      // read it as success. A real status (409/422?) needs its own decision — see §6c.
+      return jsonResponse({ success: false, reason });
     }
 
     const jobId = (event.jobOperation as any).jobId as string;
@@ -185,14 +180,13 @@ serve(async (req: Request) => {
     // can't attribute/reverse. A zero-cost posted event posted nothing, so
     // there's nothing to reverse and it's safe to delete.
     if (event.postedToGL && reversalLines.length === 0 && hasOldSchemePostings) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          reason:
-            "event was posted before per-event journal references; adjust with a manual journal entry",
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // FIXME: returns { success: false } at HTTP 200, so callers (error === null)
+      // read it as success. A real status (409/422?) needs its own decision — see §6c.
+      return jsonResponse({
+        success: false,
+        reason:
+          "event was posted before per-event journal references; adjust with a manual journal entry",
+      });
     }
 
     if (cost <= 0 && overheadCost <= 0 && reversalLines.length === 0) {
@@ -202,9 +196,7 @@ serve(async (req: Request) => {
         .from("productionEvent")
         .update({ postedToGL: !reverse })
         .eq("id", productionEventId);
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true });
     }
 
     const dimensionMap = new Map<string, string>();
@@ -304,7 +296,8 @@ serve(async (req: Request) => {
     const accountingPeriodId = await getCurrentAccountingPeriod(
       client,
       companyId,
-      db
+      db,
+      today
     );
 
     await db.transaction().execute(async (trx) => {
@@ -426,14 +419,8 @@ serve(async (req: Request) => {
         .execute();
     });
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ success: true });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse(err, 500);
   }
 });

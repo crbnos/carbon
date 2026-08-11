@@ -6,7 +6,7 @@ import {
   sectionConfigSchema,
   themeSchema
 } from "@carbon/documents/template";
-import { labelSizes } from "@carbon/utils";
+import { isValidTimeZone, labelSizes } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
@@ -54,7 +54,7 @@ export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
 
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   scopes: zfd.text(z.string().optional()),
   expiresAt: zfd.text(
     z
@@ -67,7 +67,7 @@ export const apiKeyValidator = z.object({
 });
 
 const companyAddress = {
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   addressLine1: z.string().min(1, { message: "Address is required" }),
   addressLine2: zfd.text(z.string().optional()),
   city: z.string().min(1, { message: "City is required" }),
@@ -75,6 +75,10 @@ const companyAddress = {
   postalCode: z.string().min(1, { message: "Postal Code is required" }),
   countryCode: z.string().min(1, { message: "Country is required" }),
   baseCurrencyCode: zfd.text(z.string()),
+  timezone: z
+    .string()
+    .min(1, { message: "Timezone is required" })
+    .refine(isValidTimeZone, { message: "Invalid timezone" }),
   website: zfd.text(z.string().optional())
 };
 
@@ -85,7 +89,8 @@ const company = {
   fax: zfd.text(z.string().optional()),
   email: zfd.text(z.string().optional()),
   vatNumber: zfd.text(z.string().optional()),
-  eori: zfd.text(z.string().optional())
+  eori: zfd.text(z.string().optional()),
+  registrationNumber: zfd.text(z.string().optional())
 };
 
 export const companyValidator = z.object(company);
@@ -109,7 +114,7 @@ export const onboardingCompanyValidator = z.object({
 export const customFieldValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
     dataTypeId: zfd.numeric(
       z.number().min(1, { message: "Data type is required" })
@@ -142,6 +147,14 @@ export const digitalQuoteValidator = z.object({
 export const jobCompletedValidator = z.object({
   inventoryJobCompletedNotificationGroup: z.array(z.string()).optional(),
   salesJobCompletedNotificationGroup: z.array(z.string()).optional()
+});
+
+export const operationTimerValidator = z.object({
+  autoStartOperationTimer: zfd.checkbox()
+});
+
+export const jobTravelerMaterialsValidator = z.object({
+  includeMaterialsOnTraveler: zfd.checkbox()
 });
 
 export const kanbanOutputValidator = z.object({
@@ -196,13 +209,34 @@ export const shelfLifeSettingsValidator = z.object({
   expiredEntityPolicy: z.enum(expiredEntityPolicies).default("Block")
 });
 
-export const updateLeadTimesOnReceiptValidator = z.object({
-  updateLeadTimesOnReceipt: zfd.checkbox()
+// What happens when an operator presses Finish on a picking list that still has
+// unpicked material. 'warn' surfaces the shortfall but lets them acknowledge &
+// continue (the list is flagged Partial); 'error' blocks completion until every
+// line is picked or marked Short. Mirrors the storage-rule severity shape.
+export const incompletePickingListPolicies = ["warn", "error"] as const;
+export type IncompletePickingListPolicy =
+  (typeof incompletePickingListPolicies)[number];
+
+export const incompletePickingListPolicyValidator = z.object({
+  incompletePickingListPolicy: z
+    .enum(incompletePickingListPolicies)
+    .default("warn")
 });
 
-export const maintenanceSettingsValidator = z.object({
-  maintenanceGenerateInAdvance: zfd.checkbox(),
-  maintenanceAdvanceDays: zfd.numeric(z.number().min(1).max(90).default(7))
+// When un-consumed picked material flushes back from the work-center lineside
+// bin to the warehouse. 'job' (default) returns the remainder when the whole
+// job completes; 'operation' returns each operation's remainder as soon as that
+// operation is Done (holding back what completion-time backflush still needs).
+export const returnPickedMaterialTimings = ["job", "operation"] as const;
+export type ReturnPickedMaterialTiming =
+  (typeof returnPickedMaterialTimings)[number];
+
+export const returnPickedMaterialTimingValidator = z.object({
+  returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).default("job")
+});
+
+export const updateLeadTimesOnReceiptValidator = z.object({
+  updateLeadTimesOnReceipt: zfd.checkbox()
 });
 
 export const materialIdsValidator = z.object({
@@ -291,6 +325,16 @@ export const sequenceValidator = z.object({
   size: zfd.numeric(z.number().min(1).max(20))
 });
 
+export const itemSerialSequenceValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  prefix: zfd.text(z.string().optional()),
+  suffix: zfd.text(z.string().optional()),
+  next: zfd.numeric(z.number().min(0)),
+  step: zfd.numeric(z.number().min(1)),
+  size: zfd.numeric(z.number().min(1).max(20))
+});
+
 export const themes = [
   "zinc",
   "neutral",
@@ -313,7 +357,7 @@ export const themeValidator = z.object({
 export const webhookValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
     url: z.string().url({ message: "Must be a valid URL" }),
     onInsert: zfd.checkbox(),

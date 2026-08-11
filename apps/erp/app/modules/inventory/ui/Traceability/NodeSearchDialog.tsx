@@ -24,6 +24,9 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   payload: LineagePayload;
   onSelect?: (id: string) => void;
+  /** Maps a clustered serial to the group node that stands in for it — a
+   *  member has no node of its own to centre on. */
+  resolveNodeId?: (id: string) => string;
 };
 
 type SearchResult = {
@@ -35,7 +38,8 @@ export function NodeSearchDialog({
   open,
   onOpenChange,
   payload,
-  onSelect
+  onSelect,
+  resolveNodeId
 }: Props) {
   const { getNode, setCenter } = useReactFlow();
   const navigate = useNavigate();
@@ -79,7 +83,8 @@ export function NodeSearchDialog({
     onOpenChange(false);
     const inGraph = kind === "entity" ? localIds.e.has(id) : localIds.a.has(id);
     if (inGraph) {
-      const node = getNode(id);
+      const nodeId = kind === "entity" ? (resolveNodeId?.(id) ?? id) : id;
+      const node = getNode(nodeId);
       if (node) {
         const w = node.measured?.width ?? node.width ?? 44;
         const h = node.measured?.height ?? node.height ?? 44;

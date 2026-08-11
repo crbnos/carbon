@@ -15,6 +15,7 @@ import {
   locationValidator,
   upsertLocation
 } from "~/modules/resources";
+import { invalidateLocationTimeZone } from "~/modules/shared/timezone.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { getCompanyId, locationsQuery } from "~/utils/react-query";
@@ -43,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -74,6 +75,9 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // location.timezone may have changed — drop the cached resolution.
+  await invalidateLocationTimeZone(id, companyId);
+
   throw redirect(
     path.to.locations,
     await flash(request, success("Location updated"))
@@ -96,6 +100,7 @@ export default function LocationRoute() {
   const initialValues = {
     id: location.id,
     name: location.name,
+    code: location.code ?? undefined,
     addressLine1: location.addressLine1 ?? undefined,
     addressLine2: location.addressLine2 ?? undefined,
     city: location.city ?? undefined,

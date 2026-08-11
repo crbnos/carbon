@@ -111,10 +111,12 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // Mirror the DB auto-Done predicate (sync_update_job_operation_quantities,
+  // 20260807090629): scrap does NOT count toward targetQuantity — the op is
+  // finished only once GOOD (+ reworked) quantity reaches the target.
   const totalAccountedQuantity =
     (jobOperation.data.quantityComplete ?? 0) +
     (jobOperation.data.quantityReworked ?? 0) +
-    (jobOperation.data.quantityScrapped ?? 0) +
     validation.data.quantity;
 
   const willBeFinished =
@@ -149,7 +151,6 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const trackedEntityId = newTrackedEntityId;
     if (response.error) {
       return data(
         {},
@@ -186,15 +187,21 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    if (trackedEntityId) {
-      return redirect(
-        `${path.to.operation(
-          validation.data.jobOperationId
-        )}?trackedEntityId=${trackedEntityId}`
-      );
-    }
-
-    return redirect(`${path.to.operation(validation.data.jobOperationId)}`);
+    // Not finished: complete this unit and let the client (useOperation for the
+    // operation view, AssemblyView for assembly ops) decide how to advance —
+    // auto-select the next unit on the first operation, or open the scan/select
+    // picker on later operations. Returning data (instead of redirecting to a
+    // specific next unit) keeps the just-completed unit in the URL and revalidates
+    // the loader, so the client is the single advancement authority and nothing
+    // races it. The `{ completed: true }` marker lets AssemblyView tell a
+    // successful completion apart from a failure (which returns an empty `{}`).
+    return data(
+      { completed: true },
+      await flash(request, {
+        ...success("Completed"),
+        flash: "success"
+      })
+    );
   } else if (validation.data.trackingType === "Batch") {
     const response = await serviceRole.functions.invoke("issue", {
       body: {

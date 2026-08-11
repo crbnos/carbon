@@ -14,8 +14,11 @@ import {
   installSkills,
   spawnApps,
   spawnAssembler,
+  spawnEmailPreview,
   spawnStripeListener,
-  syncEnvSymlinks
+  stopAuxApps,
+  syncEnvSymlinks,
+  whenAuxAppExits
 } from "../services/apps.js";
 import {
   allImagesPresentLocally,
@@ -94,6 +97,12 @@ type UpOpts = {
    * hosts where the Supabase dashboard and email testing UI aren't needed.
    */
   minimal?: boolean;
+  /**
+   * Boot a local headless Chromium container (compose `chrome` profile) and
+   * flag the model-thumbnail job to render locally against it, so the thumbnail
+   * flow is testable in dev. Off by default (the job skips on local otherwise).
+   */
+  thumbnails?: boolean;
 };
 
 type Ctx = {
@@ -112,6 +121,7 @@ export async function up(opts: UpOpts = {}) {
   const shouldRegen = shouldMigrate && (opts.regen ?? true);
   const shouldBorrow = opts.borrow === true;
   const minimal = opts.minimal ?? false;
+  const thumbnails = opts.thumbnails === true;
   // Services-only mode: boot compose stack + portless aliases (api/studio/
   // mail/inngest URLs still useful), skip spawnApps + auto-`down` on Ctrl+C.
   // Triggered by --no-apps OR by deselecting everything in the picker.
@@ -154,6 +164,16 @@ export async function up(opts: UpOpts = {}) {
     await ensureProxyPrivileges();
   } else {
     log.info("portless disabled (CARBON_PORTLESS=0) — using localhost URLs");
+  }
+
+  // The chrome container reaches the ERP through the portless proxy (the raw
+  // dev port only binds 127.0.0.1). Without portless there's no reachable ERP
+  // URL, so local thumbnail rendering can't work — don't boot chrome for nothing.
+  const chromeEnabled = thumbnails && portless;
+  if (thumbnails && !portless) {
+    log.warn(
+      "--thumbnails needs portless (chrome reaches the ERP via the proxy) — ignoring"
+    );
   }
 
   const allApps = opts.all === true;
@@ -209,13 +229,14 @@ export async function up(opts: UpOpts = {}) {
     slug,
     portless,
     selectedApps.includes("assembler"),
+    chromeEnabled,
     borrowedEntry
   );
   if (borrowedEntry) {
     await waitForServices(ctx);
   } else {
     await pullImages(ctx, { force: opts.pull === true, minimal });
-    await bootDockerStack(ctx, { minimal });
+    await bootDockerStack(ctx, { minimal, chrome: chromeEnabled });
     await waitForServices(ctx);
   }
   await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
@@ -234,6 +255,10 @@ export async function up(opts: UpOpts = {}) {
 
   if (selectedApps.includes("assembler")) {
     spawnAssembler({ root, ports: ctx.ports });
+  }
+
+  if (selectedApps.includes("email")) {
+    spawnEmailPreview({ root, ports: ctx.ports });
   }
 
   const summary = summaryLines(
@@ -343,6 +368,7 @@ async function provisionSlot(
   slug: string,
   portless: boolean,
   includeAssembler: boolean,
+  thumbnails: boolean,
   borrowedEntry?: { ports: PortMap; redisDb: number; jwt: JwtCreds }
 ): Promise<Ctx> {
   let ctx!: Ctx;
@@ -369,7 +395,8 @@ async function provisionSlot(
               ports: {
                 ...borrowedEntry.ports,
                 PORT_ERP: ownSlot.ports.PORT_ERP,
-                PORT_MES: ownSlot.ports.PORT_MES
+                PORT_MES: ownSlot.ports.PORT_MES,
+                PORT_EMAIL: ownSlot.ports.PORT_EMAIL
               } as PortMap,
               redisDb: borrowedEntry.redisDb,
               jwt: borrowedEntry.jwt
@@ -387,6 +414,7 @@ async function provisionSlot(
             portless,
             branchPrefix,
             includeAssembler,
+            thumbnails,
             ...slot
           })
         );
@@ -462,8 +490,11 @@ async function pullImages(
   }
 }
 
-async function bootDockerStack(ctx: Ctx, opts: { minimal: boolean }) {
-  const serviceCount = opts.minimal ? 8 : 11;
+async function bootDockerStack(
+  ctx: Ctx,
+  opts: { minimal: boolean; chrome?: boolean }
+) {
+  const serviceCount = (opts.minimal ? 8 : 11) + (opts.chrome ? 1 : 0);
   const label = opts.minimal
     ? "Boot docker compose stack (minimal — no studio/meta/inbucket)"
     : "Boot docker compose stack";
@@ -472,7 +503,10 @@ async function bootDockerStack(ctx: Ctx, opts: { minimal: boolean }) {
       title: label,
       task: async (msg) => {
         msg(`starting ${serviceCount} services`);
-        await bootStack(ctx.root, ctx.slug, { minimal: opts.minimal });
+        await bootStack(ctx.root, ctx.slug, {
+          minimal: opts.minimal,
+          chrome: opts.chrome
+        });
         return "containers up";
       }
     }
@@ -653,6 +687,10 @@ async function ensureHostsFile() {
   await syncHostsFile();
 }
 
+function reactRouterApps(selectedApps: AppId[]): AppId[] {
+  return selectedApps.filter((id) => id !== "assembler" && id !== "email");
+}
+
 async function runAppsThenTeardown(
   root: string,
   selectedApps: AppId[],
@@ -660,8 +698,17 @@ async function runAppsThenTeardown(
   portless: boolean,
   stripeChild?: ExecaChildProcess
 ) {
-  const reactRouterApps = selectedApps.filter((id) => id !== "assembler");
-  await spawnApps({ root, apps: reactRouterApps, ports, portless });
+  const apps = reactRouterApps(selectedApps);
+  if (apps.length === 0) {
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        onShutdown(() => resolve());
+      }),
+      whenAuxAppExits()
+    ]);
+  } else {
+    await spawnApps({ root, apps, ports, portless });
+  }
 
   // Apps exit on Ctrl+C; auto-`down` so compose stack isn't orphaned.
   // Swallow further signals so a second Ctrl+C during teardown doesn't
@@ -742,7 +789,7 @@ async function runAppsThenCommand(
   const controller = new AbortController();
   const appsDone = spawnApps({
     root,
-    apps: selectedApps,
+    apps: reactRouterApps(selectedApps),
     ports,
     portless,
     signal: controller.signal
@@ -764,6 +811,7 @@ async function runAppsThenCommand(
   } finally {
     controller.abort(); // stop the app supervisors
     await appsDone;
+    stopAuxApps();
     killStripe(stripeChild);
     await down({ silent: true, volumes: cleanVolumes });
     detach();

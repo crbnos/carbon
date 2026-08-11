@@ -2,6 +2,12 @@
 
 Chart of accounts, journal entries, general ledger, fiscal periods, currencies, payment terms, cost centers, dimensions, financial reporting (trial balance, balance sheet, income statement), fixed assets with depreciation, intercompany transactions, and external accounting sync (Xero).
 
+The reports hub lives inside the accounting module at `/x/accounting/reports` (with the module sidebar; single "Reports" sidebar item), while the report pages themselves are full-screen in their own namespace `apps/erp/app/routes/x+/reports+/` (`/x/reports/{balance-sheet,income-statement,executive-pnl,trial-balance,inventory-valuation}` — bare-outlet layout, no module sidebar; `/x/reports` redirects to the hub). Balance sheet and income statement are multi-period: a Columns filter (Monthly default / Quarterly / Yearly) buckets the selected range fiscal-aware via `computeReportPeriodBuckets` (`@carbon/utils`) and the `accountTreeBalancePeriodSeries` RPC returns per-bucket `balanceAtDate`/`netChange` in one snapshot-bounded journal scan. Trial balance stays single-period (Beginning/Debit/Credit/Ending derived from netChange by account class).
+
+**Inventory Valuation** (`inventory-valuation.tsx`, gated on `view: "accounting"`) is an inventory-subledger report that lives here (not in the inventory module): it renders the `InventoryValuationWorkbench` from `~/modules/inventory` (on-hand value by location/item, as-of date, with a GL tie-out and a **Reconcile** action → `inventory-valuation.reconcile` posting via `createInventoryReconciliationJournal`, gated on `create: "accounting"`). Data/UI live in the inventory module; only the route + hub registration are here.
+
+The **Executive P&L** (`executive-pnl.tsx`) shares the income statement's loader (same period series, consolidation, and translation) but renders a condensed summary instead of the account tree: `computeExecutivePnl` (`ui/Reports/executivePnl.ts`) rolls income-statement leaves up by `accountType` into Revenue / Cost of Sales / Operating Expenses / Other Income / Other Expense / Tax, then derives Gross Profit, Operating Income, and Net Income with margin-of-revenue percentages. A class-based catch-all keeps Net Income tied out to the income-statement root; `ExecutivePnlSummary` renders the fixed lines (no search, no drill-down).
+
 ## Key Domain Concepts
 
 - **Chart of Accounts** — hierarchical account tree. Accounts have `class` (Asset/Liability/Equity/Revenue/Expense), `incomeBalance` (Balance Sheet/Income Statement), and `accountType`. Group accounts contain children; leaf accounts post transactions. Scoped by `companyGroupId`.
@@ -49,7 +55,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `journal` / `journalLine` | Double-entry transactions; lines carry dimension assignments |
 | `journalLineDimension` | Dimension values assigned to journal lines |
 | `accountingPeriod` | Fiscal periods. `closeStatus` (`periodCloseStatus`: Open→Locked→Closed lifecycle), `fiscalYear`/`periodNumber` (identity from the fiscal start month), `lockedAt`/`lockedBy`. Legacy `status` (Active/Inactive) is deprecated. |
-| `accountingPeriodBalance` | Cumulative per-account GL balance snapshots. `closeAccountingPeriod` calls `snapshotAccountingPeriodBalances` inside its close transaction (after the flip to Closed) to write them; `reopenAccountingPeriod` deletes them (`endingBalanceDate` ≥ period `endDate`) before flipping back to Open. Read by `accountTreeBalancesByCompany` (snapshot + delta; full-scan fallback when empty). Balance RPCs exclude Draft journals. |
+| `accountingPeriodBalance` | Cumulative per-account GL balance snapshots. `closeAccountingPeriod` calls `snapshotAccountingPeriodBalances` inside its close transaction (after the flip to Closed) to write them; `reopenAccountingPeriod` deletes them (`endingBalanceDate` ≥ period `endDate`) before flipping back to Open. Read by `accountTreeBalancesByCompany` (snapshot + delta; full-scan fallback when empty) and `accountTreeBalancePeriodSeries` (multi-period: base snapshot before the range start + one bounded scan bucketed by period ends; single uniform branch). Balance RPCs exclude Draft journals. |
 | `periodCloseTaskDefinition` / `periodCloseTask` | NetSuite-style close checklist: company-level task templates + per-period instances (seeded via `seed-company`) |
 | `accountDefault` | Default GL account mappings (AR, AP, inventory, etc.) |
 | `currency` / `currencyCode` / `exchangeRateHistory` | Multi-currency with historical rates |
@@ -61,13 +67,18 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `fixedAssetDisposal` / `fixedAssetUsageLog` | Asset disposal and usage tracking |
 | `intercompanyTransaction` | Cross-company transaction matching |
 | `fiscalYearSettings` | Fiscal and tax year configuration |
+| `reportPin` | Per-user pin overrides for the reports hub — explicit `pinned` boolean per `(reportKey, userId, companyId)`; absent row = the report's default (core statements default pinned) |
 
 ## Key Service Functions
 
 - `getChartOfAccounts` / `getAccounts` / `upsertAccount` — account management
 - `getTrialBalance` — trial balance via `trialBalance` RPC
-- `getFinancialStatementBalances` — balance sheet / income statement with Net Income computation
-- `getConsolidatedBalances` — multi-company consolidation with currency translation
+- `getFinancialStatementBalances` — single-period statement balances with Net Income computation (trial balance report)
+- `getFinancialStatementPeriodSeries` — multi-period balance sheet / income statement columns via the `accountTreeBalancePeriodSeries` RPC; per-bucket Net Income injection and optional per-bucket translation (`translate` arg)
+- `getConsolidatedBalances` / `getConsolidatedPeriodSeries` — multi-company consolidation with currency translation (single-period / per-bucket)
+- `translateCompanyPeriodSeries` — per-bucket currency translation (wraps `translateCompanyBalances` once per bucket)
+- `getAccountPeriodSeries` — thin wrapper for the `accountTreeBalancePeriodSeries` RPC (period ends must come from `computeReportPeriodBuckets`)
+- `getReportPins` / `upsertReportPin` — per-user pin overrides for the reports hub
 - `createJournalEntry` / `saveJournalEntryWithLines` / `postJournalEntry` / `reverseJournalEntry` — journal lifecycle
 - `getOrCreateAccountingPeriod` / `getCurrentAccountingPeriod` — period management (lazy create on posting)
 - `createFiscalYearPeriods` — generate the 12 monthly periods for a fiscal year (idempotent; from `fiscalYearSettings.startMonth`)

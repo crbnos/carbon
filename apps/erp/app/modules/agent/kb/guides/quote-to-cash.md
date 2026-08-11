@@ -18,7 +18,7 @@ A sales order does not require a quote, and a quote does not require an RFQ. Eac
 
 Open a new quote and add a line per item the customer asked about. Pricing lives on the line and supports quantity breaks, so the unit price for 10 can differ from the price for 100. The negotiated number you land on is what carries forward later.
 
-A fresh quote sits at **"Draft"**. Each line moves through its own state as you work it up: **"Not Started"**, **"In Progress"**, **"Complete"**, or **"No Quote"** for a line you decide not to bid. The line states let you quote a multi-item inquiry piecemeal instead of all at once.
+A fresh quote sits at **"Draft"**. Each line moves through its own state as you work it up: **"Draft"**, **"In Progress"**, then **"Complete"** once you've settled its pricing. The line states let you quote a multi-item inquiry piecemeal instead of all at once, marking lines complete one by one rather than all at once.
 
 When the numbers are ready, finalizing the quote moves it to **"Sent"** and marks its lines **"Complete"**. That status is also the gate for the next step.
 

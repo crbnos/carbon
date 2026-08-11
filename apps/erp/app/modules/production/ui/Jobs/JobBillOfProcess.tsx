@@ -52,15 +52,9 @@ import { Editor } from "@carbon/react/Editor";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale, useNumberFormatter } from "@react-aria/i18n";
+import { useNumberFormatter } from "@react-aria/i18n";
 import type { DragControls } from "framer-motion";
-import {
-  AnimatePresence,
-  LayoutGroup,
-  motion,
-  Reorder,
-  useDragControls
-} from "framer-motion";
+import { motion, Reorder, useDragControls } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -81,15 +75,20 @@ import {
   LuPlay,
   LuRefreshCcw,
   LuSend,
-  LuSettings2,
   LuShieldX,
-  LuTriangleAlert,
-  LuX
+  LuTriangleAlert
 } from "react-icons/lu";
-import { Link, useFetcher, useFetchers, useParams } from "react-router";
+import {
+  Link,
+  useFetcher,
+  useFetchers,
+  useParams,
+  useRevalidator
+} from "react-router";
 import type { z } from "zod";
 import {
   Assignee,
+  DateTime,
   DirectionAwareTabs,
   EmployeeAvatar,
   Empty,
@@ -111,28 +110,34 @@ import {
   UnitHint,
   WorkCenter
 } from "~/components/Form";
+import AssemblyInstruction from "~/components/Form/AssemblyInstruction";
+import InspectionDocument from "~/components/Form/InspectionDocument";
 import Procedure from "~/components/Form/Procedure";
 import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 import { getUnitHint } from "~/components/Form/UnitHint";
 import UnitOfMeasure, {
   useUnitOfMeasure
 } from "~/components/Form/UnitOfMeasure";
-import { ProcedureStepTypeIcon } from "~/components/Icons";
+import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
 import InfiniteScroll from "~/components/InfiniteScroll";
 import { ConfirmDelete } from "~/components/Modals";
+import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
-import { SortableList, SortableListItem } from "~/components/SortableList";
 import {
-  useDateFormatter,
-  usePermissions,
-  useRouteData,
-  useUrlParams,
-  useUser
-} from "~/hooks";
+  SortableList,
+  SortableListItem,
+  SortableListItemPanel,
+  SortableListItemToggle
+} from "~/components/SortableList";
+import { StepLinkEditor } from "~/components/StepLinkEditor";
+import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
 import type {
   OperationParameter,
   OperationStep,
-  OperationTool
+  OperationStepSlide,
+  OperationTool,
+  SlideAnnotation,
+  SlideSize
 } from "~/modules/shared";
 import {
   methodOperationOrders,
@@ -152,7 +157,8 @@ import { getPrivateUrl, path } from "~/utils/path";
 import {
   jobOperationValidator,
   jobOperationValidatorForReleasedJob,
-  procedureSyncValidator
+  procedureSyncValidator,
+  syncAssemblyToBopValidator
 } from "../../production.models";
 import { getProductionEventsPage } from "../../production.service";
 import type { Job, JobOperation } from "../../types";
@@ -179,10 +185,16 @@ type JobOperationStep = OperationStep & {
   jobOperationStepRecord?:
     | Database["public"]["Tables"]["jobOperationStepRecord"]["Row"][]
     | null;
+  jobOperationStepSlide?: OperationStepSlide[] | null;
 };
 
 type JobMaterial = {
+  id: string;
   itemId: string;
+  description?: string | null;
+  quantity?: number | null;
+  jobOperationId?: string | null;
+  jobMaterialStep?: { jobOperationStepId: string }[] | null;
 };
 
 type JobBillOfProcessProps = {
@@ -229,7 +241,7 @@ function makeItem(
           </h3>
           {operation.reworkId && <Badge variant="red">Rework</Badge>}
         </HStack>
-        {operation.operationType === "Outside" && (
+        {operation.operationType === "Outside Processing" && (
           <SupplierProcessPreview
             processId={operation.processId}
             supplierProcessId={operation.operationSupplierProcessId}
@@ -241,8 +253,8 @@ function makeItem(
     order: operation.operationOrder,
     details: (
       <HStack spacing={1}>
-        {operation.operationType === "Outside" ? (
-          <Badge>Outside</Badge>
+        {operation.operationType === "Outside Processing" ? (
+          <Badge>Outside Processing</Badge>
         ) : (
           <>
             {(operation?.setupTime ?? 0) > 0 && (
@@ -353,7 +365,9 @@ const initialOperation: Omit<
   operationUnitCost: 0,
   operationLeadTime: 0,
   operationOrder: "After Previous",
-  operationType: "Inside",
+  operationType: "Process",
+  assemblyInstructionId: "",
+  inspectionDocumentId: "",
   overheadRate: 0,
   processId: "",
   procedureId: "",
@@ -718,6 +732,34 @@ const JobBillOfProcess = ({
     }
   });
 
+  // Phase 3: keep the live job's BOP steps fresh without closing the panel. When steps are
+  // added/edited/reordered for the open operation, or an operator records a step on the shop
+  // floor (jobOperationStepRecord), revalidate so the loader re-serves the latest steps.
+  const revalidator = useRevalidator();
+  useRealtimeChannel({
+    topic: `bop-steps:${selectedItemId}`,
+    enabled: !!selectedItemId && !temporaryItems[selectedItemId],
+    setup(channel) {
+      const refresh = () => revalidator.revalidate();
+      return channel
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "jobOperationStep",
+            filter: `operationId=eq.${selectedItemId}`
+          },
+          refresh
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "jobOperationStepRecord" },
+          refresh
+        );
+    }
+  });
+
   const loadMoreProductionEvents = useCallback(async () => {
     if (isLoading || !hasMore || !selectedItemId) return;
 
@@ -791,6 +833,7 @@ const JobBillOfProcess = ({
             >
               <OperationForm
                 item={item}
+                itemId={itemId}
                 isDisabled={isDisabled}
                 job={jobData?.job}
                 locationId={locationId}
@@ -816,7 +859,8 @@ const JobBillOfProcess = ({
         id: 1,
         label: t`Instructions`,
         disabled:
-          item.id in temporaryItems || item.data.operationType === "Outside",
+          item.id in temporaryItems ||
+          item.data.operationType === "Outside Processing",
         content: (
           <div className="flex flex-col">
             <div>
@@ -853,7 +897,8 @@ const JobBillOfProcess = ({
       {
         id: 2,
         disabled:
-          item.id in temporaryItems || item.data.operationType === "Outside",
+          item.id in temporaryItems ||
+          item.data.operationType === "Outside Processing",
         label: (
           <span className="flex items-center gap-2">
             <span>
@@ -878,7 +923,8 @@ const JobBillOfProcess = ({
       {
         id: 3,
         disabled:
-          item.id in temporaryItems || item.data.operationType === "Outside",
+          item.id in temporaryItems ||
+          item.data.operationType === "Outside Processing",
         label: (
           <span className="flex items-center gap-2">
             <span>
@@ -897,6 +943,7 @@ const JobBillOfProcess = ({
               }
               temporaryItems={temporaryItems}
               materials={materials}
+              tools={tools}
             />
           </div>
         )
@@ -904,7 +951,8 @@ const JobBillOfProcess = ({
       {
         id: 4,
         disabled:
-          item.id in temporaryItems || item.data.operationType === "Outside",
+          item.id in temporaryItems ||
+          item.data.operationType === "Outside Processing",
         label: (
           <span className="flex items-center gap-2">
             <span>
@@ -929,7 +977,8 @@ const JobBillOfProcess = ({
       {
         id: 5,
         disabled:
-          item.id in temporaryItems || item.data.operationType === "Outside",
+          item.id in temporaryItems ||
+          item.data.operationType === "Outside Processing",
         label: t`Events`,
         content: (
           <div className="flex w-full flex-col pr-2 py-6 min-h-[300px]">
@@ -956,7 +1005,8 @@ const JobBillOfProcess = ({
       {
         id: 6,
         disabled:
-          item.id in temporaryItems || item.data.operationType === "Outside",
+          item.id in temporaryItems ||
+          item.data.operationType === "Outside Processing",
         label: t`Chat`,
         content: <OperationChat jobOperationId={item.id} />
       }
@@ -974,84 +1024,18 @@ const JobBillOfProcess = ({
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
         renderExtra={(item) => (
-          <div key={`${isOpen}`}>
-            <motion.button
-              layout
-              onClick={
-                isOpen
-                  ? () => {
-                      setSelectedItemId(null);
-                    }
-                  : () => {
-                      setSelectedItemId(item.id);
-                    }
-              }
-              key="collapse"
-              className={cn("absolute right-3 top-3 z-10")}
-            >
-              {isOpen ? (
-                <motion.span
-                  initial={{ opacity: 0, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{
-                    type: "spring",
-                    duration: 1.95
-                  }}
-                >
-                  <LuX className="h-5 w-5 text-foreground" />
-                </motion.span>
-              ) : (
-                <motion.span
-                  initial={{ opacity: 0, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{
-                    type: "spring",
-                    duration: 0.95
-                  }}
-                >
-                  <LuSettings2 className="stroke-1 h-5 w-5 text-foreground/80  hover:stroke-primary/70 " />
-                </motion.span>
-              )}
-            </motion.button>
-
-            <LayoutGroup id={`${item.id}`}>
-              <AnimatePresence mode="popLayout">
-                {isOpen ? (
-                  <motion.div className="flex w-full flex-col ">
-                    <div className=" w-full p-2">
-                      <motion.div
-                        initial={{
-                          y: 0,
-                          opacity: 0,
-                          filter: "blur(4px)"
-                        }}
-                        animate={{
-                          y: 0,
-                          opacity: 1,
-                          filter: "blur(0px)"
-                        }}
-                        transition={{
-                          type: "spring",
-                          duration: 0.15
-                        }}
-                        layout
-                        className="w-full "
-                      >
-                        <DirectionAwareTabs
-                          className="mr-auto"
-                          tabs={tabs}
-                          onChange={() =>
-                            setTabChangeRerender(tabChangeRerender + 1)
-                          }
-                        />
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </LayoutGroup>
+          <div>
+            <SortableListItemToggle
+              isOpen={isOpen}
+              onToggle={() => setSelectedItemId(isOpen ? null : item.id)}
+            />
+            <SortableListItemPanel isOpen={isOpen}>
+              <DirectionAwareTabs
+                className="mr-auto"
+                tabs={tabs}
+                onChange={() => setTabChangeRerender(tabChangeRerender + 1)}
+              />
+            </SortableListItemPanel>
           </div>
         )}
       />
@@ -1083,13 +1067,15 @@ const JobBillOfProcess = ({
         </CardAction>
       </HStack>
       <CardContent>
-        <SortableList
-          items={items}
-          onReorder={onReorder}
-          onToggleItem={onToggleItem}
-          onRemoveItem={onRemoveItem}
-          renderItem={renderListItem}
-        />
+        <ScrollArea type="auto" className="max-h-[60dvh]">
+          <SortableList
+            items={items}
+            onReorder={onReorder}
+            onToggleItem={onToggleItem}
+            onRemoveItem={onRemoveItem}
+            renderItem={renderListItem}
+          />
+        </ScrollArea>
       </CardContent>
     </Card>
   );
@@ -1102,20 +1088,24 @@ function StepsForm({
   isDisabled,
   steps,
   temporaryItems,
-  materials
+  materials,
+  tools
 }: {
   operationId: string;
   isDisabled: boolean;
   steps: JobOperationStep[];
   temporaryItems: TemporaryItems;
   materials: JobMaterial[];
+  tools: OperationTool[];
 }) {
   const fetcher = useFetcher<typeof newJobOperationParameterAction>();
   const { t } = useLingui();
+  const revalidator = useRevalidator();
   const sortOrderFetcher = useFetcher<{ success: boolean }>();
   const [type, setType] = useState<OperationStep["type"]>("Task");
   const [description, setDescription] = useState<JSONContent>({});
   const [numericControls, setNumericControls] = useState<string[]>([]);
+  const toastedStepId = useRef<string | null>(null);
 
   // Initialize sort order state based on existing steps
   const [sortOrder, setSortOrder] = useState<string[]>(() =>
@@ -1176,9 +1166,60 @@ function StepsForm({
 
   const { carbon } = useCarbon();
   const {
+    id: userId,
     company: { id: companyId }
   } = useUser();
   const [allItems] = useItems();
+  // Slides chosen while creating a step are buffered here (the step has no id yet); they're
+  // attached to the new step right after it's created. See the effect below.
+  // A buffered slide is image XOR model (imagePath / modelUploadId).
+  const [draftSlides, setDraftSlides] = useState<
+    {
+      id: string;
+      imagePath: string | null;
+      modelUploadId: string | null;
+      caption: string;
+      size: SlideSize;
+      annotations: SlideAnnotation[];
+    }[]
+  >([]);
+  const [draftUploading, setDraftUploading] = useState(false);
+  const draftFileInputRef = useRef<HTMLInputElement>(null);
+  const draftModelInputRef = useRef<HTMLInputElement>(null);
+
+  // Parts (this operation's BOM materials) the operator can assign to a step. Parts picked
+  // while CREATING a step are buffered here and attached right after the step is created.
+  const operationParts = useMemo(
+    () =>
+      (materials ?? [])
+        .filter((m) => m.jobOperationId === operationId)
+        .map((m) => ({
+          id: m.id,
+          name: m.description || m.itemId,
+          quantity: m.quantity ?? 1
+        })),
+    [materials, operationId]
+  );
+  const [draftParts, setDraftParts] = useState<string[]>([]);
+
+  // Tools (this operation's tools) the operator can assign to a step — the tool twin of
+  // operationParts/draftParts. Tools picked while CREATING a step are buffered here and
+  // attached right after the step is created (see the effect below).
+  const allTools = useTools();
+  const operationTools = useMemo(
+    () =>
+      (tools ?? []).map((tl) => {
+        const tool = allTools.find((x) => x.id === tl.toolId);
+        return {
+          id: tl.id ?? "",
+          name: tool?.readableIdWithRevision ?? tl.toolId ?? "",
+          secondary: tool?.name ?? undefined,
+          quantity: tl.quantity ?? 1
+        };
+      }),
+    [tools, allTools]
+  );
+  const [draftTools, setDraftTools] = useState<string[]>([]);
 
   const materialItemIds = useMemo(
     () => new Set((materials ?? []).map((m) => m.itemId)),
@@ -1215,6 +1256,160 @@ function StepsForm({
     return getPrivateUrl(result.data.path);
   };
 
+  const onAddDraftSlide = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !carbon) return;
+    setDraftUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
+      const result = await carbon.storage
+        .from("private")
+        .upload(fileName, file);
+      if (result.error || !result.data) {
+        toast.error(t`Failed to upload image`);
+        return;
+      }
+      setDraftSlides((prev) => [
+        ...prev,
+        {
+          id: nanoid(),
+          imagePath: result.data.path,
+          modelUploadId: null,
+          caption: "",
+          size: "medium",
+          annotations: []
+        }
+      ]);
+    } finally {
+      setDraftUploading(false);
+    }
+  };
+
+  // Upload a chosen 3D model, register it as a modelUpload (which also kicks the
+  // assembler's STEP → GLB conversion), and buffer it as a draft model slide.
+  const onAddDraftModel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !carbon) return;
+    setDraftUploading(true);
+    try {
+      const modelUploadId = await uploadStepSlideModel(carbon, companyId, file);
+      if (!modelUploadId) {
+        toast.error(t`Failed to upload model`);
+        return;
+      }
+      setDraftSlides((prev) => [
+        ...prev,
+        {
+          id: nanoid(),
+          imagePath: null,
+          modelUploadId,
+          caption: "",
+          size: "medium",
+          annotations: []
+        }
+      ]);
+    } finally {
+      setDraftUploading(false);
+    }
+  };
+
+  // When the new step is created, attach any buffered slides to it, then revalidate so they
+  // show on the step and reset the buffer for the next step.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
+  useEffect(() => {
+    const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
+    if (!newStepId || draftSlides.length === 0 || !carbon) return;
+    let cancelled = false;
+    // Snapshot the batch so anything added for the next step survives this save.
+    const batch = draftSlides;
+    (async () => {
+      const slideRows = batch.map((slide, index) => ({
+        stepId: newStepId,
+        imagePath: slide.imagePath,
+        modelUploadId: slide.modelUploadId,
+        caption: slide.caption || null,
+        sortOrder: index + 1,
+        size: slide.size,
+        annotations: slide.annotations,
+        companyId,
+        createdBy: userId
+      }));
+      const { error } = await carbon
+        .from("jobOperationStepSlide")
+        .insert(slideRows);
+      if (cancelled) return;
+      if (error) {
+        toast.error(t`Failed to save slides`);
+        return;
+      }
+      const savedIds = new Set(batch.map((slide) => slide.id));
+      setDraftSlides((prev) => prev.filter((slide) => !savedIds.has(slide.id)));
+      revalidator.revalidate();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetcher.data]);
+
+  // When the new step is created, attach any buffered parts, then revalidate + reset.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
+  useEffect(() => {
+    const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
+    if (!newStepId || draftParts.length === 0 || !carbon) return;
+    let cancelled = false;
+    const batch = draftParts;
+    (async () => {
+      const { error } = await carbon.from("jobMaterialStep").insert(
+        batch.map((jobMaterialId) => ({
+          jobMaterialId,
+          jobOperationStepId: newStepId
+        }))
+      );
+      if (cancelled) return;
+      if (error) {
+        toast.error(t`Failed to save parts`);
+        return;
+      }
+      const savedIds = new Set(batch);
+      setDraftParts((prev) => prev.filter((id) => !savedIds.has(id)));
+      revalidator.revalidate();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetcher.data]);
+
+  // When the new step is created, attach any buffered tools, then revalidate + reset.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
+  useEffect(() => {
+    const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
+    if (!newStepId || draftTools.length === 0 || !carbon) return;
+    let cancelled = false;
+    const batch = draftTools;
+    (async () => {
+      const { error } = await carbon.from("jobOperationToolStep").insert(
+        batch.map((jobOperationToolId) => ({
+          jobOperationToolId,
+          jobOperationStepId: newStepId
+        }))
+      );
+      if (cancelled) return;
+      if (error) {
+        toast.error(t`Failed to save tools`);
+        return;
+      }
+      const savedIds = new Set(batch);
+      setDraftTools((prev) => prev.filter((id) => !savedIds.has(id)));
+      revalidator.revalidate();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetcher.data]);
+
   if (isDisabled && temporaryItems[operationId]) {
     return (
       <Alert className="max-w-[420px] mx-auto my-8">
@@ -1230,10 +1425,7 @@ function StepsForm({
   }
 
   return (
-    <Loading
-      className="flex flex-col gap-6"
-      isLoading={fetcher.state !== "idle"}
-    >
+    <div className="flex flex-col gap-6">
       {disclosure.isOpen ? (
         <div className="p-6 border rounded-lg bg-card mb-6">
           <ValidatedForm
@@ -1256,9 +1448,17 @@ function StepsForm({
                 1,
               operationId
             }}
-            onSubmit={() => {
-              setType("Value");
+            onAfterSubmit={() => {
+              const newStepId = (
+                fetcher.data as { id?: string | null } | undefined
+              )?.id;
+              if (!newStepId || newStepId === toastedStepId.current) return;
+              toastedStepId.current = newStepId;
+              // Only clear the controlled fields once the step actually saved.
+              setType("Task");
               setDescription({});
+              setNumericControls([]);
+              toast.success(t`Step added`);
             }}
             className="w-full"
           >
@@ -1345,6 +1545,79 @@ function StepsForm({
                 <ArrayInput name="listValues" label={t`List Options`} />
               )}
 
+              <SlidesEditor
+                slides={draftSlides.map((slide) => ({
+                  key: slide.id,
+                  imagePath: slide.imagePath,
+                  modelUploadId: slide.modelUploadId,
+                  caption: slide.caption,
+                  size: slide.size,
+                  annotations: slide.annotations
+                }))}
+                isDisabled={isDisabled}
+                busy={draftUploading}
+                fileInputRef={draftFileInputRef}
+                onFileChange={onAddDraftSlide}
+                modelInputRef={draftModelInputRef}
+                onModelFileChange={onAddDraftModel}
+                onRemove={(index) =>
+                  setDraftSlides((prev) => prev.filter((_, i) => i !== index))
+                }
+                onCaptionBlur={(index, caption) =>
+                  setDraftSlides((prev) =>
+                    prev.map((slide, i) =>
+                      i === index ? { ...slide, caption } : slide
+                    )
+                  )
+                }
+                onAnnotationsChange={(index, annotations) =>
+                  setDraftSlides((prev) =>
+                    prev.map((slide, i) =>
+                      i === index ? { ...slide, annotations } : slide
+                    )
+                  )
+                }
+              />
+
+              <StepLinkEditor
+                label={t`Parts`}
+                addLabel={t`Add parts`}
+                emptyLabel={t`No parts`}
+                searchPlaceholder={t`Search parts...`}
+                removeLabel={t`Remove part`}
+                items={operationParts}
+                linkedIds={draftParts}
+                isDisabled={isDisabled}
+                onAdd={(partId) =>
+                  setDraftParts((prev) =>
+                    prev.includes(partId) ? prev : [...prev, partId]
+                  )
+                }
+                onRemove={(partId) =>
+                  setDraftParts((prev) => prev.filter((id) => id !== partId))
+                }
+              />
+
+              <StepLinkEditor
+                label={t`Tools`}
+                addLabel={t`Add tools`}
+                emptyLabel={t`No tools`}
+                searchPlaceholder={t`Search tools...`}
+                removeLabel={t`Remove tool`}
+                icon={<LuHammer />}
+                items={operationTools}
+                linkedIds={draftTools}
+                isDisabled={isDisabled}
+                onAdd={(toolId) =>
+                  setDraftTools((prev) =>
+                    prev.includes(toolId) ? prev : [...prev, toolId]
+                  )
+                }
+                onRemove={(toolId) =>
+                  setDraftTools((prev) => prev.filter((id) => id !== toolId))
+                }
+              />
+
               <Submit
                 leftIcon={<LuCirclePlus />}
                 isDisabled={isDisabled || fetcher.state !== "idle"}
@@ -1386,6 +1659,8 @@ function StepsForm({
                       attribute={step}
                       operationId={operationId}
                       typeOptions={typeOptions}
+                      materials={materials}
+                      tools={tools}
                       isDisabled={isDisabled}
                       dragControls={dragControls}
                       itemMentions={itemMentions}
@@ -1402,7 +1677,275 @@ function StepsForm({
           </Reorder.Group>
         </div>
       )}
-    </Loading>
+    </div>
+  );
+}
+
+// Parts assigned to an EXISTING job step — the step-side of the part↔step link. Toggles each
+// jobMaterialStep link immediately via the material route. Job-tier twin of StepParts.
+function JobStepParts({
+  step,
+  operationId,
+  materials,
+  isDisabled
+}: {
+  step: JobOperationStep;
+  operationId: string;
+  materials: JobMaterial[];
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const fetcher = useFetcher();
+
+  const operationParts = (materials ?? [])
+    .filter((m) => m.jobOperationId === operationId)
+    .map((m) => ({
+      id: m.id,
+      name: m.description || m.itemId,
+      quantity: m.quantity ?? 1
+    }));
+
+  const linkedPartIds = (materials ?? [])
+    .filter((m) =>
+      (m.jobMaterialStep ?? []).some((s) => s.jobOperationStepId === step.id)
+    )
+    .map((m) => m.id);
+
+  const toggle = (partId: string, linked: boolean) => {
+    if (!step.id) return;
+    const fd = new FormData();
+    fd.append("materialId", partId);
+    fd.append("stepId", step.id);
+    fd.append("linked", String(linked));
+    fetcher.submit(fd, {
+      method: "post",
+      action: path.to.jobOperationStepMaterial
+    });
+  };
+
+  return (
+    <StepLinkEditor
+      label={t`Parts`}
+      addLabel={t`Add parts`}
+      emptyLabel={t`No parts`}
+      searchPlaceholder={t`Search parts...`}
+      removeLabel={t`Remove part`}
+      items={operationParts}
+      linkedIds={linkedPartIds}
+      isDisabled={isDisabled}
+      busy={fetcher.state !== "idle"}
+      onAdd={(id) => toggle(id, true)}
+      onRemove={(id) => toggle(id, false)}
+    />
+  );
+}
+
+// Tools assigned to an EXISTING job step — the step-side of the tool↔step link. Toggles each
+// jobOperationToolStep link immediately via the tool route. Job-tier twin of StepTools.
+function JobStepTools({
+  step,
+  tools,
+  isDisabled
+}: {
+  step: JobOperationStep;
+  tools: OperationTool[];
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const fetcher = useFetcher();
+  const allTools = useTools();
+
+  const operationTools = (tools ?? []).map((tl) => {
+    const tool = allTools.find((x) => x.id === tl.toolId);
+    return {
+      id: tl.id ?? "",
+      name: tool?.readableIdWithRevision ?? tl.toolId ?? "",
+      secondary: tool?.name ?? undefined,
+      quantity: tl.quantity ?? 1
+    };
+  });
+
+  const linkedToolIds = (tools ?? [])
+    .filter((tl) =>
+      (
+        tl.jobOperationStepIds ??
+        (
+          (tl as { jobOperationToolStep?: { jobOperationStepId: string }[] })
+            .jobOperationToolStep ?? []
+        ).map((s) => s.jobOperationStepId)
+      ).some((stepId) => stepId === step.id)
+    )
+    .map((tl) => tl.id ?? "");
+
+  const toggle = (toolId: string, linked: boolean) => {
+    if (!step.id) return;
+    const fd = new FormData();
+    fd.append("toolId", toolId);
+    fd.append("stepId", step.id);
+    fd.append("linked", String(linked));
+    fetcher.submit(fd, {
+      method: "post",
+      action: path.to.jobOperationStepTool
+    });
+  };
+
+  return (
+    <StepLinkEditor
+      label={t`Tools`}
+      addLabel={t`Add tools`}
+      emptyLabel={t`No tools`}
+      searchPlaceholder={t`Search tools...`}
+      removeLabel={t`Remove tool`}
+      icon={<LuHammer />}
+      items={operationTools}
+      linkedIds={linkedToolIds}
+      isDisabled={isDisabled}
+      busy={fetcher.state !== "idle"}
+      onAdd={(id) => toggle(id, true)}
+      onRemove={(id) => toggle(id, false)}
+    />
+  );
+}
+
+// Reference images ("slides") for an EXISTING job step — upload, caption, resize, annotate,
+// delete; persisted immediately via the job slide routes. Job-tier twin of the item
+// StepSlides (BillOfProcess); reuses the shared SlidesEditor. Lets an operator's reference
+// content be corrected on the job without recreating it, since the MES reads the job copy.
+function JobStepSlides({
+  step,
+  isDisabled
+}: {
+  step: JobOperationStep;
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const fetcher = useFetcher();
+  const captionFetcher = useFetcher();
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId }
+  } = useUser();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const modelInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const slides = ((step.jobOperationStepSlide ?? []) as OperationStepSlide[])
+    .slice()
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+
+  const nextSortOrder = () =>
+    slides.reduce((m, s) => Math.max(m, s.sortOrder ?? 0), 0) + 1;
+
+  const onAddFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !carbon || !step.id) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
+      const result = await carbon.storage
+        .from("private")
+        .upload(fileName, file);
+      if (result.error || !result.data) {
+        toast.error(t`Failed to upload image`);
+        return;
+      }
+      const fd = new FormData();
+      fd.append("stepId", step.id);
+      fd.append("imagePath", result.data.path);
+      fd.append("sortOrder", String(nextSortOrder()));
+      fetcher.submit(fd, {
+        method: "post",
+        action: path.to.newJobOperationStepSlide
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Upload a 3D model and attach it to the step as a model slide. The model-upload
+  // API also starts the assembler's STEP → GLB conversion.
+  const onAddModelFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !carbon || !step.id) return;
+    setUploading(true);
+    try {
+      const modelUploadId = await uploadStepSlideModel(carbon, companyId, file);
+      if (!modelUploadId) {
+        toast.error(t`Failed to upload model`);
+        return;
+      }
+      const fd = new FormData();
+      fd.append("stepId", step.id);
+      fd.append("modelUploadId", modelUploadId);
+      fd.append("sortOrder", String(nextSortOrder()));
+      fetcher.submit(fd, {
+        method: "post",
+        action: path.to.newJobOperationStepSlide
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Update one slide: always carries the required fields (id → the route updates rather
+  // than inserts; stepId + the slide's content field satisfy the validator) plus whatever
+  // changed. Fields not sent are preserved, so a caption edit never wipes size/annotations
+  // and vice-versa.
+  function saveSlide(
+    slide: OperationStepSlide,
+    fields: Record<string, string>
+  ) {
+    const fd = new FormData();
+    fd.append("id", slide.id);
+    fd.append("stepId", slide.stepId);
+    if (slide.imagePath) fd.append("imagePath", slide.imagePath);
+    if (slide.modelUploadId) fd.append("modelUploadId", slide.modelUploadId);
+    fd.append("sortOrder", String(slide.sortOrder ?? 1));
+    for (const [key, value] of Object.entries(fields)) fd.append(key, value);
+    captionFetcher.submit(fd, {
+      method: "post",
+      action: path.to.newJobOperationStepSlide
+    });
+  }
+
+  return (
+    <SlidesEditor
+      slides={slides.map((s) => ({
+        key: s.id,
+        imagePath: s.imagePath,
+        modelUploadId: s.modelUploadId,
+        caption: s.caption,
+        size: s.size,
+        annotations: s.annotations
+      }))}
+      isDisabled={isDisabled}
+      busy={uploading || fetcher.state !== "idle"}
+      fileInputRef={fileInputRef}
+      onFileChange={onAddFile}
+      modelInputRef={modelInputRef}
+      onModelFileChange={onAddModelFile}
+      onRemove={(index) => {
+        const slide = slides[index];
+        if (!slide) return;
+        fetcher.submit(null, {
+          method: "post",
+          action: path.to.deleteJobOperationStepSlide(slide.id)
+        });
+      }}
+      onCaptionBlur={(index, caption) => {
+        const slide = slides[index];
+        if (slide && (slide.caption ?? "") !== caption)
+          saveSlide(slide, { caption });
+      }}
+      onAnnotationsChange={(index, annotations) => {
+        const slide = slides[index];
+        if (slide)
+          saveSlide(slide, { annotations: JSON.stringify(annotations) });
+      }}
+    />
   );
 }
 
@@ -1432,6 +1975,8 @@ function StepsListItem({
   attribute,
   operationId,
   typeOptions,
+  materials,
+  tools,
   isDisabled = false,
   dragControls,
   itemMentions,
@@ -1440,6 +1985,8 @@ function StepsListItem({
   attribute: JobOperationStep;
   operationId: string;
   typeOptions: { label: JSX.Element; value: string }[];
+  materials: JobMaterial[];
+  tools: OperationTool[];
   isDisabled?: boolean;
   dragControls?: DragControls;
   itemMentions: { id: string; label: string }[];
@@ -1457,11 +2004,11 @@ function StepsListItem({
     createdAt
   } = attribute;
 
-  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
   const fetcher = useFetcher<typeof editJobOperationStepAction>();
+  const duplicateStepFetcher = useFetcher();
   const { t } = useLingui();
   const [description, setDescription] = useState<JSONContent>(() => {
     if (!attribute.description) return {};
@@ -1627,6 +2174,18 @@ function StepsListItem({
             {type === "List" && (
               <ArrayInput name="listValues" label={t`List Options`} />
             )}
+            <JobStepSlides step={attribute} isDisabled={isDisabled} />
+            <JobStepParts
+              step={attribute}
+              operationId={operationId}
+              materials={materials}
+              isDisabled={isDisabled}
+            />
+            <JobStepTools
+              step={attribute}
+              tools={tools}
+              isDisabled={isDisabled}
+            />
             <HStack className="w-full justify-end" spacing={2}>
               <Button variant="secondary" onClick={disclosure.onClose}>
                 Cancel
@@ -1713,7 +2272,8 @@ function StepsListItem({
             <div className="flex items-center justify-end gap-2">
               <HStack spacing={2}>
                 <span className="text-xs text-muted-foreground">
-                  {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                  {isUpdated ? "Updated" : "Created"}{" "}
+                  <DateTime value={date} variant="relative" />
                 </span>
                 <EmployeeAvatar employeeId={person} withName={false} />
               </HStack>
@@ -1728,6 +2288,16 @@ function StepsListItem({
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={disclosure.onOpen}>
                     Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      duplicateStepFetcher.submit(null, {
+                        method: "post",
+                        action: path.to.duplicateJobOperationStep(id)
+                      })
+                    }
+                  >
+                    Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     destructive
@@ -1763,7 +2333,6 @@ function StepsListItem({
 }
 
 function PreviewStepRecords({ attribute }: { attribute: JobOperationStep }) {
-  const { formatRelativeTime } = useDateFormatter();
   if (
     !attribute.jobOperationStepRecord ||
     !Array.isArray(attribute.jobOperationStepRecord) ||
@@ -1798,7 +2367,8 @@ function PreviewStepRecords({ attribute }: { attribute: JobOperationStep }) {
             <div className="flex items-center justify-end gap-2 w-1/2">
               <HStack spacing={2}>
                 <span className="text-xs text-muted-foreground">
-                  Created {formatRelativeTime(record.createdAt ?? "")}
+                  Created{" "}
+                  <DateTime value={record.createdAt ?? ""} variant="relative" />
                 </span>
                 <EmployeeAvatar
                   employeeId={record.createdBy}
@@ -1820,7 +2390,6 @@ function PreviewStepRecord({
   attribute: JobOperationStep;
   record: any;
 }) {
-  const { formatDateTime } = useDateFormatter();
   const unitOfMeasures = useUnitOfMeasure();
   const [employees] = usePeople();
   const numberFormatter = useNumberFormatter();
@@ -1858,7 +2427,9 @@ function PreviewStepRecord({
           </p>
         )}
       {attribute.type === "Timestamp" && (
-        <p className="text-sm">{formatDateTime(record.value ?? "")}</p>
+        <p className="text-sm">
+          <DateTime value={record.value ?? ""} variant="absolute" />
+        </p>
       )}
       {attribute.type === "List" && <p className="text-sm">{record.value}</p>}
       {attribute.type === "Person" && (
@@ -1995,7 +2566,6 @@ function ParametersListItem({
   operationId: string;
   className?: string;
 }) {
-  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
@@ -2071,7 +2641,8 @@ function ParametersListItem({
           <div className="flex items-center justify-end gap-2">
             <HStack spacing={2}>
               <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                {isUpdated ? "Updated" : "Created"}{" "}
+                <DateTime value={date} variant="relative" />
               </span>
               <EmployeeAvatar employeeId={person} withName={false} />
             </HStack>
@@ -2118,6 +2689,7 @@ function ParametersListItem({
 
 function OperationForm({
   item,
+  itemId,
   isDisabled,
   job,
   locationId,
@@ -2129,6 +2701,7 @@ function OperationForm({
   onSubmit
 }: {
   item: ItemWithData;
+  itemId: string;
   isDisabled: boolean;
   job?: Job;
   locationId: string;
@@ -2168,6 +2741,9 @@ function OperationForm({
 
   const machineDisclosure = useDisclosure();
   const laborDisclosure = useDisclosure();
+  const assemblyDisclosure = useDisclosure();
+  const [assemblyWasChanged, setAssemblyWasChanged] = useState(false);
+  const assemblySyncDisclosure = useDisclosure();
   const setupDisclosure = useDisclosure();
   const costingDisclosure = useDisclosure();
   const procedureDisclosure = useDisclosure();
@@ -2191,6 +2767,8 @@ function OperationForm({
     overheadRate: number;
     processId: string;
     procedureId: string;
+    assemblyInstructionId: string;
+    inspectionDocumentId: string;
     setupTime: number;
     setupUnit: string;
     setupUnitHint: string;
@@ -2206,7 +2784,9 @@ function OperationForm({
     machineUnitHint: getUnitHint(item.data.machineUnit),
     operationMinimumCost: item.data.operationMinimumCost ?? 0,
     operationLeadTime: item.data.operationLeadTime ?? 0,
-    operationType: item.data.operationType ?? "Inside",
+    operationType: item.data.operationType ?? "Process",
+    assemblyInstructionId: item.data.assemblyInstructionId ?? "",
+    inspectionDocumentId: item.data.inspectionDocumentId ?? "",
     operationUnitCost: item.data.operationUnitCost ?? 0,
     overheadRate: item.data.overheadRate ?? 0,
     processId: item.data.processId ?? "",
@@ -2275,8 +2855,9 @@ function OperationForm({
               return (acc += sp.leadTime ?? 0);
             }, 0) / supplierProcesses.data.length
           : p.operationLeadTime,
-      operationType:
-        process.data?.processType === "Outside" ? "Outside" : "Inside"
+      // processType and operationType share one enum — the process's type is the
+      // default operation type.
+      operationType: process.data?.processType ?? "Process"
     }));
   };
 
@@ -2356,47 +2937,49 @@ function OperationForm({
             onProcessChange(value?.value as string);
           }}
         />
-        <Select
-          name="operationOrder"
-          label={t`Operation Order`}
-          placeholder={t`Operation Order`}
-          options={methodOperationOrders.map((o) => ({
-            value: o,
-            label: o
-          }))}
-        />
         <SelectControlled
           name="operationType"
           label={t`Operation Type`}
+          termId="operation-type"
           placeholder={t`Operation Type`}
           options={operationTypes.map((o) => ({
             value: o,
-            label: o
+            label: (
+              <span className="flex items-center gap-2">
+                <OperationTypeIcon type={o} />
+                <span>{o}</span>
+              </span>
+            )
           }))}
           value={processData.operationType}
           onChange={(value) => {
+            const next = (value?.value as string) ?? "Process";
             setProcessData((d) => ({
               ...d,
-
-              setupUnit: "Total Minutes",
-              laborUnit: "Minutes/Piece",
-              machineUnit: "Minutes/Piece",
-              operationType: value?.value as string
+              operationType: next,
+              // Each type has exactly one instruction source — clear the ones
+              // that no longer apply (the upsert normalizes server-side too).
+              ...(next !== "Process" ? { procedureId: "" } : {}),
+              ...(next !== "Assembly" ? { assemblyInstructionId: "" } : {}),
+              ...(next !== "Inspection" ? { inspectionDocumentId: "" } : {}),
+              // Machine only applies to Process operations.
+              ...(next !== "Process" ? { machineTime: 0 } : {}),
+              // Crossing the in-house <-> Outside Processing boundary changes the
+              // meaningful time units; reset to defaults. Switching between in-house
+              // types keeps whatever units the user picked.
+              ...((next === "Outside Processing") !==
+              (d.operationType === "Outside Processing")
+                ? {
+                    setupUnit: "Total Minutes",
+                    laborUnit: "Minutes/Piece",
+                    machineUnit: "Minutes/Piece"
+                  }
+                : {})
             }));
           }}
         />
 
-        <InputControlled
-          name="description"
-          label={t`Description`}
-          value={processData.description}
-          onChange={(newValue) => {
-            setProcessData((d) => ({ ...d, description: newValue }));
-          }}
-          className="col-span-2"
-        />
-
-        {processData.operationType === "Outside" ? (
+        {processData.operationType === "Outside Processing" ? (
           <>
             <SupplierProcess
               name="operationSupplierProcessId"
@@ -2470,9 +3053,29 @@ function OperationForm({
             }}
           />
         )}
+
+        <InputControlled
+          name="description"
+          label={t`Description`}
+          value={processData.description}
+          onChange={(newValue) => {
+            setProcessData((d) => ({ ...d, description: newValue }));
+          }}
+          className="col-span-2"
+        />
+
+        <Select
+          name="operationOrder"
+          label={t`Operation Order`}
+          placeholder={t`Operation Order`}
+          options={methodOperationOrders.map((o) => ({
+            value: o,
+            label: o
+          }))}
+        />
       </div>
 
-      {processData.operationType === "Inside" && (
+      {processData.operationType !== "Outside Processing" && (
         <>
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
@@ -2638,89 +3241,91 @@ function OperationForm({
             </div>
           </div>
 
-          <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-            <HStack
-              className="w-full justify-between cursor-pointer"
-              onClick={machineDisclosure.onToggle}
-            >
-              <HStack>
-                <TimeTypeIcon type="Machine" />
-                <Label>
-                  <Trans>Machine</Trans>
-                </Label>
+          {processData.operationType === "Process" && (
+            <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+              <HStack
+                className="w-full justify-between cursor-pointer"
+                onClick={machineDisclosure.onToggle}
+              >
+                <HStack>
+                  <TimeTypeIcon type="Machine" />
+                  <Label>
+                    <Trans>Machine</Trans>
+                  </Label>
+                </HStack>
+                <HStack>
+                  {(processData.machineTime ?? 0) > 0 && (
+                    <Badge variant="secondary">
+                      <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
+                      {processData.machineTime} {processData.machineUnit}
+                    </Badge>
+                  )}
+                  <IconButton
+                    icon={<LuChevronRight />}
+                    aria-label={
+                      machineDisclosure.isOpen
+                        ? t`Collapse Machine`
+                        : t`Expand Machine`
+                    }
+                    variant="ghost"
+                    size="md"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      machineDisclosure.onToggle();
+                    }}
+                    className={`transition-transform ${
+                      machineDisclosure.isOpen ? "rotate-90" : ""
+                    }`}
+                  />
+                </HStack>
               </HStack>
-              <HStack>
-                {(processData.machineTime ?? 0) > 0 && (
-                  <Badge variant="secondary">
-                    <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
-                    {processData.machineTime} {processData.machineUnit}
-                  </Badge>
-                )}
-                <IconButton
-                  icon={<LuChevronRight />}
-                  aria-label={
-                    machineDisclosure.isOpen
-                      ? t`Collapse Machine`
-                      : t`Expand Machine`
-                  }
-                  variant="ghost"
-                  size="md"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    machineDisclosure.onToggle();
+              <div
+                className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
+                  machineDisclosure.isOpen ? "" : "hidden"
+                }`}
+              >
+                <UnitHint
+                  name="machineHint"
+                  label={t`Machine`}
+                  value={processData.machineUnitHint}
+                  onChange={(hint) => {
+                    setProcessData((d) => ({
+                      ...d,
+                      machineUnitHint: hint,
+                      machineUnit:
+                        hint === "Fixed" ? "Total Minutes" : "Minutes/Piece"
+                    }));
                   }}
-                  className={`transition-transform ${
-                    machineDisclosure.isOpen ? "rotate-90" : ""
-                  }`}
                 />
-              </HStack>
-            </HStack>
-            <div
-              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                machineDisclosure.isOpen ? "" : "hidden"
-              }`}
-            >
-              <UnitHint
-                name="machineHint"
-                label={t`Machine`}
-                value={processData.machineUnitHint}
-                onChange={(hint) => {
-                  setProcessData((d) => ({
-                    ...d,
-                    machineUnitHint: hint,
-                    machineUnit:
-                      hint === "Fixed" ? "Total Minutes" : "Minutes/Piece"
-                  }));
-                }}
-              />
-              <NumberControlled
-                name="machineTime"
-                label={t`Machine Time`}
-                isOptional={false}
-                minValue={0}
-                value={processData.machineTime}
-                onChange={(newValue) =>
-                  setProcessData((d) => ({
-                    ...d,
-                    machineTime: newValue
-                  }))
-                }
-              />
-              <StandardFactor
-                name="machineUnit"
-                label={t`Machine Unit`}
-                isOptional={false}
-                hint={processData.machineUnitHint}
-                value={processData.machineUnit}
-                onChange={(newValue) => {
-                  setProcessData((d) => ({
-                    ...d,
-                    machineUnit: newValue?.value ?? "Total Minutes"
-                  }));
-                }}
-              />
+                <NumberControlled
+                  name="machineTime"
+                  label={t`Machine Time`}
+                  isOptional={false}
+                  minValue={0}
+                  value={processData.machineTime}
+                  onChange={(newValue) =>
+                    setProcessData((d) => ({
+                      ...d,
+                      machineTime: newValue
+                    }))
+                  }
+                />
+                <StandardFactor
+                  name="machineUnit"
+                  label={t`Machine Unit`}
+                  isOptional={false}
+                  hint={processData.machineUnitHint}
+                  value={processData.machineUnit}
+                  onChange={(newValue) => {
+                    setProcessData((d) => ({
+                      ...d,
+                      machineUnit: newValue?.value ?? "Total Minutes"
+                    }));
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
@@ -2772,22 +3377,24 @@ function OperationForm({
                   }))
                 }
               />
-              <NumberControlled
-                name="machineRate"
-                label={t`Machine Rate`}
-                minValue={0}
-                value={processData.machineRate}
-                formatOptions={{
-                  style: "currency",
-                  currency: baseCurrency
-                }}
-                onChange={(newValue) =>
-                  setProcessData((d) => ({
-                    ...d,
-                    machineRate: newValue
-                  }))
-                }
-              />
+              {processData.operationType === "Process" && (
+                <NumberControlled
+                  name="machineRate"
+                  label={t`Machine Rate`}
+                  minValue={0}
+                  value={processData.machineRate}
+                  formatOptions={{
+                    style: "currency",
+                    currency: baseCurrency
+                  }}
+                  onChange={(newValue) =>
+                    setProcessData((d) => ({
+                      ...d,
+                      machineRate: newValue
+                    }))
+                  }
+                />
+              )}
               <NumberControlled
                 name="overheadRate"
                 label={t`Overhead Rate`}
@@ -2807,89 +3414,221 @@ function OperationForm({
             </div>
           </div>
 
-          <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-            <HStack
-              className="w-full justify-between cursor-pointer"
-              onClick={procedureDisclosure.onToggle}
-            >
-              <HStack>
-                <LuListChecks />
-                <Label>Procedure</Label>
+          {processData.operationType === "Process" && (
+            <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+              <HStack
+                className="w-full justify-between cursor-pointer"
+                onClick={procedureDisclosure.onToggle}
+              >
+                <HStack>
+                  <LuListChecks />
+                  <Label>Procedure</Label>
+                </HStack>
+                <HStack>
+                  {processData.procedureId && (
+                    <Badge variant="secondary">
+                      <LuListChecks className="h-3 w-3 mr-1" />
+                      Procedure
+                    </Badge>
+                  )}
+                  <IconButton
+                    icon={<LuChevronRight />}
+                    aria-label={
+                      procedureDisclosure.isOpen
+                        ? "Collapse Procedure"
+                        : "Expand Procedure"
+                    }
+                    variant="ghost"
+                    size="md"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      procedureDisclosure.onToggle();
+                    }}
+                    className={`transition-transform ${
+                      procedureDisclosure.isOpen ? "rotate-90" : ""
+                    }`}
+                  />
+                </HStack>
               </HStack>
-              <HStack>
-                {processData.procedureId && (
+              <div
+                className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4 ${
+                  procedureDisclosure.isOpen ? "" : "hidden"
+                }`}
+              >
+                <Procedure
+                  name="procedureId"
+                  label={t`Procedure`}
+                  processId={processData.processId}
+                  value={processData.procedureId}
+                  onChange={(value) => {
+                    if (value && value.value !== item.data.procedureId) {
+                      setProcedureWasChanged(true);
+                    }
+                    setProcessData((d) => ({
+                      ...d,
+                      procedureId: value?.value as string
+                    }));
+                  }}
+                />
+                {!temporaryItems[item.id] && processData.procedureId && (
+                  <div className="flex flex-col gap-2 w-auto">
+                    {procedureWasChanged && (
+                      <span className="text-sm text-muted-foreground">
+                        The procedure was changed, but not synced to the
+                        operation.
+                      </span>
+                    )}
+                    <div>
+                      <Button
+                        variant="secondary"
+                        rightIcon={<LuRefreshCcw />}
+                        onClick={procedureSyncDisclosure.onOpen}
+                      >
+                        Sync Procedure
+                      </Button>
+                      {procedureSyncDisclosure.isOpen && (
+                        <ProcedureSyncModal
+                          operationId={item.id}
+                          procedureId={processData.procedureId}
+                          onClose={procedureSyncDisclosure.onClose}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {processData.operationType === "Assembly" && (
+            <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+              <HStack
+                className="w-full justify-between cursor-pointer"
+                onClick={assemblyDisclosure.onToggle}
+              >
+                <HStack>
+                  <OperationTypeIcon type="Assembly" />
+                  <Label>Assembly Instruction</Label>
+                </HStack>
+                <HStack>
+                  {processData.assemblyInstructionId && (
+                    <Badge variant="secondary">
+                      <OperationTypeIcon
+                        type="Assembly"
+                        className="h-3 w-3 mr-1"
+                      />
+                      Assembly Instruction
+                    </Badge>
+                  )}
+                  <IconButton
+                    icon={<LuChevronRight />}
+                    aria-label={
+                      assemblyDisclosure.isOpen
+                        ? "Collapse Assembly Instruction"
+                        : "Expand Assembly Instruction"
+                    }
+                    variant="ghost"
+                    size="md"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      assemblyDisclosure.onToggle();
+                    }}
+                    className={`transition-transform ${
+                      assemblyDisclosure.isOpen ? "rotate-90" : ""
+                    }`}
+                  />
+                </HStack>
+              </HStack>
+              <div
+                className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4 ${
+                  assemblyDisclosure.isOpen ? "" : "hidden"
+                }`}
+              >
+                <AssemblyInstruction
+                  name="assemblyInstructionId"
+                  label={t`Assembly Instruction`}
+                  itemId={itemId}
+                  value={processData.assemblyInstructionId}
+                  onChange={(value) => {
+                    if (
+                      value &&
+                      value.value !== item.data.assemblyInstructionId
+                    ) {
+                      setAssemblyWasChanged(true);
+                    }
+                    setProcessData((d) => ({
+                      ...d,
+                      assemblyInstructionId: value?.value as string
+                    }));
+                  }}
+                />
+                {!temporaryItems[item.id] &&
+                  processData.assemblyInstructionId && (
+                    <div className="flex flex-col gap-2 w-auto">
+                      {assemblyWasChanged && (
+                        <span className="text-sm text-muted-foreground">
+                          The assembly instruction was changed, but its steps
+                          were not synced to the operation.
+                        </span>
+                      )}
+                      <div>
+                        <Button
+                          variant="secondary"
+                          rightIcon={<LuRefreshCcw />}
+                          onClick={assemblySyncDisclosure.onOpen}
+                        >
+                          Sync Assembly Steps
+                        </Button>
+                        {assemblySyncDisclosure.isOpen && (
+                          <AssemblyStepsSyncModal
+                            operationId={item.id}
+                            assemblyInstructionId={
+                              processData.assemblyInstructionId
+                            }
+                            onClose={assemblySyncDisclosure.onClose}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+              </div>
+            </div>
+          )}
+
+          {processData.operationType === "Inspection" && (
+            <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+              <HStack className="w-full justify-between">
+                <HStack>
+                  <OperationTypeIcon type="Inspection" />
+                  <Label>Inspection Plan</Label>
+                </HStack>
+                {processData.inspectionDocumentId && (
                   <Badge variant="secondary">
-                    <LuListChecks className="h-3 w-3 mr-1" />
-                    Procedure
+                    <OperationTypeIcon
+                      type="Inspection"
+                      className="h-3 w-3 mr-1"
+                    />
+                    Inspection Plan
                   </Badge>
                 )}
-                <IconButton
-                  icon={<LuChevronRight />}
-                  aria-label={
-                    procedureDisclosure.isOpen
-                      ? "Collapse Procedure"
-                      : "Expand Procedure"
-                  }
-                  variant="ghost"
-                  size="md"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    procedureDisclosure.onToggle();
-                  }}
-                  className={`transition-transform ${
-                    procedureDisclosure.isOpen ? "rotate-90" : ""
-                  }`}
-                />
               </HStack>
-            </HStack>
-            <div
-              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4 ${
-                procedureDisclosure.isOpen ? "" : "hidden"
-              }`}
-            >
-              <Procedure
-                name="procedureId"
-                label={t`Procedure`}
-                processId={processData.processId}
-                value={processData.procedureId}
-                onChange={(value) => {
-                  if (value && value.value !== item.data.procedureId) {
-                    setProcedureWasChanged(true);
-                  }
-                  setProcessData((d) => ({
-                    ...d,
-                    procedureId: value?.value as string
-                  }));
-                }}
-              />
-              {!temporaryItems[item.id] && processData.procedureId && (
-                <div className="flex flex-col gap-2 w-auto">
-                  {procedureWasChanged && (
-                    <span className="text-sm text-muted-foreground">
-                      The procedure was changed, but not synced to the
-                      operation.
-                    </span>
-                  )}
-                  <div>
-                    <Button
-                      variant="secondary"
-                      rightIcon={<LuRefreshCcw />}
-                      onClick={procedureSyncDisclosure.onOpen}
-                    >
-                      Sync Procedure
-                    </Button>
-                    {procedureSyncDisclosure.isOpen && (
-                      <ProcedureSyncModal
-                        operationId={item.id}
-                        procedureId={processData.procedureId}
-                        onClose={procedureSyncDisclosure.onClose}
-                      />
-                    )}
-                  </div>
-                </div>
-              )}
+              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4">
+                <InspectionDocument
+                  name="inspectionDocumentId"
+                  label={t`Inspection Plan`}
+                  isOptional={false}
+                  itemId={itemId}
+                  value={processData.inspectionDocumentId}
+                  onChange={(value) => {
+                    setProcessData((d) => ({
+                      ...d,
+                      inspectionDocumentId: value?.value as string
+                    }));
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </>
       )}
       <motion.div
@@ -2985,6 +3724,77 @@ function ProcedureSyncModal({
   );
 }
 
+function AssemblyStepsSyncModal({
+  operationId,
+  assemblyInstructionId,
+  onClose
+}: {
+  operationId: string;
+  assemblyInstructionId: string;
+  onClose: () => void;
+}) {
+  const fetcher = useFetcher<{ success: boolean }>();
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+    }
+  }, [fetcher.data?.success, onClose]);
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <ValidatedForm
+          validator={syncAssemblyToBopValidator}
+          action={path.to.assemblySyncBop(assemblyInstructionId)}
+          method="post"
+          fetcher={fetcher}
+          defaultValues={{
+            operationId
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Are you sure?</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody className="py-4">
+            <Hidden name="operationId" />
+            <Alert variant="warning">
+              <LuTriangleAlert className="h-4 w-4" />
+              <AlertTitle>
+                <Trans>Potential Data Loss</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                Syncing updates the operation's steps from the assembly
+                instruction. Steps previously synced from an instruction are
+                updated or removed to match; hand-authored steps are kept.
+              </AlertDescription>
+            </Alert>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Submit
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+            >
+              Sync
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
+  );
+}
+
 type ProductionEventActivityProps = {
   item: Database["public"]["Tables"]["productionEvent"]["Row"];
 };
@@ -3011,12 +3821,11 @@ const getActivityText = (
 };
 
 const ProductionEventActivity = ({ item }: ProductionEventActivityProps) => {
-  const { formatDateTime } = useDateFormatter();
   return (
     <Activity
       employeeId={item.employeeId ?? item.createdBy}
       activityMessage={getActivityText(item)}
-      activityTime={formatDateTime(item.startTime)}
+      activityTime={item.startTime}
       activityIcon={
         item.type ? (
           <TimeTypeIcon
@@ -3044,7 +3853,6 @@ function ToolsListItem({
   operationId: string;
   className?: string;
 }) {
-  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
@@ -3093,6 +3901,9 @@ function ToolsListItem({
               <Tool name="toolId" label={t`Tool`} autoFocus />
               <Number name="quantity" label={t`Quantity`} />
             </div>
+
+            {/* Tool↔step assignment lives on the step editor now (not here). */}
+
             <HStack className="w-full justify-end" spacing={2}>
               <Button variant="secondary" onClick={disclosure.onClose}>
                 Cancel
@@ -3129,7 +3940,8 @@ function ToolsListItem({
           <div className="flex items-center justify-end gap-2">
             <HStack spacing={2}>
               <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                {isUpdated ? "Updated" : "Created"}{" "}
+                <DateTime value={date} variant="relative" />
               </span>
               <EmployeeAvatar employeeId={person} withName={false} />
             </HStack>
@@ -3226,6 +4038,9 @@ function ToolsForm({
               <Number name="quantity" label={t`Quantity`} />
             </div>
 
+            {/* Tool↔step assignment lives on the step editor now, not here — a tool added
+                from this form starts operation-level (shown on every step in the MES). */}
+
             <Submit
               leftIcon={<LuCirclePlus />}
               isDisabled={isDisabled || fetcher.state !== "idle"}
@@ -3272,7 +4087,6 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
   const [employees] = usePeople();
   const [messages, setMessages] = useState<Message[]>([]);
   const { t } = useLingui();
-  const { locale } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { carbon, accessToken } = useCarbon();
@@ -3422,18 +4236,17 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
                         )}
                         <div
                           className={cn(
-                            "rounded-2xl p-3 w-full flex flex-col gap-1",
+                            "rounded-lg p-3 w-full flex flex-col gap-1",
                             isUser ? "bg-blue-500 text-white" : "bg-muted"
                           )}
                         >
                           <p className="text-sm">{m.note}</p>
 
-                          <span className="text-xs opacity-70">
-                            {new Date(m.createdAt).toLocaleTimeString(locale, {
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
-                          </span>
+                          <DateTime
+                            value={m.createdAt}
+                            variant="time"
+                            className="text-xs opacity-70"
+                          />
                         </div>
                       </div>
                     </div>

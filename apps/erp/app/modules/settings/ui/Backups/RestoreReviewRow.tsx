@@ -1,5 +1,6 @@
 import { Button, HStack, VStack } from "@carbon/react";
 import { LuLoaderCircle } from "react-icons/lu";
+import { DateTime } from "~/components";
 
 export type RestoreRun = {
   restoreRunId: string;
@@ -35,7 +36,7 @@ export function RestoreReviewRow({
           </span>
         ) : (
           <span className="text-xs text-muted-foreground">
-            {new Date(run.startedAt).toLocaleString()} ·{" "}
+            <DateTime value={run.startedAt} variant="absolute" /> ·{" "}
             {run.status === "running"
               ? "restoring…"
               : run.status === "reverting"

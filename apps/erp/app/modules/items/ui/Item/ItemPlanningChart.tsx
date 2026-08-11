@@ -51,8 +51,7 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { Empty, Hyperlink } from "~/components";
-import { useDateFormatter as useDateFormat } from "~/hooks";
+import { DateTime, Empty, Hyperlink } from "~/components";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
@@ -1304,7 +1303,6 @@ function SupplyDemandPlanningItem({
 }) {
   const { t } = useLingui();
   const numberFormatter = useNumberFormatter();
-  const { formatDate } = useDateFormat();
 
   return (
     <div className="flex flex-1 justify-between items-center w-full p-4 border-b last:border-b-0">
@@ -1348,7 +1346,11 @@ function SupplyDemandPlanningItem({
               </Hyperlink>
             )}
             <span className="text-xs text-muted-foreground">
-              {item.dueDate ? formatDate(item.dueDate) : t`No due date`}
+              {item.dueDate ? (
+                <DateTime value={item.dueDate} variant="date" />
+              ) : (
+                t`No due date`
+              )}
             </span>
           </VStack>
           <div className="flex items-center gap-1 text-sm text-muted-foreground text-right">

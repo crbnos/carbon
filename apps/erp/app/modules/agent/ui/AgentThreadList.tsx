@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { LuTrash2 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { DateTime } from "~/components";
 import { path } from "~/utils/path";
 
 type Thread = {
@@ -74,12 +75,7 @@ export function AgentThreadList({
                     {t.title ?? "Untitled chat"}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {new Date(t.createdAt).toLocaleString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit"
-                    })}
+                    <DateTime value={t.createdAt} variant="absolute" />
                   </div>
                 </button>
                 <button

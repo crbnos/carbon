@@ -1,8 +1,9 @@
 import type { Database } from "@carbon/database";
 import type {
-  getChangeOrder,
-  getChangeOrders,
-  getChangeOrderTypes,
+  getChangeNotice,
+  getChangeNoticeActions,
+  getChangeNotices,
+  getChangeNoticeTypes,
   getConfigurationParameters,
   getConfigurationRules,
   getConsumable,
@@ -42,30 +43,32 @@ import type {
 export type ItemRevisionStatus =
   Database["public"]["Enums"]["itemRevisionStatus"];
 
-// The single change order (base table, NOT-NULL columns) — the shape detail
+// The single change notice (base table, NOT-NULL columns) — the shape detail
 // routes and the properties/header/explorer components consume via useRouteData.
-export type ChangeOrder = NonNullable<
-  Awaited<ReturnType<typeof getChangeOrder>>["data"]
+export type ChangeNotice = NonNullable<
+  Awaited<ReturnType<typeof getChangeNotice>>["data"]
 >;
 
-// A row of the change-orders LIST — the `changeOrders` view, which additionally
-// rolls up `itemIds` (text[]) and `affectedItems` (jsonb) per CO. View columns are
-// all nullable, so this is a distinct type from the single-CO `ChangeOrder`.
-export type ChangeOrderListItem = NonNullable<
-  Awaited<ReturnType<typeof getChangeOrders>>["data"]
+// A row of the change-notices LIST — the `changeOrders` view, which additionally
+// rolls up `itemIds` (text[]) and `affectedItems` (jsonb) per CN. View columns are
+// all nullable, so this is a distinct type from the single-CN `ChangeNotice`.
+export type ChangeNoticeListItem = NonNullable<
+  Awaited<ReturnType<typeof getChangeNotices>>["data"]
 >[number];
 
-export type ChangeOrderType = NonNullable<
-  Awaited<ReturnType<typeof getChangeOrderTypes>>["data"]
+export type ChangeNoticeType = NonNullable<
+  Awaited<ReturnType<typeof getChangeNoticeTypes>>["data"]
 >[number];
 
-export type ChangeOrderStatus =
+export type ChangeNoticeStatus =
   Database["public"]["Enums"]["changeOrderStatus"];
 
-export type ChangeOrderActionTask =
-  Database["public"]["Tables"]["changeOrderActionTask"]["Row"];
+// Includes the `linearIssue` / `jiraIssue` mappings that `getChangeNoticeActions` hydrates.
+export type ChangeNoticeActionTask = NonNullable<
+  Awaited<ReturnType<typeof getChangeNoticeActions>>["data"]
+>[number];
 
-export type ChangeOrderRequiredAction =
+export type ChangeNoticeRequiredAction =
   Database["public"]["Tables"]["changeOrderRequiredAction"]["Row"];
 
 export type MaterialConfigurationData = {
@@ -89,7 +92,13 @@ export type ConfigurationParameterGroup = NonNullable<
   Awaited<ReturnType<typeof getConfigurationParameters>>["groups"]
 >[number];
 
-export type Consumable = NonNullable<
+// The `X`/`XListItem` pairs below are deliberately separate: `X` is the full
+// view row that detail screens read, `XListItem` is exactly what the list
+// query selects. Defining `X` from the list getter is what broke ~250 call
+// sites when the list selects were narrowed.
+export type Consumable = Database["public"]["Views"]["consumables"]["Row"];
+
+export type ConsumableListItem = NonNullable<
   Awaited<ReturnType<typeof getConsumables>>["data"]
 >[number];
 
@@ -148,7 +157,9 @@ export type MakeMethod = NonNullable<
   Awaited<ReturnType<typeof getMakeMethods>>["data"]
 >[number];
 
-export type Material = NonNullable<
+export type Material = Database["public"]["Views"]["materials"]["Row"];
+
+export type MaterialListItem = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]
 >[number];
 
@@ -184,7 +195,9 @@ export type MethodOperation = NonNullable<
   Awaited<ReturnType<typeof getMethodOperations>>["data"]
 >[number];
 
-export type Part = NonNullable<
+export type Part = Database["public"]["Views"]["parts"]["Row"];
+
+export type PartListItem = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]
 >[number];
 
@@ -200,7 +213,9 @@ export type PickMethod = NonNullable<
   Awaited<ReturnType<typeof getPickMethods>>["data"]
 >[number];
 
-export type Service = NonNullable<
+export type Service = Database["public"]["Views"]["services"]["Row"];
+
+export type ServiceListItem = NonNullable<
   Awaited<ReturnType<typeof getServices>>["data"]
 >[number];
 
@@ -216,7 +231,9 @@ export type SupplierPart = NonNullable<
   Awaited<ReturnType<typeof getSupplierParts>>["data"]
 >[number];
 
-export type Tool = NonNullable<
+export type Tool = Database["public"]["Views"]["tools"]["Row"];
+
+export type ToolListItem = NonNullable<
   Awaited<ReturnType<typeof getTools>>["data"]
 >[number];
 

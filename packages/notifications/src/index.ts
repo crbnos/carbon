@@ -8,10 +8,12 @@ export enum NotificationEvent {
   ApprovalApproved = "approval-approved",
   ApprovalRejected = "approval-rejected",
   ApprovalRequested = "approval-requested",
-  // Change-order stage broadcasts (the only CO events; no approval flow in v1).
-  ChangeOrderStarted = "change-order-started",
-  ChangeOrderImplementation = "change-order-implementation",
-  ChangeOrderDone = "change-order-done",
+  // Change-notice stage broadcasts (the only CN events; no approval flow in v1).
+  // Values are persisted in `notification.event`, so they keep the legacy
+  // "change-order" spelling.
+  ChangeNoticeStarted = "change-order-started",
+  ChangeNoticeImplementation = "change-order-implementation",
+  ChangeNoticeDone = "change-order-done",
   DigitalQuoteResponse = "digital-quote-response",
   GaugeCalibrationExpired = "gauge-calibration-expired",
   JobAssignment = "job-assignment",
@@ -40,6 +42,8 @@ export enum NotificationEvent {
   SupplierQuoteResponse = "supplier-quote-response",
   TrainingAssignment = "training-assignment",
   ResourceTrainingAssignment = "resource-training-assignment",
+  // Text authored by a customer's workflow; carries no source document to read.
+  Workflow = "workflow",
   Digest = "digest"
 }
 
@@ -155,10 +159,14 @@ export function getNotificationTopic(
     case NotificationEvent.ApprovalRejected:
     case NotificationEvent.ApprovalRequested:
       return NotificationTopic.Approval;
-    case NotificationEvent.ChangeOrderStarted:
-    case NotificationEvent.ChangeOrderImplementation:
-    case NotificationEvent.ChangeOrderDone:
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone:
       return NotificationTopic.Items;
+    // No topic of its own: topicLabels in the account settings route is an
+    // exhaustive Record<NotificationTopic, string>.
+    case NotificationEvent.Workflow:
+      return NotificationTopic.General;
     default:
       return NotificationTopic.General;
   }
@@ -230,12 +238,14 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Your request was approved";
     case NotificationEvent.ApprovalRejected:
       return "Your request was rejected";
-    case NotificationEvent.ChangeOrderStarted:
-      return "Change order started";
-    case NotificationEvent.ChangeOrderImplementation:
-      return "Change order in implementation";
-    case NotificationEvent.ChangeOrderDone:
-      return "Change order complete";
+    case NotificationEvent.ChangeNoticeStarted:
+      return "Change notice started";
+    case NotificationEvent.ChangeNoticeImplementation:
+      return "Change notice in implementation";
+    case NotificationEvent.ChangeNoticeDone:
+      return "Change notice complete";
+    case NotificationEvent.Workflow:
+      return "Workflow";
     default:
       return "You have a new notification";
   }
@@ -250,10 +260,10 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
     case NotificationEvent.ApprovalApproved:
     case NotificationEvent.ApprovalRejected:
       return "View decision";
-    case NotificationEvent.ChangeOrderStarted:
-    case NotificationEvent.ChangeOrderImplementation:
-    case NotificationEvent.ChangeOrderDone:
-      return "View change order";
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone:
+      return "View change notice";
     case NotificationEvent.JobCompleted:
       return "View job";
     case NotificationEvent.SuggestionResponse:
@@ -267,6 +277,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
     case NotificationEvent.DigitalQuoteResponse:
     case NotificationEvent.SupplierQuoteResponse:
       return "View response";
+    case NotificationEvent.Workflow:
+      return "View details";
     default:
       return "View details";
   }

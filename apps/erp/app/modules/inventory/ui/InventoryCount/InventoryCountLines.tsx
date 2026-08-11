@@ -18,6 +18,7 @@ import {
   LuWarehouse
 } from "react-icons/lu";
 import {
+  exportOnlyColumn,
   Hyperlink,
   ItemThumbnail,
   MethodItemTypeIcon,
@@ -217,8 +218,19 @@ const InventoryCountLines = ({
             </HStack>
           );
         },
-        meta: { icon: <LuPackage /> }
+        meta: {
+          icon: <LuPackage />,
+          // Display column (no accessorKey) — without an exportValue it is
+          // absent from the CSV entirely.
+          exportValue: (row) =>
+            row.itemReadableIdWithRevision ?? row.itemId ?? null
+        }
       },
+      exportOnlyColumn<InventoryCountLine>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) => row.itemName ?? null
+      }),
       {
         accessorKey: "readableId",
         header: t`Batch / Serial`,

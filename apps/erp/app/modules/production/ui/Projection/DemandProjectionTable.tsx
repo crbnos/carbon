@@ -22,7 +22,7 @@ import {
   LuTrash2
 } from "react-icons/lu";
 import { Link } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
+import { exportOnlyColumn, Hyperlink, New, Table } from "~/components";
 import { useLocations } from "~/components/Form/Location";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { ConfirmDelete } from "~/components/Modals";
@@ -131,6 +131,11 @@ const DemandProjectionsTable = memo(
             icon: <LuBookMarked />
           }
         },
+        exportOnlyColumn<DemandProjection>({
+          id: "itemName",
+          header: t`Item Name`,
+          value: (row) => row.name ?? null
+        }),
         ...periodColumns,
         {
           id: "actions",

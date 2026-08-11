@@ -14,7 +14,7 @@ import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items";
 import {
-  getItemChangeOrderData,
+  getItemChangeNoticeData,
   getItemManufacturing,
   getMakeMethodById,
   getMakeMethods,
@@ -27,9 +27,12 @@ import {
 } from "~/modules/items";
 import { getRevisionLock } from "~/modules/items/items.server";
 import {
-  ItemChangeOrders,
-  ItemOpenChangeOrderAlert
-} from "~/modules/items/ui/ChangeOrder";
+  ChangeNoticeDraftLockReason,
+  getChangeNoticeDraftLock,
+  ItemChangeNotices,
+  ItemOpenChangeNoticeAlert,
+  LockedHint
+} from "~/modules/items/ui/ChangeNotice";
 import {
   BillOfMaterial,
   BillOfProcess,
@@ -58,16 +61,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const [makeMethods, revisionLock, changeOrderData] = await Promise.all([
+  const [makeMethods, revisionLock, changeNoticeData] = await Promise.all([
     getMakeMethods(client, itemId, companyId),
     getRevisionLock(client, { itemId, companyId }),
     // Tool → CO traceability (4b): CO history for this tool + type labels.
-    getItemChangeOrderData(client, itemId, companyId)
+    getItemChangeNoticeData(client, itemId, companyId)
   ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
   // Include CO-owned draft methods so a revision/new-part item created by an open
-  // Change Order still shows its BOM/BOP on the item master. The draft is the same
+  // Change Notice still shows its BOM/BOP on the item master. The draft is the same
   // makeMethod the CO edits, so the two surfaces stay in sync. Active is still
   // preferred below, so a Version CO's item keeps its live method as the default.
   const selectable = makeMethods.data ?? [];
@@ -83,7 +86,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tags: [],
       revisionStatus,
       releaseControl,
-      ...changeOrderData
+      ...changeNoticeData
     };
   }
 
@@ -94,7 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tags: [],
       revisionStatus,
       releaseControl,
-      ...changeOrderData
+      ...changeNoticeData
     };
   }
 
@@ -129,7 +132,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     revisionStatus,
     releaseControl,
-    ...changeOrderData
+    ...changeNoticeData
   };
 }
 
@@ -216,9 +219,18 @@ export default function ToolDetailsRoute() {
     tags,
     revisionStatus,
     releaseControl,
-    changeOrders,
-    changeOrderTypes
+    changeNotices,
+    changeNoticeTypes
   } = useLoaderData<typeof loader>();
+
+  const draftLock = getChangeNoticeDraftLock(
+    methodData?.makeMethod.changeOrderId,
+    changeNotices
+  );
+  const lockReason = draftLock ? (
+    <ChangeNoticeDraftLockReason lock={draftLock} />
+  ) : undefined;
+  const lockHint = lockReason ? <LockedHint reason={lockReason} /> : undefined;
 
   const toolData = useRouteData<{
     toolSummary: ToolSummary;
@@ -239,7 +251,7 @@ export default function ToolDetailsRoute() {
   return (
     <VStack spacing={2} className="p-2">
       {permissions.is("employee") && (
-        <ItemOpenChangeOrderAlert changeOrders={changeOrders ?? []} />
+        <ItemOpenChangeNoticeAlert changeNotices={changeNotices ?? []} />
       )}
       {permissions.is("employee") && methodData && (
         <>
@@ -289,6 +301,8 @@ export default function ToolDetailsRoute() {
                 replenishmentSystem={toolData.toolSummary?.replenishmentSystem}
                 revisionStatus={revisionStatus}
                 releaseControl={releaseControl}
+                isDisabled={!!draftLock}
+                disabledReason={lockReason}
               />
               <BillOfProcess
                 key={`bop:${itemId}`}
@@ -298,6 +312,8 @@ export default function ToolDetailsRoute() {
                 tags={tags}
                 revisionStatus={revisionStatus}
                 releaseControl={releaseControl}
+                isDisabled={!!draftLock}
+                disabledReason={lockReason}
               />
             </>
           )}
@@ -312,21 +328,24 @@ export default function ToolDetailsRoute() {
                 itemId={itemId}
                 modelUpload={toolData.toolSummary ?? undefined}
                 type="Tool"
+                isReadOnly={!!draftLock}
+                titleExtras={lockHint}
               />
             )}
           </DeferredFiles>
 
           <CadModel
-            isReadOnly={!permissions.can("update", "parts")}
+            isReadOnly={!permissions.can("update", "parts") || !!draftLock}
             metadata={{ itemId }}
             modelPath={toolData?.toolSummary?.modelPath ?? null}
             title={t`CAD Model`}
+            titleExtras={lockHint}
           />
 
           <ItemRiskRegister itemId={itemId} />
-          <ItemChangeOrders
-            changeOrders={changeOrders ?? []}
-            types={changeOrderTypes ?? []}
+          <ItemChangeNotices
+            changeNotices={changeNotices ?? []}
+            types={changeNoticeTypes ?? []}
           />
         </>
       )}

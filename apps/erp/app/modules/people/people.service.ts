@@ -1,4 +1,7 @@
 import type { Database, Json } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
+import { datetime } from "@carbon/utils";
+import { getDayOfWeek, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { DataType } from "~/modules/shared";
@@ -769,11 +772,14 @@ export async function getScheduledEmployeesToday(
     "friday",
     "saturday"
   ] as const;
-  const today = dayNames[new Date().getDay()];
+  // "Today" on the company calendar — at 01:00 Monday local, UTC is still on
+  // Sunday and must not roster Sunday's shift. en-US: 0 = Sunday.
+  const tz = await getCompanyTimeZone(client, companyId);
+  const dayName = dayNames[getDayOfWeek(today(tz), "en-US")];
 
   return data.filter((ej) => {
     const shift = ej.shift as Record<string, unknown> | null;
-    return shift && shift[today] === true;
+    return shift && shift[dayName] === true;
   });
 }
 
@@ -838,18 +844,17 @@ export async function getWeeklyHoursForEmployees(
   companyId: string,
   employeeIds: string[]
 ): Promise<Record<string, number>> {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-  monday.setHours(0, 0, 0, 0);
+  // Week starts Monday 00:00 on the company calendar (one payroll boundary
+  // per books), not the server's.
+  const tz = await getCompanyTimeZone(client, companyId);
+  const { from } = datetime.weekBounds(tz);
 
   const { data: entries } = await client
     .from("timeCardEntry")
     .select("employeeId, clockIn, clockOut")
     .eq("companyId", companyId)
     .in("employeeId", employeeIds)
-    .gte("clockIn", monday.toISOString());
+    .gte("clockIn", from);
 
   const weeklyMs: Record<string, number> = {};
   for (const entry of entries ?? []) {

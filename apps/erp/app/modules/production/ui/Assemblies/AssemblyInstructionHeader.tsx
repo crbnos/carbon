@@ -21,20 +21,19 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
+import { DateTime, VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
+import { Confirm } from "~/components/Modals";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import {
-  useDateFormatter,
-  usePermissions,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import type { assemblyInstructionStatuses } from "../../production.models";
-import type { AssemblyInstruction } from "../../types";
+import type {
+  AssemblyInstruction,
+  AssemblyInstructionVersion
+} from "../../types";
 import AssemblyInstructionStatus from "./AssemblyInstructionStatus";
 
 const itemTypesWithDetails = ["Part", "Material", "Tool", "Consumable"];
@@ -45,23 +44,27 @@ const AssemblyInstructionHeader = () => {
 
   const routeData = useRouteData<{
     instruction: AssemblyInstruction;
+    versions: AssemblyInstructionVersion[];
   }>(path.to.assemblyInstruction(id));
   const instruction = routeData?.instruction;
+  const versions = routeData?.versions ?? [];
 
   const permissions = usePermissions();
   const user = useUser();
-  const { formatRelativeTime } = useDateFormatter();
   const { toggleExplorer, toggleProperties } = usePanels();
   const deleteDisclosure = useDisclosure();
+  const activateDisclosure = useDisclosure();
 
   const nameFetcher = useFetcher<{}>();
-  const statusFetcher = useFetcher<{}>();
+  const newVersionFetcher = useFetcher<{}>();
   const invalidateFetcher = useFetcher<{ success: boolean }>();
 
   const [name, setName] = useState(instruction?.name ?? "");
 
   const isDraft = instruction?.status === "Draft";
   const canUpdate = permissions.can("update", "production");
+  const canCreate = permissions.can("create", "production");
+  const isCreatingVersion = newVersionFetcher.state !== "idle";
 
   const [items] = useItems();
   const item = instruction?.itemId
@@ -80,14 +83,13 @@ const AssemblyInstructionHeader = () => {
     });
   };
 
-  const onStatusChange = (
-    status: (typeof assemblyInstructionStatuses)[number]
-  ) => {
+  const onNewVersion = () => {
+    if (!instruction) return;
     const formData = new FormData();
-    formData.append("status", status);
-    statusFetcher.submit(formData, {
+    formData.append("copyFromId", instruction.id);
+    newVersionFetcher.submit(formData, {
       method: "post",
-      action: path.to.assemblyInstructionStatus(id)
+      action: path.to.assemblyInstructionVersionNew(id)
     });
   };
 
@@ -167,47 +169,60 @@ const AssemblyInstructionHeader = () => {
         </DropdownMenu>
         {instruction && (
           <Badge variant="outline" className="shrink-0 tabular-nums">
-            Edit {instruction.version}
+            Version {instruction.version}
           </Badge>
         )}
         {instruction && (
           <span className="hidden whitespace-nowrap text-xs text-muted-foreground lg:inline">
             {instruction.createdBy === user.id ? "By you · " : ""}
             edited{" "}
-            {formatRelativeTime(instruction.updatedAt ?? instruction.createdAt)}
+            <DateTime
+              value={instruction.updatedAt ?? instruction.createdAt}
+              variant="relative"
+            />
           </span>
         )}
       </HStack>
       <div className="flex flex-shrink-0 gap-2 items-center justify-end">
-        {instruction?.status === "Draft" && (
-          <Button
-            isDisabled={!canUpdate}
-            isLoading={statusFetcher.state !== "idle"}
-            onClick={() => onStatusChange("Published")}
-          >
-            Publish
-          </Button>
+        {instruction && (
+          <VersionMenu
+            versions={versions}
+            currentVersionId={id}
+            getKey={(v) => v.id}
+            getHref={(v) => path.to.assemblyInstruction(v.id)}
+            renderLabel={(v) => (
+              <>
+                <Badge variant="outline" className="tabular-nums">
+                  V{v.version}
+                </Badge>
+                <span>{v.name}</span>
+              </>
+            )}
+            renderStatus={(v) => (
+              <AssemblyInstructionStatus status={v.status} />
+            )}
+            onNewVersion={canCreate ? onNewVersion : undefined}
+            isNewVersionDisabled={isCreatingVersion}
+          />
         )}
-        {instruction?.status === "Published" && (
-          <Button
-            variant="secondary"
-            isDisabled={!canUpdate}
-            isLoading={statusFetcher.state !== "idle"}
-            onClick={() => onStatusChange("Archived")}
-          >
-            Archive
-          </Button>
-        )}
-        {instruction?.status === "Archived" && (
-          <Button
-            variant="secondary"
-            isDisabled={!canUpdate}
-            isLoading={statusFetcher.state !== "idle"}
-            onClick={() => onStatusChange("Draft")}
-          >
-            Restore to Draft
-          </Button>
-        )}
+        {instruction?.status === "Published"
+          ? canCreate && (
+              <Button
+                isDisabled={isCreatingVersion}
+                isLoading={isCreatingVersion}
+                onClick={onNewVersion}
+              >
+                New Version
+              </Button>
+            )
+          : instruction && (
+              <Button
+                isDisabled={!canUpdate}
+                onClick={activateDisclosure.onOpen}
+              >
+                Make Active
+              </Button>
+            )}
         <IconButton
           aria-label="Toggle Properties"
           icon={<LuPanelRight />}
@@ -227,6 +242,17 @@ const AssemblyInstructionHeader = () => {
           onSubmit={() => {
             deleteDisclosure.onClose();
           }}
+        />
+      )}
+      {activateDisclosure.isOpen && instruction && (
+        <Confirm
+          isOpen
+          title="Make Active"
+          text={`Make version ${instruction.version} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it.`}
+          confirmText="Make Active"
+          action={path.to.assemblyInstructionActivate(id)}
+          onCancel={activateDisclosure.onClose}
+          onSubmit={activateDisclosure.onClose}
         />
       )}
     </div>

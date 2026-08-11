@@ -1,4 +1,6 @@
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
+import { CalendarDate, now } from "@internationalized/date";
 
 export { stripSpecialCharacters } from "@carbon/utils";
 
@@ -52,23 +54,25 @@ export const copyToClipboard = async (
   }
 };
 
-// used to generate sequences
-export const interpolateSequenceDate = (value: string | null) => {
+// used to generate sequences — date tokens derive in the company's business
+// timezone so document prefixes roll over at the company's midnight, not the
+// process's. Mirrors functions/lib/utils.ts; keep the two in sync.
+export const interpolateSequenceDate = (
+  value: string | null,
+  timezone = "UTC"
+) => {
   // replace all instances of %{year} with the current year
   if (!value) return "";
   let result = value;
 
   if (result.includes("%{")) {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hours = date.getHours();
-    const seconds = date.getSeconds();
+    const { year, month, day, hour: hours, second: seconds } = now(timezone);
+    const week = datetime.weekNumber(new CalendarDate(year, month, day));
 
     result = result.replace(/%{yyyy}/g, year.toString());
     result = result.replace(/%{yy}/g, year.toString().slice(-2));
     result = result.replace(/%{mm}/g, month.toString().padStart(2, "0"));
+    result = result.replace(/%{ww}/g, week.toString().padStart(2, "0"));
     result = result.replace(/%{dd}/g, day.toString().padStart(2, "0"));
     result = result.replace(/%{hh}/g, hours.toString().padStart(2, "0"));
     result = result.replace(/%{ss}/g, seconds.toString().padStart(2, "0"));

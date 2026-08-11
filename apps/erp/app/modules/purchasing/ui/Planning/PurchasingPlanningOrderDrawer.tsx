@@ -52,7 +52,7 @@ import {
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { useCurrencyFormatter } from "~/hooks";
+import { useCurrencyFormatter, useRouteData } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
@@ -91,6 +91,13 @@ export const PurchasingPlanningOrderDrawer = memo(
     onSupplierChange
   }: PurchasingPlanningOrderDrawerProps) => {
     const { t } = useLingui();
+    // Planned-order defaults are business dates on the plant's calendar — use
+    // the loader's location-today, not the planner's browser zone.
+    const planningData = useRouteData<{ locationToday?: string }>(
+      path.to.purchasingPlanning
+    );
+    const locationToday =
+      planningData?.locationToday ?? today(getLocalTimeZone()).toString();
     const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { carbon } = useCarbon();
 
@@ -210,10 +217,10 @@ export const PurchasingPlanningOrderDrawer = memo(
 
         const newOrder: PlannedOrder = {
           quantity: purchaseQuantity,
-          dueDate: today(getLocalTimeZone())
+          dueDate: parseDate(locationToday)
             .add({ days: selectedItem.leadTime ?? 0 })
             .toString(),
-          startDate: today(getLocalTimeZone()).toString(),
+          startDate: locationToday,
           supplierId: selectedItem.preferredSupplierId,
           itemReadableId: selectedItem.readableIdWithRevision,
           description: selectedItem.name,

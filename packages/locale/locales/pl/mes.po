@@ -21,6 +21,10 @@ msgstr "{0} - Zestaw {1}"
 msgid "{0} Active"
 msgstr "{0} Aktywnych"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} temu"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -38,15 +42,44 @@ msgstr "{0} z {1} ukończono"
 msgid "{0} of {1} completed"
 msgstr "{0} z {1} ukończonych"
 
+#. placeholder {0}: rows.length
+msgid "{0} queued"
+msgstr "{0} w kolejce"
+
+#. placeholder {0}: activeWork.length
+msgid "{0} running"
+msgstr "{0} w trakcie"
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} Odrzuconych"
 
+msgid "{completions} passed unit(s) will be completed."
+msgstr "{completions} jednostka(e) przebiegła(y) zostanie(ą) ukończona(e)."
+
+msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+msgstr "{fails} zarejestrowanych niepowodzeń będzie NIEUKOŃCZONYCH — rozwiąż je z menu akcji."
+
+msgid "+{overflow} more"
+msgstr "+{overflow} więcej"
+
 msgid "About"
 msgstr "O programie"
 
+msgid "Accept"
+msgstr "Akceptuj"
+
+msgid "Accept Lot"
+msgstr "Zaakceptuj partię"
+
+msgid "Accept lot?"
+msgstr "Zaakceptuj partię?"
+
 msgid "Account Settings"
 msgstr "Ustawienia konta"
+
+msgid "Acknowledge & finish"
+msgstr "Potwierdź i zakończ"
 
 msgid "Active"
 msgstr "Aktywne"
@@ -66,11 +99,29 @@ msgstr "Dodaj drukarkę w ustawieniach drukowania, aby drukować etykiety bezpo�
 msgid "Add Inventory"
 msgstr "Dodaj zapasy"
 
+msgid "Add Sample"
+msgstr "Dodaj próbkę"
+
 msgid "Add Spare Part"
 msgstr "Dodaj część zamienną"
 
 msgid "All"
 msgstr "Wszystkie"
+
+msgid "All clear"
+msgstr "Wszystko jasne"
+
+msgid "All rework"
+msgstr "Wszystkie przeróbki"
+
+msgid "All scrap"
+msgstr "Wszystko do złomu"
+
+msgid "Allocate failed units"
+msgstr "Przydziel jednostki z błędami"
+
+msgid "Allocate units"
+msgstr "Przydziel jednostki"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Czy na pewno chcesz usunąć ten krok?"
@@ -102,6 +153,9 @@ msgstr "Błąd uwierzytelniania"
 msgid "available"
 msgstr "dostępne"
 
+msgid "Available"
+msgstr "Dostępne"
+
 msgid "Batch"
 msgstr "Partia"
 
@@ -127,6 +181,9 @@ msgstr "Ale nie martw się. Możesz użyć funkcji resetowania hasła, aby popro
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Logując się, akceptujesz <0>Regulamin</0> i <1>Politykę prywatności.</1>"
+
+msgid "By?"
+msgstr "Przez?"
 
 msgid "Cancel"
 msgstr "Anuluj"
@@ -161,9 +218,14 @@ msgstr "Rozpocznij zmianę"
 msgid "Clock Out"
 msgstr "Zakończ zmianę"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Zalogowany od {0}"
+msgid "Clocked in since <0/>"
+msgstr "Zalogowany od <0/>"
+
+msgid "Close"
+msgstr "Zamknij"
+
+msgid "Collapse features table"
+msgstr "Zwiń tabelę funkcji"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -194,8 +256,14 @@ msgstr "Ukończ"
 msgid "Complete All"
 msgstr "Uzupełnij wszystko"
 
+msgid "Complete passed"
+msgstr "Ukończ przebieg"
+
 msgid "Completed"
 msgstr "Ukończone"
+
+msgid "Connecting"
+msgstr "Łączenie"
 
 msgid "Console"
 msgstr "Konsola"
@@ -203,8 +271,15 @@ msgstr "Konsola"
 msgid "Console Mode"
 msgstr "Tryb konsoli"
 
+msgid "Consumed"
+msgstr "Zużyte"
+
 msgid "Consumed expired"
 msgstr "Zużyte wygasłe"
+
+#. placeholder {0}: board.unplannedCost.days
+msgid "Cost of unplanned maintenance, last {0} days"
+msgstr "Koszt nieplanowanej konserwacji w ciągu ostatnich {0} dni"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -219,6 +294,9 @@ msgstr "Utwórz Problem Jakości"
 
 msgid "Create Rework"
 msgstr "Utwórz Przerobienie"
+
+msgid "Current work"
+msgstr "Bieżąca praca"
 
 msgid "Customer"
 msgstr "Klient"
@@ -244,9 +322,8 @@ msgstr "Usuń"
 msgid "Delete Step"
 msgstr "Usuń krok"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "Usuń kartę czasu pracy ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "Usuń kartę czasu (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "Opisz problem..."
@@ -266,8 +343,21 @@ msgstr "Nie znaleziono zlecenia"
 msgid "Display"
 msgstr "Wyświetlanie"
 
+msgid "Displays"
+msgstr "Wyświetlacze"
+
 msgid "Down"
 msgstr "Awaria"
+
+msgid "Down for maintenance"
+msgstr "Niedostępny do konserwacji"
+
+#. placeholder {0}: workCenter.blockingDispatchReadableId
+msgid "Down for maintenance · {0}"
+msgstr "Niedostępny do konserwacji · {0}"
+
+msgid "Down for planned maintenance"
+msgstr "Zamknięty na planowaną konserwację"
 
 msgid "Download"
 msgstr "Pobierz"
@@ -280,6 +370,9 @@ msgstr "Szkic"
 
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Przeciągnij i upuść plik tutaj lub kliknij, aby wybrać plik"
+
+msgid "Drag to resize drawing and features"
+msgstr "Przeciągnij, aby zmienić rozmiar rysunku i funkcji"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -294,6 +387,13 @@ msgstr "Termin {0}"
 msgid "Due Date"
 msgstr "Termin realizacji"
 
+#. placeholder {0}: board.dueSoon.days
+msgid "Due in the next {0} days?"
+msgstr "Należy w ciągu następnych {0} dni?"
+
+msgid "Due today?"
+msgstr "Przypada dzisiaj?"
+
 msgid "Duplicate batch number"
 msgstr "Zduplikowany numer partii"
 
@@ -305,6 +405,9 @@ msgstr "Czas trwania"
 
 msgid "Edit"
 msgstr "Edytuj"
+
+msgid "Elapsed"
+msgstr "Minęło"
 
 msgid "Email Address"
 msgstr "Adres e-mail"
@@ -325,17 +428,30 @@ msgstr "Błąd"
 msgid "Estimated"
 msgstr "Szacowane"
 
+msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
+msgstr "Każda jednostka ma werdykt: {passes} zdane i {fails} niezdane. Partia zamyka się, a każda jednostka trafia do swojego wyniku."
+
+msgid "Expand features table"
+msgstr "Rozwiń tabelę funkcji"
+
 msgid "Expired"
 msgstr "Wygasło"
 
-msgid "Expired {date}"
-msgstr "Wygasło {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Wygasło {0}"
 
-msgid "Expires {date}"
-msgstr "Wygasa {date}"
+msgid "Expires <0/>"
+msgstr "Wygasa <0/>"
 
 msgid "Expiring first"
 msgstr "Wygasające pierwsze"
+
+msgid "Failed"
+msgstr "Nieudane"
+
+msgid "Failed features"
+msgstr "Funkcje nie powiodły się"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Nie udało się zakończyć korekty zapasów"
@@ -349,12 +465,24 @@ msgstr "Nie udało się pobrać aktywnych operacji"
 msgid "Failed to fetch storageUnits"
 msgstr "Nie udało się pobrać jednostek magazynowych"
 
+msgid "Failed to save measurement"
+msgstr "Nie udało się zapisać pomiaru"
+
+msgid "Failed to save result"
+msgstr "Nie udało się zapisać wyniku"
+
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "Nie udało się przesłać pliku: {0}"
 
 msgid "Failed to upload image"
 msgstr "Nie udało się przesłać obrazu"
+
+msgid "Feature"
+msgstr "Funkcja"
+
+msgid "Features"
+msgstr "Cechy"
 
 msgid "File size exceeds 10MB limit"
 msgstr "Rozmiar pliku przekracza limit 10 MB"
@@ -368,6 +496,9 @@ msgstr "Pliki powiązane ze zleceniem i pozycją zapytania."
 msgid "Filter"
 msgstr "Filtr"
 
+msgid "Filter by location"
+msgstr "Filtruj według lokalizacji"
+
 msgid "Finish"
 msgstr "Zakończ"
 
@@ -378,6 +509,9 @@ msgstr "Zakończ {0}"
 msgid "Finish Anyways"
 msgstr "Zakończ mimo wszystko"
 
+msgid "Finish with material unpicked?"
+msgstr "Zakończyć bez wybranego materiału?"
+
 msgid "Forgot to Clock Out?"
 msgstr "Zapomniałeś zakończyć zmianę?"
 
@@ -386,6 +520,9 @@ msgstr "Wróć do operacji"
 
 msgid "How many were actually picked?"
 msgstr "Ile faktycznie zostało zebrane?"
+
+msgid "How many?"
+msgstr "Ile?"
 
 msgid "I understand and want to complete without issuing"
 msgstr "Rozumiem i chcę ukończyć bez wydania"
@@ -396,14 +533,30 @@ msgstr "Nadal pracuję"
 msgid "Ideas, suggestions or problems?"
 msgstr "Pomysły, sugestie lub problemy?"
 
+msgid "Idle for"
+msgstr "Bezczynny przez"
+
 msgid "Impact"
 msgstr "Wpływ"
 
 msgid "Imperial"
 msgstr "Imperialny"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "za {0}"
+
 msgid "In Progress"
 msgstr "W toku"
+
+msgid "Inspect Item"
+msgstr "Zbadaj artykuł"
+
+msgid "inspected"
+msgstr "zbadane"
+
+msgid "Instructions"
+msgstr "Instrukcje"
 
 msgid "Insufficient quantity"
 msgstr "Niewystarczająca ilość"
@@ -429,6 +582,12 @@ msgstr "Wydaj materiał"
 msgid "Issue Type"
 msgstr "Typ problemu"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "Wydane {issuedQuantity} z {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "Wydane {issuedQuantity} z {lotLabel} — pozostaje {remainingQuantity}"
+
 msgid "Item"
 msgstr "Pozycja"
 
@@ -447,11 +606,17 @@ msgstr "Karta obiegowa zlecenia"
 msgid "Jobs"
 msgstr "Zadania"
 
+msgid "Keep picking"
+msgstr "Kontynuuj wybieranie"
+
 msgid "Kit"
 msgstr "Zestaw"
 
 msgid "Labor"
 msgstr "Robocizna"
+
+msgid "Last completed"
+msgstr "Ostatnio ukończono"
 
 msgid "Learn more"
 msgstr "Dowiedz się więcej"
@@ -470,6 +635,9 @@ msgstr "Ładowanie szczegółów pozycji..."
 
 msgid "Loading..."
 msgstr "Ładowanie..."
+
+msgid "Local"
+msgstr "Lokalne"
 
 msgid "Location"
 msgstr "Lokalizacja"
@@ -498,14 +666,26 @@ msgstr "Rejestruj odpad dla {0}"
 msgid "Login"
 msgstr "Zaloguj się"
 
+msgid "Lot"
+msgstr "Partia"
+
 msgid "Machine"
 msgstr "Maszyna"
+
+msgid "Machine down for maintenance now?"
+msgstr "Maszyna niedostępna do konserwacji teraz?"
 
 msgid "Maintenance"
 msgstr "Utrzymanie ruchu"
 
 msgid "Maintenance Completed"
 msgstr "Utrzymanie ruchu zakończone"
+
+msgid "Maintenance overdue"
+msgstr "Konserwacja przeterminowana"
+
+msgid "Make a replacement"
+msgstr "Utwórz zamiennik"
 
 msgid "Manually add items to inventory"
 msgstr "Ręcznie dodaj pozycje do zapasów"
@@ -530,6 +710,9 @@ msgstr "Metryczny"
 
 msgid "Model"
 msgstr "Model"
+
+msgid "More actions"
+msgstr "Więcej akcji"
 
 msgid "More Actions"
 msgstr "Więcej akcji"
@@ -568,11 +751,20 @@ msgstr "Najnowsze pierwsze"
 msgid "Next"
 msgstr "Następny"
 
+msgid "No"
+msgstr "Nie"
+
+msgid "No active job at this work center"
+msgstr "Brak aktywnego zadania w tym centrum roboczym"
+
 msgid "No active maintenance dispatches"
 msgstr "Brak aktywnych zleceń utrzymania ruchu"
 
 msgid "No active operations"
 msgstr "Brak aktywnych operacji"
+
+msgid "No active work centers at this location."
+msgstr "Brak aktywnych centrów roboczych w tej lokalizacji."
 
 msgid "No assigned operations"
 msgstr "Brak przypisanych operacji"
@@ -595,6 +787,9 @@ msgstr "Brak plików"
 msgid "No Impact"
 msgstr "Brak wpływu"
 
+msgid "No issue types configured"
+msgstr "Nie skonfigurowano żadnych typów problemów"
+
 msgid "No maintenance scheduled for today"
 msgstr "Brak zaplanowanego utrzymania ruchu na dziś"
 
@@ -606,6 +801,9 @@ msgstr "Brak materiałów"
 
 msgid "No open jobs"
 msgstr "Brak otwartych zadań"
+
+msgid "No open units to allocate"
+msgstr "Brak otwartych jednostek do przydzielenia"
 
 msgid "No operators"
 msgstr "Brak operatorów"
@@ -625,6 +823,9 @@ msgstr "Brak skonfigurowanej drukarki"
 msgid "No recent operations"
 msgstr "Brak ostatnich operacji"
 
+msgid "No remaining entities to inspect."
+msgstr "Brak pozostałych encji do przebadania."
+
 msgid "No results"
 msgstr "Brak wyników"
 
@@ -633,6 +834,9 @@ msgstr "Brak wyników"
 
 msgid "No results found"
 msgstr "Nie znaleziono wyników"
+
+msgid "No samples required."
+msgstr "Nie wymagane żadne próbki."
 
 msgid "No scheduled time"
 msgstr "Brak zaplanowanego czasu"
@@ -661,8 +865,20 @@ msgstr "Żadne gniazda produkcyjne nie są zablokowane"
 msgid "No work centers exist"
 msgstr "Brak gniazd produkcyjnych"
 
+msgid "None"
+msgstr "Brak"
+
 msgid "Notes"
 msgstr "Notatki"
+
+msgid "Nothing running"
+msgstr "Nic nie działa"
+
+msgid "Nothing scheduled at this work center"
+msgstr "Nic nie zaplanowano w tym centrum roboczym"
+
+msgid "Nothing to scrap"
+msgstr "Nic do złomowania"
 
 msgid "OEE Impact"
 msgstr "Wpływ na OEE"
@@ -683,6 +899,12 @@ msgstr "Ups. Nie powinieneś widzieć tej strony. Docelowo będzie to strona gł
 msgid "Open"
 msgstr "Otwarte"
 
+msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
+msgstr "Otwórz wyświetlacz na ekranie zamontowanym w centrum roboczym i pozostaw go uruchomiony. Każda tablica odświeża się automatycznie."
+
+msgid "Open an NCR for MRB disposition"
+msgstr "Otwórz NCR dla dyspozycji MRB"
+
 msgid "Open Jobs"
 msgstr "Otwarte Zadania"
 
@@ -692,17 +914,32 @@ msgstr "Operacje"
 msgid "Operations ended"
 msgstr "Operacje zakończone"
 
+msgid "Operator"
+msgstr "Operator"
+
 msgid "Operator Performed"
 msgstr "Wykonane przez operatora"
 
 msgid "Optional"
 msgstr "Opcjonalnie"
 
+msgid "Overall result"
+msgstr "Wynik ogólny"
+
+msgid "Overdue PMs?"
+msgstr "Przeterminowane PM?"
+
 msgid "Parameters"
 msgstr "Parametry"
 
 msgid "Part"
 msgstr "Część"
+
+msgid "Partial"
+msgstr "Częściowo"
+
+msgid "Partial Disposition"
+msgstr "Częściowa dyspozycja"
 
 msgid "Passed Inspection"
 msgstr "Inspekcja zaliczona"
@@ -743,14 +980,14 @@ msgstr "Zarejestruj wszystkie kroki dla tej operacji przed zamknięciem."
 msgid "Please select an item"
 msgstr "Wybierz pozycję"
 
+msgid "PM schedule lapsed"
+msgstr "Harmonogram PM wygasł"
+
 msgid "Prev"
 msgstr "Poprzedni"
 
 msgid "Preventive"
 msgstr "Prewencyjne"
-
-msgid "Previous"
-msgstr "Poprzedni"
 
 msgid "Print"
 msgstr "Drukuj"
@@ -788,6 +1025,9 @@ msgstr "Ilość"
 msgid "Quantity must be greater than 0"
 msgstr "Ilość musi być większa od 0"
 
+msgid "Queue empty"
+msgstr "Kolejka pusta"
+
 msgid "Reason for rework"
 msgstr "Powód do przeróbki"
 
@@ -801,6 +1041,18 @@ msgstr "Rejestruj"
 msgid "Record {0}"
 msgstr "Rekord {0}"
 
+msgid "Record only"
+msgstr "Tylko zarejestruj"
+
+msgid "Record Partial"
+msgstr "Zapisz częściowo"
+
+msgid "Reject"
+msgstr "Odrzuć"
+
+msgid "Reject Lot"
+msgstr "Odrzuć partię"
+
 msgid "Remove"
 msgstr "Usuń"
 
@@ -813,11 +1065,23 @@ msgstr "Usuń zapasy"
 msgid "Remove part"
 msgstr "Usuń część"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "Ponownie otwórz podzespół i utwórz zastępczą jednostkę"
+
+msgid "Result"
+msgstr "Wynik"
+
 msgid "Rework"
 msgstr "Przeróbka"
 
 msgid "Rework created successfully"
 msgstr "Przeróbka utworzona pomyślnie"
+
+msgid "Rework quantity"
+msgstr "Ilość do przeróbki"
+
+msgid "Running"
+msgstr "W trakcie"
 
 msgid "Sales Order"
 msgstr "Zamówienie sprzedaży"
@@ -828,8 +1092,14 @@ msgstr "Zapisz"
 msgid "Scan"
 msgstr "Skanuj"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "Zeskanuj śledzony element, aby dodać pierwszą kolumnę próbki."
+
 msgid "Scan or enter serial number"
 msgstr "Skanuj lub wprowadź numer seryjny"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "Zeskanuj lub wprowadź ID elementu, numer seryjny lub numer partii"
 
 msgid "Scan or enter tracking number"
 msgstr "Skanuj lub wpisz numer śledzenia"
@@ -837,17 +1107,35 @@ msgstr "Skanuj lub wpisz numer śledzenia"
 msgid "Scan or search serial number..."
 msgstr "Skanuj lub wyszukaj numer seryjny..."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "Zeskanuj lub wybierz śledzony element z tej partii, aby dodać go jako kolumnę próbki, a następnie zaznacz jego wynik w siatce."
+
 msgid "Schedule"
 msgstr "Harmonogram"
 
 msgid "Scrap"
 msgstr "Złom"
 
+msgid "Scrap {readableId}"
+msgstr "Złom {readableId}"
+
+msgid "Scrap material"
+msgstr "Złom materiału"
+
+msgid "Scrap quantity"
+msgstr "Ilość złomu"
+
 msgid "Scrap Reason"
 msgstr "Przyczyna odrzutu"
 
 msgid "Scrapped"
 msgstr "Odrzucone"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "Złomowanie numeru seryjnego {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "Złomowanie wybranego numeru seryjnego"
 
 msgid "Search"
 msgstr "Szukaj"
@@ -876,6 +1164,9 @@ msgstr "Wybierz ilość odrzutu i przyczynę"
 msgid "Select a serial number to continue with this operation"
 msgstr "Wybierz numer seryjny, aby kontynuować tę operację"
 
+msgid "Select an issue type"
+msgstr "Wybierz typ problemu"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Wybierz pozycję i określ ilość do wydania"
 
@@ -898,6 +1189,9 @@ msgstr "Wybierz numer seryjny"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "Wybierz operację, do której chcesz wrócić. Wszystkie operacje od tego punktu do bieżącej operacji będą powtórzone."
+
+msgid "Selected"
+msgstr "Wybrane"
 
 msgid "Send"
 msgstr "Wyślij"
@@ -932,6 +1226,9 @@ msgstr "Ustaw czas zakończenia zmiany"
 
 msgid "Setup"
 msgstr "Ustawienie"
+
+msgid "short"
+msgstr "krótkie"
 
 msgid "Short"
 msgstr "Brakuje"
@@ -978,6 +1275,10 @@ msgstr "Użytkownik stacji"
 msgid "Station: {stationName}"
 msgstr "Stacja: {stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
+msgstr "Statystyczna akceptacja nie powiodła się, dlatego cała partia {0} jest uważana za niezgodną (ISO 9001:2015 §8.7) — {passes} próbkowanych przejść i {fails} niepowodzenia. Skieruj jednostki poniżej do złomu lub przeróbki, lub tylko zarejestruj werdykt."
+
 msgid "Status"
 msgstr "Status"
 
@@ -1011,15 +1312,35 @@ msgstr "Zmień operatora"
 msgid "Tag"
 msgstr "Tag"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "Ukończona ilość dla tej operacji jest mniejsza niż wymagana ilość {0}."
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "Ukończona ilość dla tej operacji jest mniejsza niż wymagana ilość {targetQuantity}."
+
+msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
+msgstr "Partia zostanie oznaczona jako Zaakceptowana i {remaining} pozostałych jednostek zostanie ukończonych w tej operacji."
+
+msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "Partia będzie nadal dyspozycjonowana, ale nie można utworzyć NCR, dopóki nie zostanie skonfigurowany co najmniej jeden typ problemu."
+
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "Brak dostępnych lub zużytych śledzonych części dla tego materiału."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Na liście materiałowej znajdują się materiały śledzone seryjnie lub partiami, które nie zostały w pełni wydane. Ukończenie bez wydania może skutkować nieprawidłowymi rekordami śledzenia."
 
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Te pozycje mają jeszcze materiał do wybrania. Zakończenie teraz oznaczy listę jako Częściowa."
+
 msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "Ta część została wykonana na zamówienie. Jej złomowanie może ponownie otworzyć trasę producji, aby wykonać zamiennik."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "Ta część zostanie złomowana z magazynu. Jej zapotrzebowanie pozostaje otwarte, aby można było wystawić zamiennik."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzony nowy numer seryjny zamiennika."
 
 msgid "Thumbnail"
 msgstr "Miniatura"
@@ -1048,6 +1369,9 @@ msgstr "Czas całkowity: {0}"
 msgid "Total: {0}"
 msgstr "Razem: {0}"
 
+msgid "Tracked Entity"
+msgstr "Śledzony element"
+
 msgid "Tracking"
 msgstr "Śledzenie"
 
@@ -1067,11 +1391,28 @@ msgstr "Cofnij pobranie"
 msgid "Unpick {0}"
 msgstr "Cofnij {0}"
 
+msgid "Unplanned downtime"
+msgstr "Nieplanowany czas przestoju"
+
+#. placeholder {0}: board.unplannedCount.days
+msgid "Unplanned maintenance items, last {0} days"
+msgstr "Pozycje nieplanowanej konserwacji w ciągu ostatnich {0} dni"
+
 msgid "Unsaved changes"
 msgstr "Niezapisane zmiany"
 
+msgid "Up next"
+msgstr "Następnie"
+
+msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
+msgstr "Do {maxAllocatable} jednostek(i) można przydzielić; reszta jest rejestrowana bez księgowania."
+
 msgid "Update"
 msgstr "Aktualizuj"
+
+#. placeholder {0}: formatClock(lastUpdated)
+msgid "Updated {0}"
+msgstr "Zaktualizowano {0}"
 
 msgid "Updated successfully"
 msgstr "Zaktualizowano pomyślnie"
@@ -1099,9 +1440,14 @@ msgstr "WIP"
 msgid "Work Center"
 msgstr "Gniazdo produkcyjne"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Zalogowałeś się o {0}. Możesz edytować czas zakończenia zmiany poniżej lub potwierdzić, że nadal pracujesz."
+msgid "Work Center Displays"
+msgstr "Wyświetlacze Centrum Roboczego"
+
+msgid "Yes"
+msgstr "Tak"
+
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Zalogowałeś się o <0/>. Możesz edytować czas wylogowania poniżej lub potwierdzić, że nadal pracujesz."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Jesteś zalogowany od {hoursElapsed} godzin. Czy zapomniałeś zakończyć zmianę?"

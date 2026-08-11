@@ -8,6 +8,8 @@ The order line is where fulfillment is scored. Each line tracks how much was sol
 
 ## Line fields
 
+A line carries a **type** that sets what it sells: *Part*, *Service*, *Material*, *Tool*, or *Consumable* for the five item kinds, plus *Fixed Asset* and *Comment* (a non-charged note line).
+
   - **Item**: What's being sold.
   - **Sale quantity**: Ordered quantity.
   - **Quantity sent**: Shipped so far; `quantity to send` is the remainder.

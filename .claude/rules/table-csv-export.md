@@ -71,11 +71,33 @@ optional, export/sort-related fields:
 - **Library:** `json2csv` from `json-2-csv`. Called as
   `json2csv(rows, { emptyFieldValue: "" })`.
 - **Filename:** hardcoded `"data.csv"` (a Blob + anchor click; no server roundtrip).
-- **Column selection** (respects the saved view): uses `columnOrder` (or
+- **Column selection** (respects the saved view): delegated to the pure
+  `selectExportColumns({ columnAccessors, columnOrder, columnVisibility,
+  exportOnlyColumns })` in `utils.ts`. It uses `columnOrder` (or
   `Object.keys(columnAccessors)` when order is empty), then keeps only ids that
-  are `in columnAccessors` AND not `columnVisibility[id] === false`. Synthetic
-  columns (select / expand / actions) are absent from `columnAccessors`, so they
-  drop out. CSV headers are the `columnAccessors` label values.
+  are `in columnAccessors` AND (in `exportOnlyColumns` OR not
+  `columnVisibility[id] === false`). Synthetic columns (select / expand / actions)
+  are absent from `columnAccessors`, so they drop out. CSV headers are the
+  `columnAccessors` label values.
+  A saved view stores the column order from when it was saved, so its
+  `columnOrder` omits export-only columns added since — and the user can never
+  reorder an invisible column back in. `selectExportColumns` therefore appends
+  any `exportOnlyColumns` id the stored order missed instead of dropping it.
+- **Export-only columns** (`exportOnlyColumns` prop, sourced from `meta.exportOnly`):
+  columns hidden in the grid but always included in the CSV regardless of the view's
+  `columnVisibility`. Use this for values you want in the export but not on screen.
+  Build one with the `exportOnlyColumn<T>({ id, header, value })` factory
+  (`utils.ts`, re-exported from `~/components`) rather than hand-writing the meta
+  blob — it sets `exportOnly`, uses `header` as `filterHeader` (the CSV heading),
+  and wires `value` as `exportValue`:
+
+  ```tsx
+  exportOnlyColumn<StockMovement>({
+    id: "itemName",
+    header: t`Item Name`,
+    value: (row) => row.itemDescription ?? null
+  })
+  ```
 - **Per-cell value:** for each kept column, if `exportValues[key]` exists it is
   called with the full row to produce the value; otherwise the raw accessor read
   is used, with the id→name substitution below. The result is then passed through
@@ -119,6 +141,14 @@ Just render `<Table>` — the button comes for free. No `enableExport`-style pro
 - A column with a JSX header and no `meta.filterHeader` and no `meta.exportValue`
   is absent from all three maps — it neither exports nor appears in the sort
   picker. Give it a `filterHeader` (label) and/or an `exportValue` to include it.
+- The per-cell read is a **flat** `row[key]`, so a dot-path accessor
+  (`accessorKey: "item.name"`) exports blank. Supply a `meta.exportValue`.
+- **Item columns**: the convention is two CSV columns — the item column exports
+  the readable part id, and an `exportOnlyColumn` with `id: "itemName"` carries
+  the name/description the cell stacks underneath it. A column whose accessor is
+  `itemId` needs an explicit `meta.exportValue` returning the readable id,
+  otherwise the `idNameMaps` substitution overwrites the id with the name and the
+  part number never reaches the CSV.
 
 ## Unrelated standalone CSV
 

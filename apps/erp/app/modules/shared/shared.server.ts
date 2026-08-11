@@ -15,6 +15,7 @@ import {
   getSalesOrderLines
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
+import { getTimezoneNames } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { stripSpecialCharacters } from "~/utils/string";
@@ -92,6 +93,38 @@ export async function getCustomFieldsSchemas(
   const result = await query;
   if (result.data) {
     await redis.set(key, JSON.stringify(result.data));
+  }
+
+  return result;
+}
+
+// tzdata only changes when the Postgres image is upgraded — a day-long TTL
+// keeps the pg_timezone_names scan (~1ms but per-request) off the hot path
+// while still picking up a DB upgrade within 24h.
+const TIMEZONES_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+let cachedTimezoneNames: {
+  data: { name: string; utcOffset: string }[];
+  fetchedAt: number;
+} | null = null;
+
+/**
+ * In-memory memo of the get_timezone_names RPC (pg_timezone_names). The list
+ * is global (not company-scoped), identical for every tenant, and never
+ * invalidated by user action — so a per-process memo beats Redis: no network
+ * round-trip, nothing to invalidate, and a cold start simply refetches
+ * (~1ms scan). A failed fetch is returned as-is and not cached.
+ */
+export async function getCachedTimezoneNames(client: SupabaseClient<Database>) {
+  if (
+    cachedTimezoneNames &&
+    Date.now() - cachedTimezoneNames.fetchedAt < TIMEZONES_CACHE_TTL_MS
+  ) {
+    return { data: cachedTimezoneNames.data, error: null };
+  }
+
+  const result = await getTimezoneNames(client);
+  if (result.data?.length) {
+    cachedTimezoneNames = { data: result.data, fetchedAt: Date.now() };
   }
 
   return result;

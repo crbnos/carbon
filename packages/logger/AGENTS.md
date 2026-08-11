@@ -21,9 +21,16 @@ categories, env-driven levels, and cloud-agnostic request-id correlation.
   overrides the default (dev `debug`, server prod `info`, browser prod
   `warning`).
 - Request id is automatic inside loaders/actions/services: `requestIdMiddleware`
-  (registered first in each app's `root.tsx`) puts `{ requestId }` into implicit
-  context, so every server log during a request carries it. Read it explicitly
-  with `getRequestId(context)` from `@carbon/logger/middleware.server`.
+  puts `{ requestId }` into implicit context, so every server log during a
+  request carries it. Read it with `getRequestId(context)` from
+  `@carbon/logger/middleware.server`, or `getRequestId()` with no argument from
+  a plain service function (resolved via `requestContextMiddleware`'s scope).
+- Request-scoped memoization: `oncePerRequest(key, fn)` computes once per HTTP
+  request; `oncePerRead(key, fn)` does the same but ONLY on GET/HEAD/OPTIONS.
+  Use `oncePerRead` for anything derived from database state — React Router runs
+  an action and its loader revalidation in one request, so a plain memo there
+  would serve pre-write data. `oncePerRequest` is for values that are not
+  database state (e.g. a Supabase client).
 - Request-body logging is **debug-only** and guarded: `requestIdMiddleware`
   captures the body onto the access-log record's `body` prop **only** when
   `LOG_LEVEL=debug` (skipped entirely at the prod `info` default — no clone, no
@@ -69,15 +76,16 @@ pnpm --filter @carbon/logger test
 | `.` | `getLogger`, `LOG_LEVELS`, `parseLogLevel`, `CarbonLogLevel`, `Logger` type — isomorphic, safe everywhere |
 | `./config.server` | `ensureLoggingConfigured()` (ANSI dev / JSONL+redacted prod, ALS) |
 | `./config.client` | `ensureLoggingConfigured()` (plain console sink, no ALS) |
-| `./middleware.server` | `requestIdMiddleware`, `requestIdContext`, `getRequestId`, `REQUEST_ID_HEADER` |
+| `./middleware.server` | `requestIdMiddleware`, `requestIdContext`, `getRequestId`, `REQUEST_ID_HEADER`, plus the request-context API re-exported from `context.server`: `requestContextMiddleware`, `getRouterContext`, `getRequestContext`, `oncePerRequest`, `oncePerRead` |
 | `./inngest` | `createInngestLogger()` — adapter passed to `new Inngest({ logger })` |
 
 ## Wiring (per app)
 
 - `entry.server.tsx`: `import { ensureLoggingConfigured } from "@carbon/logger/config.server"; ensureLoggingConfigured();` at top.
 - `entry.client.tsx`: same from `@carbon/logger/config.client`.
-- `root.tsx`: `export const middleware = [requestIdMiddleware, flashMiddleware]`
-  (request id FIRST so downstream runs inside its context scope).
+- `root.tsx`: `export const middleware = [requestContextMiddleware, requestIdMiddleware, flashMiddleware]`
+  (request context FIRST so every downstream middleware and handler runs inside
+  the AsyncLocalStorage scope, then request id so downstream logs carry it).
 
 ## Cross-References
 

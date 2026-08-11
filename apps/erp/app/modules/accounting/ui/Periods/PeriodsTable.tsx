@@ -1,6 +1,5 @@
 import { MenuIcon, MenuItem, Status } from "@carbon/react";
 import {
-  formatDate,
   formatPeriodLabel,
   PERIOD_CLOSE_STATUS_COLOR_MAP
 } from "@carbon/utils";
@@ -17,7 +16,7 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, Table } from "~/components";
+import { DateTime, Hyperlink, Table } from "~/components";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { periodCloseStatuses } from "../../accounting.models";
@@ -71,7 +70,9 @@ const PeriodsTable = memo(
         {
           accessorKey: "startDate",
           header: t`Start Date`,
-          cell: ({ row }) => formatDate(row.original.startDate),
+          cell: ({ row }) => (
+            <DateTime value={row.original.startDate} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -79,7 +80,9 @@ const PeriodsTable = memo(
         {
           accessorKey: "endDate",
           header: t`End Date`,
-          cell: ({ row }) => formatDate(row.original.endDate),
+          cell: ({ row }) => (
+            <DateTime value={row.original.endDate} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }

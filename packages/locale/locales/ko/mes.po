@@ -21,6 +21,10 @@ msgstr "{0} - {1} 설정"
 msgid "{0} Active"
 msgstr "{0} 활성"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} 전"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -38,15 +42,44 @@ msgstr "{1} 중 {0} 완료"
 msgid "{0} of {1} completed"
 msgstr "{1} 중 {0} 완료됨"
 
+#. placeholder {0}: rows.length
+msgid "{0} queued"
+msgstr "{0} 대기 중"
+
+#. placeholder {0}: activeWork.length
+msgid "{0} running"
+msgstr "{0} 실행 중"
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} 스크랩됨"
 
+msgid "{completions} passed unit(s) will be completed."
+msgstr "{completions}개의 합격 단위가 완료됩니다."
+
+msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
+
+msgid "+{overflow} more"
+msgstr "+{overflow} 더 보기"
+
 msgid "About"
 msgstr "정보"
 
+msgid "Accept"
+msgstr "수락"
+
+msgid "Accept Lot"
+msgstr "로트 수락"
+
+msgid "Accept lot?"
+msgstr "로트를 수락하시겠습니까?"
+
 msgid "Account Settings"
 msgstr "계정 설정"
+
+msgid "Acknowledge & finish"
+msgstr "확인 및 완료"
 
 msgid "Active"
 msgstr "활성"
@@ -66,11 +99,29 @@ msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가
 msgid "Add Inventory"
 msgstr "재고 추가"
 
+msgid "Add Sample"
+msgstr "샘플 추가"
+
 msgid "Add Spare Part"
 msgstr "예비 부품 추가"
 
 msgid "All"
 msgstr "전체"
+
+msgid "All clear"
+msgstr "모두 정상"
+
+msgid "All rework"
+msgstr "모두 재작업"
+
+msgid "All scrap"
+msgstr "모두 폐기"
+
+msgid "Allocate failed units"
+msgstr "실패한 단위 할당"
+
+msgid "Allocate units"
+msgstr "단위 할당"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "이 단계를 삭제하시겠습니까?"
@@ -102,6 +153,9 @@ msgstr "인증 오류"
 msgid "available"
 msgstr "사용 가능"
 
+msgid "Available"
+msgstr "사용 가능"
+
 msgid "Batch"
 msgstr "배치"
 
@@ -127,6 +181,9 @@ msgstr "걱정하지 마세요. 비밀번호 찾기를 통해 새 매직 링크�
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
+
+msgid "By?"
+msgstr "누가?"
 
 msgid "Cancel"
 msgstr "취소"
@@ -161,9 +218,14 @@ msgstr "출근"
 msgid "Clock Out"
 msgstr "퇴근"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "{0}부터 출근 중"
+msgid "Clocked in since <0/>"
+msgstr "<0/>부터 근무 중"
+
+msgid "Close"
+msgstr "닫기"
+
+msgid "Collapse features table"
+msgstr "기능 테이블 축소"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -194,8 +256,14 @@ msgstr "완료"
 msgid "Complete All"
 msgstr "모두 완료"
 
+msgid "Complete passed"
+msgstr "완료된 합격"
+
 msgid "Completed"
 msgstr "완료됨"
+
+msgid "Connecting"
+msgstr "연결 중"
 
 msgid "Console"
 msgstr "콘솔"
@@ -203,8 +271,15 @@ msgstr "콘솔"
 msgid "Console Mode"
 msgstr "콘솔 모드"
 
+msgid "Consumed"
+msgstr "소비됨"
+
 msgid "Consumed expired"
 msgstr "만료 후 소모됨"
+
+#. placeholder {0}: board.unplannedCost.days
+msgid "Cost of unplanned maintenance, last {0} days"
+msgstr "계획되지 않은 유지보수 비용, 최근 {0}일"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -219,6 +294,9 @@ msgstr "품질 이슈 생성"
 
 msgid "Create Rework"
 msgstr "재작업 생성"
+
+msgid "Current work"
+msgstr "현재 작업"
 
 msgid "Customer"
 msgstr "고객"
@@ -244,9 +322,8 @@ msgstr "삭제"
 msgid "Delete Step"
 msgstr "단계 삭제"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "근무기록 삭제 ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "타임카드 삭제 (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "문제를 설명하세요..."
@@ -266,8 +343,21 @@ msgstr "작업지시를 찾을 수 없습니다"
 msgid "Display"
 msgstr "표시"
 
+msgid "Displays"
+msgstr "디스플레이"
+
 msgid "Down"
 msgstr "가동중단"
+
+msgid "Down for maintenance"
+msgstr "유지보수 중단됨"
+
+#. placeholder {0}: workCenter.blockingDispatchReadableId
+msgid "Down for maintenance · {0}"
+msgstr "유지보수 중단됨 · {0}"
+
+msgid "Down for planned maintenance"
+msgstr "계획된 유지보수로 가동 중단"
 
 msgid "Download"
 msgstr "다운로드"
@@ -280,6 +370,9 @@ msgstr "초안"
 
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "파일을 여기로 끌어다 놓거나 클릭하여 선택하세요"
+
+msgid "Drag to resize drawing and features"
+msgstr "그리기 및 기능 크기 조정하려면 드래그하세요"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -294,6 +387,13 @@ msgstr "기한 {0}"
 msgid "Due Date"
 msgstr "기한일"
 
+#. placeholder {0}: board.dueSoon.days
+msgid "Due in the next {0} days?"
+msgstr "다음 {0}일 내에 예정됨?"
+
+msgid "Due today?"
+msgstr "오늘 예정됨?"
+
 msgid "Duplicate batch number"
 msgstr "중복된 배치 번호"
 
@@ -305,6 +405,9 @@ msgstr "기간"
 
 msgid "Edit"
 msgstr "수정"
+
+msgid "Elapsed"
+msgstr "경과 시간"
 
 msgid "Email Address"
 msgstr "이메일 주소"
@@ -325,17 +428,30 @@ msgstr "오류"
 msgid "Estimated"
 msgstr "예상"
 
+msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
+msgstr "모든 단위에 판정이 있습니다: {passes}개 합격 및 {fails}개 불합격. 로트는 각 단위가 자신의 결과로 라우팅되면서 종료됩니다."
+
+msgid "Expand features table"
+msgstr "기능 테이블 확장"
+
 msgid "Expired"
 msgstr "만료됨"
 
-msgid "Expired {date}"
-msgstr "{date}에 만료됨"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "만료됨 {0}"
 
-msgid "Expires {date}"
-msgstr "{date}에 만료"
+msgid "Expires <0/>"
+msgstr "만료 <0/>"
 
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
+
+msgid "Failed"
+msgstr "실패"
+
+msgid "Failed features"
+msgstr "실패한 기능"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "재고 조정을 완료하지 못했습니다"
@@ -349,12 +465,24 @@ msgstr "진행 중인 공정작업을 불러오지 못했습니다"
 msgid "Failed to fetch storageUnits"
 msgstr "저장 단위를 불러오지 못했습니다"
 
+msgid "Failed to save measurement"
+msgstr "측정값 저장 실패"
+
+msgid "Failed to save result"
+msgstr "결과 저장 실패"
+
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "파일을 업로드하지 못했습니다: {0}"
 
 msgid "Failed to upload image"
 msgstr "이미지를 업로드하지 못했습니다"
+
+msgid "Feature"
+msgstr "기능"
+
+msgid "Features"
+msgstr "기능"
 
 msgid "File size exceeds 10MB limit"
 msgstr "파일 크기가 10MB 제한을 초과했습니다"
@@ -368,6 +496,9 @@ msgstr "작업 및 기회 라인과 관련된 파일입니다."
 msgid "Filter"
 msgstr "필터"
 
+msgid "Filter by location"
+msgstr "위치별 필터"
+
 msgid "Finish"
 msgstr "마감"
 
@@ -378,6 +509,9 @@ msgstr "{0} 완료"
 msgid "Finish Anyways"
 msgstr "그래도 완료"
 
+msgid "Finish with material unpicked?"
+msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
+
 msgid "Forgot to Clock Out?"
 msgstr "퇴근 체크를 잊으셨나요?"
 
@@ -386,6 +520,9 @@ msgstr "공정작업으로 돌아가기"
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
+
+msgid "How many?"
+msgstr "몇 개?"
 
 msgid "I understand and want to complete without issuing"
 msgstr "이해했으며 출고 없이 완료하겠습니다"
@@ -396,14 +533,30 @@ msgstr "아직 작업 중입니다"
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
+msgid "Idle for"
+msgstr "유휴 상태"
+
 msgid "Impact"
 msgstr "영향"
 
 msgid "Imperial"
 msgstr "야드파운드법"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "{0} 후"
+
 msgid "In Progress"
 msgstr "진행 중"
+
+msgid "Inspect Item"
+msgstr "항목 검사"
+
+msgid "inspected"
+msgstr "검사됨"
+
+msgid "Instructions"
+msgstr "작업 지침"
 
 msgid "Insufficient quantity"
 msgstr "수량 부족"
@@ -429,6 +582,12 @@ msgstr "자재 출고"
 msgid "Issue Type"
 msgstr "이슈 유형"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "{issuedQuantity}를 {lotLabel}에서 발급함"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "{issuedQuantity}를 {lotLabel}에서 발급함 — {remainingQuantity}가 남음"
+
 msgid "Item"
 msgstr "품목"
 
@@ -447,11 +606,17 @@ msgstr "작업 트래블러"
 msgid "Jobs"
 msgstr "작업"
 
+msgid "Keep picking"
+msgstr "계속 선택"
+
 msgid "Kit"
 msgstr "키트"
 
 msgid "Labor"
 msgstr "노무"
+
+msgid "Last completed"
+msgstr "마지막 완료"
 
 msgid "Learn more"
 msgstr "자세히 알아보기"
@@ -470,6 +635,9 @@ msgstr "품목 세부정보를 불러오는 중..."
 
 msgid "Loading..."
 msgstr "불러오는 중..."
+
+msgid "Local"
+msgstr "로컬"
 
 msgid "Location"
 msgstr "위치"
@@ -498,14 +666,26 @@ msgstr "{0} 스크랩 기록"
 msgid "Login"
 msgstr "로그인"
 
+msgid "Lot"
+msgstr "로트"
+
 msgid "Machine"
 msgstr "기계"
+
+msgid "Machine down for maintenance now?"
+msgstr "현재 유지보수로 가동 중단?"
 
 msgid "Maintenance"
 msgstr "유지보수"
 
 msgid "Maintenance Completed"
 msgstr "유지보수 완료"
+
+msgid "Maintenance overdue"
+msgstr "기한이 지난 유지보수"
+
+msgid "Make a replacement"
+msgstr "교체품 만들기"
 
 msgid "Manually add items to inventory"
 msgstr "재고에 품목을 수동으로 추가"
@@ -530,6 +710,9 @@ msgstr "미터법"
 
 msgid "Model"
 msgstr "모델"
+
+msgid "More actions"
+msgstr "더 많은 작업"
 
 msgid "More Actions"
 msgstr "추가 작업"
@@ -568,11 +751,20 @@ msgstr "최신순"
 msgid "Next"
 msgstr "다음"
 
+msgid "No"
+msgstr "아니요"
+
+msgid "No active job at this work center"
+msgstr "이 작업 센터에 활성 작업 없음"
+
 msgid "No active maintenance dispatches"
 msgstr "진행 중인 유지보수 작업지시가 없습니다"
 
 msgid "No active operations"
 msgstr "진행 중인 공정작업이 없습니다"
+
+msgid "No active work centers at this location."
+msgstr "이 위치에 활성 작업 센터 없음."
 
 msgid "No assigned operations"
 msgstr "배정된 공정작업이 없습니다"
@@ -595,6 +787,9 @@ msgstr "파일 없음"
 msgid "No Impact"
 msgstr "영향 없음"
 
+msgid "No issue types configured"
+msgstr "구성된 문제 유형이 없음"
+
 msgid "No maintenance scheduled for today"
 msgstr "오늘 예정된 유지보수가 없습니다"
 
@@ -606,6 +801,9 @@ msgstr "자재 없음"
 
 msgid "No open jobs"
 msgstr "진행 중인 작업이 없습니다"
+
+msgid "No open units to allocate"
+msgstr "할당할 열린 단위가 없습니다"
 
 msgid "No operators"
 msgstr "작업자 없음"
@@ -625,6 +823,9 @@ msgstr "설정된 프린터가 없습니다"
 msgid "No recent operations"
 msgstr "최근 공정작업이 없습니다"
 
+msgid "No remaining entities to inspect."
+msgstr "검사할 나머지 엔터티가 없습니다."
+
 msgid "No results"
 msgstr "결과 없음"
 
@@ -633,6 +834,9 @@ msgstr "결과가 없습니다"
 
 msgid "No results found"
 msgstr "결과가 없습니다"
+
+msgid "No samples required."
+msgstr "필요한 샘플이 없습니다."
 
 msgid "No scheduled time"
 msgstr "예정된 시간 없음"
@@ -661,8 +865,20 @@ msgstr "차단된 작업장이 없습니다"
 msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
 
+msgid "None"
+msgstr "없음"
+
 msgid "Notes"
 msgstr "메모"
+
+msgid "Nothing running"
+msgstr "실행 중인 것 없음"
+
+msgid "Nothing scheduled at this work center"
+msgstr "이 작업 센터에서 예정된 것 없음"
+
+msgid "Nothing to scrap"
+msgstr "폐기할 것이 없습니다"
 
 msgid "OEE Impact"
 msgstr "OEE 영향"
@@ -683,6 +899,12 @@ msgstr "이런. 이 페이지가 보이면 안 됩니다. 나중에 랜딩 페�
 msgid "Open"
 msgstr "열림"
 
+msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
+msgstr "작업 센터에 설치된 화면에 디스플레이를 열고 실행 중인 상태로 두십시오. 각 보드는 자동으로 새로고침됩니다."
+
+msgid "Open an NCR for MRB disposition"
+msgstr "MRB 처리를 위한 NCR 열기"
+
 msgid "Open Jobs"
 msgstr "진행 중인 작업"
 
@@ -692,17 +914,32 @@ msgstr "공정작업"
 msgid "Operations ended"
 msgstr "공정작업 종료됨"
 
+msgid "Operator"
+msgstr "작업자"
+
 msgid "Operator Performed"
 msgstr "작업자 수행"
 
 msgid "Optional"
 msgstr "선택 사항"
 
+msgid "Overall result"
+msgstr "전체 결과"
+
+msgid "Overdue PMs?"
+msgstr "기한이 지난 PM?"
+
 msgid "Parameters"
 msgstr "파라미터"
 
 msgid "Part"
 msgstr "품목"
+
+msgid "Partial"
+msgstr "부분"
+
+msgid "Partial Disposition"
+msgstr "부분 처리"
 
 msgid "Passed Inspection"
 msgstr "검사 합격"
@@ -743,14 +980,14 @@ msgstr "이 공정작업을 마감하기 전에 모든 단계를 기록하세요
 msgid "Please select an item"
 msgstr "품목을 선택하세요"
 
+msgid "PM schedule lapsed"
+msgstr "PM 일정 만료됨"
+
 msgid "Prev"
 msgstr "이전"
 
 msgid "Preventive"
 msgstr "예방"
-
-msgid "Previous"
-msgstr "이전"
 
 msgid "Print"
 msgstr "인쇄"
@@ -788,6 +1025,9 @@ msgstr "수량"
 msgid "Quantity must be greater than 0"
 msgstr "수량은 0보다 커야 합니다"
 
+msgid "Queue empty"
+msgstr "대기열 비었음"
+
 msgid "Reason for rework"
 msgstr "재작업 사유"
 
@@ -801,6 +1041,18 @@ msgstr "기록"
 msgid "Record {0}"
 msgstr "{0} 기록"
 
+msgid "Record only"
+msgstr "기록만"
+
+msgid "Record Partial"
+msgstr "부분 기록"
+
+msgid "Reject"
+msgstr "거부"
+
+msgid "Reject Lot"
+msgstr "로트 거부"
+
 msgid "Remove"
 msgstr "제거"
 
@@ -813,11 +1065,23 @@ msgstr "재고 제거"
 msgid "Remove part"
 msgstr "품목 제거"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "부분 조립품을 다시 열고 교체 단위를 생성합니다"
+
+msgid "Result"
+msgstr "결과"
+
 msgid "Rework"
 msgstr "재작업"
 
 msgid "Rework created successfully"
 msgstr "재작업이 생성되었습니다"
+
+msgid "Rework quantity"
+msgstr "재작업 수량"
+
+msgid "Running"
+msgstr "실행 중"
 
 msgid "Sales Order"
 msgstr "판매주문"
@@ -828,8 +1092,14 @@ msgstr "저장"
 msgid "Scan"
 msgstr "스캔"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "추적된 엔터티를 스캔하여 첫 번째 샘플 열을 추가하세요."
+
 msgid "Scan or enter serial number"
 msgstr "일련번호를 스캔하거나 입력하세요"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "추적된 엔터티 ID, 일련번호 또는 배치를 스캔하거나 입력하세요"
 
 msgid "Scan or enter tracking number"
 msgstr "추적 번호를 스캔하거나 입력하세요"
@@ -837,17 +1107,35 @@ msgstr "추적 번호를 스캔하거나 입력하세요"
 msgid "Scan or search serial number..."
 msgstr "일련번호를 스캔하거나 검색하세요..."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "이 로트에서 추적된 엔터티를 스캔하거나 선택하여 샘플 열로 추가한 다음 그리드에 그 결과를 기록하세요."
+
 msgid "Schedule"
 msgstr "일정"
 
 msgid "Scrap"
 msgstr "스크랩"
 
+msgid "Scrap {readableId}"
+msgstr "{readableId} 폐기"
+
+msgid "Scrap material"
+msgstr "자재 폐기"
+
+msgid "Scrap quantity"
+msgstr "폐기 수량"
+
 msgid "Scrap Reason"
 msgstr "스크랩 사유"
 
 msgid "Scrapped"
 msgstr "스크랩됨"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "일련번호 {trackedEntityReadableId} 폐기"
+
+msgid "Scrapping the selected serial"
+msgstr "선택한 일련번호 폐기"
 
 msgid "Search"
 msgstr "검색"
@@ -876,6 +1164,9 @@ msgstr "스크랩 수량과 사유를 선택하세요"
 msgid "Select a serial number to continue with this operation"
 msgstr "이 공정작업을 계속하려면 일련번호를 선택하세요"
 
+msgid "Select an issue type"
+msgstr "문제 유형 선택"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "품목을 선택하고 출고할 수량을 지정하세요"
 
@@ -898,6 +1189,9 @@ msgstr "일련번호 선택"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "되돌아갈 공정작업을 선택하세요. 해당 시점부터 현재 공정작업까지 모두 다시 진행됩니다."
+
+msgid "Selected"
+msgstr "선택됨"
 
 msgid "Send"
 msgstr "전송"
@@ -932,6 +1226,9 @@ msgstr "퇴근 시간 설정"
 
 msgid "Setup"
 msgstr "설정"
+
+msgid "short"
+msgstr "부족"
 
 msgid "Short"
 msgstr "짧게"
@@ -978,6 +1275,10 @@ msgstr "스테이션 사용자"
 msgid "Station: {stationName}"
 msgstr "스테이션: {stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
+msgstr "통계적 수용이 실패했으므로 {0}의 전체 로트는 부적합으로 간주됩니다(ISO 9001:2015 §8.7) — {passes}개의 샘플 합격 및 {fails}개의 불합격. 아래 단위를 스크랩 또는 재작업으로 라우팅하거나 판정만 기록하세요."
+
 msgid "Status"
 msgstr "상태"
 
@@ -1011,15 +1312,35 @@ msgstr "작업자 전환"
 msgid "Tag"
 msgstr "태그"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "이 공정작업의 완료 수량이 필요 수량 {0}보다 적습니다."
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
+
+msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
+msgstr "로트가 합격으로 표시되고 {remaining}개의 남은 단위가 이 작업에서 완료됩니다."
+
+msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 구성될 때까지 NCR을 생성할 수 없습니다."
+
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "이 재료에 대해 사용 가능하거나 소비된 추적된 부품이 없습니다."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "자재명세서(BOM)에 아직 완전히 출고되지 않은 일련번호 또는 배치 추적 자재가 있습니다. 출고하지 않고 완료하면 이력추적 기록이 부정확해질 수 있습니다."
 
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
+
 msgid "This lot is expired and can't be picked."
 msgstr "이 로트는 만료되어 피킹할 수 없습니다."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "이 부품은 주문 제작되었습니다. 폐기하면 교체품을 만들기 위해 라우팅을 다시 열 수 있습니다."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으므로 교체품을 발급할 수 있습니다."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "이 단위는 영구적으로 폐기되며 교체 일련번호가 생성됩니다."
 
 msgid "Thumbnail"
 msgstr "썸네일"
@@ -1048,6 +1369,9 @@ msgstr "총 시간: {0}"
 msgid "Total: {0}"
 msgstr "합계: {0}"
 
+msgid "Tracked Entity"
+msgstr "추적된 엔터티"
+
 msgid "Tracking"
 msgstr "추적"
 
@@ -1067,11 +1391,28 @@ msgstr "피킹 취소"
 msgid "Unpick {0}"
 msgstr "{0} 피킹 취소"
 
+msgid "Unplanned downtime"
+msgstr "계획되지 않은 다운타임"
+
+#. placeholder {0}: board.unplannedCount.days
+msgid "Unplanned maintenance items, last {0} days"
+msgstr "계획되지 않은 유지보수 항목, 최근 {0}일"
+
 msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
 
+msgid "Up next"
+msgstr "다음"
+
+msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
+msgstr "최대 {maxAllocatable}개 단위까지 할당할 수 있으며, 나머지는 전기 없이 기록됩니다."
+
 msgid "Update"
 msgstr "업데이트"
+
+#. placeholder {0}: formatClock(lastUpdated)
+msgid "Updated {0}"
+msgstr "업데이트됨 {0}"
 
 msgid "Updated successfully"
 msgstr "성공적으로 업데이트되었습니다"
@@ -1099,9 +1440,14 @@ msgstr "재공품"
 msgid "Work Center"
 msgstr "작업장"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "{0}에 출근했습니다. 아래에서 퇴근 시간을 수정하거나 계속 근무 중임을 확인할 수 있습니다."
+msgid "Work Center Displays"
+msgstr "작업 센터 디스플레이"
+
+msgid "Yes"
+msgstr "예"
+
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편집하거나 현재 근무 중임을 확인할 수 있습니다."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊으셨나요?"

@@ -4,6 +4,7 @@ import { experimental_transcribe as transcribe } from "npm:ai@5.0.87";
 import { z } from "npm:zod@^3.24.1";
 import { openai } from "../lib/ai/openai.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getSupabase } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
@@ -13,9 +14,8 @@ const transcriptionRequestSchema = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   console.log({
     function: "transcription",
@@ -94,30 +94,14 @@ serve(async (req: Request) => {
       transcriptLength: result.text.length,
     });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        text: result.text,
-        language: result.language,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return jsonResponse({
+      success: true,
+      text: result.text,
+      language: result.language,
+    });
   } catch (error) {
     console.error("Transcription failed:", error);
 
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: "Failed to transcribe audio",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
-    );
+    return errorResponse(error, 500);
   }
 });

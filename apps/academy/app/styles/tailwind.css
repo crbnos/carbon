@@ -98,3 +98,16 @@
 .font-display {
   font-family: "DM Sans", sans-serif;
 }
+
+@keyframes spinner-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.animate-spinner {
+  animation: spinner-fade 1.2s linear infinite;
+}

@@ -1,6 +1,4 @@
 // Pure MRP engine functions shared across Supabase edge functions.
-// The same algorithm is independently available (with unit tests) at
-// packages/mrp/src/engine.ts.
 
 export type MethodType =
   | "Make to Order"

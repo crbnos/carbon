@@ -17,6 +17,7 @@ const wasmBytes = await Deno.readFile(
 await initializeImageMagick(wasmBytes);
 
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse } from "../lib/response.ts";
 
 // Maximum dimensions to process without aggressive downscaling
 const MAX_SAFE_DIMENSION = 2000;
@@ -24,9 +25,8 @@ const MAX_SAFE_DIMENSION = 2000;
 const MAX_ALLOWED_DIMENSION = 5000;
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     console.log({
@@ -365,9 +365,6 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error("Image processing error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });

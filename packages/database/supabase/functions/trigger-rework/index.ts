@@ -3,7 +3,7 @@ import type { Transaction } from "kysely";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import z from "npm:zod@^3.24.1";
 import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { DB } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -16,6 +16,9 @@ interface TriggerReworkRequest {
   reason: string;
   quantity: number;
   trackedEntityIds?: string[];
+  // Provenance link when an inspection disposition triggered the rework —
+  // stamped on the Rework productionQuantity row.
+  inspectionId?: string;
   companyId: string;
   userId: string;
 }
@@ -93,6 +96,7 @@ async function triggerRework(
     reason,
     quantity,
     trackedEntityIds,
+    inspectionId,
     companyId,
     userId,
   } = body;
@@ -233,6 +237,11 @@ async function triggerRework(
         operationSupplierProcessId: sourceOp.operationSupplierProcessId,
         workInstruction: sourceOp.workInstruction,
         procedureId: sourceOp.procedureId,
+        // A cloned Inspection op must re-inspect against the SAME plan — its
+        // lazily-created lot resolves features/sampling from this document.
+        // Assembly ops likewise keep their instruction link for 3D playback.
+        inspectionDocumentId: sourceOp.inspectionDocumentId,
+        assemblyInstructionId: sourceOp.assemblyInstructionId,
         operationQuantity: quantity,
         targetQuantity: quantity,
         tags: sourceOp.tags,
@@ -373,6 +382,7 @@ async function triggerRework(
       jobOperationId: triggeredAtJobOperationId,
       type: "Rework",
       quantity,
+      inspectionId: inspectionId ?? null,
       companyId,
       createdBy: userId,
     })
@@ -387,9 +397,8 @@ async function triggerRework(
 
 // Main handler
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     const raw = await req.json();
@@ -401,21 +410,16 @@ serve(async (req) => {
         reason: z.string().min(1),
         quantity: z.number().positive(),
         trackedEntityIds: z.array(z.string()).optional(),
+        inspectionId: z.string().optional(),
         companyId: z.string().min(1),
         userId: z.string().min(1),
       })
       .safeParse(raw);
 
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: `Invalid request: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+      return errorResponse(
+        `Invalid request: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
+        400
       );
     }
 
@@ -449,24 +453,13 @@ serve(async (req) => {
       console.error("Failed to trigger reschedule after rework:", err);
     }
 
-    return new Response(JSON.stringify({ success: true, ...result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ success: true, ...result });
   } catch (error) {
     console.error(
       `❌ Rework failed: ${
         error instanceof Error ? error.message : String(error)
       }`
     );
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: error instanceof Error ? error.message : String(error),
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return errorResponse(error, 500);
   }
 });

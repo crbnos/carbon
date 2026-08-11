@@ -2,28 +2,29 @@ import "./global.css";
 import "./editorial.css";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Fira_Code } from "next/font/google";
+import { Archivo, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import { SiteFooter } from "@/components/site-footer";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { ogImage, SEO, SITE } from "@/lib/seo";
 
-// next/font self-hosts DM Sans + Fira Code at build time: no render-blocking request
+// next/font self-hosts Archivo + JetBrains Mono at build time: no render-blocking request
 // to fonts.googleapis.com, automatic `font-display: swap`, and a size-adjusted fallback
 // face so swapping in the web font causes ~no layout shift (CLS). Exposed as CSS vars
-// the design tokens (--font-sans/--font-mono in global.css) point at.
-const dmSans = DM_Sans({
+// the design tokens (--font-sans/--font-display/--font-mono in global.css) point at.
+// Archivo covers body/UI text and (in bold weights) headings/display type.
+const archivo = Archivo({
   subsets: ["latin"],
   display: "swap",
   style: ["normal", "italic"],
-  variable: "--font-dm-sans"
+  variable: "--font-archivo"
 });
 
-const firaCode = Fira_Code({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-fira-code"
+  variable: "--font-jetbrains-mono"
 });
 
 const defaultOg = ogImage({ title: SEO.site.title, eyebrow: "Documentation" });
@@ -112,7 +113,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${firaCode.variable}`}
+      className={`${archivo.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <head>

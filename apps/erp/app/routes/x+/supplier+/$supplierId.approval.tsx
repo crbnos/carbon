@@ -6,7 +6,7 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { supplierApprovalDecisionValidator } from "~/modules/purchasing";
@@ -71,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .update({
         supplierStatus: "Pending",
         updatedBy: userId,
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", supplierId);
 
@@ -134,7 +134,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .update({
         supplierStatus: "Inactive",
         updatedBy: userId,
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", supplierId);
 

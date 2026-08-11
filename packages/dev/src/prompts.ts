@@ -56,11 +56,10 @@ export async function pickApps(): Promise<AppId[]> {
       .map((s) => s.trim())
       .filter((s): s is AppId => APP_CHOICES.some((c) => c.value === s));
   }
-  // The assembler is opt-in: it needs a one-time native OCCT build, so it's
-  // never selected by default — only via CARBON_DEV_APPS or an explicit check.
-  const defaultApps = APP_CHOICES.filter((c) => c.value !== "assembler").map(
-    (c) => c.value
-  );
+  const optInApps: readonly AppId[] = ["assembler", "email"];
+  const defaultApps = APP_CHOICES.filter(
+    (c) => !optInApps.includes(c.value)
+  ).map((c) => c.value);
   if (!process.stdin.isTTY) return defaultApps;
 
   note(
@@ -197,6 +196,20 @@ export async function confirmReset(projectName: string): Promise<boolean> {
   if (process.env.CARBON_DEV_YES === "1") return true;
   const ok = await confirm({
     message: `Destroy all volumes for ${pc.bold(projectName)}? (postgres, storage, inngest data will be wiped, redis db flushed)`,
+    initialValue: false
+  });
+  if (isCancel(ok)) return false;
+  return ok as boolean;
+}
+
+export async function confirmRestore(opts: {
+  port: number;
+  file: string;
+  mode: string;
+}): Promise<boolean> {
+  if (process.env.CARBON_DEV_YES === "1") return true;
+  const ok = await confirm({
+    message: `Replace the database on 127.0.0.1:${pc.bold(String(opts.port))} with ${pc.bold(opts.file)}? (mode: ${opts.mode} — the current data, including any seeded test data, is wiped)`,
     initialValue: false
   });
   if (isCancel(ok)) return false;

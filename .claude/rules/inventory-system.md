@@ -27,7 +27,8 @@ Key service functions (verified):
 - `getItemLedgerPage` — paginated item-ledger history for an item at a location.
 - `insertManualInventoryAdjustment` — thin wrapper over the **`post-inventory-adjustment`
   edge function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
-  The edge function owns positive/negative/set-quantity resolution, tracked-entity storage-unit
+  The edge function owns positive/negative/set-quantity **plus Scrap/Unscrap**
+  (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`) resolution, tracked-entity storage-unit
   transfers, expiry override, batch/serial assignment — and, in one Kysely transaction, maintains
   `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
@@ -36,13 +37,59 @@ Key service functions (verified):
   (`functions/shared/post-adjustment.ts`). Storage-unit transfers post no GL. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
+  **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +
+  `itemLedger.scrapReasonId`, offset to `accountDefault.scrapAccount` (fallback
+  `inventoryAdjustmentVarianceAccount`), tracked entity → `Scrapped` (keeps its
+  quantity; partial batch scrap splits per the identity-flip convention).
+  **Unscrap** (Oracle Return-from-Scrap) restores a `Scrapped` entity to
+  `Available` at the **original scrapped cost** (resolved from the scrap
+  movement's `costLedger` via `resolve-unscrap-cost.ts`) and bin, linked by
+  `correctionOfItemLedgerId`; ERP UI = the Unscrap row action on the tracked-
+  entities table (`UnscrapModal`, no location and **no scrap reason** submitted —
+  both resolved server-side; the reason is inherited from the original scrap
+  movement so unscrap can't be mis-classified, and the UI collects only an
+  optional comment).
+  Scrap journals carry ScrapReason/WorkCenter/Employee dimensions; the single
+  `scrapAccount` + dimensions replaces per-reason account mapping by design.
+  The **ScrapReason** dimension is seeded active by default (a `dimension` row per
+  company group, from `functions/lib/seed.data.ts`; backfilled to existing groups by
+  `20260808114732_backfill-scrap-reason-dimension.sql`). Like CustomerType/ItemPostingGroup
+  it is entity-backed — its values resolve live from the `scrapReason` table via
+  `getEntityDimensionValues`/`getEntityValuesByIds` (accounting.service.ts), so adding a
+  scrap reason immediately makes it a selectable/taggable dimension value with no sync step.
+  A tag is only written when the entity type has an **active** `dimension` row — a scrap
+  posting's ScrapReason `extraDimension` is dropped in `post-adjustment.ts` if the dimension
+  was deleted/deactivated for that company group.
+- `correctStockMovement` — wraps the **`correct-stock-movement` edge function**: fixes any
+  posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
+  correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
+  `postingDate` and (when accounting is on) posting its journal into the period containing
+  that date via `getAccountingPeriodForDate` (throws on Locked/Closed). The delta is
+  `correctedQuantity − effective` (effective = root + all prior corrections in the group),
+  so repeat corrections converge. `documentType`/`documentId` are copied from the original
+  so document-scoped movement views keep including the fix. Entry point: "Correct Quantity"
+  context action on `StockMovementsTable` → `stock-movements/$ledgerId/correct` route (whose
+  loader returns the authoritative effective quantity for the modal pre-fill). Corrections
+  render as normal flat rows with an `isCorrection` badge — no nesting/expandable grouping.
+  Inventory counts have NO count-level rectify; Posted is terminal.
 - Storage units: `getStorageUnit(s)`, `getStorageUnitRoots`, `getStorageUnitChildren`,
   `getStorageUnitTree`, `getStorageUnitsTreeForLocation`, `getDefaultStorageUnitForJob`,
   `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` (these are the picking/job defaults).
 - Tracking: `getTrackedEntities`, `getAvailableTrackedEntities` (RPC `get_available_tracked_entities`),
   `getSerialNumbersForItem`, `getBatchNumbersForItem`, `getShelfLifeForItems`, `getPickOrder` (FEFO/FIFO).
 - Picking: `generatePickingList`, `getPickingListAvailability` (RPC `get_picking_list_availability`),
-  `getPickingSchedule` (RPC `get_picking_schedule`).
+  `getPickingSchedule` (RPC `get_picking_schedule`). These honor `itemSupersession`
+  (`20260730143512_picking-supersession.sql` + `inventory/supersession-pick.ts`
+  `resolvePickTarget`): `Prefer New`/`Stock Only` redirect a pick to the effective successor
+  (× `conversionFactor`); `Consume First` redirects only when the predecessor is out of warehouse
+  stock; `No Stock` (and `Stock Only` without an effective successor) is dropped from the schedule
+  and skipped in generation. Note picking's redirect rules differ from the MRP/job-creation map
+  (`functions/lib/supersession-pick.ts`, which redirects only `Consume First`/`Prefer New`) —
+  for picking, `Stock Only` must not be picked for production. A substituted line's `itemId`
+  differs from its `jobMaterial.itemId` (no new column); the availability RPC reports the
+  line's OWN pick item's warehouse on-hand with NO successor fold-in — a substituted line
+  already targets the successor, and folding successor stock into a line still targeting the
+  predecessor would mask a real shortage and double-count the successor.
 
 Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptValidator`,
 `shipmentValidator`, `stockTransferValidator`, `warehouseTransferValidator`, `storageUnitValidator`,
@@ -87,8 +134,9 @@ item identity + material props, planning fields, and quantities `quantityOnHand`
 Aggregates from `itemLedger`, open `purchaseOrder(Line)`, `salesOrder(Line)`, `job`/`jobMaterial`,
 and `demandForecast`/`demandActual`.
 
-Relevant enums: `itemLedgerType`, `itemLedgerDocumentType`, `trackedEntityStatus`
-(`Available`, `Reserved`, `On Hold`, `Consumed`, `Rejected`), `warehouseTransferStatus`,
+Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
+`20260807090400`), `trackedEntityStatus`
+(`Available`, `Reserved`, `On Hold`, `Consumed`, `Rejected`, `Scrapped`), `warehouseTransferStatus`,
 `itemTrackingType`, `itemReplenishmentSystem`, `itemReorderingPolicy`.
 
 ## Gotchas

@@ -2,7 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useMount, VStack } from "@carbon/react";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
@@ -14,6 +14,7 @@ import {
 } from "~/modules/production";
 import { JobMaterialsTable } from "~/modules/production/ui/Jobs";
 import { getCompanySettings } from "~/modules/settings";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -76,7 +77,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Both depend on the materials but not on each other.
   const [expiredItemIds, orderStatusByMaterialId] = await Promise.all([
-    getExpiredItemIds(client, companyId, rows, nearExpiryWarningDays),
+    getExpiredItemIds(
+      client,
+      companyId,
+      rows,
+      nearExpiryWarningDays,
+      locationId
+    ),
     getJobOrderStatusMap(
       client,
       jobId,
@@ -112,7 +119,8 @@ async function getExpiredItemIds(
   client: Parameters<typeof getJob>[0],
   companyId: string,
   materials: { jobMaterialItemId: string | null }[],
-  nearExpiryWarningDays: number | null
+  nearExpiryWarningDays: number | null,
+  locationId: string
 ): Promise<Set<string>> {
   if (nearExpiryWarningDays === null) return new Set();
   const itemIds = materials
@@ -126,7 +134,12 @@ async function getExpiredItemIds(
     .in("sourceDocumentId", itemIds)
     .eq("companyId", companyId)
     .not("expirationDate", "is", null)
-    .lt("expirationDate", today(getLocalTimeZone()).toString());
+    .lt(
+      "expirationDate",
+      datetime
+        .today(await getLocationTimeZone(client, locationId, companyId))
+        .toString()
+    );
 
   return new Set(
     (data ?? [])

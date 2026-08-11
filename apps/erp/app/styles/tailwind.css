@@ -200,3 +200,16 @@ p.is-editor-empty:first-child:before {
 .loading-dot:nth-child(3) {
   animation-delay: 0.4s;
 }
+
+@keyframes spinner-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.animate-spinner {
+  animation: spinner-fade 1.2s linear infinite;
+}

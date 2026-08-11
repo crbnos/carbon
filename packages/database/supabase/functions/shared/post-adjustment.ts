@@ -28,11 +28,22 @@ export interface BookAdjustmentArgs {
     trackedEntityId: string | null;
     entryType: "Positive Adjmt." | "Negative Adjmt.";
     // itemLedgerDocumentType — manual adjustments stay NULL (ledger rows keep
-    // today's shape; 'Inventory Adjustment' exists only on journalLineDocumentType)
-    documentType?: "Inventory Count" | null;
+    // today's shape; 'Inventory Adjustment' exists only on journalLineDocumentType).
+    // Non-Conformance / Inbound Inspection tag NCR-disposition & inspection-reject
+    // write-offs (these also flow to the journal line's documentType). The full
+    // enum is accepted because stock-movement corrections copy the ORIGINAL
+    // movement's documentType so document-scoped movement views keep including
+    // the fix.
+    documentType?:
+      | Database["public"]["Enums"]["itemLedgerDocumentType"]
+      | null;
     documentId?: string | null;
     correctionOfItemLedgerId?: string | null;
     comment?: string | null;
+    // Reason for scrap/unscrap movements (documentType 'Scrap'); NULL for
+    // every other adjustment. MES production scrap keeps its reason on
+    // productionQuantity.scrapReasonId.
+    scrapReasonId?: string | null;
     companyId: string;
     createdBy: string;
   };
@@ -52,12 +63,26 @@ export interface BookAdjustmentArgs {
       finishedGoodsAccount: string;
       inventoryAdjustmentVarianceAccount: string;
     };
+    // Offset (non-inventory) side of the balanced pair. Defaults to
+    // inventoryAdjustmentVarianceAccount; NCR-disposition / inspection-reject
+    // write-offs pass the company's scrapAccount so cost of quality is separable
+    // on the P&L.
+    offsetAccount?: string | null;
+    offsetDescription?: string;
+    // journal.sourceType for a header this call creates (default
+    // 'Inventory Adjustment'). Ignored when getJournalId supplies a shared journal.
+    sourceType?: Database["public"]["Enums"]["journalEntrySourceType"];
     description: string;
     userId: string;
     // active dimensions for the company group, entityType → dimension id
     // (Item / ItemPostingGroup / Location are consulted) — journal lines get
     // journalLineDimension tags for whichever are configured
     dimensions?: Record<string, string>;
+    // Additional journalLineDimension tags beyond Item/ItemPostingGroup/
+    // Location (ScrapReason / WorkCenter / Employee for scrap postings).
+    // entityType must be a dimensionEntityType value present in `dimensions`;
+    // valueId is the referenced entity id (polymorphic, no FK).
+    extraDimensions?: Array<{ entityType: string; valueId: string }>;
     // When set, lines append to this shared journal instead of the core
     // creating one journal per movement — inventory counts post ONE journal
     // per count with a line pair per variance. Lazy (called only when a
@@ -68,7 +93,31 @@ export interface BookAdjustmentArgs {
   // storage-unit-transfer legs move stock between bins without changing its
   // value: ledger row only — no cost layers, no journal
   skipValuation?: boolean;
+  // Book an INCREASE's new cost layer at this unit cost instead of
+  // computeCurrentUnitCost — Unscrap reverses at the original scrapped cost
+  // (Oracle Return-from-Scrap precedent). Ignored for decreases, which always
+  // relieve via calculateCOGS.
+  fixedUnitCost?: number;
 }
+
+// itemLedgerDocumentType values that also exist on journalLineDocumentType.
+// The journal line falls back to 'Inventory Adjustment' for ledger documentType
+// values the journal enum doesn't carry (e.g. 'Sales Invoice', 'Direct
+// Transfer', 'Posted Assembly') — inserting those would fail the enum cast.
+const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
+  "Sales Shipment",
+  "Purchase Receipt",
+  "Purchase Invoice",
+  "Transfer Shipment",
+  "Job Consumption",
+  "Job Receipt",
+  "Batch Split",
+  "Maintenance Consumption",
+  "Inventory Count",
+  "Non-Conformance",
+  "Inbound Inspection",
+  "Scrap",
+]);
 
 export interface BookAdjustmentResult {
   itemLedgerId: string;
@@ -82,6 +131,7 @@ export interface CreateAdjustmentJournalArgs {
   description: string;
   postingDate: string;
   userId: string;
+  sourceType?: Database["public"]["Enums"]["journalEntrySourceType"];
 }
 
 // One journal header for adjustment postings ('Inventory Adjustment' source,
@@ -104,7 +154,7 @@ export async function createAdjustmentJournal(
       description: args.description,
       postingDate: args.postingDate,
       companyId: args.companyId,
-      sourceType: "Inventory Adjustment",
+      sourceType: args.sourceType ?? "Inventory Adjustment",
       status: "Posted",
       postedAt: new Date().toISOString(),
       postedBy: args.userId,
@@ -142,6 +192,7 @@ export async function bookAdjustment(
       trackedEntityId: ledger.trackedEntityId,
       quantity: ledger.quantity,
       comment: ledger.comment ?? null,
+      scrapReasonId: ledger.scrapReasonId ?? null,
       companyId,
       createdBy: ledger.createdBy,
     })
@@ -182,6 +233,28 @@ export async function bookAdjustment(
         quantity: -absQuantity,
         cost: -cogs.totalCost,
         remainingQuantity: 0,
+        postingDate: ledger.postingDate,
+        companyId,
+      })
+      .execute();
+  } else if (args.fixedUnitCost != null) {
+    // Increase at a caller-fixed unit cost: Unscrap restores stock at the
+    // ORIGINAL scrapped cost so a scrap→unscrap round trip nets zero P&L.
+    cost = absQuantity * args.fixedUnitCost;
+
+    await trx
+      .insertInto("costLedger")
+      .values({
+        itemLedgerType: ledger.entryType,
+        costLedgerType: "Direct Cost",
+        adjustment: false,
+        documentType: ledger.documentType ?? null,
+        documentId,
+        itemId: ledger.itemId,
+        quantity: absQuantity,
+        cost,
+        remainingQuantity: absQuantity,
+        postingDate: ledger.postingDate,
         companyId,
       })
       .execute();
@@ -248,6 +321,7 @@ export async function bookAdjustment(
         quantity: absQuantity,
         cost,
         remainingQuantity: absQuantity,
+        postingDate: ledger.postingDate,
         companyId,
       })
       .execute();
@@ -267,6 +341,7 @@ export async function bookAdjustment(
         description: accounting.description,
         postingDate: ledger.postingDate,
         userId: accounting.userId,
+        sourceType: accounting.sourceType,
       });
 
   const inventoryAccount = resolveInventoryAccount(
@@ -274,7 +349,12 @@ export async function bookAdjustment(
     accounting.accountDefaults
   );
   const journalLineReference = nanoid();
-  const journalLineDocumentType = ledger.documentType ?? "Inventory Adjustment";
+  const journalLineDocumentType = (
+    ledger.documentType &&
+    JOURNAL_LINE_SAFE_DOCUMENT_TYPES.has(ledger.documentType)
+      ? ledger.documentType
+      : "Inventory Adjustment"
+  ) as Database["public"]["Enums"]["journalLineDocumentType"];
   const isGain = ledger.quantity > 0;
 
   const journalLines = await trx
@@ -293,8 +373,10 @@ export async function bookAdjustment(
       },
       {
         journalId,
-        accountId: accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
-        description: "Inventory Adjustment",
+        accountId:
+          accounting.offsetAccount ??
+          accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
+        description: accounting.offsetDescription ?? "Inventory Adjustment",
         amount: isGain ? credit("expense", cost) : debit("expense", cost),
         quantity: absQuantity,
         documentType: journalLineDocumentType,
@@ -314,6 +396,9 @@ export async function bookAdjustment(
     ["Item", ledger.itemId],
     ["ItemPostingGroup", item.itemPostingGroupId],
     ["Location", ledger.locationId],
+    ...(accounting.extraDimensions ?? []).map(
+      (d) => [d.entityType, d.valueId] as [string, string]
+    ),
   ];
   const journalLineDimensionInserts = journalLines.flatMap((line) =>
     dimensionValues

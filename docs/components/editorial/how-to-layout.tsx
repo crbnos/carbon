@@ -155,7 +155,7 @@ export function HowToLayout({ bodies }: { bodies: ReactNode[] }) {
               </span>
             </div>
 
-            <h1 className="mt-[18px] text-ed-32 font-normal leading-[112%] text-ink md:text-ed-40">
+            <h1 className="mt-[18px] text-ed-32 font-semibold tracking-tight leading-[112%] text-ink md:text-ed-40">
               {currentChapter.title}
             </h1>
 

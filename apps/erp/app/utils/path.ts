@@ -41,6 +41,9 @@ export const path = {
       generatePath(`${x}/items/methods/versions/activate/${id}`),
     addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
       generatePath(`${x}/maintenance/${dispatchId}/add-and-issue`),
+    analyticsReport: (key: string) =>
+      generatePath(`${x}/reports/analytics/${key}`),
+    apAging: `${x}/reports/ap-aging`,
     api: {
       abilities: `${api}/resources/abilities`,
       accounts: `${api}/accounting/accounts`,
@@ -48,6 +51,12 @@ export const path = {
       agentFeedback: `${api}/agent/feedback`,
       agentThread: (id: string) => `${api}/agent/thread/${id}`,
       agentThreads: `${api}/agent/threads`,
+      analyticsReportLines: (key: string) =>
+        generatePath(`${api}/accounting/analytics-lines?reportKey=${key}`),
+      assemblyForItem: (itemId: string) =>
+        generatePath(`${api}/production/assembly-for-item/${itemId}`),
+      assemblyInstructions: (itemId: string) =>
+        generatePath(`${api}/production/assembly-instructions/${itemId}`),
       assetClasses: `${api}/accounting/asset-classes`,
       assign: `${api}/assign`,
       batchNumbers: (itemId: string) =>
@@ -88,8 +97,11 @@ export const path = {
         generatePath(`${api}/ai/csv/${table}/columns`),
       inspectionDocumentBalloonAnalyze: (inspectionDocumentId: string) =>
         generatePath(
-          `${api}/quality/inspection-document/${inspectionDocumentId}/balloon-analyze`
+          `${api}/production/inspection-document/${inspectionDocumentId}/balloon-analyze`
         ),
+      inspectionDocuments: (itemId: string) =>
+        generatePath(`${api}/production/inspection-documents/${itemId}`),
+      issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
       itemCostRecalculate: (itemId: string) =>
@@ -114,6 +126,8 @@ export const path = {
         generatePath(
           `${api}/production/methods/${id}/bom.csv?withOperations=${withOperations}`
         ),
+      jobSalesOrderLines: (jobId: string) =>
+        generatePath(`${api}/production/job/${jobId}/sales-order-lines`),
       jobs: `${api}/production/jobs`,
       kanban: (id: string) => generatePath(`${api}/kanban/${id}`),
       kanbanCollision: (id: string) =>
@@ -150,6 +164,8 @@ export const path = {
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelConvertStatus: (modelUploadId: string) =>
         generatePath(`${api}/model/convert-status/${modelUploadId}`),
+      modelDownload: (modelUploadId: string) =>
+        generatePath(`${api}/model/download/${modelUploadId}`),
       modelOptimizeCancel: `${api}/model/optimize-cancel`,
       modelReoptimize: `${api}/model/reoptimize`,
       modelUpload: `${api}/model/upload`,
@@ -179,6 +195,7 @@ export const path = {
         generatePath(`${api}/production/kpi/${key}`),
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
+      purchasesReportLines: `${api}/accounting/purchase-lines`,
       purchasingKpi: (key: string) =>
         generatePath(`${api}/purchasing/kpi/${key}`),
       qualityKpi: (key: string) => generatePath(`${api}/quality/kpi/${key}`),
@@ -249,6 +266,7 @@ export const path = {
       tags: (table?: string) =>
         generatePath(`${api}/shared/tags?table=${table}`),
       timecard: `${api}/people/timecard`,
+      timezones: `${api}/timezones`,
       unitOfMeasures: `${api}/items/uoms`,
       userSelectGroupEmails: (groupId: string) =>
         generatePath(`${api}/users/select/groups/${groupId}/emails`),
@@ -280,7 +298,10 @@ export const path = {
     approvalRule: (id: string) =>
       generatePath(`${x}/settings/approval-rules/${id}`),
     approvalRules: `${x}/settings/approval-rules`,
+    arAging: `${x}/reports/ar-aging`,
     assemblyInstruction: (id: string) => generatePath(`${x}/assembly/${id}`),
+    assemblyInstructionActivate: (id: string) =>
+      generatePath(`${x}/assembly/${id}/activate`),
     assemblyInstructionStatus: (id: string) =>
       generatePath(`${x}/assembly/${id}/status`),
     assemblyInstructionStep: (id: string, stepId: string) =>
@@ -296,6 +317,8 @@ export const path = {
     assemblyInstructionStepStatus: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/status/${stepId}`),
     assemblyInstructions: `${x}/production/assemblies`,
+    assemblyInstructionVersionNew: (id: string) =>
+      generatePath(`${x}/assembly/${id}/version/new`),
     assemblyJobsCancel: (id: string) =>
       generatePath(`${x}/assembly/${id}/jobs/cancel`),
     assemblyModelConvert: (id: string) =>
@@ -304,16 +327,12 @@ export const path = {
       generatePath(`${x}/assembly/${id}/model/invalidate`),
     assemblyPlanRerun: (id: string) =>
       generatePath(`${x}/assembly/${id}/plan/rerun`),
-    assemblyStandardNote: (noteId: string) =>
-      generatePath(`${x}/assembly/standard-notes/${noteId}`),
     assemblyStepMaterial: (id: string, materialId: string) =>
       generatePath(`${x}/assembly/${id}/materials/${materialId}`),
     assemblyStepMaterialOrder: (id: string) =>
       generatePath(`${x}/assembly/${id}/materials/order`),
-    assemblyStepRequirement: (id: string, requirementId: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/${requirementId}`),
-    assemblyStepRequirementOrder: (id: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/order`),
+    assemblySyncBop: (id: string) =>
+      generatePath(`${x}/assembly/${id}/sync-bop`),
     assetClass: (id: string) =>
       generatePath(`${x}/accounting/asset-class/${id}`),
     assetClasses: `${x}/accounting/asset-classes`,
@@ -330,9 +349,9 @@ export const path = {
     autoMatchAssemblyComponents: (id: string) =>
       generatePath(`${x}/assembly/${id}/component-mappings/auto`),
     backups: `${x}/settings/backups`,
-    balanceSheet: `${x}/accounting/balance-sheet`,
+    balanceSheet: `${x}/reports/balance-sheet`,
     balanceSheetLedger: (id: string) =>
-      generatePath(`${x}/accounting/balance-sheet/${id}`),
+      generatePath(`${x}/reports/balance-sheet/${id}`),
     batchProperty: (itemId: string) =>
       generatePath(`${x}/inventory/batch-property/${itemId}/property`),
     batchPropertyOrder: (itemId: string) =>
@@ -362,58 +381,61 @@ export const path = {
     calibrations: `${x}/quality/calibrations`,
     cancelPurchasingRfq: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/cancel`),
-    changeOrder: (id: string) => generatePath(`${x}/items/change-order/${id}`),
-    changeOrderAction: (id: string) =>
-      generatePath(`${x}/items/change-order/${id}/action`),
-    changeOrderActionOrder: (id: string) =>
-      generatePath(`${x}/items/change-order/${id}/action/order`),
-    changeOrderActionStatus: (id: string, actionId: string) =>
-      generatePath(`${x}/items/change-order/${id}/action/${actionId}/status`),
-    // Change Order content (Phase 2): BOM change rows + per-assembly targets, and
+    changeNotice: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}`),
+    changeNoticeAction: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/action`),
+    changeNoticeActionOrder: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/action/order`),
+    changeNoticeActionStatus: (id: string, actionId: string) =>
+      generatePath(`${x}/items/change-notice/${id}/action/${actionId}/status`),
+    // Change Notice content (Phase 2): BOM change rows + per-assembly targets, and
     // freeform actions. Top-to-bottom: affected items selected first, then
     // per-item staged BOM/BOP/attributes edited in place.
-    changeOrderAffected: (id: string) =>
-      generatePath(`${x}/items/change-order/${id}/affected`),
-    changeOrderAffectedChangeType: (id: string, affectedId: string) =>
+    changeNoticeAffected: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/affected`),
+    changeNoticeAffectedChangeType: (id: string, affectedId: string) =>
       generatePath(
-        `${x}/items/change-order/${id}/affected/${affectedId}/change-type`
+        `${x}/items/change-notice/${id}/affected/${affectedId}/change-type`
       ),
-    changeOrderAffectedCutover: (id: string, affectedId: string) =>
+    changeNoticeAffectedCutover: (id: string, affectedId: string) =>
       generatePath(
-        `${x}/items/change-order/${id}/affected/${affectedId}/cutover`
+        `${x}/items/change-notice/${id}/affected/${affectedId}/cutover`
       ),
     // Each affected item is its own line-item detail route (mirrors the sales
     // order line detail `${x}/sales-order/${orderId}/${lineId}/details`). The URL
     // drives selection — refresh + back/forward reselect it.
-    changeOrderAffectedItem: (id: string, affectedId: string) =>
-      generatePath(`${x}/items/change-order/${id}/${affectedId}/details`),
+    changeNoticeAffectedItem: (id: string, affectedId: string) =>
+      generatePath(`${x}/items/change-notice/${id}/${affectedId}/details`),
+    changeNoticeContent: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/content`),
     // Delete action for a supplier part managed on a CO line (Buy Revision/New
     // Part). Create/edit are reached relatively from the SupplierParts grid.
-    changeOrderDeleteSupplierPart: (
+    changeNoticeDeleteSupplierPart: (
       id: string,
       affectedId: string,
       supplierPartId: string
     ) =>
       generatePath(
-        `${x}/items/change-order/${id}/${affectedId}/details/${supplierPartId}/delete`
+        `${x}/items/change-notice/${id}/${affectedId}/details/${supplierPartId}/delete`
       ),
-    changeOrderDetails: (id: string) =>
-      generatePath(`${x}/items/change-order/${id}/details`),
-    changeOrderRequiredAction: (id: string) =>
-      generatePath(`${x}/items/change-order-actions/${id}`),
-    // Change Order Actions config (the changeOrderRequiredAction default-action
-    // templates) — a sibling of the CO list, like change-order-types above.
-    changeOrderRequiredActions: `${x}/items/change-order-actions`,
-    changeOrderStatus: (id: string) =>
-      generatePath(`${x}/items/change-order/${id}/status`),
-    // Change Orders — a sub-area of the Items module. List + config live under
-    // /x/items/change-orders; the detail record lives under /x/items/change-order/:id.
-    changeOrders: `${x}/items/change-orders`,
-    changeOrderType: (id: string) =>
-      generatePath(`${x}/items/change-order-types/${id}`),
-    // Change Order Types — a sibling of the CO list (not nested under it), so the
+    changeNoticeDetails: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/details`),
+    changeNoticeRequiredAction: (id: string) =>
+      generatePath(`${x}/items/change-notice-actions/${id}`),
+    // Change Notice Actions config (the changeNoticeRequiredAction default-action
+    // templates) — a sibling of the CO list, like change-notice-types above.
+    changeNoticeRequiredActions: `${x}/items/change-notice-actions`,
+    changeNoticeStatus: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/status`),
+    // Change Notices — a sub-area of the Items module. List + config live under
+    // /x/items/change-notices; the detail record lives under /x/items/change-notice/:id.
+    changeNotices: `${x}/items/change-notices`,
+    changeNoticeType: (id: string) =>
+      generatePath(`${x}/items/change-notice-types/${id}`),
+    // Change Notice Types — a sibling of the CO list (not nested under it), so the
     // Items sidebar doesn't highlight both entries via prefix matching.
-    changeOrderTypes: `${x}/items/change-order-types`,
+    changeNoticeTypes: `${x}/items/change-notice-types`,
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,
@@ -534,12 +556,12 @@ export const path = {
       generatePath(`${x}/assembly/delete/${id}`),
     deleteAssemblyInstructionStep: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/delete/${stepId}`),
-    deleteAssemblyStandardNote: (noteId: string) =>
-      generatePath(`${x}/assembly/standard-notes/delete/${noteId}`),
     deleteAssemblyStepMaterial: (id: string, materialId: string) =>
       generatePath(`${x}/assembly/${id}/materials/delete/${materialId}`),
-    deleteAssemblyStepRequirement: (id: string, requirementId: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/delete/${requirementId}`),
+    deleteAssemblyStepSlide: (id: string, slideId: string) =>
+      generatePath(`${x}/assembly/${id}/slides/delete/${slideId}`),
+    deleteAssemblyStepTool: (id: string, toolId: string) =>
+      generatePath(`${x}/assembly/${id}/tools/delete/${toolId}`),
     deleteAssemblyUnit: (id: string, unitId: string) =>
       generatePath(`${x}/assembly/${id}/units/delete/${unitId}`),
     deleteAssetClass: (id: string) =>
@@ -552,18 +574,18 @@ export const path = {
       generatePath(
         `${x}/inventory/batch-property/${itemId}/property/delete/${id}`
       ),
-    deleteChangeOrder: (id: string) =>
-      generatePath(`${x}/items/change-order/delete/${id}`),
-    deleteChangeOrderAction: (id: string, actionId: string) =>
-      generatePath(`${x}/items/change-order/${id}/action/delete/${actionId}`),
-    deleteChangeOrderAffected: (id: string, affectedId: string) =>
+    deleteChangeNotice: (id: string) =>
+      generatePath(`${x}/items/change-notice/delete/${id}`),
+    deleteChangeNoticeAction: (id: string, actionId: string) =>
+      generatePath(`${x}/items/change-notice/${id}/action/delete/${actionId}`),
+    deleteChangeNoticeAffected: (id: string, affectedId: string) =>
       generatePath(
-        `${x}/items/change-order/${id}/affected/delete/${affectedId}`
+        `${x}/items/change-notice/${id}/affected/delete/${affectedId}`
       ),
-    deleteChangeOrderRequiredAction: (id: string) =>
-      generatePath(`${x}/items/change-order-actions/delete/${id}`),
-    deleteChangeOrderType: (id: string) =>
-      generatePath(`${x}/items/change-order-types/delete/${id}`),
+    deleteChangeNoticeRequiredAction: (id: string) =>
+      generatePath(`${x}/items/change-notice-actions/delete/${id}`),
+    deleteChangeNoticeType: (id: string) =>
+      generatePath(`${x}/items/change-notice-types/delete/${id}`),
     deleteCompany: (id: string) =>
       generatePath(`${x}/settings/companies/delete/${id}`),
     deleteConfigurationParameter: (itemId: string, id: string) =>
@@ -628,7 +650,7 @@ export const path = {
     deleteHoliday: (id: string) =>
       generatePath(`${x}/people/holidays/delete/${id}`),
     deleteInspectionDocument: (id: string) =>
-      generatePath(`${x}/inspection/${id}/delete`),
+      generatePath(`${x}/inspection-document/${id}/delete`),
     deleteInvestigationType: (id: string) =>
       generatePath(`${x}/quality/investigation-types/delete/${id}`),
     deleteIssue: (id: string) => generatePath(`${x}/issue/delete/${id}`),
@@ -650,6 +672,8 @@ export const path = {
       generatePath(`${x}/job/methods/operation/parameter/delete/${id}`),
     deleteJobOperationStep: (id: string) =>
       generatePath(`${x}/job/methods/operation/step/delete/${id}`),
+    deleteJobOperationStepSlide: (id: string) =>
+      generatePath(`${x}/job/methods/operation/step/slide/delete/${id}`),
     deleteJobOperationTool: (id: string) =>
       generatePath(`${x}/job/methods/operation/tool/delete/${id}`),
     deleteJournalEntry: (id: string) =>
@@ -686,6 +710,8 @@ export const path = {
       generatePath(`${x}/items/methods/operation/parameter/delete/${id}`),
     deleteMethodOperationStep: (id: string) =>
       generatePath(`${x}/items/methods/operation/step/delete/${id}`),
+    deleteMethodOperationStepSlide: (id: string) =>
+      generatePath(`${x}/items/methods/operation/step/slide/delete/${id}`),
     deleteMethodOperationTool: (id: string) =>
       generatePath(`${x}/items/methods/operation/tool/delete/${id}`),
     deleteNoQuoteReason: (id: string) =>
@@ -747,6 +773,8 @@ export const path = {
     deleteQuoteOperationTool: (id: string) =>
       generatePath(`${x}/quote/methods/operation/tool/delete/${id}`),
     deleteReceipt: (id: string) => generatePath(`${x}/receipt/${id}/delete`),
+    deleteReportView: (id: string) =>
+      generatePath(`${x}/reports/views/${id}/delete`),
     deleteRequiredAction: (id: string) =>
       generatePath(`${x}/quality/required-actions/delete/${id}`),
     deleteRisk: (id: string) => generatePath(`${x}/quality/risks/delete/${id}`),
@@ -765,6 +793,8 @@ export const path = {
       generatePath(`${x}/shared/views/delete/${id}`),
     deleteScrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/delete/${id}`),
+    deleteSerialNumberSequence: (id: string) =>
+      generatePath(`${x}/settings/serial-numbers/delete/${id}`),
     deleteShift: (id: string) =>
       generatePath(`${x}/people/shifts/delete/${id}`),
     deleteShipment: (id: string) => generatePath(`${x}/shipment/${id}/delete`),
@@ -838,6 +868,10 @@ export const path = {
       generatePath(`${x}/documents/search/view/${id}`),
     download: (token: string) => `/download/${token}`,
     downloadError: (reason: string) => `/download/error?reason=${reason}`,
+    duplicateJobOperationStep: (id: string) =>
+      generatePath(`${x}/job/methods/operation/step/duplicate/${id}`),
+    duplicateMethodOperationStep: (id: string) =>
+      generatePath(`${x}/items/methods/operation/step/duplicate/${id}`),
     duplicatePriceList: `${x}/sales/price-list/duplicate`,
     editMaintenanceDispatchEvent: (dispatchId: string, eventId: string) =>
       generatePath(`${x}/maintenance/${dispatchId}/event/${eventId}`),
@@ -851,6 +885,7 @@ export const path = {
     exchangeRate: (id: string) =>
       generatePath(`${x}/accounting/exchange-rates/${id}`),
     exchangeRates: `${x}/accounting/exchange-rates`,
+    executivePnl: `${x}/reports/executive-pnl`,
     external: {
       mes: MES_URL,
       mesJobOperation: (id: string) => `${MES_URL}/x/operation/${id}`,
@@ -1110,14 +1145,26 @@ export const path = {
     holiday: (id: string) => generatePath(`${x}/people/holidays/${id}`),
     holidays: `${x}/people/holidays`,
     import: (tableId: string) => generatePath(`${x}/shared/import/${tableId}`),
-    inboundInspection: (id: string) =>
-      generatePath(`${x}/quality/inbound-inspections/${id}`),
-    inboundInspections: `${x}/quality/inbound-inspections`,
-    incomeStatement: `${x}/accounting/income-statement`,
+    incomeStatement: `${x}/reports/income-statement`,
     incomeStatementLedger: (id: string) =>
-      generatePath(`${x}/accounting/income-statement/${id}`),
-    inspectionDocument: (id: string) => generatePath(`${x}/inspection/${id}`),
-    inspectionDocuments: `${x}/quality/inspection`,
+      generatePath(`${x}/reports/income-statement/${id}`),
+    inspection: (id: string) => generatePath(`${x}/inspection/${id}`),
+    inspectionAccept: (id: string) =>
+      generatePath(`${x}/inspection/${id}/accept`),
+    inspectionAssignedDocument: (id: string) =>
+      generatePath(`${x}/inspection/${id}/document`),
+    inspectionDocument: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}`),
+    inspectionDocuments: `${x}/production/inspection`,
+    inspectionMeasurement: (id: string) =>
+      generatePath(`${x}/inspection/${id}/measurement`),
+    inspectionPartial: (id: string) =>
+      generatePath(`${x}/inspection/${id}/partial`),
+    inspectionReject: (id: string) =>
+      generatePath(`${x}/inspection/${id}/reject`),
+    inspectionSample: (id: string) =>
+      generatePath(`${x}/inspection/${id}/sample`),
+    inspections: `${x}/quality/inspections`,
     integration: (id: string) =>
       generatePath(`${x}/settings/integrations/${id}`),
     integrationDeactivate: (id: string) =>
@@ -1133,8 +1180,6 @@ export const path = {
     inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,
     inventoryCountPost: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/post`),
-    inventoryCountRectify: (id: string) =>
-      generatePath(`${x}/inventory-count/${id}/rectify`),
     inventoryCountReopen: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/reopen`),
     inventoryCounts: `${x}/inventory/inventory-count`,
@@ -1146,8 +1191,8 @@ export const path = {
       generatePath(`${x}/inventory/quantities/${id}/adjustment`),
     inventoryRoot: `${x}/inventory`,
     inventorySettings: `${x}/settings/inventory`,
-    inventoryValuation: `${x}/inventory/valuation`,
-    inventoryValuationReconcile: `${x}/inventory/valuation/reconcile`,
+    inventoryValuation: `${x}/reports/inventory-valuation`,
+    inventoryValuationReconcile: `${x}/reports/inventory-valuation/reconcile`,
     investigationType: (id: string) =>
       generatePath(`${x}/quality/investigation-types/${id}`),
     investigationTypes: `${x}/quality/investigation-types`,
@@ -1207,10 +1252,12 @@ export const path = {
     jobOperationStatus: `${x}/job/methods/operation/status`,
     jobOperationStep: (id: string) =>
       generatePath(`${x}/job/methods/operation/step/${id}`),
+    jobOperationStepMaterial: `${x}/job/methods/operation/step/material`,
     jobOperationStepOrder: (operationId: string) =>
       generatePath(`${x}/job/methods/operation/${operationId}/step/order`),
     jobOperationStepRecords: (id: string) =>
       generatePath(`${x}/job/${id}/steps`),
+    jobOperationStepTool: `${x}/job/methods/operation/step/tool`,
     jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
     jobOperationsDelete: (jobId: string) =>
       generatePath(`${x}/job/methods/${jobId}/operation/delete`),
@@ -1322,8 +1369,10 @@ export const path = {
       generatePath(`${x}/items/methods/operation/parameter/${id}`),
     methodOperationStep: (id: string) =>
       generatePath(`${x}/items/methods/operation/step/${id}`),
+    methodOperationStepMaterial: `${x}/items/methods/operation/step/material`,
     methodOperationStepOrder: (operationId: string) =>
       generatePath(`${x}/items/methods/operation/${operationId}/step/order`),
+    methodOperationStepTool: `${x}/items/methods/operation/step/tool`,
     methodOperations: `${x}/items/methods/operations`,
     methodOperationsDelete: `${x}/items/methods/operation/delete`,
     methodOperationsOrder: `${x}/items/methods/operation/order`,
@@ -1342,11 +1391,12 @@ export const path = {
     newAssemblyInstruction: `${x}/production/assemblies/new`,
     newAssemblyInstructionStep: (id: string) =>
       generatePath(`${x}/assembly/${id}/steps/new`),
-    newAssemblyStandardNote: `${x}/assembly/standard-notes/new`,
     newAssemblyStepMaterial: (id: string) =>
       generatePath(`${x}/assembly/${id}/materials/new`),
-    newAssemblyStepRequirement: (id: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/new`),
+    newAssemblyStepSlide: (id: string) =>
+      generatePath(`${x}/assembly/${id}/slides/new`),
+    newAssemblyStepTool: (id: string) =>
+      generatePath(`${x}/assembly/${id}/tools/new`),
     newAssemblyUnit: (id: string) =>
       generatePath(`${x}/assembly/${id}/units/new`),
     newAssetClass: `${x}/accounting/asset-classes/new`,
@@ -1359,13 +1409,13 @@ export const path = {
     // Create form lives at its own top-level route (like /x/part/new and
     // /x/sales-order/new) so it renders with the app sidebar rather than nested
     // under the Items module layout.
-    newChangeOrder: `${x}/change-order/new`,
+    newChangeNotice: `${x}/change-notice/new`,
     // One-click create-a-CO-for-this-item (POST) — used by the part version
     // dropdown and the new-revision modal.
-    newChangeOrderFromItem: (itemId: string) =>
-      generatePath(`${x}/items/change-order/new-from-item/${itemId}`),
-    newChangeOrderRequiredAction: `${x}/items/change-order-actions/new`,
-    newChangeOrderType: `${x}/items/change-order-types/new`,
+    newChangeNoticeFromItem: (itemId: string) =>
+      generatePath(`${x}/items/change-notice/new-from-item/${itemId}`),
+    newChangeNoticeRequiredAction: `${x}/items/change-notice-actions/new`,
+    newChangeNoticeType: `${x}/items/change-notice-types/new`,
     newChartOfAccount: `${x}/accounting/charts/new`,
     newChartOfAccountGroup: `${x}/accounting/charts/new-group`,
     newCompany: `${x}/settings/company/new`,
@@ -1408,7 +1458,7 @@ export const path = {
     newGaugeType: `${x}/quality/gauge-types/new`,
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
-    newInspectionDocument: `${x}/quality/inspection/new`,
+    newInspectionDocument: `${x}/production/inspection/new`,
     newIntercompanyTransaction: `${x}/accounting/intercompany/new`,
     newInventoryCount: `${x}/inventory/inventory-count/new`,
     newInvestigationType: `${x}/quality/investigation-types/new`,
@@ -1425,6 +1475,7 @@ export const path = {
       generatePath(`${x}/job/methods/${jobId}/operation/new`),
     newJobOperationParameter: `${x}/job/methods/operation/parameter/new`,
     newJobOperationStep: `${x}/job/methods/operation/step/new`,
+    newJobOperationStepSlide: `${x}/job/methods/operation/step/slide/new`,
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newJournalEntry: `${x}/accounting/journals/new`,
     newKanban: `${x}/inventory/kanbans/new`,
@@ -1449,6 +1500,7 @@ export const path = {
     newMethodOperation: `${x}/items/methods/operation/new`,
     newMethodOperationParameter: `${x}/items/methods/operation/parameter/new`,
     newMethodOperationStep: `${x}/items/methods/operation/step/new`,
+    newMethodOperationStepSlide: `${x}/items/methods/operation/step/slide/new`,
     newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newNoQuoteReason: `${x}/sales/no-quote-reasons/new`,
     newNote: `${x}/shared/notes/new`,
@@ -1505,6 +1557,7 @@ export const path = {
     newSalesRFQ: `${x}/sales-rfq/new`,
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
     newScrapReason: `${x}/production/scrap-reasons/new`,
+    newSerialNumberSequence: `${x}/settings/serial-numbers/new`,
     newService: `${x}/service/new`,
     newServiceSupplier: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing/new`),
@@ -1696,6 +1749,7 @@ export const path = {
     purchaseOrderStatus: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/status`),
     purchaseOrders: `${x}/purchasing/orders`,
+    purchasesReport: `${x}/reports/purchases`,
     purchasing: `${x}/purchasing`,
     purchasingPlanning: `${x}/purchasing/planning`,
 
@@ -1806,6 +1860,7 @@ export const path = {
     refreshSession: "/refresh-session",
     repeatDepreciationRun: (id: string) =>
       generatePath(`${x}/depreciation-run/${id}/repeat`),
+    reports: `${x}/accounting/reports`,
     requiredAction: (id: string) =>
       generatePath(`${x}/quality/required-actions/${id}`),
     requiredActions: `${x}/quality/required-actions`,
@@ -1887,7 +1942,7 @@ export const path = {
     salesRfqs: `${x}/sales/rfqs`,
     salesSettings: `${x}/settings/sales`,
     saveInspectionDocument: (id: string) =>
-      generatePath(`${x}/inspection/${id}/save`),
+      generatePath(`${x}/inspection-document/${id}/save`),
 
     saveViewOrder: `${x}/shared/view/order`,
 
@@ -1903,6 +1958,9 @@ export const path = {
     sequences: `${x}/settings/sequences`,
     serialNumber: (id: string) =>
       generatePath(`${x}/inventory/serial-numbers/${id}`),
+    serialNumberSequence: (id: string) =>
+      generatePath(`${x}/settings/serial-numbers/${id}`),
+    serialNumberSequences: `${x}/settings/serial-numbers`,
     serialNumbers: `${x}/inventory/serial-numbers`,
     service: (id: string) => generatePath(`${x}/service/${id}`),
     serviceCosting: (id: string) => generatePath(`${x}/service/${id}/costing`),
@@ -1936,6 +1994,8 @@ export const path = {
       generatePath(`${x}/inventory/shipping-methods/${id}`),
     shippingMethods: `${x}/inventory/shipping-methods`,
     splitIssueItem: `${x}/issue/item/split`,
+    stockMovementCorrect: (id: string) =>
+      generatePath(`${x}/inventory/stock-movements/${id}/correct`),
     stockMovements: `${x}/inventory/stock-movements`,
     stockTransfer: (id: string) => generatePath(`${x}/stock-transfer/${id}`),
     stockTransferComplete: (id: string) =>
@@ -2063,16 +2123,16 @@ export const path = {
     trainingQuestionOrder: (id: string) =>
       generatePath(`${x}/training/${id}/questions/order`),
     trainings: `${x}/resources/training`,
-    trialBalance: `${x}/accounting/trial-balance`,
+    trialBalance: `${x}/reports/trial-balance`,
     trialBalanceLedger: (id: string) =>
-      generatePath(`${x}/accounting/trial-balance/${id}`),
+      generatePath(`${x}/reports/trial-balance/${id}`),
     uom: (id: string) => generatePath(`${x}/items/uom/${id}`),
     uoms: `${x}/items/uom`,
     updateAssemblyUnit: (id: string, unitId: string) =>
       generatePath(`${x}/assembly/${id}/units/${unitId}`),
-    updateChangeOrder: `${x}/items/change-order/update`,
+    updateChangeNotice: `${x}/items/change-notice/update`,
     updateInspectionDocumentName: (id: string) =>
-      generatePath(`${x}/inspection/${id}/update-name`),
+      generatePath(`${x}/inspection-document/${id}/update-name`),
     updateIssueItem: `${x}/issue/item/update`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),
     users: `${x}/users`,
@@ -2097,7 +2157,23 @@ export const path = {
       generatePath(`${x}/resources/work-centers/${id}`),
     workCenterActivate: (id: string) =>
       generatePath(`${x}/resources/work-centers/activate/${id}`),
-    workCenters: `${x}/resources/work-centers`
+    workCenters: `${x}/resources/work-centers`,
+    workflow: (id: string) => generatePath(`${x}/workflow/${id}`),
+    workflowCanvas: (id: string) => generatePath(`${x}/workflow/${id}/canvas`),
+    workflowDelete: (id: string) => generatePath(`${x}/workflows/delete/${id}`),
+    workflowNew: `${x}/workflows/new`,
+    workflowPublish: (id: string) =>
+      generatePath(`${x}/workflow/${id}/publish`),
+    workflowRename: (id: string) => generatePath(`${x}/workflows/${id}/rename`),
+    workflowRun: (id: string) => generatePath(`${x}/workflows/runs/${id}`),
+    workflowRuns: `${x}/workflows/runs`,
+    workflowSave: (id: string) => generatePath(`${x}/workflow/${id}/save`),
+    workflows: `${x}/workflows`,
+    workflowTestRun: (id: string) =>
+      generatePath(`${x}/workflow/${id}/test-run`),
+    workflowToggle: (id: string) => generatePath(`${x}/workflow/${id}/toggle`),
+    workflowVersionNew: (id: string) =>
+      generatePath(`${x}/workflow/${id}/version/new`)
   }
 } as const;
 

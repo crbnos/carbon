@@ -45,7 +45,7 @@ const Processes = (props: ProcessSelectProps) => {
           initialValues={{
             name: created,
             defaultStandardFactor: "Minutes/Piece",
-            processType: "Inside",
+            processType: "Process",
             workCenters: [],
             completeAllOnScan: false
           }}

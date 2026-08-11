@@ -19,6 +19,7 @@ import {
   HStack,
   IconButton,
   Label,
+  ScrollArea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -29,9 +30,9 @@ import {
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { nanoid } from "nanoid";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
@@ -44,10 +45,8 @@ import {
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
   LuLock,
-  LuSettings2,
   LuSquareFunction,
-  LuTruck,
-  LuX
+  LuTruck
 } from "react-icons/lu";
 import {
   Link,
@@ -83,7 +82,12 @@ import type {
   Item as SortableItem,
   SortableItemRenderProps
 } from "~/components/SortableList";
-import { SortableList, SortableListItem } from "~/components/SortableList";
+import {
+  SortableList,
+  SortableListItem,
+  SortableListItemPanel,
+  SortableListItemToggle
+} from "~/components/SortableList";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import type {
   MethodItemType,
@@ -116,7 +120,11 @@ type Material = z.infer<typeof methodMaterialValidator> & {
   };
 };
 
-type Operation = z.infer<typeof methodOperationValidator>;
+type Operation = z.infer<typeof methodOperationValidator> & {
+  // The same operations data BillOfProcess gets — carries its steps at runtime, so the
+  // BoM editor can offer a per-step assignment (Phase 2). Narrow type, optional here.
+  methodOperationStep?: { id: string; name: string | null }[];
+};
 
 type ItemWithData = SortableItem & {
   data: Material;
@@ -131,6 +139,11 @@ type BillOfMaterialProps = {
   configurationRules?: ConfigurationRule[];
   replenishmentSystem?: string;
   parentItemId?: string;
+  // Extra read-only reason from the embedding surface (e.g. a change notice whose
+  // engineering content is frozen at Implementation).
+  isDisabled?: boolean;
+  // What to tell the user when isDisabled is what made this read-only.
+  disabledReason?: ReactNode;
 } & ReleaseLockProps;
 
 type OrderState = {
@@ -169,7 +182,9 @@ const BillOfMaterial = ({
   replenishmentSystem,
   parentItemId,
   revisionStatus,
-  releaseControl
+  releaseControl,
+  isDisabled = false,
+  disabledReason
 }: BillOfMaterialProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -180,7 +195,8 @@ const BillOfMaterial = ({
   const isReadOnly =
     permissions.can("update", "parts") === false ||
     makeMethod.status !== "Draft" ||
-    isReleaseLocked;
+    isReleaseLocked ||
+    isDisabled;
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -393,111 +409,42 @@ const BillOfMaterial = ({
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
         renderExtra={(item) => (
-          <div key={`${isOpen}`}>
-            <motion.button
-              layout
-              onClick={
-                isOpen
-                  ? () => {
-                      onSelectItem(null);
-                    }
-                  : () => {
-                      onSelectItem(item.id);
-                    }
-              }
-              key="collapse"
-              className={cn("absolute right-3 top-3 z-10")}
-            >
-              {isOpen ? (
-                <motion.span
-                  initial={{ opacity: 0, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{
-                    type: "spring",
-                    duration: 1.95
-                  }}
-                >
-                  <LuX className="h-5 w-5 text-foreground" />
-                </motion.span>
-              ) : (
-                <motion.span
-                  initial={{ opacity: 0, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{
-                    type: "spring",
-                    duration: 0.95
-                  }}
-                >
-                  <LuSettings2 className="stroke-1 h-5 w-5 text-foreground/80 hover:stroke-primary/70" />
-                </motion.span>
-              )}
-            </motion.button>
-
-            <LayoutGroup id={`${item.id}`}>
-              <AnimatePresence mode="popLayout">
-                {isOpen ? (
-                  <motion.div className="flex w-full flex-col ">
-                    <div className=" w-full p-2">
-                      <motion.div
-                        initial={{
-                          y: 0,
-                          opacity: 0,
-                          filter: "blur(4px)"
-                        }}
-                        animate={{
-                          y: 0,
-                          opacity: 1,
-                          filter: "blur(0px)"
-                        }}
-                        transition={{
-                          type: "spring",
-                          duration: 0.15
-                        }}
-                        layout
-                        className="w-full "
-                      >
-                        <motion.div
-                          initial={{ opacity: 0, filter: "blur(4px)" }}
-                          animate={{ opacity: 1, filter: "blur(0px)" }}
-                          transition={{
-                            type: "spring",
-                            bounce: 0.2,
-                            duration: 0.75,
-                            delay: 0.15
-                          }}
-                        >
-                          <MaterialForm
-                            configurable={configurable}
-                            isReadOnly={isReadOnly}
-                            item={item}
-                            methodOperations={operations}
-                            orderState={orderState}
-                            temporaryItems={temporaryItems}
-                            rulesByField={rulesByField}
-                            onConfigure={onConfigure}
-                            replenishmentSystem={replenishmentSystem}
-                            parentItemId={parentItemId}
-                            setOrderState={setOrderState}
-                            setSelectedItemId={setSelectedItemId}
-                            setTemporaryItems={setTemporaryItems}
-                            onSubmit={() => {
-                              setSelectedItemId(null);
-                              addItemButtonRef.current?.scrollIntoView({
-                                behavior: "smooth",
-                                block: "nearest",
-                                inline: "center"
-                              });
-                            }}
-                          />
-                        </motion.div>
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </LayoutGroup>
+          <div>
+            <SortableListItemToggle
+              isOpen={isOpen}
+              onToggle={() => {
+                if (isOpen) {
+                  onSelectItem(null);
+                } else {
+                  onSelectItem(item.id);
+                }
+              }}
+            />
+            <SortableListItemPanel isOpen={isOpen}>
+              <MaterialForm
+                configurable={configurable}
+                isReadOnly={isReadOnly}
+                item={item}
+                methodOperations={operations}
+                orderState={orderState}
+                temporaryItems={temporaryItems}
+                rulesByField={rulesByField}
+                onConfigure={onConfigure}
+                replenishmentSystem={replenishmentSystem}
+                parentItemId={parentItemId}
+                setOrderState={setOrderState}
+                setSelectedItemId={setSelectedItemId}
+                setTemporaryItems={setTemporaryItems}
+                onSubmit={() => {
+                  setSelectedItemId(null);
+                  addItemButtonRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
+              />
+            </SortableListItemPanel>
           </div>
         )}
       />
@@ -524,7 +471,7 @@ const BillOfMaterial = ({
             <Trans>Bill of Material</Trans>
             {isReadOnly && (
               <Tooltip>
-                <TooltipTrigger tabIndex={-1} className="text-muted-foreground">
+                <TooltipTrigger className="text-muted-foreground">
                   <LuLock />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
@@ -533,6 +480,8 @@ const BillOfMaterial = ({
                       This method version is read-only. Create a new version
                       from the method menu to make changes.
                     </Trans>
+                  ) : isDisabled && disabledReason ? (
+                    disabledReason
                   ) : (
                     <Trans>
                       You don't have permission to edit this bill of material.
@@ -590,14 +539,16 @@ const BillOfMaterial = ({
         {isProductionRevision && (
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
-        <SortableList
-          isReadOnly={isReadOnly}
-          items={materials}
-          onReorder={onReorder}
-          onToggleItem={onToggleItem}
-          onRemoveItem={onRemoveItem}
-          renderItem={renderListItem}
-        />
+        <ScrollArea type="auto" className="max-h-[60dvh]">
+          <SortableList
+            isReadOnly={isReadOnly}
+            items={materials}
+            onReorder={onReorder}
+            onToggleItem={onToggleItem}
+            onRemoveItem={onRemoveItem}
+            renderItem={renderListItem}
+          />
+        </ScrollArea>
       </CardContent>
       {configuratorDisclosure.isOpen && configuration && (
         <ConfigurationEditor
@@ -697,6 +648,7 @@ function MaterialForm({
     description: string;
     unitOfMeasureCode: string;
     methodOperationId: string | undefined;
+    methodOperationStepIds?: string[];
     quantity: number;
     kit: boolean;
     storageUnitIds: Record<string, string>;
@@ -710,6 +662,13 @@ function MaterialForm({
     description: item.data.description ?? "",
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     methodOperationId: item.data.methodOperationId ?? undefined,
+    methodOperationStepIds: (
+      (
+        item.data as {
+          methodMaterialStep?: { methodOperationStepId: string }[];
+        }
+      ).methodMaterialStep ?? []
+    ).map((s) => s.methodOperationStepId),
     quantity: item.data.quantity ?? 1,
     kit: item.data.kit ?? false,
     storageUnitIds: item.data.storageUnitIds ?? {},
@@ -1142,10 +1101,14 @@ function MaterialForm({
             onChange={(value) => {
               setItemData((d) => ({
                 ...d,
-                methodOperationId: value?.value
+                methodOperationId: value?.value,
+                // Steps belong to an operation — clear them when the operation changes.
+                methodOperationStepIds: []
               }));
             }}
           />
+          {/* Part ↔ step assignment now lives on the STEP (the BoP step editor's "Parts"
+              picker), not here — so there is no per-material "Steps" dropdown in the BOM. */}
         </div>
       </div>
 

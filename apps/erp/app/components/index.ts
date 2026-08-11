@@ -7,6 +7,7 @@ import CadModel from "./CadModel";
 import Contact from "./Contact";
 import CustomerAvatar from "./CustomerAvatar";
 import { DateSelect } from "./DateSelect";
+import { DateTime } from "./DateTime";
 import { DeferredFiles } from "./DeferredFiles";
 import { DirectionAwareTabs } from "./DirectionAwareTabs";
 import DocumentHeader from "./DocumentHeader";
@@ -23,6 +24,7 @@ import {
   MethodItemTypeIcon,
   ModuleIcon,
   OperationStatusIcon,
+  OperationTypeIcon,
   SourcingTypeIcon,
   TimeTypeIcon,
   TrackingTypeIcon
@@ -31,6 +33,7 @@ import { ItemLifecycleBadge } from "./ItemLifecycleBadge";
 import ItemThumbnail from "./ItemThumbnail";
 import Location from "./Location";
 import MetricCard from "./MetricCard";
+import { ModelOptimizedIndicator } from "./ModelOptimizedIndicator";
 import New from "./New";
 import PeriodSelector from "./PeriodSelector";
 import RealtimeDataProvider from "./RealtimeDataProvider";
@@ -38,7 +41,8 @@ import SearchFilter from "./SearchFilter";
 import { SearchLandingPage } from "./SearchLandingPage";
 import Select from "./Select";
 import SupplierAvatar from "./SupplierAvatar";
-import Table from "./Table";
+import Table, { exportOnlyColumn } from "./Table";
+import { VersionMenu } from "./VersionMenu";
 
 export {
   Assignee,
@@ -51,6 +55,7 @@ export {
   Contact,
   CustomerAvatar,
   DateSelect,
+  DateTime,
   DeferredFiles,
   DirectionAwareTabs,
   DocumentHeader,
@@ -68,9 +73,11 @@ export {
   MethodIcon,
   MethodItemTypeIcon,
   MetricCard,
+  ModelOptimizedIndicator,
   ModuleIcon,
   New,
   OperationStatusIcon,
+  OperationTypeIcon,
   PeriodSelector,
   PrintButton,
   RealtimeDataProvider,
@@ -82,5 +89,7 @@ export {
   Table,
   TimeTypeIcon,
   TrackingTypeIcon,
-  useOptimisticAssignment
+  exportOnlyColumn,
+  useOptimisticAssignment,
+  VersionMenu
 };

@@ -8,10 +8,14 @@ import {
   LuFolderOpen
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { Chart } from "../../types";
+import {
+  accountsToFlatTree,
+  filterAccounts,
+  getDebitCredit
+} from "./reportTree";
 
 type TrialBalanceChart = Chart & {
   translatedBalance?: number;
@@ -27,73 +31,6 @@ type TrialBalanceTreeProps = {
   ledgerPath?: (accountId: string) => string;
 };
 
-function accountsToFlatTree(
-  accounts: TrialBalanceChart[]
-): FlatTree<TrialBalanceChart> {
-  const byParent = new Map<string, TrialBalanceChart[]>();
-  for (const a of accounts) {
-    const key = a.parentId ?? "__root__";
-    if (!byParent.has(key)) byParent.set(key, []);
-    byParent.get(key)!.push(a);
-  }
-
-  const result: FlatTreeItem<TrialBalanceChart>[] = [];
-
-  function walk(parentId: string | null, level: number) {
-    const children = (byParent.get(parentId ?? "__root__") ?? []).sort(
-      (a, b) => {
-        const aIsGroup = a.isGroup ? 1 : 0;
-        const bIsGroup = b.isGroup ? 1 : 0;
-        if (aIsGroup !== bIsGroup) return aIsGroup - bIsGroup;
-        return (a.name ?? "").localeCompare(b.name ?? "");
-      }
-    );
-    for (const account of children) {
-      const childAccounts = byParent.get(account.id) ?? [];
-      const childIds = childAccounts.map((c) => c.id);
-      result.push({
-        id: account.id,
-        parentId: parentId ?? undefined,
-        children: childIds,
-        hasChildren: childIds.length > 0,
-        level,
-        data: account
-      });
-      walk(account.id, level + 1);
-    }
-  }
-
-  walk(null, 0);
-  return result;
-}
-
-function filterAccounts(
-  accounts: TrialBalanceChart[],
-  search: string
-): TrialBalanceChart[] {
-  if (!search.trim()) return accounts;
-  const lower = search.toLowerCase();
-
-  const byId = new Map(accounts.map((a) => [a.id, a]));
-  const matched = new Set<string>();
-
-  for (const a of accounts) {
-    const nameMatch = a.name?.toLowerCase().includes(lower);
-    const numberMatch = a.number?.toLowerCase().includes(lower);
-    if (nameMatch || numberMatch) {
-      matched.add(a.id as string);
-      let parentId = a.parentId;
-      while (parentId) {
-        matched.add(parentId);
-        const parent = byId.get(parentId);
-        parentId = parent?.parentId ?? null;
-      }
-    }
-  }
-
-  return accounts.filter((a) => matched.has(a.id as string));
-}
-
 function formatCurrency(value: number): string {
   if (value === 0) return "-";
   return value.toLocaleString(undefined, {
@@ -104,34 +41,10 @@ function formatCurrency(value: number): string {
 
 function formatPercent(value: number): string {
   if (!Number.isFinite(value)) return "-";
-  return `${value.toFixed(1)}%`;
-}
-
-/** Normal-debit accounts: positive balance = debit */
-function isNormalDebit(accountClass: string | null | undefined): boolean {
-  return accountClass === "Asset" || accountClass === "Expense";
-}
-
-/**
- * Split net change into debit and credit based on account class.
- * Normal-debit accounts (Asset, Expense): positive netChange = debit
- * Normal-credit accounts (Liability, Equity, Revenue): positive netChange = credit
- */
-function getDebitCredit(
-  netChange: number,
-  accountClass: string | null | undefined
-): { debit: number; credit: number } {
-  if (netChange === 0) return { debit: 0, credit: 0 };
-
-  if (isNormalDebit(accountClass)) {
-    return netChange > 0
-      ? { debit: netChange, credit: 0 }
-      : { debit: 0, credit: Math.abs(netChange) };
-  }
-  // Normal credit accounts
-  return netChange > 0
-    ? { debit: 0, credit: netChange }
-    : { debit: Math.abs(netChange), credit: 0 };
+  return `${value.toLocaleString(undefined, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2
+  })}%`;
 }
 
 const TrialBalanceTree = memo(
@@ -191,24 +104,24 @@ const TrialBalanceTree = memo(
           <div className="flex-1 px-4">
             <Trans>Account</Trans>
           </div>
-          <span className="w-28 text-right px-4">
+          <span className="w-28 text-right px-2">
             <Trans>Beginning</Trans>
           </span>
-          <span className="w-28 text-right px-4">
+          <span className="w-28 text-right px-2">
             <Trans>Debits</Trans>
           </span>
-          <span className="w-28 text-right px-4">
+          <span className="w-28 text-right px-2">
             <Trans>Credits</Trans>
           </span>
-          <span className="w-28 text-right px-4">
+          <span className="w-28 text-right px-2">
             <Trans>Ending</Trans>
           </span>
           {showTranslated && (
-            <span className="w-28 text-right px-4">
+            <span className="w-28 text-right px-2">
               {t`Ending (${parentCurrency ?? "Translated"})`}
             </span>
           )}
-          <span className="w-16 text-right px-4">
+          <span className="w-20 text-right px-2">
             <Trans>Ratio</Trans>
           </span>
         </div>
@@ -308,24 +221,24 @@ const TrialBalanceTree = memo(
                 </div>
 
                 {/* Beginning Balance */}
-                <span className="w-28 text-right tabular-nums shrink-0 text-muted-foreground">
+                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
                   {formatCurrency(beginningBalance)}
                 </span>
 
                 {/* Debits */}
-                <span className="w-28 text-right tabular-nums shrink-0 text-muted-foreground">
+                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
                   {formatCurrency(debit)}
                 </span>
 
                 {/* Credits */}
-                <span className="w-28 text-right tabular-nums shrink-0 text-muted-foreground">
+                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
                   {formatCurrency(credit)}
                 </span>
 
                 {/* Ending Balance */}
                 <span
                   className={cn(
-                    "w-28 text-right tabular-nums shrink-0 text-muted-foreground",
+                    "w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground",
                     isDrillable &&
                       "group-hover/row:text-foreground group-hover/row:underline underline-offset-2 decoration-border"
                   )}
@@ -335,7 +248,7 @@ const TrialBalanceTree = memo(
 
                 {/* Translated Ending Balance */}
                 {showTranslated && (
-                  <span className="w-28 text-right tabular-nums shrink-0 text-muted-foreground">
+                  <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
                     {account.translatedBalance != null
                       ? formatCurrency(account.translatedBalance)
                       : "-"}
@@ -343,7 +256,7 @@ const TrialBalanceTree = memo(
                 )}
 
                 {/* Ratio */}
-                <span className="w-16 text-right tabular-nums shrink-0 text-muted-foreground">
+                <span className="w-20 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
                   {node.parentId ? formatPercent(ratio) : ""}
                 </span>
               </div>

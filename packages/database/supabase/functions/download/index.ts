@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "npm:zod@^3.24.1";
 
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 
 const downloadValidator = z.object({
@@ -12,9 +12,8 @@ const downloadValidator = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
 
   try {
@@ -37,33 +36,14 @@ serve(async (req: Request) => {
       .createSignedUrl(path, 60);
 
     if (signedUrl.error) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: signedUrl.error.message,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 404,
-        }
-      );
+      return errorResponse(signedUrl.error, 404);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        signedUrl: signedUrl.data?.signedUrl,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+    return jsonResponse({
+      success: true,
+      signedUrl: signedUrl.data?.signedUrl,
     });
+  } catch (err) {
+    return errorResponse(err, 500);
   }
 });

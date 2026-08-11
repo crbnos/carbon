@@ -78,7 +78,7 @@ export const formatTaxPercent = (
   taxPercent: number | null | undefined
 ): string | null => {
   if (!taxPercent) return null;
-  return `${(taxPercent * 100).toFixed(0)}%`;
+  return `${(taxPercent * 100).toFixed(2)}%`;
 };
 
 export const getCurrencyFormatter = (

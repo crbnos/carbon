@@ -25,8 +25,7 @@ import {
 } from "@carbon/react/Carousel";
 import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router";
-import { Empty } from "~/components";
-import { useDateFormatter } from "~/hooks";
+import { DateTime, Empty } from "~/components";
 import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
 import type { HistoricalQuotationPrice, SalesOrderLine } from "../../types";
@@ -40,7 +39,6 @@ const QuoteLinePricingHistory = ({
   relatedSalesOrderLines: SalesOrderLine[];
   historicalQuoteLinePrices: HistoricalQuotationPrice[];
 }) => {
-  const { formatDate } = useDateFormatter();
   const historicalQuoteLines = historicalQuoteLinePrices.reduce<
     Record<
       string,
@@ -137,7 +135,10 @@ const QuoteLinePricingHistory = ({
                                 </div>
                                 <div className="flex flex-col gap-1 items-end">
                                   <span className="text-xs text-muted-foreground">
-                                    {formatDate(line.orderDate!)}
+                                    <DateTime
+                                      value={line.orderDate!}
+                                      variant="date"
+                                    />
                                   </span>
                                   <span className="text-xs text-muted-foreground">
                                     {line.itemReadableId}
@@ -225,7 +226,10 @@ const QuoteLinePricingHistory = ({
                                   </div>
                                   <div className="flex flex-col gap-1 items-end">
                                     <span className="text-xs text-muted-foreground">
-                                      {formatDate(line.quoteCreatedAt!)}
+                                      <DateTime
+                                        value={line.quoteCreatedAt!}
+                                        variant="date"
+                                      />
                                     </span>
                                     <span className="text-xs text-muted-foreground">
                                       {line.itemReadableId}

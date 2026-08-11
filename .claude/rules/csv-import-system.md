@@ -61,8 +61,34 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 ### Tables & permissions
 
 `customer`, `customerContact` → `sales`; `supplier`, `supplierContact` → `purchasing`;
-`part`, `material`, `tool`, `fixture`, `consumable`, `methodMaterial` → `parts`;
+`part`, `material`, `tool`, `fixture`, `consumable`, `methodMaterial`, `bom`,
+`operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
+`materialGrade`, `materialType`, `materialDimension` → `parts`;
 `workCenter`, `process` → `production`; `fixedAsset` → `accounting`.
+
+The edge function's own `table` enum (`import-csv/index.ts`) accepts: `consumable`,
+`customer`, `customerContact`, `fixture`, `material`, `bom`, `operations`,
+`partWithMethod`, `part`, `supplier`, `supplierContact`, `tool`, `workCenter`,
+`process`, `materialSubstance`, `materialForm`, `materialFinish`, `materialGrade`,
+`materialType`, `materialDimension`. Note it does **not** list `fixedAsset` or
+`methodMaterial` (see Gotchas).
+
+### Material-property imports (skip-duplicate, create-only)
+
+The six material-taxonomy lookups (`materialSubstance`, `materialForm`,
+`materialFinish`, `materialGrade`, `materialType`, `materialDimension`) are each a
+standalone import surfaced from its own config table (`apps/erp/app/modules/items/ui/Material*`).
+They are handled by `import-csv/material-property-import.ts` (not the item/customer
+paths) with **create-only, skip-duplicate** semantics — no `externalIntegrationMapping`,
+no updates. A row matching an existing entry for the company **or** a global system row
+(`companyId IS NULL`) is reported as `skipped`; re-importing the same file is a no-op.
+Dedup keys mirror the DB unique constraints (case/whitespace-insensitive):
+`code` (substance/form), `(materialSubstanceId, name)` (finish/grade),
+`(materialFormId, name)` (dimension), and both `(substance, form, code)` and
+`(substance, form, name)` (type). Parent substance/shape are referenced **by name**
+and resolved to ids by the FieldMappings enum-mapping step (fetchers on
+`materialSubstance` / `materialForm`), so parents must already exist — an unresolved
+parent is an `errors` row. New rows get a DB-generated `xid()` id.
 
 > The models also include `customerStatus` / `customerType` field-mapping entries (used by
 > creatable lookups), but only the tables above appear in `importPermissions`.
@@ -94,6 +120,14 @@ Deno `serve` handler. Payload validated by `importCsvValidator` (table enum, `fi
   when the strict parser rejects uneven row widths.
 - Applies `columnMappings`, then `enumMappings` (unknown CSV value → the enum's `"Default"`);
   `"N/A"` / unmapped columns are skipped.
+- **Material Finish / Grade / Dimensions arrive as raw text** (`finish`, `grade`,
+  `dimensions` — they can't be flat enum mappings because `materialFinish`/`materialGrade`
+  are scoped by substance and `materialDimension` by form). `resolveMaterialTaxonomyIds()`
+  resolves them per row within the row's substance/form scope — case-insensitive match
+  against global (`companyId IS NULL`) + company rows (company wins) — and **creates a
+  company-scoped taxonomy row for unmatched names** (mirroring the creatable comboboxes on
+  the material form). A row with no substance (finish/grade) or no form (dimensions) leaves
+  the attribute unset.
 - Classifies each row with `classifyImportRow()` (see `classify-import-row.ts`):
   returns `{ action: "insert" }`, `{ action: "update"; entityId }`, or
   `{ action: "skip"; reason }`. Skips on missing Name or duplicate id/name within the file.
@@ -117,8 +151,12 @@ See `.claude/rules/accounting-sync-handlers.md` for the full `externalIntegratio
 ## Gotchas
 
 - **`methodMaterial` is not implemented** — its edge-function case `throw new Error("Not implemented")`.
-- **`fixedAsset`** has models/permissions but is **NOT** in the edge function's `table` enum,
-  so the edge function would reject it. <!-- UNVERIFIED: whether fixedAsset import is wired anywhere -->
+- **`fixedAsset`** has models/permissions (`fieldMappings`, `importPermissions`) but is
+  **confirmed absent** from the edge function's `table` enum, so the edge function
+  **rejects it** — the zod `table` enum fails to parse and it errors out (effectively
+  "Table not found in the list of supported tables"). fixedAsset CSV import is not wired.
+- **Item custom fields are not populated on import** — the item insert paths write
+  `customFields: {}` (empty object) rather than mapping any CSV columns into custom fields.
 - Client parses CSV with **PapaParse**; the edge function parses independently with Deno std.
   They are separate parsers — don't assume identical behavior.
 - `enumMappings` crosses the route boundary as a JSON string; the service/edge function expect

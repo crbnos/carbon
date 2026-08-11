@@ -6,6 +6,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getCompanies } from "~/modules/settings";
+import { getRecordPath } from "~/utils/entity";
 import { path } from "~/utils/path";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
@@ -65,10 +66,10 @@ function resolve(
       return path.to.gauge(documentId);
     case NotificationEvent.NonConformanceAssignment:
       return path.to.issue(documentId);
-    case NotificationEvent.ChangeOrderStarted:
-    case NotificationEvent.ChangeOrderImplementation:
-    case NotificationEvent.ChangeOrderDone:
-      return path.to.changeOrderDetails(documentId);
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone:
+      return path.to.changeNoticeDetails(documentId);
     case NotificationEvent.RiskAssignment:
       return path.to.risk(documentId);
     case NotificationEvent.ProcedureAssignment:
@@ -79,6 +80,8 @@ function resolve(
       return path.to.pickingList(documentId);
     case NotificationEvent.SuggestionResponse:
       return path.to.suggestion(documentId);
+    case NotificationEvent.Workflow:
+      return getRecordPath(documentType, documentId);
     case NotificationEvent.ApprovalApproved:
     case NotificationEvent.ApprovalRejected:
     case NotificationEvent.ApprovalRequested:

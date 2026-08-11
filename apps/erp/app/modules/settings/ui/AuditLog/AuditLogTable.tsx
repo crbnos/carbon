@@ -11,8 +11,9 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuFilePen, LuFilePlus, LuFileX } from "react-icons/lu";
 import { Link } from "react-router";
-import { EmployeeAvatar, Table } from "~/components";
-import { useDateFormatter } from "~/hooks";
+import { DateTime, EmployeeAvatar, Table } from "~/components";
+import { ChangeRow } from "~/components/AuditLog";
+import { getEntityPath } from "~/utils/entity";
 import { path } from "~/utils/path";
 
 type AuditLogTableProps = {
@@ -40,76 +41,6 @@ const operationConfig: Record<
     label: "Deleted"
   }
 };
-
-function formatValue(value: unknown): string {
-  if (value === null) return "null";
-  if (value === undefined) return "undefined";
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean")
-    return String(value);
-  return JSON.stringify(value);
-}
-
-function getEntityPath(entityId: string): string | null {
-  const prefix = entityId.split("_")[0];
-  if (!prefix || prefix === entityId) return null;
-
-  const map: Record<string, (id: string) => string> = {
-    pi: path.to.purchaseInvoice,
-    si: path.to.salesInvoice,
-    po: path.to.purchaseOrder,
-    so: path.to.salesOrder,
-    cust: path.to.customer,
-    sup: path.to.supplier,
-    item: path.to.part,
-    job: path.to.job,
-    quote: path.to.quote,
-    emp: path.to.employeeAccount,
-    nc: path.to.issue,
-    co: path.to.changeOrder,
-    sh: path.to.shipment,
-    rec: path.to.receipt,
-    ic: path.to.inventoryCount,
-    g: path.to.gauge,
-    sq: path.to.supplierQuote,
-    wc: path.to.workCenter,
-    main: path.to.maintenanceDispatch
-  };
-  const pathFn = map[prefix];
-  return pathFn ? pathFn(entityId) : null;
-}
-
-const InlineDiff = memo(
-  ({
-    fieldName,
-    oldValue,
-    newValue
-  }: {
-    fieldName: string;
-    oldValue: unknown;
-    newValue: unknown;
-  }) => (
-    <div className="flex items-center gap-2 font-mono text-sm py-1">
-      <span className="text-muted-foreground font-medium min-w-[120px]">
-        {fieldName}:
-      </span>
-      {oldValue !== undefined && (
-        <span className="px-2 py-0.5 rounded bg-red-500/10 text-red-500">
-          {formatValue(oldValue)}
-        </span>
-      )}
-      {oldValue !== undefined && newValue !== undefined && (
-        <span className="text-muted-foreground">→</span>
-      )}
-      {newValue !== undefined && (
-        <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-500">
-          {formatValue(newValue)}
-        </span>
-      )}
-    </div>
-  )
-);
-InlineDiff.displayName = "InlineDiff";
 
 // Hide globally-skipped columns (and any nested suffix) from the rendered
 // diff. Defense-in-depth — backend strips skipFields too, but legacy entries
@@ -153,7 +84,9 @@ const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
         </div>
         <div>
           <span className="text-muted-foreground">Timestamp</span>
-          <div className="font-mono text-xs">{entry.createdAt}</div>
+          <div className="font-mono text-xs">
+            <DateTime value={entry.createdAt} variant="absolute" />
+          </div>
         </div>
       </div>
 
@@ -162,11 +95,10 @@ const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
         {hasDiff ? (
           <div className="space-y-1">
             {visibleEntries.map(([fieldName, change]) => (
-              <InlineDiff
+              <ChangeRow
                 key={fieldName}
-                fieldName={fieldName}
-                oldValue={change.old}
-                newValue={change.new}
+                columnKey={fieldName}
+                change={change}
               />
             ))}
           </div>
@@ -187,7 +119,6 @@ ExpandedRowContent.displayName = "ExpandedRowContent";
 
 const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
   const { t } = useLingui();
-  const { formatDateTime } = useDateFormatter();
   const columns = useMemo<ColumnDef<AuditLogEntry>[]>(
     () => [
       {
@@ -294,12 +225,12 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
         header: t`When`,
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">
-            {formatDateTime(row.original.createdAt)}
+            <DateTime value={row.original.createdAt} variant="absolute" />
           </span>
         )
       }
     ],
-    [t, formatDateTime]
+    [t]
   );
 
   const renderExpandedRow = useCallback(

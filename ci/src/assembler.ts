@@ -23,6 +23,11 @@ async function deploy(): Promise<void> {
   // fresh empty-named stage (colliding on the account-global custom domain).
   const stage = process.env.STAGE || "prod";
 
+  // The deploy job runs one account's credentials, so skip rows in any other
+  // account — else a govcloud run would try prod rows (and vice versa) and fail
+  // across the aws-us-gov partition. Set from `aws sts get-caller-identity`.
+  const deployAccountId = process.env.DEPLOY_AWS_ACCOUNT_ID;
+
   const { data: workspaces, error } = await client
     .from("workspaces")
     .select("*");
@@ -52,6 +57,12 @@ async function deploy(): Promise<void> {
 
     if (!aws_account_id) {
       console.log(`🔴 🍳 Missing AWS account id for ${id}`);
+      continue;
+    }
+    if (deployAccountId && aws_account_id !== deployAccountId) {
+      console.log(
+        `⏭️ Skipping ${id} — account ${aws_account_id} != deploy account ${deployAccountId}`,
+      );
       continue;
     }
     if (!aws_region) {

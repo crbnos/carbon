@@ -5,7 +5,7 @@ import { DataType } from "~/modules/shared";
 export const attributeValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     userAttributeCategoryId: z.string().min(20),
     attributeDataTypeId: zfd.numeric(),
     listOptions: z.string().min(1).array().optional(),
@@ -26,14 +26,14 @@ export const attributeValidator = z
 
 export const attributeCategoryValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   emoji: zfd.text(z.string().optional()),
   isPublic: zfd.checkbox()
 });
 
 export const departmentValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   parentDepartmentId: zfd.text(z.string().optional())
 });
 
@@ -47,13 +47,13 @@ export const employeeJobValidator = z.object({
 
 export const holidayValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   date: z.string().min(1, { message: "Date is required" })
 });
 
 export const shiftValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   startTime: z.string().min(1, { message: "Start time is required" }),
   endTime: z.string().min(1, { message: "End time is required" }),
   locationId: z.string().min(1, { message: "Location is required" }),

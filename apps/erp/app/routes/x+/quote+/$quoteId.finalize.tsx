@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -62,7 +62,7 @@ export async function action(args: ActionFunctionArgs) {
       .from("quote")
       .update({
         externalLinkId: externalLink.data.id,
-        completedDate: now(getLocalTimeZone()).toAbsoluteString()
+        completedDate: datetime.timestamp()
       })
       .eq("id", quoteId);
   }
@@ -119,7 +119,7 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    const finalize = await finalizeQuote(client, quoteId, userId);
+    const finalize = await finalizeQuote(client, quoteId, userId, companyId);
     if (finalize.error) {
       throw redirect(
         path.to.quote(quoteId),

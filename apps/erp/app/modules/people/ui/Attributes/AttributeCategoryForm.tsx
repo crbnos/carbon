@@ -74,6 +74,7 @@ const AttributeCategoryForm = ({
                 label={t`Public`}
                 termId="attribute-category-public"
                 description={t`Visible on a user's public profile`}
+                bordered
               />
             </VStack>
           </DrawerBody>

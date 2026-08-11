@@ -21,11 +21,10 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { CustomerAvatar, MethodIcon } from "~/components";
+import { CustomerAvatar, DateTime, MethodIcon } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
-  useDateFormatter,
   usePercentFormatter,
   useRouteData,
   useUser
@@ -150,7 +149,7 @@ const LineItems = ({
                           </Link>
                         </Button>
                       </HStack>
-                      <span className="text-muted-foreground text-base truncate">
+                      <span className="text-muted-foreground text-sm truncate">
                         {line.description}
                       </span>
                     </VStack>
@@ -348,7 +347,6 @@ const SalesInvoiceSummary = ({
 }: SalesInvoiceSummaryProps) => {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
-  const { formatDate } = useDateFormatter();
 
   const routeData = useRouteData<{
     salesInvoice: SalesInvoice;
@@ -439,8 +437,12 @@ const SalesInvoiceSummary = ({
               customerId={routeData?.salesInvoice.customerId ?? null}
             />
             {routeData?.salesInvoice?.dateDue && (
-              <span className="text-muted-foreground text-sm">
-                Due {formatDate(routeData?.salesInvoice.dateDue)}
+              <span className="text-xs text-muted-foreground tracking-tight">
+                Due{" "}
+                <DateTime
+                  value={routeData?.salesInvoice.dateDue}
+                  variant="date"
+                />
               </span>
             )}
           </div>
@@ -457,7 +459,7 @@ const SalesInvoiceSummary = ({
         />
 
         <VStack spacing={2} className="mt-8">
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Subtotal:</span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(subtotal)}</span>
@@ -469,7 +471,7 @@ const SalesInvoiceSummary = ({
             </VStack>
           </HStack>
 
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Tax:</span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(tax)}</span>
@@ -481,7 +483,7 @@ const SalesInvoiceSummary = ({
             </VStack>
           </HStack>
 
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             {shippingCost > 0 ? (
               <>
                 <VStack spacing={0}>
@@ -512,7 +514,7 @@ const SalesInvoiceSummary = ({
               <Button
                 variant="link"
                 size="sm"
-                className="text-muted-foreground"
+                className="text-primary"
                 onClick={onEditShippingCost}
               >
                 <Trans>Add Shipping</Trans>
@@ -520,7 +522,7 @@ const SalesInvoiceSummary = ({
             ) : null}
           </HStack>
 
-          <HStack className="justify-between text-xl font-bold w-full">
+          <HStack className="justify-between text-xl font-semibold w-full">
             <span>Total:</span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(total)}</span>

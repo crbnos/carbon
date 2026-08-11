@@ -546,7 +546,9 @@ export function JobStartModal({
 
     // Check for existing purchase order lines for outside operations
     const outsideOperations =
-      operations.data?.filter((op) => op.operationType === "Outside") || [];
+      operations.data?.filter(
+        (op) => op.operationType === "Outside Processing"
+      ) || [];
     const existingPurchaseOrderLines =
       outsideOperations.length > 0
         ? await carbon

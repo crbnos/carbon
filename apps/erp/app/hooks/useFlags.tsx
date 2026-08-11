@@ -1,4 +1,4 @@
-import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT, IS_LOCAL_DEV } from "@carbon/auth";
 import { useEdition } from "@carbon/react";
 import { Edition, isInternalEmail } from "@carbon/utils";
 import { useUser } from "./useUser";
@@ -13,6 +13,7 @@ export function useFlags() {
     isCloud: edition === Edition.Cloud,
     isCommunity: edition === Edition.Community,
     isEnterprise: edition === Edition.Enterprise,
-    isControlledEnvironment: CONTROLLED_ENVIRONMENT
+    isControlledEnvironment: CONTROLLED_ENVIRONMENT,
+    isLocalDev: IS_LOCAL_DEV
   };
 }

@@ -1,10 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import {
-  Input as FormInput,
-  Number as FormNumberInput,
-  Hidden,
-  ValidatedForm
-} from "@carbon/form";
+import { Number as FormNumberInput, Hidden, ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertDescription,
@@ -40,38 +35,37 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  toast,
-  useDisclosure
+  toast
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { formatDate, getItemReadableId } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  LuArrowRightLeft,
   LuCheck,
   LuChevronDown,
   LuChevronUp,
   LuCirclePlus,
-  LuGitBranch,
   LuList,
   LuQrCode,
-  LuScale,
-  LuTrash,
+  LuTrash2,
   LuUndo2,
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { PrintButton } from "~/components";
 import type {
   getBatchNumbersForItem,
   getSerialNumbersForItem,
   SuggestedAllocationLot
 } from "~/services/inventory.service";
-import { convertEntityValidator, issueValidator } from "~/services/models";
+import { issueValidator } from "~/services/models";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { ScrapEntityModal } from "./ScrapEntityModal";
+import type { ScrappableEntity } from "./ScrapTab";
+import { ScrapTab } from "./ScrapTab";
 
 type TrackingType = "Serial" | "Batch" | "Inventory" | "Non-Inventory" | null;
 
@@ -86,26 +80,55 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 export function IssueMaterialModal({
   operationId,
+  allowPrefill = false,
+  parentUnitCount,
+  issuePerUnit = false,
   expiredEntityPolicy = "Block",
+  autoSelectMaterialWithoutPickingList = false,
   locationId,
   workCenterId,
   material,
   parentId,
   parentIdIsSerialized,
+  jobOperationStepId,
+  unitNumber,
   trackedInputs = [],
   onClose
 }: {
   operationId: string;
+  // Opt-in from the call site to pre-select tracked entities from the picking
+  // list. The process view passes true; the assembly view issues one unit at
+  // a time and never opts in. Even when true, the modal only seeds when the
+  // whole pick provably belongs to the parent entity being issued to: a
+  // picking list exists AND (the parent is not serialized — one entity spans
+  // the whole quantity — or the operation makes exactly one unit, so there is
+  // exactly one parent serial). See canPrefill below.
+  allowPrefill?: boolean;
+  // How many units the operation makes (parent tracked entities for a serial
+  // parent). Required for prefill when the parent is serialized — without it
+  // a serialized parent never prefills.
+  parentUnitCount?: number;
+  // Issue one unit's worth per submission (the assembly view's build-one-at-
+  // a-time flow) instead of defaulting to the whole remaining quantity.
+  // Serial parents always behave this way regardless of this flag.
+  issuePerUnit?: boolean;
   expiredEntityPolicy?: ExpiredEntityPolicy;
+  autoSelectMaterialWithoutPickingList?: boolean;
   locationId?: string;
   workCenterId?: string;
   material?: JobMaterial;
   parentId?: string;
   parentIdIsSerialized?: boolean;
+  // Assembly view only: the step + 1-based unit the operator is on, stamped onto the
+  // consume so issued quantities can be attributed per-unit/per-step even for a batch
+  // parent (where all units share one lot entity). Omitted by the operation view.
+  jobOperationStepId?: string;
+  unitNumber?: number;
   trackedInputs?: TrackedInput[];
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
+  const { t } = useLingui();
   const [items] = useItems();
   const numberFormatter = useNumberFormatter({ maximumFractionDigits: 4 });
 
@@ -157,19 +180,13 @@ export function IssueMaterialModal({
   );
 
   // Format an expiration date as `MMM d, yyyy` for the option helper text.
-  // Browsers all support this through Intl.DateTimeFormat, no extra deps.
   const formatExpiry = useCallback((date: string | null | undefined) => {
     if (!date) return "";
-    try {
-      const cd = parseDate(date);
-      return new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      }).format(cd.toDate(getLocalTimeZone()));
-    } catch {
-      return date;
-    }
+    return formatDate(date, {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
   }, []);
 
   const serialOptions = useMemo(() => {
@@ -274,15 +291,52 @@ export function IssueMaterialModal({
     }));
   }, [trackedInputs]);
 
-  // Quantity for inventory items
+  // Scrappable entities for this material: available (picked / in stock,
+  // pulled from the item's available serials) + already-consumed (trackedInputs).
+  const scrappableEntities = useMemo<ScrappableEntity[]>(() => {
+    const consumed: ScrappableEntity[] = trackedInputs.map((input) => ({
+      id: input.id,
+      readableId: input.readableId,
+      state: "Consumed" as const
+    }));
+    const consumedIds = new Set(consumed.map((e) => e.id));
+    const availableSource =
+      trackingType === "Batch"
+        ? (batchNumbers?.data ?? [])
+        : (serialNumbers?.data ?? []);
+    const available: ScrappableEntity[] = availableSource
+      // Batch numbers are not pre-filtered by status at the query, so guard here
+      // (serial numbers already come back Available-only) — Reserved/On Hold/
+      // Scrapped entities must never appear as scrap-from-stock targets.
+      .filter((s) => s.status === "Available")
+      .filter((s) => !consumedIds.has(s.id))
+      .map((s) => ({
+        id: s.id,
+        readableId: s.readableId,
+        state: "Available" as const
+      }));
+    return [...available, ...consumed];
+  }, [trackedInputs, trackingType, serialNumbers?.data, batchNumbers?.data]);
+
+  // Default issue quantity. Serial parents always issue per-unit
+  // (material.quantity is the per-unit requirement and quantityIssued is
+  // scoped to the parent entity). The assembly view issues per-unit for
+  // EVERY parent type (issuePerUnit) — a 10-unit build consumes its parts
+  // one unit at a time, never the whole remaining total in one shot.
+  // Otherwise (process view, non-serial parent) default to the remaining
+  // total for the operation.
   const initialQuantity = useMemo(() => {
     if (!material) return 1;
-    const total = parentIdIsSerialized
-      ? (material.quantity ?? material.estimatedQuantity ?? 1)
-      : (material.estimatedQuantity ?? material.quantity ?? 1);
-    const remaining = total - (material.quantityIssued ?? 0);
-    return Math.max(1, remaining);
-  }, [material, parentIdIsSerialized]);
+    const perUnit = material.quantity ?? material.estimatedQuantity ?? 1;
+    if (parentIdIsSerialized) {
+      return Math.max(1, perUnit - (material.quantityIssued ?? 0));
+    }
+    if (issuePerUnit) {
+      return Math.max(1, perUnit);
+    }
+    const total = material.estimatedQuantity ?? material.quantity ?? 1;
+    return Math.max(1, total - (material.quantityIssued ?? 0));
+  }, [material, parentIdIsSerialized, issuePerUnit]);
 
   // Serial numbers selection state
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<
@@ -293,6 +347,10 @@ export function IssueMaterialModal({
       .map((_, index) => ({ index, id: "" }))
   );
   const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
+  const [scrapEntityTarget, setScrapEntityTarget] = useState<{
+    id: string;
+    readableId?: string | null;
+  } | null>(null);
   const [selectedTrackedInputs, setSelectedTrackedInputs] = useState<string[]>(
     []
   );
@@ -310,7 +368,20 @@ export function IssueMaterialModal({
   const [activeTab, setActiveTab] = useState("scan");
 
   // Pre-fill the selection with the picking list's recommendation (a default
-  // only — fully editable below). Two sources feed it, in priority order:
+  // only — fully editable below). Pre-selecting tracked entities is a
+  // traceability hazard: a wrong default an operator blindly accepts records
+  // the wrong genealogy. Every issue submission binds ALL children to ONE
+  // parent tracked entity, so seeding is only trustworthy when the whole
+  // pick provably belongs to that parent. That requires ALL of:
+  //   - the call site opted in (`allowPrefill` — the process view; the
+  //     assembly view issues one unit at a time so the pick can never be
+  //     attributed to the unit on screen),
+  //   - the material is actually on a picking list, and
+  //   - the parent is a single entity: not serialized (one batch/lot spans
+  //     the whole quantity) OR the operation makes exactly one unit (one
+  //     parent serial).
+  // Otherwise the modal opens on the Scan tab with nothing selected.
+  // When seeding is allowed, two sources feed it, in priority order:
   //   1. the exact lots a picking list already PICKED for this material
   //      (`pickedAllocation`, from pickingListLineTrackedEntity), and
   //   2. the on-the-fly pickMethod suggestion of what to pick
@@ -319,15 +390,32 @@ export function IssueMaterialModal({
   // yet — e.g. a multi-line list where other lines were picked first. In that
   // state `pickedAllocation` is empty, so we must still surface the suggestion
   // rather than leaving the operator with the default first lot. Hence the
-  // suggestion is ALWAYS loaded and used as the fallback, not gated off whenever
-  // a picking allocation merely exists.
+  // suggestion is ALWAYS loaded, not gated off whenever a picking allocation
+  // merely exists. Whether the suggestion actually SEEDS the rows when there is
+  // no picking list is gated by `autoSelectMaterialWithoutPickingList` (see
+  // `seedAllocation` below).
   const pickedOverlay = material as
     | { quantityToPick?: number | null; quantityPicked?: number | null }
     | undefined;
   const hasPickingAllocation =
     Number(pickedOverlay?.quantityToPick ?? 0) > 0 ||
     Number(pickedOverlay?.quantityPicked ?? 0) > 0;
+  // The genealogy safety gate: a seed is only trustworthy when the whole pick
+  // provably belongs to ONE parent — the call site opted in (`allowPrefill`) and
+  // the parent is a single entity (not a serialized multi-unit operation).
+  const parentSafe =
+    allowPrefill && (!parentIdIsSerialized || parentUnitCount === 1);
+  // Picking-list seeding (picked lots): always requires a real allocation.
+  const canPrefill = parentSafe && hasPickingAllocation;
+  // No-picking-list FEFO seeding: opt-in per company via
+  // `autoSelectMaterialWithoutPickingList`, still bound by the same parent
+  // safety. Relaxes ONLY the picking-allocation requirement, never the
+  // single-parent genealogy guard.
+  const canSuggestWithoutList =
+    parentSafe && autoSelectMaterialWithoutPickingList;
+  const canSeedSuggestion = canPrefill || canSuggestWithoutList;
   const shouldSuggestAllocation =
+    canSeedSuggestion &&
     !!material &&
     !!selectedItemId &&
     !!locationId &&
@@ -342,58 +430,117 @@ export function IssueMaterialModal({
       : undefined
   );
   const shouldLoadPickedAllocation =
+    canPrefill &&
     !!material?.id &&
-    hasPickingAllocation &&
     (trackingType === "Batch" || trackingType === "Serial");
   const { data: pickedAllocation, resolved: pickedAllocationResolved } =
     usePickedAllocation(
       shouldLoadPickedAllocation ? (material?.id ?? undefined) : undefined
     );
+
+  // Scanning the SHELF label must issue the allocated lineside child, not the
+  // warehouse lot: after a partial pick the shelf entity keeps its id (and its
+  // printed label) while the picked portion is a child entity staged at
+  // lineside. Without this mapping, a shelf-label scan would consume the
+  // warehouse parent at the wrong bin. Only remaps when the scanned id is not
+  // itself an allocated lot and a picked child points back at it.
+  const resolveScannedBatchId = useCallback(
+    (scannedId: string) => {
+      if (!scannedId || pickedAllocation.length === 0) return scannedId;
+      if (pickedAllocation.some((lot) => lot.trackedEntityId === scannedId)) {
+        return scannedId;
+      }
+      return (
+        pickedAllocation.find((lot) => lot.splitFromEntityId === scannedId)
+          ?.trackedEntityId ?? scannedId
+      );
+    },
+    [pickedAllocation]
+  );
   // Prefer the actual picks; fall back to the suggestion only when nothing's
   // been picked yet (allocated-but-not-picked) or when there's no picking list.
   // Wait for the picked-allocation request to resolve before falling back, so a
   // faster suggestion response can't be seeded and then locked in ahead of the
   // real picked lots.
+  //
+  // Seed the FEFO suggestion whenever seeding is allowed (`canSeedSuggestion`):
+  // that's a real picking allocation (allocated-but-not-yet-picked) OR the
+  // no-picking-list opt-in setting. Picked lots always seed. When there's no
+  // picking list and the setting is off, `canSeedSuggestion` is false → the
+  // operator stays on the Scan tab. This does NOT affect the Select-tab option
+  // ordering or the add-row remainder fill below.
   const seedAllocation =
     shouldLoadPickedAllocation && !pickedAllocationResolved
       ? []
       : pickedAllocation.length
         ? pickedAllocation
-        : suggestedAllocation;
+        : canSeedSuggestion
+          ? suggestedAllocation
+          : [];
   const hasSeededSuggestionRef = useRef(false);
   useEffect(() => {
     if (hasSeededSuggestionRef.current) return;
     if (!seedAllocation.length) return;
+    // Intersect the seed with what is actually still available before
+    // applying it. The picked allocation is NOT netted by consumption
+    // (pickingListLineTrackedEntity keeps the original picked qty, and a
+    // partial consumption splits the entity into a new id), so re-opening
+    // the modal after a partial issue would otherwise re-suggest lots that
+    // were already consumed. Consumed/unavailable entities drop out of the
+    // options lists, so waiting for those to resolve and filtering against
+    // them nets the seed correctly.
     if (trackingType === "Batch") {
+      if (batchNumbers?.data === undefined) return;
       // Don't clobber a selection the operator already started if the (async)
       // suggestion arrives after they picked.
       if (selectedBatchNumbers.some((b) => b.id)) return;
+      const availableById = new Map(
+        batchOptions.map((o) => [o.value, o.availableQuantity])
+      );
+      const lots = seedAllocation
+        .map((lot) => ({
+          ...lot,
+          quantity: Math.min(
+            lot.quantity,
+            availableById.get(lot.trackedEntityId) ?? 0
+          )
+        }))
+        .filter((lot) => lot.quantity > 0);
+      hasSeededSuggestionRef.current = true;
+      if (!lots.length) return;
       setSelectedBatchNumbers(
-        seedAllocation.map((lot, index) => ({
+        lots.map((lot, index) => ({
           index,
           id: lot.trackedEntityId,
           quantity: lot.quantity
         }))
       );
       setActiveTab("select");
-      hasSeededSuggestionRef.current = true;
     } else if (trackingType === "Serial") {
+      if (serialNumbers?.data === undefined) return;
       if (selectedSerialNumbers.some((s) => s.id)) return;
+      const availableIds = new Set(serialOptions.map((o) => o.value));
+      const lots = seedAllocation.filter((lot) =>
+        availableIds.has(lot.trackedEntityId)
+      );
+      hasSeededSuggestionRef.current = true;
+      if (!lots.length) return;
       setSelectedSerialNumbers((prev) =>
         prev.map((row, i) =>
-          seedAllocation[i]
-            ? { ...row, id: seedAllocation[i].trackedEntityId }
-            : row
+          lots[i] ? { ...row, id: lots[i].trackedEntityId } : row
         )
       );
       setActiveTab("select");
-      hasSeededSuggestionRef.current = true;
     }
   }, [
     seedAllocation,
     trackingType,
     selectedBatchNumbers,
-    selectedSerialNumbers
+    selectedSerialNumbers,
+    batchNumbers,
+    serialNumbers,
+    batchOptions,
+    serialOptions
   ]);
 
   // Expiry override state. Surfaced when a selected serial/batch is expired.
@@ -420,16 +567,6 @@ export function IssueMaterialModal({
   const hasExpiredSelection =
     expiredSerialIds.length > 0 || expiredBatchIds.length > 0;
 
-  // Split entities result state (for batch splitting)
-  const [splitEntitiesResult, setSplitEntitiesResult] = useState<
-    {
-      newId: string;
-      originalId: string;
-      quantity: number;
-      readableId?: string;
-    }[]
-  >([]);
-
   // Fetchers
   const fetcher = useFetcher<{
     success: boolean;
@@ -439,15 +576,11 @@ export function IssueMaterialModal({
       newId: string;
       quantity: number;
       readableId?: string;
+      remainingQuantity?: number;
     }>;
   }>();
   const unconsumeFetcher = useFetcher<{ success: boolean; message: string }>();
   const inventoryFetcher = useFetcher<{ success: boolean; message: string }>();
-
-  // Sub-modals for batch splitting
-  const convertDisclosure = useDisclosure();
-  const scrapDisclosure = useDisclosure();
-  const [trackedEntity, setTrackedEntity] = useState<string | null>(null);
 
   // Fetch item details when item is selected (only when no material provided)
   const handleItemChange = useCallback(
@@ -530,10 +663,15 @@ export function IssueMaterialModal({
 
   const addSerialNumber = useCallback(() => {
     setSelectedSerialNumbers((prev) => {
-      // Pre-fill the new row with the next unused serial. Prefer the remaining
-      // pick-method-ordered suggestion (FEFO/FIFO/LIFO), so added rows stay
-      // consistent with the seeded ones; only fall back to the picker's default
-      // FEFO/FIFO order once the suggestion is exhausted. Editable either way.
+      // When prefill is allowed, seed the new row with the next unused serial.
+      // Prefer the remaining pick-method-ordered suggestion (FEFO/FIFO/LIFO),
+      // so added rows stay consistent with the seeded ones; only fall back to
+      // the picker's default FEFO/FIFO order once the suggestion is exhausted.
+      // When prefill is off, the row starts empty — auto-picking a tracked
+      // entity the operator never chose is a traceability hazard.
+      if (!canSeedSuggestion) {
+        return [...prev, { index: prev.length, id: "" }];
+      }
       const used = new Set(prev.map((s) => s.id).filter(Boolean));
       const fromSuggestion = seedAllocation.find(
         (lot) => !used.has(lot.trackedEntityId)
@@ -543,7 +681,7 @@ export function IssueMaterialModal({
         : serialOptions.find((o) => !used.has(o.value) && !o.isExpired);
       return [...prev, { index: prev.length, id: next?.value ?? "" }];
     });
-  }, [serialOptions, seedAllocation]);
+  }, [serialOptions, seedAllocation, canSeedSuggestion]);
 
   const removeSerialNumber = useCallback((indexToRemove: number) => {
     setSelectedSerialNumbers((prev) => {
@@ -580,10 +718,15 @@ export function IssueMaterialModal({
 
   const addBatchNumber = useCallback(() => {
     setSelectedBatchNumbers((prev) => {
-      // Pre-fill the new row with the next unused batch. Prefer the remaining
-      // pick-method-ordered suggestion (FEFO/FIFO/LIFO) so added rows match the
-      // seeded ones; fall back to the picker's default FEFO/FIFO order once the
-      // suggestion is exhausted. Default qty is clamped to the lot's on-hand.
+      // When prefill is allowed, seed the new row with the next unused batch.
+      // Prefer the remaining pick-method-ordered suggestion (FEFO/FIFO/LIFO) so
+      // added rows match the seeded ones; fall back to the picker's default
+      // FEFO/FIFO order once the suggestion is exhausted. Default qty is
+      // clamped to the lot's on-hand. When prefill is off, the row starts
+      // empty — auto-picking a tracked entity is a traceability hazard.
+      if (!canSeedSuggestion) {
+        return [...prev, { index: prev.length, id: "", quantity: 1 }];
+      }
       const used = new Set(prev.map((b) => b.id).filter(Boolean));
       const fromSuggestion = seedAllocation.find(
         (lot) => !used.has(lot.trackedEntityId)
@@ -600,7 +743,7 @@ export function IssueMaterialModal({
         }
       ];
     });
-  }, [batchOptions, seedAllocation]);
+  }, [batchOptions, seedAllocation, canSeedSuggestion]);
 
   const removeBatchNumber = useCallback((indexToRemove: number) => {
     setSelectedBatchNumbers((prev) => {
@@ -756,6 +899,11 @@ export function IssueMaterialModal({
               overrideReason: expiryOverrideReason.trim()
             }
           : {};
+      // Per-unit/per-step attribution context (assembly view only).
+      const contextFields = {
+        ...(jobOperationStepId ? { jobOperationStepId } : {}),
+        ...(unitNumber !== undefined ? { unitNumber } : {})
+      };
       const payload = material?.id
         ? {
             materialId: material.id,
@@ -764,6 +912,7 @@ export function IssueMaterialModal({
               trackedEntityId: sn.id,
               quantity: 1
             })),
+            ...contextFields,
             ...overrideFields
           }
         : {
@@ -774,6 +923,7 @@ export function IssueMaterialModal({
               trackedEntityId: sn.id,
               quantity: 1
             })),
+            ...contextFields,
             ...overrideFields
           };
 
@@ -792,7 +942,9 @@ export function IssueMaterialModal({
     selectedItemId,
     fetcher,
     hasExpiredSelection,
-    expiryOverrideReason
+    expiryOverrideReason,
+    jobOperationStepId,
+    unitNumber
   ]);
 
   const handleSubmitBatch = useCallback(() => {
@@ -828,6 +980,11 @@ export function IssueMaterialModal({
               overrideReason: expiryOverrideReason.trim()
             }
           : {};
+      // Per-unit/per-step attribution context (assembly view only).
+      const contextFields = {
+        ...(jobOperationStepId ? { jobOperationStepId } : {}),
+        ...(unitNumber !== undefined ? { unitNumber } : {})
+      };
       const payload = material?.id
         ? {
             materialId: material.id,
@@ -836,6 +993,7 @@ export function IssueMaterialModal({
               trackedEntityId: bn.id,
               quantity: bn.quantity
             })),
+            ...contextFields,
             ...overrideFields
           }
         : {
@@ -846,6 +1004,7 @@ export function IssueMaterialModal({
               trackedEntityId: bn.id,
               quantity: bn.quantity
             })),
+            ...contextFields,
             ...overrideFields
           };
 
@@ -864,7 +1023,9 @@ export function IssueMaterialModal({
     selectedItemId,
     fetcher,
     hasExpiredSelection,
-    expiryOverrideReason
+    expiryOverrideReason,
+    jobOperationStepId,
+    unitNumber
   ]);
 
   const handleUnconsumeSerial = useCallback(() => {
@@ -947,15 +1108,27 @@ export function IssueMaterialModal({
           fetcher.data.splitEntities &&
           fetcher.data.splitEntities.length > 0
         ) {
-          setSplitEntitiesResult(
-            fetcher.data.splitEntities.map((entity) => ({
-              newId: entity.newId,
-              originalId: entity.originalId,
-              readableId: entity.readableId,
-              quantity: entity.quantity
-            }))
-          );
-          toast.success(fetcher.data.message);
+          // A partial issue split the lot: the consumed portion departed as a
+          // new child entity and the surviving lineside lot kept its id (and
+          // its label). A one-line confirmation replaces the old full-screen
+          // split ceremony — nothing to print, nothing to act on.
+          for (const split of fetcher.data.splitEntities) {
+            const lotLabel =
+              split.readableId ||
+              getItemReadableId(items, material?.itemId) ||
+              "batch";
+            const issuedQuantity = numberFormatter.format(split.quantity);
+            const remainingQuantity =
+              split.remainingQuantity !== undefined
+                ? numberFormatter.format(split.remainingQuantity)
+                : null;
+            toast.success(
+              remainingQuantity !== null
+                ? t`Issued ${issuedQuantity} of ${lotLabel} — ${remainingQuantity} remains`
+                : t`Issued ${issuedQuantity} of ${lotLabel}`
+            );
+          }
+          onClose();
         } else {
           onClose();
           if (fetcher.data.message) {
@@ -966,7 +1139,15 @@ export function IssueMaterialModal({
         toast.error(fetcher.data.message);
       }
     }
-  }, [fetcher.state, fetcher.data, onClose]);
+  }, [
+    fetcher.state,
+    fetcher.data,
+    onClose,
+    items,
+    material?.itemId,
+    numberFormatter,
+    t
+  ]);
 
   useEffect(() => {
     if (unconsumeFetcher.data?.success) {
@@ -1008,76 +1189,9 @@ export function IssueMaterialModal({
             )}
           </ModalHeader>
 
-          {splitEntitiesResult.length > 0 ? (
-            // Show split entities result
-            <ModalBody>
-              <Alert variant="default" className="mb-4">
-                <LuGitBranch className="mr-2" />
-                <AlertTitle>Batch Split Occurred</AlertTitle>
-                <AlertDescription>
-                  <div className="flex flex-col gap-2">
-                    <p>A new batch entity was created from a split:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      {splitEntitiesResult.map((split) => (
-                        <li key={split.newId} className="flex flex-col text-sm">
-                          <span className="text-md font-semibold">
-                            {split.readableId ??
-                              getItemReadableId(items, material?.itemId) ??
-                              "Material"}
-                          </span>
-                          <div className="flex gap-2 items-center">
-                            <span className="font-mono flex gap-1 items-center">
-                              <LuQrCode />
-                              {split.newId}
-                            </span>
-                            <span className="font-mono text-xs text-muted-foreground flex gap-1 items-center truncate">
-                              <LuScale />
-                              {numberFormatter.format(split.quantity)}
-                            </span>
-                          </div>
-                          <div className="flex gap-2 mt-4">
-                            <PrintButton
-                              sourceDocument="Split"
-                              sourceDocumentId={split.newId}
-                              locationId={locationId}
-                              context="workCenter"
-                              workCenterId={workCenterId}
-                              fileRoutes={{
-                                pdf: path.to.file.trackedEntityLabelPdf,
-                                zpl: path.to.file.trackedEntityLabelZpl
-                              }}
-                            />
-                            <Button
-                              variant="secondary"
-                              leftIcon={<LuArrowRightLeft />}
-                              onClick={() => {
-                                setTrackedEntity(split.newId);
-                                convertDisclosure.onOpen();
-                              }}
-                            >
-                              Convert
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              leftIcon={<LuTrash />}
-                              onClick={() => {
-                                setTrackedEntity(split.newId);
-                                scrapDisclosure.onOpen();
-                              }}
-                            >
-                              Scrap
-                            </Button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            </ModalBody>
-          ) : trackingType === "Inventory" ||
-            trackingType === "Non-Inventory" ||
-            trackingType === null ? (
+          {trackingType === "Inventory" ||
+          trackingType === "Non-Inventory" ||
+          trackingType === null ? (
             // Untracked item (Inventory or Non-Inventory, e.g. consumables and
             // services) - use ValidatedForm; the issue edge function skips the
             // itemLedger for Non-Inventory items but still posts the WIP cost
@@ -1090,14 +1204,17 @@ export function IssueMaterialModal({
                 materialId: material?.id ?? "",
                 jobOperationId: operationId,
                 itemId: selectedItemId,
-                // Default to the remaining qty, but never submit zero/negative
-                // — that's how this modal ends up posting an invalid form and
-                // the server bouncing it silently when a material has been
-                // fully issued already.
+                // Default to the remaining qty (or one unit's worth in the
+                // assembly view's one-at-a-time flow), but never submit
+                // zero/negative — that's how this modal ends up posting an
+                // invalid form and the server bouncing it silently when a
+                // material has been fully issued already.
                 quantity: Math.max(
                   1,
-                  (material?.estimatedQuantity ?? 0) -
-                    (material?.quantityIssued ?? 0)
+                  issuePerUnit
+                    ? (material?.quantity ?? material?.estimatedQuantity ?? 1)
+                    : (material?.estimatedQuantity ?? 0) -
+                        (material?.quantityIssued ?? 0)
                 ),
                 adjustmentType: "Negative Adjmt."
               }}
@@ -1106,6 +1223,14 @@ export function IssueMaterialModal({
               <ModalBody>
                 <Hidden name="jobOperationId" />
                 <Hidden name="materialId" />
+                {/* Scope an unplanned part (no materialId) to the step it's
+                    issued on so the assembly view shows it on that step. */}
+                {!material?.id && jobOperationStepId && (
+                  <Hidden
+                    name="jobOperationStepId"
+                    value={jobOperationStepId}
+                  />
+                )}
                 {material?.id && (
                   <Hidden name="adjustmentType" value="Negative Adjmt." />
                 )}
@@ -1234,8 +1359,8 @@ export function IssueMaterialModal({
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                       <TabsList
                         className={cn(
-                          "grid w-full grid-cols-2 mb-4",
-                          hasTrackedInputs && "grid-cols-3"
+                          "grid w-full grid-cols-3 mb-4",
+                          hasTrackedInputs && "grid-cols-4"
                         )}
                       >
                         <TabsTrigger value="scan">
@@ -1246,6 +1371,10 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
+                        <TabsTrigger value="scrap">
+                          <LuTrash2 className="mr-2" />
+                          Scrap
+                        </TabsTrigger>
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1253,6 +1382,18 @@ export function IssueMaterialModal({
                           </TabsTrigger>
                         )}
                       </TabsList>
+
+                      <TabsContent value="scrap">
+                        <ScrapTab
+                          entities={scrappableEntities}
+                          onScrap={(entity) =>
+                            setScrapEntityTarget({
+                              id: entity.id,
+                              readableId: entity.readableId
+                            })
+                          }
+                        />
+                      </TabsContent>
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
@@ -1265,6 +1406,7 @@ export function IssueMaterialModal({
                                 <div className="flex-1">
                                   <InputGroup>
                                     <Input
+                                      autoFocus={index === 0}
                                       placeholder={`Serial Number ${index + 1}`}
                                       value={sn.id}
                                       onChange={(e) => {
@@ -1279,6 +1421,15 @@ export function IssueMaterialModal({
                                         setSelectedSerialNumbers(
                                           newSerialNumbers
                                         );
+                                      }}
+                                      onKeyDown={(e) => {
+                                        // Barcode scanners emit the code then an
+                                        // Enter keystroke — submit the issue on
+                                        // Enter, same as clicking Issue.
+                                        if (e.key === "Enter") {
+                                          e.preventDefault();
+                                          handleSubmitSerial();
+                                        }
                                       }}
                                       onBlur={(e) => {
                                         const newValue = e.target.value;
@@ -1477,8 +1628,8 @@ export function IssueMaterialModal({
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                       <TabsList
                         className={cn(
-                          "grid w-full grid-cols-2 mb-4",
-                          hasTrackedInputs && "grid-cols-3"
+                          "grid w-full grid-cols-3 mb-4",
+                          hasTrackedInputs && "grid-cols-4"
                         )}
                       >
                         <TabsTrigger value="scan">
@@ -1489,6 +1640,10 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
+                        <TabsTrigger value="scrap">
+                          <LuTrash2 className="mr-2" />
+                          Scrap
+                        </TabsTrigger>
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1496,6 +1651,18 @@ export function IssueMaterialModal({
                           </TabsTrigger>
                         )}
                       </TabsList>
+
+                      <TabsContent value="scrap">
+                        <ScrapTab
+                          entities={scrappableEntities}
+                          onScrap={(entity) =>
+                            setScrapEntityTarget({
+                              id: entity.id,
+                              readableId: entity.readableId
+                            })
+                          }
+                        />
+                      </TabsContent>
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
@@ -1505,17 +1672,32 @@ export function IssueMaterialModal({
                                 <div className="flex-1">
                                   <InputGroup>
                                     <Input
+                                      autoFocus={index === 0}
                                       value={batch.id}
                                       onChange={(e) => {
-                                        const newValue = e.target.value;
+                                        // A shelf-label scan resolves to its
+                                        // allocated lineside child (see
+                                        // resolveScannedBatchId).
+                                        const newValue = resolveScannedBatchId(
+                                          e.target.value
+                                        );
                                         updateBatchNumber({
                                           ...batch,
                                           id: newValue
                                         });
                                       }}
+                                      onKeyDown={(e) => {
+                                        // Barcode scanners emit the code then an
+                                        // Enter keystroke — submit the issue on
+                                        // Enter, same as clicking Issue.
+                                        if (e.key === "Enter") {
+                                          e.preventDefault();
+                                          handleSubmitBatch();
+                                        }
+                                      }}
                                       onBlur={(e) => {
                                         validateBatchInput(
-                                          e.target.value,
+                                          resolveScannedBatchId(e.target.value),
                                           index
                                         );
                                       }}
@@ -1789,273 +1971,66 @@ export function IssueMaterialModal({
                 </div>
               </ModalBody>
               <ModalFooter>
-                {splitEntitiesResult.length > 0 ? (
-                  <Button variant="primary" size="lg" onClick={onClose}>
-                    Close
+                <Button variant="secondary" size="lg" onClick={onClose}>
+                  Cancel
+                </Button>
+                {activeTab === "unconsume" ? (
+                  <Button
+                    variant="destructive"
+                    size="lg"
+                    onClick={
+                      trackingType === "Serial"
+                        ? handleUnconsumeSerial
+                        : handleUnconsumeBatch
+                    }
+                    isLoading={unconsumeFetcher.state !== "idle"}
+                    isDisabled={
+                      unconsumeFetcher.state !== "idle" ||
+                      (trackingType === "Serial"
+                        ? selectedTrackedInputs.length === 0
+                        : !unconsumedBatches.some((batch) => batch.id))
+                    }
+                  >
+                    Unconsume
                   </Button>
                 ) : (
-                  <>
-                    <Button variant="secondary" size="lg" onClick={onClose}>
-                      Cancel
-                    </Button>
-                    {activeTab === "unconsume" ? (
-                      <Button
-                        variant="destructive"
-                        size="lg"
-                        onClick={
-                          trackingType === "Serial"
-                            ? handleUnconsumeSerial
-                            : handleUnconsumeBatch
-                        }
-                        isLoading={unconsumeFetcher.state !== "idle"}
-                        isDisabled={
-                          unconsumeFetcher.state !== "idle" ||
-                          (trackingType === "Serial"
-                            ? selectedTrackedInputs.length === 0
-                            : !unconsumedBatches.some((batch) => batch.id))
-                        }
-                      >
-                        Unconsume
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        onClick={
-                          trackingType === "Serial"
-                            ? handleSubmitSerial
-                            : handleSubmitBatch
-                        }
-                        isLoading={fetcher.state !== "idle"}
-                        isDisabled={
-                          fetcher.state !== "idle" ||
-                          !selectedItemId ||
-                          isLoadingItem
-                        }
-                      >
-                        Issue
-                      </Button>
-                    )}
-                  </>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={
+                      trackingType === "Serial"
+                        ? handleSubmitSerial
+                        : handleSubmitBatch
+                    }
+                    isLoading={fetcher.state !== "idle"}
+                    isDisabled={
+                      fetcher.state !== "idle" ||
+                      !selectedItemId ||
+                      isLoadingItem
+                    }
+                  >
+                    Issue
+                  </Button>
                 )}
               </ModalFooter>
             </>
           )}
-
-          {/* Footer for split entities result */}
-          {splitEntitiesResult.length > 0 && (
-            <ModalFooter>
-              <Button variant="primary" size="lg" onClick={onClose}>
-                Close
-              </Button>
-            </ModalFooter>
-          )}
         </ModalContent>
       </Modal>
-
-      {/* Sub-modals for batch splitting */}
-      {convertDisclosure.isOpen && (
-        <ConvertSplitModal
-          trackedEntity={trackedEntity}
-          itemType={material?.itemType ?? "Part"}
-          onCancel={() => {
-            convertDisclosure.onClose();
-            setTrackedEntity(null);
-          }}
-          onSuccess={(convertedEntity) => {
-            setSplitEntitiesResult((prev) =>
-              prev.map((entity) =>
-                entity.newId === convertedEntity.trackedEntityId
-                  ? {
-                      ...entity,
-                      readableId: convertedEntity.readableId,
-                      quantity: convertedEntity.quantity
-                    }
-                  : entity
-              )
-            );
-            convertDisclosure.onClose();
-            setTrackedEntity(null);
-          }}
-        />
-      )}
-      {scrapDisclosure.isOpen && (
-        <ScrapSplitModal
-          materialId={material?.id!}
-          parentTrackedEntityId={parentId ?? ""}
-          trackedEntity={trackedEntity}
-          onCancel={() => {
-            scrapDisclosure.onClose();
-            setTrackedEntity(null);
-          }}
-          onSuccess={() => {
-            scrapDisclosure.onClose();
-            setTrackedEntity(null);
-            onClose();
-          }}
+      {scrapEntityTarget && (
+        <ScrapEntityModal
+          materialId={material?.id ?? ""}
+          trackedEntityId={scrapEntityTarget.id}
+          readableId={scrapEntityTarget.readableId}
+          parentId={parentId}
+          isMakeToOrder={material?.methodType === "Make to Order"}
+          onClose={() => setScrapEntityTarget(null)}
         />
       )}
     </>
   );
 }
 
-// Sub-modal for converting split batch entities
-function ConvertSplitModal({
-  trackedEntity,
-  itemType,
-  onCancel,
-  onSuccess
-}: {
-  trackedEntity: string | null;
-  itemType: string | null;
-  onCancel: () => void;
-  onSuccess: (convertedEntity: {
-    trackedEntityId: string;
-    readableId: string;
-    quantity: number;
-  }) => void;
-}) {
-  const fetcher = useFetcher<{
-    success: boolean;
-    message: string;
-    convertedEntity?: {
-      trackedEntityId: string;
-      readableId: string;
-      quantity: number;
-    };
-  }>();
-
-  useEffect(() => {
-    if (fetcher.data?.success && fetcher.data.convertedEntity) {
-      toast.success("Entity converted successfully");
-      onSuccess(fetcher.data.convertedEntity);
-    } else if (fetcher.data?.success === false) {
-      toast.error(fetcher.data.message || "Failed to convert entity");
-    }
-  }, [fetcher.data, onSuccess]);
-
-  if (!trackedEntity) return null;
-
-  return (
-    <Modal open onOpenChange={onCancel}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            Convert to New {itemType === "Material" ? "Size" : "Revision"}
-          </ModalTitle>
-          <ModalDescription>
-            Convert this tracked entity into a quantity of 1 of a new size.
-          </ModalDescription>
-        </ModalHeader>
-        <ValidatedForm
-          method="post"
-          action={path.to.convertEntity(trackedEntity)}
-          defaultValues={{
-            trackedEntityId: trackedEntity,
-            newRevision: "",
-            quantity: 1
-          }}
-          validator={convertEntityValidator}
-          fetcher={fetcher}
-        >
-          <Hidden name="trackedEntityId" />
-          <ModalBody>
-            <div className="flex flex-col gap-4">
-              <FormInput
-                name="newRevision"
-                label={`New ${itemType === "Material" ? "Size" : "Revision"}`}
-                autoFocus
-              />
-              <FormNumberInput
-                name="quantity"
-                label="Quantity"
-                minValue={0.001}
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" size="lg" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              type="submit"
-              size="lg"
-              variant="primary"
-            >
-              Convert
-            </Button>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
-  );
-}
-
-// Sub-modal for scrapping split batch entities
-function ScrapSplitModal({
-  materialId,
-  parentTrackedEntityId,
-  trackedEntity,
-  onCancel,
-  onSuccess
-}: {
-  materialId: string;
-  parentTrackedEntityId: string;
-  trackedEntity: string | null;
-  onCancel: () => void;
-  onSuccess: () => void;
-}) {
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onSuccess();
-    }
-  }, [fetcher.data?.success, onSuccess]);
-
-  if (!trackedEntity) return null;
-
-  return (
-    <Modal open onOpenChange={onCancel}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>Are you sure you want to scrap this batch?</ModalTitle>
-          <ModalDescription>
-            The remaining quantity will be removed from inventory and issued to
-            the job
-          </ModalDescription>
-        </ModalHeader>
-        <ModalFooter>
-          <Button variant="secondary" size="lg" onClick={onCancel}>
-            Cancel
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.scrapEntity(
-              materialId,
-              trackedEntity,
-              parentTrackedEntityId
-            )}
-          >
-            <Button
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              type="submit"
-              size="lg"
-              variant="destructive"
-            >
-              Scrap
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
-  );
-}
-
-// Hook for fetching serial numbers
 function useSerialNumbers(itemId?: string) {
   const serialNumbersFetcher =
     useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();

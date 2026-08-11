@@ -11,6 +11,9 @@ import {
   DrawerTitle,
   HStack,
   Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -23,7 +26,7 @@ import {
   LuSettings
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
-import { EmployeeAvatar, Empty } from "~/components";
+import { DateTime, EmployeeAvatar, Empty } from "~/components";
 import {
   UpgradeOverlayActions,
   UpgradeOverlayContent,
@@ -33,8 +36,9 @@ import {
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton
 } from "~/components/UpgradeOverlay";
-import { useDateFormatter, usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
+import { isEmptyDiffValue } from "./utils";
 
 type AuditLogDrawerProps = {
   isOpen: boolean;
@@ -234,7 +238,6 @@ type AuditLogEntryCardProps = {
 };
 
 const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
-  const { formatDateTime } = useDateFormatter();
   const opInfo = operationLabels[entry.operation] ?? {
     label: entry.operation,
     variant: "secondary" as const,
@@ -265,7 +268,7 @@ const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
               entry.actorId && "pl-8"
             )}
           >
-            {formatDateTime(entry.createdAt)}
+            <DateTime value={entry.createdAt} variant="absolute" />
           </span>
         </VStack>
         <VStack spacing={1} className="items-end">
@@ -344,6 +347,19 @@ function humanizeColumnKey(key: string, hasSnapshot: boolean): string {
     .trim();
 }
 
+// Raw "oldId → newId" transition for a multi-column snapshot header, or
+// undefined when neither side is a string id.
+function formatIdTransition(
+  change: import("@carbon/database/audit.types").AuditDiffEntry
+): string | undefined {
+  if (typeof change.old !== "string" && typeof change.new !== "string") {
+    return undefined;
+  }
+  const oldId = typeof change.old === "string" ? change.old : "—";
+  const newId = typeof change.new === "string" ? change.new : "—";
+  return `${oldId} → ${newId}`;
+}
+
 // Pick the snapshot value for a given snapshot column from old or new sides.
 function snapshotValue(
   snapshot: Record<string, unknown> | undefined,
@@ -352,10 +368,31 @@ function snapshotValue(
   return snapshot && col in snapshot ? snapshot[col] : undefined;
 }
 
+// Wraps children in a styled tooltip carrying the raw id(s) — the forensic
+// anchor behind a resolved display name. Instant-ish (root provider sets a
+// 200ms delay), unlike the native `title` attribute which needs a ~1s
+// motionless hover.
+function IdTooltip({
+  id,
+  children
+}: {
+  id: string;
+  children: React.ReactElement;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>
+        <span className="font-mono text-xs">{id}</span>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 // Linear-style pill: when a display value is present, show that as primary
-// sans-serif text and stash the underlying raw value on the title attribute
-// (hover to inspect). When no display value is supplied, fall back to
-// mono-rendering the raw value — appropriate for IDs, booleans, numbers.
+// sans-serif text with the underlying raw value in a hover tooltip. When no
+// display value is supplied, fall back to mono-rendering the raw value —
+// appropriate for IDs, booleans, numbers.
 function ChangePill({
   value,
   display,
@@ -365,7 +402,18 @@ function ChangePill({
   display?: unknown;
   variant: "old" | "new";
 }) {
-  const hasDisplay = display !== undefined && display !== null;
+  // An empty-string display (e.g. a snapshot row whose name is blank) is no
+  // display at all — fall through so an empty value renders the "Empty" pill
+  // rather than a blank colored one.
+  const hasDisplay =
+    display !== undefined && display !== null && display !== "";
+  if (!hasDisplay && isEmptyDiffValue(value)) {
+    return (
+      <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground italic">
+        <Trans>Empty</Trans>
+      </span>
+    );
+  }
   const text = hasDisplay ? formatValue(display) : formatValue(value);
   const className = cn(
     "px-2 py-0.5 rounded",
@@ -375,11 +423,9 @@ function ChangePill({
       : "bg-green-500/10 text-green-500"
   );
   const tooltip = hasDisplay && typeof value === "string" ? value : undefined;
-  return (
-    <span className={className} title={tooltip}>
-      {text}
-    </span>
-  );
+  const pill = <span className={className}>{text}</span>;
+  if (!tooltip) return pill;
+  return <IdTooltip id={tooltip}>{pill}</IdTooltip>;
 }
 
 // One labeled side-by-side row: "label  [old]  →  [new]". Used for both
@@ -427,7 +473,7 @@ function ChangeLine({
 //   • multi-key snap    → humanized FK header + indented sub-rows per
 //                         snapshot column, with the raw id shown last as a
 //                         muted forensic anchor
-function ChangeRow({
+export function ChangeRow({
   columnKey,
   change
 }: {
@@ -468,22 +514,15 @@ function ChangeRow({
   // the raw FK id is demoted to a hover tooltip on the section header —
   // Linear-style. Power users still see the id transition without crowding
   // the visual flow.
-  const idTooltip = ((): string | undefined => {
-    if (typeof change.old !== "string" && typeof change.new !== "string") {
-      return undefined;
-    }
-    const oldId = typeof change.old === "string" ? change.old : "—";
-    const newId = typeof change.new === "string" ? change.new : "—";
-    return `${oldId} → ${newId}`;
-  })();
+  const idTooltip = formatIdTransition(change);
+  const header = (
+    <div className="text-sm text-muted-foreground font-medium w-fit">
+      {label}
+    </div>
+  );
   return (
     <div className="py-1">
-      <div
-        className="text-sm text-muted-foreground font-medium"
-        title={idTooltip}
-      >
-        {label}
-      </div>
+      {idTooltip ? <IdTooltip id={idTooltip}>{header}</IdTooltip> : header}
       <div className="space-y-1 mt-1">
         {Array.from(snapKeys).map((col) => (
           <ChangeLine

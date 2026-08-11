@@ -40,14 +40,13 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
-import { EmployeeAvatar } from "~/components";
+import { DateTime, EmployeeAvatar } from "~/components";
 import { useAuditLog } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
 import { ConfirmDelete } from "~/components/Modals";
 import {
-  useDateFormatter,
   usePermissions,
   useRouteData,
   useSupplierApprovalRequired,
@@ -66,7 +65,6 @@ const SupplierHeader = () => {
   if (!supplierId) throw new Error("Could not find supplierId");
   const fetcher = useFetcher<typeof action>();
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const requestApprovalFetcher = useFetcher();
   const permissions = usePermissions();
   const { company } = useUser();
@@ -300,7 +298,10 @@ const SupplierHeader = () => {
                         <Trans>Approval Date</Trans>
                       </CardAttributeLabel>
                       <CardAttributeValue>
-                        {formatDate(routeData.decision.decisionAt)}
+                        <DateTime
+                          value={routeData.decision.decisionAt}
+                          variant="date"
+                        />
                       </CardAttributeValue>
                     </CardAttribute>
                   </>
@@ -323,7 +324,10 @@ const SupplierHeader = () => {
                         <Trans>Rejected Date</Trans>
                       </CardAttributeLabel>
                       <CardAttributeValue>
-                        {formatDate(routeData.decision.decisionAt)}
+                        <DateTime
+                          value={routeData.decision.decisionAt}
+                          variant="date"
+                        />
                       </CardAttributeValue>
                     </CardAttribute>
                   </>

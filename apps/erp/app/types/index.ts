@@ -89,6 +89,8 @@ export type Route<T = {}> = T & {
   }[];
   q?: string; // TODO: this is dumb
   table?: string;
+  /** When present, overrides the default pathname-includes active check. */
+  isActive?: (pathname: string) => boolean;
 };
 
 export type RouteGroup<T = {}> = {

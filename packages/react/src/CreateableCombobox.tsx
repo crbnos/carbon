@@ -89,10 +89,9 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
 
       return [labelText, selectedOption.helper].filter(Boolean).join(" - ");
     }, [selectedOption]);
-    const dropdownContentWidthCh = useMemo(() => {
-      if (options.length === 0) return undefined;
-
-      const maxOptionChars = options.reduce((longest, option) => {
+    // Real-text sizer instead of a ch estimate — see Combobox.tsx.
+    const longestOptionText = useMemo(() => {
+      return options.reduce((longest, option) => {
         const labelText =
           typeof option.label === "string"
             ? option.label
@@ -101,10 +100,8 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           .filter(Boolean)
           .join(" ");
 
-        return Math.max(longest, combined.length);
-      }, 0);
-
-      return Math.min(72, Math.max(36, maxOptionChars + 8));
+        return combined.length > longest.length ? combined : longest;
+      }, "");
     }, [options]);
 
     return (
@@ -173,21 +170,22 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
             className={cn(
-              "max-w-[min(560px,calc(100vw-2rem))] p-1",
+              "w-auto max-w-[min(560px,calc(100vw-2rem))] p-1",
               // Inline mode's trigger is a small icon button, so falling back to
               // the trigger width collapses the popover. Floor it to a usable width.
               inline
                 ? "min-w-[220px]"
-                : "min-w-[var(--radix-popover-trigger-width)]"
+                : "min-w-[max(var(--radix-popover-trigger-width),14rem)]"
             )}
-            style={{
-              width: dropdownContentWidthCh
-                ? `min(560px, max(var(--radix-popover-trigger-width), ${dropdownContentWidthCh}ch))`
-                : inline
-                  ? "240px"
-                  : "var(--radix-popover-trigger-width)"
-            }}
           >
+            {/* Zero-height sizer: the widest option, so the auto width fits it
+                even when virtualization keeps it unrendered. */}
+            <div
+              aria-hidden
+              className="invisible h-0 overflow-hidden whitespace-nowrap px-8 text-sm"
+            >
+              {longestOptionText}
+            </div>
             {emptyMessage && options.length === 0 ? (
               emptyMessage
             ) : (
@@ -288,7 +286,7 @@ function VirtualizedCommand({
     count: filteredOptions.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => itemHeight,
-    overscan: 5
+    overscan: 12
   });
 
   const items = virtualizer.getVirtualItems();

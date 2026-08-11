@@ -372,6 +372,9 @@ export default function useUserSelect(props: UserSelectProps) {
 
   useOutsideClick({
     ref: containerRef,
+    // The canvas never lets the mouseup out, so waiting for the release would
+    // strand this open. Elsewhere keep the default close-on-release.
+    immediate: innerProps.insideCanvas === true,
     handler: () => {
       clear();
       commit();

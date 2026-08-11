@@ -15,10 +15,13 @@ const taskToEvent = {
   "company-restore": "carbon/company-restore",
   "company-restore-finalize": "carbon/company-restore-finalize",
   "company-restore-revert": "carbon/company-restore-revert",
+  "generate-maintenance": "carbon/generate-maintenance",
   "model-thumbnail": "carbon/model-thumbnail",
   "model-optimize": "carbon/model-optimize",
   notify: "carbon/notify",
   onboard: "carbon/onboard",
+  "onshape-backfill": "carbon/onshape-backfill",
+  "onshape-revision-sync": "carbon/onshape-revision-sync",
   "paperless-parts": "carbon/paperless-parts",
   "post-transactions": "carbon/post-transaction",
   "print-job-deliver": "carbon/print-job-deliver",
@@ -36,7 +39,9 @@ const taskToEvent = {
   "sync-issue-from-linear": "carbon/linear-sync",
   "update-permissions": "carbon/update-permissions",
   "user-admin": "carbon/user-admin",
-  "extract-document": "carbon/extract-document"
+  "extract-document": "carbon/extract-document",
+  "workflow-moment": "carbon/workflow-moment.raised",
+  "workflow-scheduler-wake": "carbon/workflow-scheduler.wake"
 } as const;
 
 type TaskMap = typeof taskToEvent;
@@ -58,11 +63,16 @@ type TaskPayloads = {
  */
 export async function trigger<T extends keyof TaskPayloads>(
   taskId: T,
-  payload: TaskPayloads[T]
+  payload: TaskPayloads[T],
+  options?: { id?: string }
 ) {
   const eventName = taskToEvent[taskId];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return inngest.send({ data: payload, name: eventName } as any);
+  return inngest.send({
+    data: payload,
+    name: eventName,
+    ...(options?.id ? { id: options.id } : {})
+  } as any);
 }
 
 /**

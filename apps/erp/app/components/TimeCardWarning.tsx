@@ -14,10 +14,10 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
+import { DateTime } from "./DateTime";
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
@@ -32,7 +32,6 @@ type TimeCardWarningProps = {
 
 export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
   const { t } = useLingui();
-  const { locale } = useLocale();
   const [showClockWarning, setShowClockWarning] = useState(false);
   const [editClockOut, setEditClockOut] = useState("");
   const fetcher = useFetcher();
@@ -120,9 +119,9 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
               <p className="text-sm text-muted-foreground">
                 <Trans>
                   You clocked in at{" "}
-                  {new Date(openClockEntry.clockIn).toLocaleString(locale)}. You
-                  can edit your clock-out time below or acknowledge that you're
-                  still working.
+                  <DateTime value={openClockEntry.clockIn} variant="absolute" />
+                  . You can edit your clock-out time below or acknowledge that
+                  you're still working.
                 </Trans>
               </p>
               <div className="flex flex-col gap-2">

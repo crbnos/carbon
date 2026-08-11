@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
@@ -26,12 +26,10 @@ const payloadValidator = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   const payload = await req.json();
-  const today = format(new Date(), "yyyy-MM-dd");
 
   try {
     const { type, paymentId, userId, companyId } =
@@ -44,6 +42,7 @@ serve(async (req: Request) => {
       req.headers.get("carbon-key") ?? "",
       companyId
     );
+    const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
     const accountingSettings = await client
       .from("companySettings")
@@ -86,7 +85,7 @@ serve(async (req: Request) => {
       }
 
       const accountingPeriodId = accountingEnabled
-        ? await getCurrentAccountingPeriod(client, companyId, db)
+        ? await getCurrentAccountingPeriod(client, companyId, db, today)
         : null;
 
       await db.transaction().execute(async (trx) => {
@@ -206,9 +205,7 @@ serve(async (req: Request) => {
           .execute();
       });
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true });
     }
 
     // --------------------------------------------------------------
@@ -292,7 +289,7 @@ serve(async (req: Request) => {
     // Build journal lines (in base currency)
     // --------------------------------------------------------------
     const accountingPeriodId = accountingEnabled
-      ? await getCurrentAccountingPeriod(client, companyId, db)
+      ? await getCurrentAccountingPeriod(client, companyId, db, today)
       : null;
 
     const journalLineInserts: PaymentJournalLine[] = [];
@@ -791,21 +788,8 @@ serve(async (req: Request) => {
       createdJournalId = journalId;
     });
 
-    return new Response(
-      JSON.stringify({ success: true, journalId: createdJournalId }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonResponse({ success: true, journalId: createdJournalId });
   } catch (err) {
-    console.error(err);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: err instanceof Error ? err.message : String(err),
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
-    );
+    return errorResponse(err, 500);
   }
 });

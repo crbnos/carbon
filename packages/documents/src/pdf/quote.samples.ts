@@ -12,7 +12,8 @@ export const SAMPLE_QUOTE = {
     logoLight: null,
     logoLightIcon: null,
     logoWatermark: null,
-    eori: null
+    eori: null,
+    registrationNumber: null
   },
   exchangeRate: 1,
   quote: {
