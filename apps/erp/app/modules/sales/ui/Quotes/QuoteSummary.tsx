@@ -25,13 +25,8 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { CustomerAvatar } from "~/components";
-import {
-  useDateFormatter,
-  usePercentFormatter,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { CustomerAvatar, DateTime } from "~/components";
+import { usePercentFormatter, useRouteData, useUser } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
 import type {
@@ -116,9 +111,16 @@ const LineItems = ({
           if (!line.id) {
             return acc;
           }
+          // Scope to the breaks the line still offers — a removed break can
+          // leave an orphaned price row behind.
           acc[line.id!] =
             routeData?.prices
-              ?.filter((p) => p.quoteLineId === line.id)
+              ?.filter(
+                (p) =>
+                  p.quoteLineId === line.id &&
+                  Array.isArray(line.quantity) &&
+                  line.quantity.includes(p.quantity)
+              )
               .sort((a, b) => a.quantity - b.quantity) ?? [];
           return acc;
         },
@@ -672,7 +674,6 @@ const QuoteSummary = ({
 }) => {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quote id");
-  const { formatDate } = useDateFormatter();
   const routeData = useRouteData<{
     quote: Quotation;
     lines: QuotationLine[];
@@ -861,7 +862,11 @@ const QuoteSummary = ({
             <CustomerAvatar customerId={routeData?.quote.customerId ?? null} />
             {routeData?.quote?.expirationDate && (
               <span className="text-xs text-muted-foreground tracking-tight">
-                Expires {formatDate(routeData?.quote.expirationDate)}
+                Expires{" "}
+                <DateTime
+                  value={routeData?.quote.expirationDate}
+                  variant="date"
+                />
               </span>
             )}
           </div>

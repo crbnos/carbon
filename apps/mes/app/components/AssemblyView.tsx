@@ -50,7 +50,6 @@ import type {
 } from "@carbon/viewer";
 import { AssemblyPlayer } from "@carbon/viewer";
 import { ModelPreview } from "@carbon/viewer/model-preview";
-import { getLocalTimeZone } from "@internationalized/date";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBox,
@@ -1128,7 +1127,6 @@ export function AssemblyView({
     ) {
       const fd = new FormData();
       fd.set("jobOperationId", operation.id);
-      fd.set("timezone", getLocalTimeZone());
       fd.set("type", "Labor");
       fd.set("action", "Start");
       // Recording the first step means hands-on build has begun: end any open
@@ -1163,7 +1161,6 @@ export function AssemblyView({
     ) {
       const fd = new FormData();
       fd.set("jobOperationId", operation.id);
-      fd.set("timezone", getLocalTimeZone());
       fd.set("type", "Labor");
       fd.set("action", "End");
       fd.set("id", openLaborEvent.id);
@@ -2310,6 +2307,7 @@ export function AssemblyView({
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}
           trackedEntityId={currentEntity?.id ?? ""}
+          trackedEntityReadableId={currentEntity?.readableId ?? undefined}
           setupProductionEvent={openByType("Setup")}
           laborProductionEvent={openByType("Labor")}
           machineProductionEvent={openByType("Machine")}
@@ -2552,7 +2550,6 @@ function AutoTimer({
     if (running || busy) return;
     const fd = new FormData();
     fd.set("jobOperationId", operationId);
-    fd.set("timezone", getLocalTimeZone());
     fd.set("type", workType);
     fd.set("action", "Start");
     fd.set("exclusive", "true");
@@ -2626,7 +2623,6 @@ function TimerControl({
       className="h-full shrink-0"
     >
       <input type="hidden" name="jobOperationId" value={operation.id} />
-      <input type="hidden" name="timezone" value={getLocalTimeZone()} />
       <input type="hidden" name="type" value={workType} />
       {/* Single-phase clocking: starting this type ends any other open type. */}
       <input type="hidden" name="exclusive" value="true" />
@@ -3045,7 +3041,11 @@ function UnitNavigator({
 }: {
   units: {
     index: number;
-    entity: { id: string; readableId?: string | null } | null;
+    entity: {
+      id: string;
+      readableId?: string | null;
+      status?: string | null;
+    } | null;
   }[];
   currentUnitIndex: number;
   // Highest unit index the operator may open. For a serial parent this is the last
@@ -3111,9 +3111,12 @@ function UnitNavigator({
           const isCurrent = u.index === currentUnitIndex;
           const bad = unitHasBadResult(u.index);
           const recorded = unitIsRecorded(u.index);
+          // A scrapped serial is terminal — it can't be worked or selected; show
+          // it muted with a Scrapped marker instead.
+          const isScrapped = u.entity?.status === "Scrapped";
           // A serial unit with no minted serial yet can't be opened (nothing to
           // scan or complete against). Show it as a disabled placeholder.
-          const navigable = isNavigable(u);
+          const navigable = isNavigable(u) && !isScrapped;
           return (
             <button
               key={u.index}
@@ -3121,7 +3124,13 @@ function UnitNavigator({
               ref={isCurrent ? currentRef : undefined}
               aria-pressed={isCurrent}
               disabled={!navigable}
-              title={navigable ? undefined : "Not started yet"}
+              title={
+                isScrapped
+                  ? "Scrapped"
+                  : navigable
+                    ? undefined
+                    : "Not started yet"
+              }
               onClick={() => onSelectUnit(u.index)}
               className={cn(
                 "flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
@@ -3130,13 +3139,14 @@ function UnitNavigator({
                   : navigable
                     ? "text-muted-foreground hover:bg-muted/60"
                     : "cursor-not-allowed text-muted-foreground/40",
-                bad && "text-red-500"
+                bad && "text-red-500",
+                isScrapped && "opacity-50"
               )}
             >
               <span
                 className={cn(
                   "size-1.5 shrink-0 rounded-full",
-                  bad
+                  bad || isScrapped
                     ? "bg-red-500"
                     : recorded
                       ? "bg-emerald-500"
@@ -3146,7 +3156,12 @@ function UnitNavigator({
               {isEntityLabel(u) && u.entity ? (
                 u.entity.readableId ? (
                   <span className="flex min-w-0 flex-col">
-                    <span className="truncate font-medium">
+                    <span
+                      className={cn(
+                        "truncate font-medium",
+                        isScrapped && "line-through"
+                      )}
+                    >
                       {u.entity.readableId}
                     </span>
                     <span className="truncate font-mono text-[10px] text-muted-foreground">
@@ -3154,12 +3169,22 @@ function UnitNavigator({
                     </span>
                   </span>
                 ) : (
-                  <span className="truncate font-mono">
+                  <span
+                    className={cn(
+                      "truncate font-mono",
+                      isScrapped && "line-through"
+                    )}
+                  >
                     {u.entity.id.slice(0, 8)}
                   </span>
                 )
               ) : (
                 <span className="truncate">{`Unit ${u.index + 1}`}</span>
+              )}
+              {isScrapped && (
+                <span className="ml-auto shrink-0 text-[10px] font-semibold uppercase tracking-wide text-red-500">
+                  Scrapped
+                </span>
               )}
             </button>
           );

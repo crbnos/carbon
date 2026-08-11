@@ -642,7 +642,10 @@ export const auditConfig = {
     customerItemPriceOverride: "Price Override",
     customerItemPriceOverrideBreak: "Quantity Break",
     fixedAsset: "Fixed Asset",
-    accountingPeriod: "Accounting Period"
+    accountingPeriod: "Accounting Period",
+    group: "Group",
+    location: "Location",
+    user: "User"
   } satisfies Partial<Record<TableName, string>>,
 
   /** Fields to skip in diff computation */

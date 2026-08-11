@@ -18,7 +18,7 @@ import {
 type Entry = {
   label: string;
   color: string;
-  shape: "circle" | "diamond";
+  shape: "circle" | "diamond" | "stack";
   icon: IconType;
 };
 
@@ -30,15 +30,23 @@ const ENTITY_DISPLAY_ORDER: EntityStatus[] = [
   "Rejected"
 ];
 
-const ENTITY_ENTRIES: Entry[] = ENTITY_DISPLAY_ORDER.map((status) => {
-  const meta = ENTITY_STATUS_META[status];
-  return {
-    label: meta.label,
-    color: meta.color,
-    shape: "circle",
-    icon: meta.icon
-  };
-});
+const ENTITY_ENTRIES: Entry[] = [
+  ...ENTITY_DISPLAY_ORDER.map<Entry>((status) => {
+    const meta = ENTITY_STATUS_META[status];
+    return {
+      label: meta.label,
+      color: meta.color,
+      shape: "circle",
+      icon: meta.icon
+    };
+  }),
+  {
+    label: "Serial group",
+    color: ENTITY_STATUS_META.Available.color,
+    shape: "stack",
+    icon: ENTITY_STATUS_META.Available.icon
+  }
+];
 
 const ACTIVITY_ENTRIES: Entry[] = (
   Object.keys(ACTIVITY_KIND_META) as ActivityKind[]
@@ -167,10 +175,30 @@ function Row({ entry }: { entry: Entry }) {
   return (
     <HStack spacing={3} className="items-center">
       <div className="relative w-6 h-6 flex items-center justify-center shrink-0">
+        {entry.shape === "stack" && (
+          <>
+            <div
+              className="absolute inset-0 rounded-full ring-1 ring-background"
+              style={{
+                background: entry.color,
+                opacity: 0.3,
+                transform: "translate(4px, -4px)"
+              }}
+            />
+            <div
+              className="absolute inset-0 rounded-full ring-1 ring-background"
+              style={{
+                background: entry.color,
+                opacity: 0.55,
+                transform: "translate(2px, -2px)"
+              }}
+            />
+          </>
+        )}
         <div
           className={cn(
             "absolute inset-0",
-            entry.shape === "circle" ? "rounded-full" : "rounded"
+            entry.shape === "diamond" ? "rounded" : "rounded-full"
           )}
           style={{
             background: entry.color,

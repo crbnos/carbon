@@ -21,6 +21,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   New,
@@ -29,12 +30,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useDateFormatter,
-  usePermissions,
-  useRouteData,
-  useUrlParams
-} from "~/hooks";
+import { usePermissions, useRouteData, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
 import type { ListItem } from "~/types";
@@ -63,7 +59,6 @@ const GaugeCalibrationRecordsTable = memo(
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
-    const { formatDate } = useDateFormatter();
     const permissions = usePermissions();
     const deleteDisclosure = useDisclosure();
     const [selectedGaugeCalibrationRecord, setSelectedGaugeCalibrationRecord] =
@@ -116,7 +111,9 @@ const GaugeCalibrationRecordsTable = memo(
         {
           accessorKey: "dateCalibrated",
           header: t`Date Calibrated`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -295,7 +292,9 @@ const GaugeCalibrationRecordsTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuFileText />
           }
@@ -320,7 +319,9 @@ const GaugeCalibrationRecordsTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuFileText />
           }
@@ -334,8 +335,7 @@ const GaugeCalibrationRecordsTable = memo(
       suppliers,
       temperatureFormatter,
       types,
-      t,
-      formatDate
+      t
     ]);
 
     const renderContextMenu = useCallback(

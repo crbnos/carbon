@@ -18,6 +18,7 @@ import * as salesFunctions from "~/modules/sales/sales.service";
 import * as settingsFunctions from "~/modules/settings/settings.service";
 import * as sharedFunctions from "~/modules/shared/shared.service";
 import * as usersFunctions from "~/modules/users/users.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { isMcpBlockedTool } from "./mcp-blocked-tools";
 import toolMetadata from "./tool-metadata.json";
 import type { AuthField } from "./types";
@@ -149,6 +150,8 @@ export async function executeFunction(
     for (const paramName of paramNames) {
       if (paramName === "client") {
         functionArgs.push(context.client);
+      } else if (paramName === "db") {
+        functionArgs.push(getDatabaseClient());
       } else if (paramName === "userId") {
         functionArgs.push(context.userId);
       } else if (paramName === "companyId") {

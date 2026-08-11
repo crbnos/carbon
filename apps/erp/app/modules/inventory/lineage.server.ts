@@ -26,7 +26,11 @@ export type LineagePayload = {
   containments?: IssueContainment[];
 };
 
-const MAX_ENTITIES = 200;
+// The graph collapses identical serial siblings into group nodes, so a large
+// serial fan no longer costs a node each — the ceiling can afford whole jobs.
+// The BFS must stay COMPLETE up to it: cluster signatures are computed from
+// the full edge set, and a truncated frontier would split a group in two.
+const MAX_ENTITIES = 500;
 
 type LineageState = {
   entities: Map<string, TrackedEntity>;

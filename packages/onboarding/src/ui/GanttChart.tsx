@@ -1,6 +1,11 @@
-import { cn } from "@carbon/react";
+import { cn, DateTime } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { formatDate, resolveTimeline, type TimelineBar } from "../logic";
+import {
+  formatDate,
+  resolveTimeline,
+  type TimelineBar,
+  toISODate
+} from "../logic";
 import type { StepDef } from "../types";
 import { useCanEdit, useFieldMap } from "./state";
 
@@ -154,7 +159,11 @@ function GateLegendRow({ bar }: { bar: TimelineBar }) {
       </span>
       {bar.gateDate ? (
         <span className="shrink-0 text-[11px] font-medium text-muted-foreground tabular-nums">
-          {formatDate(bar.gateDate)}
+          <DateTime
+            value={toISODate(bar.gateDate)}
+            variant="date"
+            dateOptions={{ month: "short", day: "numeric" }}
+          />
         </span>
       ) : null}
     </div>

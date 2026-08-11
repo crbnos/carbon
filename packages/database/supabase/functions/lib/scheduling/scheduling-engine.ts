@@ -648,6 +648,13 @@ export class SchedulingEngine {
     for (const op of this.scheduledOperations.values()) {
       const originalOp = this.operations.find((o) => o.id === op.id);
       const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
+      // Never clobber a work center the user (or method) already set.
+      // Auto-selection may only fill null/empty work centers.
+      const originalWorkCenterId = originalOp?.workCenterId;
+      const workCenterId =
+        originalWorkCenterId != null && originalWorkCenterId !== ""
+          ? originalWorkCenterId
+          : op.workCenterId;
 
       if (isManuallyScheduled) {
         await this.db
@@ -655,7 +662,7 @@ export class SchedulingEngine {
           .set({
             startDate: op.startDate,
             priority: op.priority ?? undefined,
-            workCenterId: op.workCenterId,
+            workCenterId,
             hasConflict: op.hasConflict,
             conflictReason: op.conflictReason,
             updatedAt: new Date().toISOString(),
@@ -670,7 +677,7 @@ export class SchedulingEngine {
             startDate: op.startDate,
             dueDate: op.dueDate,
             priority: op.priority ?? undefined,
-            workCenterId: op.workCenterId,
+            workCenterId,
             hasConflict: op.hasConflict,
             conflictReason: op.conflictReason,
             updatedAt: new Date().toISOString(),

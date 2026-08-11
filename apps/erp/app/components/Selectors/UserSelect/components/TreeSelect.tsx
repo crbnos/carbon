@@ -12,7 +12,7 @@ const UserTreeSelect = () => {
   const {
     aria: { listBoxProps },
     viewModel,
-    innerProps: { isMulti },
+    innerProps: { isMulti, insideCanvas },
     loading,
     loadMore,
     onMouseOver,
@@ -26,6 +26,9 @@ const UserTreeSelect = () => {
       aria-multiselectable={isMulti}
       ref={listBoxRef}
       onMouseOver={onMouseOver}
+      // The canvas zooms on wheel, so this list would never scroll inside it.
+      onWheel={insideCanvas ? (e) => e.stopPropagation() : undefined}
+      onTouchMove={insideCanvas ? (e) => e.stopPropagation() : undefined}
       className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-h-[300px] my-1 flex flex-col gap-1"
     >
       {loading ? (

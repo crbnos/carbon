@@ -114,7 +114,8 @@
     "./ErrorBoundary": "./src/ErrorBoundary/index.ts",
     "./FunnelChart": "./src/FunnelChart.tsx",
     "./HTML": "./src/HTML.tsx",
-    "./RichText": "./src/RichText/index.ts"
+    "./RichText": "./src/RichText/index.ts",
+    "./VariableText": "./src/VariableText/index.ts"
   },
   "peerDependencies": {
     "@internationalized/date": "catalog:",

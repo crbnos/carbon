@@ -328,11 +328,11 @@ export async function getInspectionOutcomeState(
     0
   );
 
+  // Scrap no longer counts toward targetQuantity (20260807090629), so a
+  // scrapped unit doesn't reduce remaining good work.
   const opTarget = operation.targetQuantity ?? operation.operationQuantity ?? 0;
   const opAccounted =
-    (operation.quantityComplete ?? 0) +
-    (operation.quantityScrapped ?? 0) +
-    (operation.quantityReworked ?? 0);
+    (operation.quantityComplete ?? 0) + (operation.quantityReworked ?? 0);
   const opRemaining = Math.max(0, opTarget - opAccounted);
 
   const entities = (trackedEntities?.data ?? []).map((e) => ({

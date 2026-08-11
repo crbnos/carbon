@@ -18,8 +18,8 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
-import { Empty, Hyperlink } from "~/components";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { DateTime, Empty, Hyperlink } from "~/components";
+import { usePermissions } from "~/hooks";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import { path } from "~/utils/path";
 import type {
@@ -41,7 +41,6 @@ export function SalesOrderLineShipments({
   shipments
 }: SalesOrderLineShipmentsProps) {
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
   const { orderId, lineId } = useParams();
   if (!orderId) throw new Error("orderId not found");
   if (!lineId) throw new Error("lineId not found");
@@ -126,7 +125,10 @@ export function SalesOrderLineShipments({
                       </HStack>
                     </Td>
                     <Td>
-                      {formatDate(groupedShipments[0].shipment.createdAt)}
+                      <DateTime
+                        value={groupedShipments[0].shipment.createdAt}
+                        variant="date"
+                      />
                     </Td>
                     <Td className="text-right">
                       {groupedShipments.reduce(

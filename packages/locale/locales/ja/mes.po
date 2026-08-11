@@ -21,6 +21,10 @@ msgstr "{0} - セット {1}"
 msgid "{0} Active"
 msgstr "{0} アクティブ"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0}前"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -149,6 +153,9 @@ msgstr "認証エラー"
 msgid "available"
 msgstr "利用可能"
 
+msgid "Available"
+msgstr "利用可能"
+
 msgid "Batch"
 msgstr "バッチ"
 
@@ -211,9 +218,8 @@ msgstr "出勤打刻"
 msgid "Clock Out"
 msgstr "退勤打刻"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "{0} から出勤中"
+msgid "Clocked in since <0/>"
+msgstr "<0/>からクロックイン中"
 
 msgid "Close"
 msgstr "閉じる"
@@ -265,6 +271,9 @@ msgstr "コンソール"
 msgid "Console Mode"
 msgstr "コンソールモード"
 
+msgid "Consumed"
+msgstr "消費済み"
+
 msgid "Consumed expired"
 msgstr "消費期限切れ"
 
@@ -313,9 +322,8 @@ msgstr "削除"
 msgid "Delete Step"
 msgstr "ステップを削除"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "タイムカードを削除（{0}）"
+msgid "Delete Timecard (<0/>)"
+msgstr "タイムカードを削除 (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "問題を説明してください..."
@@ -429,11 +437,12 @@ msgstr "機能テーブルを展開"
 msgid "Expired"
 msgstr "期限切れ"
 
-msgid "Expired {date}"
-msgstr "期限切れ {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "期限切れ {0}"
 
-msgid "Expires {date}"
-msgstr "有効期限 {date}"
+msgid "Expires <0/>"
+msgstr "有効期限：<0/>"
 
 msgid "Expiring first"
 msgstr "最初に期限切れ"
@@ -533,6 +542,10 @@ msgstr "影響"
 msgid "Imperial"
 msgstr "インペリアル"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "{0}で"
+
 msgid "In Progress"
 msgstr "進行中"
 
@@ -623,6 +636,9 @@ msgstr "品目詳細を読み込み中..."
 msgid "Loading..."
 msgstr "読み込み中..."
 
+msgid "Local"
+msgstr "ローカル"
+
 msgid "Location"
 msgstr "ロケーション"
 
@@ -667,6 +683,9 @@ msgstr "メンテナンス完了"
 
 msgid "Maintenance overdue"
 msgstr "メンテナンス期限超過"
+
+msgid "Make a replacement"
+msgstr "代替品を作成"
 
 msgid "Manually add items to inventory"
 msgstr "手動で在庫に品目を追加"
@@ -858,6 +877,9 @@ msgstr "稼働中の作業はありません"
 msgid "Nothing scheduled at this work center"
 msgstr "このワークセンターにはスケジュールされたものはありません"
 
+msgid "Nothing to scrap"
+msgstr "スクラップするものがない"
+
 msgid "OEE Impact"
 msgstr "OEE影響度"
 
@@ -1043,6 +1065,9 @@ msgstr "在庫削除"
 msgid "Remove part"
 msgstr "パーツを削除"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "サブアセンブリを再度開いて代替ユニットを作成"
+
 msgid "Result"
 msgstr "結果"
 
@@ -1091,6 +1116,12 @@ msgstr "スケジュール"
 msgid "Scrap"
 msgstr "廃棄"
 
+msgid "Scrap {readableId}"
+msgstr "{readableId} をスクラップ"
+
+msgid "Scrap material"
+msgstr "材料をスクラップ"
+
 msgid "Scrap quantity"
 msgstr "スクラップ数量"
 
@@ -1099,6 +1130,12 @@ msgstr "スクラップ理由"
 
 msgid "Scrapped"
 msgstr "スクラップ済み"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "シリアル {trackedEntityReadableId} をスクラップ中"
+
+msgid "Scrapping the selected serial"
+msgstr "選択したシリアルをスクラップ中"
 
 msgid "Search"
 msgstr "検索"
@@ -1284,6 +1321,9 @@ msgstr "ロットは「合格」とマークされ、{remaining}個の残りユ�
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "ロットは引き続き処分されますが、少なくとも1つの問題タイプが設定されるまでNCRを作成することはできません。"
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "このマテリアルについて、利用可能または消費済みの追跡部品がありません。"
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "部品表にシリアルまたはバッチ追跡対象の材料が完全に払い出されていません。払出なしで完了すると、トレーサビリティ記録が不正確になる可能性があります。"
 
@@ -1292,6 +1332,15 @@ msgstr "これらのアイテムにはまだピッキング対象の材料があ
 
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "この部品は注文に応じて製造されました。これをスクラップすると、代替品を製造するためにそのルーティングを再度開くことができます。"
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "この部品は在庫からスクラップされます。その要件は開いたままなので、代替品を発行できます。"
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "このユニットは永久にスクラップされ、代替シリアル番号が作成されます。"
 
 msgid "Thumbnail"
 msgstr "サムネイル"
@@ -1397,9 +1446,8 @@ msgstr "ワークセンター ディスプレイ"
 msgid "Yes"
 msgstr "はい"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "{0} に出勤打刻しました。下記で退勤時間を編集するか、まだ作業中であることを確認してください。"
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "あなたは<0/>にクロックインしました。下記でクロックアウト時間を編集するか、まだ作業中であることを確認できます。"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} 時間出勤中です。退勤打刻を忘れていませんか？"

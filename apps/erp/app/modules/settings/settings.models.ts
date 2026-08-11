@@ -54,7 +54,7 @@ export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
 
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   scopes: zfd.text(z.string().optional()),
   expiresAt: zfd.text(
     z
@@ -67,7 +67,7 @@ export const apiKeyValidator = z.object({
 });
 
 const companyAddress = {
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   addressLine1: z.string().min(1, { message: "Address is required" }),
   addressLine2: zfd.text(z.string().optional()),
   city: z.string().min(1, { message: "City is required" }),
@@ -114,7 +114,7 @@ export const onboardingCompanyValidator = z.object({
 export const customFieldValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
     dataTypeId: zfd.numeric(
       z.number().min(1, { message: "Data type is required" })
@@ -357,7 +357,7 @@ export const themeValidator = z.object({
 export const webhookValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
     url: z.string().url({ message: "Must be a valid URL" }),
     onInsert: zfd.checkbox(),

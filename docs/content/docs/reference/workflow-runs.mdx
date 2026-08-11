@@ -1,0 +1,109 @@
+---
+title: Workflow runs
+description: Every firing of a workflow is recorded step by step. What the run list and run detail show, what each status means, how repeating steps are summarised, and how long history is kept.
+plan: Business
+---
+
+Every time a workflow fires, Carbon records a <Term>workflow run</Term>: one row for the run and one row for each step it took, with the values that went in, the values that came out, and why it ended the way it did. Open **Automate → Runs** to see them all, or click the **"Last Run"** cell on the workflow list to jump straight to the most recent one.
+
+The run log is written by the engine and is read-only for everyone. It is the record of what your automations actually did, so nothing in the app can edit it.
+
+## The run list
+
+| Column | Shows |
+| --- | --- |
+| Status | The run's status badge, linking to the run |
+| Workflow | The workflow's name, linking to the builder |
+| Trigger | The event or moment that started it |
+| Record | The record it started from, linking to that record |
+| Started | When it began |
+| Duration | How long it took |
+| Owner | The user the run acted as |
+| Chain | **"Hop 2"** when this run was caused by another run, linking to the cause |
+
+Rows update live while anything is still queued or running, then settle. Scheduled runs have no record, so their **Record** cell is blank.
+
+## Inside a run
+
+Clicking a row opens the **"Run Details"** drawer: the workflow's name, the version it ran, its status, and a one-line plain-English outcome. That sentence is the fastest way to understand a run, and it is deliberately specific:
+
+- *Completed — 4 of 6 steps ran.*
+- *Failed at "notify the buyer": The address answered 500.*
+- *Nothing happened — "only if overdue" matched none of its conditions, so the 3 steps after it never ran.*
+- *Stopped early — "find the customer" was skipped: That list was empty, so there was nothing to do.*
+- *Blocked — Cycle: this workflow already ran in this chain*
+
+Below that sits the step list, in the order the steps appear in the workflow rather than the order they happened, so a step that never ran still holds its place — greyed out and marked **"Not reached"**, **"Skipped — the check above didn't match"**, or **"Skipped — an earlier step failed"**.
+
+Expand a step to see three things: **Input** (its settings, plus the values those settings resolved to), **Output** (what it produced), and **Why** for condition steps — a clause-by-clause account of each path, showing the left side, the operator, the right side, and whether it passed, with the path that was taken marked **"taken"**. A **"Show raw"** toggle dumps the underlying JSON when you need it.
+
+<Callout type="note" title="A run can succeed having done nothing">
+If a condition matches none of its paths and has no **"Otherwise"**, that step *succeeded* — it correctly decided not to continue. The run ends successful with most of its steps never reached, which is why the outcome line spells out what happened instead of leaving you to read a green badge.
+</Callout>
+
+## Run statuses
+
+<StatusFlow entity="workflowRun">
+  <Status name="Queued">Accepted and waiting for a worker to pick it up.</Status>
+  <Status name="Running">A worker has claimed it and is walking the steps.</Status>
+  <Status name="Succeeded" accent>Every step that ran finished without error.</Status>
+  <Status name="Failed" terminal>At least one step failed, or the run was stopped by the 500-step ceiling.</Status>
+  <Status name="Blocked" terminal>A loop guard stopped it before any step ran. The reason is on the run.</Status>
+  <Status name="Skipped" terminal>It never started — the workflow was switched off, or a scheduled run came due too late, or its previous run was still going.</Status>
+</StatusFlow>
+
+Individual steps use a shorter list: **Running**, **Succeeded**, **Failed**, **Skipped**. There is no blocked or queued step — those are decisions about the run as a whole.
+
+<Callout type="warn" title="A failed step stops its branch, not the run">
+Other branches already in flight keep going, and if you wired the step's **Failure** handle to something, the run follows it. The run is marked failed at the end regardless. The one exception is a permission failure, which stops that branch outright even when a failure path exists — Carbon will not treat "you are not allowed to do this" as a business outcome to route around.
+</Callout>
+
+Missing data is usually a skip rather than a failure. A step that cannot find the record it needs records a reason and stands down, and a condition whose values cannot be read does **not** fall through to its **"Otherwise"** — an unknown is not the same as a no.
+
+## Steps that repeat
+
+When a list is wired into a step that takes one value, the run records each item separately and then adds one summary row for the step as a whole. The summary sentence counts what actually ran:
+
+- *"Ran 3 of 3; 1 failed."*
+- *"Ran 100 of 150; 50 were not used."*
+
+<Callout type="note" title="“Not used” means the cap, not an error">
+A repeating step processes at most 100 items. In *"Ran 100 of 150"* the other 50 were never attempted — they were beyond the cap, not broken. The summary succeeds if at least one item succeeded, so read the count, not just the badge. An empty list is a single skipped step: *"That list was empty, so there was nothing to do."*
+</Callout>
+
+## Chains and loop protection
+
+When a workflow's own writes trigger another workflow, Carbon links the runs together. The **Chain** column shows how many hops in you are, and the drawer draws the whole chain, indented, with the run you are looking at marked **"current"**.
+
+Two guards stop a chain running away, and both record a **Blocked** run so you can see why it stopped:
+
+- **Cycle** — the same workflow already ran earlier in this chain: *"Cycle: this workflow already ran in this chain"*.
+- **Depth** — the chain is ten hops long: *"Chain depth limit reached (10 hops)"*.
+
+The **"Triggered by"** setting on each trigger is the first line of defence: leave it at **"People"** and the workflow simply ignores changes made by other workflows. See [what starts a workflow](/docs/reference/workflows#what-starts-a-workflow).
+
+<Callout type="warn" title="There is no retry button">
+A finished run cannot be re-run from the Runs page. If a step failed because of something outside Carbon, fix that and let the next trigger fire, or use the builder's **"Test run"** — which really executes, but is not written to run history. A run that crashes mid-flight is retried automatically by the queue, and because each step is claimed before it acts, that retry cannot repeat work that already completed.
+</Callout>
+
+## How long history is kept
+
+A nightly job tidies run history in four passes, all of them ignoring runs that are still in flight:
+
+| After | What happens |
+| --- | --- |
+| 24 hours | A run still queued or running is closed as failed: *"This run stopped reporting and was closed automatically after 24 hours."* |
+| 7 days | Recorded values are summarised in place, and the run is marked as such |
+| 30 days | Step rows are deleted; the run itself survives |
+| 90 days | The run is deleted entirely |
+
+Summarising shortens long text, keeps the first few items of a list, and reduces a record to its identity — enough to follow what happened, without storing a full copy of your data forever. The drawer says so plainly: **"Values in this run have been summarised. Full detail is kept for 7 days."** and, once the steps are gone, **"Step detail is kept for 30 days. This run's steps have been removed."**
+
+<Callout type="note" title="Secrets are stripped before anything is written">
+Values whose names look like credentials — anything containing *secret*, *token*, *password*, *authorization*, *api key*, *bearer*, *cookie* and similar — are stored as `[REDACTED]`, and every webhook header value is masked regardless of its name. The field name is kept so you can still tell it was there. Ordinary fields that merely sound sensitive, such as an item key or who authorised something, are left alone: a debugging tool that hides too much is as broken as one that hides too little.
+</Callout>
+
+<Cards>
+  <Card title="Workflows" href="/docs/reference/workflows">Building the workflow that produced these runs.</Card>
+  <Card title="Audit log" href="/docs/reference/audit-log">The separate, entity-centric record of who changed what.</Card>
+</Cards>

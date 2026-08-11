@@ -10,11 +10,10 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
-import { useLocale } from "@react-aria/i18n";
 import { LuPlay, LuSquare } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useFetcher, useParams } from "react-router";
-import { EmployeeAvatar } from "~/components";
+import { DateTime, EmployeeAvatar } from "~/components";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import {
   isMaintenanceDispatchLocked,
@@ -140,7 +139,6 @@ export default function MaintenanceDispatchEventsRoute() {
   if (!dispatchId) throw new Error("dispatchId not found");
 
   const user = useUser();
-  const { locale } = useLocale();
   const permissions = usePermissions();
   const fetcher = useFetcher();
 
@@ -219,13 +217,15 @@ export default function MaintenanceDispatchEventsRoute() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Start:</span>{" "}
-                    {new Date(event.startTime).toLocaleString(locale)}
+                    <DateTime value={event.startTime} variant="absolute" />
                   </div>
                   <div>
                     <span className="text-muted-foreground">End:</span>{" "}
-                    {event.endTime
-                      ? new Date(event.endTime).toLocaleString(locale)
-                      : "-"}
+                    {event.endTime ? (
+                      <DateTime value={event.endTime} variant="absolute" />
+                    ) : (
+                      "-"
+                    )}
                   </div>
                   <div>
                     <span className="text-muted-foreground">Duration:</span>{" "}

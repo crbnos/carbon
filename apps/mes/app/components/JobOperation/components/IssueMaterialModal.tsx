@@ -37,7 +37,7 @@ import {
   TabsTrigger,
   toast
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { formatDate, getItemReadableId } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -49,6 +49,7 @@ import {
   LuCirclePlus,
   LuList,
   LuQrCode,
+  LuTrash2,
   LuUndo2,
   LuX
 } from "react-icons/lu";
@@ -62,6 +63,9 @@ import { issueValidator } from "~/services/models";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { ScrapEntityModal } from "./ScrapEntityModal";
+import type { ScrappableEntity } from "./ScrapTab";
+import { ScrapTab } from "./ScrapTab";
 
 type TrackingType = "Serial" | "Batch" | "Inventory" | "Non-Inventory" | null;
 
@@ -176,19 +180,13 @@ export function IssueMaterialModal({
   );
 
   // Format an expiration date as `MMM d, yyyy` for the option helper text.
-  // Browsers all support this through Intl.DateTimeFormat, no extra deps.
   const formatExpiry = useCallback((date: string | null | undefined) => {
     if (!date) return "";
-    try {
-      const cd = parseDate(date);
-      return new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      }).format(cd.toDate(getLocalTimeZone()));
-    } catch {
-      return date;
-    }
+    return formatDate(date, {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
   }, []);
 
   const serialOptions = useMemo(() => {
@@ -293,6 +291,33 @@ export function IssueMaterialModal({
     }));
   }, [trackedInputs]);
 
+  // Scrappable entities for this material: available (picked / in stock,
+  // pulled from the item's available serials) + already-consumed (trackedInputs).
+  const scrappableEntities = useMemo<ScrappableEntity[]>(() => {
+    const consumed: ScrappableEntity[] = trackedInputs.map((input) => ({
+      id: input.id,
+      readableId: input.readableId,
+      state: "Consumed" as const
+    }));
+    const consumedIds = new Set(consumed.map((e) => e.id));
+    const availableSource =
+      trackingType === "Batch"
+        ? (batchNumbers?.data ?? [])
+        : (serialNumbers?.data ?? []);
+    const available: ScrappableEntity[] = availableSource
+      // Batch numbers are not pre-filtered by status at the query, so guard here
+      // (serial numbers already come back Available-only) — Reserved/On Hold/
+      // Scrapped entities must never appear as scrap-from-stock targets.
+      .filter((s) => s.status === "Available")
+      .filter((s) => !consumedIds.has(s.id))
+      .map((s) => ({
+        id: s.id,
+        readableId: s.readableId,
+        state: "Available" as const
+      }));
+    return [...available, ...consumed];
+  }, [trackedInputs, trackingType, serialNumbers?.data, batchNumbers?.data]);
+
   // Default issue quantity. Serial parents always issue per-unit
   // (material.quantity is the per-unit requirement and quantityIssued is
   // scoped to the parent entity). The assembly view issues per-unit for
@@ -322,6 +347,10 @@ export function IssueMaterialModal({
       .map((_, index) => ({ index, id: "" }))
   );
   const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
+  const [scrapEntityTarget, setScrapEntityTarget] = useState<{
+    id: string;
+    readableId?: string | null;
+  } | null>(null);
   const [selectedTrackedInputs, setSelectedTrackedInputs] = useState<string[]>(
     []
   );
@@ -331,7 +360,9 @@ export function IssueMaterialModal({
     Array<{ index: number; id: string; quantity: number }>
   >([{ index: 0, id: "", quantity: initialQuantity }]);
   const [batchErrors, setBatchErrors] = useState<Record<number, string>>({});
-  const [unconsumedBatch, setUnconsumedBatch] = useState("");
+  const [unconsumedBatches, setUnconsumedBatches] = useState<
+    Array<{ index: number; id: string }>
+  >([{ index: 0, id: "" }]);
 
   // Tab state
   const [activeTab, setActiveTab] = useState("scan");
@@ -805,6 +836,35 @@ export function IssueMaterialModal({
     });
   }, []);
 
+  // Update functions for unconsume batch rows
+  const updateUnconsumedBatch = useCallback(
+    (batch: { index: number; id: string }) => {
+      setUnconsumedBatches((prev) => {
+        const newBatches = [...prev];
+        newBatches[batch.index] = batch;
+        return newBatches;
+      });
+    },
+    []
+  );
+
+  const addUnconsumedBatch = useCallback(() => {
+    setUnconsumedBatches((prev) => {
+      // Pre-fill the new row with the next consumed batch not already selected
+      const used = new Set(prev.map((b) => b.id).filter(Boolean));
+      const next = trackedInputs.find((input) => !used.has(input.id));
+      return [...prev, { index: prev.length, id: next?.id ?? "" }];
+    });
+  }, [trackedInputs]);
+
+  const removeUnconsumedBatch = useCallback((indexToRemove: number) => {
+    setUnconsumedBatches((prev) =>
+      prev
+        .filter((_, i) => i !== indexToRemove)
+        .map((item, i) => ({ ...item, index: i }))
+    );
+  }, []);
+
   // Submit handlers
   const handleSubmitSerial = useCallback(() => {
     if (!parentId) {
@@ -996,8 +1056,9 @@ export function IssueMaterialModal({
   }, [selectedTrackedInputs, material?.id, parentId, unconsumeFetcher]);
 
   const handleUnconsumeBatch = useCallback(() => {
-    if (!unconsumedBatch) {
-      toast.error("Please select a batch to unconsume");
+    const selectedBatches = unconsumedBatches.filter((batch) => batch.id);
+    if (selectedBatches.length === 0) {
+      toast.error("Please select at least one batch to unconsume");
       return;
     }
 
@@ -1009,14 +1070,11 @@ export function IssueMaterialModal({
     const payload = {
       materialId: material.id,
       parentTrackedEntityId: parentId,
-      children: [
-        {
-          trackedEntityId: unconsumedBatch,
-          quantity:
-            trackedInputs.find((input) => input.id === unconsumedBatch)
-              ?.quantity ?? 0
-        }
-      ]
+      children: selectedBatches.map((batch) => ({
+        trackedEntityId: batch.id,
+        quantity:
+          trackedInputs.find((input) => input.id === batch.id)?.quantity ?? 0
+      }))
     };
 
     unconsumeFetcher.submit(JSON.stringify(payload), {
@@ -1025,7 +1083,7 @@ export function IssueMaterialModal({
       encType: "application/json"
     });
   }, [
-    unconsumedBatch,
+    unconsumedBatches,
     material?.id,
     parentId,
     trackedInputs,
@@ -1301,8 +1359,8 @@ export function IssueMaterialModal({
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                       <TabsList
                         className={cn(
-                          "grid w-full grid-cols-2 mb-4",
-                          hasTrackedInputs && "grid-cols-3"
+                          "grid w-full grid-cols-3 mb-4",
+                          hasTrackedInputs && "grid-cols-4"
                         )}
                       >
                         <TabsTrigger value="scan">
@@ -1313,6 +1371,10 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
+                        <TabsTrigger value="scrap">
+                          <LuTrash2 className="mr-2" />
+                          Scrap
+                        </TabsTrigger>
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1320,6 +1382,18 @@ export function IssueMaterialModal({
                           </TabsTrigger>
                         )}
                       </TabsList>
+
+                      <TabsContent value="scrap">
+                        <ScrapTab
+                          entities={scrappableEntities}
+                          onScrap={(entity) =>
+                            setScrapEntityTarget({
+                              id: entity.id,
+                              readableId: entity.readableId
+                            })
+                          }
+                        />
+                      </TabsContent>
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
@@ -1554,8 +1628,8 @@ export function IssueMaterialModal({
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                       <TabsList
                         className={cn(
-                          "grid w-full grid-cols-2 mb-4",
-                          hasTrackedInputs && "grid-cols-3"
+                          "grid w-full grid-cols-3 mb-4",
+                          hasTrackedInputs && "grid-cols-4"
                         )}
                       >
                         <TabsTrigger value="scan">
@@ -1566,6 +1640,10 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
+                        <TabsTrigger value="scrap">
+                          <LuTrash2 className="mr-2" />
+                          Scrap
+                        </TabsTrigger>
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1573,6 +1651,18 @@ export function IssueMaterialModal({
                           </TabsTrigger>
                         )}
                       </TabsList>
+
+                      <TabsContent value="scrap">
+                        <ScrapTab
+                          entities={scrappableEntities}
+                          onScrap={(entity) =>
+                            setScrapEntityTarget({
+                              id: entity.id,
+                              readableId: entity.readableId
+                            })
+                          }
+                        />
+                      </TabsContent>
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
@@ -1773,30 +1863,65 @@ export function IssueMaterialModal({
                       {hasTrackedInputs && (
                         <TabsContent value="unconsume">
                           <div className="flex flex-col gap-4">
-                            <div className="flex gap-2">
-                              <div className="flex-1">
-                                <ComboboxBase
-                                  value={unconsumedBatch}
-                                  onChange={setUnconsumedBatch}
-                                  options={unconsumeOptions}
-                                  placeholder="Select batch to unconsume"
-                                />
-                              </div>
-                              {unconsumedBatch && (
-                                <div className="w-24">
-                                  <Input
-                                    isReadOnly
-                                    value={
-                                      trackedInputs
-                                        .find(
-                                          (input) =>
-                                            input.id === unconsumedBatch
-                                        )
-                                        ?.quantity.toString() ?? "0"
+                            {unconsumedBatches.map((batch, index) => (
+                              <div key={index} className="flex gap-2">
+                                <div className="flex-1">
+                                  <ComboboxBase
+                                    value={batch.id}
+                                    onChange={(value) =>
+                                      updateUnconsumedBatch({
+                                        index,
+                                        id: value
+                                      })
                                     }
+                                    options={unconsumeOptions.filter(
+                                      (option) =>
+                                        !unconsumedBatches.some(
+                                          (b, i) =>
+                                            b.id === option.value && i !== index
+                                        )
+                                    )}
+                                    placeholder="Select batch to unconsume"
                                   />
                                 </div>
-                              )}
+                                {batch.id && (
+                                  <div className="w-24">
+                                    <Input
+                                      isReadOnly
+                                      value={
+                                        trackedInputs
+                                          .find(
+                                            (input) => input.id === batch.id
+                                          )
+                                          ?.quantity.toString() ?? "0"
+                                      }
+                                    />
+                                  </div>
+                                )}
+                                {index > 0 && (
+                                  <IconButton
+                                    aria-label="Remove Batch"
+                                    icon={<LuX />}
+                                    variant="ghost"
+                                    onClick={() => removeUnconsumedBatch(index)}
+                                    className="flex-shrink-0"
+                                  />
+                                )}
+                              </div>
+                            ))}
+                            <div>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                leftIcon={<LuCirclePlus />}
+                                onClick={addUnconsumedBatch}
+                                isDisabled={
+                                  unconsumedBatches.length >=
+                                  trackedInputs.length
+                                }
+                              >
+                                Add Batch
+                              </Button>
                             </div>
                             <div className="h-8" />
                           </div>
@@ -1863,7 +1988,7 @@ export function IssueMaterialModal({
                       unconsumeFetcher.state !== "idle" ||
                       (trackingType === "Serial"
                         ? selectedTrackedInputs.length === 0
-                        : !unconsumedBatch)
+                        : !unconsumedBatches.some((batch) => batch.id))
                     }
                   >
                     Unconsume
@@ -1892,6 +2017,16 @@ export function IssueMaterialModal({
           )}
         </ModalContent>
       </Modal>
+      {scrapEntityTarget && (
+        <ScrapEntityModal
+          materialId={material?.id ?? ""}
+          trackedEntityId={scrapEntityTarget.id}
+          readableId={scrapEntityTarget.readableId}
+          parentId={parentId}
+          isMakeToOrder={material?.methodType === "Make to Order"}
+          onClose={() => setScrapEntityTarget(null)}
+        />
+      )}
     </>
   );
 }

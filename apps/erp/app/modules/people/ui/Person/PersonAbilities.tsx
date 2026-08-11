@@ -6,7 +6,7 @@ import type { IconType } from "react-icons";
 import { BsBarChartFill, BsCheckLg } from "react-icons/bs";
 import { FaThumbsUp } from "react-icons/fa";
 import { Link } from "react-router";
-import { useDateFormatter } from "~/hooks";
+import { DateTime } from "~/components";
 import type { EmployeeAbility } from "~/modules/resources/types";
 import {
   AbilityEmployeeStatus,
@@ -37,7 +37,6 @@ const AbilityIcons: Record<
 
 const PersonAbilities = ({ abilities }: PersonAbilitiesProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
 
   const abilityDescriptions: Record<AbilityEmployeeStatus, string> = {
     [AbilityEmployeeStatus.Complete]: t`Fully trained for`,
@@ -105,10 +104,14 @@ const PersonAbilities = ({ abilities }: PersonAbilitiesProps) => {
                     </div>
                     <div className="flex h-full items-center">
                       <p className="text-sm text-muted-foreground">
-                        {formatDate(employeeAbility.lastTrainingDate, {
-                          month: "short",
-                          year: "numeric"
-                        })}
+                        <DateTime
+                          value={employeeAbility.lastTrainingDate}
+                          variant="date"
+                          dateOptions={{
+                            month: "short",
+                            year: "numeric"
+                          }}
+                        />
                       </p>
                     </div>
                   </div>

@@ -53,10 +53,9 @@ import type { Column, JobItem } from "~/modules/production/ui/Schedule";
 import type { DisplaySettings } from "~/modules/production/ui/Schedule/Kanban";
 import { DateKanban } from "~/modules/production/ui/Schedule/Kanban/DateKanban";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
-import { getLocationsList } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
+import { resolveLocationId } from "~/modules/shared/location.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
-import { getUserDefaults } from "~/modules/users/users.server";
 import { usePeople } from "~/stores";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -113,36 +112,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  let locationId = searchParams.get("location");
-
-  if (!locationId) {
-    const userDefaults = await getUserDefaults(client, userId, companyId);
-    if (userDefaults.error) {
-      throw redirect(
-        path.to.production,
-        await flash(
-          request,
-          error(userDefaults.error, "Failed to load default location")
-        )
-      );
-    }
-
-    locationId = userDefaults.data?.locationId ?? null;
-  }
-
-  if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
-    if (locations.error || !locations.data?.length) {
-      throw redirect(
-        path.to.production,
-        await flash(
-          request,
-          error(locations.error, "Failed to load any locations")
-        )
-      );
-    }
-    locationId = locations.data?.[0].id as string;
-  }
+  const locationId = await resolveLocationId(client, request, {
+    searchParams,
+    userId,
+    companyId,
+    onDefaultsError: path.to.production,
+    onNoLocations: path.to.production
+  });
 
   // The board's "today" and its week/month windows belong to the plant being
   // scheduled, not the server — resolved after locationId settles.

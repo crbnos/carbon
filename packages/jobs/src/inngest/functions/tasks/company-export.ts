@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { sql } from "kysely";
+import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
 import type { Manifest } from "./company-backup";
 import {
@@ -13,7 +14,6 @@ import {
   encodeValue,
   findExportScopeViolations,
   getCompanyTableCatalog,
-  getJobDatabaseClient,
   mapWithConcurrency,
   SECRET_TABLES,
   STORAGE_BUCKET,
@@ -33,7 +33,6 @@ const MAX_STORAGE_TOTAL_BYTES = 1024 * 1024 * 1024;
 const TABLE_CONCURRENCY = 6;
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
-type JobDatabase = ReturnType<typeof getJobDatabaseClient>;
 
 /**
  * Build a company backup as a folder of small objects under `exports/<name>/`:

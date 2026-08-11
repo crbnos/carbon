@@ -52,6 +52,7 @@ import {
   useLoaderData,
   useParams
 } from "react-router";
+import { DateTime } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useDateFormatter } from "~/hooks";
 import {
@@ -91,13 +92,6 @@ function formatTotalHours(
   const hours = Math.floor(totalMs / 3600000);
   const minutes = Math.floor((totalMs % 3600000) / 60000);
   return `${hours}h ${minutes}m`;
-}
-
-function formatTime(dateStr: string, locale: string) {
-  return new Date(dateStr).toLocaleTimeString(locale, {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
 }
 
 function formatDay(dateStr: string, locale: string) {
@@ -463,7 +457,8 @@ export default function PersonTimecardRoute() {
         {openEntry && (
           <Badge variant="green" className="w-fit">
             <Trans>
-              Clocked in since {formatTime(openEntry.clockIn, locale)}
+              Clocked in since{" "}
+              <DateTime value={openEntry.clockIn} variant="time" />
             </Trans>
           </Badge>
         )}
@@ -478,8 +473,17 @@ export default function PersonTimecardRoute() {
             </Link>
           </Button>
           <span className="text-sm text-muted-foreground">
-            {formatDate(weekStart, { dateStyle: "medium" })} —{" "}
-            {formatDate(weekEnd, { dateStyle: "medium" })}
+            <DateTime
+              value={weekStart}
+              variant="date"
+              dateOptions={{ dateStyle: "medium" }}
+            />{" "}
+            —{" "}
+            <DateTime
+              value={weekEnd}
+              variant="date"
+              dateOptions={{ dateStyle: "medium" }}
+            />
           </span>
           <Button
             variant="outline"
@@ -697,10 +701,12 @@ export default function PersonTimecardRoute() {
                     <Td className="whitespace-nowrap">
                       {formatDay(entry.clockIn, locale)}
                     </Td>
-                    <Td>{formatTime(entry.clockIn, locale)}</Td>
+                    <Td>
+                      <DateTime value={entry.clockIn} variant="time" />
+                    </Td>
                     <Td>
                       {entry.clockOut ? (
-                        formatTime(entry.clockOut, locale)
+                        <DateTime value={entry.clockOut} variant="time" />
                       ) : (
                         <Badge variant="green">
                           <Trans>Active</Trans>

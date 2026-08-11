@@ -8,7 +8,7 @@ import {
   LuFileText,
   LuStar
 } from "react-icons/lu";
-import { Table } from "~/components";
+import { DateTime, Table } from "~/components";
 import { intercompanyTransactionStatuses } from "../../accounting.models";
 import IntercompanyTransactionStatus from "./IntercompanyTransactionStatus";
 
@@ -104,8 +104,9 @@ const IntercompanyTransactionTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created`,
-          cell: ({ row }) =>
-            new Date(row.original.createdAt).toLocaleDateString()
+          cell: ({ row }) => (
+            <DateTime value={row.original.createdAt} variant="date" />
+          )
         }
       ];
       return defaultColumns;

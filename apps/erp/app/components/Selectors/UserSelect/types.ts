@@ -27,6 +27,12 @@ export interface UserSelectProps {
   disabled?: boolean;
   hideSelections?: boolean;
   id?: string;
+  /**
+   * Rendered inside a pan/zoom canvas (the workflow builder). The canvas keeps
+   * the mouseup and steals the wheel, so close on the press and hold the wheel
+   * in the list. Off everywhere else — both change ordinary select behaviour.
+   */
+  insideCanvas?: boolean;
   innerInputRender?:
     | ((props: UserSelectProps) => JSX.Element | JSX.Element[])
     | ReactNode

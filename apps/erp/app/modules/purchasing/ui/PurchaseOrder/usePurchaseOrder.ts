@@ -15,13 +15,13 @@ export const usePurchaseOrder = () => {
   const submit = useSubmit();
 
   const edit = useCallback(
-    (purchaseOrder: PurchaseOrder) =>
+    (purchaseOrder: Pick<PurchaseOrder, "id">) =>
       navigate(path.to.purchaseOrder(purchaseOrder.id!)),
     [navigate]
   );
 
   const invoice = useCallback(
-    (purchaseOrder: PurchaseOrder) =>
+    (purchaseOrder: Pick<PurchaseOrder, "id">) =>
       navigate(
         `${path.to.newPurchaseInvoice}?sourceDocument=Purchase Order&sourceDocumentId=${purchaseOrder.id}`
       ),
@@ -29,7 +29,7 @@ export const usePurchaseOrder = () => {
   );
 
   const receive = useCallback(
-    (purchaseOrder: PurchaseOrder) => {
+    (purchaseOrder: Pick<PurchaseOrder, "id">) => {
       if (!purchaseOrder.id) return;
       const formData = new FormData();
       formData.set("sourceDocument", "Purchase Order");
@@ -40,7 +40,7 @@ export const usePurchaseOrder = () => {
   );
 
   const ship = useCallback(
-    (purchaseOrder: PurchaseOrder) => {
+    (purchaseOrder: Pick<PurchaseOrder, "id">) => {
       if (!purchaseOrder.id) return;
       const formData = new FormData();
       formData.set("sourceDocument", "Purchase Order");

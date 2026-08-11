@@ -8,7 +8,7 @@ interface SpinnerProps {
 
 const BARS = Array.from({ length: 12 });
 
-export function Spinner({ size = 18, className }: SpinnerProps) {
+export function Spinner({ size = 16, className }: SpinnerProps) {
   return (
     <div
       role="status"

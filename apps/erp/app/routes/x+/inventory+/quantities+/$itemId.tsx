@@ -11,8 +11,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
 import { getItem, getPickMethod, upsertPickMethod } from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { resolveLocationId } from "~/modules/shared/location.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -25,36 +24,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
-  let locationId = searchParams.get("location");
-
-  if (!locationId) {
-    const userDefaults = await getUserDefaults(client, userId, companyId);
-    if (userDefaults.error) {
-      throw redirect(
-        path.to.inventory,
-        await flash(
-          request,
-          error(userDefaults.error, "Failed to load default location")
-        )
-      );
-    }
-
-    locationId = userDefaults.data?.locationId ?? null;
-  }
-
-  if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
-    if (locations.error || !locations.data?.length) {
-      throw redirect(
-        path.to.inventory,
-        await flash(
-          request,
-          error(locations.error, "Failed to load any locations")
-        )
-      );
-    }
-    locationId = locations.data?.[0].id as string;
-  }
+  const locationId = await resolveLocationId(client, request, {
+    searchParams,
+    userId,
+    companyId,
+    onDefaultsError: path.to.inventory,
+    onNoLocations: path.to.inventory
+  });
 
   // Ensure pick method exists for this item/location combination
   const ensurePickMethod = await upsertPickMethod(client, {

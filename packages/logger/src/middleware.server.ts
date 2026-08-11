@@ -6,6 +6,22 @@ import {
   type MiddlewareFunction,
   type RouterContextProvider
 } from "react-router";
+import { getRequestContext } from "./context.server";
+
+// Re-exported from the existing entry point rather than adding a new package
+// export subpath: Vite resolves a package's `exports` map once at dev-server
+// start, so a new subpath 500s until every running dev server is restarted.
+// TODO: once a restart is coordinated, add `"./context.server"` to this
+// package's `exports` and repoint the four importers (both apps' root.tsx,
+// auth's auth.server.ts and users.server.ts) at it, then drop this re-export.
+export {
+  getRequestContext,
+  getRouterContext,
+  oncePerRead,
+  oncePerRequest,
+  requestContextMiddleware
+} from "./context.server";
+
 import { getLogger } from "./logger";
 
 export const REQUEST_ID_HEADER = "x-request-id";
@@ -112,8 +128,16 @@ async function captureRequestBody(request: Request): Promise<unknown> {
 /** Request-scoped correlation id, readable in loaders/actions via `getRequestId`. */
 export const requestIdContext = createContext<string | null>(null);
 
-export function getRequestId(context: RouterContextProvider): string | null {
-  return context.get(requestIdContext);
+/**
+ * The current request's correlation id.
+ *
+ * Pass `context` explicitly from a loader/action, or omit it to read the
+ * ambient request context published by `requestContextMiddleware` — which is
+ * what makes this callable from a plain service function.
+ */
+export function getRequestId(context?: RouterContextProvider): string | null {
+  if (context) return context.get(requestIdContext);
+  return getRequestContext(requestIdContext) ?? null;
 }
 
 const log = getLogger("http");

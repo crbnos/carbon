@@ -988,7 +988,15 @@ const Table = <T extends object>({
   }, [visibleColumns, columnOrder, pinnedColumnsKey]);
 
   // Primitive the memoized Row/Cell comparators can compare — see Cell.tsx.
-  const pinnedShadowKey = `${scrolledEdges.left}:${scrolledEdges.right}`;
+  // `getPinnedStyles` is a fresh closure every render, so this has to encode
+  // everything it can return: the scrolled edges that drive the shadow, and
+  // each pinned column's sticky offset out of `columnSizeMap` (the resize
+  // observer replaces that Map wholesale, so comparing the Map itself would
+  // re-render every row on every observation).
+  const pinnedStyleKey = `${scrolledEdges.left}:${scrolledEdges.right}|${visibleColumns
+    .filter((col) => col.getIsPinned())
+    .map((col) => `${col.id}@${columnSizeMap.get(col.id)?.startX ?? 0}`)
+    .join(",")}`;
 
   const getPinnedStyles = (column: Column<T>): CSSProperties => {
     const isPinned = column.getIsPinned();
@@ -1315,12 +1323,12 @@ const Table = <T extends object>({
                               row.index in rowSelection &&
                               !!rowSelection[row.index]
                             }
-                            pinnedColumns={pinnedColumnsKey}
+                            visibleColumns={visibleColumns}
                             selectedCell={selectedCell}
                             row={row}
                             rowIsSelected={selectedCell?.row === row.index}
                             getPinnedStyles={getPinnedStyles}
-                            pinnedShadow={pinnedShadowKey}
+                            pinnedStyleKey={pinnedStyleKey}
                             onCellClick={onCellClick}
                             onCellUpdate={onCellUpdate}
                             onClick={handleRowClick}
@@ -1344,12 +1352,12 @@ const Table = <T extends object>({
                       isRowSelected={
                         row.index in rowSelection && !!rowSelection[row.index]
                       }
-                      pinnedColumns={pinnedColumnsKey}
+                      visibleColumns={visibleColumns}
                       selectedCell={selectedCell}
                       row={row}
                       rowIsSelected={selectedCell?.row === row.index}
                       getPinnedStyles={getPinnedStyles}
-                      pinnedShadow={pinnedShadowKey}
+                      pinnedStyleKey={pinnedStyleKey}
                       onCellClick={onCellClick}
                       onCellUpdate={onCellUpdate}
                       onClick={handleRowClick}

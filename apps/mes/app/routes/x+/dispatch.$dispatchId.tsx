@@ -18,7 +18,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import { FaCheck, FaPause, FaPlay } from "react-icons/fa6";
@@ -29,6 +28,7 @@ import { z } from "zod";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
 import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
+import { DateTime } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { MaintenanceAddPartModal } from "~/components/MaintenanceDispatch";
 import MaintenanceOeeImpact from "~/components/MaintenanceOeeImpact";
@@ -185,7 +185,6 @@ export default function MaintenanceDetailRoute() {
   const { dispatch, events, items, activeEvent } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
-  const { locale } = useLocale();
   const fetcher = useFetcher();
   const deleteFetcher = useFetcher();
   const addPartModal = useDisclosure();
@@ -400,9 +399,16 @@ export default function MaintenanceDetailRoute() {
                           size="xs"
                         />
                         <span className="text-xs text-muted-foreground">
-                          {new Date(event.startTime).toLocaleString(locale)}
-                          {event.endTime &&
-                            ` - ${new Date(event.endTime).toLocaleTimeString(locale)}`}
+                          <DateTime
+                            value={event.startTime}
+                            variant="absolute"
+                          />
+                          {event.endTime && (
+                            <>
+                              {" - "}
+                              <DateTime value={event.endTime} variant="time" />
+                            </>
+                          )}
                         </span>
                       </VStack>
                       <span className="text-sm font-mono">

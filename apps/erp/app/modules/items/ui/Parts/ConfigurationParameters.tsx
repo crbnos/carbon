@@ -67,12 +67,11 @@ import {
   LuKeySquare
 } from "react-icons/lu";
 import { useFetcher, useFetchers, useParams, useSubmit } from "react-router";
-import { EmployeeAvatar } from "~/components";
+import { DateTime, EmployeeAvatar } from "~/components";
 import { ConfiguratorDataTypeIcon } from "~/components/Configurator/Icons";
 import { Enumerable } from "~/components/Enumerable";
 import { useShape } from "~/components/Form/Shape";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter } from "~/hooks";
 import type { ConfigurationParameter } from "~/modules/items";
 import {
   configurationParameterDataTypes,
@@ -816,7 +815,6 @@ function ConfigurableParameter({
   isOverlay?: boolean;
 }) {
   const { t } = useLingui();
-  const { formatRelativeTime } = useDateFormatter();
   const { isList, isMaterial, key, onChangeCheckForListType, updateKey } =
     useConfigurationParameters(parameter);
 
@@ -989,7 +987,7 @@ function ConfigurableParameter({
               <HStack spacing={2}>
                 <span className="text-xs text-muted-foreground">
                   {isUpdated ? t`Updated` : t`Created`}{" "}
-                  {formatRelativeTime(date)}
+                  <DateTime value={date} variant="relative" />
                 </span>
                 <EmployeeAvatar employeeId={person} withName={false} />
               </HStack>

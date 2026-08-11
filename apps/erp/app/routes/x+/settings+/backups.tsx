@@ -40,6 +40,7 @@ import {
   useRevalidator
 } from "react-router";
 import { z } from "zod";
+import { DateTime } from "~/components";
 import { Confirm } from "~/components/Modals";
 import type { CompanyBackupSummary } from "~/modules/settings";
 import {
@@ -607,7 +608,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
             <>Incomplete backup — not restorable</>
           ) : (
             <>
-              {formatBackupDate(file.exportedAt)}
+              <DateTime value={file.exportedAt} variant="absolute" />
               {file.sizeBytes ? (
                 <>
                   {" · "}

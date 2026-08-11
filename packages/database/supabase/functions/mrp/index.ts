@@ -352,14 +352,14 @@ serve(async (req: Request) => {
     type DemandForecastSourceInsert =
       Database["public"]["Tables"]["demandForecastSource"]["Insert"];
 
-    // Demand projections (netted against production supply)
+    // Demand projections. Do NOT net firm job/PO supply here — supply is
+    // credited exactly once by explodeBom's running balance (which receives
+    // jobAndPoSupplyByLocationPeriodItem below). Netting here as well would
+    // double-count supply and under-drive child demand.
     for (const projection of demandProjections.data) {
       if (!projection.itemId || !projection.forecastQuantity) continue;
 
-      let netDemand = projection.forecastQuantity;
-      const periodKey = `${projection.locationId ?? ""}-${projection.periodId}-${projection.itemId}`;
-      const plannedProduction = jobSupplyByLocationPeriodItem.get(periodKey) ?? 0;
-      netDemand = Math.max(0, projection.forecastQuantity - plannedProduction);
+      const netDemand = projection.forecastQuantity;
 
       if (netDemand > 0) {
         const key = `${projection.locationId ?? ""}-${projection.periodId}-${projection.itemId}`;

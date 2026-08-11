@@ -8,6 +8,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { getOverReceiptViolations } from "@carbon/utils";
@@ -302,6 +303,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       })
       .eq("id", receiptId);
   }
+
+  // Must stay below the rollback catch above — a post that got reverted to
+  // Draft must not fire workflows.
+  await raiseMoment("inventory.receiptPosted", {
+    outputs: { receipt: { id: receiptId }, postedBy: { id: userId } },
+    companyId,
+    actorId: userId
+  });
 
   throw redirect(path.to.receipt(receiptId));
 }

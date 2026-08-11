@@ -118,6 +118,9 @@ type EventContentOptions = {
   companyId: string;
   documentIds?: string[];
   userId?: string;
+  // Workflow-authored text, carried on the payload instead of read from a document.
+  title?: string;
+  body?: string;
 };
 
 function changeNoticeStageDescription(
@@ -1178,6 +1181,14 @@ async function buildEventContent(
           { label: "Status", value: changeNoticeData.status },
           { label: "Assignee", value: assigneeName }
         ])
+      };
+    }
+
+    // The only kind whose text comes from the payload — it reads nothing.
+    case NotificationEvent.Workflow: {
+      return {
+        description: opts?.title ?? "A workflow ran",
+        details: opts?.body ? [{ label: "Message", value: opts.body }] : []
       };
     }
 

@@ -29,13 +29,14 @@ import { useCallback } from "react";
 import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
 import {
+  DateTime,
   DocumentPreview,
   FileDropzone,
   Hyperlink,
   ModelOptimizedIndicator
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { useDateFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type { ItemType, OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
@@ -68,7 +69,6 @@ const ItemDocuments = ({
   titleExtras
 }: ItemDocumentsProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const {
     canDelete,
     download,
@@ -237,7 +237,11 @@ const ItemDocuments = ({
                     )}
                   </Td>
                   <Td className="text-xs font-mono">
-                    {file.created_at ? formatDate(file.created_at) : "--"}
+                    {file.created_at ? (
+                      <DateTime value={file.created_at} variant="date" />
+                    ) : (
+                      "--"
+                    )}
                   </Td>
                   <Td>
                     <div className="flex justify-end w-full">

@@ -21,6 +21,10 @@ msgstr "{0} - सेट {1}"
 msgid "{0} Active"
 msgstr "{0} सक्रिय"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} पहले"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -149,6 +153,9 @@ msgstr "प्रमाणीकरण त्रुटि"
 msgid "available"
 msgstr "उपलब्ध"
 
+msgid "Available"
+msgstr "उपलब्ध"
+
 msgid "Batch"
 msgstr "बैच"
 
@@ -211,9 +218,8 @@ msgstr "घड़ी में प्रवेश करें"
 msgid "Clock Out"
 msgstr "घड़ी बंद करें"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Clocked in since {0}"
+msgid "Clocked in since <0/>"
+msgstr "<0/> से घड़ी चालू है"
 
 msgid "Close"
 msgstr "बंद करें"
@@ -265,6 +271,9 @@ msgstr "कंसोल"
 msgid "Console Mode"
 msgstr "कंसोल मोड"
 
+msgid "Consumed"
+msgstr "खपत"
+
 msgid "Consumed expired"
 msgstr "खपत की गई समाप्त"
 
@@ -313,9 +322,8 @@ msgstr "हटाएं"
 msgid "Delete Step"
 msgstr "चरण हटाएं"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "टाइमकार्ड हटाएं ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "टाइमकार्ड हटाएं (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "समस्या का वर्णन करें..."
@@ -429,11 +437,12 @@ msgstr "फीचर्स टेबल को विस्तृत करे�
 msgid "Expired"
 msgstr "समाप्त"
 
-msgid "Expired {date}"
-msgstr "समाप्त {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "समाप्त {0}"
 
-msgid "Expires {date}"
-msgstr "समाप्त होता है {date}"
+msgid "Expires <0/>"
+msgstr "समाप्त होता है <0/>"
 
 msgid "Expiring first"
 msgstr "पहले समाप्त होने वाले"
@@ -533,6 +542,10 @@ msgstr "प्रभाव"
 msgid "Imperial"
 msgstr "इंपीरियल"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "{0} में"
+
 msgid "In Progress"
 msgstr "प्रगति में"
 
@@ -623,6 +636,9 @@ msgstr "आइटम विवरण लोड हो रहे हैं..."
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
+msgid "Local"
+msgstr "स्थानीय"
+
 msgid "Location"
 msgstr "स्थान"
 
@@ -667,6 +683,9 @@ msgstr "रखरखाव पूर्ण"
 
 msgid "Maintenance overdue"
 msgstr "रखरखाव अतिदेय"
+
+msgid "Make a replacement"
+msgstr "एक प्रतिस्थापन बनाएं"
 
 msgid "Manually add items to inventory"
 msgstr "इन्वेंटरी में आइटम मैन्युअली जोड़ें"
@@ -858,6 +877,9 @@ msgstr "कुछ नहीं चल रहा"
 msgid "Nothing scheduled at this work center"
 msgstr "इस कार्य केंद्र पर कुछ भी शेड्यूल नहीं है"
 
+msgid "Nothing to scrap"
+msgstr "स्क्रैप करने के लिए कुछ नहीं"
+
 msgid "OEE Impact"
 msgstr "OEE प्रभाव"
 
@@ -1043,6 +1065,9 @@ msgstr "इन्वेंटरी हटाएं"
 msgid "Remove part"
 msgstr "भाग हटाएं"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "सबअ्यासेम्बली को फिर से खोलें और एक प्रतिस्थापन इकाई बनाएं"
+
 msgid "Result"
 msgstr "परिणाम"
 
@@ -1091,6 +1116,12 @@ msgstr "शेड्यूल"
 msgid "Scrap"
 msgstr "स्क्रैप"
 
+msgid "Scrap {readableId}"
+msgstr "स्क्रैप {readableId}"
+
+msgid "Scrap material"
+msgstr "स्क्रैप सामग्री"
+
 msgid "Scrap quantity"
 msgstr "स्क्रैप मात्रा"
 
@@ -1099,6 +1130,12 @@ msgstr "स्क्रैप कारण"
 
 msgid "Scrapped"
 msgstr "स्क्रैप किया गया"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "सीरीयल को स्क्रैप किया जा रहा है {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "चयनित सीरीयल को स्क्रैप किया जा रहा है"
 
 msgid "Search"
 msgstr "खोजें"
@@ -1284,6 +1321,9 @@ msgstr "लॉट को पास के रूप में चिह्नि
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "लॉट को अभी भी डिस्पोज़ किया जाएगा, लेकिन कम से कम एक Issue Type कॉन्फ़िगर होने तक NCR नहीं बनाया जा सकता।"
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "इस सामग्री के लिए कोई उपलब्ध या खपत ट्रैक की गई वस्तुएं नहीं हैं।"
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "बिल ऑफ मेटेरियल पर सीरियल या बैच ट्रैक किए गए मेटेरियल हैं जो पूरी तरह से जारी नहीं किए गए हैं। जारी किए बिना पूरा करने से गलत ट्रेसेबिलिटी रिकॉर्ड हो सकते हैं।"
 
@@ -1292,6 +1332,15 @@ msgstr "इन आइटम के पास अभी भी चुनने �
 
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "यह हिस्सा आदेश के अनुसार बनाया गया था। इसे स्क्रैप करने से इसका रूटिंग फिर से खुल सकता है प्रतिस्थापन बनाने के लिए।"
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "यह हिस्सा स्टॉक से स्क्रैप किया जाएगा। इसकी आवश्यकता खुली रहती है ताकि आप एक प्रतिस्थापन जारी कर सकें।"
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "यह इकाई स्थायी रूप से स्क्रैप की जाएगी और एक प्रतिस्थापन सीरीयल नंबर बनाया जाएगा।"
 
 msgid "Thumbnail"
 msgstr "थंबनेल"
@@ -1397,9 +1446,8 @@ msgstr "कार्य केंद्र डिस्प्ले"
 msgid "Yes"
 msgstr "हां"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "आप {0} पर क्लॉक इन हुए हैं। आप नीचे अपने क्लॉक-आउट समय को संपादित कर सकते हैं या यह स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "आपने <0/> पर घड़ी शुरू की है। आप नीचे अपने निकास समय को संपादित कर सकते हैं या स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इन हैं। क्या आप क्लॉक आउट करना भूल गए?"

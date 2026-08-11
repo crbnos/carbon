@@ -70,8 +70,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // Pick the bin surface from `adjustmentType` only. `quantity` is a
     // positive magnitude per `inventoryAdjustmentValidator` — sign-based
     // direction detection would misclassify `Negative Adjmt.` as `place`.
-    // Item rules own the `place`/`pick` surfaces.
-    const isNegative = d.adjustmentType === "Negative Adjmt.";
+    // Item rules own the `place`/`pick` surfaces. Scrap removes from a bin
+    // (pick); Unscrap restores to a bin (place).
+    const isNegative =
+      d.adjustmentType === "Negative Adjmt." || d.adjustmentType === "Scrap";
     const binSurface: "place" | "pick" = isNegative ? "pick" : "place";
 
     const binPass = await evaluateLinesForSurface({

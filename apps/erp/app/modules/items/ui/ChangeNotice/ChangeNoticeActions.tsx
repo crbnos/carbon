@@ -11,6 +11,7 @@ import { nanoid } from "nanoid";
 import { useCallback, useState } from "react";
 import { LuTrash2 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { DateTime } from "~/components";
 import {
   ActionTaskCard,
   type ActionTaskStatus
@@ -233,7 +234,7 @@ function ActionItem({
       footerExtras={
         action.dueDate ? (
           <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap shrink-0">
-            {action.dueDate}
+            <DateTime value={action.dueDate} variant="date" />
           </span>
         ) : undefined
       }

@@ -18,8 +18,12 @@ export type EntityType =
   | "purchaseOrder"
   | "salesInvoice"
   | "purchaseInvoice"
-  | "equipmentType"
-  | "workCellType";
+  | "quote"
+  | "salesRfq"
+  | "salesOrder"
+  | "supplierQuote"
+  | "issue"
+  | "gauge";
 
 export type EntityTypeFilter = "all" | EntityType;
 

@@ -11,7 +11,7 @@ import {
   insertSupplierInteraction
 } from "~/modules/purchasing";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
@@ -33,6 +33,12 @@ import type {
   salesInvoiceStatusType,
   salesInvoiceValidator
 } from "./invoicing.models";
+
+const PURCHASE_INVOICES_LIST_COLUMNS =
+  "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
+
+const SALES_INVOICES_LIST_COLUMNS =
+  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName" as const;
 
 /**
  * Compute an invoice's Due Date from its Issue Date and Payment Term.
@@ -245,7 +251,7 @@ export async function getPurchaseInvoices(
 ) {
   let query = client
     .from("purchaseInvoices")
-    .select("*", { count: "exact" })
+    .select(PURCHASE_INVOICES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -328,7 +334,7 @@ export async function getSalesInvoices(
 ) {
   let query = client
     .from("salesInvoices")
-    .select("*", { count: "exact" })
+    .select(SALES_INVOICES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {

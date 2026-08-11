@@ -21,6 +21,10 @@ msgstr "{0} - Jeu {1}"
 msgid "{0} Active"
 msgstr "{0} Actif(s)"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "il y a {0}"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -149,6 +153,9 @@ msgstr "Erreur d'authentification"
 msgid "available"
 msgstr "disponible"
 
+msgid "Available"
+msgstr "Disponible"
+
 msgid "Batch"
 msgstr "Lot"
 
@@ -211,9 +218,8 @@ msgstr "Pointer l'entrée"
 msgid "Clock Out"
 msgstr "Pointer la sortie"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Pointé depuis {0}"
+msgid "Clocked in since <0/>"
+msgstr "Connecté depuis <0/>"
 
 msgid "Close"
 msgstr "Fermer"
@@ -265,6 +271,9 @@ msgstr "Console"
 msgid "Console Mode"
 msgstr "Mode console"
 
+msgid "Consumed"
+msgstr "Consommé"
+
 msgid "Consumed expired"
 msgstr "Consommé expiré"
 
@@ -313,9 +322,8 @@ msgstr "Supprimer"
 msgid "Delete Step"
 msgstr "Supprimer l'étape"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "Supprimer la fiche de temps ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "Supprimer la feuille de temps (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "Décrivez le problème..."
@@ -429,11 +437,12 @@ msgstr "Développer le tableau des caractéristiques"
 msgid "Expired"
 msgstr "Expiré"
 
-msgid "Expired {date}"
-msgstr "Expiré {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Expiré {0}"
 
-msgid "Expires {date}"
-msgstr "Expire le {date}"
+msgid "Expires <0/>"
+msgstr "Expire <0/>"
 
 msgid "Expiring first"
 msgstr "Expiration en premier"
@@ -533,6 +542,10 @@ msgstr "Impact"
 msgid "Imperial"
 msgstr "Impérial"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "dans {0}"
+
 msgid "In Progress"
 msgstr "En cours"
 
@@ -623,6 +636,9 @@ msgstr "Chargement des détails de l'article..."
 msgid "Loading..."
 msgstr "Chargement..."
 
+msgid "Local"
+msgstr "Local"
+
 msgid "Location"
 msgstr "Emplacement"
 
@@ -667,6 +683,9 @@ msgstr "Maintenance terminée"
 
 msgid "Maintenance overdue"
 msgstr "Maintenance en retard"
+
+msgid "Make a replacement"
+msgstr "Effectuer un remplacement"
 
 msgid "Manually add items to inventory"
 msgstr "Ajouter manuellement des articles au stock"
@@ -858,6 +877,9 @@ msgstr "Rien en cours"
 msgid "Nothing scheduled at this work center"
 msgstr "Rien de planifié à ce centre de travail"
 
+msgid "Nothing to scrap"
+msgstr "Rien à rebuter"
+
 msgid "OEE Impact"
 msgstr "Impact TRS"
 
@@ -1043,6 +1065,9 @@ msgstr "Retirer du stock"
 msgid "Remove part"
 msgstr "Retirer la pièce"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "Rouvrir le sous-ensemble et créer une unité de remplacement"
+
 msgid "Result"
 msgstr "Résultat"
 
@@ -1091,6 +1116,12 @@ msgstr "Planification"
 msgid "Scrap"
 msgstr "Rebut"
 
+msgid "Scrap {readableId}"
+msgstr "Rebut {readableId}"
+
+msgid "Scrap material"
+msgstr "Mise au rebut du matériel"
+
 msgid "Scrap quantity"
 msgstr "Quantité de rebut"
 
@@ -1099,6 +1130,12 @@ msgstr "Motif de rebut"
 
 msgid "Scrapped"
 msgstr "Rebuté"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "Mise au rebut du numéro de série {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "Mise au rebut du numéro de série sélectionné"
 
 msgid "Search"
 msgstr "Rechercher"
@@ -1284,6 +1321,9 @@ msgstr "Le lot sera marqué comme Réussi et {remaining} unité(s) restante(s) s
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Le lot sera toujours dispositionné, mais un NCR ne peut pas être créé tant qu'au moins un type de problème n'est pas configuré."
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "Il n'y a aucun article suivi disponible ou consommé pour ce matériel."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Il existe des matériaux suivis par numéro de série ou par lot dans la nomenclature qui n'ont pas été entièrement distribués. Terminer sans distribuer peut entraîner des enregistrements de traçabilité incorrects."
 
@@ -1292,6 +1332,15 @@ msgstr "Ces articles ont encore du matériel à prélever. L'arrêt maintenant m
 
 msgid "This lot is expired and can't be picked."
 msgstr "Ce lot est expiré et ne peut pas être prélevé."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "Cette pièce a été fabriquée sur commande. Sa mise au rebut peut rouvrir son itinéraire pour créer un remplacement."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "Cette pièce sera mise au rebut du stock. Son besoin reste ouvert pour que vous puissiez émettre un remplacement."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "Cette unité sera définitivement mise au rebut et un nouveau numéro de série de remplacement sera créé."
 
 msgid "Thumbnail"
 msgstr "Miniature"
@@ -1397,9 +1446,8 @@ msgstr "Affichages du Centre de Travail"
 msgid "Yes"
 msgstr "Oui"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Vous avez pointé votre entrée à {0}. Vous pouvez modifier votre heure de sortie ci-dessous ou confirmer que vous travaillez encore."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Vous avez pointé à <0/>. Vous pouvez modifier votre heure de départ ci-dessous ou confirmer que vous travaillez toujours."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Vous êtes pointé depuis {hoursElapsed} heures. Avez-vous oublié de pointer la sortie ?"

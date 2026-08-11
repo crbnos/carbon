@@ -95,7 +95,9 @@ serve(async (req: Request) => {
           if (job.error) {
             throw new Error(`Failed to get job: ${job.error.message}`);
           }
-          parentQuantity = job.data.productionQuantity ?? 1;
+          // Use job.quantity as the root's target quantity (not productionQuantity)
+          // The item's scrap percentage will be applied within updateJobQuantities
+          parentQuantity = job.data.quantity ?? 1;
         }
 
         const jobMethodTrees = await getJobMethodTree(
@@ -193,39 +195,37 @@ const updateJobQuantities = async (
 
   // Get scrap percentage from jobMaterial (stored at job creation time)
   // Fall back to itemReplenishment if not stored
+  // Scrap applies to every method type (get-method stamps itemScrapPercentage
+  // on every material row and applies scrap unconditionally at creation)
   let scrapPercentage = 0;
-  if (tree.data.methodType === "Make to Order") {
-    const jobMaterial = await trx
-      .selectFrom("jobMaterial")
-      .select("itemScrapPercentage")
-      .where("id", "=", tree.id)
-      .executeTakeFirst();
+  const jobMaterial = await trx
+    .selectFrom("jobMaterial")
+    .select("itemScrapPercentage")
+    .where("id", "=", tree.id)
+    .executeTakeFirst();
 
-    if (
-      jobMaterial?.itemScrapPercentage != null &&
-      jobMaterial.itemScrapPercentage > 0
-    ) {
-      scrapPercentage = Number(jobMaterial.itemScrapPercentage);
-    } else {
-      // Fall back to itemReplenishment
-      const itemReplenishment = await trx
-        .selectFrom("itemReplenishment")
-        .select("scrapPercentage")
-        .where("itemId", "=", tree.data.itemId)
-        .executeTakeFirst();
-      scrapPercentage = Number(itemReplenishment?.scrapPercentage ?? 0);
-    }
+  // A stored 0 is intentional (locked at job creation) — only a NULL falls
+  // back to the item's current replenishment scrap percentage.
+  if (jobMaterial?.itemScrapPercentage != null) {
+    scrapPercentage = Number(jobMaterial.itemScrapPercentage);
+  } else {
+    // Fall back to itemReplenishment
+    const itemReplenishment = await trx
+      .selectFrom("itemReplenishment")
+      .select("scrapPercentage")
+      .where("itemId", "=", tree.data.itemId)
+      .executeTakeFirst();
+    scrapPercentage = Number(itemReplenishment?.scrapPercentage ?? 0);
   }
 
   // Calculate scrap and estimated quantities
-  // scrapQuantity = portion attributable to scrap (only for Make parts)
+  // scrapQuantity = portion attributable to scrap
   // totalWithScrap = target + scrap allowance (what we need to make/procure)
   // estimatedQuantity: For Make = good quantity (without scrap), For Buy/Pick = total
-  const scrapQuantity =
-    tree.data.methodType === "Make to Order" ? targetQuantity * scrapPercentage : 0;
-  const totalWithScrap = Math.ceil(targetQuantity + scrapQuantity);
+  const scrapQuantity = targetQuantity * scrapPercentage;
+  const totalWithScrap = targetQuantity + scrapQuantity;
   // For Make: estimatedQuantity is good quantity (without scrap)
-  // For Buy/Pick: estimatedQuantity = total (but scrap is 0, so same as target)
+  // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
   const estimatedQuantity =
     tree.data.methodType === "Make to Order" ? targetQuantity : totalWithScrap;
 
@@ -255,7 +255,9 @@ const updateJobQuantities = async (
         .updateTable("jobOperation")
         .set({
           targetQuantity: targetQuantity,
-          operationQuantity: totalWithScrap,
+          // Operation/production counts stay whole even when material
+          // quantities are fractional
+          operationQuantity: Math.ceil(totalWithScrap),
         })
         .where("jobMakeMethodId", "=", tree.data.jobMaterialMakeMethodId)
         .where("reworkId", "is", null)
@@ -266,7 +268,9 @@ const updateJobQuantities = async (
       await trx
         .updateTable("trackedEntity")
         .set({
-          quantity: jobMakeMethod.requiresSerialTracking ? 1 : totalWithScrap,
+          quantity: jobMakeMethod.requiresSerialTracking
+            ? 1
+            : Math.ceil(totalWithScrap),
         })
         .where("id", "=", jobMakeMethod.trackedEntityId)
         .execute();

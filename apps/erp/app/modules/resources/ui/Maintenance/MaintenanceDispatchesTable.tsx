@@ -15,10 +15,10 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useWorkCenters } from "~/components/Form/WorkCenters";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -51,7 +51,6 @@ const MaintenanceDispatchesTable = memo(
     locationId
   }: MaintenanceDispatchesTableProps) => {
     const { t } = useLingui();
-    const { formatDate } = useDateFormatter();
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -197,7 +196,7 @@ const MaintenanceDispatchesTable = memo(
           header: t`Planned Start`,
           cell: ({ row }) => {
             const date = row.original.plannedStartTime;
-            return date ? formatDate(date) : "-";
+            return date ? <DateTime value={date} variant="date" /> : "-";
           },
           meta: {
             icon: <LuCalendar />
@@ -292,7 +291,7 @@ const MaintenanceDispatchesTable = memo(
           header: t`Created At`,
           cell: ({ row }) => {
             const date = row.original.createdAt;
-            return date ? formatDate(date) : "-";
+            return date ? <DateTime value={date} variant="date" /> : "-";
           },
           meta: {
             icon: <LuCalendar />
@@ -321,21 +320,14 @@ const MaintenanceDispatchesTable = memo(
           header: t`Updated At`,
           cell: ({ row }) => {
             const date = row.original.updatedAt;
-            return date ? formatDate(date) : "-";
+            return date ? <DateTime value={date} variant="date" /> : "-";
           },
           meta: {
             icon: <LuCalendar />
           }
         }
       ];
-    }, [
-      workCenters,
-      failureModes.find,
-      failureModes?.map,
-      people.map,
-      t,
-      formatDate
-    ]);
+    }, [workCenters, failureModes.find, failureModes?.map, people.map, t]);
 
     const renderContextMenu = useCallback(
       (row: MaintenanceDispatch) => {

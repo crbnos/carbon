@@ -36,6 +36,18 @@ pnpm --filter @carbon/checks baseline      # regenerate baseline (careful!)
 - **Clobber detection**: `findClobbers(branch, main)` — identifies DB objects redefined on both sides
 - **Baseline**: `src/baseline.ts` — grandfathered violations keyed by `checkId + file + line + snippet`
 - **Invariants**: SQL queries loaded from directory, injected `Query` for testability
+- **Workflows**: two DB-backed drift checks, answering different questions.
+  `src/invariants/workflow-trigger-event-drift.sql` (via `pnpm --filter @carbon/checks invariants`)
+  compares each active workflow's `workflowTriggerEvent` rows against its active version's trigger
+  nodes — a dispatch row that is missing, orphaned, or pinned to a superseded version.
+  `src/scripts/check-workflow-events.ts` (`pnpm --filter @carbon/checks workflow-events`) asks
+  whether an event id a live workflow subscribes to still exists in the generated catalog — the
+  shape a catalog rename leaves behind. Neither replaces the other.
+  **Neither runs in CI, and neither can as CI stands**: both open a live Postgres connection
+  (`DATABASE_URL` / `SUPABASE_DB_URL`), and no job in `.github/workflows/` has database
+  credentials — `check.yml` runs only the static `check:workflow-catalog`, and `supabase.yml`
+  applies migrations through the Supabase CLI. Run them by hand against staging or production
+  after a catalog change, or give the deploy workflow a connection string first.
 
 ## Cross-References
 

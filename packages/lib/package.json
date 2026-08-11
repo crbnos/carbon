@@ -6,9 +6,11 @@
     "@carbon/kv": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/notifications": "workspace:*",
+    "@carbon/workflows": "workspace:*",
     "@slack/web-api": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "inngest": "3.54.0",
+    "nanoid": "catalog:",
     "resend": "3.5.0",
     "sst": "catalog:",
     "supabase": "catalog:",
@@ -30,7 +32,8 @@
     "./shims": "./src/shims.ts",
     "./slack.server": "./src/slack.server.ts",
     "./trigger": "./src/trigger.ts",
-    "./twenty.server": "./src/twenty.server.ts"
+    "./twenty.server": "./src/twenty.server.ts",
+    "./workflows": "./src/workflows/raise-moment.ts"
   },
   "private": true,
   "scripts": {

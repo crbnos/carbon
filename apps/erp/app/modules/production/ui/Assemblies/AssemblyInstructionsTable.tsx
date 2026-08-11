@@ -9,7 +9,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate, getItemById, getItemReadableId } from "@carbon/utils";
+import { getItemById, getItemReadableId } from "@carbon/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
@@ -25,7 +25,13 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { exportOnlyColumn, Hyperlink, New, Table } from "~/components";
+import {
+  DateTime,
+  exportOnlyColumn,
+  Hyperlink,
+  New,
+  Table
+} from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
@@ -166,8 +172,12 @@ const AssemblyInstructionsTable = memo(
         {
           accessorKey: "updatedAt",
           header: "Updated",
-          cell: ({ row }) =>
-            formatDate(row.original.updatedAt ?? row.original.createdAt),
+          cell: ({ row }) => (
+            <DateTime
+              value={row.original.updatedAt ?? row.original.createdAt}
+              variant="date"
+            />
+          ),
           meta: {
             icon: <LuCalendar />
           }

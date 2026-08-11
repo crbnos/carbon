@@ -26,7 +26,7 @@ import {
   LuSettings
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
-import { EmployeeAvatar, Empty } from "~/components";
+import { DateTime, EmployeeAvatar, Empty } from "~/components";
 import {
   UpgradeOverlayActions,
   UpgradeOverlayContent,
@@ -36,7 +36,7 @@ import {
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton
 } from "~/components/UpgradeOverlay";
-import { useDateFormatter, usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import { isEmptyDiffValue } from "./utils";
 
@@ -238,7 +238,6 @@ type AuditLogEntryCardProps = {
 };
 
 const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
-  const { formatDateTime } = useDateFormatter();
   const opInfo = operationLabels[entry.operation] ?? {
     label: entry.operation,
     variant: "secondary" as const,
@@ -269,7 +268,7 @@ const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
               entry.actorId && "pl-8"
             )}
           >
-            {formatDateTime(entry.createdAt)}
+            <DateTime value={entry.createdAt} variant="absolute" />
           </span>
         </VStack>
         <VStack spacing={1} className="items-end">

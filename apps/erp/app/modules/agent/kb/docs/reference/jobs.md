@@ -62,7 +62,7 @@ The **order** field sets each operation's position, and operation order (*After 
 
 ### Time and output
 
-The floor reports two separate things against an operation. A production event measures *time*, typed **Setup**, **Labor**, or **Machine**, with a start, an end, and the employee. A production quantity measures *units* (**Production**, **Scrap**, or **Rework**) and rolls up automatically into the operation's completed, scrapped, and reworked totals. Logging time implies no output, and reporting output implies no particular time, which is what lets Carbon cost on actual events while measuring yield on actual quantities. Untracked materials are backflushed as output is reported; tracked materials are issued deliberately.
+The floor reports two separate things against an operation. A production event measures *time*, typed **Setup**, **Labor**, or **Machine**, with a start, an end, and the employee. A production quantity measures *units* (**Production**, `docs/reference/scrap`, or **Rework**) and rolls up automatically into the operation's completed, scrapped, and reworked totals. Scrapped units don't count toward the target, so the operation keeps going until the good quantity is met. Logging time implies no output, and reporting output implies no particular time, which is what lets Carbon cost on actual events while measuring yield on actual quantities. Untracked materials are backflushed as output is reported; tracked materials are issued deliberately.
 
 ### Procedures
 

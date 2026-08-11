@@ -12,7 +12,11 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
+import {
+  LIST_COUNT,
+  setGenericQueryFilters,
+  setSearchFilter
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { nonConformancePriority } from "../quality/quality.models";
 import type {
@@ -81,6 +85,21 @@ import {
   type unitOfMeasureValidator
 } from "./items.models";
 import type { InventoryItemType } from "./types";
+
+const PARTS_LIST_COLUMNS =
+  "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+
+const MATERIALS_LIST_COLUMNS =
+  "active,defaultMethodType,description,itemTrackingType,name,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,unitOfMeasure,revisions,materialForm,materialSubstance,dimensions,finish,grade,materialType,materialSubstanceId,materialFormId,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+
+const TOOLS_LIST_COLUMNS =
+  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+
+const CONSUMABLES_LIST_COLUMNS =
+  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+
+const SERVICES_LIST_COLUMNS =
+  "active,defaultMethodType,description,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt" as const;
 
 const logger = getLogger("erp", "items");
 
@@ -523,8 +542,8 @@ export async function getConsumables(
 ) {
   let query = client
     .from("consumables")
-    .select("*", {
-      count: "exact"
+    .select(CONSUMABLES_LIST_COLUMNS, {
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -1221,8 +1240,8 @@ export async function getMaterials(
 ) {
   let query = client
     .from("materials")
-    .select("*", {
-      count: "exact"
+    .select(MATERIALS_LIST_COLUMNS, {
+      count: LIST_COUNT
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1755,8 +1774,8 @@ export async function getParts(
 ) {
   let query = client
     .from("parts")
-    .select("*", {
-      count: "exact"
+    .select(PARTS_LIST_COLUMNS, {
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -2005,8 +2024,8 @@ export async function getServices(
 ) {
   let query = client
     .from("services")
-    .select("*", {
-      count: "exact"
+    .select(SERVICES_LIST_COLUMNS, {
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -2099,8 +2118,8 @@ export async function getTools(
 ) {
   let query = client
     .from("tools")
-    .select("*", {
-      count: "exact"
+    .select(TOOLS_LIST_COLUMNS, {
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -3761,6 +3780,7 @@ export async function upsertSupplierPart(
   client: SupabaseClient<Database>,
   supplierPart:
     | (Omit<z.infer<typeof supplierPartValidator>, "id"> & {
+        id?: undefined;
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -3772,18 +3792,25 @@ export async function upsertSupplierPart(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in supplierPart) {
+  // Branch on `id`, not on `createdBy` — the MCP executor stamps `createdBy` onto
+  // every payload, which turned every API-side edit into a duplicate insert.
+  if (supplierPart.id !== undefined) {
+    // Drop any injected `createdBy` so an edit can't rewrite who created the row.
+    const { createdBy: _createdBy, ...update } =
+      supplierPart as typeof supplierPart & {
+        createdBy?: string;
+      };
     return client
       .from("supplierPart")
-      .insert([supplierPart])
+      .update(sanitize(update))
+      .eq("id", supplierPart.id)
+      .eq("companyId", supplierPart.companyId)
       .select("id")
       .single();
   }
   return client
     .from("supplierPart")
-    .update(sanitize(supplierPart))
-    .eq("id", supplierPart.id)
-    .eq("companyId", supplierPart.companyId)
+    .insert([supplierPart])
     .select("id")
     .single();
 }

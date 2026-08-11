@@ -1,6 +1,5 @@
-import { error, useCarbon } from "@carbon/auth";
+import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import {
   Button,
   ClientOnly,
@@ -39,7 +38,7 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Link, redirect, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
@@ -57,12 +56,11 @@ import type {
 import { Kanban } from "~/modules/production/ui/Schedule/Kanban";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import {
-  getLocationsList,
   getProcessesList,
   getWorkCentersByLocation
 } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { resolveLocationId } from "~/modules/shared/location.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/duration";
 import type { Handle } from "~/utils/handle";
@@ -128,36 +126,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  let locationId = searchParams.get("location");
-
-  if (!locationId) {
-    const userDefaults = await getUserDefaults(client, userId, companyId);
-    if (userDefaults.error) {
-      throw redirect(
-        path.to.inventory,
-        await flash(
-          request,
-          error(userDefaults.error, "Failed to load default location")
-        )
-      );
-    }
-
-    locationId = userDefaults.data?.locationId ?? null;
-  }
-
-  if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
-    if (locations.error || !locations.data?.length) {
-      throw redirect(
-        path.to.inventory,
-        await flash(
-          request,
-          error(locations.error, "Failed to load any locations")
-        )
-      );
-    }
-    locationId = locations.data?.[0].id as string;
-  }
+  const locationId = await resolveLocationId(client, request, {
+    searchParams,
+    userId,
+    companyId,
+    onDefaultsError: path.to.inventory,
+    onNoLocations: path.to.inventory
+  });
 
   const [workCenters, processes, operations, tags] = await Promise.all([
     getWorkCentersByLocation(client, locationId),

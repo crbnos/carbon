@@ -25,7 +25,12 @@ import { LuCopy, LuKeySquare, LuLink, LuTriangleAlert } from "react-icons/lu";
 import { Await, Link, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
+import {
+  DateTime,
+  MethodBadge,
+  MethodIcon,
+  TrackingTypeIcon
+} from "~/components";
 import {
   Boolean,
   ItemPostingGroup,
@@ -765,7 +770,12 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
               <p className="text-xs text-muted-foreground">
                 <Trans>
                   From{" "}
-                  {routeDataFromRoute.supersession.successorEffectivityDate}
+                  <DateTime
+                    value={
+                      routeDataFromRoute.supersession.successorEffectivityDate
+                    }
+                    variant="date"
+                  />
                 </Trans>
               </p>
             )}

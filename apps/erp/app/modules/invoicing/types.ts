@@ -12,7 +12,10 @@ import type {
   getSalesInvoices
 } from "./invoicing.service";
 
-export type PurchaseInvoice = NonNullable<
+export type PurchaseInvoice =
+  Database["public"]["Views"]["purchaseInvoices"]["Row"];
+
+export type PurchaseInvoiceListItem = NonNullable<
   Awaited<ReturnType<typeof getPurchaseInvoices>>["data"]
 >[number];
 
@@ -28,7 +31,13 @@ export type PurchaseInvoiceLineType = (typeof purchaseInvoiceLineType)[number];
 
 export type PurchaseInvoiceStatus = (typeof purchaseInvoiceStatusType)[number];
 
-export type SalesInvoice = NonNullable<
+// The `X`/`XListItem` pairs below are deliberately separate: `X` is the full
+// view row that detail screens read, `XListItem` is exactly what the list
+// query selects. Defining `X` from the list getter is what broke ~250 call
+// sites when the list selects were narrowed.
+export type SalesInvoice = Database["public"]["Views"]["salesInvoices"]["Row"];
+
+export type SalesInvoiceListItem = NonNullable<
   Awaited<ReturnType<typeof getSalesInvoices>>["data"]
 >[number];
 

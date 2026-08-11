@@ -9,3 +9,4 @@ export { notificationDigestFunction } from "./notification-digest";
 export { notificationPurgeFunction } from "./notification-purge";
 export { updateExchangeRatesFunction } from "./update-exchange-rates";
 export { weeklyFunction } from "./weekly";
+export { workflowRunRetentionFunction } from "./workflow-run-retention";

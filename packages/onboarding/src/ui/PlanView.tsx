@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  DateTime,
   Modal,
   ModalBody,
   ModalContent,
@@ -34,7 +35,6 @@ import { SPINE } from "../content/spine";
 import {
   boardTasksForTier,
   effectiveGateStatus,
-  formatDate,
   ownerForStep,
   ownerLeadLabel,
   planAnchorId,
@@ -45,7 +45,8 @@ import {
   taskKey,
   taskSetupProgress,
   taskStatus,
-  tasksForStep
+  tasksForStep,
+  toISODate
 } from "../logic";
 import type { BoardTask, GateValue, StateKind, StepDef, Tier } from "../types";
 import { ProgressPill } from "./ProgressPill";
@@ -116,7 +117,13 @@ export function PlanView({
           <span className="text-xxs uppercase tracking-wide font-medium text-muted-foreground shrink-0">
             <Trans>Target go-live</Trans>
           </span>
-          <span className="text-sm font-medium">{formatDate(goLiveDate)}</span>
+          <span className="text-sm font-medium">
+            <DateTime
+              value={toISODate(goLiveDate)}
+              variant="date"
+              dateOptions={{ month: "short", day: "numeric" }}
+            />
+          </span>
         </div>
       ) : null}
 

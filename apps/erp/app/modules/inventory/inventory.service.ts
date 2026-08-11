@@ -10,7 +10,11 @@ import { getNextSequence } from "~/modules/settings";
 import type { StorageItem } from "~/types";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
+import {
+  LIST_COUNT,
+  setGenericQueryFilters,
+  setSearchFilter
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.service";
 import type {
@@ -1345,7 +1349,7 @@ export async function getTrackedEntities(
   let query = client
     .from("trackedEntity")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .neq("status", "Reserved");

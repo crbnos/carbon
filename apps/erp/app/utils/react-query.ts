@@ -75,6 +75,11 @@ export const customerTypesQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low
 });
 
+export const issueTypesQuery = (companyId: string | null) => ({
+  queryKey: ["issueTypes", companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
 export const configurableItemsQuery = (companyId: string | null) => ({
   queryKey: ["configurableItems", companyId ?? "null"],
   staleTime: RefreshRate.Low

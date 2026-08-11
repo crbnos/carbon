@@ -3,14 +3,10 @@ import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
 import { createGunzip, createGzip } from "node:zlib";
 import type { TableName } from "@carbon/database/audit.config";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool,
-  type KyselyDatabase
-} from "@carbon/database/client";
+import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { type Kysely, PostgresDriver, type RawBuilder, sql } from "kysely";
+import { type Kysely, type RawBuilder, sql } from "kysely";
 import { nanoid } from "nanoid";
 
 const log = getLogger("jobs", "company-backup");
@@ -478,14 +474,6 @@ export async function readBackup(
     }
   );
   return { manifest, data };
-}
-
-export function getJobDatabaseClient(size = 1) {
-  const pool = getPostgresConnectionPool(size);
-  return getPostgresClient(
-    pool,
-    PostgresDriver
-  ) as unknown as Kysely<KyselyDatabase>;
 }
 
 /**

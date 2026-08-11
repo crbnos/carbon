@@ -22,6 +22,7 @@ import {
 import { useNavigate } from "react-router";
 import {
   CustomerAvatar,
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   ItemThumbnail,
@@ -30,16 +31,16 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { quoteStatusType } from "../../sales.models";
-import type { Quotation } from "../../types";
+import type { QuotationListItem } from "../../types";
 import QuoteStatus from "./QuoteStatus";
 
 type QuotesTableProps = {
-  data: Quotation[];
+  data: QuotationListItem[];
   count: number;
 };
 
@@ -47,24 +48,22 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const { formatDate } = useDateFormatter();
 
-  const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(
-    null
-  );
+  const [selectedQuotation, setSelectedQuotation] =
+    useState<QuotationListItem | null>(null);
   const deleteQuotationModal = useDisclosure();
 
   const [customers] = useCustomers();
   const [people] = usePeople();
 
-  const customColumns = useCustomColumns<Quotation>("quote");
-  const columns = useMemo<ColumnDef<Quotation>[]>(() => {
+  const customColumns = useCustomColumns<QuotationListItem>("quote");
+  const columns = useMemo<ColumnDef<QuotationListItem>[]>(() => {
     const employeeOptions = people.map((employee) => ({
       value: employee.id,
       label: employee.name
     }));
 
-    const defaultColumns: ColumnDef<Quotation>[] = [
+    const defaultColumns: ColumnDef<QuotationListItem>[] = [
       {
         accessorKey: "quoteId",
         header: t`Quote Number`,
@@ -191,7 +190,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       {
         accessorKey: "dueDate",
         header: t`Due Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -199,7 +200,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       {
         accessorKey: "expirationDate",
         header: t`Expiration Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -241,7 +244,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -266,7 +271,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -274,10 +281,10 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [customers, people, customColumns, t, formatDate]);
+  }, [customers, people, customColumns, t]);
 
   const renderContextMenu = useMemo(() => {
-    return (row: Quotation) => (
+    return (row: QuotationListItem) => (
       <>
         <MenuItem onClick={() => navigate(path.to.quoteDetails(row.id!))}>
           <MenuIcon icon={<LuPencil />} />
@@ -300,7 +307,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
 
   return (
     <>
-      <Table<Quotation>
+      <Table<QuotationListItem>
         count={count}
         columns={columns}
         data={data}

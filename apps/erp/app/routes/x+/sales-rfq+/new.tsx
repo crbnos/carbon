@@ -16,6 +16,7 @@ import {
   upsertSalesRFQLine
 } from "~/modules/sales";
 import { SalesRFQForm } from "~/modules/sales/ui/SalesRFQ";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -39,7 +40,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await insertSalesRFQ(client, {
+  const result = await insertSalesRFQ(client, getDatabaseClient(), {
     ...validation.data,
     rfqId: validation.data.rfqId || undefined,
     companyId,

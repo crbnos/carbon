@@ -1,0 +1,31 @@
+{
+  "name": "@carbon/workflows",
+  "private": true,
+  "version": "0.0.0",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./help": "./src/catalog/help.generated.ts",
+    "./labels": "./src/catalog/labels.generated.ts"
+  },
+  "scripts": {
+    "clean": "rimraf .turbo node_modules",
+    "lint": "biome lint --write ",
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@carbon/utils": "workspace:*",
+    "@internationalized/date": "catalog:",
+    "@lingui/core": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
+    "@carbon/glossary": "workspace:*",
+    "kysely": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -16,10 +16,10 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useRealtime } from "~/hooks/useRealtime";
 import { useItems } from "~/stores/items";
@@ -56,7 +56,6 @@ const ChangeNoticesTable = memo(
   ({ data, types, count }: ChangeNoticesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
-    const { formatDate } = useDateFormatter();
     const permissions = usePermissions();
     const deleteDisclosure = useDisclosure();
     const [selectedChangeNotice, setSelectedChangeNotice] =
@@ -209,14 +208,16 @@ const ChangeNoticesTable = memo(
         {
           accessorKey: "openDate",
           header: t`Open Date`,
-          cell: ({ row }) => formatDate(row.original.openDate),
+          cell: ({ row }) => (
+            <DateTime value={row.original.openDate} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
         }
       ];
       return [...defaultColumns, ...customColumns];
-    }, [customColumns, people, items, resolveItemId, types, t, formatDate]);
+    }, [customColumns, people, items, resolveItemId, types, t]);
 
     const canExpandRow = useCallback(
       (row: ChangeNoticeListItem) => (row.itemIds?.length ?? 0) > 0,

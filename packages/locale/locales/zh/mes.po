@@ -21,6 +21,10 @@ msgstr "{0} - 组 {1}"
 msgid "{0} Active"
 msgstr "{0} 个活跃"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "{0} 前"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -149,6 +153,9 @@ msgstr "认证错误"
 msgid "available"
 msgstr "可用"
 
+msgid "Available"
+msgstr "可用"
+
 msgid "Batch"
 msgstr "批次"
 
@@ -211,9 +218,8 @@ msgstr "上班打卡"
 msgid "Clock Out"
 msgstr "下班打卡"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "自 {0} 起已打卡上班"
+msgid "Clocked in since <0/>"
+msgstr "自 <0/> 起打卡"
 
 msgid "Close"
 msgstr "关闭"
@@ -265,6 +271,9 @@ msgstr "控制台"
 msgid "Console Mode"
 msgstr "控制台模式"
 
+msgid "Consumed"
+msgstr "已消耗"
+
 msgid "Consumed expired"
 msgstr "已消耗过期"
 
@@ -313,9 +322,8 @@ msgstr "删除"
 msgid "Delete Step"
 msgstr "删除步骤"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "删除考勤记录 ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "删除工时表 (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "描述问题..."
@@ -429,11 +437,12 @@ msgstr "展开功能表"
 msgid "Expired"
 msgstr "已过期"
 
-msgid "Expired {date}"
-msgstr "已过期 {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "已过期 {0}"
 
-msgid "Expires {date}"
-msgstr "过期时间 {date}"
+msgid "Expires <0/>"
+msgstr "过期于 <0/>"
 
 msgid "Expiring first"
 msgstr "即将过期优先"
@@ -533,6 +542,10 @@ msgstr "影响"
 msgid "Imperial"
 msgstr "英制"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "在 {0}"
+
 msgid "In Progress"
 msgstr "进行中"
 
@@ -623,6 +636,9 @@ msgstr "正在加载物料详情..."
 msgid "Loading..."
 msgstr "加载中..."
 
+msgid "Local"
+msgstr "本地"
+
 msgid "Location"
 msgstr "位置"
 
@@ -667,6 +683,9 @@ msgstr "维护已完成"
 
 msgid "Maintenance overdue"
 msgstr "维护逾期"
+
+msgid "Make a replacement"
+msgstr "制作替换件"
 
 msgid "Manually add items to inventory"
 msgstr "手动添加物料到库存"
@@ -858,6 +877,9 @@ msgstr "没有运行"
 msgid "Nothing scheduled at this work center"
 msgstr "该工作中心没有计划任务"
 
+msgid "Nothing to scrap"
+msgstr "没有需要报废的"
+
 msgid "OEE Impact"
 msgstr "OEE 影响"
 
@@ -1043,6 +1065,9 @@ msgstr "移除库存"
 msgid "Remove part"
 msgstr "移除零件"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "重新打开子装配体并创建替换单元"
+
 msgid "Result"
 msgstr "结果"
 
@@ -1091,6 +1116,12 @@ msgstr "排程"
 msgid "Scrap"
 msgstr "报废"
 
+msgid "Scrap {readableId}"
+msgstr "报废 {readableId}"
+
+msgid "Scrap material"
+msgstr "报废物料"
+
 msgid "Scrap quantity"
 msgstr "报废数量"
 
@@ -1099,6 +1130,12 @@ msgstr "报废原因"
 
 msgid "Scrapped"
 msgstr "已报废"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "报废序列号 {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "报废所选序列号"
 
 msgid "Search"
 msgstr "搜索"
@@ -1284,6 +1321,9 @@ msgstr "该批次将被标记为\"通过\"，{remaining} 个剩余单位将在�
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前，无法创建NCR。"
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "此材料没有可用或已消耗的追踪件。"
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "物料清单中有序列号或批次追踪的物料尚未完全发放。不发放即完成可能导致追溯记录不正确。"
 
@@ -1292,6 +1332,15 @@ msgstr "这些项目仍有物料需要拣选。现在完成将把列表标记为
 
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法领取。"
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "此部件是按订单生产的。报废它可以重新打开其路线以制作替换件。"
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "此部件将从库存中报废。其需求保持打开状态，以便您可以发放替换件。"
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "此单元将被永久报废，并将创建替换序列号。"
 
 msgid "Thumbnail"
 msgstr "缩略图"
@@ -1397,9 +1446,8 @@ msgstr "工作中心显示屏"
 msgid "Yes"
 msgstr "是"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "您于 {0} 打卡上班。您可以在下方编辑下班时间，或确认您仍在工作。"
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "您在 <0/> 打卡。您可以编辑下方的下班时间，或确认您仍在工作。"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班了？"
