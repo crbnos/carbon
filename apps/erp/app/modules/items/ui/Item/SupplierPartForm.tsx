@@ -59,6 +59,10 @@ import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { supplierPartValidator } from "../../items.models";
 
+// Distributors quote small components in thousandths (e.g. DKK 0.164/ea at MOQ 10,000),
+// so a 2-decimal currency default silently rounds the price away on entry.
+const UNIT_PRICE_FRACTION_DIGITS = 5;
+
 type PriceBreak = {
   quantity: number;
   unitPrice: number;
@@ -186,7 +190,8 @@ const SupplierPartForm = ({
                   minValue={0}
                   formatOptions={{
                     style: "currency",
-                    currency: baseCurrency
+                    currency: baseCurrency,
+                    maximumFractionDigits: UNIT_PRICE_FRACTION_DIGITS
                   }}
                 />
                 <UnitOfMeasure
@@ -386,7 +391,11 @@ function PriceBreaks({
     () => ({
       quantity: EditableNumber(noOpMutation),
       unitPrice: EditableNumber(noOpMutation, {
-        formatOptions: { style: "currency", currency: baseCurrency }
+        formatOptions: {
+          style: "currency",
+          currency: baseCurrency,
+          maximumFractionDigits: UNIT_PRICE_FRACTION_DIGITS
+        }
       })
     }),
     [noOpMutation, baseCurrency]
