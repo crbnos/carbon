@@ -3794,12 +3794,12 @@ export async function upsertSupplierPart(
 ) {
   // Branch on `id`, not on `createdBy` — the MCP executor stamps `createdBy` onto
   // every payload, which turned every API-side edit into a duplicate insert.
-  if (supplierPart.id) {
+  if (supplierPart.id !== undefined) {
     // Drop any injected `createdBy` so an edit can't rewrite who created the row.
-    const { createdBy: _createdBy, ...update } = supplierPart as Extract<
-      typeof supplierPart,
-      { updatedBy: string }
-    > & { createdBy?: string };
+    const { createdBy: _createdBy, ...update } =
+      supplierPart as typeof supplierPart & {
+        createdBy?: string;
+      };
     return client
       .from("supplierPart")
       .update(sanitize(update))
@@ -3810,9 +3810,7 @@ export async function upsertSupplierPart(
   }
   return client
     .from("supplierPart")
-    .insert([
-      supplierPart as Extract<typeof supplierPart, { createdBy: string }>
-    ])
+    .insert([supplierPart])
     .select("id")
     .single();
 }
