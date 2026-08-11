@@ -270,7 +270,7 @@ export const receiptValidator = z.object({
 
 export const storageUnitValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   locationId: z.string().min(1, { message: "Location ID is required" }),
   warehouseId: zfd.text(z.string().optional()),
   parentId: zfd.text(z.string().optional()),
@@ -280,7 +280,7 @@ export const storageUnitValidator = z.object({
 
 export const storageTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const shipmentStatusType = [
@@ -325,7 +325,7 @@ export const shipmentValidator = z.object({
 
 export const shippingMethodValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   carrier: z.enum(["UPS", "FedEx", "USPS", "DHL", "Other"], {
     errorMap: () => ({
       message: "Carrier is required"

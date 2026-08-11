@@ -58,7 +58,7 @@ const storageRuleConditionAstFormField = z.preprocess((raw) => {
 export const storageRuleValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }).max(120),
+    name: z.string().trim().min(1, { message: "Name is required" }).max(120),
     description: zfd.text(z.string().optional()),
     message: z.string().min(1, { message: "Message is required" }).max(500),
     severity: z.enum(storageRuleSeverities),
