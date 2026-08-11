@@ -1,4 +1,4 @@
-# RMA / Customer Returns — `salesReturnOrder` Module
+# Returns — Customer RMAs (`salesReturnOrder`) + Supplier Returns (`purchaseReturnOrder`)
 
 > Status: draft
 > Author: Claude (with Sid)
@@ -9,11 +9,15 @@
 
 Add a Return Merchandise Authorization document to the Sales module: a **non-posting `salesReturnOrder` header + lines** that authorizes a customer return, receives goods through the **existing receipts system** (the unused `"Sales Return Order"` value in `receiptSourceDocument` was built for exactly this), re-enters inventory at **original outbound cost** (exact cost reversing), reactivates the **same `trackedEntity`** for serialized/batch goods (genealogy survives the round trip), routes complex dispositions through the **existing quality Issues module**, and settles money by generating the **existing AR credit `memo`** and/or a linked **replacement sales order**. No parallel receiving, costing, quality, or credit subsystem is built — the RMA document is the connective tissue between machinery Carbon already has.
 
+The purchasing side is the mirror image (added per PR #1354 review): a **`purchaseReturnOrder`** authorizes returns TO suppliers, ships through the **existing shipments system** (`"Purchase Return Order"` was pre-plumbed there too), relieves inventory at carried cost, and settles via a **supplier credit `memo`** — same table shapes, direction flipped, with the quality Issue `'Return to Supplier'` disposition as the bridge that drafts one (Epicor's DMR→vendor-return pattern).
+
 ## Problem Statement
 
 Carbon has no way to process a customer return. Today a shop that gets a defective part back must fake it: a manual inventory adjustment (wrong cost, no provenance), a hand-created credit memo (no linkage to what came back), no authorization number to give the customer, no reversible-quantity control (nothing stops crediting more than was sold), no inspection/disposition trail, and a broken genealogy chain for serialized goods.
 
-The schema shows this was always intended: `receiptSourceDocument` and `shipmentSourceDocument` already contain `"Sales Return Order"` (commented out in `inventory.models.ts` pickers), `itemLedgerDocumentType` already contains `"Sales Return Receipt"`, `salesInvoiceStatus` has unused `"Return"` / `"Credit Note Issued"` values, and the glossary describes shipment sources as "a sales order, an outbound transfer, or an RMA return". None of it is wired to anything.
+The schema shows this was always intended: `receiptSourceDocument` and `shipmentSourceDocument` already contain **both** `"Sales Return Order"` and `"Purchase Return Order"` (commented out in `inventory.models.ts` pickers), `itemLedgerDocumentType` already contains `"Sales Return Receipt"` and `"Purchase Return Shipment"`, `salesInvoiceStatus` has unused `"Return"` / `"Credit Note Issued"` values, and the glossary describes shipment sources as "a sales order, an outbound transfer, or an RMA return". None of it is wired to anything.
+
+The supplier direction is equally unserved: today the quality module's `'Return to Supplier'` disposition writes inventory out directly at issue close (`post-nonconformance`) with no authorization document, no paperwork for the supplier, no supplier-RMA-number tracking, and no linkage to the AP credit that should follow.
 
 Every document-first ERP surveyed (Business Central, NetSuite, Epicor, Infor, SAP B1, Katana) models this the same way — a non-posting authorization document distinct from the receipt and the credit memo (research §Synthesis 1–10). Odoo, the one system without an RMA object, is the cautionary tale: nowhere to hang authorization state, reasons, dispositions, or expected-vs-received tracking.
 
@@ -43,7 +47,7 @@ Draft ──confirm──▶ Confirmed ──receive──▶ Partially Received
 |----------|--------|-----------|
 | Document model | New non-posting `salesReturnOrder` + `salesReturnOrderLine`; NOT a quality-issue flavor, NOT negative SO lines | Unanimous competitor pattern (research §Synthesis 1); Carbon's enums were pre-plumbed for exactly this document; Issues lack logistics/credit machinery. Odoo's no-document approach leaves state homeless |
 | Module home / permissions | Sales module: code in `modules/sales/`, routes `handle.module: "sales"`, gated by existing `sales_*` scopes. Receiving stays `inventory_*`, credit stays `invoicing_*` | Lesson "Features live inside existing permission modules"; permission scopes are FROZEN surfaces — adding none. Epicor files RMA under Sales Management too |
-| Naming | Tables `salesReturnOrder` / `salesReturnOrderLine`; UI label "RMAs"; sequence prefix `RMA` | Matches the pre-existing enum literal `"Sales Return Order"` and `salesOrder` symmetry; leaves room for a mirrored `purchaseReturnOrder` later (research §Synthesis 10) |
+| Naming | Tables `salesReturnOrder` / `salesReturnOrderLine`; UI label "RMAs"; sequence prefix `RMA` | Matches the pre-existing enum literal `"Sales Return Order"` and `salesOrder` symmetry; the mirrored `purchaseReturnOrder` is specced in the Purchasing Side section (research §Synthesis 10) |
 | Line linkage | Nullable FKs to `salesOrderLine`, `shipmentLine`, `salesInvoiceLine`; blind returns fully supported | Optional-but-rich linkage is table stakes (research §Synthesis 2): link drives reversible-qty validation, credit pricing, and cost reversal |
 | Status lifecycle | Enum `salesReturnOrderStatus`: `Draft`, `Confirmed`, `Partially Received`, `Received`, `Completed`, `Cancelled` — receipt-driven transitions, manual guarded Complete | Quantity-derived statuses are the NetSuite/Infor/Katana consensus (research §Synthesis 3); Carbon precedent: receipt/shipment posting already flips source-doc statuses. No approval stage in v1 (only NetSuite/Infor make it first-class) |
 | Receiving | Reuse receipts end-to-end: activate `"Sales Return Order"` in `receiptSourceDocumentType`, extend `create` + `post-receipt` edge functions | No surveyed system invents a parallel receiving stack (research §Synthesis 4); inspection hook (`requiresInspection` → `On Hold`) already sits in `post-receipt` |
@@ -251,6 +255,51 @@ RMA PDF in `packages/documents` (header, customer, lines, reasons, return-to add
 - **Quality**: `IssueAssociations` gains the Sales Return Order association type (render + create like the existing ten).
 - **MES**: no changes.
 
+## Purchasing Side — `purchaseReturnOrder` (Supplier Returns)
+
+Added per review on PR #1354. A direction-flipped mirror of the customer side: the customer RMA **receives**, the supplier return **ships** (research §Synthesis 10; NetSuite Vendor RA: enter → approve → ship → credit; BC purchase return orders → posted return shipments → purchase credit memo). Everything below reuses the sales-side design verbatim unless a delta is called out — same conventions (multi-tenancy, RLS naming, service shape, additive-only) apply.
+
+### Workflow
+
+`Draft → Confirmed → Partially Shipped → Shipped → Completed / Cancelled` (enum `purchaseReturnOrderStatus`). Authorize lines (optionally from a PO / receipt / purchase invoice, with reversible-quantity validation against received-minus-already-returned) → confirm (assigns readable id, PDF for the supplier's RMA process; header `supplierReference` carries the **supplier's own RMA number** — NetSuite records both numbers) → ship through the existing shipments system (`shipmentSourceDocument 'Purchase Return Order'`, pre-plumbed) → generate supplier credit memo(s) → optional replacement PO → guarded Complete with `closedComplete` short-close.
+
+There is **no disposition stage** — goods leave; the decision of *what* to send back was already made (usually by a quality Issue). There is no `inventoryValueZero` analog either: outbound relief is always at carried cost.
+
+### Deltas vs the sales side
+
+| Aspect | Sales side | Purchase side |
+|--------|-----------|---------------|
+| Physical flow | Receipt (`receiptSourceDocument 'Sales Return Order'`) | Shipment (`shipmentSourceDocument 'Purchase Return Order'`), `post-shipment` branch |
+| Ledger identity | `entryType 'Sale'`, positive, `'Sales Return Receipt'` | `entryType 'Purchase'`, **negative**, `'Purchase Return Shipment'` (pre-existing unused value) |
+| Cost | Original outbound cost / current / zero | Carried layer cost (standard consumption math — no policy choice) |
+| Journal | `Dr Inventory / Cr COGS` | `Cr Inventory / Dr goodsReceivedNotInvoicedAccount` (reverses the receipt posting); credit-vs-cost delta → `purchaseVarianceAccount` |
+| Tracked entities | Same entity re-enters `On Hold`; disposition flips it | Entities picked from on-hand stock received from that supplier; shipping marks them `Consumed` + `'Return Shipment'` activity (genealogy closed, not broken) |
+| Money | AR memo (`customerId`, `reasonAccount = salesReturnsAccount ?? salesAccount`) | AP memo (`supplierId`, direction `Credit`, `reasonAccount = goodsReceivedNotInvoicedAccount` so `post-memo` nets GRNI against payables) |
+| Replacement | `replacementSalesOrderId` → draft SO | `replacementPurchaseOrderId` → draft PO |
+| Reason codes | `returnReason` | **Same table** — shared across both directions (BC precedent); `inventoryValueZero` is simply ignored outbound |
+| Module home | Sales (`sales_*`) | Purchasing (`purchasing.models.ts` / `purchasing.service.ts` / `modules/purchasing/ui/PurchaseReturnOrders/`, `purchasing_*` perms); credit generation `create: "invoicing"` |
+| Quality relationship | RMA escalates TO an Issue | An Issue's `'Return to Supplier'` disposition **drafts** a `purchaseReturnOrder` |
+
+### Data model (mirror tables, all additive)
+
+- `purchaseReturnOrder` — same shape as `salesReturnOrder` with: `id('pro')`, readable `purchaseReturnOrderId` (sequence prefix `RTS`, e.g. `RTS000001`), `supplierId` (NOT NULL), `supplierLocationId`/`supplierContactId`, **`supplierReference`** (the supplier's RMA number), `purchaseOrderId` convenience link, `replacementPurchaseOrderId`, status `purchaseReturnOrderStatus`; no reason-hook columns beyond the sales twin.
+- `purchaseReturnOrderLine` — same shape as `salesReturnOrderLine` with `id('prol')`, `quantityShipped` (not `quantityReceived`), links `purchaseOrderLineId` / `receiptLineId` / `purchaseInvoiceLineId` (all nullable — blind supplier returns allowed), `unitPrice` = expected credit basis (copied from the linked PO/invoice line), `restockFeePercent` (supplier-charged fee reduces our credit), **no `disposition` column**.
+- `purchaseReturnOrderLineTrackedEntity` — expected entities to send back, picked from on-hand entities whose genealogy traces to that supplier.
+- `purchaseReturnOrderCreditLine` — mirror of the sales twin (`memoId`, `purchaseReturnOrderLineId`, quantity/unitPrice/fee); `quantityCredited` derived from `Posted` memos the same way.
+- `nonConformancePurchaseReturnOrderLine` + `nonConformanceAssociationType` value `'Purchase Return Order'` — Issue ↔ supplier-return linkage for the bridge.
+- `ALTER TABLE "memo" ADD COLUMN "purchaseReturnOrderId" TEXT` (nullable, SET NULL).
+- `CREATE TYPE "purchaseReturnOrderStatus" AS ENUM ('Draft','Confirmed','Partially Shipped','Shipped','Completed','Cancelled');`
+- Sequence seed rows (`'purchaseReturnOrder'`, prefix `RTS`) + a `purchaseReturnOrders` list view mirroring `salesReturnOrders`.
+- RLS: identical pattern with `purchasing_*` permissions (`invoicing_*` for the credit-line table). No portal arm.
+
+### Flows
+
+- **Ship**: `create` edge function gains a `shipment` branch for `sourceDocument 'Purchase Return Order'` (lines from open return lines, `quantity − quantityShipped`); `post-shipment` gains the return branch — negative `itemLedger` at carried cost via the existing consumption math, journal per the deltas table, entity flips + `'Return Shipment'` `trackedActivity`, `quantityShipped` bump + status transition, void reverses.
+- **Credit**: `createPurchaseReturnOrderCredit` mirrors the sales twin — one AP `memo` + credit lines; posting/voiding untouched in `x+/credits+`.
+- **Replacement**: draft PO from return lines (prices from the linked PO line or `supplierPart` pricing; user adjusts for warranty).
+- **Quality bridge**: on an Issue whose disposition is `'Return to Supplier'`, a **Create Supplier Return** action drafts a `purchaseReturnOrder` pre-filled with the Issue's supplier, items, quantities, and tracked entities (association rows written both ways). The Issue's existing direct write-off path in `post-nonconformance` remains for shops that skip the paperwork — if the goods leave via the return shipment instead, the Issue must NOT also post the write-off (close guard: skip movements for quantities already relieved by a linked posted return shipment — mirrors the idempotence rule already in `post-nonconformance`).
+- **Routes/UI**: list `x+/purchasing+/supplier-returns.tsx` + nav "Supplier Returns" (Purchasing group); detail tree `x+/purchase-return-order+/` mirroring the sales twin (confirm/cancel/complete, lines, credit, replacement, PDF); shipments UI uncomment for `'Purchase Return Order'`; entity picker `getReturnableEntitiesForSupplier`.
+
 ## Acceptance Criteria
 
 - [ ] Creating an RMA from a shipped+invoiced sales order pre-fills lines with the shipped quantities, prices, and line links; authorizing more than shipped-minus-already-returned is rejected with a validation error.
@@ -264,8 +313,12 @@ RMA PDF in `packages/documents` (header, customer, lines, reasons, return-to add
 - [ ] Issuing credit for 2 of 5 received units at unit price 100 with a 10% restock fee creates a Draft memo for 180 linked to the RMA; after posting, the RMA shows `quantityCredited = 2`; voiding the memo returns it to 0.
 - [ ] `Create Replacement Order` produces a draft sales order pre-filled from the RMA lines and both documents show the cross-link.
 - [ ] `Complete` is blocked while any received quantity is `Pending` disposition or any non-closed line is short of authorized quantity; short-closing the line unblocks it.
-- [ ] All new tables enforce RLS (cross-company reads return nothing); every route 403s without the corresponding `sales`/`invoicing` permission.
-- [ ] `pnpm run generate:types`, scoped typecheck, lint, and existing inventory/receipt tests pass.
+- [ ] A supplier return created from a posted PO receipt pre-fills lines with reversible quantities, prices, and links; authorizing more than received-minus-already-returned is rejected.
+- [ ] Shipping a partial quantity against a confirmed supplier return flips it `Confirmed → Partially Shipped → Shipped`; posting relieves inventory at carried layer cost (`Cr Inventory / Dr GRNI`), marks the shipped tracked entities `Consumed` with a `Return Shipment` activity, and voiding the shipment reverses all of it.
+- [ ] Issuing supplier credit creates a Draft AP memo (`supplierId`, direction `Credit`, `reasonAccount = goodsReceivedNotInvoicedAccount`) linked via `memo.purchaseReturnOrderId`; posting updates the return's credited quantities; voiding reverts them.
+- [ ] Closing a quality Issue with a `'Return to Supplier'` disposition offers **Create Supplier Return**, which drafts a `purchaseReturnOrder` pre-filled with the Issue's supplier, items, and tracked entities — and the Issue does not double-post the inventory relief when the return shipment posts it.
+- [ ] All new tables enforce RLS (cross-company reads return nothing); every route 403s without the corresponding `sales`/`purchasing`/`invoicing` permission.
+- [ ] `pnpm run generate:types`, scoped typecheck, lint, and existing inventory/receipt/shipment tests pass.
 
 ## Risks
 
@@ -273,6 +326,8 @@ RMA PDF in `packages/documents` (header, customer, lines, reasons, return-to add
 |------|----------|------------|
 | Original-cost resolution from shipment cost layers is subtle (partial shipments, corrections, multi-layer consumption) | High | Reuse `calculateCOGS`'s layer math in reverse; fall back to current cost with a flagged variance note when layers can't be resolved; unit-test against multi-layer fixtures |
 | `post-receipt` is load-bearing for PO receiving; a regression breaks daily receiving | High | Return branch is additive and switched on `sourceDocument`; existing PO/transfer paths untouched; run existing receipt tests + new return fixtures |
+| `post-shipment` is equally load-bearing for daily sales shipping (purchase-return branch) | High | Same additive-branch discipline; existing shipment tests + supplier-return fixtures |
+| Issue `'Return to Supplier'` + linked return shipment could double-relieve inventory | Med | Close guard: `post-nonconformance` skips movements for quantities already relieved by a linked posted return shipment (its `(documentType, documentId)` idempotence key is the precedent) |
 | `ALTER TYPE … ADD VALUE` cannot run inside a transaction block on older Postgres patterns | Med | Follow the existing enum-addition migrations in the repo (`database-migration-patterns.md`); keep enum additions in their own statements |
 | Reactivating a `Consumed`/shipped tracked entity may collide with status assumptions elsewhere (`get_inventory_quantities`, pickers) | Med | Re-entry uses `On Hold` (already excluded from available); audit the status-aware reads before implementation; the disposition step is the only path to `Available` |
 | Credit derivation joins (creditLine × memo status) on hot list views | Low | Aggregate inside the `salesReturnOrders` view; index `salesReturnOrderCreditLine(memoId)` and `(salesReturnOrderLineId)` |
@@ -295,8 +350,10 @@ RMA PDF in `packages/documents` (header, customer, lines, reasons, return-to add
 - [x] Restocking fee shape? — **Autonomous:** per-line `restockFeePercent` fraction 0–1 applied at credit generation (BC per-line charge precedent; only vendor-documented mechanism).
 - [x] Credit GL account? — **Autonomous:** additive `accountDefault.salesReturnsAccount` (contra-revenue, seeded account, fallback `salesAccount`) passed as the memo `reasonAccount` — the `accountDefault` lesson pattern; `post-memo` unchanged.
 - [x] Replacement mechanics? — **Autonomous:** action spawns a draft SO from RMA lines with `resolvePrice` pricing (user zeroes for warranty); link on `salesReturnOrder.replacementSalesOrderId`; BC's negative-line dance rejected.
-- [x] v1 scope boundaries? — **Autonomous:** OUT: supplier-side `purchaseReturnOrder` (design stays symmetric for later), customer-portal-initiated returns, approval workflow stage, formal repair/rework job linkage (quality Issue covers it), refunds beyond the posted memo, MES surfaces. IN: PDF, return reasons, partial everything.
+- [x] v1 scope boundaries? — **Autonomous:** OUT: customer-portal-initiated returns, approval workflow stage, formal repair/rework job linkage (quality Issue covers it), refunds beyond the posted memo, MES surfaces. IN: PDF, return reasons, partial everything. (Supplier-side `purchaseReturnOrder` was originally deferred; pulled into scope per review — next question.)
+- [x] Supplier-side shape? — **Review (PR #1354, changes requested: "Let's do the purchasing side as part of the spec too"):** included as a direction-flipped mirror — authorize → **ship** → credit (NetSuite Vendor RA order of operations), shared `returnReason` table (BC shares the reason codes across sales and purchase returns), no disposition stage (goods leave; nothing to disposition), the supplier's own RMA number on the header (`supplierReference`), and a "Create Supplier Return" bridge on the quality Issue `'Return to Supplier'` disposition. See the Purchasing Side section.
 
 ## Changelog
 
+- 2026-08-11: Purchasing side added — `purchaseReturnOrder` supplier-returns mirror (authorize → ship → credit, shared `returnReason`, Issue `'Return to Supplier'` bridge, double-relief close guard) per review on PR #1354 ("Let's do the purchasing side as part of the spec too"). Title, TLDR, problem statement, scope resolution, acceptance criteria, and risks updated to match.
 - 2026-08-07: Created. Research at `.ai/research/2026-08-07-rma-module.md`; internal recon + run record at `.ai/runs/2026-08-07-rma-module.md`. All 14 open questions resolved autonomously (fully-autonomous run) — flagged for human review at spec review, especially: additive enum values (`disposition`, `nonConformanceAssociationType`), additive columns on `memo` + `accountDefault` (+ seeded contra-revenue account), and the decision to route Scrap/Rework GL through quality Issues rather than RMA-native posting.
