@@ -12,7 +12,7 @@ Carbon cannot enforce commercial/compliance restrictions when an item is added t
 
 ### Data model changes
 
-- **New enum** `itemRuleSurface` = `'quoteLine' | 'salesOrderLine'` (deliberately separate from the storage `transactionSurface` enum).
+- **New enum** `itemRuleSurface` = `'quoteLine' | 'salesOrderLine'` — deliberately separate from the storage `transactionSurface` enum: the two families fire on categorically different things (warehouse/MES transaction events vs sales-document lines), and a shared enum would let the DB accept a storage rule subscribed to `quoteLine` (a rule that silently never fires). See the rationale under "Engine extensions".
 - **New table** `itemRule` — rule definitions: `name`, `description`, `message` (token interpolation), `severity` (`error|warn`), `conditionAst` JSONB, `surfaces itemRuleSurface[]` (CHECK non-empty), item scoping (`filteredItemTypes`, `filteredItemGroupIds`, `filteredItemMatchAll`), `active`, audit columns, `customFields`. House PK `("id","companyId")`; RLS: SELECT any employee, writes `parts_`*. Registered in `customFieldTable` as `('itemRule','Item Rule','Items')`.
 - **New table** `itemRuleAssignment` — explicit per-item pins, PK `(itemId, ruleId)`, composite FK to `itemRule`.
 - **New table** `itemRuleAcknowledgment` — append-only override/block evidence: `ruleId` (soft reference, no FK) + denormalized `ruleName`, `documentType 'quote'|'salesOrder'`, `documentId`, `documentLineId`, `itemId`, `severity`, `outcome 'blocked'|'acknowledged'`, `message`, `createdBy`. SELECT any employee; INSERT via `sales_create`; no UPDATE/DELETE policies. Evidence survives rule rename/deletion.
@@ -189,7 +189,11 @@ In `packages/utils/src/rules.ts` (shared engine — extend, don't fork):
 - Add `customer` root to `RuleContext`: `{ id, typeId, statusId, location: { countryCode (alpha2) }, customFields }`.
 - Field registry (`field-registry.ts`): add `customer.typeId` (options: customer types), `customer.statusId` (options: customer statuses), `customer.location.countryCode` (options: countries by alpha2 — matches app-wide convention since `20240928155702_country-codes.sql`; the `Country` selector already uses alpha2 values), plus synthesized `customer.customFields.*` mirroring `item.customFields.*`.
 
-DB enum note: the DB-side `surfaces` uses the new `itemRuleSurface` enum — do NOT extend the storage `transactionSurface` enum (item rules have their own table).
+DB enum note: the DB-side `surfaces` uses the new `itemRuleSurface` enum — do NOT extend the storage `transactionSurface` enum. Rationale:
+
+- **Illegal states unrepresentable:** `storageRule.surfaces` is typed `transactionSurface[]`; adding `quoteLine`/`salesOrderLine` there would let the DB accept a storage rule subscribed to a sales surface (and an item rule to `pick`) — rules that silently never fire. Separate enums make the column type the guard; a shared enum would need CHECK constraints on both tables instead.
+- **Postgres enums are append-only:** values can be added but never removed without a type-rebuild migration. `transactionSurface` grows along the warehouse/MES axis (5 → 11 values so far); `itemRuleSurface` will grow along the sales-document axis (e.g. a future `purchaseOrderLine`). One enum would couple both features' migrations forever.
+- **Mirrors the Option A split:** separate DB layer, shared code layer. The sharing happens in TypeScript where it is cheap and safe — `RuleSurface = TransactionSurface | ItemRuleSurface` lets the one engine evaluate either family — while surfaces keep driving per-family concerns (field-availability maps, each form's surface picker) that must not blend.
 
 ## Evaluator (`packages/ee/src/rules/item/`)
 
