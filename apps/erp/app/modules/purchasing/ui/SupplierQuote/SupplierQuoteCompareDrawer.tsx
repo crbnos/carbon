@@ -760,7 +760,8 @@ const LinePricingOptions = ({
               supplierShippingCost: selectedOption.supplierShippingCost ?? 0,
               shippingCost: selectedOption.shippingCost ?? 0,
               leadTime: selectedOption.leadTime ?? 0,
-              supplierTaxAmount: selectedOption.supplierTaxAmount ?? 0
+              supplierTaxAmount: selectedOption.supplierTaxAmount ?? 0,
+              taxPercent: selectedOption.taxPercent ?? 0
             }
           }));
         }

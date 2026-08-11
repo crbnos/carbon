@@ -186,6 +186,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
         const { lineId, quantity, selectedLine } = priceRecordsToProcess[i];
         const existingPrice = existingPriceChecks[i];
 
+        // The portal collects amounts only; seed the stored rate the way the
+        // old generated column derived it (amount / canonical subtotal)
+        const breakSubtotal =
+          (selectedLine.supplierUnitPrice ?? 0) * quantity +
+          (selectedLine.supplierShippingCost ?? 0);
+        const taxPercent =
+          breakSubtotal > 0
+            ? (selectedLine.supplierTaxAmount ?? 0) / breakSubtotal
+            : 0;
+
         if (existingPrice.data) {
           // Update existing price record
           priceUpdates.push(
@@ -196,6 +206,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
                 leadTime: selectedLine.leadTime ?? 0,
                 supplierShippingCost: selectedLine.supplierShippingCost ?? 0,
                 supplierTaxAmount: selectedLine.supplierTaxAmount ?? 0,
+                taxPercent,
                 updatedAt: new Date().toISOString(),
                 updatedBy: quote.data.createdBy
               })
@@ -213,6 +224,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             leadTime: selectedLine.leadTime ?? 0,
             supplierShippingCost: selectedLine.supplierShippingCost ?? 0,
             supplierTaxAmount: selectedLine.supplierTaxAmount ?? 0,
+            taxPercent,
             exchangeRate: quote.data.exchangeRate ?? 1,
             createdBy: quote.data.createdBy
           });

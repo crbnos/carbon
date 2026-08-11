@@ -108,6 +108,7 @@ const payloadValidator = z.discriminatedUnion("type", [
         supplierShippingCost: z.number(),
         supplierUnitPrice: z.number(),
         supplierTaxAmount: z.number(),
+        taxPercent: z.number().optional().default(0),
         unitPrice: z.number(),
       })
     ),
@@ -420,6 +421,8 @@ serve(async (req: Request) => {
                 (line.supplierShippingCost ?? 0) * uninvoicedFraction(line),
               supplierTaxAmount:
                 (line.supplierTaxAmount ?? 0) * uninvoicedFraction(line),
+              // The rate is invariant under proration; only the amount scales
+              taxPercent: line.taxPercent ?? 0,
               purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
               inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
               conversionFactor: line.conversionFactor,
@@ -1689,6 +1692,7 @@ serve(async (req: Request) => {
                   supplierShippingCost:
                     selectedLines![line.id!].supplierShippingCost,
                   supplierTaxAmount: selectedLines![line.id!].supplierTaxAmount,
+                  taxPercent: selectedLines![line.id!].taxPercent ?? 0,
                   sortOrder: line.sortOrder ?? 1,
                   createdBy: userId,
                   companyId,

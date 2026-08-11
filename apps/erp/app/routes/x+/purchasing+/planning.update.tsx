@@ -387,10 +387,13 @@ export async function action({ request }: ActionFunctionArgs) {
                 inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
                 conversionFactor: supplierPart?.conversionFactor ?? 1,
                 supplierUnitPrice: supplierPart?.unitPrice ?? 0,
+                // supplier.taxPercent is a 0..1 fraction; the amount follows
+                // the canonical denominator (unit price × quantity + shipping)
+                taxPercent: supplier.taxPercent ?? 0,
                 supplierTaxAmount:
-                  ((supplierPart?.unitPrice ?? 0) *
-                    (supplier.taxPercent ?? 0)) /
-                  100,
+                  (supplierPart?.unitPrice ?? 0) *
+                  adjustedQuantity *
+                  (supplier.taxPercent ?? 0),
                 supplierShippingCost: 0,
                 requiredDate: order.dueDate ?? undefined,
                 locationId,

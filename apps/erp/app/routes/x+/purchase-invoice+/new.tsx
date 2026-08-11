@@ -156,6 +156,11 @@ export async function action({ request }: ActionFunctionArgs) {
           supplierUnitPrice: item.unitPrice || 0,
           supplierShippingCost: 0,
           supplierTaxAmount: lineTax,
+          // Seed the stored rate exactly as the old generated column derived it
+          taxPercent:
+            (item.unitPrice || 0) * (item.quantity || 1) > 0
+              ? lineTax / ((item.unitPrice || 0) * (item.quantity || 1))
+              : 0,
           locationId: d.locationId,
           companyId,
           createdBy: userId,

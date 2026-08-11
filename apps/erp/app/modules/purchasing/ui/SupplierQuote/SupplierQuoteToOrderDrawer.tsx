@@ -271,7 +271,8 @@ const LinePricingOptions = ({
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     shippingCost: 0,
-    supplierTaxAmount: 0
+    supplierTaxAmount: 0,
+    taxPercent: 0
   });
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -286,7 +287,17 @@ const LinePricingOptions = ({
           supplierShippingCost: overridePricing.supplierShippingCost,
           shippingCost: overridePricing.shippingCost,
           leadTime: overridePricing.leadTime,
-          supplierTaxAmount: overridePricing.supplierTaxAmount
+          supplierTaxAmount: overridePricing.supplierTaxAmount,
+          // Override collects amounts only — seed the rate the way the old
+          // generated column derived it
+          taxPercent:
+            overridePricing.supplierUnitPrice * overridePricing.quantity +
+              overridePricing.supplierShippingCost >
+            0
+              ? overridePricing.supplierTaxAmount /
+                (overridePricing.supplierUnitPrice * overridePricing.quantity +
+                  overridePricing.supplierShippingCost)
+              : 0
         }
       }));
     }
@@ -319,7 +330,8 @@ const LinePricingOptions = ({
                 supplierShippingCost: selectedOption.supplierShippingCost ?? 0,
                 shippingCost: selectedOption.shippingCost ?? 0,
                 leadTime: selectedOption.leadTime,
-                supplierTaxAmount: selectedOption.supplierTaxAmount ?? 0
+                supplierTaxAmount: selectedOption.supplierTaxAmount ?? 0,
+                taxPercent: selectedOption.taxPercent ?? 0
               }
             }));
             setSelectedValue(value);
