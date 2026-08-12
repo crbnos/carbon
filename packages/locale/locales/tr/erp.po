@@ -8383,6 +8383,8 @@ msgstr "Tümünü davet et"
 
 msgid "Invite Multiple Employees"
 msgstr "Birden fazla çalışan davet et"
+msgid "Invite Employees"
+msgstr ""
 
 msgid "Invited"
 msgstr "Davetli"
