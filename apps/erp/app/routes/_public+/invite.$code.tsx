@@ -180,7 +180,7 @@ async function requestNewInvite(
 
   const invite = await serviceRole
     .from("invite")
-    .select("email, companyId, createdBy, acceptedAt, company(name)")
+    .select("email, companyId, createdBy, acceptedAt, revokedAt, company(name)")
     .eq("code", code)
     .maybeSingle();
 
@@ -195,6 +195,15 @@ async function requestNewInvite(
     throw redirect(
       path.to.root,
       await flash(request, error(null, "This invite has already been accepted"))
+    );
+  }
+
+  // A revoked invite must stay revoked — never resurrect it via self-serve
+  // reissue. Only an admin-initiated resend may un-revoke (resend-invite.tsx).
+  if (invite.data.revokedAt) {
+    throw redirect(
+      path.to.root,
+      await flash(request, error(null, "This invite is no longer valid"))
     );
   }
 
@@ -219,10 +228,10 @@ async function requestNewInvite(
   const newCode = nanoid();
   const refreshed = await serviceRole
     .from("invite")
+    // Not accepted and not revoked (guarded above) — self-serve reissue only
+    // resets the code + expiry window; it never clears acceptedAt/revokedAt.
     .update({
       code: newCode,
-      acceptedAt: null,
-      revokedAt: null,
       createdAt: datetime.timestamp()
     })
     .eq("code", code)

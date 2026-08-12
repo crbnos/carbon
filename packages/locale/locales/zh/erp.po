@@ -2749,7 +2749,7 @@ msgid "Centralized Billing Address"
 msgstr "集中式账单地址"
 
 msgid "Cert Version"
-msgstr ""
+msgstr "证书版本"
 
 msgid "Certificate Number"
 msgstr "证书编号"
@@ -2758,7 +2758,7 @@ msgid "Certificate uploaded"
 msgstr "证书已上传"
 
 msgid "Certified"
-msgstr ""
+msgstr "已认证"
 
 msgid "Chain"
 msgstr "链"
@@ -7249,7 +7249,7 @@ msgid "I (reduced)"
 msgstr "I（已减少）"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
-msgstr ""
+msgstr "我有合理的理由相信该个人是根据 22 CFR 120.62 定义的美国人"
 
 msgid "I'm Still Working"
 msgstr "我仍在工作"
@@ -7640,7 +7640,7 @@ msgid "Invite"
 msgstr "邀请"
 
 msgid "Invite Expired"
-msgstr ""
+msgstr "邀请已过期"
 
 msgid "Invited"
 msgstr "已邀请"
@@ -7802,7 +7802,7 @@ msgid "Issues"
 msgstr "问题"
 
 msgid "ITAR Certifications"
-msgstr ""
+msgstr "ITAR 认证"
 
 msgid "item"
 msgstr "项"
@@ -8062,7 +8062,7 @@ msgid "Last Fiscal Year"
 msgstr "上一财政年度"
 
 msgid "Last Login"
-msgstr ""
+msgstr "最后登录"
 
 msgid "Last Month"
 msgstr "上个月"
@@ -9774,7 +9774,7 @@ msgid "Not a table but a general-ledger balance: cost accumulates as job materia
 msgstr "不是表格而是总账余额：当发出工作物料时成本积累，当工作收到库存时清除。"
 
 msgid "Not certified"
-msgstr ""
+msgstr "未认证"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
@@ -11893,7 +11893,7 @@ msgid "Reprint"
 msgstr "重新打印"
 
 msgid "Request a new invite"
-msgstr ""
+msgstr "请求新邀请"
 
 msgid "Request access"
 msgstr "请求访问"
@@ -14868,7 +14868,7 @@ msgstr "这个检验计划"
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
-msgstr ""
+msgstr "加入 {0} 的邀请已过期。您可以请求将新邀请发送到您的电子邮件。"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "这是一个采购项目 — 它没有BoM/BoP；只有其属性和文档可以更改。"
@@ -14877,7 +14877,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "这是webhook的唯一标识符"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
-msgstr ""
+msgstr "这是一个 ITAR 受控环境。访问仅限于美国人。"
 
 msgid "This is the month your fiscal year starts."
 msgstr "这是您的财政年度开始的月份。"
@@ -15398,7 +15398,7 @@ msgid "Types"
 msgstr "类型"
 
 msgid "U.S. Person Attestation"
-msgstr ""
+msgstr "美国人证明"
 
 msgid "Unapplied"
 msgstr "未应用"

@@ -2749,7 +2749,7 @@ msgid "Centralized Billing Address"
 msgstr "통합 청구 주소"
 
 msgid "Cert Version"
-msgstr ""
+msgstr "인증 버전"
 
 msgid "Certificate Number"
 msgstr "인증서 번호"
@@ -2758,7 +2758,7 @@ msgid "Certificate uploaded"
 msgstr "인증서가 업로드됨"
 
 msgid "Certified"
-msgstr ""
+msgstr "인증됨"
 
 msgid "Chain"
 msgstr "체인"
@@ -7249,7 +7249,7 @@ msgid "I (reduced)"
 msgstr "I(축소)"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
-msgstr ""
+msgstr "나는 이 개인이 22 CFR 120.62에서 정의한 미국인이라고 합리적으로 믿을 이유가 있습니다"
 
 msgid "I'm Still Working"
 msgstr "아직 작업 중입니다"
@@ -7640,7 +7640,7 @@ msgid "Invite"
 msgstr "초대"
 
 msgid "Invite Expired"
-msgstr ""
+msgstr "초대권 만료됨"
 
 msgid "Invited"
 msgstr "초대됨"
@@ -7802,7 +7802,7 @@ msgid "Issues"
 msgstr "이슈"
 
 msgid "ITAR Certifications"
-msgstr ""
+msgstr "ITAR 인증"
 
 msgid "item"
 msgstr "품목"
@@ -8062,7 +8062,7 @@ msgid "Last Fiscal Year"
 msgstr "지난 회계연도"
 
 msgid "Last Login"
-msgstr ""
+msgstr "마지막 로그인"
 
 msgid "Last Month"
 msgstr "지난달"
@@ -9774,7 +9774,7 @@ msgid "Not a table but a general-ledger balance: cost accumulates as job materia
 msgstr "테이블이 아니라 총계정원장 잔액입니다. 작업 자재가 투입되면서 원가가 누적되고, 작업이 재고로 입고되면 정산됩니다."
 
 msgid "Not certified"
-msgstr ""
+msgstr "인증되지 않음"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
@@ -11893,7 +11893,7 @@ msgid "Reprint"
 msgstr "재출력"
 
 msgid "Request a new invite"
-msgstr ""
+msgstr "새 초대권 요청"
 
 msgid "Request access"
 msgstr "액세스 요청"
@@ -14868,7 +14868,7 @@ msgstr "이 검사 계획"
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
-msgstr ""
+msgstr "{0}에 참여하기 위한 이 초대권은 만료되었습니다. 이메일로 새 초대권을 보내달라고 요청할 수 있습니다."
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "이것은 구매 항목입니다 — BoM/BoP가 없습니다. 해당 속성과 문서만 변경할 수 있습니다."
@@ -14877,7 +14877,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "웹훅의 고유 식별자입니다"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
-msgstr ""
+msgstr "이것은 ITAR 통제 환경입니다. 접근은 미국인에게만 제한됩니다."
 
 msgid "This is the month your fiscal year starts."
 msgstr "회계연도가 시작되는 월입니다."
@@ -15398,7 +15398,7 @@ msgid "Types"
 msgstr "유형"
 
 msgid "U.S. Person Attestation"
-msgstr ""
+msgstr "미국인 증명"
 
 msgid "Unapplied"
 msgstr "미적용"

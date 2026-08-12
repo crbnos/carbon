@@ -2749,7 +2749,7 @@ msgid "Centralized Billing Address"
 msgstr "Централизованный адрес выставления счетов"
 
 msgid "Cert Version"
-msgstr ""
+msgstr "Версия сертификата"
 
 msgid "Certificate Number"
 msgstr "Номер сертификата"
@@ -2758,7 +2758,7 @@ msgid "Certificate uploaded"
 msgstr "Сертификат загружен"
 
 msgid "Certified"
-msgstr ""
+msgstr "Сертифицировано"
 
 msgid "Chain"
 msgstr "Цепь"
@@ -7249,7 +7249,7 @@ msgid "I (reduced)"
 msgstr "I (сокращено)"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
-msgstr ""
+msgstr "У меня есть разумные основания полагать, что это лицо является лицом США, как определено в 22 CFR 120.62"
 
 msgid "I'm Still Working"
 msgstr "Я всё ещё работаю"
@@ -7640,7 +7640,7 @@ msgid "Invite"
 msgstr "Пригласить"
 
 msgid "Invite Expired"
-msgstr ""
+msgstr "Приглашение истекло"
 
 msgid "Invited"
 msgstr "Приглашено"
@@ -7802,7 +7802,7 @@ msgid "Issues"
 msgstr "Проблемы"
 
 msgid "ITAR Certifications"
-msgstr ""
+msgstr "Сертификации ITAR"
 
 msgid "item"
 msgstr "элемент"
@@ -8062,7 +8062,7 @@ msgid "Last Fiscal Year"
 msgstr "Прошлый финансовый год"
 
 msgid "Last Login"
-msgstr ""
+msgstr "Последний вход"
 
 msgid "Last Month"
 msgstr "Прошлый месяц"
@@ -9774,7 +9774,7 @@ msgid "Not a table but a general-ledger balance: cost accumulates as job materia
 msgstr "Не таблица, а баланс главной книги: стоимость накапливается по мере выдачи материалов задания и очищается при поступлении задания на склад."
 
 msgid "Not certified"
-msgstr ""
+msgstr "Не сертифицировано"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно заданий для покрытия количества"
@@ -11893,7 +11893,7 @@ msgid "Reprint"
 msgstr "Перепечать"
 
 msgid "Request a new invite"
-msgstr ""
+msgstr "Запросить новое приглашение"
 
 msgid "Request access"
 msgstr "Запросить доступ"
@@ -14868,7 +14868,7 @@ msgstr "этот план проверки"
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
-msgstr ""
+msgstr "Это приглашение присоединиться к {0} истекло. Вы можете запросить новое приглашение, которое будет отправлено на вашу электронную почту."
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Это купленный элемент — у него нет BoM/BoP; могут изменяться только его атрибуты и документы."
@@ -14877,7 +14877,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "Это уникальный идентификатор для вебхука"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
-msgstr ""
+msgstr "Это среда, контролируемая ITAR. Доступ ограничен для лиц США."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Это месяц, когда начинается ваш финансовый год."
@@ -15398,7 +15398,7 @@ msgid "Types"
 msgstr "Типы"
 
 msgid "U.S. Person Attestation"
-msgstr ""
+msgstr "Удостоверение лица США"
 
 msgid "Unapplied"
 msgstr "Неприменённые"

@@ -2749,7 +2749,7 @@ msgid "Centralized Billing Address"
 msgstr "Merkezi Faturalama Adresi"
 
 msgid "Cert Version"
-msgstr ""
+msgstr "Sertifika Versiyonu"
 
 msgid "Certificate Number"
 msgstr "Sertifika Numarası"
@@ -2758,7 +2758,7 @@ msgid "Certificate uploaded"
 msgstr "Sertifika Yüklendi"
 
 msgid "Certified"
-msgstr ""
+msgstr "Sertifikalı"
 
 msgid "Chain"
 msgstr "Zincir"
@@ -7249,7 +7249,7 @@ msgid "I (reduced)"
 msgstr "I (azaltılmış)"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
-msgstr ""
+msgstr "Bu kişinin 22 CFR 120.62'de tanımlanan şekilde ABD vatandaşı olduğuna inanmak için makul bir temelem var"
 
 msgid "I'm Still Working"
 msgstr "Hala Çalışıyorum"
@@ -7640,7 +7640,7 @@ msgid "Invite"
 msgstr "Davet et"
 
 msgid "Invite Expired"
-msgstr ""
+msgstr "Davet Süresi Doldu"
 
 msgid "Invited"
 msgstr "Davetli"
@@ -7802,7 +7802,7 @@ msgid "Issues"
 msgstr "Sorunlar"
 
 msgid "ITAR Certifications"
-msgstr ""
+msgstr "ITAR Sertifikaları"
 
 msgid "item"
 msgstr "öğe"
@@ -8062,7 +8062,7 @@ msgid "Last Fiscal Year"
 msgstr "Son Mali Yıl"
 
 msgid "Last Login"
-msgstr ""
+msgstr "Son Giriş"
 
 msgid "Last Month"
 msgstr "Geçen Ay"
@@ -9774,7 +9774,7 @@ msgid "Not a table but a general-ledger balance: cost accumulates as job materia
 msgstr "Bir tablo değil, bir genel muhasebe dengesi: iş malzemeleri verildiğinde maliyetler birikir ve iş envantere alındığında temizlenir."
 
 msgid "Not certified"
-msgstr ""
+msgstr "Sertifikalı değil"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılayacak yeterli iş yok"
@@ -11893,7 +11893,7 @@ msgid "Reprint"
 msgstr "Yeniden Yazdır"
 
 msgid "Request a new invite"
-msgstr ""
+msgstr "Yeni bir davet iste"
 
 msgid "Request access"
 msgstr "Erişim İste"
@@ -14868,7 +14868,7 @@ msgstr "bu muayene planı"
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
-msgstr ""
+msgstr "{0} kuruluşuna katılmak için gönderilen bu davet süresi dolmuştur. E-postanıza yeni bir davet gönderilmesini isteyebilirsiniz."
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Bu satın alınan bir üründür — BoM/BoP'si yoktur; yalnızca öznitelikleri ve belgeleri değişebilir."
@@ -14877,7 +14877,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "Bu, web kancası için benzersiz bir tanımlayıcıdır"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
-msgstr ""
+msgstr "Bu ITAR tarafından kontrol edilen bir ortamdır. Erişim yalnızca ABD vatandaşları ile sınırlıdır."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Bu, mali yılınızın başladığı aydır."
@@ -15398,7 +15398,7 @@ msgid "Types"
 msgstr "Tipler"
 
 msgid "U.S. Person Attestation"
-msgstr ""
+msgstr "ABD Vatandaşı Tasdiki"
 
 msgid "Unapplied"
 msgstr "Uygulanmamış"

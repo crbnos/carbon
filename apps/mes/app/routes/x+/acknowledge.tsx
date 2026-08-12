@@ -42,6 +42,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "itar-entity") {
+    // Only a representative who can bind the company may accept the Rider. MES
+    // never renders Screen 1 (that is an ERP admin action), but this endpoint is
+    // still live and writes via the service-role client (RLS bypassed), so
+    // enforce the same permission the ERP action does.
+    await requirePermissions(request, { update: "users" });
+
     const parsed = itarEntityCertificationValidator.safeParse({
       authorityToBind: formData.get("authorityToBind") === "on",
       acceptRider: formData.get("acceptRider") === "on",

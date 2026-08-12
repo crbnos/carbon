@@ -2749,7 +2749,7 @@ msgid "Centralized Billing Address"
 msgstr "一元化された請求先住所"
 
 msgid "Cert Version"
-msgstr ""
+msgstr "認定バージョン"
 
 msgid "Certificate Number"
 msgstr "証明書番号"
@@ -2758,7 +2758,7 @@ msgid "Certificate uploaded"
 msgstr "証明書がアップロードされました"
 
 msgid "Certified"
-msgstr ""
+msgstr "認定済み"
 
 msgid "Chain"
 msgstr "チェーン"
@@ -7249,7 +7249,7 @@ msgid "I (reduced)"
 msgstr "I（削減）"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
-msgstr ""
+msgstr "この個人は22 CFR 120.62で定義されている米国人である合理的な根拠があります"
 
 msgid "I'm Still Working"
 msgstr "まだ働いています"
@@ -7640,7 +7640,7 @@ msgid "Invite"
 msgstr "招待"
 
 msgid "Invite Expired"
-msgstr ""
+msgstr "招待が期限切れになりました"
 
 msgid "Invited"
 msgstr "招待済み"
@@ -7802,7 +7802,7 @@ msgid "Issues"
 msgstr "問題"
 
 msgid "ITAR Certifications"
-msgstr ""
+msgstr "ITAR認定"
 
 msgid "item"
 msgstr "アイテム"
@@ -8062,7 +8062,7 @@ msgid "Last Fiscal Year"
 msgstr "前年度"
 
 msgid "Last Login"
-msgstr ""
+msgstr "最後のログイン"
 
 msgid "Last Month"
 msgstr "先月"
@@ -9774,7 +9774,7 @@ msgid "Not a table but a general-ledger balance: cost accumulates as job materia
 msgstr "テーブルではなく、総勘定元帳残高：ジョブ材料が発行されるにつれてコストが蓄積され、ジョブが在庫に受け取られるとクリアになります。"
 
 msgid "Not certified"
-msgstr ""
+msgstr "認定されていない"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
@@ -11893,7 +11893,7 @@ msgid "Reprint"
 msgstr "再印刷"
 
 msgid "Request a new invite"
-msgstr ""
+msgstr "新しい招待をリクエストする"
 
 msgid "Request access"
 msgstr "アクセスをリクエスト"
@@ -14868,7 +14868,7 @@ msgstr "この検査計画"
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
-msgstr ""
+msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "これは購入アイテムです。BoM/BoP はありません。属性と文書のみ変更できます。"
@@ -14877,7 +14877,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "これはウェブフックの一意の識別子です"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
-msgstr ""
+msgstr "これはITAR管理環境です。アクセスは米国人に限定されています。"
 
 msgid "This is the month your fiscal year starts."
 msgstr "これはあなたの会計年度が始まる月です。"
@@ -15398,7 +15398,7 @@ msgid "Types"
 msgstr "タイプ"
 
 msgid "U.S. Person Attestation"
-msgstr ""
+msgstr "米国人証明"
 
 msgid "Unapplied"
 msgstr "未適用"

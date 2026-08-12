@@ -115,6 +115,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const redirectTo = formData.get("redirectTo") as string | null;
 
   if (intent === "itar-entity") {
+    // Only a representative who can bind the company may accept the Rider. The
+    // UI gates Screen 1 on this same permission; enforce it here too, since this
+    // writes via the service-role client (RLS bypassed) and unblocks the whole
+    // company's controlled-environment gate.
+    await requirePermissions(request, { update: "users" });
+
     const parsed = itarEntityCertificationValidator.safeParse({
       authorityToBind: formData.get("authorityToBind") === "on",
       acceptRider: formData.get("acceptRider") === "on",
