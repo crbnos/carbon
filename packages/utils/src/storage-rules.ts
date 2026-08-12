@@ -12,7 +12,12 @@ import {
   getFieldDef,
   getFieldsForTargetType
 } from "./field-registry";
+import { fnv1a32 } from "./hash";
 
+/**
+ * The one condition-operator vocabulary, shared by storage rules and workflows.
+ * Which operators a field may use is narrowed per-feature; the names live here.
+ */
 export type Operator =
   | "eq"
   | "neq"
@@ -21,7 +26,12 @@ export type Operator =
   | "isSet"
   | "isNotSet"
   | "gt"
-  | "lt";
+  | "gte"
+  | "lt"
+  | "lte"
+  | "contains"
+  | "startsWith"
+  | "endsWith";
 
 export type Severity = "error" | "warn";
 
@@ -152,9 +162,7 @@ export type CompiledRule = {
   predicate: (ctx: RuleContext) => boolean;
 };
 
-// ---------------------------------------------------------------------------
 // Field path resolver
-// ---------------------------------------------------------------------------
 
 type Resolver = (ctx: RuleContext) => unknown;
 
@@ -182,9 +190,7 @@ export const buildResolver = (path: string): Resolver => {
   };
 };
 
-// ---------------------------------------------------------------------------
 // Operator implementations (pure)
-// ---------------------------------------------------------------------------
 
 const isNullish = (v: unknown): boolean => v === null || v === undefined;
 
@@ -213,12 +219,21 @@ const operatorFns: Record<
   isNotSet: (l) =>
     Array.isArray(l) ? l.length === 0 : isNullish(l) || l === "",
   gt: (l, r) => typeof l === "number" && typeof r === "number" && l > r,
-  lt: (l, r) => typeof l === "number" && typeof r === "number" && l < r
+  gte: (l, r) => typeof l === "number" && typeof r === "number" && l >= r,
+  lt: (l, r) => typeof l === "number" && typeof r === "number" && l < r,
+  lte: (l, r) => typeof l === "number" && typeof r === "number" && l <= r,
+  // Membership on a list, substring on a string — the left operand decides.
+  contains: (l, r) =>
+    Array.isArray(l)
+      ? l.includes(r)
+      : typeof l === "string" && typeof r === "string" && l.includes(r),
+  startsWith: (l, r) =>
+    typeof l === "string" && typeof r === "string" && l.startsWith(r),
+  endsWith: (l, r) =>
+    typeof l === "string" && typeof r === "string" && l.endsWith(r)
 };
 
-// ---------------------------------------------------------------------------
 // Compiler
-// ---------------------------------------------------------------------------
 
 const compileCondition = (cond: Condition): ((ctx: RuleContext) => boolean) => {
   const resolve = buildResolver(cond.field);
@@ -289,28 +304,17 @@ export const compileRule = (row: StorageRuleRow): CompiledRule => ({
   predicate: compilePredicate(row.conditionAst)
 });
 
-// ---------------------------------------------------------------------------
 // LRU cache (process-scoped, FIFO eviction at cap)
-// ---------------------------------------------------------------------------
 
 const CACHE_CAP = 256;
 const cache = new Map<string, CompiledRule>();
 
-const fnv1a = (s: string): string => {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
-  }
-  return h.toString(36);
-};
-
 const cacheKey = (row: StorageRuleRow): string => {
   // Hash bits that drive compilation output, including targetType so two
   // rules with identical AST but different targets cannot collide.
-  const contentHash = fnv1a(
+  const contentHash = fnv1a32(
     `${row.targetType}|${row.message}|${JSON.stringify(row.conditionAst)}|${(row.surfaces ?? []).join(",")}`
-  );
+  ).toString(36);
   return `${row.id}:${row.updatedAt ?? ""}:${contentHash}`;
 };
 
@@ -337,16 +341,15 @@ export const __resetStorageRulesCache = (): void => {
 
 export const __storageRulesCacheSize = (): number => cache.size;
 
-// ---------------------------------------------------------------------------
 // Message interpolation
-// ---------------------------------------------------------------------------
 
 const TOKEN_RE =
   /\{(condition\[\d+\]\.(?:field|operator|value|name)|[a-zA-Z_][\w.]*)\}/g;
 
 const CONDITION_TOKEN_RE = /^condition\[(\d+)\]\.(field|operator|value|name)$/;
 
-const OPERATOR_LABELS: Record<Operator, string> = {
+/** Customer-facing wording for each operator. Shared by storage rules and workflows. */
+export const OPERATOR_LABELS: Record<Operator, string> = {
   eq: "equals",
   neq: "not equals",
   in: "is one of",
@@ -354,7 +357,12 @@ const OPERATOR_LABELS: Record<Operator, string> = {
   isSet: "is set",
   isNotSet: "is not set",
   gt: "greater than",
-  lt: "less than"
+  gte: "greater than or equal to",
+  lt: "less than",
+  lte: "less than or equal to",
+  contains: "contains",
+  startsWith: "starts with",
+  endsWith: "ends with"
 };
 
 export type InterpolateMessageOptions = {
@@ -416,9 +424,7 @@ export const interpolateMessage = (
   });
 };
 
-// ---------------------------------------------------------------------------
 // Evaluator
-// ---------------------------------------------------------------------------
 
 export type EvaluateRulesOptions = {
   resolveConditionValue?: (
@@ -490,13 +496,8 @@ export const evaluateRules = (
   return out;
 };
 
-// ---------------------------------------------------------------------------
-// Item-target rule filtering — which items a broadcast item rule fires on
-// ---------------------------------------------------------------------------
-//
-// Item rules no longer use the blunt `appliesToAll` broadcast. Instead they
-// carry optional type/group filters; empty filters = every item. `server.ts`
-// gates each item broadcast through this before adding the rule to a line.
+// Which items a broadcast item rule fires on: optional type/group filters,
+// empty = every item. `server.ts` gates each broadcast through this.
 
 export type ItemRuleFilter = {
   filteredItemTypes?: string[];
@@ -545,24 +546,9 @@ export const toItemRuleFilter = (row: {
   filteredItemMatchAll: row.filteredItemMatchAll ?? false
 });
 
-// ---------------------------------------------------------------------------
-// Per-surface context availability — single source of truth for "which field
-// may a rule reference given the surfaces it subscribes to"
-// ---------------------------------------------------------------------------
-//
-// Declares which root `FieldContext`s the evaluator STRUCTURALLY builds in
-// `RuleContext` for each surface. "Structurally" = the evaluator constructs that
-// root context for the surface at all; whether a given line's value is null is a
-// separate, allowed concern handled by `isSet`/`isNotSet` (see `nullable`). This
-// turns the prose in `STORAGE_UNIT_NOTES` / "Not populated" into enforced data so
-// the builder/validator can never offer or accept a field that won't resolve.
-//
-// Note `"storage"` is the `FieldContext` value; it maps to the `storageUnit`
-// RuleContext root key.
-//
-// Locked by the anti-drift test in `packages/ee/src/storage-rules/context.test.ts`,
-// which asserts the ctx `evaluateLinesForSurface` builds for each surface
-// populates exactly these contexts.
+// Which root `FieldContext`s the evaluator builds per surface — a null value is
+// a separate concern, handled by `isSet`/`isNotSet`. `"storage"` maps to the
+// `storageUnit` root key. Locked by `packages/ee/src/storage-rules/context.test.ts`.
 export const SURFACE_CONTEXT_AVAILABILITY: Record<
   TransactionSurface,
   readonly FieldContext[]
@@ -605,15 +591,8 @@ export const getFieldsForTargetTypeAndSurfaces = (
     isFieldAvailableOnSurfaces(f, surfaces)
   );
 
-// ---------------------------------------------------------------------------
-// Per-surface field semantics
-// ---------------------------------------------------------------------------
-//
-// Some fields carry different meaning depending on which surface fires the
-// rule. `transaction.quantity` is the prime example — it's the line qty on a
-// receipt, the planned op qty on `operationStart`, the scan delta on
-// `operationFinish`, etc. Surface this so rule authors don't write predicates
-// that work on one surface and silently misfire on another.
+// Fields whose meaning shifts by surface, surfaced to rule authors so a
+// predicate written for one surface doesn't silently misfire on another.
 
 const TRANSACTION_QUANTITY_NOTES: Record<TransactionSurface, string> = {
   receipt: "Quantity received on this receipt line.",

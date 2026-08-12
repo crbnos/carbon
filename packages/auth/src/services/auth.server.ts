@@ -64,12 +64,22 @@ export async function deleteAuthAccount(
   client: SupabaseClient<Database>,
   userId: string
 ) {
-  const [supabaseDelete, carbonDelete] = await Promise.all([
-    client.auth.admin.deleteUser(userId),
-    client.from("user").delete().eq("id", userId)
-  ]);
+  // Sequential: a failed auth delete leaves both records intact and retryable.
+  const supabaseDelete = await client.auth.admin.deleteUser(userId);
+  if (supabaseDelete.error) return null;
 
-  if (supabaseDelete.error || carbonDelete.error) return null;
+  const carbonDelete = await client.from("user").delete().eq("id", userId);
+  if (carbonDelete.error) {
+    // Auth user is gone but the app row remains; log so it can be found and cleaned up.
+    log.error(
+      "deleteAuthAccount: user table cleanup failed after auth delete",
+      {
+        userId,
+        error: carbonDelete.error
+      }
+    );
+    return null;
+  }
 
   return true;
 }

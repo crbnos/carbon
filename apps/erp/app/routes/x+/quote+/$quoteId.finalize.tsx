@@ -119,7 +119,7 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    const finalize = await finalizeQuote(client, quoteId, userId);
+    const finalize = await finalizeQuote(client, quoteId, userId, companyId);
     if (finalize.error) {
       throw redirect(
         path.to.quote(quoteId),

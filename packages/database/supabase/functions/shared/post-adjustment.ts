@@ -40,6 +40,10 @@ export interface BookAdjustmentArgs {
     documentId?: string | null;
     correctionOfItemLedgerId?: string | null;
     comment?: string | null;
+    // Reason for scrap/unscrap movements (documentType 'Scrap'); NULL for
+    // every other adjustment. MES production scrap keeps its reason on
+    // productionQuantity.scrapReasonId.
+    scrapReasonId?: string | null;
     companyId: string;
     createdBy: string;
   };
@@ -74,6 +78,11 @@ export interface BookAdjustmentArgs {
     // (Item / ItemPostingGroup / Location are consulted) — journal lines get
     // journalLineDimension tags for whichever are configured
     dimensions?: Record<string, string>;
+    // Additional journalLineDimension tags beyond Item/ItemPostingGroup/
+    // Location (ScrapReason / WorkCenter / Employee for scrap postings).
+    // entityType must be a dimensionEntityType value present in `dimensions`;
+    // valueId is the referenced entity id (polymorphic, no FK).
+    extraDimensions?: Array<{ entityType: string; valueId: string }>;
     // When set, lines append to this shared journal instead of the core
     // creating one journal per movement — inventory counts post ONE journal
     // per count with a line pair per variance. Lazy (called only when a
@@ -84,6 +93,11 @@ export interface BookAdjustmentArgs {
   // storage-unit-transfer legs move stock between bins without changing its
   // value: ledger row only — no cost layers, no journal
   skipValuation?: boolean;
+  // Book an INCREASE's new cost layer at this unit cost instead of
+  // computeCurrentUnitCost — Unscrap reverses at the original scrapped cost
+  // (Oracle Return-from-Scrap precedent). Ignored for decreases, which always
+  // relieve via calculateCOGS.
+  fixedUnitCost?: number;
 }
 
 // itemLedgerDocumentType values that also exist on journalLineDocumentType.
@@ -102,6 +116,7 @@ const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
   "Inventory Count",
   "Non-Conformance",
   "Inbound Inspection",
+  "Scrap",
 ]);
 
 export interface BookAdjustmentResult {
@@ -177,6 +192,7 @@ export async function bookAdjustment(
       trackedEntityId: ledger.trackedEntityId,
       quantity: ledger.quantity,
       comment: ledger.comment ?? null,
+      scrapReasonId: ledger.scrapReasonId ?? null,
       companyId,
       createdBy: ledger.createdBy,
     })
@@ -217,6 +233,27 @@ export async function bookAdjustment(
         quantity: -absQuantity,
         cost: -cogs.totalCost,
         remainingQuantity: 0,
+        postingDate: ledger.postingDate,
+        companyId,
+      })
+      .execute();
+  } else if (args.fixedUnitCost != null) {
+    // Increase at a caller-fixed unit cost: Unscrap restores stock at the
+    // ORIGINAL scrapped cost so a scrap→unscrap round trip nets zero P&L.
+    cost = absQuantity * args.fixedUnitCost;
+
+    await trx
+      .insertInto("costLedger")
+      .values({
+        itemLedgerType: ledger.entryType,
+        costLedgerType: "Direct Cost",
+        adjustment: false,
+        documentType: ledger.documentType ?? null,
+        documentId,
+        itemId: ledger.itemId,
+        quantity: absQuantity,
+        cost,
+        remainingQuantity: absQuantity,
         postingDate: ledger.postingDate,
         companyId,
       })
@@ -359,6 +396,9 @@ export async function bookAdjustment(
     ["Item", ledger.itemId],
     ["ItemPostingGroup", item.itemPostingGroupId],
     ["Location", ledger.locationId],
+    ...(accounting.extraDimensions ?? []).map(
+      (d) => [d.entityType, d.valueId] as [string, string]
+    ),
   ];
   const journalLineDimensionInserts = journalLines.flatMap((line) =>
     dimensionValues

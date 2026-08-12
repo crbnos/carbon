@@ -1,10 +1,6 @@
-import {
-  getPostgresClient,
-  getPostgresConnectionPool,
-  type KyselyDatabase
-} from "@carbon/database/client";
 import type { HandlerType, QueueMessage } from "@carbon/database/event";
-import { type Kysely, PostgresDriver, sql } from "kysely";
+import { sql } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 const QUEUE_NAME = "event_system"; // Name of the PGMQ queue
@@ -20,14 +16,6 @@ function chunk<T>(arr: T[], size: number): T[][] {
   }
   return chunks;
 }
-
-const getDatabaseClient = (size: number) => {
-  const pool = getPostgresConnectionPool(size);
-  return getPostgresClient(
-    pool,
-    PostgresDriver
-  ) as unknown as Kysely<KyselyDatabase>;
-};
 
 type QueueJob = {
   msg_id: number;
@@ -71,7 +59,7 @@ export const eventQueueFunction = inngest.createFunction(
       const { grouped, allIds } = (await step.run(
         `read-queue-${pass}`,
         async () => {
-          const pg = getDatabaseClient(1);
+          const pg = getJobDatabaseClient();
           const { rows: jobs } =
             await sql<QueueJob>`SELECT * FROM pgmq.read(${QUEUE_NAME}, ${VISIBILITY_TIMEOUT}, ${BATCH_SIZE})`.execute(
               pg
@@ -109,6 +97,7 @@ export const eventQueueFunction = inngest.createFunction(
           data: {
             msgId: job.msg_id,
             url: job.message.handlerConfig.url,
+            companyId: job.message.companyId,
             config: job.message.handlerConfig,
             data: job.message.event
           }
@@ -126,7 +115,9 @@ export const eventQueueFunction = inngest.createFunction(
           name: "carbon/event-workflow" as const,
           data: {
             msgId: job.msg_id,
-            workflowId: job.message.handlerConfig.workflowId,
+            companyId: job.message.companyId,
+            actorId: job.message.actorId ?? null,
+            workflowRunId: job.message.workflowRunId ?? null,
             data: job.message.event
           }
         }));
@@ -206,7 +197,7 @@ export const eventQueueFunction = inngest.createFunction(
 
       // 9. Delete processed messages from PGMQ
       await step.run(`delete-processed-${pass}`, async () => {
-        const pg = getDatabaseClient(1);
+        const pg = getJobDatabaseClient();
         await sql`SELECT pgmq.delete(${QUEUE_NAME}, id::bigint) FROM unnest(${allIds}::bigint[]) AS id`.execute(
           pg
         );

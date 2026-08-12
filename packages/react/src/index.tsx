@@ -251,6 +251,7 @@ import {
 import { Paragraph } from "./Paragraph";
 import {
   Popover,
+  PopoverAnchor,
   PopoverClose,
   PopoverContent,
   PopoverFooter,
@@ -537,6 +538,7 @@ export {
   OperatingSystemContextProvider,
   Paragraph,
   Popover,
+  PopoverAnchor,
   PopoverClose,
   PopoverContent,
   PopoverFooter,

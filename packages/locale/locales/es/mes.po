@@ -153,6 +153,9 @@ msgstr "Error de autenticación"
 msgid "available"
 msgstr "disponible"
 
+msgid "Available"
+msgstr "Disponible"
+
 msgid "Batch"
 msgstr "Lote"
 
@@ -267,6 +270,9 @@ msgstr "Consola"
 
 msgid "Console Mode"
 msgstr "Modo consola"
+
+msgid "Consumed"
+msgstr "Consumido"
 
 msgid "Consumed expired"
 msgstr "Consumido vencido"
@@ -678,6 +684,9 @@ msgstr "Mantenimiento completado"
 msgid "Maintenance overdue"
 msgstr "Mantenimiento vencido"
 
+msgid "Make a replacement"
+msgstr "Hacer un reemplazo"
+
 msgid "Manually add items to inventory"
 msgstr "Agregar artículos al inventario manualmente"
 
@@ -868,6 +877,9 @@ msgstr "Nada en ejecución"
 msgid "Nothing scheduled at this work center"
 msgstr "Nada programado en este centro de trabajo"
 
+msgid "Nothing to scrap"
+msgstr "Nada que descartar"
+
 msgid "OEE Impact"
 msgstr "Impacto OEE"
 
@@ -1053,6 +1065,9 @@ msgstr "Eliminar inventario"
 msgid "Remove part"
 msgstr "Eliminar pieza"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "Reabrir el subconjunto y crear una unidad de reemplazo"
+
 msgid "Result"
 msgstr "Resultado"
 
@@ -1101,6 +1116,12 @@ msgstr "Programación"
 msgid "Scrap"
 msgstr "Descartar"
 
+msgid "Scrap {readableId}"
+msgstr "Descartar {readableId}"
+
+msgid "Scrap material"
+msgstr "Descartar material"
+
 msgid "Scrap quantity"
 msgstr "Cantidad de desecho"
 
@@ -1109,6 +1130,12 @@ msgstr "Motivo de desperdicio"
 
 msgid "Scrapped"
 msgstr "Descartado"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "Descartando serie {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "Descartando la serie seleccionada"
 
 msgid "Search"
 msgstr "Buscar"
@@ -1294,6 +1321,9 @@ msgstr "El lote se marcará como Aprobado y {remaining} unidad(es) restante(s) s
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "El lote seguirá siendo disposicionado, pero no se puede crear un NCR hasta que se configure al menos un tipo de problema."
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "No hay piezas rastreadas disponibles o consumidas para este material."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Hay materiales con seguimiento de serie o lote en la lista de materiales que no se han emitido completamente. Completar sin emitir puede generar registros de trazabilidad incorrectos."
 
@@ -1302,6 +1332,15 @@ msgstr "Estos elementos aún tienen material para recoger. Finalizar ahora marca
 
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote ha expirado y no se puede seleccionar."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "Esta pieza fue hecha por encargo. Descartarla puede reabrir su ruta para hacer un reemplazo."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "Esta pieza será descartada del inventario. Su requisito permanece abierto para que puedas emitir un reemplazo."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "Esta unidad será descartada permanentemente y se creará un nuevo número de serie de reemplazo."
 
 msgid "Thumbnail"
 msgstr "Miniatura"

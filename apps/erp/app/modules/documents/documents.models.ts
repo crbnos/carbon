@@ -24,7 +24,7 @@ export const documentSourceTypes = [
 
 export const documentValidator = z.object({
   id: z.string().min(1, { message: "Document ID is required" }),
-  name: z.string().min(3).max(50),
+  name: z.string().trim().min(3).max(50),
   extension: z.string().optional(),
   description: z.string().optional(),
   labels: z.array(z.string().min(1).max(50)).optional(),

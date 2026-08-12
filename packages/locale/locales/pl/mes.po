@@ -153,6 +153,9 @@ msgstr "Błąd uwierzytelniania"
 msgid "available"
 msgstr "dostępne"
 
+msgid "Available"
+msgstr "Dostępne"
+
 msgid "Batch"
 msgstr "Partia"
 
@@ -267,6 +270,9 @@ msgstr "Konsola"
 
 msgid "Console Mode"
 msgstr "Tryb konsoli"
+
+msgid "Consumed"
+msgstr "Zużyte"
 
 msgid "Consumed expired"
 msgstr "Zużyte wygasłe"
@@ -678,6 +684,9 @@ msgstr "Utrzymanie ruchu zakończone"
 msgid "Maintenance overdue"
 msgstr "Konserwacja przeterminowana"
 
+msgid "Make a replacement"
+msgstr "Utwórz zamiennik"
+
 msgid "Manually add items to inventory"
 msgstr "Ręcznie dodaj pozycje do zapasów"
 
@@ -868,6 +877,9 @@ msgstr "Nic nie działa"
 msgid "Nothing scheduled at this work center"
 msgstr "Nic nie zaplanowano w tym centrum roboczym"
 
+msgid "Nothing to scrap"
+msgstr "Nic do złomowania"
+
 msgid "OEE Impact"
 msgstr "Wpływ na OEE"
 
@@ -1053,6 +1065,9 @@ msgstr "Usuń zapasy"
 msgid "Remove part"
 msgstr "Usuń część"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "Ponownie otwórz podzespół i utwórz zastępczą jednostkę"
+
 msgid "Result"
 msgstr "Wynik"
 
@@ -1101,6 +1116,12 @@ msgstr "Harmonogram"
 msgid "Scrap"
 msgstr "Złom"
 
+msgid "Scrap {readableId}"
+msgstr "Złom {readableId}"
+
+msgid "Scrap material"
+msgstr "Złom materiału"
+
 msgid "Scrap quantity"
 msgstr "Ilość złomu"
 
@@ -1109,6 +1130,12 @@ msgstr "Przyczyna odrzutu"
 
 msgid "Scrapped"
 msgstr "Odrzucone"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "Złomowanie numeru seryjnego {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "Złomowanie wybranego numeru seryjnego"
 
 msgid "Search"
 msgstr "Szukaj"
@@ -1294,6 +1321,9 @@ msgstr "Partia zostanie oznaczona jako Zaakceptowana i {remaining} pozostałych 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Partia będzie nadal dyspozycjonowana, ale nie można utworzyć NCR, dopóki nie zostanie skonfigurowany co najmniej jeden typ problemu."
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "Brak dostępnych lub zużytych śledzonych części dla tego materiału."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Na liście materiałowej znajdują się materiały śledzone seryjnie lub partiami, które nie zostały w pełni wydane. Ukończenie bez wydania może skutkować nieprawidłowymi rekordami śledzenia."
 
@@ -1302,6 +1332,15 @@ msgstr "Te pozycje mają jeszcze materiał do wybrania. Zakończenie teraz oznac
 
 msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "Ta część została wykonana na zamówienie. Jej złomowanie może ponownie otworzyć trasę producji, aby wykonać zamiennik."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "Ta część zostanie złomowana z magazynu. Jej zapotrzebowanie pozostaje otwarte, aby można było wystawić zamiennik."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzony nowy numer seryjny zamiennika."
 
 msgid "Thumbnail"
 msgstr "Miniatura"

@@ -71,7 +71,14 @@ type ContentProps = TooltipPrimitive.Popup.Props &
   Pick<
     TooltipPrimitive.Positioner.Props,
     "side" | "sideOffset" | "align" | "alignOffset"
-  >;
+  > & {
+    /**
+     * Portal to `document.body` and paint above other overlays. Opt in only for a
+     * tooltip inside a popover that already sits above the default layer — the
+     * default `z-50` deliberately stays below modals, drawers and the palette.
+     */
+    elevated?: boolean;
+  };
 
 /** Anchor arrow pointing at the trigger; render as a child of TooltipContent. */
 const TooltipArrow = (props: TooltipPrimitive.Arrow.Props) => (
@@ -104,17 +111,22 @@ const TooltipContent = forwardRef<HTMLDivElement, ContentProps>(
       sideOffset = 4,
       align = "center",
       alignOffset = 0,
+      elevated = false,
       ...props
     },
     ref
   ) => (
-    <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Portal
+      container={
+        elevated && typeof document !== "undefined" ? document.body : undefined
+      }
+    >
       <TooltipPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
-        className="z-50"
+        className={elevated ? "z-[9999]" : "z-50"}
       >
         <TooltipPrimitive.Popup
           ref={ref}

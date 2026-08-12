@@ -10,16 +10,20 @@ export type RecentSearch = Route & {
 };
 
 export type EntityType =
-  | "customer"
-  | "supplier"
   | "item"
   | "job"
-  | "employee"
+  | "salesOrder"
   | "purchaseOrder"
+  | "customer"
+  | "supplier"
+  | "quote"
+  | "salesRfq"
+  | "supplierQuote"
   | "salesInvoice"
   | "purchaseInvoice"
-  | "equipmentType"
-  | "workCellType";
+  | "employee"
+  | "issue"
+  | "gauge";
 
 export type EntityTypeFilter = "all" | EntityType;
 

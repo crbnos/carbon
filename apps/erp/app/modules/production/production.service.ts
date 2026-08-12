@@ -2,6 +2,7 @@ import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { nameSimilarity, tiptapToText } from "@carbon/utils";
@@ -2383,12 +2384,13 @@ export async function updateJobStatus(
   client: SupabaseClient<Database>,
   params: {
     id: string;
+    companyId: string;
     status: (typeof jobStatus)[number];
     assignee?: string | null;
     updatedBy: string;
   }
 ) {
-  const { id, status, assignee, updatedBy } = params;
+  const { id, companyId, status, assignee, updatedBy } = params;
 
   // Reopening a job (leaving a completed state) must clear completedDate so it
   // isn't left stale. Done in the same UPDATE as status so the job event
@@ -2397,7 +2399,15 @@ export async function updateJobStatus(
   // set completedDate — that is the complete route's / complete_job_to_inventory's job.
   const clearsCompletion = !["Completed", "Closed"].includes(status);
 
-  return client
+  // The prior status is what tells a real release/hold apart from a re-save.
+  const prior = await client
+    .from("job")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  const result = await client
     .from("job")
     .update({
       status,
@@ -2407,6 +2417,24 @@ export async function updateJobStatus(
       ...(clearsCompletion ? { completedDate: null } : {})
     })
     .eq("id", id);
+
+  if (!result.error && prior.data && prior.data.status !== status) {
+    if (status === "Ready") {
+      await raiseMoment("production.jobReleased", {
+        outputs: { job: { id }, releasedBy: { id: updatedBy } },
+        companyId,
+        actorId: updatedBy
+      });
+    } else if (status === "Paused") {
+      await raiseMoment("production.jobHeld", {
+        outputs: { job: { id }, heldBy: { id: updatedBy } },
+        companyId,
+        actorId: updatedBy
+      });
+    }
+  }
+
+  return result;
 }
 
 export async function updateJobMaterialOrder(
@@ -6615,7 +6643,9 @@ export async function generateAssemblyStepsFromPlan(
         ok: false,
         reason: "steps-locked",
         modelUploadId,
-        message: `${locked.length} ${locked.length === 1 ? "step is" : "steps are"} manually authored or done — delete or reset them before regenerating`
+        message: `${locked.length} ${
+          locked.length === 1 ? "step is" : "steps are"
+        } manually authored or done — delete or reset them before regenerating`
       };
     }
     const removed = await client

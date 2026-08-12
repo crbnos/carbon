@@ -18,7 +18,7 @@ import {
   getNextLessonInCourse,
   toProgressSets
 } from "~/utils/progress";
-import { formatDuration } from "~/utils/video";
+import { formatDuration, isLessonComingSoon } from "~/utils/video";
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { courseId } = params;
@@ -49,6 +49,11 @@ export default function CourseRoute() {
     course?.topics.reduce((acc, topic) => {
       return acc + (topic.challenge === undefined ? 0 : 1);
     }, 0) ?? 0;
+
+  // Counts every lesson listed below, including ones that aren't recorded yet —
+  // `progress.lessonsTotal` only counts the ones that can actually be completed.
+  const totalLessons =
+    course?.topics.reduce((acc, topic) => acc + topic.lessons.length, 0) ?? 0;
 
   if (!course || !module) {
     throw new Error("Course not found");
@@ -109,8 +114,8 @@ export default function CourseRoute() {
         <div className="flex items-center gap-5 font-mono text-ed-12 text-ed-ink/70">
           <span>{formatDuration(totalDuration)}</span>
           <span>
-            {progress.lessonsTotal} lesson
-            {progress.lessonsTotal === 1 ? "" : "s"}
+            {totalLessons} lesson
+            {totalLessons === 1 ? "" : "s"}
           </span>
           <span>
             {totalChallenges} challenge{totalChallenges === 1 ? "" : "s"}
@@ -186,6 +191,7 @@ export default function CourseRoute() {
                     name={lesson.name}
                     duration={lesson.duration}
                     completed={completedLessons.includes(lesson.id)}
+                    comingSoon={isLessonComingSoon(lesson)}
                     tocAnchor
                   />
                 ))}
@@ -204,6 +210,7 @@ export default function CourseRoute() {
                         name={lesson.name}
                         duration={lesson.duration}
                         completed={completedLessons.includes(lesson.id)}
+                        comingSoon={isLessonComingSoon(lesson)}
                       />
                     ))}
                   </div>
@@ -263,12 +270,14 @@ function LessonRow({
   name,
   duration,
   completed,
+  comingSoon,
   tocAnchor
 }: {
   lessonId: string;
   name: string;
   duration: number;
   completed: boolean;
+  comingSoon?: boolean;
   tocAnchor?: boolean;
 }) {
   return (
@@ -286,7 +295,7 @@ function LessonRow({
         </span>
       </span>
       <span className="shrink-0 font-mono text-ed-12 text-ed-ink/60">
-        {formatDuration(duration)}
+        {comingSoon ? "Coming soon" : formatDuration(duration)}
       </span>
     </Link>
   );

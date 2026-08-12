@@ -57,7 +57,7 @@ export const deactivateUsersValidator = z.object({
 
 export const employeeTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   data: z
     .string()
     .startsWith("[", { message: "Invalid JSON" })
@@ -87,7 +87,7 @@ export const employeeValidator = z.object({
 
 export const groupValidator = z.object({
   id: z.string(),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   selections: z
     .array(z.string().min(1, { message: "Invalid selection" }))
     .min(1, { message: "Group members are required" })

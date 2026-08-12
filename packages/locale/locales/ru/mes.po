@@ -153,6 +153,9 @@ msgstr "Ошибка аутентификации"
 msgid "available"
 msgstr "доступно"
 
+msgid "Available"
+msgstr "Доступно"
+
 msgid "Batch"
 msgstr "Партия"
 
@@ -267,6 +270,9 @@ msgstr "Консоль"
 
 msgid "Console Mode"
 msgstr "Режим консоли"
+
+msgid "Consumed"
+msgstr "Использовано"
 
 msgid "Consumed expired"
 msgstr "Потреблено истекшее"
@@ -678,6 +684,9 @@ msgstr "Обслуживание завершено"
 msgid "Maintenance overdue"
 msgstr "Обслуживание просрочено"
 
+msgid "Make a replacement"
+msgstr "Создать замену"
+
 msgid "Manually add items to inventory"
 msgstr "Добавить номенклатуру на склад вручную"
 
@@ -868,6 +877,9 @@ msgstr "Ничего не работает"
 msgid "Nothing scheduled at this work center"
 msgstr "Ничего не запланировано на этом рабочем центре"
 
+msgid "Nothing to scrap"
+msgstr "Нечего списывать"
+
 msgid "OEE Impact"
 msgstr "Влияние на OEE"
 
@@ -1053,6 +1065,9 @@ msgstr "Списать запас"
 msgid "Remove part"
 msgstr "Удалить деталь"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "Снова открыть узел и создать сменный агрегат"
+
 msgid "Result"
 msgstr "Результат"
 
@@ -1101,6 +1116,12 @@ msgstr "Расписание"
 msgid "Scrap"
 msgstr "Брак"
 
+msgid "Scrap {readableId}"
+msgstr "Списать {readableId}"
+
+msgid "Scrap material"
+msgstr "Списать материал"
+
 msgid "Scrap quantity"
 msgstr "Количество брака"
 
@@ -1109,6 +1130,12 @@ msgstr "Причина брака"
 
 msgid "Scrapped"
 msgstr "Списано в брак"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "Списание серийного номера {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "Списание выбранного серийного номера"
 
 msgid "Search"
 msgstr "Поиск"
@@ -1294,6 +1321,9 @@ msgstr "Партия будет отмечена как Пройдена, и {re
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Партия все еще будет распределена, но NCR не может быть создана до тех пор, пока не будет настроен хотя бы один тип проблемы."
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "Для этого материала нет доступных или использованных отслеживаемых компонентов."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "В спецификации есть материалы с серийным или партионным учётом, которые не были полностью выданы. Завершение без выдачи может привести к некорректным записям прослеживаемости."
 
@@ -1302,6 +1332,15 @@ msgstr "Эти позиции содержат материал для подб�
 
 msgid "This lot is expired and can't be picked."
 msgstr "Эта партия истекла и не может быть выбрана."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "Эта часть была изготовлена на заказ. Её списание может снова открыть маршрут для создания замены."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "Эта часть будет списана со склада. Её требование остается открытым, чтобы вы могли выдать замену."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "Эта единица будет окончательно списана, и будет создан новый серийный номер замены."
 
 msgid "Thumbnail"
 msgstr "Миниатюра"

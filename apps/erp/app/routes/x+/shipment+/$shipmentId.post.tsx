@@ -8,6 +8,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { datetime } from "@carbon/utils";
@@ -346,6 +347,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       })
       .eq("id", shipmentId);
   }
+
+  // Must stay below the rollback catch above — a post that got reverted to
+  // Draft must not fire workflows.
+  await raiseMoment("inventory.shipmentPosted", {
+    outputs: { shipment: { id: shipmentId }, postedBy: { id: userId } },
+    companyId,
+    actorId: userId
+  });
 
   if (expiredWarning) {
     throw redirect(

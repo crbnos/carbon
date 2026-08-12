@@ -43,6 +43,17 @@ pnpm --filter @carbon/database typecheck
 | `./ratelimit` | `checkApiKeyRateLimit` (Postgres RPC wrapper) |
 | `.` (root, from `src/timezone.ts` + `src/utils.ts`) | `getCompanyTimeZone(db, companyId)` / `getLocationTimeZone(db, locationId, companyId)` — business-timezone resolvers, overloaded for Supabase client or Kysely handle (they throw on query failure rather than silently falling back); `AnyPostgresClient` + `isKysely` guard for writing such overloads. SQL siblings: `company_today(companyId)` / `location_today(locationId, companyId)` replace `CURRENT_DATE` for business dates in DB functions (SECURITY INVOKER — callers must be SECURITY DEFINER or service-role). ERP routes should prefer the Redis-cached wrappers in `~/modules/shared/timezone.server` |
 
+## Dev Seed
+
+`pnpm db:seed:dev` runs `src/seed-dev/` — not a single script. `cli.ts` is the entry point,
+`bootstrap.ts` sets up the company, `wipe.ts` clears prior data, and the actual seeding is a
+**tiered** directory (`tiers/01-foundation.ts` … `tiers/12-planning.ts`) run in numeric order,
+because each tier depends on the ids the tiers before it created. Add new seed data to the tier
+that owns that module rather than creating a new top-level script — the ordering IS the contract.
+
+Per-module seed scripts were folded into this structure: `seed-change-orders.ts` and its
+`db:seed:change-orders` script are gone, replaced by `tiers/08-change-orders.ts`.
+
 ## Cross-References
 
 - `.claude/rules/conventions-database.md` — table template, column types, migration checklist

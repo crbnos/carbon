@@ -77,15 +77,17 @@ const IconWithTooltip = ({
   tooltip
 }: {
   icon: ReactNode;
-  tooltip: string;
+  tooltip?: string;
 }) => (
   <Tooltip>
     <TooltipTrigger asChild>
       <span className="inline-flex">{icon}</span>
     </TooltipTrigger>
-    <TooltipContent>
-      <p>{tooltip}</p>
-    </TooltipContent>
+    {tooltip ? (
+      <TooltipContent>
+        <p>{tooltip}</p>
+      </TooltipContent>
+    ) : null}
   </Tooltip>
 );
 
@@ -213,17 +215,14 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           const statusIcon = everyMadeLineIsCompleted ? (
             <IconWithTooltip
               icon={<LuCheck className="w-3 h-3 mr-2 text-emerald-500" />}
-              tooltip={t`All jobs completed`}
             />
           ) : everyMadeLineHasSufficientJobs ? (
             <IconWithTooltip
               icon={<LuLoader className="w-3 h-3 mr-2 text-orange-500" />}
-              tooltip={t`Jobs in progress`}
             />
           ) : (
             <IconWithTooltip
               icon={<LuTriangleAlert className="w-3 h-3 mr-2 text-red-500" />}
-              tooltip={t`Not enough jobs to cover quantity`}
             />
           );
 

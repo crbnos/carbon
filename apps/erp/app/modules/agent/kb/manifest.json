@@ -18,7 +18,7 @@
     {
       "slug": "docs/building/webhooks",
       "title": "Webhooks",
-      "description": "Get an HTTP callback the moment a Carbon record is created, changed, or deleted.",
+      "description": "Get an HTTP callback when a Carbon record is created, changed, or deleted.",
       "keywords": ["webhooks", "docs", "building"],
       "headings": [
         "Subscribable tables",
@@ -1315,6 +1315,20 @@
       ]
     },
     {
+      "slug": "docs/reference/scrap",
+      "title": "Scrap and unscrap",
+      "description": "Writing off defective or lost material, and restoring it if the write-off was a mistake.",
+      "keywords": ["scrap", "and", "unscrap", "docs", "reference"],
+      "headings": [
+        "Scrapping a unit on the floor",
+        "Scrapping a subcomponent",
+        "Scrapping stock",
+        "Unscrap",
+        "Accounting for scrap",
+        "Related"
+      ]
+    },
+    {
       "slug": "docs/reference/sequences",
       "title": "Numbering sequences",
       "description": "The per-company generator behind every readable document number — jobs, change notices, payments, and more.",
@@ -1495,6 +1509,34 @@
         "Rates: estimate vs actual",
         "Capacity",
         "Related"
+      ]
+    },
+    {
+      "slug": "docs/reference/workflow-runs",
+      "title": "Workflow runs",
+      "description": "Every firing of a workflow is recorded step by step. What the run list and run detail show, what each status means, how repeating steps are summarised, and how long history is kept.",
+      "keywords": ["workflow", "runs", "docs", "reference"],
+      "headings": [
+        "The run list",
+        "Inside a run",
+        "Run statuses",
+        "Steps that repeat",
+        "Chains and loop protection",
+        "How long history is kept"
+      ]
+    },
+    {
+      "slug": "docs/reference/workflows",
+      "title": "Workflows",
+      "description": "Build an automation on a canvas — one trigger, conditions, and steps that notify people, update records, or call an outside service. Triggers, values, publishing, and versions.",
+      "keywords": ["workflows", "docs", "reference"],
+      "headings": [
+        "What starts a workflow",
+        "The steps you can add",
+        "Filling in a step",
+        "Calling an outside URL",
+        "Saving, publishing, and versions",
+        "Who can do what"
       ]
     },
     {

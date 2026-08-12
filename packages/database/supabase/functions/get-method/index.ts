@@ -615,14 +615,16 @@ serve(async (req: Request) => {
             // - scrapQuantity = targetQuantity * scrapRate (the extra needed for scrap)
             // - totalForChildren = target + scrap (passed to children for cascade)
             const nodeScrapQuantity = targetQuantity * nodeScrapPercentage;
-            const totalWithScrap = Math.ceil(targetQuantity + nodeScrapQuantity);
+            const totalWithScrap = targetQuantity + nodeScrapQuantity;
 
             // For Make: estimatedQuantity is the good quantity (without scrap)
             // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
             const estimatedQuantity =
               node.data.methodType === "Make to Order" ? targetQuantity : totalWithScrap;
             // operationQuantity should be the total (including scrap) since that's what we need to make
-            const operationQuantity = totalWithScrap;
+            // Operation/production counts stay whole even when material
+            // quantities are fractional
+            const operationQuantity = Math.ceil(totalWithScrap);
             // Pass total (including scrap) to children so cascade works correctly
             const totalQuantityForChildren = totalWithScrap;
 
@@ -1092,9 +1094,8 @@ serve(async (req: Request) => {
               const childTargetQuantity = totalQuantityForChildren * quantity;
               // scrapQuantity = portion attributable to scrap
               const childScrapQuantity = childTargetQuantity * itemScrapPercentage;
-              const childTotalWithScrap = Math.ceil(
-                childTargetQuantity + childScrapQuantity
-              );
+              const childTotalWithScrap =
+                childTargetQuantity + childScrapQuantity;
               // For Make: estimatedQuantity is the good quantity (without scrap)
               // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
               const childEstimatedQuantity =
@@ -1525,10 +1526,12 @@ serve(async (req: Request) => {
             // - For Make parts: estimatedQuantity = targetQuantity (good quantity, NOT including scrap)
             // - For Buy/Pick parts: estimatedQuantity = target + scrap (what we need to procure)
             const nodeScrapQuantity = targetQuantity * nodeScrapPercentage;
-            const totalWithScrap = Math.ceil(targetQuantity + nodeScrapQuantity);
+            const totalWithScrap = targetQuantity + nodeScrapQuantity;
             const estimatedQuantity =
               node.data.methodType === "Make to Order" ? targetQuantity : totalWithScrap;
-            const operationQuantity = totalWithScrap;
+            // Operation/production counts stay whole even when material
+            // quantities are fractional
+            const operationQuantity = Math.ceil(totalWithScrap);
             const totalQuantityForChildren = totalWithScrap;
 
             const relatedOperations = await client
@@ -1780,9 +1783,8 @@ serve(async (req: Request) => {
                 totalQuantityForChildren * (child.data.quantity ?? 1);
               const childScrapQuantity =
                 childTargetQuantity * itemScrapPercentage;
-              const childTotalWithScrap = Math.ceil(
-                childTargetQuantity + childScrapQuantity
-              );
+              const childTotalWithScrap =
+                childTargetQuantity + childScrapQuantity;
               // For Make: estimatedQuantity is the good quantity (without scrap)
               // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
               const childEstimatedQuantity =
@@ -2464,7 +2466,12 @@ serve(async (req: Request) => {
                     ) {
                       const attributes = await Promise.all(
                         methodOperationStep.map(
-                          async ({ id, ...attribute }) => ({
+                          async ({
+                            id,
+                            // quoteOperationStep has no provenance marker
+                            assemblyInstructionStepId: _assemblyInstructionStepId,
+                            ...attribute
+                          }) => ({
                             ...attribute,
                             description: toTiptapDoc(attribute.description),
                             operationId,
@@ -2992,7 +2999,13 @@ serve(async (req: Request) => {
                         .insertInto("quoteOperationStep")
                         .values(
                           methodOperationStep.map(
-                            ({ id: _id, ...attribute }) => ({
+                            ({
+                              id: _id,
+                              // quoteOperationStep has no provenance marker
+                              assemblyInstructionStepId:
+                                _assemblyInstructionStepId,
+                              ...attribute
+                            }) => ({
                               ...attribute,
                               description: toTiptapDoc(attribute.description),
                               operationId,
@@ -4825,7 +4838,11 @@ serve(async (req: Request) => {
         // Track estimated quantities for each make method to set on operations
         const quoteMakeMethodIdToQuantities: Record<
           string,
-          { targetQuantity: number; estimatedQuantity: number }
+          {
+            targetQuantity: number;
+            estimatedQuantity: number;
+            totalWithScrap: number;
+          }
         > = {};
 
         await db.transaction().execute(async (trx) => {
@@ -4879,15 +4896,11 @@ serve(async (req: Request) => {
                   rootItemReplenishment?.scrapPercentage ?? 0
                 );
                 const rootTarget = job.data?.quantity ?? 1;
-                const rootScrapQuantity =
-                  node.data.methodType === "Make to Order"
-                    ? rootTarget * rootScrapPercentage
-                    : 0;
-                const rootTotalWithScrap = Math.ceil(
-                  rootTarget + rootScrapQuantity
-                );
+                // Scrap applies to every method type (mirrors itemToJob)
+                const rootScrapQuantity = rootTarget * rootScrapPercentage;
+                const rootTotalWithScrap = rootTarget + rootScrapQuantity;
                 // For Make: estimatedQuantity is good quantity (without scrap)
-                // For Buy/Pick: estimatedQuantity = total (but scrap is 0, so same as target)
+                // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
                 const rootEstimatedQuantity =
                   node.data.methodType === "Make to Order"
                     ? rootTarget
@@ -4928,15 +4941,13 @@ serve(async (req: Request) => {
                 // Target = parent's total (including scrap) * quantity per parent
                 const childTargetQuantity =
                   nodeTotalForChildren * (child.data.quantity ?? 1);
+                // Scrap applies to every method type (mirrors itemToJob)
                 const childScrapQuantity =
-                  child.data.methodType === "Make to Order"
-                    ? childTargetQuantity * itemScrapPercentage
-                    : 0;
-                const childTotalWithScrap = Math.ceil(
-                  childTargetQuantity + childScrapQuantity
-                );
+                  childTargetQuantity * itemScrapPercentage;
+                const childTotalWithScrap =
+                  childTargetQuantity + childScrapQuantity;
                 // For Make: estimatedQuantity is good quantity (without scrap)
-                // For Buy/Pick: estimatedQuantity = total (but scrap is 0, so same as target)
+                // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
                 const childEstimatedQuantity =
                   child.data.methodType === "Make to Order"
                     ? childTargetQuantity
@@ -5063,6 +5074,16 @@ serve(async (req: Request) => {
               // Get quantities for this operation's make method
               const opQuantities =
                 quoteMakeMethodIdToQuantities[op.quoteMakeMethodId ?? ""];
+              // The traversal stores quantities for every make method in the
+              // tree, so a miss means the operation references an orphaned
+              // make method. Fail the conversion (rolls back the transaction)
+              // instead of silently inserting a zero-quantity operation with
+              // a NULL jobMakeMethodId.
+              if (!opQuantities) {
+                throw new Error(
+                  `No quantities found for quote make method ${op.quoteMakeMethodId} referenced by operation ${op.id} — the quote method tree and its operations are out of sync`
+                );
+              }
               return {
                 jobId,
                 jobMakeMethodId:
@@ -5092,8 +5113,10 @@ serve(async (req: Request) => {
                 operationUnitCost: op.operationUnitCost ?? 0,
                 tags: op.tags ?? [],
                 workInstruction: parts.workInstructions ? op.workInstruction : {},
-                targetQuantity: opQuantities?.targetQuantity ?? 0,
-                operationQuantity: opQuantities?.totalWithScrap ?? 0,
+                targetQuantity: opQuantities.targetQuantity,
+                // Operation/production counts stay whole even when material
+                // quantities are fractional
+                operationQuantity: Math.ceil(opQuantities.totalWithScrap),
                 companyId,
                 createdBy: userId,
                 customFields: {},

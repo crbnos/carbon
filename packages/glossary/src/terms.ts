@@ -898,6 +898,10 @@ export const terms = {
   },
 
   // ── Shipping methods (ShippingMethodForm) ───────────────────────────────
+  "shipping-method": {
+    term: msg`Shipping Method`,
+    definition: msg`The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to.`
+  },
   "shipping-method-carrier-account": {
     term: msg`Carrier Account`,
     definition: msg`The GL account charges for this carrier post to (freight expense, freight in/out).`
@@ -976,6 +980,10 @@ export const terms = {
   },
 
   // ── Items: core (Part/Tool/Material/Consumable/Item forms) ──────────────
+  item: {
+    term: msg`Item`,
+    definition: msg`Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at.`
+  },
   "item-tracking-type": {
     term: msg`Tracking Type`,
     definition: msg`Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory).`
@@ -1279,6 +1287,18 @@ export const terms = {
   "job-deadline-type": {
     term: msg`Deadline Type`,
     definition: msg`How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely.`
+  },
+  "job-due-date": {
+    term: msg`Due Date (job)`,
+    definition: msg`The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue.`
+  },
+  "job-priority": {
+    term: msg`Job Priority`,
+    definition: msg`The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating.`
+  },
+  "job-sales-order-line": {
+    term: msg`Sales Order Line (job)`,
+    definition: msg`The sales order line this job was created to supply, tying the job to the customer demand behind it.`
   },
   "job-bulk-total-quantity": {
     term: msg`Total Quantity`,
@@ -1947,5 +1967,51 @@ export const terms = {
     term: msg`Notification`,
     definition: msg`An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user.`,
     href: "/docs/reference/notifications"
+  },
+
+  // ── Workflows & cross-cutting record fields ─────────────────────────────
+  workflow: {
+    term: msg`Workflow`,
+    definition: msg`An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL.`,
+    href: "/docs/reference/workflows"
+  },
+  "business-moment": {
+    term: msg`Business moment`,
+    definition: msg`A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id.`,
+    href: "/docs/reference/workflows#what-starts-a-workflow"
+  },
+  "workflow-run": {
+    term: msg`Workflow run`,
+    definition: msg`One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner.`,
+    href: "/docs/reference/workflow-runs"
+  },
+  webhook: {
+    term: msg`Webhook`,
+    definition: msg`An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured.`,
+    href: "/docs/reference/workflows#calling-an-outside-url"
+  },
+  assignee: {
+    term: msg`Assignee`,
+    definition: msg`The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person.`
+  },
+  "workflow-notify-about-record": {
+    term: msg`About (notification)`,
+    definition: msg`The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself.`
+  },
+  "workflow-webhook-url": {
+    term: msg`Webhook URL`,
+    definition: msg`The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds.`
+  },
+  "workflow-webhook-body": {
+    term: msg`Webhook Body`,
+    definition: msg`The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one.`
+  },
+  "workflow-webhook-method": {
+    term: msg`Webhook Method`,
+    definition: msg`Which kind of request to send: GET reads something, POST creates, PUT and PATCH update, DELETE removes. A new step starts at GET, and only POST, PUT, and PATCH carry a body.`
+  },
+  "workflow-webhook-headers": {
+    term: msg`Webhook Headers`,
+    definition: msg`Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

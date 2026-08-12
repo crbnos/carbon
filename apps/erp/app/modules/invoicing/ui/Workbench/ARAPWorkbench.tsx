@@ -78,6 +78,9 @@ type ARAPWorkbenchProps = {
   asOfDate: string;
   agingMethod: "dueDate" | "documentDate";
   bucketDays: [number, number, number];
+  // Overrides the table title. Defaults to Receivables/Payables (the invoicing
+  // workbench); the aging reports pass "AR Aging" / "AP Aging".
+  title?: string;
 };
 
 // A counterparty (root) row carries the aging buckets; an invoice (child) row
@@ -101,7 +104,8 @@ export function ARAPWorkbench({
   open,
   asOfDate,
   agingMethod,
-  bucketDays
+  bucketDays,
+  title
 }: ARAPWorkbenchProps) {
   const { t } = useLingui();
   const [, setParams] = useUrlParams();
@@ -546,7 +550,7 @@ export function ARAPWorkbench({
           data={displayRows}
           columns={columns}
           count={displayRows.length}
-          title={side === "ar" ? t`Receivables` : t`Payables`}
+          title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}
           primaryAction={filters}
           defaultColumnPinning={{ left: ["Select", "counterparty"] }}
         />

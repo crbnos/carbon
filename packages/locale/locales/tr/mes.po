@@ -153,6 +153,9 @@ msgstr "Kimlik Doğrulama Hatası"
 msgid "available"
 msgstr "mevcut"
 
+msgid "Available"
+msgstr "Mevcut"
+
 msgid "Batch"
 msgstr "Parti"
 
@@ -267,6 +270,9 @@ msgstr "Konsol"
 
 msgid "Console Mode"
 msgstr "Konsol Modu"
+
+msgid "Consumed"
+msgstr "Tüketildi"
 
 msgid "Consumed expired"
 msgstr "Tüketilmiş süre dolmuş"
@@ -678,6 +684,9 @@ msgstr "Bakım Tamamlandı"
 msgid "Maintenance overdue"
 msgstr "Bakım vadesi geçmiş"
 
+msgid "Make a replacement"
+msgstr "Bir yedek oluştur"
+
 msgid "Manually add items to inventory"
 msgstr "Envantere öğeler eklemek için manuel olarak"
 
@@ -868,6 +877,9 @@ msgstr "Hiçbir şey çalışmıyor"
 msgid "Nothing scheduled at this work center"
 msgstr "Bu iş merkezinde hiçbir şey planlanmadı"
 
+msgid "Nothing to scrap"
+msgstr "Atılacak hiçbir şey yok"
+
 msgid "OEE Impact"
 msgstr "OEE Etkisi"
 
@@ -1053,6 +1065,9 @@ msgstr "Stoktan Çıkar"
 msgid "Remove part"
 msgstr "Parçayı kaldır"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
+
 msgid "Result"
 msgstr "Sonuç"
 
@@ -1101,6 +1116,12 @@ msgstr "Planlama"
 msgid "Scrap"
 msgstr "Hurda"
 
+msgid "Scrap {readableId}"
+msgstr "Hurdala {readableId}"
+
+msgid "Scrap material"
+msgstr "Malzeme hurdası"
+
 msgid "Scrap quantity"
 msgstr "Hurda miktarı"
 
@@ -1109,6 +1130,12 @@ msgstr "Hurda Nedeni"
 
 msgid "Scrapped"
 msgstr "Hurdaya Ayrılan"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "Seri hurdası {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "Seçilen serinin hurdası"
 
 msgid "Search"
 msgstr "Ara"
@@ -1294,6 +1321,9 @@ msgstr "Lot Passed olarak işaretlenecek ve {remaining} kalan birim(ler) bu oper
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Lot yine de işleme tabi tutulacak, ancak en az bir Sorun Türü yapılandırılana kadar bir NCR oluşturulamaz."
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "Bu malzeme için mevcut veya tüketilmiş izlenen parça bulunmamaktadır."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak verilmemiş. Vermeden tamamlamak, yanlış izlenebilirlik kayıtlarına neden olabilir."
 
@@ -1302,6 +1332,15 @@ msgstr "Bu öğelerin hala seçilecek malzemesi var. Şimdi bitirmek listeyi Kı
 
 msgid "This lot is expired and can't be picked."
 msgstr "Bu parti süresi dolmuş ve alınamaz."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "Bu parça siparişe göre yapılmıştır. Hurdalaması, bir yedek yapmak için rotasını yeniden açabilir."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "Bu parça stoktan hurdaya çıkarılacaktır. Gereksinimleri açık kalır, böylece bir yedek çıkarabilirsiniz."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
 
 msgid "Thumbnail"
 msgstr "Küçük Resim"

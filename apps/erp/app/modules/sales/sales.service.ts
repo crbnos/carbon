@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
@@ -208,12 +209,30 @@ export async function convertQuoteToOrder(
     digitalQuoteAcceptedByEmail?: string;
   }
 ) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "quoteToSalesOrder",
-      ...payload
+  const result = await client.functions.invoke<{ convertedId: string }>(
+    "convert",
+    {
+      body: {
+        type: "quoteToSalesOrder",
+        ...payload
+      }
     }
-  });
+  );
+
+  if (!result.error && result.data?.convertedId) {
+    await raiseMoment("sales.quoteAccepted", {
+      outputs: {
+        quote: { id: payload.id },
+        salesOrder: { id: result.data.convertedId }
+      },
+      companyId: payload.companyId,
+      // A digital acceptance is the customer acting; `userId` is only the
+      // employee who created the quote.
+      actorId: payload.digitalQuoteAcceptedBy ? null : payload.userId
+    });
+  }
+
+  return result;
 }
 
 export async function copyQuoteLine(
@@ -1990,7 +2009,8 @@ export async function insertSalesOrderLines(
 export async function finalizeQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
-  userId: string
+  userId: string,
+  companyId: string
 ) {
   const quoteUpdate = await client
     .from("quote")
@@ -2005,7 +2025,7 @@ export async function finalizeQuote(
     return quoteUpdate;
   }
 
-  return client
+  const lineUpdate = await client
     .from("quoteLine")
     .update({
       status: "Complete",
@@ -2014,6 +2034,16 @@ export async function finalizeQuote(
     })
     .neq("status", "No Quote")
     .eq("quoteId", quoteId);
+
+  // Gated on the quote reaching 'Sent' (the early return above), not on the
+  // line write — a zero-line quote is still sent.
+  await raiseMoment("sales.quoteSent", {
+    outputs: { quote: { id: quoteId }, sentBy: { id: userId } },
+    companyId,
+    actorId: userId
+  });
+
+  return lineUpdate;
 }
 
 export async function releaseSalesOrder(
@@ -3189,16 +3219,29 @@ export async function updateQuoteExchangeRate(
 }
 
 export async function updateQuoteLinePrecision(
-  client: SupabaseClient<Database>,
-  quoteLineId: string,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  quoteId: string,
+  lineId: string,
   precision: number
 ) {
-  return client
-    .from("quoteLine")
-    .update({ unitPricePrecision: precision })
-    .eq("id", quoteLineId)
-    .select("id")
-    .single();
+  return db.transaction().execute(async (trx) => {
+    const line = await trx
+      .updateTable("quoteLine")
+      .set({ unitPricePrecision: precision })
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .returning("id")
+      .executeTakeFirst();
+
+    if (!line) {
+      throw new Error(
+        `Quote line ${lineId} was not found for company ${companyId}`
+      );
+    }
+
+    await rewriteQuoteLinePrices(trx, companyId, quoteId, lineId);
+  });
 }
 
 export async function updateSalesOrderExchangeRate(
@@ -3868,8 +3911,20 @@ export async function upsertQuoteLineAdditionalCharges(
   return client.from("quoteLine").update(update).eq("id", lineId);
 }
 
+type QuoteLinePriceInput = {
+  quoteLineId: string;
+  unitPrice: number;
+  leadTime: number;
+  discountPercent: number;
+  quantity: number;
+  createdBy: string;
+  categoryMarkups?: Record<string, number>;
+  priceSource?: "system" | "manual";
+};
+
 export async function upsertQuoteLinePrices(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
   quoteId: string,
   lineId: string,
   quoteLinePrices: {
@@ -3883,77 +3938,92 @@ export async function upsertQuoteLinePrices(
     priceSource?: "system" | "manual";
   }[]
 ) {
-  const existingPrices = await client
-    .from("quoteLinePrice")
-    .select("*")
-    .eq("quoteLineId", lineId);
-  if (existingPrices.error) {
-    return existingPrices;
-  }
-
-  const deletePrices = await client
-    .from("quoteLinePrice")
-    .delete()
-    .eq("quoteLineId", lineId);
-  if (deletePrices.error) {
-    return deletePrices;
-  }
-
-  const quoteExchangeRate = await client
-    .from("quote")
-    .select("id, exchangeRate")
-    .eq("id", quoteId)
-    .single();
-
-  const quoteLineUnitPricePrecision = await client
-    .from("quoteLine")
-    .select("unitPricePrecision")
-    .eq("id", lineId)
-    .single();
-
-  const pricesByQuantity = existingPrices.data.reduce<
-    Record<
-      number,
-      {
-        discountPercent: number;
-        leadTime: number;
-        categoryMarkups: unknown;
-        priceSource: string;
-      }
-    >
-  >((acc, price) => {
-    acc[price.quantity] = price;
-    return acc;
-  }, {});
-
-  const pricesWithExistingDiscountsAndLeadTimes = quoteLinePrices.map((p) => {
-    const existing = pricesByQuantity[p.quantity];
-    const roundedUnitPrice = Number(
-      p.unitPrice.toFixed(
-        quoteLineUnitPricePrecision.data?.unitPricePrecision ?? 2
-      )
+  return db
+    .transaction()
+    .execute((trx) =>
+      rewriteQuoteLinePrices(trx, companyId, quoteId, lineId, quoteLinePrices)
     );
+}
 
-    return {
-      ...p,
-      unitPrice: roundedUnitPrice,
-      discountPercent: existing?.discountPercent ?? p.discountPercent,
-      leadTime: existing?.leadTime ?? p.leadTime,
-      categoryMarkups: p.categoryMarkups ?? existing?.categoryMarkups ?? {},
-      // Explicit caller intent wins; otherwise keep the row's provenance so a
-      // delete+reinsert can never turn a manual price back into a system one.
-      priceSource: p.priceSource ?? existing?.priceSource ?? "system",
-      quoteId: quoteId,
-      exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1
-    };
-  });
+async function rewriteQuoteLinePrices(
+  trx: KyselyTx,
+  companyId: string,
+  quoteId: string,
+  lineId: string,
+  quoteLinePrices?: QuoteLinePriceInput[]
+) {
+  const existingPrices = await trx
+    .selectFrom("quoteLinePrice")
+    .selectAll()
+    .where("quoteLineId", "=", lineId)
+    .where("companyId", "=", companyId)
+    .execute();
 
-  return (
-    client
-      .from("quoteLinePrice")
-      // @ts-expect-error - categoryMarkups is a Json object
-      .insert(pricesWithExistingDiscountsAndLeadTimes)
+  const replacements: QuoteLinePriceInput[] =
+    quoteLinePrices ??
+    existingPrices.map((price) => ({
+      quoteLineId: lineId,
+      quantity: Number(price.quantity),
+      unitPrice: Number(price.unitPrice),
+      leadTime: Number(price.leadTime),
+      discountPercent: Number(price.discountPercent),
+      createdBy: price.createdBy
+    }));
+
+  if (replacements.length === 0) return;
+
+  const quote = await trx
+    .selectFrom("quote")
+    .select("exchangeRate")
+    .where("id", "=", quoteId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+
+  const quoteLine = await trx
+    .selectFrom("quoteLine")
+    .select("unitPricePrecision")
+    .where("id", "=", lineId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+
+  if (!quote || !quoteLine) {
+    throw new Error(
+      `Quote ${quoteId} / line ${lineId} was not found for company ${companyId}`
+    );
+  }
+
+  await trx
+    .deleteFrom("quoteLinePrice")
+    .where("quoteLineId", "=", lineId)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  const existingByQuantity = new Map(
+    existingPrices.map((price) => [Number(price.quantity), price])
   );
+
+  await trx
+    .insertInto("quoteLinePrice")
+    .values(
+      replacements.map((p) => {
+        const existing = existingByQuantity.get(Number(p.quantity));
+
+        return {
+          ...p,
+          quoteLineId: lineId,
+          companyId,
+          quoteId,
+          unitPrice: Number(p.unitPrice.toFixed(quoteLine.unitPricePrecision)),
+          discountPercent: existing?.discountPercent ?? p.discountPercent,
+          leadTime: existing?.leadTime ?? p.leadTime,
+          shippingCost: existing?.shippingCost ?? 0,
+          categoryMarkups: p.categoryMarkups ?? existing?.categoryMarkups ?? {},
+          priceSource: p.priceSource ?? existing?.priceSource ?? "system",
+          exchangeRate: quote.exchangeRate ?? 1
+        };
+      })
+    )
+    .execute();
 }
 
 async function buildCostEffects(
@@ -5756,6 +5826,7 @@ export async function upsertSalesOrderPayment(
 
 export async function insertSalesRFQ(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     customerId: string;
     companyId: string;
@@ -5766,6 +5837,8 @@ export async function insertSalesRFQ(
     locationId?: string;
     salesPersonId?: string;
     customerContactId?: string;
+    customerEngineeringContactId?: string;
+    customerLocationId?: string;
     customerReference?: string;
     status?: "Draft" | "Ready for Quote" | "Quoted" | "Closed";
     notes?: string;
@@ -5796,46 +5869,60 @@ export async function insertSalesRFQ(
     rfqId = seq.data;
   }
 
-  const opportunity = await client
-    .from("opportunity")
-    .insert({
-      companyId: input.companyId,
-      customerId: input.customerId
-    })
-    .select("id")
-    .single();
+  const rfqDate =
+    input.rfqDate ??
+    datetime
+      .today(await getCompanyTimeZone(client, input.companyId))
+      .toString();
 
-  if (opportunity.error) return { data: null, error: opportunity.error };
+  // The opportunity and the RFQ are created together or not at all — a failed
+  // RFQ insert must not leave an orphaned opportunity behind.
+  try {
+    const rfq = await db.transaction().execute(async (trx) => {
+      const opportunity = await trx
+        .insertInto("opportunity")
+        .values({
+          companyId: input.companyId,
+          customerId: input.customerId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
 
-  const rfq = await client
-    .from("salesRfq")
-    .insert({
-      rfqId,
-      customerId: input.customerId,
-      customerContactId: input.customerContactId,
-      customerReference: input.customerReference,
-      rfqDate:
-        input.rfqDate ??
-        datetime
-          .today(await getCompanyTimeZone(client, input.companyId))
-          .toString(),
-      expirationDate: input.expirationDate,
-      locationId: input.locationId,
-      salesPersonId: input.salesPersonId,
-      status: input.status ?? "Draft",
-      internalNotes: input.notes ?? null,
-      customFields: input.customFields,
-      opportunityId: opportunity.data.id,
-      companyId: input.companyId,
-      createdBy: input.createdBy,
-      updatedBy: input.createdBy
-    })
-    .select("id, rfqId")
-    .single();
+      return trx
+        .insertInto("salesRfq")
+        .values({
+          rfqId,
+          customerId: input.customerId,
+          customerContactId: input.customerContactId,
+          customerEngineeringContactId: input.customerEngineeringContactId,
+          customerLocationId: input.customerLocationId,
+          customerReference: input.customerReference,
+          rfqDate,
+          expirationDate: input.expirationDate,
+          locationId: input.locationId,
+          salesPersonId: input.salesPersonId,
+          status: input.status ?? "Draft",
+          internalNotes: input.notes ?? null,
+          customFields: input.customFields,
+          opportunityId: opportunity.id,
+          companyId: input.companyId,
+          createdBy: input.createdBy,
+          updatedBy: input.createdBy
+        })
+        .returning(["id", "rfqId"])
+        .executeTakeFirstOrThrow();
+    });
 
-  if (rfq.error) return { data: null, error: rfq.error };
-
-  return { data: { id: rfq.data.id, rfqId: rfq.data.rfqId }, error: null };
+    return { data: { id: rfq.id, rfqId: rfq.rfqId }, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error ? err.message : "Failed to insert sales RFQ"
+      } as PostgrestError
+    };
+  }
 }
 
 export async function updateSalesRFQ(
@@ -5845,6 +5932,8 @@ export async function updateSalesRFQ(
     updatedBy: string;
     customerId?: string;
     customerContactId?: string | null;
+    customerEngineeringContactId?: string | null;
+    customerLocationId?: string | null;
     customerReference?: string | null;
     rfqDate?: string;
     expirationDate?: string | null;

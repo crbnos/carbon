@@ -24,13 +24,12 @@ import {
   ItarPopup,
   TooltipProvider,
   useKeyboardWedge,
-  useMount,
   useNProgress
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import { Edition, isSearchParamOnlyNavigation } from "@carbon/utils";
 import posthog from "posthog-js";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
@@ -258,8 +257,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
-  const { session, user, companySettings, openClockEntry, printerRoutes } =
-    useLoaderData<typeof loader>();
+  const {
+    company,
+    session,
+    user,
+    companySettings,
+    openClockEntry,
+    printerRoutes
+  } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { isOpen, training, dismiss } = useTrainingPanel();
 
@@ -276,14 +281,32 @@ export default function AuthenticatedRoute() {
     }
   });
 
-  useMount(() => {
-    if (!user) return;
+  const userId = user?.id;
+  const userEmail = user?.email;
+  const userFullName = user ? `${user.firstName} ${user.lastName}` : undefined;
+  const companyId = company?.companyId;
+  const companyName = company?.name;
 
-    posthog.identify(user.id, {
-      email: user.email,
-      name: `${user.firstName} ${user.lastName}`
-    });
-  });
+  // Keyed on the identity rather than run once on mount: switching company
+  // redirects back into x+/_layout without unmounting it, so a mount-only
+  // effect would leave the previous company attached to every later event.
+  // The deps are primitives because `user`/`company` get fresh object
+  // identities on every revalidation, and group() re-sends $groupidentify
+  // each time it is called.
+  useEffect(() => {
+    if (!userId) return;
+
+    posthog.identify(userId, { email: userEmail, name: userFullName });
+
+    if (!companyId) return;
+
+    // Adoption is measured per customer, and a user can belong to more than one
+    // company — so the company rides on the events rather than on the person.
+    // register() puts companyId on every event including autocapture; group()
+    // is what lets PostHog aggregate by customer.
+    posthog.register({ companyId });
+    posthog.group("company", companyId, { name: companyName });
+  }, [userId, userEmail, userFullName, companyId, companyName]);
 
   return (
     <div className="h-[100dvh] flex flex-col">

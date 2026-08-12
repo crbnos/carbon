@@ -77,6 +77,39 @@ Conventions (see also `conventions-services.md`):
 - Upserts are done either with a manual `id ? update : insert` branch or supabase's native `.upsert(...)`; both are in use.
 - `fetchAllFromTable(client, table, columns, qb)` (from `@carbon/database`) pages through large result sets.
 
+## N+1 reads
+
+**Never query inside a loop.** Fetching a list and then issuing one query per row turns a page
+into N+1 round trips; at 500 rows that is 500 sequential queries holding 500 connection
+checkouts, and it degrades as the customer's data grows — the tenant with the most data is the
+one it breaks for. `Promise.all` over the same loop is not a fix: it removes the waiting, not the
+queries, and replaces one slow page with a burst that exhausts the pool.
+
+Collect the ids first, then make **one** query:
+
+```typescript
+// No: one query per line.
+const suppliers = await Promise.all(
+  lines.map((line) => client.from("supplier").select("*").eq("id", line.supplierId).single())
+);
+
+// Yes: one query, indexed by id.
+const { data } = await client
+  .from("supplier")
+  .select("id, name")
+  .in("id", [...new Set(lines.map((line) => line.supplierId))])
+  .eq("companyId", companyId);
+const byId = new Map((data ?? []).map((row) => [row.id, row]));
+```
+
+Real precedents: `getWorkflowVersionNumbers` (flat `.in()` lookup instead of a nested embed),
+`getWorkflowRunRecordNames` (groups refs by table, one query per table, never per row).
+
+When the related rows belong to the parent, prefer a **PostgREST embed**
+(`.select("*, salesOrderLine(*)")`) — one request, and the join happens in Postgres. For reads
+that need real aggregation across tables, use a view or an RPC rather than assembling it in
+TypeScript. Over 1000 rows, page with `fetchAllFromTable` — do not loop.
+
 ## RPC functions
 
 Heavy/aggregate logic lives in Postgres functions called via `client.rpc("fn_name", { ... }, { count })`.
@@ -84,16 +117,27 @@ Examples: `get_sales_order_lines_by_customer_id`, `get_opportunity_with_related_
 `get_quote_methods`, `get_part_details`. Use an RPC when the query is non-trivial or needs a transaction
 that supabase-js can't express; the function is defined in a migration.
 
-## Transactions (Kysely)
+## Transactions
+
+**The Supabase client cannot open a transaction.** Every `client.from(...)` call is its own HTTP
+roundtrip to PostgREST, so a sequence of them — awaited in order or fanned out with `Promise.all` —
+has no atomicity and no rollback: some rows commit, the rest fail, and the data is left half
+applied. Never write multi-step writes that way and hope.
+
+Two real options, in order of preference:
+
+1. **A Kysely transaction** — one real PG transaction over a direct `pg` connection. The default:
+   logic stays in TypeScript, so it is typed, unit-testable, and reviewable in the diff.
+2. **A Postgres function called via `client.rpc(...)`** — when the same atomic write must also be
+   callable from somewhere Kysely cannot go (an edge function, the public API), or when the work is
+   genuinely set-based and belongs next to the data. The cost is real: SQL is harder to test and
+   review, and ships through a migration. Do not push app logic into SQL just to get atomicity.
 
 For **multi-row / multi-table writes** where partial failure is a bug, use Kysely. The route passes
 `getDatabaseClient()` (`apps/erp/app/services/database.server.ts` — a cached singleton over a 10-conn
 `pg` pool built by `getPostgresClient`/`getPostgresConnectionPool` in
-`packages/database/supabase/functions/lib/postgres/index.ts`).
-
-Every `client.from(...).update(...)` is a separate HTTP roundtrip to PostgREST. With `Promise.all`,
-some rows can commit and the rest fail, leaving data in a half-applied state with no rollback.
-Kysely opens one PG transaction, runs every write inside it, and rolls everything back on any error.
+`packages/database/supabase/functions/lib/postgres/index.ts`). Kysely opens one PG transaction, runs
+every write inside it, and rolls everything back on any error.
 
 **Use transactions when:**
 - Bulk reorder / sortOrder updates across N rows.

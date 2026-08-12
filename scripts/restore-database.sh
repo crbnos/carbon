@@ -25,6 +25,13 @@
 #                   contact, invite, companySettings, quote) to @example.test
 #                   so no production emails can be contacted from local.
 #                   The ADMIN_EMAIL account is preserved so you can still log in.
+#   KEEP_STORAGE_OBJECTS
+#                   set to any non-empty value to KEEP the dump's
+#                   storage.objects/prefixes rows and its buckets instead of
+#                   clearing them. File downloads still 404 (the bytes live in
+#                   the source environment's backend, not the DB) — this is for
+#                   work that needs realistic storage metadata volume, such as
+#                   profiling RLS on storage listings.
 #   RESTORE_MODE    'local' (default) or 'prod'.
 #                   local: after restoring, localize environment-sensitive state —
 #                     re-seed the config row to local Kong, deactivate webhooks /
@@ -47,6 +54,7 @@ set -euo pipefail
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-localpass}"
 SCRUB_EMAILS="${SCRUB_EMAILS:-}"
+KEEP_STORAGE_OBJECTS="${KEEP_STORAGE_OBJECTS:-}"
 RESTORE_MODE="${RESTORE_MODE:-local}"
 if [[ "$RESTORE_MODE" != "local" && "$RESTORE_MODE" != "prod" ]]; then
   echo "RESTORE_MODE must be 'local' or 'prod' (got '$RESTORE_MODE')" >&2
@@ -103,7 +111,19 @@ $PSQL_PG -At -c "
             WHERE n.nspname='public' AND t.typcategory IN ('E','C')
   UNION ALL SELECT format('DROP SEQUENCE IF EXISTS public.%I CASCADE;', sequencename) FROM pg_sequences WHERE schemaname='public'
 " | $PSQL_PG -v ON_ERROR_STOP=0 >/dev/null
-$PSQL_PG -c "TRUNCATE auth.users CASCADE; TRUNCATE storage.objects CASCADE; TRUNCATE storage.buckets CASCADE;" >/dev/null
+# Guarded the same way as the storage reset in step 5: on a stack that has only
+# ever booted postgres (e.g. `crbn restore` right after a `crbn reset`), the
+# service schemas do not exist yet -- storage.objects is created by the storage
+# service's own migrations, not by the postgres image. A bare TRUNCATE there
+# aborts the whole restore under `set -e`.
+$PSQL_PG -c "
+DO \$\$
+BEGIN
+  IF to_regclass('auth.users') IS NOT NULL THEN TRUNCATE auth.users CASCADE; END IF;
+  IF to_regclass('storage.objects') IS NOT NULL THEN TRUNCATE storage.objects CASCADE; END IF;
+  IF to_regclass('storage.buckets') IS NOT NULL THEN TRUNCATE storage.buckets CASCADE; END IF;
+END \$\$;
+" >/dev/null
 # ── 3. Restore ───────────────────────────────────────────────────────────────
 # Supports both plain-text SQL dumps (Supabase cluster .backup files) and
 # custom-format pg_dump archives (.dump, magic bytes 'PGDMP').
@@ -173,10 +193,20 @@ ON CONFLICT (queue_name) DO NOTHING;
 # the actual file bytes live in prod's storage backend, not in the DB — so
 # those rows would point at files that don't exist locally and downloads
 # would 404. Clear the metadata, keep/create the buckets the app expects.
-echo "▶ Resetting storage metadata + ensuring buckets (fixed + per-company)"
-# Guard each TRUNCATE with to_regclass so a table that doesn't exist in this
-# Supabase version can't abort — and thereby roll back — the whole block.
-$PSQL_SA -v ON_ERROR_STOP=0 -c "
+if [[ -n "$KEEP_STORAGE_OBJECTS" ]]; then
+  # Opt-in: keep the dump's storage rows AND its buckets. Downloads still 404
+  # (the bytes are in the source environment's backend, not the DB) — this
+  # exists for work that needs realistic storage.objects volume, e.g. profiling
+  # the RLS on storage listings, which is unmeasurable against an empty table.
+  # Buckets are kept too: the objects reference buckets that the re-seed below
+  # does not recreate (`temp-staging` is neither a fixed bucket nor a company),
+  # so truncating them would strand those rows on a missing FK.
+  echo "▶ Keeping storage metadata (KEEP_STORAGE_OBJECTS) — downloads will 404 locally"
+else
+  echo "▶ Resetting storage metadata + ensuring buckets (fixed + per-company)"
+  # Guard each TRUNCATE with to_regclass so a table that doesn't exist in this
+  # Supabase version can't abort — and thereby roll back — the whole block.
+  $PSQL_SA -v ON_ERROR_STOP=0 -c "
 DO \$\$
 BEGIN
   IF to_regclass('storage.objects') IS NOT NULL THEN TRUNCATE storage.objects CASCADE; END IF;
@@ -186,6 +216,7 @@ BEGIN
   IF to_regclass('storage.buckets') IS NOT NULL THEN TRUNCATE storage.buckets CASCADE; END IF;
 END \$\$;
 " >/dev/null 2>&1 || true
+fi
 # Re-seed buckets in a SEPARATE statement so the TRUNCATE outcome above can never
 # roll it back: the fixed app buckets plus one private bucket per restored
 # company (id = company id), matching the bucket-seeding migrations.
