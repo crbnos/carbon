@@ -74,7 +74,41 @@ invisible in dev. Snapshot tenants over the limit: `d0rlmp5l6de2s779lqi0`
 those tenants plan on a silently truncated demand picture. Fix:
 `fetchAllFromTable`-style pagination for the five Phase-1 reads.
 
-### 3. MEDIUM — self-referencing BOMs exist in production data
+### 3. MEDIUM — self-referencing BOMs exist in production data — **BOM layer FIXED 2026-08-12**
+
+Fixed in `20260812030545_bom-self-reference-guard.sql`: the 6 `methodMaterial`
+self-references deleted (all confirmed accidental: 4× Black Cat Labs purchased
+hardware, 1× CNC Precision mis-pick, 1× test-tenant junk), and a **sync
+interceptor** (`sync_check_method_material_self_reference`, wired via
+`attach_event_trigger`) now vetoes both shapes on write — item on its own BOM,
+and `materialMakeMethodId = makeMethodId`. Verified: both vetoes fire with
+`check_violation`, legitimate BOM lines still insert.
+
+**Job layer also FIXED 2026-08-12** (`20260812032423_job-material-self-reference-guard.sql`),
+by product decision: self-consumption benefits no one and should have been
+prevented from the start. `jobMaterial` rows where the job consumes its own
+output item numbered **50 across ~20 tenants** — most added directly on jobs,
+not copied from BOMs. All 50 deleted; a sync interceptor
+(`sync_check_job_material_self_reference`, PREPENDED to jobMaterial's existing
+interceptor chain) now vetoes the class on every write path. Deletion nuance
+that mattered, and that a first pass got WRONG: the cascade chain
+(`jobMaterial → jobMakeMethod → jobOperation`) reaches SIX child tables —
+`productionEvent` (labor/time), `jobOperationTool`, `jobOperationStep`,
+`jobOperationParameter`, `rework`, `nonConformanceJobOperation`. Only
+`productionQuantity` is `NO ACTION`; it raises, which is the only reason the
+problem was noticed at all. The others delete silently. A first version of this
+migration detached only subtrees containing `productionQuantity` and did
+destroy a labor record on the restored snapshot (`productionEvent` 3,159 in the
+backup → 3,158 after). The shipped version detaches every subtree containing
+ANY `jobOperation`, so the cascade can never reach an operation; only empty
+method copies are collected. Re-proven by probe: labor 1→1, operation kept,
+self-consuming line deleted. Verified: 0 self-rows remain, veto fires,
+legitimate materials insert, existing interceptor chain intact.
+
+**Lesson worth generalizing:** before writing any data-deleting migration,
+enumerate the full `ON DELETE` graph (`pg_constraint.confdeltype`) — a
+`RESTRICT`/`NO ACTION` edge fails loudly and teaches you; every `CASCADE` edge
+is silent and is where the data actually goes.
 
 6 `methodMaterial` rows across 3 tenants list an item as a component of itself
 (one at quantity **100**): PRT-101641/101820/102065/102136
@@ -85,6 +119,53 @@ self-demand that is never netted — inflated, wrong requirements for those item
 Two-part fix: a DB guard (`CHECK`/trigger rejecting `mm."itemId" =
 makeMethod."itemId"`, plus data cleanup) and explicit cycle detection in the
 engine (comes free with the Kahn rewrite below).
+
+## Before/after benchmark (same DB, same 8M-row ledger, 2026-08-12)
+
+End-to-end MRP, 5 runs per tenant, best-of reported (edge function via HTTP):
+
+| Tenant | Shape | Before | After | Change |
+|---|---|---|---|---|
+| `cvnu…` | mid-size, 1,739 BOM edges | 0.52 s | **0.084 s** | 6× faster |
+| `d0r…` | giant, 8M ledger rows | 17.5–20.4 s | **0.226 s** | **~85× faster** |
+| `2QHY…` | imported UUID item ids | **HTTP 500** (every run, since onboarding) | **0.207 s** | now works at all |
+| `VpYi…` (Farm it) | contains a BOM cycle | silently mis-planned | **0.036 s** + logged warning | now correct + visible |
+
+Component: the on-hand input, both queries measured back-to-back on the same
+data —
+
+| On-hand input | Time |
+|---|---|
+| OLD: `SELECT itemId, locationId, SUM(quantity) FROM itemLedger WHERE companyId=… GROUP BY` | **19.8–20.3 s** |
+| NEW: `SELECT … FROM itemStockQuantities WHERE companyId=…` | **0.27–5.6 ms** |
+
+The old query's plan explains the whole run: `Buffers: shared hit=840
+read=399986` — ~3 GB read from disk per run, I/O-bound, and it does not warm up
+across repeats (the table is 6 GB against a much smaller `shared_buffers`).
+NOTE: an earlier probe in this document measured 0.8–1.7 s for "the same"
+query; that was a `count(*)` wrapper measured immediately after the amplifying
+writes, i.e. a different plan against warm page cache. The ~20 s figure is the
+honest steady state, and it matches the observed 17.5–20.4 s end-to-end run.
+
+### Low-level codes: Kahn vs path enumeration
+
+On real customer BOMs the two are equivalent (worst real case 2.03 ms → 0.49 ms,
+4.1×) — the exponential blowup is NOT triggered by current data, as first
+measured. But the risk is real and cheap to demonstrate on a *tiny* graph
+whose node count grows linearly while root-to-node paths grow exponentially:
+
+| Layers | Nodes | Edges | Old | Kahn | Speedup |
+|---|---|---|---|---|---|
+| 8 | 18 | 32 | 0.59 ms | 0.106 ms | 6× |
+| 12 | 26 | 48 | 4.19 ms | 0.023 ms | 181× |
+| 16 | 34 | 64 | 59.0 ms | 0.031 ms | 1,927× |
+| 18 | 38 | 72 | 211.5 ms | 0.034 ms | 6,283× |
+| 20 | 42 | 80 | **851.8 ms** | 0.038 ms | **22,639×** |
+
+A **42-node** BOM — trivially small — took the old implementation 0.85 s, and
+each added layer roughly quadruples it. Reuse-heavy nesting like this is normal
+in electronics and aerospace assemblies, so this was a live landmine for the
+next customer with a deep BOM, not a theoretical one.
 
 ## Performance baselines (measured)
 
@@ -128,8 +209,21 @@ above instead of silently truncating them.
    Kysely transaction; rollback proven by fault injection).
 3. **Paginate the inputs** — **DONE 2026-08-12** (`lib/fetch-all.ts`; Phase 1
    AND the Phase-6 actuals reads; multi-page output byte-identical).
-4. **BOM cycle guard** + data cleanup for the 6 self-referencing rows; swap
-   `computeLowLevelCodes` for Kahn (cycle detection included).
+4. **BOM cycle guard + Kahn rewrite** — **DONE 2026-08-12.**
+   - `computeLowLevelCodes` is now Kahn's longest-path (O(items + edges),
+     replacing worst-case-exponential path enumeration) and returns
+     `cycleItemIds`. `explodeBom` plans cycle members as LEAF items (their own
+     demand still nets; nothing explodes through them) and the run logs a
+     warning via `getFunctionLogger` naming company + items — no longer
+     silently wrong, and one corrupt loop no longer fails a whole company.
+   - The `methodMaterial` interceptor gained a recursive-CTE reachability walk
+     (active methods, per company, UNION-deduped so it terminates over
+     existing cyclic data, depth-capped): writes that would close a
+     multi-node cycle (A→B→A) are vetoed at the door.
+   - A real multi-node cycle was found in prod: tenant "Farm it",
+     rose seeds → rose → bouquet → rose seeds (1 active job on those items).
+     Grandfathered data — their MRP now runs green with the warning logged;
+     editing inside the loop will veto until they break it.
 5. **Read on-hand from `itemStockQuantities`** — **DONE 2026-08-12.** Semantics
    decided: Rejected stock excluded (matches `get_inventory_quantities`; exactly
    one tenant / 10 units were affected by the change). Measured effect: the

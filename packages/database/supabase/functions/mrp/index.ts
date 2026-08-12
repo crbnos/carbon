@@ -22,6 +22,7 @@ import {
 import { Kysely } from "npm:kysely";
 import z from "npm:zod@^3.24.1";
 import { fetchAll } from "../lib/fetch-all.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
@@ -29,6 +30,7 @@ import { buildSupersessionRedirectMap } from "../lib/supersession-pick.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("mrp");
 
 const WEEKS_TO_FORECAST = 18 * 4;
 
@@ -83,7 +85,7 @@ serve(async (req: Request) => {
   const parsedPayload = payloadValidator.parse(payload);
   const { type, companyId, userId } = parsedPayload;
 
-  console.log({ function: "mrp", type, companyId, userId });
+  logger.info("run started", { type, companyId, userId });
 
   const today = datetime.today(await getCompanyTimeZone(db, companyId));
   const ranges = getStartAndEndDates(today, "Week");
@@ -603,7 +605,7 @@ serve(async (req: Request) => {
       }
     }
 
-    const { bomDerivedDemand, demandContributors } = explodeBom({
+    const { bomDerivedDemand, demandContributors, cycleItemIds } = explodeBom({
       grossDemand,
       bomByItem,
       replenishmentSystemByItem,
@@ -613,6 +615,13 @@ serve(async (req: Request) => {
       jobSupplyByLocationPeriodItem: jobAndPoSupplyByLocationPeriodItem,
       topLevelContributors,
     });
+
+    if (cycleItemIds.size > 0) {
+      logger.warn(
+        "BOM cycle detected — cycle items were planned as leaf items (no explosion through them)",
+        { companyId, itemIds: [...cycleItemIds] }
+      );
+    }
 
     // demandForecast output: Map<"itemId-locationId-periodId", record>
     const demandForecastMap = new Map<

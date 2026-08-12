@@ -90,10 +90,106 @@ Deno.test("computeLowLevelCodes handles hyphenated ids and shared subassemblies"
     ]],
     ["mid", [{ itemId: UUID_ITEM, quantity: 1, methodType: "Pull from Inventory" }]],
   ]);
-  const llc = computeLowLevelCodes(bomByItem);
+  const { llc, cycleItemIds } = computeLowLevelCodes(bomByItem);
   assertEquals(llc.get("top"), 0);
   assertEquals(llc.get("mid"), 1);
   // Deepest occurrence wins: UUID item appears at level 1 (under top) and
   // level 2 (under mid).
   assertEquals(llc.get(UUID_ITEM), 2);
+  assertEquals(cycleItemIds.size, 0);
+});
+
+Deno.test("computeLowLevelCodes reports cycles instead of silently truncating", () => {
+  // Real production shape (tenant "Farm it"): seeds -> flower -> bouquet -> seeds.
+  const bomByItem = new Map<string, BomChild[]>([
+    ["seeds", [{ itemId: "flower", quantity: 1, methodType: "Make to Order" }]],
+    ["flower", [{ itemId: "bouquet", quantity: 1, methodType: "Make to Order" }]],
+    ["bouquet", [{ itemId: "seeds", quantity: 1, methodType: "Make to Order" }]],
+    // an untangled item alongside the cycle still levels normally
+    ["clean", [{ itemId: "leaf", quantity: 1, methodType: "Pull from Inventory" }]],
+  ]);
+  const { llc, cycleItemIds } = computeLowLevelCodes(bomByItem);
+  assertEquals([...cycleItemIds].sort(), ["bouquet", "flower", "seeds"]);
+  assertEquals(llc.get("clean"), 0);
+  assertEquals(llc.get("leaf"), 1);
+});
+
+Deno.test("explodeBom plans around a cycle instead of hanging or failing", () => {
+  const location = "loc-1";
+  const bomByItem = new Map<string, BomChild[]>([
+    ["seeds", [{ itemId: "flower", quantity: 1, methodType: "Make to Order" }]],
+    ["flower", [{ itemId: "seeds", quantity: 2, methodType: "Make to Order" }]],
+  ]);
+
+  const { bomDerivedDemand, cycleItemIds } = explodeBom({
+    grossDemand: new Map([[makeKey(location, "p1", "flower"), 5]]),
+    bomByItem,
+    replenishmentSystemByItem: new Map([
+      ["seeds", "Make"],
+      ["flower", "Make"],
+    ]),
+    leadTimeByItem: new Map(),
+    periods: [{ id: "p1" }],
+    onHandByLocationItem: new Map(),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map(),
+  });
+
+  assertEquals([...cycleItemIds].sort(), ["flower", "seeds"]);
+  // Cycle members are treated as leaves: no demand explodes through them.
+  assertEquals(bomDerivedDemand.size, 0);
+});
+
+Deno.test("explodeBom does not mutate the caller's bomByItem", () => {
+  const bomByItem = new Map<string, BomChild[]>([
+    ["a", [{ itemId: "b", quantity: 1, methodType: "Make to Order" }]],
+    ["b", [{ itemId: "a", quantity: 1, methodType: "Make to Order" }]],
+  ]);
+  const sizeBefore = bomByItem.size;
+
+  explodeBom({
+    grossDemand: new Map([[makeKey("loc", "p1", "a"), 1]]),
+    bomByItem,
+    replenishmentSystemByItem: new Map([["a", "Make"], ["b", "Make"]]),
+    leadTimeByItem: new Map(),
+    periods: [{ id: "p1" }],
+    onHandByLocationItem: new Map(),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map(),
+  });
+
+  assertEquals(bomByItem.size, sizeBefore);
+  assert(bomByItem.has("a") && bomByItem.has("b"));
+});
+
+Deno.test("a clean parent still explodes onto a cycle item, but nothing explodes onward", () => {
+  const loc = "loc";
+  // clean -> cyc1; cyc1 <-> cyc2 form a cycle. The corrupt loop must not cost
+  // the clean part of the graph its planning.
+  const bomByItem = new Map<string, BomChild[]>([
+    ["clean", [{ itemId: "cyc1", quantity: 1, methodType: "Pull from Inventory" }]],
+    ["cyc1", [{ itemId: "cyc2", quantity: 1, methodType: "Make to Order" }]],
+    ["cyc2", [{ itemId: "cyc1", quantity: 1, methodType: "Make to Order" }]],
+  ]);
+
+  const { bomDerivedDemand, cycleItemIds } = explodeBom({
+    grossDemand: new Map([[makeKey(loc, "p1", "clean"), 10]]),
+    bomByItem,
+    replenishmentSystemByItem: new Map([
+      ["clean", "Make"],
+      ["cyc1", "Make"],
+      ["cyc2", "Make"],
+    ]),
+    leadTimeByItem: new Map(),
+    periods: [{ id: "p1" }],
+    onHandByLocationItem: new Map(),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map(),
+  });
+
+  assert(cycleItemIds.has("cyc1") && cycleItemIds.has("cyc2"));
+  // The clean parent plans normally: its demand reaches cyc1.
+  assertEquals(bomDerivedDemand.get(makeKey(loc, "p1", "cyc1")), 10);
+  // cyc1 is a leaf, so no phantom demand is manufactured around the loop.
+  assertEquals(bomDerivedDemand.get(makeKey(loc, "p1", "cyc2")), undefined);
 });

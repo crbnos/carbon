@@ -51,6 +51,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchQuantities = async () => {
     if (!carbon || !companyId) return;
+    const requestedCompanyId = companyId;
 
     const { data, error } = await fetchAllFromTable<{
       itemId: string;
@@ -60,10 +61,14 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       carbon,
       "itemStockQuantities",
       "itemId, locationId, quantityOnHand",
-      (query) => query.eq("companyId", companyId)
+      (query) => query.eq("companyId", requestedCompanyId)
     );
 
     if (error || !data) return;
+    // The company can switch while this is in flight (or while a debounced
+    // refresh is pending). Writing company A's quantities onto company B's
+    // items would zero every badge, since none of B's ids are in A's map.
+    if (activeCompanyId !== requestedCompanyId) return;
 
     const totalMap = new Map<string, number>();
     const locationMap = new Map<string, Record<string, number>>();

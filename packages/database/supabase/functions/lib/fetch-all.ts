@@ -7,19 +7,24 @@
 // deno-lint-ignore-file no-explicit-any
 
 const BATCH_SIZE = 1000;
+// Backstop only: a server that ignored `Range` would otherwise loop forever
+// inside an edge function. 1000 pages = 1M rows, far past any real input.
+const MAX_PAGES = 1000;
 
 type PageResult<T> = {
   data: T[] | null;
-  error: { message: string } | null;
+  // Carries PostgREST's error through unchanged (code/details/hint included) —
+  // narrowing it to a message would discard the diagnostics.
+  error: { message: string; [key: string]: unknown } | null;
 };
 
 export async function fetchAll<T>(
   buildQuery: () => any
 ): Promise<PageResult<T>> {
   const allData: T[] = [];
-  let offset = 0;
 
-  while (true) {
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const offset = page * BATCH_SIZE;
     const result = await buildQuery().range(offset, offset + BATCH_SIZE - 1);
 
     if (result.error) {
@@ -32,6 +37,12 @@ export async function fetchAll<T>(
     if (rows.length < BATCH_SIZE) {
       return { data: allData, error: null };
     }
-    offset += BATCH_SIZE;
   }
+
+  return {
+    data: null,
+    error: {
+      message: `fetchAll exceeded ${MAX_PAGES} pages — refusing to plan on a partial read`,
+    },
+  };
 }
