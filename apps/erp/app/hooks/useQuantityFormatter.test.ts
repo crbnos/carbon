@@ -36,9 +36,19 @@ describe("formatQuantityForDisplay", () => {
     expect(format(0)).toBe("0");
   });
 
+  it("keeps the storage-scale boundary value exact", () => {
+    expect(format(0.00001)).toBe("0.00001");
+  });
+
+  it("never renders a non-zero quantity below the storage scale as zero", () => {
+    expect(format(0.000001)).toBe("<0.00001");
+    expect(format(1e-9)).toBe("<0.00001");
+  });
+
   it("handles negative quantities", () => {
     expect(format(-2.567)).toBe("-2.567");
     expect(format(-0.004)).toBe("-0.004");
+    expect(format(-0.000001)).toBe(">-0.00001");
   });
 
   it("returns an empty string for non-finite values", () => {
@@ -50,5 +60,14 @@ describe("formatQuantityForDisplay", () => {
     const de = new Intl.NumberFormat("de-DE", quantityFormatOptions());
     expect(formatQuantityForDisplay(3.232227, de)).toBe("3,23223");
     expect(formatQuantityForDisplay(1234.5, de)).toBe("1.234,5");
+  });
+
+  it("uses the locale's own negative sign below the threshold", () => {
+    // sv-SE renders negatives with U+2212 MINUS SIGN, not an ASCII hyphen.
+    const sv = new Intl.NumberFormat("sv-SE", quantityFormatOptions());
+    expect(formatQuantityForDisplay(-0.000001, sv)).toBe(
+      `>${sv.format(-0.00001)}`
+    );
+    expect(formatQuantityForDisplay(0.000001, sv)).toBe("<0,00001");
   });
 });

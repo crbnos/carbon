@@ -15,7 +15,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { applyRate, INPUT_FORMAT, round } from "@carbon/utils";
+import { applyRate, deriveRate, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router";
@@ -391,7 +391,7 @@ const SupplierQuoteLinePricing = ({
                         onUpdateTaxPair(quantity, {
                           taxPercent:
                             breakSubtotal > 0
-                              ? round(value / breakSubtotal)
+                              ? deriveRate(value, breakSubtotal)
                               : taxPercent,
                           supplierTaxAmount: value
                         })

@@ -34,7 +34,7 @@ import {
     getNextRevisionSequence,
     getNextSequence,
 } from "../shared/get-next-sequence.ts";
-import { round, RoundingMode } from "../shared/precision.ts";
+import { scrapAllowance } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -615,10 +615,9 @@ serve(async (req: Request) => {
             // - For Buy/Pick parts: estimatedQuantity = target + scrap (what we need to procure)
             // - scrapQuantity = targetQuantity * scrapRate (the extra needed for scrap)
             // - totalForChildren = target + scrap (passed to children for cascade)
-            const nodeScrapQuantity = round(
-              targetQuantity * nodeScrapPercentage,
-              0,
-              RoundingMode.Up
+            const nodeScrapQuantity = scrapAllowance(
+              targetQuantity,
+              nodeScrapPercentage
             );
             const totalWithScrap = targetQuantity + nodeScrapQuantity;
 
@@ -1097,10 +1096,9 @@ serve(async (req: Request) => {
               // targetQuantity for this child = parent's total (including scrap) * quantity per parent
               const childTargetQuantity = totalQuantityForChildren * quantity;
               // scrapQuantity = portion attributable to scrap
-              const childScrapQuantity = round(
-                childTargetQuantity * itemScrapPercentage,
-                0,
-                RoundingMode.Up
+              const childScrapQuantity = scrapAllowance(
+                childTargetQuantity,
+                itemScrapPercentage
               );
               const childTotalWithScrap =
                 childTargetQuantity + childScrapQuantity;
@@ -1533,10 +1531,9 @@ serve(async (req: Request) => {
             // Calculate quantities:
             // - For Make parts: estimatedQuantity = targetQuantity (good quantity, NOT including scrap)
             // - For Buy/Pick parts: estimatedQuantity = target + scrap (what we need to procure)
-            const nodeScrapQuantity = round(
-              targetQuantity * nodeScrapPercentage,
-              0,
-              RoundingMode.Up
+            const nodeScrapQuantity = scrapAllowance(
+              targetQuantity,
+              nodeScrapPercentage
             );
             const totalWithScrap = targetQuantity + nodeScrapQuantity;
             const estimatedQuantity =
@@ -1793,10 +1790,9 @@ serve(async (req: Request) => {
               // Use totalQuantityForChildren (parent's total including scrap) for child calculations
               const childTargetQuantity =
                 totalQuantityForChildren * (child.data.quantity ?? 1);
-              const childScrapQuantity = round(
-                childTargetQuantity * itemScrapPercentage,
-                0,
-                RoundingMode.Up
+              const childScrapQuantity = scrapAllowance(
+                childTargetQuantity,
+                itemScrapPercentage
               );
               const childTotalWithScrap =
                 childTargetQuantity + childScrapQuantity;
@@ -4912,10 +4908,9 @@ serve(async (req: Request) => {
                 );
                 const rootTarget = job.data?.quantity ?? 1;
                 // Scrap applies to every method type (mirrors itemToJob)
-                const rootScrapQuantity = round(
-                  rootTarget * rootScrapPercentage,
-                  0,
-                  RoundingMode.Up
+                const rootScrapQuantity = scrapAllowance(
+                  rootTarget,
+                  rootScrapPercentage
                 );
                 const rootTotalWithScrap = rootTarget + rootScrapQuantity;
                 // For Make: estimatedQuantity is good quantity (without scrap)
@@ -4961,10 +4956,9 @@ serve(async (req: Request) => {
                 const childTargetQuantity =
                   nodeTotalForChildren * (child.data.quantity ?? 1);
                 // Scrap applies to every method type (mirrors itemToJob)
-                const childScrapQuantity = round(
-                  childTargetQuantity * itemScrapPercentage,
-                  0,
-                  RoundingMode.Up
+                const childScrapQuantity = scrapAllowance(
+                  childTargetQuantity,
+                  itemScrapPercentage
                 );
                 const childTotalWithScrap =
                   childTargetQuantity + childScrapQuantity;

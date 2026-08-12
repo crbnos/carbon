@@ -6,6 +6,7 @@ paths:
   - "packages/checks/src/conformance/no-raw-rounding.ts"
   - "packages/checks/src/conformance/no-inline-fraction-digits.ts"
   - "packages/checks/src/sources/typescript.ts"
+  - "packages/form/src/components/Number.tsx"
   - "packages/ee/src/accounting/providers/xero/serialize.ts"
   - "apps/erp/app/components/Form/TaxFields.tsx"
   - "apps/erp/app/hooks/usePriceFormatter.tsx"
@@ -44,12 +45,18 @@ full float precision; Postgres computes derived values (generated columns);
 
 - `round(value, scale = SCALE, mode = HalfUp)` — exponent-shift rounding
   (`round(1.005, 2) === 1.01`), ties away from zero to match Postgres.
-- `withScrap(target, scrap)` — scrap allowance ceils to whole units; the
-  target itself is NEVER rounded (`withScrap(4.5, 0) === 4.5`).
+- `scrapAllowance(target, rate)` — the extra WHOLE units to cover scrap; the
+  fractional target itself is never rounded, and callers add the two
+  (`4.5 + scrapAllowance(4.5, 0) === 4.5`; `31 + scrapAllowance(31, 0.01) === 32`).
 - `applyRate(base, rate, decimals)` — tax/discount → settlement amount;
   `decimals` comes from `currency.decimalPlaces` — data, never a literal.
+- `deriveRate(amount, subtotal)` — the inverse of `applyRate`: recover the rate
+  an absolute amount implies, rounded to internal scale. The ONE place a rate is
+  derived from an amount; a bare `amount / subtotal` at a call site is a bug.
 - `equals(a, b)` / `EPSILON = 1e-6` — the one float-noise tolerance.
-- `assertBalanced(debits, credits, tolerance = EPSILON)` — ledger invariant.
+- `assertBalanced(debits, credits, tolerance = EPSILON, label = "Journal")` —
+  ledger invariant. Pass a `label` so the refusal names the journal and its
+  currency (`"Payment journal (base currency)"`).
   `tolerance` is a BUSINESS refusal threshold: payment/memo posting passes
   `0.01`, manual journals and period close use `0.001`. Do not unify them and
   do not tighten to EPSILON — FX journals carry genuine sub-cent residuals.
@@ -88,11 +95,14 @@ pair is displayed as stored rather than silently recomputed on mount.
 
 ## Display digits = input digits (named kinds)
 
-`packages/utils/src/format.ts` defines the ONLY digit choices:
+`packages/utils/src/format.ts` defines the ONLY digit choices (`PERCENT_DIGITS`
+is module-private so the two percent kinds can never drift apart):
 
 | Kind | Digits | Notes |
 |---|---|---|
 | Percent / rate | min 0, max 3 | "5%", "6.25%", "6.255%" |
+| Percent points | min 0, max 3 | the same rate typed bare in a field already labelled "%" — `6.25`, caller divides by 100 |
+| Exchange rate | min 0, max 5 | "1.0852", "0.00781" — a plain multiplier, not a percent and not a currency. Intl's decimal default caps at 3, which truncates a stored rate on blur |
 | Quantity | min 0, max 5 | "3", "4.33333", "0.00125" — no "<0.01" placeholder |
 | Money (settlement) | min = max = `currency.decimalPlaces` | "$4.50", "¥63" — always padded |
 | Price (per-unit) | min = `currency.decimalPlaces`, max 5 | "$0.164", "$4.50" |
@@ -134,6 +144,14 @@ coercions are harmless no-ops; float8 columns still arrive as strings.
 ## Conformance
 
 Three checks in `@carbon/checks` guard the standard: `no-derived-percent-column`
-(SQL migrations), `no-raw-rounding` and `no-inline-fraction-digits` (all app
-TS via `sources/typescript.ts`). Fix new hits — baseline only NOT-IN-CLASS
-sites.
+(SQL migrations), `no-raw-rounding` and `no-inline-fraction-digits` (all app TS
+via `sources/typescript.ts`). That source also covers the shared packages —
+`packages/{utils,form,react,printing,workflows}/src` — because the standard's own
+helpers live in `@carbon/utils` and `form`/`react` own the number inputs whose
+`formatOptions` are part of the storage round-trip. A bare `Number` field with no
+`formatOptions` defaults to the quantity kind (`packages/form/src/components/Number.tsx`).
+
+Fix new hits — baseline only NOT-IN-CLASS sites (calendar buckets, relative-time
+math, file sizes, label/pixel geometry, pagination). Note `no-numeric-precision`
+reads migration TEXT, so a column a widening migration SKIPPED produces no
+finding: the check cannot tell you the live schema is still clamped.

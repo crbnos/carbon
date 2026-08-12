@@ -17,7 +17,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { RoundingMode, round } from "@carbon/utils";
+import { scrapAllowance } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuDiamond, LuLayers } from "react-icons/lu";
@@ -181,11 +181,9 @@ const JobForm = ({ initialValues }: JobFormProps) => {
           : (manufacturing?.data?.lotSize ?? 0),
       modelUploadId: item.data?.modelUploadId ?? null,
       scrapPercentage: manufacturing?.data?.scrapPercentage ?? 0,
-      scrapQuantity: round(
-        (manufacturing?.data?.lotSize ?? 0) *
-          (manufacturing?.data?.scrapPercentage ?? 0),
-        0,
-        RoundingMode.Up
+      scrapQuantity: scrapAllowance(
+        manufacturing?.data?.lotSize ?? 0,
+        manufacturing?.data?.scrapPercentage ?? 0
       )
     }));
 
@@ -320,10 +318,9 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                           setItemData((prev) => ({
                             ...prev,
                             quantity: value,
-                            scrapQuantity: round(
-                              value * prev.scrapPercentage,
-                              0,
-                              RoundingMode.Up
+                            scrapQuantity: scrapAllowance(
+                              value,
+                              prev.scrapPercentage
                             )
                           }))
                         }

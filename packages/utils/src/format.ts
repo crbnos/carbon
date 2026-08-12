@@ -27,12 +27,27 @@ export function priceFormatOptions(
   };
 }
 
-/** Rates (0-1 fractions): 3 percent-digits — a scale-5 fraction round-trips exactly. */
+/** How many digits a percent carries. A scale-5 fraction is 3 percent-digits,
+ *  so a rate round-trips exactly through either of the two kinds below. */
+const PERCENT_DIGITS = 3;
+
+/** Rates (0-1 fractions): rendered as a percentage, "6.25%". */
 export function percentFormatOptions(): Intl.NumberFormatOptions {
   return {
     style: "percent",
     minimumFractionDigits: 0,
-    maximumFractionDigits: 3
+    maximumFractionDigits: PERCENT_DIGITS
+  };
+}
+
+/** The same rate typed as percentage POINTS — a bare 6.25 in a field already
+ *  labelled "%", where the caller divides by 100. Same digits as the percent
+ *  kind, so the two agree on what a rate can express. */
+export function percentPointsFormatOptions(): Intl.NumberFormatOptions {
+  return {
+    style: "decimal",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: PERCENT_DIGITS
   };
 }
 
@@ -41,11 +56,20 @@ export function quantityFormatOptions(): Intl.NumberFormatOptions {
   return { minimumFractionDigits: 0, maximumFractionDigits: SCALE };
 }
 
+/** FX rates: a plain scale-5 multiplier — neither a 0-1 percent nor a currency.
+ *  Intl's decimal default caps at 3 fraction digits, which silently truncates a
+ *  stored rate on an input's blur commit, so this kind has to be explicit. */
+export function exchangeRateFormatOptions(): Intl.NumberFormatOptions {
+  return { minimumFractionDigits: 0, maximumFractionDigits: SCALE };
+}
+
 /** Editable inputs MUST use these: react-aria's blur commit runs parse(format(x)),
  *  making the input formatter part of the storage round-trip. */
 export const INPUT_FORMAT = {
   rate: percentFormatOptions(),
+  percentPoints: percentPointsFormatOptions(),
   quantity: quantityFormatOptions(),
+  exchangeRate: exchangeRateFormatOptions(),
   money: (currency: string, decimalPlaces: number) =>
     moneyFormatOptions(currency, decimalPlaces),
   price: (currency: string, decimalPlaces: number) =>
@@ -61,6 +85,7 @@ export const INPUT_STEP = {
   rate: SCALE_STEP,
   quantity: SCALE_STEP,
   price: SCALE_STEP,
+  exchangeRate: SCALE_STEP,
   /** Settlement money steps in its own smallest unit (1 for JPY, 0.01 for USD). */
   money: (decimalPlaces: number) => 1 / 10 ** decimalPlaces
 };
@@ -95,4 +120,10 @@ export function formatPercent(value: number, locale: string): string {
 
 export function formatQuantity(value: number, locale: string): string {
   return new Intl.NumberFormat(locale, quantityFormatOptions()).format(value);
+}
+
+export function formatExchangeRate(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, exchangeRateFormatOptions()).format(
+    value
+  );
 }

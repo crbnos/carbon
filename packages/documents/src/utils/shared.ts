@@ -83,14 +83,36 @@ export const formatTaxPercent = (
   return formatPercent(taxPercent, locale);
 };
 
+/** Settlement money for emails/documents. When the currency row's
+ *  `decimalPlaces` is known, pad both ways to it (the money kind — the DB
+ *  column is authoritative over CLDR); otherwise fall back to CLDR capped
+ *  at 2, the historical behavior. */
 export const getCurrencyFormatter = (
   baseCurrencyCode: string,
   locale: string,
-  maximumFractionDigits?: number
+  decimalPlaces?: number | null
 ) => {
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: baseCurrencyCode,
-    maximumFractionDigits: maximumFractionDigits ?? 2
+    ...(decimalPlaces != null
+      ? {
+          minimumFractionDigits: decimalPlaces,
+          maximumFractionDigits: decimalPlaces
+        }
+      : { maximumFractionDigits: 2 })
+  });
+};
+
+/** The PDFs' bare-number money formatter (currency code is rendered
+ *  separately). Same digit rule as above with the same CLDR-era fallback. */
+export const getMoneyNumberFormatter = (
+  locale: string,
+  decimalPlaces?: number | null
+) => {
+  return new Intl.NumberFormat(locale, {
+    style: "decimal",
+    minimumFractionDigits: decimalPlaces ?? 2,
+    maximumFractionDigits: decimalPlaces ?? 2
   });
 };

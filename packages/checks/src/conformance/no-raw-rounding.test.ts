@@ -22,9 +22,9 @@ describe("no-raw-rounding", () => {
 
   it("allows the precision module's helpers", () => {
     const src = [
-      'import { round, withScrap } from "@carbon/utils";',
+      'import { round, scrapAllowance } from "@carbon/utils";',
       "const a = round(x);",
-      "const b = withScrap(target, scrap);"
+      "const b = scrapAllowance(target, rate);"
     ].join("\n");
     expect(noRawRounding.scan("a.ts", src)).toHaveLength(0);
   });

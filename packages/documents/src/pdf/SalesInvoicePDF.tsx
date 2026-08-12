@@ -8,7 +8,10 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
-import { resolveRegistrationLine } from "../utils/shared";
+import {
+  getMoneyNumberFormatter,
+  resolveRegistrationLine
+} from "../utils/shared";
 import type { SalesInvoiceData, SalesInvoiceLocations } from "./blocks";
 import { buildSalesInvoiceVars, salesInvoiceBlockRegistry } from "./blocks";
 import { Template } from "./components";
@@ -31,6 +34,8 @@ interface SalesInvoicePDFProps extends PDF {
   template?: DocumentTemplate | null;
   /** Shared sections referenced by the template, keyed by id. */
   sections?: Record<string, ResolvedSection>;
+  /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
+  currencyDecimals?: number | null;
 }
 
 const SalesInvoicePDF = ({
@@ -48,16 +53,13 @@ const SalesInvoicePDF = ({
   shippingMethods,
   thumbnails,
   locale,
+  currencyDecimals,
   template,
   sections = {},
   title = "Invoice"
 }: SalesInvoicePDFProps) => {
   const currencyCode = salesInvoice.currencyCode ?? company.baseCurrencyCode;
-  const numberFormatter = new Intl.NumberFormat(locale, {
-    style: "decimal",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  const numberFormatter = getMoneyNumberFormatter(locale, currencyDecimals);
 
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("salesInvoice", template);

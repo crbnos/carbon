@@ -22,7 +22,6 @@ import {
   NumberInputStepper,
   VStack
 } from "@carbon/react";
-import { twoDecimals } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ElementRef } from "react";
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
@@ -32,6 +31,7 @@ import {
   LuChevronUp,
   LuLanguages
 } from "react-icons/lu";
+import { useQuantityFormatter } from "~/hooks";
 import { useUnitOfMeasure } from "./UnitOfMeasure";
 
 enum ConversionDirection {
@@ -108,6 +108,7 @@ const ConversionFactor = forwardRef<
     };
 
     const unitOfMeasureOptions = useUnitOfMeasure();
+    const formatQuantity = useQuantityFormatter();
 
     const description = useMemo(() => {
       const purchaseUnit =
@@ -129,7 +130,7 @@ const ConversionFactor = forwardRef<
         return (
           <>
             <span className={cn(Number.isNaN(conversionFactor) && "opacity-0")}>
-              {`There ${conversionFactor === 1 ? "is" : "are"} ${twoDecimals(
+              {`There ${conversionFactor === 1 ? "is" : "are"} ${formatQuantity(
                 conversionFactor
               )} ${inventoryUnit.toLocaleLowerCase()} in one `}
               <span className="text-primary">
@@ -143,7 +144,7 @@ const ConversionFactor = forwardRef<
       return (
         <>
           <span>
-            {`There ${conversionFactor === 1 ? "is" : "are"} ${twoDecimals(
+            {`There ${conversionFactor === 1 ? "is" : "are"} ${formatQuantity(
               inverseOfConversion
             )} `}
             <span className="text-primary">
@@ -156,6 +157,7 @@ const ConversionFactor = forwardRef<
     }, [
       conversionDirection,
       conversionFactor,
+      formatQuantity,
       inventoryCode,
       purchasingCode,
       unitOfMeasureOptions,
@@ -220,7 +222,7 @@ const ConversionFactor = forwardRef<
             ref={ref}
             onClick={() => setOpen(true)}
           >
-            {controlValue ? twoDecimals(controlValue) : "-"}
+            {controlValue ? formatQuantity(controlValue) : "-"}
           </CommandTrigger>
 
           <ModalContent>

@@ -24,7 +24,7 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { pluralize } from "@carbon/utils";
+import { deriveRate, pluralize } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -288,16 +288,13 @@ const LinePricingOptions = ({
           shippingCost: overridePricing.shippingCost,
           leadTime: overridePricing.leadTime,
           supplierTaxAmount: overridePricing.supplierTaxAmount,
-          // Override collects amounts only — seed the rate the way the old
-          // generated column derived it
-          taxPercent:
+          // Override collects amounts only — seed the rate from the canonical
+          // denominator (unit price x quantity + shipping).
+          taxPercent: deriveRate(
+            overridePricing.supplierTaxAmount,
             overridePricing.supplierUnitPrice * overridePricing.quantity +
-              overridePricing.supplierShippingCost >
-            0
-              ? overridePricing.supplierTaxAmount /
-                (overridePricing.supplierUnitPrice * overridePricing.quantity +
-                  overridePricing.supplierShippingCost)
-              : 0
+              overridePricing.supplierShippingCost
+          )
         }
       }));
     }

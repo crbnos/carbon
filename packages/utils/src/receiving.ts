@@ -1,4 +1,4 @@
-import { EPSILON } from "./math";
+import { EPSILON, round } from "./math";
 import type { Violation } from "./storage-rules";
 
 export type OverReceiptReceiptLine = {
@@ -36,8 +36,6 @@ export function getOverReceiptViolations(
       (incomingByLine.get(line.lineId) ?? 0) + quantityInPurchaseUnits
     );
   }
-
-  const round = (value: number) => Math.round(value * 100000) / 100000;
 
   const violations: Violation[] = [];
   const ruleNames: Record<string, string> = {};

@@ -16,13 +16,17 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
-import { round } from "@carbon/utils";
+import { INPUT_FORMAT, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import { LuSave } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePermissions
+} from "~/hooks";
 import { path } from "~/utils/path";
 
 // An available credit (a posted, balance-reducing memo) the party can apply to an
@@ -80,6 +84,7 @@ const AvailableCreditsTable = ({
   const permissions = usePermissions();
   const fetcher = useFetcher();
   const currencyFormatter = useCurrencyFormatter({ currency });
+  const currencyDecimals = useCurrencyDecimals(currency);
   const canEdit = permissions.can("update", "invoicing");
 
   const balanceByInvoice = useMemo(
@@ -290,10 +295,10 @@ const AvailableCreditsTable = ({
                       }
                       minValue={0}
                       isDisabled={!canEdit}
-                      formatOptions={{
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 4
-                      }}
+                      formatOptions={INPUT_FORMAT.money(
+                        currency,
+                        currencyDecimals
+                      )}
                     >
                       <NumberInputGroup>
                         <NumberInput className="text-right tabular-nums" />

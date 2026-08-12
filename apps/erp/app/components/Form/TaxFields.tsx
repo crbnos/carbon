@@ -1,5 +1,5 @@
 import { NumberControlled } from "@carbon/form";
-import { applyRate, INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
+import { applyRate, deriveRate, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 
@@ -78,8 +78,9 @@ export function TaxFields({
         isReadOnly={isReadOnly}
         onChange={(value) =>
           onChange({
-            // Rounded to internal scale so the stored rate is what the input renders.
-            percent: subtotal > 0 ? round(value / subtotal) : percent,
+            // deriveRate rounds to internal scale, so the stored rate is what the
+            // input renders. No base to divide by -> keep the rate the user typed.
+            percent: subtotal > 0 ? deriveRate(value, subtotal) : percent,
             amount: value
           })
         }

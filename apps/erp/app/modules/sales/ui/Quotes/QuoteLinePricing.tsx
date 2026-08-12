@@ -31,7 +31,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT, round } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -47,7 +47,9 @@ import { useFetcher, useParams } from "react-router";
 import EditableNumberCell from "~/components/EditableNumberCell";
 import {
   useCurrencyFormatter,
+  usePercentFormatter,
   usePermissions,
+  usePriceFormatter,
   useRouteData,
   useSettings,
   useUser
@@ -178,13 +180,14 @@ const QuoteLinePricing = ({
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   const formatter = useCurrencyFormatter();
-  const unitPriceFormatter = useCurrencyFormatter({
+  const percentFormatter = usePercentFormatter();
+  const unitPriceFormatter = usePriceFormatter({
     currency: routeData?.quote?.currencyCode ?? baseCurrency,
-    maximumFractionDigits: unitPricePrecision
+    decimalPlaces: unitPricePrecision
   });
-  const presentationCurrencyFormatter = useCurrencyFormatter({
+  const presentationCurrencyFormatter = usePriceFormatter({
     currency: routeData?.quote?.currencyCode ?? baseCurrency,
-    maximumFractionDigits: unitPricePrecision
+    decimalPlaces: unitPricePrecision
   });
 
   const additionalCharges = useMemo(() => {
@@ -511,7 +514,7 @@ const QuoteLinePricing = ({
       let roundedValue = value;
       if (key === "unitPrice") {
         // Round the value to the precision of the quote line
-        roundedValue = Number(value.toFixed(unitPricePrecision));
+        roundedValue = round(value, unitPricePrecision);
       }
       newPrices[quantity] = {
         ...newPrices[quantity],
@@ -653,10 +656,7 @@ const QuoteLinePricing = ({
                         customMarkup === "" ? undefined : Number(customMarkup)
                       }
                       minValue={0}
-                      formatOptions={{
-                        style: "decimal",
-                        maximumFractionDigits: 2
-                      }}
+                      formatOptions={INPUT_FORMAT.percentPoints}
                       onChange={(val) => {
                         if (Number.isFinite(val)) setCustomMarkup(String(val));
                       }}
@@ -935,11 +935,10 @@ const QuoteLinePricing = ({
                   <Td key={quantity.toString()}>
                     <EditableNumberCell
                       value={price}
-                      formatOptions={{
-                        style: "currency",
-                        currency: baseCurrency,
-                        maximumFractionDigits: unitPricePrecision
-                      }}
+                      formatOptions={INPUT_FORMAT.price(
+                        baseCurrency,
+                        unitPricePrecision
+                      )}
                       minValue={0}
                       isEditable={isEditable}
                       onChange={(value) =>
@@ -1019,7 +1018,7 @@ const QuoteLinePricing = ({
                           <span
                             className={cn(profit < -0.01 && "text-red-500")}
                           >
-                            {profit.toFixed(2)}%
+                            {percentFormatter.format(profit / 100)}
                           </span>
                         ) : (
                           <span>-</span>

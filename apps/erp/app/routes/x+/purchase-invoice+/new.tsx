@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { round } from "@carbon/utils";
+import { deriveRate } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -143,8 +143,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // pair, rounded to internal scale and held inside the 0..1 fraction the
       // validator and TaxFields both require.
       const lineSubtotal = (item.unitPrice || 0) * (item.quantity || 1);
-      const lineTaxPercent =
-        lineSubtotal > 0 ? Math.min(1, round(lineTax / lineSubtotal)) : 0;
+      const lineTaxPercent = Math.min(1, deriveRate(lineTax, lineSubtotal));
 
       // Map the line up front when the extracted text directly matches an
       // existing record — only lines with no direct match are left as

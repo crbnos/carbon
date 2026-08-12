@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   applyRate,
   assertBalanced,
+  deriveRate,
   equals,
   RoundingMode,
   round,
-  sum,
-  withScrap
+  scrapAllowance,
+  sum
 } from "./math";
 
 describe("round", () => {
@@ -36,13 +37,34 @@ describe("round", () => {
   });
 });
 
-describe("withScrap", () => {
-  it("never rounds the target — the consumed-quantity regression", () => {
-    expect(withScrap(4.5, 0)).toBe(4.5);
+describe("scrapAllowance", () => {
+  it("is zero at a zero rate, so the target passes through unrounded", () => {
+    expect(scrapAllowance(4.5, 0)).toBe(0);
+    expect(4.5 + scrapAllowance(4.5, 0)).toBe(4.5);
   });
 
-  it("still ceils the scrap allowance to whole units", () => {
-    expect(withScrap(31, 0.31)).toBe(32);
+  it("ceils a partial allowance to whole units", () => {
+    expect(scrapAllowance(31, 0.01)).toBe(1);
+    expect(31 + scrapAllowance(31, 0.01)).toBe(32);
+  });
+
+  it("ceils rather than rounds — 2.00001 units of scrap needs 3", () => {
+    expect(scrapAllowance(200001, 0.00001)).toBe(3);
+  });
+});
+
+describe("deriveRate", () => {
+  it("recovers the rate an amount implies, at internal scale", () => {
+    expect(deriveRate(0.56, 9)).toBe(0.06222);
+  });
+
+  it("is zero when there is no base to divide by", () => {
+    expect(deriveRate(5, 0)).toBe(0);
+    expect(deriveRate(5, -1)).toBe(0);
+  });
+
+  it("round-trips a typed rate through applyRate at internal scale", () => {
+    expect(deriveRate(applyRate(9, 0.0625, 5), 9)).toBe(0.0625);
   });
 });
 

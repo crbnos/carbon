@@ -1690,6 +1690,34 @@ export async function getCurrency(
     .single();
 }
 
+/**
+ * Settlement decimals for the company's base currency. Fixed-asset and GL
+ * amounts are booked in base currency, so this is the scale their rounding must
+ * use. Falls back to 2 only when the currency row is unreachable.
+ */
+export async function getBaseCurrencyDecimalPlaces(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  companyGroupId: string
+): Promise<number> {
+  const company = await client
+    .from("company")
+    .select("baseCurrencyCode")
+    .eq("id", companyId)
+    .single();
+
+  if (company.error || !company.data?.baseCurrencyCode) return 2;
+
+  const currency = await client
+    .from("currencies")
+    .select("decimalPlaces")
+    .eq("code", company.data.baseCurrencyCode)
+    .eq("companyGroupId", companyGroupId)
+    .single();
+
+  return currency.data?.decimalPlaces ?? 2;
+}
+
 export async function getCurrencyByCode(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -1725,11 +1753,40 @@ export async function getCurrencies(
   return query;
 }
 
-export async function getCurrenciesList(client: SupabaseClient<Database>) {
-  return client
-    .from("currencyCode")
-    .select("code, name")
-    .order("name", { ascending: true });
+/**
+ * The full ISO currency list for pickers, carrying the company group's
+ * configured `decimalPlaces` where the currency has been set up. Callers that
+ * format or round money need the settlement scale alongside the code — the DB
+ * column is authoritative over Intl/CLDR, so it has to travel with the option.
+ * `decimalPlaces` is null for an ISO currency the group has not configured.
+ */
+export async function getCurrenciesList(
+  client: SupabaseClient<Database>,
+  companyGroupId: string
+) {
+  const [codes, configured] = await Promise.all([
+    client.from("currencyCode").select("code, name").order("name", {
+      ascending: true
+    }),
+    client
+      .from("currencies")
+      .select("code, decimalPlaces")
+      .eq("companyGroupId", companyGroupId)
+  ]);
+
+  if (codes.error) return codes;
+
+  const decimalsByCode = new Map(
+    (configured.data ?? []).map((c) => [c.code, c.decimalPlaces])
+  );
+
+  return {
+    ...codes,
+    data: codes.data.map((c) => ({
+      ...c,
+      decimalPlaces: decimalsByCode.get(c.code) ?? null
+    }))
+  };
 }
 
 export async function getCurrentAccountingPeriod(

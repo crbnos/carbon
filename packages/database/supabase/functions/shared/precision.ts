@@ -42,16 +42,26 @@ export function equals(a: number, b: number): boolean {
   return Math.abs(a - b) < EPSILON;
 }
 
-/** Scrap allowance rounds up to whole units; the target itself is NEVER rounded.
- *  withScrap(4.5, 0)   === 4.5
- *  withScrap(31, 0.31) === 32 */
-export function withScrap(target: number, scrap: number): number {
-  return target + round(scrap, 0, RoundingMode.Up);
+/** The extra whole units to make/procure to cover scrap at `rate`. Ceils to
+ *  whole units — you cannot make a third of a part to throw away — while the
+ *  fractional target itself is NEVER rounded (callers add the two).
+ *  scrapAllowance(4.5, 0)    === 0     -> total stays 4.5
+ *  scrapAllowance(31, 0.01)  === 1     -> total 32 */
+export function scrapAllowance(target: number, rate: number): number {
+  return round(target * rate, 0, RoundingMode.Up);
 }
 
 /** Tax/discount → settlement amount. `decimals` comes from currency.decimalPlaces — data, never a literal. */
 export function applyRate(base: number, rate: number, decimals: number): number {
   return round(base * rate, decimals);
+}
+
+/** The other half of the value pair: recover the rate an absolute amount implies.
+ *  Rounded to internal scale so the stored rate is a real 5dp fact, not a raw
+ *  float. Precision only flows cleanly one way — a rate derived back from a
+ *  cents-rounded amount is limited by that amount's scale. */
+export function deriveRate(amount: number, subtotal: number): number {
+  return subtotal > 0 ? round(amount / subtotal) : 0;
 }
 
 /** Ledger invariant. Throws with the drift so posting refuses rather than mis-posts.
@@ -62,10 +72,13 @@ export function applyRate(base: number, rate: number, decimals: number): number 
 export function assertBalanced(
   debits: number,
   credits: number,
-  tolerance: number = EPSILON
+  tolerance: number = EPSILON,
+  label = "Journal"
 ): void {
   const drift = debits - credits;
   if (Math.abs(drift) > tolerance) {
-    throw new Error(`Journal does not balance (off by ${round(drift)})`);
+    throw new Error(
+      `${label} does not balance (off by ${round(drift)}); refusing to post`
+    );
   }
 }

@@ -9,7 +9,7 @@ import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { round } from "../shared/precision.ts";
+import { deriveRate } from "../shared/precision.ts";
 import { getRemainingQuantityToInvoice } from "../shared/short-close.ts";
 
 const pool = getConnectionPool(2);
@@ -147,9 +147,10 @@ function resolveTaxPercent(line: {
 }): number {
   if (line.taxPercent) return line.taxPercent;
   if (!line.supplierTaxAmount) return 0;
-  const subtotal =
-    line.supplierUnitPrice * line.quantity + line.supplierShippingCost;
-  return subtotal > 0 ? round(line.supplierTaxAmount / subtotal) : 0;
+  return deriveRate(
+    line.supplierTaxAmount,
+    line.supplierUnitPrice * line.quantity + line.supplierShippingCost
+  );
 }
 
 serve(async (req: Request) => {

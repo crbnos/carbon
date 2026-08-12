@@ -4,6 +4,7 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { deriveRate } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import {
@@ -186,15 +187,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         const { lineId, quantity, selectedLine } = priceRecordsToProcess[i];
         const existingPrice = existingPriceChecks[i];
 
-        // The portal collects amounts only; seed the stored rate the way the
-        // old generated column derived it (amount / canonical subtotal)
-        const breakSubtotal =
+        // The portal collects amounts only; seed the stored rate from the
+        // canonical denominator (unit price x quantity + shipping).
+        const taxPercent = deriveRate(
+          selectedLine.supplierTaxAmount ?? 0,
           (selectedLine.supplierUnitPrice ?? 0) * quantity +
-          (selectedLine.supplierShippingCost ?? 0);
-        const taxPercent =
-          breakSubtotal > 0
-            ? (selectedLine.supplierTaxAmount ?? 0) / breakSubtotal
-            : 0;
+            (selectedLine.supplierShippingCost ?? 0)
+        );
 
         if (existingPrice.data) {
           // Update existing price record

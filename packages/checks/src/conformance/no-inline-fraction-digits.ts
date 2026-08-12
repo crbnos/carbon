@@ -6,13 +6,16 @@ import type { ConformanceCheck, Violation } from "../check";
 // runs parse(format(x)) — the input formatter is part of arithmetic.
 const INLINE_DIGITS = /minimumFractionDigits|maximumFractionDigits/;
 
-// The formatter layer itself is where the digits are DEFINED.
+// The formatter layer itself is where the digits are DEFINED. Note
+// useCurrencyFormatter is deliberately NOT excluded — it delegates to
+// moneyFormatOptions, so a digit literal creeping back in should flag.
 const EXCLUDED_FILES = new Set([
   "packages/utils/src/format.ts",
-  "apps/erp/app/hooks/useCurrencyFormatter.tsx",
   "apps/erp/app/hooks/usePercentFormatter.tsx",
   "apps/erp/app/hooks/useQuantityFormatter.tsx",
-  "apps/erp/app/hooks/usePriceFormatter.tsx"
+  "apps/erp/app/hooks/usePriceFormatter.tsx",
+  // The documents package's formatter layer (react-pdf can't use the hooks).
+  "packages/documents/src/utils/shared.ts"
 ]);
 
 export const noInlineFractionDigits: ConformanceCheck = {

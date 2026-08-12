@@ -9,7 +9,12 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
-import { xeroMoney, xeroUnitAmount } from "../serialize";
+import {
+  xeroCurrencyRate,
+  xeroMoney,
+  xeroQuantity,
+  xeroUnitAmount
+} from "../serialize";
 
 const logger = getLogger("ee", "accounting", "xero");
 
@@ -335,15 +340,19 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     // Build line items, resolving item dependencies
     const lineItems: Xero.InvoiceLineItem[] = [];
     for (const line of local.lines) {
-      const taxAmount =
-        (line.quantity * line.unitPrice * line.taxPercent) / 100;
+      // Round once, then derive: Xero recomputes the extension from what we
+      // send, so a rounded Quantity with an extension built from the unrounded
+      // one makes Quantity x UnitAmount disagree with LineAmount.
+      const quantity = xeroQuantity(line.quantity);
+      const unitAmount = xeroUnitAmount(line.unitPrice);
+      const taxAmount = (quantity * unitAmount * line.taxPercent) / 100;
 
       const lineItem: Xero.InvoiceLineItem = {
         Description: line.description ?? undefined,
-        Quantity: xeroUnitAmount(line.quantity),
-        UnitAmount: xeroUnitAmount(line.unitPrice),
+        Quantity: quantity,
+        UnitAmount: unitAmount,
         TaxAmount: xeroMoney(taxAmount),
-        LineAmount: xeroMoney(line.quantity * line.unitPrice),
+        LineAmount: xeroMoney(quantity * unitAmount),
         // Use default account code from settings if no account specified
         AccountCode: defaultAccountCode,
         // TaxType is required by Xero: OUTPUT for sales tax, NONE for zero tax
@@ -395,7 +404,10 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       AmountDue: xeroMoney(local.balance),
       AmountPaid: xeroMoney(local.totalAmount - local.balance),
       CurrencyCode: local.currencyCode,
-      CurrencyRate: local.exchangeRate !== 1 ? local.exchangeRate : undefined
+      CurrencyRate:
+        local.exchangeRate !== 1
+          ? xeroCurrencyRate(local.exchangeRate)
+          : undefined
     };
   }
 

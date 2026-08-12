@@ -528,14 +528,40 @@ Deno.test("applied exactly equal to cash emits no unapplied line", () => {
   assert(line(lines, "Accounts Receivable (credit applied)") === undefined);
 });
 
-Deno.test("sub-dust unapplied (< 0.0001) emits no on-account line", () => {
+// Anything the ledger can STORE has to be booked: the cash line already carries
+// the full amount, so a dropped residual would be stored out of balance. At scale
+// 5 that means 0.00005 gets its own on-account line; only float noise is dropped.
+Deno.test("storable unapplied dust still emits an on-account line", () => {
   const { lines, signedDebitTotal } = buildPaymentJournal(
     arBase({
       totalAmount: 100,
       applications: [
         {
           targetSalesInvoiceId: "si_1",
-          appliedAmount: 99.99995, // unapplied 0.00005 < threshold
+          appliedAmount: 99.99995, // unapplied 0.00005 — representable at scale 5
+          discountAmount: 0,
+          writeOffAmount: 0,
+          targetExchangeRate: 1,
+          sourceExchangeRate: 1,
+        },
+      ],
+    })
+  );
+  assertEquals(
+    line(lines, "Accounts Receivable (on-account credit)")?.amount,
+    -0.00005
+  );
+  assert(balanced(signedDebitTotal));
+});
+
+Deno.test("float-noise unapplied is dropped and the entry still balances", () => {
+  const { lines, signedDebitTotal } = buildPaymentJournal(
+    arBase({
+      totalAmount: 100,
+      applications: [
+        {
+          targetSalesInvoiceId: "si_1",
+          appliedAmount: 99.9999999, // below EPSILON — not storable
           discountAmount: 0,
           writeOffAmount: 0,
           targetExchangeRate: 1,

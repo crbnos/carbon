@@ -6,7 +6,12 @@ import {
 } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
-import { xeroMoney, xeroUnitAmount } from "../serialize";
+import {
+  xeroCurrencyRate,
+  xeroMoney,
+  xeroQuantity,
+  xeroUnitAmount
+} from "../serialize";
 
 // Note: This is a push-only syncer (Carbon -> Xero).
 // Carbon sales orders are pushed as Xero Quotes since Xero
@@ -271,9 +276,10 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
         continue;
       }
 
+      const quantity = xeroQuantity(line.quantity);
       const lineItem: Xero.QuoteLineItem = {
         Description: line.description ?? undefined,
-        Quantity: xeroUnitAmount(line.quantity),
+        Quantity: quantity,
         UnitAmount: xeroUnitAmount(line.unitPrice),
         AccountCode: line.accountNumber ?? undefined,
         LineAmount: xeroMoney(line.lineAmount)
@@ -302,7 +308,10 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
       LineAmountTypes: "Exclusive",
       LineItems: lineItems,
       CurrencyCode: local.currencyCode,
-      CurrencyRate: local.exchangeRate !== 1 ? local.exchangeRate : undefined,
+      CurrencyRate:
+        local.exchangeRate !== 1
+          ? xeroCurrencyRate(local.exchangeRate)
+          : undefined,
       Title: `Sales Order ${local.salesOrderId}`
     };
   }

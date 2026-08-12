@@ -19,6 +19,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCheckCheck, LuTicketX, LuTrash } from "react-icons/lu";
@@ -216,10 +217,8 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
                 <Number
                   name="exchangeRate"
                   label={t`Exchange Rate`}
-                  formatOptions={{
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 4
-                  }}
+                  step={INPUT_STEP.exchangeRate}
+                  formatOptions={INPUT_FORMAT.exchangeRate}
                 />
                 <Number
                   name="amount"

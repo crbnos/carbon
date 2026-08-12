@@ -13,14 +13,18 @@ import {
   NumberInput,
   NumberInputGroup
 } from "@carbon/react";
-import { EPSILON, round } from "@carbon/utils";
+import { EPSILON, INPUT_FORMAT, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { CSSProperties } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { LuListChecks, LuRotateCcw, LuSave } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePermissions
+} from "~/hooks";
 import { path } from "~/utils/path";
 
 // One row in the apply table — an open invoice for the payment's
@@ -85,12 +89,16 @@ const AmountInput = ({
   value,
   onChange,
   isDisabled,
-  label
+  label,
+  currency,
+  currencyDecimals
 }: {
   value: number;
   onChange: (value: number) => void;
   isDisabled: boolean;
   label: string;
+  currency: string;
+  currencyDecimals: number;
 }) => (
   <NumberField
     aria-label={label}
@@ -98,7 +106,7 @@ const AmountInput = ({
     onChange={(v) => onChange(Number.isNaN(v) ? 0 : v)}
     minValue={0}
     isDisabled={isDisabled}
-    formatOptions={{ minimumFractionDigits: 2, maximumFractionDigits: 4 }}
+    formatOptions={INPUT_FORMAT.money(currency, currencyDecimals)}
   >
     <NumberInputGroup>
       <NumberInput className="text-right tabular-nums" />
@@ -120,6 +128,7 @@ const PaymentApplyTable = ({
   const permissions = usePermissions();
   const fetcher = useFetcher();
   const currencyFormatter = useCurrencyFormatter({ currency: paymentCurrency });
+  const currencyDecimals = useCurrencyDecimals(paymentCurrency);
   const today = new Date().toISOString().slice(0, 10);
   const isReceipt = paymentType === "Receipt";
   const canEdit = permissions.can("update", "invoicing");
@@ -388,18 +397,24 @@ const PaymentApplyTable = ({
                       label={t`Applied amount for ${r.invoiceId}`}
                       value={r.appliedAmount}
                       isDisabled={!canEdit}
+                      currency={paymentCurrency}
+                      currencyDecimals={currencyDecimals}
                       onChange={(v) => updateAmount(r.id, "appliedAmount", v)}
                     />
                     <AmountInput
                       label={t`Discount for ${r.invoiceId}`}
                       value={r.discountAmount}
                       isDisabled={!canEdit}
+                      currency={paymentCurrency}
+                      currencyDecimals={currencyDecimals}
                       onChange={(v) => updateAmount(r.id, "discountAmount", v)}
                     />
                     <AmountInput
                       label={t`Write-off for ${r.invoiceId}`}
                       value={r.writeOffAmount}
                       isDisabled={!canEdit}
+                      currency={paymentCurrency}
+                      currencyDecimals={currencyDecimals}
                       onChange={(v) => updateAmount(r.id, "writeOffAmount", v)}
                     />
                   </div>

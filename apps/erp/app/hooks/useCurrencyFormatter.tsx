@@ -1,12 +1,27 @@
+import { moneyFormatOptions } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
+import { useConfiguredCurrencyDecimals } from "./useCurrencies";
 import { useUser } from "./useUser";
 
-export function useCurrencyFormatter(options?: Intl.NumberFormatOptions) {
+/**
+ * Settlement money display. Digits come from the company group's configured
+ * `currency.decimalPlaces` — the DB column is authoritative over Intl/CLDR —
+ * padded both ways per the money kind ("$4.50", "¥63"). CLDR only decides when
+ * the currency isn't configured for the group (or the list hasn't loaded yet).
+ *
+ * `decimalPlaces` overrides the lookup when the caller already has the row
+ * (e.g. from a loader). Any other Intl options a caller passes win over the
+ * kind — reports that deliberately show whole units keep doing so.
+ */
+export function useCurrencyFormatter(
+  options?: Intl.NumberFormatOptions & { decimalPlaces?: number }
+) {
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const { locale } = useLocale();
   const currency = options?.currency ?? baseCurrency;
+  const configuredDecimals = useConfiguredCurrencyDecimals(currency);
 
   // Every call site passes an object literal, so depending on `options` by
   // identity meant the memo never hit: a new Intl.NumberFormat on every render,
@@ -14,14 +29,18 @@ export function useCurrencyFormatter(options?: Intl.NumberFormatOptions) {
   // tables — a full column rebuild with it. Depend on the fields instead.
   const optionsKey = options ? JSON.stringify(options) : "";
   const formatter = useMemo(() => {
-    const opts = optionsKey
-      ? (JSON.parse(optionsKey) as Intl.NumberFormatOptions)
-      : undefined;
+    const { decimalPlaces, ...opts } = optionsKey
+      ? (JSON.parse(optionsKey) as Intl.NumberFormatOptions & {
+          decimalPlaces?: number;
+        })
+      : {};
+    const decimals = decimalPlaces ?? configuredDecimals;
     return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: currency,
+      ...(decimals != null
+        ? moneyFormatOptions(currency, decimals)
+        : { style: "currency" as const, currency }),
       ...opts
     });
-  }, [locale, currency, optionsKey]);
+  }, [locale, currency, optionsKey, configuredDecimals]);
   return formatter;
 }

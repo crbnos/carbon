@@ -164,7 +164,12 @@ export function buildMemoJournal(
 
   // BALANCE_TOLERANCE is a business threshold (multi-currency memos carry
   // sub-cent cross-rate residuals), NOT the float-noise default.
-  assertBalanced(signedDebitTotal, 0, BALANCE_TOLERANCE);
+  assertBalanced(
+    signedDebitTotal,
+    0,
+    BALANCE_TOLERANCE,
+    "Memo journal (base currency)"
+  );
 
   return { lines, signedDebitTotal };
 }

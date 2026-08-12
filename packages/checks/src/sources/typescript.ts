@@ -15,7 +15,15 @@ const TYPESCRIPT_ROOTS = [
   "packages/ee/src",
   "packages/jobs/src",
   "packages/documents/src/pdf",
-  "packages/documents/src/utils"
+  "packages/documents/src/utils",
+  // Shared packages are in scope too: @carbon/utils is where the standard's own
+  // helpers live (a local `round` shadow hid here), and form/react own the
+  // number inputs whose formatOptions are part of the storage round-trip.
+  "packages/utils/src",
+  "packages/form/src",
+  "packages/react/src",
+  "packages/printing/src",
+  "packages/workflows/src"
 ];
 
 const EXCLUDED_DIRS = new Set([

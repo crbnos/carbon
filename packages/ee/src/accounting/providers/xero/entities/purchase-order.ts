@@ -8,7 +8,12 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
-import { xeroMoney, xeroUnitAmount } from "../serialize";
+import {
+  xeroCurrencyRate,
+  xeroMoney,
+  xeroQuantity,
+  xeroUnitAmount
+} from "../serialize";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "purchaseOrder"
@@ -342,7 +347,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
 
         return {
           Description: line.description ?? undefined,
-          Quantity: xeroUnitAmount(line.quantity),
+          Quantity: xeroQuantity(line.quantity),
           UnitAmount: xeroUnitAmount(line.unitPrice),
           ItemCode: itemCode?.slice(0, 30) ?? undefined,
           // Use line's account number if specified, otherwise use default from settings
@@ -369,7 +374,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       CurrencyCode: local.currencyCode ?? undefined,
       CurrencyRate:
         local.exchangeRate && local.exchangeRate !== 1
-          ? local.exchangeRate
+          ? xeroCurrencyRate(local.exchangeRate)
           : undefined,
       LineItems: lineItems,
       SubTotal: xeroMoney(local.subtotal),

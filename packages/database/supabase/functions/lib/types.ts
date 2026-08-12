@@ -36809,16 +36809,11 @@ export type Database = {
       process: {
         Row: {
           active: boolean
-          batchable: boolean
           companyId: string
           completeAllOnScan: boolean
           createdAt: string
           createdBy: string
           customFields: Json | null
-          defaultEndTrim: number | null
-          defaultGripMargin: number | null
-          defaultKerf: number | null
-          defaultMinRemnantLength: number | null
           defaultStandardFactor: Database["public"]["Enums"]["factor"]
           id: string
           name: string
@@ -36829,16 +36824,11 @@ export type Database = {
         }
         Insert: {
           active?: boolean
-          batchable?: boolean
           companyId: string
           completeAllOnScan?: boolean
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          defaultEndTrim?: number | null
-          defaultGripMargin?: number | null
-          defaultKerf?: number | null
-          defaultMinRemnantLength?: number | null
           defaultStandardFactor: Database["public"]["Enums"]["factor"]
           id?: string
           name: string
@@ -36849,16 +36839,11 @@ export type Database = {
         }
         Update: {
           active?: boolean
-          batchable?: boolean
           companyId?: string
           completeAllOnScan?: boolean
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          defaultEndTrim?: number | null
-          defaultGripMargin?: number | null
-          defaultKerf?: number | null
-          defaultMinRemnantLength?: number | null
           defaultStandardFactor?: Database["public"]["Enums"]["factor"]
           id?: string
           name?: string
@@ -42986,7 +42971,6 @@ export type Database = {
       }
       quoteOperationStep: {
         Row: {
-          assemblyInstructionStepId: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -43006,7 +42990,6 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
-          assemblyInstructionStepId?: string | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -43026,7 +43009,6 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
-          assemblyInstructionStepId?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -43129,13 +43111,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "quoteOperationStep_assemblyInstructionStepId_fkey"
-            columns: ["assemblyInstructionStepId"]
-            isOneToOne: false
-            referencedRelation: "assemblyInstructionStep"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -62551,7 +62526,6 @@ export type Database = {
           locationName: string | null
           postingDate: string | null
           quantity: number | null
-          scrapReasonId: string | null
           storageUnitId: string | null
           storageUnitName: string | null
           thumbnailPath: string | null
@@ -62645,13 +62619,6 @@ export type Database = {
             columns: ["locationId"]
             isOneToOne: false
             referencedRelation: "location"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_scrapReasonId_fkey"
-            columns: ["scrapReasonId"]
-            isOneToOne: false
-            referencedRelation: "scrapReason"
             referencedColumns: ["id"]
           },
           {
@@ -63010,8 +62977,6 @@ export type Database = {
           scrapQuantity: number | null
           storageUnitId: string | null
           storageUnitName: string | null
-          substitutedFromItemId: string | null
-          substitutionFactor: number | null
           unitCost: number | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -63252,7 +63217,6 @@ export type Database = {
           dueDate: string | null
           hasConflict: boolean | null
           id: string | null
-          inspectionDocumentId: string | null
           jobId: string | null
           jobMakeMethodId: string | null
           laborRate: number | null
@@ -63304,7 +63268,6 @@ export type Database = {
           dueDate?: string | null
           hasConflict?: boolean | null
           id?: string | null
-          inspectionDocumentId?: string | null
           jobId?: string | null
           jobMakeMethodId?: string | null
           laborRate?: number | null
@@ -63356,7 +63319,6 @@ export type Database = {
           dueDate?: string | null
           hasConflict?: boolean | null
           id?: string | null
-          inspectionDocumentId?: string | null
           jobId?: string | null
           jobMakeMethodId?: string | null
           laborRate?: number | null
@@ -63507,20 +63469,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "jobOperation_inspectionDocumentId_fkey"
-            columns: ["inspectionDocumentId"]
-            isOneToOne: false
-            referencedRelation: "inspectionDocument"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperation_inspectionDocumentId_fkey"
-            columns: ["inspectionDocumentId"]
-            isOneToOne: false
-            referencedRelation: "inspectionDocuments"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "jobOperation_jobId_fkey"
@@ -63677,7 +63625,6 @@ export type Database = {
           dueDate: string | null
           hasConflict: boolean | null
           id: string | null
-          inspectionDocumentId: string | null
           jobId: string | null
           jobMakeMethodId: string | null
           laborRate: number | null
@@ -63829,20 +63776,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "jobOperation_inspectionDocumentId_fkey"
-            columns: ["inspectionDocumentId"]
-            isOneToOne: false
-            referencedRelation: "inspectionDocument"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperation_inspectionDocumentId_fkey"
-            columns: ["inspectionDocumentId"]
-            isOneToOne: false
-            referencedRelation: "inspectionDocuments"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "jobOperation_jobId_fkey"
@@ -66608,16 +66541,11 @@ export type Database = {
       processes: {
         Row: {
           active: boolean | null
-          batchable: boolean | null
           companyId: string | null
           completeAllOnScan: boolean | null
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
-          defaultEndTrim: number | null
-          defaultGripMargin: number | null
-          defaultKerf: number | null
-          defaultMinRemnantLength: number | null
           defaultStandardFactor: Database["public"]["Enums"]["factor"] | null
           id: string | null
           name: string | null
@@ -68853,15 +68781,12 @@ export type Database = {
           modelSize: number | null
           modelUploadId: string | null
           noQuoteReason: string | null
-          priceTrace: Json | null
-          pricingRuleId: string | null
           qty: number | null
           quantity: number[] | null
           quoteCreatedAt: string | null
           quoteId: string | null
           quoteReadableId: string | null
           quoteRevisionId: number | null
-          sortOrder: number | null
           status: Database["public"]["Enums"]["quoteLineStatus"] | null
           tags: string[] | null
           taxPercent: number | null
@@ -69041,13 +68966,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesRfqLines"
             referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "quoteLine_pricingRuleId_fkey"
-            columns: ["pricingRuleId"]
-            isOneToOne: false
-            referencedRelation: "pricingRule"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quoteLine_quoteId_fkey"
@@ -69655,14 +69573,12 @@ export type Database = {
       }
       quoteOperationsWithMakeMethods: {
         Row: {
-          assemblyInstructionId: string | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
           description: string | null
           id: string | null
-          inspectionDocumentId: string | null
           laborRate: number | null
           laborTime: number | null
           laborUnit: Database["public"]["Enums"]["factor"] | null
@@ -69694,20 +69610,6 @@ export type Database = {
           workInstruction: Json | null
         }
         Relationships: [
-          {
-            foreignKeyName: "quoteOperation_assemblyInstructionId_fkey"
-            columns: ["assemblyInstructionId"]
-            isOneToOne: false
-            referencedRelation: "assemblyInstruction"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperation_assemblyInstructionId_fkey"
-            columns: ["assemblyInstructionId"]
-            isOneToOne: false
-            referencedRelation: "assemblyInstructions"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "quoteOperation_companyId_fkey"
             columns: ["companyId"]
@@ -69770,20 +69672,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "quoteOperation_inspectionDocumentId_fkey"
-            columns: ["inspectionDocumentId"]
-            isOneToOne: false
-            referencedRelation: "inspectionDocument"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperation_inspectionDocumentId_fkey"
-            columns: ["inspectionDocumentId"]
-            isOneToOne: false
-            referencedRelation: "inspectionDocuments"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quoteOperation_operationSupplierProcessId_fkey"
@@ -71747,14 +71635,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -73368,7 +73256,6 @@ export type Database = {
           processId: string | null
           processName: string | null
           supplierId: string | null
-          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -77980,7 +77867,6 @@ export type Database = {
         | "Non-Conformance"
         | "Inbound Inspection"
         | "Inventory Count"
-        | "Cut List Consumption"
         | "Scrap"
       itemLedgerType:
         | "Purchase"
@@ -79361,7 +79247,6 @@ export const Constants = {
         "Non-Conformance",
         "Inbound Inspection",
         "Inventory Count",
-        "Cut List Consumption",
         "Scrap",
       ],
       itemLedgerType: [

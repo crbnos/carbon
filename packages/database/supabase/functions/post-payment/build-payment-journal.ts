@@ -34,7 +34,7 @@
 // means a loss, for both AR and AP. This is the same quantity the stored
 // `invoiceSettlement.fxGainLossAmount` captures, so the subledger reconciles.
 
-import { assertBalanced, round } from "../shared/precision.ts";
+import { assertBalanced, EPSILON, round } from "../shared/precision.ts";
 import { credit, debit } from "../lib/utils.ts";
 
 // A journal line this builder emits. Deliberately self-contained — a pure unit
@@ -248,9 +248,14 @@ export function buildPaymentJournal(
   //    Positive: cash beyond what was applied becomes new on-account credit.
   //    Negative: this payment applied more than its cash, drawing down the
   //    party's existing on-account credit (the inverse posting side).
+  //    The band is EPSILON, not a hand-picked 1e-4: whatever we DON'T book here
+  //    stays in the cash line with nothing to offset it, so anything the ledger
+  //    can store must get a line or the entry is stored out of balance. When the
+  //    columns were NUMERIC(19,4) a 1e-4 band was exactly "smaller than one
+  //    storable unit"; at scale 5 that same literal drops ten storable units.
   const unappliedInPaymentCcy =
     totalAmount - applications.reduce((sum, a) => sum + Number(a.appliedAmount), 0);
-  if (Math.abs(unappliedInPaymentCcy) > 0.0001) {
+  if (Math.abs(unappliedInPaymentCcy) > EPSILON) {
     const buildingCredit = unappliedInPaymentCcy > 0;
     pushLine(
       cashIn === buildingCredit ? "credit" : "debit",
@@ -269,8 +274,9 @@ export function buildPaymentJournal(
     );
   }
 
-  // 4) FX plug (single line).
-  if (Math.abs(totalFxImpact) > 0.0001) {
+  // 4) FX plug (single line). Same reasoning as the unapplied band above — an
+  //     unbooked FX residual has nothing to offset it.
+  if (Math.abs(totalFxImpact) > EPSILON) {
     const fxBase = round(Math.abs(totalFxImpact));
     if (totalFxImpact > 0) {
       if (!fxGainAccountId) {
@@ -297,7 +303,12 @@ export function buildPaymentJournal(
   // an unbalanced journal to the GL. BALANCE_TOLERANCE is a business threshold
   // (multi-currency journals carry sub-cent cross-rate residuals), NOT the
   // float-noise default.
-  assertBalanced(signedDebitTotal, 0, BALANCE_TOLERANCE);
+  assertBalanced(
+    signedDebitTotal,
+    0,
+    BALANCE_TOLERANCE,
+    "Payment journal (base currency)"
+  );
 
   return { lines, signedDebitTotal, totalFxImpact };
 }

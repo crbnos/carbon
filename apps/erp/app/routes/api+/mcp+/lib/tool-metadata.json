@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-12T05:30:07.628Z",
-  "totalTools": 1431,
+  "generated": "2026-08-12T08:56:43.204Z",
+  "totalTools": 1432,
   "modules": 15,
   "tools": [
     {
@@ -1292,6 +1292,25 @@
       }
     },
     {
+      "name": "accounting_getBaseCurrencyDecimalPlaces",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get base currency decimal places",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "companyGroupId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
       "name": "accounting_getCurrencyByCode",
       "module": "accounting",
       "classification": "READ",
@@ -1363,7 +1382,8 @@
       "description": "get currencies list",
       "paramCount": 0,
       "serviceParams": [
-        "client"
+        "client",
+        "companyGroupId"
       ],
       "injectAuth": [
         "companyId"

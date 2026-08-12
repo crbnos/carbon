@@ -5,12 +5,7 @@ import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import {
-  nameSimilarity,
-  RoundingMode,
-  round,
-  tiptapToText
-} from "@carbon/utils";
+import { nameSimilarity, scrapAllowance, tiptapToText } from "@carbon/utils";
 import type {
   AssemblyGraph,
   AssemblyGraphIndex,
@@ -240,10 +235,7 @@ export async function convertSalesOrderLinesToJobs(
 
         // Calculate scrap quantity based on item's scrap percentage
         const scrapPercentage = manufacturing.data?.scrapPercentage ?? 0;
-        const scrapQuantity =
-          scrapPercentage > 0
-            ? round(jobQuantity * scrapPercentage, 0, RoundingMode.Up)
-            : 0;
+        const scrapQuantity = scrapAllowance(jobQuantity, scrapPercentage);
 
         const data = {
           customerId: salesOrder.data?.customerId ?? undefined,
@@ -2874,10 +2866,7 @@ export async function insertJob(
       input.companyId
     ));
 
-  const scrapQuantity =
-    scrapPercentage > 0
-      ? round(input.quantity * scrapPercentage, 0, RoundingMode.Up)
-      : 0;
+  const scrapQuantity = scrapAllowance(input.quantity, scrapPercentage);
 
   const job = await client
     .from("job")
