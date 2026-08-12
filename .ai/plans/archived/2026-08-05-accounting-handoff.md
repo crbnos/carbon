@@ -4,10 +4,10 @@
 > re-litigate decisions — every open question is already resolved in the specs.
 > Branch: `feat/rillet` (workspace `maseru`). Target branch for diffing: `origin/main`.
 > Sources of truth (already amended 2026-08-05 — read them, they agree with this file):
-> - `.ai/specs/2026-07-09-accounting-sync-engine.md` §Phase F
-> - `.ai/plans/2026-08-05-accounting-bill-payment-sync.md` (Task 4.4 = Part A here)
-> - `.ai/specs/2026-08-05-accounting-document-representation.md`
-> - `.ai/plans/2026-08-05-accounting-document-representation.md` (Part B executes this)
+> - `.ai/specs/implemented/2026-07-09-accounting-sync-engine.md` §Phase F
+> - `.ai/plans/archived/2026-08-05-accounting-bill-payment-sync.md` (Task 4.4 = Part A here)
+> - `.ai/specs/implemented/2026-08-05-accounting-document-representation.md`
+> - `.ai/plans/archived/2026-08-05-accounting-document-representation.md` (Part B executes this)
 >
 > If this file conflicts with those, THIS FILE WINS (it is the newest distillation).
 > If this file conflicts with the CODE (a cited function/shape doesn't exist), STOP that
@@ -196,7 +196,7 @@
 
 ## Part B — Document representation (execute the amended plan)
 
-Execute `.ai/plans/2026-08-05-accounting-document-representation.md` tasks **in this
+Execute `.ai/plans/archived/2026-08-05-accounting-document-representation.md` tasks **in this
 order**: 0.1 → 0.2 → 1.1 → 1.2 → 2.1 → 2.2 → 2.3 → 2.4 → 3.1 → 3.2. That plan was
 amended 2026-08-05 with every design decision resolved; the invariants at its top are
 binding. Condensed per-task guidance (the plan has the full detail):

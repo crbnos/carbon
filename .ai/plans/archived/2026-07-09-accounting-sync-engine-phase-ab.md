@@ -1,6 +1,6 @@
 # Accounting Sync Engine v2 (Phases A+B) — implementation plan
 
-**Spec:** .ai/specs/2026-07-09-accounting-sync-engine.md
+**Spec:** .ai/specs/implemented/2026-07-09-accounting-sync-engine.md
 **Research:** .ai/research/quickbooks-accounting-sync-engine.md
 **Branch:** feat/quickbooks-enterprise (worktree /Users/barbinbrad/Code/carbon-feat-quickbooks-enterprise)
 

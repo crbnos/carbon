@@ -10,7 +10,7 @@ paths:
 
 Syncs Carbon entities <-> external accounting providers. **Three live providers**: Xero (`ProviderID.XERO`), QuickBooks Online (`ProviderID.QBO`), and Rillet (`ProviderID.RILLET`). (QuickBooks *Desktop* shipped then was removed 2026-08-01; Sage was never built.) `SyncFactory` is a **provider-keyed registry** (`registries[providerId][entityType]`) — each provider's `index.ts` barrel calls `SyncFactory.register(...)`. Runs on **Inngest** (the old trigger.dev `from-/to-accounting-sync` task design is gone — do not look for `UPSERT_MAP`/`DELETE_MAP` or a `trigger/` dir; neither exists).
 
-Design specs: `.ai/specs/2026-07-09-accounting-sync-engine.md` (v2 — engine, providers, ledger, pull sweep, **§Phase F inbound payment sync-back**), `.ai/specs/2026-08-02-accounting-sync-engine-v3.md` (journal policy, dimensions, tie-out), and `.ai/specs/2026-08-11-accounting-sync-delivery-robustness.md` (v4 — delivery correctness: converged subscriptions, truthful ledger, outbound sweep, tie-out enforcement; the authoritative capstone where it conflicts with v2/v3).
+Design specs: `.ai/specs/implemented/2026-07-09-accounting-sync-engine.md` (v2 — engine, providers, ledger, pull sweep, **§Phase F inbound payment sync-back**), `.ai/specs/2026-08-02-accounting-sync-engine-v3.md` (journal policy, dimensions, tie-out), and `.ai/specs/implemented/2026-08-11-accounting-sync-delivery-robustness.md` (v4 — delivery correctness: converged subscriptions, truthful ledger, outbound sweep, tie-out enforcement; the authoritative capstone where it conflicts with v2/v3).
 
 ## Architecture: class-per-entity syncers, not a handler map
 
@@ -158,13 +158,13 @@ trigger (`20260807152238_payment-event-trigger.sql`) + a `rillet-sync`
 subscription from `REQUIRED_SYNC_SUBSCRIPTIONS` convergence (Rillet-only; no
 migration backfill — see the subscriptions section); `getPaymentPushDecision`
 enqueues push only on a transition to Posted/Voided. Spec:
-`.ai/specs/2026-07-09-accounting-sync-engine.md` §Phase G.
+`.ai/specs/implemented/2026-07-09-accounting-sync-engine.md` §Phase G.
 
 ## Document representation model (bills, invoices, items)
 
 Every AR/AP **document** Carbon pushes reproduces its Carbon posting journal, so
 the provider's GL for that document equals Carbon's. Spec:
-`.ai/specs/2026-08-05-accounting-document-representation.md`.
+`.ai/specs/implemented/2026-08-05-accounting-document-representation.md`.
 
 - **AP bills = account-costed replay of the posted "Purchase Invoice" journal**,
   NOT the item's account. `core/document-costing.ts` is the shared core:

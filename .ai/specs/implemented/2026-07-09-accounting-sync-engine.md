@@ -847,13 +847,13 @@ Phase G — outbound payment write-back (Rillet)
       sync keeps status fresh; payment-application sync revisited with Phase C.
       *(Update 2026-08-05: inbound AR payment sync-back shipped for Rillet in Phase D/E;
       inbound AP bill-payment sync-back — plus AR for QBO/Xero — is now specified in
-      **Phase F** and planned at `.ai/plans/2026-08-05-accounting-bill-payment-sync.md`.
+      **Phase F** and planned at `.ai/plans/archived/2026-08-05-accounting-bill-payment-sync.md`.
       Outbound payment push stays deferred, except v3 Phase 4 journal-mode payment journals.)*
 - [x] Dimensions → Xero tracking categories / QB classes — **Autonomous:** out of scope v1;
       documented follow-up (mapping table design deferred until posting sync is proven).
       *(Update 2026-08-11: delivered by v3 §3 dimension sync — slots + value mapping for
       QBO/Xero; Rillet subsequently moved off slots to send all dimensions with
-      auto-provisioned Fields, per `.ai/plans/2026-08-11-rillet-all-dimensions.md`.)*
+      auto-provisioned Fields, per `.ai/plans/archived/2026-08-11-rillet-all-dimensions.md`.)*
 - [x] Employee/time sync (QBD TimeTrackingAdd) — **Autonomous:** out of scope v1.
 - [x] Sync-state storage — **Autonomous:** durable `accountingSyncOperation` table (canon +
       QBD queue requirement), not Inngest-internal state.
@@ -864,13 +864,13 @@ Phase G — outbound payment write-back (Rillet)
 - 2026-07-09: Created after research (.ai/research/quickbooks-accounting-sync-engine.md);
   open questions resolved autonomously per combined spec+plan delegation, except QBD
   transport (Ask-First, BLOCKED for Brad — gates Phase D only). Plan for Phases A+B follows
-  at .ai/plans/2026-07-09-accounting-sync-engine-phase-ab.md.
+  at .ai/plans/archived/2026-07-09-accounting-sync-engine-phase-ab.md.
 - 2026-07-09 (later): **QBD transport decided by Brad: build the self-hosted QBWC endpoint.**
   Phase D rewritten around `QbwcTransport` (SOAP resource route, `qbwcSession` table, qbXML
   layer over `fast-xml-parser` — new dependency called out, message-set error recovery,
   QWC/credential issuance UI, Windows-free protocol tests + manual QB gate). Phase C
   sharpened (provider-keyed `SyncFactory` refactor as its first task; split
-  Customer/Vendor syncers). Plans added: .ai/plans/2026-07-09-accounting-sync-engine-phase-c.md
+  Customer/Vendor syncers). Plans added: .ai/plans/archived/2026-07-09-accounting-sync-engine-phase-c.md
   and .ai/plans/2026-07-09-accounting-sync-engine-phase-d.md.
 - 2026-08-01: **Phase D removed; Rillet provider added** (branch
   feat/quickbooks-enterprise-v1). QuickBooks Desktop/QBWC deleted in full
@@ -892,7 +892,7 @@ Phase G — outbound payment write-back (Rillet)
   (Rillet `/bill-payments` `updated.gt`; QBO BillPayment CDC/webhook; Xero
   `/Payments` `If-Modified-Since` + ACCPAY Invoice-update webhook). Complements
   v3 Phase 4 (outbound payment *journals*). Plan:
-  `.ai/plans/2026-08-05-accounting-bill-payment-sync.md`.
+  `.ai/plans/archived/2026-08-05-accounting-bill-payment-sync.md`.
 - 2026-08-05 (review): Phase F corrections after an implementation-grounded review
   (Phases 0-3 were already built, uncommitted). `post-payment` does **not** write document
   status (view-derived; F.1/F.5 corrected), and void **retains** settlement rows (acceptance

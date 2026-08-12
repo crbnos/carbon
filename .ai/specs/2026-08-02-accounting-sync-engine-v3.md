@@ -8,7 +8,7 @@
 > delivery schedule are owned by
 > [2026-08-11-accounting-sync-delivery-robustness.md](2026-08-11-accounting-sync-delivery-robustness.md)
 > (v4); Rillet's dimension-slot design in §3 is superseded by
-> `.ai/plans/2026-08-11-rillet-all-dimensions.md`. Annotated notes mark each passage below.
+> `.ai/plans/archived/2026-08-11-rillet-all-dimensions.md`. Annotated notes mark each passage below.
 > Author: Brad Barbin + Claude
 > Date: 2026-08-02
 > Research: first-principles design per Brad's directive (2026-08-02) — no new competitor
@@ -283,7 +283,7 @@ exactly so the seam is clean.
 > no field cap, so every `line.dimensions` entry is sent on journals AND bills, with Rillet
 > **Fields** auto-provisioned by name (`POST /fields`) and values upserted, no slot config
 > required. Slots remain authoritative for QBO/Xero (real 2-slot caps). See
-> `.ai/plans/2026-08-11-rillet-all-dimensions.md`.
+> `.ai/plans/archived/2026-08-11-rillet-all-dimensions.md`.
 
 Two layers, mirroring how account mapping already works:
 
@@ -573,7 +573,7 @@ Phase 1 — policy + dispositions *(status 2026-08-11: implemented)*
       zero unaccounted journals.
 
 Phase 2 — dimensions *(status 2026-08-11: implemented; Rillet since moved off slots — see the
-§3 note and `.ai/plans/2026-08-11-rillet-all-dimensions.md`)*
+§3 note and `.ai/plans/archived/2026-08-11-rillet-all-dimensions.md`)*
 - [ ] With Location slotted to QBO Class and values mapped, a Job Consumption journal pushes
       with `ClassRef` populated per line; the same journal to Xero carries the Tracking
       option; unslotted dimensions (e.g. Item) are absent and cause no warnings.
@@ -741,7 +741,7 @@ spelling — sync code must not "correct" it.
   intentionally skipped; provider facts verified in-repo, one VERIFY flagged for Rillet).
   Grounded in two full codebase surveys (sync engine internals; all 17 journal-producing
   flows). Open questions resolved autonomously under the combined spec+plan delegation and
-  surfaced for veto. Implementation plan: .ai/plans/2026-08-02-accounting-sync-engine-v3.md.
+  surfaced for veto. Implementation plan: .ai/plans/archived/2026-08-02-accounting-sync-engine-v3.md.
 - 2026-08-02 (later): Two clarifications from Brad folded in. (1) "Integration GL is the
   source of truth" = complete outbound delivery of all automated journals → I1 reframed as
   Total delivery; doc-backed dispositions now record `metadata.backingDocument` and count
@@ -792,7 +792,7 @@ provider GL, `journals` mode). The **inbound** complement — provider-owned pay
 because it lives on the pull-sweep/syncer machinery this spec explicitly does *not*
 rewrite. It generalizes the shipped Rillet AR payment syncer to AP bill payments across
 all three providers. See the "Complement" note in §2 and
-`.ai/plans/2026-08-05-accounting-bill-payment-sync.md`. No change to Phase 4's own scope.
+`.ai/plans/archived/2026-08-05-accounting-bill-payment-sync.md`. No change to Phase 4's own scope.
 
 Carbon-side capture (Phase 1) is live: `journalLineDimension` rows exist on
 real posted journals (Item/Supplier/Location observed on the sandbox
@@ -805,6 +805,6 @@ Phase 4 partial), with per-phase markers on the acceptance criteria. Notes added
 enforcement is delivered by v4 (outbound reconciliation sweep + tie-out); §5 tie-out +
 close gate implementation is owned by v4 Phase 3 (design stays here); `Skipped` is
 broadened by v4 Pillar C.1 (drain-recorded no-ops, not only human parks); §3's Rillet
-dimension slots are superseded by `.ai/plans/2026-08-11-rillet-all-dimensions.md` (all
+dimension slots are superseded by `.ai/plans/archived/2026-08-11-rillet-all-dimensions.md` (all
 dimensions sent, Fields auto-provisioned; slots remain for QBO/Xero). No original text
 removed. See 2026-08-11-accounting-sync-delivery-robustness.md.

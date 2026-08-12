@@ -1,8 +1,8 @@
 # Accounting Document Representation — Journal-Replay Bills, Item-Referenced Invoices, Non-Tracked Provider Items
 
 > Status: implemented — executed 2026-08-05 as **Part B** of the accounting handoff run
-> (`.ai/plans/2026-08-05-accounting-handoff.md`, executing
-> `.ai/plans/2026-08-05-accounting-document-representation.md`; run log
+> (`.ai/plans/archived/2026-08-05-accounting-handoff.md`, executing
+> `.ai/plans/archived/2026-08-05-accounting-document-representation.md`; run log
 > `.ai/runs/2026-08-05-accounting-handoff-run.md`). Sandbox-gated acceptance items remain
 > env-gated; the tie-out acceptance criterion awaits v4 Phase 3 (see the note in
 > Acceptance Criteria).
@@ -399,7 +399,7 @@ items sync as non-inventory and per-SKU valuation lives in Carbon — nice-to-ha
   clears GR-IR, and that account-costed journal replay (Rillet's model) is the correct,
   provider-quirk-independent representation. Design resolved autonomously under the combined
   spec delegation; inventory-valuation question answered inline. Implementation plan to follow
-  at `.ai/plans/2026-08-05-accounting-document-representation.md`.
+  at `.ai/plans/archived/2026-08-05-accounting-document-representation.md`.
 - 2026-08-05 (review): Pre-implementation review amendments, grounded against the working
   tree. Corrected the item-label join (`documentLineReference` =
   `purchase-invoice:<purchaseOrderLineId>` — prefixed, PO-line-keyed, absent on direct no-PO
@@ -410,6 +410,6 @@ items sync as non-inventory and per-SKU valuation lives in Carbon — nice-to-ha
   sales account). PO / `buildQboExpenseLines` explicitly untouched. New risks: QBO
   negative-line VERIFY; paid-document re-sync. Plan updated in lockstep.
 - 2026-08-11: Reconciliation pass — status set to **implemented** (executed 2026-08-05 as
-  Part B of the accounting handoff run, `.ai/plans/2026-08-05-accounting-handoff.md`); the
+  Part B of the accounting handoff run, `.ai/plans/archived/2026-08-05-accounting-handoff.md`); the
   tie-out acceptance criterion annotated as awaiting v4 Phase 3
   (2026-08-11-accounting-sync-delivery-robustness.md §Pillar E). No design changes.

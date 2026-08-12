@@ -1,6 +1,6 @@
 # Plan: Inbound Payment Sync-Back — AP Bill Payments Across QBO, Xero, Rillet (v2 Phase F)
 
-> Spec: [.ai/specs/2026-07-09-accounting-sync-engine.md](../specs/2026-07-09-accounting-sync-engine.md) §Phase F
+> Spec: [.ai/specs/implemented/2026-07-09-accounting-sync-engine.md](../specs/2026-07-09-accounting-sync-engine.md) §Phase F
 > Complements: [.ai/specs/2026-08-02-accounting-sync-engine-v3.md](../specs/2026-08-02-accounting-sync-engine-v3.md) §2 (outbound payment journals)
 > Date: 2026-08-05
 > Status: Phases 0-3 ✅ implemented + green (uncommitted); Phase 4 in progress (gate + rule done; settings note, review-finding fixes (Task 4.4), sandbox acceptance remain)

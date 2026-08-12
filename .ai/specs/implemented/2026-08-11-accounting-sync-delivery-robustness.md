@@ -8,9 +8,9 @@ annotated in those files). Implementation deviations recorded in the run
 record: D.1 (post-route event reordering) was unnecessary — transition events
 now bypass the cooldown instead; F7 absorption is covered by the sweep.
 **Date:** 2026-08-11
-**Builds on:** `.ai/specs/2026-07-09-accounting-sync-engine.md` (v2),
+**Builds on:** `.ai/specs/implemented/2026-07-09-accounting-sync-engine.md` (v2),
 `.ai/specs/2026-08-02-accounting-sync-engine-v3.md` (v3),
-`.ai/specs/2026-08-05-accounting-document-representation.md`
+`.ai/specs/implemented/2026-08-05-accounting-document-representation.md`
 
 ## Why this spec exists
 

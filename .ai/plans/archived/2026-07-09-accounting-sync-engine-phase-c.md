@@ -1,10 +1,10 @@
 # Accounting Sync Engine v2 — Phase C (QuickBooks Online) — implementation plan
 
-**Spec:** .ai/specs/2026-07-09-accounting-sync-engine.md (Phase C)
+**Spec:** .ai/specs/implemented/2026-07-09-accounting-sync-engine.md (Phase C)
 **Research:** .ai/research/quickbooks-accounting-sync-engine.md
 **Branch:** feat/quickbooks-enterprise (worktree /Users/barbinbrad/Code/carbon-feat-quickbooks-enterprise)
 
-**Prerequisite:** Phase A+B plan complete (.ai/plans/2026-07-09-accounting-sync-engine-phase-ab.md)
+**Prerequisite:** Phase A+B plan complete (.ai/plans/archived/2026-07-09-accounting-sync-engine-phase-ab.md)
 — the operations ledger (Task 5), account-mapping service (Task 8), and JournalEntrySyncer
 patterns (Task 9) are consumed here. Do not start this plan before those tasks are checked off.
 

@@ -1,6 +1,6 @@
 # Run Log: 2026-08-05 Accounting Handoff (Phase F fixes + Document Representation)
 
-> Executing `.ai/plans/2026-08-05-accounting-handoff.md`. Branch `feat/rillet`.
+> Executing `.ai/plans/archived/2026-08-05-accounting-handoff.md`. Branch `feat/rillet`.
 > Ground rules: never commit/push/stash/reset/clean; pnpm only; scoped gates; ENV-GATED
 > steps skipped + logged; STOP-and-report on any code mismatch (no improvised workarounds).
 

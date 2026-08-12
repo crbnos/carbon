@@ -5,7 +5,7 @@
 > Date: 2026-08-02
 > Status (2026-08-11): Phases 1–2 implemented; Phase 3 NOT executed — tie-out + close-gate
 > delivery is now owned by v4 Phase 3
-> ([.ai/specs/2026-08-11-accounting-sync-delivery-robustness.md](../specs/2026-08-11-accounting-sync-delivery-robustness.md),
+> ([.ai/specs/implemented/2026-08-11-accounting-sync-delivery-robustness.md](../specs/2026-08-11-accounting-sync-delivery-robustness.md),
 > Pillar E); Phase 4 partial. Do not execute Phase 3 from this file alone — v4 also
 > repurposes the reconciliation cron (outbound sweep, v4 Phase 1).
 
@@ -252,7 +252,7 @@ exist; `/self-review` the phase diff.
 ## Phase 3 — Tie-out + period-close gate
 
 > **Status (2026-08-11): not executed.** Implementation is now owned by v4 Phase 3
-> (`.ai/specs/2026-08-11-accounting-sync-delivery-robustness.md`, Pillar E). The task
+> (`.ai/specs/implemented/2026-08-11-accounting-sync-delivery-robustness.md`, Pillar E). The task
 > breakdown below remains a valid starting point, but note task 3.2's host function
 > (`accounting-reconciliation.ts`) is also reshaped by v4 Phase 1 (outbound reconciliation
 > sweep) — plan those together.

@@ -1,6 +1,6 @@
 # Plan: Accounting Document Representation — Journal-Replay Bills, Item-Referenced Invoices, Non-Tracked Items
 
-> Spec: [.ai/specs/2026-08-05-accounting-document-representation.md](../specs/2026-08-05-accounting-document-representation.md)
+> Spec: [.ai/specs/implemented/2026-08-05-accounting-document-representation.md](../specs/2026-08-05-accounting-document-representation.md)
 > Date: 2026-08-05
 > Status: not started (2026-08-05 review amendments folded in — see the spec changelog)
 

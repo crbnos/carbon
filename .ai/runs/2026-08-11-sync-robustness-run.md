@@ -1,6 +1,6 @@
 # Run record — accounting sync delivery robustness (v4)
 
-Spec: `.ai/specs/2026-08-11-accounting-sync-delivery-robustness.md` (approved 2026-08-11)
+Spec: `.ai/specs/implemented/2026-08-11-accounting-sync-delivery-robustness.md` (approved 2026-08-11)
 Branch: `feat/rillet` — all work uncommitted, verification per phase below.
 
 ## Phase 0 — converged subscriptions + truthful ledger ✅ (code-verified)
