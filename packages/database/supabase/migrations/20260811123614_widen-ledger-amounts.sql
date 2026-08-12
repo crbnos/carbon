@@ -36,7 +36,21 @@ ALTER TABLE "intercompanyTransaction"
 -- survives the drop/recreate; publication membership (supabase_realtime)
 -- survives a column retype.
 DROP VIEW IF EXISTS "itemLedgers";
-DROP MATERIALIZED VIEW IF EXISTS "itemStockQuantities";
+-- itemStockQuantities is a matview here in a from-scratch apply, but migration
+-- 20260812002454 (later timestamp, but already applied on any environment that
+-- deployed main first — so this migration lands OUT OF ORDER there) converts it
+-- to a trigger-maintained TABLE. A table does not depend on itemLedger.quantity's
+-- type, so it neither blocks the ALTER below nor may be clobbered back into a
+-- matview. Only drop it when it is actually still a matview.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_matviews
+    WHERE schemaname = 'public' AND matviewname = 'itemStockQuantities'
+  ) THEN
+    DROP MATERIALIZED VIEW "itemStockQuantities";
+  END IF;
+END $$;
 DROP MATERIALIZED VIEW IF EXISTS "itemLedgerSnapshot";
 
 ALTER TABLE "itemLedger"
@@ -65,21 +79,38 @@ LEFT JOIN "location" l ON l."id" = il."locationId" AND l."companyId" = il."compa
 LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId" AND su."companyId" = il."companyId"
 LEFT JOIN "trackedEntity" te ON te."id" = il."trackedEntityId" AND te."companyId" = il."companyId";
 
--- Recreate (verbatim from 20260420112047)
-CREATE MATERIALIZED VIEW "itemStockQuantities" AS
-SELECT
-  "itemId",
-  "companyId",
-  COALESCE("locationId", '') AS "locationId",
-  SUM("quantity") FILTER (
-    WHERE "trackedEntityStatus" IS NULL
-       OR "trackedEntityStatus" != 'Rejected'
-  ) AS "quantityOnHand"
-FROM "itemLedger"
-GROUP BY "itemId", "companyId", COALESCE("locationId", '');
-
-CREATE UNIQUE INDEX "itemStockQuantities_itemId_companyId_locationId_idx"
-  ON "itemStockQuantities" ("itemId", "companyId", "locationId");
+-- Recreate itemStockQuantities as a matview ONLY when it is not already present
+-- as a relation. In a from-scratch apply the guarded DROP above removed the
+-- matview, so it is recreated here and 20260812002454 later converts it to a
+-- table. Where 20260812002454 already ran (out-of-order deploy), the table
+-- exists and is left exactly as-is — its statement-level triggers and realtime
+-- membership intact. Verbatim from 20260420112047.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = 'itemStockQuantities'
+  ) THEN
+    EXECUTE $mv$
+      CREATE MATERIALIZED VIEW "itemStockQuantities" AS
+      SELECT
+        "itemId",
+        "companyId",
+        COALESCE("locationId", '') AS "locationId",
+        SUM("quantity") FILTER (
+          WHERE "trackedEntityStatus" IS NULL
+             OR "trackedEntityStatus" != 'Rejected'
+        ) AS "quantityOnHand"
+      FROM "itemLedger"
+      GROUP BY "itemId", "companyId", COALESCE("locationId", '')
+    $mv$;
+    EXECUTE $ix$
+      CREATE UNIQUE INDEX "itemStockQuantities_itemId_companyId_locationId_idx"
+        ON "itemStockQuantities" ("itemId", "companyId", "locationId")
+    $ix$;
+  END IF;
+END $$;
 
 -- Recreate (verbatim from 20260713235406)
 CREATE MATERIALIZED VIEW "itemLedgerSnapshot" AS
