@@ -59,7 +59,7 @@ serve(async (req: Request) => {
     const [companyRecord, accountingSettings] = await Promise.all([
       client
         .from("company")
-        .select("companyGroupId")
+        .select("companyGroupId, baseCurrencyCode")
         .eq("id", companyId)
         .single(),
       client
@@ -70,6 +70,7 @@ serve(async (req: Request) => {
     ]);
     if (companyRecord.error) throw new Error("Failed to fetch company");
     const companyGroupId = companyRecord.data.companyGroupId;
+    const baseCurrencyCode = companyRecord.data.baseCurrencyCode;
     const accountingEnabled = accountingSettings.data?.accountingEnabled ?? false;
 
     const [receipt, receiptLines, receiptLineTracking, dimensions] =
@@ -617,9 +618,31 @@ serve(async (req: Request) => {
         if (purchaseOrderDelivery.error)
           throw new Error("Failed to fetch purchase order delivery");
 
+        // supplierShippingCost is a supplier-currency amount; exchangeRate is
+        // foreign-per-base, so supplier→base is DIVIDE (matching
+        // post-purchase-invoice and the purchaseInvoices view). This keeps the
+        // receipt's inventory/GR-IR cost layers consistent with the invoice-side
+        // AP relief for foreign-currency POs. A base-currency PO needs no
+        // conversion; for a foreign-currency PO the rate must be finite and
+        // positive — a missing/zero rate is a data error, NOT a silent 1 (which
+        // would leave the shipping cost unconverted and inflate the base layers).
+        const purchaseOrderCurrencyCode =
+          purchaseOrder.data?.currencyCode ?? baseCurrencyCode;
+        const isBaseCurrencyPurchaseOrder =
+          purchaseOrderCurrencyCode === baseCurrencyCode;
+        const purchaseOrderExchangeRate = purchaseOrder.data?.exchangeRate;
+        if (
+          !isBaseCurrencyPurchaseOrder &&
+          (!Number.isFinite(purchaseOrderExchangeRate) ||
+            (purchaseOrderExchangeRate ?? 0) <= 0)
+        ) {
+          throw new Error(
+            `Invalid exchange rate (${purchaseOrderExchangeRate}) for foreign-currency purchase order ${purchaseOrder.data?.id}`
+          );
+        }
         const shippingCost =
-          (purchaseOrderDelivery.data?.supplierShippingCost ?? 0) *
-          (purchaseOrder.data?.exchangeRate ?? 1);
+          (purchaseOrderDelivery.data?.supplierShippingCost ?? 0) /
+          (isBaseCurrencyPurchaseOrder ? 1 : purchaseOrderExchangeRate!);
 
         const totalLinesCost = receiptLines.data.reduce((acc, receiptLine) => {
           const safeReceivedQuantity =

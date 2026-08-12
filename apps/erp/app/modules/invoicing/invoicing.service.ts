@@ -1627,7 +1627,7 @@ export async function getAvailableOnAccountCredit(
 
   const apps = await client
     .from("invoiceSettlement")
-    .select("paymentId, appliedAmount, sourceExchangeRate")
+    .select("paymentId, appliedAmount")
     .eq("companyId", companyId)
     .in(
       "paymentId",
@@ -1635,21 +1635,20 @@ export async function getAvailableOnAccountCredit(
     );
   if (apps.error) return 0;
 
+  // appliedAmount and payment.totalAmount are already base currency, so the
+  // on-account credit is the raw unapplied cash — no exchange-rate conversion.
   const appliedBaseByPayment = new Map<string, number>();
   for (const a of apps.data ?? []) {
     if (!a.paymentId) continue;
     appliedBaseByPayment.set(
       a.paymentId,
-      (appliedBaseByPayment.get(a.paymentId) ?? 0) +
-        Number(a.appliedAmount) * Number(a.sourceExchangeRate)
+      (appliedBaseByPayment.get(a.paymentId) ?? 0) + Number(a.appliedAmount)
     );
   }
 
   let baseCredit = 0;
   for (const p of payments.data) {
-    baseCredit +=
-      Number(p.totalAmount) * Number(p.exchangeRate) -
-      (appliedBaseByPayment.get(p.id) ?? 0);
+    baseCredit += Number(p.totalAmount) - (appliedBaseByPayment.get(p.id) ?? 0);
   }
   return Math.max(0, Math.round(baseCredit * 10000) / 10000);
 }

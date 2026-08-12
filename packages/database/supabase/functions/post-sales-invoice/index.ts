@@ -309,11 +309,12 @@ serve(async (req: Request) => {
             ? icReceivablesAccount
             : accountDefaults?.data?.receivablesAccount;
 
-        // Invoice exchange rate (defaults to 1 for base-currency invoices).
-        // journalLine.amount is denominated in base currency, so all monetary
-        // amounts derived from the invoice's foreign-currency unitPrice etc.
-        // must be multiplied by this rate before they reach a journal line.
-        const invoiceExchangeRate = salesInvoice.data?.exchangeRate ?? 1;
+        // salesInvoiceLine.unitPrice is ALREADY base currency (the document /
+        // presentation value is the separate generated column convertedUnitPrice
+        // = unitPrice × exchangeRate). Header shippingCost is likewise base. So the
+        // line totals below are already base and reach the journal unscaled —
+        // matching the base-denominated salesInvoices view balance that caps
+        // payments. No exchange-rate multiplier.
 
         for await (const invoiceLine of salesInvoiceLines.data) {
           const invoiceLineQuantityInInventoryUnit = invoiceLine.quantity;
@@ -344,9 +345,9 @@ serve(async (req: Request) => {
               : preTaxLineCost / totalLinesCost;
           const lineWeightedShippingCost =
             shippingCost * lineCostPercentageOfTotalCost;
-          // Convert to base currency for the GL.
+          // Already base currency (see the note on the removed rate multiplier).
           const totalLineCostWithWeightedShipping =
-            (totalLineCost + lineWeightedShippingCost) * invoiceExchangeRate;
+            totalLineCost + lineWeightedShippingCost;
 
           const invoiceLineUnitCostInInventoryUnit =
             totalLineCostWithWeightedShipping / invoiceLine.quantity;

@@ -204,10 +204,9 @@ export default function PaymentDetailRoute() {
   const locked = isPaymentLocked(payment.status);
   const side: "sales" | "purchase" = payment.customerId ? "sales" : "purchase";
 
-  // Convert the base-currency credit pool into the payment's currency so the
-  // apply table can compare it against amounts entered in payment currency.
-  const exchangeRate = Number(payment.exchangeRate ?? 1) || 1;
-  const availableCredit = (availableCreditBase ?? 0) / exchangeRate;
+  // The credit pool and every apply-table amount (applied, view balances,
+  // totalAmount) are base currency, so no conversion is needed.
+  const availableCredit = availableCreditBase ?? 0;
 
   const initialValues = {
     id: payment.id,
