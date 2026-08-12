@@ -1,7 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getStorageRulesDataForTarget } from "@carbon/ee/storage-rules.server";
+import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import { pluckUnique } from "@carbon/utils";
@@ -13,10 +13,13 @@ import {
   getTrackedEntityExpirations,
   InventoryDetails
 } from "~/modules/inventory";
+import RuleAssignmentsList from "~/modules/inventory/ui/StorageRules/RuleAssignmentsList";
 import type { PartSummary, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getBomHasShelfLifeManagedInput,
   getItemQuantities,
+  getItemRuleAssignmentsForItem,
+  getItemRulesList,
   getItemShelfLife,
   getItemStorageUnitQuantities,
   getPickMethod,
@@ -26,8 +29,8 @@ import {
   upsertPickMethodWithShelfLife
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
+import { ItemRuleAssignmentsList } from "~/modules/items/ui/ItemRules";
 import { getLocationsList } from "~/modules/resources";
-import RuleAssignmentsList from "~/modules/storage-rules/ui/RuleAssignmentsList";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores";
@@ -116,7 +119,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     itemStorageUnitQuantities,
     shelfLife,
     bomHasShelfLifeManagedInput,
-    rulesData
+    rulesData,
+    itemRuleAssignments,
+    itemRuleLibrary
   ] = await Promise.all([
     getItemQuantities(client, itemId, companyId, locationId),
     getItemStorageUnitQuantities(client, itemId, companyId, locationId),
@@ -126,7 +131,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       targetType: "item",
       targetId: itemId,
       companyId
-    })
+    }),
+    getItemRuleAssignmentsForItem(client, { itemId, companyId }),
+    getItemRulesList(client, companyId)
   ]);
   if (quantities.error) {
     throw redirect(
@@ -164,7 +171,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     itemId,
     locationId,
     ruleAssignments: rulesData.assignments,
-    ruleLibrary: rulesData.library
+    ruleLibrary: rulesData.library,
+    itemRuleAssignments: itemRuleAssignments.data ?? [],
+    itemRuleLibrary: itemRuleLibrary.data ?? []
   };
 }
 
@@ -239,7 +248,9 @@ export default function PartInventoryRoute() {
     trackedEntityExpirations,
     itemId,
     ruleAssignments,
-    ruleLibrary
+    ruleLibrary,
+    itemRuleAssignments,
+    itemRuleLibrary
   } = useLoaderData<typeof loader>();
 
   const partData = useRouteData<{
@@ -295,6 +306,11 @@ export default function PartInventoryRoute() {
         targetId={itemId}
         assignments={ruleAssignments as never}
         library={ruleLibrary as never}
+      />
+      <ItemRuleAssignmentsList
+        itemId={itemId}
+        assignments={itemRuleAssignments as never}
+        library={itemRuleLibrary as never}
       />
     </VStack>
   );

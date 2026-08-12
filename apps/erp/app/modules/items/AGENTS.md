@@ -131,6 +131,34 @@ Change-order code follows the one-service/models/server-per-module convention �
 | `changeOrderActionTask` | Freeform non-gating tasks (Actions) |
 | `item.changeOrderId` | Revision/new-part → CO back-link, stamped at release; powers change history + revision-centric audit |
 
+## Item Rules (sub-area)
+
+Configurable if-condition-then-error/warn rules evaluated when an item is added to a **sales document** (quote line, sales order line) — e.g. "if item type is X and the customer's ship-to country is Y → block". Lives **inside** this module: validators in `items.models.ts`, CRUD in `items.service.ts`, UI in `ui/ItemRules/`. There is no `modules/item-rules` directory — a rule feature is not its own domain.
+
+Distinct from **storage rules** (`~/modules/inventory`, warehouse/MES surfaces) and **configurator rules** (`configurationRule`, `x+/part+/$itemId.rule*.tsx`) — three separate features sharing naming discipline: `itemRule*` / `storageRule*` / `configurationRule*`, never bare `rule`.
+
+- **Rule** — `itemRule` row: `conditionAst` JSONB (`{kind: all|any|none, conditions:[{field,op,value}]}`), `severity` (`error` blocks; `warn` requires acknowledgment), `message` with `{token}` interpolation, `surfaces` (`itemRuleSurface` enum: `quoteLine` | `salesOrderLine`), item scoping via `filteredItemTypes`/`filteredItemGroupIds`/`filteredItemMatchAll` (empty = all items) or explicit `itemRuleAssignment` pins.
+- **Shared engine** — the AST compiler/evaluator lives in `@carbon/utils` (`rules.ts` + `field-registry.ts`, with the zod AST mirror in `rules-schema.ts`): `compileItemRuleWithCache`, `evaluateRules`, `ITEM_RULE_SURFACES`, `getFieldsForItemRuleSurfaces`, `ITEM_RULE_FIELD_REGISTRY` (customer type/status/country + synthesized `customer.customFields.*`). Countries are **alpha-2** codes.
+- **Evaluator** — `@carbon/ee/rules.server` `evaluateItemRuleLines` (service-role client; plan-gated on `ITEM_RULES`). Missing ship-to → the engine's required-field semantics emit "Customer location is required" at the rule's severity.
+- **One modal** — enforcement actions return `{ violations, ruleNames }`; forms submit via `useRuleViolations` and render the shared `RuleViolationModal` (`@carbon/ee/rules`). Do not add a second violation UI.
+- **Acknowledgment log** — `itemRuleAcknowledgment` (append-only): one row per deduped violation on blocked attempts and acknowledged overrides.
+
+### Item Rules safety
+
+- MUST evaluate with the **service role** client in route actions AFTER `requirePermissions` — the check must see full truth regardless of the acting user's read permissions.
+- MUST gate write routes with `requirePlan({ feature: "ITEM_RULES" })` (key in `packages/ee/src/plan.ts`).
+- The shared rule-builder components (`RuleBuilder`, `SurfacesField`, `MessageWithTokens`, `SeveritySelect`, `ItemFilterSelector`) live in `~/modules/inventory/ui/StorageRules/` and are imported by **deep path**. Keep any parameterization **additive** (defaults preserve storage behavior), and never import a module *barrel* from these components — `inventory` already depends on `items`, so a barrel import back would be a cycle. The shared zod AST schema lives in `@carbon/utils` for the same reason.
+- Never extend the storage `transactionSurface` DB enum for sales surfaces — item rules own `itemRuleSurface`.
+- Never duplicate `isBlocked`/`dedupeViolations`/the violation modal — import from `@carbon/ee/rules(.server)`.
+
+| Table | Purpose |
+|---|---|
+| `itemRule` | Rule definitions (house PK `("id","companyId")`; RLS writes `parts_*`) |
+| `itemRuleAssignment` | Explicit per-item pins, PK `(itemId, ruleId)` |
+| `itemRuleAcknowledgment` | Append-only override/block evidence (INSERT via `sales_create`) |
+
+Service functions: `getItemRules` / `getItemRule` / `upsertItemRule` / `deleteItemRule` / `getItemRuleAssignmentCounts` (in `items.service.ts`); cross-app `getActiveItemRulesForItems` / `getItemRuleAssignmentsForItem` / `getItemRulesList` / `assignItemRule` / `unassignItemRule` re-exported from `@carbon/ee/rules` through the module barrel. Routes: `x+/items+/item-rules*` (list/new/edit/delete/assign/unassign), sidebar entry in `useItemsSubmodules`, per-item "Item rules" card on `x+/part+/$itemId.inventory.tsx`. Enforcement: the quote and sales-order line create + edit actions.
+
 ## Related Modules
 
 - **purchasing** — supplier parts pricing; PO lines reference items; `conversionFactor` on `supplierPart`; CO impact panel reads open PO lines (`openPurchaseOrderLines`) for deleted parts

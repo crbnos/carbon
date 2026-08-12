@@ -2,6 +2,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateItemRulesForSalesDocument,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -22,6 +27,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const serviceRole = getCarbonServiceRole();
+
+  // Terminal gate before the `convert` edge function mints quote lines. Gating
+  // here rather than inside the edge function keeps the evaluator in one place
+  // (it is Deno and cannot import the ERP server runtime the plan gate needs).
+  const acknowledged =
+    (await request.formData()).get("acknowledged") === "true";
+  const { violations, ruleNames } = await evaluateItemRulesForSalesDocument({
+    client: serviceRole,
+    companyId,
+    userId,
+    documentType: "salesRfq",
+    documentId: id
+  });
+  const deduped = dedupeViolations(violations);
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
+    return { violations: deduped, ruleNames };
+  }
+
   const convert = await convertSalesRfqToQuote(serviceRole, {
     id,
     companyId,

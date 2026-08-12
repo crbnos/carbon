@@ -885,6 +885,9 @@ msgstr "All Documents"
 msgid "All item types"
 msgstr "All item types"
 
+msgid "All items"
+msgstr "All items"
+
 msgid "All Items"
 msgstr "All Items"
 
@@ -4864,6 +4867,9 @@ msgstr "Edit Supplier Type"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Edit the rule to remove the \"Applies to all\" flag"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "Edit the rule's item filters to remove it"
+
 msgid "Edit Timecard"
 msgstr "Edit Timecard"
 
@@ -4963,6 +4969,9 @@ msgstr "Enable full accrual accounting with journal entries, financial reports, 
 msgid "Enable in Settings"
 msgstr "Enable in Settings"
 
+msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Enable notifications when an RFQ is marked as ready for quote."
 
@@ -5023,6 +5032,12 @@ msgstr "Ending ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "Enforce — edits are blocked"
+
+msgid "Enforce checks on quote and sales order lines for this item."
+msgstr "Enforce checks on quote and sales order lines for this item."
+
+msgid "Enforce customer and item checks when items are added to quotes and sales orders."
+msgstr "Enforce customer and item checks when items are added to quotes and sales orders."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
@@ -6984,6 +6999,15 @@ msgstr "Item must match a selected type OR a selected group"
 
 msgid "Item Name"
 msgstr "Item Name"
+
+msgid "Item Rule Violations"
+msgstr "Item Rule Violations"
+
+msgid "Item rules"
+msgstr "Item rules"
+
+msgid "Item Rules"
+msgstr "Item Rules"
 
 msgid "Item Scope"
 msgstr "Item Scope"
@@ -9495,6 +9519,9 @@ msgstr "Pick a customer or customer type to view their pricing."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Pick a date or leave blank to clear it."
+
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
 
 msgid "Pick List"
 msgstr "Pick List"
@@ -14051,6 +14078,9 @@ msgstr "Upgrade to unlock {0} rules"
 msgid "Upgrade to unlock audit history"
 msgstr "Upgrade to unlock audit history"
 
+msgid "Upgrade to unlock item rules"
+msgstr "Upgrade to unlock item rules"
+
 msgid "Upload"
 msgstr "Upload"
 
@@ -14891,6 +14921,9 @@ msgstr "Who should receive notifications when a supplier quote is submitted?"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Who should receive notifications when an inventory job is completed?"
+
+msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
+msgstr "Who should receive notifications when an item rule violation is blocked or acknowledged?"
 
 msgid "Who you buy from."
 msgstr "Who you buy from."

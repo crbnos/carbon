@@ -78,6 +78,25 @@ import { getInventoryItems, insertManualInventoryAdjustment } from "~/modules/in
 import { inventoryAdjustmentValidator, receiptValidator } from "~/modules/inventory";
 ```
 
+## Storage Rules (sub-area)
+
+Configurable if-condition-then-error/warn rules evaluated on **warehouse/MES transaction surfaces** (`transactionSurface`: receipt, shipment, stockTransfer, warehouseTransfer, inventoryAdjustment, place, pick, operationStart, operationFinish, materialIssue, materialReceive). Lives **inside** this module: validators in `inventory.models.ts`, CRUD in `inventory.service.ts`, UI in `ui/StorageRules/`. There is no `modules/storage-rules` directory — a rule feature is not its own domain.
+
+Sibling feature to **item rules** (`~/modules/items`, sales-document surfaces). Both share the engine in `@carbon/utils` (`rules.ts` + `field-registry.ts` + the zod AST mirror in `rules-schema.ts`) and the evaluator/violation UI in `@carbon/ee/rules(.server)` — the code layer is unified under neutral `rules` naming while the tables stay separate.
+
+- **Rule** — `storageRule` row: `conditionAst` JSONB, `severity` (`error` blocks; `warn` blocks until acknowledged), `targetType` (`item` | `workCenter`, enum `storageRuleTargetType`), `surfaces`, `appliesToAll` (workCenter broadcast gate) and the `filteredItem*` columns (item scoping). Assignments are polymorphic across `storageRuleItemAssignment` / `storageRuleWorkCenterAssignment` — `targetType` picks the table.
+- **Evaluator** — `@carbon/ee/rules.server`: `evaluateLinesForSurface`, `isBlocked`, `dedupeViolations`, plan gate `isStorageRulesEnabledForCompany`.
+- **One modal** — posting actions return `{ violations, ruleNames }`; callers submit via `useRuleViolations` and render `RuleViolationModal`. Do not fork a second violation UI.
+
+### Storage Rules safety
+
+- The `ui/StorageRules/` components are the **shared** rule-builder surface — item rules imports `RuleBuilder`, `SurfacesField`, `MessageWithTokens`, `SeveritySelect`, and `ItemFilterSelector` from here by deep path. Changes must stay backward-compatible; parameterize additively rather than rewriting.
+- These components must NOT import a module barrel (`~/modules/inventory` or `~/modules/items`) — deep file imports only. `inventory` already depends on `items`, so a barrel import would create a cycle. `StorageRules` is deliberately **not** re-exported from `ui/index.ts` for the same reason.
+- `getRuleAssignmentCounts` spans BOTH assignment tables — a rule lives in exactly one, so the union of single-table counts is correct.
+- Never extend `transactionSurface` with sales-document surfaces — those belong to item rules' own `itemRuleSurface` enum.
+
+Service functions: `getStorageRules` / `getStorageRule` / `upsertStorageRule` / `deleteStorageRule` / `getRuleAssignmentCounts`; cross-app `getActiveRulesForTargets` / `getRuleAssignmentsForTarget` / `getStorageRulesList` / `assignStorageRule` / `unassignStorageRule` re-exported from `@carbon/ee/rules` through the module barrel. Routes: `x+/inventory+/storage-rules*`, plus assignment routes under `x+/items+/rules.*` (item targets) and `x+/resources+/work-centers.rules.*` (work-center targets).
+
 ## Related Modules
 
 - **purchasing** — receipts consume PO lines; receipt posting updates `purchaseOrderLine.quantityReceived`

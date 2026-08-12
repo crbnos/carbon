@@ -9,6 +9,7 @@ import {
   type Condition,
   type ConditionAst,
   FIELD_REGISTRY,
+  type FieldDef,
   getFieldsForTargetTypeAndSurfaces,
   type MatchKind,
   type TargetType,
@@ -32,6 +33,12 @@ type RuleBuilderProps = {
    */
   surfaces?: TransactionSurface[];
   /**
+   * Explicit field pool (e.g. item rules pass
+   * `getFieldsForItemRuleSurfaces(...)`). When provided it replaces the
+   * targetType-derived registry lookup entirely.
+   */
+  fields?: FieldDef[];
+  /**
    * Notifies the parent of every condition-list change so siblings (e.g.
    * `MessageWithTokens`) can offer per-condition tokens that resolve to
    * the rule's required values at eval time.
@@ -41,11 +48,14 @@ type RuleBuilderProps = {
 
 const emptyConditionFor = (
   targetType: TargetType | undefined,
-  surfaces: TransactionSurface[] | undefined
+  surfaces: TransactionSurface[] | undefined,
+  fields: FieldDef[] | undefined
 ): Condition => {
-  const pool = targetType
-    ? getFieldsForTargetTypeAndSurfaces(targetType, surfaces ?? [])
-    : FIELD_REGISTRY;
+  const pool =
+    fields ??
+    (targetType
+      ? getFieldsForTargetTypeAndSurfaces(targetType, surfaces ?? [])
+      : FIELD_REGISTRY);
   return { field: pool[0]?.path ?? "", op: "eq", value: undefined };
 };
 
@@ -54,6 +64,7 @@ export default function RuleBuilder({
   initial,
   targetType,
   surfaces,
+  fields,
   onConditionsChange
 }: RuleBuilderProps) {
   const { t } = useLingui();
@@ -85,7 +96,7 @@ export default function RuleBuilder({
   const [conditions, setConditions] = useState<Condition[]>(
     initial?.conditions?.length
       ? initial.conditions
-      : [emptyConditionFor(targetType, surfaces)]
+      : [emptyConditionFor(targetType, surfaces, fields)]
   );
   const optionsByLoader = useValueOptions();
 
@@ -112,8 +123,11 @@ export default function RuleBuilder({
   }, []);
 
   const handleAdd = useCallback(() => {
-    setConditions((prev) => [...prev, emptyConditionFor(targetType, surfaces)]);
-  }, [targetType, surfaces]);
+    setConditions((prev) => [
+      ...prev,
+      emptyConditionFor(targetType, surfaces, fields)
+    ]);
+  }, [targetType, surfaces, fields]);
 
   const ast: ConditionAst = { kind, conditions };
 
@@ -161,6 +175,7 @@ export default function RuleBuilder({
             optionsByLoader={optionsByLoader}
             targetType={targetType}
             surfaces={surfaces}
+            fields={fields}
           />
         ))}
       </div>

@@ -885,6 +885,9 @@ msgstr "Todos los documentos"
 msgid "All item types"
 msgstr "Todos los tipos de artículos"
 
+msgid "All items"
+msgstr "Todos los elementos"
+
 msgid "All Items"
 msgstr "Todos los artículos"
 
@@ -4864,6 +4867,9 @@ msgstr "Editar Tipo de Proveedor"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Editar la regla para eliminar la marca \"Aplica a todos\""
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "Editar los filtros de elementos de la regla para eliminarlo"
+
 msgid "Edit Timecard"
 msgstr "Editar Tarjeta de Tiempo"
 
@@ -4963,6 +4969,9 @@ msgstr "Habilitar contabilidad de acumulación completa con asientos de diario, 
 msgid "Enable in Settings"
 msgstr "Habilitar en Configuración"
 
+msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Habilitar notificaciones cuando una violación de regla de elemento se bloquea o se reconoce en una línea de cotización u orden de venta."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Habilitar notificaciones cuando una RFQ está marcada como lista para cotizar."
 
@@ -5023,6 +5032,12 @@ msgstr "Final ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "Aplicar — las ediciones están bloqueadas"
+
+msgid "Enforce checks on quote and sales order lines for this item."
+msgstr "Aplicar verificaciones en líneas de cotización y orden de venta para este elemento."
+
+msgid "Enforce customer and item checks when items are added to quotes and sales orders."
+msgstr "Aplicar verificaciones de cliente y elemento cuando se agregan elementos a cotizaciones y órdenes de venta."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Aplicar validación y directrices por artículo en recibos, envíos, transferencias y ajustes."
@@ -6984,6 +6999,15 @@ msgstr "El artículo debe coincidir con un tipo seleccionado O un grupo seleccio
 
 msgid "Item Name"
 msgstr "Nombre del artículo"
+
+msgid "Item Rule Violations"
+msgstr "Violaciones de reglas de elementos"
+
+msgid "Item rules"
+msgstr "Reglas de elementos"
+
+msgid "Item Rules"
+msgstr "Reglas de elementos"
 
 msgid "Item Scope"
 msgstr "Alcance de Artículos"
@@ -9495,6 +9519,9 @@ msgstr "Selecciona un cliente o tipo de cliente para ver sus precios."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Elige una fecha o déjala en blanco para borrarla."
+
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "Selecciona una regla existente de la biblioteca o crea una nueva para comenzar a aplicar verificaciones en este elemento."
 
 msgid "Pick List"
 msgstr "Lista de Picking"
@@ -14051,6 +14078,9 @@ msgstr "Actualizar para desbloquear reglas de {0}"
 msgid "Upgrade to unlock audit history"
 msgstr "Actualizar para desbloquear el historial de auditoría"
 
+msgid "Upgrade to unlock item rules"
+msgstr "Actualizar para desbloquear reglas de elementos"
+
 msgid "Upload"
 msgstr "Cargar"
 
@@ -14891,6 +14921,9 @@ msgstr "¿Quién debe recibir notificaciones cuando se envía una cotización de
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "¿Quién debe recibir notificaciones cuando se completa un trabajo de inventario?"
+
+msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
+msgstr "¿Quién debe recibir notificaciones cuando una violación de regla de elemento se bloquea o se reconoce?"
 
 msgid "Who you buy from."
 msgstr "De quién compras."

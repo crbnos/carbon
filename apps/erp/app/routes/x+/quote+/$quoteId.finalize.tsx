@@ -2,6 +2,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents/email";
+import {
+  dedupeViolations,
+  evaluateItemRulesForSalesDocument,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLocalTimeZone, now } from "@internationalized/date";
@@ -46,6 +51,25 @@ export async function action(args: ActionFunctionArgs) {
       path.to.quote(quoteId),
       await flash(request, error(quote.error, "Failed to get quote"))
     );
+  }
+
+  // Terminal gate: re-evaluate every line before the quote leaves for the
+  // customer. Lines can arrive here from paths the per-line check never saw
+  // (RFQ conversion, duplication, integrations, the API), and a line that
+  // passed earlier may violate a rule authored since or a ship-to that changed.
+  // Runs before the external link + PDF so a blocked quote produces neither.
+  const formData = await request.clone().formData();
+  const acknowledged = formData.get("acknowledged") === "true";
+  const { violations, ruleNames } = await evaluateItemRulesForSalesDocument({
+    client,
+    companyId,
+    userId,
+    documentType: "quote",
+    documentId: quoteId
+  });
+  const deduped = dedupeViolations(violations);
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
+    return { violations: deduped, ruleNames };
   }
 
   const externalLink = await upsertExternalLink(client, {

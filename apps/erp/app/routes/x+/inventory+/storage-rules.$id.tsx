@@ -14,8 +14,8 @@ import {
   getStorageRule,
   storageRuleValidator,
   upsertStorageRule
-} from "~/modules/storage-rules";
-import StorageRuleForm from "~/modules/storage-rules/ui/StorageRuleForm";
+} from "~/modules/inventory";
+import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 

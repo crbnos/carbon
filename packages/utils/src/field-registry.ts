@@ -1,10 +1,10 @@
 // Field resolver registry — single source of truth for the rule-builder UI and
-// the evaluator's field paths. Split out of `storage-rules.ts` to keep that file
-// focused on evaluation/compilation. Depends on `storage-rules` only for the core
+// the evaluator's field paths. Split out of `rules.ts` to keep that file
+// focused on evaluation/compilation. Depends on `rules` only for the core
 // `Operator` / `TargetType` types (type-only — no runtime cycle).
 
 import type { Database } from "@carbon/database";
-import type { Operator, TargetType } from "./storage-rules";
+import type { Operator, TargetType } from "./rules";
 
 type Tables = Database["public"]["Tables"];
 
@@ -34,14 +34,18 @@ export type ValueOptionsLoader =
   | "itemTypes"
   | "replenishmentSystems"
   | "itemTrackingTypes"
-  | "itemPostingGroups";
+  | "itemPostingGroups"
+  | "customerTypes"
+  | "customerStatuses"
+  | "countries";
 
 export type FieldContext =
   | "item"
   | "storage"
   | "workCenter"
   | "operation"
-  | "transaction";
+  | "transaction"
+  | "customer";
 
 export type FieldDef = {
   path: string;
@@ -303,6 +307,49 @@ export const FIELD_REGISTRY: FieldDef[] = [
   })
 ];
 
+// ITEM_RULE_FIELD_REGISTRY holds fields ONLY item rules (sales-document
+// surfaces) may reference. Kept SEPARATE from FIELD_REGISTRY so the storage
+// rule builder/validator never sees customer fields — the storage evaluator
+// never builds a `customer` ctx.
+export const ITEM_RULE_FIELD_REGISTRY: FieldDef[] = [
+  fields.database({
+    table: "customer",
+    column: "customerTypeId",
+    nullable: true,
+    label: "Customer type",
+    type: "id",
+    operators: ID_OPS,
+    context: "customer",
+    targetType: "item",
+    ctxKey: "customer",
+    valueOptionsLoader: "customerTypes"
+  }),
+  fields.database({
+    table: "customer",
+    column: "customerStatusId",
+    nullable: true,
+    label: "Customer status",
+    type: "id",
+    operators: ID_OPS,
+    context: "customer",
+    targetType: "item",
+    ctxKey: "customer",
+    valueOptionsLoader: "customerStatuses"
+  }),
+  fields.synthetic({
+    path: "customer.location.countryCode",
+    derivedFrom:
+      "Ship-to country (alpha-2) resolved from the document's customer location address.",
+    nullable: true,
+    label: "Customer country",
+    type: "id",
+    operators: ID_OPS,
+    context: "customer",
+    valueOptionsLoader: "countries",
+    targetType: "item"
+  })
+];
+
 /**
  * Subset of the registry visible to a rule of a given `targetType`. Includes
  * all fields explicitly declared for that target plus the `shared` set, plus
@@ -315,6 +362,19 @@ export const getFieldsForTargetType = (targetType: TargetType): FieldDef[] =>
     if (Array.isArray(f.targetType)) return f.targetType.includes(targetType);
     return f.targetType === targetType;
   });
+
+/**
+ * Full field set an ITEM RULE may reference: the item + shared slice of the
+ * storage registry (no storage/workCenter/operation contexts — the item-rule
+ * evaluator never builds those) plus the customer-context fields above.
+ * Narrow further by surfaces via `getFieldsForItemRuleSurfaces`.
+ */
+export const getFieldsForItemRules = (): FieldDef[] => [
+  ...FIELD_REGISTRY.filter(
+    (f) => f.context === "item" || f.targetType === "shared"
+  ),
+  ...ITEM_RULE_FIELD_REGISTRY
+];
 
 export const getFieldDef = (path: string): FieldDef | undefined => {
   // Custom fields are dynamic — accept any item.customFields.* path.
@@ -329,5 +389,20 @@ export const getFieldDef = (path: string): FieldDef | undefined => {
       description: "Custom field on the item record."
     };
   }
-  return FIELD_REGISTRY.find((f) => f.path === path);
+  // Same synthesis for customer custom fields (item-rule surfaces only).
+  if (path.startsWith("customer.customFields.")) {
+    return {
+      path,
+      label: path.slice("customer.customFields.".length),
+      type: "string",
+      operators: SCALAR_OPS,
+      context: "customer",
+      targetType: "item",
+      description: "Custom field on the customer record."
+    };
+  }
+  return (
+    FIELD_REGISTRY.find((f) => f.path === path) ??
+    ITEM_RULE_FIELD_REGISTRY.find((f) => f.path === path)
+  );
 };

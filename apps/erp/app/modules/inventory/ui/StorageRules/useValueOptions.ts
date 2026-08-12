@@ -1,5 +1,8 @@
 import type { ValueOptionsLoader } from "@carbon/utils";
 import { useMemo } from "react";
+import { useCountries } from "~/components/Form/Country";
+import { useCustomerStatuses } from "~/components/Form/CustomerStatus";
+import { useCustomerTypes } from "~/components/Form/CustomerType";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useStorageTypes } from "~/components/Form/StorageTypes";
@@ -32,6 +35,11 @@ export function useValueOptions(): ValueOptionsByLoader {
   const locations = useLocations();
   const storageTypes = useStorageTypes();
   const itemPostingGroups = useItemPostingGroups();
+  // Item-rule loaders (customer-context fields). `countries` values are
+  // alpha-2 codes, matching the persisted `customer.location.countryCode`.
+  const customerTypes = useCustomerTypes();
+  const customerStatuses = useCustomerStatuses();
+  const countries = useCountries();
 
   return useMemo<ValueOptionsByLoader>(
     () => ({
@@ -40,8 +48,18 @@ export function useValueOptions(): ValueOptionsByLoader {
       itemPostingGroups,
       itemTypes: ITEM_TYPES_OPTIONS,
       itemTrackingTypes: ITEM_TRACKING_TYPES_OPTIONS,
-      replenishmentSystems: REPLENISHMENT_SYSTEMS_OPTIONS
+      replenishmentSystems: REPLENISHMENT_SYSTEMS_OPTIONS,
+      customerTypes,
+      customerStatuses,
+      countries
     }),
-    [locations, storageTypes, itemPostingGroups]
+    [
+      locations,
+      storageTypes,
+      itemPostingGroups,
+      customerTypes,
+      customerStatuses,
+      countries
+    ]
   );
 }

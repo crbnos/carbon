@@ -82,16 +82,30 @@ const SURFACE_META: Record<
   }
 };
 
-type SurfacesFieldProps = {
+export type SurfaceOption<S extends string = string> = {
+  value: S;
+  label: string;
+  description?: string;
+  icon?: JSX.Element;
+};
+
+type SurfacesFieldProps<S extends string> = {
   name: string;
   label?: string;
   targetType?: "item" | "workCenter";
+  /**
+   * Custom surface catalog (e.g. item-rule sales surfaces). When provided it
+   * replaces the storage `TransactionSurface` catalog entirely and
+   * `targetType` is ignored. Omit for storage rules — the default behavior
+   * is unchanged.
+   */
+  surfaceOptions?: SurfaceOption<S>[];
   /**
    * Mirrors the live `value` to the parent so siblings (e.g. ConditionRow's
    * per-surface notes panel) can filter against the rule's actual surfaces
    * rather than every surface valid for the targetType. Identity untracked.
    */
-  onSurfacesChange?: (next: TransactionSurface[]) => void;
+  onSurfacesChange?: (next: S[]) => void;
 };
 
 /**
@@ -101,15 +115,16 @@ type SurfacesFieldProps = {
  * Soft-guards against unchecking the last selected surface (zod `min(1)` is
  * the server-side backstop).
  */
-export default function SurfacesField({
+export default function SurfacesField<S extends string = TransactionSurface>({
   name,
   label,
   targetType,
+  surfaceOptions,
   onSurfacesChange
-}: SurfacesFieldProps) {
+}: SurfacesFieldProps<S>) {
   const { t } = useLingui();
   const { error, isOptional } = useField(name);
-  const [value, setValue] = useControlField<TransactionSurface[]>(name);
+  const [value, setValue] = useControlField<S[]>(name);
   const selected = value ?? [];
 
   // Mirror selection up to the form. Identity of `onSurfacesChange` not
@@ -119,23 +134,34 @@ export default function SurfacesField({
     onSurfacesChange?.(selected);
   }, [selected]);
 
-  const allowed = targetType
-    ? new Set<TransactionSurface>(SURFACES_BY_TARGET_TYPE[targetType])
-    : null;
-  const visibleSurfaces = allowed
-    ? TRANSACTION_SURFACES.filter((s) => allowed.has(s))
-    : TRANSACTION_SURFACES;
+  let options: ChoiceSelectOption<S>[];
+  if (surfaceOptions) {
+    options = surfaceOptions.map((o) => ({
+      value: o.value,
+      title: o.label,
+      description: o.description,
+      icon: o.icon
+    }));
+  } else {
+    const allowed = targetType
+      ? new Set<TransactionSurface>(SURFACES_BY_TARGET_TYPE[targetType])
+      : null;
+    const visibleSurfaces = allowed
+      ? TRANSACTION_SURFACES.filter((s) => allowed.has(s))
+      : TRANSACTION_SURFACES;
 
-  const options: ChoiceSelectOption<TransactionSurface>[] = visibleSurfaces.map(
-    (s) => ({
+    // Default generic (S = TransactionSurface) makes this cast a no-op; it
+    // only exists because TS can't see that the fallback branch implies the
+    // default type parameter.
+    options = visibleSurfaces.map((s) => ({
       value: s,
       title: SURFACE_META[s].title,
       description: SURFACE_META[s].description,
       icon: SURFACE_META[s].icon
-    })
-  );
+    })) as unknown as ChoiceSelectOption<S>[];
+  }
 
-  const handleChange = (next: TransactionSurface[]) => {
+  const handleChange = (next: S[]) => {
     if (next.length === 0) return; // soft guard — keep at least one
     setValue(next);
   };
@@ -155,7 +181,7 @@ export default function SurfacesField({
         />
       ))}
 
-      <ChoiceSelect<TransactionSurface>
+      <ChoiceSelect<S>
         multiple
         value={selected}
         onChange={handleChange}

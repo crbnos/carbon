@@ -7,7 +7,7 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { redirect } from "react-router";
-import { assignStorageRule } from "~/modules/storage-rules";
+import { assignStorageRule } from "~/modules/inventory";
 import { path } from "~/utils/path";
 import { getCompanyId, storageRuleAssignmentsQuery } from "~/utils/react-query";
 

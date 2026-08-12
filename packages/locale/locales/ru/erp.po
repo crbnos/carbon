@@ -885,6 +885,9 @@ msgstr "Все документы"
 msgid "All item types"
 msgstr "Все типы товаров"
 
+msgid "All items"
+msgstr "Все товары"
+
 msgid "All Items"
 msgstr "Все элементы"
 
@@ -4864,6 +4867,9 @@ msgstr "Редактировать тип поставщика"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Отредактируйте правило, чтобы удалить флаг \"Применяется ко всем\""
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "Отредактируйте фильтры товаров правила, чтобы удалить его"
+
 msgid "Edit Timecard"
 msgstr "Редактировать табель учета рабочего времени"
 
@@ -4963,6 +4969,9 @@ msgstr "Включите полный учет по методу начисле�
 msgid "Enable in Settings"
 msgstr "Включить в параметрах"
 
+msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Включить уведомления, когда нарушение правила товара заблокировано или подтверждено в строке предложения или заказа продажи."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Включить уведомления, когда запрос коммерческого предложения отмечен как готовый к цитированию."
 
@@ -5023,6 +5032,12 @@ msgstr "Конец ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "Принудить — редактирование заблокировано"
+
+msgid "Enforce checks on quote and sales order lines for this item."
+msgstr "Применять проверки в строках предложения и заказа продажи для этого товара."
+
+msgid "Enforce customer and item checks when items are added to quotes and sales orders."
+msgstr "Применять проверки клиента и товара при добавлении товаров в предложения и заказы продажи."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Обеспечьте валидацию и рекомендации для каждого товара в квитанциях, отправках, передачах и корректировках."
@@ -6984,6 +6999,15 @@ msgstr "Товар должен соответствовать выбранно�
 
 msgid "Item Name"
 msgstr "Название позиции"
+
+msgid "Item Rule Violations"
+msgstr "Нарушения правил товара"
+
+msgid "Item rules"
+msgstr "Правила товара"
+
+msgid "Item Rules"
+msgstr "Правила товара"
 
 msgid "Item Scope"
 msgstr "Область применения товара"
@@ -9495,6 +9519,9 @@ msgstr "Выберите клиента или тип клиента для пр
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Выберите дату или оставьте пустым, чтобы очистить."
+
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "Выберите существующее правило из библиотеки или создайте новое, чтобы начать применять проверки для этого товара."
 
 msgid "Pick List"
 msgstr "Список подбора"
@@ -14051,6 +14078,9 @@ msgstr "Обновитесь, чтобы разблокировать прави
 msgid "Upgrade to unlock audit history"
 msgstr "Обновитесь, чтобы разблокировать историю аудита"
 
+msgid "Upgrade to unlock item rules"
+msgstr "Обновите, чтобы разблокировать правила товара"
+
 msgid "Upload"
 msgstr "Загрузить"
 
@@ -14891,6 +14921,9 @@ msgstr "Кто должен получать уведомления при от�
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Кто должен получать уведомления при завершении работы инвентаризации?"
+
+msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
+msgstr "Кто должен получать уведомления, когда нарушение правила товара заблокировано или подтверждено?"
 
 msgid "Who you buy from."
 msgstr "Кто вам поставляет."

@@ -1,6 +1,12 @@
 // Direct executor for ERP functions without MCP protocol wrapper
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import {
+  dedupeViolations,
+  evaluateItemRuleLines,
+  resolveSalesOrderShipTo
+} from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import * as accountFunctions from "~/modules/account/account.service";
@@ -81,6 +87,106 @@ function enrichWithAuthContext(
   return enriched;
 }
 
+/**
+ * Item-rule backstop for sales line writes reached through MCP.
+ *
+ * The route actions that add quote / sales-order lines evaluate item rules
+ * before writing. This executor calls the same service functions by name, so
+ * those checks never run — an agent holding an OAuth token or API key could
+ * otherwise put a restricted item on a sales document.
+ *
+ * The check lives here rather than inside `upsertQuoteLine` /
+ * `upsertSalesOrderLine` deliberately: `sales.service.ts` is re-exported from
+ * the `~/modules/sales` barrel that UI components import, so it must stay free
+ * of server-only imports. This module is server-only by construction.
+ *
+ * Only `error`-severity violations block. A `warn` needs a human to acknowledge
+ * it, and there is no human on this path — warns are allowed through so the
+ * agent isn't wedged on a rule a person could have waved past.
+ */
+async function checkItemRulesForSalesLineWrite(
+  functionName: string,
+  context: ExecutorContext,
+  args?: Record<string, any>
+): Promise<{ success: false; error: string } | null> {
+  const surface =
+    functionName === "sales_upsertQuoteLine"
+      ? ("quoteLine" as const)
+      : functionName === "sales_upsertSalesOrderLine"
+        ? ("salesOrderLine" as const)
+        : null;
+  if (!surface || !args) return null;
+
+  const itemId = typeof args.itemId === "string" ? args.itemId : null;
+  if (!itemId) return null;
+
+  const documentId =
+    surface === "quoteLine"
+      ? typeof args.quoteId === "string"
+        ? args.quoteId
+        : null
+      : typeof args.salesOrderId === "string"
+        ? args.salesOrderId
+        : null;
+  if (!documentId) return null;
+
+  const serviceRole = getCarbonServiceRole();
+  const shipTo =
+    surface === "salesOrderLine"
+      ? await resolveSalesOrderShipTo(
+          serviceRole,
+          documentId,
+          context.companyId
+        )
+      : await (async () => {
+          const { data } = await serviceRole
+            .from("quote")
+            .select("customerId, customerLocationId")
+            .eq("id", documentId)
+            .eq("companyId", context.companyId)
+            .maybeSingle();
+          return {
+            customerId: data?.customerId ?? null,
+            customerLocationId: data?.customerLocationId ?? null
+          };
+        })();
+
+  const quantity =
+    typeof args.saleQuantity === "number"
+      ? args.saleQuantity
+      : Array.isArray(args.quantity)
+        ? Math.max(1, ...(args.quantity as number[]))
+        : typeof args.quantity === "number"
+          ? args.quantity
+          : 1;
+
+  const { violations } = await evaluateItemRuleLines({
+    client: serviceRole,
+    companyId: context.companyId,
+    userId: context.userId,
+    surface,
+    lines: [
+      {
+        lineId: typeof args.id === "string" ? args.id : "new",
+        itemId,
+        quantity
+      }
+    ],
+    customerId: shipTo.customerId,
+    customerLocationId: shipTo.customerLocationId
+  });
+
+  const errors = dedupeViolations(violations).filter(
+    (v) => v.severity === "error"
+  );
+  if (errors.length === 0) return null;
+
+  return {
+    success: false,
+    error: `Blocked by item rules: ${errors.map((v) => v.message).join("; ")}`
+  };
+}
+
 export async function executeFunction(
   functionName: string,
   context: ExecutorContext,
@@ -104,6 +210,13 @@ export async function executeFunction(
       error: `Tool disabled: ${functionName} is not available via MCP.`
     };
   }
+
+  const itemRuleBlock = await checkItemRulesForSalesLineWrite(
+    functionName,
+    context,
+    normalizedArgs
+  );
+  if (itemRuleBlock) return itemRuleBlock;
 
   // Parse the function name to get module and function
   const parts = functionName.split("_");

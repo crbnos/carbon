@@ -1,5 +1,9 @@
 import { assertIsPost, notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  dedupeViolations,
+  evaluateItemRulesForSalesDocument
+} from "@carbon/ee/rules.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -86,6 +90,46 @@ export async function action(args: ActionFunctionArgs) {
       let purchaseOrderNumber = "";
       if (file instanceof File && file.name.toLowerCase().endsWith(".pdf")) {
         purchaseOrderNumber = file.name.replace(/\.pdf$/i, "");
+      }
+
+      // Terminal gate on the customer-facing accept. This endpoint is
+      // unauthenticated — the share link is the only credential — so it is
+      // HARD-BLOCK-ONLY: there is no employee here, nobody who may legitimately
+      // acknowledge a warning, and internal compliance text must never reach
+      // the customer. Errors refuse with a neutral message; warnings are logged
+      // for the seller and the order proceeds.
+      const { violations: itemRuleViolations } =
+        await evaluateItemRulesForSalesDocument({
+          client: serviceRole,
+          companyId: quote.data.companyId,
+          userId: quote.data.createdBy,
+          documentType: "quote",
+          documentId: quote.data.id
+        });
+      const dedupedItemRuleViolations = dedupeViolations(itemRuleViolations);
+      const blockingViolations = dedupedItemRuleViolations.filter(
+        (v) => v.severity === "error"
+      );
+
+      if (blockingViolations.length > 0) {
+        logger.error("Digital quote acceptance blocked by item rules", {
+          quoteId: quote.data.id,
+          companyId: quote.data.companyId,
+          violations: blockingViolations
+        });
+        return {
+          success: false,
+          message:
+            "This quote can no longer be accepted online. Please contact your sales representative."
+        };
+      }
+
+      if (dedupedItemRuleViolations.length > 0) {
+        logger.warn("Digital quote accepted with item rule warnings", {
+          quoteId: quote.data.id,
+          companyId: quote.data.companyId,
+          violations: dedupedItemRuleViolations
+        });
       }
 
       const [convert] = await Promise.all([

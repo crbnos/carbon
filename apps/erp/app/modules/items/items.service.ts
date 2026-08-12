@@ -7,6 +7,7 @@ import type {
   KyselyTx
 } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import type { ConditionAst, ItemRuleSurface, Severity } from "@carbon/utils";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -7865,4 +7866,123 @@ export async function getChangeNoticeDiff(
   }
 
   return { data: { items }, error: null };
+}
+
+// -----------------------------------------------------------------------------
+// Item Rules
+// -----------------------------------------------------------------------------
+// ERP-only admin CRUD for the Items → Item Rules page. Cross-app queries
+// (assignment loaders, list fetch for tab data, assign/unassign) live in
+// `@carbon/ee/rules` and are re-exported from this module's barrel.
+
+type ItemRuleFilters = {
+  filteredItemTypes?: string[];
+  filteredItemGroupIds?: string[];
+  filteredItemMatchAll?: boolean;
+};
+
+type ItemRuleInsert = ItemRuleFilters & {
+  name: string;
+  description?: string | null;
+  message: string;
+  severity: Severity;
+  conditionAst: ConditionAst;
+  surfaces: ItemRuleSurface[];
+  active: boolean;
+  companyId: string;
+  createdBy: string;
+  customFields?: Json;
+};
+
+type ItemRuleUpdate = ItemRuleFilters & {
+  id: string;
+  name: string;
+  description?: string | null;
+  message: string;
+  severity: Severity;
+  conditionAst: ConditionAst;
+  surfaces: ItemRuleSurface[];
+  active: boolean;
+  updatedBy: string;
+  customFields?: Json;
+};
+
+export async function getItemRules(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("itemRule")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args ?? {}, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getItemRule(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("itemRule").select("*").eq("id", id).single();
+}
+
+export async function upsertItemRule(
+  client: SupabaseClient<Database>,
+  rule: ItemRuleInsert | ItemRuleUpdate
+) {
+  if ("createdBy" in rule) {
+    return client
+      .from("itemRule")
+      .insert({ ...rule, conditionAst: rule.conditionAst as unknown as Json })
+      .select("id")
+      .single();
+  }
+  return client
+    .from("itemRule")
+    .update({
+      ...sanitize(rule),
+      conditionAst: rule.conditionAst as unknown as Json,
+      updatedAt: now(getLocalTimeZone()).toAbsoluteString()
+    })
+    .eq("id", rule.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteItemRule(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("itemRule").delete().eq("id", id);
+}
+
+export async function getItemRuleAssignmentCounts(
+  client: SupabaseClient<Database>,
+  ruleIds: string[]
+) {
+  if (ruleIds.length === 0) return { data: {}, error: null };
+
+  const { data, error } = await client
+    .from("itemRuleAssignment")
+    .select("ruleId")
+    .in("ruleId", ruleIds);
+
+  if (error) return { data: {}, error };
+
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? []) as Array<{ ruleId: string }>) {
+    counts[row.ruleId] = (counts[row.ruleId] ?? 0) + 1;
+  }
+
+  return { data: counts, error: null };
 }

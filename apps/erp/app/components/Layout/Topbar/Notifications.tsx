@@ -236,6 +236,21 @@ function GenericNotification({
           {...props}
         />
       );
+    case NotificationEvent.ItemRuleViolation: {
+      // Compound documentId: "<quote|salesOrder>:<documentId>:<outcome>"
+      const [docType, docId] = id.split(":");
+      return (
+        <Notification
+          icon={<LuShieldAlert />}
+          to={
+            docType === "salesOrder"
+              ? path.to.salesOrderDetails(docId ?? "")
+              : path.to.quoteDetails(docId ?? "")
+          }
+          {...props}
+        />
+      );
+    }
     case NotificationEvent.JobCompleted:
     case NotificationEvent.JobAssignment:
       return (

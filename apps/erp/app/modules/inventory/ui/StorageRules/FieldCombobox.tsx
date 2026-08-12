@@ -31,7 +31,8 @@ import {
   LuCheck,
   LuChevronDown,
   LuInfo,
-  LuReceipt
+  LuReceipt,
+  LuUser
 } from "react-icons/lu";
 
 const CONTEXT: Record<
@@ -51,11 +52,13 @@ const CONTEXT: Record<
   transaction: {
     label: "Transaction",
     icon: <LuReceipt className="h-3.5 w-3.5" />
-  }
+  },
+  customer: { label: "Customer", icon: <LuUser className="h-3.5 w-3.5" /> }
 };
 
 const CONTEXT_ORDER: FieldDef["context"][] = [
   "item",
+  "customer",
   "storage",
   "workCenter",
   "operation",
@@ -74,6 +77,11 @@ type FieldComboboxProps = {
    * can't pick a field that won't resolve at runtime.
    */
   surfaces?: TransactionSurface[];
+  /**
+   * Explicit field pool (item rules). When provided it replaces the
+   * targetType-derived registry lookup entirely.
+   */
+  fields?: FieldDef[];
 };
 
 export default function FieldCombobox({
@@ -82,7 +90,8 @@ export default function FieldCombobox({
   placeholder,
   className,
   targetType,
-  surfaces
+  surfaces,
+  fields
 }: FieldComboboxProps) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
@@ -90,12 +99,14 @@ export default function FieldCombobox({
   const grouped = useMemo(() => {
     const map = new Map<FieldDef["context"], FieldDef[]>();
     for (const ctx of CONTEXT_ORDER) map.set(ctx, []);
-    const pool = targetType
-      ? getFieldsForTargetTypeAndSurfaces(targetType, surfaces ?? [])
-      : FIELD_REGISTRY;
+    const pool =
+      fields ??
+      (targetType
+        ? getFieldsForTargetTypeAndSurfaces(targetType, surfaces ?? [])
+        : FIELD_REGISTRY);
     for (const f of pool) map.get(f.context)!.push(f);
     return map;
-  }, [targetType, surfaces]);
+  }, [targetType, surfaces, fields]);
 
   const selected = useMemo(() => getFieldDef(value), [value]);
   const ctx = selected ? CONTEXT[selected.context] : undefined;

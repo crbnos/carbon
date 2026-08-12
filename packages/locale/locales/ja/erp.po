@@ -885,6 +885,9 @@ msgstr "すべてのドキュメント"
 msgid "All item types"
 msgstr "すべてのアイテムタイプ"
 
+msgid "All items"
+msgstr "すべてのアイテム"
+
 msgid "All Items"
 msgstr "すべてのアイテム"
 
@@ -4864,6 +4867,9 @@ msgstr "サプライヤータイプを編集"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "ルールを編集して「すべてに適用」フラグを削除する"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "ルールのアイテムフィルターを編集して削除します"
+
 msgid "Edit Timecard"
 msgstr "タイムカードを編集"
 
@@ -4963,6 +4969,9 @@ msgstr "完全な発生主義会計を有効にし、仕訳帳エントリ、財
 msgid "Enable in Settings"
 msgstr "設定で有効にする"
 
+msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "見積書または販売注文行でアイテムルール違反がブロックまたは確認されたときに通知を有効にします。"
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "RFQが見積もり準備完了としてマークされたときに通知を有効にします。"
 
@@ -5023,6 +5032,12 @@ msgstr "終了 ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "強制 - 編集はブロックされます"
+
+msgid "Enforce checks on quote and sales order lines for this item."
+msgstr "このアイテムの見積書および販売注文行に対するチェックを実行します。"
+
+msgid "Enforce customer and item checks when items are added to quotes and sales orders."
+msgstr "アイテムが見積書と販売注文に追加されるときに、顧客とアイテムのチェックを実行します。"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "領収書、出荷、転送、および調整全体にわたって、品目ごとの検証とガイドラインを実施します。"
@@ -6984,6 +6999,15 @@ msgstr "アイテムは選択されたタイプまたは選択されたグルー
 
 msgid "Item Name"
 msgstr "品目名"
+
+msgid "Item Rule Violations"
+msgstr "アイテムルール違反"
+
+msgid "Item rules"
+msgstr "アイテムルール"
+
+msgid "Item Rules"
+msgstr "アイテムルール"
 
 msgid "Item Scope"
 msgstr "アイテムスコープ"
@@ -9495,6 +9519,9 @@ msgstr "顧客または顧客タイプを選択して、その価格を表示し
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "日付を選択するか、空白のままにしてクリアしてください。"
+
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "ライブラリから既存のルールを選択するか、新しいルールを作成してこのアイテムのチェックを実行し始めます。"
 
 msgid "Pick List"
 msgstr "ピッキングリスト"
@@ -14051,6 +14078,9 @@ msgstr "{0}ルールのロックを解除するにはアップグレード"
 msgid "Upgrade to unlock audit history"
 msgstr "監査履歴のロックを解除するにはアップグレードしてください"
 
+msgid "Upgrade to unlock item rules"
+msgstr "アイテムルールのロックを解除するにはアップグレードしてください"
+
 msgid "Upload"
 msgstr "アップロード"
 
@@ -14891,6 +14921,9 @@ msgstr "サプライヤーの見積もりが送信されたときに、誰が通
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "在库存工作完成时，谁应该收到通知？"
+
+msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
+msgstr "アイテムルール違反がブロックまたは確認されたときに、誰が通知を受け取るべきですか？"
 
 msgid "Who you buy from."
 msgstr "あなたが購入する相手。"

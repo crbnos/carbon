@@ -40,12 +40,14 @@ import {
   digitalQuoteValidator,
   getAccountsReceivableBillingAddress,
   getCompanySettings,
+  itemRuleNotificationValidator,
   quoteLineCategoryMarkupsSettingsValidator,
   rfqReadyValidator,
   updateAccountsReceivableAddressSetting,
   updateAccountsReceivableBillingAddress,
   updateDefaultCustomerCc,
   updateDigitalQuoteSetting,
+  updateItemRuleNotificationSetting,
   updateQuoteLineCategoryMarkups,
   updateRfqReadySetting,
   updateShowCustomerReadableIdSetting
@@ -163,6 +165,29 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: rfqSettings.error.message };
 
       return { success: true, message: "RFQ setting updated" };
+
+    case "itemRuleViolations":
+      const itemRuleValidation = await validator(
+        itemRuleNotificationValidator
+      ).validate(formData);
+
+      if (itemRuleValidation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const itemRuleSettings = await updateItemRuleNotificationSetting(
+        client,
+        companyId,
+        itemRuleValidation.data.itemRuleNotificationGroup ?? []
+      );
+
+      if (itemRuleSettings.error)
+        return { success: false, message: itemRuleSettings.error.message };
+
+      return {
+        success: true,
+        message: "Item rule notification settings updated"
+      };
 
     case "categoryMarkups":
       const categoryMarkupsValidation = await validator(
@@ -592,6 +617,55 @@ export default function SalesSettingsRoute() {
                 isLoading={
                   fetcher.state !== "idle" &&
                   fetcher.formData?.get("intent") === "rfq"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={itemRuleNotificationValidator}
+            defaultValues={{
+              itemRuleNotificationGroup:
+                companySettings.itemRuleNotificationGroup ?? []
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="itemRuleViolations" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Item Rule Violations</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Enable notifications when an item rule violation is blocked or
+                  acknowledged on a quote or sales order line.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Label>
+                    <Trans>Notifications</Trans>
+                  </Label>
+                  <Users
+                    name="itemRuleNotificationGroup"
+                    label={t`Who should receive notifications when an item rule violation is blocked or acknowledged?`}
+                    type="employee"
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "itemRuleViolations"
                 }
               >
                 <Trans>Save</Trans>

@@ -2,6 +2,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateItemRulesForSalesDocument,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -69,6 +74,25 @@ export async function action(args: ActionFunctionArgs) {
   const cc = notificationValidation.data?.cc;
 
   const serviceRole = getCarbonServiceRole();
+
+  // Terminal gate, in the route rather than inside the `convert` edge function:
+  // the edge function writes salesOrderLine rows directly and cannot run the
+  // evaluator (it is Deno, and the evaluator's plan gate pulls in the ERP
+  // server runtime). Gating here covers this path without duplicating the
+  // evaluator into a tree CI never typechecks or tests.
+  const acknowledged = formData.get("acknowledged") === "true";
+  const { violations, ruleNames } = await evaluateItemRulesForSalesDocument({
+    client: serviceRole,
+    companyId,
+    userId,
+    documentType: "quote",
+    documentId: quoteId
+  });
+  const deduped = dedupeViolations(violations);
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
+    return { violations: deduped, ruleNames };
+  }
+
   const convert = await convertQuoteToOrder(serviceRole, {
     id: quoteId,
     purchaseOrderNumber: poNumber ?? "",

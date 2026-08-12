@@ -20,7 +20,7 @@ import {
   type FieldDef,
   getFieldDef,
   getFieldsForTargetType,
-  type TransactionSurface
+  type RuleSurface
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { MouseEvent, ReactNode, TextareaHTMLAttributes } from "react";
@@ -47,6 +47,11 @@ type MessageWithTokensProps = {
    * so e.g. workCenter rules don't list `item.replenishmentSystem`.
    */
   targetType?: "item" | "workCenter";
+  /**
+   * Explicit field pool (item rules). When provided it replaces the
+   * targetType/registry lookup for the token dropdown entirely.
+   */
+  fields?: FieldDef[];
 };
 
 type TokenItem = { token: string; description: string };
@@ -55,9 +60,10 @@ type TokenGroup = { heading: string; tokens: TokenItem[] };
 /**
  * Maps each surface to the ctx-block keys whose fields will be populated
  * at eval time. Used to filter the FIELD_REGISTRY into a relevant
- * suggestion list.
+ * suggestion list. Keyed by the full `RuleSurface` union so the item-rule
+ * form (sales-document surfaces) reuses this component unchanged.
  */
-const CTX_KEYS_BY_SURFACE: Record<TransactionSurface, FieldDef["context"][]> = {
+const CTX_KEYS_BY_SURFACE: Record<RuleSurface, FieldDef["context"][]> = {
   receipt: ["storage", "transaction"],
   shipment: ["storage", "transaction"],
   stockTransfer: ["storage", "transaction"],
@@ -68,11 +74,14 @@ const CTX_KEYS_BY_SURFACE: Record<TransactionSurface, FieldDef["context"][]> = {
   operationStart: ["workCenter", "operation", "transaction"],
   operationFinish: ["workCenter", "operation", "transaction"],
   materialIssue: ["workCenter", "operation", "transaction"],
-  materialReceive: ["workCenter", "operation", "transaction"]
+  materialReceive: ["workCenter", "operation", "transaction"],
+  quoteLine: ["customer", "transaction"],
+  salesOrderLine: ["customer", "transaction"]
 };
 
 const CONTEXT_LABELS: Record<FieldDef["context"], string> = {
   item: "Item",
+  customer: "Customer",
   storage: "Storage unit",
   workCenter: "Work center",
   operation: "Operation",
@@ -85,6 +94,7 @@ const CONTEXT_LABELS: Record<FieldDef["context"], string> = {
 // bucketed by context — `O(n)` once instead of `O(n)` per ctx per render.
 const FIELDS_BY_CTX: Record<FieldDef["context"], FieldDef[]> = {
   item: [],
+  customer: [],
   storage: [],
   workCenter: [],
   operation: [],
@@ -95,14 +105,20 @@ for (const f of FIELD_REGISTRY) FIELDS_BY_CTX[f.context].push(f);
 // Stable references for default values. `surfacesValue ?? []` would
 // allocate a fresh `[]` every render, busting the `groups` memo — and
 // re-running the per-condition token assembly even when nothing changed.
-const EMPTY_SURFACES: TransactionSurface[] = [];
-const ORDERED_CTX: FieldDef["context"][] = ["storage", "transaction"];
+const EMPTY_SURFACES: RuleSurface[] = [];
+// `customer` is only ever in `allowedCtx` for item-rule surfaces, so storage
+// rules render identically with it in the ordered list.
+const ORDERED_CTX: FieldDef["context"][] = [
+  "customer",
+  "storage",
+  "transaction"
+];
 
 // Hoist the static icon node — re-rendering the parent doesn't need to
 // reallocate the icon element (rendering-hoist-jsx).
 const BRACES_ICON = <LuBraces />;
 
-// Mirror of the runtime `TOKEN_RE` in packages/utils/src/storage-rules.ts so the
+// Mirror of the runtime `TOKEN_RE` in packages/utils/src/rules.ts so the
 // editor highlights exactly what `interpolateMessage` will substitute — no
 // false greens, no missed reds. Inlined rather than re-exported to avoid a
 // UI → runtime import cycle.
@@ -113,6 +129,9 @@ const TOKEN_RE =
 // generic dotted-path resolver. Treat any such token as known so the editor
 // stops painting valid custom-field references as errors.
 const CUSTOM_FIELD_PREFIX = "item.customFields.";
+// Same for `customer.customFields.*` — only honored when an explicit item-rule
+// `fields` pool is provided, so storage-rule highlighting is unchanged.
+const CUSTOMER_CUSTOM_FIELD_PREFIX = "customer.customFields.";
 
 // Only background + ring — text stays `text-transparent` (inherited from
 // the overlay) so the textarea's real glyphs show through cleanly. Adding a
@@ -127,13 +146,13 @@ export default function MessageWithTokens({
   label,
   conditions,
   surfacesFieldName = "surfaces",
-  targetType
+  targetType,
+  fields
 }: MessageWithTokensProps) {
   const { t } = useLingui();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
-  const [surfacesValue] =
-    useControlField<TransactionSurface[]>(surfacesFieldName);
+  const [surfacesValue] = useControlField<RuleSurface[]>(surfacesFieldName);
   const surfaces = surfacesValue ?? EMPTY_SURFACES;
 
   const { getInputProps, error, defaultValue } = useField(name);
@@ -188,12 +207,14 @@ export default function MessageWithTokens({
   const groups = useMemo<TokenGroup[]>(() => {
     const out: TokenGroup[] = [];
     const conds = conditions ?? [];
-    // Field pool scoped to the rule's targetType; falls back to full registry
-    // when not provided (legacy usage).
+    // Field pool: an explicit `fields` prop wins (item rules), then the
+    // rule's targetType; falls back to full registry when neither is
+    // provided (legacy usage).
     const scopedFieldsByCtx: Partial<Record<FieldDef["context"], FieldDef[]>> =
       {};
-    if (targetType) {
-      const pool = getFieldsForTargetType(targetType);
+    const pool =
+      fields ?? (targetType ? getFieldsForTargetType(targetType) : null);
+    if (pool) {
       for (const f of pool) {
         const bucket = scopedFieldsByCtx[f.context];
         if (bucket) bucket.push(f);
@@ -201,7 +222,7 @@ export default function MessageWithTokens({
       }
     }
     const fieldsForCtx = (ctx: FieldDef["context"]): FieldDef[] =>
-      targetType ? (scopedFieldsByCtx[ctx] ?? []) : FIELDS_BY_CTX[ctx];
+      pool ? (scopedFieldsByCtx[ctx] ?? []) : FIELDS_BY_CTX[ctx];
 
     // 1. Per-condition tokens.
     conds.forEach((c, i) => {
@@ -263,7 +284,7 @@ export default function MessageWithTokens({
     }
 
     return out;
-  }, [conditions, surfaces, targetType]);
+  }, [conditions, surfaces, targetType, fields]);
 
   const knownTokens = useMemo(() => {
     const set = new Set<string>();
@@ -286,7 +307,10 @@ export default function MessageWithTokens({
       if (idx > last) out.push(text.slice(last, idx));
       const inner = m[1] ?? "";
       const known =
-        knownTokens.has(inner) || inner.startsWith(CUSTOM_FIELD_PREFIX);
+        knownTokens.has(inner) ||
+        inner.startsWith(CUSTOM_FIELD_PREFIX) ||
+        (fields !== undefined &&
+          inner.startsWith(CUSTOMER_CUSTOM_FIELD_PREFIX));
       out.push(
         <mark
           key={key++}
@@ -303,7 +327,7 @@ export default function MessageWithTokens({
     }
     if (last < text.length) out.push(text.slice(last));
     return out;
-  }, [text, knownTokens]);
+  }, [text, knownTokens, fields]);
 
   // Identical typography between the overlay and the textarea — any drift
   // here desyncs the highlighted rectangles from the rendered glyphs.

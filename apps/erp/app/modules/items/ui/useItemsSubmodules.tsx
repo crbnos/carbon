@@ -15,6 +15,7 @@ import {
   LuPuzzle,
   LuRuler,
   LuShapes,
+  LuShieldCheck,
   LuTags
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
@@ -134,6 +135,12 @@ export default function useItemsSubmodules() {
           to: path.to.itemPostingGroups,
           role: "employee",
           icon: <LuGroup />
+        },
+        {
+          name: t`Item Rules`,
+          to: path.to.itemRules,
+          role: "employee",
+          icon: <LuShieldCheck />
         },
         {
           name: t`Units`,

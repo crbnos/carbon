@@ -54,6 +54,11 @@ type ConditionRowProps = {
    * surfaces valid for the targetType when omitted.
    */
   surfaces?: TransactionSurface[];
+  /**
+   * Explicit field pool forwarded to the field picker (item rules). When
+   * provided it replaces the targetType-derived registry lookup.
+   */
+  fields?: FieldDef[];
 };
 
 function ConditionRowImpl({
@@ -64,7 +69,8 @@ function ConditionRowImpl({
   onRemove,
   optionsByLoader,
   targetType,
-  surfaces
+  surfaces,
+  fields
 }: ConditionRowProps) {
   const { t } = useLingui();
 
@@ -143,6 +149,7 @@ function ConditionRowImpl({
             value={condition.field}
             targetType={targetType}
             surfaces={surfaces}
+            fields={fields}
             onChange={(path) => {
               const nextDef = getFieldDef(path);
               const nextOps = nextDef ? availableOperators(nextDef) : [];

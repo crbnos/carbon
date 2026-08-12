@@ -885,6 +885,9 @@ msgstr "सभी दस्तावेज़"
 msgid "All item types"
 msgstr "सभी आइटम प्रकार"
 
+msgid "All items"
+msgstr "सभी आइटम"
+
 msgid "All Items"
 msgstr "सभी आइटम"
 
@@ -4864,6 +4867,9 @@ msgstr "आपूर्तिकर्ता प्रकार संपाद�
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "नियम को संपादित करें \"सभी पर लागू करें\" फ़्लैग को हटाने के लिए"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "इसे निकालने के लिए नियम के आइटम फिल्टर को संपादित करें"
+
 msgid "Edit Timecard"
 msgstr "टाइमकार्ड संपादित करें"
 
@@ -4963,6 +4969,9 @@ msgstr "पूर्ण प्रोद्भवन लेखांकन को
 msgid "Enable in Settings"
 msgstr "सेटिंग्स में सक्षम करें"
 
+msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "जब किसी उद्धरण या बिक्रय आदेश लाइन पर एक आइटम नियम उल्लंघन अवरुद्ध या स्वीकार किया जाता है तो सूचनाएं सक्षम करें।"
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "जब कोई RFQ उद्धरण के लिए तैयार के रूप में चिह्नित किया जाता है तो सूचनाएं सक्षम करें।"
 
@@ -5023,6 +5032,12 @@ msgstr "समाप्त ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "लागू करें — संपादन अवरुद्ध हैं"
+
+msgid "Enforce checks on quote and sales order lines for this item."
+msgstr "इस आइटम के लिए उद्धरण और बिक्रय आदेश लाइनों पर जांच लागू करें।"
+
+msgid "Enforce customer and item checks when items are added to quotes and sales orders."
+msgstr "जब उद्धरण और बिक्रय आदेशों में आइटम जोड़े जाते हैं तो ग्राहक और आइटम जांच लागू करें।"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "रसीदों, शिपमेंट, ट्रांसफर और समायोजन में प्रति-आइटम सत्यापन और दिशानिर्देश लागू करें।"
@@ -6984,6 +6999,15 @@ msgstr "आइटम को एक चयनित प्रकार OR एक 
 
 msgid "Item Name"
 msgstr "आइटम नाम"
+
+msgid "Item Rule Violations"
+msgstr "आइटम नियम उल्लंघन"
+
+msgid "Item rules"
+msgstr "आइटम नियम"
+
+msgid "Item Rules"
+msgstr "आइटम नियम"
 
 msgid "Item Scope"
 msgstr "आइटम स्कोप"
@@ -9495,6 +9519,9 @@ msgstr "उनकी मूल्य निर्धारण देखने �
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "एक तारीख चुनें या इसे साफ करने के लिए खाली छोड़ें।"
+
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "इस आइटम पर जांच लागू करना शुरू करने के लिए लाइब्रेरी से एक मौजूदा नियम चुनें या एक नया नियम बनाएं।"
 
 msgid "Pick List"
 msgstr "पिक लिस्ट"
@@ -14051,6 +14078,9 @@ msgstr "{0} नियमों को अनलॉक करने के लि
 msgid "Upgrade to unlock audit history"
 msgstr "ऑडिट इतिहास को अनलॉक करने के लिए अपग्रेड करें"
 
+msgid "Upgrade to unlock item rules"
+msgstr "आइटम नियमों को अनलॉक करने के लिए अपग्रेड करें"
+
 msgid "Upload"
 msgstr "अपलोड करें"
 
@@ -14891,6 +14921,9 @@ msgstr "जब कोई आपूर्तिकर्ता उद्धरण
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "इन्वेंटरी जॉब पूरा होने पर कौन सूचनाएं प्राप्त करना चाहिए?"
+
+msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
+msgstr "जब किसी आइटम नियम उल्लंघन को अवरुद्ध या स्वीकार किया जाता है तो किसे सूचनाएं प्राप्त करनी चाहिए?"
 
 msgid "Who you buy from."
 msgstr "आप किससे खरीदते हैं।"

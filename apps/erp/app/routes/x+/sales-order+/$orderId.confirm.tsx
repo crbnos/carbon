@@ -1,6 +1,11 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  dedupeViolations,
+  evaluateItemRulesForSalesDocument,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import { validator } from "@carbon/form";
 import { getSalesOrderStatus } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
@@ -54,6 +59,32 @@ export async function action(args: ActionFunctionArgs) {
       };
     }
 
+    // Terminal gate: re-evaluate item rules across EVERY line on the order,
+    // with today's context. Per-line checks only cover lines added through the
+    // line routes — conversions, duplication, integrations and the API all
+    // write lines without them — and a line that passed weeks ago may violate
+    // a rule authored since, or a ship-to that has changed. Runs before the PDF
+    // so a blocked order doesn't generate one.
+    const formData = await request.formData();
+    const acknowledged = formData.get("acknowledged") === "true";
+
+    const { violations, ruleNames } = await evaluateItemRulesForSalesDocument({
+      client: serviceRole,
+      companyId,
+      userId,
+      documentType: "salesOrder",
+      documentId: orderId
+    });
+    const deduped = dedupeViolations(violations);
+    if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
+      return {
+        success: false,
+        message: "Item rule violations must be resolved before confirming",
+        violations: deduped,
+        ruleNames
+      };
+    }
+
     const acceptLanguage = request.headers.get("accept-language");
     const locales = parseAcceptLanguage(acceptLanguage, {
       validate: Intl.DateTimeFormat.supportedLocalesOf
@@ -84,7 +115,7 @@ export async function action(args: ActionFunctionArgs) {
     }
 
     const validation = await validator(salesConfirmValidator).validate(
-      await request.formData()
+      formData
     );
 
     if (validation.error) {

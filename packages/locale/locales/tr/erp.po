@@ -885,6 +885,9 @@ msgstr "Tüm Belgeler"
 msgid "All item types"
 msgstr "Tüm öğe türleri"
 
+msgid "All items"
+msgstr "Tüm öğeler"
+
 msgid "All Items"
 msgstr "Tüm Öğeler"
 
@@ -4864,6 +4867,9 @@ msgstr "Tedarikçi Türünü Düzenle"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Kuralı düzenleyerek \"Tümüne uygulanır\" işaretini kaldırın"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "Kuralı kaldırmak için kuralın öğe filtrelerini düzenleyin"
+
 msgid "Edit Timecard"
 msgstr "Çalışma Saatini Düzenle"
 
@@ -4963,6 +4969,9 @@ msgstr "Yevmiye kayıtları, finansal raporlar ve genel defter kaydı ile tam ta
 msgid "Enable in Settings"
 msgstr "Ayarlarda Etkinleştir"
 
+msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Bir alıntı veya satış siparişi satırında bir öğe kuralı ihlali engellendiğinde veya onaylandığında bildirimleri etkinleştirin."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Bir RFQ teklif için hazır olarak işaretlendiğinde bildirimleri etkinleştir."
 
@@ -5023,6 +5032,12 @@ msgstr "Son ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "Zorunlu — düzenlemeler engellendi"
+
+msgid "Enforce checks on quote and sales order lines for this item."
+msgstr "Bu öğe için alıntı ve satış siparişi satırlarında kontrolleri uygulayın."
+
+msgid "Enforce customer and item checks when items are added to quotes and sales orders."
+msgstr "Öğeler alıntılara ve satış siparişlerine eklendiğinde müşteri ve öğe kontrollerini uygulayın."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Alışmalar, sevkiyatlar, transferler ve ayarlamalarda kalem bazında doğrulama ve yönergeleri zorunlu kılın."
@@ -6984,6 +6999,15 @@ msgstr "Öğe seçilen bir tür VEYA seçilen bir gruba uymalıdır"
 
 msgid "Item Name"
 msgstr "Kalem Adı"
+
+msgid "Item Rule Violations"
+msgstr "Öğe Kuralı İhlafleri"
+
+msgid "Item rules"
+msgstr "Öğe kuralları"
+
+msgid "Item Rules"
+msgstr "Öğe Kuralları"
 
 msgid "Item Scope"
 msgstr "Ürün Kapsamı"
@@ -9495,6 +9519,9 @@ msgstr "Fiyatlandırmalarını görüntülemek için bir müşteri veya müşter
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Bir tarih seçin veya temizlemek için boş bırakın."
+
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "Bu öğe üzerinde kontroller uygulamaya başlamak için kitaplıktan mevcut bir kural seçin veya yeni bir kural oluşturun."
 
 msgid "Pick List"
 msgstr "Seçim Listesi"
@@ -14051,6 +14078,9 @@ msgstr "Üniforma kurallarını açmak için yükseltin"
 msgid "Upgrade to unlock audit history"
 msgstr "Denetim geçmişini açmak için yükseltin"
 
+msgid "Upgrade to unlock item rules"
+msgstr "Öğe kurallarının kilidini açmak için yükseltin"
+
 msgid "Upload"
 msgstr "Yükle"
 
@@ -14891,6 +14921,9 @@ msgstr "Bir tedarikçi teklifi gönderildiğinde kimler bildirim almalı?"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Envanter işi tamamlandığında kimler bildirim almalı?"
+
+msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
+msgstr "Bir öğe kuralı ihlali engellendiğinde veya onaylandığında kim bildirimler almalıdır?"
 
 msgid "Who you buy from."
 msgstr "Kimden satın aldığınız."

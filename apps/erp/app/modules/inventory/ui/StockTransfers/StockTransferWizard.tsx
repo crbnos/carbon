@@ -1,6 +1,6 @@
 import type { Result } from "@carbon/auth";
 import { useCarbon } from "@carbon/auth";
-import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
+import { useRuleViolations } from "@carbon/ee/rules";
 import { getLogger } from "@carbon/logger";
 import {
   Badge,
@@ -915,7 +915,7 @@ function WizardFooter({ locationId }: { locationId: string }) {
 
   // Item Rule pre-flight on Create Transfer (auto-released → the stock-commit
   // gate sits here). The modal surfaces violations before the transfer exists.
-  const createRules = useStorageRuleViolations<Result>({
+  const createRules = useRuleViolations<Result>({
     action: path.to.newStockTransfer,
     onSuccess: () => clearStockTransferWizard()
   });

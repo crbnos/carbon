@@ -1211,6 +1211,17 @@ export async function updateAccountsReceivableEmail(
     .eq("id", companyId);
 }
 
+export async function updateItemRuleNotificationSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemRuleNotificationGroup: string[]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ itemRuleNotificationGroup }))
+    .eq("id", companyId);
+}
+
 export async function updateQuoteLineCategoryMarkups(
   client: SupabaseClient<Database>,
   companyId: string,

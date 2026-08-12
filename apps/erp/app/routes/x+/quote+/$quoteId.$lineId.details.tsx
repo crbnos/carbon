@@ -2,7 +2,15 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateItemRuleLines,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -58,10 +66,13 @@ import {
 } from "~/modules/sales/ui/Quotes";
 import QuoteLinePricingHistory from "~/modules/sales/ui/Quotes/QuoteLinePricingHistory";
 import QuoteLineRiskRegister from "~/modules/sales/ui/Quotes/QuoteLineRiskRegister";
+import { getCompanySettings } from "~/modules/settings";
 import { getTagsList, type SupplierPriceMap } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "quoteid-lineid-details");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { client, companyId } = await requirePermissions(request, {
@@ -180,6 +191,87 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
+  const serviceRole = getCarbonServiceRole();
+
+  // Item-rule enforcement: evaluate before the line is written. Blocked
+  // submissions return violations for the form's violation modal;
+  // acknowledged warns pass through on re-submit.
+  const acknowledged = formData.get("acknowledged") === "true";
+  const { violations, ruleNames } = await evaluateItemRuleLines({
+    client: serviceRole,
+    companyId,
+    userId,
+    surface: "quoteLine",
+    // Quote lines carry a quantity-break array rather than a single
+    // transaction quantity. Evaluate the largest break — it is the one most
+    // likely to trip a `gt` threshold, so it is the conservative choice.
+    lines: [
+      {
+        lineId,
+        itemId: d.itemId ?? null,
+        quantity: Math.max(1, ...(d.quantity ?? [1]))
+      }
+    ],
+    customerId: quote.data?.customerId ?? null,
+    customerLocationId: quote.data?.customerLocationId ?? null
+  });
+  const deduped = dedupeViolations(violations);
+  if (deduped.length > 0) {
+    const blocked = isBlocked(deduped, acknowledged);
+    const outcome = blocked ? ("blocked" as const) : ("acknowledged" as const);
+
+    // Persist override evidence — one row per deduped violation. Failures
+    // must never break the submission.
+    const acknowledgmentInsert = await serviceRole
+      .from("itemRuleAcknowledgment")
+      .insert(
+        deduped.map((v) => ({
+          companyId,
+          ruleId: v.ruleId,
+          ruleName: ruleNames[v.ruleId] ?? null,
+          documentType: "quote" as const,
+          documentId: quoteId,
+          documentLineId: lineId,
+          itemId: d.itemId ?? null,
+          severity: v.severity,
+          outcome,
+          message: v.message,
+          createdBy: userId
+        }))
+      );
+    if (acknowledgmentInsert.error) {
+      logger.error("Failed to record item rule acknowledgments", {
+        error: acknowledgmentInsert.error
+      });
+    }
+
+    // Notify the configured group — fire-and-forget; a notification failure
+    // must never break the submission.
+    try {
+      const companySettings = await getCompanySettings(serviceRole, companyId);
+      if (companySettings.data?.itemRuleNotificationGroup?.length) {
+        await trigger("notify", {
+          companyId,
+          documentId: `quote:${quoteId}:${outcome}`,
+          event: NotificationEvent.ItemRuleViolation,
+          recipient: {
+            type: "group",
+            groupIds: companySettings.data.itemRuleNotificationGroup
+          },
+          from: userId
+        });
+      }
+    } catch (err) {
+      logger.error("Failed to trigger item rule violation notification", {
+        error: err
+      });
+    }
+
+    if (blocked) {
+      return { error: null, data: null, violations: deduped, ruleNames };
+    }
+  }
+
   const updateQuotationLine = await upsertQuoteLine(client, {
     id: lineId,
     ...d,
@@ -209,7 +301,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     !!d.quantity?.length;
 
   if (needsSeed) {
-    const serviceRole = getCarbonServiceRole();
     const existingPrices = await serviceRole
       .from("quoteLinePrice")
       .select("quantity")

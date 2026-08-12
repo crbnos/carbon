@@ -885,6 +885,9 @@ msgstr "모든 문서"
 msgid "All item types"
 msgstr "모든 품목 유형"
 
+msgid "All items"
+msgstr "모든 항목"
+
 msgid "All Items"
 msgstr "모든 품목"
 
@@ -4864,6 +4867,9 @@ msgstr "공급업체 유형 수정"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "\"전체에 적용\" 플래그를 제거하려면 규칙을 수정하세요"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "규칙의 항목 필터를 편집하여 제거합니다"
+
 msgid "Edit Timecard"
 msgstr "근무기록 수정"
 
@@ -4963,6 +4969,9 @@ msgstr "전표, 재무 보고서, 총계정원장 전기를 포함한 완전 발
 msgid "Enable in Settings"
 msgstr "설정에서 활성화"
 
+msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "견적서 또는 판매 주문 라인에서 항목 규칙 위반이 차단되거나 승인될 때 알림을 활성화합니다."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "RFQ가 견적 준비 완료로 표시될 때 알림을 활성화하세요."
 
@@ -5023,6 +5032,12 @@ msgstr "종료 ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "강제 — 편집이 차단되었습니다."
+
+msgid "Enforce checks on quote and sales order lines for this item."
+msgstr "이 항목에 대한 견적서 및 판매 주문 라인에 검사를 적용합니다."
+
+msgid "Enforce customer and item checks when items are added to quotes and sales orders."
+msgstr "항목을 견적서 및 판매 주문에 추가할 때 고객 및 항목 검사를 적용합니다."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "입고, 출하, 이동, 조정 전반에 걸쳐 품목별 검증 및 지침을 적용합니다."
@@ -6984,6 +6999,15 @@ msgstr "품목은 선택한 유형 또는 선택한 그룹 중 하나를 충족�
 
 msgid "Item Name"
 msgstr "품목명"
+
+msgid "Item Rule Violations"
+msgstr "항목 규칙 위반"
+
+msgid "Item rules"
+msgstr "항목 규칙"
+
+msgid "Item Rules"
+msgstr "항목 규칙"
 
 msgid "Item Scope"
 msgstr "품목 범위"
@@ -9495,6 +9519,9 @@ msgstr "가격을 확인할 고객 또는 고객 유형을 선택하세요."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "날짜를 선택하거나 비워두어 지우세요."
+
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "라이브러리에서 기존 규칙을 선택하거나 새 규칙을 만들어 이 항목에 대한 검사를 시작합니다."
 
 msgid "Pick List"
 msgstr "피킹 목록"
@@ -14051,6 +14078,9 @@ msgstr "{0}개의 규칙을 사용하려면 업그레이드하세요"
 msgid "Upgrade to unlock audit history"
 msgstr "감사 기록을 사용하려면 업그레이드하세요"
 
+msgid "Upgrade to unlock item rules"
+msgstr "항목 규칙을 잠금 해제하려면 업그레이드하십시오"
+
 msgid "Upload"
 msgstr "업로드"
 
@@ -14891,6 +14921,9 @@ msgstr "공급업체 견적이 제출될 때 알림을 누가 받아야 합니�
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "재고 작업이 완료될 때 알림을 누가 받아야 합니까?"
+
+msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
+msgstr "항목 규칙 위반이 차단되거나 승인될 때 누가 알림을 받아야 합니까?"
 
 msgid "Who you buy from."
 msgstr "누구에게서 구매하는지."

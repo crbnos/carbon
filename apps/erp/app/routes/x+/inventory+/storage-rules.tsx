@@ -5,12 +5,9 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import {
-  getRuleAssignmentCounts,
-  getStorageRules
-} from "~/modules/storage-rules";
-import StorageRulesGroups from "~/modules/storage-rules/ui/StorageRulesGroups";
-import StorageRulesUpgradeOverlay from "~/modules/storage-rules/ui/StorageRulesUpgradeOverlay";
+import { getRuleAssignmentCounts, getStorageRules } from "~/modules/inventory";
+import StorageRulesGroups from "~/modules/inventory/ui/StorageRules/StorageRulesGroups";
+import StorageRulesUpgradeOverlay from "~/modules/inventory/ui/StorageRules/StorageRulesUpgradeOverlay";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

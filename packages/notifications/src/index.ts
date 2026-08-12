@@ -16,6 +16,7 @@ export enum NotificationEvent {
   ChangeNoticeDone = "change-order-done",
   DigitalQuoteResponse = "digital-quote-response",
   GaugeCalibrationExpired = "gauge-calibration-expired",
+  ItemRuleViolation = "item-rule-violation",
   JobAssignment = "job-assignment",
   JobCompleted = "job-completed",
   JobOperationAssignment = "job-operation-assignment",
@@ -132,6 +133,7 @@ export function getNotificationTopic(
     case NotificationEvent.SupplierQuoteAssignment:
     case NotificationEvent.SupplierQuoteResponse:
       return NotificationTopic.Quote;
+    case NotificationEvent.ItemRuleViolation:
     case NotificationEvent.SalesOrderAssignment:
     case NotificationEvent.SalesRfqAssignment:
     case NotificationEvent.SalesRfqReady:
@@ -208,6 +210,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "New maintenance dispatch";
     case NotificationEvent.GaugeCalibrationExpired:
       return "Gauge calibration expired";
+    case NotificationEvent.ItemRuleViolation:
+      return "Item rule violation";
     case NotificationEvent.NonConformanceAssignment:
       return "Issue assigned to you";
     case NotificationEvent.RiskAssignment:
@@ -262,6 +266,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View suggestion";
     case NotificationEvent.GaugeCalibrationExpired:
       return "View gauge";
+    case NotificationEvent.ItemRuleViolation:
+      return "View document";
     case NotificationEvent.QuoteExpired:
       return "View quote";
     case NotificationEvent.TrainingReminder:

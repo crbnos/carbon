@@ -21,7 +21,8 @@ import {
   type Violation
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { companyHasPlan } from "../plan.server";
+import { companyHasPlan } from "../../plan.server";
+import { dedupeViolations, isBlocked } from "../violations";
 import {
   buildLineContext,
   type ItemCtxRow,
@@ -52,34 +53,11 @@ export const isStorageRulesEnabledForCompany = (
 // Block decision
 // ---------------------------------------------------------------------------
 
-/** Any error blocks unconditionally. Warns block until acknowledged. */
-export const isBlocked = (
-  violations: Violation[],
-  acknowledged: boolean
-): boolean => {
-  for (let i = 0; i < violations.length; i++) {
-    if (violations[i]!.severity === "error") return true;
-  }
-  return violations.length > 0 && !acknowledged;
-};
-
-/**
- * Collapse violations by `ruleId + message`. Call when accumulating results
- * from multiple `evaluateLinesForSurface` invocations (e.g. item pass +
- * storageUnit pass on the same receipt).
- */
-export const dedupeViolations = (violations: Violation[]): Violation[] => {
-  const seen = new Set<string>();
-  const out: Violation[] = [];
-  for (let i = 0; i < violations.length; i++) {
-    const v = violations[i]!;
-    const key = `${v.ruleId}\x00${v.message}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(v);
-  }
-  return out;
-};
+// `isBlocked` / `dedupeViolations` are pure and live in `../violations` so they
+// are unit-testable without this file's plan-gate import chain. Imported (this
+// file uses `dedupeViolations` below) and re-exported so every existing import
+// path — here and via `../server.ts` — keeps resolving.
+export { dedupeViolations, isBlocked };
 
 // ---------------------------------------------------------------------------
 // Per-target Rules tab data (loader helper)
@@ -215,7 +193,28 @@ const LOADERS: Record<ValueOptionsLoader, LoaderFn | null> = {
   // Static enums — value is already the label.
   itemTypes: null,
   replenishmentSystems: null,
-  itemTrackingTypes: null
+  itemTrackingTypes: null,
+  // Item-rule loaders (customer-context fields).
+  customerTypes: async (c, id) => {
+    const { data } = await c
+      .from("customerType")
+      .select("id, name")
+      .eq("companyId", id);
+    return (data ?? []) as { id: string; name: string }[];
+  },
+  customerStatuses: async (c, id) => {
+    const { data } = await c
+      .from("customerStatus")
+      .select("id, name")
+      .eq("companyId", id);
+    return (data ?? []) as { id: string; name: string }[];
+  },
+  // Countries are global (no companyId); the stored condition value is the
+  // alpha-2 code, so it plays the `id` role here.
+  countries: async (c) => {
+    const { data } = await c.from("country").select("alpha2, name");
+    return (data ?? []).map((r) => ({ id: r.alpha2, name: r.name }));
+  }
 };
 
 const EMPTY_RESOLVER = (): undefined => undefined;

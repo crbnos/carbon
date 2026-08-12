@@ -9,7 +9,7 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteStorageRule, getStorageRule } from "~/modules/storage-rules";
+import { deleteStorageRule, getStorageRule } from "~/modules/inventory";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 

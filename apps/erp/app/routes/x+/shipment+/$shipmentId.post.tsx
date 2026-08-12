@@ -4,9 +4,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
+  evaluateItemRulesForSalesDocument,
   evaluateLinesForSurface,
   isBlocked
-} from "@carbon/ee/storage-rules.server";
+} from "@carbon/ee/rules.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
@@ -49,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // fire here too.
   const { data: shipmentForSurface } = await serviceRole
     .from("shipment")
-    .select("sourceDocument")
+    .select("sourceDocument, sourceDocumentId")
     .eq("id", shipmentId)
     .single();
   const surfaces: ("shipment" | "warehouseTransfer")[] = ["shipment"];
@@ -95,6 +96,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
       targetType: "item",
       surface,
       lines: evalLines
+    });
+    allViolations.push(...violations);
+    Object.assign(allRuleNames, ruleNames);
+  }
+
+  // Item rules on the originating sales order — the last physical checkpoint.
+  // Item rules have no `shipment` surface (their enum is sales-document only),
+  // so this re-evaluates the SO under `salesOrderLine` rather than inventing a
+  // surface. It is what catches an order confirmed BEFORE a rule was authored,
+  // and it is the first moment a real shipped quantity exists.
+  if (
+    shipmentForSurface?.sourceDocument === "Sales Order" &&
+    shipmentForSurface.sourceDocumentId
+  ) {
+    const { violations, ruleNames } = await evaluateItemRulesForSalesDocument({
+      client: serviceRole,
+      companyId,
+      userId,
+      documentType: "salesOrder",
+      documentId: shipmentForSurface.sourceDocumentId
     });
     allViolations.push(...violations);
     Object.assign(allRuleNames, ruleNames);

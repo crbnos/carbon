@@ -1,15 +1,18 @@
-// Storage Rules evaluator. AST → JIT-compiled closure with LRU cache.
-// Used server-side on transactions (receipt, shipment, stock transfer,
-// inventory adjustment, place, pick, operation start/finish, material
-// issue/receive) to enforce per-entity validation/guideline rules.
+// Shared rule engine for storage rules AND item rules. AST → JIT-compiled
+// closure with LRU cache. Used server-side on storage-rule transactions
+// (receipt, shipment, stock transfer, inventory adjustment, place, pick,
+// operation start/finish, material issue/receive) and on item-rule sales
+// surfaces (quote line, sales order line) to enforce per-entity
+// validation/guideline rules.
 //
-// Each rule binds to a single `TargetType` (`item` or `workCenter`). The field
-// registry lives in `./field-registry`.
+// Each storage rule binds to a single `TargetType` (`item` or `workCenter`);
+// item rules are item-scoped. The field registry lives in `./field-registry`.
 
 import {
   type FieldContext,
   type FieldDef,
   getFieldDef,
+  getFieldsForItemRules,
   getFieldsForTargetType
 } from "./field-registry";
 
@@ -57,6 +60,18 @@ export const TRANSACTION_SURFACES = [
   "materialReceive"
 ] as const;
 export type TransactionSurface = (typeof TRANSACTION_SURFACES)[number];
+
+/**
+ * Sales-document surfaces an ITEM RULE may opt into. Mirrors the Postgres
+ * ENUM `itemRuleSurface`. Item rules reuse this engine (same AST, operators,
+ * compiler, evaluator) but fire when items are added to sales documents, not
+ * on warehouse transactions.
+ */
+export const ITEM_RULE_SURFACES = ["quoteLine", "salesOrderLine"] as const;
+export type ItemRuleSurface = (typeof ITEM_RULE_SURFACES)[number];
+
+/** Any surface the shared engine can evaluate a compiled rule on. */
+export type RuleSurface = TransactionSurface | ItemRuleSurface;
 
 /**
  * Which surfaces are valid for each target type. The form validator narrows
@@ -110,6 +125,13 @@ export type Violation = {
   ruleId: string;
   severity: Severity;
   message: string;
+  /**
+   * The document line that produced this violation. Set when rules are
+   * evaluated across a whole document (a terminal gate) so the UI can group
+   * violations by line and deep-link to the offending one. Left undefined by
+   * single-line evaluation, where the caller already knows the line.
+   */
+  lineId?: string;
 };
 
 export type RuleContext = {
@@ -119,6 +141,11 @@ export type RuleContext = {
   workCenter?: Record<string, unknown>;
   operation?: Record<string, unknown>;
   transaction?: Record<string, unknown>;
+  /** Item-rule surfaces only — the sales document's customer. */
+  customer?: Record<string, unknown> & {
+    customFields?: Record<string, unknown>;
+    location?: Record<string, unknown>;
+  };
 };
 
 export type StorageRuleRow = {
@@ -143,7 +170,7 @@ export type CompiledRule = {
   targetType: TargetType;
   severity: Severity;
   rawMessage: string;
-  surfaces: TransactionSurface[];
+  surfaces: readonly RuleSurface[];
   conditions: Condition[];
   requiredFieldChecks: {
     field: string;
@@ -164,7 +191,8 @@ const ROOT_KEYS = new Set([
   "storageUnit",
   "workCenter",
   "operation",
-  "transaction"
+  "transaction",
+  "customer"
 ]);
 
 export const buildResolver = (path: string): Resolver => {
@@ -338,6 +366,45 @@ export const __resetStorageRulesCache = (): void => {
 export const __storageRulesCacheSize = (): number => cache.size;
 
 // ---------------------------------------------------------------------------
+// Item rules — sales-document rules (itemRule table) reusing this engine
+// ---------------------------------------------------------------------------
+
+/**
+ * Raw `itemRule` row shape the compiler needs. Unlike `StorageRuleRow` there
+ * is no `targetType` column — item rules are always item-target — and
+ * `surfaces` holds `ItemRuleSurface` values (Postgres ENUM `itemRuleSurface`).
+ */
+export type ItemRuleRow = {
+  id: string;
+  severity: Severity;
+  message: string;
+  conditionAst: ConditionAst;
+  /**
+   * Surfaces this rule applies to. Empty arrays are not allowed at the DB
+   * level (CHECK constraint); treat missing/empty client-side as "all item
+   * rule surfaces".
+   */
+  surfaces?: ItemRuleSurface[];
+  updatedAt?: string | null;
+  active?: boolean;
+};
+
+/**
+ * Compile an item rule through the shared LRU cache. Normalizes the row to
+ * the storage compiler's shape (`targetType: "item"`, defaulted surfaces).
+ * The cast is safe: `CompiledRule.surfaces` is typed as the `RuleSurface`
+ * union and the evaluator only ever runs `.includes(surface)` on it.
+ */
+export const compileItemRuleWithCache = (row: ItemRuleRow): CompiledRule =>
+  compileWithCache({
+    ...row,
+    targetType: "item",
+    surfaces: (row.surfaces && row.surfaces.length > 0
+      ? row.surfaces
+      : [...ITEM_RULE_SURFACES]) as unknown as TransactionSurface[]
+  });
+
+// ---------------------------------------------------------------------------
 // Message interpolation
 // ---------------------------------------------------------------------------
 
@@ -458,7 +525,7 @@ const buildRequiredFieldMessage = (
 export const evaluateRules = (
   rules: CompiledRule[],
   ctx: RuleContext,
-  surface: TransactionSurface,
+  surface: RuleSurface,
   opts?: EvaluateRulesOptions
 ): Violation[] => {
   const out: Violation[] = [];
@@ -560,7 +627,7 @@ export const toItemRuleFilter = (row: {
 // Note `"storage"` is the `FieldContext` value; it maps to the `storageUnit`
 // RuleContext root key.
 //
-// Locked by the anti-drift test in `packages/ee/src/storage-rules/context.test.ts`,
+// Locked by the anti-drift test in `packages/ee/src/rules/storage/context.test.ts`,
 // which asserts the ctx `evaluateLinesForSurface` builds for each surface
 // populates exactly these contexts.
 export const SURFACE_CONTEXT_AVAILABILITY: Record<
@@ -603,6 +670,46 @@ export const getFieldsForTargetTypeAndSurfaces = (
 ): FieldDef[] =>
   getFieldsForTargetType(targetType).filter((f) =>
     isFieldAvailableOnSurfaces(f, surfaces)
+  );
+
+/**
+ * Item-rule counterpart of `SURFACE_CONTEXT_AVAILABILITY`: which root
+ * `FieldContext`s the item-rule evaluator structurally builds in `RuleContext`
+ * for each sales-document surface. Locked by the anti-drift test in
+ * `packages/ee/src/item-rules/context.test.ts`.
+ */
+export const ITEM_RULE_SURFACE_CONTEXT_AVAILABILITY: Record<
+  ItemRuleSurface,
+  readonly FieldContext[]
+> = {
+  quoteLine: ["item", "customer", "transaction"],
+  salesOrderLine: ["item", "customer", "transaction"]
+};
+
+/**
+ * A field resolves for an item rule iff its context is structurally available
+ * on EVERY surface the rule subscribes to. Empty surfaces → caller hasn't
+ * picked surfaces yet; show the full item-rule field set.
+ */
+export const isFieldAvailableOnItemRuleSurfaces = (
+  def: FieldDef,
+  surfaces: readonly ItemRuleSurface[]
+): boolean =>
+  surfaces.length === 0 ||
+  surfaces.every((s) =>
+    ITEM_RULE_SURFACE_CONTEXT_AVAILABILITY[s]?.includes(def.context)
+  );
+
+/**
+ * Registry subset an item rule may reference when it subscribes to
+ * `surfaces`. Narrows `getFieldsForItemRules` by per-surface context
+ * availability. The item-rule builder field picker filters through this.
+ */
+export const getFieldsForItemRuleSurfaces = (
+  surfaces: readonly ItemRuleSurface[]
+): FieldDef[] =>
+  getFieldsForItemRules().filter((f) =>
+    isFieldAvailableOnItemRuleSurfaces(f, surfaces)
   );
 
 // ---------------------------------------------------------------------------

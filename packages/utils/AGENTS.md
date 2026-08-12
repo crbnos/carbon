@@ -1,6 +1,6 @@
 # @carbon/utils
 
-Pure utility functions shared across all Carbon packages and apps. Covers accounting, arrays, BOM, dates, math, strings, status helpers, storage rules, URL manipulation, and more.
+Pure utility functions shared across all Carbon packages and apps. Covers accounting, arrays, BOM, dates, math, strings, status helpers, the storage/item rule engine, URL manipulation, and more.
 
 ## Always
 
@@ -12,7 +12,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 ## Ask First
 
 - Adding new dependencies — this package is imported everywhere; new deps increase bundle size across all apps.
-- Modifying `storage-rules.ts` — affects Supabase storage bucket policies and file access patterns.
+- Modifying `rules.ts` / `field-registry.ts` / `rules-schema.ts` — the rule-evaluation engine (condition AST compiler, operators, field registry) and its zod mirror, shared by storage rules (`~/modules/inventory`) and item rules (`~/modules/items`); changes affect rule evaluation across ERP and MES.
 - Changing `Edition` enum or `isBrowser` detection — used by `@carbon/env` and auth logic.
 
 ## Never
@@ -24,7 +24,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/utils test        # Runs storage-rules tests etc.
+pnpm --filter @carbon/utils test        # Runs rule-engine tests etc.
 pnpm --filter @carbon/utils typecheck
 ```
 
@@ -39,10 +39,11 @@ pnpm --filter @carbon/utils typecheck
 | `math` | Rounding, precision, numeric utilities |
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
 | `status` | Status resolution, status color mapping |
-| `storage-rules` | Supabase storage bucket access policies |
+| `rules` | Rule engine: condition-AST compiler/evaluator + surfaces for storage rules and item rules |
+| `rules-schema` | Zod mirror of the rule AST (`conditionAstSchema`, `conditionAstFormField`, `RULE_OPERATORS`/`RULE_MATCH_KINDS`/`RULE_SEVERITIES`). Shared by both ERP rule form validators so neither module imports the other |
 | `supabase` | Typed Supabase query helpers |
 | `types` | Shared TypeScript types (`Edition`, generic utility types) |
-| `field-registry` | Dynamic field registration for custom fields |
+| `field-registry` | Field registry for the rule builder/evaluator (which fields rules may reference) |
 | `labels` | Human-readable label generation |
 | `url` | URL construction and manipulation |
 

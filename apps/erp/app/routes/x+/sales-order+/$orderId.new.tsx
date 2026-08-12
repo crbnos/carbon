@@ -1,7 +1,17 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateItemRuleLines,
+  isBlocked,
+  resolveSalesOrderShipTo
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect, useParams } from "react-router";
 import { useRouteData, useUser } from "~/hooks";
@@ -13,9 +23,12 @@ import {
   upsertSalesOrderLine
 } from "~/modules/sales";
 import { SalesOrderLineForm } from "~/modules/sales/ui/SalesOrder";
+import { getCompanySettings } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "orderid-new");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -62,6 +75,101 @@ export async function action({ request, params }: ActionFunctionArgs) {
     d.assetId = undefined;
   }
 
+  // Item-rule enforcement — only for lines that reference an item (Comment
+  // and Fixed Asset lines carry no itemId). Blocked submissions return
+  // violations for the form's violation modal; acknowledged warns pass
+  // through on re-submit.
+  const serviceRole = getCarbonServiceRole();
+  let acknowledgedViolations: ReturnType<typeof dedupeViolations> = [];
+  let acknowledgedRuleNames: Record<string, string> = {};
+  if (d.itemId) {
+    const acknowledged = formData.get("acknowledged") === "true";
+    // Drop shipments deliver to the drop-ship location, not the header's —
+    // evaluating the header alone would clear an order that ships elsewhere.
+    const shipTo = await resolveSalesOrderShipTo(
+      serviceRole,
+      orderId,
+      companyId
+    );
+    const { violations, ruleNames } = await evaluateItemRuleLines({
+      client: serviceRole,
+      companyId,
+      userId,
+      surface: "salesOrderLine",
+      lines: [
+        { lineId: "new", itemId: d.itemId, quantity: d.saleQuantity ?? 1 }
+      ],
+      customerId: shipTo.customerId,
+      customerLocationId: shipTo.customerLocationId
+    });
+    const deduped = dedupeViolations(violations);
+    if (deduped.length > 0) {
+      const blocked = isBlocked(deduped, acknowledged);
+      const outcome = blocked
+        ? ("blocked" as const)
+        : ("acknowledged" as const);
+
+      if (blocked) {
+        // Persist blocked evidence — one row per deduped violation. No line
+        // exists on a blocked create, so documentLineId stays null. Failures
+        // must never break the submission.
+        const acknowledgmentInsert = await serviceRole
+          .from("itemRuleAcknowledgment")
+          .insert(
+            deduped.map((v) => ({
+              companyId,
+              ruleId: v.ruleId,
+              ruleName: ruleNames[v.ruleId] ?? null,
+              documentType: "salesOrder" as const,
+              documentId: orderId,
+              documentLineId: null,
+              itemId: d.itemId ?? null,
+              severity: v.severity,
+              outcome,
+              message: v.message,
+              createdBy: userId
+            }))
+          );
+        if (acknowledgmentInsert.error) {
+          logger.error("Failed to record item rule acknowledgments", {
+            error: acknowledgmentInsert.error
+          });
+        }
+      }
+
+      // Notify the configured group — fire-and-forget; a notification failure
+      // must never break the submission.
+      try {
+        const companySettings = await getCompanySettings(
+          serviceRole,
+          companyId
+        );
+        if (companySettings.data?.itemRuleNotificationGroup?.length) {
+          await trigger("notify", {
+            companyId,
+            documentId: `salesOrder:${orderId}:${outcome}`,
+            event: NotificationEvent.ItemRuleViolation,
+            recipient: {
+              type: "group",
+              groupIds: companySettings.data.itemRuleNotificationGroup
+            },
+            from: userId
+          });
+        }
+      } catch (err) {
+        logger.error("Failed to trigger item rule violation notification", {
+          error: err
+        });
+      }
+
+      if (blocked) {
+        return { error: null, data: null, violations: deduped, ruleNames };
+      }
+      acknowledgedViolations = deduped;
+      acknowledgedRuleNames = ruleNames;
+    }
+  }
+
   const createSalesOrderLine = await upsertSalesOrderLine(client, {
     ...d,
     companyId,
@@ -77,6 +185,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(createSalesOrderLine.error, "Failed to create sales order line.")
       )
     );
+  }
+
+  // Acknowledged proceed: persist override evidence now that the line exists
+  // so documentLineId captures the created line. Failures must never break
+  // the submission.
+  if (acknowledgedViolations.length > 0) {
+    const acknowledgmentInsert = await serviceRole
+      .from("itemRuleAcknowledgment")
+      .insert(
+        acknowledgedViolations.map((v) => ({
+          companyId,
+          ruleId: v.ruleId,
+          ruleName: acknowledgedRuleNames[v.ruleId] ?? null,
+          documentType: "salesOrder" as const,
+          documentId: orderId,
+          documentLineId: createSalesOrderLine.data.id,
+          itemId: d.itemId ?? null,
+          severity: v.severity,
+          outcome: "acknowledged" as const,
+          message: v.message,
+          createdBy: userId
+        }))
+      );
+    if (acknowledgmentInsert.error) {
+      logger.error("Failed to record item rule acknowledgments", {
+        error: acknowledgmentInsert.error
+      });
+    }
   }
 
   throw redirect(path.to.salesOrderDetails(orderId));

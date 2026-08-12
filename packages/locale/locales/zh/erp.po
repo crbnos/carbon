@@ -885,6 +885,9 @@ msgstr "所有文档"
 msgid "All item types"
 msgstr "所有项目类型"
 
+msgid "All items"
+msgstr "所有项目"
+
 msgid "All Items"
 msgstr "所有项目"
 
@@ -4864,6 +4867,9 @@ msgstr "编辑供应商类型"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "编辑规则以移除\"应用于全部\"标志"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "编辑规则的项目过滤器以将其删除"
+
 msgid "Edit Timecard"
 msgstr "编辑时间卡"
 
@@ -4963,6 +4969,9 @@ msgstr "启用完整的权责发生制会计，包括日记账分录、财务报
 msgid "Enable in Settings"
 msgstr "在设置中启用"
 
+msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "当在报价或销售订单行上阻止或确认项目规则违反时启用通知。"
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "在RFQ标记为准备报价时启用通知。"
 
@@ -5023,6 +5032,12 @@ msgstr "结束 ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "强制执行—编辑被阻止"
+
+msgid "Enforce checks on quote and sales order lines for this item."
+msgstr "对此项目的报价和销售订单行强制执行检查。"
+
+msgid "Enforce customer and item checks when items are added to quotes and sales orders."
+msgstr "在将项目添加到报价和销售订单时强制执行客户和项目检查。"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "在收据、发货、转移和调整中强制执行按项目验证和指南。"
@@ -6984,6 +6999,15 @@ msgstr "项目必须匹配选定的类型或选定的组"
 
 msgid "Item Name"
 msgstr "物料名称"
+
+msgid "Item Rule Violations"
+msgstr "项目规则违反"
+
+msgid "Item rules"
+msgstr "项目规则"
+
+msgid "Item Rules"
+msgstr "项目规则"
 
 msgid "Item Scope"
 msgstr "物品范围"
@@ -9495,6 +9519,9 @@ msgstr "选择客户或客户类型以查看其定价。"
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "选择日期或留空以清除。"
+
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "从库中选择现有规则或创建新规则以开始对此项目强制执行检查。"
 
 msgid "Pick List"
 msgstr "拣货单"
@@ -14051,6 +14078,9 @@ msgstr "升级以解锁 {0} 规则"
 msgid "Upgrade to unlock audit history"
 msgstr "升级以解锁审计历史"
 
+msgid "Upgrade to unlock item rules"
+msgstr "升级以解锁项目规则"
+
 msgid "Upload"
 msgstr "上传"
 
@@ -14891,6 +14921,9 @@ msgstr "供应商报价提交时，谁应该收到通知？"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "当库存工作完成时，谁应该收到通知？"
+
+msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
+msgstr "当项目规则违反被阻止或确认时，谁应该收到通知？"
 
 msgid "Who you buy from."
 msgstr "你从谁那里购买。"

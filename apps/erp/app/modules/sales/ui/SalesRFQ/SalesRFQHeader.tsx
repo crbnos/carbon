@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { useRuleViolations } from "@carbon/ee/rules";
 import { Select, Submit, ValidatedForm } from "@carbon/form";
 import {
   Alert,
@@ -26,7 +27,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   LuCircleCheck,
   LuCircleX,
@@ -414,17 +415,27 @@ function ConvertToQuoteModal({
     path.to.salesRfq(rfqId)
   );
 
-  const fetcher = useFetcher<{ error: string | null }>();
+  // Converting re-evaluates item rules across the RFQ's mapped lines (the
+  // terminal gate in the action) before the edge function mints quote lines.
+  // Route the submission through the violations hook so a blocked convert
+  // opens the shared modal instead of silently doing nothing.
+  const ruleViolations = useRuleViolations({
+    action: path.to.salesRfqConvert(rfqId),
+    onSuccess: onClose
+  });
+  const fetcher = ruleViolations.fetcher as ReturnType<
+    typeof useFetcher<{ error: string | null; violations?: unknown[] }>
+  >;
   const isLoading = fetcher.state !== "idle";
   const linesWithoutItems = lines.filter((line) => !line.itemId);
   const requiresPartNumbers = linesWithoutItems.length > 0;
   const requiresCustomer = !routeData?.rfqSummary?.customerId;
 
-  useEffect(() => {
-    if (fetcher.state === "loading") {
-      onClose();
-    }
-  }, [fetcher.state, onClose]);
+  // NOTE: do NOT close on `fetcher.state === "loading"`. A fetcher passes
+  // through `loading` (revalidation) even when the action RETURNS data, so that
+  // would unmount this modal — and the nested ViolationModal — the moment the
+  // item-rule gate returns violations. Closing is owned by the hook's
+  // `onSuccess`, which fires only when the action actually succeeded.
 
   return (
     <Modal
@@ -508,6 +519,7 @@ function ConvertToQuoteModal({
           </fetcher.Form>
         </ModalFooter>
       </ModalContent>
+      <ruleViolations.ViolationModal />
     </Modal>
   );
 }

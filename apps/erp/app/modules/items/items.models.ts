@@ -1,3 +1,10 @@
+import {
+  conditionAstFormField,
+  getFieldDef,
+  ITEM_RULE_SURFACES,
+  isFieldAvailableOnItemRuleSurfaces,
+  RULE_SEVERITIES
+} from "@carbon/utils";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -1292,4 +1299,53 @@ export type ChangeNoticeItemDiff = {
 export const changeNoticeTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" })
+});
+
+// -----------------------------------------------------------------------------
+// Item Rules — predicate rules evaluated when an item is added to a sales
+// document (quote line / sales order line). Distinct from storage rules
+// (`~/modules/inventory`, warehouse/MES surfaces) and the configurator's
+// `configurationRule`. The AST schema and engine are shared via @carbon/utils.
+// -----------------------------------------------------------------------------
+export const itemRuleSeverities = RULE_SEVERITIES;
+
+export const itemRuleValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().min(1, { message: "Name is required" }).max(120),
+    description: zfd.text(z.string().optional()),
+    message: z.string().min(1, { message: "Message is required" }).max(500),
+    severity: z.enum(itemRuleSeverities),
+    // Item rules are always item-target and broadcast via the filteredItem*
+    // columns (empty = all items), so there is no targetType/appliesToAll.
+    filteredItemTypes: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemGroupIds: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemMatchAll: zfd.checkbox(),
+    active: zfd.checkbox(),
+    surfaces: zfd
+      .repeatableOfType(z.enum(ITEM_RULE_SURFACES))
+      .refine((arr) => arr.length >= 1, {
+        message: "Pick at least one surface"
+      }),
+    conditionAst: conditionAstFormField
+  })
+  .superRefine((val, ctx) => {
+    // Reject conditions on a registry field whose context the evaluator won't
+    // populate for every selected surface (else it resolves undefined → false
+    // "X is required"). Unknown paths are left to runtime presence handling.
+    val.conditionAst.conditions.forEach((c, i) => {
+      const def = getFieldDef(c.field);
+      if (def && !isFieldAvailableOnItemRuleSurfaces(def, val.surfaces)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["conditionAst", "conditions", i, "field"],
+          message: `"${def.label}" isn't available on the selected surface(s)`
+        });
+      }
+    });
+  });
+
+export const itemRuleAssignmentValidator = z.object({
+  itemId: z.string().min(1, { message: "Item ID is required" }),
+  ruleId: z.string().min(1, { message: "Rule ID is required" })
 });

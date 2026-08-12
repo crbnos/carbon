@@ -2,7 +2,16 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateItemRuleLines,
+  isBlocked,
+  resolveSalesOrderShipTo
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import { Card, CardHeader, CardTitle } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -42,9 +51,12 @@ import {
   SalesOrderLineJobs
 } from "~/modules/sales/ui/SalesOrder";
 import { SalesOrderLineShipments } from "~/modules/sales/ui/SalesOrder/SalesOrderLineShipments";
+import { getCompanySettings } from "~/modules/settings";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "orderid-lineid-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
@@ -103,7 +115,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales order. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -129,6 +141,92 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } else {
     d.accountId = undefined;
     d.assetId = undefined;
+  }
+
+  // Item-rule enforcement — only for lines that reference an item (Comment
+  // and Fixed Asset lines carry no itemId). Blocked submissions return
+  // violations for the form's violation modal; acknowledged warns pass
+  // through on re-submit.
+  if (d.itemId) {
+    const acknowledged = formData.get("acknowledged") === "true";
+    const serviceRole = getCarbonServiceRole();
+    // Drop shipments deliver to the drop-ship location, not the header's —
+    // evaluating the header alone would clear an order that ships elsewhere.
+    const shipTo = await resolveSalesOrderShipTo(
+      serviceRole,
+      orderId,
+      companyId
+    );
+    const { violations, ruleNames } = await evaluateItemRuleLines({
+      client: serviceRole,
+      companyId,
+      userId,
+      surface: "salesOrderLine",
+      lines: [{ lineId, itemId: d.itemId, quantity: d.saleQuantity ?? 1 }],
+      customerId: shipTo.customerId,
+      customerLocationId: shipTo.customerLocationId
+    });
+    const deduped = dedupeViolations(violations);
+    if (deduped.length > 0) {
+      const blocked = isBlocked(deduped, acknowledged);
+      const outcome = blocked
+        ? ("blocked" as const)
+        : ("acknowledged" as const);
+
+      // Persist override evidence — one row per deduped violation. Failures
+      // must never break the submission.
+      const acknowledgmentInsert = await serviceRole
+        .from("itemRuleAcknowledgment")
+        .insert(
+          deduped.map((v) => ({
+            companyId,
+            ruleId: v.ruleId,
+            ruleName: ruleNames[v.ruleId] ?? null,
+            documentType: "salesOrder" as const,
+            documentId: orderId,
+            documentLineId: lineId,
+            itemId: d.itemId ?? null,
+            severity: v.severity,
+            outcome,
+            message: v.message,
+            createdBy: userId
+          }))
+        );
+      if (acknowledgmentInsert.error) {
+        logger.error("Failed to record item rule acknowledgments", {
+          error: acknowledgmentInsert.error
+        });
+      }
+
+      // Notify the configured group — fire-and-forget; a notification failure
+      // must never break the submission.
+      try {
+        const companySettings = await getCompanySettings(
+          serviceRole,
+          companyId
+        );
+        if (companySettings.data?.itemRuleNotificationGroup?.length) {
+          await trigger("notify", {
+            companyId,
+            documentId: `salesOrder:${orderId}:${outcome}`,
+            event: NotificationEvent.ItemRuleViolation,
+            recipient: {
+              type: "group",
+              groupIds: companySettings.data.itemRuleNotificationGroup
+            },
+            from: userId
+          });
+        }
+      } catch (err) {
+        logger.error("Failed to trigger item rule violation notification", {
+          error: err
+        });
+      }
+
+      if (blocked) {
+        return { error: null, data: null, violations: deduped, ruleNames };
+      }
+    }
   }
 
   const updateSalesOrderLine = await upsertSalesOrderLine(client, {

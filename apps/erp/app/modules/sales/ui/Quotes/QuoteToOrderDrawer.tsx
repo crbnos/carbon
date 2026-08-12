@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { useRuleViolations } from "@carbon/ee/rules";
 import { SelectControlled, ValidatedForm } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import {
@@ -46,7 +47,7 @@ import {
   LuTruck,
   LuUpload
 } from "react-icons/lu";
-import { useNavigation, useParams } from "react-router";
+import { useParams } from "react-router";
 import type { z } from "zod";
 import { CustomerAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -310,8 +311,15 @@ const QuoteToOrderDrawer = ({
     }
   };
 
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state !== "idle";
+  // Converting re-evaluates item rules across every quote line (the terminal
+  // gate in the action) before the edge function writes sales order lines.
+  // Submitting through the violations hook — rather than a plain navigation —
+  // is what lets a blocked convert surface the shared modal.
+  const ruleViolations = useRuleViolations({
+    action: path.to.convertQuoteToOrder(quote.id!),
+    onSuccess: onClose
+  });
+  const isSubmitting = ruleViolations.fetcher.state !== "idle";
 
   const isNextButtonDisabled =
     step === 1 && Object.keys(selectedLines).length === 0;
@@ -336,6 +344,7 @@ const QuoteToOrderDrawer = ({
             method="post"
             action={path.to.convertQuoteToOrder(quote.id!)}
             validator={salesConfirmValidator}
+            fetcher={ruleViolations.fetcher}
             defaultValues={{
               notification: "None",
               customerContact: quote.customerContactId ?? undefined,
@@ -381,6 +390,7 @@ const QuoteToOrderDrawer = ({
           </>
         )}
       </DrawerContent>
+      <ruleViolations.ViolationModal />
     </Drawer>
   );
 };

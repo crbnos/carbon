@@ -582,6 +582,61 @@ async function buildEventContent(
       };
     }
 
+    case NotificationEvent.ItemRuleViolation: {
+      // Compound documentId (same pattern as JobOperation*):
+      // "<quote|salesOrder>:<documentId>:<blocked|acknowledged>"
+      const [docType, docId, outcome] = documentId.split(":");
+      if (!docId) return null;
+
+      const phrase =
+        outcome === "blocked"
+          ? "blocked by item rules"
+          : "flagged by item rules and acknowledged";
+      const outcomeLabel = outcome === "blocked" ? "Blocked" : "Acknowledged";
+
+      if (docType === "salesOrder") {
+        const salesOrder = await client
+          .from("salesOrder")
+          .select("salesOrderId, customer(name)")
+          .eq("id", docId)
+          .single();
+
+        if (salesOrder.error) {
+          console.error("Failed to get salesOrder", salesOrder.error);
+          throw salesOrder.error;
+        }
+
+        return {
+          description: `A line on Sales Order ${salesOrder.data?.salesOrderId} was ${phrase}`,
+          reference: salesOrder.data?.salesOrderId ?? undefined,
+          details: buildDetails([
+            { label: "Customer", value: salesOrder.data?.customer?.name },
+            { label: "Outcome", value: outcomeLabel }
+          ])
+        };
+      }
+
+      const quote = await client
+        .from("quote")
+        .select("quoteId, customer(name)")
+        .eq("id", docId)
+        .single();
+
+      if (quote.error) {
+        console.error("Failed to get quote", quote.error);
+        throw quote.error;
+      }
+
+      return {
+        description: `A line on Quote ${quote.data?.quoteId} was ${phrase}`,
+        reference: quote.data?.quoteId ?? undefined,
+        details: buildDetails([
+          { label: "Customer", value: quote.data?.customer?.name },
+          { label: "Outcome", value: outcomeLabel }
+        ])
+      };
+    }
+
     case NotificationEvent.StockTransferAssignment: {
       const stockTransfer = await client
         .from("stockTransfer")
@@ -1222,6 +1277,8 @@ export function getActorLabel(type: NotificationEvent): string | null {
       return "Rejected by";
     case NotificationEvent.MaintenanceDispatchCreated:
       return "Created by";
+    case NotificationEvent.ItemRuleViolation:
+      return "Submitted by";
     default:
       return null;
   }

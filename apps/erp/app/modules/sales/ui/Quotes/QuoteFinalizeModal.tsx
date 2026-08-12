@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { useRuleViolations } from "@carbon/ee/rules";
 import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
@@ -53,7 +54,7 @@ type QuotationFinalizeModalProps = {
 const QuotationFinalizeModal = ({
   quote,
   onClose,
-  fetcher,
+  fetcher: _fetcher,
   shipment,
   defaultCc = [],
   pricing
@@ -61,6 +62,16 @@ const QuotationFinalizeModal = ({
   const { t } = useLingui();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
+
+  // Finalizing re-evaluates item rules across every line (the terminal gate in
+  // the action). Route the submission through the violations hook so a blocked
+  // finalize opens the shared modal instead of silently doing nothing, and only
+  // close this modal once the action actually succeeds.
+  const ruleViolations = useRuleViolations({
+    action: path.to.quoteFinalize(quoteId),
+    onSuccess: onClose
+  });
+  const { fetcher } = ruleViolations;
 
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
@@ -146,7 +157,6 @@ const QuotationFinalizeModal = ({
           method="post"
           validator={quoteFinalizeValidator}
           action={path.to.quoteFinalize(quoteId)}
-          onSubmit={onClose}
           defaultValues={{
             notification: notificationType as "Email" | "None",
             customerContact: quote?.customerContactId ?? undefined,
@@ -232,6 +242,7 @@ const QuotationFinalizeModal = ({
           </ModalFooter>
         </ValidatedForm>
       </ModalContent>
+      <ruleViolations.ViolationModal />
     </Modal>
   );
 };

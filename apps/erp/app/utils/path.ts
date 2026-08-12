@@ -656,6 +656,8 @@ export const path = {
     deleteItem: (id: string) => generatePath(`${x}/items/delete/${id}`),
     deleteItemPostingGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
+    deleteItemRule: (id: string) =>
+      generatePath(`${x}/items/item-rules/${id}/delete`),
     deleteJob: (id: string) => generatePath(`${x}/job/${id}/delete`),
     deleteJobMaterial: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/material/delete/${id}`),
@@ -1211,6 +1213,12 @@ export const path = {
     itemPostingGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
     itemPostingGroups: `${x}/items/groups`,
     itemProperties: (id: string) => generatePath(`${x}/items/${id}/properties`),
+    itemRule: (id: string) => generatePath(`${x}/items/item-rules/${id}`),
+    itemRuleAssign: (itemId: string) =>
+      generatePath(`${x}/items/item-rules/assign/${itemId}`),
+    itemRules: `${x}/items/item-rules`,
+    itemRuleUnassign: (itemId: string, ruleId: string) =>
+      generatePath(`${x}/items/item-rules/unassign/${itemId}/${ruleId}`),
     items: `${x}/items`,
     itemsSettings: `${x}/settings/items`,
     job: (id: string) => generatePath(`${x}/job/${id}`),
@@ -1456,6 +1464,7 @@ export const path = {
     newIssueType: `${x}/quality/issue-types/new`,
     newIssueWorkflow: `${x}/issue-workflow/new`,
     newItemPostingGroup: `${x}/items/groups/new`,
+    newItemRule: `${x}/items/item-rules/new`,
     newJob: `${x}/job/new`,
     newJobMaterial: (jobId: string) =>
       generatePath(`${x}/job/methods/${jobId}/material/new`),

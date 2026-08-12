@@ -1,6 +1,7 @@
 import type { ComboboxProps } from "@carbon/form";
 import { useMount } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
+import { useMemo } from "react";
 import { useFetcher } from "react-router";
 import { Combobox } from "~/components/Form";
 import type { getCountries } from "~/modules/shared";
@@ -26,12 +27,12 @@ export const useCountries = () => {
     countryFetcher.load(path.to.api.countries);
   });
 
-  const countries = countryFetcher.data?.data ?? [];
-
-  const options = countries.map((c) => ({
-    value: c.alpha2,
-    label: c.name
-  }));
+  const options = useMemo(() => {
+    return (countryFetcher.data?.data ?? []).map((c) => ({
+      value: c.alpha2,
+      label: c.name
+    }));
+  }, [countryFetcher.data?.data]);
 
   return options;
 };

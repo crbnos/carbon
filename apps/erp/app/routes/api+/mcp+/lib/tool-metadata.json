@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-05T17:32:29.010Z",
-  "totalTools": 1413,
+  "generated": "2026-08-12T22:08:26.855Z",
+  "totalTools": 1423,
   "modules": 15,
   "tools": [
     {
@@ -8041,6 +8041,149 @@
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getStorageRules",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get storage rules",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "targetType": {}
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "inventory_getStorageRule",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get storage rule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "inventory_upsertStorageRule",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "upsert storage rule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "rule"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "rule": {}
+        },
+        "required": [
+          "rule"
+        ]
+      }
+    },
+    {
+      "name": "inventory_deleteStorageRule",
+      "module": "inventory",
+      "classification": "DESTRUCTIVE",
+      "description": "delete storage rule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getRuleAssignmentCounts",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get rule assignment counts",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "ruleIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ruleIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ruleIds"
         ]
       }
     },
@@ -16126,6 +16269,148 @@
         },
         "required": [
           "changeNoticeId"
+        ]
+      }
+    },
+    {
+      "name": "items_getItemRules",
+      "module": "items",
+      "classification": "READ",
+      "description": "get item rules",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "items_getItemRule",
+      "module": "items",
+      "classification": "READ",
+      "description": "get item rule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_upsertItemRule",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "upsert item rule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "rule"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "rule": {}
+        },
+        "required": [
+          "rule"
+        ]
+      }
+    },
+    {
+      "name": "items_deleteItemRule",
+      "module": "items",
+      "classification": "DESTRUCTIVE",
+      "description": "delete item rule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_getItemRuleAssignmentCounts",
+      "module": "items",
+      "classification": "READ",
+      "description": "get item rule assignment counts",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "ruleIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ruleIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ruleIds"
         ]
       }
     },
@@ -36106,34 +36391,6 @@
       }
     },
     {
-      "name": "sales_insertSalesOrderLines",
-      "module": "sales",
-      "classification": "WRITE",
-      "description": "insert sales order lines",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "salesOrderLines"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "salesOrderLines": {
-            "type": "array",
-            "items": {}
-          }
-        },
-        "required": [
-          "salesOrderLines"
-        ]
-      }
-    },
-    {
       "name": "sales_finalizeQuote",
       "module": "sales",
       "classification": "WRITE",
@@ -41010,6 +41267,36 @@
         },
         "required": [
           "accountsReceivableEmail"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateItemRuleNotificationSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update item rule notification setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "itemRuleNotificationGroup"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemRuleNotificationGroup": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "itemRuleNotificationGroup"
         ]
       }
     },
