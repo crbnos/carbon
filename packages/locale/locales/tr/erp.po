@@ -130,6 +130,11 @@ msgstr "{0}g izin"
 #. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}s boş"
+
+#. placeholder {0}: formatHours(requiredHours)
+msgid "{0}h required"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parça atlandı — zaten açık işleri var"
 
@@ -1293,6 +1298,9 @@ msgstr "Tüm Şirketler"
 msgid "All Customers"
 msgstr "Tüm Müşteriler"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "Tüm Belgeler"
 
@@ -1310,6 +1318,9 @@ msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabile
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "{inserted} eklendi, {updated} güncellendi — tüm satırlar içe aktarıldı."
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Tüm Tedarikçiler"
@@ -6208,6 +6219,9 @@ msgstr "{0}g içinde süresi doluyor"
 msgid "Expiring first"
 msgstr "İlk sona eren"
 
+msgid "Expiring Soon"
+msgstr ""
+
 msgid "Expiry"
 msgstr "Son Kullanma Tarihi"
 
@@ -6681,9 +6695,6 @@ msgstr "Buraya eklenen dosyalar, bu tedarikçiye gönderilen her satın alma sip
 msgid "Filter"
 msgstr "Filtre"
 
-msgid "Filter ({appliedCount} applied)"
-msgstr "Filtre ({appliedCount} uygulanmış)"
-
 msgid "Finalize"
 msgstr "Onayla"
 
@@ -6890,6 +6901,9 @@ msgstr "Elden Çıkarmada Kar Hesabı"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Sabit varlıkların elden çıkarılmasında muhasebeleştirilen karlar"
+
+msgid "Gantt"
+msgstr ""
 
 msgid "gauge"
 msgstr "Ölçüler"
@@ -7531,9 +7545,6 @@ msgstr "Yalnızca stokta"
 
 msgid "In the loop together"
 msgstr "Birlikte döngüde"
-
-msgid "In Training"
-msgstr "Eğitimde"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta veya Slack aracılığıyla sizi ulaştıracağını seçin."
@@ -9927,6 +9938,9 @@ msgstr "Araç yok"
 msgid "No tools for this step"
 msgstr "Bu adım için araç yok"
 
+msgid "No trainings assigned"
+msgstr ""
+
 msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"
 
@@ -10015,9 +10029,6 @@ msgid "Not set"
 msgstr "Belirtilmemiş"
 
 msgid "Not started"
-msgstr "Başlanmadı"
-
-msgid "Not Started"
 msgstr "Başlanmadı"
 
 msgid "Not working today"
@@ -13302,9 +13313,6 @@ msgstr "Şiddetler"
 msgid "Severity"
 msgstr "Şiddet"
 
-msgid "Shadow Weeks"
-msgstr "Gözlemci Haftalar"
-
 msgid "shape"
 msgstr "şekil"
 
@@ -15659,9 +15667,6 @@ msgstr "Eğitim"
 msgid "Training Assignments"
 msgstr "Eğitim Atamaları"
 
-msgid "Training Completed"
-msgstr "Eğitim Tamamlandı"
-
 msgid "Training Plan"
 msgstr "Eğitim Planı"
 
@@ -16090,9 +16095,6 @@ msgstr "Ana sayfada ve dijital tekliflerde kullanılır"
 
 msgid "Used on the home screen in dark mode"
 msgstr "Karanlık modda ana ekranda kullanılır"
-
-msgid "Used to build the default learning curve"
-msgstr "Varsayılan öğrenme eğrisini oluşturmak için kullanılır"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Raporlama ve analiz için ürünleri kategorize etmek amacıyla kullanılır"
@@ -16583,14 +16585,8 @@ msgstr "5. ile 7. Haftalar"
 msgid "Weeks 7 to 8"
 msgstr "Haftalar 7 ila 8"
 
-msgid "Weeks of shadowing before an employee is productive"
-msgstr "Çalışanın üretken olması öncesinde gözlemci olduğu haftalar"
-
 msgid "Weeks Open"
 msgstr "Açık Haftalar"
-
-msgid "Weeks to Full Proficiency"
-msgstr "Tam Yeterlilik İçin Haftalar"
 
 msgid "Weighted Average"
 msgstr "Ağırlıklı Ortalama"

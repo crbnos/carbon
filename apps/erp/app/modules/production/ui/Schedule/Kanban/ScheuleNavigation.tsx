@@ -17,9 +17,7 @@ import {
   LuChartNoAxesGantt,
   LuChevronDown,
   LuCog,
-  LuFactory,
-  LuList,
-  LuUsers
+  LuList
 } from "react-icons/lu";
 import { useLocation, useNavigate } from "react-router";
 import { path } from "~/utils/path";
@@ -29,10 +27,8 @@ export function ScheduleNavigation() {
   const navigate = useNavigate();
 
   const getCurrentView = () => {
-    if (location.pathname.includes(path.to.schedulePeople)) return "people";
-    if (location.pathname.includes(path.to.scheduleResources))
-      return "capacity";
-    if (location.pathname.includes(path.to.scheduleGantt())) return "timeline";
+    if (location.pathname.includes(path.to.scheduleTimeline()))
+      return "timeline";
     if (location.pathname.includes(path.to.scheduleOperation))
       return "operations";
     if (location.pathname.includes(path.to.scheduleDates)) {
@@ -51,10 +47,6 @@ export function ScheduleNavigation() {
     switch (option) {
       case "operations":
         return "Work Centers";
-      case "capacity":
-        return "Capacity";
-      case "people":
-        return "People";
       case "week":
         return "Week";
       case "month":
@@ -70,10 +62,6 @@ export function ScheduleNavigation() {
     switch (option) {
       case "operations":
         return <LuCog />;
-      case "capacity":
-        return <LuFactory />;
-      case "people":
-        return <LuUsers />;
       case "week":
         return <LuCalendarDays />;
       case "month":
@@ -92,12 +80,6 @@ export function ScheduleNavigation() {
       case "operations":
         navigate(path.to.scheduleOperation + "?" + searchParams.toString());
         break;
-      case "capacity":
-        navigate(path.to.scheduleResources);
-        break;
-      case "people":
-        navigate(path.to.schedulePeople + "?" + searchParams.toString());
-        break;
       case "week":
         searchParams.set("view", "week");
         navigate(path.to.scheduleDates + "?" + searchParams.toString());
@@ -107,7 +89,7 @@ export function ScheduleNavigation() {
         navigate(path.to.scheduleDates + "?" + searchParams.toString());
         break;
       case "timeline":
-        navigate(path.to.scheduleGantt());
+        navigate(path.to.scheduleTimeline());
         break;
     }
   };
@@ -134,14 +116,6 @@ export function ScheduleNavigation() {
           <DropdownMenuRadioItem value="operations">
             <DropdownMenuIcon icon={getViewIcon("operations")} />
             {getViewLabel("operations")}
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="capacity">
-            <DropdownMenuIcon icon={getViewIcon("capacity")} />
-            {getViewLabel("capacity")}
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="people">
-            <DropdownMenuIcon icon={getViewIcon("people")} />
-            {getViewLabel("people")}
           </DropdownMenuRadioItem>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>

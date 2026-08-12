@@ -278,7 +278,7 @@ const JobHeader = () => {
                 </a>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to={path.to.scheduleGantt(jobId)}>
+                <Link to={path.to.scheduleTimeline(jobId)}>
                   <DropdownMenuIcon icon={<LuChartNoAxesGantt />} />
                   Timeline
                 </Link>

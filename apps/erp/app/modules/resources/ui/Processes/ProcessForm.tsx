@@ -157,6 +157,7 @@ const ProcessForm = ({
                   name="requiresAbility"
                   label={t`Requires Ability`}
                   description={t`Only qualified employees can be scheduled for and run this process`}
+                  bordered
                 />
                 <CustomFormFields table="process" />
               </VStack>

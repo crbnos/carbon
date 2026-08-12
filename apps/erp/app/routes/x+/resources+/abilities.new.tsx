@@ -11,25 +11,6 @@ import {
 } from "~/modules/resources";
 import { path } from "~/utils/path";
 
-function buildCurve(weeks: number, startingPoint: number) {
-  const range = 100 - startingPoint;
-  const data = [
-    { id: 0, week: 0, value: startingPoint },
-    {
-      id: 1,
-      week: Math.round(((weeks * 1) / 3) * 100) / 100,
-      value: Math.round(startingPoint + range * 0.6)
-    },
-    {
-      id: 2,
-      week: Math.round(((weeks * 2) / 3) * 100) / 100,
-      value: Math.round(startingPoint + range * 0.8)
-    },
-    { id: 3, week: weeks, value: 100 }
-  ];
-  return { data };
-}
-
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -43,13 +24,10 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { name, startingPoint, weeks, shadowWeeks, recertifyEveryDays } =
-    validation.data;
+  const { name, recertifyEveryDays } = validation.data;
 
   const createAbility = await insertAbility(client, {
     name,
-    curve: buildCurve(weeks, startingPoint),
-    shadowWeeks,
     recertifyEveryDays: recertifyEveryDays ?? null,
     companyId,
     createdBy: userId
@@ -76,9 +54,6 @@ export default function NewAbilityRoute() {
 
   const initialValues = {
     name: "",
-    startingPoint: 50,
-    weeks: 4,
-    shadowWeeks: 0,
     recertifyEveryDays: undefined as number | undefined
   };
 

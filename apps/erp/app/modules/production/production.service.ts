@@ -1020,25 +1020,32 @@ export async function getCapacityReservationsByJob(
 
 export async function getCapacityReservationsForResources(
   client: SupabaseClient<Database>,
-  companyId: string
+  companyId: string,
+  locationId?: string
 ) {
   // Live/upcoming reservations across ALL jobs — feeds the resource-lane
   // Gantt. Rows that ended within the last day stay visible for context.
   // Cancelled/completed/closed jobs keep their reservation rows until the
   // next reschedule, so filter them out here — they are no longer real load.
   const cutoff = new Date(Date.now() - 24 * 3_600_000).toISOString();
-  return client
+  let query = client
     .from("capacityReservation")
     .select(
       `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours,
-       job!inner(jobId, status, dueDate),
+       job!inner(jobId, status, dueDate, locationId),
        jobOperation(description, hasConflict, conflictReason)`
     )
     .eq("companyId", companyId)
     .is("scenarioId", null)
     .gte("endAt", cutoff)
-    .not("job.status", "in", '("Cancelled","Completed","Closed")')
-    .order("startAt");
+    .not("job.status", "in", '("Cancelled","Completed","Closed")');
+
+  // Scope to a single plant so the resource Gantt matches its work-center list.
+  if (locationId) {
+    query = query.eq("job.locationId", locationId);
+  }
+
+  return query.order("startAt");
 }
 
 export async function getProductionEventsByJob(
@@ -4589,11 +4596,12 @@ export async function getActiveEmployeeAbilities(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
+  // Qualification is presence-based: any employeeAbility row counts (subject
+  // only to expiry, applied by the caller).
   return client
     .from("employeeAbility")
-    .select("employeeId, abilityId, trainingCompleted, expiresAt")
-    .eq("companyId", companyId)
-    .eq("active", true);
+    .select("employeeId, abilityId, expiresAt")
+    .eq("companyId", companyId);
 }
 
 /**
@@ -5140,12 +5148,15 @@ export async function assignPeopleWeek(
     }
     const weekEnd = addIsoDays(args.weekStart, 6);
     const [existing, absences] = await Promise.all([
-      // location-scoped, for the same reason as the day copy
+      // Company-wide (NOT location-scoped): the unique index is
+      // peopleAssignment_person_day_key (companyId, employeeId, date,
+      // COALESCE(shiftId,'')) — a person already booked for this day+shift at
+      // ANY location/station collides, so a location-scoped skip let the bulk
+      // insert violate the constraint and fail the whole week assignment.
       trx
         .selectFrom("peopleAssignment")
-        .select(["date"])
+        .select(["date", "shiftId"])
         .where("companyId", "=", args.companyId)
-        .where("locationId", "=", args.locationId)
         .where("employeeId", "=", args.employeeId)
         .where("date", ">=", args.weekStart)
         .where("date", "<=", weekEnd)
@@ -5159,17 +5170,21 @@ export async function assignPeopleWeek(
         .where("date", "<=", weekEnd)
         .execute()
     ]);
-    const skip = new Set([
-      ...existing.map((row) => toIsoDate(row.date)),
-      ...absences.map((row) => toIsoDate(row.date))
-    ]);
+    // Key on date + shift to mirror the unique index exactly.
+    const slotKey = (date: string, shiftId: string | null) =>
+      `${date}:${shiftId ?? ""}`;
+    const takenSlots = new Set(
+      existing.map((row) => slotKey(toIsoDate(row.date), row.shiftId))
+    );
+    const absentDays = new Set(absences.map((row) => toIsoDate(row.date)));
 
     const rows = [];
     for (let offset = 0; offset < 7; offset++) {
       const date = addIsoDays(args.weekStart, offset);
       // weekStart is a Monday, so offset maps 1:1 onto WEEKDAYS_MONDAY_FIRST
       if (!activeWeekdays.includes(WEEKDAYS_MONDAY_FIRST[offset])) continue;
-      if (skip.has(date)) continue;
+      if (absentDays.has(date)) continue;
+      if (takenSlots.has(slotKey(date, args.shiftId))) continue;
       rows.push({
         companyId: args.companyId,
         locationId: args.locationId,
@@ -5183,7 +5198,10 @@ export async function assignPeopleWeek(
     if (rows.length > 0) {
       await trx.insertInto("peopleAssignment").values(rows).execute();
     }
-    return { assigned: rows.length, skipped: skip.size };
+    return {
+      assigned: rows.length,
+      skipped: takenSlots.size + absentDays.size
+    };
   });
 }
 

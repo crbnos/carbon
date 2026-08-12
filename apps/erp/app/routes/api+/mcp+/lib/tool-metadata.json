@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-12T03:05:11.428Z",
-  "totalTools": 1467,
+  "generated": "2026-08-12T19:05:58.079Z",
+  "totalTools": 1466,
   "modules": 15,
   "tools": [
     {
@@ -19197,17 +19197,22 @@
       "module": "production",
       "classification": "READ",
       "description": "get capacity reservations for resources",
-      "paramCount": 0,
+      "paramCount": 1,
       "serviceParams": [
         "client",
-        "companyId"
+        "companyId",
+        "locationId"
       ],
       "injectAuth": [
         "companyId"
       ],
       "schema": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "locationId": {
+            "type": "string"
+          }
+        }
       }
     },
     {
@@ -32933,6 +32938,32 @@
       }
     },
     {
+      "name": "resources_getTrainingAssignmentStatusForEmployee",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get training assignment status for employee",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "employeeId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId"
+        ]
+      }
+    },
+    {
       "name": "resources_getPartner",
       "module": "resources",
       "classification": "READ",
@@ -33529,7 +33560,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "insert ability",
-      "paramCount": 4,
+      "paramCount": 2,
       "serviceParams": [
         "client",
         "ability"
@@ -33545,35 +33576,6 @@
           "name": {
             "type": "string"
           },
-          "curve": {
-            "type": "object",
-            "properties": {
-              "data": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "week": {
-                      "type": "number"
-                    },
-                    "value": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "week",
-                    "value"
-                  ]
-                }
-              }
-            },
-            "required": [
-              "data"
-            ]
-          },
-          "shadowWeeks": {
-            "type": "number"
-          },
           "recertifyEveryDays": {
             "type": [
               "number",
@@ -33582,45 +33584,7 @@
           }
         },
         "required": [
-          "name",
-          "curve",
-          "shadowWeeks"
-        ]
-      }
-    },
-    {
-      "name": "resources_insertEmployeeAbilities",
-      "module": "resources",
-      "classification": "WRITE",
-      "description": "insert employee abilities",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "abilityId",
-        "employeeIds",
-        "companyId"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "abilityId": {
-            "type": "string"
-          },
-          "employeeIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "abilityId",
-          "employeeIds"
+          "name"
         ]
       }
     },
@@ -33741,7 +33705,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert employee ability cell",
-      "paramCount": 6,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "cell"
@@ -33760,12 +33724,6 @@
           "abilityId": {
             "type": "string"
           },
-          "active": {
-            "type": "boolean"
-          },
-          "trainingCompleted": {
-            "type": "boolean"
-          },
           "lastTrainingDate": {
             "type": [
               "string",
@@ -33782,8 +33740,6 @@
         "required": [
           "employeeId",
           "abilityId",
-          "active",
-          "trainingCompleted",
           "lastTrainingDate",
           "expiresAt"
         ]
@@ -33935,47 +33891,6 @@
         },
         "required": [
           "contractorWithAbilities"
-        ]
-      }
-    },
-    {
-      "name": "resources_upsertEmployeeAbility",
-      "module": "resources",
-      "classification": "WRITE",
-      "description": "upsert employee ability",
-      "paramCount": 5,
-      "serviceParams": [
-        "client",
-        "employeeAbility"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "abilityId": {
-            "type": "string"
-          },
-          "employeeId": {
-            "type": "string"
-          },
-          "trainingCompleted": {
-            "type": "boolean"
-          },
-          "trainingDays": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "abilityId",
-          "employeeId",
-          "trainingCompleted"
         ]
       }
     },

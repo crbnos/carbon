@@ -130,6 +130,11 @@ msgstr "{0}일 쉼"
 #. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}시간 여유"
+
+#. placeholder {0}: formatHours(requiredHours)
+msgid "{0}h required"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}개 부품이 건너뜀 — 이미 활성 작업이 있음"
 
@@ -1293,6 +1298,9 @@ msgstr "모든 회사"
 msgid "All Customers"
 msgstr "모든 고객"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "모든 문서"
 
@@ -1310,6 +1318,9 @@ msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 �
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "모든 행을 가져왔습니다 — {inserted}개 추가, {updated}개 업데이트."
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "모든 공급업체"
@@ -6208,6 +6219,9 @@ msgstr "{0}일 후 만료"
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
 
+msgid "Expiring Soon"
+msgstr ""
+
 msgid "Expiry"
 msgstr "만료"
 
@@ -6681,9 +6695,6 @@ msgstr "여기에 첨부한 파일은 이 공급업체에 전송되는 모든 �
 msgid "Filter"
 msgstr "필터"
 
-msgid "Filter ({appliedCount} applied)"
-msgstr "필터 ({appliedCount}개 적용됨)"
-
 msgid "Finalize"
 msgstr "확정"
 
@@ -6890,6 +6901,9 @@ msgstr "처분 이익 계정"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 이익"
+
+msgid "Gantt"
+msgstr ""
 
 msgid "gauge"
 msgstr "측정기"
@@ -7531,9 +7545,6 @@ msgstr "재고만"
 
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
-
-msgid "In Training"
-msgstr "교육 중"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "인앱 알림은 항상 전달됩니다. 이메일 또는 Slack으로도 전달받을 주제를 선택하세요."
@@ -9927,6 +9938,9 @@ msgstr "도구 없음"
 msgid "No tools for this step"
 msgstr "이 단계에 도구 없음"
 
+msgid "No trainings assigned"
+msgstr ""
+
 msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
 
@@ -10016,9 +10030,6 @@ msgstr "설정되지 않음"
 
 msgid "Not started"
 msgstr "시작되지 않음"
-
-msgid "Not Started"
-msgstr "시작하지 않음"
 
 msgid "Not working today"
 msgstr "오늘 근무하지 않음"
@@ -13302,9 +13313,6 @@ msgstr "심각도"
 msgid "Severity"
 msgstr "심각도"
 
-msgid "Shadow Weeks"
-msgstr "섀도우 주"
-
 msgid "shape"
 msgstr "형상"
 
@@ -15659,9 +15667,6 @@ msgstr "교육"
 msgid "Training Assignments"
 msgstr "교육 배정"
 
-msgid "Training Completed"
-msgstr "훈련 완료"
-
 msgid "Training Plan"
 msgstr "교육 계획"
 
@@ -16090,9 +16095,6 @@ msgstr "홈 화면과 디지털 견적에서 사용됩니다"
 
 msgid "Used on the home screen in dark mode"
 msgstr "다크 모드에서 홈 화면에 사용됩니다"
-
-msgid "Used to build the default learning curve"
-msgstr "기본 학습 곡선을 구축하는 데 사용됨"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "보고 및 분석을 위해 품목을 분류하는 데 사용됩니다"
@@ -16583,14 +16585,8 @@ msgstr "5~7주"
 msgid "Weeks 7 to 8"
 msgstr "7~8주"
 
-msgid "Weeks of shadowing before an employee is productive"
-msgstr "직원이 생산성을 갖기 전의 섀도우 주"
-
 msgid "Weeks Open"
 msgstr "미결 주수"
-
-msgid "Weeks to Full Proficiency"
-msgstr "완전한 숙련도까지의 주"
 
 msgid "Weighted Average"
 msgstr "가중평균"

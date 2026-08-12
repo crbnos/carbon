@@ -130,6 +130,11 @@ msgstr "{0}日休み"
 #. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}h 余裕あり"
+
+#. placeholder {0}: formatHours(requiredHours)
+msgid "{0}h required"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}件のパーツをスキップしました — 既にオープンジョブがあります"
 
@@ -1293,6 +1298,9 @@ msgstr "すべての会社"
 msgid "All Customers"
 msgstr "すべての顧客"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "すべてのドキュメント"
 
@@ -1310,6 +1318,9 @@ msgstr "選択されたグループのすべてのメンバーと選択された
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "すべての行をインポート—{inserted}行挿入、{updated}行更新。"
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "すべてのサプライヤー"
@@ -6208,6 +6219,9 @@ msgstr "{0}d 後に有効期限切れ"
 msgid "Expiring first"
 msgstr "最初に期限切れ"
 
+msgid "Expiring Soon"
+msgstr ""
+
 msgid "Expiry"
 msgstr "有効期限"
 
@@ -6681,9 +6695,6 @@ msgstr "ここに添付されたファイルは、このサプライヤーに送
 msgid "Filter"
 msgstr "フィルター"
 
-msgid "Filter ({appliedCount} applied)"
-msgstr "フィルター({appliedCount}適用)"
-
 msgid "Finalize"
 msgstr "確定"
 
@@ -6890,6 +6901,9 @@ msgstr "処分益勘定科目"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定資産の処分により認識された利益"
+
+msgid "Gantt"
+msgstr ""
 
 msgid "gauge"
 msgstr "ゲージ"
@@ -7531,9 +7545,6 @@ msgstr "在庫のみ"
 
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"
-
-msgid "In Training"
-msgstr "トレーニング中"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "アプリ内通知は常に配信されます。どのトピックがメールまたはSlackでも届くかを選択してください。"
@@ -9927,6 +9938,9 @@ msgstr "ツールがありません"
 msgid "No tools for this step"
 msgstr "このステップのツールがありません"
 
+msgid "No trainings assigned"
+msgstr ""
+
 msgid "No transactions in this period"
 msgstr "この期間に取引がありません"
 
@@ -10015,9 +10029,6 @@ msgid "Not set"
 msgstr "未設定"
 
 msgid "Not started"
-msgstr "未開始"
-
-msgid "Not Started"
 msgstr "未開始"
 
 msgid "Not working today"
@@ -13302,9 +13313,6 @@ msgstr "重大度"
 msgid "Severity"
 msgstr "重大度"
 
-msgid "Shadow Weeks"
-msgstr "シャドウ週"
-
 msgid "shape"
 msgstr "形状"
 
@@ -15659,9 +15667,6 @@ msgstr "トレーニング"
 msgid "Training Assignments"
 msgstr "研修割り当て"
 
-msgid "Training Completed"
-msgstr "研修完了"
-
 msgid "Training Plan"
 msgstr "トレーニング計画"
 
@@ -16090,9 +16095,6 @@ msgstr "ホーム画面とデジタル見積書で使用されます"
 
 msgid "Used on the home screen in dark mode"
 msgstr "ダークモードのホーム画面で使用されます"
-
-msgid "Used to build the default learning curve"
-msgstr "デフォルト学習曲線を構築するために使用"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "レポートと分析のためにアイテムを分類するために使用されます"
@@ -16583,14 +16585,8 @@ msgstr "週5～7"
 msgid "Weeks 7 to 8"
 msgstr "7～8週目"
 
-msgid "Weeks of shadowing before an employee is productive"
-msgstr "従業員が生産的になる前のシャドウイング週数"
-
 msgid "Weeks Open"
 msgstr "開いている週数"
-
-msgid "Weeks to Full Proficiency"
-msgstr "完全習熟までの週数"
 
 msgid "Weighted Average"
 msgstr "加重平均"

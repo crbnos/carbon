@@ -16,7 +16,7 @@ import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -107,11 +107,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 }
 
-const fade = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 }
-};
-
 const Heading = motion.create(_Heading);
 const Button = motion.create(_Button);
 
@@ -154,12 +149,9 @@ export default function Invite() {
   }
 
   return (
-    <AnimatePresence>
+    <>
       <VStack spacing={4} className="max-w-lg items-center text-center">
-        <motion.img
-          initial={{ opacity: 0, scale: 0.4 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 2, ease: "easeInOut" }}
+        <img
           src="/carbon-mark-light.svg"
           alt="Carbon Logo"
           className="w-24 dark:hidden"
@@ -170,22 +162,12 @@ export default function Invite() {
           className="w-24 hidden dark:block"
         />
 
-        <Heading
-          {...fade}
-          transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
-          size="h1"
-          className="mb-4"
-        >
+        <Heading size="h1" className="mb-4">
           <Trans>Welcome to Carbon</Trans>
         </Heading>
 
         <Form method="post">
-          <Button
-            {...fade}
-            transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
-            size="lg"
-            type="submit"
-          >
+          <Button size="lg" type="submit">
             <Trans>Join {company?.name ?? "Company"}</Trans>
           </Button>
         </Form>
@@ -204,6 +186,6 @@ export default function Invite() {
           .
         </Trans>
       </p>
-    </AnimatePresence>
+    </>
   );
 }

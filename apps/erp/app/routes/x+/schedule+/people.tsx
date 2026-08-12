@@ -342,6 +342,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
     scheduledByWorkCenter = buckets.scheduledByWorkCenter;
   }
 
+  // Day board: operation-hours each work center needs on the selected date, so
+  // the manning board shows where the workload is (who to put where).
+  let requiredHoursByWorkCenter: Record<string, number> = {};
+  if (view === "board" && range === "day") {
+    const dayOperations = await getPeopleCapacityOperations(client, companyId, {
+      locationId,
+      startDate: date,
+      endDate: date
+    });
+    const { demandByWorkCenter: dayDemand } = buildPeopleCapacityBuckets({
+      weekDates: [date],
+      timezone,
+      operations: dayOperations.data ?? [],
+      reservations: []
+    });
+    requiredHoursByWorkCenter = Object.fromEntries(
+      Object.entries(dayDemand).map(([workCenterId, bucket]) => [
+        workCenterId,
+        bucket.days[date] ?? 0
+      ])
+    );
+  }
+
   return {
     locationId,
     locationTimeZone: timezone,
@@ -356,6 +379,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     weekAbsences,
     demandByWorkCenter,
     scheduledByWorkCenter,
+    requiredHoursByWorkCenter,
     employeeShiftHours,
     assignments: assignments.data ?? [],
     absences: absences.data ?? [],
@@ -408,6 +432,7 @@ export default function SchedulePeopleRoute() {
     employeeShiftHours,
     demandByWorkCenter,
     scheduledByWorkCenter,
+    requiredHoursByWorkCenter,
     assignments,
     absences,
     employees,
@@ -590,6 +615,7 @@ export default function SchedulePeopleRoute() {
               assignments={boardAssignments}
               absences={absences}
               requiredAbilities={requiredAbilities}
+              requiredHoursByWorkCenter={requiredHoursByWorkCenter}
               employeeAbilities={employeeAbilities}
               shiftHoursById={shiftHoursById}
               employeeShiftHours={employeeShiftHours}

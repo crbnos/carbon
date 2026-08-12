@@ -12,10 +12,13 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, New, Table } from "~/components";
+import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import type { Ability } from "~/modules/resources";
 import { path } from "~/utils/path";
-import EmployeeAbilityStatus from "./EmployeeAbilityStatus";
+import EmployeeAbilityStatus, {
+  getEmployeeAbilityStatus
+} from "./EmployeeAbilityStatus";
 
 type AbilityEmployee = NonNullable<Ability["employeeAbility"]>[number];
 
@@ -29,11 +32,23 @@ const AbilityEmployeesTable = memo(
     const navigate = useNavigate();
     const permissions = usePermissions();
     const { formatDate } = useDateFormatter();
+    const { getFilter } = useFilters();
 
     const rows = useMemo(
       () => ability.employeeAbility ?? [],
       [ability.employeeAbility]
     );
+
+    const statusFilterKey = getFilter("status").join(",");
+
+    const filteredRows = useMemo(() => {
+      if (!statusFilterKey) return rows;
+      const selected = new Set(statusFilterKey.split(","));
+      const asOf = new Date();
+      return rows.filter((row) =>
+        selected.has(getEmployeeAbilityStatus(row, asOf).kind)
+      );
+    }, [rows, statusFilterKey]);
 
     const columns = useMemo<ColumnDef<AbilityEmployee>[]>(() => {
       return [
@@ -55,7 +70,17 @@ const AbilityEmployeesTable = memo(
           ),
           meta: {
             filterHeader: t`Status`,
-            icon: <LuAward />
+            icon: <LuAward />,
+            // Values must match getEmployeeAbilityStatus's `kind`.
+            filter: {
+              type: "static",
+              isArray: true,
+              options: [
+                { value: "qualified", label: t`Qualified` },
+                { value: "expiring", label: t`Expiring Soon` },
+                { value: "expired", label: t`Expired` }
+              ]
+            }
           }
         },
         {
@@ -118,9 +143,10 @@ const AbilityEmployeesTable = memo(
 
     return (
       <Table<AbilityEmployee>
-        data={rows}
+        data={filteredRows}
         columns={columns}
-        count={rows.length}
+        count={statusFilterKey ? filteredRows.length : rows.length}
+        isFiltered={!!statusFilterKey}
         primaryAction={
           <HStack>
             <Button

@@ -66,8 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { employeeId, active, trainingCompleted, lastTrainingDate, expiresAt } =
-    validation.data;
+  const { employeeId, lastTrainingDate, expiresAt } = validation.data;
 
   const resolvedExpiresAt = await resolveEmployeeAbilityExpiresAt(
     client,
@@ -80,8 +79,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     employeeId,
     abilityId,
     companyId,
-    active,
-    trainingCompleted,
     lastTrainingDate: lastTrainingDate ?? null,
     expiresAt: resolvedExpiresAt
   });
@@ -122,8 +119,6 @@ export default function EmployeeAbilityRoute() {
   const initialValues = {
     employeeId: employeeAbility.employeeId,
     abilityId: id,
-    active: employeeAbility.active ?? true,
-    trainingCompleted: employeeAbility.trainingCompleted ?? false,
     lastTrainingDate: employeeAbility.lastTrainingDate ?? "",
     expiresAt: employeeAbility.expiresAt ?? ""
   };

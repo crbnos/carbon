@@ -56,10 +56,11 @@ type PeopleBoardProps = {
     abilityId: string;
     abilityName: string;
   }[];
+  /** operation-hours each work center needs on the board's date (demand) */
+  requiredHoursByWorkCenter: Record<string, number>;
   employeeAbilities: {
     employeeId: string;
     abilityId: string;
-    trainingCompleted: boolean | null;
     expiresAt: string | null;
   }[];
   shiftHoursById: Record<string, number>;
@@ -106,6 +107,7 @@ const PeopleBoard = ({
   assignments,
   absences,
   requiredAbilities,
+  requiredHoursByWorkCenter,
   employeeAbilities,
   shiftHoursById,
   employeeShiftHours,
@@ -180,12 +182,11 @@ const PeopleBoard = ({
     return map;
   }, [absences]);
 
-  // qualification = active row ∧ trainingCompleted ∧ not expired
+  // qualification = has an ability row ∧ not expired
   const qualifiedAbilitiesByEmployee = useMemo(() => {
     const map = new Map<string, Set<string>>();
     const today = date;
     for (const row of employeeAbilities) {
-      if (!row.trainingCompleted) continue;
       if (row.expiresAt && row.expiresAt.slice(0, 10) < today) continue;
       const set = map.get(row.employeeId) ?? new Set<string>();
       set.add(row.abilityId);
@@ -488,6 +489,7 @@ const PeopleBoard = ({
             key={workCenter.id}
             id={workCenter.id}
             title={workCenter.name}
+            requiredHours={requiredHoursByWorkCenter[workCenter.id] ?? 0}
             items={itemsByColumn.get(workCenter.id) ?? []}
             isDisabled={isDisabled}
             editor={editor}

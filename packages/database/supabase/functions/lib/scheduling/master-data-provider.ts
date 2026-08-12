@@ -102,8 +102,6 @@ export type ProcessRequirementRow = {
 export type QualifiedEmployeeRow = {
   abilityId: string;
   employeeId: string;
-  active: boolean;
-  trainingCompleted: boolean | null;
   expiresAt: string | null;
 };
 
@@ -543,13 +541,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
 
     const rows = await this.db
       .selectFrom("employeeAbility as ea")
-      .select([
-        "ea.abilityId",
-        "ea.employeeId",
-        "ea.active",
-        "ea.trainingCompleted",
-        "ea.expiresAt",
-      ])
+      .select(["ea.abilityId", "ea.employeeId", "ea.expiresAt"])
       .where("ea.abilityId", "in", abilityIds)
       .where("ea.companyId", "=", this.companyId)
       .execute();
@@ -557,8 +549,6 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     return rows.map((r) => ({
       abilityId: r.abilityId,
       employeeId: r.employeeId,
-      active: Boolean(r.active),
-      trainingCompleted: r.trainingCompleted,
       expiresAt: toIsoDate(r.expiresAt),
     }));
   }

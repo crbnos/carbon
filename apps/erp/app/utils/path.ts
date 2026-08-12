@@ -1663,6 +1663,8 @@ export const path = {
     peopleSettings: `${x}/settings/people`,
     peopleTimecard: `${x}/people/timecard`,
     person: (id: string) => generatePath(`${x}/person/${id}`),
+    personAbilities: (id: string) =>
+      generatePath(`${x}/person/${id}/abilities`),
     personAttributeCategory: (personId: string, categoryId: string) =>
       generatePath(`${x}/person/${personId}/attributes/${categoryId}`),
     personDetails: (id: string) => generatePath(`${x}/person/${id}/details`),
@@ -1955,13 +1957,15 @@ export const path = {
     saveViews: `${x}/shared/views`,
     scheduleDates: `${x}/schedule/dates`,
     scheduleDatesUpdate: `${x}/schedule/dates/update`,
-    scheduleGantt: (jobId?: string) =>
-      jobId ? `${x}/scheduling/gantt?jobId=${jobId}` : `${x}/scheduling/gantt`,
+    scheduleGantt: `${x}/scheduling/gantt`,
     scheduleOperation: `${x}/schedule/operations`,
     scheduleOperationUpdate: `${x}/schedule/operations/update`,
     schedulePeople: `${x}/schedule/people`,
     schedulePeopleUpdate: `${x}/schedule/people/update`,
-    scheduleResources: `${x}/scheduling/resources`,
+    scheduleTimeline: (jobId?: string) =>
+      jobId
+        ? `${x}/scheduling/timeline?jobId=${jobId}`
+        : `${x}/scheduling/timeline`,
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),
     scrapReasons: `${x}/production/scrap-reasons`,

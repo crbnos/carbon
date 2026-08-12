@@ -130,6 +130,11 @@ msgstr "{0}д выходной"
 #. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}ч свободно"
+
+#. placeholder {0}: formatHours(requiredHours)
+msgid "{0}h required"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} деталей пропущено — у них уже есть открытые задания"
 
@@ -1293,6 +1298,9 @@ msgstr "Все компании"
 msgid "All Customers"
 msgstr "Все клиенты"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "Все документы"
 
@@ -1310,6 +1318,9 @@ msgstr "Все члены выбранных групп и выбранные л
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Все строки импортированы — {inserted} вставлено, {updated} обновлено."
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Все поставщики"
@@ -6208,6 +6219,9 @@ msgstr "Истекает через {0}д"
 msgid "Expiring first"
 msgstr "Истекающие первыми"
 
+msgid "Expiring Soon"
+msgstr ""
+
 msgid "Expiry"
 msgstr "Срок действия"
 
@@ -6681,9 +6695,6 @@ msgstr "Файлы, прикрепленные здесь, отправляют�
 msgid "Filter"
 msgstr "Фильтр"
 
-msgid "Filter ({appliedCount} applied)"
-msgstr "Фильтр (применено {appliedCount})"
-
 msgid "Finalize"
 msgstr "Завершить"
 
@@ -6890,6 +6901,9 @@ msgstr "Счёт прибыли от выбытия"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Прибыль, признаваемая при выбытии основных средств"
+
+msgid "Gantt"
+msgstr ""
 
 msgid "gauge"
 msgstr "Калибры"
@@ -7531,9 +7545,6 @@ msgstr "Только в наличии"
 
 msgid "In the loop together"
 msgstr "В курсе дела вместе"
-
-msgid "In Training"
-msgstr "На обучении"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также будут доходить до вас по электронной почте или Slack."
@@ -9927,6 +9938,9 @@ msgstr "Нет инструментов"
 msgid "No tools for this step"
 msgstr "Нет инструментов для этого шага"
 
+msgid "No trainings assigned"
+msgstr ""
+
 msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"
 
@@ -10016,9 +10030,6 @@ msgstr "Не установлено"
 
 msgid "Not started"
 msgstr "Не начинается"
-
-msgid "Not Started"
-msgstr "Не начато"
 
 msgid "Not working today"
 msgstr "Не работает сегодня"
@@ -13302,9 +13313,6 @@ msgstr "Серьезности"
 msgid "Severity"
 msgstr "Серьезность"
 
-msgid "Shadow Weeks"
-msgstr "Недели теневой подготовки"
-
 msgid "shape"
 msgstr "форма"
 
@@ -15659,9 +15667,6 @@ msgstr "Обучение"
 msgid "Training Assignments"
 msgstr "Назначения обучения"
 
-msgid "Training Completed"
-msgstr "Обучение завершено"
-
 msgid "Training Plan"
 msgstr "План обучения"
 
@@ -16090,9 +16095,6 @@ msgstr "Используется на главном экране и в цифр
 
 msgid "Used on the home screen in dark mode"
 msgstr "Используется на главном экране в темном режиме"
-
-msgid "Used to build the default learning curve"
-msgstr "Используется для построения кривой обучения по умолчанию"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Используется для категоризации товаров в целях отчетности и анализа"
@@ -16583,14 +16585,8 @@ msgstr "Недели 5–7"
 msgid "Weeks 7 to 8"
 msgstr "Недели 7–8"
 
-msgid "Weeks of shadowing before an employee is productive"
-msgstr "Недели теневой подготовки перед тем как сотрудник начинает самостоятельную работу"
-
 msgid "Weeks Open"
 msgstr "Недель открыто"
-
-msgid "Weeks to Full Proficiency"
-msgstr "Недели до полной компетентности"
 
 msgid "Weighted Average"
 msgstr "Средневзвешенное значение"

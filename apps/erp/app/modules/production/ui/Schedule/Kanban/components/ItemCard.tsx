@@ -237,7 +237,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
                   </a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to={path.to.scheduleGantt(item.jobId)}>
+                  <Link to={path.to.scheduleTimeline(item.jobId)}>
                     <DropdownMenuIcon icon={<LuChartNoAxesGantt />} />
                     View Timeline
                   </Link>

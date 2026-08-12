@@ -608,8 +608,6 @@ export class SchedulingEngine {
       const list = employeesByAbility.get(e.abilityId) ?? [];
       list.push({
         employeeId: e.employeeId,
-        active: e.active,
-        trainingCompleted: e.trainingCompleted,
         expiresAt: e.expiresAt,
         windows: windowsByEmployee.get(e.employeeId) ?? [
           { start: rangeStart, end: rangeEnd },

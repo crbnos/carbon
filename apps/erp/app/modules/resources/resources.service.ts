@@ -52,10 +52,7 @@ export async function deleteEmployeeAbility(
   client: SupabaseClient<Database>,
   employeeAbilityId: string
 ) {
-  return client
-    .from("employeeAbility")
-    .update({ active: false })
-    .eq("id", employeeAbilityId);
+  return client.from("employeeAbility").delete().eq("id", employeeAbilityId);
 }
 
 export async function deleteFailureMode(
@@ -205,20 +202,40 @@ export async function getAbilities(
   companyId: string,
   args: GenericQueryFilters & { search: string | null }
 ) {
+  // The "employees" filter narrows abilities to those a selected employee is
+  // assigned to. It targets employeeAbility (a related table), not a column on
+  // ability, so resolve it to a set of abilityIds first and drop it from the
+  // generic column filters.
+  const employeeFilter = args.filters?.find((f) => f.column === "employees");
+  const filters = args.filters?.filter((f) => f.column !== "employees");
+
   let query = client
     .from("ability")
-    .select(`*, employeeAbility(employeeId, trainingCompleted, expiresAt)`, {
+    .select(`*, employeeAbility(employeeId, expiresAt)`, {
       count: "exact"
     })
     .eq("companyId", companyId)
-    .eq("active", true)
-    .eq("employeeAbility.active", true);
+    .eq("active", true);
+
+  if (employeeFilter?.value) {
+    const employeeIds = employeeFilter.value.split(",");
+    const assigned = await client
+      .from("employeeAbility")
+      .select("abilityId")
+      .eq("companyId", companyId)
+      .in("employeeId", employeeIds);
+    const abilityIds = [
+      ...new Set((assigned.data ?? []).map((row) => row.abilityId))
+    ];
+    // No matching abilities → force an empty result rather than no filter
+    query = query.in("id", abilityIds.length > 0 ? abilityIds : [""]);
+  }
 
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
+  query = setGenericQueryFilters(query, { ...args, filters }, [
     { column: "name", ascending: true }
   ]);
   return query;
@@ -240,22 +257,14 @@ export async function getAbility(
   client: SupabaseClient<Database>,
   abilityId: string
 ) {
-  return (
-    client
-      .from("ability")
-      .select(
-        `*, employeeAbility(id, employeeId, lastTrainingDate, trainingDays, trainingCompleted, expiresAt, active)`,
-        {
-          count: "exact"
-        }
-      )
-      .eq("id", abilityId)
-      .eq("active", true)
-      // deleteEmployeeAbility is a soft delete — inactive rows would otherwise
-      // reappear in the roster after "Remove Employee"
-      .eq("employeeAbility.active", true)
-      .single()
-  );
+  return client
+    .from("ability")
+    .select(`*, employeeAbility(id, employeeId, lastTrainingDate, expiresAt)`, {
+      count: "exact"
+    })
+    .eq("id", abilityId)
+    .eq("active", true)
+    .single();
 }
 
 export async function getContractor(
@@ -304,8 +313,7 @@ export async function getEmployeeAbilities(
     .from("employeeAbility")
     .select(`*, ability(id, name, curve, shadowWeeks)`)
     .eq("employeeId", employeeId)
-    .eq("companyId", companyId)
-    .eq("active", true);
+    .eq("companyId", companyId);
 }
 
 export async function getEmployeeAbility(
@@ -656,6 +664,37 @@ export async function getOutstandingTrainingsForUser(
     });
 
   return { data: filteredData, error: null };
+}
+
+export async function getTrainingAssignmentStatusForEmployee(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  employeeId: string
+) {
+  const { data, error } = await client.rpc("get_training_assignment_status", {
+    p_company_id: companyId,
+    p_employee_id: employeeId
+  });
+
+  if (error) return { data: null, error };
+
+  // Surface the trainings that need attention first: Overdue, then Pending,
+  // then Not Required, then Completed.
+  const statusOrder: Record<string, number> = {
+    Overdue: 0,
+    Pending: 1,
+    "Not Required": 2,
+    Completed: 3
+  };
+
+  const sorted = (data ?? []).sort((a, b) => {
+    const aOrder = statusOrder[a.status] ?? 4;
+    const bOrder = statusOrder[b.status] ?? 4;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return (a.trainingName ?? "").localeCompare(b.trainingName ?? "");
+  });
+
+  return { data: sorted, error: null };
 }
 
 export async function getPartner(
@@ -1059,39 +1098,12 @@ export async function insertAbility(
   client: SupabaseClient<Database>,
   ability: {
     name: string;
-    curve: {
-      data: {
-        week: number;
-        value: number;
-      }[];
-    };
-    shadowWeeks: number;
     recertifyEveryDays?: number | null;
     companyId: string;
     createdBy: string;
   }
 ) {
   return client.from("ability").insert([ability]).select("*").single();
-}
-
-export async function insertEmployeeAbilities(
-  client: SupabaseClient<Database>,
-  abilityId: string,
-  employeeIds: string[],
-  companyId: string
-) {
-  const employeeAbilities = employeeIds.map((employeeId) => ({
-    abilityId,
-    employeeId,
-    companyId,
-    trainingCompleted: true
-  }));
-
-  return client
-    .from("employeeAbility")
-    .insert(employeeAbilities)
-    .select("id")
-    .single();
 }
 
 export async function insertTrainingCompletion(
@@ -1120,13 +1132,6 @@ export async function updateAbility(
   id: string,
   ability: Partial<{
     name: string;
-    curve: {
-      data: {
-        week: number;
-        value: number;
-      }[];
-    };
-    shadowWeeks: number;
     recertifyEveryDays: number | null;
   }>
 ) {
@@ -1166,8 +1171,6 @@ export async function upsertEmployeeAbilityCell(
     employeeId: string;
     abilityId: string;
     companyId: string;
-    active: boolean;
-    trainingCompleted: boolean;
     lastTrainingDate: string | null;
     expiresAt: string | null;
   }
@@ -1311,44 +1314,6 @@ export async function upsertContractor(
   });
 
   return client.from("contractorAbility").insert(contractorAbilities);
-}
-
-export async function upsertEmployeeAbility(
-  client: SupabaseClient<Database>,
-  employeeAbility: {
-    id?: string;
-    abilityId: string;
-    employeeId: string;
-    trainingCompleted: boolean;
-    trainingDays?: number;
-    companyId: string;
-  }
-) {
-  const { id, ...update } = employeeAbility;
-  if (id) {
-    return client.from("employeeAbility").update(sanitize(update)).eq("id", id);
-  }
-
-  const deactivatedId = await client
-    .from("employeeAbility")
-    .select("id")
-    .eq("employeeId", employeeAbility.employeeId)
-    .eq("abilityId", employeeAbility.abilityId)
-    .eq("active", false)
-    .single();
-
-  if (deactivatedId.data?.id) {
-    return client
-      .from("employeeAbility")
-      .update(sanitize({ ...update, active: true }))
-      .eq("id", deactivatedId.data.id);
-  }
-
-  return client
-    .from("employeeAbility")
-    .insert([{ ...update }])
-    .select("id")
-    .single();
 }
 
 export async function upsertFailureMode(

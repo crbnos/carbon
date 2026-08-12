@@ -15,6 +15,7 @@ import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
+import { Enumerable } from "~/components/Enumerable";
 import { Ability, InputControlled, Tags } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
@@ -303,13 +304,16 @@ const TrainingProperties = () => {
           <Ability
             label={t`Grants Ability`}
             name="grantsAbilityId"
-            inline={(value, options) => (
-              <span>
-                {options.find((o) => o.value === value)?.label ?? (
+            inline={(value, options) => {
+              const label = options.find((o) => o.value === value)?.label;
+              return typeof label === "string" ? (
+                <Enumerable value={label} />
+              ) : (
+                <span className="text-muted-foreground">
                   <Trans>None</Trans>
-                )}
-              </span>
-            )}
+                </span>
+              );
+            }}
             value={routeData?.training?.grantsAbilityId ?? ""}
             onChange={(value) => {
               onUpdate("grantsAbilityId", value?.value ?? null);

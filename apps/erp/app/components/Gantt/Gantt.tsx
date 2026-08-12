@@ -541,16 +541,19 @@ const GanttTimeline = ({
                         {node.data.wait && node.data.wait.duration > 0 && (
                           <WaitSpan wait={node.data.wait} />
                         )}
-                        <SpanWithDuration
-                          showDuration={state.selected ? true : showDurations}
-                          startMs={node.data.offset}
-                          durationMs={
-                            node.data.duration
-                              ? node.data.duration
-                              : duration - node.data.offset
-                          }
-                          node={node}
-                        />
+                        {/* A zero-duration node renders no bar — an idle
+                            resource lane or an unscheduled job is genuinely
+                            empty. In-progress work carries a real elapsed
+                            duration (end clamped to "now"), so it still draws;
+                            never fill an unknown/zero span to the window edge. */}
+                        {node.data.duration > 0 && (
+                          <SpanWithDuration
+                            showDuration={state.selected ? true : showDurations}
+                            startMs={node.data.offset}
+                            durationMs={node.data.duration}
+                            node={node}
+                          />
+                        )}
                       </>
                     ) : (
                       <Timeline.Point ms={node.data.offset}>

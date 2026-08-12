@@ -130,6 +130,11 @@ msgstr "{0}d off"
 #. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}h free"
+
+#. placeholder {0}: formatHours(requiredHours)
+msgid "{0}h required"
+msgstr "{0}h required"
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 
@@ -1293,6 +1298,9 @@ msgstr "All Companies"
 msgid "All Customers"
 msgstr "All Customers"
 
+msgid "All departments"
+msgstr "All departments"
+
 msgid "All Documents"
 msgstr "All Documents"
 
@@ -1310,6 +1318,9 @@ msgstr "All members of selected groups and selected individuals will be able to 
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "All rows imported — {inserted} inserted, {updated} updated."
+
+msgid "All shifts"
+msgstr "All shifts"
 
 msgid "All Suppliers"
 msgstr "All Suppliers"
@@ -6208,6 +6219,9 @@ msgstr "Expires in {0}d"
 msgid "Expiring first"
 msgstr "Expiring first"
 
+msgid "Expiring Soon"
+msgstr "Expiring Soon"
+
 msgid "Expiry"
 msgstr "Expiry"
 
@@ -6681,9 +6695,6 @@ msgstr "Files attached here ride along on every purchase order email sent to thi
 msgid "Filter"
 msgstr "Filter"
 
-msgid "Filter ({appliedCount} applied)"
-msgstr "Filter ({appliedCount} applied)"
-
 msgid "Finalize"
 msgstr "Finalize"
 
@@ -6890,6 +6901,9 @@ msgstr "Gain on Disposal Account"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Gains recognized on disposal of fixed assets"
+
+msgid "Gantt"
+msgstr "Gantt"
 
 msgid "gauge"
 msgstr "gauge"
@@ -7531,9 +7545,6 @@ msgstr "In stock only"
 
 msgid "In the loop together"
 msgstr "In the loop together"
-
-msgid "In Training"
-msgstr "In Training"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
@@ -9927,6 +9938,9 @@ msgstr "No tools"
 msgid "No tools for this step"
 msgstr "No tools for this step"
 
+msgid "No trainings assigned"
+msgstr "No trainings assigned"
+
 msgid "No transactions in this period"
 msgstr "No transactions in this period"
 
@@ -10016,9 +10030,6 @@ msgstr "Not set"
 
 msgid "Not started"
 msgstr "Not started"
-
-msgid "Not Started"
-msgstr "Not Started"
 
 msgid "Not working today"
 msgstr "Not working today"
@@ -13302,9 +13313,6 @@ msgstr "Severities"
 msgid "Severity"
 msgstr "Severity"
 
-msgid "Shadow Weeks"
-msgstr "Shadow Weeks"
-
 msgid "shape"
 msgstr "shape"
 
@@ -15659,9 +15667,6 @@ msgstr "Training"
 msgid "Training Assignments"
 msgstr "Training Assignments"
 
-msgid "Training Completed"
-msgstr "Training Completed"
-
 msgid "Training Plan"
 msgstr "Training Plan"
 
@@ -16090,9 +16095,6 @@ msgstr "Used on the home screen and digital quotes"
 
 msgid "Used on the home screen in dark mode"
 msgstr "Used on the home screen in dark mode"
-
-msgid "Used to build the default learning curve"
-msgstr "Used to build the default learning curve"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Used to categorize items for reporting and analysis"
@@ -16583,14 +16585,8 @@ msgstr "Weeks 5 to 7"
 msgid "Weeks 7 to 8"
 msgstr "Weeks 7 to 8"
 
-msgid "Weeks of shadowing before an employee is productive"
-msgstr "Weeks of shadowing before an employee is productive"
-
 msgid "Weeks Open"
 msgstr "Weeks Open"
-
-msgid "Weeks to Full Proficiency"
-msgstr "Weeks to Full Proficiency"
 
 msgid "Weighted Average"
 msgstr "Weighted Average"

@@ -29,11 +29,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { name, shadowWeeks, recertifyEveryDays } = validation.data;
+  const { name, recertifyEveryDays } = validation.data;
 
   const update = await updateAbility(client, id, {
     name,
-    shadowWeeks,
     recertifyEveryDays: recertifyEveryDays ?? null
   });
   if (update.error) {
@@ -59,17 +58,9 @@ export default function AbilityDetailsRoute() {
 
   const onClose = () => navigate(path.to.ability(id));
 
-  const curve = ability?.curve as {
-    data?: { week: number; value: number }[];
-  } | null;
-  const points = Array.isArray(curve?.data) ? curve.data : [];
-
   const initialValues = {
     id: ability?.id,
     name: ability?.name ?? "",
-    startingPoint: points[0]?.value ?? 50,
-    weeks: points.length > 0 ? points[points.length - 1].week : 4,
-    shadowWeeks: ability?.shadowWeeks ?? 0,
     recertifyEveryDays: ability?.recertifyEveryDays ?? undefined
   };
 

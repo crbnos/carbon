@@ -15,8 +15,6 @@ function employee(
 ): QualifiedEmployee {
   return {
     employeeId: "emp-1",
-    active: true,
-    trainingCompleted: true,
     expiresAt: null,
     ...overrides,
   };
@@ -41,14 +39,6 @@ Deno.test("null expiry never expires", () => {
   assertEquals(isEligibleOperator(employee(), opStart), true);
 });
 
-Deno.test("inactive or not-training-completed are excluded regardless of expiry", () => {
-  assertEquals(isEligibleOperator(employee({ active: false }), opStart), false);
-  assertEquals(
-    isEligibleOperator(employee({ trainingCompleted: false }), opStart),
-    false
-  );
-});
-
 Deno.test("regression: pg DATE object stringified via String() defeated the expiry check; toIsoDate restores it", () => {
   const pgDateExpired = new Date(2026, 6, 7); // DATE '2026-07-07' as returned by pg
 
@@ -65,8 +55,6 @@ Deno.test("regression: pg DATE object stringified via String() defeated the expi
 Deno.test("expiry boundary respects the factory time zone", () => {
   const employee: QualifiedEmployee = {
     employeeId: "emp-1",
-    active: true,
-    trainingCompleted: true,
     expiresAt: "2026-07-21",
   };
   // 20:00 UTC on the 20th is already the 21st in India: the qualification

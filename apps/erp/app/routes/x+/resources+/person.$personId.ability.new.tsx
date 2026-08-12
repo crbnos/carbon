@@ -41,8 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { abilityId, active, trainingCompleted, lastTrainingDate, expiresAt } =
-    validation.data;
+  const { abilityId, lastTrainingDate, expiresAt } = validation.data;
 
   const resolvedExpiresAt = await resolveEmployeeAbilityExpiresAt(
     client,
@@ -55,8 +54,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     employeeId: personId,
     abilityId,
     companyId,
-    active,
-    trainingCompleted,
     lastTrainingDate: lastTrainingDate ?? null,
     expiresAt: resolvedExpiresAt
   });
@@ -75,7 +72,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   throw redirect(
-    path.to.personDetails(personId),
+    path.to.personAbilities(personId),
     await flash(request, success("Added ability"))
   );
 }
@@ -87,13 +84,11 @@ export default function NewPersonAbilityRoute() {
   const { t } = useLingui();
   const navigate = useNavigate();
 
-  const onClose = () => navigate(path.to.personDetails(personId));
+  const onClose = () => navigate(path.to.personAbilities(personId));
 
   const initialValues = {
     employeeId: personId,
     abilityId: "",
-    active: true,
-    trainingCompleted: false,
     lastTrainingDate: "",
     expiresAt: ""
   };

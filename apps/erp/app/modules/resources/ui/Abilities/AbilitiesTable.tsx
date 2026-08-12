@@ -1,20 +1,20 @@
-import { Checkbox, MenuIcon, MenuItem } from "@carbon/react";
+import { MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuAward,
   LuCalendarClock,
-  LuCheck,
   LuPencil,
   LuTrash,
   LuUsers
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
+import { EmployeeAvatarGroup, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Abilities } from "~/modules/resources";
+import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
 type Ability = Abilities[number];
@@ -29,6 +29,12 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const permissions = usePermissions();
+  const [people] = usePeople();
+
+  const employeeOptions = useMemo(
+    () => people.map((person) => ({ value: person.id, label: person.name })),
+    [people]
+  );
 
   const columns = useMemo<ColumnDef<Ability>[]>(() => {
     return [
@@ -57,41 +63,32 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         }
       },
       {
-        id: "qualifiedEmployees",
+        id: "employees",
         header: t`Qualified Employees`,
         cell: ({ row }) => {
-          // Qualified = active (query-filtered) ∧ training completed ∧ not
-          // expired — counting assigned-but-untrained people here would
-          // overstate real capacity
+          // Qualified = has an ability row ∧ not expired. Presence of the row
+          // is the qualification — there is no separate training gate.
           const today = new Date().toISOString().slice(0, 10);
-          const qualified = (row.original.employeeAbility ?? []).filter(
-            (ea) =>
-              ea.trainingCompleted && (!ea.expiresAt || ea.expiresAt >= today)
-          ).length;
-          return <span className="tabular-nums">{qualified}</span>;
+          const employeeIds = (row.original.employeeAbility ?? [])
+            .filter((ea) => !ea.expiresAt || ea.expiresAt >= today)
+            .map((ea) => ea.employeeId);
+          return employeeIds.length > 0 ? (
+            <EmployeeAvatarGroup employeeIds={employeeIds} />
+          ) : (
+            <span className="text-muted-foreground">&mdash;</span>
+          );
         },
         meta: {
-          icon: <LuUsers />
-        }
-      },
-      {
-        accessorKey: "active",
-        header: t`Active`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
-        meta: {
+          icon: <LuUsers />,
           filter: {
             type: "static",
-            options: [
-              { value: "true", label: "Active" },
-              { value: "false", label: "Inactive" }
-            ]
-          },
-          pluralHeader: t`Active Statuses`,
-          icon: <LuCheck />
+            options: employeeOptions,
+            isArray: true
+          }
         }
       }
     ];
-  }, [t]);
+  }, [t, employeeOptions]);
 
   const renderContextMenu = useCallback<(row: Ability) => JSX.Element>(
     (row) => (

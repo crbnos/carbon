@@ -1,18 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { activeJobStatuses } from "@carbon/database";
 import {
   Badge,
-  Button,
   ClientOnly,
   Combobox,
   cn,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
   HStack,
   ResizableHandle,
   ResizablePanel,
@@ -21,37 +12,23 @@ import {
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
-import {
-  LuBoxes,
-  LuChevronDown,
-  LuFactory,
-  LuTriangleAlert
-} from "react-icons/lu";
+import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs, Location } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { DateTime, Empty } from "~/components";
+import { useLocations } from "~/components/Form/Location";
 import { Gantt } from "~/components/Gantt";
-import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
-import type { ColumnFilter } from "~/components/Table/components/Filter/types";
-import { useDateFormatter } from "~/hooks";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
-import {
-  getCapacityReservationsByJob,
-  getJobOperationsForTimeline,
-  getProductionEventsByJob
-} from "~/modules/production";
-import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
-import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
+import { getDepartmentsList } from "~/modules/people";
+import { getCapacityReservationsForResources } from "~/modules/production";
+import { buildResourceTimeline } from "~/modules/production/ui/Schedule/resourceTimeline";
 import {
   TIMELINE_DATE_OPTIONS,
   TimelineDetail
 } from "~/modules/production/ui/Schedule/TimelineDetail";
-import type {
-  TimelineGroupBy,
-  TimelineNodeDetail
-} from "~/modules/production/ui/Schedule/timeline";
-import { buildJobTimeline } from "~/modules/production/ui/Schedule/timeline";
+import type { TimelineNodeDetail } from "~/modules/production/ui/Schedule/timeline";
+import { getWorkCentersByLocation } from "~/modules/resources";
+import { resolveLocationId } from "~/modules/shared/location.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import {
@@ -60,122 +37,77 @@ import {
 } from "~/utils/resizable-panels";
 
 export const handle: Handle = {
-  breadcrumb: msg`Timeline`,
-  to: path.to.scheduleGantt(),
+  breadcrumb: msg`Gantt`,
+  to: path.to.scheduleGantt,
   module: "production"
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "production"
   });
 
-  const url = new URL(request.url);
-  const requestedJobId = url.searchParams.get("jobId");
-  // View option (like the dates board's week/month): work-center grouping is
-  // the default; "?view=assembly" switches to the BOM view
-  const groupBy: TimelineGroupBy =
-    url.searchParams.get("view") === "assembly" ? "assembly" : "workCenter";
-  // Standard filter params, e.g. "filter=workCenter:in:wc1,wc2"
-  const workCenterFilter = new Set<string>();
-  for (const f of url.searchParams.getAll("filter")) {
-    const [key, , value] = f.split(":");
-    if (key === "workCenter" && value) {
-      for (const v of value.split(",")) {
-        workCenterFilter.add(v);
-      }
-    }
-  }
-
   const resizeSettings = await getResizableGanttSettings(request);
 
-  const jobs = await client
-    .from("job")
-    .select("id, jobId, status")
-    .eq("companyId", companyId)
-    .in("status", [...activeJobStatuses])
-    .order("createdAt", { ascending: false })
-    .limit(100);
+  const url = new URL(request.url);
+  const locationId = await resolveLocationId(client, request, {
+    searchParams: url.searchParams,
+    userId,
+    companyId,
+    onDefaultsError: path.to.production,
+    onNoLocations: path.to.production
+  });
 
-  const jobOptions = (jobs.data ?? []).map((j) => ({
-    value: j.id,
-    label: j.jobId
+  const departmentId = url.searchParams.get("department");
+
+  const [reservations, locationWorkCenters, departmentsList] =
+    await Promise.all([
+      getCapacityReservationsForResources(client, companyId, locationId),
+      getWorkCentersByLocation(client, locationId),
+      getDepartmentsList(client, companyId)
+    ]);
+
+  // Every active work center in the plant — seeded as a lane so a station with
+  // no scheduled work still shows up on the board. Narrowed to the selected
+  // department when one is chosen.
+  const plantWorkCenters = (locationWorkCenters.data ?? [])
+    .filter(
+      (workCenter) => !departmentId || workCenter.departmentId === departmentId
+    )
+    .map((workCenter) => ({
+      id: workCenter.id as string,
+      name: (workCenter.name ?? "Work Center") as string
+    }));
+  const departmentWorkCenterIds = new Set(plantWorkCenters.map((wc) => wc.id));
+
+  // A department scopes the board to its work centers and their reservations —
+  // employee/operator-pool lanes are not department-scoped, so they drop out
+  // while a department filter is active.
+  const rows = departmentId
+    ? (reservations.data ?? []).filter(
+        (r) =>
+          r.resourceKind === "WorkCenter" &&
+          departmentWorkCenterIds.has(r.resourceId)
+      )
+    : (reservations.data ?? []);
+
+  const departments = (departmentsList.data ?? []).map((department) => ({
+    value: department.id,
+    label: department.name
   }));
 
-  const selectedJobId = requestedJobId ?? jobs.data?.[0]?.id ?? null;
-
-  if (!selectedJobId) {
-    return {
-      jobOptions,
-      selectedJobId: null,
-      jobStatus: null,
-      jobDueDate: null,
-      conflictCount: 0,
-      trace: null,
-      detailsById: {} as Record<string, TimelineNodeDetail>,
-      groupBy,
-      workCenterOptions: [] as { value: string; label: string }[],
-      resizeSettings
-    };
-  }
-
-  const [job, operations, reservations, productionEvents] = await Promise.all([
-    client
-      .from("job")
-      .select("id, jobId, status, dueDate")
-      .eq("id", selectedJobId)
-      .eq("companyId", companyId)
-      .single(),
-    getJobOperationsForTimeline(client, selectedJobId),
-    getCapacityReservationsByJob(client, selectedJobId),
-    getProductionEventsByJob(client, selectedJobId)
-  ]);
-
-  if (job.error || !job.data) {
-    return {
-      jobOptions,
-      selectedJobId: null,
-      jobStatus: null,
-      jobDueDate: null,
-      conflictCount: 0,
-      trace: null,
-      detailsById: {} as Record<string, TimelineNodeDetail>,
-      groupBy,
-      workCenterOptions: [] as { value: string; label: string }[],
-      resizeSettings
-    };
-  }
-
-  // Resolve display names: work centers + abilities for reservations, users
-  // for assignees and timecards
+  // Resolve resource names: work centers + named operators + legacy
+  // ability (operator pool) rows
   const workCenterIds = new Set<string>();
   const abilityIds = new Set<string>();
-  const userIds = new Set<string>();
-  for (const r of reservations.data ?? []) {
+  const employeeIds = new Set<string>();
+  for (const r of rows) {
     if (r.resourceKind === "WorkCenter") workCenterIds.add(r.resourceId);
-    else if (r.resourceKind === "Employee") userIds.add(r.resourceId);
+    else if (r.resourceKind === "Employee") employeeIds.add(r.resourceId);
     else abilityIds.add(r.resourceId);
   }
-  for (const o of operations.data ?? []) {
-    if (o.assignee) userIds.add(o.assignee);
-    // Ops' stations may not appear in any reservation yet — the filter
-    // options and group labels still need their names
-    if (o.workCenterId) workCenterIds.add(o.workCenterId);
-  }
-  for (const e of productionEvents.data ?? []) {
-    if (e.employeeId) userIds.add(e.employeeId);
-  }
-  // A make method's parentMaterialId points at a jobMaterial row in the
-  // PARENT make method — resolve that ownership so the Gantt can nest
-  // subassemblies under the assembly that consumes them
-  const parentMaterialIds = new Set<string>();
-  for (const o of operations.data ?? []) {
-    if (o.jobMakeMethod?.parentMaterialId) {
-      parentMaterialIds.add(o.jobMakeMethod.parentMaterialId);
-    }
-  }
 
-  const [workCenters, abilities, users, parentMaterials] = await Promise.all([
+  const [workCenters, abilities, operators] = await Promise.all([
     workCenterIds.size > 0
       ? client
           .from("workCenter")
@@ -188,22 +120,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .select("id, name")
           .in("id", Array.from(abilityIds))
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    userIds.size > 0
-      ? client.from("user").select("id, fullName").in("id", Array.from(userIds))
+    employeeIds.size > 0
+      ? client
+          .from("user")
+          .select("id, fullName")
+          .in("id", Array.from(employeeIds))
       : Promise.resolve({
           data: [] as { id: string; fullName: string | null }[]
-        }),
-    parentMaterialIds.size > 0
-      ? client
-          .from("jobMaterial")
-          .select("id, jobMakeMethodId, order")
-          .in("id", Array.from(parentMaterialIds))
-      : Promise.resolve({
-          data: [] as {
-            id: string;
-            jobMakeMethodId: string;
-            order: number | null;
-          }[]
         })
   ]);
 
@@ -213,114 +136,64 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const abilityNames = new Map(
     (abilities.data ?? []).map((a) => [a.id, a.name])
   );
-  const userNames = new Map((users.data ?? []).map((u) => [u.id, u.fullName]));
-  const materialOwnerMethod = new Map(
-    (parentMaterials.data ?? []).map((m) => [m.id, m.jobMakeMethodId])
-  );
-  const materialOrder = new Map(
-    (parentMaterials.data ?? []).map((m) => [m.id, m.order])
+  const operatorNames = new Map(
+    (operators.data ?? []).map((u) => [u.id, u.fullName])
   );
 
-  const allOperations = operations.data ?? [];
-  const workCenterOptions = [
-    ...new Map(
-      allOperations
-        .filter((o) => o.workCenterId)
-        .map((o) => [
-          o.workCenterId as string,
-          {
-            value: o.workCenterId as string,
-            label:
-              workCenterNames.get(o.workCenterId as string) ?? "Work Center"
-          }
-        ])
-    ).values()
-  ].sort((a, b) => a.label.localeCompare(b.label));
-
-  const visibleOperations =
-    workCenterFilter.size > 0
-      ? allOperations.filter(
-          (o) => o.workCenterId && workCenterFilter.has(o.workCenterId)
-        )
-      : allOperations;
-  const visibleOperationIds = new Set(visibleOperations.map((o) => o.id));
-
-  const timeline = buildJobTimeline({
-    job: {
-      id: job.data.id,
-      readableId: job.data.jobId,
-      status: job.data.status
-    },
-    operations: visibleOperations.map((o) => ({
-      id: o.id,
-      description: o.description,
-      order: o.order ?? 0,
-      status: o.status,
-      startDate: o.startDate,
-      dueDate: o.dueDate,
-      hasConflict: o.hasConflict,
-      conflictReason: o.conflictReason,
-      assigneeName: o.assignee ? (userNames.get(o.assignee) ?? null) : null,
-      workCenterName: o.workCenter?.name ?? null,
-      workCenterId: o.workCenterId ?? null,
-      makeMethodId: o.jobMakeMethod?.id ?? null,
-      makeMethodParentMaterialId: o.jobMakeMethod?.parentMaterialId ?? null,
-      makeMethodParentMakeMethodId: o.jobMakeMethod?.parentMaterialId
-        ? (materialOwnerMethod.get(o.jobMakeMethod.parentMaterialId) ?? null)
-        : null,
-      makeMethodParentMaterialOrder: o.jobMakeMethod?.parentMaterialId
-        ? (materialOrder.get(o.jobMakeMethod.parentMaterialId) ?? null)
-        : null,
-      makeMethodItemReadableId: o.jobMakeMethod?.item?.readableId ?? null
-    })),
-    reservations: (reservations.data ?? [])
-      .filter((r) => visibleOperationIds.has(r.operationId))
-      .map((r) => ({
-        id: r.id,
-        operationId: r.operationId,
-        resourceKind: r.resourceKind,
-        resourceName:
-          r.resourceKind === "WorkCenter"
-            ? (workCenterNames.get(r.resourceId) ?? "Work Center")
-            : r.resourceKind === "Employee"
-              ? (userNames.get(r.resourceId) ?? "Operator")
-              : (abilityNames.get(r.resourceId) ?? "Operator Pool"),
-        startAt: r.startAt,
-        endAt: r.endAt,
-        earliestStartAt: r.earliestStartAt,
-        scheduleNote: r.scheduleNote,
-        workHours: r.workHours
-      })),
-    productionEvents: (productionEvents.data ?? [])
-      .filter((e) => visibleOperationIds.has(e.jobOperationId))
-      .map((e) => ({
-        id: e.id,
-        operationId: e.jobOperationId,
-        type: e.type,
-        employeeName: e.employeeId
-          ? (userNames.get(e.employeeId) ?? null)
-          : null,
-        startTime: e.startTime,
-        endTime: e.endTime
-      })),
-    groupBy
+  const timeline = buildResourceTimeline({
+    workCenters: plantWorkCenters,
+    reservations: rows.map((r) => ({
+      id: r.id,
+      resourceKind: r.resourceKind,
+      resourceId: r.resourceId,
+      resourceName:
+        r.resourceKind === "WorkCenter"
+          ? (workCenterNames.get(r.resourceId) ?? "Work Center")
+          : r.resourceKind === "Employee"
+            ? (operatorNames.get(r.resourceId) ?? "Operator")
+            : (abilityNames.get(r.resourceId) ?? "Operator Pool"),
+      startAt: r.startAt,
+      endAt: r.endAt,
+      jobId: r.jobId,
+      jobReadableId: r.job?.jobId ?? r.jobId,
+      operationDescription: r.jobOperation?.description ?? null,
+      hasConflict: r.jobOperation?.hasConflict ?? false,
+      conflictReason: r.jobOperation?.conflictReason ?? null,
+      scheduleNote: r.scheduleNote,
+      workHours: r.workHours
+    }))
   });
 
+  const jobCount = new Set(rows.map((r) => r.jobId)).size;
+  const conflictCount = new Set(
+    rows.filter((r) => r.jobOperation?.hasConflict).map((r) => r.operationId)
+  ).size;
+
+  // Count every station shown, not just the ones carrying reservations —
+  // include plant work centers, plus any resource a reservation references.
+  const shownWorkCenterIds = new Set<string>([
+    ...plantWorkCenters.map((workCenter) => workCenter.id),
+    ...workCenterIds
+  ]);
+
   return {
-    jobOptions,
-    selectedJobId,
-    jobStatus: job.data.status,
-    jobDueDate: job.data.dueDate,
-    conflictCount: (operations.data ?? []).filter((o) => o.hasConflict).length,
-    trace: {
-      events: timeline.events,
-      duration: timeline.totalDuration,
-      rootSpanStatus: "completed" as const,
-      rootStartedAt: timeline.windowStart
-    },
-    detailsById: timeline.detailsById,
-    groupBy,
-    workCenterOptions,
+    locationId,
+    departmentId,
+    departments,
+    resourceCount: shownWorkCenterIds.size + abilityIds.size + employeeIds.size,
+    reservationCount: rows.length,
+    jobCount,
+    conflictCount,
+    trace:
+      timeline.events.length > 1
+        ? {
+            events: timeline.events,
+            duration: timeline.totalDuration,
+            rootSpanStatus: "completed" as const,
+            rootStartedAt: timeline.windowStart
+          }
+        : null,
+    detailsById: timeline.detailsById as Record<string, TimelineNodeDetail>,
     resizeSettings
   };
 }
@@ -330,52 +203,40 @@ function getSpanId(location: Location<any>): string | undefined {
   return search.get("span") ?? undefined;
 }
 
-export default function GanttView() {
+function getLocationPath(locationId: string) {
+  return `${path.to.scheduleGantt}?location=${locationId}`;
+}
+
+export default function ResourceGanttView() {
   const {
-    jobOptions,
-    selectedJobId,
-    jobStatus,
-    jobDueDate,
+    locationId,
+    departmentId,
+    departments,
+    resourceCount,
+    reservationCount,
+    jobCount,
     conflictCount,
     trace,
     detailsById,
-    groupBy,
-    workCenterOptions,
     resizeSettings
   } = useLoaderData<typeof loader>();
+
   const { t } = useLingui();
   const navigate = useNavigate();
-  const { formatDate } = useDateFormatter();
-
+  const locations = useLocations();
   const { location, replaceSearchParam } = useReplaceLocation();
   const selectedSpanId = getSpanId(location);
 
-  const setView = (view: string) => {
-    if (view === groupBy) return;
+  // Department filters server-side, so it needs a real navigation (loader
+  // re-run) — not replaceSearchParam, which only rewrites the URL client-side.
+  const changeDepartment = (value: string) => {
     const params = new URLSearchParams(location.search);
-    if (view === "assembly") {
-      params.set("view", "assembly");
-    } else {
-      params.delete("view");
-    }
-    // The selected span's node may not exist in the other grouping
+    params.set("location", locationId);
+    if (value && value !== "all") params.set("department", value);
+    else params.delete("department");
     params.delete("span");
-    navigate(`${location.pathname}?${params.toString()}`);
+    navigate(`${path.to.scheduleGantt}?${params.toString()}`);
   };
-
-  const filters = useMemo<ColumnFilter[]>(
-    () => [
-      {
-        accessorKey: "workCenter",
-        header: t`Work Center`,
-        filter: {
-          type: "static",
-          options: workCenterOptions
-        }
-      }
-    ],
-    [t, workCenterOptions]
-  );
 
   const changeToSpan = useDebounce((selectedSpan: string) => {
     replaceSearchParam("span", selectedSpan);
@@ -389,64 +250,35 @@ export default function GanttView() {
     <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full bg-background">
       <HStack className="justify-between px-4 py-2 border-b border-border bg-card">
         <HStack spacing={2}>
-          <ScheduleNavigation />
           <Combobox
+            asButton
             size="sm"
-            className="w-56"
-            value={selectedJobId ?? ""}
-            options={jobOptions}
-            placeholder={t`Select a job`}
-            onChange={(jobId) => {
-              if (jobId) {
-                const params = new URLSearchParams(location.search);
-                params.set("jobId", jobId);
-                params.delete("span");
-                navigate(`${location.pathname}?${params.toString()}`);
-              }
+            value={locationId}
+            options={locations}
+            onChange={(selected) => {
+              // hard refresh because the loader's location default won't
+              // otherwise pick up the new selection
+              window.location.href = getLocationPath(selected);
             }}
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="sm"
-                variant="secondary"
-                leftIcon={
-                  groupBy === "workCenter" ? <LuFactory /> : <LuBoxes />
-                }
-                rightIcon={<LuChevronDown />}
-              >
-                {groupBy === "workCenter" ? t`Work Centers` : t`Assemblies`}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48">
-              <DropdownMenuRadioGroup value={groupBy} onValueChange={setView}>
-                <DropdownMenuLabel>
-                  <Trans>Group by</Trans>
-                </DropdownMenuLabel>
-                <DropdownMenuRadioItem value="workCenter">
-                  <DropdownMenuIcon icon={<LuFactory />} />
-                  <Trans>Work Centers</Trans>
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="assembly">
-                  <DropdownMenuIcon icon={<LuBoxes />} />
-                  <Trans>Assemblies</Trans>
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {workCenterOptions.length > 0 && (
-            <>
-              <Filter filters={filters} />
-              <ActiveFilters filters={filters} />
-            </>
+          {departments.length > 0 && (
+            <Combobox
+              asButton
+              size="sm"
+              value={departmentId ?? "all"}
+              options={[
+                { value: "all", label: t`All departments` },
+                ...departments
+              ]}
+              onChange={changeDepartment}
+            />
           )}
-          {jobStatus && <div className="h-4 w-px bg-border" />}
-          <JobStatus status={jobStatus} />
-          {jobDueDate && (
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              <Trans>Due {formatDate(jobDueDate)}</Trans>
-            </span>
-          )}
+          <span className="text-xs text-muted-foreground whitespace-nowrap tabular-nums">
+            <Trans>
+              {resourceCount} resources · {reservationCount} reservations ·{" "}
+              {jobCount} jobs
+            </Trans>
+          </span>
           {conflictCount > 0 && (
             <Badge
               variant="destructive"
@@ -467,14 +299,6 @@ export default function GanttView() {
             <Trans>Scheduled</Trans>
           </HStack>
           <HStack className="gap-x-1">
-            <span className="inline-block h-2 w-4 rounded-sm bg-blue-500 [background-image:repeating-linear-gradient(45deg,transparent,transparent_2px,rgba(255,255,255,0.45)_2px,rgba(255,255,255,0.45)_4px)]" />
-            <Trans>Estimated</Trans>
-          </HStack>
-          <HStack className="gap-x-1">
-            <span className="inline-block h-2 w-4 rounded-sm bg-gray-500 [background-image:repeating-linear-gradient(45deg,transparent,transparent_2px,rgba(255,255,255,0.45)_2px,rgba(255,255,255,0.45)_4px)]" />
-            <Trans>In progress</Trans>
-          </HStack>
-          <HStack className="gap-x-1">
             <span className="inline-block h-2 w-4 rounded-sm bg-red-500" />
             <Trans>Conflict</Trans>
           </HStack>
@@ -492,11 +316,12 @@ export default function GanttView() {
           )}
         </HStack>
       </HStack>
-      {!trace || !selectedJobId ? (
+      {!trace ? (
         <div className="flex flex-1 items-center justify-center">
           <Empty>
             <Trans>
-              No released jobs to visualize. Release a job to see its schedule.
+              No capacity reservations to visualize. Schedule a job to see
+              work-center load.
             </Trans>
           </Empty>
         </div>
@@ -524,17 +349,8 @@ export default function GanttView() {
                 >
                   <Gantt
                     selectedId={selectedSpanId}
-                    key={`${selectedJobId}-${groupBy}-${trace.events.length}-${trace.events[0]?.id ?? "-"}`}
+                    key={trace.events[0]?.id ?? "-"}
                     events={trace.events}
-                    // One row per workstation by default; the chevron expands
-                    // to the individual operations
-                    collapsedIds={
-                      groupBy === "workCenter"
-                        ? trace.events
-                            .filter((e) => e.id.startsWith("wc:"))
-                            .map((e) => e.id)
-                        : undefined
-                    }
                     onSelectedIdChanged={(selectedSpan) => {
                       if (!selectedSpan) {
                         replaceSearchParam("span");
@@ -561,7 +377,6 @@ export default function GanttView() {
                     >
                       <TimelineDetail
                         detail={selectedDetail}
-                        jobId={selectedJobId}
                         onClose={() => replaceSearchParam("span")}
                       />
                     </ResizablePanel>

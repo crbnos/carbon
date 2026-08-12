@@ -130,6 +130,11 @@ msgstr "{0}天假"
 #. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}h 空闲"
+
+#. placeholder {0}: formatHours(requiredHours)
+msgid "{0}h required"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} 个零件已跳过 — 它们已有待处理作业"
 
@@ -1293,6 +1298,9 @@ msgstr "所有公司"
 msgid "All Customers"
 msgstr "所有客户"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "所有文档"
 
@@ -1310,6 +1318,9 @@ msgstr "所选组的所有成员和所选个人将能够批准请求"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "所有供应商"
@@ -6208,6 +6219,9 @@ msgstr "在 {0}d 后过期"
 msgid "Expiring first"
 msgstr "先到期"
 
+msgid "Expiring Soon"
+msgstr ""
+
 msgid "Expiry"
 msgstr "过期"
 
@@ -6681,9 +6695,6 @@ msgstr "此处附加的文件将随附在发送给此供应商的每份采购订
 msgid "Filter"
 msgstr "筛选"
 
-msgid "Filter ({appliedCount} applied)"
-msgstr "筛选（已应用 {appliedCount} 个）"
-
 msgid "Finalize"
 msgstr "完成"
 
@@ -6890,6 +6901,9 @@ msgstr "处置获利账户"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的获利"
+
+msgid "Gantt"
+msgstr ""
 
 msgid "gauge"
 msgstr "规格"
@@ -7531,9 +7545,6 @@ msgstr "仅库存"
 
 msgid "In the loop together"
 msgstr "一起保持沟通"
-
-msgid "In Training"
-msgstr "培训中"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件或 Slack 发送给您。"
@@ -9927,6 +9938,9 @@ msgstr "没有工具"
 msgid "No tools for this step"
 msgstr "此步骤没有工具"
 
+msgid "No trainings assigned"
+msgstr ""
+
 msgid "No transactions in this period"
 msgstr "此期间无交易"
 
@@ -10015,9 +10029,6 @@ msgid "Not set"
 msgstr "未设置"
 
 msgid "Not started"
-msgstr "未开始"
-
-msgid "Not Started"
 msgstr "未开始"
 
 msgid "Not working today"
@@ -13302,9 +13313,6 @@ msgstr "严重程度"
 msgid "Severity"
 msgstr "严重程度"
 
-msgid "Shadow Weeks"
-msgstr "跟班周数"
-
 msgid "shape"
 msgstr "形状"
 
@@ -15659,9 +15667,6 @@ msgstr "培训"
 msgid "Training Assignments"
 msgstr "培训分配"
 
-msgid "Training Completed"
-msgstr "培训已完成"
-
 msgid "Training Plan"
 msgstr "培训计划"
 
@@ -16090,9 +16095,6 @@ msgstr "用于主屏幕和数字报价"
 
 msgid "Used on the home screen in dark mode"
 msgstr "在深色模式下用于主屏幕"
-
-msgid "Used to build the default learning curve"
-msgstr "用于构建默认学习曲线"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "用于对项目进行分类以用于报告和分析"
@@ -16583,14 +16585,8 @@ msgstr "第5至7周"
 msgid "Weeks 7 to 8"
 msgstr "第7至8周"
 
-msgid "Weeks of shadowing before an employee is productive"
-msgstr "员工提高生产力前的跟班周数"
-
 msgid "Weeks Open"
 msgstr "周数开放"
-
-msgid "Weeks to Full Proficiency"
-msgstr "达到完全熟练的周数"
 
 msgid "Weighted Average"
 msgstr "加权平均"

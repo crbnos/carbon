@@ -1113,7 +1113,7 @@ export async function getOperationEligibility(
 
   const employeeAbility = await client
     .from("employeeAbility")
-    .select("active, trainingCompleted, expiresAt")
+    .select("expiresAt")
     .eq("employeeId", employeeId)
     .eq("abilityId", ability.data.id)
     .eq("companyId", companyId)
@@ -1127,17 +1127,12 @@ export async function getOperationEligibility(
     return { eligible: true, reason: null };
   }
 
-  if (!employeeAbility.data || !employeeAbility.data.active) {
+  // Qualification is presence-based: the row existing means qualified, subject
+  // only to expiry below.
+  if (!employeeAbility.data) {
     return {
       eligible: false,
       reason: `Requires ${abilityName} — not qualified`
-    };
-  }
-
-  if (!employeeAbility.data.trainingCompleted) {
-    return {
-      eligible: false,
-      reason: `Requires ${abilityName} — training not completed`
     };
   }
 

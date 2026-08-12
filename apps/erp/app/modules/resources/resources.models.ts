@@ -17,25 +17,10 @@ export const abilityNameValidator = z.object({
   name: z.string().trim().min(1, { message: "Name is required" })
 });
 
-export const abilityValidator = z
-  .object({
-    name: z.string().trim().min(1, { message: "Name is required" }),
-    startingPoint: zfd.numeric(
-      z.number().min(0, { message: "Learning curve is required" })
-    ),
-    weeks: zfd.numeric(z.number().min(0, { message: "Weeks is required" })),
-    shadowWeeks: zfd.numeric(
-      z.number().min(0, { message: "Shadow is required" })
-    ),
-    recertifyEveryDays: zfd.numeric(z.number().int().min(1).optional()),
-    employees: z
-      .array(z.string().min(1, { message: "Invalid selection" }))
-      .min(1, { message: "Group members are required" })
-      .optional()
-  })
-  .refine((schema) => schema.shadowWeeks <= schema.weeks, {
-    message: "name is required when you send color on request"
-  });
+export const abilityValidator = z.object({
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  recertifyEveryDays: zfd.numeric(z.number().int().min(1).optional())
+});
 
 export const contractorValidator = z.object({
   id: z.string().min(1, { message: "Supplier Contact is required" }),
@@ -52,8 +37,6 @@ export const contractorValidator = z.object({
 export const employeeAbilityCellValidator = z.object({
   employeeId: z.string().min(1, { message: "Employee is required" }),
   abilityId: z.string().min(1, { message: "Ability is required" }),
-  active: zfd.checkbox(),
-  trainingCompleted: zfd.checkbox(),
   lastTrainingDate: zfd.text(z.string().optional()),
   expiresAt: zfd.text(z.string().optional())
 });

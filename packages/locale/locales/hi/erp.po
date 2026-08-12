@@ -130,6 +130,11 @@ msgstr "{0}द बंद"
 #. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}घंटे मुक्त"
+
+#. placeholder {0}: formatHours(requiredHours)
+msgid "{0}h required"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} भाग छोड़ दिए गए — उनके पास पहले से ही खुली नौकरियाँ हैं"
 
@@ -1293,6 +1298,9 @@ msgstr "सभी कंपनियां"
 msgid "All Customers"
 msgstr "सभी ग्राहक"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "सभी दस्तावेज़"
 
@@ -1310,6 +1318,9 @@ msgstr "चयनित समूहों के सभी सदस्य औ�
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "सभी पंक्तियाँ आयात की गईं — {inserted} डाली गईं, {updated} अपडेट की गईं।"
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "सभी आपूर्तिकर्ता"
@@ -6208,6 +6219,9 @@ msgstr "{0}d में समाप्त होता है"
 msgid "Expiring first"
 msgstr "पहले समाप्त होने वाला"
 
+msgid "Expiring Soon"
+msgstr ""
+
 msgid "Expiry"
 msgstr "समाप्ति"
 
@@ -6681,9 +6695,6 @@ msgstr "यहां संलग्न की गई फाइलें इस 
 msgid "Filter"
 msgstr "फ़िल्टर"
 
-msgid "Filter ({appliedCount} applied)"
-msgstr "फ़िल्टर ({appliedCount} लागू)"
-
 msgid "Finalize"
 msgstr "अंतिम रूप दें"
 
@@ -6890,6 +6901,9 @@ msgstr "निपटान पर लाभ खाता"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "स्थिर संपत्तियों के निपटान पर मान्यता प्राप्त लाभ"
+
+msgid "Gantt"
+msgstr ""
 
 msgid "gauge"
 msgstr "गेज"
@@ -7531,9 +7545,6 @@ msgstr "केवल स्टॉक में"
 
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
-
-msgid "In Training"
-msgstr "प्रशिक्षण में"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "इन-ऐप नोटिफिकेशन हमेशा डिलीवर किए जाते हैं। चुनें कि कौन से विषय आपको ईमेल या Slack के माध्यम से भी पहुंचते हैं।"
@@ -9927,6 +9938,9 @@ msgstr "कोई उपकरण नहीं"
 msgid "No tools for this step"
 msgstr "इस कदम के लिए कोई उपकरण नहीं"
 
+msgid "No trainings assigned"
+msgstr ""
+
 msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
 
@@ -10015,9 +10029,6 @@ msgid "Not set"
 msgstr "सेट नहीं है"
 
 msgid "Not started"
-msgstr "शुरू नहीं किया गया"
-
-msgid "Not Started"
 msgstr "शुरू नहीं किया गया"
 
 msgid "Not working today"
@@ -13302,9 +13313,6 @@ msgstr "गंभीरताएं"
 msgid "Severity"
 msgstr "गंभीरता"
 
-msgid "Shadow Weeks"
-msgstr "प्रशिक्षण सप्ताह"
-
 msgid "shape"
 msgstr "आकार"
 
@@ -15659,9 +15667,6 @@ msgstr "प्रशिक्षण"
 msgid "Training Assignments"
 msgstr "प्रशिक्षण असाइनमेंट"
 
-msgid "Training Completed"
-msgstr "प्रशिक्षण पूर्ण"
-
 msgid "Training Plan"
 msgstr "प्रशिक्षण योजना"
 
@@ -16090,9 +16095,6 @@ msgstr "होम स्क्रीन और डिजिटल उद्ध�
 
 msgid "Used on the home screen in dark mode"
 msgstr "होम स्क्रीन पर डार्क मोड में उपयोग किया जाता है"
-
-msgid "Used to build the default learning curve"
-msgstr "डिफ़ॉल्ट सीखने के वक्र को बनाने के लिए उपयोग किया जाता है"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "रिपोर्टिंग और विश्लेषण के लिए आइटम को वर्गीकृत करने के लिए उपयोग किया जाता है"
@@ -16583,14 +16585,8 @@ msgstr "सप्ताह 5 से 7"
 msgid "Weeks 7 to 8"
 msgstr "सप्ताह 7 से 8"
 
-msgid "Weeks of shadowing before an employee is productive"
-msgstr "एक कर्मचारी के उत्पादक होने से पहले प्रशिक्षण के सप्ताह"
-
 msgid "Weeks Open"
 msgstr "हफ्ते खुले"
-
-msgid "Weeks to Full Proficiency"
-msgstr "पूर्ण दक्षता के लिए सप्ताह"
 
 msgid "Weighted Average"
 msgstr "भारित औसत"

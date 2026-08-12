@@ -49,12 +49,18 @@ type Lane = {
 
 export function buildResourceTimeline(input: {
   reservations: ResourceTimelineReservation[];
+  /**
+   * Every work center in the plant — seeded as an empty lane so the board
+   * shows a station even when nothing is scheduled on it. Without this the
+   * Gantt only surfaces resources that already carry a reservation.
+   */
+  workCenters?: { id: string; name: string }[];
 }): ResourceTimeline {
-  const { reservations } = input;
+  const { reservations, workCenters = [] } = input;
 
   const detailsById: Record<string, TimelineNodeDetail> = {};
 
-  if (reservations.length === 0) {
+  if (reservations.length === 0 && workCenters.length === 0) {
     const root = makeRootEvent(0, false);
     detailsById[ROOT_ID] = {
       kind: "resource",
@@ -76,12 +82,27 @@ export function buildResourceTimeline(input: {
     Date.parse(r.startAt),
     Date.parse(r.endAt)
   ]);
-  const windowStart = Math.min(...timestamps);
-  const windowEnd = Math.max(...timestamps);
+  // With no reservations there is no real window; fall back to a one-day span
+  // from "now" so the empty work-center lanes still have a time axis to sit on.
+  const windowStart =
+    timestamps.length > 0 ? Math.min(...timestamps) : Date.now();
+  const windowEnd =
+    timestamps.length > 0 ? Math.max(...timestamps) : windowStart + 86_400_000;
   const totalDuration = Math.max(windowEnd - windowStart, 1);
 
-  // One lane per resource; work centers first, each group alphabetical
+  // One lane per resource; work centers first, each group alphabetical. Seed a
+  // lane for every plant work center up front, then attach reservations —
+  // stations with no scheduled work keep an empty lane.
   const laneByKey = new Map<string, Lane>();
+  for (const workCenter of workCenters) {
+    const key = `WorkCenter:${workCenter.id}`;
+    laneByKey.set(key, {
+      id: `lane:${key}`,
+      resourceKind: "WorkCenter",
+      resourceName: workCenter.name,
+      reservations: []
+    });
+  }
   for (const r of reservations) {
     const key = `${r.resourceKind}:${r.resourceId}`;
     let lane = laneByKey.get(key);
@@ -122,8 +143,16 @@ export function buildResourceTimeline(input: {
     const sorted = [...lane.reservations].sort(
       (a, b) => Date.parse(a.startAt) - Date.parse(b.startAt)
     );
-    const laneStart = Math.min(...sorted.map((r) => Date.parse(r.startAt)));
-    const laneEnd = Math.max(...sorted.map((r) => Date.parse(r.endAt)));
+    // An empty lane (station with no scheduled work) collapses to the window
+    // start with zero duration — it renders as a labeled row with no bar.
+    const laneStart =
+      sorted.length > 0
+        ? Math.min(...sorted.map((r) => Date.parse(r.startAt)))
+        : windowStart;
+    const laneEnd =
+      sorted.length > 0
+        ? Math.max(...sorted.map((r) => Date.parse(r.endAt)))
+        : windowStart;
     const laneConflict = sorted.some((r) => r.hasConflict);
     const laneTitle =
       lane.resourceKind === "OperatorPool"

@@ -16,7 +16,6 @@ import type { z } from "zod";
 import { EmployeeAvatar } from "~/components";
 import {
   Ability,
-  Boolean,
   DatePicker,
   Employee,
   Hidden,
@@ -83,11 +82,6 @@ const EmployeeAbilityForm = ({
                 {mode === "new-ability" && (
                   <Ability name="abilityId" label={t`Ability`} />
                 )}
-                <Boolean name="active" label={t`Active`} />
-                <Boolean
-                  name="trainingCompleted"
-                  label={t`Training Completed`}
-                />
                 <DatePicker
                   name="lastTrainingDate"
                   label={t`Last Training Date`}

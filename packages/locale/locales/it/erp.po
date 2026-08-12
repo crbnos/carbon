@@ -130,6 +130,11 @@ msgstr "{0}d libero"
 #. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}h libere"
+
+#. placeholder {0}: formatHours(requiredHours)
+msgid "{0}h required"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parti saltate — hanno già processi aperti"
 
@@ -1293,6 +1298,9 @@ msgstr "Tutte le Aziende"
 msgid "All Customers"
 msgstr "Tutti i clienti"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "Tutti i documenti"
 
@@ -1310,6 +1318,9 @@ msgstr "Tutti i membri dei gruppi selezionati e gli individui selezionati potran
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Tutte le righe importate — {inserted} inserite, {updated} aggiornate."
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Tutti i fornitori"
@@ -6208,6 +6219,9 @@ msgstr "Scade tra {0}g"
 msgid "Expiring first"
 msgstr "Scadenza prima"
 
+msgid "Expiring Soon"
+msgstr ""
+
 msgid "Expiry"
 msgstr "Scadenza"
 
@@ -6681,9 +6695,6 @@ msgstr "I file allegati qui vengono inclusi in ogni email di ordine d'acquisto i
 msgid "Filter"
 msgstr "Filtro"
 
-msgid "Filter ({appliedCount} applied)"
-msgstr "Filtro ({appliedCount} applicato)"
-
 msgid "Finalize"
 msgstr "Finalizza"
 
@@ -6890,6 +6901,9 @@ msgstr "Conto Guadagno sulla Dismissione"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Guadagni riconosciuti sulla dismissione dei cespiti"
+
+msgid "Gantt"
+msgstr ""
 
 msgid "gauge"
 msgstr "Calibri"
@@ -7531,9 +7545,6 @@ msgstr "Solo in giacenza"
 
 msgid "In the loop together"
 msgstr "Nel giro insieme"
-
-msgid "In Training"
-msgstr "In Formazione"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Le notifiche in-app vengono sempre consegnate. Scegli quali argomenti vuoi ricevere anche per e-mail o Slack."
@@ -9927,6 +9938,9 @@ msgstr "Nessuno strumento"
 msgid "No tools for this step"
 msgstr "Nessuno strumento per questo passaggio"
 
+msgid "No trainings assigned"
+msgstr ""
+
 msgid "No transactions in this period"
 msgstr "Nessuna transazione in questo periodo"
 
@@ -10016,9 +10030,6 @@ msgstr "Non impostato"
 
 msgid "Not started"
 msgstr "Non iniziato"
-
-msgid "Not Started"
-msgstr "Non Iniziato"
 
 msgid "Not working today"
 msgstr "Non lavora oggi"
@@ -13302,9 +13313,6 @@ msgstr "Gravità"
 msgid "Severity"
 msgstr "Gravità"
 
-msgid "Shadow Weeks"
-msgstr "Settimane di affiancamento"
-
 msgid "shape"
 msgstr "forma"
 
@@ -15659,9 +15667,6 @@ msgstr "Formazione"
 msgid "Training Assignments"
 msgstr "Assegnazioni di Formazione"
 
-msgid "Training Completed"
-msgstr "Formazione completata"
-
 msgid "Training Plan"
 msgstr "Piano di Formazione"
 
@@ -16090,9 +16095,6 @@ msgstr "Utilizzato nella schermata iniziale e nelle quotazioni digitali"
 
 msgid "Used on the home screen in dark mode"
 msgstr "Utilizzato nella schermata iniziale in modalità scura"
-
-msgid "Used to build the default learning curve"
-msgstr "Utilizzato per costruire la curva di apprendimento predefinita"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Utilizzato per categorizzare gli articoli per la reportistica e l'analisi"
@@ -16583,14 +16585,8 @@ msgstr "Settimane 5-7"
 msgid "Weeks 7 to 8"
 msgstr "Settimane 7-8"
 
-msgid "Weeks of shadowing before an employee is productive"
-msgstr "Settimane di affiancamento prima che un dipendente sia produttivo"
-
 msgid "Weeks Open"
 msgstr "Settimane Aperte"
-
-msgid "Weeks to Full Proficiency"
-msgstr "Settimane per la piena competenza"
 
 msgid "Weighted Average"
 msgstr "Media Ponderata"

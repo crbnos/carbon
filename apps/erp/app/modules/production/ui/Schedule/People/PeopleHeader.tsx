@@ -1,6 +1,7 @@
 import {
   Button,
   Calendar,
+  Combobox,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -20,15 +21,12 @@ import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
-  LuBuilding2,
   LuCalendarDays,
   LuChevronDown,
   LuChevronLeft,
   LuChevronRight,
-  LuClock,
   LuCopy,
   LuEllipsisVertical,
-  LuMapPin,
   LuTimer,
   LuUserX
 } from "react-icons/lu";
@@ -36,8 +34,6 @@ import { useNavigate, useSearchParams, useSubmit } from "react-router";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { ScheduleNavigation } from "../Kanban/ScheuleNavigation";
-import { PeopleFilter } from "./PeopleFilter";
 
 export type WeekOption = {
   start: string;
@@ -191,60 +187,47 @@ export function PeopleHeader({
   return (
     <HStack className="px-4 py-2 flex flex-wrap gap-y-2 justify-between bg-card border-b border-border">
       <HStack className="flex-wrap gap-y-2">
-        <ScheduleNavigation />
-        <PeopleFilter
-          categories={[
-            {
-              key: "location",
-              header: t`Location`,
-              icon: <LuMapPin />,
-              options: locations,
-              value: locationId,
-              clearable: false
-            },
-            ...(departments.length > 0
-              ? [
-                  {
-                    key: "department",
-                    header: t`Department`,
-                    icon: <LuBuilding2 />,
-                    options: departments,
-                    value: departmentId,
-                    clearable: true
-                  }
-                ]
-              : []),
-            ...(view !== "capacity" && shifts.length > 1
-              ? [
-                  {
-                    key: "shift",
-                    header: t`Shift`,
-                    icon: <LuClock />,
-                    options: shifts.map((shift) => ({
-                      value: shift.id,
-                      label: shift.name
-                    })),
-                    value: shiftId,
-                    clearable: true
-                  }
-                ]
-              : [])
-          ]}
-          onChange={(key, value) => {
-            if (key === "location") {
-              if (!value) return;
+        <HStack spacing={2} className="flex-wrap gap-y-2">
+          <Combobox
+            asButton
+            size="sm"
+            value={locationId}
+            options={locations}
+            onChange={(selected) => {
+              if (!selected) return;
               const newParams = new URLSearchParams(searchParams);
-              newParams.set("location", value);
-              window.location.href = `${
-                path.to.schedulePeople
-              }?${newParams.toString()}`;
-            } else if (key === "department") {
-              setDepartment(value ?? "all");
-            } else if (key === "shift") {
-              setShift(value ?? "all");
-            }
-          }}
-        />
+              newParams.set("location", selected);
+              window.location.href = `${path.to.schedulePeople}?${newParams.toString()}`;
+            }}
+          />
+          {departments.length > 0 && (
+            <Combobox
+              asButton
+              size="sm"
+              value={departmentId ?? "all"}
+              options={[
+                { value: "all", label: t`All departments` },
+                ...departments
+              ]}
+              onChange={(selected) => setDepartment(selected || "all")}
+            />
+          )}
+          {view !== "capacity" && shifts.length > 1 && (
+            <Combobox
+              asButton
+              size="sm"
+              value={shiftId ?? "all"}
+              options={[
+                { value: "all", label: t`All shifts` },
+                ...shifts.map((shift) => ({
+                  value: shift.id,
+                  label: shift.name
+                }))
+              ]}
+              onChange={(selected) => setShift(selected || "all")}
+            />
+          )}
+        </HStack>
         <Tabs value={view} onValueChange={setView}>
           <TabsList>
             <TabsTrigger value="board">

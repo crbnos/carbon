@@ -1,4 +1,4 @@
-import { Hidden, Input, Number, Submit, ValidatedForm } from "@carbon/form";
+import { Input, Number, Submit, ValidatedForm } from "@carbon/form";
 import {
   Button,
   HStack,
@@ -18,7 +18,7 @@ import { abilityValidator } from "~/modules/resources";
 import { path } from "~/utils/path";
 
 type AbilityFormProps = {
-  initialValues: Omit<z.infer<typeof abilityValidator>, "employees"> & {
+  initialValues: z.infer<typeof abilityValidator> & {
     id?: string;
   };
   open?: boolean;
@@ -68,27 +68,8 @@ const AbilityForm = ({
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
-              <Hidden
-                name="startingPoint"
-                value={initialValues.startingPoint}
-              />
-              {isEditing && <Hidden name="weeks" value={initialValues.weeks} />}
               <VStack spacing={4}>
                 <Input name="name" label={t`Name`} />
-                {!isEditing && (
-                  <Number
-                    name="weeks"
-                    label={t`Weeks to Full Proficiency`}
-                    helperText={t`Used to build the default learning curve`}
-                    minValue={0}
-                  />
-                )}
-                <Number
-                  name="shadowWeeks"
-                  label={t`Shadow Weeks`}
-                  helperText={t`Weeks of shadowing before an employee is productive`}
-                  minValue={0}
-                />
                 <Number
                   name="recertifyEveryDays"
                   label={t`Recertify Every (Days)`}

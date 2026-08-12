@@ -4,7 +4,7 @@ import { Trans } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CardEditorContext, PeopleCardItem } from "./PeopleCard";
 import { cardId, PeopleCard } from "./PeopleCard";
-import { UNASSIGNED } from "./peopleShared";
+import { formatHours, UNASSIGNED } from "./peopleShared";
 
 export type CardHandlers = {
   onOpen: (item: PeopleCardItem) => void;
@@ -13,6 +13,7 @@ export type CardHandlers = {
 export function PeopleColumn({
   id,
   title,
+  requiredHours,
   items,
   isDisabled,
   sticky = false,
@@ -21,6 +22,8 @@ export function PeopleColumn({
 }: {
   id: string;
   title: string;
+  /** operation-hours this work center needs on the board's date (demand) */
+  requiredHours?: number;
   items: PeopleCardItem[];
   isDisabled: boolean;
   sticky?: boolean;
@@ -65,8 +68,20 @@ export function PeopleColumn({
         sticky && isScrolled && "shadow-[6px_0_12px_-6px_rgba(0,0,0,0.15)]"
       )}
     >
-      <div className="p-4 w-full font-semibold text-left flex flex-row items-center sticky top-0 z-1 border-b bg-card">
-        <span className="mr-auto truncate">{title}</span>
+      <div className="p-4 w-full font-semibold text-left flex flex-row items-center gap-2 sticky top-0 z-1 border-b bg-card">
+        <div className="mr-auto min-w-0">
+          <div className="truncate">{title}</div>
+          {/* Always rendered (incl. "0h required") so every column header is
+              the same height and the cards below line up. The Unassigned column
+              passes no hours — reserve the line so it aligns too. */}
+          <div className="text-xs font-normal text-muted-foreground tabular-nums">
+            {requiredHours !== undefined ? (
+              <Trans>{formatHours(requiredHours)}h required</Trans>
+            ) : (
+              <>&nbsp;</>
+            )}
+          </div>
+        </div>
         <Badge variant="secondary">{headcount}</Badge>
       </div>
       <ScrollArea className="flex-grow">

@@ -4,10 +4,12 @@ import {
   LuChartLine,
   LuCirclePlay,
   LuListChecks,
+  LuListTodo,
   LuSquareChartGantt,
   LuSquareKanban,
   LuStepForward,
-  LuTrash
+  LuTrash,
+  LuUsers
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
@@ -36,7 +38,7 @@ export default function useProductionSubmodules() {
         {
           name: t`Planning`,
           to: path.to.productionPlanning,
-          icon: <LuSquareChartGantt />,
+          icon: <LuListTodo />,
           table: "production-planning"
         },
         {
@@ -49,6 +51,16 @@ export default function useProductionSubmodules() {
           name: t`Schedule`,
           to: path.to.scheduleDates,
           icon: <LuSquareKanban />
+        },
+        {
+          name: t`Gantt`,
+          to: path.to.scheduleGantt,
+          icon: <LuSquareChartGantt />
+        },
+        {
+          name: t`People`,
+          to: path.to.schedulePeople,
+          icon: <LuUsers />
         }
       ]
     },
