@@ -194,7 +194,7 @@ not a drop-in.
 
 `computeLowLevelCodes` enumerates root-to-node paths with a copied `visited`
 Set per child — worst-case exponential on diamond-heavy BOMs. Measured against
-every company's real BOM (script: `scripts/bench-mrp-llc.mjs`): worst case
+every company's real BOM: worst case
 **1.62 ms** (`d0r…`, 1,133 items / 3,330 edges); a Kahn's-algorithm longest-path
 reference agrees on every acyclic input and is at best 2.4× faster. Current
 customer BOMs are too shallow/narrow to trigger the explosion. The Kahn rewrite
