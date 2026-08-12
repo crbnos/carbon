@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-12T04:53:51.766Z",
+  "generated": "2026-08-12T04:57:49.315Z",
   "totalTools": 1431,
   "modules": 15,
   "tools": [
@@ -14861,11 +14861,20 @@
           },
           "unitPrice": {
             "type": "number"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "itemId",
-          "supplierId"
+          "supplierId",
+          "_operation"
         ]
       }
     },
