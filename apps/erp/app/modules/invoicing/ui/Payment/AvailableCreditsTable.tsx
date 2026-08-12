@@ -65,7 +65,6 @@ type CreditRow = {
   amount: number;
 };
 
-
 const GRID =
   "grid grid-cols-[2rem_minmax(8rem,1fr)_7rem_minmax(9rem,1fr)_8rem] gap-3";
 

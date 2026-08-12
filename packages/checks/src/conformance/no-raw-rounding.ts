@@ -19,8 +19,10 @@ export const noRawRounding: ConformanceCheck = {
   description:
     "Value-bearing rounding goes through @carbon/utils round/withScrap/applyRate, not Math.round/ceil/floor or toFixed",
   provenance: {
-    deprecates: "ad-hoc Math.round/Math.ceil/Math.floor/toFixed on prices, rates, and quantities",
-    replacedBy: "round/withScrap/applyRate from @carbon/utils (functions/shared/precision.ts)",
+    deprecates:
+      "ad-hoc Math.round/Math.ceil/Math.floor/toFixed on prices, rates, and quantities",
+    replacedBy:
+      "round/withScrap/applyRate from @carbon/utils (functions/shared/precision.ts)",
     since: "2026-08-11"
   },
   scan(file: string, contents: string): Violation[] {

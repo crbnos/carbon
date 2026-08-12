@@ -20,8 +20,10 @@ export const noInlineFractionDigits: ConformanceCheck = {
   description:
     "Pick a named kind from @carbon/utils format.ts (money/price/percent/quantity, INPUT_FORMAT.*) instead of passing digits",
   provenance: {
-    deprecates: "inline minimumFractionDigits/maximumFractionDigits at call sites",
-    replacedBy: "moneyFormatOptions/priceFormatOptions/percentFormatOptions/quantityFormatOptions + INPUT_FORMAT from @carbon/utils",
+    deprecates:
+      "inline minimumFractionDigits/maximumFractionDigits at call sites",
+    replacedBy:
+      "moneyFormatOptions/priceFormatOptions/percentFormatOptions/quantityFormatOptions + INPUT_FORMAT from @carbon/utils",
     since: "2026-08-11"
   },
   scan(file: string, contents: string): Violation[] {
