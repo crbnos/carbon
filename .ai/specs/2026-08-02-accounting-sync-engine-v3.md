@@ -1,6 +1,14 @@
 # Accounting Sync Engine v3 — Manufacturing Journal Sync, Dimensions, Tie-Out
 
-> Status: draft
+> Status: partially implemented — Phases 1–2 (policy + dispositions, dimensions):
+> **implemented**. Phase 3 (tie-out + close gate): **NOT built** — the §5 design stays
+> authoritative here, but its implementation is now owned by v4 Phase 3 (Pillar E). Phase 4
+> (AR/AP journal mode): **partial**.
+> Superseded in part (2026-08-11): the enforcement of invariants I1/I5 and the tie-out
+> delivery schedule are owned by
+> [2026-08-11-accounting-sync-delivery-robustness.md](2026-08-11-accounting-sync-delivery-robustness.md)
+> (v4); Rillet's dimension-slot design in §3 is superseded by
+> `.ai/plans/2026-08-11-rillet-all-dimensions.md`. Annotated notes mark each passage below.
 > Author: Brad Barbin + Claude
 > Date: 2026-08-02
 > Research: first-principles design per Brad's directive (2026-08-02) — no new competitor
@@ -91,6 +99,13 @@ Rillet payment webhook + pull sweep), and the event-trigger → enqueue → drai
 
 ### The contract (invariants)
 
+> **Enforcement (2026-08-11):** the 2026-08-11 audit found I1 ("total delivery") and I5
+> ("verifiable replication") had **no enforcement mechanism built** — recorded dispositions
+> depend on events that can be lost or never generated, and the tie-out was never implemented.
+> v4 supplies the enforcement: the outbound reconciliation sweep (v4 Phase 1) makes I1 hold
+> against event loss, and the §5 tie-out — implemented under v4 Phase 3 — proves I5. The
+> invariants themselves are unchanged. See 2026-08-11-accounting-sync-delivery-robustness.md.
+
 With an accounting integration connected and posting sync enabled:
 
 - **I1 — Total delivery.** Every `Posted` journal is delivered to the external GL — pushed
@@ -162,7 +177,15 @@ records the outcome instead of discarding the negative cases:
 - Posting sync disabled entirely, or no accounting integration → no rows (no noise for
   companies not using the feature; the tie-out page states "posting sync off").
 
-`Skipped` keeps its meaning (a human parked it); `Excluded` means policy did. The
+`Skipped` keeps its meaning (a human parked it); `Excluded` means policy did.
+
+> **Amended (2026-08-11):** v4 broadens `Skipped` — the drain now records engine no-ops as
+> `Skipped` with the reason preserved (previously a syncer "skipped" result was closed as
+> `Completed` with cleared error fields — the false-green class v4 F3), in addition to the
+> human Skip action. `Excluded` semantics are unchanged. See
+> 2026-08-11-accounting-sync-delivery-robustness.md §Pillar C.1.
+
+The
 sync-activity inbox becomes the complete audit trail, and the completeness check is
 `journal LEFT JOIN accountingSyncOperation` scoped from the integration's posting-sync
 start date — journals with no operation row indicate a missed event and feed the backfill.
@@ -256,6 +279,12 @@ exactly so the seam is clean.
 
 ### 3. Dimension sync (I3)
 
+> **Superseded for Rillet (2026-08-11):** Rillet no longer uses the slot system below — it has
+> no field cap, so every `line.dimensions` entry is sent on journals AND bills, with Rillet
+> **Fields** auto-provisioned by name (`POST /fields`) and values upserted, no slot config
+> required. Slots remain authoritative for QBO/Xero (real 2-slot caps). See
+> `.ai/plans/2026-08-11-rillet-all-dimensions.md`.
+
 Two layers, mirroring how account mapping already works:
 
 **Slot config** (per integration, in `companyIntegration.metadata.settings.postingSync.dimensionSlots`):
@@ -307,6 +336,11 @@ lives in the batch operation's `metadata`, and the inbox row expands to the memb
 netted lines don't balance to 2dp (pre-flight still enforces balance before push).
 
 ### 5. Tie-out + period-close gate (I5)
+
+> **Implementation ownership (2026-08-11):** NOT built as of 2026-08-11. The design in this
+> section stays authoritative; its delivery is now scheduled as **v4 Phase 3** (Pillar E),
+> alongside the outbound reconciliation sweep that feeds it — see
+> 2026-08-11-accounting-sync-delivery-robustness.md.
 
 **Tie-out** replaces the aggregate half of the weekly reconciliation:
 
@@ -519,7 +553,7 @@ MES: no changes.
 
 ## Acceptance Criteria
 
-Phase 1 — policy + dispositions
+Phase 1 — policy + dispositions *(status 2026-08-11: implemented)*
 - [ ] Posting a sales invoice (accounting enabled, posting sync on) creates an `Excluded`
       operation with reason `DOC_BACKED` and `metadata.backingDocument` pointing at the
       invoice — visible in the inbox — and no provider journal, while the invoice document
@@ -538,7 +572,8 @@ Phase 1 — policy + dispositions
       count(operation rows across all dispositions) — the I1 completeness query returns
       zero unaccounted journals.
 
-Phase 2 — dimensions
+Phase 2 — dimensions *(status 2026-08-11: implemented; Rillet since moved off slots — see the
+§3 note and `.ai/plans/2026-08-11-rillet-all-dimensions.md`)*
 - [ ] With Location slotted to QBO Class and values mapped, a Job Consumption journal pushes
       with `ClassRef` populated per line; the same journal to Xero carries the Tracking
       option; unslotted dimensions (e.g. Item) are absent and cause no warnings.
@@ -556,7 +591,8 @@ Phase 2 — dimensions
       mapping, per-provider mapper output (QBO/Xero/Rillet golden fixtures), degradation
       recording.
 
-Phase 3 — tie-out + close gate
+Phase 3 — tie-out + close gate *(status 2026-08-11: NOT built — implementation owned by v4
+Phase 3, see the §5 note)*
 - [ ] The tie-out page shows, for a seeded period, internal delta 0 for every account; after
       manually deleting one provider journal (sandbox), recompute shows a red external delta
       on exactly the affected account × period with the missing entry in the drill-down.
@@ -568,7 +604,7 @@ Phase 3 — tie-out + close gate
       policy table, dispositions, dimensions, tie-out); stale "Xero is the only live
       provider" claim gone.
 
-Phase 4 — AR/AP journal mode (both-cases support)
+Phase 4 — AR/AP journal mode (both-cases support) *(status 2026-08-11: partial)*
 - [ ] With `families.ar = "journals"` on QBO: posting a sales invoice pushes ONE journal
       entry whose AR line carries the customer ref (customer JIT-synced if unmapped), no
       Invoice document is created, and the payment applying to it pushes with the same
@@ -761,3 +797,14 @@ all three providers. See the "Complement" note in §2 and
 Carbon-side capture (Phase 1) is live: `journalLineDimension` rows exist on
 real posted journals (Item/Supplier/Location observed on the sandbox
 company's receipt + purchase-invoice journals).
+
+## Changelog addendum — reconciliation pass against v4 (2026-08-11)
+
+Status header set to partially implemented (Phases 1–2 implemented; Phase 3 NOT built;
+Phase 4 partial), with per-phase markers on the acceptance criteria. Notes added: I1/I5
+enforcement is delivered by v4 (outbound reconciliation sweep + tie-out); §5 tie-out +
+close gate implementation is owned by v4 Phase 3 (design stays here); `Skipped` is
+broadened by v4 Pillar C.1 (drain-recorded no-ops, not only human parks); §3's Rillet
+dimension slots are superseded by `.ai/plans/2026-08-11-rillet-all-dimensions.md` (all
+dimensions sent, Fields auto-provisioned; slots remain for QBO/Xero). No original text
+removed. See 2026-08-11-accounting-sync-delivery-robustness.md.

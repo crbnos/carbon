@@ -75393,6 +75393,267 @@ export default {
         tags: ["passkeyCredential"]
       }
     },
+    "/accountingSyncTieOut": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.carbonPostedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.syncedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.docBackedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.excludedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.pendingAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.blockedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.providerAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.internalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.externalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.computedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/accountingSyncTieOut"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["accountingSyncTieOut"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.accountingSyncTieOut"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["accountingSyncTieOut"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.carbonPostedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.syncedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.docBackedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.excludedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.pendingAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.blockedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.providerAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.internalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.externalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.computedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingSyncTieOut"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.carbonPostedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.syncedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.docBackedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.excludedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.pendingAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.blockedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.providerAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.internalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.externalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.computedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.accountingSyncTieOut"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingSyncTieOut"]
+      }
+    },
     "/fixedAsset": {
       get: {
         parameters: [
@@ -133096,6 +133357,125 @@ export default {
       },
       type: "object"
     },
+    accountingSyncTieOut: {
+      required: [
+        "id",
+        "companyId",
+        "integration",
+        "accountingPeriodId",
+        "accountId",
+        "carbonPostedAmount",
+        "syncedAmount",
+        "docBackedAmount",
+        "excludedAmount",
+        "pendingAmount",
+        "blockedAmount",
+        "internalDelta",
+        "computedAt",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('tieout'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        integration: {
+          format: "text",
+          type: "string"
+        },
+        accountingPeriodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `accountingPeriod.id`.<fk table='accountingPeriod' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        carbonPostedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        syncedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        docBackedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        excludedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        pendingAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        blockedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        providerAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        internalDelta: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        externalDelta: {
+          format: "numeric",
+          type: "number"
+        },
+        computedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     fixedAsset: {
       required: [
         "id",
@@ -178335,6 +178715,129 @@ export default {
     },
     "rowFilter.passkeyCredential.lastUsedAt": {
       name: "lastUsedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.accountingSyncTieOut": {
+      name: "accountingSyncTieOut",
+      description: "accountingSyncTieOut",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/accountingSyncTieOut"
+      }
+    },
+    "rowFilter.accountingSyncTieOut.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.integration": {
+      name: "integration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.accountingPeriodId": {
+      name: "accountingPeriodId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.carbonPostedAmount": {
+      name: "carbonPostedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.syncedAmount": {
+      name: "syncedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.docBackedAmount": {
+      name: "docBackedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.excludedAmount": {
+      name: "excludedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.pendingAmount": {
+      name: "pendingAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.blockedAmount": {
+      name: "blockedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.providerAmount": {
+      name: "providerAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.internalDelta": {
+      name: "internalDelta",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.externalDelta": {
+      name: "externalDelta",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.computedAt": {
+      name: "computedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

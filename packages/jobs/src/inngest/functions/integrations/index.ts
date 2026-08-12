@@ -1,5 +1,6 @@
 export { accountingBackfillFunction } from "./accounting-backfill";
 export { accountingConsolidationFunction } from "./accounting-consolidation";
+export { accountingOutboundSweepFunction } from "./accounting-outbound-sweep";
 export { accountingPullSweepFunction } from "./accounting-pull-sweep";
 export { accountingReconciliationFunction } from "./accounting-reconciliation";
 export { jiraSyncFunction, syncIssueFromJiraSchema } from "./jira";

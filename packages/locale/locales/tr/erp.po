@@ -60,6 +60,10 @@ msgstr "{0} hesaplar"
 msgid "{0} ago"
 msgstr "{0} önce"
 
+#. placeholder {0}: tieOut.deltaCellCount
+msgid "{0} cells with deltas"
+msgstr "{0} deltaları olan hücreler"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} müşteri bakiye ile"
@@ -1274,6 +1278,10 @@ msgstr "Kapsamda Hizala"
 msgid "All"
 msgstr "Tümü"
 
+#. placeholder {0}: tieOut.cellCount
+msgid "All {0} cells tie out"
+msgstr "Tüm {0} hücre uyumluyor"
+
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Tüm {total} aşama tamamlandı. Harika iş — ekibiniz çalışmaya başladı."
 
@@ -1518,6 +1526,7 @@ msgstr "Yukarıda açıkça kapsamda listelenmemiş herhangi bir şey"
 
 msgid "AP"
 msgstr "AP"
+
 msgid "AP Aging"
 msgstr "AP Yaşlandırma"
 
@@ -1644,6 +1653,7 @@ msgstr "AR"
 
 msgid "AR / AP representation"
 msgstr "AR / AP gösterimi"
+
 msgid "AR Aging"
 msgstr "AR Yaşlandırma"
 
@@ -2513,6 +2523,7 @@ msgstr "Defter Amortismanı"
 
 msgid "Books lock date (manual)"
 msgstr "Defterlerin kilitlenme tarihi (manuel)"
+
 msgid "Both"
 msgstr "Her ikisi"
 
@@ -2770,6 +2781,9 @@ msgstr "Carbon Logosu"
 
 msgid "Carbon only"
 msgstr "Yalnızca Carbon"
+
+msgid "Carbon Posted"
+msgstr "Carbon Kaydedildi"
 
 msgid "Carbon value"
 msgstr "Carbon değeri"
@@ -3188,6 +3202,13 @@ msgstr "Tamamlama Barkodu"
 
 msgid "Completion Time"
 msgstr "Tamamlama Süresi"
+
+#. placeholder {0}: formatRelativeTime(tieOut.computedAt)
+msgid "computed {0}"
+msgstr "hesaplanan {0}"
+
+msgid "Computed At"
+msgstr "Hesaplama Tarihi"
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Marjlar ve kilit alt toplamlarla sıkıştırılmış P&L"
@@ -5118,6 +5139,9 @@ msgstr "Durumlar"
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Kullanıcının mevcut izinlerini bu çalışan türü için varsayılan izinlerle üzerine yazmak ister misiniz?"
 
+msgid "Doc-Backed"
+msgstr "Belge Destekli"
+
 msgid "Docs"
 msgstr "Belgeler"
 
@@ -6201,10 +6225,14 @@ msgstr "Genelletilmiş Fiyat"
 msgid "External"
 msgstr "Harici"
 
-msgid "External ID"
-msgstr "Harici Kimlik"
+msgid "External Delta"
+msgstr "Harici Fark"
+
 msgid "External document"
 msgstr "Harici belge"
+
+msgid "External ID"
+msgstr "Harici Kimlik"
 
 msgid "External link"
 msgstr "Harici bağlantı"
@@ -7647,6 +7675,9 @@ msgstr "Talimatlar"
 msgid "Instructions are inherited from the procedure."
 msgstr "Talimatlar prosedürden miras alınır."
 
+msgid "Integration"
+msgstr "Entegrasyon"
+
 msgid "Integration not found"
 msgstr "Entegrasyon bulunamadı"
 
@@ -7682,6 +7713,9 @@ msgstr "Bankacılık faaliyetlerinden faiz geliri veya gideri"
 
 msgid "Internal"
 msgstr "Dahili"
+
+msgid "Internal Delta"
+msgstr "Dahili Fark"
 
 msgid "Internal notes"
 msgstr "İç notlar"
@@ -8061,6 +8095,7 @@ msgstr "Muhasebe Kaydı"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Bu tarih veya öncesine tarihlenmiş yevmiyeler kilitli olarak kabul edilir. Her ikisi de mevcut olduğunda sağlayıcı tarafından bildirilen kilitlenme tarihi ile birleştirilir."
+
 msgid "Just one"
 msgstr "Sadece bir"
 
@@ -8158,13 +8193,14 @@ msgstr "İşçilik Birimi"
 msgid "Language"
 msgstr "Dil"
 
+msgid "Last 6 Months"
+msgstr "Son 6 Ay"
+
 msgid "Last attempt"
 msgstr "Son deneme"
 
 msgid "Last Attempt"
 msgstr "Son Deneme"
-msgid "Last 6 Months"
-msgstr "Son 6 Ay"
 
 msgid "Last Calibration"
 msgstr "Son Kalibrasyon"
@@ -9771,6 +9807,9 @@ msgstr "Henüz ödeme yok."
 msgid "No planning data"
 msgstr "Planlama verisi yok"
 
+msgid "No posted journals in this period for this account"
+msgstr "Bu dönem için bu hesapta hiçbir muhasebe kaydı yayınlanmadı"
+
 msgid "No pricing for selected quantity"
 msgstr "Seçilen miktar için fiyat yok"
 
@@ -9941,6 +9980,9 @@ msgstr "Miktarı karşılayacak yeterli iş yok"
 
 msgid "Not reached"
 msgstr "Ulaşılmadı"
+
+msgid "Not recorded"
+msgstr "Kaydedilmedi"
 
 msgid "Not referenced anywhere yet."
 msgstr "Henüz hiçbir yerde referans verilmemiş."
@@ -11278,13 +11320,14 @@ msgstr "Planlanan Tarih"
 msgid "Properties"
 msgstr "Özellikler"
 
+msgid "Property"
+msgstr "Özellik"
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Carbon hesap numarasının sağlayıcı hesap koduyla tam olarak eşleştiği önerilen eşleşmeler."
 
 msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
 msgstr "Carbon boyut değerinin adı sağlayıcı seçeneğinin adıyla tamamen eşleştiği önerilen eşlemeler."
-msgid "Property"
-msgstr "Özellik"
 
 msgid "Protect the go-live date"
 msgstr "Go-live tarihini koruyun"
@@ -13463,6 +13506,9 @@ msgstr "{parentCurrency} cinsinden gösteriliyor"
 msgid "Showing the first 500 lines"
 msgstr "İlk 500 satır gösteriliyor"
 
+msgid "Showing the newest 200 journals"
+msgstr "En yeni 200 muhasebe kaydı gösteriliyor"
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Miktar açısından ilk 1.000 grup gösteriliyor"
 
@@ -14167,6 +14213,12 @@ msgstr "Senkronizasyon Etkinliği"
 
 msgid "Sync operation"
 msgstr "Senkronizasyon işlemi"
+
+msgid "Sync Tie-Out"
+msgstr "Senkronizasyon Uyumu"
+
+msgid "Synced"
+msgstr "Eşitlendi"
 
 msgid "System"
 msgstr "Sistem"
@@ -15315,6 +15367,9 @@ msgstr "Perşembe"
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Sevkiyatları faturaya bağlayın, yeniden veri girişi olmadan"
 
+msgid "Tie-out"
+msgstr "Uyum"
+
 msgid "Tie-Out"
 msgstr "Mutabakat Kontrolü"
 
@@ -15622,7 +15677,6 @@ msgid "Trial Balance"
 msgstr "Mizan"
 
 msgid "Trigger"
-msgstr "Tetikle"
 msgstr "Tetikleyici"
 
 msgid "Trigger type"
@@ -16322,6 +16376,9 @@ msgstr "Öneri Görüntüle"
 msgid "View Suppliers"
 msgstr "Tedarikçileri Görüntüle"
 
+msgid "View tie-out"
+msgstr "Uyumu Görüntüle"
+
 msgid "View Traceability Graph"
 msgstr "İzlenebilirlik Grafiğini Görüntüle"
 
@@ -16525,10 +16582,11 @@ msgstr "Carbon'a geçtiğinizde neler değişir ve kabaca ne kadar değerli olur
 msgid "What data"
 msgstr "Hangi veri"
 
-msgid "What happens when a journal is dated in a locked period."
-msgstr "Kilitli bir dönemde günlüğe tarih atanırsa ne olur?"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Envanterin yükselmesine veya düşmesine neyin sebep olduğu, herhangi bir boyuta göre"
+
+msgid "What happens when a journal is dated in a locked period."
+msgstr "Kilitli bir dönemde günlüğe tarih atanırsa ne olur?"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"

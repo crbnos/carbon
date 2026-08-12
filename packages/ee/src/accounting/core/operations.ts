@@ -601,10 +601,47 @@ export async function failOperation(
 }
 
 /**
+ * Mark an operation Skipped — the drain's close-out for a syncer no-op
+ * with NO remote copy behind it (shouldSync gate, config-disabled entity,
+ * parked payment). Truthful-ledger rule (v4 spec, Pillar C): such a no-op
+ * must never read Completed; the reason lands in errorMessage (errorCode
+ * stays null so the inbox renders it neutrally, not as an error badge).
+ * `completedAt` is stamped so terminal rows sort consistently. A no-op
+ * whose result carries a remoteId (fast-bailout, already-linked) still
+ * closes Completed — the remote copy exists, so Completed is the truth.
+ */
+export async function skipOperation(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    reason: string;
+  }
+): Promise<{ data: SyncOperation | null; error: string | null }> {
+  const now = new Date().toISOString();
+
+  const updated = await syncOperationTable(client)
+    .update({
+      status: "Skipped",
+      errorCode: null,
+      errorMessage: args.reason,
+      completedAt: now,
+      updatedAt: now
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .select("*")
+    .single();
+
+  if (updated.error) return { data: null, error: updated.error.message };
+  return { data: updated.data as SyncOperation, error: null };
+}
+
+/**
  * UI-driven status transition (Retry / Skip / Re-send) with the guard
- * table: Failed|Warning → Pending, Failed|Warning|Pending → Skipped,
- * Completed → Pending. Anything else returns an error string. Stamps
- * updatedBy.
+ * table: Failed|Warning|Skipped → Pending, Failed|Warning|Pending →
+ * Skipped, Completed → Pending. Anything else returns an error string.
+ * Stamps updatedBy.
  */
 export async function transitionOperation(
   client: SupabaseClient<Database>,

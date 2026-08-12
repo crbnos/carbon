@@ -16,14 +16,17 @@ import type { SyncOperationStatus, SyncOperationTrigger } from "./types";
 const ALL_STATUSES = SyncOperationStatusSchema.options;
 
 describe("getSyncOperationTransitionError", () => {
-  // Retry (Failed/Warning → Pending), Skip (Failed/Warning/Pending →
-  // Skipped), Re-send (Completed/Excluded → Pending — an Excluded journal
-  // re-decides against the current policy config)
+  // Retry (Failed/Warning/Skipped → Pending — Skipped covers both a human
+  // opt-out and the drain's machine no-op close), Skip
+  // (Failed/Warning/Pending → Skipped), Re-send (Completed/Excluded →
+  // Pending — an Excluded journal re-decides against the current policy
+  // config)
   const allowed: Array<[SyncOperationStatus, SyncOperationStatus]> = [
     ["Failed", "Pending"],
     ["Warning", "Pending"],
     ["Completed", "Pending"],
     ["Excluded", "Pending"],
+    ["Skipped", "Pending"],
     ["Failed", "Skipped"],
     ["Warning", "Skipped"],
     ["Pending", "Skipped"]
@@ -46,10 +49,9 @@ describe("getSyncOperationTransitionError", () => {
     }
   });
 
-  it("rejects transitions out of In Flight and Skipped entirely", () => {
+  it("rejects transitions out of In Flight entirely", () => {
     for (const to of ALL_STATUSES) {
       expect(getSyncOperationTransitionError("In Flight", to)).not.toBeNull();
-      expect(getSyncOperationTransitionError("Skipped", to)).not.toBeNull();
     }
   });
 });

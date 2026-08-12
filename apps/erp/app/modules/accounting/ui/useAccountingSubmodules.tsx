@@ -14,6 +14,7 @@ import {
   LuFileSpreadsheet,
   LuHandCoins,
   LuLayers,
+  LuScale,
   LuSheet
 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -34,6 +35,12 @@ export default function useAccountingSubmodules() {
             to: path.to.reports,
             role: "employee",
             icon: <LuFileSpreadsheet />
+          },
+          {
+            name: t`Sync Tie-Out`,
+            to: path.to.accountingSyncTieOut,
+            role: "employee",
+            icon: <LuScale />
           }
         ]
       },

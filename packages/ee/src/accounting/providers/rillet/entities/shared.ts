@@ -1,10 +1,14 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getAccountMappings } from "../../../core/account-mapping";
 import {
+  buildDimensionFieldLookup,
+  buildDimensionValueMappingEntityId,
   buildDimensionValueMappingLookup,
-  ensureDimensionValueExternalIds,
+  getDimensionMappings,
   getDimensionValueMappings,
+  loadDimensionNames,
   resolveDimensionValueLabels,
+  upsertDimensionMapping,
   upsertDimensionValueMapping
 } from "../../../core/dimension-mapping";
 import {
@@ -23,8 +27,8 @@ import {
 import { withTriggersDisabled } from "../../../core/utils";
 import { parseRilletDate, type Rillet } from "../models";
 import {
+  buildRilletIdempotencyKey,
   isRilletUnknownExternalReferenceTypeError,
-  parseRilletFieldTarget,
   type RilletProvider
 } from "../provider";
 
@@ -447,6 +451,7 @@ export abstract class RilletTransactionSyncer<
   // lookup are each fetched at most once per drain
   private postingSyncSettingsPromise?: Promise<PostingSyncSettings>;
   private dimensionValueMappingsPromise?: Promise<Map<string, string>>;
+  private dimensionFieldMappingsPromise?: Promise<Map<string, string>>;
 
   /**
    * Per-company posting-sync settings from
@@ -495,43 +500,155 @@ export abstract class RilletTransactionSyncer<
   }
 
   /**
-   * autoCreate — default ON for Rillet slots (Fields are dimension-native
-   * and value upsert is the expected flow): upsert missing Field values
-   * BY NAME — the value's resolved READABLE label (part readable id for
-   * items, name for everything else) — then store the mapping and update
-   * the lookup in place. Rillet's upsert-by-name returns the full Field,
-   * so re-pushing an existing name reuses its uuid instead of duplicating.
+   * `dimensionId` → Rillet Field id from the dimension mapping rows
+   * (entityType "dimension"). Mutated in place by resolveLineDimensions so
+   * later pushes in the same drain reuse an auto-provisioned Field.
    */
-  protected async ensureAutoCreatedDimensionValues(
-    lines: ReadonlyArray<{ dimensions?: JournalLineDimensionRef[] }>,
-    settings: PostingSyncSettings,
-    mappings: Map<string, string>
-  ): Promise<void> {
-    await ensureDimensionValueExternalIds({
-      lines,
-      slots: settings.dimensionSlots,
-      defaultAutoCreate: true, // Rillet: Field-value upsert is the expected flow
-      mappings,
-      resolveLabels: (values) =>
-        resolveDimensionValueLabels(this.database, { values }),
-      createExternalValue: async (slot, label) => {
-        const fieldId = parseRilletFieldTarget(slot.target);
-        if (!fieldId) {
-          throw new Error(`Unknown Rillet dimension target "${slot.target}"`);
+  public getDimensionFieldMappings(): Promise<Map<string, string>> {
+    if (!this.dimensionFieldMappingsPromise) {
+      this.dimensionFieldMappingsPromise = (async () => {
+        const mappings = await getDimensionMappings(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id
+        });
+        if (mappings.error) {
+          throw new Error(
+            `Failed to load dimension field mappings: ${mappings.error}`
+          );
         }
-        const value = await this.rilletProvider.upsertFieldValue(
+        return buildDimensionFieldLookup(mappings.data ?? []);
+      })();
+    }
+    return this.dimensionFieldMappingsPromise;
+  }
+
+  /**
+   * Resolve EVERY dimension on the given lines to a Rillet {field, value},
+   * auto-provisioning the Rillet Field (createField) and Field value
+   * (upsertFieldValue) as needed and persisting both mappings. Returns the
+   * two lookups the mapper needs. This is the "send all dimensions" flow that
+   * replaces the slot-gated setup for Rillet — Rillet has no field cap, so no
+   * dimension is dropped for lack of a slot. Field auto-create is BY NAME
+   * (reuse an existing Rillet Field with the same name before creating one);
+   * value auto-create is BY the value's resolved READABLE label (part
+   * readable id for items, name for everything else). A dimension whose name
+   * can't be resolved, or a value whose label can't (source row deleted), is
+   * left unmapped and the mapper drops just that ref.
+   */
+  protected async resolveLineDimensions(
+    lines: ReadonlyArray<{ dimensions?: JournalLineDimensionRef[] }>
+  ): Promise<{
+    fieldIdByDimensionId: ReadonlyMap<string, string>;
+    fieldValueIdsByValue: ReadonlyMap<string, string>;
+  }> {
+    const fieldIdByDimensionId = await this.getDimensionFieldMappings();
+    const fieldValueIdsByValue = await this.getDimensionValueMappings();
+
+    // 1. Auto-provision a Rillet Field per distinct dimension not yet mapped.
+    const dimensionIds = [
+      ...new Set(
+        lines.flatMap((line) =>
+          (line.dimensions ?? []).map((dimension) => dimension.dimensionId)
+        )
+      )
+    ];
+    const unmappedDimensionIds = dimensionIds.filter(
+      (id) => !fieldIdByDimensionId.has(id)
+    );
+
+    if (unmappedDimensionIds.length > 0) {
+      const names = await loadDimensionNames(this.database, {
+        dimensionIds: unmappedDimensionIds
+      });
+      // Reuse an existing Rillet Field with the same name before creating a
+      // new one — createField is not idempotent by name server-side.
+      const existingFieldIdByName = new Map(
+        (await this.rilletProvider.listFields()).map((field) => [
+          field.name,
+          field.id
+        ])
+      );
+
+      for (const dimensionId of unmappedDimensionIds) {
+        const name = names.get(dimensionId);
+        if (!name) continue; // dimension deleted — its values won't attach
+
+        let fieldId = existingFieldIdByName.get(name);
+        if (!fieldId) {
+          // Journal entries + bills are expense-side (EXPENSES applicability).
+          const created = await this.rilletProvider.createField(
+            name,
+            "EXPENSES",
+            buildRilletIdempotencyKey({
+              companyId: this.companyId,
+              operation: "create-field",
+              localId: dimensionId
+            })
+          );
+          fieldId = created.id;
+          existingFieldIdByName.set(name, fieldId);
+        }
+
+        const persisted = await upsertDimensionMapping(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id,
+          dimensionId,
+          externalId: fieldId,
+          externalName: name
+        });
+        if (persisted.error) {
+          throw new Error(
+            `Failed to store dimension field mapping: ${persisted.error}`
+          );
+        }
+        fieldIdByDimensionId.set(dimensionId, fieldId);
+      }
+    }
+
+    // 2. Auto-provision a Rillet Field value per distinct unmapped value whose
+    //    Field is now known.
+    const unmappedValues: JournalLineDimensionRef[] = [];
+    const seenValueKeys = new Set<string>();
+    for (const line of lines) {
+      for (const dimension of line.dimensions ?? []) {
+        if (!fieldIdByDimensionId.has(dimension.dimensionId)) continue;
+        const key = buildDimensionValueMappingEntityId(
+          dimension.dimensionId,
+          dimension.valueId
+        );
+        if (fieldValueIdsByValue.has(key) || seenValueKeys.has(key)) continue;
+        seenValueKeys.add(key);
+        unmappedValues.push({
+          dimensionId: dimension.dimensionId,
+          valueId: dimension.valueId
+        });
+      }
+    }
+
+    if (unmappedValues.length > 0) {
+      const labels = await resolveDimensionValueLabels(this.database, {
+        values: unmappedValues
+      });
+      for (const value of unmappedValues) {
+        const key = buildDimensionValueMappingEntityId(
+          value.dimensionId,
+          value.valueId
+        );
+        const label = labels.get(key);
+        if (!label) continue; // unresolvable label (source row deleted) — drop
+        const fieldId = fieldIdByDimensionId.get(value.dimensionId);
+        if (!fieldId) continue;
+
+        const created = await this.rilletProvider.upsertFieldValue(
           fieldId,
           label
         );
-        return value.id;
-      },
-      persistMapping: async (value, externalId, label) => {
         const persisted = await upsertDimensionValueMapping(this.database, {
           companyId: this.companyId,
           integration: this.provider.id,
           dimensionId: value.dimensionId,
           valueId: value.valueId,
-          externalId,
+          externalId: created.id,
           externalName: label
         });
         if (persisted.error) {
@@ -539,8 +656,11 @@ export abstract class RilletTransactionSyncer<
             `Failed to store dimension value mapping: ${persisted.error}`
           );
         }
+        fieldValueIdsByValue.set(key, created.id);
       }
-    });
+    }
+
+    return { fieldIdByDimensionId, fieldValueIdsByValue };
   }
 
   async pushToAccounting(entityId: string): Promise<SyncResult> {

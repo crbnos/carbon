@@ -60,6 +60,10 @@ msgstr "{0} cuentas"
 msgid "{0} ago"
 msgstr "{0} hace"
 
+#. placeholder {0}: tieOut.deltaCellCount
+msgid "{0} cells with deltas"
+msgstr "{0} celdas con diferencias"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} clientes con saldo"
@@ -1274,6 +1278,10 @@ msgstr "Alinear en el alcance"
 msgid "All"
 msgstr "Todos"
 
+#. placeholder {0}: tieOut.cellCount
+msgid "All {0} cells tie out"
+msgstr "Todas las {0} celdas cierran"
+
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Todas las {total} fases están completadas. Buen trabajo — tu equipo está en funcionamiento."
 
@@ -1518,6 +1526,7 @@ msgstr "Cualquier cosa no explícitamente listada en el alcance anterior"
 
 msgid "AP"
 msgstr "AP"
+
 msgid "AP Aging"
 msgstr "Análisis de Antigüedad de CxP"
 
@@ -1644,6 +1653,7 @@ msgstr "AR"
 
 msgid "AR / AP representation"
 msgstr "Representación de AR / AP"
+
 msgid "AR Aging"
 msgstr "Análisis de Antigüedad de CxC"
 
@@ -2513,6 +2523,7 @@ msgstr "Depreciación de Libro"
 
 msgid "Books lock date (manual)"
 msgstr "Fecha de bloqueo de libros (manual)"
+
 msgid "Both"
 msgstr "Ambos"
 
@@ -2770,6 +2781,9 @@ msgstr "Logo de Carbon"
 
 msgid "Carbon only"
 msgstr "Solo de Carbon"
+
+msgid "Carbon Posted"
+msgstr "Carbon Registrado"
 
 msgid "Carbon value"
 msgstr "Valor Carbon"
@@ -3188,6 +3202,13 @@ msgstr "Código de Barras de Finalización"
 
 msgid "Completion Time"
 msgstr "Tiempo de Finalización"
+
+#. placeholder {0}: formatRelativeTime(tieOut.computedAt)
+msgid "computed {0}"
+msgstr "calculado {0}"
+
+msgid "Computed At"
+msgstr "Calculado en"
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Estado de Resultados Condensado con márgenes y subtotales clave"
@@ -5118,6 +5139,9 @@ msgstr "Disposiciones"
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "¿Deseas sobrescribir los permisos actuales del usuario con los permisos predeterminados para este tipo de empleado?"
 
+msgid "Doc-Backed"
+msgstr "Respaldado por Documento"
+
 msgid "Docs"
 msgstr "Documentos"
 
@@ -6201,10 +6225,14 @@ msgstr "Precio Extendido"
 msgid "External"
 msgstr "Externo"
 
-msgid "External ID"
-msgstr "ID Externo"
+msgid "External Delta"
+msgstr "Diferencia Externa"
+
 msgid "External document"
 msgstr "Documento externo"
+
+msgid "External ID"
+msgstr "ID Externo"
 
 msgid "External link"
 msgstr "Enlace externo"
@@ -7647,6 +7675,9 @@ msgstr "Instrucciones"
 msgid "Instructions are inherited from the procedure."
 msgstr "Las instrucciones se heredan del procedimiento."
 
+msgid "Integration"
+msgstr "Integración"
+
 msgid "Integration not found"
 msgstr "Integración no encontrada"
 
@@ -7682,6 +7713,9 @@ msgstr "Ingresos o gastos por intereses de actividades bancarias"
 
 msgid "Internal"
 msgstr "Interno"
+
+msgid "Internal Delta"
+msgstr "Diferencia Interna"
 
 msgid "Internal notes"
 msgstr "Notas internas"
@@ -8061,6 +8095,7 @@ msgstr "Asiento de Diario"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Los diarios con fecha en o antes de esta fecha se tratan como bloqueados. Se fusionan con la fecha de bloqueo reportada por el proveedor cuando ambas existen."
+
 msgid "Just one"
 msgstr "Solo uno"
 
@@ -8158,13 +8193,14 @@ msgstr "Unidad de Trabajo"
 msgid "Language"
 msgstr "Idioma"
 
+msgid "Last 6 Months"
+msgstr "Últimos 6 Meses"
+
 msgid "Last attempt"
 msgstr "Último intento"
 
 msgid "Last Attempt"
 msgstr "Último Intento"
-msgid "Last 6 Months"
-msgstr "Últimos 6 Meses"
 
 msgid "Last Calibration"
 msgstr "Última Calibración"
@@ -9771,6 +9807,9 @@ msgstr "Sin pagos aún."
 msgid "No planning data"
 msgstr "Sin datos de planificación"
 
+msgid "No posted journals in this period for this account"
+msgstr "Sin diarios registrados en este período para esta cuenta"
+
 msgid "No pricing for selected quantity"
 msgstr "Sin precios para la cantidad seleccionada"
 
@@ -9941,6 +9980,9 @@ msgstr "No hay suficientes trabajos para cubrir la cantidad"
 
 msgid "Not reached"
 msgstr "No alcanzado"
+
+msgid "Not recorded"
+msgstr "No registrado"
 
 msgid "Not referenced anywhere yet."
 msgstr "Sin referencias aún."
@@ -11278,13 +11320,14 @@ msgstr "Fecha Prometida"
 msgid "Properties"
 msgstr "Propiedades"
 
+msgid "Property"
+msgstr "Propiedad"
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Coincidencias propuestas donde el número de cuenta de Carbon es exactamente igual al código de cuenta del proveedor."
 
 msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
 msgstr "Coincidencias propuestas donde el nombre del valor de dimensión Carbon es igual al nombre de la opción del proveedor exactamente."
-msgid "Property"
-msgstr "Propiedad"
 
 msgid "Protect the go-live date"
 msgstr "Proteger la fecha de puesta en marcha"
@@ -13463,6 +13506,9 @@ msgstr "Mostrando en {parentCurrency}"
 msgid "Showing the first 500 lines"
 msgstr "Mostrando las primeras 500 líneas"
 
+msgid "Showing the newest 200 journals"
+msgstr "Mostrando los 200 diarios más recientes"
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Mostrando los 1,000 grupos principales por cantidad"
 
@@ -14167,6 +14213,12 @@ msgstr "Actividad de sincronización"
 
 msgid "Sync operation"
 msgstr "Operación de sincronización"
+
+msgid "Sync Tie-Out"
+msgstr "Sincronización de Cierre"
+
+msgid "Synced"
+msgstr "Sincronizado"
 
 msgid "System"
 msgstr "Sistema"
@@ -15315,6 +15367,9 @@ msgstr "Jueves"
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Vincular envíos a una factura sin re-ingreso de datos"
 
+msgid "Tie-out"
+msgstr "Cierre"
+
 msgid "Tie-Out"
 msgstr "Conciliación"
 
@@ -15622,7 +15677,6 @@ msgid "Trial Balance"
 msgstr "Balance de Comprobación"
 
 msgid "Trigger"
-msgstr "Desencadenar"
 msgstr "Disparador"
 
 msgid "Trigger type"
@@ -16322,6 +16376,9 @@ msgstr "Ver Sugerencia"
 msgid "View Suppliers"
 msgstr "Ver Proveedores"
 
+msgid "View tie-out"
+msgstr "Ver cierre"
+
 msgid "View Traceability Graph"
 msgstr "Ver Gráfico de Trazabilidad"
 
@@ -16525,10 +16582,11 @@ msgstr "Qué cambia cuando te pasas a Carbon y aproximadamente cuánto vale. Est
 msgid "What data"
 msgstr "Qué datos"
 
-msgid "What happens when a journal is dated in a locked period."
-msgstr "¿Qué sucede cuando un diario está fechado en un período cerrado?"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Qué impulsó el inventario hacia arriba o hacia abajo, por cualquier dimensión"
+
+msgid "What happens when a journal is dated in a locked period."
+msgstr "¿Qué sucede cuando un diario está fechado en un período cerrado?"
 
 msgid "What is {translatedTerm}?"
 msgstr "¿Qué es {translatedTerm}?"

@@ -1,11 +1,9 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { CreateSubscriptionParams } from "@carbon/database/event";
+import { deleteEventSystemSubscriptionsByName } from "@carbon/database/event";
 import {
-  createEventSystemSubscription,
-  deleteEventSystemSubscriptionsByName
-} from "@carbon/database/event";
-import {
+  ensureProviderSubscriptions,
   getProviderIntegration,
+  getSyncSubscriptionName,
   ProviderID,
   type ProviderIntegrationMetadata
 } from "@carbon/ee/accounting";
@@ -24,40 +22,23 @@ export async function rilletHealthcheck(
   return await provider.validate();
 }
 
+/**
+ * Install/settings-save hook: converge this company's `rillet-sync` event
+ * subscriptions onto REQUIRED_SYNC_SUBSCRIPTIONS (the code-derived list —
+ * see @carbon/ee/accounting core/subscriptions). Runs on install AND on
+ * every settings save (onUpdate), so an existing install self-heals when
+ * the required set grows.
+ */
 export async function rilletOnInstall(companyId: string) {
   const client = getCarbonServiceRole();
-
-  // Push master data + documents. No purchaseOrder/salesOrder — Rillet has no
-  // PO endpoint, and orders have no Rillet representation. `payment` is here for
-  // the OUTBOUND half (Phase G): a Carbon-born Posted payment (e.g. a bill paid
-  // through Ramp) pushes to Rillet as a payment document. Provider-recorded
-  // payments still flow INTO Carbon via the Rillet webhook + pull sweep; the
-  // push syncer skips those (their mapping marks them provider-owned).
-  const tables: CreateSubscriptionParams["table"][] = [
-    "address",
-    "customer",
-    "supplier",
-    "item",
-    "salesInvoice",
-    "purchaseInvoice",
-    "payment"
-  ];
-
-  for (const table of tables) {
-    await createEventSystemSubscription(client, {
-      table,
-      companyId,
-      name: "rillet-sync",
-      operations: ["INSERT", "UPDATE", "DELETE"],
-      type: "SYNC",
-      config: {
-        provider: ProviderID.RILLET
-      }
-    });
-  }
+  await ensureProviderSubscriptions(client, companyId, ProviderID.RILLET);
 }
 
 export async function rilletOnUninstall(companyId: string) {
   const client = getCarbonServiceRole();
-  await deleteEventSystemSubscriptionsByName(client, companyId, "rillet-sync");
+  await deleteEventSystemSubscriptionsByName(
+    client,
+    companyId,
+    getSyncSubscriptionName(ProviderID.RILLET)
+  );
 }

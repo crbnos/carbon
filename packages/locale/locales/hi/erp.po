@@ -60,6 +60,10 @@ msgstr "{0} खाते"
 msgid "{0} ago"
 msgstr "{0} पहले"
 
+#. placeholder {0}: tieOut.deltaCellCount
+msgid "{0} cells with deltas"
+msgstr "{0} अंतर वाली कोशिकाएँ"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} ग्राहकों के साथ शेष"
@@ -1274,6 +1278,10 @@ msgstr "दायरे पर संरेखित करें"
 msgid "All"
 msgstr "सभी"
 
+#. placeholder {0}: tieOut.cellCount
+msgid "All {0} cells tie out"
+msgstr "सभी {0} कोशिकाएँ मेल खाती हैं"
+
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "सभी {total} चरण पूरे हो गए। शानदार काम — आपकी टीम चल रही है।"
 
@@ -1518,6 +1526,7 @@ msgstr "स्कोप में ऊपर स्पष्ट रूप से 
 
 msgid "AP"
 msgstr "AP"
+
 msgid "AP Aging"
 msgstr "AP एजिंग"
 
@@ -1644,6 +1653,7 @@ msgstr "AR"
 
 msgid "AR / AP representation"
 msgstr "AR / AP प्रतिनिधित्व"
+
 msgid "AR Aging"
 msgstr "AR एजिंग"
 
@@ -2513,6 +2523,7 @@ msgstr "पुस्तक मूल्यह्रास"
 
 msgid "Books lock date (manual)"
 msgstr "पुस्तकें लॉक तारीख (मैनुअल)"
+
 msgid "Both"
 msgstr "दोनों"
 
@@ -2770,6 +2781,9 @@ msgstr "कार्बन लोगो"
 
 msgid "Carbon only"
 msgstr "केवल कार्बन"
+
+msgid "Carbon Posted"
+msgstr "Carbon पोस्ट किया गया"
 
 msgid "Carbon value"
 msgstr "Carbon मान"
@@ -3188,6 +3202,13 @@ msgstr "पूर्ण बारकोड"
 
 msgid "Completion Time"
 msgstr "पूर्ण होने का समय"
+
+#. placeholder {0}: formatRelativeTime(tieOut.computedAt)
+msgid "computed {0}"
+msgstr "की गणना {0}"
+
+msgid "Computed At"
+msgstr "गणना समय"
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "मार्जिन और मुख्य उप-योग के साथ संक्षिप्त P&L"
@@ -5118,6 +5139,9 @@ msgstr "निपटान"
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "क्या आप उपयोगकर्ता की वर्तमान अनुमतियों को इस कर्मचारी प्रकार के लिए डिफ़ॉल्ट अनुमतियों से अधिलेखित करना चाहते हैं?"
 
+msgid "Doc-Backed"
+msgstr "दस्तावेज़-समर्थित"
+
 msgid "Docs"
 msgstr "दस्तावेज़"
 
@@ -6201,10 +6225,14 @@ msgstr "विस्तारित मूल्य"
 msgid "External"
 msgstr "बाहरी"
 
-msgid "External ID"
-msgstr "बाहरी आईडी"
+msgid "External Delta"
+msgstr "बाहरी अंतर"
+
 msgid "External document"
 msgstr "बाहरी दस्तावेज़"
+
+msgid "External ID"
+msgstr "बाहरी आईडी"
 
 msgid "External link"
 msgstr "बाहरी लिंक"
@@ -7647,6 +7675,9 @@ msgstr "निर्देश"
 msgid "Instructions are inherited from the procedure."
 msgstr "निर्देश प्रक्रिया से विरासत में मिले हैं।"
 
+msgid "Integration"
+msgstr "एकीकरण"
+
 msgid "Integration not found"
 msgstr "एकीकरण नहीं मिला"
 
@@ -7682,6 +7713,9 @@ msgstr "बैंकिंग गतिविधियों से ब्या
 
 msgid "Internal"
 msgstr "आंतरिक"
+
+msgid "Internal Delta"
+msgstr "आंतरिक अंतर"
 
 msgid "Internal notes"
 msgstr "आंतरिक नोट्स"
@@ -8061,6 +8095,7 @@ msgstr "जर्नल प्रविष्टि"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "इस तारीख को या उससे पहले की तारीख वाली पत्रिकाओं को लॉक किए गए के रूप में माना जाता है। प्रदाता द्वारा रिपोर्ट की गई लॉक तारीख के साथ विलय किया जाता है जब दोनों मौजूद हों।"
+
 msgid "Just one"
 msgstr "बस एक"
 
@@ -8158,13 +8193,14 @@ msgstr "श्रम इकाई"
 msgid "Language"
 msgstr "भाषा"
 
+msgid "Last 6 Months"
+msgstr "पिछले 6 महीने"
+
 msgid "Last attempt"
 msgstr "अंतिम प्रयास"
 
 msgid "Last Attempt"
 msgstr "अंतिम प्रयास"
-msgid "Last 6 Months"
-msgstr "पिछले 6 महीने"
 
 msgid "Last Calibration"
 msgstr "अंतिम अंशांकन"
@@ -9771,6 +9807,9 @@ msgstr "अभी तक कोई भुगतान नहीं।"
 msgid "No planning data"
 msgstr "कोई योजना डेटा नहीं"
 
+msgid "No posted journals in this period for this account"
+msgstr "इस अवधि में इस खाते के लिए कोई पोस्ट किए गए जर्नल नहीं हैं"
+
 msgid "No pricing for selected quantity"
 msgstr "चयनित मात्रा के लिए कोई मूल्य निर्धारण नहीं"
 
@@ -9941,6 +9980,9 @@ msgstr "पर्याप्त नौकरियां नहीं हैं
 
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
+
+msgid "Not recorded"
+msgstr "रिकॉर्ड नहीं किया गया"
 
 msgid "Not referenced anywhere yet."
 msgstr "अभी तक कहीं भी संदर्भित नहीं।"
@@ -11278,13 +11320,14 @@ msgstr "वादा की गई तारीख"
 msgid "Properties"
 msgstr "गुण"
 
+msgid "Property"
+msgstr "प्रॉपर्टी"
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "प्रस्तावित मेल जहां कार्बन खाता संख्या प्रदाता खाता कोड के बिल्कुल बराबर है।"
 
 msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
 msgstr "प्रस्तावित मेल जहां Carbon आयाम मान का नाम प्रदाता विकल्प नाम के बिल्कुल बराबर है।"
-msgid "Property"
-msgstr "प्रॉपर्टी"
 
 msgid "Protect the go-live date"
 msgstr "गो-लाइव की तारीख की सुरक्षा करें"
@@ -13463,6 +13506,9 @@ msgstr "में दिखाई दे रहा है {parentCurrency}"
 msgid "Showing the first 500 lines"
 msgstr "पहली 500 लाइनें दिखा रहे हैं"
 
+msgid "Showing the newest 200 journals"
+msgstr "नवीनतम 200 जर्नल दिखाए जा रहे हैं"
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "राशि द्वारा शीर्ष 1,000 समूह दिखा रहे हैं"
 
@@ -14167,6 +14213,12 @@ msgstr "सिंक गतिविधि"
 
 msgid "Sync operation"
 msgstr "सिंक संचालन"
+
+msgid "Sync Tie-Out"
+msgstr "सिंक समंजन"
+
+msgid "Synced"
+msgstr "सिंक किया गया"
 
 msgid "System"
 msgstr "सिस्टम"
@@ -15315,6 +15367,9 @@ msgstr "गुरुवार"
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "शिपमेंट को बिना पुनः-कुंजीयन के चालान से जोड़ें"
 
+msgid "Tie-out"
+msgstr "समंजन"
+
 msgid "Tie-Out"
 msgstr "टाई-आउट"
 
@@ -16321,6 +16376,9 @@ msgstr "सुझाव देखें"
 msgid "View Suppliers"
 msgstr "आपूर्तिकर्ताओं को देखें"
 
+msgid "View tie-out"
+msgstr "समंजन देखें"
+
 msgid "View Traceability Graph"
 msgstr "ट्रेसेबिलिटी ग्राफ देखें"
 
@@ -16524,10 +16582,11 @@ msgstr "जब आप Carbon पर जाते हैं तो क्या �
 msgid "What data"
 msgstr "कौन सा डेटा"
 
-msgid "What happens when a journal is dated in a locked period."
-msgstr "जब कोई जर्नल लॉक की गई अवधि में तारीख दी जाती है तो क्या होता है।"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "किस चीज़ ने इन्वेंटरी को किसी भी आयाम द्वारा ऊपर या नीचे ले जाया"
+
+msgid "What happens when a journal is dated in a locked period."
+msgstr "जब कोई जर्नल लॉक की गई अवधि में तारीख दी जाती है तो क्या होता है।"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"

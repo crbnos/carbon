@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  buildDimensionFieldLookup,
   buildDimensionValueMappingEntityId,
   buildDimensionValueMappingLookup,
   ensureDimensionValueExternalIds,
@@ -62,6 +63,24 @@ describe("buildDimensionValueMappingLookup", () => {
 });
 
 // ── Match by name (exact-match proposals only) ───────────────────────────────
+
+describe("buildDimensionFieldLookup", () => {
+  it("maps dimensionId → provider Field id, skipping rows with no externalId", () => {
+    const lookup = buildDimensionFieldLookup([
+      {
+        id: "m1",
+        dimensionId: "dim_loc",
+        externalId: "field-loc",
+        externalName: "Location"
+      },
+      { id: "m2", dimensionId: "dim_cc", externalId: null, externalName: null }
+    ]);
+
+    expect(lookup.get("dim_loc")).toBe("field-loc");
+    expect(lookup.has("dim_cc")).toBe(false);
+    expect(lookup.size).toBe(1);
+  });
+});
 
 describe("matchDimensionValuesByName", () => {
   const values = [

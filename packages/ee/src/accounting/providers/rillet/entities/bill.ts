@@ -7,7 +7,6 @@ import {
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
 import {
-  collectUnmappedDimensionValues,
   JournalEntrySyncError,
   toPostingDateString
 } from "../../../core/posting";
@@ -17,7 +16,7 @@ import type {
   RilletBillCreate,
   RilletTransactionWriteOmit
 } from "../models";
-import { buildRilletIdempotencyKey, parseRilletFieldTarget } from "../provider";
+import { buildRilletIdempotencyKey } from "../provider";
 import type { RilletJournalDimensionArgs } from "./journal-entry";
 import {
   carbonCompanyExternalReference,
@@ -212,20 +211,18 @@ export function mapBillToRilletBill(args: {
   const items: Rillet.BillItem[] = transactionLines.map((line) => {
     const fieldRefs: Rillet.ItemFieldRef[] = [];
     if (args.dimensions) {
-      for (const slot of args.dimensions.slots) {
-        const fieldId = parseRilletFieldTarget(slot.target);
-        if (!fieldId) continue;
-        const dimension = line.dimensions?.find(
-          (candidate) => candidate.dimensionId === slot.dimensionId
+      for (const dimension of line.dimensions ?? []) {
+        const fieldId = args.dimensions.fieldIdByDimensionId.get(
+          dimension.dimensionId
         );
-        if (!dimension) continue;
+        if (!fieldId) continue;
         const fieldValueId = args.dimensions.fieldValueIdsByValue.get(
           buildDimensionValueMappingEntityId(
             dimension.dimensionId,
             dimension.valueId
           )
         );
-        if (!fieldValueId) continue; // drop policy — recorded by the caller
+        if (!fieldValueId) continue; // Field/value not provisioned — drop this ref
         fieldRefs.push({ field_id: fieldId, field_value_id: fieldValueId });
       }
     }
@@ -501,43 +498,12 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       payablesAccountId
     });
 
-    // Dimension slots (same flow as the journal syncer): resolve the
-    // value-mapping lookup and upsert missing Field values (autoCreate
-    // default ON for Rillet), then apply the onUnmappedDimensionValue
-    // policy over the COSTING lines (the AP control line never pushes, so
-    // its dimensions never park a bill).
-    const settings = await this.getPostingSyncSettings();
-    let dimensionValueMappings: Map<string, string> | undefined;
-    if (settings.dimensionSlots.length > 0) {
-      dimensionValueMappings = await this.getDimensionValueMappings();
-      await this.ensureAutoCreatedDimensionValues(
-        costingLines,
-        settings,
-        dimensionValueMappings
-      );
-
-      const unmappedDimensionValues = collectUnmappedDimensionValues(
-        costingLines,
-        settings.dimensionSlots,
-        dimensionValueMappings
-      );
-      if (unmappedDimensionValues.length > 0) {
-        if (settings.onUnmappedDimensionValue === "warn") {
-          throw new JournalEntrySyncError({
-            errorCode: "UNMAPPED_DIMENSION_VALUES",
-            message: `Bill ${local.invoiceId} carries ${unmappedDimensionValues.length} slotted dimension value(s) with no provider option mapping. Map the value(s) on the integration settings page (or enable auto-create on the slot), then retry.`,
-            warning: true,
-            metadata: { unmappedDimensionValues }
-          });
-        }
-        // "drop" policy: pushed without these dimensions. The drain has
-        // no success-metadata channel yet, so the record lives in the logs.
-        console.warn("[RilletBillSyncer] dropped unmapped dimension values", {
-          billId: local.id,
-          droppedDimensionValues: unmappedDimensionValues
-        });
-      }
-    }
+    // Send ALL dimensions on the bill: auto-provision every Rillet Field +
+    // value the COSTING lines reference (the AP control line never pushes, so
+    // its dimensions never reach Rillet). Rillet has no field cap, so nothing
+    // is dropped for lack of a slot.
+    const { fieldIdByDimensionId, fieldValueIdsByValue } =
+      await this.resolveLineDimensions(costingLines);
 
     return mapBillToRilletBill({
       bill: local,
@@ -547,14 +513,7 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       companyId: this.companyId,
       postingJournalLines: costingLines,
       payablesAccountId,
-      ...(dimensionValueMappings
-        ? {
-            dimensions: {
-              slots: settings.dimensionSlots,
-              fieldValueIdsByValue: dimensionValueMappings
-            }
-          }
-        : {})
+      dimensions: { fieldIdByDimensionId, fieldValueIdsByValue }
     });
   }
 
@@ -583,8 +542,7 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
         buildRilletIdempotencyKey({
           companyId: this.companyId,
           operation: "bill",
-          localId,
-          payload
+          localId
         })
       )
     );

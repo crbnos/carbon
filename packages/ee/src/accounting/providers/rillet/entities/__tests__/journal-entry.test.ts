@@ -271,11 +271,9 @@ describe("mapJournalEntryToRilletJournalEntry — dimensions (Fields)", () => {
     ]
   });
 
-  const slots = [
-    { dimensionId: LOCATION_DIM, target: `field:${DEPARTMENT_FIELD_ID}` }
-  ];
+  const fieldIdByDimensionId = new Map([[LOCATION_DIM, DEPARTMENT_FIELD_ID]]);
 
-  it("attaches uuid field refs (field_id + field_value_id — ids, never names) per slotted dimension", () => {
+  it("attaches uuid field refs (field_id + field_value_id — ids, never names) for every dimension on the line", () => {
     const payload = mapJournalEntryToRilletJournalEntry({
       journal: dimensionedJournal,
       accountCodesById: ACCOUNT_CODES,
@@ -283,7 +281,7 @@ describe("mapJournalEntryToRilletJournalEntry — dimensions (Fields)", () => {
       subsidiaryId: null,
       pushDate: "2026-07-01",
       dimensions: {
-        slots,
+        fieldIdByDimensionId,
         fieldValueIdsByValue: new Map([
           ["dim_loc:loc_atl", "fv-atl"],
           ["dim_loc:loc_bos", "fv-bos"]
@@ -307,7 +305,7 @@ describe("mapJournalEntryToRilletJournalEntry — dimensions (Fields)", () => {
       subsidiaryId: null,
       pushDate: "2026-07-01",
       dimensions: {
-        slots,
+        fieldIdByDimensionId,
         fieldValueIdsByValue: new Map([["dim_loc:loc_atl", "fv-atl"]])
       }
     });
@@ -338,7 +336,7 @@ describe("mapJournalEntryToRilletJournalEntry — dimensions (Fields)", () => {
       currency: "USD",
       subsidiaryId: null,
       pushDate: "2026-07-01",
-      dimensions: { slots, fieldValueIdsByValue: lookup }
+      dimensions: { fieldIdByDimensionId, fieldValueIdsByValue: lookup }
     });
 
     expect(payload.items[1]?.fields).toEqual([
@@ -346,7 +344,7 @@ describe("mapJournalEntryToRilletJournalEntry — dimensions (Fields)", () => {
     ]);
   });
 
-  it("ignores slots whose target is not a field target", () => {
+  it("omits a dimension whose Field was not provisioned (no field mapping)", () => {
     const payload = mapJournalEntryToRilletJournalEntry({
       journal: dimensionedJournal,
       accountCodesById: ACCOUNT_CODES,
@@ -354,7 +352,7 @@ describe("mapJournalEntryToRilletJournalEntry — dimensions (Fields)", () => {
       subsidiaryId: null,
       pushDate: "2026-07-01",
       dimensions: {
-        slots: [{ dimensionId: LOCATION_DIM, target: "class" }],
+        fieldIdByDimensionId: new Map(), // LOCATION_DIM Field not provisioned
         fieldValueIdsByValue: new Map([["dim_loc:loc_atl", "fv-atl"]])
       }
     });

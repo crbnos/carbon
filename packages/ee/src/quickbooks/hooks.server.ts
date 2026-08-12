@@ -1,12 +1,28 @@
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { deleteEventSystemSubscriptionsByName } from "@carbon/database/event";
+import {
+  ensureProviderSubscriptions,
+  getSyncSubscriptionName,
+  ProviderID
+} from "@carbon/ee/accounting";
+
 /**
- * Server-side lifecycle hooks for the QuickBooks Online integration,
- * mirroring the Xero hooks (../xero/hooks.server.ts).
- *
- * Intentionally empty for now: event-system subscriptions (the equivalent
- * of xeroOnInstall's "xero-sync" subscriptions) are wired when the QBO
- * entity syncers land (Tasks C5–C8) — subscribing tables before any syncer
- * can drain them would only queue dead events.
+ * Install/settings-save hook: converge this company's `quickbooks-sync`
+ * event subscriptions onto REQUIRED_SYNC_SUBSCRIPTIONS (the code-derived
+ * list — see @carbon/ee/accounting core/subscriptions). The QBO entity
+ * syncers have shipped, so the old no-op here left QBO outbound event sync
+ * entirely dead — every subscribed table routes to a registered syncer.
  */
-export async function quickbooksOnInstall(_companyId: string) {
-  // No-op until the QuickBooks Online entity syncers are registered
+export async function quickbooksOnInstall(companyId: string) {
+  const client = getCarbonServiceRole();
+  await ensureProviderSubscriptions(client, companyId, ProviderID.QUICKBOOKS);
+}
+
+export async function quickbooksOnUninstall(companyId: string) {
+  const client = getCarbonServiceRole();
+  await deleteEventSystemSubscriptionsByName(
+    client,
+    companyId,
+    getSyncSubscriptionName(ProviderID.QUICKBOOKS)
+  );
 }

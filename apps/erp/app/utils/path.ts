@@ -31,6 +31,9 @@ export const path = {
     accountingPeriodsGenerate: `${x}/accounting/periods/generate`,
     accountingRoot: `${x}/accounting`,
     accountingSettings: `${x}/settings/accounting`,
+    accountingSyncTieOut: `${x}/accounting/sync-tieout`,
+    accountingSyncTieOutCell: (id: string) =>
+      generatePath(`${x}/accounting/sync-tieout/${id}`),
     accountPassword: `${x}/account/password`,
     accountPersonal: `${x}/account/personal`,
     accountSecurity: `${x}/account/security`,

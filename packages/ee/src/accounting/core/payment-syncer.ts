@@ -5,7 +5,11 @@ import {
   type NormalizedPayment,
   upsertLocalPaymentDraft
 } from "./payment-application";
-import { isPaymentSyncbackEnabled, JournalEntrySyncError } from "./posting";
+import {
+  isPaymentSyncbackEnabled,
+  JournalEntrySyncError,
+  toPostingDateString
+} from "./posting";
 import {
   BaseEntitySyncer,
   type BatchSyncResult,
@@ -618,7 +622,10 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
       bankAccount: payment.bankAccount,
       currencyCode: payment.currencyCode,
       exchangeRate: Number(payment.exchangeRate ?? 1),
-      paidDate: (payment.postingDate ?? payment.paymentDate).slice(0, 10),
+      // Kysely's pg driver hands DATE columns back as Date objects (local
+      // midnight) — toPostingDateString recovers the stored calendar date
+      // for both Date and string values; a bare .slice crashed the push.
+      paidDate: toPostingDateString(payment.postingDate ?? payment.paymentDate),
       reference: payment.reference,
       settlements: settlements.map((s) => ({
         targetSalesInvoiceId: s.targetSalesInvoiceId,

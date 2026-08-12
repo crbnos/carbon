@@ -947,6 +947,16 @@ export const periodCloseTaskDefinitions = [
     severity: null,
     active: true,
     isSystem: true
+  },
+  {
+    name: "External GL sync complete",
+    taskType: "Auto",
+    autoCheckKey: "external-gl-sync",
+    sortOrder: 9,
+    required: true,
+    severity: "Blocker",
+    active: true,
+    isSystem: true
   }
 ];
 

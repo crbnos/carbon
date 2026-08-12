@@ -3,6 +3,11 @@
 > Spec: [.ai/specs/2026-08-02-accounting-sync-engine-v3.md](../specs/2026-08-02-accounting-sync-engine-v3.md)
 > Branch: feat/quickbooks-enterprise-v1 (continues the v2 engine work)
 > Date: 2026-08-02
+> Status (2026-08-11): Phases 1–2 implemented; Phase 3 NOT executed — tie-out + close-gate
+> delivery is now owned by v4 Phase 3
+> ([.ai/specs/2026-08-11-accounting-sync-delivery-robustness.md](../specs/2026-08-11-accounting-sync-delivery-robustness.md),
+> Pillar E); Phase 4 partial. Do not execute Phase 3 from this file alone — v4 also
+> repurposes the reconciliation cron (outbound sweep, v4 Phase 1).
 
 Read before starting any task: `.ai/lessons.md` (enum-pair, seed-reconciliation,
 fork-newest-function, migration-timestamp, and rolled-back-psql-validation lessons apply),
@@ -246,6 +251,12 @@ exist; `/self-review` the phase diff.
 
 ## Phase 3 — Tie-out + period-close gate
 
+> **Status (2026-08-11): not executed.** Implementation is now owned by v4 Phase 3
+> (`.ai/specs/2026-08-11-accounting-sync-delivery-robustness.md`, Pillar E). The task
+> breakdown below remains a valid starting point, but note task 3.2's host function
+> (`accounting-reconciliation.ts`) is also reshaped by v4 Phase 1 (outbound reconciliation
+> sweep) — plan those together.
+
 ### 3.1 Migration: `accountingSyncTieOut`
 - [ ] `pnpm db:migrate:new accounting-sync-tieout` — table + indexes + RLS exactly per the
       spec's Data Model section, mirroring the *newest* RLS helper-cast style (grep the most
@@ -308,6 +319,8 @@ exist; `/self-review` the phase diff.
 ---
 
 ## Phase 4 — AR/AP journal mode (both-cases support)
+
+> **Status (2026-08-11): partial.**
 
 Ships the `families.* = "journals"` option: invoices/bills/payments/memos posted within
 Carbon reach the external system as journal entries instead of documents.

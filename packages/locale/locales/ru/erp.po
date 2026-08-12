@@ -60,6 +60,10 @@ msgstr "{0} счётов"
 msgid "{0} ago"
 msgstr "{0} назад"
 
+#. placeholder {0}: tieOut.deltaCellCount
+msgid "{0} cells with deltas"
+msgstr "{0} ячеек с разницами"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} клиентов с остатком"
@@ -1274,6 +1278,10 @@ msgstr "Согласовать объем"
 msgid "All"
 msgstr "Все"
 
+#. placeholder {0}: tieOut.cellCount
+msgid "All {0} cells tie out"
+msgstr "Все {0} ячеек согласованы"
+
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Все {total} этапов завершены. Отличная работа — ваша команда готова к работе."
 
@@ -1518,6 +1526,7 @@ msgstr "Все, что не указано явно в области дейст
 
 msgid "AP"
 msgstr "КЗ"
+
 msgid "AP Aging"
 msgstr "Анализ возраста кредиторской задолженности"
 
@@ -1644,6 +1653,7 @@ msgstr "ДЗ"
 
 msgid "AR / AP representation"
 msgstr "Представление ДЗ/КЗ"
+
 msgid "AR Aging"
 msgstr "Анализ возраста дебиторской задолженности"
 
@@ -2513,6 +2523,7 @@ msgstr "Амортизация по книге"
 
 msgid "Books lock date (manual)"
 msgstr "Дата блокировки книг (вручную)"
+
 msgid "Both"
 msgstr "Оба"
 
@@ -2770,6 +2781,9 @@ msgstr "Логотип Carbon"
 
 msgid "Carbon only"
 msgstr "Только Carbon"
+
+msgid "Carbon Posted"
+msgstr "Carbon проведен"
 
 msgid "Carbon value"
 msgstr "Значение Carbon"
@@ -3188,6 +3202,13 @@ msgstr "Штрихкод завершения"
 
 msgid "Completion Time"
 msgstr "Время завершения"
+
+#. placeholder {0}: formatRelativeTime(tieOut.computedAt)
+msgid "computed {0}"
+msgstr "вычислено {0}"
+
+msgid "Computed At"
+msgstr "Вычислено в"
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Сокращенный П&У с прибыльностью и ключевыми итогами"
@@ -5118,6 +5139,9 @@ msgstr "Решения"
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Вы хотите перезаписать текущие разрешения пользователя разрешениями по умолчанию для этого типа сотрудника?"
 
+msgid "Doc-Backed"
+msgstr "Обеспечено документом"
+
 msgid "Docs"
 msgstr "Документы"
 
@@ -6201,10 +6225,14 @@ msgstr "Расширенная цена"
 msgid "External"
 msgstr "Внешние"
 
-msgid "External ID"
-msgstr "Внешний идентификатор"
+msgid "External Delta"
+msgstr "Внешняя разница"
+
 msgid "External document"
 msgstr "Внешний документ"
+
+msgid "External ID"
+msgstr "Внешний идентификатор"
 
 msgid "External link"
 msgstr "Внешняя ссылка"
@@ -7647,6 +7675,9 @@ msgstr "Инструкции"
 msgid "Instructions are inherited from the procedure."
 msgstr "Инструкции наследуются из процедуры."
 
+msgid "Integration"
+msgstr "Интеграция"
+
 msgid "Integration not found"
 msgstr "Интеграция не найдена"
 
@@ -7682,6 +7713,9 @@ msgstr "Процентный доход или расход от банковс�
 
 msgid "Internal"
 msgstr "Внутренние"
+
+msgid "Internal Delta"
+msgstr "Внутренняя разница"
 
 msgid "Internal notes"
 msgstr "Внутренние заметки"
@@ -8061,6 +8095,7 @@ msgstr "Запись в журнале"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Журналы с датой в указанный день или раньше считаются заблокированными. Объединяются с датой блокировки, сообщаемой системой, когда обе существуют."
+
 msgid "Just one"
 msgstr "Только один"
 
@@ -8158,13 +8193,14 @@ msgstr "Единица труда"
 msgid "Language"
 msgstr "Язык"
 
+msgid "Last 6 Months"
+msgstr "Последние 6 месяцев"
+
 msgid "Last attempt"
 msgstr "Последняя попытка"
 
 msgid "Last Attempt"
 msgstr "Последняя попытка"
-msgid "Last 6 Months"
-msgstr "Последние 6 месяцев"
 
 msgid "Last Calibration"
 msgstr "Последняя калибровка"
@@ -9771,6 +9807,9 @@ msgstr "Платежей пока нет."
 msgid "No planning data"
 msgstr "Нет данных планирования"
 
+msgid "No posted journals in this period for this account"
+msgstr "Нет проведенных журналов в этом периоде для этого счета"
+
 msgid "No pricing for selected quantity"
 msgstr "Нет цен для выбранного количества"
 
@@ -9941,6 +9980,9 @@ msgstr "Недостаточно заданий для покрытия коли
 
 msgid "Not reached"
 msgstr "Не достигнуто"
+
+msgid "Not recorded"
+msgstr "Не записано"
 
 msgid "Not referenced anywhere yet."
 msgstr "Пока не на что-либо ссылается."
@@ -11278,13 +11320,14 @@ msgstr "Обещанная дата"
 msgid "Properties"
 msgstr "Свойства"
 
+msgid "Property"
+msgstr "Свойство"
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Предложенные совпадения, где номер счета Carbon точно совпадает с кодом счета системы."
 
 msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
 msgstr "Предложенные совпадения, где имя значения размерности Carbon точно соответствует имени параметра провайдера."
-msgid "Property"
-msgstr "Свойство"
 
 msgid "Protect the go-live date"
 msgstr "Защитите дату запуска"
@@ -13463,6 +13506,9 @@ msgstr "Отображение в {parentCurrency}"
 msgid "Showing the first 500 lines"
 msgstr "Показано первые 500 строк"
 
+msgid "Showing the newest 200 journals"
+msgstr "Показываются последние 200 журналов"
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Показано топ 1000 групп по сумме"
 
@@ -14167,6 +14213,12 @@ msgstr "Активность синхронизации"
 
 msgid "Sync operation"
 msgstr "Операция синхронизации"
+
+msgid "Sync Tie-Out"
+msgstr "Проверка синхронизации"
+
+msgid "Synced"
+msgstr "Синхронизировано"
 
 msgid "System"
 msgstr "Система"
@@ -15315,6 +15367,9 @@ msgstr "Четверг"
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Связать отправки с счетом без повторного ввода данных"
 
+msgid "Tie-out"
+msgstr "Согласование"
+
 msgid "Tie-Out"
 msgstr "Сверка"
 
@@ -16321,6 +16376,9 @@ msgstr "Просмотр предложения"
 msgid "View Suppliers"
 msgstr "Просмотр поставщиков"
 
+msgid "View tie-out"
+msgstr "Просмотр согласования"
+
 msgid "View Traceability Graph"
 msgstr "Просмотр графика отслеживания"
 
@@ -16524,10 +16582,11 @@ msgstr "Что изменится при переходе на Carbon и при�
 msgid "What data"
 msgstr "Какие данные"
 
-msgid "What happens when a journal is dated in a locked period."
-msgstr "Что происходит, когда журнал датирован в закрытом периоде."
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Что повлияло на инвентаризацию вверх или вниз, по любому измерению"
+
+msgid "What happens when a journal is dated in a locked period."
+msgstr "Что происходит, когда журнал датирован в закрытом периоде."
 
 msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"

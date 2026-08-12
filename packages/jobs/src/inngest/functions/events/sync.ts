@@ -5,7 +5,6 @@ import {
 } from "@carbon/database/client";
 import { EventSchema } from "@carbon/database/event";
 import {
-  type AccountingEntityType,
   type BatchSyncResult,
   getAccountingIntegration,
   getProviderIntegration,
@@ -23,10 +22,12 @@ import {
   getSyncOperationActor,
   insertTerminalSyncOperations,
   isJournalEntryPostingEnabled,
+  isStatusTransitionEvent,
   planJournalPostingOperation,
   type SyncOperationRequest,
   type TerminalSyncOperationRequest
 } from "../integrations/accounting-sync-operations";
+import { getEntityTypeFromTable } from "./sync-tables";
 
 const SyncRecordSchema = z.object({
   event: EventSchema,
@@ -41,22 +42,6 @@ const SyncPayloadSchema = z.object({
 });
 
 export type SyncPayload = z.infer<typeof SyncPayloadSchema>;
-
-// Map database table names to accounting entity types
-const TABLE_TO_ENTITY_MAP: Partial<Record<string, AccountingEntityType>> = {
-  customer: "customer",
-  supplier: "vendor",
-  item: "item",
-  purchaseOrder: "purchaseOrder",
-  purchaseInvoice: "bill",
-  salesInvoice: "invoice",
-  journal: "journalEntry",
-  payment: "payment"
-};
-
-function getEntityTypeFromTable(table: string): AccountingEntityType | null {
-  return TABLE_TO_ENTITY_MAP[table] ?? null;
-}
 
 export const syncFunction = inngest.createFunction(
   {
@@ -139,8 +124,11 @@ export const syncFunction = inngest.createFunction(
             );
 
             const requests: SyncOperationRequest[] = [];
-            // Journal posting transitions enqueue with trigger "posting"
-            // (the ledger trigger is per enqueue call, not per request)
+            // Trigger "posting" bypasses the 60s completed-row cooldown
+            // (the ledger trigger is per enqueue call, not per request).
+            // It carries journal posting transitions AND generic-table
+            // status transitions — a state change must never be dropped
+            // by a cooldown that exists to absorb same-state edit bursts.
             const postingRequests: SyncOperationRequest[] = [];
             // Decision-time dispositions (Excluded/Warning) — recorded so
             // every posted journal is accounted for (spec I1)
@@ -234,8 +222,14 @@ export const syncFunction = inngest.createFunction(
                 continue;
               }
 
-              // INSERTs and UPDATEs push to accounting
-              requests.push({
+              // INSERTs and UPDATEs push to accounting. Status
+              // transitions ride the non-cooldown "posting" trigger so a
+              // document posted within 60s of its previous sync (e.g.
+              // created-then-posted) is never swallowed by the cooldown.
+              const target = isStatusTransitionEvent(r.event)
+                ? postingRequests
+                : requests;
+              target.push({
                 entityType,
                 entityId: r.event.recordId,
                 direction: "push-to-accounting"

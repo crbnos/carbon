@@ -210,6 +210,133 @@ export async function upsertDimensionValueMapping(
 }
 
 /**
+ * Dimension → provider FIELD mapping service (entityType "dimension"),
+ * mirroring the value service above. The Carbon side is the plain
+ * `dimensionId`; the provider side is the Field/dimension id in `externalId`
+ * (Rillet Field uuid). Used by the "send all dimensions" flow to auto-
+ * provision a provider Field per Carbon dimension, so a value mapping always
+ * has a Field to hang off of.
+ */
+export const DIMENSION_MAPPING_ENTITY_TYPE = "dimension";
+
+/** A dimension → provider Field mapping row. */
+export interface DimensionFieldMapping {
+  id: string;
+  dimensionId: string;
+  externalId: string | null;
+  externalName: string | null;
+}
+
+/** All dimension → provider Field mappings for an integration. */
+export async function getDimensionMappings(
+  db: Db,
+  args: { companyId: string; integration: string }
+): Promise<{ data: DimensionFieldMapping[] | null; error: string | null }> {
+  try {
+    const rows = await db
+      .selectFrom("externalIntegrationMapping")
+      .select(["id", "entityId", "externalId", "metadata"])
+      .where("entityType", "=", DIMENSION_MAPPING_ENTITY_TYPE)
+      .where("integration", "=", args.integration)
+      .where("companyId", "=", args.companyId)
+      .execute();
+
+    const data = rows.map((row) => ({
+      id: row.id,
+      dimensionId: row.entityId,
+      externalId: row.externalId ?? null,
+      externalName: getExternalNameFromMetadata(row.metadata)
+    }));
+
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: toErrorMessage(err) };
+  }
+}
+
+/** `dimensionId` → provider Field id. Rows without an externalId are unmapped. */
+export function buildDimensionFieldLookup(
+  mappings: ReadonlyArray<DimensionFieldMapping>
+): Map<string, string> {
+  const lookup = new Map<string, string>();
+  for (const mapping of mappings) {
+    if (mapping.externalId) lookup.set(mapping.dimensionId, mapping.externalId);
+  }
+  return lookup;
+}
+
+/**
+ * Upsert a dimension → provider Field mapping (dimensionId → Field id). Two
+ * Carbon dimensions that share a name may resolve to one provider Field
+ * (auto-provision reuses an existing Field by name), so duplicate external
+ * ids are allowed — the same stance as the value + account mappings.
+ */
+export async function upsertDimensionMapping(
+  db: Db,
+  args: {
+    companyId: string;
+    integration: string;
+    dimensionId: string;
+    externalId: string;
+    externalName?: string;
+    userId?: string;
+  }
+): Promise<{ data: ExternalIntegrationMapping | null; error: string | null }> {
+  try {
+    const mappingService = createMappingService(db, args.companyId);
+
+    await mappingService.link(
+      DIMENSION_MAPPING_ENTITY_TYPE,
+      args.dimensionId,
+      args.integration,
+      args.externalId,
+      {
+        ...(args.externalName
+          ? { metadata: { externalName: args.externalName } }
+          : {}),
+        ...(args.userId ? { createdBy: args.userId } : {}),
+        allowDuplicateExternalId: true
+      }
+    );
+
+    const data = await mappingService.getByEntity(
+      DIMENSION_MAPPING_ENTITY_TYPE,
+      args.dimensionId,
+      args.integration
+    );
+
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: toErrorMessage(err) };
+  }
+}
+
+/**
+ * `dimensionId` → dimension name, for auto-provisioning provider Fields by
+ * name. Queries `dimension` by id (already company-scoped by provenance —
+ * the ids come from the company's journal lines), mirroring how
+ * resolveDimensionValueLabels reads the dimension table.
+ */
+export async function loadDimensionNames(
+  db: Db,
+  args: { dimensionIds: ReadonlyArray<string> }
+): Promise<Map<string, string>> {
+  const names = new Map<string, string>();
+  if (args.dimensionIds.length === 0) return names;
+
+  const rows = await db
+    .selectFrom("dimension")
+    .select(["id", "name"])
+    .where("id", "in", [...args.dimensionIds])
+    .execute();
+
+  for (const row of rows) {
+    if (typeof row.name === "string" && row.name) names.set(row.id, row.name);
+  }
+  return names;
+}
+
+/**
  * Propose matches where a Carbon dimension value's resolved label equals
  * a provider option name EXACTLY (no trimming, no case folding).
  * Ambiguous candidates are skipped: duplicate labels among the values,

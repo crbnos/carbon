@@ -33,6 +33,7 @@ import type {
   SyncOperationStatusSchema,
   SyncOperationTriggerSchema
 } from "./models";
+import { JournalEntrySyncError } from "./posting";
 import { AccountingApiError, withTriggersDisabled } from "./utils";
 
 const logger = getLogger("ee", "accounting");
@@ -301,6 +302,17 @@ export interface SyncResult {
   localId?: string;
   remoteId?: string;
   error?: unknown;
+}
+
+/**
+ * Normalize a thrown value for SyncResult.error. A JournalEntrySyncError
+ * keeps its structured failure envelope (errorCode/warning/metadata) so
+ * the ledger drain records a Warning with machine-readable detail instead
+ * of a flattened Failed string — batch pushes previously lost this.
+ */
+export function toSyncResultError(err: unknown): unknown {
+  if (err instanceof JournalEntrySyncError) return err.failure;
+  return err instanceof Error ? err.message : String(err);
 }
 
 export interface BatchSyncResult {
@@ -609,7 +621,7 @@ export abstract class BaseEntitySyncer<
         status: "error",
         action: "none",
         localId: entityId,
-        error: err instanceof Error ? err.message : String(err)
+        error: toSyncResultError(err)
       };
     }
   }
@@ -717,7 +729,7 @@ export abstract class BaseEntitySyncer<
         status: "error",
         action: "none",
         remoteId,
-        error: err instanceof Error ? err.message : String(err)
+        error: toSyncResultError(err)
       };
     }
   }
@@ -794,7 +806,7 @@ export abstract class BaseEntitySyncer<
             status: "error",
             action: "none",
             localId,
-            error: err instanceof Error ? err.message : String(err)
+            error: toSyncResultError(err)
           });
         }
       }
@@ -853,7 +865,7 @@ export abstract class BaseEntitySyncer<
             status: "error",
             action: "none",
             localId: id,
-            error: err instanceof Error ? err.message : String(err)
+            error: toSyncResultError(err)
           });
         }
       }
@@ -960,7 +972,7 @@ export abstract class BaseEntitySyncer<
             status: "error",
             action: "none",
             remoteId,
-            error: err instanceof Error ? err.message : String(err)
+            error: toSyncResultError(err)
           });
         }
       }
@@ -972,7 +984,7 @@ export abstract class BaseEntitySyncer<
             status: "error",
             action: "none",
             remoteId: id,
-            error: err instanceof Error ? err.message : String(err)
+            error: toSyncResultError(err)
           });
         }
       }

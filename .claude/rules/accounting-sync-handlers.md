@@ -2,6 +2,7 @@
 paths:
   - "packages/jobs/src/inngest/functions/integrations/**"
   - "packages/jobs/src/inngest/functions/events/sync.ts"
+  - "packages/jobs/src/inngest/functions/events/sync-tables.ts"
   - "packages/ee/src/accounting/**"
 ---
 
@@ -9,7 +10,7 @@ paths:
 
 Syncs Carbon entities <-> external accounting providers. **Three live providers**: Xero (`ProviderID.XERO`), QuickBooks Online (`ProviderID.QBO`), and Rillet (`ProviderID.RILLET`). (QuickBooks *Desktop* shipped then was removed 2026-08-01; Sage was never built.) `SyncFactory` is a **provider-keyed registry** (`registries[providerId][entityType]`) — each provider's `index.ts` barrel calls `SyncFactory.register(...)`. Runs on **Inngest** (the old trigger.dev `from-/to-accounting-sync` task design is gone — do not look for `UPSERT_MAP`/`DELETE_MAP` or a `trigger/` dir; neither exists).
 
-Design specs: `.ai/specs/2026-07-09-accounting-sync-engine.md` (v2 — engine, providers, ledger, pull sweep, **§Phase F inbound payment sync-back**) and `.ai/specs/2026-08-02-accounting-sync-engine-v3.md` (journal policy, dimensions, tie-out).
+Design specs: `.ai/specs/2026-07-09-accounting-sync-engine.md` (v2 — engine, providers, ledger, pull sweep, **§Phase F inbound payment sync-back**), `.ai/specs/2026-08-02-accounting-sync-engine-v3.md` (journal policy, dimensions, tie-out), and `.ai/specs/2026-08-11-accounting-sync-delivery-robustness.md` (v4 — delivery correctness: converged subscriptions, truthful ledger, outbound sweep, tie-out enforcement; the authoritative capstone where it conflicts with v2/v3).
 
 ## Architecture: class-per-entity syncers, not a handler map
 
@@ -29,20 +30,60 @@ The sync engine lives in `packages/ee/src/accounting/` (package `@carbon/ee/acco
 
 ## Inngest functions (entry points)
 
-All three are in `packages/jobs/src/inngest/functions/integrations/` (+ `events/sync.ts`), exported via that dir's `index.ts`, and registered in `packages/jobs/src/inngest/index.ts`. Event-name <-> trigger-key map: `packages/lib/src/trigger.ts` & `packages/lib/src/events.ts`. Fire with `trigger("<key>", payload)`.
+These live in `packages/jobs/src/inngest/functions/integrations/` (+ `events/sync.ts`), exported via that dir's `index.ts`, and registered in `packages/jobs/src/inngest/index.ts`. Event-name <-> trigger-key map: `packages/lib/src/trigger.ts` & `packages/lib/src/events.ts`. Fire with `trigger("<key>", payload)`.
 
 | Inngest id | event | file | trigger key / fired from |
 |---|---|---|---|
 | `sync-external-accounting` | `carbon/sync-external-accounting` | `sync-external-accounting.ts` | `sync-external-accounting`; fired by the inbound webhooks — `webhook.xero.ts`, `webhook.rillet.$companyId.ts`, `webhook.quickbooks.$companyId.ts` |
-| `accounting-pull-sweep` | — | `accounting-pull-sweep.ts` | cron; iterates every active integration that implements `SupportsIncrementalPull` (`listChanges`) — the **correctness guarantee** behind the webhooks (webhooks are latency, not correctness) |
+| `accounting-pull-sweep` | — | `accounting-pull-sweep.ts` | cron `*/30 * * * *`; iterates every active integration that implements `SupportsIncrementalPull` (`listChanges`) — the **INBOUND correctness guarantee** behind the webhooks (webhooks are latency, not correctness) |
+| `accounting-outbound-sweep` | — | `accounting-outbound-sweep.ts` | cron `15,45 * * * *` (offset from the pull sweep) — the **OUTBOUND correctness guarantee** (v4 Pillar B); see the sweep section below |
 | `accounting-backfill` | `carbon/accounting-backfill` | `accounting-backfill.ts` | `accounting-backfill` |
+| `accounting-consolidation` | — | `accounting-consolidation.ts` | cron `0 2 * * *`; pushes one aggregated provider journal per posting date for daily-consolidation configs (drains hold those journal ops for it) |
+| `accounting-reconciliation` | — | `accounting-reconciliation.ts` | cron `0 3 * * 1` (Mondays 03:00 UTC) — presence drift check + `accountingSyncTieOut` writer; see the tie-out section below |
 | `event-handler-sync` | `carbon/event-sync` | `events/sync.ts` | the SYNC event-system handler (see event-system.md) — DB writes -> push to the provider |
 
-The drain path routes through a durable **`accountingSyncOperation`** ledger (`accounting-sync-operations.ts` — `enqueueSyncOperations`/`drainSyncOperations`, 60s cooldown, retry/skip/re-send) between enqueue and `SyncFactory.getSyncer(...).pushBatch/pullBatch`.
+### The operation ledger — enqueue, cooldown, truthful close
 
-`sync-external-accounting.ts` flow: parse `AccountingSyncSchema` → `getAccountingIntegration` → `getProviderIntegration` → group entities by type → per type `provider.getSyncConfig(type)` (skip if `!enabled`) → `SyncFactory.getSyncer(...)` → resolve `effectiveDirection` (`two-way` uses `entityConfig.direction`) → `pushBatchToAccounting` / `pullBatchFromAccounting` / `handleTwoWaySync`. A **60s per-entity cooldown** (`SYNC_COOLDOWN_MS`, via `mappingService.getByEntity().lastSyncedAt`) skips recently-synced entities. Returns `{ success: BatchSyncResult[], failed[] }`.
+Every entry point routes through the durable **`accountingSyncOperation`** ledger (`accounting-sync-operations.ts` in jobs + `core/operations.ts` in ee) between enqueue and `SyncFactory.getSyncer(...).pushBatch/pullBatch`:
 
-`events/sync.ts` maps DB table → entity type via `TABLE_TO_ENTITY_MAP` (`customer→customer`, `supplier→vendor`, `item→item`, `purchaseOrder→purchaseOrder`, `purchaseInvoice→bill`, `salesInvoice→invoice`, `journal→journalEntry`, `payment→payment`). Generic INSERT/UPDATE → `pushBatchToAccounting`; **DELETE is logged/skipped (not implemented)**. Two tables use a table-specific enqueue rule instead of the generic push: `journal` (via `planJournalPostingOperation` — only on a transition to Posted/Reversed) and `payment` (via `getPaymentPushDecision` — only on a transition to Posted/Voided; Phase G, see Payment sync-back below). Wrapped in `step.run` per company+provider for checkpointing; re-throws `RatelimitError` so Inngest retries.
+- **Enqueue + cooldown.** `enqueueSyncOperations` absorbs re-triggers into the live (Pending/In Flight) row; a Completed row for the same tuple absorbs re-enqueues for 60s (`SYNC_OPERATION_COOLDOWN_MS`, `core/operations.ts`) — but ONLY for machine triggers (`isCooldownTrigger`: `event`/`webhook`). `backfill`/`manual`/`posting`/`retry` always enqueue. **Status transitions bypass the cooldown**: `events/sync.ts` routes any generic UPDATE whose `status` changed (`isStatusTransitionEvent`) onto the non-cooldown `posting` trigger — the observed v4 loss (F4/F5) was a Draft-edit op completing seconds before the post transition, whose enqueue then died in the cooldown and left the posted document unsynced. (The old per-entity `SYNC_COOLDOWN_MS` mapping-table check is gone.)
+- **Drain.** `drainSyncOperations` claims Pending (+ stale In Flight) rows in groups of (entityType, direction); an op claimed more than `MAX_SYNC_OPERATION_ATTEMPTS` (10) times parks as `Failed` `ATTEMPTS_EXHAUSTED` instead of running again (a human Retry resets the loop deliberately).
+- **Truthful close (v4 Pillar C).** `getSyncOperationCloseDecision` decides how a claimed op closes: syncer `skipped` WITH a `remoteId` (fast-bailout, already linked) → `Completed` stamping that externalId; `skipped` WITHOUT one (shouldSync gate, disabled entity, parked payment) → `Skipped` via `skipOperation` (reason in `errorMessage`, `errorCode` null so the UI renders it neutrally); push `success` WITHOUT a `remoteId` → `Failed` `POSTCONDITION` (a push success must produce an external id/mapping — recording it green is the phantom-success bug). A no-op is never recorded `Completed`. `Skipped → Pending` is an allowed transition (`SYNC_OPERATION_ALLOWED_TRANSITIONS`, `core/models.ts` — Retry covers the drain's machine no-op closes too). Batch AND single pushes preserve structured `JournalEntrySyncError` failures via `toSyncResultError` (`core/types.ts`), so e.g. `UNMAPPED_ACCOUNTS` lands as a Warning with metadata instead of a flattened Failed string.
+
+`sync-external-accounting.ts` flow: parse `AccountingSyncSchema` → `getAccountingIntegration` → `getProviderIntegration` → enqueue one ledger op per entity + direction (trigger: `webhook` syncs keep `"webhook"`, scheduled/trigger syncs enqueue as `"event"`; both respect the completed-row cooldown) → drain. Returns `{ success, enqueue, drain }` summaries.
+
+`events/sync.ts` maps DB table → entity type via `TABLE_TO_ENTITY_MAP`, which lives in **`events/sync-tables.ts`** (import-light on purpose — no Inngest/env boot — so the subscriptions invariant test can import it): `customer→customer`, `supplier→vendor`, `item→item`, `purchaseOrder→purchaseOrder`, `purchaseInvoice→bill`, `salesInvoice→invoice`, `salesOrder→salesOrder`, `journal→journalEntry`, `payment→payment`. Generic INSERT/UPDATE enqueue a push op (status transitions on the `posting` trigger, everything else on `event`); **DELETE is logged/skipped (not implemented)**. Two tables use a table-specific enqueue rule instead of the generic push: `journal` (via `planJournalPostingOperation` — only on INSERT born Posted or a transition to Posted/Reversed; policy exclusions record terminal Excluded/Warning rows so every posted journal has a disposition) and `payment` (via `getPaymentPushDecision` — only on a transition to Posted/Voided; Phase G, see Payment sync-back below). Wrapped in `step.run` per company+provider for checkpointing; re-throws `RatelimitError` so Inngest retries.
+
+## Event subscriptions — code-derived, converged (v4 Pillar A)
+
+`packages/ee/src/accounting/core/subscriptions.ts` (exported from the `./accounting` barrel) is the single source of truth for the SYNC event-system subscriptions each provider's outbound sync needs: `REQUIRED_SYNC_SUBSCRIPTIONS[providerId]` + the idempotent `ensureProviderSubscriptions(client, companyId, providerId)` (the create RPC upserts on `(companyId, name, table)`; rows for tables no longer required are deleted). Subscription name: `${providerId}-sync` (`getSyncSubscriptionName`).
+
+- **Converged from three call sites** — the install hook, the `onUpdate` hook (every settings save of an installed integration), and the outbound sweep — so existing installs self-heal at runtime. **No migration ever backfills subscription rows**; migrations only attach table triggers (`20260807152238_payment-event-trigger.sql` is the precedent).
+- **The set**: every provider gets `customer`/`supplier`/`item`/`salesInvoice`/`purchaseInvoice` (INSERT/UPDATE/DELETE) + `journal` (INSERT/UPDATE only — journals are immutable once posted and DELETE sync doesn't exist). Rillet adds `payment` (Phase G outbound push); Xero adds `purchaseOrder` + `salesOrder`; QBO adds `purchaseOrder` only. **`address` is deliberately absent everywhere** — address edits reach sync via the parent-row `updatedAt` bump interceptor; a direct address subscription is a dead letter.
+- Provider hooks (`packages/ee/src/{rillet,xero,quickbooks}/hooks.server.ts`) are thin wrappers over the convergence. The QBO install hook is **no longer a no-op** (its syncers shipped), and `quickbooksOnUninstall` exists. `onUpdate` is a new `IntegrationServerHooks` member (`packages/ee/src/types.ts`; registry `packages/ee/src/hooks.server.ts`; wired in `apps/erp/app/routes/x+/settings+/integrations.$id.tsx`).
+- **Invariant test**: `packages/jobs/src/inngest/functions/events/subscriptions-mapping.test.ts` pins every subscribed table ↔ a `TABLE_TO_ENTITY_MAP` entry (`events/sync-tables.ts`) ↔ a registered syncer for that provider — a subscription that routes nowhere fails CI. (`salesOrder` got its map entry as part of this; it was a dead Xero subscription before.)
+
+## Outbound reconciliation sweep (v4 Pillar B)
+
+Doctrine, mirroring the inbound pull sweep: **events are latency; the sweep is outbound correctness.** Any lost event (missing subscription, queue loss, cooldown swallow, phantom Completed) becomes ≤30-min staleness, never permanent loss. `accounting-outbound-sweep.ts` (cron `15,45 * * * *`), per company with an active accounting integration:
+
+1. **Subscription convergence** — `ensureProviderSubscriptions` (the self-healing invariant check; runs first so a repaired install's next events flow normally).
+2. **Journal completeness diff** — every Posted/Reversed journal in the window must have a recorded disposition (spec I1); missing ones route through the SAME `planJournalPostingOperation` policy decision the event path uses (push ops enqueue, exclusions record terminally). Window floor: `getSweepFloorDate` = today − `SWEEP_LOOKBACK_DAYS` (7), raised to the entity's `syncFromDate` — deliberately short; history beyond it is the explicit backfill's job.
+3. **Document completeness diff** (bills, invoices) — `shouldEnqueueMissingDocument`: enqueue iff no mapping with externalId, no live op, and the latest op is null or `Completed` (Completed-without-mapping is the phantom-success signature the truthful-ledger close now prevents; the sweep repairs it retroactively). Parked statuses (Skipped/Warning/Failed/Excluded) belong to the capped re-drive or a human, never the diff. Swept statuses: `SWEPT_BILL_STATUSES`/`SWEPT_INVOICE_STATUSES` (the posted set minus the transient mid-posting `Pending`).
+4. **Payment completeness diff** — Rillet only (the one provider with outbound payment push); stricter rule: only payments with NO op row at all enqueue (payment mapping ids are composite, so the mapping-based phantom check doesn't apply).
+5. **Re-drive** — bill ops parked `Warning` `UNMAPPED_ACCOUNTS` whose backing posted "Purchase Invoice" journal NOW exists flip back to Pending (heals the post-invoice race where the bill drained before its journal posted), capped at `MAX_REDRIVE_ATTEMPTS` (5).
+6. **Drain** — including what this run enqueued/re-drove. This is **Xero's only periodic drain** (it has no incremental pull), so UI retries stop rotting as Pending.
+7. **Alert (Pillar F)** — failed ops left after the drain fire one in-app `NotificationEvent.IntegrationSync` to the integration's configurer (`integration.updatedBy`), linking to the integration's settings page. A notification failure never fails the sweep.
+
+Pure helpers + tests live in `accounting-sync-operations.ts` / `.test.ts`.
+
+## Reconciliation + tie-out (v3 §5 / v4 Pillar E)
+
+`accounting-reconciliation.ts` (cron `0 3 * * 1`) is **provider-agnostic** — all three providers, no longer Xero-only:
+
+- **Presence** — pages the last 90 days of Completed journalEntry ops and verifies each distinct externalId still exists remotely via `fetchRemoteJournalTotals` (`core/remote-journal.ts` — dispatches on the concrete provider class: Xero manual journals, Rillet journal entries, QBO journal entries; returns net debit-signed totals per remote account ref, `found: false` for missing/voided/deleted, never throws except `RatelimitError`). Drift entries land at `companyIntegration.metadata.settings.postingSync.lastReconciliation` (the SyncActivity banner's feed).
+- **Tie-out** — writes one `accountingSyncTieOut` row per (integration × accountingPeriod × account) (migration `20260811223145`; single-column FK to `accountingPeriod` — its PK is `(id)` alone; RLS is SELECT-only under `accounting_view`, rows written by the cron via service role). Per cell: `carbonPostedAmount` split into `synced/docBacked/excluded/pending/blocked` by each journal's ledger disposition (least-delivered bucket wins across an op + its `:reversal` twin; `DOC_BACKED` counts as delivered only while the backing document really synced), `providerAmount` from the presence fetches (strictly reused, never fetched twice; NULL when uncovered), `internalDelta` (I1: carbonPosted − sum of buckets) and `externalDelta` (I5: synced − provider).
+- **ERP surface** — `x+/accounting+/sync-tieout.tsx` (+ `$cellId` drawer drill-down), nav item under Accounting → Reports (`path.to.accountingSyncTieOut`); the SyncActivity tab gets a tie-out summary card + a Failed/Warning count badge. **Period close**: the "External GL sync complete" Blocker auto-check (`autoCheckKey: "external-gl-sync"`, seeded for new companies and reconciled for existing ones in the same migration) is computed by `getPeriodExternalGlSyncReadiness` (apps/erp `accounting.service.ts`) — every journal posted into the period must carry a terminal disposition (Completed/Excluded/Skipped) for every active posting-sync-enabled integration; auto-passes when no integration has posting sync on.
 
 ## externalIntegrationMapping table
 
@@ -69,7 +110,7 @@ into Carbon as `payment` + `invoiceSettlement` rows that close the
   `supplierId`) + one `invoiceSettlement` per mapped document
   (`targetSalesInvoiceId`/`targetPurchaseInvoiceId`), idempotent by the `payment`
   mapping, dropping unmapped documents. Returns a `postAction` (`post`/`void`/`none`).
-- `core/payment-syncer.ts` — `PaymentSyncerBase` (pull-only). Providers implement
+- `core/payment-syncer.ts` — `PaymentSyncerBase` (pull, plus the Phase G push below). Providers implement
   `mapToNormalized(remote, entityId)` + `fetchRemote`. The base overrides
   `pullFromAccounting`/`pullBatchFromAccounting`: Draft write in the base tx, then
   **after commit** invokes the native `post-payment` edge fn (`{type:'post'|'void'}`
@@ -106,10 +147,16 @@ the composite id with `metadata.origin = "carbon"` so a later void echoes out an
 a later pull no-ops. `supportsPaymentPush` gates the whole thing (Rillet true;
 QBO/Xero keep rejecting push). v1 is single-settlement, base-currency, no
 discount, no void-echo (Rillet has no payment-void endpoint) — everything else
-parks as Skipped. Rillet client: `createInvoicePayment`/`createBillPayment` (VERIFY
-comments — no local OpenAPI). Trigger: the `payment` table has an event trigger
-(`20260807152238_payment-event-trigger.sql`) + a `rillet-sync` subscription
-(`rilletOnInstall` for new installs, backfilled for existing); `getPaymentPushDecision`
+parks as Skipped. The paid date goes through `toPostingDateString` (Kysely's pg
+driver returns DATE columns as JS `Date`s; a bare `.slice` crashed the push).
+Rillet client: `createInvoicePayment`/`createBillPayment` — the bill path is
+**VERIFIED** (sandbox 2026-08-11): `POST /bills/{id}/payments` takes a FLAT body
+`{ amount, date, account_code }` (`date`, NOT `payment_date` — that 400s) and
+returns the created payment flat (status UNCLEARED); the invoice path is assumed
+to mirror it, not separately confirmed. Trigger: the `payment` table has an event
+trigger (`20260807152238_payment-event-trigger.sql`) + a `rillet-sync`
+subscription from `REQUIRED_SYNC_SUBSCRIPTIONS` convergence (Rillet-only; no
+migration backfill — see the subscriptions section); `getPaymentPushDecision`
 enqueues push only on a transition to Posted/Voided. Spec:
 `.ai/specs/2026-07-09-accounting-sync-engine.md` §Phase G.
 
@@ -157,9 +204,32 @@ the provider's GL for that document equals Carbon's. Spec:
 - **PO / SO / Quote are unchanged** — item-referenced, no GL constraint (QBO PO
   keeps `buildQboExpenseLines` / `ItemBasedExpenseLineDetail`).
 
+## Dimensions (journal / bill analytics)
+
+Journal-entry and bill line dimensions (`journalLineDimension`) map to provider
+analytics fields. **Rillet sends ALL dimensions on every line and auto-provisions
+what's missing** — there is no per-company slot/cap (Rillet Fields are unlimited).
+`RilletTransactionSyncer.resolveLineDimensions(lines)` (`providers/rillet/entities/shared.ts`)
+resolves each distinct dimension to a Rillet Field id (reuse an existing Field by
+name, else `createField(name, "EXPENSES")` — journal entries + bills are
+expense-side) and each value to a Field-value id (`upsertFieldValue` by the
+value's readable label), persisting both in `externalIntegrationMapping`
+(`entityType` `"dimension"` for the Field via `upsertDimensionMapping`,
+`"dimensionValue"` for the value). The Rillet mappers iterate `line.dimensions`;
+a dimension whose Field or value can't be provisioned is dropped from that line's
+refs. `createField` (`POST /fields`) is VERIFY-flagged — confirm the payload on
+the Rillet sandbox.
+
+**Xero/QBO keep the slot system** (`dimensionSlots` + `maxJournalDimensionSlots`
+= 2 each; `validateDimensionSlots`, the Dimensions settings tab). For Rillet the
+slot config is now inert (the mapper no longer reads it) — the tab's slot editor
+is dead config for Rillet only, left in place for the capped providers.
+
 ## Gotchas
 
-- All DB writes during sync are wrapped in `withTriggersDisabled(database, tx => ...)` to break the loop (sync writes DB → event trigger → sync again). **Exception:** payment sync-back invokes `post-payment` *outside* that tx (triggers enabled), like a user posting a payment — intended.
+- All DB writes during sync are wrapped in `withTriggersDisabled(database, tx => ...)` to break the loop (sync writes DB → event trigger → sync again). Since migration `20260811224732`, that suppression is **scoped**: `dispatch_event_batch()` drops only SYNC/WEBHOOK/WORKFLOW subscriptions while `app.sync_in_progress` is set (the loop/echo-prone types); SEARCH/AUDIT/EMBEDDING observers now see sync-written rows (v4 F13). **Exception:** payment sync-back invokes `post-payment` *outside* that tx (triggers enabled), like a user posting a payment — intended.
+- Rillet create POSTs carry a deterministic, **entity-scoped** `Idempotency-Key`: `buildRilletIdempotencyKey` (`providers/rillet/provider.ts`) = sha256 of `companyId:operation:localId`; Rillet replays the stored response for 24h. The payload is deliberately **NOT hashed** (v4 Pillar C): a crash between the remote create and the local mapping write retries with a possibly-drifted payload, and a payload-sensitive key would mint a fresh key and duplicate the remote document. Contract pinned by `providers/rillet/__tests__/provider.test.ts`.
+- The event-queue drainer (`events/queue.ts`) archives unknown-`handlerType` messages to pgmq's dead-letter table (`pgmq.a_event_system`) instead of crash-looping the whole drain (v4 F8) — a poison message can no longer wedge ALL event processing.
 - `ContactSyncer.getRemoteId` checks both `customer` and `vendor` mappings (one Xero Contact backs both).
 - Transaction syncers (PO, invoice, bill) use `ensureDependencySynced(type, localId)` for JIT dependency syncing (e.g. push the customer before its invoice); `dependsOn` is declared in `ENTITY_DEFINITIONS`.
 - DELETE sync is not implemented anywhere yet.

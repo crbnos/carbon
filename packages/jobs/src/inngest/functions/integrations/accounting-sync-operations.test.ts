@@ -11,12 +11,15 @@ import {
   getPositiveCents,
   getPullCursorDecision,
   getPullIdempotencyScope,
+  getSweepFloorDate,
+  getSyncOperationCloseDecision,
   getSyncOperationFailureRecord,
   getSyncOperationIdempotencyKey,
   getUtcDateString,
   isClaimableConsolidationOperation,
   isDailyConsolidationMarker,
   isJournalEntryPostingEnabled,
+  isStatusTransitionEvent,
   type JournalPostingEventInput,
   MAX_RECONCILIATION_DRIFT_ENTRIES,
   mergePostingSyncReconciliation,
@@ -24,6 +27,8 @@ import {
   partitionConsolidationOperations,
   planJournalPostingOperation,
   resolvePaymentJournalFamily,
+  SWEEP_LOOKBACK_DAYS,
+  shouldEnqueueMissingDocument,
   toIsoDateString
 } from "./accounting-sync-operations";
 
@@ -1349,5 +1354,230 @@ describe("planJournalPostingOperation", () => {
     if (unresolvedPlan.action !== "terminal")
       throw new Error("expected terminal");
     expect(unresolvedPlan.request.errorCode).toBe("PAYMENT_FAMILY_UNRESOLVED");
+  });
+});
+
+// ── Truthful-ledger close decisions (v4 spec, Pillar C) ─────────────────────
+
+describe("getSyncOperationCloseDecision", () => {
+  const pushOp = { metadata: null, direction: "push-to-accounting" as const };
+  const pullOp = { metadata: null, direction: "pull-from-accounting" as const };
+
+  it("fails when the syncer returned no result for the entity", () => {
+    const decision = getSyncOperationCloseDecision(pushOp, undefined);
+    expect(decision.outcome).toBe("failed");
+  });
+
+  it("fails on an error result, preserving the failure record", () => {
+    const decision = getSyncOperationCloseDecision(pushOp, {
+      status: "error",
+      action: "none",
+      localId: "pi_1",
+      error: "boom"
+    });
+    expect(decision).toEqual({
+      outcome: "failed",
+      record: { errorMessage: "boom" }
+    });
+  });
+
+  it("completes a skip that carries a remoteId — the remote copy exists", () => {
+    // Fast-bailout ("Already synced - local unchanged") and already-linked
+    // hard-skips return the mapping's externalId; recording Completed with
+    // that id is the truth.
+    const decision = getSyncOperationCloseDecision(pushOp, {
+      status: "skipped",
+      action: "none",
+      localId: "pi_1",
+      remoteId: "remote-1",
+      error: "Already synced - local unchanged"
+    });
+    expect(decision).toEqual({ outcome: "completed", externalId: "remote-1" });
+  });
+
+  it("records Skipped (not Completed) for a no-op with nothing behind it", () => {
+    // The observed false-green failure mode: a shouldSync gate ("Bill must
+    // be posted…") closing as Completed with no external mapping.
+    const decision = getSyncOperationCloseDecision(pushOp, {
+      status: "skipped",
+      action: "none",
+      localId: "pi_1",
+      error: "Bill must be posted before syncing"
+    });
+    expect(decision).toEqual({
+      outcome: "skipped",
+      reason: "Bill must be posted before syncing"
+    });
+  });
+
+  it("defaults the skip reason when the syncer supplied none", () => {
+    const decision = getSyncOperationCloseDecision(pushOp, {
+      status: "skipped",
+      action: "none",
+      localId: "pi_1"
+    });
+    expect(decision).toEqual({
+      outcome: "skipped",
+      reason: "Not eligible for sync"
+    });
+  });
+
+  it("fails a push success that produced no remote id (POSTCONDITION)", () => {
+    const decision = getSyncOperationCloseDecision(pushOp, {
+      status: "success",
+      action: "created",
+      localId: "pi_1"
+    });
+    expect(decision.outcome).toBe("failed");
+    if (decision.outcome === "failed") {
+      expect(decision.record.errorCode).toBe("POSTCONDITION");
+    }
+  });
+
+  it("completes a push success with its remote id", () => {
+    const decision = getSyncOperationCloseDecision(pushOp, {
+      status: "success",
+      action: "created",
+      localId: "pi_1",
+      remoteId: "remote-1"
+    });
+    expect(decision).toEqual({ outcome: "completed", externalId: "remote-1" });
+  });
+
+  it("completes a pull success without requiring a remote id", () => {
+    const decision = getSyncOperationCloseDecision(pullOp, {
+      status: "success",
+      action: "created",
+      localId: "pay_1"
+    });
+    expect(decision).toEqual({ outcome: "completed" });
+  });
+});
+
+// ── Outbound-sweep decisions (v4 spec, Pillar B) ────────────────────────────
+
+describe("getSweepFloorDate", () => {
+  it("looks back SWEEP_LOOKBACK_DAYS from today", () => {
+    expect(SWEEP_LOOKBACK_DAYS).toBe(7);
+    expect(getSweepFloorDate({ todayIso: "2026-08-11" })).toBe("2026-08-04");
+  });
+
+  it("raises the floor to syncFromDate when that is later", () => {
+    expect(
+      getSweepFloorDate({ todayIso: "2026-08-11", syncFromDate: "2026-08-08" })
+    ).toBe("2026-08-08");
+  });
+
+  it("ignores a syncFromDate older than the lookback window", () => {
+    expect(
+      getSweepFloorDate({ todayIso: "2026-08-11", syncFromDate: "2026-01-01" })
+    ).toBe("2026-08-04");
+  });
+
+  it("accepts a timestamp-shaped syncFromDate (date part only)", () => {
+    expect(
+      getSweepFloorDate({
+        todayIso: "2026-08-11",
+        syncFromDate: "2026-08-09T14:00:00.000Z"
+      })
+    ).toBe("2026-08-09");
+  });
+});
+
+describe("shouldEnqueueMissingDocument", () => {
+  const base = {
+    hasMapping: false,
+    hasLiveOperation: false,
+    latestOperationStatus: null as string | null
+  };
+
+  it("enqueues a pure lost event (no mapping, no ops at all)", () => {
+    expect(shouldEnqueueMissingDocument(base)).toBe(true);
+  });
+
+  it("enqueues a phantom success (latest op Completed but no mapping)", () => {
+    // The observed pi_Rhnz signature: a pre-truthful-ledger Completed row
+    // with nothing behind it. A real Completed push implies a mapping.
+    expect(
+      shouldEnqueueMissingDocument({
+        ...base,
+        latestOperationStatus: "Completed"
+      })
+    ).toBe(true);
+  });
+
+  it("leaves mapped documents alone", () => {
+    expect(shouldEnqueueMissingDocument({ ...base, hasMapping: true })).toBe(
+      false
+    );
+  });
+
+  it("leaves documents with a live operation alone", () => {
+    expect(
+      shouldEnqueueMissingDocument({ ...base, hasLiveOperation: true })
+    ).toBe(false);
+  });
+
+  it("never re-enqueues parked dispositions (the re-drive rules own those)", () => {
+    for (const status of ["Skipped", "Warning", "Failed", "Excluded"]) {
+      expect(
+        shouldEnqueueMissingDocument({
+          ...base,
+          latestOperationStatus: status
+        }),
+        `latest ${status} must not re-enqueue`
+      ).toBe(false);
+    }
+  });
+});
+
+// ── Cooldown-bypassing status transitions (v4 spec, F4/F5) ─────────────────
+
+describe("isStatusTransitionEvent", () => {
+  it("detects a status transition on an UPDATE", () => {
+    expect(
+      isStatusTransitionEvent({
+        operation: "UPDATE",
+        new: { id: "pi_1", status: "Open" },
+        old: { id: "pi_1", status: "Pending" }
+      })
+    ).toBe(true);
+  });
+
+  it("ignores same-status UPDATEs (the cooldown's legitimate territory)", () => {
+    expect(
+      isStatusTransitionEvent({
+        operation: "UPDATE",
+        new: { id: "pi_1", status: "Open", internalNotes: "edited" },
+        old: { id: "pi_1", status: "Open", internalNotes: "original" }
+      })
+    ).toBe(false);
+  });
+
+  it("ignores INSERTs and DELETEs", () => {
+    expect(
+      isStatusTransitionEvent({
+        operation: "INSERT",
+        new: { id: "pi_1", status: "Draft" },
+        old: null
+      })
+    ).toBe(false);
+    expect(
+      isStatusTransitionEvent({
+        operation: "DELETE",
+        new: null,
+        old: { id: "pi_1", status: "Open" }
+      })
+    ).toBe(false);
+  });
+
+  it("ignores rows with no status column at all", () => {
+    expect(
+      isStatusTransitionEvent({
+        operation: "UPDATE",
+        new: { id: "cust_1", name: "B" },
+        old: { id: "cust_1", name: "A" }
+      })
+    ).toBe(false);
   });
 });

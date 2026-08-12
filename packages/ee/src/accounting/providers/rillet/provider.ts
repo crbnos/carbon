@@ -205,21 +205,23 @@ export function isRilletUnknownExternalReferenceTypeError(
 /**
  * Deterministic Idempotency-Key for a Rillet create POST (Rillet replays
  * the stored response for 24h): the same company + operation + local
- * entity + payload always produces the same key, so a retried push cannot
- * double-create, while any payload change issues a fresh key.
+ * entity always produces the same key, so a retried push cannot
+ * double-create — even when the retry's payload drifted (dimension
+ * resolution, an edit between attempts). The payload is deliberately NOT
+ * hashed (v4 spec, Pillar C): a crash between the remote create and the
+ * local mapping write retries the push, and a payload-sensitive key would
+ * mint a fresh key for the drifted payload and duplicate the document
+ * remotely. Every call site's localId identifies one logical create
+ * (composite ids for payments, `:reversal`-suffixed ids for reversal
+ * journals, batch keys for consolidated journals).
  */
 export function buildRilletIdempotencyKey(args: {
   companyId: string;
   operation: string;
   localId: string;
-  payload: unknown;
 }): string {
   return createHash("sha256")
-    .update(
-      `${args.companyId}:${args.operation}:${args.localId}:${JSON.stringify(
-        args.payload
-      )}`
-    )
+    .update(`${args.companyId}:${args.operation}:${args.localId}`)
     .digest("hex");
 }
 
@@ -650,6 +652,38 @@ export class RilletProvider extends BaseProvider {
     return value;
   }
 
+  /**
+   * Create a Field definition (a whole dimension) BY NAME
+   * (POST /fields). `area` is the applicability scope — EXPENSES covers
+   * bills + manual journal entries, REVENUE covers invoices/credit memos —
+   * written as `settings.<AREA> = { mandatory, display }` with display
+   * STANDALONE (single-select; one value per line per Carbon dimension).
+   * Unlike upsertFieldValue this is NOT idempotent by name server-side, so
+   * callers must check for an existing Field first (see resolveLineDimensions)
+   * and pass a deterministic Idempotency-Key to guard a create-retry.
+   *
+   * VERIFY: the POST /fields request body is inferred from the documented
+   * GET /fields shape (v3 spec changelog 2026-08-04) — confirm against the
+   * live Rillet sandbox before relying on auto-provisioning in production.
+   */
+  async createField(
+    name: string,
+    area: "EXPENSES" | "REVENUE",
+    idempotencyKey?: string
+  ): Promise<Rillet.Field> {
+    return this.writeEntity<Rillet.Field>({
+      method: "POST",
+      path: "/fields",
+      envelopeKey: "field",
+      operation: "create field",
+      payload: {
+        name,
+        settings: { [area]: { mandatory: false, display: "STANDALONE" } }
+      },
+      idempotencyKey
+    });
+  }
+
   /** All Rillet customers (cursor-drained). Throws on API failure. */
   async listCustomers(): Promise<Rillet.Customer[]> {
     return this.listPaginated<Rillet.Customer>(
@@ -945,9 +979,11 @@ export class RilletProvider extends BaseProvider {
    * the composite mapping. Idempotency-Key protects against double-create on a
    * push retry (Rillet replays the stored response for 24h).
    *
-   * VERIFY: the `POST /invoices/{id}/payments` path + `{ payment }` envelope +
-   * `RilletPaymentCreate` field names are assumed to mirror the read endpoints;
-   * not confirmed against the live Rillet OpenAPI.
+   * Request body is FLAT (writeEntity never wraps requests; envelopeKey only
+   * unwraps responses, and unwrapRilletEntity falls back to the flat object).
+   * VERIFIED on the bill mirror (sandbox 2026-08-11): flat body with `date`
+   * (not `payment_date`), flat response payment object. The invoice path is
+   * assumed to mirror it; not separately confirmed.
    */
   async createInvoicePayment(
     invoiceId: string,
@@ -967,9 +1003,11 @@ export class RilletProvider extends BaseProvider {
   /**
    * Record a payment against one AP bill (AP mirror of createInvoicePayment).
    *
-   * VERIFY: the `POST /bills/{id}/payments` path + `{ payment }` envelope are
-   * assumed to mirror the read endpoints; not confirmed against the live Rillet
-   * OpenAPI.
+   * VERIFIED (sandbox 2026-08-11): POST /bills/{id}/payments takes a FLAT
+   * body `{ amount, date, account_code, external_references? }` — `payment_date`
+   * 400s ("date must not be null") — and returns the created payment FLAT
+   * (`{ id, status, bill_id, amount, date, account_code }`, status UNCLEARED);
+   * unwrapRilletEntity's flat fallback handles it.
    */
   async createBillPayment(
     billId: string,

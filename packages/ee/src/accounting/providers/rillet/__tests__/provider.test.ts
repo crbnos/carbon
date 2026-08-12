@@ -183,25 +183,25 @@ describe("RilletProvider idempotency", () => {
     expect(JSON.parse(String(requestInit(0)?.body))).toEqual(JOURNAL_PAYLOAD);
   });
 
-  it("buildRilletIdempotencyKey is stable and payload-sensitive", () => {
+  it("buildRilletIdempotencyKey is stable and entity-scoped (payload drift must not mint a fresh key)", () => {
+    // A crash between the remote create and the local mapping write
+    // retries the push; the retry's payload may have drifted (dimension
+    // resolution, an edit between attempts). The key must dedupe on the
+    // logical create — company + operation + local entity — so the retry
+    // replays Rillet's stored response instead of double-creating.
     const args = {
       companyId: "company-1",
       operation: "journal-entry",
-      localId: "je_123",
-      payload: JOURNAL_PAYLOAD
+      localId: "je_123"
     };
 
     const key = buildRilletIdempotencyKey(args);
     expect(key).toMatch(/^[0-9a-f]{64}$/);
     expect(buildRilletIdempotencyKey(args)).toBe(key);
-
-    expect(
-      buildRilletIdempotencyKey({
-        ...args,
-        payload: { ...JOURNAL_PAYLOAD, date: "2026-07-02" }
-      })
-    ).not.toBe(key);
     expect(buildRilletIdempotencyKey({ ...args, localId: "je_456" })).not.toBe(
+      key
+    );
+    expect(buildRilletIdempotencyKey({ ...args, operation: "bill" })).not.toBe(
       key
     );
   });

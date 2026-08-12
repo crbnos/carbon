@@ -60,6 +60,10 @@ msgstr "{0} accounts"
 msgid "{0} ago"
 msgstr "{0} ago"
 
+#. placeholder {0}: tieOut.deltaCellCount
+msgid "{0} cells with deltas"
+msgstr "{0} cells with deltas"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} customers with a balance"
@@ -1274,6 +1278,10 @@ msgstr "Align on scope"
 msgid "All"
 msgstr "All"
 
+#. placeholder {0}: tieOut.cellCount
+msgid "All {0} cells tie out"
+msgstr "All {0} cells tie out"
+
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "All {total} phases are done. Nice work — your team is up and running."
 
@@ -1518,6 +1526,7 @@ msgstr "Anything not explicitly listed in scope above"
 
 msgid "AP"
 msgstr "AP"
+
 msgid "AP Aging"
 msgstr "AP Aging"
 
@@ -1644,6 +1653,7 @@ msgstr "AR"
 
 msgid "AR / AP representation"
 msgstr "AR / AP representation"
+
 msgid "AR Aging"
 msgstr "AR Aging"
 
@@ -2513,6 +2523,7 @@ msgstr "Book Depreciation"
 
 msgid "Books lock date (manual)"
 msgstr "Books lock date (manual)"
+
 msgid "Both"
 msgstr "Both"
 
@@ -2770,6 +2781,9 @@ msgstr "Carbon Logo"
 
 msgid "Carbon only"
 msgstr "Carbon only"
+
+msgid "Carbon Posted"
+msgstr "Carbon Posted"
 
 msgid "Carbon value"
 msgstr "Carbon value"
@@ -3188,6 +3202,13 @@ msgstr "Completion Barcode"
 
 msgid "Completion Time"
 msgstr "Completion Time"
+
+#. placeholder {0}: formatRelativeTime(tieOut.computedAt)
+msgid "computed {0}"
+msgstr "computed {0}"
+
+msgid "Computed At"
+msgstr "Computed At"
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Condensed P&L with margins and key subtotals"
@@ -5118,6 +5139,9 @@ msgstr "Dispositions"
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 
+msgid "Doc-Backed"
+msgstr "Doc-Backed"
+
 msgid "Docs"
 msgstr "Docs"
 
@@ -6201,10 +6225,14 @@ msgstr "Extended Price"
 msgid "External"
 msgstr "External"
 
-msgid "External ID"
-msgstr "External ID"
+msgid "External Delta"
+msgstr "External Delta"
+
 msgid "External document"
 msgstr "External document"
+
+msgid "External ID"
+msgstr "External ID"
 
 msgid "External link"
 msgstr "External link"
@@ -7647,6 +7675,9 @@ msgstr "Instructions"
 msgid "Instructions are inherited from the procedure."
 msgstr "Instructions are inherited from the procedure."
 
+msgid "Integration"
+msgstr "Integration"
+
 msgid "Integration not found"
 msgstr "Integration not found"
 
@@ -7682,6 +7713,9 @@ msgstr "Interest income or expense from banking activities"
 
 msgid "Internal"
 msgstr "Internal"
+
+msgid "Internal Delta"
+msgstr "Internal Delta"
 
 msgid "Internal notes"
 msgstr "Internal notes"
@@ -8061,6 +8095,7 @@ msgstr "Journal Entry"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
+
 msgid "Just one"
 msgstr "Just one"
 
@@ -8158,13 +8193,14 @@ msgstr "Labor Unit"
 msgid "Language"
 msgstr "Language"
 
+msgid "Last 6 Months"
+msgstr "Last 6 Months"
+
 msgid "Last attempt"
 msgstr "Last attempt"
 
 msgid "Last Attempt"
 msgstr "Last Attempt"
-msgid "Last 6 Months"
-msgstr "Last 6 Months"
 
 msgid "Last Calibration"
 msgstr "Last Calibration"
@@ -9771,6 +9807,9 @@ msgstr "No payments yet."
 msgid "No planning data"
 msgstr "No planning data"
 
+msgid "No posted journals in this period for this account"
+msgstr "No posted journals in this period for this account"
+
 msgid "No pricing for selected quantity"
 msgstr "No pricing for selected quantity"
 
@@ -9941,6 +9980,9 @@ msgstr "Not enough jobs to cover quantity"
 
 msgid "Not reached"
 msgstr "Not reached"
+
+msgid "Not recorded"
+msgstr "Not recorded"
 
 msgid "Not referenced anywhere yet."
 msgstr "Not referenced anywhere yet."
@@ -11278,13 +11320,14 @@ msgstr "Promised Date"
 msgid "Properties"
 msgstr "Properties"
 
+msgid "Property"
+msgstr "Property"
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Proposed matches where the Carbon account number equals the provider account code exactly."
 
 msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
 msgstr "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
-msgid "Property"
-msgstr "Property"
 
 msgid "Protect the go-live date"
 msgstr "Protect the go-live date"
@@ -13463,6 +13506,9 @@ msgstr "Showing in {parentCurrency}"
 msgid "Showing the first 500 lines"
 msgstr "Showing the first 500 lines"
 
+msgid "Showing the newest 200 journals"
+msgstr "Showing the newest 200 journals"
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Showing the top 1,000 groups by amount"
 
@@ -14167,6 +14213,12 @@ msgstr "Sync Activity"
 
 msgid "Sync operation"
 msgstr "Sync operation"
+
+msgid "Sync Tie-Out"
+msgstr "Sync Tie-Out"
+
+msgid "Synced"
+msgstr "Synced"
 
 msgid "System"
 msgstr "System"
@@ -15315,6 +15367,9 @@ msgstr "Thursday"
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Tie shipments through to an invoice with no re-keying"
 
+msgid "Tie-out"
+msgstr "Tie-out"
+
 msgid "Tie-Out"
 msgstr "Tie-Out"
 
@@ -16321,6 +16376,9 @@ msgstr "View Suggestion"
 msgid "View Suppliers"
 msgstr "View Suppliers"
 
+msgid "View tie-out"
+msgstr "View tie-out"
+
 msgid "View Traceability Graph"
 msgstr "View Traceability Graph"
 
@@ -16524,10 +16582,11 @@ msgstr "What changes when you move to Carbon, and roughly what it's worth. Estim
 msgid "What data"
 msgstr "What data"
 
-msgid "What happens when a journal is dated in a locked period."
-msgstr "What happens when a journal is dated in a locked period."
 msgid "What drove inventory up or down, by any dimension"
 msgstr "What drove inventory up or down, by any dimension"
+
+msgid "What happens when a journal is dated in a locked period."
+msgstr "What happens when a journal is dated in a locked period."
 
 msgid "What is {translatedTerm}?"
 msgstr "What is {translatedTerm}?"

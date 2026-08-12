@@ -404,7 +404,7 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
 
     const payload = {
       amount: toRilletMoney(context.amount, context.currencyCode),
-      payment_date: context.paidDate,
+      date: context.paidDate,
       account_code: accountCode,
       external_references: [
         { type: RILLET_CARBON_REFERENCE_TYPE, id: context.carbonPaymentId }
@@ -417,8 +417,7 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
         context.family === "ar"
           ? "create invoice payment"
           : "create bill payment",
-      localId: `${context.carbonPaymentId}:${context.targetDocumentId}`,
-      payload
+      localId: `${context.carbonPaymentId}:${context.targetDocumentId}`
     });
 
     const created =

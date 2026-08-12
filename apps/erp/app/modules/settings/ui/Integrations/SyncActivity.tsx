@@ -1,6 +1,7 @@
 import {
   Badge,
   Button,
+  cn,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -31,6 +32,7 @@ import {
   LuChevronRight,
   LuCircleSlash,
   LuRotateCw,
+  LuScale,
   LuSend,
   LuTriangleAlert
 } from "react-icons/lu";
@@ -119,6 +121,17 @@ type SyncActivityProps = {
    * banner + drift table above the operations when drift exists.
    */
   lastReconciliation?: SyncReconciliationReport | null;
+  /**
+   * Tie-out summary for this integration (accountingSyncTieOut): latest
+   * computedAt + how many period × account cells carry a nonzero internal
+   * or external delta. Null / undefined = no tie-out rows exist yet, and
+   * the card renders nothing.
+   */
+  tieOut?: {
+    computedAt: string | null;
+    deltaCellCount: number;
+    cellCount: number;
+  } | null;
 };
 
 const STATUS_FILTERS: SyncOperationStatus[] = [
@@ -193,9 +206,11 @@ function formatTrigger(trigger: string): string {
 
 /**
  * UI actions by status (mirrors the service's transition guard):
- * Retry (Failed/Warning → Pending), Skip (Failed/Warning/Pending → Skipped),
- * Re-send (Completed/Excluded → Pending — an Excluded journal re-decides
- * against the current posting-policy config).
+ * Retry (Failed/Warning/Skipped → Pending — Skipped covers both a human
+ * opt-out and the drain's machine no-op close, either of which a user may
+ * re-drive), Skip (Failed/Warning/Pending → Skipped), Re-send
+ * (Completed/Excluded → Pending — an Excluded journal re-decides against
+ * the current posting-policy config).
  */
 function getAvailableTransitions(status: SyncOperationStatus): {
   retry: boolean;
@@ -203,7 +218,7 @@ function getAvailableTransitions(status: SyncOperationStatus): {
   resend: boolean;
 } {
   return {
-    retry: status === "Failed" || status === "Warning",
+    retry: status === "Failed" || status === "Warning" || status === "Skipped",
     skip: status === "Failed" || status === "Warning" || status === "Pending",
     resend: status === "Completed" || status === "Excluded"
   };
@@ -216,7 +231,8 @@ export function SyncActivity({
   status,
   page,
   pageSize,
-  lastReconciliation
+  lastReconciliation,
+  tieOut
 }: SyncActivityProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -289,6 +305,7 @@ export function SyncActivity({
       <DrawerBody className="gap-4">
         {tabs}
         <ReconciliationDrift lastReconciliation={lastReconciliation} />
+        <TieOutSummary tieOut={tieOut} />
 
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1">
@@ -557,6 +574,67 @@ const driftAmountFormatter = new Intl.NumberFormat(undefined, {
  * reconciliation. Rendered above the operations table only when the stored
  * report has drift entries — a clean report (or none yet) shows nothing.
  */
+/**
+ * Compact tie-out status card, styled after the drift banner above it:
+ * amber when any period × account cell carries a nonzero delta, quiet
+ * otherwise. Links to the accounting module's tie-out page (which requires
+ * accounting_view). Renders nothing when no tie-out rows exist.
+ */
+function TieOutSummary({
+  tieOut
+}: {
+  tieOut?: {
+    computedAt: string | null;
+    deltaCellCount: number;
+    cellCount: number;
+  } | null;
+}) {
+  const { formatRelativeTime } = useDateFormatter();
+
+  if (!tieOut) return null;
+  const hasDeltas = tieOut.deltaCellCount > 0;
+
+  return (
+    <div
+      className={cn(
+        "flex w-full items-center justify-between gap-3 rounded-lg border p-4",
+        hasDeltas ? "border-amber-500/40 bg-amber-500/5" : "border-border"
+      )}
+    >
+      <div className="flex items-start gap-3">
+        {hasDeltas ? (
+          <LuTriangleAlert className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-500" />
+        ) : (
+          <LuScale className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+        )}
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium">
+            <Trans>Tie-out</Trans>
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {hasDeltas ? (
+              <Trans>{tieOut.deltaCellCount} cells with deltas</Trans>
+            ) : (
+              <Trans>All {tieOut.cellCount} cells tie out</Trans>
+            )}
+            {tieOut.computedAt ? (
+              <>
+                {" · "}
+                <Trans>computed {formatRelativeTime(tieOut.computedAt)}</Trans>
+              </>
+            ) : null}
+          </span>
+        </div>
+      </div>
+      <Button size="sm" variant="secondary" asChild>
+        <Link to={path.to.accountingSyncTieOut}>
+          <Trans>View tie-out</Trans>
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
 function ReconciliationDrift({
   lastReconciliation
 }: {

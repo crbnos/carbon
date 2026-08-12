@@ -266,8 +266,7 @@ export class RilletVendorSyncer extends RilletEntitySyncer<
         buildRilletIdempotencyKey({
           companyId: this.companyId,
           operation: "vendor",
-          localId,
-          payload
+          localId
         })
       )
     );

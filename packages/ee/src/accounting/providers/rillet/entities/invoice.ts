@@ -376,8 +376,7 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
         buildRilletIdempotencyKey({
           companyId: this.companyId,
           operation: "invoice",
-          localId,
-          payload: data
+          localId
         })
       );
       return created.id;

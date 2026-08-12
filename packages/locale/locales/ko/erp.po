@@ -60,6 +60,10 @@ msgstr "{0} 계정"
 msgid "{0} ago"
 msgstr "{0} 전"
 
+#. placeholder {0}: tieOut.deltaCellCount
+msgid "{0} cells with deltas"
+msgstr "{0}개 셀에 변경사항 있음"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "잔액이 있는 고객 {0}명"
@@ -1274,6 +1278,10 @@ msgstr "범위 정렬"
 msgid "All"
 msgstr "전체"
 
+#. placeholder {0}: tieOut.cellCount
+msgid "All {0} cells tie out"
+msgstr "모든 {0}개 셀이 일치함"
+
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "{total}단계가 모두 완료되었습니다. 수고하셨습니다 — 팀이 이제 정상 가동 중입니다."
 
@@ -1518,6 +1526,7 @@ msgstr "위 범위에 명시적으로 나열되지 않은 모든 사항"
 
 msgid "AP"
 msgstr "AP"
+
 msgid "AP Aging"
 msgstr "AP 에이징"
 
@@ -1644,6 +1653,7 @@ msgstr "AR"
 
 msgid "AR / AP representation"
 msgstr "AR / AP 표현"
+
 msgid "AR Aging"
 msgstr "AR 에이징"
 
@@ -2513,6 +2523,7 @@ msgstr "장부 감가상각"
 
 msgid "Books lock date (manual)"
 msgstr "장부 잠금 날짜(수동)"
+
 msgid "Both"
 msgstr "모두"
 
@@ -2770,6 +2781,9 @@ msgstr "Carbon 로고"
 
 msgid "Carbon only"
 msgstr "Carbon 전용"
+
+msgid "Carbon Posted"
+msgstr "Carbon 게시됨"
 
 msgid "Carbon value"
 msgstr "Carbon 값"
@@ -3188,6 +3202,13 @@ msgstr "완료 바코드"
 
 msgid "Completion Time"
 msgstr "완료 시간"
+
+#. placeholder {0}: formatRelativeTime(tieOut.computedAt)
+msgid "computed {0}"
+msgstr "{0}에 계산됨"
+
+msgid "Computed At"
+msgstr "계산 시간"
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "마진 및 주요 소계를 포함한 축약 손익계산"
@@ -5118,6 +5139,9 @@ msgstr "처리"
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "이 직원 유형의 기본 권한으로 사용자의 현재 권한을 덮어쓰시겠습니까?"
 
+msgid "Doc-Backed"
+msgstr "문서 기반"
+
 msgid "Docs"
 msgstr "문서"
 
@@ -6201,10 +6225,14 @@ msgstr "확장 가격"
 msgid "External"
 msgstr "외부"
 
-msgid "External ID"
-msgstr "외부 ID"
+msgid "External Delta"
+msgstr "외부 변경사항"
+
 msgid "External document"
 msgstr "외부 문서"
+
+msgid "External ID"
+msgstr "외부 ID"
 
 msgid "External link"
 msgstr "외부 링크"
@@ -7647,6 +7675,9 @@ msgstr "지시사항"
 msgid "Instructions are inherited from the procedure."
 msgstr "지시사항은 절차에서 상속됩니다."
 
+msgid "Integration"
+msgstr "통합"
+
 msgid "Integration not found"
 msgstr "연동을 찾을 수 없습니다"
 
@@ -7682,6 +7713,9 @@ msgstr "은행 거래에서 발생하는 이자 수익 또는 비용"
 
 msgid "Internal"
 msgstr "내부"
+
+msgid "Internal Delta"
+msgstr "내부 변경사항"
 
 msgid "Internal notes"
 msgstr "내부 메모"
@@ -8061,6 +8095,7 @@ msgstr "분개"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "이 날짜 이전의 분개는 잠금으로 처리됩니다. 둘 다 존재하면 공급자에서 보고한 잠금 날짜와 병합됩니다."
+
 msgid "Just one"
 msgstr "정확히 하나"
 
@@ -8158,13 +8193,14 @@ msgstr "노무 단위"
 msgid "Language"
 msgstr "언어"
 
+msgid "Last 6 Months"
+msgstr "지난 6개월"
+
 msgid "Last attempt"
 msgstr "마지막 시도"
 
 msgid "Last Attempt"
 msgstr "마지막 시도"
-msgid "Last 6 Months"
-msgstr "지난 6개월"
 
 msgid "Last Calibration"
 msgstr "마지막 교정"
@@ -9771,6 +9807,9 @@ msgstr "아직 결제가 없습니다."
 msgid "No planning data"
 msgstr "계획 데이터가 없습니다"
 
+msgid "No posted journals in this period for this account"
+msgstr "이 계정의 현재 기간에 게시된 저널이 없습니다"
+
 msgid "No pricing for selected quantity"
 msgstr "선택한 수량에 대한 가격이 없습니다"
 
@@ -9941,6 +9980,9 @@ msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
 
 msgid "Not reached"
 msgstr "도달하지 않음"
+
+msgid "Not recorded"
+msgstr "기록되지 않음"
 
 msgid "Not referenced anywhere yet."
 msgstr "아직 어디에서도 참조되지 않음."
@@ -11278,13 +11320,14 @@ msgstr "약속일"
 msgid "Properties"
 msgstr "속성"
 
+msgid "Property"
+msgstr "속성"
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Carbon 계정 번호가 공급자 계정 코드와 정확히 일치하는 제안된 일치 항목입니다."
 
 msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
 msgstr "Carbon 차원 값의 이름이 제공자 옵션 이름과 정확히 일치하는 제안된 일치 항목입니다."
-msgid "Property"
-msgstr "속성"
 
 msgid "Protect the go-live date"
 msgstr "도입일을 사수하세요"
@@ -13463,6 +13506,9 @@ msgstr "{parentCurrency}로 표시"
 msgid "Showing the first 500 lines"
 msgstr "처음 500줄을 표시하고 있습니다"
 
+msgid "Showing the newest 200 journals"
+msgstr "최신 200개 저널 표시 중"
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "금액별 상위 1,000개 그룹을 표시하고 있습니다"
 
@@ -14167,6 +14213,12 @@ msgstr "동기화 활동"
 
 msgid "Sync operation"
 msgstr "동기화 작업"
+
+msgid "Sync Tie-Out"
+msgstr "동기화 일치"
+
+msgid "Synced"
+msgstr "동기화됨"
 
 msgid "System"
 msgstr "시스템"
@@ -15315,6 +15367,9 @@ msgstr "목요일"
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "재입력 없이 출하를 인보이스까지 연결"
 
+msgid "Tie-out"
+msgstr "일치"
+
 msgid "Tie-Out"
 msgstr "대사"
 
@@ -16321,6 +16376,9 @@ msgstr "제안 보기"
 msgid "View Suppliers"
 msgstr "공급업체 보기"
 
+msgid "View tie-out"
+msgstr "일치 보기"
+
 msgid "View Traceability Graph"
 msgstr "이력추적 그래프 보기"
 
@@ -16524,10 +16582,11 @@ msgstr "Carbon으로 전환하면 무엇이 달라지고 그 가치는 대략 �
 msgid "What data"
 msgstr "어떤 데이터"
 
-msgid "What happens when a journal is dated in a locked period."
-msgstr "저널이 잠긴 기간에 날짜가 지정되면 어떻게 됩니까?"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "모든 차원별 재고를 높이거나 낮춘 요인"
+
+msgid "What happens when a journal is dated in a locked period."
+msgstr "저널이 잠긴 기간에 날짜가 지정되면 어떻게 됩니까?"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"

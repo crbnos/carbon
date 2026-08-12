@@ -279,9 +279,7 @@ describe("mapBillToRilletBill — dimensions (Fields)", () => {
     }
   ];
 
-  const slots = [
-    { dimensionId: LOCATION_DIM, target: `field:${LOCATION_FIELD_ID}` }
-  ];
+  const fieldIdByDimensionId = new Map([[LOCATION_DIM, LOCATION_FIELD_ID]]);
 
   it("attaches uuid field refs to items from their posting journal line dimensions", () => {
     const payload = mapBillToRilletBill({
@@ -293,7 +291,7 @@ describe("mapBillToRilletBill — dimensions (Fields)", () => {
       postingJournalLines: dimensionedLines,
       payablesAccountId: "acct_ap",
       dimensions: {
-        slots,
+        fieldIdByDimensionId,
         fieldValueIdsByValue: new Map([["dim_loc:loc_hq", "fv-hq"]])
       }
     });
@@ -313,7 +311,7 @@ describe("mapBillToRilletBill — dimensions (Fields)", () => {
       companyId: "company-1",
       postingJournalLines: dimensionedLines,
       payablesAccountId: "acct_ap",
-      dimensions: { slots, fieldValueIdsByValue: new Map() }
+      dimensions: { fieldIdByDimensionId, fieldValueIdsByValue: new Map() }
     });
     expect(dropped.items[0]?.fields).toBeUndefined();
 
@@ -329,7 +327,7 @@ describe("mapBillToRilletBill — dimensions (Fields)", () => {
     expect(withoutArgs.items[0]?.fields).toBeUndefined();
   });
 
-  it("ignores dimensions outside the slot config", () => {
+  it("omits a dimension whose Field was not provisioned (no field mapping)", () => {
     const payload = mapBillToRilletBill({
       bill: bill(),
       vendorRemoteId: "vendor-remote-1",
@@ -342,13 +340,13 @@ describe("mapBillToRilletBill — dimensions (Fields)", () => {
           accountId: "acct_grir",
           amount: 300,
           description: "GR/IR Clearing",
-          dimensions: [{ dimensionId: "dim_unslotted", valueId: "v1" }]
+          dimensions: [{ dimensionId: "dim_unprovisioned", valueId: "v1" }]
         }
       ],
       payablesAccountId: "acct_ap",
       dimensions: {
-        slots,
-        fieldValueIdsByValue: new Map([["dim_unslotted:v1", "fv-x"]])
+        fieldIdByDimensionId, // only LOCATION_DIM is mapped
+        fieldValueIdsByValue: new Map([["dim_unprovisioned:v1", "fv-x"]])
       }
     });
     expect(payload.items[0]?.fields).toBeUndefined();

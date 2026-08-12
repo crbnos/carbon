@@ -60,6 +60,10 @@ msgstr "{0} 个账户"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: tieOut.deltaCellCount
+msgid "{0} cells with deltas"
+msgstr "{0} 个单元格有差异"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0}个有余额的客户"
@@ -1274,6 +1278,10 @@ msgstr "对齐范围"
 msgid "All"
 msgstr "全部"
 
+#. placeholder {0}: tieOut.cellCount
+msgid "All {0} cells tie out"
+msgstr "全部 {0} 个单元格对账"
+
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "所有 {total} 个阶段已完成。做得很好——你的团队已启动并运行。"
 
@@ -1518,6 +1526,7 @@ msgstr "未在上述范围内明确列出的任何内容"
 
 msgid "AP"
 msgstr "AP"
+
 msgid "AP Aging"
 msgstr "应付账款账龄"
 
@@ -1644,6 +1653,7 @@ msgstr "AR"
 
 msgid "AR / AP representation"
 msgstr "AR / AP 表示法"
+
 msgid "AR Aging"
 msgstr "应收账款账龄"
 
@@ -2513,6 +2523,7 @@ msgstr "账面折旧"
 
 msgid "Books lock date (manual)"
 msgstr "账册锁定日期（手动）"
+
 msgid "Both"
 msgstr "两者"
 
@@ -2770,6 +2781,9 @@ msgstr "Carbon 标志"
 
 msgid "Carbon only"
 msgstr "仅限 Carbon"
+
+msgid "Carbon Posted"
+msgstr "Carbon 已记账"
 
 msgid "Carbon value"
 msgstr "Carbon 值"
@@ -3188,6 +3202,13 @@ msgstr "完成条码"
 
 msgid "Completion Time"
 msgstr "完成时间"
+
+#. placeholder {0}: formatRelativeTime(tieOut.computedAt)
+msgid "computed {0}"
+msgstr "计算于 {0}"
+
+msgid "Computed At"
+msgstr "计算于"
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "精简损益表，含利润率和关键小计"
@@ -5118,6 +5139,9 @@ msgstr "处置"
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "您想用此员工类型的默认权限覆盖该用户的当前权限吗？"
 
+msgid "Doc-Backed"
+msgstr "文档支持"
+
 msgid "Docs"
 msgstr "文档"
 
@@ -6201,10 +6225,14 @@ msgstr "扩展价格"
 msgid "External"
 msgstr "外部"
 
-msgid "External ID"
-msgstr "外部 ID"
+msgid "External Delta"
+msgstr "外部差异"
+
 msgid "External document"
 msgstr "外部文档"
+
+msgid "External ID"
+msgstr "外部 ID"
 
 msgid "External link"
 msgstr "外部链接"
@@ -7647,6 +7675,9 @@ msgstr "说明"
 msgid "Instructions are inherited from the procedure."
 msgstr "说明继承自工序。"
 
+msgid "Integration"
+msgstr "集成"
+
 msgid "Integration not found"
 msgstr "集成未找到"
 
@@ -7682,6 +7713,9 @@ msgstr "来自银行活动的利息收入或支出"
 
 msgid "Internal"
 msgstr "内部"
+
+msgid "Internal Delta"
+msgstr "内部差异"
 
 msgid "Internal notes"
 msgstr "内部备注"
@@ -8061,6 +8095,7 @@ msgstr "日记账条目"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "日期在此日期及之前的日记账被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
+
 msgid "Just one"
 msgstr "仅一个"
 
@@ -8158,13 +8193,14 @@ msgstr "劳动单位"
 msgid "Language"
 msgstr "语言"
 
+msgid "Last 6 Months"
+msgstr "最近6个月"
+
 msgid "Last attempt"
 msgstr "上次尝试"
 
 msgid "Last Attempt"
 msgstr "上次尝试"
-msgid "Last 6 Months"
-msgstr "最近6个月"
 
 msgid "Last Calibration"
 msgstr "最后校准"
@@ -9771,6 +9807,9 @@ msgstr "还没有付款。"
 msgid "No planning data"
 msgstr "没有规划数据"
 
+msgid "No posted journals in this period for this account"
+msgstr "此期间此账户没有已记账日记账"
+
 msgid "No pricing for selected quantity"
 msgstr "所选数量无定价"
 
@@ -9941,6 +9980,9 @@ msgstr "工作数量不足以覆盖数量"
 
 msgid "Not reached"
 msgstr "未到达"
+
+msgid "Not recorded"
+msgstr "未记录"
 
 msgid "Not referenced anywhere yet."
 msgstr "还没有在任何地方被引用。"
@@ -11278,13 +11320,14 @@ msgstr "承诺日期"
 msgid "Properties"
 msgstr "属性"
 
+msgid "Property"
+msgstr "属性"
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "提议的匹配项，其中 Carbon 账户编号与提供商账户代码完全相等。"
 
 msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
 msgstr "建议的匹配，其中 Carbon 维度值的名称与提供商选项名称完全相同。"
-msgid "Property"
-msgstr "属性"
 
 msgid "Protect the go-live date"
 msgstr "保护上线日期"
@@ -13463,6 +13506,9 @@ msgstr "显示货币：{parentCurrency}"
 msgid "Showing the first 500 lines"
 msgstr "显示前500行"
 
+msgid "Showing the newest 200 journals"
+msgstr "显示最新的 200 条日记账"
+
 msgid "Showing the top 1,000 groups by amount"
 msgstr "按金额显示前1,000个分组"
 
@@ -14167,6 +14213,12 @@ msgstr "同步活动"
 
 msgid "Sync operation"
 msgstr "同步操作"
+
+msgid "Sync Tie-Out"
+msgstr "同步对账"
+
+msgid "Synced"
+msgstr "已同步"
 
 msgid "System"
 msgstr "系统"
@@ -15315,6 +15367,9 @@ msgstr "星期四"
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "将发货与发票关联，无需重新输入"
 
+msgid "Tie-out"
+msgstr "对账"
+
 msgid "Tie-Out"
 msgstr "对账"
 
@@ -15622,7 +15677,6 @@ msgid "Trial Balance"
 msgstr "试算平衡表"
 
 msgid "Trigger"
-msgstr "触发"
 msgstr "触发器"
 
 msgid "Trigger type"
@@ -16322,6 +16376,9 @@ msgstr "查看建议"
 msgid "View Suppliers"
 msgstr "查看供应商"
 
+msgid "View tie-out"
+msgstr "查看对账"
+
 msgid "View Traceability Graph"
 msgstr "查看可追溯性图表"
 
@@ -16525,10 +16582,11 @@ msgstr "当您迁移到 Carbon 时会发生什么变化，以及大致的价值�
 msgid "What data"
 msgstr "什么数据"
 
-msgid "What happens when a journal is dated in a locked period."
-msgstr "当日记帐日期在锁定期间时会发生什么"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "按任何维度推动库存上升或下降的因素"
+
+msgid "What happens when a journal is dated in a locked period."
+msgstr "当日记帐日期在锁定期间时会发生什么"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"

@@ -1,6 +1,13 @@
 # Accounting Sync Engine v2 — Multi-Provider Refactor, Posting Sync, QuickBooks
 
-> Status: draft
+> Status: partially implemented — see per-phase status. Phases A/B/C/E: **shipped**.
+> Phase D: **removed 2026-08-01** (tombstone below). Phases F/G: **implemented on
+> branch feat/rillet**.
+> Superseded in part (2026-08-11): this spec's delivery-correctness statements —
+> the event system as the outbound delivery guarantee, migration-backfilled event
+> subscriptions (Phase G.2), and the Phase B.7 minimal reconciliation — are
+> superseded by [2026-08-11-accounting-sync-delivery-robustness.md](2026-08-11-accounting-sync-delivery-robustness.md)
+> (v4). Annotated notes mark each passage below.
 > Author: Brad Barbin + Claude
 > Date: 2026-07-09
 > Research: [.ai/research/quickbooks-accounting-sync-engine.md](../research/quickbooks-accounting-sync-engine.md)
@@ -134,6 +141,14 @@ entries (Xero Manual Journals, QBO JournalEntryAdd, Rillet journal entries), wit
    - **Safety net**: any pushable journal containing a line on a mapped AR/AP control account
      (`accountDefault.receivablesAccount`/`payablesAccount`) → `Warning`, never pushed
      (also keeps QBD's one-AR/AP-line-per-JE constraint unreachable).
+
+   > **Superseded (2026-08-02):** the two hard-coded source-type lists above were replaced by
+   > v3's total `POSTING_POLICY` table (`representation: journal | document | none` per
+   > source type, plus per-family `documents | journals | none` modes) — see
+   > 2026-08-02-accounting-sync-engine-v3.md §2. The doc-backed-exclusion principle and the
+   > safety net stand (the safety net now applies in `documents` mode only); the list form
+   > does not.
+
    Trigger: add `journal` to the event system (event trigger migration + entry in
    `TABLE_TO_ENTITY_MAP`, `packages/jobs/src/inngest/functions/events/sync.ts:36`). Enqueue on:
    (a) **INSERT with `status='Posted'` and `reversalOfId IS NULL`** — Carbon's `post-*` edge
@@ -145,10 +160,24 @@ entries (Xero Manual Journals, QBO JournalEntryAdd, Rillet journal entries), wit
    webhooks (#1059) — this is the internal path. *(Amended 2026-07-09 during implementation:
    the original UPDATE-transition-only rule missed that posting functions INSERT journals as
    Posted.)*
+
+   > **Superseded (2026-08-11):** the trigger + `TABLE_TO_ENTITY_MAP` wiring described here
+   > never completed delivery — dispatch also requires a per-company `eventSystemSubscription`,
+   > and **no install hook ever created a `journal` subscription for any provider**, so journal
+   > events were silently never dispatched (the v4 root cause; live incident
+   > `je_9G1UYT9VXmBgMrvqtyTq5t`). v4 fixes this with a code-level `REQUIRED_SUBSCRIPTIONS`
+   > list converged at runtime (`ensureProviderSubscriptions`), and reframes the event path as
+   > latency only — the outbound reconciliation sweep is the correctness guarantee — see
+   > 2026-08-11-accounting-sync-delivery-robustness.md §Pillar A / §Pillar B / Phase 0.
 3. **Consolidation.** Per-company setting: `Individual` (default — one provider journal per
    Carbon journal) or `Daily summary` (Inngest cron aggregates the day's pending journal
    operations into one provider journal per posting date, lines grouped per account; memo
    carries count + Carbon reference for drill-back). Cin7/MRPeasy precedent.
+
+   > **Superseded (2026-08-02):** the single global consolidation switch became
+   > **per-source-type granularity** in v3 (`individual` | `daily-summary` per source type;
+   > summaries grouped by `(postingDate, accountId, dimension-tuple)`; a settings shim reads
+   > the v2 shape) — see 2026-08-02-accounting-sync-engine-v3.md §2/§4.
 4. **Reversals.** `journal.status → 'Reversed'` enqueues a reversing push referencing the
    original mapping (Xero: new reversing manual journal; metadata links both). Never delete
    or mutate in the target (SAP reversal-by-reference).
@@ -160,7 +189,16 @@ entries (Xero Manual Journals, QBO JournalEntryAdd, Rillet journal entries), wit
 6. **Idempotency.** The sync-operation `idempotencyKey` = `journal.id` (+ consolidation batch
    key for daily mode); provider-side: Xero manual-journal `Narration` carries the Carbon
    journal id and the mapping row stores the provider id — retry checks mapping-before-insert.
-7. **Reconciliation job (minimal v1).** Weekly Inngest cron per connection: (a) presence check
+7. **Reconciliation job (minimal v1).**
+
+   > **Superseded (2026-08-11):** this weekly presence+aggregate report is no longer the
+   > correctness mechanism. The v3 §5 account × period tie-out superseded the aggregate half
+   > (design), and v4 now owns correctness: the outbound reconciliation sweep (v4 Phase 1,
+   > Pillar B) is the state-based backstop that detects and re-drives every missing
+   > disposition, and the tie-out (v4 Phase 3, Pillar E) is the detective proof — see
+   > 2026-08-11-accounting-sync-delivery-robustness.md.
+
+   Weekly Inngest cron per connection: (a) presence check
    — every `Completed` journal operation's `externalId` still exists remotely; (b) aggregate
    check — sum of Carbon-pushed journals per account/month vs sum of the corresponding
    provider journals. Drift renders as a report section on the sync-activity tab. Deeper
@@ -198,6 +236,11 @@ chart-of-accounts pull for account mapping, and the codebase's first
 `invoiceSettlement` rows and flips `salesInvoice` status.
 
 ### Phase E — Generic pull sweep (added 2026-08-01)
+
+> **Extended (2026-08-11):** v4 adopts this exact doctrine for the outbound direction too —
+> events are latency, not correctness; a state-based **outbound** reconciliation sweep
+> (v4 Phase 1, Pillar B) is the push-side analog of this pull sweep. See
+> 2026-08-11-accounting-sync-delivery-robustness.md.
 
 Webhooks are a latency optimization, not the correctness guarantee: Rillet
 disables a webhook after repeated delivery failures, Xero's inbound sync
@@ -309,6 +352,13 @@ completed-cooldown, and — for anything that slips past both — the `postActio
 in `upsertLocalPaymentDraft` (re-pulling an already-`Posted` payment is a no-op). Do not
 "simplify" the live index away on the belief that idempotencyKey covers it.
 
+> **Amended (2026-08-11):** v4 revises two of these dedupe layers — the 60s completed-cooldown
+> becomes content-hash dedupe (a suppressed enqueue after a real state transition must record a
+> Pending op, never return null: v4 F4), and an enqueue against a claimed **In Flight** op
+> creates a fresh Pending row instead of being absorbed (mid-flight deltas were lost: v4 F7).
+> The live-operation index and the `postAction:'none'` guard stay. See
+> 2026-08-11-accounting-sync-delivery-robustness.md §Pillar C.3 / §Pillar D.3.
+
 **F.3 — Composite entity id, generalized.** Keep the AR composite contract
 (`<documentRemoteId>:<paymentRemoteId>`) but let `documentRemoteId` be the
 settled **invoice or bill** remote id. `dependsOnMapping` targets that document,
@@ -397,7 +447,19 @@ Config: `payment` `supportedDirections` gains push; `buildRilletSyncConfig`
 changes payment from forced pull-only to `direction: "two-way"`, still
 `enabled: true` (the Rillet `listChanges` gate keys on `enabled`, unaffected).
 
-**G.2 — Event wiring.** The `payment` table has no event trigger and no
+**G.2 — Event wiring.**
+
+> **Superseded (2026-08-11):** (a)'s "backfill `eventSystemSubscription` … copying the
+> journal-trigger precedent" is superseded twice over. First, there was no such precedent —
+> no migration (and no install hook) ever created a `journal` subscription, which is the v4
+> root cause; the shipped payment migration (`20260807152238_payment-event-trigger.sql`)
+> attaches **only the trigger** and leaves subscription rows to the install hook. Second, v4
+> replaces migration-backfilled subscriptions entirely with **runtime convergence**:
+> `ensureProviderSubscriptions`, derived from a code-level `REQUIRED_SUBSCRIPTIONS` list, run
+> from the install hook, the settings save path, and the outbound sweep. Migrations only
+> attach table triggers. See 2026-08-11-accounting-sync-delivery-robustness.md §Pillar A.
+
+The `payment` table has no event trigger and no
 `TABLE_TO_ENTITY_MAP` entry today (verified). Add: (a) migration —
 `attach_event_trigger('payment', ARRAY[]::TEXT[], ARRAY[]::TEXT[])` + backfill
 `eventSystemSubscription` (`rillet-sync`, table `payment`) for companies with
@@ -455,6 +517,13 @@ documents-mode exception) — not implemented unless VERIFY fails.
 Their payment syncers keep rejecting push cleanly until then.
 
 ### Design Decisions
+
+> **Superseded in part (2026-08-11):** the "Journal push trigger" and "Payment push trigger
+> (Phase G)" rows below name the event system as the delivery mechanism. The mechanism stays,
+> but per v4 doctrine it is **latency, not correctness** — the outbound reconciliation sweep
+> (v4 Phase 1) is the delivery guarantee, and subscription coverage is converged at runtime
+> rather than assumed from install-time wiring. See
+> 2026-08-11-accounting-sync-delivery-robustness.md (Principles P1/P2/P4).
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
@@ -554,6 +623,10 @@ gained a seed row for `rillet` instead.)
 - **Event wiring**: migration attaches the standard event trigger to `journal` (same helper as
   existing event-system tables) so UPDATEs enqueue into PGMQ; the SYNC handler maps
   `journal → 'journalEntry'` and enqueues only on transition to `Posted`/`Reversed`.
+  > **Superseded (2026-08-11):** trigger + handler mapping alone never dispatched anything —
+  > dispatch also requires a per-company SYNC `eventSystemSubscription` on the `journal`
+  > table, which no install hook or migration ever created (v4 root cause; fixed by v4
+  > Phase 0's `REQUIRED_SUBSCRIPTIONS` + `ensureProviderSubscriptions`).
 - **Settings**: posting-sync config (enabled sourceTypes, consolidation, period-lock policy,
   provider lock date for QBO) lives in `companyIntegration.metadata.settings` — existing
   pattern, no schema change.
@@ -778,6 +851,9 @@ Phase G — outbound payment write-back (Rillet)
       Outbound payment push stays deferred, except v3 Phase 4 journal-mode payment journals.)*
 - [x] Dimensions → Xero tracking categories / QB classes — **Autonomous:** out of scope v1;
       documented follow-up (mapping table design deferred until posting sync is proven).
+      *(Update 2026-08-11: delivered by v3 §3 dimension sync — slots + value mapping for
+      QBO/Xero; Rillet subsequently moved off slots to send all dimensions with
+      auto-provisioned Fields, per `.ai/plans/2026-08-11-rillet-all-dimensions.md`.)*
 - [x] Employee/time sync (QBD TimeTrackingAdd) — **Autonomous:** out of scope v1.
 - [x] Sync-state storage — **Autonomous:** durable `accountingSyncOperation` table (canon +
       QBD queue requirement), not Inngest-internal state.
@@ -829,6 +905,17 @@ Phase G — outbound payment write-back (Rillet)
   force-enable the pull-only `payment` entity (the families mode is the switch). Companion
   plan updated (stale `journalId:NULL` risk row; dropped `paymentSyncback` flag; new
   Task 4.4 for the review fixes).
+- 2026-08-11: **Reconciliation pass against v4**
+  (2026-08-11-accounting-sync-delivery-robustness.md). Status header set to partially
+  implemented (A/B/C/E shipped; D removed; F/G on feat/rillet). Superseded/amended notes
+  added: journal-subscription root cause (Phase B.2 trigger passage + Data Model event
+  wiring — no install hook ever created a `journal` subscription), Phase B.7 minimal
+  reconciliation (v4 sweep + tie-out own correctness), Phase G.2 migration-backfilled
+  subscriptions (runtime convergence instead; migrations only attach triggers),
+  event-system-as-guarantee framing (Design Decisions head note; Phase E extended-doctrine
+  note), and the F.2 dedupe layers (cooldown → content-hash; In Flight no longer absorbs).
+  Also cross-linked v3's supersession of the hard-coded source-type lists and the global
+  consolidation switch, and updated the dimensions open question. No original text removed.
 - 2026-08-07: **Phase G added — outbound payment write-back** (Brad, 2026-08-07; driven by
   the Ramp scenario: payments executed outside the provider must still close the provider's
   bill/invoice). Carbon-born `Posted` payments push as provider payment documents in

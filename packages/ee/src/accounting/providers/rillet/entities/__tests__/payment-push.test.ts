@@ -195,7 +195,7 @@ describe("RilletPaymentSyncer push — happy path", () => {
     expect(billId).toBe("bill-remote-1");
     expect(payload).toMatchObject({
       amount: { amount: "100.00", currency: "USD" },
-      payment_date: "2026-08-07",
+      date: "2026-08-07",
       account_code: "1000",
       external_references: [{ type: "carbon", id: "pay_1" }]
     });

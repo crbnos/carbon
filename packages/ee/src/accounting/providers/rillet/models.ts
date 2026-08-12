@@ -397,14 +397,16 @@ export type RilletBillCreate = Omit<Rillet.Bill, RilletTransactionWriteOmit>;
  * VERIFY: neither the create endpoints/paths nor the exact field names are
  * confirmed against the live Rillet OpenAPI (no local spec exists). The shape
  * mirrors the READ schemas (InvoicePaymentSchema / BillPaymentSchema) —
- * `amount` as a MonetaryAmount, an ISO `payment_date`, and the cash/bank
+ * `amount` as a MonetaryAmount, an ISO `date`, and the cash/bank
  * `account_code` — plus the Carbon external reference. If a field is wrong,
  * the create 400s and the sync operation lands Failed (visible, not silent).
  */
 export type RilletPaymentCreate = {
   amount: Rillet.MonetaryAmount;
-  /** YYYY-MM-DD. */
-  payment_date: string;
+  /** YYYY-MM-DD. VERIFIED (sandbox 2026-08-11): the create endpoints take
+   * `date`, not `payment_date` — the latter 400s with "date must not be
+   * null". */
+  date: string;
   /** Rillet cash/bank account code the payment clears through. */
   account_code: string;
   /** Carbon payment id, tagged like every other pushed document. */

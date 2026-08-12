@@ -2,7 +2,6 @@ import {
   buildDimensionValueMappingEntityId,
   loadJournalLineDimensions
 } from "../../../core/dimension-mapping";
-import type { PostingSyncDimensionSlot } from "../../../core/models";
 import {
   getPostingSyncSourceTypeSkipReason,
   JournalEntrySyncError,
@@ -19,7 +18,7 @@ import type {
   RilletJournalEntryCreate,
   RilletWriteOmit
 } from "../models";
-import { buildRilletIdempotencyKey, parseRilletFieldTarget } from "../provider";
+import { buildRilletIdempotencyKey } from "../provider";
 import {
   loadCompanyBaseCurrency,
   loadRilletAccountCodesById,
@@ -97,16 +96,15 @@ export function getRilletLockDate(
 /**
  * Slot config + resolved Field-value ids for the Rillet journal mapper:
  * `slots` carry `field:<fieldId>` targets; `fieldValueIdsByValue`
- * resolves `<dimensionId>:<valueId>` → Rillet field_value uuid. Item
- * refs are uuid pairs (`fields: [{ field_id, field_value_id }]`) — ids,
- * never names. Slotted line dimensions with no resolvable value are
- * OMITTED — the warn policy parks in pre-flight before mapping, so an
- * unresolved value here is the recorded drop path.
+ * resolves `<dimensionId>:<valueId>` → Rillet field_value uuid, and
+ * `fieldIdByDimensionId` resolves the Carbon dimension → Rillet Field uuid.
+ * Item refs are uuid pairs (`fields: [{ field_id, field_value_id }]`) — ids,
+ * never names. EVERY dimension on a line is emitted; one whose Field or value
+ * couldn't be provisioned (see resolveLineDimensions) is dropped from that
+ * line's refs.
  */
 export type RilletJournalDimensionArgs = {
-  slots: ReadonlyArray<
-    Pick<PostingSyncDimensionSlot, "dimensionId" | "target">
-  >;
+  fieldIdByDimensionId: ReadonlyMap<string, string>;
   fieldValueIdsByValue: ReadonlyMap<string, string>;
 };
 
@@ -146,20 +144,18 @@ export function mapJournalEntryToRilletJournalEntry(args: {
 
     const fieldRefs: Rillet.ItemFieldRef[] = [];
     if (args.dimensions) {
-      for (const slot of args.dimensions.slots) {
-        const fieldId = parseRilletFieldTarget(slot.target);
-        if (!fieldId) continue;
-        const dimension = line.dimensions?.find(
-          (candidate) => candidate.dimensionId === slot.dimensionId
+      for (const dimension of line.dimensions ?? []) {
+        const fieldId = args.dimensions.fieldIdByDimensionId.get(
+          dimension.dimensionId
         );
-        if (!dimension) continue;
+        if (!fieldId) continue;
         const fieldValueId = args.dimensions.fieldValueIdsByValue.get(
           buildDimensionValueMappingEntityId(
             dimension.dimensionId,
             dimension.valueId
           )
         );
-        if (!fieldValueId) continue; // drop policy — recorded by the caller
+        if (!fieldValueId) continue; // Field/value not provisioned — drop this ref
         fieldRefs.push({ field_id: fieldId, field_value_id: fieldValueId });
       }
     }
@@ -444,18 +440,12 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
     const controlAccountIds = await this.getControlAccountIds();
     const lockDate = getRilletLockDate(settings);
 
-    // Dimension slots: resolve the value-mapping lookup and upsert
-    // missing Field values (autoCreate default ON for Rillet) BEFORE
-    // pre-flight so freshly upserted values never park as unmapped
-    let dimensionValueMappings: Map<string, string> | undefined;
-    if (settings.dimensionSlots.length > 0) {
-      dimensionValueMappings = await this.getDimensionValueMappings();
-      await this.ensureAutoCreatedDimensionValues(
-        local.lines,
-        settings,
-        dimensionValueMappings
-      );
-    }
+    // Send ALL dimensions on the journal: auto-provision every Rillet Field +
+    // value the lines reference (Rillet has no field cap) and get back the two
+    // lookups the mapper needs. Runs BEFORE pre-flight so freshly provisioned
+    // values never park as unmapped.
+    const { fieldIdByDimensionId, fieldValueIdsByValue } =
+      await this.resolveLineDimensions(local.lines);
 
     const preflight = runJournalEntryPreflight({
       journal: local,
@@ -463,23 +453,11 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
       controlAccountIds,
       lockDate,
       settings,
-      dimensionValueMappings
+      dimensionValueMappings: fieldValueIdsByValue
     });
 
     if (preflight.failure) {
       throw new JournalEntrySyncError(preflight.failure);
-    }
-
-    if (preflight.droppedDimensionValues?.length) {
-      // "drop" policy: pushed without these dimensions. The drain has no
-      // success-metadata channel yet, so the record lives in the logs.
-      console.warn(
-        "[RilletJournalEntrySyncer] dropped unmapped dimension values",
-        {
-          journalId: local.id,
-          droppedDimensionValues: preflight.droppedDimensionValues
-        }
-      );
     }
 
     return mapJournalEntryToRilletJournalEntry({
@@ -489,14 +467,7 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
       subsidiaryId: this.rilletProvider.subsidiaryId,
       pushDate: preflight.pushDate,
       redatedFromDate: preflight.redatedFromDate,
-      ...(dimensionValueMappings
-        ? {
-            dimensions: {
-              slots: settings.dimensionSlots,
-              fieldValueIdsByValue: dimensionValueMappings
-            }
-          }
-        : {})
+      dimensions: { fieldIdByDimensionId, fieldValueIdsByValue }
     });
   }
 
@@ -514,8 +485,7 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
       buildRilletIdempotencyKey({
         companyId: this.companyId,
         operation: "journal-entry",
-        localId,
-        payload: data
+        localId
       })
     );
     return created.id;

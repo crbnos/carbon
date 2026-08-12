@@ -48,6 +48,7 @@ import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { Badge } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -538,6 +539,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     page: number;
     pageSize: number;
     lastReconciliation: SyncReconciliationReport | null;
+    /** Failed + Warning operations — the tab-label badge. */
+    failingCount: number;
+    /**
+     * Tie-out summary: latest computedAt + how many (period × account)
+     * cells carry a nonzero internal or external delta. Null when no
+     * tie-out rows exist (or the viewer lacks accounting_view — the
+     * table's RLS SELECT — in which case the rows read back empty).
+     */
+    tieOut: {
+      computedAt: string | null;
+      deltaCellCount: number;
+      cellCount: number;
+    } | null;
   } | null = null;
 
   if (isAccountingInstalled) {
@@ -551,18 +565,63 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
     const pageSize = 25;
 
-    const operations = await getSyncOperations(client, {
-      companyId,
-      integration: integrationId,
-      status: statusFilter.success ? statusFilter.data : undefined,
-      limit: pageSize,
-      offset: (page - 1) * pageSize
-    });
+    const [operations, failingOps, tieOutRows] = await Promise.all([
+      getSyncOperations(client, {
+        companyId,
+        integration: integrationId,
+        status: statusFilter.success ? statusFilter.data : undefined,
+        limit: pageSize,
+        offset: (page - 1) * pageSize
+      }),
+      // Failed + Warning count for the tab badge — only the exact count is
+      // used, so fetch a single row.
+      getSyncOperations(client, {
+        companyId,
+        integration: integrationId,
+        status: ["Failed", "Warning"],
+        limit: 1
+      }),
+      // Tie-out cells for this integration. The table is not in the
+      // generated DB types yet — cast, same pattern as
+      // @carbon/ee/accounting core/operations.ts.
+      (client.from("accountingSyncTieOut" as any) as any)
+        .select("internalDelta, externalDelta, computedAt")
+        .eq("companyId", companyId)
+        .eq("integration", integrationId)
+    ]);
 
     if (operations.error) {
       // Don't block the settings drawer on an inbox failure — render the
       // tab empty and log the cause.
       console.error("Failed to load sync operations:", operations.error);
+    }
+
+    let tieOut: {
+      computedAt: string | null;
+      deltaCellCount: number;
+      cellCount: number;
+    } | null = null;
+    const tieOutCells = (tieOutRows.error ? [] : (tieOutRows.data ?? [])) as {
+      internalDelta: number | null;
+      externalDelta: number | null;
+      computedAt: string | null;
+    }[];
+    if (tieOutCells.length > 0) {
+      tieOut = {
+        computedAt: tieOutCells.reduce<string | null>(
+          (latest, row) =>
+            row.computedAt && (latest == null || row.computedAt > latest)
+              ? row.computedAt
+              : latest,
+          null
+        ),
+        deltaCellCount: tieOutCells.filter(
+          (row) =>
+            Math.abs(Number(row.internalDelta ?? 0)) > 0.001 ||
+            Math.abs(Number(row.externalDelta ?? 0)) > 0.001
+        ).length,
+        cellCount: tieOutCells.length
+      };
     }
 
     // Latest weekly reconciliation report, written by the
@@ -586,7 +645,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       status: statusFilter.success ? statusFilter.data : null,
       page,
       pageSize,
-      lastReconciliation
+      lastReconciliation,
+      failingCount: failingOps.error ? 0 : (failingOps.count ?? 0),
+      tieOut
     };
   }
 
@@ -1404,6 +1465,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
       }
     }
+  } else {
+    // Settings save on an already-installed integration: run `onUpdate` so
+    // derived server state (e.g. accounting event subscriptions) converges
+    // without a reinstall. Best-effort — the save is already persisted, so
+    // a hook failure is logged rather than surfaced as a save failure.
+    const onUpdate = getIntegrationServerHooks(integrationId)?.onUpdate;
+    if (onUpdate) {
+      try {
+        await onUpdate(companyId);
+      } catch (hookError) {
+        logger.error("onUpdate hook failed for integration", {
+          integrationId,
+          error: hookError
+        });
+      }
+    }
   }
 
   // Onshape: keep the release-webhook subscription in lockstep with the
@@ -1531,7 +1608,15 @@ export default function IntegrationRoute() {
   if (syncActivity) {
     tabs.push({
       value: "sync-activity",
-      label: <Trans>Sync Activity</Trans>,
+      label:
+        syncActivity.failingCount > 0 ? (
+          <span className="flex items-center gap-1.5">
+            <Trans>Sync Activity</Trans>
+            <Badge variant="orange">{syncActivity.failingCount}</Badge>
+          </span>
+        ) : (
+          <Trans>Sync Activity</Trans>
+        ),
       content: (tabBar) => (
         <SyncActivity
           tabs={tabBar}
@@ -1541,6 +1626,7 @@ export default function IntegrationRoute() {
           page={syncActivity.page}
           pageSize={syncActivity.pageSize}
           lastReconciliation={syncActivity.lastReconciliation}
+          tieOut={syncActivity.tieOut}
         />
       )
     });

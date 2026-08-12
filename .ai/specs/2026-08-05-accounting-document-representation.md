@@ -1,6 +1,11 @@
 # Accounting Document Representation — Journal-Replay Bills, Item-Referenced Invoices, Non-Tracked Provider Items
 
-> Status: draft
+> Status: implemented — executed 2026-08-05 as **Part B** of the accounting handoff run
+> (`.ai/plans/2026-08-05-accounting-handoff.md`, executing
+> `.ai/plans/2026-08-05-accounting-document-representation.md`; run log
+> `.ai/runs/2026-08-05-accounting-handoff-run.md`). Sandbox-gated acceptance items remain
+> env-gated; the tie-out acceptance criterion awaits v4 Phase 3 (see the note in
+> Acceptance Criteria).
 > Author: Brad Barbin + Claude
 > Date: 2026-08-05
 > Research: provider-capability survey (2026-08-05, this session) + codebase audit of all
@@ -303,6 +308,11 @@ items sync as non-inventory and per-SKU valuation lives in Carbon — nice-to-ha
 
 ## Acceptance Criteria
 
+> **Note (2026-08-11):** the **Tie-out** criterion below references the v3 §5 account × period
+> tie-out, which was never built; its implementation is now owned by v4 Phase 3 — see
+> 2026-08-11-accounting-sync-delivery-robustness.md §Pillar E. That criterion becomes
+> verifiable once v4 Phase 3 ships.
+
 - [ ] **AP GR-IR clears (per provider).** In a sandbox: receive an item on a PO (Carbon pushes
       `Dr Inventory / Cr GR-IR`), then post + sync the bill. The provider's **GR-IR account nets
       to zero** and Inventory is debited exactly once. Holds on Rillet, QBO, and Xero.
@@ -399,3 +409,7 @@ items sync as non-inventory and per-SKU valuation lives in Carbon — nice-to-ha
   create/update rollout rule, and the Xero AR revenue-account source decision (item's mapped
   sales account). PO / `buildQboExpenseLines` explicitly untouched. New risks: QBO
   negative-line VERIFY; paid-document re-sync. Plan updated in lockstep.
+- 2026-08-11: Reconciliation pass — status set to **implemented** (executed 2026-08-05 as
+  Part B of the accounting handoff run, `.ai/plans/2026-08-05-accounting-handoff.md`); the
+  tie-out acceptance criterion annotated as awaiting v4 Phase 3
+  (2026-08-11-accounting-sync-delivery-robustness.md §Pillar E). No design changes.

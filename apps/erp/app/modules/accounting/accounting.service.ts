@@ -2391,6 +2391,125 @@ export type PeriodCloseUnpostedDocument = {
 
 const UNPOSTED_DOCUMENT_LIMIT = 25;
 
+/** companyIntegration ids that can carry accounting posting sync. */
+const ACCOUNTING_SYNC_INTEGRATION_IDS = ["xero", "quickbooks", "rillet"];
+
+/** Terminal sync dispositions — the journal is accounted for externally. */
+const TERMINAL_SYNC_OPERATION_STATUSES = new Set([
+  "Completed",
+  "Excluded",
+  "Skipped"
+]);
+
+/**
+ * The "External GL sync complete" close auto-check (autoCheckKey
+ * "external-gl-sync"): every journal posted into the period must carry a
+ * terminal disposition (Completed / Excluded / Skipped) in the
+ * accountingSyncOperation ledger for EVERY active accounting integration
+ * whose posting sync is enabled. A reversal journal (reversalOfId set) is
+ * delivered through the ORIGINAL journal's "<id>:reversal" operation — the
+ * reversal row never gets its own ledger entry (see
+ * getJournalSyncCompleteness). Auto-passes (failing false, count 0) when no
+ * active accounting integration has posting sync on. Reads
+ * metadata.settings.postingSync directly instead of importing
+ * @carbon/ee/accounting — see the TS2589 notes in the settings Integrations
+ * components.
+ */
+export async function getPeriodExternalGlSyncReadiness(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  startDate: string,
+  endDate: string
+): Promise<{ failing: boolean; count: number; postingSyncEnabled: boolean }> {
+  const integrations = await client
+    .from("companyIntegration")
+    .select("id, metadata")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .in("id", ACCOUNTING_SYNC_INTEGRATION_IDS);
+
+  const enabledIntegrationIds = (integrations.data ?? [])
+    .filter((integration) => {
+      const settings =
+        integration.metadata &&
+        typeof integration.metadata === "object" &&
+        !Array.isArray(integration.metadata)
+          ? (integration.metadata as Record<string, any>).settings
+          : null;
+      return settings?.postingSync?.enabled === true;
+    })
+    .map((integration) => integration.id);
+
+  if (enabledIntegrationIds.length === 0) {
+    return { failing: false, count: 0, postingSyncEnabled: false };
+  }
+
+  const journals = await fetchAllFromTable<{
+    id: string;
+    reversalOfId: string | null;
+  }>(client, "journal", "id, reversalOfId", (query: any) =>
+    query
+      .eq("companyId", companyId)
+      .in("status", ["Posted", "Reversed"])
+      .gte("postingDate", startDate)
+      .lte("postingDate", endDate)
+      .order("id", { ascending: true })
+  );
+
+  const journalRows = journals.data ?? [];
+  if (journalRows.length === 0) {
+    return { failing: false, count: 0, postingSyncEnabled: true };
+  }
+
+  // Distinct journals missing a terminal disposition for at least one
+  // enabled integration. Bounded loop: at most three integrations.
+  const undelivered = new Set<string>();
+  for (const integrationId of enabledIntegrationIds) {
+    const operations = await fetchAllFromTable<{
+      entityId: string;
+      status: string;
+    }>(client, "accountingSyncOperation", "entityId, status", (query: any) =>
+      query
+        .eq("companyId", companyId)
+        .eq("integration", integrationId)
+        .eq("entityType", "journalEntry")
+        .order("createdAt", { ascending: false })
+    );
+    if (operations.error) {
+      // Can't verify — fail closed: a Blocker check must not silently pass
+      // because its evidence query failed.
+      for (const journal of journalRows) {
+        undelivered.add(journal.id);
+      }
+      continue;
+    }
+
+    // Newest-first order means first-seen wins as the latest status.
+    const latestStatusByEntityId = new Map<string, string>();
+    for (const operation of operations.data ?? []) {
+      if (!latestStatusByEntityId.has(operation.entityId)) {
+        latestStatusByEntityId.set(operation.entityId, operation.status);
+      }
+    }
+
+    for (const journal of journalRows) {
+      const entityId = journal.reversalOfId
+        ? `${journal.reversalOfId}:reversal`
+        : journal.id;
+      const status = latestStatusByEntityId.get(entityId);
+      if (!status || !TERMINAL_SYNC_OPERATION_STATUSES.has(status)) {
+        undelivered.add(journal.id);
+      }
+    }
+  }
+
+  return {
+    failing: undelivered.size > 0,
+    count: undelivered.size,
+    postingSyncEnabled: true
+  };
+}
+
 async function computePeriodReadiness(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2424,7 +2543,8 @@ async function computePeriodReadiness(
     pendingSalesInvoices,
     pendingPurchaseInvoices,
     pendingPayments,
-    pendingMemos
+    pendingMemos,
+    externalGlSync
   ] = await Promise.all([
     client
       .from("journal")
@@ -2509,7 +2629,8 @@ async function computePeriodReadiness(
       .eq("status", "Draft")
       .or(unpostedDateFilter)
       .order("memoId", { ascending: true })
-      .limit(UNPOSTED_DOCUMENT_LIMIT)
+      .limit(UNPOSTED_DOCUMENT_LIMIT),
+    getPeriodExternalGlSyncReadiness(client, companyId, startDate, endDate)
   ]);
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
@@ -2599,6 +2720,20 @@ async function computePeriodReadiness(
       label: "Posted journal entries with unequal debits and credits",
       failing: unbalanced.length > 0,
       count: unbalanced.length
+    },
+    // Auto-pass when posting sync is off: getPeriodExternalGlSyncReadiness
+    // returns failing false / count 0 with no enabled integration. This
+    // evaluator MUST exist for the seeded "External GL sync complete" task
+    // (autoCheckKey "external-gl-sync") — an Auto task with no registered
+    // evaluator fails closed in evaluateCloseChecklist and would block every
+    // close.
+    {
+      autoCheckKey: "external-gl-sync",
+      severity: "Blocker",
+      label:
+        "Posted journal entries not yet delivered to the external accounting system",
+      failing: externalGlSync.failing,
+      count: externalGlSync.count
     },
     {
       autoCheckKey: "draft-depreciation",
@@ -5456,4 +5591,310 @@ export async function getJournalSyncCompleteness(
   }
 
   return { data: summary, error: null };
+}
+
+// /********************************************************\
+// *        Sync tie-out (spec v3 §5, delivered v4 P3)      *
+// \********************************************************/
+
+/**
+ * One (integration × accounting period × account) tie-out cell, written by
+ * the tie-out cron. Amounts are net debit-signed. The invariant per cell:
+ * carbonPostedAmount = syncedAmount + docBackedAmount + excludedAmount +
+ * pendingAmount + blockedAmount (internalDelta) and syncedAmount =
+ * providerAmount (externalDelta, null until the provider side is fetched).
+ * The table is not in the generated DB types yet, so the query builder is
+ * cast and the row payload typed locally — same pattern as
+ * @carbon/ee/accounting core/operations.ts.
+ */
+export type AccountingSyncTieOutCell = {
+  id: string;
+  companyId: string;
+  integration: string;
+  accountingPeriodId: string;
+  accountId: string;
+  carbonPostedAmount: number;
+  syncedAmount: number;
+  docBackedAmount: number;
+  excludedAmount: number;
+  pendingAmount: number;
+  blockedAmount: number;
+  providerAmount: number | null;
+  internalDelta: number;
+  externalDelta: number | null;
+  computedAt: string;
+};
+
+export type AccountingSyncTieOutListItem = AccountingSyncTieOutCell & {
+  account: { number: string | null; name: string } | null;
+  accountingPeriod: {
+    startDate: string;
+    endDate: string;
+    fiscalYear: number | null;
+    periodNumber: number | null;
+  } | null;
+};
+
+/** Attach account (number/name) + period identity to raw tie-out rows. */
+async function joinTieOutCells(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  cells: AccountingSyncTieOutCell[]
+): Promise<{
+  data: AccountingSyncTieOutListItem[] | null;
+  error: PostgrestError | null;
+}> {
+  if (cells.length === 0) {
+    return { data: [], error: null };
+  }
+
+  const accountIds = [...new Set(cells.map((cell) => cell.accountId))];
+  const periodIds = [...new Set(cells.map((cell) => cell.accountingPeriodId))];
+
+  const [accounts, periods] = await Promise.all([
+    client.from("account").select("id, number, name").in("id", accountIds),
+    client
+      .from("accountingPeriod")
+      .select("id, startDate, endDate, fiscalYear, periodNumber")
+      .eq("companyId", companyId)
+      .in("id", periodIds)
+  ]);
+  if (accounts.error) return { data: null, error: accounts.error };
+  if (periods.error) return { data: null, error: periods.error };
+
+  const accountById = new Map(
+    (accounts.data ?? []).map((account) => [account.id, account])
+  );
+  const periodById = new Map(
+    (periods.data ?? []).map((period) => [period.id, period])
+  );
+
+  return {
+    data: cells.map((cell) => {
+      const account = accountById.get(cell.accountId);
+      const period = periodById.get(cell.accountingPeriodId);
+      return {
+        ...cell,
+        account: account
+          ? { number: account.number, name: account.name }
+          : null,
+        accountingPeriod: period
+          ? {
+              startDate: period.startDate,
+              endDate: period.endDate,
+              fiscalYear: period.fiscalYear,
+              periodNumber: period.periodNumber
+            }
+          : null
+      };
+    }),
+    error: null
+  };
+}
+
+/**
+ * The tie-out grid: every persisted cell for the company, joined with
+ * account and period identity, newest period first. Optional filters narrow
+ * to one integration and/or one accounting period.
+ */
+export async function getAccountingSyncTieOut(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: {
+    integration?: string | null;
+    accountingPeriodId?: string | null;
+  }
+): Promise<{
+  data: AccountingSyncTieOutListItem[] | null;
+  error: PostgrestError | null;
+}> {
+  const rows = await fetchAllFromTable<AccountingSyncTieOutCell>(
+    client,
+    "accountingSyncTieOut" as any,
+    "*",
+    (query: any) => {
+      let filtered = query.eq("companyId", companyId);
+      if (args?.integration) {
+        filtered = filtered.eq("integration", args.integration);
+      }
+      if (args?.accountingPeriodId) {
+        filtered = filtered.eq("accountingPeriodId", args.accountingPeriodId);
+      }
+      return filtered.order("id", { ascending: true });
+    }
+  );
+  if (rows.error) return { data: null, error: rows.error };
+
+  const joined = await joinTieOutCells(client, companyId, rows.data ?? []);
+  if (joined.error || !joined.data) return joined;
+
+  // Newest period first, then account number, then integration.
+  const sorted = [...joined.data].sort((a, b) => {
+    const aStart = a.accountingPeriod?.startDate ?? "";
+    const bStart = b.accountingPeriod?.startDate ?? "";
+    if (aStart !== bStart) return aStart < bStart ? 1 : -1;
+    const aAccount = a.account?.number ?? a.account?.name ?? "";
+    const bAccount = b.account?.number ?? b.account?.name ?? "";
+    if (aAccount !== bAccount) return aAccount < bAccount ? -1 : 1;
+    if (a.integration !== b.integration) {
+      return a.integration < b.integration ? -1 : 1;
+    }
+    return 0;
+  });
+
+  return { data: sorted, error: null };
+}
+
+/** A posted journal behind a tie-out cell, with its sync disposition. */
+export type AccountingSyncTieOutJournal = {
+  id: string;
+  journalEntryId: string;
+  postingDate: string;
+  sourceType: string | null;
+  status: string;
+  /** Net debit-signed amount of this journal's lines on the cell's account. */
+  accountAmount: number;
+  /** Latest sync operation status; null = no operation row recorded. */
+  syncStatus: string | null;
+};
+
+export type AccountingSyncTieOutCellDetail = {
+  cell: AccountingSyncTieOutListItem;
+  journals: AccountingSyncTieOutJournal[];
+  /** True when more than TIE_OUT_CELL_JOURNAL_LIMIT journals matched. */
+  truncated: boolean;
+};
+
+const TIE_OUT_CELL_JOURNAL_LIMIT = 200;
+
+/**
+ * One tie-out cell plus its drill-down: the posted journals dated inside
+ * the cell's period with at least one line on the cell's account, each with
+ * the latest accountingSyncOperation disposition for the cell's
+ * integration. A reversal journal's disposition lives under the original
+ * journal's "<id>:reversal" entity id (see getJournalSyncCompleteness).
+ * Bounded to the newest TIE_OUT_CELL_JOURNAL_LIMIT journals.
+ */
+export async function getAccountingSyncTieOutCell(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  cellId: string
+): Promise<{
+  data: AccountingSyncTieOutCellDetail | null;
+  error: PostgrestError | { message: string } | null;
+}> {
+  const cellResult = await (client.from("accountingSyncTieOut" as any) as any)
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("id", cellId)
+    .single();
+  if (cellResult.error || !cellResult.data) {
+    return {
+      data: null,
+      error: cellResult.error ?? { message: "Tie-out cell not found" }
+    };
+  }
+
+  const joined = await joinTieOutCells(client, companyId, [
+    cellResult.data as AccountingSyncTieOutCell
+  ]);
+  if (joined.error || !joined.data) {
+    return { data: null, error: joined.error };
+  }
+  const cell = joined.data[0];
+  if (!cell) {
+    return { data: null, error: { message: "Tie-out cell not found" } };
+  }
+  const period = cell.accountingPeriod;
+  if (!period) {
+    return {
+      data: null,
+      error: { message: "Accounting period not found for tie-out cell" }
+    };
+  }
+
+  const journalsResult = await client
+    .from("journal")
+    .select(
+      "id, journalEntryId, postingDate, sourceType, status, reversalOfId, journalLine!inner(accountId)"
+    )
+    .eq("companyId", companyId)
+    .in("status", ["Posted", "Reversed"])
+    .gte("postingDate", period.startDate)
+    .lte("postingDate", period.endDate)
+    .eq("journalLine.accountId", cell.accountId)
+    .order("postingDate", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(TIE_OUT_CELL_JOURNAL_LIMIT + 1);
+  if (journalsResult.error) {
+    return { data: null, error: journalsResult.error };
+  }
+
+  const allJournals = journalsResult.data ?? [];
+  const truncated = allJournals.length > TIE_OUT_CELL_JOURNAL_LIMIT;
+  const journalRows = truncated
+    ? allJournals.slice(0, TIE_OUT_CELL_JOURNAL_LIMIT)
+    : allJournals;
+
+  const journalIds = journalRows.map((journal) => journal.id);
+  const CHUNK = 300;
+
+  // Net debit-signed amount per journal on the cell's account.
+  const amountByJournalId = new Map<string, number>();
+  for (let i = 0; i < journalIds.length; i += CHUNK) {
+    const chunk = journalIds.slice(i, i + CHUNK);
+    const lines = await client
+      .from("journalLine")
+      .select("journalId, amount")
+      .eq("companyId", companyId)
+      .eq("accountId", cell.accountId)
+      .in("journalId", chunk);
+    if (lines.error) return { data: null, error: lines.error };
+    for (const line of lines.data ?? []) {
+      amountByJournalId.set(
+        line.journalId,
+        (amountByJournalId.get(line.journalId) ?? 0) + Number(line.amount ?? 0)
+      );
+    }
+  }
+
+  // Latest disposition per sync entity id (newest-first, first-seen wins).
+  const entityIds = journalRows.map((journal) =>
+    journal.reversalOfId ? `${journal.reversalOfId}:reversal` : journal.id
+  );
+  const latestStatusByEntityId = new Map<string, string>();
+  for (let i = 0; i < entityIds.length; i += CHUNK) {
+    const chunk = entityIds.slice(i, i + CHUNK);
+    const operations = await client
+      .from("accountingSyncOperation")
+      .select("entityId, status, createdAt")
+      .eq("companyId", companyId)
+      .eq("integration", cell.integration)
+      .eq("entityType", "journalEntry")
+      .in("entityId", chunk)
+      .order("createdAt", { ascending: false });
+    if (operations.error) return { data: null, error: operations.error };
+    for (const operation of operations.data ?? []) {
+      if (!latestStatusByEntityId.has(operation.entityId)) {
+        latestStatusByEntityId.set(operation.entityId, operation.status);
+      }
+    }
+  }
+
+  const journals: AccountingSyncTieOutJournal[] = journalRows.map(
+    (journal) => ({
+      id: journal.id,
+      journalEntryId: journal.journalEntryId,
+      postingDate: journal.postingDate,
+      sourceType: journal.sourceType,
+      status: journal.status,
+      accountAmount: amountByJournalId.get(journal.id) ?? 0,
+      syncStatus:
+        latestStatusByEntityId.get(
+          journal.reversalOfId ? `${journal.reversalOfId}:reversal` : journal.id
+        ) ?? null
+    })
+  );
+
+  return { data: { cell, journals, truncated }, error: null };
 }

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-11T22:40:31.205Z",
-  "totalTools": 1432,
+  "generated": "2026-08-12T04:24:24.675Z",
+  "totalTools": 1435,
   "modules": 15,
   "tools": [
     {
@@ -1668,6 +1668,37 @@
         },
         "required": [
           "fiscalYear"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getPeriodExternalGlSyncReadiness",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get period external gl sync readiness",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "startDate",
+        "endDate"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "endDate"
         ]
       }
     },
@@ -4090,6 +4121,64 @@
         "required": [
           "/** companyIntegration id, e.g. \"xero\" | \"quickbooks\" | \"rillet\". */\n    integrationId",
           "journals dated before this are out of scope. */\n    syncFromDate"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getAccountingSyncTieOut",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get accounting sync tie out",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "integration": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "accountingPeriodId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_getAccountingSyncTieOutCell",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get accounting sync tie out cell",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "cellId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "cellId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cellId"
         ]
       }
     },

@@ -754,10 +754,12 @@ export const SyncOperationSchema = z.object({
 });
 
 /**
- * UI-driven status transitions: Retry (Failed/Warning → Pending), Skip
- * (Failed/Warning/Pending → Skipped), Re-send (Completed/Excluded →
- * Pending — an Excluded journal re-decides against the current policy
- * config). Everything else is invalid.
+ * UI-driven status transitions: Retry (Failed/Warning/Skipped → Pending
+ * — Skipped covers both a human opt-out and the drain's machine no-op
+ * close, either of which a user may re-drive), Skip (Failed/Warning/
+ * Pending → Skipped), Re-send (Completed/Excluded → Pending — an
+ * Excluded journal re-decides against the current policy config).
+ * Everything else is invalid.
  */
 export const SYNC_OPERATION_ALLOWED_TRANSITIONS: Record<
   z.infer<typeof SyncOperationStatusSchema>,
@@ -768,7 +770,7 @@ export const SYNC_OPERATION_ALLOWED_TRANSITIONS: Record<
   Completed: ["Pending"],
   Failed: ["Pending", "Skipped"],
   Warning: ["Pending", "Skipped"],
-  Skipped: [],
+  Skipped: ["Pending"],
   Excluded: ["Pending"]
 };
 

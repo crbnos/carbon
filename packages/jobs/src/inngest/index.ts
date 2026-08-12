@@ -31,6 +31,7 @@ import { extractDocumentFunction } from "./functions/extraction";
 import {
   accountingBackfillFunction,
   accountingConsolidationFunction,
+  accountingOutboundSweepFunction,
   accountingPullSweepFunction,
   accountingReconciliationFunction,
   jiraSyncFunction,
@@ -145,6 +146,7 @@ export const functions = [
   paperlessPartsFunction,
   accountingBackfillFunction,
   accountingConsolidationFunction,
+  accountingOutboundSweepFunction,
   accountingReconciliationFunction,
   accountingPullSweepFunction,
   onshapeBackfillFunction,

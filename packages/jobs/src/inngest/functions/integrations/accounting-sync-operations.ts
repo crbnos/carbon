@@ -51,9 +51,11 @@ import {
   type SyncOperation,
   type SyncOperationDirection,
   type SyncOperationTrigger,
-  type SyncResult
+  type SyncResult,
+  skipOperation
 } from "@carbon/ee/accounting";
 import { groupBy } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -62,6 +64,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * batch of 20 = 500 operations).
  */
 const MAX_DRAIN_ITERATIONS = 25;
+
+/**
+ * An operation claimed more times than this parks as Failed
+ * (ATTEMPTS_EXHAUSTED) instead of running again — the backstop for
+ * crash-looping ops that cycle In Flight → stale → re-claim forever
+ * (claiming increments attemptCount). A human retry from Sync Activity
+ * resets the loop deliberately.
+ */
+export const MAX_SYNC_OPERATION_ATTEMPTS = 10;
 
 /**
  * The sync jobs run with a service-role client, but ledger rows need a
@@ -118,6 +129,29 @@ export type JournalPostingEventInput = {
   new: Record<string, unknown> | null;
   old: Record<string, unknown> | null;
 };
+
+/**
+ * True when an UPDATE event's `status` column changed. Status transitions
+ * on generic tables (documents, payments-adjacent rows) enqueue with the
+ * non-cooldown "posting" trigger instead of "event": the 60s
+ * completed-row cooldown exists to absorb bursty same-state edits, but a
+ * status TRANSITION is a state change the ledger must never drop — the
+ * observed failure was a Draft-edit op completing seconds before the
+ * post-transition event, whose enqueue then died in the cooldown and left
+ * the posted document unsynced (v4 spec F4/F5).
+ */
+export function isStatusTransitionEvent(event: {
+  operation: "INSERT" | "UPDATE" | "DELETE" | "TRUNCATE";
+  new: Record<string, unknown> | null;
+  old: Record<string, unknown> | null;
+}): boolean {
+  if (event.operation !== "UPDATE") return false;
+  const oldStatus =
+    typeof event.old?.status === "string" ? event.old.status : null;
+  const newStatus =
+    typeof event.new?.status === "string" ? event.new.status : null;
+  return oldStatus !== null && newStatus !== null && oldStatus !== newStatus;
+}
 
 export type JournalPostingDecision =
   | { action: "enqueue"; entityId: string; reversal: boolean }
@@ -652,6 +686,64 @@ export function getSyncOperationFailureRecord(
   return { errorMessage: toSyncErrorMessage(syncResult.error) };
 }
 
+export type SyncOperationCloseDecision =
+  | { outcome: "completed"; externalId?: string }
+  | { outcome: "skipped"; reason: string }
+  | { outcome: "failed"; record: SyncOperationFailureRecord };
+
+/**
+ * Decide how a claimed operation closes from its sync result — the
+ * truthful-ledger rules (v4 spec, Pillar C):
+ *
+ * - error / missing result → Failed (structured Warnings preserved).
+ * - "skipped" WITH a remoteId (fast-bailout, already-linked) → Completed
+ *   stamping that externalId: the remote copy exists, so Completed is the
+ *   truth even though this attempt was a no-op.
+ * - "skipped" WITHOUT a remoteId (shouldSync gate, disabled entity,
+ *   parked payment) → Skipped with the reason: nothing exists remotely,
+ *   so Completed would be a lie — the observed false-green failure mode.
+ * - push "success" WITHOUT a remoteId → Failed POSTCONDITION: a push
+ *   success must produce an external id/mapping; treating the violation
+ *   as failure surfaces the bug instead of recording a phantom sync.
+ */
+export function getSyncOperationCloseDecision(
+  operation: Pick<SyncOperation, "metadata" | "direction">,
+  syncResult: SyncResult | undefined
+): SyncOperationCloseDecision {
+  if (!syncResult || syncResult.status === "error") {
+    return {
+      outcome: "failed",
+      record: getSyncOperationFailureRecord(operation, syncResult)
+    };
+  }
+
+  if (syncResult.status === "skipped") {
+    if (syncResult.remoteId) {
+      return { outcome: "completed", externalId: syncResult.remoteId };
+    }
+    return {
+      outcome: "skipped",
+      reason: toSyncErrorMessage(syncResult.error ?? "Not eligible for sync")
+    };
+  }
+
+  if (operation.direction === "push-to-accounting" && !syncResult.remoteId) {
+    return {
+      outcome: "failed",
+      record: {
+        errorCode: "POSTCONDITION",
+        errorMessage:
+          "Sync reported success without a remote id — no external mapping was recorded, so the push is treated as failed"
+      }
+    };
+  }
+
+  return {
+    outcome: "completed",
+    ...(syncResult.remoteId ? { externalId: syncResult.remoteId } : {})
+  };
+}
+
 /**
  * Drain the ledger for one company + integration: claim Pending (and stale
  * In Flight) operations, run the same entity syncers the entry points used
@@ -722,8 +814,27 @@ export async function drainSyncOperations(args: {
 
     summary.claimed += claimed.data.length;
 
+    // Attempt-cap backstop: claiming increments attemptCount, so a
+    // crash-looping op re-claims forever without this. Park it Failed —
+    // visible and retryable in Sync Activity — instead of burning another
+    // provider call every drain.
+    const workable: SyncOperation[] = [];
+    for (const operation of claimed.data) {
+      if (operation.attemptCount > MAX_SYNC_OPERATION_ATTEMPTS) {
+        summary.failed++;
+        await failOperation(args.client, {
+          id: operation.id,
+          companyId: operation.companyId,
+          errorCode: "ATTEMPTS_EXHAUSTED",
+          errorMessage: `Sync was attempted ${operation.attemptCount} times without reaching a terminal outcome; parked as Failed — retry manually once the underlying issue is fixed`
+        });
+        continue;
+      }
+      workable.push(operation);
+    }
+
     const groups = groupBy(
-      claimed.data,
+      workable,
       (operation) => `${operation.entityType}:${operation.direction}`
     );
 
@@ -759,7 +870,9 @@ export async function drainSyncOperations(args: {
               : r.remoteId === operation.entityId
           );
 
-          if (!syncResult || syncResult.status === "error") {
+          const decision = getSyncOperationCloseDecision(operation, syncResult);
+
+          if (decision.outcome === "failed") {
             summary.failed++;
             // Structured journal pre-flight failures keep their errorCode,
             // Warning/Failed flag and metadata; other errors flatten to a
@@ -767,25 +880,26 @@ export async function drainSyncOperations(args: {
             await failOperation(args.client, {
               id: operation.id,
               companyId: operation.companyId,
-              ...getSyncOperationFailureRecord(operation, syncResult)
+              ...decision.record
             });
             continue;
           }
 
-          // "skipped" (already synced, gated by shouldSync, or disabled in
-          // config) is terminal for this attempt: the drain has no skip
-          // marker in the ledger API, so it closes as Completed just like a
-          // successful sync.
-          if (syncResult.status === "skipped") {
+          if (decision.outcome === "skipped") {
             summary.skipped++;
-          } else {
-            summary.completed++;
+            await skipOperation(args.client, {
+              id: operation.id,
+              companyId: operation.companyId,
+              reason: decision.reason
+            });
+            continue;
           }
 
+          summary.completed++;
           await completeOperation(args.client, {
             id: operation.id,
             companyId: operation.companyId,
-            ...(syncResult.remoteId ? { externalId: syncResult.remoteId } : {})
+            ...(decision.externalId ? { externalId: decision.externalId } : {})
           });
         }
       } catch (error) {
@@ -1301,5 +1415,339 @@ export function mergePullCursor(
       ...settings,
       pullCursor: cursor
     }
+  };
+}
+
+// /********************************************************\
+// *      Outbound-sweep decisions (cron, v4 Pillar B)      *
+// \********************************************************/
+// Pure helpers for the accounting-outbound-sweep cron (same import-light
+// rationale as the pull-sweep cursor helpers above).
+
+/**
+ * How far back the outbound sweep diffs. Short on purpose: the sweep
+ * repairs LOST EVENTS (at most as old as the outage that lost them), not
+ * history — pushing a company's pre-integration past is the explicit
+ * backfill's job. With a 30-minute cadence, anything inside the window
+ * gets hundreds of repair chances before aging out.
+ */
+export const SWEEP_LOOKBACK_DAYS = 7;
+
+/**
+ * Ops parked Warning re-drive at most this many attempts (claiming
+ * increments attemptCount) before a human has to act — stops a genuinely
+ * broken op from churning every half hour forever.
+ */
+export const MAX_REDRIVE_ATTEMPTS = 5;
+
+/**
+ * Document statuses the outbound sweep treats as posted — the
+ * per-provider SYNCABLE_STATUSES minus the transient "Pending"
+ * (mid-posting: the post route flips Draft → Pending BEFORE the edge
+ * function writes the posting journal, so diffing Pending would race the
+ * same way the event path does; the document re-enters the diff as soon
+ * as posting lands a terminal status).
+ */
+export const SWEPT_BILL_STATUSES = [
+  "Open",
+  "Return",
+  "Debit Note Issued",
+  "Partially Paid",
+  "Paid",
+  "Overdue"
+] as const;
+export const SWEPT_INVOICE_STATUSES = [
+  "Submitted",
+  "Partially Paid",
+  "Paid",
+  "Overdue"
+] as const;
+export const SWEPT_PAYMENT_STATUSES = ["Posted", "Voided"] as const;
+
+/**
+ * The sweep window's lower bound: `todayIso - SWEEP_LOOKBACK_DAYS`, raised
+ * to the entity's syncFromDate when that is later (never push before the
+ * configured start). ISO date strings, lexicographic comparison.
+ */
+export function getSweepFloorDate(args: {
+  todayIso: string;
+  syncFromDate?: string | null;
+}): string {
+  const lookbackFloor = parseDate(args.todayIso)
+    .subtract({ days: SWEEP_LOOKBACK_DAYS })
+    .toString();
+  const syncFrom = args.syncFromDate?.slice(0, 10);
+  return syncFrom && syncFrom > lookbackFloor ? syncFrom : lookbackFloor;
+}
+
+/**
+ * The outbound sweep's document diff rule. Enqueue iff nothing exists
+ * remotely (no mapping), nothing is about to run (no live op), and
+ * nothing parked it: no rows at all is a pure lost event, and a latest
+ * row of Completed is a phantom success (a truthful Completed push
+ * implies a mapping). A latest row of Skipped/Warning/Failed/Excluded
+ * means the entity is deliberately parked — the capped re-drive rules or
+ * a human own it, not the diff (re-enqueueing those every sweep would
+ * churn forever).
+ */
+export function shouldEnqueueMissingDocument(args: {
+  hasMapping: boolean;
+  hasLiveOperation: boolean;
+  latestOperationStatus: string | null;
+}): boolean {
+  if (args.hasMapping || args.hasLiveOperation) return false;
+  return (
+    args.latestOperationStatus === null ||
+    args.latestOperationStatus === "Completed"
+  );
+}
+
+// /********************************************************\
+// *        Tie-out computations (cron, v4 Pillar E)        *
+// \********************************************************/
+// Pure helpers for the accounting-reconciliation cron's per-period ×
+// per-account tie-out pass (v3 spec §5). Kept in this import-light module
+// so they are unit-testable without booting the Inngest client (same
+// rationale as the sweep helpers above); tests live in
+// accounting-reconciliation.test.ts.
+
+/**
+ * Default tie-out lookback when the company has no
+ * `postingSync.syncFromDate` — matches the reconciliation presence window.
+ */
+export const TIE_OUT_DEFAULT_LOOKBACK_DAYS = 90;
+
+/**
+ * Lower bound of the tie-out scope: `postingSync.syncFromDate` when set,
+ * else `todayIso - TIE_OUT_DEFAULT_LOOKBACK_DAYS`. ISO date strings.
+ */
+export function getTieOutScopeStart(args: {
+  todayIso: string;
+  syncFromDate?: string | null;
+}): string {
+  const syncFrom = args.syncFromDate?.slice(0, 10);
+  if (syncFrom) return syncFrom;
+  return parseDate(args.todayIso)
+    .subtract({ days: TIE_OUT_DEFAULT_LOOKBACK_DAYS })
+    .toString();
+}
+
+/**
+ * The five tie-out amount buckets a posted journal's debit-signed line
+ * amounts land in, based on its sync disposition (spec §5 internal
+ * completeness: carbonPosted = synced + docBacked + excluded + pending +
+ * blocked).
+ */
+export type TieOutBucket =
+  | "synced"
+  | "docBacked"
+  | "excluded"
+  | "pending"
+  | "blocked";
+
+/**
+ * Delivery order, LEAST delivered first — the fold order for a journal
+ * with both a normal and a :reversal operation.
+ */
+export const TIE_OUT_BUCKETS_LEAST_DELIVERED_FIRST: readonly TieOutBucket[] = [
+  "blocked",
+  "pending",
+  "excluded",
+  "docBacked",
+  "synced"
+];
+
+export const DOC_BACKED_ERROR_CODE = "DOC_BACKED";
+
+/**
+ * Map one journalEntry operation's disposition onto its tie-out bucket:
+ *
+ * - Completed → synced;
+ * - Excluded/DOC_BACKED → docBacked only while the backing document is
+ *   actually delivered (its own op Completed, or an external mapping
+ *   exists), else pending — a doc-backed journal is only "in the GL" if
+ *   the document really synced (spec §5);
+ * - other Excluded → excluded;
+ * - Pending / In Flight → pending;
+ * - Failed / Warning / Skipped → blocked.
+ */
+export function getOperationTieOutBucket(
+  operation: Pick<SyncOperation, "status" | "errorCode">,
+  args: { docBackedDelivered: boolean }
+): TieOutBucket {
+  switch (operation.status) {
+    case "Completed":
+      return "synced";
+    case "Excluded":
+      if (operation.errorCode === DOC_BACKED_ERROR_CODE) {
+        return args.docBackedDelivered ? "docBacked" : "pending";
+      }
+      return "excluded";
+    case "Pending":
+    case "In Flight":
+      return "pending";
+    default:
+      // Failed | Warning | Skipped
+      return "blocked";
+  }
+}
+
+/**
+ * Fold a journal's per-operation buckets into ONE bucket for its full
+ * line amounts: the LEAST-delivered bucket wins (blocked > pending >
+ * excluded > docBacked > synced). A journal with no operations at all is
+ * pending — it has been posted but nothing has decided it yet.
+ */
+export function foldTieOutBuckets(
+  buckets: readonly TieOutBucket[]
+): TieOutBucket {
+  let least: TieOutBucket | null = null;
+  for (const bucket of buckets) {
+    if (
+      least === null ||
+      TIE_OUT_BUCKETS_LEAST_DELIVERED_FIRST.indexOf(bucket) <
+        TIE_OUT_BUCKETS_LEAST_DELIVERED_FIRST.indexOf(least)
+    ) {
+      least = bucket;
+    }
+  }
+  return least ?? "pending";
+}
+
+/**
+ * Latest operation per entityId (by createdAt). Terminal re-dispositions
+ * insert new rows for the same tuple over time; the newest row is the
+ * journal's current disposition (mirrors getLatestOperationForTuple in
+ * the operations service).
+ */
+export function getLatestOperationsByEntityId<
+  T extends Pick<SyncOperation, "entityId" | "createdAt">
+>(operations: readonly T[]): Map<string, T> {
+  const latest = new Map<string, T>();
+  for (const operation of operations) {
+    const existing = latest.get(operation.entityId);
+    if (!existing || operation.createdAt > existing.createdAt) {
+      latest.set(operation.entityId, operation);
+    }
+  }
+  return latest;
+}
+
+export type TieOutPeriod = {
+  id: string;
+  /** YYYY-MM-DD (normalize DATE reads before calling). */
+  startDate: string;
+  /** YYYY-MM-DD. */
+  endDate: string;
+};
+
+/**
+ * The accounting period whose [startDate, endDate] contains the date
+ * (inclusive), or null. ISO date strings compare lexicographically.
+ */
+export function findAccountingPeriodForDate<T extends TieOutPeriod>(
+  periods: readonly T[],
+  isoDate: string | null
+): T | null {
+  if (!isoDate) return null;
+  const day = isoDate.slice(0, 10);
+  return (
+    periods.find(
+      (period) =>
+        period.startDate.slice(0, 10) <= day &&
+        day <= period.endDate.slice(0, 10)
+    ) ?? null
+  );
+}
+
+/** `metadata.backingDocument.entityType` of a DOC_BACKED disposition, or null. */
+export function getBackingDocumentEntityType(
+  metadata: Record<string, unknown> | null | undefined
+): string | null {
+  const backing = metadata?.backingDocument;
+  if (typeof backing !== "object" || backing === null) return null;
+  const entityType = (backing as Record<string, unknown>).entityType;
+  return typeof entityType === "string" ? entityType : null;
+}
+
+/**
+ * A DOC_BACKED journal counts as delivered only while its backing
+ * document's own operation is Completed OR the document already carries an
+ * external mapping (a truthful Completed push implies one; the mapping
+ * also covers documents linked outside the ledger, e.g. backfills).
+ */
+export function isBackingDocumentDelivered(args: {
+  latestOperationStatus: string | null;
+  hasExternalMapping: boolean;
+}): boolean {
+  return args.latestOperationStatus === "Completed" || args.hasExternalMapping;
+}
+
+/**
+ * Fold account-mapping rows (entityType "account") into a reverse index:
+ * remote account ref → Carbon account.id. Both the mapping's externalId
+ * (QBO AccountRef.value = provider account id) and its metadata
+ * externalCode (Xero AccountCode / Rillet account_code) are indexed —
+ * providers address journal lines by different refs. Consolidation
+ * mappings are many-to-one (several Carbon accounts → one provider
+ * account); the first row wins, so pass rows in a stable order.
+ */
+export function buildRemoteAccountRefIndex(
+  mappings: ReadonlyArray<{
+    entityId: string;
+    externalId: string | null;
+    metadata: unknown;
+  }>
+): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const mapping of mappings) {
+    const refs: Array<string | null> = [mapping.externalId];
+    if (
+      typeof mapping.metadata === "object" &&
+      mapping.metadata !== null &&
+      !Array.isArray(mapping.metadata)
+    ) {
+      const externalCode = (mapping.metadata as Record<string, unknown>)
+        .externalCode;
+      if (typeof externalCode === "string") refs.push(externalCode);
+    }
+    for (const ref of refs) {
+      if (!ref) continue;
+      if (!index.has(ref)) index.set(ref, mapping.entityId);
+    }
+  }
+  return index;
+}
+
+export type TieOutCellCents = {
+  carbonPostedCents: number;
+  syncedCents: number;
+  docBackedCents: number;
+  excludedCents: number;
+  pendingCents: number;
+  blockedCents: number;
+  /** null = no provider fetch succeeded for this cell. */
+  providerCents: number | null;
+};
+
+/**
+ * The two tie-out invariants as deltas (cents):
+ * internal = carbonPosted − (synced+docBacked+excluded+pending+blocked);
+ * external = synced − provider (null while providerCents is null).
+ */
+export function computeTieOutDeltas(cell: TieOutCellCents): {
+  internalDeltaCents: number;
+  externalDeltaCents: number | null;
+} {
+  const accounted =
+    cell.syncedCents +
+    cell.docBackedCents +
+    cell.excludedCents +
+    cell.pendingCents +
+    cell.blockedCents;
+  return {
+    internalDeltaCents: cell.carbonPostedCents - accounted,
+    externalDeltaCents:
+      cell.providerCents === null ? null : cell.syncedCents - cell.providerCents
   };
 }
