@@ -4,7 +4,7 @@ import { useCarbon } from "@carbon/auth";
 import { type Database, fetchAllFromTable } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { useInterval, useRealtimeChannel } from "@carbon/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useUser } from "~/hooks";
 import {
   upsertIntoListStore,
@@ -58,7 +58,6 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       quantityOnHand: number;
     }>(
       carbon,
-      // @ts-ignore -- itemStockQuantities is a materialized view
       "itemStockQuantities",
       "itemId, locationId, quantityOnHand",
       (query) => query.eq("companyId", companyId)
@@ -88,6 +87,26 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       }))
     );
   };
+
+  // A posting writes one itemStockQuantities row per (item, location) it
+  // touched, so a single receipt can emit a burst. Coalesce them into one
+  // refetch — the same 1.5s quiet window `useDebouncedRealtime` uses.
+  const quantitiesRefresh = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scheduleQuantitiesRefresh = () => {
+    if (quantitiesRefresh.current) clearTimeout(quantitiesRefresh.current);
+    quantitiesRefresh.current = setTimeout(() => {
+      quantitiesRefresh.current = null;
+      fetchQuantities();
+    }, 1500);
+  };
+
+  useEffect(
+    () => () => {
+      if (quantitiesRefresh.current) clearTimeout(quantitiesRefresh.current);
+    },
+    []
+  );
 
   const hydrate = async () => {
     const idb = (await import("localforage")).default;
@@ -317,6 +336,29 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
               default:
                 break;
             }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            // Quantities are maintained incrementally by triggers on itemLedger,
+            // so this fires on the posting itself rather than up to 40 min later
+            // (the old 30 min matview refresh + the 10 min poll below).
+            // Server-side filter: with ~1600 tenants an unfiltered subscription
+            // would fan every company's postings out to every client.
+            table: "itemStockQuantities",
+            filter: `companyId=eq.${companyId}`
+          },
+          (payload) => {
+            // companyId is part of the primary key, so it is present even on a
+            // DELETE payload (which otherwise carries only key columns).
+            const row =
+              payload.eventType === "DELETE" ? payload.old : payload.new;
+            if (row && "companyId" in row && row.companyId !== companyId)
+              return;
+            scheduleQuantitiesRefresh();
           }
         )
         .on(
