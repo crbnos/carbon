@@ -20758,6 +20758,27 @@ export type Database = {
           },
         ]
       }
+      itemStockQuantities: {
+        Row: {
+          companyId: string
+          itemId: string
+          locationId: string
+          quantityOnHand: number
+        }
+        Insert: {
+          companyId: string
+          itemId: string
+          locationId?: string
+          quantityOnHand?: number
+        }
+        Update: {
+          companyId?: string
+          itemId?: string
+          locationId?: string
+          quantityOnHand?: number
+        }
+        Relationships: []
+      }
       itemSupersession: {
         Row: {
           companyId: string
@@ -61205,20 +61226,6 @@ export type Database = {
           tableName: string | null
           type: string | null
         }
-        Insert: {
-          attachedFunctions?: never
-          status?: never
-          systemTriggerName?: unknown
-          tableName?: never
-          type?: never
-        }
-        Update: {
-          attachedFunctions?: never
-          status?: never
-          systemTriggerName?: unknown
-          tableName?: never
-          type?: never
-        }
         Relationships: []
       }
       gaugeCalibrationRecords: {
@@ -62970,86 +62977,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-        ]
-      }
-      itemStockQuantities: {
-        Row: {
-          companyId: string | null
-          itemId: string | null
-          locationId: string | null
-          quantityOnHand: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "partLeger_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "partLeger_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "partLeger_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "partLeger_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
           },
         ]
       }
@@ -67833,14 +67760,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -75188,19 +75115,18 @@ export type Database = {
           netChange: number
         }[]
       }
-      attach_event_trigger:
-        | {
-            Args: { sync_functions?: string[]; table_name_text: string }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              after_sync_functions?: string[]
-              sync_functions?: string[]
-              table_name_text: string
-            }
-            Returns: undefined
-          }
+      attach_event_trigger: {
+        Args: {
+          after_sync_functions?: string[]
+          sync_functions?: string[]
+          table_name_text: string
+        }
+        Returns: undefined
+      }
+      attach_statement_handler: {
+        Args: { handler_functions?: string[]; table_name_text: string }
+        Returns: undefined
+      }
       backflush_job_materials: {
         Args: {
           p_company_id: string
@@ -77212,6 +77138,13 @@ export type Database = {
         Returns: boolean
       }
       is_valid_timezone: { Args: { tz: string }; Returns: boolean }
+      item_ledger_on_hand_contribution: {
+        Args: {
+          quantity: number
+          tracked_entity_status: Database["public"]["Enums"]["trackedEntityStatus"]
+        }
+        Returns: number
+      }
       items_search: {
         Args: {
           match_count: number
@@ -77399,6 +77332,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      reconcile_item_stock_quantities: { Args: never; Returns: undefined }
       resolve_shelf_life_start_for_receipt: {
         Args: { p_item_id: string; p_receipt_id: string }
         Returns: string
@@ -77507,6 +77441,14 @@ export type Database = {
         Returns: undefined
       }
       sync_archive_other_quality_documents: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_check_job_material_self_reference: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_check_method_material_self_reference: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
