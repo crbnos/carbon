@@ -13,6 +13,7 @@ import {
   HStack,
   IconButton
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
@@ -21,7 +22,12 @@ import { Outlet, useNavigate, useParams } from "react-router";
 import { New } from "~/components";
 import { EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
-import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { SupplierProcess } from "~/modules/purchasing";
 import { path } from "~/utils/path";
@@ -44,6 +50,7 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
   const { carbon } = useCarbon();
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const onCellEdit = useCallback(
     async (id: string, value: unknown, row: SupplierProcess) => {
@@ -134,10 +141,7 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
   const editableComponents = useMemo(
     () => ({
       minimumCost: EditableNumber(onCellEdit, {
-        formatOptions: {
-          style: "currency",
-          currency: baseCurrency
-        }
+        formatOptions: INPUT_FORMAT.price(baseCurrency, currencyDecimals)
       }),
       leadTime: EditableNumber(onCellEdit)
     }),

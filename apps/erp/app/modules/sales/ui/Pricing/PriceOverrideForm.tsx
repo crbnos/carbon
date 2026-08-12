@@ -37,6 +37,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -65,7 +66,12 @@ import {
   TextArea
 } from "~/components/Form";
 import Grid from "~/components/Grid";
-import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { priceOverrideValidator } from "../../sales.models";
 import type { PriceOverrideBreak } from "../../types";
 
@@ -270,6 +276,7 @@ function PriceBreaks({
 }) {
   const { t } = useLingui();
   const formatter = useCurrencyFormatter();
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const [historyBreakId, setHistoryBreakId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{
@@ -351,7 +358,7 @@ function PriceBreaks({
     () => ({
       quantity: EditableNumber(noOpMutation),
       overridePrice: EditableNumber(noOpMutation, {
-        formatOptions: { style: "currency", currency: baseCurrency }
+        formatOptions: INPUT_FORMAT.price(baseCurrency, currencyDecimals)
       })
     }),
     [noOpMutation, baseCurrency]

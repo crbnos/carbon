@@ -21,7 +21,11 @@ import {
   VStack
 } from "@carbon/react";
 import type { SalesOrderForProductionCheck } from "@carbon/utils";
-import { getSalesOrderJobStatus, hasLinesRequiringJobs } from "@carbon/utils";
+import {
+  getSalesOrderJobStatus,
+  hasLinesRequiringJobs,
+  moneyFormatOptions
+} from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -43,7 +47,13 @@ import {
 import { Link, useParams } from "react-router";
 import { CustomerAvatar, DateTime, Hyperlink, MethodIcon } from "~/components";
 import { Confirm } from "~/components/Modals";
-import { usePercentFormatter, usePermissions, useRouteData } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePercentFormatter,
+  usePermissions,
+  useRouteData
+} from "~/hooks";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";
@@ -80,16 +90,23 @@ const SalesOrderSummary = ({
   const salesOrderToJobsModal = useDisclosure();
 
   const { locale } = useLocale();
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: routeData?.salesOrder?.currencyCode ?? "USD"
-      }),
-    [locale, routeData?.salesOrder?.currencyCode]
-  );
+  const formatter = useCurrencyFormatter({
+    currency: routeData?.salesOrder?.currencyCode ?? "USD"
+  });
 
   const isEditable = !isSalesOrderLocked(routeData?.salesOrder?.status);
+  // Settlement money: digits from the document currency's configured
+  // decimals. MotionNumber narrows `notation`, hence the explicit value.
+  const currencyDecimals = useCurrencyDecimals(
+    routeData?.salesOrder?.currencyCode ?? "USD"
+  );
+  const moneyFormat = {
+    ...moneyFormatOptions(
+      routeData?.salesOrder?.currencyCode ?? "USD",
+      currencyDecimals
+    ),
+    notation: "standard" as const
+  };
 
   // Calculate totals
   const subtotal =
@@ -233,10 +250,7 @@ const SalesOrderSummary = ({
               </span>
               <MotionNumber
                 value={subtotal}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
-                }}
+                format={moneyFormat}
                 locales={locale}
               />
             </HStack>
@@ -244,14 +258,7 @@ const SalesOrderSummary = ({
               <span>
                 <Trans>Tax:</Trans>
               </span>
-              <MotionNumber
-                value={tax}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
-                }}
-                locales={locale}
-              />
+              <MotionNumber value={tax} format={moneyFormat} locales={locale} />
             </HStack>
             <HStack className="justify-between text-sm text-muted-foreground w-full">
               {convertedShippingCost > 0 ? (
@@ -271,10 +278,7 @@ const SalesOrderSummary = ({
                   </VStack>
                   <MotionNumber
                     value={convertedShippingCost}
-                    format={{
-                      style: "currency",
-                      currency: routeData?.salesOrder.currencyCode ?? "USD"
-                    }}
+                    format={moneyFormat}
                     locales={locale}
                   />
                 </>
@@ -295,10 +299,7 @@ const SalesOrderSummary = ({
               </span>
               <MotionNumber
                 value={total}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
-                }}
+                format={moneyFormat}
                 locales={locale}
               />
             </HStack>
@@ -309,10 +310,7 @@ const SalesOrderSummary = ({
               </span>
               <MotionNumber
                 value={routeData?.invoiceSummary?.invoicedAmount ?? 0}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
-                }}
+                format={moneyFormat}
                 locales={locale}
               />
             </HStack>
@@ -322,10 +320,7 @@ const SalesOrderSummary = ({
               </span>
               <MotionNumber
                 value={routeData?.invoiceSummary?.paidAmount ?? 0}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
-                }}
+                format={moneyFormat}
                 locales={locale}
               />
             </HStack>
@@ -363,6 +358,13 @@ function LineItems({
   if (!orderId) throw new Error("Could not find orderId");
 
   const percentFormatter = usePercentFormatter();
+  // Settlement money: digits from the document currency's configured
+  // decimals. MotionNumber narrows `notation`, hence the explicit value.
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
+  const moneyFormat = {
+    ...moneyFormatOptions(currencyCode, currencyDecimals),
+    notation: "standard" as const
+  };
   const [openItems, setOpenItems] = useState<string[]>([]);
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
@@ -455,10 +457,7 @@ function LineItems({
                               (1 + (line?.taxPercent ?? 0)) +
                             (line?.convertedNonTaxableAddOnCost ?? 0)
                           }
-                          format={{
-                            style: "currency",
-                            currency: currencyCode
-                          }}
+                          format={moneyFormat}
                           locales={locale}
                         />
                         <motion.div
@@ -576,7 +575,7 @@ function LineItems({
                       <Td className="text-right">
                         <MotionNumber
                           value={line.convertedUnitPrice ?? 0}
-                          format={{ style: "currency", currency: currencyCode }}
+                          format={moneyFormat}
                           locales={locale}
                         />
                       </Td>
@@ -589,7 +588,7 @@ function LineItems({
                             (line.convertedUnitPrice ?? 0) *
                             (line.saleQuantity ?? 0)
                           }
-                          format={{ style: "currency", currency: currencyCode }}
+                          format={moneyFormat}
                           locales={locale}
                         />
                       </Td>
@@ -601,10 +600,7 @@ function LineItems({
                         <Td className="text-right">
                           <MotionNumber
                             value={line.addOnCost ?? 0}
-                            format={{
-                              style: "currency",
-                              currency: currencyCode
-                            }}
+                            format={moneyFormat}
                             locales={locale}
                           />
                         </Td>
@@ -617,10 +613,7 @@ function LineItems({
                         <Td className="text-right">
                           <MotionNumber
                             value={line.nonTaxableAddOnCost ?? 0}
-                            format={{
-                              style: "currency",
-                              currency: currencyCode
-                            }}
+                            format={moneyFormat}
                             locales={locale}
                           />
                         </Td>
@@ -638,10 +631,7 @@ function LineItems({
                             (line.convertedNonTaxableAddOnCost ?? 0) +
                             (line.convertedShippingCost ?? 0)
                           }
-                          format={{
-                            style: "currency",
-                            currency: currencyCode
-                          }}
+                          format={moneyFormat}
                           locales={locale}
                         />
                       </Td>
@@ -660,10 +650,7 @@ function LineItems({
                               (line.convertedShippingCost ?? 0)) *
                             (line.taxPercent ?? 0)
                           }
-                          format={{
-                            style: "currency",
-                            currency: currencyCode
-                          }}
+                          format={moneyFormat}
                           locales={locale}
                         />
                       </Td>
@@ -681,10 +668,7 @@ function LineItems({
                               (1 + (line.taxPercent ?? 0)) +
                             (line.convertedNonTaxableAddOnCost ?? 0)
                           }
-                          format={{
-                            style: "currency",
-                            currency: currencyCode
-                          }}
+                          format={moneyFormat}
                           locales={locale}
                         />
                       </Td>

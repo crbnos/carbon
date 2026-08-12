@@ -34,7 +34,11 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
-import { formatCityStatePostalCode, priceFormatOptions } from "@carbon/utils";
+import {
+  formatCityStatePostalCode,
+  moneyFormatOptions,
+  priceFormatOptions
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -54,7 +58,11 @@ import {
 import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
-import { usePercentFormatter } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePercentFormatter
+} from "~/hooks";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
 import type {
@@ -324,6 +332,13 @@ const LineItems = ({
   selectedLines: Record<string, SelectedLine>;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
 }) => {
+  // Settlement money at the document currency's configured decimals.
+  // MotionNumber narrows `notation`, hence the explicit value.
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
+  const moneyFormat = {
+    ...moneyFormatOptions(currencyCode, currencyDecimals),
+    notation: "standard" as const
+  };
   const { company, quote, quoteLines, quoteLinePrices, thumbnails } =
     useLoaderData<typeof loader>().data!;
 
@@ -422,10 +437,7 @@ const LineItems = ({
                               0)) *
                             (selectedLines[line.id!]?.taxPercent ?? 0)
                         }
-                        format={{
-                          style: "currency",
-                          currency: currencyCode
-                        }}
+                        format={moneyFormat}
                         locales={locale}
                       />
                       <motion.div
@@ -505,6 +517,13 @@ const LinePricingOptions = ({
   selectedLine,
   setSelectedLines
 }: LinePricingOptionsProps) => {
+  // Settlement money at the document currency's configured decimals.
+  // MotionNumber narrows `notation`, hence the explicit value.
+  const currencyDecimals = useCurrencyDecimals(quoteCurrency);
+  const moneyFormat = {
+    ...moneyFormatOptions(quoteCurrency, currencyDecimals),
+    notation: "standard" as const
+  };
   const percentFormatter = usePercentFormatter();
   const { quote } = useLoaderData<typeof loader>().data!;
 
@@ -787,7 +806,7 @@ const LinePricingOptions = ({
                       (selectedLine.convertedUnitPrice ?? 0) *
                       selectedLine.quantity
                     }
-                    format={{ style: "currency", currency: quoteCurrency }}
+                    format={moneyFormat}
                     locales={locale}
                   />
                 </Td>
@@ -807,7 +826,7 @@ const LinePricingOptions = ({
                         selectedLine.quantity *
                         selectedLine.discountPercent
                       }
-                      format={{ style: "currency", currency: quoteCurrency }}
+                      format={moneyFormat}
                       locales={locale}
                     />
                   </Td>
@@ -828,7 +847,7 @@ const LinePricingOptions = ({
                     <Td className="text-right">
                       <MotionNumber
                         value={charge.amount}
-                        format={{ style: "currency", currency: quoteCurrency }}
+                        format={moneyFormat}
                         locales={locale}
                       />
                     </Td>
@@ -847,10 +866,7 @@ const LinePricingOptions = ({
                       selectedLine.convertedAddOn +
                       selectedLine.convertedShippingCost
                     }
-                    format={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    format={moneyFormat}
                     locales={locale}
                   />
                 </Td>
@@ -870,10 +886,7 @@ const LinePricingOptions = ({
                         selectedLine.convertedShippingCost) *
                       selectedLine.taxPercent
                     }
-                    format={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    format={moneyFormat}
                     locales={locale}
                   />
                 </Td>
@@ -896,10 +909,7 @@ const LinePricingOptions = ({
                         selectedLine.convertedShippingCost) *
                         selectedLine.taxPercent
                     }
-                    format={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    format={moneyFormat}
                     locales={locale}
                   />
                 </Td>
@@ -949,14 +959,16 @@ const Quote = ({ data }: { data: QuoteData }) => {
   } = data;
   const { t } = useLingui();
   const { locale } = useLocale();
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: quote.currencyCode ?? "USD"
-      }),
-    [locale, quote.currencyCode]
-  );
+  const formatter = useCurrencyFormatter({
+    currency: quote.currencyCode ?? "USD"
+  });
+  // Settlement money at the document currency's configured decimals.
+  // MotionNumber narrows `notation`, hence the explicit value.
+  const currencyDecimals = useCurrencyDecimals(quote.currencyCode ?? "USD");
+  const moneyFormat = {
+    ...moneyFormatOptions(quote.currencyCode ?? "USD", currencyDecimals),
+    notation: "standard" as const
+  };
 
   const { id } = useParams();
   if (!id) throw new Error("Could not find external quote id");
@@ -1231,10 +1243,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               </span>
               <MotionNumber
                 value={subtotal + totalDiscount}
-                format={{
-                  style: "currency",
-                  currency: quote.currencyCode ?? "USD"
-                }}
+                format={moneyFormat}
                 locales={locale}
               />
             </HStack>
@@ -1245,10 +1254,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
                   -
                   <MotionNumber
                     value={totalDiscount}
-                    format={{
-                      style: "currency",
-                      currency: quote.currencyCode ?? "USD"
-                    }}
+                    format={moneyFormat}
                     locales={locale}
                   />
                 </span>
@@ -1258,14 +1264,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               <span>
                 <Trans>Tax</Trans>:
               </span>
-              <MotionNumber
-                value={tax}
-                format={{
-                  style: "currency",
-                  currency: quote.currencyCode ?? "USD"
-                }}
-                locales={locale}
-              />
+              <MotionNumber value={tax} format={moneyFormat} locales={locale} />
             </HStack>
             {convertedShippingCost > 0 && (
               <HStack className="justify-between text-base w-full">
@@ -1274,10 +1273,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
                 </span>
                 <MotionNumber
                   value={convertedShippingCost}
-                  format={{
-                    style: "currency",
-                    currency: quote.currencyCode ?? "USD"
-                  }}
+                  format={moneyFormat}
                   locales={locale}
                 />
               </HStack>
@@ -1289,10 +1285,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               </span>
               <MotionNumber
                 value={total}
-                format={{
-                  style: "currency",
-                  currency: quote.currencyCode ?? "USD"
-                }}
+                format={moneyFormat}
                 locales={locale}
               />
             </HStack>

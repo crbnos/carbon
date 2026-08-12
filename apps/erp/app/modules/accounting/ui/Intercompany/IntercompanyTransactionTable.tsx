@@ -1,3 +1,4 @@
+import { formatMoney } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -10,6 +11,7 @@ import {
   LuStar
 } from "react-icons/lu";
 import { DateTime, Table } from "~/components";
+import { useCurrencies } from "~/hooks";
 import { intercompanyTransactionStatuses } from "../../accounting.models";
 import IntercompanyTransactionStatus from "./IntercompanyTransactionStatus";
 
@@ -39,6 +41,16 @@ const IntercompanyTransactionTable = memo(
     // Currency varies per row, so the formatter is built per cell from the
     // app locale rather than a single-currency hook instance.
     const { locale } = useLocale();
+    const currencies = useCurrencies();
+    const decimalsByCode = useMemo(
+      () =>
+        new Map(
+          currencies.flatMap((c) =>
+            c.decimalPlaces == null ? [] : [[c.code, c.decimalPlaces] as const]
+          )
+        ),
+      [currencies]
+    );
     const columns = useMemo<ColumnDef<IntercompanyTransaction>[]>(() => {
       const defaultColumns: ColumnDef<IntercompanyTransaction>[] = [
         {
@@ -61,11 +73,15 @@ const IntercompanyTransactionTable = memo(
           accessorKey: "amount",
           header: t`Amount`,
           cell: ({ row }) => {
-            const formatted = new Intl.NumberFormat(locale, {
-              style: "currency",
-              currency: row.original.currencyCode || "USD"
-            }).format(row.original.amount);
-            return formatted;
+            // The currency varies per row, so the decimals are looked up from
+            // the cached list rather than by a hook (which cannot run per row).
+            const code = row.original.currencyCode || "USD";
+            return formatMoney(
+              row.original.amount,
+              locale,
+              code,
+              decimalsByCode.get(code) ?? 2
+            );
           },
           meta: {
             icon: <LuCircleDollarSign />
