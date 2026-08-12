@@ -5,6 +5,9 @@ import {
   DropdownMenuItem,
   MenuIcon,
   MenuItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -189,7 +192,37 @@ const EmployeesTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const isActive = item.getValue<boolean>();
+            const status = item.row.original.status;
+            return (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-fit">
+                    <Checkbox isChecked={isActive} />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isActive ? (
+                    <Trans>
+                      To deactivate, use the row menu and choose Deactivate
+                      Account.
+                    </Trans>
+                  ) : status === "Invited" ? (
+                    <Trans>
+                      An invitation is pending. They become active once they
+                      accept it.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      To reactivate, use the row menu and choose Send Invite.
+                      The employee becomes active once they accept.
+                    </Trans>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            );
+          },
           meta: {
             icon: <LuToggleRight />
           }

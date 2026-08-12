@@ -1,7 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -11,6 +11,7 @@ import {
   getItem,
   insertChangeNotice
 } from "~/modules/items";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path, requestReferrer } from "~/utils/path";
 
 // One-click "Create Change Notice" for a part/tool: mint a CO and attach the item
@@ -54,7 +55,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId,
     createdBy: userId,
     name: `Change for ${label}`,
-    openDate: today(getLocalTimeZone()).toString()
+    openDate: datetime
+      .today(await getCompanyTimeZone(client, companyId))
+      .toString()
   });
   if (co.error || !co.data) {
     throw redirect(

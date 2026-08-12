@@ -44,8 +44,6 @@ import type {
 type QuotationFinalizeModalProps = {
   onClose: () => void;
   quote?: Quotation;
-  lines: QuotationLine[];
-  pricing: QuotationPrice[];
   shipment: QuotationShipment | null;
   fetcher: FetcherWithComponents<{}>;
   defaultCc?: string[];
@@ -56,8 +54,7 @@ const QuotationFinalizeModal = ({
   onClose,
   fetcher: _fetcher,
   shipment,
-  defaultCc = [],
-  pricing
+  defaultCc = []
 }: QuotationFinalizeModalProps) => {
   const { t } = useLingui();
   const { quoteId } = useParams();
@@ -89,7 +86,10 @@ const QuotationFinalizeModal = ({
         getQuoteLines(carbon, quoteId),
         getQuoteLinePricesByQuoteId(carbon, quoteId)
       ]);
-      setLines(lines.data ?? []);
+      // Declined lines never receive pricing, lead time, or shipping, and
+      // `finalizeQuote` excludes them too — validating them here would flag
+      // every quote containing one.
+      setLines((lines.data ?? []).filter((line) => line.status !== "No Quote"));
       setPrices(prices.data ?? []);
     } catch {
       toast.error("Failed to load quote data");
@@ -119,7 +119,20 @@ const QuotationFinalizeModal = ({
     .map((line) => line.itemReadableId)
     .filter((id): id is string => id !== undefined);
 
-  const linesWithZeroPriceOrLeadTime = prices
+  // Only rows for a quantity break the line still offers count. A break that
+  // was removed can leave its price row behind, and a freshly-seeded orphan
+  // carries leadTime 0 / shippingCost 0 — enough to fail both checks below for
+  // a quantity the quote no longer sells.
+  const livePrices = prices.filter((price) => {
+    const line = lines.find((line) => line.id === price.quoteLineId);
+    return (
+      !!line &&
+      Array.isArray(line.quantity) &&
+      line.quantity.includes(price.quantity)
+    );
+  });
+
+  const linesWithZeroPriceOrLeadTime = livePrices
     .filter((price) => price.unitPrice === 0 || price.leadTime === 0)
     .map((price) => {
       const line = lines.find((line) => line.id === price.quoteLineId);
@@ -136,7 +149,9 @@ const QuotationFinalizeModal = ({
 
   const hasShippingCost = shipment?.shippingCost && shipment.shippingCost > 0;
   const allLinesHaveShippingCosts = lines.every((line) => {
-    const linePrices = prices.filter((price) => price.quoteLineId === line.id);
+    const linePrices = livePrices.filter(
+      (price) => price.quoteLineId === line.id
+    );
     return linePrices.every(
       (price) => price.shippingCost && price.shippingCost > 0
     );

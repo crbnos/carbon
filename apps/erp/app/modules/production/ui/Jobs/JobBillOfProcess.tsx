@@ -52,7 +52,7 @@ import { Editor } from "@carbon/react/Editor";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale, useNumberFormatter } from "@react-aria/i18n";
+import { useNumberFormatter } from "@react-aria/i18n";
 import type { DragControls } from "framer-motion";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import { nanoid } from "nanoid";
@@ -88,6 +88,7 @@ import {
 import type { z } from "zod";
 import {
   Assignee,
+  DateTime,
   DirectionAwareTabs,
   EmployeeAvatar,
   Empty,
@@ -129,13 +130,7 @@ import {
   SortableListItemToggle
 } from "~/components/SortableList";
 import { StepLinkEditor } from "~/components/StepLinkEditor";
-import {
-  useDateFormatter,
-  usePermissions,
-  useRouteData,
-  useUrlParams,
-  useUser
-} from "~/hooks";
+import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
 import type {
   OperationParameter,
   OperationStep,
@@ -2009,7 +2004,6 @@ function StepsListItem({
     createdAt
   } = attribute;
 
-  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
@@ -2278,7 +2272,8 @@ function StepsListItem({
             <div className="flex items-center justify-end gap-2">
               <HStack spacing={2}>
                 <span className="text-xs text-muted-foreground">
-                  {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                  {isUpdated ? "Updated" : "Created"}{" "}
+                  <DateTime value={date} variant="relative" />
                 </span>
                 <EmployeeAvatar employeeId={person} withName={false} />
               </HStack>
@@ -2338,7 +2333,6 @@ function StepsListItem({
 }
 
 function PreviewStepRecords({ attribute }: { attribute: JobOperationStep }) {
-  const { formatRelativeTime } = useDateFormatter();
   if (
     !attribute.jobOperationStepRecord ||
     !Array.isArray(attribute.jobOperationStepRecord) ||
@@ -2373,7 +2367,8 @@ function PreviewStepRecords({ attribute }: { attribute: JobOperationStep }) {
             <div className="flex items-center justify-end gap-2 w-1/2">
               <HStack spacing={2}>
                 <span className="text-xs text-muted-foreground">
-                  Created {formatRelativeTime(record.createdAt ?? "")}
+                  Created{" "}
+                  <DateTime value={record.createdAt ?? ""} variant="relative" />
                 </span>
                 <EmployeeAvatar
                   employeeId={record.createdBy}
@@ -2395,7 +2390,6 @@ function PreviewStepRecord({
   attribute: JobOperationStep;
   record: any;
 }) {
-  const { formatDateTime } = useDateFormatter();
   const unitOfMeasures = useUnitOfMeasure();
   const [employees] = usePeople();
   const numberFormatter = useNumberFormatter();
@@ -2433,7 +2427,9 @@ function PreviewStepRecord({
           </p>
         )}
       {attribute.type === "Timestamp" && (
-        <p className="text-sm">{formatDateTime(record.value ?? "")}</p>
+        <p className="text-sm">
+          <DateTime value={record.value ?? ""} variant="absolute" />
+        </p>
       )}
       {attribute.type === "List" && <p className="text-sm">{record.value}</p>}
       {attribute.type === "Person" && (
@@ -2570,7 +2566,6 @@ function ParametersListItem({
   operationId: string;
   className?: string;
 }) {
-  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
@@ -2646,7 +2641,8 @@ function ParametersListItem({
           <div className="flex items-center justify-end gap-2">
             <HStack spacing={2}>
               <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                {isUpdated ? "Updated" : "Created"}{" "}
+                <DateTime value={date} variant="relative" />
               </span>
               <EmployeeAvatar employeeId={person} withName={false} />
             </HStack>
@@ -3825,12 +3821,11 @@ const getActivityText = (
 };
 
 const ProductionEventActivity = ({ item }: ProductionEventActivityProps) => {
-  const { formatDateTime } = useDateFormatter();
   return (
     <Activity
       employeeId={item.employeeId ?? item.createdBy}
       activityMessage={getActivityText(item)}
-      activityTime={formatDateTime(item.startTime)}
+      activityTime={item.startTime}
       activityIcon={
         item.type ? (
           <TimeTypeIcon
@@ -3858,7 +3853,6 @@ function ToolsListItem({
   operationId: string;
   className?: string;
 }) {
-  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
@@ -3946,7 +3940,8 @@ function ToolsListItem({
           <div className="flex items-center justify-end gap-2">
             <HStack spacing={2}>
               <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                {isUpdated ? "Updated" : "Created"}{" "}
+                <DateTime value={date} variant="relative" />
               </span>
               <EmployeeAvatar employeeId={person} withName={false} />
             </HStack>
@@ -4092,7 +4087,6 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
   const [employees] = usePeople();
   const [messages, setMessages] = useState<Message[]>([]);
   const { t } = useLingui();
-  const { locale } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { carbon, accessToken } = useCarbon();
@@ -4248,12 +4242,11 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
                         >
                           <p className="text-sm">{m.note}</p>
 
-                          <span className="text-xs opacity-70">
-                            {new Date(m.createdAt).toLocaleTimeString(locale, {
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
-                          </span>
+                          <DateTime
+                            value={m.createdAt}
+                            variant="time"
+                            className="text-xs opacity-70"
+                          />
                         </div>
                       </div>
                     </div>

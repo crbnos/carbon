@@ -80,8 +80,14 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
 
       return [labelText, selectedOption.helper].filter(Boolean).join(" - ");
     }, [selectedOption]);
-    const dropdownContentWidthCh = useMemo(() => {
-      const maxOptionChars = options.reduce((longest, option) => {
+    // The list is virtualized (items are absolutely positioned), so the
+    // popover can't size to its options naturally. Instead of estimating in
+    // `ch` (which overestimates proportional text and made every popover wider
+    // than its trigger), render the longest label in an invisible zero-height
+    // sizer row — the browser measures the true text width and the popover
+    // takes max(trigger width, real content width).
+    const longestOptionText = useMemo(() => {
+      return options.reduce((longest, option) => {
         const labelText =
           typeof option.label === "string"
             ? option.label
@@ -90,13 +96,8 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
           .filter(Boolean)
           .join(" ");
 
-        return Math.max(longest, combined.length);
-      }, 0);
-
-      // Keep a sensible minimum even for an empty list so the `emptyMessage`
-      // has room. An inline "+" trigger is tiny, so falling back to the trigger
-      // width would collapse the popover and wrap the message one word per line.
-      return Math.min(72, Math.max(36, maxOptionChars + 8));
+        return combined.length > longest.length ? combined : longest;
+      }, "");
     }, [options]);
 
     return (
@@ -159,11 +160,17 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
             align="start"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
-            className="min-w-[var(--radix-popover-trigger-width)] max-w-[min(560px,calc(100vw-2rem))] p-1"
-            style={{
-              width: `min(560px, max(var(--radix-popover-trigger-width), ${dropdownContentWidthCh}ch))`
-            }}
+            className="w-auto min-w-[max(var(--radix-popover-trigger-width),14rem)] max-w-[min(560px,calc(100vw-2rem))] p-1"
           >
+            {/* Zero-height sizer: the widest option, so the auto width fits it
+                even when virtualization keeps it unrendered. px-8 covers item
+                padding + the selected-check icon + scrollbar. */}
+            <div
+              aria-hidden
+              className="invisible h-0 overflow-hidden whitespace-nowrap px-8 text-sm"
+            >
+              {longestOptionText}
+            </div>
             {emptyMessage && options.length === 0 ? (
               emptyMessage
             ) : (
@@ -214,23 +221,33 @@ function VirtualizedCommand({
   const parentRef = useRef<HTMLDivElement>(null);
 
   const filteredOptions = useMemo(() => {
-    return search
-      ? options.filter((option) => {
-          const value =
-            typeof option.label === "string"
-              ? `${option.label} ${option.helper}`
-              : reactNodeToString(option.label);
-
-          return value.toLowerCase().includes(search.toLowerCase());
-        })
-      : options;
+    if (!search) return options;
+    const query = search.toLowerCase();
+    // Rank word-boundary hits above mid-word substrings, then earlier hits
+    // first — searching "EST" should surface "(EST/EDT, …)" timezones before
+    // cities that merely contain "est" (Creston, Bucharest…). Stable sort, so
+    // equally-ranked options keep their original order.
+    const scored: { option: (typeof options)[number]; score: number }[] = [];
+    for (const option of options) {
+      const text = (
+        typeof option.label === "string"
+          ? `${option.label} ${option.helper}`
+          : reactNodeToString(option.label)
+      ).toLowerCase();
+      const index = text.indexOf(query);
+      if (index === -1) continue;
+      const atWordStart =
+        index === 0 || !/[a-z0-9]/.test(text.charAt(index - 1));
+      scored.push({ option, score: (atWordStart ? 0 : 100000) + index });
+    }
+    return scored.sort((a, b) => a.score - b.score).map((s) => s.option);
   }, [options, search]);
 
   const virtualizer = useVirtualizer({
     count: filteredOptions.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => itemHeight,
-    overscan: 5
+    overscan: 12
   });
 
   const items = virtualizer.getVirtualItems();

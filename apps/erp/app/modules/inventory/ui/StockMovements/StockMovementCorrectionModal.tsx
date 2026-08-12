@@ -16,9 +16,10 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
+import { DateTime } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Number, Submit, TextArea } from "~/components/Form";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { stockMovementCorrectionValidator } from "../../inventory.models";
 import type { StockMovement } from "../../types";
@@ -42,7 +43,6 @@ const StockMovementCorrectionModal = ({
   onClose
 }: StockMovementCorrectionModalProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const permissions = usePermissions();
 
   const effectiveFetcher = useFetcher<{ effectiveQuantity: number | null }>();
@@ -96,7 +96,7 @@ const StockMovementCorrectionModal = ({
                 <HStack spacing={2} className="text-sm">
                   <Enumerable value={movement.entryType} />
                   <span className="text-muted-foreground">
-                    {formatDate(movement.postingDate)}
+                    <DateTime value={movement.postingDate} variant="date" />
                   </span>
                   <Badge variant="secondary">
                     {t`Current quantity`}: {effectiveQuantity}

@@ -36,9 +36,9 @@ import {
   LuUpload
 } from "react-icons/lu";
 import { Outlet, useFetchers, useRevalidator, useSubmit } from "react-router";
-import { DocumentPreview, FileDropzone } from "~/components";
+import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { useDateFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
@@ -62,7 +62,6 @@ const OpportunityDocuments = ({
   type,
   isReadOnly: isReadOnlyProp
 }: OpportunityDocumentsProps) => {
-  const { formatDate } = useDateFormatter();
   const { canDelete, download, deleteAttachment, getPath, upload } =
     useOpportunityDocuments({
       opportunityId: opportunity.id,
@@ -145,9 +144,14 @@ const OpportunityDocuments = ({
                       )}
                     </Td>
                     <Td className="text-xs font-mono">
-                      {attachment.created_at
-                        ? formatDate(attachment.created_at)
-                        : "--"}
+                      {attachment.created_at ? (
+                        <DateTime
+                          value={attachment.created_at}
+                          variant="date"
+                        />
+                      ) : (
+                        "--"
+                      )}
                     </Td>
                     <Td>
                       <div className="flex justify-end gap-2">

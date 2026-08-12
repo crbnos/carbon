@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { productionEventValidator } from "~/services/models";
@@ -28,7 +28,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const {
     id,
     action: productionAction,
-    timezone,
     trackedEntityId,
     unitIndex,
     exclusive,
@@ -49,7 +48,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .neq("type", d.type);
       if (openOthers.data && openOthers.data.length > 0) {
         const serviceRole = await getCarbonServiceRole();
-        const endTime = now(timezone ?? getLocalTimeZone()).toAbsoluteString();
+        const endTime = datetime.timestamp();
         for (const ev of openOthers.data) {
           const ended = await endProductionEvent(client, {
             id: ev.id,
@@ -68,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
       client,
       {
         ...d,
-        startTime: now(timezone ?? getLocalTimeZone()).toAbsoluteString(),
+        startTime: datetime.timestamp(),
         employeeId: userId,
         companyId,
         createdBy: userId
@@ -94,7 +93,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     const endEvent = await endProductionEvent(client, {
       id,
-      endTime: now(timezone ?? getLocalTimeZone()).toAbsoluteString(),
+      endTime: datetime.timestamp(),
       employeeId: userId
     });
     if (endEvent.error) {

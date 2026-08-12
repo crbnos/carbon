@@ -1,7 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
@@ -15,6 +15,7 @@ import {
   getOpenSalesOrderLines
 } from "~/modules/items/items.service";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 
 const defaultResponse = {
   demand: [],
@@ -41,7 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!locationId) throw new Error("Could not find locationId");
 
   const periods = await getOrCreatePeriods(
-    today(getLocalTimeZone()),
+    datetime.today(await getLocationTimeZone(client, locationId, companyId)),
     WEEKS_TO_FORECAST
   );
 

@@ -6,7 +6,7 @@ import {
   sectionConfigSchema,
   themeSchema
 } from "@carbon/documents/template";
-import { labelSizes } from "@carbon/utils";
+import { isValidTimeZone, labelSizes } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
@@ -54,7 +54,7 @@ export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
 
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   scopes: zfd.text(z.string().optional()),
   expiresAt: zfd.text(
     z
@@ -67,7 +67,7 @@ export const apiKeyValidator = z.object({
 });
 
 const companyAddress = {
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   addressLine1: z.string().min(1, { message: "Address is required" }),
   addressLine2: zfd.text(z.string().optional()),
   city: z.string().min(1, { message: "City is required" }),
@@ -75,6 +75,10 @@ const companyAddress = {
   postalCode: z.string().min(1, { message: "Postal Code is required" }),
   countryCode: z.string().min(1, { message: "Country is required" }),
   baseCurrencyCode: zfd.text(z.string()),
+  timezone: z
+    .string()
+    .min(1, { message: "Timezone is required" })
+    .refine(isValidTimeZone, { message: "Invalid timezone" }),
   website: zfd.text(z.string().optional())
 };
 
@@ -110,7 +114,7 @@ export const onboardingCompanyValidator = z.object({
 export const customFieldValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
     dataTypeId: zfd.numeric(
       z.number().min(1, { message: "Data type is required" })
@@ -359,7 +363,7 @@ export const themeValidator = z.object({
 export const webhookValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
     url: z.string().url({ message: "Must be a valid URL" }),
     onInsert: zfd.checkbox(),

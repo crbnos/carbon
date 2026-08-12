@@ -1,4 +1,4 @@
-import { error, success } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT, error, success } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash, requireAuthSession } from "@carbon/auth/session.server";
@@ -9,6 +9,13 @@ import {
 } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
+import { now, parseAbsolute } from "@internationalized/date";
+
+// Re-exported, not reimplemented: this module used to carry a near-identical
+// copy that (a) missed the canonical version's cache TTL and (b) bypassed its
+// per-request memoization.
+export { getUserClaims } from "@carbon/auth/users.server";
+
 import { getLogger } from "@carbon/logger";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -31,6 +38,21 @@ import { insertEmployeeJob } from "../people/people.service";
 
 const logger = getLogger("erp", "users");
 
+/**
+ * Controlled environments (ITAR) expire invites 7 days after creation. Computed
+ * at read time — no `expiresAt` column. Resend resets `createdAt`, restarting
+ * the window. Enforced only when CONTROLLED_ENVIRONMENT is on.
+ */
+export const INVITE_EXPIRY_DAYS = 7;
+
+export function isControlledInviteExpired(createdAt: string): boolean {
+  if (!CONTROLLED_ENVIRONMENT) return false;
+  const expiresAt = parseAbsolute(createdAt, "UTC").add({
+    days: INVITE_EXPIRY_DAYS
+  });
+  return expiresAt.compare(now("UTC")) < 0;
+}
+
 export async function acceptInvite(
   serviceRole: SupabaseClient<Database>,
   code: string,
@@ -45,6 +67,16 @@ export async function acceptInvite(
     .single();
 
   if (invite.error) return invite;
+
+  if (isControlledInviteExpired(invite.data.createdAt)) {
+    return {
+      data: null,
+      error: {
+        message:
+          "This invite has expired. Please request a new invite to continue."
+      }
+    };
+  }
 
   if (email && invite.data.email !== email) {
     throw new Error(
@@ -262,19 +294,21 @@ export async function createCustomerAccount(
 
   if (user.data) {
     userId = user.data.id;
+    if (!(await authIdentityExists(userId))) {
+      return {
+        success: false,
+        message:
+          "This user's auth account no longer exists. Contact support before re-adding."
+      };
+    }
   } else {
     isNewUser = true;
-    const createSupabaseUser = await serviceRole.auth.admin.createUser({
-      email: email.toLowerCase(),
-      password: crypto.randomUUID(),
-      email_confirm: true
-    });
-
-    if (createSupabaseUser.error) {
-      return { success: false, message: createSupabaseUser.error.message };
+    const resolvedId = await resolveAuthUserId(email);
+    if (!resolvedId) {
+      return { success: false, message: "Failed to create auth account" };
     }
+    userId = resolvedId;
 
-    userId = createSupabaseUser.data.user.id;
     const createCarbonUser = await createUser(serviceRole, {
       id: userId,
       email: email.toLowerCase(),
@@ -347,7 +381,9 @@ export async function createEmployeeAccount(
     employeeType,
     locationId,
     companyId,
-    createdBy
+    createdBy,
+    attestedBy,
+    attestedAt
   }: {
     email: string;
     firstName: string;
@@ -356,6 +392,10 @@ export async function createEmployeeAccount(
     locationId: string;
     companyId: string;
     createdBy: string;
+    // ITAR (controlled environments): the inviter's 22 CFR 120.62 U.S.-person
+    // attestation. Null in ordinary deployments.
+    attestedBy?: string | null;
+    attestedAt?: string | null;
   }
 ): Promise<
   | { success: false; message: string }
@@ -377,6 +417,13 @@ export async function createEmployeeAccount(
 
   if (user.data) {
     userId = user.data.id;
+    if (!(await authIdentityExists(userId))) {
+      return {
+        success: false,
+        message:
+          "This user's auth account no longer exists. Contact support before re-adding."
+      };
+    }
 
     const existingEmployee = await client
       .from("employee")
@@ -393,17 +440,12 @@ export async function createEmployeeAccount(
     }
   } else {
     isNewUser = true;
-    const createSupabaseUser = await serviceRole.auth.admin.createUser({
-      email: email.toLowerCase(),
-      password: crypto.randomUUID(),
-      email_confirm: true
-    });
-
-    if (createSupabaseUser.error) {
-      return { success: false, message: createSupabaseUser.error.message };
+    const resolvedId = await resolveAuthUserId(email);
+    if (!resolvedId) {
+      return { success: false, message: "Failed to create auth account" };
     }
+    userId = resolvedId;
 
-    userId = createSupabaseUser.data.user.id;
     const createCarbonUser = await createUser(serviceRole, {
       id: userId,
       email: email.toLowerCase(),
@@ -437,7 +479,9 @@ export async function createEmployeeAccount(
       email,
       companyId,
       createdBy,
-      code
+      code,
+      attestedBy: attestedBy ?? null,
+      attestedAt: attestedAt ?? null
     })
   ]);
 
@@ -506,19 +550,21 @@ export async function createSupplierAccount(
 
   if (user.data) {
     userId = user.data.id;
+    if (!(await authIdentityExists(userId))) {
+      return {
+        success: false,
+        message:
+          "This user's auth account no longer exists. Contact support before re-adding."
+      };
+    }
   } else {
     isNewUser = true;
-    const createSupabaseUser = await serviceRole.auth.admin.createUser({
-      email: email.toLowerCase(),
-      password: crypto.randomUUID(),
-      email_confirm: true
-    });
-
-    if (createSupabaseUser.error) {
-      return { success: false, message: createSupabaseUser.error.message };
+    const resolvedId = await resolveAuthUserId(email);
+    if (!resolvedId) {
+      return { success: false, message: "Failed to create auth account" };
     }
+    userId = resolvedId;
 
-    userId = createSupabaseUser.data.user.id;
     const createCarbonUser = await createUser(serviceRole, {
       id: userId,
       email: email.toLowerCase(),
@@ -641,48 +687,40 @@ export async function getUserByEmail(email: string) {
     .single();
 }
 
-export async function getUserClaims(userId: string, companyId: string) {
-  let claims: {
-    permissions: Record<string, Permission>;
-    role: string | null;
-  } | null = null;
+// Returns false if the auth identity for this userId has been deleted, leaving only an app-side row.
+async function authIdentityExists(userId: string): Promise<boolean> {
+  const { error } = await getCarbonServiceRole().auth.admin.getUserById(userId);
+  return !error;
+}
 
-  try {
-    const cachedClaims = await redis.get(getPermissionCacheKey(userId));
-    if (cachedClaims) {
-      claims = JSON.parse(cachedClaims) as {
-        permissions: Record<string, Permission>;
-        role: string | null;
-      };
-    }
-  } catch (e) {
-    logger.error("Failed to get claims from redis", { error: e });
-  } finally {
-    // if we don't have permissions from redis, get them from the database
-    if (!claims) {
-      // TODO: remove service role from here, and move it up a level
-      const rawClaims = await getClaims(
-        getCarbonServiceRole(),
-        userId,
-        companyId
-      );
-      if (rawClaims.error || rawClaims.data === null) {
-        logger.error("Failed to get claims", { error: rawClaims.error });
-        throw new Error("Failed to get claims");
-      }
+// Creates the auth user for email, or recovers the existing ID if a prior deletion left one behind.
+async function resolveAuthUserId(email: string): Promise<string | null> {
+  const serviceRole = getCarbonServiceRole();
+  const result = await serviceRole.auth.admin.createUser({
+    email: email.toLowerCase(),
+    password: crypto.randomUUID(),
+    email_confirm: true
+  });
 
-      // convert rawClaims to permissions
-      claims = makePermissionsFromClaims(rawClaims.data as Json[]);
+  if (!result.error) return result.data.user.id;
 
-      // store claims in redis
-      await redis.set(getPermissionCacheKey(userId), JSON.stringify(claims));
+  // Only recover for "already registered"; other errors (network, rate limit) surface as-is.
+  if (result.error.code !== "user_already_exists") return null;
 
-      if (!claims) {
-        throw new Error("Failed to get claims");
-      }
-    }
-
-    return claims;
+  // auth record exists but app user row doesn't; find the orphaned ID.
+  const target = email.toLowerCase();
+  let page = 1;
+  const perPage = 1000;
+  while (true) {
+    const { data, error } = await serviceRole.auth.admin.listUsers({
+      page,
+      perPage
+    });
+    if (error || !data?.users?.length) return null;
+    const match = data.users.find((u) => u.email?.toLowerCase() === target);
+    if (match) return match.id;
+    if (data.users.length < perPage) return null;
+    page++;
   }
 }
 

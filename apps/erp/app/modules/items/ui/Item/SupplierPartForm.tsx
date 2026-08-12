@@ -42,6 +42,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import type { z } from "zod";
+import { DateTime } from "~/components";
 import { EditableNumber } from "~/components/Editable";
 import {
   ConversionFactor,
@@ -54,12 +55,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import Grid from "~/components/Grid";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions,
-  useUser
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { supplierPartValidator } from "../../items.models";
 
@@ -265,7 +261,6 @@ function PurchaseHistory({
   baseCurrency: string;
 }) {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   if (history.length === 0) return null;
 
   return (
@@ -298,9 +293,14 @@ function PurchaseHistory({
                         {line.purchaseOrder.purchaseOrderId}
                       </Link>
                       <span className="text-xs text-muted-foreground">
-                        {line.purchaseOrder.orderDate
-                          ? formatDate(line.purchaseOrder.orderDate)
-                          : "—"}
+                        {line.purchaseOrder.orderDate ? (
+                          <DateTime
+                            value={line.purchaseOrder.orderDate}
+                            variant="date"
+                          />
+                        ) : (
+                          "—"
+                        )}
                       </span>
                     </HStack>
                     <div className="my-4">

@@ -24,6 +24,7 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
+import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
@@ -41,7 +42,8 @@ import {
   AddressAutocomplete,
   Currency,
   Input,
-  Submit
+  Submit,
+  Timezone
 } from "~/components/Form";
 import { useRouteData, useUser } from "~/hooks";
 import type { Company } from "~/modules/settings";
@@ -280,7 +282,8 @@ function CompanyBreadcrumb() {
                 onSubmit={companyForm.onClose}
                 defaultValues={{
                   countryCode: "US",
-                  baseCurrencyCode: "USD"
+                  baseCurrencyCode: "USD",
+                  timezone: getLocalTimeZone()
                 }}
               >
                 <ModalHeader>
@@ -292,6 +295,7 @@ function CompanyBreadcrumb() {
                   <VStack spacing={4}>
                     <Input autoFocus name="name" label={t`Company Name`} />
                     <AddressAutocomplete variant="grid" />
+                    <Timezone name="timezone" label={t`Timezone`} />
                     <Currency
                       name="baseCurrencyCode"
                       label={t`Base Currency`}

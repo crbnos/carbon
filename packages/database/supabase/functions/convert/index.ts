@@ -1,12 +1,8 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import {
-  getLocalTimeZone,
-  now,
-  toCalendarDate,
-} from "npm:@internationalized/date";
 import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import { format } from "https://deno.land/std@0.205.0/datetime/format.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
@@ -371,7 +367,7 @@ serve(async (req: Request) => {
               locationId: purchaseOrderDelivery.data.locationId,
               paymentTermId: purchaseOrderPayment.data.paymentTermId,
               currencyCode: purchaseOrder.data.currencyCode ?? "USD",
-              dateIssued: new Date().toISOString().split("T")[0],
+              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
               exchangeRate: purchaseOrder.data.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
               supplierInteractionId: purchaseOrder.data.supplierInteractionId,
@@ -526,7 +522,7 @@ serve(async (req: Request) => {
 
         let insertedSalesOrderId = "";
         await db.transaction().execute(async (trx) => {
-          const today = format(new Date(), "yyyy-MM-dd");
+          const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
           const salesOrderId = await getNextSequence(
             trx,
             "salesOrder",
@@ -864,7 +860,7 @@ serve(async (req: Request) => {
               locationId: salesOrderShipment.data.locationId,
               paymentTermId: salesOrderPayment.data.paymentTermId,
               currencyCode: salesOrder.data.currencyCode ?? "USD",
-              dateIssued: new Date().toISOString().split("T")[0],
+              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
               exchangeRate: salesOrder.data.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
               opportunityId: salesOrder.data.opportunityId,
@@ -1147,9 +1143,9 @@ serve(async (req: Request) => {
                 customerLocationId: salesRfq.data?.customerLocationId,
                 customerReference: salesRfq.data?.customerReference,
                 locationId: salesRfq.data?.locationId,
-                expirationDate: toCalendarDate(
-                  now(getLocalTimeZone()).add({ days: 30 })
-                ).toString(),
+                expirationDate: datetime.today(
+                  await getCompanyTimeZone(client, companyId)
+                ).add({ days: 30 }).toString(),
                 salesPersonId: salesRfq.data?.salesPersonId ?? userId,
                 status: "Draft",
                 externalNotes: salesRfq.data?.externalNotes,
@@ -1453,7 +1449,7 @@ serve(async (req: Request) => {
               locationId: salesOrderShipment.data.locationId,
               paymentTermId: salesOrderPayment.data.paymentTermId,
               currencyCode: salesOrder.data.currencyCode ?? "USD",
-              dateIssued: new Date().toISOString().split("T")[0],
+              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
               exchangeRate: salesOrder.data.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
               opportunityId: salesOrder.data.opportunityId,

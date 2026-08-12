@@ -3,6 +3,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { auditConfig } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import { inngest } from "../../client";
 
 const log = getLogger("jobs", "audit-archive");
@@ -47,11 +48,12 @@ async function archiveCompanyLogs(
   const jsonl = records.map((r) => JSON.stringify(r)).join("\n");
   const gzipped = gzipSync(Buffer.from(jsonl));
 
-  // Generate archive path
-  const nowDate = new Date();
-  const year = nowDate.getFullYear();
-  const month = String(nowDate.getMonth() + 1).padStart(2, "0");
-  const day = String(nowDate.getDate()).padStart(2, "0");
+  // Generate archive path — a storage key, so the UTC calendar is the
+  // explicit, deterministic choice under any process timezone.
+  const utcToday = datetime.today("UTC");
+  const year = utcToday.year;
+  const month = String(utcToday.month).padStart(2, "0");
+  const day = String(utcToday.day).padStart(2, "0");
   const timestamp = `${year}-${month}-${day}`;
   const archivePath = `audit-logs/${companyId}/${year}/${month}/${timestamp}.jsonl.gz`;
 

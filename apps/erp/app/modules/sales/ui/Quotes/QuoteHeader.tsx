@@ -339,8 +339,6 @@ const QuoteHeader = () => {
       {finalizeModal.isOpen && (
         <QuoteFinalizeModal
           quote={routeData?.quote}
-          lines={eligibleLines ?? []}
-          pricing={routeData?.prices ?? []}
           shipment={routeData?.shipment ?? null}
           onClose={finalizeModal.onClose}
           fetcher={finalizeFetcher}

@@ -7,7 +7,9 @@ import type {
 } from "./check";
 import { moduleShape } from "./conformance/module-shape";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
+import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
+import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import {
   loadSqlFiles,
   migrationsDir,
@@ -15,10 +17,17 @@ import {
   type SqlFile
 } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
+import { loadServerFiles } from "./sources/server-files";
 
 export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noNumericPrecision,
   noLegacyRls
+];
+
+/** Checks that run over server-side TS, not SQL migrations. */
+export const SERVER_CHECKS: ConformanceCheck[] = [
+  noLocalTimezone,
+  noZeroConcurrency
 ];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
@@ -55,11 +64,12 @@ export function scanModules(
   return out;
 }
 
-/** Every finding across the real migrations (text) + modules (structure) under `root`. */
+/** Every finding across the real migrations (text) + modules (structure) + server TS under `root`. */
 export function collectFindings(root: string = repoRoot()): Finding[] {
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root))),
-    ...scanModules(loadModules(modulesDir(root)))
+    ...scanModules(loadModules(modulesDir(root))),
+    ...scanAll(loadServerFiles(root), SERVER_CHECKS)
   ];
 }
 

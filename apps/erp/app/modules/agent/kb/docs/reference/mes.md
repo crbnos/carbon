@@ -55,7 +55,7 @@ Open an operation and the station panel is where the shift actually happens. A b
 Good, bad, and reworked units are reported separately, so yield stays honest:
 
   - **Log Completed**: Records good units off this operation. **"Complete All"** fills the remaining quantity; **"Total Quantity"** sets it explicitly.
-  - **Log Scrap**: Records scrapped units against a required **"Scrap Reason"**, so the loss is attributable.
+  - **Log Scrap**: Records scrapped units against a required **"Scrap Reason"**, so the loss is attributable. The unit flips to **"Scrapped"**, a replacement is spawned, and the routing reopens — see `docs/reference/scrap`.
   - **Log Rework**: Records units reworked in place at this operation, without sending them anywhere.
 
 Reworking *in place* is different from sending a unit back upstream. **"Create Rework"** does the latter: pick an operation under **"Go back to operation"**, give a **"Reason for rework"**, and Carbon re-runs every operation from that point forward to the current one.

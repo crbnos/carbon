@@ -149,6 +149,12 @@ const MaterialFinishesTable = memo(
         data={data}
         columns={columns}
         count={count}
+        importCSV={[
+          {
+            table: "materialFinish" as const,
+            label: t`Material Finishes`
+          }
+        ]}
         primaryAction={
           permissions.can("create", "parts") && (
             <New

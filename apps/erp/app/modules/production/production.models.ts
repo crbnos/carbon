@@ -830,7 +830,7 @@ export const getJobMethodValidator = z.object({
 
 export const procedureValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   version: zfd.numeric(z.number().min(0)),
   processId: zfd.text(z.string().optional()),
   content: zfd.text(z.string().optional()),
@@ -841,7 +841,7 @@ export const procedureStepValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     procedureId: z.string().min(1, { message: "Procedure is required" }),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     description: zfd.text(z.string().optional()),
     type: z.enum(procedureStepType, {
       errorMap: () => ({ message: "Type is required" })
@@ -978,12 +978,12 @@ export const scheduleJobUpdateValidator = z.object({
 
 export const scrapReasonValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const failureModeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const maintenanceDispatchValidator = z.object({
@@ -1051,7 +1051,7 @@ export const maintenanceDispatchWorkCenterValidator = z.object({
 
 export const maintenanceScheduleValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   description: zfd.text(z.string().optional()),
   workCenterId: z.string().min(1, { message: "Work center is required" }),
   frequency: z.enum(maintenanceFrequency),
@@ -1196,7 +1196,7 @@ const jsonField = <T extends z.ZodTypeAny>(schema: T) =>
 
 export const assemblyInstructionValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   modelUploadId: z.string().min(1, { message: "Model is required" }),
   itemId: zfd.text(z.string().optional())
 });
@@ -1425,7 +1425,7 @@ export const assemblyStepToolValidator = z.object({
 export const assemblyUnitValidator = z.object({
   id: zfd.text(z.string().optional()),
   modelUploadId: z.string().min(1),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   componentNodeIds: jsonField(z.array(z.string()).min(1)),
   itemId: zfd.text(z.string().optional())
 });

@@ -297,6 +297,9 @@ patchedDependencies:
   '@vercel/react-router@1.2.6':
     hash: fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a
     path: patches/@vercel__react-router@1.2.6.patch
+  supabase@2.89.0:
+    hash: f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c
+    path: patches/supabase@2.89.0.patch
 
 importers:
 
@@ -380,7 +383,7 @@ importers:
         version: 5.0.10
       supabase:
         specifier: 'catalog:'
-        version: 2.89.0
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       ts-morph:
         specifier: 22.0.0
         version: 22.0.0
@@ -641,6 +644,9 @@ importers:
       '@carbon/viewer':
         specifier: workspace:*
         version: link:../../packages/viewer
+      '@carbon/workflows':
+        specifier: workspace:*
+        version: link:../../packages/workflows
       '@dagrejs/dagre':
         specifier: ^1.1.4
         version: 1.1.8
@@ -697,7 +703,7 @@ importers:
         version: 3.4.5(encoding@0.1.13)(react@18.3.1)
       '@react-router/remix-routes-option-adapter':
         specifier: 'catalog:'
-        version: 7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)
+        version: 7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)
       '@react-router/serve':
         specifier: 'catalog:'
         version: 7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
@@ -742,7 +748,7 @@ importers:
         version: 1.6.1(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@visx/responsive':
         specifier: 2.17.0
         version: 2.17.0(react@18.3.1)
@@ -787,7 +793,7 @@ importers:
         version: 11.18.2(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       inngest:
         specifier: ^3.52.7
-        version: 3.54.0(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.14)(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76)
+        version: 3.54.0(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@4.22.1)(hono@4.12.14)(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76)
       intl-parse-accept-language:
         specifier: 'catalog:'
         version: 1.0.0
@@ -977,16 +983,16 @@ importers:
         version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)(react@18.3.1)
       '@lingui/vite-plugin':
         specifier: 'catalog:'
-        version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
+        version: 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.19(tailwindcss@4.3.0)
       '@tailwindcss/vite':
         specifier: 'catalog:'
-        version: 4.3.0(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 4.3.0(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       '@types/d3':
         specifier: 7.4.3
         version: 7.4.3
@@ -1028,7 +1034,7 @@ importers:
         version: 4.1.5
       supabase:
         specifier: 'catalog:'
-        version: 2.89.0
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       tailwind-scrollbar:
         specifier: 'catalog:'
         version: 4.0.2(react@18.3.1)(tailwindcss@4.3.0)
@@ -1046,13 +1052,13 @@ importers:
         version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+        version: 8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
       vite-plugin-babel-macros:
         specifier: 'catalog:'
-        version: 1.0.6(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 1.0.6(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       vitest:
         specifier: 'catalog:'
-        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
 
   apps/mes:
     dependencies:
@@ -1136,7 +1142,7 @@ importers:
         version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)(react@18.3.1)
       '@lingui/vite-plugin':
         specifier: 'catalog:'
-        version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       '@nanostores/react':
         specifier: 'catalog:'
         version: 0.7.3(nanostores@0.9.5)(react@18.3.1)
@@ -1148,10 +1154,10 @@ importers:
         version: 3.4.5(encoding@0.1.13)(react@18.3.1)
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
+        version: 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
       '@react-router/remix-routes-option-adapter':
         specifier: 'catalog:'
-        version: 7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)
+        version: 7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)
       '@react-router/serve':
         specifier: 'catalog:'
         version: 7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
@@ -1172,7 +1178,7 @@ importers:
         version: 0.5.19(tailwindcss@4.3.0)
       '@tailwindcss/vite':
         specifier: 'catalog:'
-        version: 4.3.0(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 4.3.0(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       '@tanstack/react-query':
         specifier: 5.97.0
         version: 5.97.0(react@18.3.1)
@@ -1217,7 +1223,7 @@ importers:
         version: 1.6.1(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@xyflow/react':
         specifier: 12.10.2
         version: 12.10.2(@types/react@18.3.28)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1295,7 +1301,7 @@ importers:
         version: 4.6.9
       supabase:
         specifier: 'catalog:'
-        version: 2.89.0
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       tailwind-merge:
         specifier: 'catalog:'
         version: 3.3.0
@@ -1347,13 +1353,13 @@ importers:
         version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+        version: 8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
       vite-plugin-babel-macros:
         specifier: 'catalog:'
-        version: 1.0.6(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 1.0.6(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       vitest:
         specifier: 'catalog:'
-        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       wait-on:
         specifier: 'catalog:'
         version: 7.2.0
@@ -1882,6 +1888,9 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@carbon/workflows':
+        specifier: workspace:*
+        version: link:../workflows
       '@types/node':
         specifier: ^22
         version: 22.19.7
@@ -1943,6 +1952,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@internationalized/date':
+        specifier: 'catalog:'
+        version: 3.12.0
       '@supabase/postgrest-js':
         specifier: 'catalog:'
         version: 2.80.0
@@ -1957,7 +1969,7 @@ importers:
         version: 0.28.15
       kysely-supabase:
         specifier: 0.2.1
-        version: 0.2.1(kysely@0.28.15)(supabase@2.89.0)
+        version: 0.2.1(kysely@0.28.15)(supabase@2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c))
       nanoid:
         specifier: 'catalog:'
         version: 5.1.7
@@ -2000,7 +2012,7 @@ importers:
         version: 5.0.10
       supabase:
         specifier: 'catalog:'
-        version: 2.89.0
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3)
@@ -2263,7 +2275,7 @@ importers:
         version: 4.6.9
       supabase:
         specifier: 'catalog:'
-        version: 2.89.0
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3)
@@ -2496,6 +2508,9 @@ importers:
       '@carbon/viewer':
         specifier: workspace:*
         version: link:../viewer
+      '@carbon/workflows':
+        specifier: workspace:*
+        version: link:../workflows
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -2552,10 +2567,13 @@ importers:
         version: 4.6.9
       supabase:
         specifier: 'catalog:'
-        version: 2.89.0
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3)
+      undici:
+        specifier: ^8.10.0
+        version: 8.10.0
       zod:
         specifier: 'catalog:'
         version: 3.25.76
@@ -2651,6 +2669,9 @@ importers:
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../notifications
+      '@carbon/workflows':
+        specifier: workspace:*
+        version: link:../workflows
       '@slack/web-api':
         specifier: 'catalog:'
         version: 7.10.0
@@ -2660,6 +2681,9 @@ importers:
       inngest:
         specifier: 3.54.0
         version: 3.54.0(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.14)(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76)
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.7
       resend:
         specifier: 3.5.0
         version: 3.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2668,7 +2692,7 @@ importers:
         version: 4.6.9
       supabase:
         specifier: 'catalog:'
-        version: 2.89.0
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       zod:
         specifier: 'catalog:'
         version: 3.25.76
@@ -3540,6 +3564,40 @@ importers:
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/workflows:
+    dependencies:
+      '@carbon/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@internationalized/date':
+        specifier: 'catalog:'
+        version: 3.12.0
+      '@lingui/core':
+        specifier: 'catalog:'
+        version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
+    devDependencies:
+      '@carbon/config':
+        specifier: workspace:*
+        version: link:../config
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
+      '@carbon/glossary':
+        specifier: workspace:*
+        version: link:../glossary
+      kysely:
+        specifier: 'catalog:'
+        version: 0.28.15
       typescript:
         specifier: 'catalog:'
         version: 5.8.3
@@ -15993,6 +16051,10 @@ packages:
   undici-types@8.3.0:
     resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
+  undici@8.10.0:
+    resolution: {integrity: sha512-HvltHd7avK13QIw/oLe4qoOLyoVSoafqJ2jYOrtMRBkbYT31eiBQ8O0ehRKZiEZCMEyLFQNIADpgCWC5fALvYQ==}
+    engines: {node: '>=22.19.0'}
+
   unicode-properties@1.4.1:
     resolution: {integrity: sha512-CLjCCLQ6UuMxWnbIylkisbRj31qxHPAurvena/0iwSVbQ2G1VY5/HjV0IRabOEbDHlzZlRdCrD4NhB0JtU40Pg==}
 
@@ -27130,6 +27192,44 @@ snapshots:
 
   inline-style-parser@0.2.7: {}
 
+  inngest@3.54.0(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@4.22.1)(hono@4.12.14)(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76):
+    dependencies:
+      '@bufbuild/protobuf': 2.11.0
+      '@inngest/ai': 0.1.7
+      '@jpwilliams/waitgroup': 2.1.1
+      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/auto-instrumentations-node': 0.72.0(@opentelemetry/api@1.9.0)(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))
+      '@opentelemetry/context-async-hooks': 2.6.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/exporter-trace-otlp-http': 0.214.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/instrumentation': 0.214.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/resources': 2.6.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-base': 2.6.1(@opentelemetry/api@1.9.0)
+      '@standard-schema/spec': 1.1.0
+      '@traceloop/instrumentation-anthropic': 0.20.0
+      '@types/debug': 4.1.13
+      '@types/ms': 2.1.0
+      canonicalize: 1.0.8
+      chalk: 4.1.2
+      cross-fetch: 4.1.0(encoding@0.1.13)
+      debug: 4.4.3(supports-color@8.1.1)
+      hash.js: 1.1.7
+      json-stringify-safe: 5.0.1
+      ms: 2.1.3
+      serialize-error-cjs: 0.1.4
+      strip-ansi: 5.2.0
+      temporal-polyfill: 0.2.5
+      ulid: 2.4.0
+      zod: 3.25.76
+    optionalDependencies:
+      express: 4.22.1
+      hono: 4.12.14
+      next: 16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      typescript: 5.8.3
+    transitivePeerDependencies:
+      - '@opentelemetry/core'
+      - encoding
+      - supports-color
+
   inngest@3.54.0(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.14)(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76):
     dependencies:
       '@bufbuild/protobuf': 2.11.0
@@ -27589,10 +27689,10 @@ snapshots:
 
   konva@9.3.22: {}
 
-  kysely-supabase@0.2.1(kysely@0.28.15)(supabase@2.89.0):
+  kysely-supabase@0.2.1(kysely@0.28.15)(supabase@2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)):
     dependencies:
       kysely: 0.28.15
-      supabase: 2.89.0
+      supabase: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
 
   kysely@0.28.15: {}
 
@@ -30677,7 +30777,7 @@ snapshots:
       tinyglobby: 0.2.17
       ts-interface-checker: 0.1.13
 
-  supabase@2.89.0:
+  supabase@2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c):
     dependencies:
       bin-links: 6.0.0
       https-proxy-agent: 9.0.0
@@ -31167,6 +31267,8 @@ snapshots:
 
   undici-types@8.3.0:
     optional: true
+
+  undici@8.10.0: {}
 
   unicode-properties@1.4.1:
     dependencies:

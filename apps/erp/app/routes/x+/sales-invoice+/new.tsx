@@ -3,12 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { useUrlParams, useUser } from "~/hooks";
+import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import {
   createSalesInvoiceFromSalesOrder,
   createSalesInvoiceFromShipment,
@@ -143,12 +142,13 @@ export default function SalesInvoiceNewRoute() {
   const customerId = params.get("customerId");
   const { defaults } = useUser();
 
+  const companyToday = useCompanyToday();
   const initialValues = {
     id: undefined,
     invoiceId: undefined,
     customerId: customerId ?? "",
     locationId: defaults?.locationId ?? "",
-    dateIssued: today(getLocalTimeZone()).toString()
+    dateIssued: companyToday
   };
 
   return (

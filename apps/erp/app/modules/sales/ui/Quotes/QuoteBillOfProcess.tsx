@@ -61,6 +61,7 @@ import {
 import { useFetcher, useFetchers, useParams } from "react-router";
 import type { z } from "zod";
 import {
+  DateTime,
   DirectionAwareTabs,
   EmployeeAvatar,
   OperationTypeIcon,
@@ -98,12 +99,7 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
-import {
-  useDateFormatter,
-  usePermissions,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type {
   OperationParameter,
   OperationStep,
@@ -1167,7 +1163,6 @@ function AttributesListItem({
   className?: string;
 }) {
   const { t } = useLingui();
-  const { formatRelativeTime } = useDateFormatter();
   const {
     name,
     unitOfMeasureCode,
@@ -1441,7 +1436,8 @@ function AttributesListItem({
           <div className="flex items-center justify-end gap-2">
             <HStack spacing={2}>
               <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                {isUpdated ? "Updated" : "Created"}{" "}
+                <DateTime value={date} variant="relative" />
               </span>
               <EmployeeAvatar employeeId={person} withName={false} />
             </HStack>
@@ -1585,7 +1581,6 @@ function ParametersListItem({
   className?: string;
 }) {
   const { t } = useLingui();
-  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
@@ -1662,7 +1657,8 @@ function ParametersListItem({
           <div className="flex items-center justify-end gap-2">
             <HStack spacing={2}>
               <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                {isUpdated ? "Updated" : "Created"}{" "}
+                <DateTime value={date} variant="relative" />
               </span>
               <EmployeeAvatar employeeId={person} withName={false} />
             </HStack>
@@ -2606,7 +2602,6 @@ function ToolsListItem({
   className?: string;
 }) {
   const { t } = useLingui();
-  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
@@ -2690,7 +2685,8 @@ function ToolsListItem({
           <div className="flex items-center justify-end gap-2">
             <HStack spacing={2}>
               <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                {isUpdated ? "Updated" : "Created"}{" "}
+                <DateTime value={date} variant="relative" />
               </span>
               <EmployeeAvatar employeeId={person} withName={false} />
             </HStack>

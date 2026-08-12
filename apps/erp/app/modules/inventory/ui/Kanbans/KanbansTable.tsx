@@ -21,7 +21,6 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -44,6 +43,7 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   exportOnlyColumn,
   Hyperlink,
@@ -502,7 +502,9 @@ const KanbansTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: ({ row }) => formatDate(row.original.createdAt),
+          cell: ({ row }) => (
+            <DateTime value={row.original.createdAt} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -527,7 +529,9 @@ const KanbansTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: ({ row }) => formatDate(row.original.updatedAt),
+          cell: ({ row }) => (
+            <DateTime value={row.original.updatedAt} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }

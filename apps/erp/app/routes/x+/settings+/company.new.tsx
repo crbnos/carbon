@@ -6,7 +6,6 @@ import { updateCompanySession } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { insertEmployeeJob } from "~/modules/people";
@@ -58,7 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ...locationData,
     name: "Headquarters",
     companyId,
-    timezone: getLocalTimeZone(),
+    // timezone comes from locationData — HQ shares the company's timezone.
     createdBy: userId
   });
 

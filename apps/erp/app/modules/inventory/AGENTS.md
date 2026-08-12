@@ -5,7 +5,7 @@ Tracks item quantities across locations and storage units. Manages receipts, shi
 ## Key Domain Concepts
 
 - **Storage Unit** — hierarchical container (bin, shelf, rack, zone) within a location. Tree structure via `parentId`. Renamed from `shelf` in migration `20260417000100`. MUST use `storageUnit` naming, never `shelf`.
-- **Tracked Entity** — serial/batch/lot-tracked item instance with `readableId` (serial or batch number), `status` (Available/Reserved/On Hold/Consumed/Rejected), `quantity`, and `expirationDate`. Batch items have `batchProperty` definitions.
+- **Tracked Entity** — serial/batch/lot-tracked item instance with `readableId` (serial or batch number), `status` (Available/Reserved/On Hold/Consumed/Rejected/Scrapped), `quantity`, and `expirationDate`. `Scrapped` is terminal but recoverable via the Unscrap adjustment. Batch items have `batchProperty` definitions.
 - **Item Ledger** — append-only log of every inventory movement (`itemLedger` table). Source of truth for on-hand quantities. MUST never INSERT directly — always go through service functions.
 - **Receipt** — inbound inventory from POs or production. Lines link to `purchaseOrderLine` or jobs. Posting creates ledger entries and tracked entities.
 - **Shipment** — outbound inventory to customers. Lines link to sales order lines.
@@ -44,6 +44,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 | Table / View | Purpose |
 |---|---|
 | `itemLedger` / `itemLedgers` (view) | Append-only movement log: item, location, quantity, document ref, trackedEntityId |
+| `itemStockQuantities` | On-hand per (item, company, location) — a real TABLE maintained transactionally by a statement-level event handler on `itemLedger` (`apply_item_stock_quantities`, attached via `attach_statement_handler`; was a 30-min-refresh matview until `20260812002454`). Excludes `Rejected` tracked stock. Never write to it directly — it is derived state; the nightly `reconcile-item-stock-quantities` cron repairs any drift. Read by the item-dropdown store (with realtime push), the workflow engine's `item.quantityOnHand`, and MRP's on-hand input |
 | `storageUnit` | Hierarchical bins/shelves via `parentId`; scoped to location |
 | `storageType` | Storage unit type definitions (capacity, constraints) |
 | `trackedEntity` | Serial/batch/lot instances with readableId, status, quantity, expirationDate |

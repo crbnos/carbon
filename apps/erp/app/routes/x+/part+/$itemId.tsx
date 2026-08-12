@@ -112,38 +112,41 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const methodTree = getMakeMethods(client, itemId, companyId).then(
-    async (makeMethods) => {
-      // Include CO-owned drafts so a revision/new-part item created by an open
-      // Change Notice shows its method tree on the item master, in sync with the
-      // CO (same makeMethod). Active is still preferred as the default below.
-      const selectable = makeMethods.data ?? [];
-      const makeMethod = requestedMethodId
-        ? (selectable.find((m) => m.id === requestedMethodId) ??
-          selectable.find((m) => m.status === "Active") ??
-          selectable[0])
-        : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
-      if (!makeMethod) return null;
+  // One query, two consumers: `methodTree` derives from it and the raw list is
+  // also deferred to the client. Calling getMakeMethods twice issued the same
+  // query twice on every part-detail load.
+  const makeMethodsPromise = getMakeMethods(client, itemId, companyId);
 
-      const fullMethod = await getMakeMethodById(
-        client,
-        makeMethod.id,
-        companyId
-      );
-      if (fullMethod.error || !fullMethod.data) return null;
+  const methodTree = makeMethodsPromise.then(async (makeMethods) => {
+    // Include CO-owned drafts so a revision/new-part item created by an open
+    // Change Notice shows its method tree on the item master, in sync with the
+    // CO (same makeMethod). Active is still preferred as the default below.
+    const selectable = makeMethods.data ?? [];
+    const makeMethod = requestedMethodId
+      ? (selectable.find((m) => m.id === requestedMethodId) ??
+        selectable.find((m) => m.status === "Active") ??
+        selectable[0])
+      : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
+    if (!makeMethod) return null;
 
-      const tree = await getMethodTree(client, fullMethod.data.id);
-      if (tree.error) return null;
+    const fullMethod = await getMakeMethodById(
+      client,
+      makeMethod.id,
+      companyId
+    );
+    if (fullMethod.error || !fullMethod.data) return null;
 
-      const methods =
-        tree.data.length > 0 ? flattenTree<Method>(tree.data[0]) : [];
+    const tree = await getMethodTree(client, fullMethod.data.id);
+    if (tree.error) return null;
 
-      return {
-        makeMethod: fullMethod.data,
-        methods
-      };
-    }
-  );
+    const methods =
+      tree.data.length > 0 ? flattenTree<Method>(tree.data[0]) : [];
+
+    return {
+      makeMethod: fullMethod.data,
+      methods
+    };
+  });
 
   return {
     partSummary: partSummary.data,
@@ -152,7 +155,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
-    makeMethods: getMakeMethods(client, itemId, companyId),
+    makeMethods: makeMethodsPromise,
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree,

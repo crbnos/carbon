@@ -8,11 +8,15 @@ import type {
   getCostCentersTree,
   getCurrencies,
   getDimension,
+  getDimensionPivot,
+  getDimensionPivotLines,
   getDimensions,
   getJournalEntries,
   getJournalEntry,
   getPaymentTerms,
-  getPeriodCloseReadiness
+  getPeriodCloseReadiness,
+  getPurchaseLinePivotLines,
+  getReportViews
 } from "./accounting.service";
 
 export type Account = NonNullable<
@@ -59,6 +63,24 @@ export type Dimension = NonNullable<
 export type DimensionDetail = NonNullable<
   Awaited<ReturnType<typeof getDimension>>["data"]
 >;
+
+// -- Dimensional analytics (pivot) report types --
+
+export type DimensionPivot = NonNullable<
+  Awaited<ReturnType<typeof getDimensionPivot>>["data"]
+>;
+
+export type DimensionPivotLine = NonNullable<
+  Awaited<ReturnType<typeof getDimensionPivotLines>>["data"]
+>[number];
+
+export type PurchaseLinePivotLine = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseLinePivotLines>>["data"]
+>[number];
+
+export type ReportView = NonNullable<
+  Awaited<ReturnType<typeof getReportViews>>["data"]
+>[number];
 
 export const currencyCodes = [
   "AFN",
@@ -395,6 +417,26 @@ export type TranslatedBalance = {
 export type TranslatedTransaction = Transaction & {
   translatedBalance?: number;
   exchangeRate?: number;
+};
+
+// One report column's values for one account, keyed by ReportPeriodBucket.key.
+// `translatedBalance` is the translated cumulative balance (balanceAtDate × rate,
+// for balance-sheet/stock reads); `translatedNetChange` is the translated period
+// delta (netChange × rate, for income-statement/flow reads).
+export type PeriodCell = {
+  netChange: number;
+  balanceAtDate: number;
+  translatedBalance?: number;
+  translatedNetChange?: number;
+  exchangeRate?: number;
+};
+
+// A chart row with multi-period values for the /x/reports statements. Reads
+// come from the "accounts" view merged with the accountTreeBalancePeriodSeries
+// RPC — only the hierarchy columns and per-period cells, no single-measure
+// balance columns.
+export type ChartPeriodSeries = Account & {
+  periods: Record<string, PeriodCell>;
 };
 
 export type JournalEntry = NonNullable<

@@ -10,6 +10,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@carbon/react";
+import { isInternalEmail } from "@carbon/utils";
 import { useCallback } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
@@ -28,9 +29,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId, email } = await requirePermissions(request, {
     view: "settings"
   });
+
+  // Multi-company management is gated to internal (Carbon) users for now.
+  if (!isInternalEmail(email)) {
+    throw redirect(path.to.settings);
+  }
 
   const companies = await getSubsidiaries(
     getCarbonServiceRole(),

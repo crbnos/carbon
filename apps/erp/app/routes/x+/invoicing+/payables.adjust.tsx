@@ -2,6 +2,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { datetime } from "@carbon/utils";
 import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -11,6 +12,7 @@ import {
 } from "~/modules/accounting";
 import { getApTieOut } from "~/modules/invoicing";
 import { getCompanySettings } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 
 // Turns a non-zero AP tie-out variance into a balanced Draft journal entry — the
@@ -40,7 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const asOfDate =
     (formData.get("asOfDate") as string | null) ??
-    new Date().toISOString().slice(0, 10);
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
   const [tieOut, defaults] = await Promise.all([
     getApTieOut(client, companyId, asOfDate),

@@ -3,7 +3,8 @@ import {
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
   getCarbon,
-  getMESUrl
+  getMESUrl,
+  ITAR_RIDER_PDF_PATH
 } from "@carbon/auth";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import {
@@ -21,16 +22,22 @@ import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import {
-  ItarPopup,
+  ItarEntityCertification,
+  ItarEntityPendingBlock,
+  ItarUserCertification,
   TooltipProvider,
   useKeyboardWedge,
-  useMount,
   useNProgress
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import {
+  Edition,
+  isSearchParamOnlyNavigation,
+  requiresItarEntityCertification
+} from "@carbon/utils";
 import posthog from "posthog-js";
-import { Suspense } from "react";
+import type { ReactNode } from "react";
+import { Suspense, useEffect } from "react";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
@@ -47,6 +54,7 @@ import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
+import { usePermissions } from "~/hooks";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
@@ -61,6 +69,7 @@ import {
   getSavedViews,
   isApprovalRequired
 } from "~/modules/shared/shared.service";
+import { getItarCertificationStatus } from "~/modules/users";
 import {
   getModulePreferences,
   getUser,
@@ -72,6 +81,8 @@ import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
+  nextUrl,
+  formMethod,
   defaultShouldRevalidate
 }) => {
   if (
@@ -83,6 +94,18 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     currentUrl.pathname.startsWith("/x/shared/views")
   ) {
     return true;
+  }
+
+  // This loader is the app shell: 16 parallel queries plus an auth round-trip.
+  // Without this it re-ran on every table filter, sort and page click, none of
+  // which can change anything it returns.
+  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
+  // also looks like a same-pathname GET, so the shell does not re-run for
+  // realtime events either. Leaf loaders still refresh, which is the intent.
+  // Shell data that must react to a realtime change needs an explicit case
+  // above.
+  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
+    return false;
   }
 
   return defaultShouldRevalidate;
@@ -109,6 +132,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const client = getCarbon(accessToken);
 
+  // Only probe product signals when the company is actually enrolled, so the
+  // home card + nav badge count gates the same way the hub page does. Chained
+  // off the hub query rather than awaited after the fan-out below, so the
+  // probes overlap the rest of it instead of forming a second serial wave.
+  const implementationHubPromise = getImplementationHub(client, companyId);
+  const implementationSignalsPromise = implementationHubPromise.then((hub) =>
+    hub.data ? detectImplementationSignals(client, companyId) : null
+  );
+
+  // ITAR gate status — only queried in controlled environments; elsewhere the
+  // gate never renders, so default to "certified" and skip the round-trip.
+  // `entityRequired` is layered on below, once the user's email is known.
+  const itarCertificationPromise = CONTROLLED_ENVIRONMENT
+    ? getItarCertificationStatus(client, companyId, userId)
+    : Promise.resolve({ entityCertified: true, userCertified: true });
+
   // Parallelize all requests
   const [
     companies,
@@ -126,7 +165,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     modulePreferences,
     printerRoutes,
     implementationHub,
-    implementationCheckStates
+    implementationCheckStates,
+    implementationSignals,
+    itarCertification
   ] = await Promise.all([
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
@@ -144,8 +185,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isAuditLogEnabled(client, companyId).catch(() => false),
     getModulePreferences(client, userId, companyId),
     getPrinterRoutes(client, companyId),
-    getImplementationHub(client, companyId),
-    getImplementationCheckStates(client, companyId)
+    implementationHubPromise,
+    getImplementationCheckStates(client, companyId),
+    implementationSignalsPromise,
+    itarCertificationPromise
   ]);
 
   if (!claims || user.error || !user.data || !groups.data) {
@@ -201,12 +244,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.onboarding.root);
   }
 
-  // Only probe product signals when the company is actually enrolled, so the
-  // home card + nav badge count gates the same way the hub page does.
-  const implementationSignals = implementationHub.data
-    ? await detectImplementationSignals(client, companyId)
-    : null;
-
   return data({
     session: {
       accessToken,
@@ -231,6 +268,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     implementationHub: implementationHub.data ?? null,
     implementationCheckStates: implementationCheckStates.data ?? [],
     implementationSignals,
+    itarCertification: {
+      ...itarCertification,
+      // Server-decided, never client-inferred: the gate must not be skippable
+      // by anything the browser can set.
+      entityRequired: requiresItarEntityCertification(user.data.email)
+    },
     supplierApprovalRequired: isApprovalRequired(client, "supplier", companyId),
     openClockEntry: companySettings.data?.timeCardEnabled
       ? getOpenClockEntry(client, userId, companyId)
@@ -239,9 +282,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
-  const { session, user, companySettings, openClockEntry, printerRoutes } =
-    useLoaderData<typeof loader>();
+  const {
+    company,
+    session,
+    user,
+    companySettings,
+    openClockEntry,
+    printerRoutes,
+    itarCertification
+  } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const permissions = usePermissions();
   const { isOpen, training, dismiss } = useTrainingPanel();
 
   useNProgress();
@@ -257,22 +308,74 @@ export default function AuthenticatedRoute() {
     }
   });
 
-  useMount(() => {
-    if (!user) return;
+  const userId = user?.id;
+  const userEmail = user?.email;
+  const userFullName = user ? `${user.firstName} ${user.lastName}` : undefined;
+  const companyId = company?.companyId;
+  const companyName = company?.name;
 
-    posthog.identify(user.id, {
-      email: user.email,
-      name: `${user.firstName} ${user.lastName}`
-    });
-  });
+  // Keyed on the identity rather than run once on mount: switching company
+  // redirects back into x+/_layout without unmounting it, so a mount-only
+  // effect would leave the previous company attached to every later event.
+  // The deps are primitives because `user`/`company` get fresh object
+  // identities on every revalidation, and group() re-sends $groupidentify
+  // each time it is called.
+  useEffect(() => {
+    if (!userId) return;
 
-  return (
-    <div className="h-[100dvh] flex flex-col">
-      {user?.acknowledgedITAR === false && CONTROLLED_ENVIRONMENT ? (
-        <ItarPopup
+    posthog.identify(userId, { email: userEmail, name: userFullName });
+
+    if (!companyId) return;
+
+    // Adoption is measured per customer, and a user can belong to more than one
+    // company — so the company rides on the events rather than on the person.
+    // register() puts companyId on every event including autocapture; group()
+    // is what lets PostHog aggregate by customer.
+    posthog.register({ companyId });
+    posthog.group("company", companyId, { name: companyName });
+  }, [userId, userEmail, userFullName, companyId, companyName]);
+
+  // ITAR gate: entity Rider acceptance first (only an admin who can bind the
+  // company may accept it; everyone else waits), then the user's own U.S.-Person
+  // attestation. Declining either logs the user out.
+  //
+  // `entityRequired` is false for Carbon staff — they provision customer tenants
+  // and so hold users_update there, but the Rider binds the customer's own
+  // organization and is not theirs to sign. They fall straight through to their
+  // own attestation; the customer's first admin binds the customer.
+  let itarScreen: ReactNode = null;
+  const entityBlocking =
+    itarCertification.entityRequired && !itarCertification.entityCertified;
+  if (
+    CONTROLLED_ENVIRONMENT &&
+    (entityBlocking || !itarCertification.userCertified)
+  ) {
+    if (entityBlocking) {
+      itarScreen = permissions.can("update", "users") ? (
+        <ItarEntityCertification
+          companyName={companyName ?? "your company"}
+          riderPdfPath={ITAR_RIDER_PDF_PATH}
           acknowledgeAction={path.to.acknowledge}
           logoutAction={path.to.logout}
         />
+      ) : (
+        <ItarEntityPendingBlock logoutAction={path.to.logout} />
+      );
+    } else {
+      itarScreen = (
+        <ItarUserCertification
+          riderPdfPath={ITAR_RIDER_PDF_PATH}
+          acknowledgeAction={path.to.acknowledge}
+          logoutAction={path.to.logout}
+        />
+      );
+    }
+  }
+
+  return (
+    <div className="h-[100dvh] flex flex-col">
+      {itarScreen ? (
+        itarScreen
       ) : (
         <CarbonProvider session={session}>
           <PrintingProvider

@@ -10,6 +10,7 @@ import {
   ModalHeader,
   ModalTitle
 } from "@carbon/react";
+import { isInternalEmail } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
@@ -26,9 +27,14 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  const { userId, email } = await requirePermissions(request, {
     create: "settings"
   });
+
+  // Multi-company management is gated to internal (Carbon) users for now.
+  if (!isInternalEmail(email)) {
+    throw redirect(path.to.settings);
+  }
 
   const formData = await request.formData();
   const validation = await validator(subsidiaryValidator).validate(formData);
@@ -82,7 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ...locationData,
     name: "Headquarters",
     companyId,
-    timezone: getLocalTimeZone(),
+    // timezone comes from locationData — HQ shares the company's timezone.
     createdBy: userId
   });
 
@@ -140,7 +146,8 @@ export default function NewSubsidiaryRoute() {
     stateProvince: "",
     postalCode: "",
     countryCode: "",
-    baseCurrencyCode: company?.baseCurrencyCode ?? "USD"
+    baseCurrencyCode: company?.baseCurrencyCode ?? "USD",
+    timezone: getLocalTimeZone()
   };
 
   return (

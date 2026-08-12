@@ -30,6 +30,7 @@ import {
   useNavigate,
   useParams
 } from "react-router";
+import { DateTime } from "~/components";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -168,12 +169,16 @@ export default function DepreciationRunDetailRoute() {
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3 w-full mb-6">
               <div>
                 <p className="text-sm text-muted-foreground">Period End</p>
-                <p className="text-sm">{formatDate(run.periodEnd)}</p>
+                <p className="text-sm">
+                  <DateTime value={run.periodEnd} variant="date" />
+                </p>
               </div>
               {run.postedAt && (
                 <div>
                   <p className="text-sm text-muted-foreground">Posted At</p>
-                  <p className="text-sm">{formatDate(run.postedAt)}</p>
+                  <p className="text-sm">
+                    <DateTime value={run.postedAt} variant="date" />
+                  </p>
                 </div>
               )}
             </div>

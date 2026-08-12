@@ -382,7 +382,7 @@ export async function getLocationsList(
 ) {
   return client
     .from("location")
-    .select(`id, name`)
+    .select(`id, name, timezone`)
     .eq("companyId", companyId)
     .order("name");
 }

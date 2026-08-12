@@ -2,7 +2,6 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasPlan } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import { Avatar } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -13,6 +12,7 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   Breadcrumbs,
+  DateTime,
   MethodIcon,
   Table
 } from "~/components";
@@ -258,19 +258,23 @@ export default function CustomerPortal() {
       {
         accessorKey: "orderDate",
         header: "Order Date",
-        cell: ({ row }) => formatDate(row.original.orderDate, undefined, locale)
+        cell: ({ row }) => (
+          <DateTime value={row.original.orderDate} variant="date" />
+        )
       },
       {
         accessorKey: "promisedDate",
         header: "Due Date",
-        cell: ({ row }) =>
-          formatDate(
-            row.original.promisedDate ??
+        cell: ({ row }) => (
+          <DateTime
+            value={
+              row.original.promisedDate ??
               row.original.receiptPromisedDate ??
-              row.original.receiptRequestedDate,
-            undefined,
-            locale
-          )
+              row.original.receiptRequestedDate
+            }
+            variant="date"
+          />
+        )
       },
       {
         accessorKey: "readableId",

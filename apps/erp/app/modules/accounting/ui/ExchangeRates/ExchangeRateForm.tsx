@@ -35,6 +35,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@carbon/react/Chart";
+import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { json2csv } from "json-2-csv";
 import { useCallback, useMemo, useState } from "react";
@@ -42,6 +43,7 @@ import { LuDownload } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { z } from "zod";
+import { DateTime } from "~/components";
 import {
   CustomFormFields,
   Hidden,
@@ -226,7 +228,7 @@ const CurrencyForm = ({
                           <XAxis
                             dataKey="date"
                             tickFormatter={(v) =>
-                              new Date(v).toLocaleDateString(undefined, {
+                              formatDate(v, {
                                 month: "short",
                                 day: "numeric"
                               })
@@ -245,7 +247,7 @@ const CurrencyForm = ({
                             content={
                               <ChartTooltipContent
                                 labelFormatter={(v) =>
-                                  new Date(v).toLocaleDateString(undefined, {
+                                  formatDate(v, {
                                     year: "numeric",
                                     month: "short",
                                     day: "numeric"
@@ -278,14 +280,7 @@ const CurrencyForm = ({
                             {[...chartData].reverse().map((row) => (
                               <Tr key={row.date}>
                                 <Td>
-                                  {new Date(row.date).toLocaleDateString(
-                                    undefined,
-                                    {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric"
-                                    }
-                                  )}
+                                  <DateTime value={row.date} variant="date" />
                                 </Td>
                                 <Td className="text-right">
                                   {row.rate.toFixed(decimalPlaces)}

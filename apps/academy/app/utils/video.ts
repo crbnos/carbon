@@ -1,9 +1,43 @@
 import { modules } from "~/config";
 
 export function formatDuration(duration: number) {
-  const minutes = Math.floor(duration / 60);
-  const seconds = duration % 60;
+  const total = Number.isFinite(duration)
+    ? Math.max(0, Math.floor(duration))
+    : 0;
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+  }
+
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Pull the video id out of a Loom share/embed URL. Returns null when the URL is
+ * missing or doesn't contain a `/share/` or `/embed/` segment, so callers can
+ * render a fallback instead of an `embed/undefined` iframe.
+ */
+export function getLoomEmbedId(loomUrl: string | null | undefined) {
+  if (!loomUrl) return null;
+  const id = loomUrl.split(/(?:share|embed)\//)[1]?.split("?")[0];
+  return id ? id : null;
+}
+
+/**
+ * A lesson that has no recorded video yet. Placeholder entries carry
+ * `duration: 0` (and share a stand-in Loom URL), so they're shown as "coming
+ * soon" rather than embedded, and are left out of progress and navigation.
+ */
+export function isLessonComingSoon(lesson: {
+  duration: number;
+  loomUrl?: string | null;
+}) {
+  return lesson.duration <= 0 || getLoomEmbedId(lesson.loomUrl) === null;
 }
 
 export function findTopicContext(topicId: string) {
@@ -63,32 +97,45 @@ export function getLessonContext(lessonId: string) {
   return null;
 }
 
-export function getNextLesson(lessonId: string) {
+/**
+ * The list a lesson is navigated within: the topic's core lessons, or its
+ * supplemental videos when the lesson is supplemental. Supplemental lessons are
+ * a separate track, so they page through each other rather than the core path.
+ */
+export function getLessonSiblings(lessonId: string) {
   const context = getLessonContext(lessonId);
   if (!context) return null;
 
-  const { topic } = context;
-  const allLessons = topic.lessons;
-  const currentIndex = allLessons.findIndex((lesson) => lesson.id === lessonId);
+  return context.lessonType === "supplemental"
+    ? (context.topic.supplemental ?? [])
+    : context.topic.lessons;
+}
 
-  if (currentIndex === -1 || currentIndex === allLessons.length - 1) {
-    return null;
-  }
+export function getNextLesson(lessonId: string) {
+  const siblings = getLessonSiblings(lessonId);
+  if (!siblings) return null;
 
-  return allLessons[currentIndex + 1];
+  const currentIndex = siblings.findIndex((lesson) => lesson.id === lessonId);
+  if (currentIndex === -1) return null;
+
+  return (
+    siblings
+      .slice(currentIndex + 1)
+      .find((lesson) => !isLessonComingSoon(lesson)) ?? null
+  );
 }
 
 export function getPreviousLesson(lessonId: string) {
-  const context = getLessonContext(lessonId);
-  if (!context) return null;
+  const siblings = getLessonSiblings(lessonId);
+  if (!siblings) return null;
 
-  const { topic } = context;
-  const allLessons = topic.lessons;
-  const currentIndex = allLessons.findIndex((lesson) => lesson.id === lessonId);
+  const currentIndex = siblings.findIndex((lesson) => lesson.id === lessonId);
+  if (currentIndex <= 0) return null;
 
-  if (currentIndex <= 0) {
-    return null;
-  }
-
-  return allLessons[currentIndex - 1];
+  return (
+    siblings
+      .slice(0, currentIndex)
+      .reverse()
+      .find((lesson) => !isLessonComingSoon(lesson)) ?? null
+  );
 }

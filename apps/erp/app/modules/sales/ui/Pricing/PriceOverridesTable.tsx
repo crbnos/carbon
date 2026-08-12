@@ -38,15 +38,10 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { useNavigate, useSearchParams } from "react-router";
-import { Hyperlink, ItemThumbnail, New, Table } from "~/components";
+import { DateTime, Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions,
-  useUser
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
 import type { PriceListRow } from "~/modules/sales";
 import { path } from "~/utils/path";
 import { DuplicatePriceListModal } from "./DuplicatePriceListModal";
@@ -77,7 +72,6 @@ const PriceListTable = memo(
     const { t } = useLingui();
     const permissions = usePermissions();
     const currencyFormatter = useCurrencyFormatter();
-    const { formatDate } = useDateFormatter();
     const { company } = useUser();
     const baseCurrency = company?.baseCurrencyCode ?? "USD";
     const navigate = useNavigate();
@@ -244,11 +238,21 @@ const PriceListTable = memo(
                   <span className="text-muted-foreground text-sm">{t`Always`}</span>
                 );
               }
-              const from = overrideValidFrom
-                ? formatDate(overrideValidFrom)
-                : "…";
-              const to = overrideValidTo ? formatDate(overrideValidTo) : "…";
-              return <span className="text-sm">{`${from} – ${to}`}</span>;
+              return (
+                <span className="text-sm">
+                  <DateTime
+                    value={overrideValidFrom}
+                    variant="date"
+                    fallback="…"
+                  />
+                  {" – "}
+                  <DateTime
+                    value={overrideValidTo}
+                    variant="date"
+                    fallback="…"
+                  />
+                </span>
+              );
             },
             meta: { icon: <LuCalendar /> }
           }
@@ -262,8 +266,7 @@ const PriceListTable = memo(
       currencyFormatter,
       hasScope,
       itemPostingGroups,
-      t,
-      formatDate
+      t
     ]);
 
     const handleQuantityCommit = useCallback(

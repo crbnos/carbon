@@ -128,6 +128,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // the Complete button uses $jobId.complete.tsx, which runs both.
   const update = await updateJobStatus(client, {
     id,
+    companyId,
     status,
     assignee: ["Cancelled"].includes(status) ? null : undefined,
     updatedBy: userId

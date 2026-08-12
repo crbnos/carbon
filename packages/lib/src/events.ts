@@ -3,6 +3,7 @@ import type {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
+import type { RunTrigger } from "@carbon/workflows";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
 
@@ -27,6 +28,9 @@ export type Events = {
         | { type: "users"; userIds: string[] };
       from?: string;
       documentType?: ApprovalDocumentType;
+      /** Set by a workflow: the message is authored by the customer, not read from a document. */
+      title?: string;
+      body?: string;
       // Caller-selected fan-out targets. inApp is always added by the notify
       // function regardless of what's passed; email and slack are opt-in.
       destinations?: NotificationDestination[];
@@ -357,6 +361,9 @@ export type Events = {
     data: {
       msgId: number;
       url: string;
+      // Part of the outbound body, but not on the event — forwarded off the
+      // queue message by the drainer.
+      companyId: string;
       config: {
         headers?: Record<string, string>;
         [key: string]: unknown;
@@ -373,7 +380,9 @@ export type Events = {
   "carbon/event-workflow": {
     data: {
       msgId: number;
-      workflowId: string;
+      companyId: string;
+      actorId: string | null;
+      workflowRunId: string | null;
       data: {
         table: string;
         recordId: string;
@@ -604,6 +613,43 @@ export type Events = {
     data: {
       documentExtractionId: string;
       companyId: string;
+    };
+  };
+
+  // A matched workflow firing: one event per created workflowRun row.
+  "carbon/workflow-run.queued": {
+    data: {
+      runId: string;
+      companyId: string;
+      workflowId: string;
+      workflowVersionId: string;
+      eventId: string;
+      ownerId: string;
+      sourceEventId: string;
+      trigger: RunTrigger;
+    };
+  };
+
+  // The self-chaining scheduler's own wake. Each wake books the next one as a future-dated send;
+  // `bookedFor` is the booking this wake was created by, or null from the hourly backstop, which
+  // always adopts the chain.
+  "carbon/workflow-scheduler.wake": {
+    data: {
+      bookedFor: number | null;
+    };
+  };
+
+  // Workflow moments — raised after a business action commits.
+  "carbon/workflow-moment.raised": {
+    data: {
+      /** Minted by raiseMoment; also set as the Inngest event id. */
+      momentId: string;
+      moment: string;
+      companyId: string;
+      /** auth.uid() of the actor; null for service-role / background writes. */
+      actorId: string | null;
+      /** Output name -> entity id, per the moment's declaration. */
+      outputs: Record<string, { id: string }>;
     };
   };
 };

@@ -43,6 +43,8 @@ export enum NotificationEvent {
   SupplierQuoteResponse = "supplier-quote-response",
   TrainingAssignment = "training-assignment",
   ResourceTrainingAssignment = "resource-training-assignment",
+  // Text authored by a customer's workflow; carries no source document to read.
+  Workflow = "workflow",
   Digest = "digest"
 }
 
@@ -163,6 +165,10 @@ export function getNotificationTopic(
     case NotificationEvent.ChangeNoticeImplementation:
     case NotificationEvent.ChangeNoticeDone:
       return NotificationTopic.Items;
+    // No topic of its own: topicLabels in the account settings route is an
+    // exhaustive Record<NotificationTopic, string>.
+    case NotificationEvent.Workflow:
+      return NotificationTopic.General;
     default:
       return NotificationTopic.General;
   }
@@ -242,6 +248,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Change notice in implementation";
     case NotificationEvent.ChangeNoticeDone:
       return "Change notice complete";
+    case NotificationEvent.Workflow:
+      return "Workflow";
     default:
       return "You have a new notification";
   }
@@ -275,6 +283,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
     case NotificationEvent.DigitalQuoteResponse:
     case NotificationEvent.SupplierQuoteResponse:
       return "View response";
+    case NotificationEvent.Workflow:
+      return "View details";
     default:
       return "View details";
   }

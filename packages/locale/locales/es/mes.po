@@ -21,6 +21,10 @@ msgstr "{0} - Conjunto {1}"
 msgid "{0} Active"
 msgstr "{0} Activos"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "hace {0}"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -149,6 +153,9 @@ msgstr "Error de autenticación"
 msgid "available"
 msgstr "disponible"
 
+msgid "Available"
+msgstr "Disponible"
+
 msgid "Batch"
 msgstr "Lote"
 
@@ -211,9 +218,8 @@ msgstr "Registrar entrada"
 msgid "Clock Out"
 msgstr "Registrar salida"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Registrado desde {0}"
+msgid "Clocked in since <0/>"
+msgstr "Marcado entrada desde <0/>"
 
 msgid "Close"
 msgstr "Cerrar"
@@ -265,6 +271,9 @@ msgstr "Consola"
 msgid "Console Mode"
 msgstr "Modo consola"
 
+msgid "Consumed"
+msgstr "Consumido"
+
 msgid "Consumed expired"
 msgstr "Consumido vencido"
 
@@ -313,9 +322,8 @@ msgstr "Eliminar"
 msgid "Delete Step"
 msgstr "Eliminar paso"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "Eliminar tarjeta de tiempo ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "Eliminar Tarjeta de Tiempo (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "Describe el problema..."
@@ -429,11 +437,12 @@ msgstr "Expandir tabla de características"
 msgid "Expired"
 msgstr "Vencido"
 
-msgid "Expired {date}"
-msgstr "Vencido {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Expirado {0}"
 
-msgid "Expires {date}"
-msgstr "Vence {date}"
+msgid "Expires <0/>"
+msgstr "Expira <0/>"
 
 msgid "Expiring first"
 msgstr "Vencimiento próximo"
@@ -533,6 +542,10 @@ msgstr "Impacto"
 msgid "Imperial"
 msgstr "Imperial"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "en {0}"
+
 msgid "In Progress"
 msgstr "En progreso"
 
@@ -623,6 +636,9 @@ msgstr "Cargando detalles del artículo..."
 msgid "Loading..."
 msgstr "Cargando..."
 
+msgid "Local"
+msgstr "Local"
+
 msgid "Location"
 msgstr "Ubicación"
 
@@ -667,6 +683,9 @@ msgstr "Mantenimiento completado"
 
 msgid "Maintenance overdue"
 msgstr "Mantenimiento vencido"
+
+msgid "Make a replacement"
+msgstr "Hacer un reemplazo"
 
 msgid "Manually add items to inventory"
 msgstr "Agregar artículos al inventario manualmente"
@@ -858,6 +877,9 @@ msgstr "Nada en ejecución"
 msgid "Nothing scheduled at this work center"
 msgstr "Nada programado en este centro de trabajo"
 
+msgid "Nothing to scrap"
+msgstr "Nada que descartar"
+
 msgid "OEE Impact"
 msgstr "Impacto OEE"
 
@@ -1043,6 +1065,9 @@ msgstr "Eliminar inventario"
 msgid "Remove part"
 msgstr "Eliminar pieza"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "Reabrir el subconjunto y crear una unidad de reemplazo"
+
 msgid "Result"
 msgstr "Resultado"
 
@@ -1091,6 +1116,12 @@ msgstr "Programación"
 msgid "Scrap"
 msgstr "Descartar"
 
+msgid "Scrap {readableId}"
+msgstr "Descartar {readableId}"
+
+msgid "Scrap material"
+msgstr "Descartar material"
+
 msgid "Scrap quantity"
 msgstr "Cantidad de desecho"
 
@@ -1099,6 +1130,12 @@ msgstr "Motivo de desperdicio"
 
 msgid "Scrapped"
 msgstr "Descartado"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "Descartando serie {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "Descartando la serie seleccionada"
 
 msgid "Search"
 msgstr "Buscar"
@@ -1284,6 +1321,9 @@ msgstr "El lote se marcará como Aprobado y {remaining} unidad(es) restante(s) s
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "El lote seguirá siendo disposicionado, pero no se puede crear un NCR hasta que se configure al menos un tipo de problema."
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "No hay piezas rastreadas disponibles o consumidas para este material."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Hay materiales con seguimiento de serie o lote en la lista de materiales que no se han emitido completamente. Completar sin emitir puede generar registros de trazabilidad incorrectos."
 
@@ -1292,6 +1332,15 @@ msgstr "Estos elementos aún tienen material para recoger. Finalizar ahora marca
 
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote ha expirado y no se puede seleccionar."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "Esta pieza fue hecha por encargo. Descartarla puede reabrir su ruta para hacer un reemplazo."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "Esta pieza será descartada del inventario. Su requisito permanece abierto para que puedas emitir un reemplazo."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "Esta unidad será descartada permanentemente y se creará un nuevo número de serie de reemplazo."
 
 msgid "Thumbnail"
 msgstr "Miniatura"
@@ -1397,9 +1446,8 @@ msgstr "Pantallas del Centro de Trabajo"
 msgid "Yes"
 msgstr "Sí"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Registró su entrada a las {0}. Puede editar su hora de salida a continuación o confirmar que sigue trabajando."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Marcaste entrada a las <0/>. Puedes editar tu hora de salida a continuación o confirmar que aún estás trabajando."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ha estado registrado durante {hoursElapsed} horas. ¿Olvidó registrar la salida?"

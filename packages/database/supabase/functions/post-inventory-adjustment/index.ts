@@ -1,8 +1,11 @@
 import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
+import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { Transaction } from "kysely";
+import { buildBatchSplitRecords } from "../shared/batch-split.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
@@ -10,6 +13,7 @@ import type { Json } from "../lib/types.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
+import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -23,22 +27,48 @@ const logger = getFunctionLogger("post-inventory-adjustment");
 // cost layers + (when companySettings.accountingEnabled) a balanced journal
 // against the inventory adjustment variance account. Storage-unit transfers
 // move value-neutral stock and never post to the GL.
-const payloadValidator = z.object({
-  adjustmentType: z.enum(["Positive Adjmt.", "Negative Adjmt.", "Set Quantity"]),
-  itemId: z.string(),
-  locationId: z.string(),
-  storageUnitId: z.string().optional().nullable(),
-  trackedEntityId: z.string().optional().nullable(),
-  // 0 is legal for Set Quantity (set to zero); a negative magnitude is never
-  // valid — direction comes from adjustmentType, not the sign.
-  quantity: z.number().min(0),
-  readableId: z.string().optional().nullable(),
-  originalStorageUnitId: z.string().optional().nullable(),
-  expirationDate: z.string().optional().nullable(),
-  comment: z.string().optional().nullable(),
-  companyId: z.string(),
-  userId: z.string(),
-});
+const payloadValidator = z
+  .object({
+    adjustmentType: z.enum([
+      "Positive Adjmt.",
+      "Negative Adjmt.",
+      "Set Quantity",
+      "Scrap",
+      "Unscrap",
+    ]),
+    itemId: z.string(),
+    // Optional for Unscrap (resolved from the original scrap movement);
+    // required for every other type, enforced by the app-layer validator.
+    locationId: z.string().optional().nullable(),
+    storageUnitId: z.string().optional().nullable(),
+    trackedEntityId: z.string().optional().nullable(),
+    // 0 is legal for Set Quantity (set to zero) and for a tracked Scrap/Unscrap
+    // (full-entity quantity is resolved server-side); a negative magnitude is
+    // never valid — direction comes from adjustmentType, not the sign.
+    quantity: z.number().min(0),
+    readableId: z.string().optional().nullable(),
+    originalStorageUnitId: z.string().optional().nullable(),
+    expirationDate: z.string().optional().nullable(),
+    comment: z.string().optional().nullable(),
+    // Required for Scrap (enforced below) — lands on the itemLedger row and,
+    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
+    // omits it: the reason is inherited from the original scrap movement.
+    scrapReasonId: z.string().optional().nullable(),
+    // Unscrap: the original scrap itemLedger row to reverse against. Optional —
+    // resolved server-side from the tracked entity's newest Scrap movement.
+    unscrapOfItemLedgerId: z.string().optional().nullable(),
+    companyId: z.string(),
+    userId: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.adjustmentType === "Scrap" && !data.scrapReasonId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["scrapReasonId"],
+        message: "Scrap reason is required",
+      });
+    }
+  });
 
 // Business-validation failures are 400s with the exact message the app routes
 // string-match on; everything else is a 500 so real outages surface in
@@ -55,7 +85,7 @@ serve(async (req: Request) => {
     const {
       adjustmentType,
       itemId,
-      locationId,
+      locationId: payloadLocationId,
       storageUnitId,
       trackedEntityId,
       quantity,
@@ -63,15 +93,21 @@ serve(async (req: Request) => {
       originalStorageUnitId,
       expirationDate: providedExpirationDate,
       comment,
+      scrapReasonId,
+      unscrapOfItemLedgerId,
       companyId,
       userId,
     } = payloadValidator.parse(payload);
+
+    // Unscrap sends no location (resolved from the scrap movement); every
+    // other type carries one (app-layer validator enforces it).
+    const locationId: string | null = payloadLocationId ?? null;
 
     const client = await requirePermissions(req, companyId, userId, {
       update: "inventory",
     });
 
-    const today = format(new Date(), "yyyy-MM-dd");
+    const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
     const nowIso = new Date().toISOString();
 
     const [
@@ -84,7 +120,7 @@ serve(async (req: Request) => {
       client.rpc("get_item_quantities_by_tracking_id", {
         item_id: itemId,
         company_id: companyId,
-        location_id: locationId,
+        location_id: locationId ?? "",
       }),
       client
         .from("item")
@@ -157,7 +193,14 @@ serve(async (req: Request) => {
         .select("id, entityType")
         .eq("companyGroupId", companyRecord.data.companyGroupId)
         .eq("active", true)
-        .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+        .in("entityType", [
+          "Item",
+          "ItemPostingGroup",
+          "Location",
+          "ScrapReason",
+          "WorkCenter",
+          "Employee",
+        ]);
       // Fail closed: journal lines must not silently lose dimension tags.
       if (dimensions.error) throw new Error("Failed to fetch dimensions");
       for (const dim of dimensions.data ?? []) {
@@ -168,7 +211,7 @@ serve(async (req: Request) => {
     // getCurrentAccountingPeriod uses the REST client and calling it
     // mid-transaction parks the (size 1) pool in idle-in-transaction.
     const accountingPeriodId = accountingEnabled
-      ? await getCurrentAccountingPeriod(client, companyId, db)
+      ? await getCurrentAccountingPeriod(client, companyId, db, today)
       : null;
     const accounting =
       accountingEnabled && accountDefaults?.data && accountingPeriodId
@@ -295,7 +338,422 @@ serve(async (req: Request) => {
       originalStorageUnitId &&
       originalStorageUnitId !== storageUnitId;
 
+    // Scrap/Unscrap offset to the company's scrapAccount (fallback per the
+    // 20260726012013 seed comment) so cost of quality is separable on the P&L;
+    // analysis slices by dimension (ScrapReason / Employee + the standard trio)
+    // instead of by account.
+    const scrapAccounting = accounting
+      ? {
+          ...accounting,
+          offsetAccount:
+            accountDefaults?.data?.scrapAccount ??
+            accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
+          offsetDescription: "Scrap Account",
+          extraDimensions: [
+            ...(scrapReasonId
+              ? [{ entityType: "ScrapReason", valueId: scrapReasonId }]
+              : []),
+            { entityType: "Employee", valueId: userId },
+          ],
+        }
+      : null;
+
     await db.transaction().execute(async (trx) => {
+      if (adjustmentType === "Scrap") {
+        const scrapLedgerBase = {
+          ...ledgerBase,
+          documentType: "Scrap" as const,
+          scrapReasonId,
+          entryType: "Negative Adjmt." as const,
+        };
+        const accountingForScrap = scrapAccounting
+          ? {
+              ...scrapAccounting,
+              description: comment?.trim()
+                ? `Scrap — ${comment.trim()}`
+                : "Scrap",
+            }
+          : null;
+
+        if (trackedEntityId) {
+          const entity = await trx
+            .selectFrom("trackedEntity")
+            .select([
+              "id",
+              "quantity",
+              "status",
+              "readableId",
+              "sourceDocument",
+              "sourceDocumentId",
+              "sourceDocumentReadableId",
+              "itemId",
+              "expirationDate",
+              "attributes",
+            ])
+            .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          if (!entity) throw new ValidationError("Tracked entity not found");
+          if (entity.status !== "Available") {
+            throw new ValidationError(
+              "Only available tracked entities can be scrapped"
+            );
+          }
+          const entityQuantity = Number(entity.quantity) || 0;
+          // quantity 0 ⇒ scrap the whole entity (serial UIs don't send a qty)
+          const scrapQuantity = quantity > 0 ? quantity : entityQuantity;
+          if (scrapQuantity > entityQuantity) {
+            throw new ValidationError("Insufficient quantity for scrap");
+          }
+          const bin =
+            currentQuantity?.storageUnitId ?? storageUnitId ?? null;
+
+          let scrappedEntityId = trackedEntityId;
+          if (scrapQuantity < entityQuantity) {
+            // Partial batch scrap: identity-flip split — the parent keeps its
+            // id and is decremented; the departing child is the Scrapped
+            // record of what left.
+            const split = buildBatchSplitRecords({
+              parent: {
+                id: entity.id,
+                readableId: entity.readableId,
+                quantity: entityQuantity,
+                sourceDocument: entity.sourceDocument,
+                sourceDocumentId: entity.sourceDocumentId,
+                sourceDocumentReadableId: entity.sourceDocumentReadableId,
+                itemId: entity.itemId,
+                expirationDate: entity.expirationDate
+                  ? String(entity.expirationDate)
+                  : null,
+                attributes:
+                  (entity.attributes as Record<string, unknown> | null) ?? null,
+              },
+              drawQuantity: scrapQuantity,
+              childId: nanoid(),
+              splitActivityId: nanoid(),
+              activitySourceDocument: "Item",
+              activitySourceDocumentId: itemId,
+              bin: { storageUnitId: bin, locationId },
+              itemLedgerItemId: itemId,
+              companyId,
+              userId,
+              postingDate: today,
+              childStatus: "Scrapped",
+            });
+            await trx
+              .insertInto("trackedEntity")
+              .values({
+                ...split.childEntityInsert,
+                sourceDocument:
+                  split.childEntityInsert.sourceDocument ?? "Item",
+                sourceDocumentId:
+                  split.childEntityInsert.sourceDocumentId ?? itemId,
+                attributes: split.childEntityInsert
+                  .attributes as unknown as Json,
+              })
+              .execute();
+            await trx
+              .updateTable("trackedEntity")
+              .set(split.parentUpdate)
+              .where("id", "=", entity.id)
+              .where("companyId", "=", companyId)
+              .execute();
+            await trx
+              .insertInto("trackedActivity")
+              .values({
+                ...split.activityInsert,
+                attributes: split.activityInsert
+                  .attributes as unknown as Json,
+              })
+              .execute();
+            await trx
+              .insertInto("trackedActivityInput")
+              .values(split.activityInputInsert)
+              .execute();
+            await trx
+              .insertInto("trackedActivityOutput")
+              .values(split.activityOutputInsert)
+              .execute();
+            await trx
+              .insertInto("itemLedger")
+              .values(
+                split.ledgerInserts.map((ledgerRow) => ({
+                  ...ledgerRow,
+                  itemId: ledgerRow.itemId ?? itemId,
+                }))
+              )
+              .execute();
+            scrappedEntityId = split.childEntityInsert.id;
+          } else {
+            // Full-entity scrap: terminal status flip; the entity KEEPS its
+            // quantity as the record of what was scrapped (the negative
+            // ledger row below carries the stock decrement).
+            await trx
+              .updateTable("trackedEntity")
+              .set({ status: "Scrapped" })
+              .where("id", "=", trackedEntityId)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+
+          const scrapActivityId = nanoid();
+          await trx
+            .insertInto("trackedActivity")
+            .values({
+              id: scrapActivityId,
+              type: "Scrap",
+              sourceDocument: "Item",
+              sourceDocumentId: itemId,
+              attributes: {
+                "Scrap Reason": scrapReasonId,
+                Employee: userId,
+                ...(comment?.trim() ? { Notes: comment.trim() } : {}),
+              },
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+          await trx
+            .insertInto("trackedActivityInput")
+            .values({
+              trackedActivityId: scrapActivityId,
+              trackedEntityId: scrappedEntityId,
+              quantity: scrapQuantity,
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          const booked = await bookAdjustment(trx, {
+            ledger: {
+              ...scrapLedgerBase,
+              trackedEntityId: scrappedEntityId,
+              storageUnitId: bin,
+              quantity: -Math.abs(scrapQuantity),
+            },
+            item,
+            itemCost,
+            accounting: accountingForScrap,
+          });
+          resultLedgerId = booked.itemLedgerId;
+          return;
+        }
+
+        // Untracked scrap: negative movement from the bin's untracked stock.
+        if (quantity <= 0) {
+          throw new ValidationError("Scrap quantity must be greater than zero");
+        }
+        const untrackedRow = trackingRows.find(
+          (q) => q.trackedEntityId == null && q.storageUnitId == storageUnitId
+        );
+        if ((untrackedRow?.quantity ?? 0) < quantity) {
+          throw new ValidationError("Insufficient quantity for scrap");
+        }
+        const booked = await bookAdjustment(trx, {
+          ledger: {
+            ...scrapLedgerBase,
+            trackedEntityId: null,
+            quantity: -Math.abs(quantity),
+          },
+          item,
+          itemCost,
+          accounting: accountingForScrap,
+        });
+        resultLedgerId = booked.itemLedgerId;
+        return;
+      }
+
+      if (adjustmentType === "Unscrap") {
+        const unscrapLedgerBase = {
+          ...ledgerBase,
+          documentType: "Scrap" as const,
+          scrapReasonId,
+          entryType: "Positive Adjmt." as const,
+        };
+        const accountingForUnscrap = scrapAccounting
+          ? {
+              ...scrapAccounting,
+              description: comment?.trim()
+                ? `Unscrap — ${comment.trim()}`
+                : "Unscrap",
+            }
+          : null;
+
+        if (trackedEntityId) {
+          const entity = await trx
+            .selectFrom("trackedEntity")
+            .select(["id", "quantity", "status"])
+            .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          if (!entity) throw new ValidationError("Tracked entity not found");
+          if (entity.status !== "Scrapped") {
+            throw new ValidationError(
+              "Only scrapped tracked entities can be unscrapped"
+            );
+          }
+          const entityQuantity = Number(entity.quantity) || 0;
+          if (entityQuantity <= 0) {
+            throw new ValidationError("Tracked entity has no quantity to restore");
+          }
+
+          // The original scrap movement: explicit id from the payload, else
+          // the entity's newest negative Scrap row.
+          let scrapMovement = unscrapOfItemLedgerId
+            ? await trx
+                .selectFrom("itemLedger")
+                .select(["id", "storageUnitId", "locationId", "scrapReasonId"])
+                .where("id", "=", unscrapOfItemLedgerId)
+                .where("companyId", "=", companyId)
+                // Constrain a caller-supplied id to THIS entity's own negative
+                // Scrap movements (same filters as the fallback below) — an
+                // unrelated ledger id must not drive the restored bin/cost.
+                .where("trackedEntityId", "=", trackedEntityId)
+                .where("documentType", "=", "Scrap")
+                .where("quantity", "<", 0)
+                .executeTakeFirst()
+            : undefined;
+          if (!scrapMovement) {
+            scrapMovement = await trx
+              .selectFrom("itemLedger")
+              .select(["id", "storageUnitId", "locationId", "scrapReasonId"])
+              .where("trackedEntityId", "=", trackedEntityId)
+              .where("companyId", "=", companyId)
+              .where("documentType", "=", "Scrap")
+              .where("quantity", "<", 0)
+              .orderBy("createdAt", "desc")
+              .executeTakeFirst();
+          }
+
+          // Inherit the reason from the original scrap movement so an unscrap
+          // is never mis-classified — the operator no longer re-enters it. Fall
+          // back to any payload reason, then null (untracked/legacy rows).
+          const resolvedScrapReasonId =
+            scrapMovement?.scrapReasonId ?? scrapReasonId ?? null;
+          const accountingForTrackedUnscrap = accountingForUnscrap
+            ? {
+                ...accountingForUnscrap,
+                extraDimensions: [
+                  ...(resolvedScrapReasonId
+                    ? [
+                        {
+                          entityType: "ScrapReason",
+                          valueId: resolvedScrapReasonId,
+                        },
+                      ]
+                    : []),
+                  { entityType: "Employee", valueId: userId },
+                ],
+              }
+            : null;
+
+          // Reverse at the ORIGINAL scrapped cost when the scrap movement's
+          // cost rows are resolvable (costLedger.documentId = the scrap
+          // itemLedger id — bookAdjustment's linkage); else current cost.
+          let fixedUnitCost: number | undefined;
+          if (scrapMovement) {
+            const costRows = await trx
+              .selectFrom("costLedger")
+              .select(["quantity", "cost"])
+              .where("documentId", "=", scrapMovement.id)
+              .where("companyId", "=", companyId)
+              .execute();
+            const resolved = resolveUnscrapUnitCost(
+              costRows.map((r) => ({
+                quantity: Number(r.quantity),
+                cost: Number(r.cost),
+              }))
+            );
+            if (resolved != null) fixedUnitCost = resolved;
+          }
+
+          await trx
+            .updateTable("trackedEntity")
+            .set({ status: "Available" })
+            .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          const unscrapActivityId = nanoid();
+          await trx
+            .insertInto("trackedActivity")
+            .values({
+              id: unscrapActivityId,
+              type: "Unscrap",
+              sourceDocument: "Item",
+              sourceDocumentId: itemId,
+              attributes: {
+                "Scrap Reason": resolvedScrapReasonId,
+                Employee: userId,
+                ...(comment?.trim() ? { Notes: comment.trim() } : {}),
+              },
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+          await trx
+            .insertInto("trackedActivityOutput")
+            .values({
+              trackedActivityId: unscrapActivityId,
+              trackedEntityId,
+              quantity: entityQuantity,
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          const booked = await bookAdjustment(trx, {
+            ledger: {
+              ...unscrapLedgerBase,
+              scrapReasonId: resolvedScrapReasonId,
+              // A Scrapped tracked-entity row carries no location — restore to
+              // the bin/location the scrap movement removed it from.
+              locationId:
+                scrapMovement?.locationId ?? unscrapLedgerBase.locationId,
+              storageUnitId:
+                scrapMovement?.storageUnitId ?? storageUnitId ?? null,
+              correctionOfItemLedgerId: scrapMovement?.id ?? null,
+              quantity: entityQuantity,
+            },
+            item,
+            itemCost,
+            accounting: accountingForTrackedUnscrap,
+            fixedUnitCost,
+          });
+          resultLedgerId = booked.itemLedgerId;
+          return;
+        }
+
+        // Untracked unscrap: positive movement at current cost (no original
+        // movement linkage to reverse against — v1).
+        if (quantity <= 0) {
+          throw new ValidationError(
+            "Unscrap quantity must be greater than zero"
+          );
+        }
+        // Unscrap makes locationId optional in the validator (the tracked path
+        // recovers it from the scrap movement). The untracked path has no such
+        // recovery, so require it — a null-location ledger row is invisible to
+        // location-scoped inventory queries.
+        if (!locationId) {
+          throw new ValidationError(
+            "Location is required to unscrap untracked stock"
+          );
+        }
+        const booked = await bookAdjustment(trx, {
+          ledger: {
+            ...unscrapLedgerBase,
+            trackedEntityId: null,
+            quantity,
+          },
+          item,
+          itemCost,
+          accounting: accountingForUnscrap,
+        });
+        resultLedgerId = booked.itemLedgerId;
+        return;
+      }
+
       if (isStorageUnitTransfer) {
         if (readableId !== undefined && readableId !== null) {
           await trx

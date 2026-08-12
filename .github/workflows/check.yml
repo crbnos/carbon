@@ -117,6 +117,33 @@ jobs:
 
       - run: pnpm run lingui:check
 
+  catalog:
+    name: Catalog
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/cache@v4
+        id: node-modules-cache
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            docs/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Always install so the postinstall generates the gitignored font data.
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run check:workflow-catalog
+
   test:
     name: Test
     needs: install

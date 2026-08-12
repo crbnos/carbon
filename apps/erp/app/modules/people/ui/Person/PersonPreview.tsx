@@ -14,7 +14,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 // import { LuHistory } from "react-icons/lu";
 import { useParams } from "react-router";
-import { Avatar } from "~/components";
+import { Avatar, DateTime } from "~/components";
 import { AuditLogDrawer } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { useRouteData, useUser } from "~/hooks";
@@ -82,7 +82,10 @@ const PersonHeader = () => {
                 <Trans>Start Date</Trans>
               </CardAttributeLabel>
               <CardAttributeValue>
-                {routeData?.employeeSummary?.startDate}
+                <DateTime
+                  value={routeData?.employeeSummary?.startDate}
+                  variant="date"
+                />
               </CardAttributeValue>
             </CardAttribute>
           </CardAttributes>

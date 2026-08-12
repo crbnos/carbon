@@ -7,10 +7,11 @@ import { Form } from "react-router";
 import { Avatar } from "~/components";
 import { Hidden, Submit } from "~/components/Form";
 import RichTextForm from "~/components/Form/RichText";
-import { useDateFormatter, usePermissions, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type { Note } from "~/modules/shared";
 import { noteValidator } from "~/modules/shared";
 import { path } from "~/utils/path";
+import { DateTime } from "./DateTime";
 
 type RichTextProps = {
   documentId: string;
@@ -18,7 +19,6 @@ type RichTextProps = {
 };
 
 const RichText = ({ documentId, notes }: RichTextProps) => {
-  const { formatTimeAgo } = useDateFormatter();
   const user = useUser();
   const permissions = usePermissions();
   const isEmployee = permissions.is("employee");
@@ -42,7 +42,7 @@ const RichText = ({ documentId, notes }: RichTextProps) => {
                   <HTML text={note.note} />
                   <HStack spacing={4}>
                     <span className="text-sm text-muted-foreground">
-                      {formatTimeAgo(note.createdAt)}
+                      <DateTime value={note.createdAt} variant="relative" />
                     </span>
                     {/* @ts-ignore */}
                     {user.id === note.user.id && (

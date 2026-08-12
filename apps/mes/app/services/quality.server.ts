@@ -1,5 +1,7 @@
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { getLocationTimeZone } from "@carbon/database";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getJobMakeMethod,
@@ -110,7 +112,11 @@ export async function createQualityIssue(
       locationId: context.locationId,
       nonConformanceTypeId: args.nonConformanceTypeId ?? context.issueTypeId,
       nonConformanceWorkflowId: null,
-      openDate: new Date().toISOString().slice(0, 10),
+      openDate: datetime
+        .today(
+          await getLocationTimeZone(serviceRole, context.locationId, companyId)
+        )
+        .toString(),
       quantity,
       assignee: context.assignee,
       requiredActionIds: [],
@@ -322,11 +328,11 @@ export async function getInspectionOutcomeState(
     0
   );
 
+  // Scrap no longer counts toward targetQuantity (20260807090629), so a
+  // scrapped unit doesn't reduce remaining good work.
   const opTarget = operation.targetQuantity ?? operation.operationQuantity ?? 0;
   const opAccounted =
-    (operation.quantityComplete ?? 0) +
-    (operation.quantityScrapped ?? 0) +
-    (operation.quantityReworked ?? 0);
+    (operation.quantityComplete ?? 0) + (operation.quantityReworked ?? 0);
   const opRemaining = Math.max(0, opTarget - opAccounted);
 
   const entities = (trackedEntities?.data ?? []).map((e) => ({

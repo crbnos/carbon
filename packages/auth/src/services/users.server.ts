@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { oncePerRead } from "@carbon/logger/middleware.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { Permission, Result } from "../types";
@@ -26,7 +27,23 @@ export async function getUserByEmail(email: string) {
     .single();
 }
 
-export async function getUserClaims(userId: string, companyId: string) {
+/**
+ * Claims for a user in a company, resolved once per read request.
+ *
+ * Every matched loader that calls `requirePermissions` — plus the app-shell
+ * loaders that call this directly — otherwise repeated the same Redis GET.
+ *
+ * Read-gated deliberately: React Router runs an action and its loader
+ * revalidation in one request, so memoizing here on a mutating request could
+ * let a permission gate pass on claims the action had just revoked.
+ */
+export function getUserClaims(userId: string, companyId: string) {
+  return oncePerRead(`claims:${userId}:${companyId}`, () =>
+    loadUserClaims(userId, companyId)
+  );
+}
+
+async function loadUserClaims(userId: string, companyId: string) {
   let claims: {
     permissions: Record<string, Permission>;
     role: string | null;

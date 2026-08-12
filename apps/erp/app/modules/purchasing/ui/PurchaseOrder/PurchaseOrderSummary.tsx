@@ -21,12 +21,11 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { MethodIcon, SupplierAvatar } from "~/components";
+import { DateTime, MethodIcon, SupplierAvatar } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
-  useDateFormatter,
   usePercentFormatter,
   useRouteData,
   useUser
@@ -407,7 +406,6 @@ const PurchaseOrderSummary = ({
 }: PurchaseOrderSummaryProps) => {
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
-  const { formatDate } = useDateFormatter();
 
   const { company } = useUser();
   const routeData = useRouteData<{
@@ -486,7 +484,11 @@ const PurchaseOrderSummary = ({
             />
             {routeData?.purchaseOrder?.orderDate && (
               <span className="text-xs text-muted-foreground tracking-tight">
-                Ordered {formatDate(routeData?.purchaseOrder.orderDate)}
+                Ordered{" "}
+                <DateTime
+                  value={routeData?.purchaseOrder.orderDate}
+                  variant="date"
+                />
               </span>
             )}
           </div>

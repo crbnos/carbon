@@ -4,6 +4,9 @@
  */
 export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   "settings_seedCompany",
+  // Creating a company is an account-level operation that must not be exposed
+  // as an MCP tool (it would let a company-scoped token create new tenants).
+  "settings_insertCompany",
   // Internal sweep orchestration invoked by job/operation completion flows.
   // Their args require a userId the MCP executor cannot inject (AuthField has
   // no such payload field), so direct calls would only ever fail validation.

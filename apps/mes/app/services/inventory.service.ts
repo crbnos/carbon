@@ -1,10 +1,12 @@
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { getLocationTimeZone } from "@carbon/database";
 import type {
   DocumentTemplate,
   DocumentTemplateType
 } from "@carbon/documents/template";
 import { toDocumentTemplate } from "@carbon/documents/template";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -323,7 +325,9 @@ export async function getSuggestedAllocationForMaterial(
   // issue modal refuses to offer (expiredEntityPolicy 'Block' drops them from
   // the options), netting the seed to nothing. An expired lot is never the
   // "correct batch to use" — skip them regardless of policy.
-  const today = new Date().toISOString().slice(0, 10);
+  const today = datetime
+    .today(await getLocationTimeZone(client, args.locationId, args.companyId))
+    .toString();
   const unexpired = data.filter(
     (row) => !row.expirationDate || row.expirationDate >= today
   );

@@ -139,7 +139,7 @@ export async function provisionOnboardingCompany(
       upsertLocation(serviceRole, {
         ...location,
         ...addressData,
-        timezone: getLocalTimeZone(),
+        timezone: companyData.timezone || getLocalTimeZone(),
         updatedBy: userId
       })
     ]);
@@ -184,7 +184,7 @@ export async function provisionOnboardingCompany(
     ...addressData,
     name: "Headquarters",
     companyId,
-    timezone: getLocalTimeZone(),
+    timezone: companyData.timezone || getLocalTimeZone(),
     createdBy: userId
   });
   if (locationInsert.error) {

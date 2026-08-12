@@ -24,6 +24,7 @@ import {
   LuTimer
 } from "react-icons/lu";
 import { Link } from "react-router";
+import { DateTime } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { useDateFormatter } from "~/hooks";
 import type { Operation, OperationSettings } from "~/services/types";
@@ -92,7 +93,7 @@ function OperationCard({
   showThumbnail
 }: OperationCardProps) {
   const { t } = useLingui();
-  const { formatDate, formatRelativeTime } = useDateFormatter();
+  const { formatRelativeTime } = useDateFormatter();
   const isOverdue =
     operation.jobDeadlineType !== "No Deadline" && operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
@@ -199,7 +200,7 @@ function OperationCard({
                 <HStack className="justify-start space-x-2">
                   <LuCalendarDays />
                   <span className="text-sm">
-                    {formatDate(operation.jobDueDate)}
+                    <DateTime value={operation.jobDueDate} variant="date" />
                   </span>
                 </HStack>
               )}

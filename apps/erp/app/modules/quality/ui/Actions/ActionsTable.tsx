@@ -13,9 +13,9 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useItems } from "~/stores";
 import { usePeople } from "~/stores/people";
 import type { ListItem } from "~/types";
@@ -34,7 +34,6 @@ type ActionsTableProps = {
 const ActionsTable = memo(
   ({ data, issueTypes, requiredActions, count }: ActionsTableProps) => {
     const { t } = useLingui();
-    const { formatDate } = useDateFormatter();
     const navigate = useNavigate();
     const permissions = usePermissions();
 
@@ -153,7 +152,7 @@ const ActionsTable = memo(
               new Date(row.original.dueDate) < new Date();
             return (
               <span className={isOverdue ? "text-red-500" : ""}>
-                {formatDate(row.original.dueDate)}
+                <DateTime value={row.original.dueDate} variant="date" />
               </span>
             );
           },
@@ -193,7 +192,9 @@ const ActionsTable = memo(
         {
           accessorKey: "completedDate",
           header: t`Completed Date`,
-          cell: ({ row }) => formatDate(row.original.completedDate),
+          cell: ({ row }) => (
+            <DateTime value={row.original.completedDate} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -201,14 +202,16 @@ const ActionsTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created`,
-          cell: ({ row }) => formatDate(row.original.createdAt),
+          cell: ({ row }) => (
+            <DateTime value={row.original.createdAt} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
         }
       ];
       return defaultColumns;
-    }, [requiredActions, people, items, issueTypes, t, formatDate]);
+    }, [requiredActions, people, items, issueTypes, t]);
 
     const renderContextMenu = useCallback(
       (row: QualityAction) => {

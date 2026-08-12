@@ -215,12 +215,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Is this the first operation in the routing? A serial unit only earns a printed
     // label when completed at its first operation, so the first op flows unit-by-unit
     // (auto-select), and later ops scan/select (labels exist). "First" means nothing
-    // precedes it — no jobOperationDependency row keyed to this operation. `order` is
-    // only a display/sort field and isn't a reliable precedence signal.
+    // precedes it within THIS make method — no jobOperationDependency whose predecessor
+    // shares this op's jobMakeMethodId. Cross make-method (subassembly) dependencies are
+    // ignored: a parent-assembly op still has no printed label just because a subassembly
+    // finished first. `order` is only a display/sort field and isn't a reliable signal.
     serviceRole
       .from("jobOperationDependency")
-      .select("operationId")
+      .select(
+        "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
+      )
       .eq("operationId", operationId)
+      .eq("dependsOn.jobMakeMethodId", op.jobMakeMethodId)
       .limit(1)
       .maybeSingle()
   ]);

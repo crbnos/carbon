@@ -6,6 +6,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
+  cn,
   Modal,
   ModalContent,
   useDebounce,
@@ -14,15 +15,13 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import idb from "localforage";
 import { nanoid } from "nanoid";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LuChevronRight,
   LuCirclePlay,
   LuClock,
-  LuDraftingCompass,
   LuFileCheck,
   LuPackageSearch,
-  LuShieldX,
   LuShoppingCart,
   LuSquareUser,
   LuUser,
@@ -37,6 +36,10 @@ import {
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { useFetcher, useNavigate } from "react-router";
 import { MethodItemTypeIcon } from "~/components/Icons";
+import { getEntityTypeConfig } from "~/components/Layout/Topbar/Search/config";
+import { SearchEmptyState } from "~/components/Layout/Topbar/Search/SearchEmptyState";
+import { SearchFilterChips } from "~/components/Layout/Topbar/Search/SearchFilterChips";
+import type { EntityTypeFilter } from "~/components/Layout/Topbar/Search/types";
 import { useModules, useUser } from "~/hooks";
 import useAccountSubmodules from "~/modules/account/ui/useAccountSubmodules";
 import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
@@ -52,11 +55,10 @@ import useResourcesSubmodules from "~/modules/resources/ui/useResourcesSubmodule
 import useSalesSubmodules from "~/modules/sales/ui/useSalesSubmodules";
 import useSettingsSubmodules from "~/modules/settings/ui/useSettingsSubmodules";
 import useUsersSubmodules from "~/modules/users/ui/useUsersSubmodules";
+import useWorkflowsSubmodules from "~/modules/workflows/ui/useWorkflowsSubmodules";
 import type { SearchResponse } from "~/routes/api+/search";
 import { useUIStore } from "~/stores/ui";
-
 import type { Authenticated, Route } from "~/types";
-import { SearchEmptyState } from "./Search/SearchEmptyState";
 
 type RecentSearch = Route & {
   entityType?: string;
@@ -78,10 +80,24 @@ export const SearchModal = () => {
   const storageKey = `recentSearches_${company.id}`;
 
   const [input, setInput] = useState("");
+  const [typeFilter, setTypeFilter] = useState<EntityTypeFilter>("all");
+  const typeFilterRef = useRef<EntityTypeFilter>(typeFilter);
+  typeFilterRef.current = typeFilter;
   const [isDebouncing, setIsDebouncing] = useState(false);
+
+  const buildSearchUrl = (q: string, type: EntityTypeFilter) => {
+    const params = new URLSearchParams({ q });
+    if (type !== "all") {
+      params.set("type", type);
+    }
+    return `/api/search?${params.toString()}`;
+  };
+
+  // Always read the latest type filter so a pending debounce after chip change
+  // does not re-fetch with a stale type.
   const debounceSearch = useDebounce((q: string) => {
     if (q && q.length >= 2) {
-      fetcher.load(`/api/search?q=${encodeURIComponent(q)}`);
+      fetcher.load(buildSearchUrl(q, typeFilterRef.current));
     }
     setIsDebouncing(false);
   }, 500);
@@ -89,6 +105,8 @@ export const SearchModal = () => {
   useEffect(() => {
     if (isSearchModalOpen) {
       setInput("");
+      setTypeFilter("all");
+      typeFilterRef.current = "all";
     }
   }, [isSearchModalOpen]);
 
@@ -119,21 +137,32 @@ export const SearchModal = () => {
   const recentPaths = new Set(recentResults.map((r) => r.to));
   const searchResults = input.length >= 2 ? (fetcher.data?.results ?? []) : [];
   const loading = fetcher.state === "loading";
+  const isEntityTypeFiltered = typeFilter !== "all";
 
-  // Filter static results based on input for empty state detection
+  // When a type chip is active, only show recents that match that entity type
+  const visibleRecentResults = isEntityTypeFiltered
+    ? recentResults.filter((r) => r.entityType === typeFilter)
+    : recentResults;
+
+  // Filter static results based on input for empty state detection.
+  // Module nav is hidden when filtering by entity type (entity results only).
   const normalizedInput = input.toLowerCase().trim();
   const hasMatchingStaticResults =
-    normalizedInput.length === 0 ||
-    Object.entries(staticResults).some(([module, submodules]) =>
-      submodules.some(
-        (s) =>
-          !recentPaths.has(s.to) &&
-          `${module} ${s.name}`.toLowerCase().includes(normalizedInput)
-      )
-    );
+    !isEntityTypeFiltered &&
+    (normalizedInput.length === 0 ||
+      Object.entries(staticResults).some(([module, submodules]) =>
+        submodules.some(
+          (s) =>
+            !recentPaths.has(s.to) &&
+            `${module} ${s.name}`.toLowerCase().includes(normalizedInput)
+        )
+      ));
   const hasMatchingRecentResults =
-    normalizedInput.length === 0 ||
-    recentResults.some((r) => r.name.toLowerCase().includes(normalizedInput));
+    visibleRecentResults.length > 0 &&
+    (normalizedInput.length === 0 ||
+      visibleRecentResults.some((r) =>
+        r.name.toLowerCase().includes(normalizedInput)
+      ));
 
   const hasAnyResults =
     searchResults.length > 0 ||
@@ -146,6 +175,16 @@ export const SearchModal = () => {
       setIsDebouncing(true);
     }
     debounceSearch(value);
+  };
+
+  const onTypeFilterChange = (filter: EntityTypeFilter) => {
+    setTypeFilter(filter);
+    typeFilterRef.current = filter;
+    // Re-fetch immediately so chip selection feels responsive
+    if (input && input.length >= 2) {
+      setIsDebouncing(false);
+      fetcher.load(buildSearchUrl(input, filter));
+    }
   };
 
   const onSelect = async (
@@ -183,6 +222,8 @@ export const SearchModal = () => {
       open={isSearchModalOpen}
       onOpenChange={(open) => {
         setInput("");
+        setTypeFilter("all");
+        typeFilterRef.current = "all";
         if (!open) closeSearchModal();
       }}
     >
@@ -200,6 +241,11 @@ export const SearchModal = () => {
             className="h-14 text-base"
           />
 
+          <SearchFilterChips
+            selectedFilter={typeFilter}
+            onFilterChange={onTypeFilterChange}
+          />
+
           {/* Results */}
           <CommandList className="flex-1 max-h-none overflow-y-auto px-2 py-2">
             {loading || isDebouncing ? (
@@ -209,7 +255,7 @@ export const SearchModal = () => {
             ) : (
               <>
                 {/* Recent Searches */}
-                {recentResults.length > 0 && (
+                {visibleRecentResults.length > 0 && (
                   <>
                     <CommandGroup
                       heading={
@@ -220,7 +266,7 @@ export const SearchModal = () => {
                       }
                       key="recent"
                     >
-                      {recentResults.map((result, index) => {
+                      {visibleRecentResults.map((result, index) => {
                         const ModuleIcon = result.module
                           ? getModuleIcon(result.module)
                           : undefined;
@@ -238,7 +284,7 @@ export const SearchModal = () => {
                             value={`:${result.to}`}
                             className="flex items-center gap-3 px-3 py-2.5 rounded-lg group"
                           >
-                            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                            <ResultIconContainer entityType={result.entityType}>
                               {result.entityType ? (
                                 <ResultIcon entityType={result.entityType} />
                               ) : ModuleIcon ? (
@@ -246,7 +292,7 @@ export const SearchModal = () => {
                               ) : (
                                 <RxMagnifyingGlass className="w-4 h-4 text-muted-foreground" />
                               )}
-                            </div>
+                            </ResultIconContainer>
                             <VStack spacing={0} className="flex-1 min-w-0">
                               <span className="font-medium truncate">
                                 {result.name}
@@ -299,9 +345,9 @@ export const SearchModal = () => {
                         }
                         className="flex items-center gap-3 px-3 py-3 rounded-lg group"
                       >
-                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                        <ResultIconContainer entityType={result.entityType}>
                           <ResultIcon entityType={result.entityType} />
-                        </div>
+                        </ResultIconContainer>
                         <VStack spacing={0} className="flex-1 min-w-0">
                           <span className="font-medium text-foreground truncate">
                             {result.title}
@@ -318,52 +364,54 @@ export const SearchModal = () => {
                   </CommandGroup>
                 )}
 
-                {/* Module Navigation */}
-                {Object.entries(staticResults).map(([module, submodules]) => {
-                  const filteredSubmodules = submodules.filter(
-                    (s) => !recentPaths.has(s.to)
-                  );
-                  if (filteredSubmodules.length === 0) return null;
-                  return (
-                    <div key={`static-${module}`}>
-                      <CommandGroup
-                        heading={
-                          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                            {module}
-                          </span>
-                        }
-                      >
-                        {filteredSubmodules.map((submodule, index) => {
-                          const hasIconElement =
-                            "iconElement" in submodule && submodule.iconElement;
-                          return (
-                            <CommandItem
-                              key={`${submodule.to}-${submodule.name}-${index}`}
-                              onSelect={() =>
-                                onSelect(submodule, undefined, module)
-                              }
-                              value={`${module} ${submodule.name}`}
-                              className="flex items-center gap-3 px-3 py-2 rounded-lg group"
-                            >
-                              <div className="flex-shrink-0 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground [&>svg]:w-4 [&>svg]:h-4">
-                                {hasIconElement ? (
-                                  submodule.iconElement
-                                ) : submodule.icon ? (
-                                  <submodule.icon className="w-4 h-4" />
-                                ) : null}
-                              </div>
-                              <span className="flex-1 text-sm">
-                                {submodule.name}
-                              </span>
-                              <LuChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                      <CommandSeparator className="my-2" />
-                    </div>
-                  );
-                })}
+                {/* Module Navigation (hidden when filtering by entity type) */}
+                {!isEntityTypeFiltered &&
+                  Object.entries(staticResults).map(([module, submodules]) => {
+                    const filteredSubmodules = submodules.filter(
+                      (s) => !recentPaths.has(s.to)
+                    );
+                    if (filteredSubmodules.length === 0) return null;
+                    return (
+                      <div key={`static-${module}`}>
+                        <CommandGroup
+                          heading={
+                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                              {module}
+                            </span>
+                          }
+                        >
+                          {filteredSubmodules.map((submodule, index) => {
+                            const hasIconElement =
+                              "iconElement" in submodule &&
+                              submodule.iconElement;
+                            return (
+                              <CommandItem
+                                key={`${submodule.to}-${submodule.name}-${index}`}
+                                onSelect={() =>
+                                  onSelect(submodule, undefined, module)
+                                }
+                                value={`${module} ${submodule.name}`}
+                                className="flex items-center gap-3 px-3 py-2 rounded-lg group"
+                              >
+                                <div className="flex-shrink-0 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground [&>svg]:w-4 [&>svg]:h-4">
+                                  {hasIconElement ? (
+                                    submodule.iconElement
+                                  ) : submodule.icon ? (
+                                    <submodule.icon className="w-4 h-4" />
+                                  ) : null}
+                                </div>
+                                <span className="flex-1 text-sm">
+                                  {submodule.name}
+                                </span>
+                                <LuChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                        <CommandSeparator className="my-2" />
+                      </div>
+                    );
+                  })}
               </>
             )}
           </CommandList>
@@ -397,19 +445,46 @@ export const SearchModal = () => {
   );
 };
 
+function ResultIconContainer({
+  entityType,
+  children
+}: {
+  entityType?: string;
+  children: React.ReactNode;
+}) {
+  const config = entityType ? getEntityTypeConfig(entityType) : null;
+  const hasTint = Boolean(config?.bgColor);
+
+  return (
+    <div
+      className={cn(
+        "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
+        hasTint ? config?.bgColor : "bg-muted"
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 function ResultIcon({ entityType }: { entityType: string }) {
-  const iconClass = "w-4 h-4 text-muted-foreground";
+  const config = getEntityTypeConfig(entityType);
+  const iconClass = cn("w-4 h-4", config.textColor || "text-muted-foreground");
+
+  // Prefer shared entity config icons (issue → LuOctagonAlert, gauge → LuGauge)
+  if (config.icon) {
+    const Icon = config.icon;
+    return <Icon className={iconClass} />;
+  }
+
+  // Fallbacks for types without a config icon
   switch (entityType) {
     case "customer":
       return <LuSquareUser className={iconClass} />;
     case "employee":
       return <LuUser className={iconClass} />;
-    case "gauge":
-      return <LuDraftingCompass className={iconClass} />;
     case "job":
       return <LuCirclePlay className={iconClass} />;
-    case "issue":
-      return <LuShieldX className={iconClass} />;
     case "item":
       return <MethodItemTypeIcon type="Part" className={iconClass} />;
     case "purchaseOrder":
@@ -449,6 +524,7 @@ function useGroupedSubmodules() {
   const quality = useQualitySubmodules();
   const resources = useResourcesSubmodules();
   const account = useAccountSubmodules();
+  const workflows = useWorkflowsSubmodules();
   const groupedSubmodules: Record<
     string,
     {
@@ -471,6 +547,7 @@ function useGroupedSubmodules() {
     resources,
     settings,
     users,
+    workflows,
     "my account": account
   };
 

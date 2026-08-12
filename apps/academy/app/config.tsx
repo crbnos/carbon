@@ -1029,6 +1029,15 @@ export const modules: Config = [
                 description:
                   "Learn how to use job travelers to guide production processes and provide instructions.",
                 duration: 222
+              },
+              {
+                id: "scrap",
+                loomUrl:
+                  "https://www.loom.com/share/f69fe5573f7b4cdcb79e545ce571679e",
+                name: "Scrap",
+                description:
+                  "Learn how to scrap serials, subcomponents, and stock in Carbon, and how scrap flows through production and inventory.",
+                duration: 597
               }
             ]
           }

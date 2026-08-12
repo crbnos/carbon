@@ -32,7 +32,7 @@ company membership is per-user, so one login can hold several companies and swit
 
 Companies can also nest. A company with a `parentCompanyId` is a **subsidiary** (`subsidiaryValidator`, `settings.models.ts:279`); an `isEliminationEntity` company exists only to net intercompany transactions out of consolidated reports.
 
-The **Companies** management screen is gated to internal operators (`internalOnlyRoutes` in `useSettingsSubmodules.tsx`); **Backups** is gated to internal operators on any real deployment but is open to every user on a local dev stack (`canAccessBackups`). Most tenants create and switch companies through onboarding and the company picker, not this screen.
+The **Companies** management screen and **Backups** are gated to internal operators (`internalOnlyRoutes` in `useSettingsSubmodules.tsx`). Most tenants create and switch companies through onboarding and the company picker, not this screen.
 
 For consolidated reporting and the elimination flow, see `docs/reference/intercompany`.
 
@@ -102,7 +102,7 @@ Which company-wide features are available at all also depends on your plan and e
 Mostly "why can't I see or change setting X" — the answers are preconditions, not error strings.
 
 ### I can't find the Companies or Backups settings page
-Companies is internal-operator-only (`internalOnlyRoutes` in `useSettingsSubmodules.tsx`). Backups is internal-operator-only on hosted and self-hosted deployments, but visible to any user running a local dev stack (`canAccessBackups`). Regular tenants don't get these screens — create and switch companies through onboarding and the company picker instead.
+Both are internal-operator-only, gated by `internalOnlyRoutes` in `useSettingsSubmodules.tsx`. Regular tenants don't get these screens — create and switch companies through onboarding and the company picker instead.
 
 ### I can't see the Billing settings page
 Billing needs **company ownership** *and* a Cloud environment — it's gated on both (`useSettingsSubmodules.tsx`). Self-hosted/community editions and non-owner users won't see it.

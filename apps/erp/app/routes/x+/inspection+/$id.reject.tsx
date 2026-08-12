@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { getLogger } from "@carbon/logger";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -19,6 +19,7 @@ import {
 } from "~/modules/quality";
 import { dispositionInspection } from "~/modules/quality/quality.server";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
@@ -217,7 +218,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     source: "Internal",
     locationId,
     nonConformanceTypeId: issueType.id,
-    openDate: today(getLocalTimeZone()).toString(),
+    openDate: datetime
+      .today(await getLocationTimeZone(client, locationId, companyId))
+      .toString(),
     quantity: Number(insp.lotSize ?? 0),
     items: insp.itemId ? [insp.itemId] : [],
     companyId,

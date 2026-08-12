@@ -32,14 +32,11 @@ the procedure, not a re-description — it does not repeat that detail.
 | Use case | Handler type | Dispatch shape |
 | --- | --- | --- |
 | Notify external system (Slack, etc.) | `WEBHOOK` | per-row |
-| Internal automation | `WORKFLOW` | per-row (handler body is a stub — see below) |
+| Customer workflows (the matcher) | `WORKFLOW` | per-row, carrying `companyId` / `actorId` / `workflowRunId` (see `workflow-matcher.md`) |
 | Sync to accounting (Xero) | `SYNC` | batched `{ records }` |
 | Update search index | `SEARCH` | batched `{ records }` |
 | Audit log | `AUDIT` | batched `{ records }` |
 | Embedding / vector index | `EMBEDDING` | batched `{ records }` |
-
-<!-- UNVERIFIED: the WORKFLOW handler body (workflow.ts) is currently a no-op stub
-     that only logs; it does not yet dispatch by workflowId. -->
 
 ---
 
@@ -222,6 +219,8 @@ In `packages/jobs/src/inngest/functions/events/queue.ts`:
    ```
    For **per-row** dispatch instead, follow the `grouped.WEBHOOK` block: map each job
    to `{ name, data: { msgId: job.msg_id, … } }` and `sendEvent` the chunk array directly.
+   The `grouped.WORKFLOW` branch is the other per-row example: it forwards
+   `{ msgId, companyId, actorId, workflowRunId, data: job.message.event }`.
 
    Note: the queue does NOT delete the chunk-level loop's processed ids individually —
    `delete-processed` removes **all** read ids (`allIds`) at the end of the run.

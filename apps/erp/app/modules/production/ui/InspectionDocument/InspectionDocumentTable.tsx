@@ -1,5 +1,4 @@
 import { MenuIcon, MenuItem, useDisclosure, VStack } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -13,7 +12,7 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useItems } from "~/stores/items";
@@ -97,7 +96,9 @@ const InspectionDocumentTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: { icon: <LuFileText /> }
         },
         {
@@ -111,7 +112,9 @@ const InspectionDocumentTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: { icon: <LuFileText /> }
         }
       ],

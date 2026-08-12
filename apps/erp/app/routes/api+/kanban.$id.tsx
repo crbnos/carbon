@@ -5,7 +5,7 @@ import type { Database } from "@carbon/database";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { Loading } from "@carbon/react";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
@@ -25,6 +25,10 @@ import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+import {
+  getCompanyTimeZone,
+  getLocationTimeZone
+} from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "kanban");
@@ -86,7 +90,12 @@ async function handleKanban({
     ]);
 
     const leadTime = manufacturing.data?.leadTime ?? 7;
-    const startDate = today(getLocalTimeZone());
+    // No location on the kanban → the company calendar.
+    const startDate = datetime.today(
+      kanban.data.locationId
+        ? await getLocationTimeZone(client, kanban.data.locationId, companyId)
+        : await getCompanyTimeZone(client, companyId)
+    );
     const dueDate = startDate.add({ days: leadTime }).toString();
 
     // Use storage unit from kanban if it exists, otherwise use default storage unit

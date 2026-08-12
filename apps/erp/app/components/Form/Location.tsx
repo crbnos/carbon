@@ -98,7 +98,8 @@ export const useLocations = () => {
       locationFetcher.data?.data
         ? locationFetcher.data?.data.map((c) => ({
             value: c.id,
-            label: c.name
+            label: c.name,
+            timezone: c.timezone
           }))
         : [],
     [locationFetcher.data]

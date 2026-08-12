@@ -1,6 +1,7 @@
 import { sql, Transaction } from "kysely";
 import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
 import { interpolateSerialNumber } from "../lib/utils.ts";
+import { getSequenceTimeZone } from "./get-next-sequence.ts";
 
 /**
  * Atomically reserve and format the next `count` serial numbers for an item from
@@ -49,6 +50,7 @@ export async function getNextSerialNumbers(
   const context = {
     locationCode: args.locationCode,
     locationName: args.locationName,
+    timezone: await getSequenceTimeZone(trx, args.companyId),
   };
 
   const serials: string[] = [];

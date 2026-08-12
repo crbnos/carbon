@@ -2,16 +2,16 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { PurchasingPlanningItem } from "~/modules/purchasing";
 import { getPurchasingPlanning } from "~/modules/purchasing";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
-import { getLocationsList } from "~/modules/resources";
+import { resolveLocationId } from "~/modules/shared/location.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -36,41 +36,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  let locationId = searchParams.get("location");
+  const locationId = await resolveLocationId(client, request, {
+    searchParams,
+    userId,
+    companyId,
+    onDefaultsError: path.to.inventory,
+    onNoLocations: path.to.purchasing
+  });
 
-  if (!locationId) {
-    const userDefaults = await getUserDefaults(client, userId, companyId);
-    if (userDefaults.error) {
-      throw redirect(
-        path.to.inventory,
-        await flash(
-          request,
-          error(userDefaults.error, "Failed to load default location")
-        )
-      );
-    }
-
-    locationId = userDefaults.data?.locationId ?? null;
-  }
-
-  if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
-    if (locations.error || !locations.data?.length) {
-      throw redirect(
-        path.to.purchasing,
-        await flash(
-          request,
-          error(locations.error, "Failed to load any locations")
-        )
-      );
-    }
-    locationId = locations.data?.[0].id as string;
-  }
-
-  const periods = await getOrCreatePeriods(
-    today(getLocalTimeZone()),
-    WEEKS_TO_PLAN
+  const locationToday = datetime.today(
+    await getLocationTimeZone(client, locationId, companyId)
   );
+  const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
 
   const items = await getPurchasingPlanning(
     client,
@@ -97,7 +74,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     items: (items.data ?? []) as PurchasingPlanningItem[],
     count: items.count ?? 0,
     periods,
-    locationId
+    locationId,
+    // Planned-order date defaults are business dates on the plant's calendar —
+    // the drawer must not seed them from the planner's browser zone.
+    locationToday: locationToday.toString()
   };
 }
 

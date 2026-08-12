@@ -171,3 +171,50 @@ export async function duplicatePriceOverrides(
     return { duplicated: 0, skipped: 0, overwritten: 0, error: e };
   }
 }
+
+/**
+ * Save a quote line and reconcile its quantity-break prices atomically.
+ *
+ * These three writes have to land together. Previously the line update
+ * committed first, then the prune, then the seed — so a resolver failure left
+ * the line saved with its new breaks unpriced, and a failure after the prune
+ * left it short rows it used to have. The user saw a flashed error but the data
+ * was already half-applied.
+ *
+ * Price ROWS are computed by the caller beforehand (the resolvers only read),
+ * so a pricing failure aborts before anything is written at all. Those reads
+ * are outside the transaction, which is fine: none of them touch the rows being
+ * written here.
+ */
+export async function saveQuoteLineWithPrices(args: {
+  lineId: string;
+  line: Record<string, unknown>;
+  removedQuantities: number[];
+  priceRows: Record<string, unknown>[];
+}): Promise<void> {
+  const { lineId, line, removedQuantities, priceRows } = args;
+  const db = getDatabaseClient();
+
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("quoteLine")
+      .set(line as never)
+      .where("id", "=", lineId)
+      .execute();
+
+    if (removedQuantities.length > 0) {
+      await trx
+        .deleteFrom("quoteLinePrice")
+        .where("quoteLineId", "=", lineId)
+        .where("quantity", "in", removedQuantities)
+        .execute();
+    }
+
+    if (priceRows.length > 0) {
+      await trx
+        .insertInto("quoteLinePrice")
+        .values(priceRows as never)
+        .execute();
+    }
+  });
+}

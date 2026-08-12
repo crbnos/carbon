@@ -11,12 +11,11 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import { LuSend } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useFetcher, useParams } from "react-router";
-import { EmployeeAvatar } from "~/components";
+import { DateTime, EmployeeAvatar } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
   getMaintenanceDispatch,
@@ -77,7 +76,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function MaintenanceDispatchCommentsRoute() {
   const { t } = useLingui();
-  const { locale } = useLocale();
   const { dispatchId } = useParams();
   if (!dispatchId) throw new Error("dispatchId not found");
 
@@ -151,7 +149,7 @@ export default function MaintenanceDispatchCommentsRoute() {
                       <EmployeeAvatar employeeId={c.createdBy.id} size="xs" />
                     </HStack>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(c.createdAt).toLocaleString(locale)}
+                      <DateTime value={c.createdAt} variant="absolute" />
                     </span>
                   </HStack>
                   <p className="text-sm">{c.comment}</p>

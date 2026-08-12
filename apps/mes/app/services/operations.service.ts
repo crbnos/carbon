@@ -1,13 +1,15 @@
 import type { Database } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
+  datetime,
   type FlatTree,
   flattenTree,
   generateBomIds,
   type TrackedActivityAttributes
 } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -192,7 +194,19 @@ export async function finishJobOperation(
     // last operation. Return any picked-but-unconsumed stock staged at lineside
     // back to its warehouse source — the SQL trigger can't call edge functions,
     // so we orchestrate it here.
-    await returnPickedRemainders(client, args);
+    const { jobId } = await returnPickedRemainders(client, args);
+
+    if (jobId) {
+      await raiseMoment("production.jobOperationCompleted", {
+        outputs: {
+          job: { id: jobId },
+          jobOperation: { id: args.jobOperationId },
+          completedBy: { id: args.userId }
+        },
+        companyId: args.companyId,
+        actorId: args.userId
+      });
+    }
   }
 
   return result;
@@ -217,7 +231,7 @@ export async function returnPickedRemainders(
     userId: string;
     companyId: string;
   }
-) {
+): Promise<{ jobId: string | undefined }> {
   const op = await client
     .from("jobOperation")
     .select("jobId")
@@ -225,7 +239,7 @@ export async function returnPickedRemainders(
     .eq("companyId", args.companyId)
     .maybeSingle();
   const jobId = op.data?.jobId;
-  if (!jobId) return;
+  if (!jobId) return { jobId: undefined };
 
   const job = await client
     .from("job")
@@ -233,7 +247,7 @@ export async function returnPickedRemainders(
     .eq("id", jobId)
     .eq("companyId", args.companyId)
     .maybeSingle();
-  if (!job.data) return;
+  if (!job.data) return { jobId };
 
   const body =
     job.data.status === "Completed"
@@ -261,6 +275,8 @@ export async function returnPickedRemainders(
       companyId: args.companyId
     });
   }
+
+  return { jobId };
 }
 
 export async function getActiveJobOperationsByEmployee(
@@ -649,16 +665,34 @@ export async function getJobMaterialsByOperationId(
   const consumedEntityIds = Array.from(
     new Set((trackedInputs.data ?? []).map((i) => i.id).filter(Boolean))
   );
-  const todayStr = today(getLocalTimeZone()).toString();
-  const expiredConsumed =
-    consumedEntityIds.length > 0
-      ? await client
-          .from("trackedEntity")
-          .select("id")
-          .in("id", consumedEntityIds)
-          .not("expirationDate", "is", null)
-          .lt("expirationDate", todayStr)
-      : { data: [] as { id: string }[] };
+  let expiredConsumed: { data: { id: string }[] | null } = {
+    data: [] as { id: string }[]
+  };
+  if (consumedEntityIds.length > 0) {
+    const job = await client
+      .from("job")
+      .select("companyId")
+      .eq("id", operation.jobId)
+      .single();
+    // A missing job row must not silently degrade the expiry cutoff to UTC
+    // (getCompanyTimeZone("") resolves no company and falls back).
+    if (job.error || !job.data) {
+      throw new Error(
+        `Failed to resolve job ${operation.jobId} for the expiry check: ${
+          job.error?.message ?? "not found"
+        }`
+      );
+    }
+    const todayStr = datetime
+      .today(await getCompanyTimeZone(client, job.data.companyId))
+      .toString();
+    expiredConsumed = await client
+      .from("trackedEntity")
+      .select("id")
+      .in("id", consumedEntityIds)
+      .not("expirationDate", "is", null)
+      .lt("expirationDate", todayStr);
+  }
   const expiredConsumedIds = new Set(
     (expiredConsumed.data ?? []).map((r) => r.id)
   );
@@ -1168,9 +1202,12 @@ export function isSerialEntityIncompleteForOperation(
   jobOperationId: string
 ): boolean {
   const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
+  // Scrapped is terminal like Consumed — a scrapped unit is never a work
+  // candidate; its replacement is the spawned Reserved entity.
   return (
     !(`Operation ${jobOperationId}` in attributes) &&
-    entity.status !== "Consumed"
+    entity.status !== "Consumed" &&
+    entity.status !== "Scrapped"
   );
 }
 
@@ -1187,10 +1224,20 @@ export function getNextIncompleteSerialEntity<
   T extends SerialEntityForSelection
 >(entities: T[], jobOperationId: string): T | undefined {
   if (entities.length === 0) return undefined;
+  // Prefer a non-terminal (not Consumed/Scrapped) unit for the end-state
+  // fallback so we never seed work onto a scrapped/consumed serial. But keep
+  // the guaranteed last-entity fallback for a fully-terminal make method (every
+  // unit Consumed on a finished subassembly), preserving the prior behavior of
+  // always returning something when entities exist.
+  const selectable = entities.filter(
+    (entity) => entity.status !== "Consumed" && entity.status !== "Scrapped"
+  );
   return (
-    entities.find((entity) =>
+    selectable.find((entity) =>
       isSerialEntityIncompleteForOperation(entity, jobOperationId)
-    ) ?? entities[entities.length - 1]
+    ) ??
+    selectable[selectable.length - 1] ??
+    entities[entities.length - 1]
   );
 }
 
@@ -1236,6 +1283,15 @@ export async function getTrackedInputs(
       p_tracked_entity_id: trackedEntityId
     })
   ]);
+
+  // A scrapped descendant is no longer a live consumed input — the scrap flow
+  // relieved its WIP and reopened the material requirement — so it must not
+  // surface in the Unconsume/Scrap lists (which are built from these inputs).
+  // Genealogy still sees it via the traceability lineage RPCs; this MES helper
+  // intentionally hides it.
+  if (inputs.data) {
+    inputs.data = inputs.data.filter((input) => input.status !== "Scrapped");
+  }
 
   if (outputs.error || outputs.data.length === 0) return inputs;
 
@@ -1615,7 +1671,7 @@ export async function startProductionEvent(
   client: SupabaseClient<Database>,
   data: Omit<
     z.infer<typeof productionEventValidator>,
-    "id" | "action" | "timezone" | "hasActiveEvents" | "unitIndex"
+    "id" | "action" | "hasActiveEvents" | "unitIndex"
   > & {
     startTime: string;
     employeeId: string;

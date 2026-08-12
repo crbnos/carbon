@@ -21,6 +21,10 @@ msgstr "{0} - Satz {1}"
 msgid "{0} Active"
 msgstr "{0} Aktiv"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "vor {0}"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -149,6 +153,9 @@ msgstr "Authentifizierungsfehler"
 msgid "available"
 msgstr "verfügbar"
 
+msgid "Available"
+msgstr "Verfügbar"
+
 msgid "Batch"
 msgstr "Charge"
 
@@ -211,9 +218,8 @@ msgstr "Einstempeln"
 msgid "Clock Out"
 msgstr "Ausstempeln"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Eingestempelt seit {0}"
+msgid "Clocked in since <0/>"
+msgstr "Eingecheckt seit <0/>"
 
 msgid "Close"
 msgstr "Schließen"
@@ -265,6 +271,9 @@ msgstr "Konsole"
 msgid "Console Mode"
 msgstr "Konsolenmodus"
 
+msgid "Consumed"
+msgstr "Verbraucht"
+
 msgid "Consumed expired"
 msgstr "Verbrauchte abgelaufen"
 
@@ -313,9 +322,8 @@ msgstr "Löschen"
 msgid "Delete Step"
 msgstr "Schritt löschen"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "Zeitkarte löschen ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "Zeitkarte löschen (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "Beschreiben Sie das Problem..."
@@ -429,11 +437,12 @@ msgstr "Funktionstabelle erweitern"
 msgid "Expired"
 msgstr "Abgelaufen"
 
-msgid "Expired {date}"
-msgstr "Abgelaufen {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Abgelaufen {0}"
 
-msgid "Expires {date}"
-msgstr "Verfällt am {date}"
+msgid "Expires <0/>"
+msgstr "Läuft ab <0/>"
 
 msgid "Expiring first"
 msgstr "Verfällt zuerst"
@@ -533,6 +542,10 @@ msgstr "Auswirkung"
 msgid "Imperial"
 msgstr "Imperiale"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "in {0}"
+
 msgid "In Progress"
 msgstr "In Bearbeitung"
 
@@ -623,6 +636,9 @@ msgstr "Artikeldetails werden geladen..."
 msgid "Loading..."
 msgstr "Wird geladen..."
 
+msgid "Local"
+msgstr "Lokal"
+
 msgid "Location"
 msgstr "Standort"
 
@@ -667,6 +683,9 @@ msgstr "Instandhaltung abgeschlossen"
 
 msgid "Maintenance overdue"
 msgstr "Wartung überfällig"
+
+msgid "Make a replacement"
+msgstr "Ersatzteil erstellen"
 
 msgid "Manually add items to inventory"
 msgstr "Artikel manuell zum Bestand hinzufügen"
@@ -858,6 +877,9 @@ msgstr "Nichts läuft"
 msgid "Nothing scheduled at this work center"
 msgstr "Nichts geplant in diesem Arbeitszentrum"
 
+msgid "Nothing to scrap"
+msgstr "Nichts zum Verschrotten"
+
 msgid "OEE Impact"
 msgstr "OEE-Auswirkung"
 
@@ -1043,6 +1065,9 @@ msgstr "Bestand entfernen"
 msgid "Remove part"
 msgstr "Teil entfernen"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "Unterbaugruppe erneut öffnen und Ersatzeinheit erstellen"
+
 msgid "Result"
 msgstr "Ergebnis"
 
@@ -1091,6 +1116,12 @@ msgstr "Zeitplan"
 msgid "Scrap"
 msgstr "Ausschuss"
 
+msgid "Scrap {readableId}"
+msgstr "{readableId} verschrotten"
+
+msgid "Scrap material"
+msgstr "Material verschrotten"
+
 msgid "Scrap quantity"
 msgstr "Verschrottungsmenge"
 
@@ -1099,6 +1130,12 @@ msgstr "Ausschussgrund"
 
 msgid "Scrapped"
 msgstr "Ausschuss"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "Seriennummer {trackedEntityReadableId} wird verschrottet"
+
+msgid "Scrapping the selected serial"
+msgstr "Ausgewählte Seriennummer wird verschrottet"
 
 msgid "Search"
 msgstr "Suchen"
@@ -1284,6 +1321,9 @@ msgstr "Das Los wird als Bestanden markiert und {remaining} verbleibende Einheit
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Das Los wird weiterhin dispositioniert, aber ein NCR kann nicht erstellt werden, bis mindestens ein Problemtyp konfiguriert ist."
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "Es gibt keine verfügbaren oder verbrauchten verfolgten Teile für dieses Material."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Es gibt serien- oder chargenverfolgte Materialien in der Stückliste, die noch nicht vollständig ausgegeben wurden. Ein Abschluss ohne Ausgabe kann zu fehlerhaften Rückverfolgbarkeitsdaten führen."
 
@@ -1292,6 +1332,15 @@ msgstr "Diese Artikel haben noch Material zum Picken. Ein Abschluss jetzt markie
 
 msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "Dieses Teil wurde auf Bestellung gefertigt. Durch das Verschrotten kann seine Arbeitsfolge erneut geöffnet werden, um ein Ersatzteil zu erstellen."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "Dieses Teil wird aus dem Lager verschrottet. Sein Bedarf bleibt offen, damit Sie ein Ersatzteil ausgeben können."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "Diese Einheit wird endgültig verschrottet und es wird eine neue Seriennummer erstellt."
 
 msgid "Thumbnail"
 msgstr "Vorschaubild"
@@ -1397,9 +1446,8 @@ msgstr "Arbeitszentrum-Anzeigetafeln"
 msgid "Yes"
 msgstr "Ja"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Sie haben sich um {0} eingestempelt. Sie können Ihre Ausstempelzeit unten bearbeiten oder bestätigen, dass Sie noch arbeiten."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Sie haben sich um <0/> angemeldet. Sie können Ihre Abmeldungszeit unten ändern oder bestätigen, dass Sie noch arbeiten."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie vergessen auszustempeln?"
