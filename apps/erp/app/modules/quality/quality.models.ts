@@ -159,7 +159,7 @@ export const gaugeCalibrationRecordValidator = z.object({
 
 export const gaugeTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const issueAssociationValidator = z
@@ -197,7 +197,7 @@ export const issueValidator = z.object({
   nonConformanceId: zfd.text(z.string().optional()),
   priority: z.enum(nonConformancePriority),
   source: z.enum(nonConformanceSource),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   description: zfd.text(z.string().optional()),
   requiredActionIds: z.array(z.string()).optional(),
   approvalRequirements: z
@@ -223,12 +223,12 @@ export const nonConformanceReviewerValidator = z.object({
 
 export const issueTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const issueWorkflowValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   content: z
     .string()
     .min(1, { message: "Content is required" })
@@ -315,7 +315,7 @@ export const assignIssueItemEntitiesValidator = z.object({
 
 export const qualityDocumentValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   version: zfd.numeric(z.number().min(0)),
   content: zfd.text(z.string().optional()),
   copyFromId: zfd.text(z.string().optional())
@@ -327,7 +327,7 @@ export const qualityDocumentStepValidator = z
     qualityDocumentId: z
       .string()
       .min(1, { message: "Quality document is required" }),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     description: zfd.text(z.string().optional()),
     type: z.enum(procedureStepType, {
       errorMap: () => ({ message: "Type is required" })
@@ -381,7 +381,7 @@ export const qualityDocumentStepValidator = z
 
 export const requiredActionValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   active: zfd.checkbox()
 });
 

@@ -73,6 +73,10 @@ msgstr "{0}が正常に削除されました"
 msgid "{0} draft journal entries"
 msgstr "{0}件の下書き仕訳"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0}件のジョブが作成されました"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
@@ -109,6 +113,9 @@ msgstr "{0}が正常にアップロードされました"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount}件のパーツをスキップしました — 既にオープンジョブがあります"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}%の買掛金"
 
@@ -141,6 +148,9 @@ msgstr "{maxSizeMB}MB制限"
 msgid "{name} deleted"
 msgstr "{name}が削除されました"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount}件のパーツをスキップしました — 製造する必要がありません"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
 
@@ -158,6 +168,9 @@ msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount}件のジョブが更新されました"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} をアップロードしました — ドキュメントからフィールドに入力されました。"
@@ -193,6 +206,18 @@ msgstr "1日"
 
 msgid "1 draft journal entry"
 msgstr "1件の下書き仕訳"
+
+msgid "1 job created"
+msgstr "1件のジョブが作成されました"
+
+msgid "1 job updated"
+msgstr "1件のジョブが更新されました"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1件のパーツをスキップしました — 既にオープンジョブがあります"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1件のパーツをスキップしました — 製造する必要がありません"
 
 msgid "1 problem — not published"
 msgstr "1個の問題 — 未発行"
@@ -1228,9 +1253,6 @@ msgstr "すべてのアイテムタイプ"
 
 msgid "All Items"
 msgstr "すべてのアイテム"
-
-msgid "All jobs completed"
-msgstr "すべてのジョブが完了しました"
 
 msgid "All Locations"
 msgstr "すべての場所"
@@ -7890,9 +7912,6 @@ msgstr "ジョブ"
 msgid "Jobs Assigned to Me"
 msgstr "私に割り当てられたジョブ"
 
-msgid "Jobs in progress"
-msgstr "進行中のジョブ"
-
 msgid "Jobs Required"
 msgstr "ジョブが必要です"
 
@@ -9486,6 +9505,9 @@ msgstr "アイテムなし"
 
 msgid "No items have inventory activity here yet."
 msgstr "ここにはまだアイテムの在庫活動がありません。"
+
+msgid "No jobs were created"
+msgstr "ジョブが作成されていません"
 
 msgid "No journal lines in scope for this period"
 msgstr "この期間のスコープ内にジャーナルラインがありません"
@@ -15836,6 +15858,9 @@ msgstr "アクティブなジョブを表示"
 
 msgid "View Active Quotes"
 msgstr "アクティブな見積もりを表示"
+
+msgid "View all"
+msgstr "すべて表示"
 
 msgid "View All"
 msgstr "すべて表示"

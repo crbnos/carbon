@@ -73,6 +73,10 @@ msgstr "{0} eliminado com sucesso"
 msgid "{0} draft journal entries"
 msgstr "{0} lançamentos de diário em rascunho"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0} trabalhos criados"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} linhas para mapear"
@@ -109,6 +113,9 @@ msgstr "{0} enviado com sucesso"
 msgid "{0} values missing"
 msgstr "{0} valores ausentes"
 
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount} peças ignoradas — elas já têm trabalhos abertos"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% de contas a pagar"
 
@@ -141,6 +148,9 @@ msgstr "{maxSizeMB}MB limit"
 msgid "{name} deleted"
 msgstr "{name} eliminado"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount} peças ignoradas — nada para fabricar"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase restante} other {# fases restantes}}"
 
@@ -158,6 +168,9 @@ msgstr "{totalQuantity, plural, one {# unidade} other {# unidades}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# linha não contada} other {# linhas não contadas}}"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount} trabalhos atualizados"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} enviado — campos preenchidos a partir do documento."
@@ -193,6 +206,18 @@ msgstr "1 dia"
 
 msgid "1 draft journal entry"
 msgstr "1 lançamento de diário em rascunho"
+
+msgid "1 job created"
+msgstr "1 trabalho criado"
+
+msgid "1 job updated"
+msgstr "1 trabalho atualizado"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1 peça ignorada — ela já tem um trabalho aberto"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1 peça ignorada — nada para fabricar"
 
 msgid "1 problem — not published"
 msgstr "1 problema — não publicado"
@@ -1228,9 +1253,6 @@ msgstr "Todos os tipos de itens"
 
 msgid "All Items"
 msgstr "Todos os Itens"
-
-msgid "All jobs completed"
-msgstr "Todos os trabalhos concluídos"
 
 msgid "All Locations"
 msgstr "Todos os Locais"
@@ -7890,9 +7912,6 @@ msgstr "Trabalhos"
 msgid "Jobs Assigned to Me"
 msgstr "Tarefas Atribuídas a Mim"
 
-msgid "Jobs in progress"
-msgstr "Trabalhos em andamento"
-
 msgid "Jobs Required"
 msgstr "Trabalhos Necessários"
 
@@ -9486,6 +9505,9 @@ msgstr "Nenhum item"
 
 msgid "No items have inventory activity here yet."
 msgstr "Nenhum item teve atividade de inventário aqui ainda."
+
+msgid "No jobs were created"
+msgstr "Nenhum trabalho foi criado"
 
 msgid "No journal lines in scope for this period"
 msgstr "Nenhuma linha de diário no escopo para este período"
@@ -15836,6 +15858,9 @@ msgstr "Ver Tarefas Ativas"
 
 msgid "View Active Quotes"
 msgstr "Ver Cotações Ativas"
+
+msgid "View all"
+msgstr "Ver tudo"
 
 msgid "View All"
 msgstr "Ver Tudo"

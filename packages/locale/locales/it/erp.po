@@ -73,6 +73,10 @@ msgstr "{0} eliminato con successo"
 msgid "{0} draft journal entries"
 msgstr "{0} bozze di registrazioni contabili"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0} processi creati"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} righe da mappare"
@@ -109,6 +113,9 @@ msgstr "{0} caricato con successo"
 msgid "{0} values missing"
 msgstr "{0} valori mancanti"
 
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount} parti saltate — hanno già processi aperti"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% dei debiti"
 
@@ -141,6 +148,9 @@ msgstr "{maxSizeMB}MB limite"
 msgid "{name} deleted"
 msgstr "{name} eliminato"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount} parti saltate — niente da produrre"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase rimanente} other {# fasi rimanenti}}"
 
@@ -158,6 +168,9 @@ msgstr "{totalQuantity, plural, one {# unità} other {# unità}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# riga non conteggiata} other {# righe non conteggiate}}"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount} processi aggiornati"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} caricato — campi compilati dal documento."
@@ -193,6 +206,18 @@ msgstr "1 giorno"
 
 msgid "1 draft journal entry"
 msgstr "1 bozza di registrazione contabile"
+
+msgid "1 job created"
+msgstr "1 processo creato"
+
+msgid "1 job updated"
+msgstr "1 processo aggiornato"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1 parte saltata — ha già un processo aperto"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1 parte saltata — niente da produrre"
 
 msgid "1 problem — not published"
 msgstr "1 problema — non pubblicato"
@@ -1228,9 +1253,6 @@ msgstr "Tutti i tipi di articoli"
 
 msgid "All Items"
 msgstr "Tutti gli articoli"
-
-msgid "All jobs completed"
-msgstr "Tutti i lavori completati"
 
 msgid "All Locations"
 msgstr "Tutte le Ubicazioni"
@@ -7890,9 +7912,6 @@ msgstr "Lavori"
 msgid "Jobs Assigned to Me"
 msgstr "Lavori assegnati a me"
 
-msgid "Jobs in progress"
-msgstr "Lavori in corso"
-
 msgid "Jobs Required"
 msgstr "Lavori Richiesti"
 
@@ -9486,6 +9505,9 @@ msgstr "Nessun articolo"
 
 msgid "No items have inventory activity here yet."
 msgstr "Nessun articolo ha attività di inventario qui ancora."
+
+msgid "No jobs were created"
+msgstr "Nessun processo è stato creato"
 
 msgid "No journal lines in scope for this period"
 msgstr "Nessuna riga di diario nell'ambito per questo periodo"
@@ -15836,6 +15858,9 @@ msgstr "Visualizza Lavori Attivi"
 
 msgid "View Active Quotes"
 msgstr "Visualizza Preventivi Attivi"
+
+msgid "View all"
+msgstr "Visualizza tutto"
 
 msgid "View All"
 msgstr "Visualizza tutto"

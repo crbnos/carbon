@@ -73,6 +73,10 @@ msgstr "{0} 已成功删除"
 msgid "{0} draft journal entries"
 msgstr "{0} 份草稿日记账条目"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0} 个作业已创建"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
@@ -109,6 +113,9 @@ msgstr "{0} 上传成功"
 msgid "{0} values missing"
 msgstr "{0} 个值缺失"
 
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount} 个零件已跳过 — 它们已有待处理作业"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% 的应付账款"
 
@@ -141,6 +148,9 @@ msgstr "{maxSizeMB}MB 限制"
 msgid "{name} deleted"
 msgstr "{name} 已删除"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount} 个零件已跳过 — 没有需要生产的"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
 
@@ -158,6 +168,9 @@ msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount} 个作业已更新"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} 已上传 — 已根据文档填写字段。"
@@ -193,6 +206,18 @@ msgstr "1 天"
 
 msgid "1 draft journal entry"
 msgstr "1 份草稿日记账条目"
+
+msgid "1 job created"
+msgstr "1 个作业已创建"
+
+msgid "1 job updated"
+msgstr "1 个作业已更新"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1 个零件已跳过 — 它已有待处理作业"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1 个零件已跳过 — 没有需要生产的"
 
 msgid "1 problem — not published"
 msgstr "1 个问题 — 未发布"
@@ -1228,9 +1253,6 @@ msgstr "所有项目类型"
 
 msgid "All Items"
 msgstr "所有项目"
-
-msgid "All jobs completed"
-msgstr "所有工作已完成"
 
 msgid "All Locations"
 msgstr "所有位置"
@@ -7890,9 +7912,6 @@ msgstr "工作"
 msgid "Jobs Assigned to Me"
 msgstr "分配给我的工作"
 
-msgid "Jobs in progress"
-msgstr "进行中的工作"
-
 msgid "Jobs Required"
 msgstr "所需的工作"
 
@@ -9486,6 +9505,9 @@ msgstr "无项目"
 
 msgid "No items have inventory activity here yet."
 msgstr "此处尚无项目的库存活动。"
+
+msgid "No jobs were created"
+msgstr "没有创建任何作业"
 
 msgid "No journal lines in scope for this period"
 msgstr "本期范围内没有日记账行"
@@ -15836,6 +15858,9 @@ msgstr "查看活跃工作"
 
 msgid "View Active Quotes"
 msgstr "查看活跃报价"
+
+msgid "View all"
+msgstr "查看全部"
 
 msgid "View All"
 msgstr "查看全部"

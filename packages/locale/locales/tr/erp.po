@@ -73,6 +73,10 @@ msgstr "{0} başarıyla silindi"
 msgid "{0} draft journal entries"
 msgstr "{0} taslak muhasebe kaydı"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0} iş oluşturuldu"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
@@ -109,6 +113,9 @@ msgstr "{0} başarıyla yüklendi"
 msgid "{0} values missing"
 msgstr "{0} değeri eksik"
 
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount} parça atlandı — zaten açık işleri var"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% borç"
 
@@ -141,6 +148,9 @@ msgstr "{maxSizeMB}MB sınırı"
 msgid "{name} deleted"
 msgstr "{name} silindi"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount} parça atlandı — yapılacak bir şey yok"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
@@ -158,6 +168,9 @@ msgstr "{totalQuantity, plural, one {# birim} other {# birimler}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount} iş güncellendi"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} yüklendi — alanlar belgeden dolduruldu."
@@ -193,6 +206,18 @@ msgstr "1 gün"
 
 msgid "1 draft journal entry"
 msgstr "1 taslak muhasebe kaydı"
+
+msgid "1 job created"
+msgstr "1 iş oluşturuldu"
+
+msgid "1 job updated"
+msgstr "1 iş güncellendi"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1 parça atlandı — zaten açık bir işi var"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1 parça atlandı — yapılacak bir şey yok"
 
 msgid "1 problem — not published"
 msgstr "1 sorun — yayınlanmadı"
@@ -1228,9 +1253,6 @@ msgstr "Tüm öğe türleri"
 
 msgid "All Items"
 msgstr "Tüm Öğeler"
-
-msgid "All jobs completed"
-msgstr "Tüm işler tamamlandı"
 
 msgid "All Locations"
 msgstr "Tüm Konumlar"
@@ -7890,9 +7912,6 @@ msgstr "İşler"
 msgid "Jobs Assigned to Me"
 msgstr "Bana Atanan İşler"
 
-msgid "Jobs in progress"
-msgstr "Devam eden işler"
-
 msgid "Jobs Required"
 msgstr "İşler Gerekli"
 
@@ -9486,6 +9505,9 @@ msgstr "Öğe yok"
 
 msgid "No items have inventory activity here yet."
 msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
+
+msgid "No jobs were created"
+msgstr "Hiçbir iş oluşturulmadı"
 
 msgid "No journal lines in scope for this period"
 msgstr "Bu dönem için kapsam içinde günlük satırı yok"
@@ -15836,6 +15858,9 @@ msgstr "Aktif İşleri Görüntüle"
 
 msgid "View Active Quotes"
 msgstr "Aktif Teklifleri Görüntüle"
+
+msgid "View all"
+msgstr "Tümünü Görüntüle"
 
 msgid "View All"
 msgstr "Tümünü Gör"

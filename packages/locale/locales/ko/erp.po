@@ -73,6 +73,10 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} draft journal entries"
 msgstr "{0}건의 임시 분개"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0}개 작업이 생성됨"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
@@ -109,6 +113,9 @@ msgstr "{0}이(가) 업로드되었습니다"
 msgid "{0} values missing"
 msgstr "{0}개 값 누락"
 
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount}개 부품이 건너뜀 — 이미 활성 작업이 있음"
+
 msgid "{apOverduePct}% of payables"
 msgstr "매입채무의 {apOverduePct}%"
 
@@ -141,6 +148,9 @@ msgstr "{maxSizeMB}MB 제한"
 msgid "{name} deleted"
 msgstr "{name} 삭제됨"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount}개 부품이 건너뜀 — 만들 것이 없음"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
 
@@ -158,6 +168,9 @@ msgstr "{totalQuantity, plural, one {# 단위} other {# 단위}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount}개 작업이 업데이트됨"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} 업로드됨 — 문서에서 필드가 채워졌습니다."
@@ -193,6 +206,18 @@ msgstr "1일"
 
 msgid "1 draft journal entry"
 msgstr "1건의 임시 분개"
+
+msgid "1 job created"
+msgstr "1개 작업이 생성됨"
+
+msgid "1 job updated"
+msgstr "1개 작업이 업데이트됨"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1개 부품이 건너뜀 — 이미 활성 작업이 있음"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1개 부품이 건너뜀 — 만들 것이 없음"
 
 msgid "1 problem — not published"
 msgstr "1개 문제 — 발행되지 않음"
@@ -1228,9 +1253,6 @@ msgstr "모든 품목 유형"
 
 msgid "All Items"
 msgstr "모든 품목"
-
-msgid "All jobs completed"
-msgstr "모든 작업 완료됨"
 
 msgid "All Locations"
 msgstr "모든 위치"
@@ -7890,9 +7912,6 @@ msgstr "작업"
 msgid "Jobs Assigned to Me"
 msgstr "내게 배정된 작업"
 
-msgid "Jobs in progress"
-msgstr "진행 중인 작업"
-
 msgid "Jobs Required"
 msgstr "필요한 작업"
 
@@ -9486,6 +9505,9 @@ msgstr "품목 없음"
 
 msgid "No items have inventory activity here yet."
 msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
+
+msgid "No jobs were created"
+msgstr "생성된 작업이 없음"
 
 msgid "No journal lines in scope for this period"
 msgstr "이 기간에 대한 범위 내 분개선이 없습니다"
@@ -15836,6 +15858,9 @@ msgstr "진행 중인 작업 보기"
 
 msgid "View Active Quotes"
 msgstr "활성 견적 보기"
+
+msgid "View all"
+msgstr "모두 보기"
 
 msgid "View All"
 msgstr "전체 보기"

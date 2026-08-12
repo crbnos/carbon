@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+import puppeteer from "npm:puppeteer-core@16.2.0";
 import { z } from "npm:zod@^3.24.1";
 import { Buffer } from "node:buffer";
 import { corsHeaders } from "../lib/headers.ts";

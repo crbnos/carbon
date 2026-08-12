@@ -277,7 +277,7 @@ export const reportViewValidator = z.object({
 export const groupAccountValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     parentId: zfd.text(z.string().optional()),
     accountType: z
       .enum(accountTypes, {
@@ -331,7 +331,7 @@ export const accountValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     number: z.string().min(1, { message: "Number is required" }).nullish(),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     parentId: zfd.text(z.string().optional()),
     isGroup: zfd.checkbox(),
     accountType: z
@@ -415,7 +415,7 @@ export const journalLineValidator = z.object({
 
 export const currencyValidator = z.object({
   id: zfd.text(z.string().optional()),
-  code: z.string().min(1, { message: "Code is required" }),
+  code: z.string().trim().min(1, { message: "Code is required" }),
   decimalPlaces: zfd.numeric(z.number().min(0).max(4)),
   exchangeRate: zfd.numeric(z.number().min(0, { message: "Rate is required" })),
   historicalExchangeRate: zfd.numeric(
@@ -581,7 +581,7 @@ export const paymentTermsCalculationMethod = [
 
 export const paymentTermValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   daysDue: zfd.numeric(
     z
       .number()
@@ -624,7 +624,7 @@ export const costLedgerValidator = z.object({
 
 export const costCenterValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   parentCostCenterId: zfd.text(z.string().optional()),
   ownerId: z.string().min(1, { message: "Owner is required" })
 });
@@ -736,7 +736,7 @@ export const closeTaskSkipValidator = z.object({
 export const addCloseTaskValidator = z.object({
   intent: z.literal("addTask"),
   periodId: z.string().min(1, { message: "Period is required" }),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   taskType: z.enum(periodCloseTaskTypes, {
     errorMap: () => ({ message: "Task type is required" })
   }),
@@ -747,7 +747,7 @@ export const addCloseTaskValidator = z.object({
 // Create/update a company-level close task definition (template row).
 export const periodCloseTaskDefinitionValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   taskType: z.enum(periodCloseTaskTypes, {
     errorMap: () => ({ message: "Task type is required" })
   }),
@@ -803,7 +803,7 @@ export const dimensionEntityTypes = [
 
 export const dimensionValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   entityType: z.enum(dimensionEntityTypes, {
     errorMap: () => ({ message: "Entity type is required" })
   }),
@@ -837,7 +837,7 @@ export const disposalMethods = ["Sale", "Scrapping"] as const;
 
 export const fixedAssetClassValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   description: z.string().optional(),
   depreciationMethod: z.enum(depreciationMethods, {
     errorMap: () => ({ message: "Depreciation method is required" })
@@ -890,7 +890,7 @@ export const fixedAssetClassValidator = z.object({
 export const fixedAssetValidator = z.object({
   id: zfd.text(z.string().optional()),
   fixedAssetClassId: z.string().min(1, { message: "Asset class is required" }),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   description: z.string().optional(),
   serialNumber: z.string().optional(),
   depreciationMethod: z.enum(depreciationMethods, {
