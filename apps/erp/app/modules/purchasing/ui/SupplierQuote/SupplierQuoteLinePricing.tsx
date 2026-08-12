@@ -23,6 +23,7 @@ import EditableNumberCell from "~/components/EditableNumberCell";
 import { Enumerable } from "~/components/Enumerable";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
+  useCurrencyDecimals,
   useCurrencyFormatter,
   usePermissions,
   useRouteData,
@@ -71,8 +72,6 @@ const SupplierQuoteLinePricing = ({
     quote: SupplierQuote;
     presentationCurrency: { decimalPlaces: number } | null;
   }>(path.to.supplierQuote(id));
-  // Settlement decimals come from the quote currency's row (loader data)
-  const currencyDecimals = routeData?.presentationCurrency?.decimalPlaces ?? 2;
   const isEditable =
     permissions.can("update", "purchasing") &&
     ["Draft"].includes(routeData?.quote?.status ?? "");
@@ -80,6 +79,13 @@ const SupplierQuoteLinePricing = ({
   const { carbon } = useCarbon();
   const { id: userId, company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  // The loader's currency row first — correct on first paint; the hook covers
+  // the case where it isn't loaded, and carries the one documented fallback.
+  const configuredDecimals = useCurrencyDecimals(
+    routeData?.quote?.currencyCode ?? baseCurrency
+  );
+  const currencyDecimals =
+    routeData?.presentationCurrency?.decimalPlaces ?? configuredDecimals;
 
   const formatter = useCurrencyFormatter();
   const presentationCurrencyFormatter = useCurrencyFormatter({
@@ -292,10 +298,10 @@ const SupplierQuoteLinePricing = ({
                   <Td key={quantity.toString()}>
                     <EditableNumberCell
                       value={price}
-                      formatOptions={{
-                        style: "currency",
-                        currency: routeData?.quote?.currencyCode ?? baseCurrency
-                      }}
+                      formatOptions={INPUT_FORMAT.price(
+                        routeData?.quote?.currencyCode ?? baseCurrency,
+                        currencyDecimals
+                      )}
                       minValue={0}
                       isEditable={isEditable}
                       onChange={(value) =>
@@ -347,10 +353,10 @@ const SupplierQuoteLinePricing = ({
                   <Td key={quantity.toString()}>
                     <EditableNumberCell
                       value={shippingCost}
-                      formatOptions={{
-                        style: "currency",
-                        currency: routeData?.quote?.currencyCode ?? baseCurrency
-                      }}
+                      formatOptions={INPUT_FORMAT.money(
+                        routeData?.quote?.currencyCode ?? baseCurrency,
+                        currencyDecimals
+                      )}
                       minValue={0}
                       isEditable={isEditable}
                       onChange={(value) =>

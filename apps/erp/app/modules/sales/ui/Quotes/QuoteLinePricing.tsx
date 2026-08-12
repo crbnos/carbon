@@ -46,6 +46,7 @@ import {
 import { useFetcher, useParams } from "react-router";
 import EditableNumberCell from "~/components/EditableNumberCell";
 import {
+  useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
@@ -178,6 +179,7 @@ const QuoteLinePricing = ({
   const { carbon } = useCarbon();
   const { id: userId, company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const formatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
@@ -794,10 +796,10 @@ const QuoteLinePricing = ({
                     <Td key={index} className="group-hover:bg-muted/50">
                       <EditableNumberCell
                         value={editableFields.unitCost}
-                        formatOptions={{
-                          style: "currency",
-                          currency: baseCurrency
-                        }}
+                        formatOptions={INPUT_FORMAT.price(
+                          baseCurrency,
+                          currencyDecimals
+                        )}
                         minValue={0}
                         isEditable={isEditable}
                         onChange={(value) => onUpdateCost(value)}
@@ -1071,10 +1073,10 @@ const QuoteLinePricing = ({
                   <Td key={quantity.toString()}>
                     <EditableNumberCell
                       value={shippingCost}
-                      formatOptions={{
-                        style: "currency",
-                        currency: baseCurrency
-                      }}
+                      formatOptions={INPUT_FORMAT.money(
+                        baseCurrency,
+                        currencyDecimals
+                      )}
                       minValue={0}
                       isEditable={isEditable}
                       onChange={(value) =>
@@ -1169,10 +1171,10 @@ const QuoteLinePricing = ({
                           <VStack spacing={0}>
                             <EditableNumberCell
                               value={amount}
-                              formatOptions={{
-                                style: "currency",
-                                currency: baseCurrency
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                baseCurrency,
+                                currencyDecimals
+                              )}
                               minValue={0}
                               isEditable={isEditable}
                               onChange={(value) =>

@@ -24,7 +24,7 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { deriveRate, pluralize } from "@carbon/utils";
+import { deriveRate, INPUT_FORMAT, pluralize } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -32,7 +32,7 @@ import { LuImage } from "react-icons/lu";
 import { Form, useNavigation, useParams } from "react-router";
 import type { z } from "zod";
 import { useAccounts } from "~/components/Form/Account";
-import { useUser } from "~/hooks";
+import { useCurrencyDecimals, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { selectedLineSchema } from "../../purchasing.models";
@@ -262,6 +262,7 @@ const LinePricingOptions = ({
   setSelectedLines
 }: LinePricingOptionsProps) => {
   const { t } = useLingui();
+  const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const [selectedValue, setSelectedValue] = useState("");
   const [showOverride, setShowOverride] = useState(false);
   const [overridePricing, setOverridePricing] = useState<SelectedLine>({
@@ -447,10 +448,10 @@ const LinePricingOptions = ({
                     aria-label={t`Unit Price`}
                     minValue={0}
                     value={overridePricing.supplierUnitPrice}
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.price(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(unitPrice) =>
                       setOverridePricing((v) => ({
                         ...v,
@@ -471,10 +472,10 @@ const LinePricingOptions = ({
                     aria-label={t`Shipping`}
                     minValue={0}
                     value={overridePricing.supplierShippingCost}
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(shippingCost) =>
                       setOverridePricing((v) => ({
                         ...v,
@@ -520,10 +521,10 @@ const LinePricingOptions = ({
                     aria-label={t`Tax`}
                     minValue={0}
                     value={overridePricing.supplierTaxAmount}
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(taxAmount) =>
                       setOverridePricing((v) => ({
                         ...v,
