@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { STRIPE_SECRET_KEY } from "@carbon/env";
+import { STRIPE_CONNECT_WEBHOOK_SECRET, STRIPE_SECRET_KEY } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Stripe } from "stripe";
@@ -208,10 +208,51 @@ export async function createExpressDashboardLoginLink(
 // stays on the shared v1-pinned `stripe` client with `{ stripeAccount }`
 // rather than the v2 `stripeConnect` client used for account management.
 
-export function toStripeAmount(value: number, _currencyCode: string): number {
-  // TODO: zero-decimal currencies (JPY, etc.) need to skip the *100 — not
-  // handled yet, this spike assumes 2-decimal currencies only.
-  return Math.round(value * 100);
+// Stripe expresses amounts in a currency's smallest unit, and the number of
+// decimal places is currency-dependent — ¥1000 is `1000`, not `100000`. Anything
+// not listed here is the ordinary 2-decimal case.
+const ZERO_DECIMAL_CURRENCIES = new Set([
+  "BIF",
+  "CLP",
+  "DJF",
+  "GNF",
+  "JPY",
+  "KMF",
+  "KRW",
+  "MGA",
+  "PYG",
+  "RWF",
+  "UGX",
+  "VND",
+  "VUV",
+  "XAF",
+  "XOF",
+  "XPF"
+]);
+
+const THREE_DECIMAL_CURRENCIES = new Set(["BHD", "JOD", "KWD", "OMR", "TND"]);
+
+function currencyExponent(currencyCode: string): number {
+  const code = currencyCode.toUpperCase();
+  if (ZERO_DECIMAL_CURRENCIES.has(code)) return 0;
+  if (THREE_DECIMAL_CURRENCIES.has(code)) return 3;
+  return 2;
+}
+
+/** Carbon's decimal amount → Stripe's smallest-unit integer. */
+export function toStripeAmount(value: number, currencyCode: string): number {
+  const factor = 10 ** currencyExponent(currencyCode);
+  const minor = Math.round(value * factor);
+  // Stripe rejects three-decimal amounts that aren't a multiple of 10 (the
+  // smallest unit is charged in hundredths for these currencies).
+  return currencyExponent(currencyCode) === 3
+    ? Math.round(minor / 10) * 10
+    : minor;
+}
+
+/** Stripe's smallest-unit integer → Carbon's decimal amount. */
+export function fromStripeAmount(minor: number, currencyCode: string): number {
+  return minor / 10 ** currencyExponent(currencyCode);
 }
 
 export async function createConnectCustomer(
@@ -317,4 +358,156 @@ export async function createAndSendConnectInvoice(
     hostedInvoiceUrl: sent.hosted_invoice_url ?? null,
     invoicePdf: sent.invoice_pdf ?? null
   };
+}
+
+// --- Connect webhooks ---
+// Connected-account events arrive at a SEPARATE endpoint registered with
+// `connect: true`, signed with its own secret and carrying `event.account`.
+// Deliberately kept out of `processStripeEvent` (@carbon/stripe/AGENTS.md fences
+// that to platform subscription state).
+
+// Re-exported so consumers (the ERP app) can type webhook payloads without
+// taking a direct dependency on the `stripe` package themselves.
+export type ConnectWebhookEvent = Stripe.Event;
+export type ConnectInvoice = Stripe.Invoice;
+
+export function constructConnectWebhookEvent({
+  body,
+  signature
+}: {
+  body: string;
+  signature: string;
+}) {
+  if (!stripe) {
+    return {
+      success: false as const,
+      event: null,
+      error: new Error("Stripe is not initialized")
+    };
+  }
+
+  if (!STRIPE_CONNECT_WEBHOOK_SECRET) {
+    return {
+      success: false as const,
+      event: null,
+      error: new Error("STRIPE_CONNECT_WEBHOOK_SECRET is not configured")
+    };
+  }
+
+  try {
+    const event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      STRIPE_CONNECT_WEBHOOK_SECRET
+    );
+    return { success: true as const, event, error: null };
+  } catch (err) {
+    return { success: false as const, event: null, error: err as Error };
+  }
+}
+
+export type ConnectInvoicePaymentDetails = {
+  /** Charge ids behind this invoice's payments, for traceability. */
+  chargeIds: string[];
+  /** Stripe's processing fee, as a decimal amount in `feeCurrency`. */
+  feeAmount: number;
+  /**
+   * Currency the fee was assessed in — the account's SETTLEMENT currency, which
+   * is not necessarily the invoice currency. Callers must compare before booking.
+   */
+  feeCurrency: string | null;
+};
+
+/**
+ * The charges (and Stripe's fee) behind a paid invoice on a connected account.
+ *
+ * The shared v1 client is pinned to `2025-06-30.basil`, where `invoice.charge`
+ * and `invoice.payment_intent` no longer exist — payments hang off
+ * `invoice.payments` as InvoicePayment objects instead. The fee itself only
+ * lives on the charge's balance transaction, so each payment costs one extra
+ * expanded retrieve.
+ *
+ * Never throws: a fee we can't resolve returns `feeAmount: 0` with a logged
+ * warning, because failing to book a fee must not cost us the payment itself.
+ */
+export async function getConnectInvoicePaymentDetails(
+  stripeAccountId: string,
+  invoiceId: string
+): Promise<ConnectInvoicePaymentDetails> {
+  const empty: ConnectInvoicePaymentDetails = {
+    chargeIds: [],
+    feeAmount: 0,
+    feeCurrency: null
+  };
+
+  if (!stripe) return empty;
+
+  const options = { stripeAccount: stripeAccountId };
+
+  try {
+    // Listed rather than read off the webhook's invoice snapshot: `payments` is
+    // an expandable sub-list, so the delivered payload may carry only the first
+    // page (or none at all).
+    const payments = await stripe.invoicePayments.list(
+      { invoice: invoiceId, limit: 100 },
+      options
+    );
+
+    const chargeIds: string[] = [];
+    let feeMinor = 0;
+    let feeCurrency: string | null = null;
+
+    for (const payment of payments.data) {
+      if (payment.status !== "paid") continue;
+
+      let charge: Stripe.Charge | null = null;
+      const source = payment.payment;
+
+      if (source.charge) {
+        const chargeId =
+          typeof source.charge === "string" ? source.charge : source.charge.id;
+        charge = await stripe.charges.retrieve(
+          chargeId,
+          { expand: ["balance_transaction"] },
+          options
+        );
+      } else if (source.payment_intent) {
+        const paymentIntentId =
+          typeof source.payment_intent === "string"
+            ? source.payment_intent
+            : source.payment_intent.id;
+        const paymentIntent = await stripe.paymentIntents.retrieve(
+          paymentIntentId,
+          { expand: ["latest_charge.balance_transaction"] },
+          options
+        );
+        charge =
+          typeof paymentIntent.latest_charge === "string"
+            ? null
+            : (paymentIntent.latest_charge ?? null);
+      }
+
+      if (!charge) continue;
+      chargeIds.push(charge.id);
+
+      const balanceTransaction = charge.balance_transaction;
+      if (balanceTransaction && typeof balanceTransaction !== "string") {
+        feeMinor += balanceTransaction.fee;
+        feeCurrency = balanceTransaction.currency.toUpperCase();
+      }
+    }
+
+    return {
+      chargeIds,
+      feeAmount: feeCurrency ? fromStripeAmount(feeMinor, feeCurrency) : 0,
+      feeCurrency
+    };
+  } catch (err) {
+    log.warn("Failed to resolve Stripe Connect invoice payment details", {
+      error: err,
+      invoiceId,
+      stripeAccountId
+    });
+    return empty;
+  }
 }

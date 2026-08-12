@@ -63,6 +63,7 @@ declare global {
       SLACK_STATE_SECRET: string;
       STRIPE_SECRET_KEY: string;
       STRIPE_WEBHOOK_SECRET: string;
+      STRIPE_CONNECT_WEBHOOK_SECRET: string;
       STRIPE_BYPASS_COMPANY_IDS: string;
       STRIPE_BYPASS_USER_IDS: string;
       GTM_URL: string;
@@ -333,6 +334,15 @@ export const STRIPE_SECRET_KEY = getEnv("STRIPE_SECRET_KEY", {
 export const STRIPE_WEBHOOK_SECRET = getEnv("STRIPE_WEBHOOK_SECRET", {
   isRequired: false
 });
+// Connect webhook endpoints (`connect: true`) are signed with their OWN secret,
+// distinct from the platform-account endpoint above — a Connect event verified
+// against STRIPE_WEBHOOK_SECRET fails signature validation.
+export const STRIPE_CONNECT_WEBHOOK_SECRET = getEnv(
+  "STRIPE_CONNECT_WEBHOOK_SECRET",
+  {
+    isRequired: false
+  }
+);
 export const STRIPE_BYPASS_COMPANY_IDS = getEnv("STRIPE_BYPASS_COMPANY_IDS", {
   isRequired: false
 });
