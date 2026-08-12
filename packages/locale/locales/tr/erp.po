@@ -133,7 +133,7 @@ msgstr "{0}s boş"
 
 #. placeholder {0}: formatHours(requiredHours)
 msgid "{0}h required"
-msgstr ""
+msgstr "{0}s gerekli"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parça atlandı — zaten açık işleri var"
@@ -1299,7 +1299,7 @@ msgid "All Customers"
 msgstr "Tüm Müşteriler"
 
 msgid "All departments"
-msgstr ""
+msgstr "Tüm departmanlar"
 
 msgid "All Documents"
 msgstr "Tüm Belgeler"
@@ -1320,7 +1320,7 @@ msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "{inserted} eklendi, {updated} güncellendi — tüm satırlar içe aktarıldı."
 
 msgid "All shifts"
-msgstr ""
+msgstr "Tüm vardiyalar"
 
 msgid "All Suppliers"
 msgstr "Tüm Tedarikçiler"
@@ -6220,7 +6220,7 @@ msgid "Expiring first"
 msgstr "İlk sona eren"
 
 msgid "Expiring Soon"
-msgstr ""
+msgstr "Yakında Sona Erecek"
 
 msgid "Expiry"
 msgstr "Son Kullanma Tarihi"
@@ -6903,7 +6903,7 @@ msgid "Gains recognized on disposal of fixed assets"
 msgstr "Sabit varlıkların elden çıkarılmasında muhasebeleştirilen karlar"
 
 msgid "Gantt"
-msgstr ""
+msgstr "Gantt"
 
 msgid "gauge"
 msgstr "Ölçüler"
@@ -9939,7 +9939,7 @@ msgid "No tools for this step"
 msgstr "Bu adım için araç yok"
 
 msgid "No trainings assigned"
-msgstr ""
+msgstr "Atanan eğitim yok"
 
 msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"

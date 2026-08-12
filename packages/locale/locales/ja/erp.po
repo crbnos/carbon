@@ -133,7 +133,7 @@ msgstr "{0}h 余裕あり"
 
 #. placeholder {0}: formatHours(requiredHours)
 msgid "{0}h required"
-msgstr ""
+msgstr "{0}時間が必要"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}件のパーツをスキップしました — 既にオープンジョブがあります"
@@ -1299,7 +1299,7 @@ msgid "All Customers"
 msgstr "すべての顧客"
 
 msgid "All departments"
-msgstr ""
+msgstr "すべての部門"
 
 msgid "All Documents"
 msgstr "すべてのドキュメント"
@@ -1320,7 +1320,7 @@ msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "すべての行をインポート—{inserted}行挿入、{updated}行更新。"
 
 msgid "All shifts"
-msgstr ""
+msgstr "すべてのシフト"
 
 msgid "All Suppliers"
 msgstr "すべてのサプライヤー"
@@ -6220,7 +6220,7 @@ msgid "Expiring first"
 msgstr "最初に期限切れ"
 
 msgid "Expiring Soon"
-msgstr ""
+msgstr "もうすぐ期限切れ"
 
 msgid "Expiry"
 msgstr "有効期限"
@@ -6903,7 +6903,7 @@ msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定資産の処分により認識された利益"
 
 msgid "Gantt"
-msgstr ""
+msgstr "ガント"
 
 msgid "gauge"
 msgstr "ゲージ"
@@ -9939,7 +9939,7 @@ msgid "No tools for this step"
 msgstr "このステップのツールがありません"
 
 msgid "No trainings assigned"
-msgstr ""
+msgstr "トレーニングが割り当てられていません"
 
 msgid "No transactions in this period"
 msgstr "この期間に取引がありません"

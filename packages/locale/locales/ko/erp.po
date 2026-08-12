@@ -133,7 +133,7 @@ msgstr "{0}시간 여유"
 
 #. placeholder {0}: formatHours(requiredHours)
 msgid "{0}h required"
-msgstr ""
+msgstr "{0}h 필요"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}개 부품이 건너뜀 — 이미 활성 작업이 있음"
@@ -1299,7 +1299,7 @@ msgid "All Customers"
 msgstr "모든 고객"
 
 msgid "All departments"
-msgstr ""
+msgstr "모든 부서"
 
 msgid "All Documents"
 msgstr "모든 문서"
@@ -1320,7 +1320,7 @@ msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "모든 행을 가져왔습니다 — {inserted}개 추가, {updated}개 업데이트."
 
 msgid "All shifts"
-msgstr ""
+msgstr "모든 교대"
 
 msgid "All Suppliers"
 msgstr "모든 공급업체"
@@ -6220,7 +6220,7 @@ msgid "Expiring first"
 msgstr "먼저 만료되는 순"
 
 msgid "Expiring Soon"
-msgstr ""
+msgstr "곧 만료됨"
 
 msgid "Expiry"
 msgstr "만료"
@@ -6903,7 +6903,7 @@ msgid "Gains recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 이익"
 
 msgid "Gantt"
-msgstr ""
+msgstr "Gantt"
 
 msgid "gauge"
 msgstr "측정기"
@@ -9939,7 +9939,7 @@ msgid "No tools for this step"
 msgstr "이 단계에 도구 없음"
 
 msgid "No trainings assigned"
-msgstr ""
+msgstr "할당된 교육 없음"
 
 msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"

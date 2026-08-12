@@ -133,7 +133,7 @@ msgstr "{0}ч свободно"
 
 #. placeholder {0}: formatHours(requiredHours)
 msgid "{0}h required"
-msgstr ""
+msgstr "{0}ч требуется"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} деталей пропущено — у них уже есть открытые задания"
@@ -1299,7 +1299,7 @@ msgid "All Customers"
 msgstr "Все клиенты"
 
 msgid "All departments"
-msgstr ""
+msgstr "Все отделы"
 
 msgid "All Documents"
 msgstr "Все документы"
@@ -1320,7 +1320,7 @@ msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Все строки импортированы — {inserted} вставлено, {updated} обновлено."
 
 msgid "All shifts"
-msgstr ""
+msgstr "Все смены"
 
 msgid "All Suppliers"
 msgstr "Все поставщики"
@@ -6220,7 +6220,7 @@ msgid "Expiring first"
 msgstr "Истекающие первыми"
 
 msgid "Expiring Soon"
-msgstr ""
+msgstr "Скоро истечет"
 
 msgid "Expiry"
 msgstr "Срок действия"
@@ -6903,7 +6903,7 @@ msgid "Gains recognized on disposal of fixed assets"
 msgstr "Прибыль, признаваемая при выбытии основных средств"
 
 msgid "Gantt"
-msgstr ""
+msgstr "Gantt"
 
 msgid "gauge"
 msgstr "Калибры"
@@ -9939,7 +9939,7 @@ msgid "No tools for this step"
 msgstr "Нет инструментов для этого шага"
 
 msgid "No trainings assigned"
-msgstr ""
+msgstr "Обучение не назначено"
 
 msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"

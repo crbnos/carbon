@@ -133,7 +133,7 @@ msgstr "{0}h livre"
 
 #. placeholder {0}: formatHours(requiredHours)
 msgid "{0}h required"
-msgstr ""
+msgstr "{0}h obrigatório"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} peças ignoradas — elas já têm trabalhos abertos"
@@ -1299,7 +1299,7 @@ msgid "All Customers"
 msgstr "Todos os Clientes"
 
 msgid "All departments"
-msgstr ""
+msgstr "Todos os departamentos"
 
 msgid "All Documents"
 msgstr "Todos os Documentos"
@@ -1320,7 +1320,7 @@ msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Todas as linhas importadas — {inserted} inseridas, {updated} atualizadas."
 
 msgid "All shifts"
-msgstr ""
+msgstr "Todos os turnos"
 
 msgid "All Suppliers"
 msgstr "Todos os Fornecedores"
@@ -6220,7 +6220,7 @@ msgid "Expiring first"
 msgstr "Expirando primeiro"
 
 msgid "Expiring Soon"
-msgstr ""
+msgstr "Vencendo em breve"
 
 msgid "Expiry"
 msgstr "Validade"
@@ -6903,7 +6903,7 @@ msgid "Gains recognized on disposal of fixed assets"
 msgstr "Ganhos reconhecidos na alienação de ativos imobilizados"
 
 msgid "Gantt"
-msgstr ""
+msgstr "Gantt"
 
 msgid "gauge"
 msgstr "Bitolas"
@@ -9939,7 +9939,7 @@ msgid "No tools for this step"
 msgstr "Nenhuma ferramenta para esta etapa"
 
 msgid "No trainings assigned"
-msgstr ""
+msgstr "Sem treinamentos atribuídos"
 
 msgid "No transactions in this period"
 msgstr "Nenhuma transação neste período"

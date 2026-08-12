@@ -133,7 +133,7 @@ msgstr "{0}h 空闲"
 
 #. placeholder {0}: formatHours(requiredHours)
 msgid "{0}h required"
-msgstr ""
+msgstr "{0}h 需要"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} 个零件已跳过 — 它们已有待处理作业"
@@ -1299,7 +1299,7 @@ msgid "All Customers"
 msgstr "所有客户"
 
 msgid "All departments"
-msgstr ""
+msgstr "所有部门"
 
 msgid "All Documents"
 msgstr "所有文档"
@@ -1320,7 +1320,7 @@ msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
 
 msgid "All shifts"
-msgstr ""
+msgstr "所有班次"
 
 msgid "All Suppliers"
 msgstr "所有供应商"
@@ -6220,7 +6220,7 @@ msgid "Expiring first"
 msgstr "先到期"
 
 msgid "Expiring Soon"
-msgstr ""
+msgstr "即将过期"
 
 msgid "Expiry"
 msgstr "过期"
@@ -6903,7 +6903,7 @@ msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的获利"
 
 msgid "Gantt"
-msgstr ""
+msgstr "甘特"
 
 msgid "gauge"
 msgstr "规格"
@@ -9939,7 +9939,7 @@ msgid "No tools for this step"
 msgstr "此步骤没有工具"
 
 msgid "No trainings assigned"
-msgstr ""
+msgstr "未分配培训"
 
 msgid "No transactions in this period"
 msgstr "此期间无交易"

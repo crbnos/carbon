@@ -133,7 +133,7 @@ msgstr "{0}घंटे मुक्त"
 
 #. placeholder {0}: formatHours(requiredHours)
 msgid "{0}h required"
-msgstr ""
+msgstr "{0}घंटे आवश्यक"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} भाग छोड़ दिए गए — उनके पास पहले से ही खुली नौकरियाँ हैं"
@@ -1299,7 +1299,7 @@ msgid "All Customers"
 msgstr "सभी ग्राहक"
 
 msgid "All departments"
-msgstr ""
+msgstr "सभी विभाग"
 
 msgid "All Documents"
 msgstr "सभी दस्तावेज़"
@@ -1320,7 +1320,7 @@ msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "सभी पंक्तियाँ आयात की गईं — {inserted} डाली गईं, {updated} अपडेट की गईं।"
 
 msgid "All shifts"
-msgstr ""
+msgstr "सभी शिफ्ट"
 
 msgid "All Suppliers"
 msgstr "सभी आपूर्तिकर्ता"
@@ -6220,7 +6220,7 @@ msgid "Expiring first"
 msgstr "पहले समाप्त होने वाला"
 
 msgid "Expiring Soon"
-msgstr ""
+msgstr "शीघ्र समाप्ति"
 
 msgid "Expiry"
 msgstr "समाप्ति"
@@ -6903,7 +6903,7 @@ msgid "Gains recognized on disposal of fixed assets"
 msgstr "स्थिर संपत्तियों के निपटान पर मान्यता प्राप्त लाभ"
 
 msgid "Gantt"
-msgstr ""
+msgstr "Gantt"
 
 msgid "gauge"
 msgstr "गेज"
@@ -9939,7 +9939,7 @@ msgid "No tools for this step"
 msgstr "इस कदम के लिए कोई उपकरण नहीं"
 
 msgid "No trainings assigned"
-msgstr ""
+msgstr "कोई प्रशिक्षण निर्धारित नहीं"
 
 msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
