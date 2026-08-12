@@ -56,22 +56,14 @@ FOR SELECT USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
 );
 
--- Certs are written server-side via the service-role client (a self-attesting
--- user does not hold settings_create); these policies guard the supabase-js path.
-CREATE POLICY "INSERT" ON "public"."itarCertification"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_create'))::text[])
-);
-
-CREATE POLICY "UPDATE" ON "public"."itarCertification"
-FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[])
-);
-
-CREATE POLICY "DELETE" ON "public"."itarCertification"
-FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_delete'))::text[])
-);
+-- No client INSERT/UPDATE/DELETE policies by design: certifications are a
+-- compliance record written ONLY server-side via the service-role client
+-- (recordCertification / recordItarCertification), which sets the authoritative
+-- Rider docVersion/docHash, server-captured ipAddress/userAgent, and the 365-day
+-- expiry. RLS is enabled, so with no write policy the supabase-js path is denied
+-- outright — a caller holding settings_create/update/delete cannot insert forged
+-- fields, or alter/delete existing certification evidence. Read stays open to any
+-- employee via the SELECT policy above (the compliance report needs it).
 
 -- Invite attestation: when CONTROLLED_ENVIRONMENT is on, an admin inviting an
 -- employee must attest a reasonable basis that the invitee is a U.S. person

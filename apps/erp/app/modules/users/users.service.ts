@@ -51,31 +51,43 @@ export async function getItarCertificationStatus(
 
 /**
  * Compliance report source: every active employee with their latest ITAR
- * certification (version / date / expiry). One `.in()` lookup, no N+1. Last
- * login is layered on in the route from the Supabase Auth admin API.
+ * certification (version / date / expiry). Both reads page past the 1000-row
+ * Supabase limit via `fetchAllFromTable` so tenants above 1000 employees (or
+ * certifications) don't silently lose rows; certs are already company-scoped, so
+ * we fetch them all and group in memory rather than passing an unbounded `userId`
+ * array to `.in()`. Last login is layered on in the route from the Auth admin API.
  */
 export async function getItarCertificationReport(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  const employees = await client
-    .from("employees")
-    .select("id, name, email")
-    .eq("companyId", companyId);
+  const employees = await fetchAllFromTable<{
+    id: string | null;
+    name: string | null;
+    email: string | null;
+  }>(client, "employees", "id, name, email", (query) =>
+    query.eq("companyId", companyId)
+  );
 
   if (employees.error || !employees.data) {
     return { data: null, error: employees.error };
   }
 
-  const userIds = employees.data.map((e) => e.id).filter(Boolean) as string[];
-
-  const certs = await client
-    .from("itarCertification")
-    .select("userId, docVersion, certifiedAt, expiresAt")
-    .eq("companyId", companyId)
-    .eq("type", "user")
-    .in("userId", userIds)
-    .order("certifiedAt", { ascending: false });
+  const certs = await fetchAllFromTable<{
+    userId: string | null;
+    docVersion: string;
+    certifiedAt: string;
+    expiresAt: string;
+  }>(
+    client,
+    "itarCertification",
+    "userId, docVersion, certifiedAt, expiresAt",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("type", "user")
+        .order("certifiedAt", { ascending: false })
+  );
 
   if (certs.error) {
     return { data: null, error: certs.error };

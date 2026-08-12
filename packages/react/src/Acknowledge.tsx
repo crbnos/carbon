@@ -181,7 +181,16 @@ export function ItarEntityCertification({
             Accept the Carbon GovCloud Rider on behalf of your company
           </ModalTitle>
         </ModalHeader>
-        <fetcher.Form method="post" action={acknowledgeAction}>
+        {/* Form wraps only the fields — the logout FormButton renders its own
+            <form>, so it must be a sibling, not nested (nested <form> is invalid
+            HTML; the browser drops the inner one and the logout button would
+            submit this certification form instead). The submit button lives in
+            the footer and targets this form by id. */}
+        <fetcher.Form
+          id="itar-entity-cert"
+          method="post"
+          action={acknowledgeAction}
+        >
           <input type="hidden" name="intent" value="itar-entity" />
           <ModalBody>
             <div className="flex flex-col gap-4">
@@ -223,19 +232,24 @@ export function ItarEntityCertification({
               </div>
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button type="submit" isLoading={isLoading} isDisabled={isLoading}>
-              {`Accept on behalf of ${companyName}`}
-            </Button>
-            <FormButton
-              action={logoutAction}
-              variant="secondary"
-              isDisabled={isLoading}
-            >
-              Cancel
-            </FormButton>
-          </ModalFooter>
         </fetcher.Form>
+        <ModalFooter>
+          <Button
+            type="submit"
+            form="itar-entity-cert"
+            isLoading={isLoading}
+            isDisabled={isLoading}
+          >
+            {`Accept on behalf of ${companyName}`}
+          </Button>
+          <FormButton
+            action={logoutAction}
+            variant="secondary"
+            isDisabled={isLoading}
+          >
+            Cancel
+          </FormButton>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );
@@ -263,7 +277,13 @@ export function ItarUserCertification({
         <ModalHeader>
           <ModalTitle>ITAR-Controlled Environment</ModalTitle>
         </ModalHeader>
-        <fetcher.Form method="post" action={acknowledgeAction}>
+        {/* Form wraps only the fields; the logout FormButton is a sibling in the
+            footer (see the entity screen for why nesting <form> is invalid). */}
+        <fetcher.Form
+          id="itar-user-cert"
+          method="post"
+          action={acknowledgeAction}
+        >
           <input type="hidden" name="intent" value="itar-user" />
           <ModalBody>
             <div className="flex flex-col gap-4">
@@ -315,26 +335,31 @@ export function ItarUserCertification({
               />
             </div>
           </ModalBody>
-          <ModalFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs italic text-muted-foreground text-pretty">
-              This attestation expires 365 days after submission. Continued
-              access requires re-attestation against the then-current version of
-              this Rider.
-            </p>
-            <div className="flex items-center gap-2">
-              <FormButton action={logoutAction} variant="secondary">
-                I am not a U.S. Person
-              </FormButton>
-              <Button
-                type="submit"
-                isLoading={isLoading}
-                isDisabled={isLoading}
-              >
-                Submit and enter
-              </Button>
-            </div>
-          </ModalFooter>
         </fetcher.Form>
+        <ModalFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs italic text-muted-foreground text-pretty">
+            This attestation expires 365 days after submission. Continued access
+            requires re-attestation against the then-current version of this
+            Rider.
+          </p>
+          <div className="flex items-center gap-2">
+            <FormButton
+              action={logoutAction}
+              variant="secondary"
+              isDisabled={isLoading}
+            >
+              I am not a U.S. Person
+            </FormButton>
+            <Button
+              type="submit"
+              form="itar-user-cert"
+              isLoading={isLoading}
+              isDisabled={isLoading}
+            >
+              Submit and enter
+            </Button>
+          </div>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );
