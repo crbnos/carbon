@@ -8,6 +8,10 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import {
   explodeBom,
+  makeActualKey,
+  makeKey,
+  makeLocationItemKey,
+  splitActualKey,
   splitKey,
   type BomChild,
   type DemandContributor,
@@ -15,8 +19,9 @@ import {
   type ReplenishmentSystem,
 } from "../lib/mrp-engine.ts";
 
-import { Kysely, sql } from "npm:kysely";
+import { Kysely } from "npm:kysely";
 import z from "npm:zod@^3.24.1";
+import { fetchAll } from "../lib/fetch-all.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
@@ -95,6 +100,11 @@ serve(async (req: Request) => {
   try {
     // ──────────────────────────────────────────────────────────────
     // PHASE 1: Bulk data pre-loading
+    //
+    // Every PostgREST read is paginated via fetchAll: production caps
+    // responses at max_rows = 1000, and tenants exceed that on these views
+    // (2,497 open job material lines observed) — an uncapped read plans on
+    // silently truncated demand. The `.order("id")` keeps pages stable.
     // ──────────────────────────────────────────────────────────────
 
     const [
@@ -104,27 +114,46 @@ serve(async (req: Request) => {
       purchaseOrderLines,
       demandProjections,
     ] = await Promise.all([
-      client.from("openSalesOrderLines").select("*").eq("companyId", companyId),
-      client
-        .from("openJobMaterialLines")
-        .select("*")
-        .eq("companyId", companyId),
-      client
-        .from("openProductionOrders")
-        .select("*")
-        .eq("companyId", companyId),
-      client
-        .from("openPurchaseOrderLines")
-        .select("*")
-        .eq("companyId", companyId),
-      client
-        .from("demandProjection")
-        .select("*")
-        .eq("companyId", companyId)
-        .in(
-          "periodId",
-          periods.map((p: DemandPeriod) => p.id ?? "").filter(Boolean)
-        ),
+      fetchAll<Database["public"]["Views"]["openSalesOrderLines"]["Row"]>(() =>
+        client
+          .from("openSalesOrderLines")
+          .select("*")
+          .eq("companyId", companyId)
+          .order("id")
+      ),
+      fetchAll<Database["public"]["Views"]["openJobMaterialLines"]["Row"]>(() =>
+        client
+          .from("openJobMaterialLines")
+          .select("*")
+          .eq("companyId", companyId)
+          .order("id")
+      ),
+      fetchAll<Database["public"]["Views"]["openProductionOrders"]["Row"]>(() =>
+        client
+          .from("openProductionOrders")
+          .select("*")
+          .eq("companyId", companyId)
+          .order("id")
+      ),
+      fetchAll<Database["public"]["Views"]["openPurchaseOrderLines"]["Row"]>(
+        () =>
+          client
+            .from("openPurchaseOrderLines")
+            .select("*")
+            .eq("companyId", companyId)
+            .order("id")
+      ),
+      fetchAll<Database["public"]["Tables"]["demandProjection"]["Row"]>(() =>
+        client
+          .from("demandProjection")
+          .select("*")
+          .eq("companyId", companyId)
+          .in(
+            "periodId",
+            periods.map((p: DemandPeriod) => p.id ?? "").filter(Boolean)
+          )
+          .order("id")
+      ),
     ]);
 
     if (salesOrderLines.error) throw new Error("Failed to load sales order lines");
@@ -164,12 +193,21 @@ serve(async (req: Request) => {
     // Loaded via the supabase client (like the other demand inputs) so DATE
     // columns come back as "YYYY-MM-DD" strings — Kysely/node-pg would hand back
     // JS Date objects, which parseDate() can't take.
-    const supersessions = await client
-      .from("itemSupersession")
-      .select(
-        "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor"
-      )
-      .eq("companyId", companyId);
+    const supersessions = await fetchAll<{
+      itemId: string;
+      supersessionMode: string;
+      successorItemId: string | null;
+      successorEffectivityDate: string | null;
+      conversionFactor: number | null;
+    }>(() =>
+      client
+        .from("itemSupersession")
+        .select(
+          "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor"
+        )
+        .eq("companyId", companyId)
+        .order("itemId")
+    );
     if (supersessions.error) throw new Error("Failed to load supersessions");
     const supersessionByItem = new Map<
       string,
@@ -180,7 +218,7 @@ serve(async (req: Request) => {
         conversionFactor: number;
       }
     >();
-    for (const s of supersessions.data) {
+    for (const s of supersessions.data ?? []) {
       supersessionByItem.set(s.itemId, {
         supersessionMode: s.supersessionMode,
         successorItemId: s.successorItemId,
@@ -200,20 +238,23 @@ serve(async (req: Request) => {
       today.toString()
     );
 
-    // Bulk-load inventory by location+item
+    // Bulk-load inventory by location+item from the trigger-maintained
+    // aggregate: transactionally current and an indexed read of a few hundred
+    // rows, where the previous full-ledger GROUP BY grew with total history
+    // (~6-8s of an 8M-row tenant's run). Semantics deliberately follow the
+    // aggregate: Rejected tracked stock is NOT available to plan against,
+    // matching get_inventory_quantities — the raw ledger sum counted it.
     const inventoryRows = await db
-      .selectFrom("itemLedger")
-      .select(["itemId", "locationId"])
-      .select(sql<number>`SUM("quantity")`.as("quantityOnHand"))
+      .selectFrom("itemStockQuantities")
+      .select(["itemId", "locationId", "quantityOnHand"])
       .where("companyId", "=", companyId)
-      .groupBy(["itemId", "locationId"])
       .execute();
 
     const baseInventoryByLocationItem = new Map<string, number>();
     for (const row of inventoryRows) {
       if (row.itemId && row.locationId) {
         baseInventoryByLocationItem.set(
-          `${row.locationId}-${row.itemId}`,
+          makeLocationItemKey(row.locationId, row.itemId),
           Number(row.quantityOnHand) || 0
         );
       }
@@ -221,14 +262,20 @@ serve(async (req: Request) => {
 
     // Bulk-load all BOMs: use activeMakeMethods view (returns one method per item,
     // prioritizing 'Active' status then highest version — same logic as get_method_tree)
-    const activeMethodsResult = await client
-      .from("activeMakeMethods")
-      .select("id, itemId")
-      .eq("companyId", companyId);
+    const activeMethodsResult = await fetchAll<{
+      id: string | null;
+      itemId: string | null;
+    }>(() =>
+      client
+        .from("activeMakeMethods")
+        .select("id, itemId")
+        .eq("companyId", companyId)
+        .order("id")
+    );
     if (activeMethodsResult.error) throw activeMethodsResult.error;
 
     const methodIdByItem = new Map<string, string>();
-    for (const m of activeMethodsResult.data) {
+    for (const m of activeMethodsResult.data ?? []) {
       if (m.id && m.itemId) {
         methodIdByItem.set(m.itemId, m.id);
       }
@@ -293,7 +340,7 @@ serve(async (req: Request) => {
     // Supply bucketed by location+period+item (for demand projection netting + supplyActual output)
     const jobSupplyByLocationPeriodItem = new Map<string, number>();
 
-    for (const line of productionLines.data) {
+    for (const line of productionLines.data ?? []) {
       if (!line.itemId || !line.quantityToReceive) continue;
 
       const dueDate = line.dueDate
@@ -305,7 +352,11 @@ serve(async (req: Request) => {
       const period = findPeriod(dueDate, today, periods);
       if (!period) continue;
 
-      const periodKey = `${line.locationId ?? ""}-${period.id ?? ""}-${line.itemId}`;
+      const periodKey = makeKey(
+        line.locationId ?? "",
+        period.id ?? "",
+        line.itemId
+      );
       jobSupplyByLocationPeriodItem.set(
         periodKey,
         (jobSupplyByLocationPeriodItem.get(periodKey) ?? 0) + line.quantityToReceive
@@ -314,7 +365,7 @@ serve(async (req: Request) => {
 
     const poSupplyByLocationPeriodItem = new Map<string, number>();
 
-    for (const line of purchaseOrderLines.data) {
+    for (const line of purchaseOrderLines.data ?? []) {
       if (!line.itemId || !line.quantityToReceive) continue;
 
       const dueDate = line.promisedDate
@@ -326,7 +377,11 @@ serve(async (req: Request) => {
       const period = findPeriod(dueDate, today, periods);
       if (!period) continue;
 
-      const periodKey = `${line.locationId ?? ""}-${period.id ?? ""}-${line.itemId}`;
+      const periodKey = makeKey(
+        line.locationId ?? "",
+        period.id ?? "",
+        line.itemId
+      );
       poSupplyByLocationPeriodItem.set(
         periodKey,
         (poSupplyByLocationPeriodItem.get(periodKey) ?? 0) + line.quantityToReceive
@@ -356,13 +411,17 @@ serve(async (req: Request) => {
     // credited exactly once by explodeBom's running balance (which receives
     // jobAndPoSupplyByLocationPeriodItem below). Netting here as well would
     // double-count supply and under-drive child demand.
-    for (const projection of demandProjections.data) {
+    for (const projection of demandProjections.data ?? []) {
       if (!projection.itemId || !projection.forecastQuantity) continue;
 
       const netDemand = projection.forecastQuantity;
 
       if (netDemand > 0) {
-        const key = `${projection.locationId ?? ""}-${projection.periodId}-${projection.itemId}`;
+        const key = makeKey(
+          projection.locationId ?? "",
+          projection.periodId,
+          projection.itemId
+        );
         grossDemand.set(key, (grossDemand.get(key) ?? 0) + netDemand);
 
         // Seed top-level contributor for this projection. Use the projection's
@@ -382,7 +441,7 @@ serve(async (req: Request) => {
     }
 
     // Sales order lines
-    for (const line of salesOrderLines.data) {
+    for (const line of salesOrderLines.data ?? []) {
       if (!line.itemId || !line.quantityToSend) continue;
 
       const promiseDate = line.promisedDate
@@ -391,10 +450,15 @@ serve(async (req: Request) => {
       const period = findPeriod(promiseDate, today, periods);
       if (!period) continue;
 
-      const key = `${line.locationId ?? ""}-${period.id ?? ""}-${line.itemId}`;
+      const key = makeKey(line.locationId ?? "", period.id ?? "", line.itemId);
       grossDemand.set(key, (grossDemand.get(key) ?? 0) + line.quantityToSend);
 
-      const actualKey = `${line.itemId}-${line.locationId ?? ""}-${period.id ?? ""}-Sales Order`;
+      const actualKey = makeActualKey(
+        line.itemId,
+        line.locationId ?? "",
+        period.id ?? "",
+        "Sales Order"
+      );
       salesDemandByKey.set(
         actualKey,
         (salesDemandByKey.get(actualKey) ?? 0) + line.quantityToSend
@@ -413,7 +477,7 @@ serve(async (req: Request) => {
     }
 
     // Job material lines
-    for (const line of jobMaterialLines.data) {
+    for (const line of jobMaterialLines.data ?? []) {
       if (!line.itemId || !line.quantityToIssue) continue;
 
       const dueDate = line.dueDate ? parseDate(line.dueDate) : today;
@@ -421,10 +485,15 @@ serve(async (req: Request) => {
       const period = findPeriod(requiredDate, today, periods);
       if (!period) continue;
 
-      const key = `${line.locationId ?? ""}-${period.id ?? ""}-${line.itemId}`;
+      const key = makeKey(line.locationId ?? "", period.id ?? "", line.itemId);
       grossDemand.set(key, (grossDemand.get(key) ?? 0) + line.quantityToIssue);
 
-      const actualKey = `${line.itemId}-${line.locationId ?? ""}-${period.id ?? ""}-Job Material`;
+      const actualKey = makeActualKey(
+        line.itemId,
+        line.locationId ?? "",
+        period.id ?? "",
+        "Job Material"
+      );
       jobMaterialDemandByKey.set(
         actualKey,
         (jobMaterialDemandByKey.get(actualKey) ?? 0) + line.quantityToIssue
@@ -458,11 +527,13 @@ serve(async (req: Request) => {
       for (const location of locations.data) {
         // Consume First draws down the old item's on-hand before redirecting.
         let oldOnHand = consumeOnHand
-          ? (baseInventoryByLocationItem.get(`${location.id}-${oldItemId}`) ?? 0)
+          ? (baseInventoryByLocationItem.get(
+              makeLocationItemKey(location.id, oldItemId)
+            ) ?? 0)
           : 0;
 
         for (const period of periods) {
-          const oldKey = `${location.id}-${period.id ?? ""}-${oldItemId}`;
+          const oldKey = makeKey(location.id, period.id ?? "", oldItemId);
           const demand = grossDemand.get(oldKey);
           if (!demand) continue;
 
@@ -476,7 +547,7 @@ serve(async (req: Request) => {
           topLevelContributors.delete(oldKey);
 
           if (redirect > 0) {
-            const newKey = `${location.id}-${period.id ?? ""}-${successorId}`;
+            const newKey = makeKey(location.id, period.id ?? "", successorId);
             grossDemand.set(newKey, (grossDemand.get(newKey) ?? 0) + redirect);
             if (contributors) {
               // Mark the moved demand so it can be shown as redirected from the
@@ -557,7 +628,7 @@ serve(async (req: Request) => {
       if (qty <= 0) continue;
       const [locationId, periodId, itemId] = splitKey(key);
 
-      const forecastKey = `${itemId}-${locationId}-${periodId}`;
+      const forecastKey = makeKey(locationId, periodId, itemId);
       const existing = demandForecastMap.get(forecastKey);
       if (existing) {
         existing.forecastQuantity = Number(existing.forecastQuantity) + qty;
@@ -637,26 +708,41 @@ serve(async (req: Request) => {
       Database["public"]["Tables"]["supplyActual"]["Insert"]
     >();
 
+    // Paginated: a single tenant's actuals exceed the production max_rows cap
+    // (9,391 rows observed), and a truncated read here leaves stale actuals
+    // un-zeroed. Ordering by the primary key keeps pages stable.
     const [
       { data: existingDemandActuals, error: demandActualsError },
       { data: existingSupplyActuals, error: supplyActualsError },
     ] = await Promise.all([
-      client
-        .from("demandActual")
-        .select("*")
-        .eq("companyId", companyId)
-        .in(
-          "periodId",
-          periods.map((p) => p.id ?? "")
-        ),
-      client
-        .from("supplyActual")
-        .select("*")
-        .eq("companyId", companyId)
-        .in(
-          "periodId",
-          periods.map((p: DemandPeriod) => p.id ?? "").filter(Boolean)
-        ),
+      fetchAll<Database["public"]["Tables"]["demandActual"]["Row"]>(() =>
+        client
+          .from("demandActual")
+          .select("*")
+          .eq("companyId", companyId)
+          .in(
+            "periodId",
+            periods.map((p) => p.id ?? "")
+          )
+          .order("itemId")
+          .order("locationId")
+          .order("periodId")
+          .order("sourceType")
+      ),
+      fetchAll<Database["public"]["Tables"]["supplyActual"]["Row"]>(() =>
+        client
+          .from("supplyActual")
+          .select("*")
+          .eq("companyId", companyId)
+          .in(
+            "periodId",
+            periods.map((p: DemandPeriod) => p.id ?? "").filter(Boolean)
+          )
+          .order("itemId")
+          .order("locationId")
+          .order("periodId")
+          .order("sourceType")
+      ),
     ]);
 
     if (demandActualsError) throw demandActualsError;
@@ -665,7 +751,12 @@ serve(async (req: Request) => {
     // Zero out existing demand actuals (they'll be overwritten if still relevant)
     if (existingDemandActuals) {
       for (const existing of existingDemandActuals) {
-        const key = `${existing.itemId}-${existing.locationId}-${existing.periodId}-${existing.sourceType}`;
+        const key = makeActualKey(
+          existing.itemId,
+          existing.locationId ?? "",
+          existing.periodId,
+          existing.sourceType
+        );
         demandActualsMap.set(key, {
           itemId: existing.itemId,
           locationId: existing.locationId,
@@ -682,10 +773,11 @@ serve(async (req: Request) => {
     // Sales order demand actuals
     for (const [key, quantity] of salesDemandByKey) {
       if (quantity > 0) {
+        const [itemId, locationId, periodId] = splitActualKey(key);
         demandActualsMap.set(key, {
-          itemId: key.split("-")[0],
-          locationId: key.split("-")[1],
-          periodId: key.split("-")[2],
+          itemId,
+          locationId,
+          periodId,
           actualQuantity: quantity,
           sourceType: "Sales Order",
           companyId,
@@ -698,10 +790,11 @@ serve(async (req: Request) => {
     // Job material demand actuals
     for (const [key, quantity] of jobMaterialDemandByKey) {
       if (quantity > 0) {
+        const [itemId, locationId, periodId] = splitActualKey(key);
         demandActualsMap.set(key, {
-          itemId: key.split("-")[0],
-          locationId: key.split("-")[1],
-          periodId: key.split("-")[2],
+          itemId,
+          locationId,
+          periodId,
           actualQuantity: quantity,
           sourceType: "Job Material",
           companyId,
@@ -714,7 +807,12 @@ serve(async (req: Request) => {
     // Zero out existing supply actuals
     if (existingSupplyActuals) {
       for (const existing of existingSupplyActuals) {
-        const key = `${existing.itemId}-${existing.locationId}-${existing.periodId}-${existing.sourceType}`;
+        const key = makeActualKey(
+          existing.itemId,
+          existing.locationId ?? "",
+          existing.periodId,
+          existing.sourceType
+        );
         supplyActualsMap.set(key, {
           itemId: existing.itemId,
           locationId: existing.locationId,
@@ -731,8 +829,13 @@ serve(async (req: Request) => {
     // Production order supply actuals
     for (const [key, quantity] of jobSupplyByLocationPeriodItem) {
       if (quantity > 0) {
-        const [locationId, periodId, itemId] = key.split("-");
-        const actualKey = `${itemId}-${locationId}-${periodId}-Production Order`;
+        const [locationId, periodId, itemId] = splitKey(key);
+        const actualKey = makeActualKey(
+          itemId,
+          locationId,
+          periodId,
+          "Production Order"
+        );
         supplyActualsMap.set(actualKey, {
           itemId,
           locationId,
@@ -749,8 +852,13 @@ serve(async (req: Request) => {
     // Purchase order supply actuals
     for (const [key, quantity] of poSupplyByLocationPeriodItem) {
       if (quantity > 0) {
-        const [locationId, periodId, itemId] = key.split("-");
-        const actualKey = `${itemId}-${locationId}-${periodId}-Purchase Order`;
+        const [locationId, periodId, itemId] = splitKey(key);
+        const actualKey = makeActualKey(
+          itemId,
+          locationId,
+          periodId,
+          "Purchase Order"
+        );
         supplyActualsMap.set(actualKey, {
           itemId,
           locationId,
@@ -775,93 +883,100 @@ serve(async (req: Request) => {
     const BATCH_SIZE = 500;
 
     try {
-      // Delete existing MRP forecasts
-      await db
-        .deleteFrom("demandForecast")
-        .where("companyId", "=", companyId)
-        .where("forecastMethod", "=", "mrp")
-        .execute();
+      // One transaction for the whole delete-and-rewrite: these statements
+      // previously ran independently, so a crash mid-sequence (or a reader
+      // between the delete and the inserts) saw planning data half-written —
+      // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
+      // everything back on any throw.
+      await db.transaction().execute(async (trx) => {
+        // Delete existing MRP forecasts
+        await trx
+          .deleteFrom("demandForecast")
+          .where("companyId", "=", companyId)
+          .where("forecastMethod", "=", "mrp")
+          .execute();
 
-      // Delete existing MRP forecast source rows. The demandForecast delete
-      // above removes the parent rows; this removes their attribution rows.
-      // demandForecastSource only ever holds MRP-derived rows.
-      await db
-        .deleteFrom("demandForecastSource")
-        .where("companyId", "=", companyId)
-        .execute();
+        // Delete existing MRP forecast source rows. The demandForecast delete
+        // above removes the parent rows; this removes their attribution rows.
+        // demandForecastSource only ever holds MRP-derived rows.
+        await trx
+          .deleteFrom("demandForecastSource")
+          .where("companyId", "=", companyId)
+          .execute();
 
-      await db
-        .deleteFrom("supplyForecast")
-        .where(
-          "locationId",
-          "in",
-          locations.data.map((l) => l.id)
-        )
-        .where("companyId", "=", companyId)
-        .execute();
-
-      // Insert demand forecasts in batches
-      for (let i = 0; i < demandForecastUpserts.length; i += BATCH_SIZE) {
-        const batch = demandForecastUpserts.slice(i, i + BATCH_SIZE);
-        await db
-          .insertInto("demandForecast")
-          .values(batch)
-          .onConflict((oc) =>
-            oc.columns(["itemId", "locationId", "periodId"]).doUpdateSet({
-              forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
-              forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
-              updatedAt: new Date().toISOString(),
-              updatedBy: userId,
-            })
+        await trx
+          .deleteFrom("supplyForecast")
+          .where(
+            "locationId",
+            "in",
+            locations.data.map((l) => l.id)
           )
+          .where("companyId", "=", companyId)
           .execute();
-      }
 
-      // Insert demand forecast source rows in batches. No onConflict — the
-      // upstream delete guarantees no key collisions.
-      for (let i = 0; i < demandForecastSourceInserts.length; i += BATCH_SIZE) {
-        const batch = demandForecastSourceInserts.slice(i, i + BATCH_SIZE);
-        await db
-          .insertInto("demandForecastSource")
-          .values(batch)
-          .execute();
-      }
-
-      // Insert demand actuals in batches
-      for (let i = 0; i < demandActualUpserts.length; i += BATCH_SIZE) {
-        const batch = demandActualUpserts.slice(i, i + BATCH_SIZE);
-        await db
-          .insertInto("demandActual")
-          .values(batch)
-          .onConflict((oc) =>
-            oc
-              .columns(["itemId", "locationId", "periodId", "sourceType"])
-              .doUpdateSet({
-                actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+        // Insert demand forecasts in batches
+        for (let i = 0; i < demandForecastUpserts.length; i += BATCH_SIZE) {
+          const batch = demandForecastUpserts.slice(i, i + BATCH_SIZE);
+          await trx
+            .insertInto("demandForecast")
+            .values(batch)
+            .onConflict((oc) =>
+              oc.columns(["itemId", "locationId", "periodId"]).doUpdateSet({
+                forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
+                forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
                 updatedAt: new Date().toISOString(),
                 updatedBy: userId,
               })
-          )
-          .execute();
-      }
+            )
+            .execute();
+        }
 
-      // Insert supply actuals in batches
-      for (let i = 0; i < supplyActualUpserts.length; i += BATCH_SIZE) {
-        const batch = supplyActualUpserts.slice(i, i + BATCH_SIZE);
-        await db
-          .insertInto("supplyActual")
-          .values(batch)
-          .onConflict((oc) =>
-            oc
-              .columns(["itemId", "locationId", "periodId", "sourceType"])
-              .doUpdateSet({
-                actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
-                updatedAt: new Date().toISOString(),
-                updatedBy: userId,
-              })
-          )
-          .execute();
-      }
+        // Insert demand forecast source rows in batches. No onConflict — the
+        // upstream delete guarantees no key collisions.
+        for (let i = 0; i < demandForecastSourceInserts.length; i += BATCH_SIZE) {
+          const batch = demandForecastSourceInserts.slice(i, i + BATCH_SIZE);
+          await trx
+            .insertInto("demandForecastSource")
+            .values(batch)
+            .execute();
+        }
+
+        // Insert demand actuals in batches
+        for (let i = 0; i < demandActualUpserts.length; i += BATCH_SIZE) {
+          const batch = demandActualUpserts.slice(i, i + BATCH_SIZE);
+          await trx
+            .insertInto("demandActual")
+            .values(batch)
+            .onConflict((oc) =>
+              oc
+                .columns(["itemId", "locationId", "periodId", "sourceType"])
+                .doUpdateSet({
+                  actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: userId,
+                })
+            )
+            .execute();
+        }
+
+        // Insert supply actuals in batches
+        for (let i = 0; i < supplyActualUpserts.length; i += BATCH_SIZE) {
+          const batch = supplyActualUpserts.slice(i, i + BATCH_SIZE);
+          await trx
+            .insertInto("supplyActual")
+            .values(batch)
+            .onConflict((oc) =>
+              oc
+                .columns(["itemId", "locationId", "periodId", "sourceType"])
+                .doUpdateSet({
+                  actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: userId,
+                })
+            )
+            .execute();
+        }
+      });
 
       return jsonResponse({ success: true }, 201);
     } catch (err) {

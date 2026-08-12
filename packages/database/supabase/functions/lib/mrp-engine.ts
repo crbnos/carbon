@@ -53,9 +53,16 @@ export type BomExplosionOutput = {
   demandContributors: Map<string, DemandContributor[]>;
 };
 
+// Composite map keys join their parts with a control character. Ids are
+// caller-supplied TEXT — bulk imports mint UUIDs with hyphens — so no printable
+// delimiter is collision-safe. Joining on "-" truncated hyphenated item ids on
+// parse and collapsed distinct (item, period) pairs into duplicate rows
+// (Postgres 21000 on the batched upsert).
+export const KEY_SEP = "\x1f";
+
 export function splitKey(key: string): [string, string, string] {
-  const parts = key.split("-");
-  return [parts[0]!, parts[1]!, parts.slice(2).join("-")];
+  const parts = key.split(KEY_SEP);
+  return [parts[0]!, parts[1]!, parts[2]!];
 }
 
 export function makeKey(
@@ -63,7 +70,32 @@ export function makeKey(
   periodId: string,
   itemId: string
 ): string {
-  return `${locationId}-${periodId}-${itemId}`;
+  return locationId + KEY_SEP + periodId + KEY_SEP + itemId;
+}
+
+export function makeLocationItemKey(
+  locationId: string,
+  itemId: string
+): string {
+  return locationId + KEY_SEP + itemId;
+}
+
+export function makeActualKey(
+  itemId: string,
+  locationId: string,
+  periodId: string,
+  sourceType: string
+): string {
+  return (
+    itemId + KEY_SEP + locationId + KEY_SEP + periodId + KEY_SEP + sourceType
+  );
+}
+
+export function splitActualKey(
+  key: string
+): [string, string, string, string] {
+  const parts = key.split(KEY_SEP);
+  return [parts[0]!, parts[1]!, parts[2]!, parts[3]!];
 }
 
 function effectiveReplenishment(
@@ -134,19 +166,19 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
       if (qty <= 0) continue;
       const [locationId, , itemId] = splitKey(key);
       if ((llc.get(itemId) ?? 0) === level) {
-        locItemsAtLevel.add(`${locationId}|${itemId}`);
+        locItemsAtLevel.add(makeLocationItemKey(locationId, itemId));
       }
     }
 
     for (const locItem of locItemsAtLevel) {
-      const sepIdx = locItem.indexOf("|");
+      const sepIdx = locItem.indexOf(KEY_SEP);
       const locationId = locItem.slice(0, sepIdx);
       const itemId = locItem.slice(sepIdx + 1);
 
       const effRepSys = effectiveReplenishment(
         replenishmentSystemByItem.get(itemId)
       );
-      const invKey = `${locationId}-${itemId}`;
+      const invKey = makeLocationItemKey(locationId, itemId);
       // Running balance for this (location, item) across the planning
       // horizon: starts at on-hand, +supply as each period passes,
       // −demand as we hit it. Floored at 0 because any shortfall is
