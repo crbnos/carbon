@@ -29,7 +29,7 @@ export function ScheduleNavigation() {
   const navigate = useNavigate();
 
   const getCurrentView = () => {
-    if (location.pathname.includes(path.to.scheduleCrew)) return "crew";
+    if (location.pathname.includes(path.to.schedulePeople)) return "people";
     if (location.pathname.includes(path.to.scheduleResources))
       return "capacity";
     if (location.pathname.includes(path.to.scheduleGantt())) return "timeline";
@@ -53,8 +53,8 @@ export function ScheduleNavigation() {
         return "Work Centers";
       case "capacity":
         return "Capacity";
-      case "crew":
-        return "Crew";
+      case "people":
+        return "People";
       case "week":
         return "Week";
       case "month":
@@ -72,7 +72,7 @@ export function ScheduleNavigation() {
         return <LuCog />;
       case "capacity":
         return <LuFactory />;
-      case "crew":
+      case "people":
         return <LuUsers />;
       case "week":
         return <LuCalendarDays />;
@@ -95,8 +95,8 @@ export function ScheduleNavigation() {
       case "capacity":
         navigate(path.to.scheduleResources);
         break;
-      case "crew":
-        navigate(path.to.scheduleCrew + "?" + searchParams.toString());
+      case "people":
+        navigate(path.to.schedulePeople + "?" + searchParams.toString());
         break;
       case "week":
         searchParams.set("view", "week");
@@ -139,9 +139,9 @@ export function ScheduleNavigation() {
             <DropdownMenuIcon icon={getViewIcon("capacity")} />
             {getViewLabel("capacity")}
           </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="crew">
-            <DropdownMenuIcon icon={getViewIcon("crew")} />
-            {getViewLabel("crew")}
+          <DropdownMenuRadioItem value="people">
+            <DropdownMenuIcon icon={getViewIcon("people")} />
+            {getViewLabel("people")}
           </DropdownMenuRadioItem>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>

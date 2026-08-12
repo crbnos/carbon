@@ -1493,7 +1493,7 @@ msgstr "Qualsiasi tipo di articolo"
 msgid "Anything not explicitly listed in scope above"
 msgstr "Qualsiasi cosa non esplicitamente elencata nell'ambito di cui sopra"
 
-msgid "Anything the crew should know"
+msgid "Anything the people should know"
 msgstr "Qualsiasi cosa l'equipaggio debba sapere"
 
 msgid "AP Aging"
@@ -4037,9 +4037,6 @@ msgstr "Crediti e Debiti"
 
 msgid "Credits applied"
 msgstr "Crediti applicati"
-
-msgid "Crew"
-msgstr "Equipaggio"
 
 msgid "Critical"
 msgstr "Critico"
@@ -9759,7 +9756,7 @@ msgstr "Nessuna nuova notifica"
 msgid "No notes"
 msgstr "Nessuna nota"
 
-msgid "No one crewed"
+msgid "No one assigned"
 msgstr "Nessuno assegnato"
 
 msgid "No one to assign"
@@ -14940,7 +14937,7 @@ msgstr "Il calendario utilizzato per distribuire il costo di questo asset sulla 
 msgid "The shelves and bins where stock physically sits"
 msgstr "Gli scaffali e i contenitori dove il magazzino si trova fisicamente"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 msgstr "le ore di turno dell'equipaggio che hai assegnato. Le stazioni senza nessuno ricadono nel calendario dei turni della posizione."
 
 msgid "The shop supplies and consumables you keep on hand"
@@ -15319,7 +15316,7 @@ msgstr "Questo sostituirà tutti i materiali del metodo di altre dimensioni con 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Questo imposterà +{hoursInput}h di straordinario per {previewCount} persone."
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "Questo imposterà +{hoursInput}h di straordinario per tutti i dipendenti assegnati quella settimana."
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."

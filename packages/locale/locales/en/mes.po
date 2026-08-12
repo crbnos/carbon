@@ -1458,6 +1458,6 @@ msgstr "You clocked in at <0/>. You can edit your clock-out time below or acknow
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 
-#. placeholder {0}: crewStation.name
+#. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "Your station: {0}"

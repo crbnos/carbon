@@ -32,7 +32,7 @@ const scheduleInputsChangedData = z.object({
     "work-center",
     "location",
     "reorder",
-    "crew"
+    "people"
   ]),
   reason: z.string(),
   entityId: z.string().optional(),
@@ -93,8 +93,8 @@ export const markScheduleStaleFunction = inngest.createFunction(
     //   ability-gated process (people-availability changes only matter to gated work;
     //   a company with zero gated ops is untouched)
     // - work-center (with id)  -> jobs with unfinished ops assigned to that work center
-    // - crew (with id)         -> same as work-center (entityId = the crewed workCenterId)
-    // - crew (no id)           -> absence of an uncrewed person; only gated ops care
+    // - people (with id)         -> same as work-center (entityId = the assigned workCenterId)
+    // - people (no id)           -> absence of an unassigned person; only gated ops care
     // - location/reorder       -> everything (timezone/order changes affect all placements)
     const affectedJobIds = await step.run("compute-affected-jobs", async () => {
       const gatedKinds = ["ability", "shift", "employee-shift"];
@@ -108,7 +108,10 @@ export const markScheduleStaleFunction = inngest.createFunction(
           .eq("companyId", companyId)
           .maybeSingle();
         processIds = ability.data?.processId ? [ability.data.processId] : [];
-      } else if (gatedKinds.includes(kind) || (kind === "crew" && !entityId)) {
+      } else if (
+        gatedKinds.includes(kind) ||
+        (kind === "people" && !entityId)
+      ) {
         const gated = await serviceRole
           .from("process")
           .select("id")
@@ -119,7 +122,7 @@ export const markScheduleStaleFunction = inngest.createFunction(
 
       if (
         processIds !== null ||
-        ((kind === "work-center" || kind === "crew") && entityId)
+        ((kind === "work-center" || kind === "people") && entityId)
       ) {
         if (processIds !== null && processIds.length === 0) {
           return []; // nothing gated -> nothing affected

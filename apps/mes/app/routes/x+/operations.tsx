@@ -43,15 +43,15 @@ import { Kanban } from "~/components/Kanban";
 import SearchFilter from "~/components/SearchFilter";
 import { userContext } from "~/context";
 import { useUrlParams, useUser } from "~/hooks";
-import { getCrewOverride } from "~/services/crew.server";
 import { getFilters, setFilters } from "~/services/operation.server";
 import {
   getActiveJobOperationsByLocation,
   getCustomers,
-  getMyCrewAssignment,
+  getMyPeopleAssignment,
   getProcessesList,
   getWorkCentersByLocation
 } from "~/services/operations.service";
+import { getPeopleOverride } from "~/services/people.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
@@ -145,20 +145,20 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
 
   const locationId = context.get(userContext)?.locationId;
 
-  // Crew-assignment station default: when the operator has a manning-board
+  // People-assignment station default: when the operator has a manning-board
   // assignment for today and no explicit work-center filter (and hasn't
   // dismissed the default this session), open on their station.
   const effectiveUserId = context.get(userContext)?.effectiveUserId;
-  let crewStation: { workCenterId: string; name: string } | null = null;
-  let crewDate: string | null = null;
+  let peopleStation: { workCenterId: string; name: string } | null = null;
+  let peopleDate: string | null = null;
   if (selectedWorkCenterIds.length === 0 && effectiveUserId && locationId) {
     const today = datetime
       .today(await getLocationTimeZone(serviceRole, locationId, companyId))
       .toString();
-    crewDate = today;
-    const dismissed = await getCrewOverride(request);
+    peopleDate = today;
+    const dismissed = await getPeopleOverride(request);
     if (dismissed !== today) {
-      const myAssignment = await getMyCrewAssignment(serviceRole, {
+      const myAssignment = await getMyPeopleAssignment(serviceRole, {
         companyId,
         employeeId: effectiveUserId,
         date: today
@@ -166,7 +166,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       const assignment = myAssignment.data?.[0];
       if (assignment) {
         selectedWorkCenterIds = [assignment.workCenterId];
-        crewStation = { workCenterId: assignment.workCenterId, name: "" };
+        peopleStation = { workCenterId: assignment.workCenterId, name: "" };
       }
     }
   }
@@ -257,16 +257,16 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     new Set(filteredOperations.flatMap((op) => op.tags || []))
   ).sort();
 
-  if (crewStation) {
-    crewStation.name =
-      workCenters.data?.find((wc: any) => wc.id === crewStation?.workCenterId)
+  if (peopleStation) {
+    peopleStation.name =
+      workCenters.data?.find((wc: any) => wc.id === peopleStation?.workCenterId)
         ?.name ?? "";
   }
 
   return data(
     {
-      crewStation,
-      crewDate,
+      peopleStation,
+      peopleDate,
       columns: filteredWorkCenters
         .map((wc: any) => ({
           id: wc.id!,
@@ -364,10 +364,10 @@ function KanbanSchedule() {
     processes,
     workCenters,
     availableTags,
-    crewStation,
-    crewDate
+    peopleStation,
+    peopleDate
   } = useLoaderData<typeof loader>();
-  const crewOverrideFetcher = useFetcher();
+  const peopleOverrideFetcher = useFetcher();
   const [items, setItems] = useState<Item[]>(initialItems);
 
   useEffect(() => {
@@ -480,7 +480,7 @@ function KanbanSchedule() {
           <HStack>
             <SearchFilter param="search" size="sm" placeholder={t`Search`} />
             <Filter filters={filters} />
-            {crewStation &&
+            {peopleStation &&
               !currentFilters.some((filter) =>
                 filter.startsWith("workCenterId:")
               ) && (
@@ -490,7 +490,7 @@ function KanbanSchedule() {
                 >
                   <span className="flex items-center gap-1.5 px-2 py-1 text-sm whitespace-nowrap">
                     <LuFactory className="flex-shrink-0" />
-                    <Trans>Your station: {crewStation.name}</Trans>
+                    <Trans>Your station: {peopleStation.name}</Trans>
                   </span>
                   <IconButton
                     aria-label={t`Clear station default`}
@@ -498,9 +498,9 @@ function KanbanSchedule() {
                     variant="ghost"
                     size="sm"
                     onClick={() =>
-                      crewOverrideFetcher.submit(
-                        { date: crewDate ?? "" },
-                        { method: "post", action: path.to.crewOverride }
+                      peopleOverrideFetcher.submit(
+                        { date: peopleDate ?? "" },
+                        { method: "post", action: path.to.peopleOverride }
                       )
                     }
                   />

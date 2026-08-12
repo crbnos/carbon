@@ -1493,7 +1493,7 @@ msgstr "任何物品类型"
 msgid "Anything not explicitly listed in scope above"
 msgstr "未在上述范围内明确列出的任何内容"
 
-msgid "Anything the crew should know"
+msgid "Anything the people should know"
 msgstr "工作人员应该知道的任何信息"
 
 msgid "AP Aging"
@@ -4037,9 +4037,6 @@ msgstr "贷项和借项"
 
 msgid "Credits applied"
 msgstr "已应用的额度"
-
-msgid "Crew"
-msgstr "班组"
 
 msgid "Critical"
 msgstr "关键"
@@ -9759,7 +9756,7 @@ msgstr "没有新通知"
 msgid "No notes"
 msgstr "没有备注"
 
-msgid "No one crewed"
+msgid "No one assigned"
 msgstr "没有人员配备"
 
 msgid "No one to assign"
@@ -14940,7 +14937,7 @@ msgstr "用于在资产的使用寿命内分配该资产成本的折旧方法（
 msgid "The shelves and bins where stock physically sits"
 msgstr "库存物理上存放的货架和箱子"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 msgstr "您分配的工作团队的班次小时数。没有人员的工作站将回退到该位置的班次日历。"
 
 msgid "The shop supplies and consumables you keep on hand"
@@ -15319,7 +15316,7 @@ msgstr "这将用此尺寸替换其他尺寸的所有方法材料。"
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "这将为 {previewCount} 人设置 +{hoursInput} 小时加班。"
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "这将为该周所有组员设置 +{hoursInput} 小时加班。"
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."

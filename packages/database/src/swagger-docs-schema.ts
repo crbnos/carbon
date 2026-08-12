@@ -38058,50 +38058,50 @@ export default {
         tags: ["warehouse"]
       }
     },
-    "/crewAssignment": {
+    "/peopleAssignment": {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.id"
+            $ref: "#/parameters/rowFilter.peopleAssignment.id"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.companyId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.locationId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.locationId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.workCenterId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.workCenterId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.employeeId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.employeeId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.date"
+            $ref: "#/parameters/rowFilter.peopleAssignment.date"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.shiftId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.shiftId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.note"
+            $ref: "#/parameters/rowFilter.peopleAssignment.note"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.createdBy"
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.createdAt"
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.updatedBy"
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.updatedAt"
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.overtimeHours"
+            $ref: "#/parameters/rowFilter.peopleAssignment.overtimeHours"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.hours"
+            $ref: "#/parameters/rowFilter.peopleAssignment.hours"
           },
           {
             $ref: "#/parameters/select"
@@ -38130,7 +38130,7 @@ export default {
             description: "OK",
             schema: {
               items: {
-                $ref: "#/definitions/crewAssignment"
+                $ref: "#/definitions/peopleAssignment"
               },
               type: "array"
             }
@@ -38139,12 +38139,12 @@ export default {
             description: "Partial Content"
           }
         },
-        tags: ["crewAssignment"]
+        tags: ["peopleAssignment"]
       },
       post: {
         parameters: [
           {
-            $ref: "#/parameters/body.crewAssignment"
+            $ref: "#/parameters/body.peopleAssignment"
           },
           {
             $ref: "#/parameters/select"
@@ -38158,51 +38158,51 @@ export default {
             description: "Created"
           }
         },
-        tags: ["crewAssignment"]
+        tags: ["peopleAssignment"]
       },
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.id"
+            $ref: "#/parameters/rowFilter.peopleAssignment.id"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.companyId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.locationId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.locationId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.workCenterId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.workCenterId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.employeeId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.employeeId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.date"
+            $ref: "#/parameters/rowFilter.peopleAssignment.date"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.shiftId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.shiftId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.note"
+            $ref: "#/parameters/rowFilter.peopleAssignment.note"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.createdBy"
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.createdAt"
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.updatedBy"
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.updatedAt"
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.overtimeHours"
+            $ref: "#/parameters/rowFilter.peopleAssignment.overtimeHours"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.hours"
+            $ref: "#/parameters/rowFilter.peopleAssignment.hours"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -38213,54 +38213,54 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["crewAssignment"]
+        tags: ["peopleAssignment"]
       },
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.id"
+            $ref: "#/parameters/rowFilter.peopleAssignment.id"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.companyId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.locationId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.locationId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.workCenterId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.workCenterId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.employeeId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.employeeId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.date"
+            $ref: "#/parameters/rowFilter.peopleAssignment.date"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.shiftId"
+            $ref: "#/parameters/rowFilter.peopleAssignment.shiftId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.note"
+            $ref: "#/parameters/rowFilter.peopleAssignment.note"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.createdBy"
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.createdAt"
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.updatedBy"
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.updatedAt"
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.overtimeHours"
+            $ref: "#/parameters/rowFilter.peopleAssignment.overtimeHours"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAssignment.hours"
+            $ref: "#/parameters/rowFilter.peopleAssignment.hours"
           },
           {
-            $ref: "#/parameters/body.crewAssignment"
+            $ref: "#/parameters/body.peopleAssignment"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -38271,7 +38271,7 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["crewAssignment"]
+        tags: ["peopleAssignment"]
       }
     },
     "/salesOrderCustomers": {
@@ -79395,38 +79395,38 @@ export default {
         tags: ["salesRfqFavorite"]
       }
     },
-    "/crewAbsence": {
+    "/peopleAbsence": {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.id"
+            $ref: "#/parameters/rowFilter.peopleAbsence.id"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.companyId"
+            $ref: "#/parameters/rowFilter.peopleAbsence.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.employeeId"
+            $ref: "#/parameters/rowFilter.peopleAbsence.employeeId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.date"
+            $ref: "#/parameters/rowFilter.peopleAbsence.date"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.shiftId"
+            $ref: "#/parameters/rowFilter.peopleAbsence.shiftId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.note"
+            $ref: "#/parameters/rowFilter.peopleAbsence.note"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.createdBy"
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.createdAt"
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.updatedBy"
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.updatedAt"
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedAt"
           },
           {
             $ref: "#/parameters/select"
@@ -79455,7 +79455,7 @@ export default {
             description: "OK",
             schema: {
               items: {
-                $ref: "#/definitions/crewAbsence"
+                $ref: "#/definitions/peopleAbsence"
               },
               type: "array"
             }
@@ -79464,12 +79464,12 @@ export default {
             description: "Partial Content"
           }
         },
-        tags: ["crewAbsence"]
+        tags: ["peopleAbsence"]
       },
       post: {
         parameters: [
           {
-            $ref: "#/parameters/body.crewAbsence"
+            $ref: "#/parameters/body.peopleAbsence"
           },
           {
             $ref: "#/parameters/select"
@@ -79483,39 +79483,39 @@ export default {
             description: "Created"
           }
         },
-        tags: ["crewAbsence"]
+        tags: ["peopleAbsence"]
       },
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.id"
+            $ref: "#/parameters/rowFilter.peopleAbsence.id"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.companyId"
+            $ref: "#/parameters/rowFilter.peopleAbsence.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.employeeId"
+            $ref: "#/parameters/rowFilter.peopleAbsence.employeeId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.date"
+            $ref: "#/parameters/rowFilter.peopleAbsence.date"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.shiftId"
+            $ref: "#/parameters/rowFilter.peopleAbsence.shiftId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.note"
+            $ref: "#/parameters/rowFilter.peopleAbsence.note"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.createdBy"
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.createdAt"
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.updatedBy"
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.updatedAt"
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -79526,42 +79526,42 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["crewAbsence"]
+        tags: ["peopleAbsence"]
       },
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.id"
+            $ref: "#/parameters/rowFilter.peopleAbsence.id"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.companyId"
+            $ref: "#/parameters/rowFilter.peopleAbsence.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.employeeId"
+            $ref: "#/parameters/rowFilter.peopleAbsence.employeeId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.date"
+            $ref: "#/parameters/rowFilter.peopleAbsence.date"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.shiftId"
+            $ref: "#/parameters/rowFilter.peopleAbsence.shiftId"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.note"
+            $ref: "#/parameters/rowFilter.peopleAbsence.note"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.createdBy"
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.createdAt"
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.updatedBy"
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.crewAbsence.updatedAt"
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedAt"
           },
           {
-            $ref: "#/parameters/body.crewAbsence"
+            $ref: "#/parameters/body.peopleAbsence"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -79572,7 +79572,7 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["crewAbsence"]
+        tags: ["peopleAbsence"]
       }
     },
     "/holiday": {
@@ -116208,7 +116208,7 @@ export default {
       },
       type: "object"
     },
-    crewAssignment: {
+    peopleAssignment: {
       required: [
         "id",
         "companyId",
@@ -116222,7 +116222,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.id('crew'::text)",
+          default: "public.id('people'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
@@ -136174,7 +136174,7 @@ export default {
       },
       type: "object"
     },
-    crewAbsence: {
+    peopleAbsence: {
       required: [
         "id",
         "companyId",
@@ -159707,94 +159707,94 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.crewAssignment": {
-      name: "crewAssignment",
-      description: "crewAssignment",
+    "body.peopleAssignment": {
+      name: "peopleAssignment",
+      description: "peopleAssignment",
       required: false,
       in: "body",
       schema: {
-        $ref: "#/definitions/crewAssignment"
+        $ref: "#/definitions/peopleAssignment"
       }
     },
-    "rowFilter.crewAssignment.id": {
+    "rowFilter.peopleAssignment.id": {
       name: "id",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.companyId": {
+    "rowFilter.peopleAssignment.companyId": {
       name: "companyId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.locationId": {
+    "rowFilter.peopleAssignment.locationId": {
       name: "locationId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.workCenterId": {
+    "rowFilter.peopleAssignment.workCenterId": {
       name: "workCenterId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.employeeId": {
+    "rowFilter.peopleAssignment.employeeId": {
       name: "employeeId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.date": {
+    "rowFilter.peopleAssignment.date": {
       name: "date",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.shiftId": {
+    "rowFilter.peopleAssignment.shiftId": {
       name: "shiftId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.note": {
+    "rowFilter.peopleAssignment.note": {
       name: "note",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.createdBy": {
+    "rowFilter.peopleAssignment.createdBy": {
       name: "createdBy",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.createdAt": {
+    "rowFilter.peopleAssignment.createdAt": {
       name: "createdAt",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.updatedBy": {
+    "rowFilter.peopleAssignment.updatedBy": {
       name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.updatedAt": {
+    "rowFilter.peopleAssignment.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.overtimeHours": {
+    "rowFilter.peopleAssignment.overtimeHours": {
       name: "overtimeHours",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAssignment.hours": {
+    "rowFilter.peopleAssignment.hours": {
       name: "hours",
       required: false,
       in: "query",
@@ -182061,70 +182061,70 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.crewAbsence": {
-      name: "crewAbsence",
-      description: "crewAbsence",
+    "body.peopleAbsence": {
+      name: "peopleAbsence",
+      description: "peopleAbsence",
       required: false,
       in: "body",
       schema: {
-        $ref: "#/definitions/crewAbsence"
+        $ref: "#/definitions/peopleAbsence"
       }
     },
-    "rowFilter.crewAbsence.id": {
+    "rowFilter.peopleAbsence.id": {
       name: "id",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAbsence.companyId": {
+    "rowFilter.peopleAbsence.companyId": {
       name: "companyId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAbsence.employeeId": {
+    "rowFilter.peopleAbsence.employeeId": {
       name: "employeeId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAbsence.date": {
+    "rowFilter.peopleAbsence.date": {
       name: "date",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAbsence.shiftId": {
+    "rowFilter.peopleAbsence.shiftId": {
       name: "shiftId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAbsence.note": {
+    "rowFilter.peopleAbsence.note": {
       name: "note",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAbsence.createdBy": {
+    "rowFilter.peopleAbsence.createdBy": {
       name: "createdBy",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAbsence.createdAt": {
+    "rowFilter.peopleAbsence.createdAt": {
       name: "createdAt",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAbsence.updatedBy": {
+    "rowFilter.peopleAbsence.updatedBy": {
       name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.crewAbsence.updatedAt": {
+    "rowFilter.peopleAbsence.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",

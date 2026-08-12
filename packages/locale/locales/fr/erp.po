@@ -1493,7 +1493,7 @@ msgstr "Tout type d'article"
 msgid "Anything not explicitly listed in scope above"
 msgstr "Tout ce qui n'est pas explicitement listé dans le périmètre ci-dessus"
 
-msgid "Anything the crew should know"
+msgid "Anything the people should know"
 msgstr "Toute information que l'équipe devrait connaître"
 
 msgid "AP Aging"
@@ -4037,9 +4037,6 @@ msgstr "Crédits et débits"
 
 msgid "Credits applied"
 msgstr "Crédits appliqués"
-
-msgid "Crew"
-msgstr "Équipe"
 
 msgid "Critical"
 msgstr "Critique"
@@ -9759,7 +9756,7 @@ msgstr "Aucune nouvelle notification"
 msgid "No notes"
 msgstr "Aucune note"
 
-msgid "No one crewed"
+msgid "No one assigned"
 msgstr "Aucun membre d'équipe"
 
 msgid "No one to assign"
@@ -14940,7 +14937,7 @@ msgstr "L'échéance utilisée pour répartir le coût de cet actif sur sa duré
 msgid "The shelves and bins where stock physically sits"
 msgstr "Les étagères et bacs où le stock se trouve physiquement"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 msgstr "les heures de quart de l'équipe que vous avez assignée. Les stations sans personne reviennent au calendrier de quart de la localité."
 
 msgid "The shop supplies and consumables you keep on hand"
@@ -15319,7 +15316,7 @@ msgstr "Cela remplacera tous les matériaux de méthode d'autres tailles par cet
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Ceci définira +{hoursInput}h de temps supplémentaire pour {previewCount} personnes."
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "Ceci définira +{hoursInput}h de temps supplémentaire pour tous les employés assignés cette semaine."
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."

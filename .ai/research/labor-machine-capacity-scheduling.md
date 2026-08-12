@@ -10,7 +10,7 @@ Surveyed how 14 systems across four tiers (enterprise ERP, dedicated APS, mid-ma
 - **Siemens Opcenter APS (Preactor)** — APS reference for secondary constraints and phase-based labor usage
 - **Asprova** — APS; sub-resources, fractional required quantity, internal/external setup
 - **PlanetTogether** — APS; helper resources, multi-tasking resources, Attention Percent
-- **Epicor (Kinetic/E10)** — mid-market; resource groups, crew size, capabilities, adoption data
+- **Epicor (Kinetic/E10)** — mid-market; resource groups, people size, capabilities, adoption data
 - **Infor VISUAL** — mid-market; concurrent resources with Setup/Run/Duration% — closest match to Carbon's target model
 - **ECI JobBOSS² / E2 Shop System** — job shop; dispatching grids, machines-run-by-operator, unattended ops
 - **ProShop ERP** — job shop; machine-hours scheduling + per-employee queues for support functions
@@ -35,7 +35,7 @@ Surveyed how 14 systems across four tiers (enterprise ERP, dedicated APS, mid-ma
 - **Asprova**: sub-resource use instructions with capacity on **setup/teardown only** (internal setup) or fully offline (external setup); fractional **required resource quantity** (0.5 operator ⇒ one person tends two machines).
 - **PlanetTogether**: **Multi-Tasking resource + Attention Percent** — concurrent operations' attention must sum ≤ 100%.
 - **SAP**: separate standard values (machine time 60, labor time 5) load each capacity category independently; PP/DS attaches the operator secondary resource **to the setup activity only**. Man-machine ratio encoded in labor formulas (no first-class field).
-- **Epicor** (the cautionary tale): **crew size is costing-only**; a scheduling resource is "100% applied for the duration" — no fractional finite labor. Users fake it with Concurrent Capacity or fractional crew sizes that some reports round back to 1.
+- **Epicor** (the cautionary tale): **people size is costing-only**; a scheduling resource is "100% applied for the duration" — no fractional finite labor. Users fake it with Concurrent Capacity or fractional people sizes that some reports round back to 1.
 - **Job-shop tier**: costing knobs only — E2's **Machines Run (By Operator)** divides labor cost, **Unattended Operation** drops run-labor cost; the schedule is untouched (JobBOSS's open feature request for "unmanned shifts" confirms the gap).
 
 ### 3. Machines own their calendars; staffing constrains via the labor resource, not by deriving machine hours
@@ -58,13 +58,13 @@ Surveyed how 14 systems across four tiers (enterprise ERP, dedicated APS, mid-ma
 2. **Machine tending?** Phase-based consumption is the consensus at the APS/VISUAL tier: operator held for **setup (+ load/tend labor) at the start**, machine held for the full duration; fractional attention (PlanetTogether/Asprova) is the generalization. Carbon's "setup + labor at start" window matches VISUAL's Setup✓ + front-loaded Duration% and Preactor's setup-usage.
 3. **Machine hours from operator shifts?** No system does this. Machines keep their own (usually always-open or shift) calendars; staffing constrains through the labor resource. Carbon should keep machines always-open and let assigned-operator shifts constrain gated work — same architecture.
 4. **Fallback when unassigned?** Infinite labor is the industry default; Carbon's fallback-to-qualified-pool is *stricter* than industry default and safe. The E2 rule "a work center with no operator assigned still gets scheduled" is the pattern: assignment optional, only ever restricting. A "visibility before constraint" mode (plot labor overload without delaying) is the industry on-ramp worth keeping in mind.
-5. **Terminology?** "Attention percent" = PlanetTogether; "constraint usage" = Preactor; "crew size" = Epicor **costing** (avoid — misleading); "concurrent resource / Duration %" = VISUAL; "sub resource" = Asprova; "secondary resource" = SAP PP/DS; "tended/unattended" = E2/ProShop. For Carbon: **"attended time"/"attended window"** for the operator hold, **"assigned operators"** for the work-center assignment.
+5. **Terminology?** "Attention percent" = PlanetTogether; "constraint usage" = Preactor; "people size" = Epicor **costing** (avoid — misleading); "concurrent resource / Duration %" = VISUAL; "sub resource" = Asprova; "secondary resource" = SAP PP/DS; "tended/unattended" = E2/ProShop. For Carbon: **"attended time"/"attended window"** for the operator hold, **"assigned operators"** for the work-center assignment.
 6. **SMB baseline?** Work center calendar + capacity N; people recorded for assignment/costing but never constrain. Carbon already exceeds this tier.
 
 ## Competitor-Specific Details
 
 ### Infor VISUAL (closest existing implementation of Carbon's target)
-Shop resources typed Work Center / Individual|Team / Group; per-resource per-shift capacity (blank = unlimited; "Schedule Normally" = finite opt-in). Operations take concurrent resources with Setup✓/Run✓/Duration%/At Start/#Members; Group resources have "Schedule One" (pool) vs "Schedule All" (crew) and per-shift member re-picking. Consultant practice: finitely schedule only the bottleneck resource.
+Shop resources typed Work Center / Individual|Team / Group; per-resource per-shift capacity (blank = unlimited; "Schedule Normally" = finite opt-in). Operations take concurrent resources with Setup✓/Run✓/Duration%/At Start/#Members; Group resources have "Schedule One" (pool) vs "Schedule All" (people) and per-shift member re-picking. Consultant practice: finitely schedule only the bottleneck resource.
 
 ### E2/JobBOSS² (closest job-shop analog to Carbon's user base)
 Work center capacity = calendar × Utilization% × Capacity Factor (# machines). Operator/Shift dispatching grids as pool/default layers. Multi-machine work centers (Capacity Factor > 1) **cannot** be finitely loaded — must be Infinite. Machines Run By Operator / Team Size / Unattended Operation are costing-only.
@@ -73,7 +73,7 @@ Work center capacity = calendar × Utilization% × Capacity Factor (# machines).
 Capacity categories per work center transfer to PP/DS as separate resources (`WC_PLANT_001` machine, `_002` labor). Finiteness per resource with "finiteness levels" letting different tools treat the same resource finitely/infinitely. Pool capacities shared across work centers.
 
 ### Epicor
-OpDtl rows = simultaneous resource requirements (machine + labor rows both must have capacity). Setup vs production have separate crews and separate primary resources. All-or-nothing resource allocation blocks fractional finite labor; Concurrent Capacity (max simultaneous ops per resource) is the workaround.
+OpDtl rows = simultaneous resource requirements (machine + labor rows both must have capacity). Setup vs production have separate people and separate primary resources. All-or-nothing resource allocation blocks fractional finite labor; Concurrent Capacity (max simultaneous ops per resource) is the workaround.
 
 ## Recommended Approach for Carbon
 
@@ -81,7 +81,7 @@ OpDtl rows = simultaneous resource requirements (machine + labor rows both must 
 2. **Standing operator→work-center assignment (Part B)**: an employee may be assigned to a work center (durable default, reassignable from a board). Where assignments exist, the work center's labor pool = its assigned qualified people **and an assigned person leaves the pools of other work centers** (otherwise the "2 machines, 1 guy ⇒ everything queues on his machine" case doesn't materialize). Follows E2's Shift Dispatching Grid and PlanetTogether's Allowed Helpers as a *restriction layer*.
 3. **Fallback**: a work center with no assignments uses the full qualified pool exactly as today (minus people assigned elsewhere). Never let missing assignment data stall scheduling — the <5% Epicor finite-adoption stat and the universal infinite-labor default are the strongest findings in this survey.
 4. **Keep machine calendars independent** (always-open horizon now; a future maintenance/downtime calendar slots in without touching the labor model). Do not derive machine hours from operator shifts.
-5. **Terminology**: "attended time" for the operator window; "assigned operators" on the work center. Avoid "crew size."
+5. **Terminology**: "attended time" for the operator window; "assigned operators" on the work center. Avoid "people size."
 6. **Future on-ramp** (not now): an informational mode that plots labor overload without delaying placements, mirroring Preactor/Asprova's `[Not constrained]` — useful if we ever add stricter labor constraints that shops need to grow into.
 
 ## Sources
@@ -110,10 +110,10 @@ OpDtl rows = simultaneous resource requirements (machine + labor rows both must 
 - https://jobpack.com/aerospace-manufacturing-scheduling-software/
 
 ### Epicor / Infor VISUAL
-- https://www.epiusers.help/t/scheduling-multiple-resources-when-to-use-crew-size-vs-machines/116744
+- https://www.epiusers.help/t/scheduling-multiple-resources-when-to-use-people-size-vs-machines/116744
 - https://www.epiusers.help/t/aps-and-labor-scheduling/57930
-- https://www.epiusers.help/t/scheduling-blocks-vs-crew-size/50090
-- https://www.epiusers.help/t/crew-size-1-person-working-multiple-machines/80945
+- https://www.epiusers.help/t/scheduling-blocks-vs-people-size/50090
+- https://www.epiusers.help/t/people-size-1-person-working-multiple-machines/80945
 - https://www.epiusers.help/t/concurrent-capacity/65444
 - https://usersolutions.com/blog/epicor-scheduling-gaps
 - https://docs.infor.com/visual/11.x/en-us/useradminlist/VISUALMANUFACTURING.pdf

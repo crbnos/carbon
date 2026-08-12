@@ -34,7 +34,6 @@ import AssetClass, { useAssetClasses } from "./AssetClass";
 import Color from "./Color";
 import ConversionFactor from "./ConversionFactor";
 import CostCenter from "./CostCenter";
-import CrewEmployee from "./CrewEmployee";
 import Currency from "./Currency";
 import Customer from "./Customer";
 import CustomerContact from "./CustomerContact";
@@ -57,6 +56,7 @@ import ItemPostingGroup from "./ItemPostingGroup";
 import Items from "./Items";
 import JobSalesOrderLine from "./JobSalesOrderLine";
 import Location from "./Location";
+import LocationEmployee from "./LocationEmployee";
 import MaterialType from "./MaterialType";
 import Part from "./Part";
 import PaymentTerm from "./PaymentTerm";
@@ -110,7 +110,7 @@ export {
   ConversionFactor,
   CreatableCombobox,
   CreatableMultiSelect,
-  CrewEmployee,
+  LocationEmployee,
   Currency,
   Customer,
   CustomerContact,

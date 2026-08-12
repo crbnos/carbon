@@ -1458,6 +1458,6 @@ msgstr "Zalogowałeś się o <0/>. Możesz edytować czas wylogowania poniżej l
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Jesteś zalogowany od {hoursElapsed} godzin. Czy zapomniałeś zakończyć zmianę?"
 
-#. placeholder {0}: crewStation.name
+#. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "Twoja stacja: {0}"

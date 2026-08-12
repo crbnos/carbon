@@ -1458,6 +1458,6 @@ msgstr "आपने <0/> पर घड़ी शुरू की है। आ�
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इन हैं। क्या आप क्लॉक आउट करना भूल गए?"
 
-#. placeholder {0}: crewStation.name
+#. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "आपका स्टेशन: {0}"

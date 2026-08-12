@@ -1493,7 +1493,7 @@ msgstr "किसी भी आइटम प्रकार"
 msgid "Anything not explicitly listed in scope above"
 msgstr "स्कोप में ऊपर स्पष्ट रूप से सूचीबद्ध कुछ भी नहीं"
 
-msgid "Anything the crew should know"
+msgid "Anything the people should know"
 msgstr "कुछ भी जो क्रू को जानना चाहिए"
 
 msgid "AP Aging"
@@ -4037,9 +4037,6 @@ msgstr "क्रेडिट और डेबिट"
 
 msgid "Credits applied"
 msgstr "क्रेडिट लागू किए गए"
-
-msgid "Crew"
-msgstr "दल"
 
 msgid "Critical"
 msgstr "महत्वपूर्ण"
@@ -9759,7 +9756,7 @@ msgstr "कोई नई सूचनाएं नहीं"
 msgid "No notes"
 msgstr "कोई नोट नहीं"
 
-msgid "No one crewed"
+msgid "No one assigned"
 msgstr "कोई क्रू नहीं"
 
 msgid "No one to assign"
@@ -14940,7 +14937,7 @@ msgstr "अनुसूची का उपयोग इस संपत्त�
 msgid "The shelves and bins where stock physically sits"
 msgstr "वह शेल्फ और बिन जहां स्टॉक भौतिक रूप से रखा जाता है"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 msgstr "आपके द्वारा असाइन किए गए क्रू के शिफ्ट घंटे। कोई भी न होने वाले स्टेशन स्थान के शिफ्ट कैलेंडर पर वापस जाते हैं।"
 
 msgid "The shop supplies and consumables you keep on hand"
@@ -15319,7 +15316,7 @@ msgstr "यह अन्य आकारों की सभी विधि स
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "यह +{hoursInput}h अतिरिक्त समय {previewCount} लोगों के लिए सेट करेगा।"
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "यह +{hoursInput}h अतिरिक्त समय उस सप्ताह सभी नियुक्त कर्मचारियों के लिए सेट करेगा।"
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."

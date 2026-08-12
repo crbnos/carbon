@@ -1458,6 +1458,6 @@ msgstr "您在 <0/> 打卡。您可以编辑下方的下班时间，或确认您
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班了？"
 
-#. placeholder {0}: crewStation.name
+#. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "您的工作站：{0}"

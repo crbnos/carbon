@@ -1458,6 +1458,6 @@ msgstr "Vous avez pointé à <0/>. Vous pouvez modifier votre heure de départ c
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Vous êtes pointé depuis {hoursElapsed} heures. Avez-vous oublié de pointer la sortie ?"
 
-#. placeholder {0}: crewStation.name
+#. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "Votre station : {0}"

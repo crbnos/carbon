@@ -1458,6 +1458,6 @@ msgstr "Marcaste entrada a las <0/>. Puedes editar tu hora de salida a continuac
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ha estado registrado durante {hoursElapsed} horas. ¿Olvidó registrar la salida?"
 
-#. placeholder {0}: crewStation.name
+#. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "Su estación: {0}"

@@ -1493,7 +1493,7 @@ msgstr "任意のアイテムタイプ"
 msgid "Anything not explicitly listed in scope above"
 msgstr "上記の範囲に明示的にリストされていないもの"
 
-msgid "Anything the crew should know"
+msgid "Anything the people should know"
 msgstr "クルーが知っておくべきこと"
 
 msgid "AP Aging"
@@ -4037,9 +4037,6 @@ msgstr "クレジット＆デビット"
 
 msgid "Credits applied"
 msgstr "適用されたクレジット"
-
-msgid "Crew"
-msgstr "クルー"
 
 msgid "Critical"
 msgstr "重大"
@@ -9759,7 +9756,7 @@ msgstr "新しい通知はありません"
 msgid "No notes"
 msgstr "ノートなし"
 
-msgid "No one crewed"
+msgid "No one assigned"
 msgstr "クルーなし"
 
 msgid "No one to assign"
@@ -14940,7 +14937,7 @@ msgstr "このアセットの費用を耐用年数にわたって分散するた
 msgid "The shelves and bins where stock physically sits"
 msgstr "在物理上存放库存的货架和箱子"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 msgstr "割り当てたクルーのシフト時間。誰もいないステーションは、ロケーションのシフトカレンダーにフォールバックします。"
 
 msgid "The shop supplies and consumables you keep on hand"
@@ -15319,7 +15316,7 @@ msgstr "これにより、他のサイズのすべてのメソッドマテリア
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "これは{previewCount}人に+{hoursInput}時間の残業を設定します。"
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "その週のクルーの全員に+{hoursInput}時間の残業を設定します。"
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."

@@ -25,11 +25,11 @@ first match.
   `assembly-handler.ts`, `master-data-provider.ts`, `calendar-utils.ts`,
   `slot-allocator.ts`, `types.ts`). All engine READS go
   through the `MasterDataProvider` interface (`KyselyMasterDataProvider` is the
-  live impl); writes stay on Kysely. The crew reads (`getCrewAssignments`/`getCrewAbsences`)
-  take the plant `timeZone` so `crewAssignment.date` range bounds resolve on the
+  live impl); writes stay on Kysely. The people reads (`getPeopleAssignments`/`getPeopleAbsences`)
+  take the plant `timeZone` so `peopleAssignment.date` range bounds resolve on the
   plant's calendar, not UTC's. `resource-manager.ts` was dead code and
   has been deleted. `calendar-utils.ts` / `slot-allocator.ts` /
-  `date-utils.ts` / `operator-eligibility.ts` / `crew-utils.ts` are pure and have Deno tests
+  `date-utils.ts` / `operator-eligibility.ts` / `people-utils.ts` are pure and have Deno tests
   (`deno test lib/scheduling/` from the functions dir). `date-utils.toIsoDate`
   normalizes pg DATE columns (JS Date at local midnight) to "YYYY-MM-DD" —
   required before any lexicographic date comparison (operator expiry).
@@ -39,41 +39,41 @@ first match.
   sequence and work center only — does not reschedule. Change dates on the Dates board."*;
   only the Dates board calls `triggerJobSchedule`) and `dates.tsx` (jobs-by-due-date Kanban; drag →
   `dates.update.tsx` writes `job.dueDate` + `priority`, **then calls
-  `triggerJobSchedule(...)`** to re-run the engine). `crew.tsx` is the Crew
-  page with a segmented view switcher (`?view=`): the Crew **board** (manning
+  `triggerJobSchedule(...)`** to re-run the engine). `people.tsx` is the People
+  page with a segmented view switcher (`?view=`): the People **board** (manning
   board: drag employees onto work-center columns per date; Unassigned column
   is `position: sticky` — needs `min-w-max` on the shared `BoardContainer`
   row and `MeasuringStrategy.Always` on the DndContext; mutations via
-  `crew.update.tsx`, which fires
-  `notifyScheduleInputsChanged(companyId, "crew", ..., workCenterId)`), a
-  week **matrix** (`CrewMatrix.tsx`: employee×day grid + assigned-vs-needed
+  `people.update.tsx`, which fires
+  `notifyScheduleInputsChanged(companyId, "people", ..., workCenterId)`), a
+  week **matrix** (`PeopleMatrix.tsx`: employee×day grid + assigned-vs-needed
   coverage as sub-tabs, department filter), and a week **capacity** board
-  (`CrewCapacity.tsx`). Capacity math: Demand = open `jobOperation` hours by
+  (`PeopleCapacity.tsx`). Capacity math: Demand = open `jobOperation` hours by
   due date via `makeDurations` (Draft/Planned jobs excluded — released work
   only; ops overdue up to 28 days land in a Past-due column); Scheduled =
   `capacityReservation.workHours` distributed across each reservation's span
-  per day; Available = crew headcount × real shift hours resolved through
+  per day; Available = people headcount × real shift hours resolved through
   the ladder assignment `shiftId` → the person's `employeeShift` →
-  most-common shift duration at the location → 8h (uncrewed stations fall
+  most-common shift duration at the location → 8h (unassigned stations fall
   back to the location's per-weekday shift calendar); Load renders as hours
   over/free (+Xh / Xh free), not %. Shift + location filters live in header
   popovers; the shift filter's "All shifts" option (`shiftId` null on
   drag) creates shift-less assignments that resolve hours via the ladder.
-  The Board has Day | Week period tabs — Week renders `CrewWeekBoard`
-  (drag once = crewed all week via `assign-week`/`unassign-week`/`move-week`
-  → `assignCrewWeek` etc., one row per working day from the shift's weekday
+  The Board has Day | Week period tabs — Week renders `PeopleWeekBoard`
+  (drag once = assigned all week via `assign-week`/`unassign-week`/`move-week`
+  → `assignPeopleWeek` etc., one row per working day from the shift's weekday
   flags; matrix/capacity are week-only, no month range — removed on
   request). Header also has a Calendar date-jump popover (Calendar is
   exported from @carbon/react for this), copy previous day/week
   (`copy`/`copy-week` — day copy preserves split `hours`, overtime never
   copies), and a "Time off" range dialog
-  (`absent-range` → `setCrewAbsenceRange`). The route delegates its pieces to
-  `ui/Schedule/Crew/`: `CrewHeader` (filters/tabs/date nav/copy/menu),
-  `OvertimeDialog` + `TimeOffDialog` (conditionally mounted), `CrewCard` +
-  `CrewColumn` (extracted from `CrewBoard`), with the shift-hours/time ladders
-  shared via `crewShared.ts`; the Capacity view's demand/scheduled buckets are
-  computed server-side by `buildCrewCapacityBuckets`
-  (`modules/production/crewCapacity.server.ts`).
+  (`absent-range` → `setPeopleAbsenceRange`). The route delegates its pieces to
+  `ui/Schedule/People/`: `PeopleHeader` (filters/tabs/date nav/copy/menu),
+  `OvertimeDialog` + `TimeOffDialog` (conditionally mounted), `PeopleCard` +
+  `PeopleColumn` (extracted from `PeopleBoard`), with the shift-hours/time ladders
+  shared via `peopleShared.ts`; the Capacity view's demand/scheduled buckets are
+  computed server-side by `buildPeopleCapacityBuckets`
+  (`modules/production/peopleCapacity.server.ts`).
 - **MES display** (`apps/mes/app/routes/x+/operations.tsx`): the "Schedule" page is
   a **Kanban** (columns = work centers, cards = operations sorted by `priority`),
   not a Gantt. Read-only re display; operators execute via `operation.$operationId.tsx`.
@@ -116,30 +116,30 @@ selectWorkCenters → calculatePriorities → persistChanges`.
   ability-gated processes, ≥1 qualified employee on shift and unreserved
   (`slot-allocator.ts`; the accumulation windows for gated ops are the union
   of the pool members' shift windows, so work pauses while nobody qualified
-  is on shift; ungated ops need only the machine). **Crew assignments**
-  (the manning board: `crewAssignment` / `crewAbsence` tables) also feed the
-  context (`crewByWorkCenter` + `windowsByEmployee`, built in
-  `buildFiniteContext` via `getCrewAssignments`/`getCrewAbsences`). A crewed
+  is on shift; ungated ops need only the machine). **People assignments**
+  (the manning board: `peopleAssignment` / `peopleAbsence` tables) also feed the
+  context (`peopleByWorkCenter` + `windowsByEmployee`, built in
+  `buildFiniteContext` via `getPeopleAssignments`/`getPeopleAbsences`). A assigned
   station works as a TEAM (`allocateAttendedOperation`'s `team` option →
   `simulateAttendedTeam` in `slot-allocator.ts`): still one op at a time,
-  but every crew member present is booked on that op together — labor
-  accumulates at n× wall-clock (n = crew present in the stretch; rate drops
+  but every people member present is booked on that op together — labor
+  accumulates at n× wall-clock (n = people present in the stretch; rate drops
   when someone leaves), setup accumulates at 1×, and machine time is never
   compressed (unattended remainder = machineHours − labor wall-clock run
-  concurrently). Gated ops team-book crew∩qualified with windows clipped to
-  their crewed dates (`clipWindowsToDates`); pass 2 falls back softly to
+  concurrently). Gated ops team-book people∩qualified with windows clipped to
+  their assigned dates (`clipWindowsToDates`); pass 2 falls back softly to
   the full qualified pool in classic single-person relay mode. Ungated ops
-  at a crewed station are manned the same way with machine-only fallback.
+  at a assigned station are manned the same way with machine-only fallback.
   Absences subtract the person's windows for that date everywhere
-  (`subtractAbsences`). Authorized overtime (`crewAssignment.overtimeHours`)
+  (`subtractAbsences`). Authorized overtime (`peopleAssignment.overtimeHours`)
   extends the person's last window on that date (`extendWindowsByOvertime`),
-  and split days (`crewAssignment.hours`, several stations per shift) deal
+  and split days (`peopleAssignment.hours`, several stations per shift) deal
   the person's attended day out sequentially per station
-  (`buildCrewBudgets` + `clipWindowsToStation` — a sole whole-shift row is
-  byte-identical to the old `clipWindowsToDates`). A blank board is byte-identical to pre-crew
+  (`buildPeopleBudgets` + `clipWindowsToStation` — a sole whole-shift row is
+  byte-identical to the old `clipWindowsToDates`). A blank board is byte-identical to pre-people
   behavior (single-member team mode ≡ legacy relay). The allocator attributes
   each wait to its binding resource (machine queue vs operator pool vs the
-  assigned crew — `crew-wait` cause) for the
+  assigned people — `people-wait` cause) for the
   schedule note / conflict message. Picks the earliest-finish
   candidate (tie → least reserved). Placement overwrites `startDate`/`dueDate`;
   placements past the backward due date set `hasConflict`/`conflictReason`

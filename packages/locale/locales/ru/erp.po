@@ -1493,7 +1493,7 @@ msgstr "Любой тип товара"
 msgid "Anything not explicitly listed in scope above"
 msgstr "Все, что не указано явно в области действия выше"
 
-msgid "Anything the crew should know"
+msgid "Anything the people should know"
 msgstr "Всё, что должна знать бригада"
 
 msgid "AP Aging"
@@ -4037,9 +4037,6 @@ msgstr "Кредиты и дебеты"
 
 msgid "Credits applied"
 msgstr "Применённые кредиты"
-
-msgid "Crew"
-msgstr "Экипаж"
 
 msgid "Critical"
 msgstr "Критический"
@@ -9759,7 +9756,7 @@ msgstr "Нет новых уведомлений"
 msgid "No notes"
 msgstr "Нет заметок"
 
-msgid "No one crewed"
+msgid "No one assigned"
 msgstr "Никто не назначен"
 
 msgid "No one to assign"
@@ -14940,7 +14937,7 @@ msgstr "Метод амортизации, используемый для ра�
 msgid "The shelves and bins where stock physically sits"
 msgstr "Полки и контейнеры, где физически находится запас"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 msgstr "часы смены назначенной вами бригады. Станции без персонала используют календарь смен места расположения."
 
 msgid "The shop supplies and consumables you keep on hand"
@@ -15319,7 +15316,7 @@ msgstr "Это заменит все материалы методов друг�
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Это установит +{hoursInput}ч переработки для {previewCount} человек."
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "Это установит +{hoursInput}ч переработки для всех рабочих этой недели."
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."

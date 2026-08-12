@@ -76,8 +76,6 @@ export const path = {
       costCenters: `${api}/accounting/cost-centers`,
       countries: `${api}/countries`,
       createCsvLookup: `${api}/csv/create-lookup`,
-      crewEmployees: (locationId: string) =>
-        generatePath(`${api}/people/crew-employees/${locationId}`),
       currencies: `${api}/accounting/currencies`,
       customerContacts: (id: string) =>
         generatePath(`${api}/sales/customer-contacts/${id}`),
@@ -144,6 +142,8 @@ export const path = {
       linearLinkExistingIssue: `${api}/integrations/linear/issue/link`,
       linearSyncNotes: `${api}/integrations/linear/issue/sync-notes`,
       link: (companyId: string) => `${api}/link?companyId=${companyId}`,
+      locationEmployees: (locationId: string) =>
+        generatePath(`${api}/people/employees/${locationId}`),
       locations: `${api}/resources/locations`,
       maintenanceDispatches: `${api}/resources/maintenance`,
       maintenanceSchedules: `${api}/resources/scheduled-maintenance`,
@@ -1953,14 +1953,14 @@ export const path = {
     saveViewOrder: `${x}/shared/view/order`,
 
     saveViews: `${x}/shared/views`,
-    scheduleCrew: `${x}/schedule/crew`,
-    scheduleCrewUpdate: `${x}/schedule/crew/update`,
     scheduleDates: `${x}/schedule/dates`,
     scheduleDatesUpdate: `${x}/schedule/dates/update`,
     scheduleGantt: (jobId?: string) =>
       jobId ? `${x}/scheduling/gantt?jobId=${jobId}` : `${x}/scheduling/gantt`,
     scheduleOperation: `${x}/schedule/operations`,
     scheduleOperationUpdate: `${x}/schedule/operations/update`,
+    schedulePeople: `${x}/schedule/people`,
+    schedulePeopleUpdate: `${x}/schedule/people/update`,
     scheduleResources: `${x}/scheduling/resources`,
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),

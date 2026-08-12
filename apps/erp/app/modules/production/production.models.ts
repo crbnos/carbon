@@ -1430,7 +1430,7 @@ export const assemblyUnitValidator = z.object({
   itemId: zfd.text(z.string().optional())
 });
 
-export const crewAssignmentValidator = z.object({
+export const peopleAssignmentValidator = z.object({
   id: zfd.text(z.string().optional()),
   workCenterId: z.string().min(1, { message: "Work center is required" }),
   employeeId: z.string().min(1, { message: "Employee is required" }),
@@ -1442,7 +1442,7 @@ export const crewAssignmentValidator = z.object({
   hours: zfd.numeric(z.number().gt(0).max(24).optional())
 });
 
-export const crewAbsenceValidator = z.object({
+export const peopleAbsenceValidator = z.object({
   id: zfd.text(z.string().optional()),
   employeeId: z.string().min(1, { message: "Employee is required" }),
   date: z.string().min(1, { message: "Date is required" }),
@@ -1450,14 +1450,14 @@ export const crewAbsenceValidator = z.object({
   note: zfd.text(z.string().optional())
 });
 
-export const copyCrewBoardValidator = z.object({
+export const copyPeopleBoardValidator = z.object({
   locationId: z.string().min(1),
   fromDate: z.string().min(1),
   toDate: z.string().min(1),
   shiftId: zfd.text(z.string().optional())
 });
 
-export const crewWeekAssignValidator = z.object({
+export const peopleWeekAssignValidator = z.object({
   locationId: z.string().min(1),
   employeeId: z.string().min(1, { message: "Employee is required" }),
   workCenterId: z.string().min(1, { message: "Work center is required" }),
@@ -1465,14 +1465,14 @@ export const crewWeekAssignValidator = z.object({
   shiftId: zfd.text(z.string().optional())
 });
 
-export const crewWeekUnassignValidator = z.object({
+export const peopleWeekUnassignValidator = z.object({
   employeeId: z.string().min(1, { message: "Employee is required" }),
   workCenterId: z.string().min(1, { message: "Work center is required" }),
   weekStart: z.string().min(1),
   shiftId: zfd.text(z.string().optional())
 });
 
-export const crewWeekMoveValidator = z.object({
+export const peopleWeekMoveValidator = z.object({
   employeeId: z.string().min(1, { message: "Employee is required" }),
   fromWorkCenterId: z.string().min(1),
   workCenterId: z.string().min(1, { message: "Work center is required" }),
@@ -1480,14 +1480,14 @@ export const crewWeekMoveValidator = z.object({
   shiftId: zfd.text(z.string().optional())
 });
 
-export const copyCrewWeekValidator = z.object({
+export const copyPeopleWeekValidator = z.object({
   locationId: z.string().min(1),
   fromWeekStart: z.string().min(1), // Monday, YYYY-MM-DD
   toWeekStart: z.string().min(1),
   shiftId: zfd.text(z.string().optional())
 });
 
-export const crewAbsenceRangeValidator = z
+export const peopleAbsenceRangeValidator = z
   .object({
     employeeId: z.string().min(1, { message: "Employee is required" }),
     fromDate: z.string().min(1, { message: "Start date is required" }),
@@ -1507,14 +1507,14 @@ export const crewAbsenceRangeValidator = z
     { message: "Range is limited to 62 days", path: ["toDate"] }
   );
 
-export const crewMoveValidator = z.object({
+export const peopleMoveValidator = z.object({
   id: z.string().min(1, { message: "Assignment is required" }),
   workCenterId: z.string().min(1, { message: "Work center is required" })
 });
 
 // One atomic edit of a person's whole day: the given rows become the day's
 // assignments (update/insert/delete reconciliation in one transaction)
-export const crewDayValidator = z.object({
+export const peopleDayValidator = z.object({
   employeeId: z.string().min(1, { message: "Employee is required" }),
   locationId: z.string().min(1),
   date: z.string().min(1),
@@ -1536,12 +1536,12 @@ export const crewDayValidator = z.object({
 });
 
 // Absent hours = back to the whole shift (stored as null)
-export const crewHoursValidator = z.object({
+export const peopleHoursValidator = z.object({
   id: z.string().min(1, { message: "Assignment is required" }),
   hours: zfd.numeric(z.number().gt(0).max(24).optional())
 });
 
-export const crewOvertimeBulkValidator = z
+export const peopleOvertimeBulkValidator = z
   .object({
     locationId: z.string().min(1),
     date: z.string().min(1),
@@ -1939,7 +1939,7 @@ export const inspectionSaveAnchorsPayloadValidator = z
   .strict();
 
 /**
- * Weekday flag columns on `shift`, Monday-first — the order crew week rows
+ * Weekday flag columns on `shift`, Monday-first — the order people week rows
  * are dealt out in.
  */
 export const WEEKDAYS_MONDAY_FIRST = [

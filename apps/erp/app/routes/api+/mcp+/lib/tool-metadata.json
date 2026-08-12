@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-11T19:05:09.357Z",
+  "generated": "2026-08-12T03:00:51.848Z",
   "totalTools": 1467,
   "modules": 15,
   "tools": [
@@ -22763,10 +22763,10 @@
       }
     },
     {
-      "name": "production_getCrewAssignments",
+      "name": "production_getPeopleAssignments",
       "module": "production",
       "classification": "READ",
-      "description": "get crew assignments",
+      "description": "get people assignments",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -22799,10 +22799,10 @@
       }
     },
     {
-      "name": "production_getCrewAbsences",
+      "name": "production_getPeopleAbsences",
       "module": "production",
       "classification": "READ",
-      "description": "get crew absences",
+      "description": "get people absences",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -22825,10 +22825,10 @@
       }
     },
     {
-      "name": "production_getCrewAssignmentsRange",
+      "name": "production_getPeopleAssignmentsRange",
       "module": "production",
       "classification": "READ",
-      "description": "get crew assignments range",
+      "description": "get people assignments range",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -22859,10 +22859,10 @@
       }
     },
     {
-      "name": "production_getCrewAbsencesRange",
+      "name": "production_getPeopleAbsencesRange",
       "module": "production",
       "classification": "READ",
-      "description": "get crew absences range",
+      "description": "get people absences range",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -22889,10 +22889,10 @@
       }
     },
     {
-      "name": "production_getCrewCapacityOperations",
+      "name": "production_getPeopleCapacityOperations",
       "module": "production",
       "classification": "READ",
-      "description": "get crew capacity operations",
+      "description": "get people capacity operations",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -22953,10 +22953,10 @@
       }
     },
     {
-      "name": "production_getCrewEmployees",
+      "name": "production_getLocationEmployees",
       "module": "production",
       "classification": "READ",
-      "description": "get crew employees",
+      "description": "get location employees",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -23023,10 +23023,10 @@
       }
     },
     {
-      "name": "production_upsertCrewAssignment",
+      "name": "production_upsertPeopleAssignment",
       "module": "production",
       "classification": "WRITE",
-      "description": "upsert crew assignment",
+      "description": "upsert people assignment",
       "paramCount": 7,
       "serviceParams": [
         "db",
@@ -23075,10 +23075,10 @@
       }
     },
     {
-      "name": "production_deleteCrewAssignment",
+      "name": "production_deletePeopleAssignment",
       "module": "production",
       "classification": "DESTRUCTIVE",
-      "description": "delete crew assignment",
+      "description": "delete people assignment",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -23101,10 +23101,10 @@
       }
     },
     {
-      "name": "production_setCrewAbsence",
+      "name": "production_setPeopleAbsence",
       "module": "production",
       "classification": "WRITE",
-      "description": "set crew absence",
+      "description": "set people absence",
       "paramCount": 4,
       "serviceParams": [
         "client",
@@ -23141,10 +23141,10 @@
       }
     },
     {
-      "name": "production_clearCrewAbsence",
+      "name": "production_clearPeopleAbsence",
       "module": "production",
       "classification": "WRITE",
-      "description": "clear crew absence",
+      "description": "clear people absence",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -23167,10 +23167,10 @@
       }
     },
     {
-      "name": "production_moveCrewAssignment",
+      "name": "production_movePeopleAssignment",
       "module": "production",
       "classification": "WRITE",
-      "description": "move crew assignment",
+      "description": "move people assignment",
       "paramCount": 2,
       "serviceParams": [
         "db",
@@ -23197,10 +23197,10 @@
       }
     },
     {
-      "name": "production_setCrewDay",
+      "name": "production_setPeopleDay",
       "module": "production",
       "classification": "WRITE",
-      "description": "set crew day",
+      "description": "set people day",
       "paramCount": 7,
       "serviceParams": [
         "db",
@@ -23271,10 +23271,10 @@
       }
     },
     {
-      "name": "production_setCrewAssignmentHours",
+      "name": "production_setPeopleAssignmentHours",
       "module": "production",
       "classification": "WRITE",
-      "description": "set crew assignment hours",
+      "description": "set people assignment hours",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -23305,10 +23305,10 @@
       }
     },
     {
-      "name": "production_setCrewOvertimeBulk",
+      "name": "production_setPeopleOvertimeBulk",
       "module": "production",
       "classification": "WRITE",
-      "description": "set crew overtime bulk",
+      "description": "set people overtime bulk",
       "paramCount": 6,
       "serviceParams": [
         "db",
@@ -23357,10 +23357,10 @@
       }
     },
     {
-      "name": "production_copyCrewBoard",
+      "name": "production_copyPeopleBoard",
       "module": "production",
       "classification": "WRITE",
-      "description": "copy crew board",
+      "description": "copy people board",
       "paramCount": 4,
       "serviceParams": [
         "db",
@@ -23399,10 +23399,10 @@
       }
     },
     {
-      "name": "production_assignCrewWeek",
+      "name": "production_assignPeopleWeek",
       "module": "production",
       "classification": "WRITE",
-      "description": "assign crew week",
+      "description": "assign people week",
       "paramCount": 5,
       "serviceParams": [
         "db",
@@ -23443,10 +23443,10 @@
       }
     },
     {
-      "name": "production_unassignCrewWeek",
+      "name": "production_unassignPeopleWeek",
       "module": "production",
       "classification": "WRITE",
-      "description": "unassign crew week",
+      "description": "unassign people week",
       "paramCount": 4,
       "serviceParams": [
         "db",
@@ -23483,10 +23483,10 @@
       }
     },
     {
-      "name": "production_moveCrewWeek",
+      "name": "production_movePeopleWeek",
       "module": "production",
       "classification": "WRITE",
-      "description": "move crew week",
+      "description": "move people week",
       "paramCount": 5,
       "serviceParams": [
         "db",
@@ -23528,10 +23528,10 @@
       }
     },
     {
-      "name": "production_copyCrewWeek",
+      "name": "production_copyPeopleWeek",
       "module": "production",
       "classification": "WRITE",
-      "description": "copy crew week",
+      "description": "copy people week",
       "paramCount": 4,
       "serviceParams": [
         "db",
@@ -23570,10 +23570,10 @@
       }
     },
     {
-      "name": "production_setCrewAbsenceRange",
+      "name": "production_setPeopleAbsenceRange",
       "module": "production",
       "classification": "WRITE",
-      "description": "set crew absence range",
+      "description": "set people absence range",
       "paramCount": 5,
       "serviceParams": [
         "db",

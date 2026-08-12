@@ -16,12 +16,12 @@ import {
 } from "./calendar-utils.ts";
 import {
   buildAbsencesByEmployee,
-  buildCrewBudgets,
-  buildCrewByWorkCenter,
+  buildPeopleBudgets,
+  buildPeopleByWorkCenter,
   buildOvertimeByEmployee,
   extendWindowsByOvertime,
   subtractAbsences,
-} from "./crew-utils.ts";
+} from "./people-utils.ts";
 import { calculateOperationDates } from "./date-calculator.ts";
 import { calculateDurationHours } from "./duration-calculator.ts";
 import {
@@ -478,24 +478,24 @@ export class SchedulingEngine {
       now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
     );
 
-    const [liveReservations, processRequirements, crewRows, absenceRows] =
+    const [liveReservations, processRequirements, peopleRows, absenceRows] =
       await Promise.all([
         this.provider.getLiveReservations(now, this.jobId),
         this.provider.getProcessRequirements(processIds),
-        this.provider.getCrewAssignments(rangeStart, rangeEnd, this.timezone),
-        this.provider.getCrewAbsences(rangeStart, rangeEnd, this.timezone),
+        this.provider.getPeopleAssignments(rangeStart, rangeEnd, this.timezone),
+        this.provider.getPeopleAbsences(rangeStart, rangeEnd, this.timezone),
       ]);
 
     const abilityIds = Array.from(
       new Set(processRequirements.map((r) => r.abilityId))
     );
     const employees = await this.provider.getQualifiedEmployees(abilityIds);
-    // Crew members at ungated stations need real availability windows too, so
-    // shift rows are loaded for the union of qualified + crewed people
+    // People members at ungated stations need real availability windows too, so
+    // shift rows are loaded for the union of qualified + assigned people
     const employeeIds = Array.from(
       new Set([
         ...employees.map((e) => e.employeeId),
-        ...crewRows.map((r) => r.employeeId),
+        ...peopleRows.map((r) => r.employeeId),
       ])
     );
     const shiftRows = await this.provider.getEmployeeShiftWindows(employeeIds);
@@ -569,7 +569,7 @@ export class SchedulingEngine {
     const timeZone = this.job?.timezone ?? "UTC";
 
     // Absences subtract the person's availability on those dates everywhere —
-    // crew-preferred and qualified-fallback paths alike
+    // people-preferred and qualified-fallback paths alike
     const absentByEmployee = buildAbsencesByEmployee(absenceRows);
     for (const [employeeId, absentDates] of absentByEmployee) {
       const windows = windowsByEmployee.get(employeeId);
@@ -581,15 +581,15 @@ export class SchedulingEngine {
       }
     }
 
-    // An absent person is never that day's crew
-    const presentCrewRows = crewRows.filter(
+    // An absent person is never that day's people
+    const presentPeopleRows = peopleRows.filter(
       (row) => !absentByEmployee.get(row.employeeId)?.has(row.date)
     );
-    const crewByWorkCenter = buildCrewByWorkCenter(presentCrewRows);
+    const peopleByWorkCenter = buildPeopleByWorkCenter(presentPeopleRows);
 
     // Authorized overtime = a longer day: extend the person's last window on
     // each overtime date so the allocator can pack work into the extra hours
-    const overtimeByEmployee = buildOvertimeByEmployee(presentCrewRows);
+    const overtimeByEmployee = buildOvertimeByEmployee(presentPeopleRows);
     for (const [employeeId, overtimeByDate] of overtimeByEmployee) {
       const windows = windowsByEmployee.get(employeeId);
       if (windows) {
@@ -601,7 +601,7 @@ export class SchedulingEngine {
     }
 
     // Split days: each station only gets its budgeted share of the person
-    const crewBudgets = buildCrewBudgets(presentCrewRows);
+    const peopleBudgets = buildPeopleBudgets(presentPeopleRows);
 
     const employeesByAbility = new Map<string, PoolEmployee[]>();
     for (const e of employees) {
@@ -642,8 +642,8 @@ export class SchedulingEngine {
       requirementByProcess,
       employeesByAbility,
       reservationsByEmployee,
-      crewByWorkCenter,
-      crewBudgets,
+      peopleByWorkCenter,
+      peopleBudgets,
       windowsByEmployee,
       dependencies: this.dependencies,
       now,

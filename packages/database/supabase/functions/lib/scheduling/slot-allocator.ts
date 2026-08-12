@@ -276,11 +276,11 @@ function simulateAttended(args: {
 }
 
 /**
- * TEAM variant of the attended simulation: the station's whole crew works the
+ * TEAM variant of the attended simulation: the station's whole people works the
  * SAME operation together. Every member available in a stretch is booked on
  * it (overlapping segments). Setup accumulates at 1x (a second pair of hands
  * doesn't speed up setup), labor accumulates at n x wall-clock where n is the
- * crew present in that stretch — two welders finish 12h of weld labor in 6
+ * people present in that stretch — two welders finish 12h of weld labor in 6
  * wall-clock hours; if one leaves mid-op the rate drops to 1x. Returns the
  * wall-clock spent in the labor phase so the caller can credit the machine's
  * concurrent run. With one member this is behavior-identical to
@@ -371,7 +371,7 @@ function simulateAttendedTeam(args: {
     while (cursor < stretchEnd) {
       if (setupDoneMs < setupMs) {
         // Setup: one pair of hands' worth of progress; the whole present
-        // crew is at the station with the op regardless
+        // people is at the station with the op regardless
         const take = Math.min(stretchEnd - cursor, setupMs - setupDoneMs);
         bookAll(available, cursor, cursor + take);
         setupDoneMs += take;
@@ -404,9 +404,9 @@ function simulateAttendedTeam(args: {
  * shifts). Walks forward from `earliestStart`; each machine collision hops
  * to the blocking reservation's end and the attended simulation re-runs.
  *
- * With `team` set (crewed stations), the members work the operation
+ * With `team` set (assigned stations), the members work the operation
  * TOGETHER: everyone present is booked on it, labor is parallelized across
- * the present crew, setup and machine time are not (see
+ * the present people, setup and machine time are not (see
  * simulateAttendedTeam). The end is then derived from the machine hours
  * minus the machine run concurrent with the labor phase — `totalHours` (a
  * fixed setup + max(labor, machine)) would overstate the span when labor
@@ -422,7 +422,7 @@ export function allocateAttendedOperation(args: {
   busyByEmployee: Map<string, ReservationInterval[]>;
   /** IANA zone used to word dates in conflict messages (factory time) */
   timeZone?: string;
-  /** Crew team mode: the members man the station together (see above). */
+  /** People team mode: the members man the station together (see above). */
   team?: { setupHours: number; laborHours: number; machineHours: number };
 }): AttendedAllocationSuccess | AllocationConflict {
   const {

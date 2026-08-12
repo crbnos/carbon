@@ -1493,8 +1493,8 @@ msgstr "Any item type"
 msgid "Anything not explicitly listed in scope above"
 msgstr "Anything not explicitly listed in scope above"
 
-msgid "Anything the crew should know"
-msgstr "Anything the crew should know"
+msgid "Anything the people should know"
+msgstr "Anything the people should know"
 
 msgid "AP Aging"
 msgstr "AP Aging"
@@ -4037,9 +4037,6 @@ msgstr "Credits & Debits"
 
 msgid "Credits applied"
 msgstr "Credits applied"
-
-msgid "Crew"
-msgstr "Crew"
 
 msgid "Critical"
 msgstr "Critical"
@@ -9759,8 +9756,8 @@ msgstr "No new notifications"
 msgid "No notes"
 msgstr "No notes"
 
-msgid "No one crewed"
-msgstr "No one crewed"
+msgid "No one assigned"
+msgstr "No one assigned"
 
 msgid "No one to assign"
 msgstr "No one to assign"
@@ -14940,8 +14937,8 @@ msgstr "The schedule used to spread this asset's cost over its useful life (stra
 msgid "The shelves and bins where stock physically sits"
 msgstr "The shelves and bins where stock physically sits"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
-msgstr "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgstr "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "The shop supplies and consumables you keep on hand"
@@ -15319,8 +15316,8 @@ msgstr "This will replace all method materials of other sizes with this size."
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "This will set +{hoursInput}h of overtime for {previewCount} people."
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
-msgstr "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
+msgstr "This will set +{hoursInput}h of overtime for everyone assigned that week."
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
 msgstr "This will set +{hoursInput}h of overtime on {previewCount} person-days."

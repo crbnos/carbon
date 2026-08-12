@@ -1458,6 +1458,6 @@ msgstr "Ti sei connesso a <0/>. Puoi modificare l'orario di disconnessione di se
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sei timbrato in ingresso da {hoursElapsed} ore. Hai dimenticato di timbrare l'uscita?"
 
-#. placeholder {0}: crewStation.name
+#. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "La tua stazione: {0}"

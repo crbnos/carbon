@@ -1493,8 +1493,8 @@ msgstr "Beliebiger Artikeltyp"
 msgid "Anything not explicitly listed in scope above"
 msgstr "Alles, was oben nicht explizit im Umfang aufgeführt ist"
 
-msgid "Anything the crew should know"
-msgstr "Alles, was die Crew wissen sollte"
+msgid "Anything the people should know"
+msgstr "Alles, was die Leute wissen sollten"
 
 msgid "AP Aging"
 msgstr "Kreditorenalterung"
@@ -4037,9 +4037,6 @@ msgstr "Gutschriften & Belastungen"
 
 msgid "Credits applied"
 msgstr "Angewendete Gutschriften"
-
-msgid "Crew"
-msgstr "Besatzung"
 
 msgid "Critical"
 msgstr "Kritisch"
@@ -9759,7 +9756,7 @@ msgstr "Keine neuen Benachrichtigungen"
 msgid "No notes"
 msgstr "Keine Notizen"
 
-msgid "No one crewed"
+msgid "No one assigned"
 msgstr "Niemand besetzt"
 
 msgid "No one to assign"
@@ -14940,7 +14937,7 @@ msgstr "Der Zeitplan, der zur Verbreitung der Kosten dieses Vermögenswerts übe
 msgid "The shelves and bins where stock physically sits"
 msgstr "Die Regale und Behälter, in denen der Bestand physisch gelagert wird"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 msgstr "die Schichtzeiten der Mannschaft, die Sie zugewiesen haben. Stationen ohne Besetzung verwenden den Schichtkalender des Standorts."
 
 msgid "The shop supplies and consumables you keep on hand"
@@ -15319,7 +15316,7 @@ msgstr "Dies ersetzt alle Methodenmaterialien anderer Größen durch diese Grö�
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Dies setzt +{hoursInput}h Überzeit für {previewCount} Personen."
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "Dies setzt +{hoursInput}h Überzeit für alle in dieser Woche eingeplanten Personen."
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."

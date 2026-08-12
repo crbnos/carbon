@@ -1458,6 +1458,6 @@ msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편�
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊으셨나요?"
 
-#. placeholder {0}: crewStation.name
+#. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "당신의 스테이션: {0}"

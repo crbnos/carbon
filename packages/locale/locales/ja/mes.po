@@ -1458,6 +1458,6 @@ msgstr "あなたは<0/>にクロックインしました。下記でクロッ�
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} 時間出勤中です。退勤打刻を忘れていませんか？"
 
-#. placeholder {0}: crewStation.name
+#. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "あなたのステーション: {0}"

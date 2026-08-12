@@ -1493,7 +1493,7 @@ msgstr "Cualquier tipo de artículo"
 msgid "Anything not explicitly listed in scope above"
 msgstr "Cualquier cosa no explícitamente listada en el alcance anterior"
 
-msgid "Anything the crew should know"
+msgid "Anything the people should know"
 msgstr "Algo que el equipo debe saber"
 
 msgid "AP Aging"
@@ -4037,9 +4037,6 @@ msgstr "Créditos y Débitos"
 
 msgid "Credits applied"
 msgstr "Créditos aplicados"
-
-msgid "Crew"
-msgstr "Equipo"
 
 msgid "Critical"
 msgstr "Crítico"
@@ -9759,7 +9756,7 @@ msgstr "Sin notificaciones nuevas"
 msgid "No notes"
 msgstr "Sin notas"
 
-msgid "No one crewed"
+msgid "No one assigned"
 msgstr "Nadie asignado"
 
 msgid "No one to assign"
@@ -14940,7 +14937,7 @@ msgstr "El cronograma utilizado para distribuir el costo de este activo durante 
 msgid "The shelves and bins where stock physically sits"
 msgstr "Los estantes y contenedores donde el inventario se encuentra físicamente"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 msgstr "las horas de turno de la tripulación que asignaste. Las estaciones sin nadie regresan al calendario de turnos de la ubicación."
 
 msgid "The shop supplies and consumables you keep on hand"
@@ -15319,7 +15316,7 @@ msgstr "Esto reemplazará todos los materiales de método de otros tamaños con 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Esto establecerá +{hoursInput}h de tiempo extra para {previewCount} personas."
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "Esto establecerá +{hoursInput}h de tiempo extra para todo el equipo esa semana."
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."

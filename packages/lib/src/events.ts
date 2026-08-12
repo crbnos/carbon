@@ -295,7 +295,7 @@ export type Events = {
         | "work-center"
         | "location"
         | "reorder"
-        | "crew";
+        | "people";
       reason: string;
       /** The changed record (abilityId, workCenterId, ...) for precise scoping */
       entityId?: string;

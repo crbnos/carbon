@@ -612,7 +612,7 @@ Deno.test("formatBlockingJobs ranks by op count then job id, capping at 3", () =
   );
 });
 
-// --- crew team mode (station crew works the same op together) ---------------
+// --- people team mode (station people works the same op together) ---------------
 
 Deno.test("team: two members halve the labor, both booked on the same op", () => {
   // setup 1h + labor 4h, machine 0. Two 24/7 members => setup 1h at 1x, then

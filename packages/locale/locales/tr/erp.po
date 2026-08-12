@@ -1493,7 +1493,7 @@ msgstr "Herhangi bir ürün tipi"
 msgid "Anything not explicitly listed in scope above"
 msgstr "Yukarıda açıkça kapsamda listelenmemiş herhangi bir şey"
 
-msgid "Anything the crew should know"
+msgid "Anything the people should know"
 msgstr "Ekibin bilmesi gereken her şey"
 
 msgid "AP Aging"
@@ -4037,9 +4037,6 @@ msgstr "Krediler ve Borçlar"
 
 msgid "Credits applied"
 msgstr "Uygulanan krediler"
-
-msgid "Crew"
-msgstr "Ekip"
 
 msgid "Critical"
 msgstr "Kritik"
@@ -9759,7 +9756,7 @@ msgstr "Yeni bildirim yok"
 msgid "No notes"
 msgstr "Notlar yok"
 
-msgid "No one crewed"
+msgid "No one assigned"
 msgstr "Hiç kimse ekiplendirilmedi"
 
 msgid "No one to assign"
@@ -14940,7 +14937,7 @@ msgstr "Bu varlığın maliyetini faydalı ömrü boyunca yaymak için kullanıl
 msgid "The shelves and bins where stock physically sits"
 msgstr "Stokun fiziksel olarak bulunduğu raflar ve kutular"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 msgstr "atadığınız ekibin vardiya saatleri. Kimse olmayan istasyonlar konumun vardiya takvimini kullanır."
 
 msgid "The shop supplies and consumables you keep on hand"
@@ -15319,7 +15316,7 @@ msgstr "Bu, diğer boyutlardaki tüm yöntem malzemelerini bu boyutuyla değişt
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Bu, {previewCount} kişi için +{hoursInput}h fazla mesai ayarlayacak."
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "Bu, o hafta görevli herkes için +{hoursInput}h fazla mesai ayarlayacak."
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."

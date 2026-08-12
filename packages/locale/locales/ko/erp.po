@@ -1493,7 +1493,7 @@ msgstr "모든 품목 유형"
 msgid "Anything not explicitly listed in scope above"
 msgstr "위 범위에 명시적으로 나열되지 않은 모든 사항"
 
-msgid "Anything the crew should know"
+msgid "Anything the people should know"
 msgstr "크루가 알아야 할 사항"
 
 msgid "AP Aging"
@@ -4037,9 +4037,6 @@ msgstr "대변 및 차변"
 
 msgid "Credits applied"
 msgstr "적용된 크레딧"
-
-msgid "Crew"
-msgstr "크루"
 
 msgid "Critical"
 msgstr "심각"
@@ -9759,7 +9756,7 @@ msgstr "새 알림이 없습니다"
 msgid "No notes"
 msgstr "메모 없음"
 
-msgid "No one crewed"
+msgid "No one assigned"
 msgstr "배치된 사람이 없습니다"
 
 msgid "No one to assign"
@@ -14940,7 +14937,7 @@ msgstr "이 자산의 원가를 내용연수에 걸쳐 배분하는 데 사용�
 msgid "The shelves and bins where stock physically sits"
 msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
 
-msgid "the shift hours of the crew you've assigned. Stations with nobody on them fall back to the location's shift calendar."
+msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
 msgstr "배정된 크루의 근무 시간입니다. 아무도 없는 역은 위치의 근무 달력으로 돌아갑니다."
 
 msgid "The shop supplies and consumables you keep on hand"
@@ -15319,7 +15316,7 @@ msgstr "다른 사이즈의 모든 방법 자재가 이 사이즈로 교체됩�
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "이는 {previewCount}명을 위해 +{hoursInput}h의 초과 근무를 설정합니다."
 
-msgid "This will set +{hoursInput}h of overtime for everyone crewed that week."
+msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "이는 그 주에 배치된 모든 사람을 위해 +{hoursInput}h의 초과 근무를 설정합니다."
 
 msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
