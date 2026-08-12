@@ -779,8 +779,9 @@ msgstr "Kabul"
 msgid "Acceptance passed"
 msgstr "Kabul edildi"
 
-msgid "Accepted"
-msgstr "Kabul edildi"
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "{0} tarihinde kabul edildi"
 
 msgid "Account"
 msgstr "Hesap"
@@ -6057,6 +6058,7 @@ msgid "Expired"
 msgstr "Süresi Dolmuş"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Süresi dolmuş {0}"
 
@@ -6068,6 +6070,10 @@ msgstr "Süresi Dolmuş Lotlar"
 
 msgid "Expires"
 msgstr "Süresi Doluyor"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "{0} tarihinde sona eriyor"
 
 msgid "Expires <0/>"
 msgstr "Süresi doluyor <0/>"
@@ -9674,8 +9680,8 @@ msgstr "İncelenecek kalan varlık yok."
 msgid "No reports match your search."
 msgstr "Aramanızla eşleşen rapor yok."
 
-msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
-msgstr "Bu şirketin hiçbir temsilcisi Carbon GovCloud Rider'ı henüz kabul etmedi. Herhangi biri giriş yapmadan önce buradaki bir yöneticinin kabul etmesi gerekir — Carbon personeli bunu sizin adınıza kabul edemez."
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "Bu şirketin hiçbir temsilcisi Carbon GovCloud Rider'ı henüz kabul etmedi. Herhangi biri Carbon'a erişmeden önce bu şirketin bir yöneticisinin kabul etmesi gerekir — Carbon personeli bunu sizin adınıza kabul edemez."
 
 msgid "No results"
 msgstr "Sonuç bulunamadı"
@@ -12144,8 +12150,9 @@ msgstr "Teklif Numarası"
 msgid "RFQs"
 msgstr "Teklif Talepleri"
 
-msgid "Rider"
-msgstr "Rider"
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Sağ öğe"

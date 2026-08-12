@@ -779,8 +779,9 @@ msgstr "승인"
 msgid "Acceptance passed"
 msgstr "승인 통과"
 
-msgid "Accepted"
-msgstr "승인됨"
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "{0}에 승인됨"
 
 msgid "Account"
 msgstr "계정"
@@ -6057,6 +6058,7 @@ msgid "Expired"
 msgstr "만료됨"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "만료됨 {0}"
 
@@ -6068,6 +6070,10 @@ msgstr "만료된 배치"
 
 msgid "Expires"
 msgstr "만료"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "{0}에 만료"
 
 msgid "Expires <0/>"
 msgstr "만료 <0/>"
@@ -9674,8 +9680,8 @@ msgstr "검사할 개체가 남아 있지 않습니다."
 msgid "No reports match your search."
 msgstr "검색 결과와 일치하는 보고서가 없습니다."
 
-msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
-msgstr "이 회사의 대표자가 아직 Carbon GovCloud Rider를 승인하지 않았습니다. 누구든지 입장하기 전에 이 회사의 관리자가 승인해야 합니다 — Carbon 직원은 귀사를 대신하여 승인할 수 없습니다."
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "이 회사의 대표자가 아직 Carbon GovCloud Rider를 승인하지 않았습니다. 누구든지 Carbon에 접근하기 전에 이 회사의 관리자가 승인해야 합니다 — Carbon 직원은 귀사를 대신하여 승인할 수 없습니다."
 
 msgid "No results"
 msgstr "결과 없음"
@@ -12144,8 +12150,9 @@ msgstr "RFQ 번호"
 msgid "RFQs"
 msgstr "RFQ"
 
-msgid "Rider"
-msgstr "Rider"
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "올바른 품목"

@@ -779,8 +779,9 @@ msgstr "验收"
 msgid "Acceptance passed"
 msgstr "验收通过"
 
-msgid "Accepted"
-msgstr "已接受"
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "于 {0} 接受"
 
 msgid "Account"
 msgstr "账户"
@@ -6057,6 +6058,7 @@ msgid "Expired"
 msgstr "已过期"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "已过期 {0}"
 
@@ -6068,6 +6070,10 @@ msgstr "过期批次"
 
 msgid "Expires"
 msgstr "过期"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "于 {0} 到期"
 
 msgid "Expires <0/>"
 msgstr "过期于 <0/>"
@@ -9674,8 +9680,8 @@ msgstr "没有剩余的实体可检查。"
 msgid "No reports match your search."
 msgstr "未找到与搜索条件匹配的报告。"
 
-msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
-msgstr "本公司尚无代表接受 Carbon GovCloud Rider。在任何人进入之前，必须由本公司的管理员接受 — Carbon 员工无法代表贵公司接受。"
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "本公司尚无代表接受 Carbon GovCloud Rider。在任何人访问 Carbon 之前，必须由本公司的管理员接受 — Carbon 员工无法代表贵公司接受。"
 
 msgid "No results"
 msgstr "无结果"
@@ -12144,8 +12150,9 @@ msgstr "询价单号"
 msgid "RFQs"
 msgstr "询价单"
 
-msgid "Rider"
-msgstr "Rider"
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "右项"

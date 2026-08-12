@@ -779,8 +779,9 @@ msgstr "Acceptation"
 msgid "Acceptance passed"
 msgstr "Acceptation réussie"
 
-msgid "Accepted"
-msgstr "Accepté"
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "Acceptée le {0}"
 
 msgid "Account"
 msgstr "Compte"
@@ -6057,6 +6058,7 @@ msgid "Expired"
 msgstr "Expiré"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Expiré {0}"
 
@@ -6068,6 +6070,10 @@ msgstr "Lots Expirés"
 
 msgid "Expires"
 msgstr "Expire"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "Expire le {0}"
 
 msgid "Expires <0/>"
 msgstr "Expire <0/>"
@@ -9674,8 +9680,8 @@ msgstr "Aucune entité restante à inspecter."
 msgid "No reports match your search."
 msgstr "Aucun rapport ne correspond à votre recherche."
 
-msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
-msgstr "Aucun représentant de cette entreprise n'a encore accepté le Carbon GovCloud Rider. Un administrateur ici doit l'accepter avant que quiconque puisse entrer — le personnel de Carbon ne peut pas l'accepter en votre nom."
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "Aucun représentant de cette entreprise n'a encore accepté le Carbon GovCloud Rider. Un administrateur de cette entreprise doit l'accepter avant que quiconque puisse accéder à Carbon — le personnel de Carbon ne peut pas l'accepter en votre nom."
 
 msgid "No results"
 msgstr "Aucun résultat"
@@ -12144,8 +12150,9 @@ msgstr "Numéro de RFQ"
 msgid "RFQs"
 msgstr "Appels d'offres"
 
-msgid "Rider"
-msgstr "Rider"
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Élément de droite"

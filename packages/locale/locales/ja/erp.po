@@ -779,8 +779,9 @@ msgstr "受け入れ"
 msgid "Acceptance passed"
 msgstr "受け入れ完了"
 
-msgid "Accepted"
-msgstr "承認済み"
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "{0} に承認"
 
 msgid "Account"
 msgstr "アカウント"
@@ -6057,6 +6058,7 @@ msgid "Expired"
 msgstr "期限切れ"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "期限切れ {0}"
 
@@ -6068,6 +6070,10 @@ msgstr "期限切れバッチ"
 
 msgid "Expires"
 msgstr "有効期限"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "有効期限 {0}"
 
 msgid "Expires <0/>"
 msgstr "有効期限：<0/>"
@@ -9674,8 +9680,8 @@ msgstr "検査する残りのエンティティはありません。"
 msgid "No reports match your search."
 msgstr "検索に一致するレポートはありません。"
 
-msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
-msgstr "この会社の代表者はまだ Carbon GovCloud Rider を承認していません。誰かが入る前に、この会社の管理者が承認する必要があります — Carbon のスタッフが代わりに承認することはできません。"
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "この会社の代表者はまだ Carbon GovCloud Rider を承認していません。誰かが Carbon にアクセスする前に、この会社の管理者が承認する必要があります — Carbon のスタッフが代わりに承認することはできません。"
 
 msgid "No results"
 msgstr "結果がありません"
@@ -12144,8 +12150,9 @@ msgstr "RFQ番号"
 msgid "RFQs"
 msgstr "RFQ"
 
-msgid "Rider"
-msgstr "Rider"
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "右側の項目"

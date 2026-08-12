@@ -779,8 +779,9 @@ msgstr "Akzeptanz"
 msgid "Acceptance passed"
 msgstr "Akzeptanz bestanden"
 
-msgid "Accepted"
-msgstr "Akzeptiert"
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "Akzeptiert am {0}"
 
 msgid "Account"
 msgstr "Konto"
@@ -6057,6 +6058,7 @@ msgid "Expired"
 msgstr "Abgelaufen"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Abgelaufen {0}"
 
@@ -6068,6 +6070,10 @@ msgstr "Abgelaufene Chargen"
 
 msgid "Expires"
 msgstr "Verfällt"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "Läuft ab am {0}"
 
 msgid "Expires <0/>"
 msgstr "Läuft ab <0/>"
@@ -9674,8 +9680,8 @@ msgstr "Keine verbleibenden Entitäten zur Überprüfung."
 msgid "No reports match your search."
 msgstr "Keine Berichte entsprechen Ihrer Suche."
 
-msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
-msgstr "Kein Vertreter dieses Unternehmens hat den Carbon GovCloud Rider bisher akzeptiert. Ein Administrator hier muss ihn akzeptieren, bevor jemand eintreten kann — Carbon-Mitarbeiter können ihn nicht in Ihrem Namen akzeptieren."
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "Kein Vertreter dieses Unternehmens hat den Carbon GovCloud Rider bisher akzeptiert. Ein Administrator dieses Unternehmens muss ihn akzeptieren, bevor jemand Zugriff auf Carbon erhält — Carbon-Mitarbeiter können ihn nicht in Ihrem Namen akzeptieren."
 
 msgid "No results"
 msgstr "Keine Ergebnisse"
@@ -12144,8 +12150,9 @@ msgstr "RFQ-Nummer"
 msgid "RFQs"
 msgstr "Anfragen"
 
-msgid "Rider"
-msgstr "Rider"
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Rechtes Element"

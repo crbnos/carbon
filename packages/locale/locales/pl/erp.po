@@ -779,8 +779,9 @@ msgstr "Akceptacja"
 msgid "Acceptance passed"
 msgstr "Akceptacja przebiegła pomyślnie"
 
-msgid "Accepted"
-msgstr "Zaakceptowano"
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "Zaakceptowano {0}"
 
 msgid "Account"
 msgstr "Konto"
@@ -6057,6 +6058,7 @@ msgid "Expired"
 msgstr "Wygasło"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Wygasło {0}"
 
@@ -6068,6 +6070,10 @@ msgstr "Wygasłe partie"
 
 msgid "Expires"
 msgstr "Wygasa"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "Wygasa {0}"
 
 msgid "Expires <0/>"
 msgstr "Wygasa <0/>"
@@ -9674,8 +9680,8 @@ msgstr "Brak pozostałych jednostek do sprawdzenia."
 msgid "No reports match your search."
 msgstr "Brak raportów pasujących do wyszukiwania."
 
-msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
-msgstr "Żaden przedstawiciel tej firmy nie zaakceptował jeszcze Carbon GovCloud Rider. Administrator w tej firmie musi go zaakceptować, zanim ktokolwiek będzie mógł wejść — personel Carbon nie może zaakceptować go w Państwa imieniu."
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "Żaden przedstawiciel tej firmy nie zaakceptował jeszcze Carbon GovCloud Rider. Administrator tej firmy musi zaakceptować ten dokument, zanim ktokolwiek będzie mógł uzyskać dostęp do Carbon — zespół Carbon nie może zaakceptować tego dokumentu w Twoim imieniu."
 
 msgid "No results"
 msgstr "Brak wyników"
@@ -12144,8 +12150,9 @@ msgstr "Numer RFQ"
 msgid "RFQs"
 msgstr "Zapytania ofertowe"
 
-msgid "Rider"
-msgstr "Rider"
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Prawy element"

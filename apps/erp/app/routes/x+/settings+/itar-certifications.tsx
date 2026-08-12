@@ -1,6 +1,7 @@
-import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -63,6 +64,34 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getItarEntityCertification(client, companyId),
     getLastLoginByUserId()
   ]);
+
+  // Never render this page from a failed read. A missing entity row and a failed
+  // entity query both arrive as "no data", but they mean opposite things: the
+  // first is a company that has not signed the Rider, the second is a company
+  // whose status we do not know. Reporting the second as "Pending" would put a
+  // false compliance finding in front of an auditor, so fail the page instead.
+  if (report.error) {
+    throw redirect(
+      path.to.settings,
+      await flash(
+        request,
+        error(report.error, "Failed to load ITAR certifications")
+      )
+    );
+  }
+
+  if (entityCertification.error) {
+    throw redirect(
+      path.to.settings,
+      await flash(
+        request,
+        error(
+          entityCertification.error,
+          "Failed to load the entity certification"
+        )
+      )
+    );
+  }
 
   const rows = (report.data ?? []).map((row) => ({
     ...row,

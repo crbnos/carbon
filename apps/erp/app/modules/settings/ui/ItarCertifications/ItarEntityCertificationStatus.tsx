@@ -1,6 +1,7 @@
 import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { now, parseAbsolute } from "@internationalized/date";
+import { Trans } from "@lingui/react/macro";
 import { LuBuilding2, LuCircleAlert, LuCircleCheck } from "react-icons/lu";
 
 export type ItarEntityCertificationRecord = {
@@ -30,10 +31,13 @@ type ItarEntityCertificationStatusProps = {
 const ItarEntityCertificationStatus = ({
   certification
 }: ItarEntityCertificationStatusProps) => {
-  const { t } = useLingui();
-
   const expiresAt = certification?.expiresAt ?? null;
-  const isExpired = expiresAt !== null && Date.parse(expiresAt) <= Date.now();
+  // Absolute-instant comparison against the same expiry the gate reads. Both
+  // sides go through @internationalized/date rather than the JS Date the rest
+  // of the repo avoids.
+  const isExpired =
+    expiresAt !== null &&
+    parseAbsolute(expiresAt, "UTC").compare(now("UTC")) <= 0;
   const isCertified = certification !== null && !isExpired;
 
   return (
@@ -59,25 +63,34 @@ const ItarEntityCertificationStatus = ({
               </span>
               {certification.certifiedAt ? (
                 <span>
-                  {t`Accepted`} {formatDate(certification.certifiedAt)}
+                  {/* Whole phrases, not "Accepted" + a date — the adjective
+                      agrees with "certification" in several locales. */}
+                  <Trans>
+                    Accepted {formatDate(certification.certifiedAt)}
+                  </Trans>
                 </span>
               ) : null}
               {certification.docVersion ? (
                 <span>
-                  {t`Rider`} v{certification.docVersion}
+                  <Trans>Rider v{certification.docVersion}</Trans>
                 </span>
               ) : null}
               {expiresAt ? (
                 <span>
-                  {isExpired ? t`Expired` : t`Expires`} {formatDate(expiresAt)}
+                  {isExpired ? (
+                    <Trans>Expired {formatDate(expiresAt)}</Trans>
+                  ) : (
+                    <Trans>Expires {formatDate(expiresAt)}</Trans>
+                  )}
                 </span>
               ) : null}
             </span>
           ) : (
             <Trans>
               No representative of this company has accepted the Carbon GovCloud
-              Rider yet. An administrator here must accept it before anyone can
-              enter — Carbon staff cannot accept it on your behalf.
+              Rider yet. An administrator at this company must accept it before
+              anyone can access Carbon — Carbon staff cannot accept it on your
+              behalf.
             </Trans>
           )}
         </AlertDescription>
