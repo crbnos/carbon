@@ -8383,7 +8383,7 @@ msgstr "Tout inviter"
 msgid "Invite Multiple Employees"
 msgstr "Inviter plusieurs employés"
 msgid "Invite Employees"
-msgstr ""
+msgstr "Inviter des employés"
 
 msgid "Invited"
 msgstr "Invité"

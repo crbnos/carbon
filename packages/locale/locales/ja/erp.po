@@ -8385,7 +8385,7 @@ msgstr "すべて招待"
 msgid "Invite Multiple Employees"
 msgstr "複数の従業員を招待"
 msgid "Invite Employees"
-msgstr ""
+msgstr "従業員を招待"
 
 msgid "Invited"
 msgstr "招待済み"
