@@ -1,7 +1,7 @@
 # MRP: measured findings from the production snapshot
 
 Measured 2026-08-12 against a restored production cluster dump
-(`db_cluster-07-08-2026@09-15-19`, 1,634 companies, 18,542 items, 15,095 make
+(`<production cluster dump>`, 1,634 companies, 18,542 items, 15,095 make
 methods, 12,534 method materials, 24,310 `itemLedger` rows — amplified to 8M
 ledger rows for one tenant during the `itemStockQuantities` benchmark). All
 numbers are from real runs, not estimates. Companion work: the incremental
@@ -35,7 +35,7 @@ bulk import minting idempotent ids; all created in single-day batches per
 tenant). A hyphenated itemId is truncated to its first segment by the split,
 distinct (item, period) pairs collapse to the same tuple, and the batched
 insert dies with Postgres error 21000 (`ON CONFLICT DO UPDATE command cannot
-affect row a second time`). Reproduced: tenant `2QHYS5kvVmu4Jsi6EXh33q` (all
+affect row a second time`). Reproduced: tenant `tenant-B` (all
 229 open-line item ids are UUIDs) → HTTP 500 every run. Because ids arrive via
 onboarding imports, the affected population is *recently migrated customers*,
 and it grows with every data migration — not a frozen legacy set.
@@ -69,16 +69,16 @@ output to the unpaginated baseline.
 Phase-1 loads use bare `.select("*")` with no pagination. Production
 `config.toml` sets `max_rows = 1000`; the crbn dev stack does **not** enforce it
 (verified empirically: 2,497 rows returned locally), which is why this is
-invisible in dev. Snapshot tenants over the limit: `d0rlmp5l6de2s779lqi0`
-(2,497 open job material lines) and `2QHYS5kvVmu4Jsi6EXh33q` (1,495). In prod
+invisible in dev. Snapshot tenants over the limit: `tenant-A`
+(2,497 open job material lines) and `tenant-B` (1,495). In prod
 those tenants plan on a silently truncated demand picture. Fix:
 `fetchAllFromTable`-style pagination for the five Phase-1 reads.
 
 ### 3. MEDIUM — self-referencing BOMs exist in production data — **BOM layer FIXED 2026-08-12**
 
 Fixed in `20260812030545_bom-self-reference-guard.sql`: the 6 `methodMaterial`
-self-references deleted (all confirmed accidental: 4× Black Cat Labs purchased
-hardware, 1× CNC Precision mis-pick, 1× test-tenant junk), and a **sync
+self-references deleted (all confirmed accidental: 4× tenant-E purchased
+hardware, 1× tenant-F mis-pick, 1× test-tenant junk), and a **sync
 interceptor** (`sync_check_method_material_self_reference`, wired via
 `attach_event_trigger`) now vetoes both shapes on write — item on its own BOM,
 and `materialMakeMethodId = makeMethodId`. Verified: both vetoes fire with
@@ -111,9 +111,9 @@ enumerate the full `ON DELETE` graph (`pg_constraint.confdeltype`) — a
 is silent and is where the data actually goes.
 
 6 `methodMaterial` rows across 3 tenants list an item as a component of itself
-(one at quantity **100**): PRT-101641/101820/102065/102136
-(`cs868u84gfk07v78v9e0`), 11760760 (`ctk2vr84gfk0jrv92r1g`), 000000001
-(`LxozrftWzReZ49VbgF45fx`). `computeLowLevelCodes` survives via its `visited`
+(one at quantity **100**): 4 purchased-hardware parts in `tenant-E`, 1 in
+`tenant-F`, and 1 junk row in a test tenant.
+`computeLowLevelCodes` survives via its `visited`
 guard (silently truncating the cycle); `explodeBom` does not loop but generates
 self-demand that is never netted — inflated, wrong requirements for those items.
 Two-part fix: a DB guard (`CHECK`/trigger rejecting `mm."itemId" =
@@ -126,10 +126,10 @@ End-to-end MRP, 5 runs per tenant, best-of reported (edge function via HTTP):
 
 | Tenant | Shape | Before | After | Change |
 |---|---|---|---|---|
-| `cvnu…` | mid-size, 1,739 BOM edges | 0.52 s | **0.084 s** | 6× faster |
-| `d0r…` | giant, 8M ledger rows | 17.5–20.4 s | **0.226 s** | **~85× faster** |
-| `2QHY…` | imported UUID item ids | **HTTP 500** (every run, since onboarding) | **0.207 s** | now works at all |
-| `VpYi…` (Farm it) | contains a BOM cycle | silently mis-planned | **0.036 s** + logged warning | now correct + visible |
+| `tenant-C` | mid-size, 1,739 BOM edges | 0.52 s | **0.084 s** | 6× faster |
+| `tenant-A` | giant, 8M ledger rows | 17.5–20.4 s | **0.226 s** | **~85× faster** |
+| `tenant-B` | imported UUID item ids | **HTTP 500** (every run, since onboarding) | **0.207 s** | now works at all |
+| `tenant-D` (tenant-D) | contains a BOM cycle | silently mis-planned | **0.036 s** + logged warning | now correct + visible |
 
 Component: the on-hand input, both queries measured back-to-back on the same
 data —
@@ -171,8 +171,8 @@ next customer with a deep BOM, not a theoretical one.
 
 | Scenario | Wall time |
 |---|---|
-| Full company MRP, mid-size tenant (`cvnu…`, 1,739 BOM edges, 199 methods) | **0.52 s** |
-| Full company MRP, giant tenant (`d0r…`, 3,330 BOM edges, 8M-row amplified ledger) | **17.5–20.4 s** |
+| Full company MRP, mid-size tenant (`tenant-C`, 1,739 BOM edges, 199 methods) | **0.52 s** |
+| Full company MRP, giant tenant (`tenant-A`, 3,330 BOM edges, 8M-row amplified ledger) | **17.5–20.4 s** |
 
 Attribution for the giant (sampled `pg_stat_activity` during the run + direct
 query timing):
@@ -192,14 +192,17 @@ not a drop-in.
 
 ## Low-level-code verdict: no real-world blowup (hypothesis falsified)
 
-`computeLowLevelCodes` enumerates root-to-node paths with a copied `visited`
-Set per child — worst-case exponential on diamond-heavy BOMs. Measured against
-every company's real BOM: worst case
-**1.62 ms** (`d0r…`, 1,133 items / 3,330 edges); a Kahn's-algorithm longest-path
-reference agrees on every acyclic input and is at best 2.4× faster. Current
-customer BOMs are too shallow/narrow to trigger the explosion. The Kahn rewrite
-is still worth taking — not for speed, but because it *detects* the real cycles
-above instead of silently truncating them.
+`computeLowLevelCodes` **used to** enumerate root-to-node paths with a copied
+`visited` Set per child — worst-case exponential on diamond-heavy BOMs.
+Measured against every company's real BOM: worst case **1.62 ms** (`tenant-A`,
+1,133 items / 3,330 edges); the Kahn longest-path implementation agreed on
+every acyclic input and was at best 2.4× faster. Current customer BOMs are too
+shallow/narrow to trigger the explosion, so the hypothesis was falsified on
+real data. Kahn **shipped anyway** and is now the implementation — not for
+speed on today's data, but because it *detects* the real cycles above instead
+of silently truncating them, and because the exponential case is trivially
+reachable (a 42-node synthetic BOM took the old code 852 ms; see the table
+above).
 
 ## Recommended order (updated by evidence)
 
@@ -220,8 +223,8 @@ above instead of silently truncating them.
      (active methods, per company, UNION-deduped so it terminates over
      existing cyclic data, depth-capped): writes that would close a
      multi-node cycle (A→B→A) are vetoed at the door.
-   - A real multi-node cycle was found in prod: tenant "Farm it",
-     rose seeds → rose → bouquet → rose seeds (1 active job on those items).
+   - A real multi-node cycle was found in prod: tenant-D,
+     A → B → C → A (1 active job on those items).
      Grandfathered data — their MRP now runs green with the warning logged;
      editing inside the loop will veto until they break it.
 5. **Read on-hand from `itemStockQuantities`** — **DONE 2026-08-12.** Semantics

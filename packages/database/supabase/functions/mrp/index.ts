@@ -913,15 +913,20 @@ serve(async (req: Request) => {
           .where("companyId", "=", companyId)
           .execute();
 
-        await trx
-          .deleteFrom("supplyForecast")
-          .where(
-            "locationId",
-            "in",
-            locations.data.map((l) => l.id)
-          )
-          .where("companyId", "=", companyId)
-          .execute();
+        // Guarded: an empty array renders as `IN ()`, which is a syntax error
+        // (42601), so a company with no locations configured crashed the whole
+        // run. Nothing to clear in that case anyway.
+        if (locations.data.length > 0) {
+          await trx
+            .deleteFrom("supplyForecast")
+            .where(
+              "locationId",
+              "in",
+              locations.data.map((l) => l.id)
+            )
+            .where("companyId", "=", companyId)
+            .execute();
+        }
 
         // Insert demand forecasts in batches
         for (let i = 0; i < demandForecastUpserts.length; i += BATCH_SIZE) {
@@ -933,7 +938,7 @@ serve(async (req: Request) => {
               oc.columns(["itemId", "locationId", "periodId"]).doUpdateSet({
                 forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
                 forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
-                updatedAt: new Date().toISOString(),
+                updatedAt: datetime.timestamp(),
                 updatedBy: userId,
               })
             )
@@ -961,7 +966,7 @@ serve(async (req: Request) => {
                 .columns(["itemId", "locationId", "periodId", "sourceType"])
                 .doUpdateSet({
                   actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
-                  updatedAt: new Date().toISOString(),
+                  updatedAt: datetime.timestamp(),
                   updatedBy: userId,
                 })
             )
@@ -979,7 +984,7 @@ serve(async (req: Request) => {
                 .columns(["itemId", "locationId", "periodId", "sourceType"])
                 .doUpdateSet({
                   actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
-                  updatedAt: new Date().toISOString(),
+                  updatedAt: datetime.timestamp(),
                   updatedBy: userId,
                 })
             )
@@ -1088,7 +1093,7 @@ async function getOrCreateDemandPeriods(
           startDate: period.startDate,
           endDate: period.endDate,
           periodType,
-          createdAt: new Date().toISOString(),
+          createdAt: datetime.timestamp(),
         }))
       )
       .returningAll()

@@ -51,7 +51,10 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchQuantities = async () => {
     if (!carbon || !companyId) return;
-    const requestedCompanyId = companyId;
+    // A company switch (including A -> B -> A) bumps this. Comparing ids alone
+    // would let a request from the FIRST visit to A land after returning to A
+    // and overwrite newer quantities.
+    const requestedGeneration = quantitiesGeneration.current;
 
     const { data, error } = await fetchAllFromTable<{
       itemId: string;
@@ -61,14 +64,15 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       carbon,
       "itemStockQuantities",
       "itemId, locationId, quantityOnHand",
-      (query) => query.eq("companyId", requestedCompanyId)
+      // Ordered by the rest of the table's key: fetchAllFromTable pages, and
+      // without a stable sort a concurrent write can shift rows across a page
+      // boundary, dropping or duplicating one in `totalMap`.
+      (query) =>
+        query.eq("companyId", companyId).order("itemId").order("locationId")
     );
 
     if (error || !data) return;
-    // The company can switch while this is in flight (or while a debounced
-    // refresh is pending). Writing company A's quantities onto company B's
-    // items would zero every badge, since none of B's ids are in A's map.
-    if (activeCompanyId !== requestedCompanyId) return;
+    if (quantitiesGeneration.current !== requestedGeneration) return;
 
     const totalMap = new Map<string, number>();
     const locationMap = new Map<string, Record<string, number>>();
@@ -97,6 +101,18 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
   // touched, so a single receipt can emit a burst. Coalesce them into one
   // refetch — the same 1.5s quiet window `useDebouncedRealtime` uses.
   const quantitiesRefresh = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const quantitiesGeneration = useRef(0);
+
+  // Bumped on every company change so in-flight reads and pending timers from
+  // the previous company are discarded rather than applied to the new one.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on companyId by design
+  useEffect(() => {
+    quantitiesGeneration.current += 1;
+    if (quantitiesRefresh.current) {
+      clearTimeout(quantitiesRefresh.current);
+      quantitiesRefresh.current = null;
+    }
+  }, [companyId]);
 
   const scheduleQuantitiesRefresh = () => {
     if (quantitiesRefresh.current) clearTimeout(quantitiesRefresh.current);

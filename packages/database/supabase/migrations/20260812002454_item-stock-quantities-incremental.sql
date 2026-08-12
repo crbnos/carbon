@@ -58,6 +58,13 @@ $$;
 
 DROP MATERIALIZED VIEW IF EXISTS "itemStockQuantities";
 
+-- Convention exceptions, deliberate: this is DERIVED state, not an entity.
+-- The natural key (itemId, companyId, locationId) IS the identity — a surrogate
+-- id() would add no meaning and would break the ON CONFLICT upserts the trigger
+-- depends on. Audit columns are omitted for the same reason: every row is
+-- written by a trigger or the reconciliation job, never by a user, so
+-- createdBy/updatedBy would record 'system' forever on a hot-path table. The
+-- matview this replaces had neither.
 CREATE TABLE "itemStockQuantities" (
   "itemId" TEXT NOT NULL,
   "companyId" TEXT NOT NULL,
@@ -163,7 +170,12 @@ BEGIN
 
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+-- Pinned: this runs on every itemLedger write, so the caller is an ordinary
+-- application role. Without it, unqualified names resolve through a
+-- caller-controlled search_path.
+SET search_path = public, pg_temp;
 
 SELECT attach_statement_handler('itemLedger', ARRAY['apply_item_stock_quantities']);
 
@@ -207,8 +219,18 @@ CREATE OR REPLACE FUNCTION reconcile_item_stock_quantities()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
+  -- The triggers apply RELATIVE deltas, which is safe under concurrency. This
+  -- function writes an ABSOLUTE recompute, which is not: at READ COMMITTED a
+  -- ledger write committing between this statement's snapshot and its row lock
+  -- would have its delta overwritten — the drift repair would itself create
+  -- drift. Hold a SHARE lock so no ledger write can interleave. SHARE conflicts
+  -- with ROW EXCLUSIVE (INSERT/UPDATE/DELETE) but not with other readers, and
+  -- this runs once nightly.
+  LOCK TABLE "itemLedger" IN SHARE MODE;
+
   INSERT INTO "itemStockQuantities" AS isq
     ("itemId", "companyId", "locationId", "quantityOnHand")
   SELECT

@@ -12,14 +12,15 @@
 -- method-tree walker terminates only via incidental cycle guards.
 
 -- ---------------------------------------------------------------------------
--- 1. Delete the existing self-references (verified: 4x Black Cat Labs
---    purchased hardware, 1x CNC Precision mis-pick, 1x test-tenant junk;
---    across ALL make method versions, not just active ones).
+-- 1. Delete the existing self-references (6 rows across 3 tenants, all
+--    verified accidental: purchased hardware and mis-picks, plus one junk row
+--    in a test tenant; across ALL make method versions, not just active ones).
 -- ---------------------------------------------------------------------------
 
 DELETE FROM "methodMaterial" mm
 USING "makeMethod" m
 WHERE m."id" = mm."makeMethodId"
+  AND m."companyId" = mm."companyId"
   AND m."itemId" = mm."itemId";
 
 -- ---------------------------------------------------------------------------
@@ -37,6 +38,9 @@ CREATE OR REPLACE FUNCTION sync_check_method_material_self_reference(
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+-- Pinned: runs on every write to this table, so the caller is an ordinary
+-- application role and must not control name resolution.
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   parent_item_id TEXT;
@@ -53,7 +57,8 @@ BEGIN
 
   SELECT "itemId" INTO parent_item_id
   FROM "makeMethod"
-  WHERE "id" = p_new->>'makeMethodId';
+  WHERE "id" = p_new->>'makeMethodId'
+    AND "companyId" = p_new->>'companyId';
 
   IF parent_item_id = p_new->>'itemId' THEN
     RAISE EXCEPTION 'An item cannot be a material on its own bill of materials'
@@ -73,7 +78,9 @@ BEGIN
     JOIN "activeMakeMethods" amm
       ON amm."itemId" = r.item_id
      AND amm."companyId" = p_new->>'companyId'
-    JOIN "methodMaterial" mm ON mm."makeMethodId" = amm."id"
+    JOIN "methodMaterial" mm
+      ON mm."makeMethodId" = amm."id"
+     AND mm."companyId" = amm."companyId"
     WHERE r.depth < 100
   )
   SELECT EXISTS (SELECT 1 FROM reachable WHERE item_id = parent_item_id)
@@ -86,7 +93,11 @@ BEGIN
 END;
 $$;
 
+-- Explicit 3-argument form. The 2-argument overload is dropped by
+-- 20260812002453, which runs first, but naming every argument keeps this call
+-- unambiguous no matter which overloads exist when it runs.
 SELECT attach_event_trigger(
   'methodMaterial',
-  ARRAY['sync_check_method_material_self_reference']
+  ARRAY['sync_check_method_material_self_reference']::TEXT[],
+  ARRAY[]::TEXT[]
 );

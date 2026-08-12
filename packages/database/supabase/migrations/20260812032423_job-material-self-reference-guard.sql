@@ -28,25 +28,29 @@
 -- ---------------------------------------------------------------------------
 
 WITH RECURSIVE bad AS (
-  SELECT jm.id
+  SELECT jm.id, jm."companyId"
   FROM "jobMaterial" jm
-  JOIN job j ON j.id = jm."jobId"
+  JOIN job j ON j.id = jm."jobId" AND j."companyId" = jm."companyId"
   WHERE jm."itemId" = j."itemId"
 ),
 subtree AS (
-  SELECT b.id AS bad_id, m.id AS method_id
+  SELECT b.id AS bad_id, m.id AS method_id, b."companyId"
   FROM bad b
-  JOIN "jobMakeMethod" m ON m."parentMaterialId" = b.id
+  JOIN "jobMakeMethod" m
+    ON m."parentMaterialId" = b.id AND m."companyId" = b."companyId"
   UNION
-  SELECT s.bad_id, m2.id
+  SELECT s.bad_id, m2.id, s."companyId"
   FROM subtree s
-  JOIN "jobMaterial" jm2 ON jm2."jobMakeMethodId" = s.method_id
-  JOIN "jobMakeMethod" m2 ON m2."parentMaterialId" = jm2.id
+  JOIN "jobMaterial" jm2
+    ON jm2."jobMakeMethodId" = s.method_id AND jm2."companyId" = s."companyId"
+  JOIN "jobMakeMethod" m2
+    ON m2."parentMaterialId" = jm2.id AND m2."companyId" = jm2."companyId"
 ),
 dirty AS (
   SELECT DISTINCT s.bad_id
   FROM subtree s
-  JOIN "jobOperation" jo ON jo."jobMakeMethodId" = s.method_id
+  JOIN "jobOperation" jo
+    ON jo."jobMakeMethodId" = s.method_id AND jo."companyId" = s."companyId"
 )
 UPDATE "jobMakeMethod" m
 SET "parentMaterialId" = NULL
@@ -55,6 +59,7 @@ WHERE m."parentMaterialId" IN (SELECT bad_id FROM dirty);
 DELETE FROM "jobMaterial" jm
 USING job j
 WHERE j.id = jm."jobId"
+  AND j."companyId" = jm."companyId"
   AND jm."itemId" = j."itemId";
 
 -- ---------------------------------------------------------------------------
@@ -70,6 +75,9 @@ CREATE OR REPLACE FUNCTION sync_check_job_material_self_reference(
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+-- Pinned: runs on every write to this table, so the caller is an ordinary
+-- application role and must not control name resolution.
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   job_item_id TEXT;
@@ -78,7 +86,8 @@ BEGIN
 
   SELECT "itemId" INTO job_item_id
   FROM job
-  WHERE "id" = p_new->>'jobId';
+  WHERE "id" = p_new->>'jobId'
+    AND "companyId" = p_new->>'companyId';
 
   IF job_item_id = p_new->>'itemId' THEN
     RAISE EXCEPTION 'A job cannot consume the item it produces as a material'
