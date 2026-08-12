@@ -1,9 +1,9 @@
 # Attended-Window Labor Scheduling (named-people booking + lights-out runs)
 
-> Status: draft (design final — ready for /plan)
+> Status: implemented (as built on naveen/capacity-planning; superseded going forward by [2026-08-12-forecast-first-finite-scheduling.md](../2026-08-12-forecast-first-finite-scheduling.md))
 > Author: naveen + Claude
 > Date: 2026-07-17
-> Research: [.ai/research/labor-machine-capacity-scheduling.md](../research/labor-machine-capacity-scheduling.md)
+> Research: [.ai/research/labor-machine-capacity-scheduling.md](../../research/labor-machine-capacity-scheduling.md)
 
 ## TLDR
 
@@ -130,4 +130,5 @@ Manual employee→work-center assignment (+ its board/editors); fractional atten
 
 ## Changelog
 
+- 2026-08-12 — Marked implemented and moved to implemented/. The attended-window model (machine held for the span, named person booked for setup+labor, Employee reservations, shift relay) shipped in the engine; manual assignment later arrived as the People manning board. Go-forward direction superseded by 2026-08-12-forecast-first-finite-scheduling.md (which keeps this labor model unchanged but bounds the unattended remainder by the new machine calendars).
 - 2026-07-17 — Spec written after research (14 systems) and user interview (6 questions resolved, incl. scope cut of manual assignment and shift-relay handoff for long attended ops). Design final; ready for /plan.

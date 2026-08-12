@@ -1,5 +1,10 @@
 # Capacity Planning — Current Implementation
 
+> ARCHIVED 2026-08-12 — as-built record of the first iteration. The go-forward
+> design is [.ai/specs/2026-08-12-forecast-first-finite-scheduling.md](../../specs/2026-08-12-forecast-first-finite-scheduling.md)
+> (machine operating hours, forward-ASAP deterministic regeneration, expedite
+> what-if; deletes schedulingPolicy and the mark/wave frozen-set machinery).
+
 The implemented capacity-planning system on branch `naveen/capacity-planning`:
 finite scheduling with attended-window labor, process-gated abilities,
 durable capacity reservations, reactive replanning, and the schedule/Gantt
