@@ -9,7 +9,7 @@ import {
   operationTypes,
   sourcingType,
   standardFactorType
-} from "../shared";
+} from "../shared/shared.models";
 
 export const batchPropertyDataTypes = [
   "text",
@@ -323,7 +323,7 @@ const applyStorageAndShelfLifeRefines = <T extends z.AnyZodObject>(
 
 export const configurationParameterGroupValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const configurationParameterGroupOrderValidator = z.object({
@@ -625,7 +625,7 @@ export const itemManufacturingValidator = z.object({
 
 export const itemPostingGroupValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }).max(255),
+  name: z.string().trim().min(1, { message: "Name is required" }).max(255),
   description: z.string().optional()
 });
 
@@ -782,40 +782,40 @@ export const itemUnitSalePriceValidator = z.object({
 
 export const materialDimensionValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }).max(255),
+  name: z.string().trim().min(1, { message: "Name is required" }).max(255),
   materialFormId: z.string().min(1, { message: "Shape is required" })
 });
 
 export const materialFinishValidator = z.object({
   id: zfd.text(z.string().optional()),
   materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
-  name: z.string().min(1, { message: "Name is required" }).max(255)
+  name: z.string().trim().min(1, { message: "Name is required" }).max(255)
 });
 
 export const materialFormValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }).max(255),
-  code: z.string().min(1, { message: "Code is required" }).max(10)
+  name: z.string().trim().min(1, { message: "Name is required" }).max(255),
+  code: z.string().trim().min(1, { message: "Code is required" }).max(10)
 });
 
 export const materialGradeValidator = z.object({
   id: zfd.text(z.string().optional()),
   materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
-  name: z.string().min(1, { message: "Name is required" }).max(255)
+  name: z.string().trim().min(1, { message: "Name is required" }).max(255)
 });
 
 export const materialSubstanceValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }).max(255),
-  code: z.string().min(1, { message: "Code is required" }).max(10)
+  name: z.string().trim().min(1, { message: "Name is required" }).max(255),
+  code: z.string().trim().min(1, { message: "Code is required" }).max(10)
 });
 
 export const materialTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
   materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
   materialFormId: z.string().min(1, { message: "Shape is required" }),
-  name: z.string().min(1, { message: "Name is required" }).max(255),
-  code: z.string().min(1, { message: "Code is required" }).max(10)
+  name: z.string().trim().min(1, { message: "Name is required" }).max(255),
+  code: z.string().trim().min(1, { message: "Code is required" }).max(10)
 });
 
 export const partValidator = applyStorageAndShelfLifeRefines(
@@ -974,8 +974,8 @@ export const toolValidator = applyStorageAndShelfLifeRefines(
 
 export const unitOfMeasureValidator = z.object({
   id: zfd.text(z.string().optional()),
-  code: z.string().min(1, { message: "Code is required" }).max(10),
-  name: z.string().min(1, { message: "Name is required" }).max(50)
+  code: z.string().trim().min(1, { message: "Code is required" }).max(10),
+  name: z.string().trim().min(1, { message: "Name is required" }).max(50)
 });
 
 export const itemRevisionStatus = [
@@ -1150,7 +1150,7 @@ export function canEditChangeNoticeWorkflow(
 export const changeNoticeValidator = z.object({
   id: zfd.text(z.string().optional()),
   changeOrderId: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   reasonForChange: zfd.text(z.string().optional()),
   description: zfd.text(z.string().optional()),
   type: z.enum(changeNoticeType).optional(),
@@ -1205,7 +1205,7 @@ export const changeNoticeNewPartValidator = z.object({
   // Select so it reads "New Part" after the form remounts (see AffectedItemForm).
   changeType: z.enum(changeNoticeChangeTypes).default("New Part"),
   readableId: z.string().min(1, { message: "Part number is required" }),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]).default("Make"),
   itemTrackingType: z.enum(itemTrackingTypes).default("Inventory")
 });
@@ -1238,7 +1238,7 @@ export const changeNoticeActionStatusValidator = z.object({
 // per-company set a new change notice is seeded from. Configured like Issue Types.
 export const changeNoticeRequiredActionValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   active: zfd.checkbox()
 });
 
@@ -1291,5 +1291,5 @@ export type ChangeNoticeItemDiff = {
 // -----------------------------------------------------------------------------
 export const changeNoticeTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });

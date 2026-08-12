@@ -292,7 +292,7 @@ export const operationStepValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     operationId: z.string().min(1, { message: "Operation is required" }),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     description: z
       .string()
       .min(1, { message: "Description is required" })
@@ -443,7 +443,10 @@ export const operationParameterValidator = z.object({
 export const savedViewValidator = z.object({
   id: zfd.text(z.string().optional()),
   table: z.string(),
-  name: z.string().min(1, { message: "A name is required to save a view" }),
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "A name is required to save a view" }),
   description: z.string().optional(),
   filter: z.string().optional(),
   sort: z.string().optional(),

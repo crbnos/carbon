@@ -29,6 +29,10 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   const satItem = ctx.refs.items["SAT-1000"]!;
   const busItem = ctx.refs.items["BUS-STR-001"]!;
   const epsItem = ctx.refs.items["EPS-001"]!;
+  const adcsItem = ctx.refs.items["ADCS-001"]!;
+  const commsItem = ctx.refs.items["COMMS-001"]!;
+  const propItem = ctx.refs.items["PROP-001"]!;
+  const harnessItem = ctx.refs.items["HARNESS-001"]!;
 
   // ── Opportunity 1: ORBSEC — complete chain (rfq → quote → SO → shipment → invoice) ──
   ctx.log("opportunity 1 — full chain (ORBSEC)");
@@ -133,6 +137,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     status: "In Progress"
   });
   ctx.refs.documents["so:orbsec"] = so1;
+  ctx.refs.documents["soline:orbsec:sat"] = soLine1;
 
   // Shipment (Draft — Posted shipments need the edge function)
   const shpId = await nextSequence(ctx, "shipment");
@@ -343,7 +348,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     customerLocationId: cLocs.polar ?? null,
     companyId
   });
-  await insertId(ctx, "salesOrderLine", {
+  const soLine4 = await insertId(ctx, "salesOrderLine", {
     salesOrderId: so4,
     salesOrderLineType: "Part",
     itemId: satItem.id,
@@ -356,5 +361,113 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     status: "Ordered"
   });
   ctx.refs.documents["so:polar"] = so4;
+  ctx.refs.documents["soline:polar:sat"] = soLine4;
   ctx.refs.documents["opp:polar"] = opp4Id;
+
+  // ── One order per remaining job status ────────────────────────────────────
+  // Tier 6 hangs exactly one job on each of these, so every jobStatus is
+  // reachable from an order of its own. Opportunities 1 and 4 above already
+  // carry the In Progress and Ready jobs.
+  const statusOrders = [
+    {
+      key: "planned",
+      customer: "novasat",
+      item: busItem,
+      status: "Confirmed",
+      lineStatus: "Ordered",
+      orderDate: "2026-01-05",
+      unitPrice: 240000
+    },
+    {
+      key: "draft",
+      customer: "apex",
+      item: epsItem,
+      status: "Draft",
+      lineStatus: "Ordered",
+      orderDate: "2026-01-12",
+      unitPrice: 95000
+    },
+    {
+      key: "paused",
+      customer: "orbsec",
+      item: adcsItem,
+      status: "In Progress",
+      lineStatus: "In Progress",
+      orderDate: "2025-11-18",
+      unitPrice: 130000
+    },
+    {
+      key: "completed",
+      customer: "polar",
+      item: commsItem,
+      status: "Completed",
+      lineStatus: "Completed",
+      orderDate: "2025-06-02",
+      unitPrice: 110000
+    },
+    {
+      key: "closed",
+      customer: "novasat",
+      item: propItem,
+      status: "Closed",
+      lineStatus: "Completed",
+      orderDate: "2025-05-14",
+      unitPrice: 175000
+    },
+    {
+      key: "cancelled",
+      customer: "apex",
+      item: harnessItem,
+      status: "Cancelled",
+      lineStatus: "Ordered",
+      orderDate: "2025-09-08",
+      unitPrice: 42000
+    }
+  ] as const;
+
+  for (const spec of statusOrders) {
+    ctx.log(`sales order — ${spec.status} (job ${spec.key})`);
+    const customerId = customers[spec.customer];
+    const customerLocationId = cLocs[spec.customer] ?? null;
+    const oppId = await insertId(ctx, "opportunity", { customerId });
+    const readableId = await nextSequence(ctx, "salesOrder");
+    const soId = await insertId(ctx, "salesOrder", {
+      salesOrderId: readableId,
+      status: spec.status,
+      customerId,
+      customerLocationId,
+      locationId: plantId,
+      currencyCode: "USD",
+      opportunityId: oppId,
+      orderDate: spec.orderDate
+    });
+    await insertRow(ctx, "salesOrderPayment", {
+      id: soId,
+      paymentTermId,
+      companyId
+    });
+    await insertRow(ctx, "salesOrderShipment", {
+      id: soId,
+      locationId: plantId,
+      shippingMethodId,
+      customerId,
+      customerLocationId,
+      companyId
+    });
+    const lineId = await insertId(ctx, "salesOrderLine", {
+      salesOrderId: soId,
+      salesOrderLineType: "Part",
+      itemId: spec.item.id,
+      description: spec.item.name,
+      saleQuantity: 1,
+      unitPrice: spec.unitPrice,
+      unitOfMeasureCode: "EA",
+      locationId: plantId,
+      methodType: "Make to Order",
+      status: spec.lineStatus
+    });
+    ctx.refs.documents[`so:${spec.key}`] = soId;
+    ctx.refs.documents[`soline:${spec.key}`] = lineId;
+    ctx.refs.documents[`opp:${spec.key}`] = oppId;
+  }
 }

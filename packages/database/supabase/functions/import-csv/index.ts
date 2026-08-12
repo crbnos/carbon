@@ -9,6 +9,7 @@ import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
 import { classifyImportRow } from "./classify-import-row.ts";
+import { importMaterialProperties } from "./material-property-import.ts";
 import { importMethods } from "./method-import.ts";
 
 const pool = getConnectionPool(1);
@@ -30,6 +31,12 @@ const importCsvValidator = z.object({
     "tool",
     "workCenter",
     "process",
+    "materialSubstance",
+    "materialForm",
+    "materialFinish",
+    "materialGrade",
+    "materialType",
+    "materialDimension",
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string()),
@@ -2503,6 +2510,21 @@ serve(async (req: Request) => {
       case "operations":
       case "partWithMethod": {
         await importMethods(db, {
+          table,
+          mappedRecords,
+          companyId,
+          userId,
+          summary,
+        });
+        break;
+      }
+      case "materialSubstance":
+      case "materialForm":
+      case "materialFinish":
+      case "materialGrade":
+      case "materialType":
+      case "materialDimension": {
+        await importMaterialProperties(db, {
           table,
           mappedRecords,
           companyId,

@@ -73,6 +73,10 @@ msgstr "{0} usunięty pomyślnie"
 msgid "{0} draft journal entries"
 msgstr "{0} wpisów dziennika w wersji roboczej"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0} zadań utworzonych"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} linii do mapowania"
@@ -126,6 +130,8 @@ msgstr "{0}d wolny"
 #. placeholder {0}: item.freeHours
 msgid "{0}h free"
 msgstr "{0}h wolne"
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount} części pominięto — mają już otwarte zadania"
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% zobowiązań"
@@ -162,6 +168,9 @@ msgstr "{maxSizeMB}MB limit"
 msgid "{name} deleted"
 msgstr "{name} usunięty"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount} części pominięto — nic do zrobienia"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
 
@@ -182,6 +191,9 @@ msgstr "{totalQuantity, plural, one {# jednostka} other {# jednostek}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# niepoliczony wiersz} other {# niepoliczone wiersze}}"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount} zadań zaktualizowanych"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "Przesłano {uploadedFileName} — pola wypełniono na podstawie dokumentu."
@@ -224,6 +236,18 @@ msgstr "1 dzień"
 
 msgid "1 draft journal entry"
 msgstr "1 wpis dziennika w wersji roboczej"
+
+msgid "1 job created"
+msgstr "1 zadanie utworzone"
+
+msgid "1 job updated"
+msgstr "1 zadanie zaktualizowane"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1 część pominięta — ma już otwarte zadanie"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1 część pominięta — nic do zrobienia"
 
 msgid "1 problem — not published"
 msgstr "1 problem — nie opublikowano"
@@ -1277,9 +1301,6 @@ msgstr "Wszystkie typy przedmiotów"
 
 msgid "All Items"
 msgstr "Wszystkie elementy"
-
-msgid "All jobs completed"
-msgstr "Wszystkie zadania ukończone"
 
 msgid "All Locations"
 msgstr "Wszystkie lokalizacje"
@@ -8069,9 +8090,6 @@ msgstr "Zadania"
 msgid "Jobs Assigned to Me"
 msgstr "Zadania przypisane do mnie"
 
-msgid "Jobs in progress"
-msgstr "Zadania w toku"
-
 msgid "Jobs Required"
 msgstr "Wymagane zadania"
 
@@ -9719,6 +9737,9 @@ msgstr "Brak artykułów"
 
 msgid "No items have inventory activity here yet."
 msgstr "Brak aktywności magazynowej tutaj."
+
+msgid "No jobs were created"
+msgstr "Nie utworzono żadnych zadań"
 
 msgid "No journal lines in scope for this period"
 msgstr "Brak wierszy dziennika w zakresie dla tego okresu"
@@ -16226,6 +16247,9 @@ msgstr "Wyświetl aktywne zadania"
 
 msgid "View Active Quotes"
 msgstr "Wyświetl aktywne oferty"
+
+msgid "View all"
+msgstr "Wyświetl wszystko"
 
 msgid "View All"
 msgstr "Wyświetl wszystko"

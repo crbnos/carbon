@@ -3,7 +3,7 @@ import { zfd } from "zod-form-data";
 
 export const workflowValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   description: zfd.text(z.string().optional())
 });
 
