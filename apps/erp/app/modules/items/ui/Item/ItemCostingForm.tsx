@@ -8,6 +8,7 @@ import {
   CardTitle,
   useDisclosure
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
 import {
@@ -19,7 +20,7 @@ import {
   Submit
 } from "~/components/Form";
 import { Confirm } from "~/components/Modals";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 import { itemCostingMethods, itemCostValidator } from "../../items.models";
@@ -37,6 +38,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const recalculateModal = useDisclosure();
 
@@ -80,10 +82,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
             <Number
               name="unitCost"
               label={t`Unit Cost`}
-              formatOptions={{
-                style: "currency",
-                currency: baseCurrency
-              }}
+              formatOptions={INPUT_FORMAT.price(baseCurrency, currencyDecimals)}
               helperText={
                 replenishmentSystem === "Make"
                   ? undefined

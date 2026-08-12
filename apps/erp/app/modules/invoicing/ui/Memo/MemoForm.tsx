@@ -42,7 +42,7 @@ import {
   TextArea
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   isMemoLocked,
   memoDirection,
@@ -60,6 +60,9 @@ type MemoFormProps = {
 const MemoForm = ({ initialValues }: MemoFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(
+    company?.baseCurrencyCode ?? "USD"
+  );
   const permissions = usePermissions();
   const post = useFetcher();
   const voidFetcher = useFetcher();
@@ -223,10 +226,10 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
                 <Number
                   name="amount"
                   label={t`Amount`}
-                  formatOptions={{
-                    style: "currency",
-                    currency: company?.baseCurrencyCode ?? "USD"
-                  }}
+                  formatOptions={INPUT_FORMAT.money(
+                    company?.baseCurrencyCode ?? "USD",
+                    currencyDecimals
+                  )}
                 />
                 <Input name="reference" label={t`Reference`} />
                 <CustomFormFields table="memo" />

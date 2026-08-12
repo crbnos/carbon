@@ -37,7 +37,7 @@ import {
   Select,
   Submit
 } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   pricingRuleAmountTypes,
   pricingRuleTypes,
@@ -56,6 +56,9 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(
+    company?.baseCurrencyCode ?? "USD"
+  );
 
   const [amountType, setAmountType] = useState<
     (typeof pricingRuleAmountTypes)[number]
@@ -144,10 +147,10 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
                     name="amount"
                     label={t`Amount`}
                     minValue={0}
-                    formatOptions={{
-                      style: "currency",
-                      currency: company?.baseCurrencyCode ?? "USD"
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      company?.baseCurrencyCode ?? "USD",
+                      currencyDecimals
+                    )}
                   />
                 )}
 

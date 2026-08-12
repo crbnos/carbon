@@ -36,7 +36,7 @@ import {
   TextArea
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   isPaymentLocked,
   paymentType,
@@ -91,6 +91,9 @@ type PaymentFormProps = {
 const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(
+    company?.baseCurrencyCode ?? "USD"
+  );
   const permissions = usePermissions();
   const post = useFetcher();
   const voidFetcher = useFetcher();
@@ -235,10 +238,10 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
                 <Number
                   name="totalAmount"
                   label={t`Total Amount`}
-                  formatOptions={{
-                    style: "currency",
-                    currency: company?.baseCurrencyCode ?? "USD"
-                  }}
+                  formatOptions={INPUT_FORMAT.money(
+                    company?.baseCurrencyCode ?? "USD",
+                    currencyDecimals
+                  )}
                 />
                 <Account
                   name="bankAccount"

@@ -27,7 +27,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "framer-motion";
 import { nanoid } from "nanoid";
@@ -74,7 +74,13 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
-import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  usePermissions,
+  useRouteData,
+  useUrlParams,
+  useUser
+} from "~/hooks";
 import { ItemTrackingType } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType, MethodType } from "~/modules/shared";
@@ -622,6 +628,7 @@ function MaterialForm({
   const { company } = useUser();
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   useEffect(() => {
     // Remove from temporary items after successful submission
@@ -835,10 +842,7 @@ function MaterialForm({
             label={t`Unit Cost`}
             value={itemData.unitCost}
             minValue={0}
-            formatOptions={{
-              style: "currency",
-              currency: baseCurrency
-            }}
+            formatOptions={INPUT_FORMAT.price(baseCurrency, currencyDecimals)}
           />
         )}
       </div>

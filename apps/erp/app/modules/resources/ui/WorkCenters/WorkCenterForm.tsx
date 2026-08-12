@@ -19,6 +19,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
@@ -29,7 +30,7 @@ import Department from "~/components/Form/Department";
 import Location from "~/components/Form/Location";
 import Processes from "~/components/Form/Processes";
 import StandardFactor from "~/components/Form/StandardFactor";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import { workCenterValidator } from "~/modules/resources";
 import { path } from "~/utils/path";
 
@@ -54,6 +55,7 @@ const WorkCenterForm = ({
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -123,28 +125,28 @@ const WorkCenterForm = ({
                   name="laborRate"
                   label={t`Labor Rate (Hourly)`}
                   termId="work-center-labor-rate"
-                  formatOptions={{
-                    style: "currency",
-                    currency: baseCurrency
-                  }}
+                  formatOptions={INPUT_FORMAT.price(
+                    baseCurrency,
+                    currencyDecimals
+                  )}
                 />
                 <Number
                   name="machineRate"
                   label={t`Machine Rate (Hourly)`}
                   termId="work-center-machine-rate"
-                  formatOptions={{
-                    style: "currency",
-                    currency: baseCurrency
-                  }}
+                  formatOptions={INPUT_FORMAT.price(
+                    baseCurrency,
+                    currencyDecimals
+                  )}
                 />
                 <Number
                   name="overheadRate"
                   label={t`Overhead Rate (Hourly)`}
                   termId="work-center-overhead-rate"
-                  formatOptions={{
-                    style: "currency",
-                    currency: baseCurrency
-                  }}
+                  formatOptions={INPUT_FORMAT.price(
+                    baseCurrency,
+                    currencyDecimals
+                  )}
                 />
 
                 <StandardFactor

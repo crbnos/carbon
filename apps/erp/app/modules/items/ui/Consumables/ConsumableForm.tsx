@@ -11,6 +11,7 @@ import {
   ModalCardTitle,
   toast
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
@@ -30,7 +31,12 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { TrackingTypeIcon } from "~/components/Icons";
-import { useNextItemId, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useNextItemId,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { path } from "~/utils/path";
 import { consumableValidator, itemTrackingTypes } from "../../items.models";
 import ItemStorageFields from "../Item/ItemStorageFields";
@@ -52,6 +58,7 @@ const ConsumableForm = ({
 }: ConsumableFormProps) => {
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
   const { t } = useLingui();
@@ -185,10 +192,10 @@ const ConsumableForm = ({
                   <Number
                     name="unitCost"
                     label={t`Unit Cost`}
-                    formatOptions={{
-                      style: "currency",
-                      currency: baseCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.price(
+                      baseCurrency,
+                      currencyDecimals
+                    )}
                     minValue={0}
                   />
                 )}
