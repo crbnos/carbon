@@ -51,13 +51,16 @@ export interface ExecutorContext {
   userId: string;
 }
 
+export type McpOperation = "create" | "update";
+
 // Stamps auth identity onto typed payloads. Carbon's services expect auth
 // fields inside the payload (predates MCP). `fields` is per-tool from
 // tool-metadata.json so reads stay clean and updates don't overwrite createdBy.
 function enrichWithAuthContext(
   value: unknown,
   context: ExecutorContext,
-  fields: AuthField[]
+  fields: AuthField[],
+  operation?: McpOperation
 ): unknown {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;
   if (fields.length === 0) return value;
@@ -66,7 +69,11 @@ function enrichWithAuthContext(
     ...(value as Record<string, unknown>)
   };
 
-  if (fields.includes("createdBy") && !("createdBy" in enriched)) {
+  if (
+    fields.includes("createdBy") &&
+    operation !== "update" &&
+    !("createdBy" in enriched)
+  ) {
     enriched.createdBy = context.userId;
   }
   if (fields.includes("updatedBy")) {
@@ -80,6 +87,32 @@ function enrichWithAuthContext(
   }
 
   return enriched;
+}
+
+// Pulls the MCP-only `_operation` flag out of the args, top level or nested.
+function extractOperation(args: Record<string, any> | undefined): {
+  operation: McpOperation | undefined;
+  args: Record<string, any> | undefined;
+} {
+  if (!args) return { operation: undefined, args };
+
+  let operation = args._operation as McpOperation | undefined;
+  const cleaned: Record<string, any> = {};
+
+  for (const [key, value] of Object.entries(args)) {
+    if (key === "_operation") continue;
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const { _operation, ...rest } = value as Record<string, any>;
+      if (_operation !== undefined) {
+        operation = operation ?? (_operation as McpOperation);
+        cleaned[key] = rest;
+        continue;
+      }
+    }
+    cleaned[key] = value;
+  }
+
+  return { operation, args: cleaned };
 }
 
 export async function executeFunction(
@@ -97,7 +130,11 @@ export async function executeFunction(
       };
     }
   }
-  const normalizedArgs = args && typeof args === "object" ? args : undefined;
+  const rawArgs = args && typeof args === "object" ? args : undefined;
+
+  // Strip before use — the branches below hand args straight to the service.
+  const { operation: requestedOperation, args: normalizedArgs } =
+    extractOperation(rawArgs);
 
   if (isMcpBlockedTool(functionName)) {
     return {
@@ -143,6 +180,21 @@ export async function executeFunction(
       toolMeta && "injectAuth" in toolMeta
         ? ((toolMeta as any).injectAuth as AuthField[])
         : [];
+    const needsOperation = Boolean(
+      (toolMeta as any)?.schema?.properties?._operation
+    );
+
+    if (
+      needsOperation &&
+      requestedOperation !== "create" &&
+      requestedOperation !== "update"
+    ) {
+      return {
+        success: false,
+        error: `${functionName} requires _operation to be "create" (insert a new record) or "update" (modify an existing one).`
+      };
+    }
+    const operation = needsOperation ? requestedOperation : undefined;
 
     // Build arguments array based on parameter names
     const functionArgs: any[] = [];
@@ -165,7 +217,12 @@ export async function executeFunction(
         functionArgs.push(argsValue);
       } else if (normalizedArgs && paramName in normalizedArgs) {
         functionArgs.push(
-          enrichWithAuthContext(normalizedArgs[paramName], context, injectAuth)
+          enrichWithAuthContext(
+            normalizedArgs[paramName],
+            context,
+            injectAuth,
+            operation
+          )
         );
       } else if (
         normalizedArgs &&
@@ -178,13 +235,20 @@ export async function executeFunction(
         // and use as positional. Hits the documented `{ args: {...} }` wrapper
         // and any LLM that guesses a key name (e.g. `{ item: {...} }`).
         const value = Object.values(normalizedArgs)[0];
-        functionArgs.push(enrichWithAuthContext(value, context, injectAuth));
+        functionArgs.push(
+          enrichWithAuthContext(value, context, injectAuth, operation)
+        );
       } else if (normalizedArgs && Object.keys(normalizedArgs).length > 0) {
         // No key matched — pass the entire args object as a positional param.
         // Handles functions like upsertPart(client, part) where the caller
         // passes flat fields instead of nesting under the param name.
         functionArgs.push(
-          enrichWithAuthContext({ ...normalizedArgs }, context, injectAuth)
+          enrichWithAuthContext(
+            { ...normalizedArgs },
+            context,
+            injectAuth,
+            operation
+          )
         );
       } else {
         // Skip optional parameters

@@ -90,6 +90,15 @@ and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
   `["companyId","createdBy","updatedBy"]`; `update|set|sync|run|…*` →
   `["companyId","updatedBy"]`.
 
+- **`_operation`** (`usesCreatedByDiscriminator`): the ~96 tools whose service picks
+  insert-vs-update with `if ("createdBy" in …)` get a **required**
+  `_operation: "create" | "update"` in their schema — the schema is the only marker,
+  there is no parallel metadata flag. `direct-executor.ts` strips `_operation` from the
+  args (top level *and* the `{ args: {...} }` wrapper) before building the payload, then
+  suppresses the `createdBy` stamp when it is `"update"` — otherwise every MCP edit would
+  take the insert branch. Missing/invalid `_operation` on such a tool is rejected before
+  the service is called; `call_tool.arguments` is `z.any()`, so the executor is the gate.
+
 ## The 15 modules (current `tool-metadata.json`)
 
 `account` · `accounting` · `documents` · `inventory` · `invoicing` · `items` ·
