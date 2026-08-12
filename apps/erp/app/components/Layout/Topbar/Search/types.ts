@@ -10,18 +10,18 @@ export type RecentSearch = Route & {
 };
 
 export type EntityType =
-  | "customer"
-  | "supplier"
   | "item"
   | "job"
-  | "employee"
+  | "salesOrder"
   | "purchaseOrder"
-  | "salesInvoice"
-  | "purchaseInvoice"
+  | "customer"
+  | "supplier"
   | "quote"
   | "salesRfq"
-  | "salesOrder"
   | "supplierQuote"
+  | "salesInvoice"
+  | "purchaseInvoice"
+  | "employee"
   | "issue"
   | "gauge";
 

@@ -3780,7 +3780,6 @@ export async function upsertSupplierPart(
   client: SupabaseClient<Database>,
   supplierPart:
     | (Omit<z.infer<typeof supplierPartValidator>, "id"> & {
-        id?: undefined;
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -3792,25 +3791,18 @@ export async function upsertSupplierPart(
         customFields?: Json;
       })
 ) {
-  // Branch on `id`, not on `createdBy` — the MCP executor stamps `createdBy` onto
-  // every payload, which turned every API-side edit into a duplicate insert.
-  if (supplierPart.id !== undefined) {
-    // Drop any injected `createdBy` so an edit can't rewrite who created the row.
-    const { createdBy: _createdBy, ...update } =
-      supplierPart as typeof supplierPart & {
-        createdBy?: string;
-      };
+  if ("createdBy" in supplierPart) {
     return client
       .from("supplierPart")
-      .update(sanitize(update))
-      .eq("id", supplierPart.id)
-      .eq("companyId", supplierPart.companyId)
+      .insert([supplierPart])
       .select("id")
       .single();
   }
   return client
     .from("supplierPart")
-    .insert([supplierPart])
+    .update(sanitize(supplierPart))
+    .eq("id", supplierPart.id)
+    .eq("companyId", supplierPart.companyId)
     .select("id")
     .single();
 }
