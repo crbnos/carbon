@@ -31,7 +31,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -57,9 +57,11 @@ import {
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
+  useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
+  usePriceFormatter,
   useRouteData,
   useUser
 } from "~/hooks";
@@ -116,7 +118,15 @@ const PurchaseOrderLineForm = ({
 
   // Settlement decimals come from the document currency's row (loader data);
   // 2 is only the last resort for a currency-less document
-  const currencyDecimals = routeData?.currency?.decimalPlaces ?? 2;
+  // The loader's currency row is the primary source — it is correct on first
+  // paint, which matters because these formatters take part in the blur commit.
+  // The hook covers documents whose loader doesn't carry the row; the single
+  // documented last-resort lives inside it rather than as a literal here.
+  const configuredDecimals = useCurrencyDecimals(
+    routeData?.purchaseOrder?.currencyCode ?? company.baseCurrencyCode
+  );
+  const currencyDecimals =
+    routeData?.currency?.decimalPlaces ?? configuredDecimals;
 
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
@@ -288,7 +298,19 @@ const PurchaseOrderLineForm = ({
     : !permissions.can("create", "purchasing");
 
   const deleteDisclosure = useDisclosure();
-  const currencyFormatter = useCurrencyFormatter();
+  // These badges render DOCUMENT-currency values, so both formatters take the
+  // document's currency and decimals. Defaulting to base currency is what
+  // printed a JPY shipping cost as "$20.00".
+  const currencyFormatter = useCurrencyFormatter({
+    currency:
+      routeData?.purchaseOrder?.currencyCode ?? company.baseCurrencyCode,
+    decimalPlaces: currencyDecimals
+  });
+  const priceFormatter = usePriceFormatter({
+    currency:
+      routeData?.purchaseOrder?.currencyCode ?? company.baseCurrencyCode,
+    decimalPlaces: currencyDecimals
+  });
   const percentFormatter = usePercentFormatter();
 
   const onTypeChange = (t: ItemType | "Item") => {
@@ -522,7 +544,7 @@ const PurchaseOrderLineForm = ({
                               {initialValues?.purchaseQuantity}
                             </Badge>
                             <Badge variant="green">
-                              {currencyFormatter.format(
+                              {priceFormatter.format(
                                 (initialValues?.supplierUnitPrice ?? 0) +
                                   (initialValues?.supplierShippingCost ?? 0)
                               )}{" "}
@@ -691,12 +713,11 @@ const PurchaseOrderLineForm = ({
                           name="supplierUnitPrice"
                           label={t`Unit Price`}
                           value={itemData.supplierUnitPrice}
-                          formatOptions={{
-                            style: "currency",
-                            currency:
-                              routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode
-                          }}
+                          formatOptions={INPUT_FORMAT.price(
+                            routeData?.purchaseOrder?.currencyCode ??
+                              company.baseCurrencyCode,
+                            currencyDecimals
+                          )}
                           onChange={(value) =>
                             setItemData((d) => ({
                               ...d,
@@ -801,12 +822,11 @@ const PurchaseOrderLineForm = ({
                             termId="purchase-order-line-shipping"
                             minValue={0}
                             value={itemData.supplierShippingCost}
-                            formatOptions={{
-                              style: "currency",
-                              currency:
-                                routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
-                            }}
+                            formatOptions={INPUT_FORMAT.money(
+                              routeData?.purchaseOrder?.currencyCode ??
+                                company.baseCurrencyCode,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setItemData((d) => ({
                                 ...d,
@@ -958,12 +978,11 @@ const PurchaseOrderLineForm = ({
                             label={t`Unit Price`}
                             isOptional={false}
                             value={indirectData.supplierUnitPrice}
-                            formatOptions={{
-                              style: "currency",
-                              currency:
-                                routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
-                            }}
+                            formatOptions={INPUT_FORMAT.price(
+                              routeData?.purchaseOrder?.currencyCode ??
+                                company.baseCurrencyCode,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setIndirectData((d) => ({
                                 ...d,
@@ -1028,12 +1047,11 @@ const PurchaseOrderLineForm = ({
                               termId="purchase-order-line-shipping"
                               minValue={0}
                               value={indirectData.supplierShippingCost}
-                              formatOptions={{
-                                style: "currency",
-                                currency:
-                                  routeData?.purchaseOrder?.currencyCode ??
-                                  company.baseCurrencyCode
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                routeData?.purchaseOrder?.currencyCode ??
+                                  company.baseCurrencyCode,
+                                currencyDecimals
+                              )}
                               onChange={(value) =>
                                 setIndirectData((d) => ({
                                   ...d,

@@ -56,9 +56,11 @@ import {
   useDerivedTaxAmount
 } from "~/components/Form";
 import {
+  useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
+  usePriceFormatter,
   useRouteData,
   useUser
 } from "~/hooks";
@@ -103,7 +105,15 @@ const SalesInvoiceLineForm = ({
 
   // Settlement decimals come from the document currency's row (loader data);
   // 2 is only the last resort for a currency-less document
-  const currencyDecimals = routeData?.currency?.decimalPlaces ?? 2;
+  // The loader's currency row is the primary source — it is correct on first
+  // paint, which matters because these formatters take part in the blur commit.
+  // The hook covers documents whose loader doesn't carry the row; the single
+  // documented last-resort lives inside it rather than as a literal here.
+  const configuredDecimals = useCurrencyDecimals(
+    routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode
+  );
+  const currencyDecimals =
+    routeData?.currency?.decimalPlaces ?? configuredDecimals;
 
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isEditable = !isLocked;
@@ -343,7 +353,17 @@ const SalesInvoiceLineForm = ({
     }));
   };
 
-  const currencyFormatter = useCurrencyFormatter();
+  // These badges render DOCUMENT-currency values, so both formatters take the
+  // document's currency and decimals. Defaulting to base currency is what
+  // printed a JPY shipping cost as "$20.00".
+  const currencyFormatter = useCurrencyFormatter({
+    currency: routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode,
+    decimalPlaces: currencyDecimals
+  });
+  const priceFormatter = usePriceFormatter({
+    currency: routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode,
+    decimalPlaces: currencyDecimals
+  });
   const percentFormatter = usePercentFormatter();
 
   const invoiceCurrency =
@@ -421,7 +441,7 @@ const SalesInvoiceLineForm = ({
                             )}
                           </Badge>
                           <Badge variant="green">
-                            {currencyFormatter.format(
+                            {priceFormatter.format(
                               initialValues?.unitPrice ?? 0
                             )}{" "}
                             {initialValues?.unitOfMeasureCode}
@@ -565,10 +585,10 @@ const SalesInvoiceLineForm = ({
                             name="unitPrice"
                             label={t`Unit Price`}
                             value={itemData.unitPrice}
-                            formatOptions={{
-                              style: "currency",
-                              currency: invoiceCurrency
-                            }}
+                            formatOptions={INPUT_FORMAT.price(
+                              invoiceCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setItemData((d) => ({
                                 ...d,
@@ -710,10 +730,10 @@ const SalesInvoiceLineForm = ({
                               label={t`Shipping Cost`}
                               value={itemData.shippingCost}
                               minValue={0}
-                              formatOptions={{
-                                style: "currency",
-                                currency: invoiceCurrency
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                invoiceCurrency,
+                                currencyDecimals
+                              )}
                               onChange={(value) =>
                                 setItemData((d) => ({
                                   ...d,
@@ -724,18 +744,18 @@ const SalesInvoiceLineForm = ({
                             <Number
                               name="addOnCost"
                               label={t`Add-On Cost`}
-                              formatOptions={{
-                                style: "currency",
-                                currency: invoiceCurrency
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                invoiceCurrency,
+                                currencyDecimals
+                              )}
                             />
                             <Number
                               name="nonTaxableAddOnCost"
                               label={t`Non-Taxable Add-On Cost`}
-                              formatOptions={{
-                                style: "currency",
-                                currency: invoiceCurrency
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                invoiceCurrency,
+                                currencyDecimals
+                              )}
                             />
                           </div>
                         </div>
@@ -797,10 +817,10 @@ const SalesInvoiceLineForm = ({
                           label={t`Unit Price`}
                           isOptional={false}
                           value={assetData.unitPrice}
-                          formatOptions={{
-                            style: "currency",
-                            currency: invoiceCurrency
-                          }}
+                          formatOptions={INPUT_FORMAT.price(
+                            invoiceCurrency,
+                            currencyDecimals
+                          )}
                           onChange={(value) =>
                             setAssetData((d) => ({ ...d, unitPrice: value }))
                           }
@@ -867,10 +887,10 @@ const SalesInvoiceLineForm = ({
                             label={t`Shipping Cost`}
                             value={assetData.shippingCost}
                             minValue={0}
-                            formatOptions={{
-                              style: "currency",
-                              currency: invoiceCurrency
-                            }}
+                            formatOptions={INPUT_FORMAT.money(
+                              invoiceCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setAssetData((d) => ({
                                 ...d,
@@ -882,10 +902,10 @@ const SalesInvoiceLineForm = ({
                             name="addOnCost"
                             label={t`Add-On Cost`}
                             value={assetData.addOnCost}
-                            formatOptions={{
-                              style: "currency",
-                              currency: invoiceCurrency
-                            }}
+                            formatOptions={INPUT_FORMAT.money(
+                              invoiceCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setAssetData((d) => ({
                                 ...d,
@@ -897,10 +917,10 @@ const SalesInvoiceLineForm = ({
                             name="nonTaxableAddOnCost"
                             label={t`Non-Taxable Add-On Cost`}
                             value={assetData.nonTaxableAddOnCost}
-                            formatOptions={{
-                              style: "currency",
-                              currency: invoiceCurrency
-                            }}
+                            formatOptions={INPUT_FORMAT.money(
+                              invoiceCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setAssetData((d) => ({
                                 ...d,

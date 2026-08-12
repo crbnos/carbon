@@ -1,13 +1,21 @@
 import { priceFormatOptions, SCALE } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
+import { useConfiguredCurrencyDecimals } from "./useCurrencies";
 import { useUser } from "./useUser";
 
 /**
- * Per-unit price displays: settlement padding at the currency's decimals, up
- * to storage scale so the full stored price always renders ("$0.164").
- * When the currency row's decimalPlaces isn't reachable at the call site,
- * Intl's currency default supplies the minimum digits.
+ * Per-unit price displays: the currency's decimals as the MINIMUM padding, up to
+ * storage scale as the maximum so the full stored price always renders
+ * ("$0.164", "CA$9.999"). Digits come from the company group's configured
+ * `currency.decimalPlaces` — the DB column is authoritative over Intl/CLDR, the
+ * same rule `useCurrencyFormatter` follows, so the price and money kinds can
+ * never disagree about the same currency.
+ *
+ * `decimalPlaces` overrides the lookup when the caller already has the row
+ * (e.g. from a loader). CLDR decides the minimum only when the currency isn't
+ * configured for the group; the maximum is never left to Intl, whose currency
+ * default of 2 would truncate a stored 1531.4475 to 1531.45.
  */
 export function usePriceFormatter(options?: {
   currency?: string;
@@ -17,16 +25,17 @@ export function usePriceFormatter(options?: {
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const { locale } = useLocale();
   const currency = options?.currency ?? baseCurrency;
-  const decimalPlaces = options?.decimalPlaces;
+  const configuredDecimals = useConfiguredCurrencyDecimals(currency);
+  const decimals = options?.decimalPlaces ?? configuredDecimals;
 
   return useMemo(
     () =>
       new Intl.NumberFormat(
         locale,
-        decimalPlaces != null
-          ? priceFormatOptions(currency, decimalPlaces)
+        decimals != null
+          ? priceFormatOptions(currency, decimals)
           : { style: "currency", currency, maximumFractionDigits: SCALE }
       ),
-    [locale, currency, decimalPlaces]
+    [locale, currency, decimals]
   );
 }
