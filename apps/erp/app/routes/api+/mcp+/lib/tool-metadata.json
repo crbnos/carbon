@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-12T14:37:59.612Z",
-  "totalTools": 1433,
+  "generated": "2026-08-12T17:55:02.705Z",
+  "totalTools": 1434,
   "modules": 15,
   "tools": [
     {
@@ -44393,6 +44393,24 @@
         "client",
         "companyId",
         "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "users_getItarEntityCertification",
+      "module": "users",
+      "classification": "READ",
+      "description": "get itar entity certification",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"

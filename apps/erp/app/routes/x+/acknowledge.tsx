@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { insertAuditLogEntries } from "@carbon/database/audit";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, requiresItarEntityCertification } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -108,7 +108,10 @@ async function recordCertification({
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId, email } = await requirePermissions(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
@@ -120,6 +123,24 @@ export async function action({ request }: ActionFunctionArgs) {
     // writes via the service-role client (RLS bypassed) and unblocks the whole
     // company's controlled-environment gate.
     await requirePermissions(request, { update: "users" });
+
+    // A Rider acceptance is a named person binding their own company, so the
+    // signer's identity has to be real. Two ways it would not be:
+    //
+    //  - Carbon staff hold users_update in every tenant they provisioned, so
+    //    the permission check alone would let us bind a customer to a document
+    //    only the customer can sign. The screen is already hidden from staff;
+    //    refuse the write too, so the signatory on file is always the
+    //    customer's own.
+    //  - An API key authenticates as the key, not as a person — that path
+    //    reports an empty email and carries no signer at all.
+    if (!email || !requiresItarEntityCertification(email)) {
+      return {
+        success: false,
+        message:
+          "The Rider must be accepted by a representative of the company it binds."
+      };
+    }
 
     const parsed = itarEntityCertificationValidator.safeParse({
       authorityToBind: formData.get("authorityToBind") === "on",

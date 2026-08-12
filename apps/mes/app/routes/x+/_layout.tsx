@@ -24,7 +24,11 @@ import {
   useNProgress
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition, isSearchParamOnlyNavigation } from "@carbon/utils";
+import {
+  Edition,
+  isSearchParamOnlyNavigation,
+  requiresItarEntityCertification
+} from "@carbon/utils";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
@@ -163,10 +167,17 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     locationId
   );
 
-  // ITAR gate — only queried in controlled environments.
+  // ITAR gate — only queried in controlled environments. `entityRequired` is
+  // false for Carbon staff: the Rider binds the customer's own organization, so
+  // it is not ours to accept and the pending block would strand us behind a
+  // signature we can never provide. Decided server-side from the account's
+  // email, and defaults to required when the email is unknown.
   const itarCertification = CONTROLLED_ENVIRONMENT
-    ? await getItarCertificationStatus(client, companyId, userId)
-    : { entityCertified: true, userCertified: true };
+    ? {
+        ...(await getItarCertificationStatus(client, companyId, userId)),
+        entityRequired: requiresItarEntityCertification(user.data?.email)
+      }
+    : { entityCertified: true, userCertified: true, entityRequired: false };
 
   if (!companyPlan && CarbonEdition === Edition.Cloud) {
     throw redirect(path.to.onboarding);
@@ -295,12 +306,18 @@ export default function AuthenticatedRoute() {
   // ITAR gate. Entity Rider acceptance is an admin action performed in the ERP,
   // so shop-floor MES users never see Screen 1 — they wait on the pending block
   // until an admin accepts, then attest their own U.S.-Person status.
+  //
+  // Carbon staff are exempt from the entity gate entirely (the Rider binds the
+  // customer's organization, not ours), so they skip the pending block too and
+  // go straight to their own attestation.
   let itarScreen: ReactNode = null;
+  const entityBlocking =
+    itarCertification.entityRequired && !itarCertification.entityCertified;
   if (
     CONTROLLED_ENVIRONMENT &&
-    (!itarCertification.entityCertified || !itarCertification.userCertified)
+    (entityBlocking || !itarCertification.userCertified)
   ) {
-    itarScreen = !itarCertification.entityCertified ? (
+    itarScreen = entityBlocking ? (
       <ItarEntityPendingBlock logoutAction={path.to.logout} />
     ) : (
       <ItarUserCertification

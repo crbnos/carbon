@@ -779,6 +779,9 @@ msgstr "Приемка"
 msgid "Acceptance passed"
 msgstr "Приемка пройдена"
 
+msgid "Accepted"
+msgstr "Принято"
+
 msgid "Account"
 msgstr "Счет"
 
@@ -5782,6 +5785,15 @@ msgstr "Сущности для разделения"
 msgid "Entity"
 msgstr "Сущность"
 
+msgid "Entity certification: Accepted"
+msgstr "Сертификация организации: Принята"
+
+msgid "Entity certification: Expired"
+msgstr "Сертификация организации: Истекла"
+
+msgid "Entity certification: Pending"
+msgstr "Сертификация организации: Ожидается"
+
 msgid "Entity Type"
 msgstr "Тип Сущности"
 
@@ -9662,6 +9674,9 @@ msgstr "Нет оставшихся объектов для проверки."
 msgid "No reports match your search."
 msgstr "Никакие отчеты не соответствуют вашему поиску."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
+msgstr "Ни один представитель этой компании ещё не принял Carbon GovCloud Rider. Администратор этой компании должен принять его, прежде чем кто-либо сможет войти — сотрудники Carbon не могут принять его от вашего имени."
+
 msgid "No results"
 msgstr "Нет результатов"
 
@@ -12128,6 +12143,9 @@ msgstr "Номер РФП"
 
 msgid "RFQs"
 msgstr "РФЗ"
+
+msgid "Rider"
+msgstr "Rider"
 
 msgid "Right item"
 msgstr "Правый элемент"

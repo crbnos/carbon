@@ -50,6 +50,31 @@ export async function getItarCertificationStatus(
 }
 
 /**
+ * The company's latest entity Rider acceptance, or null when nobody has accepted
+ * one yet. Returned regardless of expiry so the compliance report can tell
+ * "expired, needs re-acceptance" from "never accepted" — the gate blocks on both,
+ * but they are different findings to an auditor.
+ *
+ * Carbon staff never appear here: the Rider binds the customer's own
+ * organization, so only the customer's admin can produce this row.
+ */
+export async function getItarEntityCertification(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("itarCertification")
+    .select(
+      "userId, fullLegalName, title, complianceContact, docVersion, certifiedAt, expiresAt"
+    )
+    .eq("companyId", companyId)
+    .eq("type", "entity")
+    .order("certifiedAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+}
+
+/**
  * Compliance report source: every active employee with their latest ITAR
  * certification (version / date / expiry). Both reads page past the 1000-row
  * Supabase limit via `fetchAllFromTable` so tenants above 1000 employees (or

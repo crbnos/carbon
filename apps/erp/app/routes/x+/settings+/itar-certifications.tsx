@@ -5,8 +5,14 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
-import { ItarCertificationsTable } from "~/modules/settings";
-import { getItarCertificationReport } from "~/modules/users";
+import {
+  ItarCertificationsTable,
+  ItarEntityCertificationStatus
+} from "~/modules/settings";
+import {
+  getItarCertificationReport,
+  getItarEntityCertification
+} from "~/modules/users";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -52,8 +58,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.settings);
   }
 
-  const [report, lastLoginByUserId] = await Promise.all([
+  const [report, entityCertification, lastLoginByUserId] = await Promise.all([
     getItarCertificationReport(client, companyId),
+    getItarEntityCertification(client, companyId),
     getLastLoginByUserId()
   ]);
 
@@ -62,14 +69,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
     lastLogin: row.id ? (lastLoginByUserId.get(row.id) ?? null) : null
   }));
 
-  return { data: rows, count: rows.length };
+  return {
+    data: rows,
+    count: rows.length,
+    entityCertification: entityCertification.data ?? null
+  };
 }
 
 export default function ItarCertificationsRoute() {
-  const { data, count } = useLoaderData<typeof loader>();
+  const { data, count, entityCertification } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
+      <ItarEntityCertificationStatus certification={entityCertification} />
       <ItarCertificationsTable data={data} count={count} />
     </VStack>
   );

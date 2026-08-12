@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
+import { requiresItarEntityCertification } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -12,7 +13,10 @@ import {
 const logger = getLogger("mes", "acknowledge");
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId, email } = await requirePermissions(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
@@ -47,6 +51,18 @@ export async function action({ request }: ActionFunctionArgs) {
     // still live and writes via the service-role client (RLS bypassed), so
     // enforce the same permission the ERP action does.
     await requirePermissions(request, { update: "users" });
+
+    // Carbon staff hold users_update in every tenant they provisioned, so the
+    // permission check alone would let us bind a customer to a document only
+    // the customer can sign; an API key carries no signer identity at all
+    // (empty email on that path). Mirrors the ERP action.
+    if (!email || !requiresItarEntityCertification(email)) {
+      return {
+        success: false,
+        message:
+          "The Rider must be accepted by a representative of the company it binds."
+      };
+    }
 
     const parsed = itarEntityCertificationValidator.safeParse({
       authorityToBind: formData.get("authorityToBind") === "on",

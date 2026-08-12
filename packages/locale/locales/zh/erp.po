@@ -779,6 +779,9 @@ msgstr "验收"
 msgid "Acceptance passed"
 msgstr "验收通过"
 
+msgid "Accepted"
+msgstr "已接受"
+
 msgid "Account"
 msgstr "账户"
 
@@ -5782,6 +5785,15 @@ msgstr "要分割的实体"
 msgid "Entity"
 msgstr "实体"
 
+msgid "Entity certification: Accepted"
+msgstr "实体认证：已接受"
+
+msgid "Entity certification: Expired"
+msgstr "实体认证：已过期"
+
+msgid "Entity certification: Pending"
+msgstr "实体认证：待处理"
+
 msgid "Entity Type"
 msgstr "实体类型"
 
@@ -9662,6 +9674,9 @@ msgstr "没有剩余的实体可检查。"
 msgid "No reports match your search."
 msgstr "未找到与搜索条件匹配的报告。"
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
+msgstr "本公司尚无代表接受 Carbon GovCloud Rider。在任何人进入之前，必须由本公司的管理员接受 — Carbon 员工无法代表贵公司接受。"
+
 msgid "No results"
 msgstr "无结果"
 
@@ -12128,6 +12143,9 @@ msgstr "询价单号"
 
 msgid "RFQs"
 msgstr "询价单"
+
+msgid "Rider"
+msgstr "Rider"
 
 msgid "Right item"
 msgstr "右项"

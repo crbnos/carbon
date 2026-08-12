@@ -30,7 +30,11 @@ import {
   useNProgress
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition, isSearchParamOnlyNavigation } from "@carbon/utils";
+import {
+  Edition,
+  isSearchParamOnlyNavigation,
+  requiresItarEntityCertification
+} from "@carbon/utils";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
@@ -139,6 +143,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // ITAR gate status — only queried in controlled environments; elsewhere the
   // gate never renders, so default to "certified" and skip the round-trip.
+  // `entityRequired` is layered on below, once the user's email is known.
   const itarCertificationPromise = CONTROLLED_ENVIRONMENT
     ? getItarCertificationStatus(client, companyId, userId)
     : Promise.resolve({ entityCertified: true, userCertified: true });
@@ -263,7 +268,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     implementationHub: implementationHub.data ?? null,
     implementationCheckStates: implementationCheckStates.data ?? [],
     implementationSignals,
-    itarCertification,
+    itarCertification: {
+      ...itarCertification,
+      // Server-decided, never client-inferred: the gate must not be skippable
+      // by anything the browser can set.
+      entityRequired: requiresItarEntityCertification(user.data.email)
+    },
     supplierApprovalRequired: isApprovalRequired(client, "supplier", companyId),
     openClockEntry: companySettings.data?.timeCardEnabled
       ? getOpenClockEntry(client, userId, companyId)
@@ -328,12 +338,19 @@ export default function AuthenticatedRoute() {
   // ITAR gate: entity Rider acceptance first (only an admin who can bind the
   // company may accept it; everyone else waits), then the user's own U.S.-Person
   // attestation. Declining either logs the user out.
+  //
+  // `entityRequired` is false for Carbon staff — they provision customer tenants
+  // and so hold users_update there, but the Rider binds the customer's own
+  // organization and is not theirs to sign. They fall straight through to their
+  // own attestation; the customer's first admin binds the customer.
   let itarScreen: ReactNode = null;
+  const entityBlocking =
+    itarCertification.entityRequired && !itarCertification.entityCertified;
   if (
     CONTROLLED_ENVIRONMENT &&
-    (!itarCertification.entityCertified || !itarCertification.userCertified)
+    (entityBlocking || !itarCertification.userCertified)
   ) {
-    if (!itarCertification.entityCertified) {
+    if (entityBlocking) {
       itarScreen = permissions.can("update", "users") ? (
         <ItarEntityCertification
           companyName={companyName ?? "your company"}

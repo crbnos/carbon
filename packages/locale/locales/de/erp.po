@@ -779,6 +779,9 @@ msgstr "Akzeptanz"
 msgid "Acceptance passed"
 msgstr "Akzeptanz bestanden"
 
+msgid "Accepted"
+msgstr "Akzeptiert"
+
 msgid "Account"
 msgstr "Konto"
 
@@ -5782,6 +5785,15 @@ msgstr "Zu teilende Entitäten"
 msgid "Entity"
 msgstr "Entität"
 
+msgid "Entity certification: Accepted"
+msgstr "Unternehmenszertifizierung: Akzeptiert"
+
+msgid "Entity certification: Expired"
+msgstr "Unternehmenszertifizierung: Abgelaufen"
+
+msgid "Entity certification: Pending"
+msgstr "Unternehmenszertifizierung: Ausstehend"
+
 msgid "Entity Type"
 msgstr "Entitätstyp"
 
@@ -9662,6 +9674,9 @@ msgstr "Keine verbleibenden Entitäten zur Überprüfung."
 msgid "No reports match your search."
 msgstr "Keine Berichte entsprechen Ihrer Suche."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
+msgstr "Kein Vertreter dieses Unternehmens hat den Carbon GovCloud Rider bisher akzeptiert. Ein Administrator hier muss ihn akzeptieren, bevor jemand eintreten kann — Carbon-Mitarbeiter können ihn nicht in Ihrem Namen akzeptieren."
+
 msgid "No results"
 msgstr "Keine Ergebnisse"
 
@@ -12128,6 +12143,9 @@ msgstr "RFQ-Nummer"
 
 msgid "RFQs"
 msgstr "Anfragen"
+
+msgid "Rider"
+msgstr "Rider"
 
 msgid "Right item"
 msgstr "Rechtes Element"

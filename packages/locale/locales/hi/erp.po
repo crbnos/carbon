@@ -779,6 +779,9 @@ msgstr "स्वीकृति"
 msgid "Acceptance passed"
 msgstr "स्वीकृति पारित"
 
+msgid "Accepted"
+msgstr "स्वीकृत"
+
 msgid "Account"
 msgstr "खाता"
 
@@ -5782,6 +5785,15 @@ msgstr "विभाजित करने के लिए इकाइया�
 msgid "Entity"
 msgstr "इकाई"
 
+msgid "Entity certification: Accepted"
+msgstr "इकाई प्रमाणन: स्वीकृत"
+
+msgid "Entity certification: Expired"
+msgstr "इकाई प्रमाणन: समाप्त"
+
+msgid "Entity certification: Pending"
+msgstr "इकाई प्रमाणन: लंबित"
+
 msgid "Entity Type"
 msgstr "इकाई प्रकार"
 
@@ -9662,6 +9674,9 @@ msgstr "निरीक्षण के लिए कोई शेष इका�
 msgid "No reports match your search."
 msgstr "कोई रिपोर्ट आपकी खोज से मेल नहीं खाती।"
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
+msgstr "इस कंपनी के किसी भी प्रतिनिधि ने अभी तक Carbon GovCloud Rider स्वीकार नहीं किया है। किसी के भी प्रवेश करने से पहले यहाँ के एक व्यवस्थापक को इसे स्वीकार करना होगा — Carbon कर्मचारी इसे आपकी ओर से स्वीकार नहीं कर सकते।"
+
 msgid "No results"
 msgstr "कोई परिणाम नहीं"
 
@@ -12128,6 +12143,9 @@ msgstr "RFQ संख्या"
 
 msgid "RFQs"
 msgstr "आरएफक्यू"
+
+msgid "Rider"
+msgstr "Rider"
 
 msgid "Right item"
 msgstr "दाहिनी वस्तु"

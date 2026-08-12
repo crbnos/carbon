@@ -779,6 +779,9 @@ msgstr "Kabul"
 msgid "Acceptance passed"
 msgstr "Kabul edildi"
 
+msgid "Accepted"
+msgstr "Kabul edildi"
+
 msgid "Account"
 msgstr "Hesap"
 
@@ -5782,6 +5785,15 @@ msgstr "Ayrılacak varlıklar"
 msgid "Entity"
 msgstr "Varlık"
 
+msgid "Entity certification: Accepted"
+msgstr "Kuruluş sertifikasyonu: Kabul edildi"
+
+msgid "Entity certification: Expired"
+msgstr "Kuruluş sertifikasyonu: Süresi doldu"
+
+msgid "Entity certification: Pending"
+msgstr "Kuruluş sertifikasyonu: Beklemede"
+
 msgid "Entity Type"
 msgstr "Varlık Türü"
 
@@ -9662,6 +9674,9 @@ msgstr "İncelenecek kalan varlık yok."
 msgid "No reports match your search."
 msgstr "Aramanızla eşleşen rapor yok."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
+msgstr "Bu şirketin hiçbir temsilcisi Carbon GovCloud Rider'ı henüz kabul etmedi. Herhangi biri giriş yapmadan önce buradaki bir yöneticinin kabul etmesi gerekir — Carbon personeli bunu sizin adınıza kabul edemez."
+
 msgid "No results"
 msgstr "Sonuç bulunamadı"
 
@@ -12128,6 +12143,9 @@ msgstr "Teklif Numarası"
 
 msgid "RFQs"
 msgstr "Teklif Talepleri"
+
+msgid "Rider"
+msgstr "Rider"
 
 msgid "Right item"
 msgstr "Sağ öğe"

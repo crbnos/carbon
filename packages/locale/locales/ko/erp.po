@@ -779,6 +779,9 @@ msgstr "승인"
 msgid "Acceptance passed"
 msgstr "승인 통과"
 
+msgid "Accepted"
+msgstr "승인됨"
+
 msgid "Account"
 msgstr "계정"
 
@@ -5782,6 +5785,15 @@ msgstr "분리할 개체"
 msgid "Entity"
 msgstr "개체"
 
+msgid "Entity certification: Accepted"
+msgstr "법인 인증: 승인됨"
+
+msgid "Entity certification: Expired"
+msgstr "법인 인증: 만료됨"
+
+msgid "Entity certification: Pending"
+msgstr "법인 인증: 대기 중"
+
 msgid "Entity Type"
 msgstr "개체 유형"
 
@@ -9662,6 +9674,9 @@ msgstr "검사할 개체가 남아 있지 않습니다."
 msgid "No reports match your search."
 msgstr "검색 결과와 일치하는 보고서가 없습니다."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
+msgstr "이 회사의 대표자가 아직 Carbon GovCloud Rider를 승인하지 않았습니다. 누구든지 입장하기 전에 이 회사의 관리자가 승인해야 합니다 — Carbon 직원은 귀사를 대신하여 승인할 수 없습니다."
+
 msgid "No results"
 msgstr "결과 없음"
 
@@ -12128,6 +12143,9 @@ msgstr "RFQ 번호"
 
 msgid "RFQs"
 msgstr "RFQ"
+
+msgid "Rider"
+msgstr "Rider"
 
 msgid "Right item"
 msgstr "올바른 품목"

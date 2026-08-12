@@ -779,6 +779,9 @@ msgstr "受け入れ"
 msgid "Acceptance passed"
 msgstr "受け入れ完了"
 
+msgid "Accepted"
+msgstr "承認済み"
+
 msgid "Account"
 msgstr "アカウント"
 
@@ -5782,6 +5785,15 @@ msgstr "分割するエンティティ"
 msgid "Entity"
 msgstr "エンティティ"
 
+msgid "Entity certification: Accepted"
+msgstr "事業体認定: 承認済み"
+
+msgid "Entity certification: Expired"
+msgstr "事業体認定: 期限切れ"
+
+msgid "Entity certification: Pending"
+msgstr "事業体認定: 保留中"
+
 msgid "Entity Type"
 msgstr "エンティティタイプ"
 
@@ -9662,6 +9674,9 @@ msgstr "検査する残りのエンティティはありません。"
 msgid "No reports match your search."
 msgstr "検索に一致するレポートはありません。"
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator here must accept it before anyone can enter — Carbon staff cannot accept it on your behalf."
+msgstr "この会社の代表者はまだ Carbon GovCloud Rider を承認していません。誰かが入る前に、この会社の管理者が承認する必要があります — Carbon のスタッフが代わりに承認することはできません。"
+
 msgid "No results"
 msgstr "結果がありません"
 
@@ -12128,6 +12143,9 @@ msgstr "RFQ番号"
 
 msgid "RFQs"
 msgstr "RFQ"
+
+msgid "Rider"
+msgstr "Rider"
 
 msgid "Right item"
 msgstr "右側の項目"
