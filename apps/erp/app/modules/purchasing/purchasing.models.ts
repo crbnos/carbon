@@ -322,7 +322,9 @@ export const selectedLineSchema = z.object({
   supplierShippingCost: z.number(),
   supplierUnitPrice: z.number(),
   supplierTaxAmount: z.number(),
-  taxPercent: z.number().optional().default(0),
+  // Same 0..1 fraction contract as purchaseOrderLineValidator — the two feed the
+  // same columns, so an unbounded rate here would bypass the form's bound.
+  taxPercent: z.number().min(0).max(1).optional().default(0),
   unitPrice: z.number()
 });
 

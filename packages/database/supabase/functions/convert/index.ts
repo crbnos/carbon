@@ -9,6 +9,7 @@ import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { round } from "../shared/precision.ts";
 import { getRemainingQuantityToInvoice } from "../shared/short-close.ts";
 
 const pool = getConnectionPool(2);
@@ -108,7 +109,10 @@ const payloadValidator = z.discriminatedUnion("type", [
         supplierShippingCost: z.number(),
         supplierUnitPrice: z.number(),
         supplierTaxAmount: z.number(),
-        taxPercent: z.number().optional().default(0),
+        // Mirrors selectedLineSchema in purchasing.models.ts — a 0..1 fraction.
+        // Left optional so existing clients keep working; resolveTaxPercent
+        // derives it from the amount rather than storing 0 beside a real one.
+        taxPercent: z.number().min(0).max(1).optional().default(0),
         unitPrice: z.number(),
       })
     ),
@@ -126,6 +130,27 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
 ]);
+
+/**
+ * taxPercent and the tax amount are one value pair — a write that sets one sets
+ * both. The payload's rate is optional for client compatibility, so when a
+ * client sends a real amount without a rate, derive the rate once from the
+ * canonical denominator (unit price x quantity + shipping) instead of storing 0
+ * next to it, which the form would then treat as "no tax" and zero out.
+ */
+function resolveTaxPercent(line: {
+  taxPercent?: number;
+  supplierTaxAmount: number;
+  supplierUnitPrice: number;
+  quantity: number;
+  supplierShippingCost: number;
+}): number {
+  if (line.taxPercent) return line.taxPercent;
+  if (!line.supplierTaxAmount) return 0;
+  const subtotal =
+    line.supplierUnitPrice * line.quantity + line.supplierShippingCost;
+  return subtotal > 0 ? round(line.supplierTaxAmount / subtotal) : 0;
+}
 
 serve(async (req: Request) => {
   const preflight = corsPreflight(req);
@@ -1692,7 +1717,7 @@ serve(async (req: Request) => {
                   supplierShippingCost:
                     selectedLines![line.id!].supplierShippingCost,
                   supplierTaxAmount: selectedLines![line.id!].supplierTaxAmount,
-                  taxPercent: selectedLines![line.id!].taxPercent ?? 0,
+                  taxPercent: resolveTaxPercent(selectedLines![line.id!]),
                   sortOrder: line.sortOrder ?? 1,
                   createdBy: userId,
                   companyId,

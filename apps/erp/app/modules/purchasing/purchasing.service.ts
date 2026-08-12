@@ -135,6 +135,7 @@ export async function duplicatePurchaseOrder(
         "id, supplierId, supplierContactId, supplierLocationId, supplierReference, currencyCode, purchaseOrderType, internalNotes, externalNotes"
       )
       .eq("id", sourcePurchaseOrderId)
+      .eq("companyId", companyId)
       .single(),
     client
       .from("purchaseOrderDelivery")
@@ -147,6 +148,7 @@ export async function duplicatePurchaseOrder(
         "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, taxPercent, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
       )
       .eq("purchaseOrderId", sourcePurchaseOrderId)
+      .eq("companyId", companyId)
   ]);
 
   if (source.error || !source.data) {

@@ -34,4 +34,15 @@ describe("no-derived-percent-column", () => {
     const sql = `ALTER TABLE "t" ADD COLUMN "unitPrice" NUMERIC GENERATED ALWAYS AS ("supplierUnitPrice" / "exchangeRate") STORED;`;
     expect(noDerivedPercentColumn.scan("a.sql", sql)).toHaveLength(0);
   });
+
+  it("stops at a same-line terminator instead of swallowing what follows", () => {
+    // The percent column is self-contained and does not divide. The division
+    // below belongs to a different column; a multiline walk that ignored the
+    // terminator on line 1 would blame it on the percent column.
+    const sql = [
+      `ALTER TABLE "t" ADD COLUMN "combinedPercent" NUMERIC GENERATED ALWAYS AS ("aPercent" + "bPercent") STORED;`,
+      `ALTER TABLE "t" ADD COLUMN "unitPrice" NUMERIC GENERATED ALWAYS AS ("supplierUnitPrice" / "exchangeRate") STORED;`
+    ].join("\n");
+    expect(noDerivedPercentColumn.scan("a.sql", sql)).toHaveLength(0);
+  });
 });

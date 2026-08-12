@@ -13,7 +13,7 @@ import {
   NumberInput,
   NumberInputGroup
 } from "@carbon/react";
-import { round } from "@carbon/utils";
+import { EPSILON, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { CSSProperties } from "react";
 import { useCallback, useMemo, useState } from "react";
@@ -75,7 +75,6 @@ type PaymentApplyTableProps = {
   openInvoices: OpenInvoice[];
   existingApplications: ExistingApplication[];
 };
-
 
 // Shared grid template so the header labels stay aligned with the rows. Wide
 // enough to scroll horizontally on small screens rather than cramp the inputs.
@@ -164,7 +163,11 @@ const PaymentApplyTable = ({
     0,
     Math.min(availableCredit, totalCash - paymentTotal)
   );
-  const overApplied = totalCash > maxApplicable + 0.0001;
+  // EPSILON, not a hand-picked 1e-4: every amount here is already rounded to
+  // internal scale, so the only slack needed is float noise. A 1e-4 band is
+  // coarser than the 1e-5 the values carry, and let a real over-application of
+  // 0.0001 through.
+  const overApplied = totalCash > maxApplicable + EPSILON;
   const appliedPct =
     paymentTotal > 0
       ? Math.min(100, Math.max(0, (totalCash / paymentTotal) * 100))

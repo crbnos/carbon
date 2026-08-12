@@ -31,7 +31,7 @@ Setup: new purchase invoice, line: quantity 1, unit price **$9.00**, no shipping
 
 - [ ] 2.1 Type **6.25** in Tax Percent → Tax Amount auto-fills **$0.56**.
 - [ ] 2.2 Tab through the Tax Amount field (blur), Save, reopen: Tax Percent reads **6.25%** (NOT 6.22%), amount $0.56.
-- [ ] 2.3 Amount override: set Tax Amount to **$0.57**, save, reopen: amount $0.57 AND percent still **6.25%** (amount edits never rewrite the rate).
+- [ ] 2.3 Amount override: set Tax Amount to **$0.57**, save, reopen: amount **$0.57** and percent **6.333%** — the pair is coupled both ways, so an amount edit re-derives the rate (`round(0.57 / 9.00)` = 0.06333). The old 6.25% is *not* retained; a stored pair that disagreed with itself is the bug this replaced.
 - [ ] 2.4 Base change: quantity → 2. Amount re-derives (6.25% of $18.00 = **$1.13**); percent unchanged.
 - [ ] 2.5 Fine-grained rate: **6.255%** survives blur and save, displays as **6.255%**.
 - [ ] 2.6 G/L-account and Fixed-Asset line types: repeat 2.1–2.2 on the second tax pair — same behavior.

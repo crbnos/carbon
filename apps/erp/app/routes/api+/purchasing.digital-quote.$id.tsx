@@ -231,13 +231,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }
       }
 
-      // Execute all updates and inserts
-      await Promise.all([
+      // Execute all updates and inserts. The Supabase client resolves rather
+      // than throwing, so a failed price write is invisible unless every result
+      // is inspected — without this the quote still flipped to Active carrying
+      // the supplier's old prices.
+      const priceWrites = await Promise.all([
         ...priceUpdates,
         priceInserts.length > 0
           ? serviceRole.from("supplierQuoteLinePrice").insert(priceInserts)
           : Promise.resolve({ data: null, error: null })
       ]);
+
+      const priceWriteError = priceWrites.find(
+        (result) => result?.error
+      )?.error;
+      if (priceWriteError) {
+        logger.error("Failed to save digital quote prices", {
+          error: priceWriteError,
+          quoteId: quote.data.id
+        });
+        return { success: false, message: "Failed to save quote prices" };
+      }
 
       const now = new Date().toISOString();
 

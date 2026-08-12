@@ -25,9 +25,12 @@ import is BY DESIGN, not an import to "fix").
 | Internal values | `SCALE = 5` | per-unit prices, rates (0–1 fractions), quantities, GL journal lines, exchange rates |
 | Settlement values | `currency.decimalPlaces` (DB column — authoritative over Intl/CLDR) | invoice balance/amountDue, applied payment amounts, document totals, tax amounts |
 
-Settlement values NEVER carry 5 decimals — `post-payment` writes balances at
-the currency's decimals, and only internal GL journal lines carry scale 5.
-Invoice paid-status dust forgiveness (`INVOICE_DUST_THRESHOLD = 0.01`,
+Settlement values are rounded to the currency's decimals at the boundary that
+produces them — the applied amounts a user enters, and every amount serialized
+to an external system. The columns themselves are bare NUMERIC and an invoice
+`balance` is read from a view rather than written by `post-payment`, so storage
+does not enforce this; the rounding does. Only internal GL journal lines carry
+scale 5. Invoice paid-status dust forgiveness (`INVOICE_DUST_THRESHOLD = 0.01`,
 `invoicing.models.ts`) and post-payment's `0.0001` unapplied-dust band are
 deliberate business behavior layered on top.
 

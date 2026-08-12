@@ -31,7 +31,7 @@
 | 11 | toFixed-as-arithmetic fixes (incl. exchange-rate bug) | `lib/methods.ts`, `update-exchange-rates.ts` |
 | 12 | Formatter sweep: raw Intl.NumberFormat + inline fraction digits | 17 files + supplier-part price UI redo |
 | 13 | PDF percent + MES quantity displays | documents pdf blocks, MES views |
-| 14 | NUMERIC type parser on pg pools | `lib/postgres/index.ts` (node branch) |
+| 14 | NUMERIC type parser on pg pools | `lib/postgres/index.ts` (both branches) |
 | 15 | Storage-scale widening (3 migrations: ledger first, purchasing cascade, tail) | migrations + RPC redeclarations |
 | 16 | Conformance checks (3) + baseline | `packages/checks` |
 | 17 | Rule doc + AGENTS.md | `.claude/rules/numeric-precision.md` |
@@ -391,10 +391,12 @@ type TaxFieldsProps = {
 };
 ```
 
-Dataflow (the entire point of the component — one-way):
+Dataflow (the entire point of the component — the pair is coupled BOTH ways, so
+whatever is stored is internally consistent):
 - **Percent edited** → `onChange({ percent: v, amount: applyRate(subtotal, v, currencyDecimals) })`
-- **Amount edited** → `onChange({ percent, amount: v })`. The percent is **never** recomputed from the amount. (The old bidirectional coupling let react-aria's blur clamp — currency inputs round to cents on `parse(format(x))` — overwrite a typed 6.25% with amount/subtotal = 6.22%.)
-- Percent input: `formatOptions={INPUT_FORMAT.rate}`, `minValue={0} maxValue={1} step={0.0001}`. Amount input: `formatOptions={INPUT_FORMAT.money(currency, currencyDecimals)}`, `minValue={0}`.
+- **Amount edited** → `onChange({ percent: subtotal > 0 ? round(v / subtotal) : percent, amount: v })`. The derived rate is rounded to internal scale so the stored value is exactly what the percent input renders.
+- Precision only flows cleanly one way: a rate carries more decimals than a settlement amount, so a rate derived back from an amount is limited by that amount's scale (0.56 on a 9.00 subtotal is 6.222%, not the 6.25% that produced it). That is inherent, and is NOT the old 6.25% → 6.22% corruption — that came from deriving the amount UNROUNDED, so the money input re-committed a changed value on blur and fed it back through the coupling. Deriving the amount through `applyRate` makes blur commit an identical value, which triggers nothing.
+- Percent input: `formatOptions={INPUT_FORMAT.rate}`, `minValue={0} maxValue={1}`, `step` from `INPUT_STEP.rate` (a step coarser than the field's scale SNAPS the committed value — `0.0001` truncated a typed 6.255% to 6.25%). Amount input: `formatOptions={INPUT_FORMAT.money(currency, currencyDecimals)}`, `minValue={0}`.
 - Base-change re-derivation (qty/price/shipping edits recompute amount from percent) remains the caller's `useEffect` — component is controlled/stateless. Labels via `useLingui` macro.
 
 **Adopt** (replace each hand-rolled percent/amount pair; keep each form's field names via props):
@@ -486,16 +488,16 @@ Leave untouched: `packages/viewer` (geometry), inspection-document geometry guar
 
 ## 14. NUMERIC type parser
 
-Reality of `lib/postgres/index.ts`: `import { Pool } from "pg"` resolves to **deno-postgres v0.17.0 under Deno** (via the `deno.json` import map) and **npm `pg` 8.x under Node** — one file, two drivers. `setTypeParser` exists only on npm pg.
+Reality of `lib/postgres/index.ts`: `import { Pool } from "pg"` resolves to **deno-postgres under Deno** (the `deno.json` import map pins `"pg": "jsr:@db/postgres@0.19.5"`) and **npm `pg` 8.x under Node** — one file, two drivers. `setTypeParser` is an npm-pg API and does not exist on deno-postgres.
 
-- **Node branch** (`packages/database/supabase/functions/lib/postgres/index.ts:73`): register once beside the pool construction — `import { types } from "pg"; types.setTypeParser(1700, (v: string) => Number(v));` guarded to the node path. This single registration covers every node Kysely consumer (jobs, ERP server) — they all reach pools through this file via `packages/database/src/client.ts`.
-- **Deno branch** (:66): deno-postgres has no `setTypeParser`. Check v0.17.0's decoder controls; if unavailable (likely), leave Deno reads as strings and keep the existing ad-hoc `Number(...)` coercions in edge functions — do NOT bump the driver in this PR. Document the asymmetry in the rule doc (change 17).
+- **Node branch**: register once beside the pool construction — `import { types } from "pg"; types.setTypeParser(1700, (v: string) => Number(v));` guarded to the node path. This single registration covers every node Kysely consumer (jobs, ERP server) — they all reach pools through this file via `packages/database/src/client.ts`.
+- **Deno branch**: deno-postgres 0.19.x exposes `controls.decoders` instead, keyed by OID — register `1700: (value: string) => Number(value)` there so NUMERIC decodes to a JS number and Deno matches Node. The decoder only fits the ClientOptions **object** form of the connection config, not the URI-string form, so the connection URL is parsed by hand at that site (sslmode mapping mirrors the driver's own). Both branches decoding means edge functions no longer receive NUMERIC as strings.
+- Existing ad-hoc `Number(...)` coercions in edge functions stay — they are harmless no-ops once both decoders are registered. `float8` columns still arrive as strings; only OID 1700 is covered.
 - Script `pg.Client` sites (`packages/checks/src/scripts/*`, `packages/dev/src/services/migrations.ts`) are read-only tooling — leave.
-- Leave existing `Number(...)` coercions in place everywhere (harmless no-ops on the node side).
 
 PostgREST/supabase-js reads are unaffected (already deserialize NUMERIC as JSON numbers).
 
-**Verify:** `pnpm exec turbo run typecheck --filter=@carbon/database`; `grep -rn "setTypeParser" packages --include="*.ts" | grep -v node_modules` → the node-branch hit.
+**Verify:** `pnpm exec turbo run typecheck --filter=@carbon/database`; `grep -rn "setTypeParser" packages --include="*.ts" | grep -v node_modules` → the node-branch hit; `grep -n "decoders" packages/database/supabase/functions/lib/postgres/index.ts` → the Deno-branch OID 1700 decoder.
 
 ## 15. Storage-scale widening (audit executed — three migrations)
 
@@ -540,7 +542,7 @@ Deploy note: `journalLine`, `itemLedger`, `costLedger`, `jobOperation`, `purchas
 
 In `packages/checks` (precedents: `sources/migrations.ts` loader, `conformance/no-numeric-precision.ts` check shape — `ConformanceCheck` with pure `scan`). Registration reality: `CONFORMANCE_CHECKS` runs over SQL migrations, `SERVER_CHECKS` over server TS via `loadServerFiles` — the two new TS checks apply to client AND server code, so they get their OWN source + array, not a ride on `SERVER_CHECKS` (whose globs/masking exist for server-only rules).
 
-- **Create** `src/sources/typescript.ts`: recursive `.ts`/`.tsx` loader over `apps/erp/app/modules`, `apps/erp/app/routes`, `apps/mes/app`, `packages/database/supabase/functions` (exclude `image-resizer`, `logo-resizer`), `packages/jobs/src`, `packages/documents/src/pdf`, `packages/documents/src/utils`; exclude tests. Prove coverage: grep one known-bad file into the scan (lesson: a check is only as good as its source glob).
+- **Create** `src/sources/typescript.ts`: recursive `.ts`/`.tsx` loader over `apps/erp/app/components`, `apps/erp/app/hooks`, `apps/erp/app/modules`, `apps/erp/app/routes`, `apps/mes/app`, `packages/database/supabase/functions` (exclude `image-resizer`, `logo-resizer`), `packages/ee/src`, `packages/jobs/src`, `packages/documents/src/pdf`, `packages/documents/src/utils`; exclude tests. The `components`/`hooks`/`ee` roots are not optional: `TaxFields.tsx`, the four formatter hooks, and the Xero serializer are the standard's own surface — `no-inline-fraction-digits` even carries per-file exclusions for the hooks, which are dead weight unless that root is scanned. Prove coverage: grep one known-bad file into the scan (lesson: a check is only as good as its source glob).
 - **Create** `src/conformance/no-derived-percent-column.ts` (SQL migrations source, register in `CONFORMANCE_CHECKS`): flag `"...Percent"`/`"...Rate"` columns `GENERATED ALWAYS AS` with `/` in the expression. Baseline the 5 historical migrations (`20241210214820`, `20250109000722`, `20250109034107`, `20250128195311`, `20250204164256`).
 - **Create** `src/conformance/no-raw-rounding.ts` (TS source): flag `Math.round(` / `Math.ceil(` / `Math.floor(` / `.toFixed(` per line. Message points to `@carbon/utils` + the rule doc.
 - **Create** `src/conformance/no-inline-fraction-digits.ts` (TS source): flag `minimumFractionDigits` / `maximumFractionDigits` — exclude `packages/utils/src/format.ts` and the formatter hooks. Message: "Pick a named kind from @carbon/utils format.ts (money/price/percent/quantity, INPUT_FORMAT.*) instead of passing digits."

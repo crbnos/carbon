@@ -73,6 +73,7 @@ export function LineItemsBlock({
 
         const netValue =
           (line.purchaseQuantity ?? 0) * (line.supplierUnitPrice ?? 0);
+        const taxPercentLabel = formatTaxPercent(line.taxPercent, locale);
 
         return (
           <View key={line.id}>
@@ -171,9 +172,9 @@ export function LineItemsBlock({
                       <Text style={tw("text-gray-600")}>
                         {numberFormatter.format(line.supplierTaxAmount ?? 0)}
                       </Text>
-                      {formatTaxPercent(line.taxPercent, locale) && (
+                      {taxPercentLabel && (
                         <Text style={tw("text-[6px] text-gray-400")}>
-                          {formatTaxPercent(line.taxPercent, locale)}
+                          {taxPercentLabel}
                         </Text>
                       )}
                     </View>

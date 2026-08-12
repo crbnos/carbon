@@ -6,16 +6,23 @@ import type { SqlFile } from "./migrations";
 // arithmetic or builds number formatters. The two image functions are pure
 // binary plumbing and the resizers' `Math.round` is pixel geometry.
 const TYPESCRIPT_ROOTS = [
+  "apps/erp/app/components",
+  "apps/erp/app/hooks",
   "apps/erp/app/modules",
   "apps/erp/app/routes",
   "apps/mes/app",
   "packages/database/supabase/functions",
+  "packages/ee/src",
   "packages/jobs/src",
   "packages/documents/src/pdf",
   "packages/documents/src/utils"
 ];
 
-const EXCLUDED_DIRS = new Set(["node_modules", "image-resizer", "logo-resizer"]);
+const EXCLUDED_DIRS = new Set([
+  "node_modules",
+  "image-resizer",
+  "logo-resizer"
+]);
 
 const isTest = (name: string) =>
   name.endsWith(".test.ts") ||

@@ -817,11 +817,11 @@ const PurchaseOrderLineForm = ({
                           <TaxFields
                             amountName="supplierTaxAmount"
                             percentName="taxPercent"
-                            subtotal={
-                              itemData.supplierUnitPrice *
-                                itemData.purchaseQuantity +
+                            subtotal={getLineSubtotal(
+                              itemData.supplierUnitPrice,
+                              itemData.purchaseQuantity,
                               itemData.supplierShippingCost
-                            }
+                            )}
                             currency={
                               routeData?.purchaseOrder?.currencyCode ??
                               company.baseCurrencyCode
@@ -1044,11 +1044,11 @@ const PurchaseOrderLineForm = ({
                             <TaxFields
                               amountName="supplierTaxAmount"
                               percentName="taxPercent"
-                              subtotal={
-                                indirectData.supplierUnitPrice *
-                                  indirectData.purchaseQuantity +
+                              subtotal={getLineSubtotal(
+                                indirectData.supplierUnitPrice,
+                                indirectData.purchaseQuantity,
                                 indirectData.supplierShippingCost
-                              }
+                              )}
                               currency={
                                 routeData?.purchaseOrder?.currencyCode ??
                                 company.baseCurrencyCode
