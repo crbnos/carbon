@@ -7,7 +7,6 @@ import {
   getDailyConsolidationBatchKey,
   getJournalPostingDecision,
   getNettedPositiveCents,
-  getPaymentPushDecision,
   getPositiveCents,
   getPullCursorDecision,
   getPullIdempotencyScope,
@@ -19,7 +18,6 @@ import {
   isClaimableConsolidationOperation,
   isDailyConsolidationMarker,
   isJournalEntryPostingEnabled,
-  isStatusTransitionEvent,
   type JournalPostingEventInput,
   MAX_RECONCILIATION_DRIFT_ENTRIES,
   mergePostingSyncReconciliation,
@@ -165,86 +163,6 @@ describe("getJournalPostingDecision", () => {
       journalEvent({ old: { id: "je_1" } })
     );
     expect(missingOld.action).toBe("skip");
-  });
-});
-
-// ── Payment push transition detection (Phase G) ─────────────────────────────
-function paymentEvent(
-  overrides: Partial<JournalPostingEventInput>
-): JournalPostingEventInput {
-  return {
-    operation: "UPDATE",
-    recordId: "pay_1",
-    new: { id: "pay_1", status: "Posted" },
-    old: { id: "pay_1", status: "Draft" },
-    ...overrides
-  };
-}
-
-describe("getPaymentPushDecision", () => {
-  it("enqueues the payment row id when status transitions Draft → Posted", () => {
-    expect(getPaymentPushDecision(paymentEvent({}))).toEqual({
-      action: "enqueue",
-      entityId: "pay_1"
-    });
-  });
-
-  it("enqueues when status transitions to Voided (echo the void)", () => {
-    const decision = getPaymentPushDecision(
-      paymentEvent({
-        new: { id: "pay_1", status: "Voided" },
-        old: { id: "pay_1", status: "Posted" }
-      })
-    );
-    expect(decision).toEqual({ action: "enqueue", entityId: "pay_1" });
-  });
-
-  it("enqueues a payment INSERTed born Posted", () => {
-    const decision = getPaymentPushDecision(
-      paymentEvent({ operation: "INSERT", old: null })
-    );
-    expect(decision).toEqual({ action: "enqueue", entityId: "pay_1" });
-  });
-
-  it("skips an INSERT of a Draft payment (the normal creation path)", () => {
-    const decision = getPaymentPushDecision(
-      paymentEvent({
-        operation: "INSERT",
-        new: { id: "pay_1", status: "Draft" },
-        old: null
-      })
-    );
-    expect(decision.action).toBe("skip");
-  });
-
-  it("skips a same-status UPDATE (an unrelated column touched on a Posted payment)", () => {
-    const decision = getPaymentPushDecision(
-      paymentEvent({
-        new: { id: "pay_1", status: "Posted", reference: "edited" },
-        old: { id: "pay_1", status: "Posted", reference: "original" }
-      })
-    );
-    expect(decision.action).toBe("skip");
-    if (decision.action === "skip") {
-      expect(decision.reason).toContain("did not change");
-    }
-  });
-
-  it("skips a transition to a non-push status", () => {
-    const decision = getPaymentPushDecision(
-      paymentEvent({
-        new: { id: "pay_1", status: "Draft" },
-        old: { id: "pay_1", status: "Posted" }
-      })
-    );
-    expect(decision.action).toBe("skip");
-  });
-
-  it("skips DELETEs", () => {
-    const decision = getPaymentPushDecision(
-      paymentEvent({ operation: "DELETE", new: null })
-    );
-    expect(decision.action).toBe("skip");
   });
 });
 
@@ -1528,56 +1446,5 @@ describe("shouldEnqueueMissingDocument", () => {
         `latest ${status} must not re-enqueue`
       ).toBe(false);
     }
-  });
-});
-
-// ── Cooldown-bypassing status transitions (v4 spec, F4/F5) ─────────────────
-
-describe("isStatusTransitionEvent", () => {
-  it("detects a status transition on an UPDATE", () => {
-    expect(
-      isStatusTransitionEvent({
-        operation: "UPDATE",
-        new: { id: "pi_1", status: "Open" },
-        old: { id: "pi_1", status: "Pending" }
-      })
-    ).toBe(true);
-  });
-
-  it("ignores same-status UPDATEs (the cooldown's legitimate territory)", () => {
-    expect(
-      isStatusTransitionEvent({
-        operation: "UPDATE",
-        new: { id: "pi_1", status: "Open", internalNotes: "edited" },
-        old: { id: "pi_1", status: "Open", internalNotes: "original" }
-      })
-    ).toBe(false);
-  });
-
-  it("ignores INSERTs and DELETEs", () => {
-    expect(
-      isStatusTransitionEvent({
-        operation: "INSERT",
-        new: { id: "pi_1", status: "Draft" },
-        old: null
-      })
-    ).toBe(false);
-    expect(
-      isStatusTransitionEvent({
-        operation: "DELETE",
-        new: null,
-        old: { id: "pi_1", status: "Open" }
-      })
-    ).toBe(false);
-  });
-
-  it("ignores rows with no status column at all", () => {
-    expect(
-      isStatusTransitionEvent({
-        operation: "UPDATE",
-        new: { id: "cust_1", name: "B" },
-        old: { id: "cust_1", name: "A" }
-      })
-    ).toBe(false);
   });
 });

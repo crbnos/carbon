@@ -1,6 +1,7 @@
 # Accounting Sync — Reconciler Unification (v5)
 
-**Status:** draft — awaiting Brad's veto
+**Status:** implemented (2026-08-12, Steps A–D) — see the changelog at the
+bottom for the two implementation deviations.
 **Date:** 2026-08-12
 **Builds on:** `.ai/specs/implemented/2026-08-11-accounting-sync-delivery-robustness.md`
 (v4 — implemented, live-verified). v2/document-representation are implemented
@@ -184,3 +185,22 @@ the decision).
   record demonstrated (`.ai/runs/2026-08-11-sync-robustness-run.md`).
 - Latency check: event→remote push still completes in seconds on the dev
   stack.
+
+## Changelog
+
+- **2026-08-12 — implemented (Steps A–D).** `reconcile.ts` (decision core) +
+  `reconcile-executor.ts` (batch executor) + `reconcile-golden.test.ts` (26
+  scenarios incl. FIX-1..4); the sweep and `events/sync.ts` both delegate;
+  `isStatusTransitionEvent` and `getPaymentPushDecision` deleted; journal
+  policy extracted to the shared `planJournalPostingFromState`; trigger
+  `"reconcile"` added (migration `20260812093418`). Deviations from the
+  draft:
+  1. **D3/Decision 2 (cooldown):** deleted from the outbound path as
+     specced (reconcile is never cooldown-gated), but the completed-row
+     cooldown REMAINS on the inbound/webhook entry points
+     (`sync-external-accounting`, pull-sweep enqueues) — inbound is a
+     non-goal here and doesn't route through the reconciler.
+  2. **D1 refinement:** a parked Failed/Warning document re-enqueues when
+     the row changed after the failure (`updatedAt > op.createdAt`) —
+     preserves the event path's fix-the-data-and-save retry without its
+     retry-on-any-touch churn (golden FIX-2).

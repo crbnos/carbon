@@ -125,3 +125,25 @@ The 22:45 sweep cron self-healed the original incident with zero manual interven
   `packages/jobs/AGENTS.md`) for: subscriptions convergence, Skipped semantics,
   outbound sweep, idempotency-key contract — same PR as the code, per
   keep-sources-in-sync.
+
+## v5 — reconciler unification ✅ (2026-08-12, spec Steps A–D)
+
+Spec: `.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md` (implemented).
+
+- **Step A** — `reconcile-golden.test.ts`: 26-scenario golden matrix pinning the
+  legacy→state-shaped translation; FIX-1..4 document every deliberate difference
+  (no Draft/mid-posting churn; changed-since-failure retry; updatedAt-vs-
+  lastSyncedAt replaces the cooldown; no void-echo enqueue).
+- **Step B** — `reconcile.ts` (pure `computeReconcileDecision`; journal policy via
+  the extracted shared `planJournalPostingFromState`) + `reconcile-executor.ts`
+  (batch-first `reconcileEntities`, one query per concern per type, trigger
+  `"reconcile"` — migration `20260812093418` widened the CHECK); the outbound
+  sweep now pages candidate refs and delegates every decision.
+- **Step C** — `events/sync.ts` is a hint dispatcher: table→ref→`reconcileEntities`
+  →drain. No per-table branches, no cooldown on this path, no transition routing.
+- **Step D** — deleted `isStatusTransitionEvent` + `getPaymentPushDecision` (+ 11
+  legacy tests, superseded by the golden matrix); rule + jobs AGENTS.md updated;
+  spec changelog records the two deviations (cooldown survives ONLY on the
+  inbound/webhook entry points; changed-since-failure document retry).
+- Verification: jobs 473 + ee 537 tests, typecheck jobs/ee/erp clean, migration
+  applied to the dev DB (CHECK includes 'reconcile').

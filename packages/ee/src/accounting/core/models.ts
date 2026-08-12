@@ -723,7 +723,9 @@ export const SyncOperationTriggerSchema = z.enum([
   "backfill",
   "manual",
   "posting",
-  "retry"
+  "retry",
+  // v5: state-derived reconcile decisions (never cooldown-gated)
+  "reconcile"
 ]);
 
 /**

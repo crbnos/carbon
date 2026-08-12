@@ -130,29 +130,6 @@ export type JournalPostingEventInput = {
   old: Record<string, unknown> | null;
 };
 
-/**
- * True when an UPDATE event's `status` column changed. Status transitions
- * on generic tables (documents, payments-adjacent rows) enqueue with the
- * non-cooldown "posting" trigger instead of "event": the 60s
- * completed-row cooldown exists to absorb bursty same-state edits, but a
- * status TRANSITION is a state change the ledger must never drop — the
- * observed failure was a Draft-edit op completing seconds before the
- * post-transition event, whose enqueue then died in the cooldown and left
- * the posted document unsynced (v4 spec F4/F5).
- */
-export function isStatusTransitionEvent(event: {
-  operation: "INSERT" | "UPDATE" | "DELETE" | "TRUNCATE";
-  new: Record<string, unknown> | null;
-  old: Record<string, unknown> | null;
-}): boolean {
-  if (event.operation !== "UPDATE") return false;
-  const oldStatus =
-    typeof event.old?.status === "string" ? event.old.status : null;
-  const newStatus =
-    typeof event.new?.status === "string" ? event.new.status : null;
-  return oldStatus !== null && newStatus !== null && oldStatus !== newStatus;
-}
-
 export type JournalPostingDecision =
   | { action: "enqueue"; entityId: string; reversal: boolean }
   | { action: "skip"; reason: string };
@@ -257,76 +234,6 @@ export function isJournalEntryPostingEnabled(
   return resolveSyncConfig(integrationMetadata).entities.journalEntry.enabled;
 }
 
-export type PaymentPushDecision =
-  | { action: "enqueue"; entityId: string }
-  | { action: "skip"; reason: string };
-
-/**
- * Decide whether a `payment` table event is an outbound push event (Phase G).
- * A Carbon-born payment pushes to the provider when it reaches a settled state:
- *
- * - INSERT born `status='Posted'` (defensive — payments are created Draft then
- *   posted, but a directly-inserted Posted payment still counts).
- * - UPDATE whose status MOVED to 'Posted' (the normal path: post-payment flips
- *   Draft→Posted) or to 'Voided' (echo the void for a Carbon-pushed payment).
- *
- * Same-status UPDATEs and every other operation skip. The enqueued `entityId`
- * is the Carbon payment row id — the push syncer reads the payment directly and
- * decides per-record (via the payment mapping) whether it is Carbon-born (push)
- * or provider-known (skip), which is the loop guard against pulled payments.
- */
-export function getPaymentPushDecision(
-  event: JournalPostingEventInput
-): PaymentPushDecision {
-  if (event.operation === "INSERT") {
-    const insertedStatus =
-      typeof event.new?.status === "string" ? event.new.status : null;
-    if (insertedStatus !== "Posted") {
-      return {
-        action: "skip",
-        reason: `Payment INSERT with status '${insertedStatus ?? "unknown"}' is not a push event (only payments born Posted enqueue on INSERT)`
-      };
-    }
-    return { action: "enqueue", entityId: event.recordId };
-  }
-
-  if (event.operation !== "UPDATE") {
-    return {
-      action: "skip",
-      reason: `Payment ${event.operation} is not a push event (payments enqueue on INSERT born Posted or when an UPDATE moves status to Posted or Voided)`
-    };
-  }
-
-  const newStatus =
-    typeof event.new?.status === "string" ? event.new.status : null;
-  const oldStatus =
-    typeof event.old?.status === "string" ? event.old.status : null;
-
-  if (!newStatus || !oldStatus) {
-    return {
-      action: "skip",
-      reason:
-        "Payment UPDATE event is missing the old or new status; cannot detect a push transition"
-    };
-  }
-
-  if (newStatus === oldStatus) {
-    return {
-      action: "skip",
-      reason: `Payment status did not change (still '${newStatus}'); not a push transition`
-    };
-  }
-
-  if (newStatus === "Posted" || newStatus === "Voided") {
-    return { action: "enqueue", entityId: event.recordId };
-  }
-
-  return {
-    action: "skip",
-    reason: `Payment status transitioned to '${newStatus}', which is not a push status (only Posted and Voided enqueue)`
-  };
-}
-
 /**
  * Resolve which AR/AP side a Payment journal's lines touch, from the
  * company's control accounts (accountDefault.receivablesAccount /
@@ -423,8 +330,10 @@ export async function planJournalPostingOperation(args: {
         })
       : null;
 
-  const decision = getJournalPostingPolicyDecision({
+  return planJournalPostingFromState({
+    journalId: args.event.recordId,
     sourceType,
+    reversal: transition.reversal,
     settings,
     docSync: {
       invoiceEnabled: syncConfig.entities.invoice.enabled,
@@ -434,10 +343,40 @@ export async function planJournalPostingOperation(args: {
     inventoryAdjustmentEntitySyncEnabled:
       syncConfig.entities.inventoryAdjustment.enabled
   });
+}
+
+/**
+ * The STATE-shaped core of the journal posting plan (v5 reconciler): given a
+ * posted journal's identity and the resolved settings — no event envelope —
+ * route through the v3 policy decision and build the push/terminal request.
+ * `planJournalPostingOperation` (event path, backfill) and the reconcile
+ * decision core both delegate here, so the policy routing can never diverge
+ * between callers. Pure: `paymentFamily` is resolved by the caller when the
+ * source type is Payment and the AR/AP family modes diverge.
+ */
+export function planJournalPostingFromState(args: {
+  journalId: string;
+  sourceType: string | null;
+  reversal: boolean;
+  settings: PostingSyncSettings;
+  docSync: { invoiceEnabled: boolean; billEnabled: boolean };
+  paymentFamily: "ar" | "ap" | null;
+  inventoryAdjustmentEntitySyncEnabled: boolean;
+}): JournalPostingOperationPlan {
+  const entityId = getJournalEntrySyncEntityId(args.journalId, args.reversal);
+
+  const decision = getJournalPostingPolicyDecision({
+    sourceType: args.sourceType,
+    settings: args.settings,
+    docSync: args.docSync,
+    paymentFamily: args.paymentFamily,
+    inventoryAdjustmentEntitySyncEnabled:
+      args.inventoryAdjustmentEntitySyncEnabled
+  });
 
   const baseMetadata = {
-    ...(transition.reversal ? { reversal: true } : {}),
-    ...(sourceType ? { sourceType } : {})
+    ...(args.reversal ? { reversal: true } : {}),
+    ...(args.sourceType ? { sourceType: args.sourceType } : {})
   };
 
   if (decision.kind === "push") {
@@ -445,7 +384,7 @@ export async function planJournalPostingOperation(args: {
       action: "push",
       request: {
         entityType: "journalEntry",
-        entityId: transition.entityId,
+        entityId,
         direction: "push-to-accounting",
         metadata: { ...baseMetadata, granularity: decision.granularity }
       }
@@ -457,7 +396,7 @@ export async function planJournalPostingOperation(args: {
       action: "terminal",
       request: {
         entityType: "journalEntry",
-        entityId: transition.entityId,
+        entityId,
         direction: "push-to-accounting",
         status: "Excluded",
         errorCode: decision.reason,
@@ -476,7 +415,7 @@ export async function planJournalPostingOperation(args: {
     action: "terminal",
     request: {
       entityType: "journalEntry",
-      entityId: transition.entityId,
+      entityId,
       direction: "push-to-accounting",
       status: "Warning",
       errorCode: decision.code,

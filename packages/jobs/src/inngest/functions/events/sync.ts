@@ -1,3 +1,24 @@
+/**
+ * SYNC event handler — v5 reconciler shape
+ * (.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md, D3).
+ *
+ * Events are HINTS, not decisions: a DB write on a subscribed table means
+ * "reconcile this entity now". The handler maps table → entity type,
+ * dedupes the batch into refs, and hands them to the SAME
+ * `reconcileEntities` executor the outbound sweep uses — the decision of
+ * whether anything should happen lives in ONE place
+ * (computeReconcileDecision), derived from current state, never from the
+ * event's old/new delta.
+ *
+ * Deleted with v5 (their failure classes are unrepresentable now):
+ * - the completed-row cooldown on this path (an unchanged entity reconciles
+ *   to nothing by state; a changed one enqueues immediately);
+ * - `isStatusTransitionEvent` routing (no cooldown to bypass);
+ * - the per-table journal/payment decision branches (state-shaped in D1).
+ *
+ * DELETEs remain logged-and-skipped (DELETE sync is unimplemented; a
+ * deleted row also reconciles to nothing by construction).
+ */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   getPostgresClient,
@@ -5,7 +26,6 @@ import {
 } from "@carbon/database/client";
 import { EventSchema } from "@carbon/database/event";
 import {
-  type BatchSyncResult,
   getAccountingIntegration,
   getProviderIntegration,
   ProviderID
@@ -17,16 +37,13 @@ import { inngest } from "../../client";
 import {
   type DrainSummary,
   drainSyncOperations,
-  enqueueSyncOperations,
-  getPaymentPushDecision,
-  getSyncOperationActor,
-  insertTerminalSyncOperations,
-  isJournalEntryPostingEnabled,
-  isStatusTransitionEvent,
-  planJournalPostingOperation,
-  type SyncOperationRequest,
-  type TerminalSyncOperationRequest
+  getSyncOperationActor
 } from "../integrations/accounting-sync-operations";
+import type { ReconcileRef } from "../integrations/reconcile";
+import {
+  type ReconcileSummary,
+  reconcileEntities
+} from "../integrations/reconcile-executor";
 import { getEntityTypeFromTable } from "./sync-tables";
 
 const SyncRecordSchema = z.object({
@@ -56,11 +73,17 @@ export const syncFunction = inngest.createFunction(
 
     // Scopes the ledger idempotency keys to this delivery: Inngest retries
     // reuse the same event id (absorbed), later deliveries get fresh keys
-    const enqueueScope = event.id ?? runId;
+    const reconcileScope = event.id ?? runId;
 
     const results = {
-      enqueued: 0,
-      success: [] as BatchSyncResult[],
+      reconciled: [] as Array<
+        { companyId: string; provider: string } & ReconcileSummary
+      >,
+      drains: [] as Array<{
+        companyId: string;
+        provider: string;
+        drain: DrainSummary["groups"];
+      }>,
       failed: [] as { recordId: string; error: string }[],
       skipped: [] as { recordId: string; reason: string }[]
     };
@@ -91,21 +114,22 @@ export const syncFunction = inngest.createFunction(
         continue;
       }
 
-      // Step 1: enqueue one ledger operation per INSERT/UPDATE record
-      // (checkpointed so a retry replays the enqueue result)
-      type EnqueueStepSummary = {
-        enqueued: number;
+      // Step 1: reconcile the hinted entities (checkpointed so a retry
+      // replays the outcome; enqueue/terminal writes are idempotent by
+      // ledger key, so re-runs cannot duplicate work)
+      type ReconcileStepSummary = {
         aborted: boolean;
+        summary: ReconcileSummary | null;
         failed: { recordId: string; error: string }[];
         skipped: { recordId: string; reason: string }[];
       };
 
-      const enqueueSummary = (await step.run(
-        `enqueue-${companyId}-${provider}`,
+      const reconcileSummary = (await step.run(
+        `reconcile-${companyId}-${provider}`,
         async () => {
-          const stepSummary: EnqueueStepSummary = {
-            enqueued: 0,
+          const stepSummary: ReconcileStepSummary = {
             aborted: false,
+            summary: null,
             failed: [],
             skipped: []
           };
@@ -117,26 +141,10 @@ export const syncFunction = inngest.createFunction(
               provider as ProviderID
             );
 
-            // Posting sync is opt-in per company: journal events enqueue
-            // only when the resolved sync config enables journalEntry
-            const journalEntryPostingEnabled = isJournalEntryPostingEnabled(
-              integration.metadata
-            );
-
-            const requests: SyncOperationRequest[] = [];
-            // Trigger "posting" bypasses the 60s completed-row cooldown
-            // (the ledger trigger is per enqueue call, not per request).
-            // It carries journal posting transitions AND generic-table
-            // status transitions — a state change must never be dropped
-            // by a cooldown that exists to absorb same-state edit bursts.
-            const postingRequests: SyncOperationRequest[] = [];
-            // Decision-time dispositions (Excluded/Warning) — recorded so
-            // every posted journal is accounted for (spec I1)
-            const terminalRequests: TerminalSyncOperationRequest[] = [];
-
+            const seen = new Set<string>();
+            const refs: ReconcileRef[] = [];
             for (const r of records) {
               const entityType = getEntityTypeFromTable(r.event.table);
-
               if (!entityType) {
                 stepSummary.skipped.push({
                   recordId: r.event.recordId,
@@ -144,69 +152,6 @@ export const syncFunction = inngest.createFunction(
                 });
                 continue;
               }
-
-              // Journal rows enqueue when INSERTed born Posted (the post-*
-              // edge functions never UPDATE from Draft; reversal inserts
-              // skip via reversalOfId) or when an UPDATE transitions status
-              // to Posted/Reversed — non-transition UPDATEs and DELETEs skip.
-              // Posting events then route through the v3 policy decision:
-              // push, or a recorded terminal disposition.
-              if (entityType === "journalEntry") {
-                if (!journalEntryPostingEnabled) {
-                  stepSummary.skipped.push({
-                    recordId: r.event.recordId,
-                    reason:
-                      "Posting sync (journalEntry) is disabled in the integration's sync config"
-                  });
-                  continue;
-                }
-
-                const plan = await planJournalPostingOperation({
-                  client,
-                  companyId,
-                  event: r.event,
-                  integrationMetadata: integration.metadata
-                });
-
-                if (plan.action === "skip") {
-                  stepSummary.skipped.push({
-                    recordId: r.event.recordId,
-                    reason: plan.reason
-                  });
-                  continue;
-                }
-
-                if (plan.action === "push") {
-                  postingRequests.push(plan.request);
-                } else {
-                  terminalRequests.push(plan.request);
-                }
-                continue;
-              }
-
-              // Payment rows push OUTBOUND (Phase G) only on a transition to
-              // Posted/Voided — never on the generic INSERT/UPDATE path, which
-              // would re-push on every Draft edit. The push syncer decides
-              // per-record whether the payment is Carbon-born (push) or
-              // provider-known (skip) via the payment mapping.
-              if (entityType === "payment") {
-                const decision = getPaymentPushDecision(r.event);
-                if (decision.action === "skip") {
-                  stepSummary.skipped.push({
-                    recordId: r.event.recordId,
-                    reason: decision.reason
-                  });
-                  continue;
-                }
-                requests.push({
-                  entityType: "payment",
-                  entityId: decision.entityId,
-                  direction: "push-to-accounting"
-                });
-                continue;
-              }
-
-              // Handle DELETEs (log for now, not yet implemented in syncers)
               if (r.event.operation === "DELETE") {
                 stepSummary.skipped.push({
                   recordId: r.event.recordId,
@@ -214,72 +159,33 @@ export const syncFunction = inngest.createFunction(
                 });
                 continue;
               }
-
               if (
                 r.event.operation !== "INSERT" &&
                 r.event.operation !== "UPDATE"
               ) {
                 continue;
               }
-
-              // INSERTs and UPDATEs push to accounting. Status
-              // transitions ride the non-cooldown "posting" trigger so a
-              // document posted within 60s of its previous sync (e.g.
-              // created-then-posted) is never swallowed by the cooldown.
-              const target = isStatusTransitionEvent(r.event)
-                ? postingRequests
-                : requests;
-              target.push({
-                entityType,
-                entityId: r.event.recordId,
-                direction: "push-to-accounting"
+              const refKey = `${entityType}:${r.event.recordId}`;
+              if (seen.has(refKey)) continue;
+              seen.add(refKey);
+              refs.push({
+                entityType: entityType as ReconcileRef["entityType"],
+                entityId: r.event.recordId
               });
             }
 
-            const outcomes = [
-              ...(await enqueueSyncOperations(client, {
-                companyId,
-                integration: provider,
-                trigger: "event",
-                createdBy: getSyncOperationActor(integration),
-                scope: enqueueScope,
-                requests
-              })),
-              ...(await enqueueSyncOperations(client, {
-                companyId,
-                integration: provider,
-                trigger: "posting",
-                createdBy: getSyncOperationActor(integration),
-                scope: enqueueScope,
-                requests: postingRequests
-              })),
-              ...(await insertTerminalSyncOperations(client, {
-                companyId,
-                integration: provider,
-                trigger: "posting",
-                createdBy: getSyncOperationActor(integration),
-                scope: enqueueScope,
-                requests: terminalRequests
-              }))
-            ];
-
-            for (const outcome of outcomes) {
-              if (outcome.outcome === "enqueued") {
-                stepSummary.enqueued++;
-              } else if (outcome.outcome === "cooldown") {
-                stepSummary.skipped.push({
-                  recordId: outcome.entityId,
-                  reason: "Synced within the cooldown window"
-                });
-              } else {
-                stepSummary.failed.push({
-                  recordId: outcome.entityId,
-                  error: outcome.error ?? "Failed to enqueue sync operation"
-                });
-              }
-            }
+            stepSummary.summary = await reconcileEntities({
+              client,
+              database: kysely,
+              companyId,
+              providerId: provider,
+              integrationMetadata: integration.metadata,
+              createdBy: getSyncOperationActor(integration),
+              scope: reconcileScope,
+              refs
+            });
           } catch (error) {
-            logger.error(`Failed to enqueue sync operations for ${key}`, {
+            logger.error(`Failed to reconcile sync events for ${key}`, {
               error
             });
             stepSummary.aborted = true;
@@ -293,16 +199,22 @@ export const syncFunction = inngest.createFunction(
 
           return stepSummary;
         }
-      )) as EnqueueStepSummary;
+      )) as ReconcileStepSummary;
 
-      results.enqueued += enqueueSummary.enqueued;
-      results.failed.push(...enqueueSummary.failed);
-      results.skipped.push(...enqueueSummary.skipped);
+      results.failed.push(...reconcileSummary.failed);
+      results.skipped.push(...reconcileSummary.skipped);
+      if (reconcileSummary.summary) {
+        results.reconciled.push({
+          companyId,
+          provider,
+          ...reconcileSummary.summary
+        });
+      }
 
       // The integration could not be resolved — there is nothing to drain
       // for this group (matches the pre-ledger behavior of recording the
       // failure without failing the run)
-      if (enqueueSummary.aborted) continue;
+      if (reconcileSummary.aborted) continue;
 
       // Step 2: drain — claim Pending operations (including UI retries and
       // stale In Flight rows) and run the entity syncers. A throw re-runs
@@ -343,11 +255,15 @@ export const syncFunction = inngest.createFunction(
         });
       }
 
-      results.success.push(...drainSummary.groups.map((g) => g.result));
+      results.drains.push({
+        companyId,
+        provider,
+        drain: drainSummary.groups
+      });
     }
 
     logger.info("Sync function completed", {
-      successCount: results.success.reduce((acc, r) => acc + r.successCount, 0),
+      reconciled: results.reconciled.length,
       failedCount: results.failed.length,
       skippedCount: results.skipped.length
     });
