@@ -488,7 +488,14 @@ function usesCreatedByDiscriminator(
     closeParen,
     nextExport === -1 ? content.length : nextExport
   );
-  return body.includes('"createdBy" in');
+  return stripComments(body).includes('"createdBy" in');
+}
+
+// The `:` guard keeps `https://` intact.
+function stripComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
 }
 
 function addOperationArg(schema: Record<string, unknown>): void {

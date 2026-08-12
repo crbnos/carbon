@@ -69,11 +69,10 @@ function enrichWithAuthContext(
     ...(value as Record<string, unknown>)
   };
 
-  if (
-    fields.includes("createdBy") &&
-    operation !== "update" &&
-    !("createdBy" in enriched)
-  ) {
+  // A caller-supplied createdBy would send the service down its insert branch.
+  if (operation === "update") {
+    delete enriched.createdBy;
+  } else if (fields.includes("createdBy") && !("createdBy" in enriched)) {
     enriched.createdBy = context.userId;
   }
   if (fields.includes("updatedBy")) {
@@ -90,21 +89,24 @@ function enrichWithAuthContext(
 }
 
 // Pulls the MCP-only `_operation` flag out of the args, top level or nested.
+// Returns every value it found so the caller can reject contradictory ones.
 function extractOperation(args: Record<string, any> | undefined): {
-  operation: McpOperation | undefined;
+  operations: string[];
   args: Record<string, any> | undefined;
 } {
-  if (!args) return { operation: undefined, args };
+  if (!args) return { operations: [], args };
 
-  let operation = args._operation as McpOperation | undefined;
+  const operations: string[] = [];
   const cleaned: Record<string, any> = {};
+
+  if (args._operation !== undefined) operations.push(String(args._operation));
 
   for (const [key, value] of Object.entries(args)) {
     if (key === "_operation") continue;
     if (value && typeof value === "object" && !Array.isArray(value)) {
       const { _operation, ...rest } = value as Record<string, any>;
       if (_operation !== undefined) {
-        operation = operation ?? (_operation as McpOperation);
+        operations.push(String(_operation));
         cleaned[key] = rest;
         continue;
       }
@@ -112,7 +114,7 @@ function extractOperation(args: Record<string, any> | undefined): {
     cleaned[key] = value;
   }
 
-  return { operation, args: cleaned };
+  return { operations, args: cleaned };
 }
 
 export async function executeFunction(
@@ -133,7 +135,7 @@ export async function executeFunction(
   const rawArgs = args && typeof args === "object" ? args : undefined;
 
   // Strip before use — the branches below hand args straight to the service.
-  const { operation: requestedOperation, args: normalizedArgs } =
+  const { operations: requestedOperations, args: normalizedArgs } =
     extractOperation(rawArgs);
 
   if (isMcpBlockedTool(functionName)) {
@@ -184,6 +186,14 @@ export async function executeFunction(
       (toolMeta as any)?.schema?.properties?._operation
     );
 
+    const distinctOperations = [...new Set(requestedOperations)];
+    if (needsOperation && distinctOperations.length > 1) {
+      return {
+        success: false,
+        error: `${functionName} received conflicting _operation values (${distinctOperations.join(", ")}).`
+      };
+    }
+    const requestedOperation = distinctOperations[0];
     if (
       needsOperation &&
       requestedOperation !== "create" &&
@@ -194,7 +204,9 @@ export async function executeFunction(
         error: `${functionName} requires _operation to be "create" (insert a new record) or "update" (modify an existing one).`
       };
     }
-    const operation = needsOperation ? requestedOperation : undefined;
+    const operation = needsOperation
+      ? (requestedOperation as McpOperation)
+      : undefined;
 
     // Build arguments array based on parameter names
     const functionArgs: any[] = [];
