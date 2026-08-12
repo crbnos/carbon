@@ -225,7 +225,7 @@ const BulkInviteEmployeesModal = () => {
         >
           <ModalHeader>
             <ModalTitle>
-              <Trans>Invite Multiple Employees</Trans>
+              <Trans>Invite Employees</Trans>
             </ModalTitle>
           </ModalHeader>
 
@@ -245,7 +245,7 @@ const BulkInviteEmployeesModal = () => {
                 <Trans>Cancel</Trans>
               </Button>
               <Submit isLoading={formFetcher.state !== "idle"}>
-                <Trans>Invite All</Trans>
+                <Trans>Invite</Trans>
               </Submit>
             </HStack>
           </ModalFooter>

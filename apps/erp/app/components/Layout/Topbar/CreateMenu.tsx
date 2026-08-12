@@ -107,7 +107,7 @@ function useCreate(): Route[] {
     if (permissions.can("create", "users")) {
       links.push({
         name: t`Employee`,
-        to: path.to.newEmployee,
+        to: path.to.bulkInviteEmployees,
         icon: <LuUsers />
       });
     }

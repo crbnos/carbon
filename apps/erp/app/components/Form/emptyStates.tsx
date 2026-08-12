@@ -137,7 +137,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       return {
         module: "users",
         action: "create",
-        route: path.to.newEmployee,
+        route: path.to.bulkInviteEmployees,
         noun: t`employee`,
         pluralNoun: t`employees`,
         moduleLabel: t`users`

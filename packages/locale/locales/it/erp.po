@@ -8383,6 +8383,8 @@ msgstr "Invita tutti"
 
 msgid "Invite Multiple Employees"
 msgstr "Invita più dipendenti"
+msgid "Invite Employees"
+msgstr ""
 
 msgid "Invited"
 msgstr "Invitato"
