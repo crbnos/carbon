@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
@@ -9,6 +10,106 @@ import { sanitize } from "~/utils/supabase";
 import type { CompanyPermission, UserSelectGroupMembers } from "./types";
 
 const logger = getLogger("erp", "users");
+
+/**
+ * The ITAR gate: does a valid, unexpired entity Rider acceptance exist for this
+ * company, and a valid user attestation for this user? Both are required before
+ * a person can enter a controlled environment.
+ */
+export async function getItarCertificationStatus(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string
+): Promise<{ entityCertified: boolean; userCertified: boolean }> {
+  const now = datetime.timestamp();
+
+  const [entity, user] = await Promise.all([
+    client
+      .from("itarCertification")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("type", "entity")
+      .gt("expiresAt", now)
+      .limit(1)
+      .maybeSingle(),
+    client
+      .from("itarCertification")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("type", "user")
+      .eq("userId", userId)
+      .gt("expiresAt", now)
+      .limit(1)
+      .maybeSingle()
+  ]);
+
+  return {
+    entityCertified: Boolean(entity.data),
+    userCertified: Boolean(user.data)
+  };
+}
+
+/**
+ * Compliance report source: every active employee with their latest ITAR
+ * certification (version / date / expiry). One `.in()` lookup, no N+1. Last
+ * login is layered on in the route from the Supabase Auth admin API.
+ */
+export async function getItarCertificationReport(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const employees = await client
+    .from("employees")
+    .select("id, name, email")
+    .eq("companyId", companyId);
+
+  if (employees.error || !employees.data) {
+    return { data: null, error: employees.error };
+  }
+
+  const userIds = employees.data.map((e) => e.id).filter(Boolean) as string[];
+
+  const certs = await client
+    .from("itarCertification")
+    .select("userId, docVersion, certifiedAt, expiresAt")
+    .eq("companyId", companyId)
+    .eq("type", "user")
+    .in("userId", userIds)
+    .order("certifiedAt", { ascending: false });
+
+  if (certs.error) {
+    return { data: null, error: certs.error };
+  }
+
+  // First row per user is the latest (ordered desc above).
+  const latestByUser = new Map<
+    string,
+    { docVersion: string; certifiedAt: string; expiresAt: string }
+  >();
+  for (const cert of certs.data ?? []) {
+    if (cert.userId && !latestByUser.has(cert.userId)) {
+      latestByUser.set(cert.userId, {
+        docVersion: cert.docVersion,
+        certifiedAt: cert.certifiedAt,
+        expiresAt: cert.expiresAt
+      });
+    }
+  }
+
+  const data = employees.data.map((employee) => {
+    const cert = employee.id ? latestByUser.get(employee.id) : undefined;
+    return {
+      id: employee.id,
+      name: employee.name,
+      email: employee.email,
+      certVersion: cert?.docVersion ?? null,
+      certifiedAt: cert?.certifiedAt ?? null,
+      expiresAt: cert?.expiresAt ?? null
+    };
+  });
+
+  return { data, error: null };
+}
 
 export async function deleteEmployeeType(
   client: SupabaseClient<Database>,

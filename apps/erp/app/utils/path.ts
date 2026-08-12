@@ -1219,6 +1219,7 @@ export const path = {
     issueTypes: `${x}/quality/issue-types`,
     issueWorkflow: (id: string) => generatePath(`${x}/issue-workflow/${id}`),
     issueWorkflows: `${x}/quality/issue-workflows`,
+    itarCertifications: `${x}/settings/itar-certifications`,
     itemCostUpdate: (id: string) => generatePath(`${x}/items/cost/${id}`),
     itemPostingGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
     itemPostingGroups: `${x}/items/groups`,

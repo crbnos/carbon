@@ -236,6 +236,15 @@ const itarEnvironment = getEnv("CONTROLLED_ENVIRONMENT", {
 
 export const CONTROLLED_ENVIRONMENT = parseBoolean(itarEnvironment, false);
 
+// Carbon GovCloud Rider metadata. These are the authoritative `docVersion` /
+// `docHash` stamped onto every ITAR certification, and the target of the
+// "View the full Rider" link. `ITAR_RIDER_SHA256` is the sha256 of the final
+// Rider text — Brad fills this in when the Rider PDF is added to the repo. Until
+// then it is a loud placeholder so the value is obviously not real.
+export const ITAR_RIDER_VERSION = "1.0";
+export const ITAR_RIDER_SHA256 = "PLACEHOLDER_BRAD_FILLS_ON_PDF_ADD";
+export const ITAR_RIDER_PDF_PATH = "https://carbon.ms/itar-rider.pdf";
+
 export const ONSHAPE_CLIENT_ID = getEnv("ONSHAPE_CLIENT_ID", {
   isRequired: false
 });

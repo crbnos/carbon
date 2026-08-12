@@ -2748,11 +2748,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "Centralized Billing Address"
 
+msgid "Cert Version"
+msgstr "Cert Version"
+
 msgid "Certificate Number"
 msgstr "Certificate Number"
 
 msgid "Certificate uploaded"
 msgstr "Certificate uploaded"
+
+msgid "Certified"
+msgstr "Certified"
 
 msgid "Chain"
 msgstr "Chain"
@@ -7242,6 +7248,9 @@ msgstr "Hypercare: intense support for the first weeks"
 msgid "I (reduced)"
 msgstr "I (reduced)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+
 msgid "I'm Still Working"
 msgstr "I'm Still Working"
 
@@ -7630,6 +7639,9 @@ msgstr "Inventory Valuation"
 msgid "Invite"
 msgstr "Invite"
 
+msgid "Invite Expired"
+msgstr "Invite Expired"
+
 msgid "Invited"
 msgstr "Invited"
 
@@ -7788,6 +7800,9 @@ msgstr "Issued Date"
 
 msgid "Issues"
 msgstr "Issues"
+
+msgid "ITAR Certifications"
+msgstr "ITAR Certifications"
 
 msgid "item"
 msgstr "item"
@@ -8045,6 +8060,9 @@ msgstr "Last day"
 
 msgid "Last Fiscal Year"
 msgstr "Last Fiscal Year"
+
+msgid "Last Login"
+msgstr "Last Login"
 
 msgid "Last Month"
 msgstr "Last Month"
@@ -9754,6 +9772,9 @@ msgstr "Normal"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
+
+msgid "Not certified"
+msgstr "Not certified"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
@@ -11870,6 +11891,9 @@ msgstr "Reports"
 
 msgid "Reprint"
 msgstr "Reprint"
+
+msgid "Request a new invite"
+msgstr "Request a new invite"
 
 msgid "Request access"
 msgstr "Request access"
@@ -14842,11 +14866,18 @@ msgstr "This information will be visible to all users, so be careful what you sh
 msgid "this inspection plan"
 msgstr "this inspection plan"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "This is a unique identifier for the webhook"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 
 msgid "This is the month your fiscal year starts."
 msgstr "This is the month your fiscal year starts."
@@ -15365,6 +15396,9 @@ msgstr "Type:"
 
 msgid "Types"
 msgstr "Types"
+
+msgid "U.S. Person Attestation"
+msgstr "U.S. Person Attestation"
 
 msgid "Unapplied"
 msgstr "Unapplied"

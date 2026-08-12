@@ -1,9 +1,18 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import {
+  getRequestMeta,
+  itarEntityCertificationValidator,
+  itarUserCertificationValidator,
+  recordItarCertification
+} from "~/services/itar.service";
+
+const logger = getLogger("mes", "acknowledge");
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
@@ -32,21 +41,66 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "University acknowledged" };
   }
 
-  if (intent === "itar") {
-    const updateResult = await client
-      .from("user")
-      .update({
-        acknowledgedITAR: true
-      })
-      .eq("id", userId);
+  if (intent === "itar-entity") {
+    const parsed = itarEntityCertificationValidator.safeParse({
+      authorityToBind: formData.get("authorityToBind") === "on",
+      acceptRider: formData.get("acceptRider") === "on",
+      fullLegalName: formData.get("fullLegalName"),
+      title: formData.get("title"),
+      complianceContact: formData.get("complianceContact")
+    });
 
-    if (updateResult.error) {
-      return {
-        success: false,
-        message: "Failed to update ITAR acknowledgement"
-      };
+    if (!parsed.success) {
+      return { success: false, message: parsed.error.issues[0].message };
     }
 
-    return { success: true, message: "ITAR acknowledged" };
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    const { error } = await recordItarCertification({
+      companyId,
+      userId,
+      type: "entity",
+      fullLegalName: parsed.data.fullLegalName,
+      title: parsed.data.title,
+      complianceContact: parsed.data.complianceContact,
+      ipAddress,
+      userAgent
+    });
+
+    if (error) {
+      logger.error(`[acknowledge] Failed to record entity cert:`, error);
+      return { success: false, message: "Failed to record certification" };
+    }
+
+    return { success: true, message: "Rider accepted" };
+  }
+
+  if (intent === "itar-user") {
+    const parsed = itarUserCertificationValidator.safeParse({
+      certifyUsPerson: formData.get("certifyUsPerson") === "on",
+      agreeNotify: formData.get("agreeNotify") === "on",
+      understandPenalty: formData.get("understandPenalty") === "on",
+      fullLegalName: formData.get("fullLegalName")
+    });
+
+    if (!parsed.success) {
+      return { success: false, message: parsed.error.issues[0].message };
+    }
+
+    const { ipAddress, userAgent } = getRequestMeta(request);
+    const { error } = await recordItarCertification({
+      companyId,
+      userId,
+      type: "user",
+      fullLegalName: parsed.data.fullLegalName,
+      ipAddress,
+      userAgent
+    });
+
+    if (error) {
+      logger.error(`[acknowledge] Failed to record user cert:`, error);
+      return { success: false, message: "Failed to record certification" };
+    }
+
+    return { success: true, message: "Certification recorded" };
   }
 }

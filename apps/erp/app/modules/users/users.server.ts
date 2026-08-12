@@ -1,4 +1,4 @@
-import { error, success } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT, error, success } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash, requireAuthSession } from "@carbon/auth/session.server";
@@ -9,6 +9,7 @@ import {
 } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
+import { now, parseAbsolute } from "@internationalized/date";
 
 // Re-exported, not reimplemented: this module used to carry a near-identical
 // copy that (a) missed the canonical version's cache TTL and (b) bypassed its
@@ -37,6 +38,21 @@ import { insertEmployeeJob } from "../people/people.service";
 
 const logger = getLogger("erp", "users");
 
+/**
+ * Controlled environments (ITAR) expire invites 7 days after creation. Computed
+ * at read time — no `expiresAt` column. Resend resets `createdAt`, restarting
+ * the window. Enforced only when CONTROLLED_ENVIRONMENT is on.
+ */
+export const INVITE_EXPIRY_DAYS = 7;
+
+export function isControlledInviteExpired(createdAt: string): boolean {
+  if (!CONTROLLED_ENVIRONMENT) return false;
+  const expiresAt = parseAbsolute(createdAt, "UTC").add({
+    days: INVITE_EXPIRY_DAYS
+  });
+  return expiresAt.compare(now("UTC")) < 0;
+}
+
 export async function acceptInvite(
   serviceRole: SupabaseClient<Database>,
   code: string,
@@ -51,6 +67,16 @@ export async function acceptInvite(
     .single();
 
   if (invite.error) return invite;
+
+  if (isControlledInviteExpired(invite.data.createdAt)) {
+    return {
+      data: null,
+      error: {
+        message:
+          "This invite has expired. Please request a new invite to continue."
+      }
+    };
+  }
 
   if (email && invite.data.email !== email) {
     throw new Error(
@@ -355,7 +381,9 @@ export async function createEmployeeAccount(
     employeeType,
     locationId,
     companyId,
-    createdBy
+    createdBy,
+    attestedBy,
+    attestedAt
   }: {
     email: string;
     firstName: string;
@@ -364,6 +392,10 @@ export async function createEmployeeAccount(
     locationId: string;
     companyId: string;
     createdBy: string;
+    // ITAR (controlled environments): the inviter's 22 CFR 120.62 U.S.-person
+    // attestation. Null in ordinary deployments.
+    attestedBy?: string | null;
+    attestedAt?: string | null;
   }
 ): Promise<
   | { success: false; message: string }
@@ -447,7 +479,9 @@ export async function createEmployeeAccount(
       email,
       companyId,
       createdBy,
-      code
+      code,
+      attestedBy: attestedBy ?? null,
+      attestedAt: attestedAt ?? null
     })
   ]);
 

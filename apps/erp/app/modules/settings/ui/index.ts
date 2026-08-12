@@ -8,6 +8,7 @@ export * from "./Companies";
 export * from "./Company";
 export * from "./CustomFields";
 export * from "./Integrations";
+export * from "./ItarCertifications";
 export * from "./Printing";
 export * from "./Sequences";
 export * from "./SerialNumbers";

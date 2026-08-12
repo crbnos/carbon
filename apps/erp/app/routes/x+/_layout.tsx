@@ -3,7 +3,8 @@ import {
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
   getCarbon,
-  getMESUrl
+  getMESUrl,
+  ITAR_RIDER_PDF_PATH
 } from "@carbon/auth";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import {
@@ -21,7 +22,9 @@ import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import {
-  ItarPopup,
+  ItarEntityCertification,
+  ItarEntityPendingBlock,
+  ItarUserCertification,
   TooltipProvider,
   useKeyboardWedge,
   useNProgress
@@ -29,6 +32,7 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import { Edition, isSearchParamOnlyNavigation } from "@carbon/utils";
 import posthog from "posthog-js";
+import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
 import type {
   LoaderFunctionArgs,
@@ -46,6 +50,7 @@ import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
+import { usePermissions } from "~/hooks";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
@@ -60,6 +65,7 @@ import {
   getSavedViews,
   isApprovalRequired
 } from "~/modules/shared/shared.service";
+import { getItarCertificationStatus } from "~/modules/users";
 import {
   getModulePreferences,
   getUser,
@@ -131,6 +137,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hub.data ? detectImplementationSignals(client, companyId) : null
   );
 
+  // ITAR gate status — only queried in controlled environments; elsewhere the
+  // gate never renders, so default to "certified" and skip the round-trip.
+  const itarCertificationPromise = CONTROLLED_ENVIRONMENT
+    ? getItarCertificationStatus(client, companyId, userId)
+    : Promise.resolve({ entityCertified: true, userCertified: true });
+
   // Parallelize all requests
   const [
     companies,
@@ -149,7 +161,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     printerRoutes,
     implementationHub,
     implementationCheckStates,
-    implementationSignals
+    implementationSignals,
+    itarCertification
   ] = await Promise.all([
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
@@ -169,7 +182,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getPrinterRoutes(client, companyId),
     implementationHubPromise,
     getImplementationCheckStates(client, companyId),
-    implementationSignalsPromise
+    implementationSignalsPromise,
+    itarCertificationPromise
   ]);
 
   if (!claims || user.error || !user.data || !groups.data) {
@@ -249,6 +263,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     implementationHub: implementationHub.data ?? null,
     implementationCheckStates: implementationCheckStates.data ?? [],
     implementationSignals,
+    itarCertification,
     supplierApprovalRequired: isApprovalRequired(client, "supplier", companyId),
     openClockEntry: companySettings.data?.timeCardEnabled
       ? getOpenClockEntry(client, userId, companyId)
@@ -263,9 +278,11 @@ export default function AuthenticatedRoute() {
     user,
     companySettings,
     openClockEntry,
-    printerRoutes
+    printerRoutes,
+    itarCertification
   } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const permissions = usePermissions();
   const { isOpen, training, dismiss } = useTrainingPanel();
 
   useNProgress();
@@ -308,13 +325,40 @@ export default function AuthenticatedRoute() {
     posthog.group("company", companyId, { name: companyName });
   }, [userId, userEmail, userFullName, companyId, companyName]);
 
-  return (
-    <div className="h-[100dvh] flex flex-col">
-      {user?.acknowledgedITAR === false && CONTROLLED_ENVIRONMENT ? (
-        <ItarPopup
+  // ITAR gate: entity Rider acceptance first (only an admin who can bind the
+  // company may accept it; everyone else waits), then the user's own U.S.-Person
+  // attestation. Declining either logs the user out.
+  let itarScreen: ReactNode = null;
+  if (
+    CONTROLLED_ENVIRONMENT &&
+    (!itarCertification.entityCertified || !itarCertification.userCertified)
+  ) {
+    if (!itarCertification.entityCertified) {
+      itarScreen = permissions.can("update", "users") ? (
+        <ItarEntityCertification
+          companyName={companyName ?? "your company"}
+          riderPdfPath={ITAR_RIDER_PDF_PATH}
           acknowledgeAction={path.to.acknowledge}
           logoutAction={path.to.logout}
         />
+      ) : (
+        <ItarEntityPendingBlock logoutAction={path.to.logout} />
+      );
+    } else {
+      itarScreen = (
+        <ItarUserCertification
+          riderPdfPath={ITAR_RIDER_PDF_PATH}
+          acknowledgeAction={path.to.acknowledge}
+          logoutAction={path.to.logout}
+        />
+      );
+    }
+  }
+
+  return (
+    <div className="h-[100dvh] flex flex-col">
+      {itarScreen ? (
+        itarScreen
       ) : (
         <CarbonProvider session={session}>
           <PrintingProvider

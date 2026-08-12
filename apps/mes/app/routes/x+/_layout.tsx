@@ -4,7 +4,8 @@ import {
   CONTROLLED_ENVIRONMENT,
   getCarbon,
   getCompanies,
-  getUser
+  getUser,
+  ITAR_RIDER_PDF_PATH
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -15,7 +16,8 @@ import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import {
-  ItarPopup,
+  ItarEntityPendingBlock,
+  ItarUserCertification,
   SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,
@@ -24,6 +26,7 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import { Edition, isSearchParamOnlyNavigation } from "@carbon/utils";
 import posthog from "posthog-js";
+import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
 import type {
   LoaderFunctionArgs,
@@ -46,6 +49,7 @@ import { TimeCardWarning } from "~/components/TimeCardWarning";
 import { userContext } from "~/context";
 import { userMiddleware } from "~/middleware/user";
 import { refreshConsolePinIn } from "~/services/console.server";
+import { getItarCertificationStatus } from "~/services/itar.service";
 import { getActiveMaintenanceEventsCount } from "~/services/maintenance.service";
 import {
   getActiveJobCount,
@@ -62,7 +66,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 }) => {
   if (
     currentUrl.pathname.startsWith("/refresh-session") ||
-    currentUrl.pathname.startsWith("/switch-company")
+    currentUrl.pathname.startsWith("/switch-company") ||
+    currentUrl.pathname.startsWith("/x/acknowledge")
   ) {
     return true;
   }
@@ -158,6 +163,11 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     locationId
   );
 
+  // ITAR gate — only queried in controlled environments.
+  const itarCertification = CONTROLLED_ENVIRONMENT
+    ? await getItarCertificationStatus(client, companyId, userId)
+    : { entityCertified: true, userCertified: true };
+
   if (!companyPlan && CarbonEdition === Edition.Cloud) {
     throw redirect(path.to.onboarding);
   }
@@ -207,7 +217,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       printerRoutes: printerRoutes.data ?? [],
       timeCardEnabled,
       useMetric: companySettings.data?.useMetric ?? false,
-      user: user.data
+      user: user.data,
+      itarCertification
     },
     headers.has("Set-Cookie") ? { headers } : undefined
   );
@@ -231,7 +242,8 @@ export default function AuthenticatedRoute() {
     printerRoutes,
     timeCardEnabled,
     useMetric,
-    user
+    user,
+    itarCertification
   } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
@@ -280,13 +292,29 @@ export default function AuthenticatedRoute() {
 
   // Scroll stays unlocked until lg, where the controls dock beside the content
   // instead of stacking below it.
+  // ITAR gate. Entity Rider acceptance is an admin action performed in the ERP,
+  // so shop-floor MES users never see Screen 1 — they wait on the pending block
+  // until an admin accepts, then attest their own U.S.-Person status.
+  let itarScreen: ReactNode = null;
+  if (
+    CONTROLLED_ENVIRONMENT &&
+    (!itarCertification.entityCertified || !itarCertification.userCertified)
+  ) {
+    itarScreen = !itarCertification.entityCertified ? (
+      <ItarEntityPendingBlock logoutAction={path.to.logout} />
+    ) : (
+      <ItarUserCertification
+        riderPdfPath={ITAR_RIDER_PDF_PATH}
+        acknowledgeAction={path.to.acknowledge}
+        logoutAction={path.to.logout}
+      />
+    );
+  }
+
   return (
     <div className="h-screen w-full overflow-y-auto lg:overflow-hidden">
-      {user?.acknowledgedITAR === false && CONTROLLED_ENVIRONMENT ? (
-        <ItarPopup
-          acknowledgeAction={path.to.acknowledge}
-          logoutAction={path.to.logout}
-        />
+      {itarScreen ? (
+        itarScreen
       ) : (
         <CarbonProvider session={session}>
           <PrintingProvider

@@ -1,5 +1,6 @@
 import {
   assertIsPost,
+  CONTROLLED_ENVIRONMENT,
   error,
   getAppUrl,
   RESEND_DOMAIN,
@@ -11,6 +12,7 @@ import { InviteEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/resend.server";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 import type {
@@ -65,8 +67,25 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { email, firstName, lastName, locationId, employeeType } =
-    validation.data;
+  const {
+    email,
+    firstName,
+    lastName,
+    locationId,
+    employeeType,
+    usPersonAttestation
+  } = validation.data;
+
+  // Controlled environments require the inviter to attest the invitee is a
+  // U.S. person (22 CFR 120.62) before the invite can be created.
+  if (CONTROLLED_ENVIRONMENT && !usPersonAttestation) {
+    return validationError({
+      fieldErrors: {
+        usPersonAttestation:
+          "You must confirm a reasonable basis that this individual is a U.S. person"
+      }
+    });
+  }
 
   const result = await createEmployeeAccount(client, {
     email: email.toLowerCase(),
@@ -75,7 +94,9 @@ export async function action({ request }: ActionFunctionArgs) {
     employeeType,
     locationId,
     companyId,
-    createdBy: userId
+    createdBy: userId,
+    attestedBy: CONTROLLED_ENVIRONMENT ? userId : null,
+    attestedAt: CONTROLLED_ENVIRONMENT ? datetime.timestamp() : null
   });
 
   if (!result.success) {
@@ -116,7 +137,8 @@ export async function action({ request }: ActionFunctionArgs) {
         companyName: company.data.name,
         inviteLink: `${getAppUrl()}/invite/${result.code}`,
         ip,
-        location
+        location,
+        controlledEnvironment: CONTROLLED_ENVIRONMENT
       })
     )
   });

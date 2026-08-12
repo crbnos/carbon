@@ -3,16 +3,20 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { deactivateUser } from "@carbon/auth/users.server";
+import { insertAuditLogEntries } from "@carbon/database/audit";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import { datetime, Edition } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { revokeInviteValidator } from "~/modules/users";
 
+const logger = getLogger("erp", "revoke-invite");
+
 export async function action({ request }: ActionFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "users"
   });
 
@@ -72,15 +76,17 @@ export async function action({ request }: ActionFunctionArgs) {
     await batchTrigger("user-admin", batchPayload);
   }
 
+  const revokedAt = datetime.timestamp();
   const revokeInvites = await serviceRole
     .from("invite")
-    .update({ revokedAt: new Date().toISOString() })
+    .update({ revokedAt })
     .in(
       "email",
       usersToRevoke.data.map((user) => user.email)
     )
     .eq("companyId", companyId)
-    .is("revokedAt", null);
+    .is("revokedAt", null)
+    .select("id");
 
   if (revokeInvites.error) {
     return data(
@@ -90,6 +96,33 @@ export async function action({ request }: ActionFunctionArgs) {
         error(revokeInvites.error.message, "Failed to revoke invites")
       )
     );
+  }
+
+  // Best-effort audit of each revocation.
+  if (revokeInvites.data && revokeInvites.data.length > 0) {
+    try {
+      await insertAuditLogEntries(
+        serviceRole,
+        companyId,
+        revokeInvites.data.map((invite) => ({
+          tableName: "invite" as const,
+          entityType: "invite" as const,
+          entityId: invite.id,
+          recordId: invite.id,
+          operation: "UPDATE" as const,
+          actorId: userId,
+          diff: { revokedAt: { old: null, new: revokedAt } },
+          metadata: {
+            ipAddress:
+              request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+              undefined,
+            userAgent: request.headers.get("user-agent") ?? undefined
+          }
+        }))
+      );
+    } catch (err) {
+      logger.warn("[revoke-invite] audit write skipped", { error: err });
+    }
   }
 
   return data(

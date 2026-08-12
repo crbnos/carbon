@@ -2748,11 +2748,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "Indirizzo di Fatturazione Centralizzato"
 
+msgid "Cert Version"
+msgstr ""
+
 msgid "Certificate Number"
 msgstr "Numero del Certificato"
 
 msgid "Certificate uploaded"
 msgstr "Certificato caricato"
+
+msgid "Certified"
+msgstr ""
 
 msgid "Chain"
 msgstr "Catena"
@@ -7242,6 +7248,9 @@ msgstr "Hypercare: supporto intenso per le prime settimane"
 msgid "I (reduced)"
 msgstr "I (ridotto)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Sto ancora lavorando"
 
@@ -7630,6 +7639,9 @@ msgstr "Valutazione Inventario"
 msgid "Invite"
 msgstr "Invita"
 
+msgid "Invite Expired"
+msgstr ""
+
 msgid "Invited"
 msgstr "Invitato"
 
@@ -7788,6 +7800,9 @@ msgstr "Data di Emissione"
 
 msgid "Issues"
 msgstr "Problemi"
+
+msgid "ITAR Certifications"
+msgstr ""
 
 msgid "item"
 msgstr "articolo"
@@ -8045,6 +8060,9 @@ msgstr "Ultimo giorno"
 
 msgid "Last Fiscal Year"
 msgstr "Ultimo Esercizio Fiscale"
+
+msgid "Last Login"
+msgstr ""
 
 msgid "Last Month"
 msgstr "Mese Scorso"
@@ -9754,6 +9772,9 @@ msgstr "Normale"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Non una tabella ma un saldo del libro mastro: il costo si accumula quando i materiali di lavoro vengono emessi e si cancella quando il lavoro viene ricevuto a magazzino."
+
+msgid "Not certified"
+msgstr ""
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Non ci sono abbastanza lavori per coprire la quantità"
@@ -11870,6 +11891,9 @@ msgstr "Rapporti"
 
 msgid "Reprint"
 msgstr "Ristampa"
+
+msgid "Request a new invite"
+msgstr ""
 
 msgid "Request access"
 msgstr "Richiedi accesso"
@@ -14842,11 +14866,18 @@ msgstr "Queste informazioni saranno visibili a tutti gli utenti, quindi fai atte
 msgid "this inspection plan"
 msgstr "questo piano di ispezione"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr ""
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Questo è un elemento acquistato — non ha BoM/BoP; solo i suoi attributi e documenti possono cambiare."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Questo è un identificatore univoco per il webhook"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr ""
 
 msgid "This is the month your fiscal year starts."
 msgstr "Questo è il mese in cui inizia il tuo anno fiscale."
@@ -15365,6 +15396,9 @@ msgstr "Tipo:"
 
 msgid "Types"
 msgstr "Tipi"
+
+msgid "U.S. Person Attestation"
+msgstr ""
 
 msgid "Unapplied"
 msgstr "Non applicato"

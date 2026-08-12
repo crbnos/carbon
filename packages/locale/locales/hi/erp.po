@@ -2748,11 +2748,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "केंद्रीकृत बिलिंग पता"
 
+msgid "Cert Version"
+msgstr ""
+
 msgid "Certificate Number"
 msgstr "प्रमाणपत्र संख्या"
 
 msgid "Certificate uploaded"
 msgstr "प्रमाणपत्र अपलोड किया गया"
+
+msgid "Certified"
+msgstr ""
 
 msgid "Chain"
 msgstr "श्रृंखला"
@@ -7242,6 +7248,9 @@ msgstr "हाइपरकेयर: पहले हफ्तों के ल�
 msgid "I (reduced)"
 msgstr "I (कम किया गया)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "मैं अभी भी काम कर रहा हूँ"
 
@@ -7630,6 +7639,9 @@ msgstr "इन्वेंटरी मूल्यांकन"
 msgid "Invite"
 msgstr "आमंत्रित करें"
 
+msgid "Invite Expired"
+msgstr ""
+
 msgid "Invited"
 msgstr "आमंत्रित"
 
@@ -7788,6 +7800,9 @@ msgstr "जारी तारीख"
 
 msgid "Issues"
 msgstr "समस्याएं"
+
+msgid "ITAR Certifications"
+msgstr ""
 
 msgid "item"
 msgstr "आइटम"
@@ -8045,6 +8060,9 @@ msgstr "अंतिम दिन"
 
 msgid "Last Fiscal Year"
 msgstr "पिछला वित्तीय वर्ष"
+
+msgid "Last Login"
+msgstr ""
 
 msgid "Last Month"
 msgstr "पिछला महीना"
@@ -9754,6 +9772,9 @@ msgstr "सामान्य"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "एक तालिका नहीं बल्कि एक सामान्य-बहीखाता संतुलन: काम की सामग्री जारी होने पर लागत जमा होती है और जब काम स्टॉक में प्राप्त होता है तो स्पष्ट हो जाता है।"
+
+msgid "Not certified"
+msgstr ""
 
 msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
@@ -11870,6 +11891,9 @@ msgstr "रिपोर्ट"
 
 msgid "Reprint"
 msgstr "दोबारा प्रिंट करें"
+
+msgid "Request a new invite"
+msgstr ""
 
 msgid "Request access"
 msgstr "प्रवेश का अनुरोध करें"
@@ -14842,11 +14866,18 @@ msgstr "यह जानकारी सभी उपयोगकर्ताओ
 msgid "this inspection plan"
 msgstr "इस निरीक्षण योजना"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr ""
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "यह एक खरीदा गया आइटम है — इसके पास कोई BoM/BoP नहीं है; केवल इसकी विशेषताओं और दस्तावेजों को बदला जा सकता है।"
 
 msgid "This is a unique identifier for the webhook"
 msgstr "यह वेबहुक के लिए एक अद्वितीय पहचानकर्ता है"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr ""
 
 msgid "This is the month your fiscal year starts."
 msgstr "यह वह महीना है जब आपका वित्तीय वर्ष शुरू होता है।"
@@ -15365,6 +15396,9 @@ msgstr "प्रकार:"
 
 msgid "Types"
 msgstr "प्रकार"
+
+msgid "U.S. Person Attestation"
+msgstr ""
 
 msgid "Unapplied"
 msgstr "अप्रयुक्त"
