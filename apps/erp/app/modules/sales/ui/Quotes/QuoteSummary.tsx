@@ -17,16 +17,14 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { moneyFormatOptions } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
-import MotionNumber from "motion-number";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { CustomerAvatar, DateTime } from "~/components";
+import { CustomerAvatar, DateTime, MotionMoney } from "~/components";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -92,12 +90,7 @@ const LineItems = ({
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
 }) => {
   // Settlement money at the document currency's configured decimals.
-  // MotionNumber narrows `notation`, hence the explicit value.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
-  const moneyFormat = {
-    ...moneyFormatOptions(currencyCode, currencyDecimals),
-    notation: "standard" as const
-  };
   const { company } = useUser();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quote id");
@@ -206,8 +199,7 @@ const LineItems = ({
                       </Button>
                     </HStack>
                     <HStack spacing={4}>
-                      <MotionNumber
-                        className="font-bold text-xl"
+                      <MotionMoney
                         value={
                           (selectedLine.convertedNetUnitPrice ?? 0) *
                             (selectedLine.quantity ?? 0) +
@@ -219,8 +211,8 @@ const LineItems = ({
                             (selectedLine.convertedShippingCost ?? 0)) *
                             (selectedLine.taxPercent ?? 0)
                         }
-                        format={moneyFormat}
-                        locales={locale}
+                        currency={currencyCode}
+                        decimalPlaces={currencyDecimals}
                       />
                       <motion.div
                         animate={{
@@ -292,12 +284,7 @@ const LinePricingOptions = ({
   setSelectedLines
 }: LinePricingOptionsProps) => {
   // Settlement money at the document currency's configured decimals.
-  // MotionNumber narrows `notation`, hence the explicit value.
   const currencyDecimals = useCurrencyDecimals(quoteCurrency);
-  const moneyFormat = {
-    ...moneyFormatOptions(quoteCurrency, currencyDecimals),
-    notation: "standard" as const
-  };
   const percentFormatter = usePercentFormatter();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quote id");
@@ -556,13 +543,13 @@ const LinePricingOptions = ({
                   <Trans>Extended Price</Trans>
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       (selectedLine.convertedUnitPrice ?? 0) *
                       selectedLine.quantity
                     }
-                    format={moneyFormat}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -575,14 +562,14 @@ const LinePricingOptions = ({
                   </Td>
                   <Td className="text-right">
                     -
-                    <MotionNumber
+                    <MotionMoney
                       value={
                         (selectedLine.convertedUnitPrice ?? 0) *
                         selectedLine.quantity *
                         selectedLine.discountPercent
                       }
-                      format={moneyFormat}
-                      locales={locale}
+                      currency={quoteCurrency}
+                      decimalPlaces={currencyDecimals}
                     />
                   </Td>
                 </Tr>
@@ -600,10 +587,10 @@ const LinePricingOptions = ({
                   >
                     <Td>{charge.name}</Td>
                     <Td className="text-right">
-                      <MotionNumber
+                      <MotionMoney
                         value={charge.amount}
-                        format={moneyFormat}
-                        locales={locale}
+                        currency={quoteCurrency}
+                        decimalPlaces={currencyDecimals}
                       />
                     </Td>
                   </Tr>
@@ -614,15 +601,15 @@ const LinePricingOptions = ({
                   <Trans>Subtotal</Trans>
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       (selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
                       (selectedLine.convertedAddOn ?? 0) +
                       (selectedLine.convertedShippingCost ?? 0)
                     }
-                    format={moneyFormat}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -632,7 +619,7 @@ const LinePricingOptions = ({
                   Tax ({percentFormatter.format(selectedLine.taxPercent)})
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       ((selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
@@ -640,8 +627,8 @@ const LinePricingOptions = ({
                         (selectedLine.convertedShippingCost ?? 0)) *
                       (selectedLine.taxPercent ?? 0)
                     }
-                    format={moneyFormat}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -651,7 +638,7 @@ const LinePricingOptions = ({
                   <Trans>Total</Trans>
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       (selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
@@ -663,8 +650,8 @@ const LinePricingOptions = ({
                         (selectedLine.convertedShippingCost ?? 0)) *
                         (selectedLine.taxPercent ?? 0)
                     }
-                    format={moneyFormat}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -698,17 +685,9 @@ const QuoteSummary = ({
     currency: routeData?.quote.currencyCode ?? "USD"
   });
   // Settlement money at the document currency's configured decimals.
-  // MotionNumber narrows `notation`, hence the explicit value.
   const currencyDecimals = useCurrencyDecimals(
     routeData?.quote?.currencyCode ?? "USD"
   );
-  const moneyFormat = {
-    ...moneyFormatOptions(
-      routeData?.quote?.currencyCode ?? "USD",
-      currencyDecimals
-    ),
-    notation: "standard" as const
-  };
 
   const [selectedLines, setSelectedLines] = useState<
     Record<string, SelectedLine>
@@ -900,10 +879,10 @@ const QuoteSummary = ({
         <VStack spacing={2} className="mt-8">
           <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Subtotal:</span>
-            <MotionNumber
+            <MotionMoney
               value={subtotal + totalDiscount}
-              format={moneyFormat}
-              locales={locale}
+              currency={routeData?.quote?.currencyCode ?? "USD"}
+              decimalPlaces={currencyDecimals}
             />
           </HStack>
           {totalDiscount > 0 && (
@@ -911,17 +890,21 @@ const QuoteSummary = ({
               <span>Discount:</span>
               <span className="text-muted-foreground">
                 -
-                <MotionNumber
+                <MotionMoney
                   value={totalDiscount}
-                  format={moneyFormat}
-                  locales={locale}
+                  currency={routeData?.quote?.currencyCode ?? "USD"}
+                  decimalPlaces={currencyDecimals}
                 />
               </span>
             </HStack>
           )}
           <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Tax:</span>
-            <MotionNumber value={tax} format={moneyFormat} locales={locale} />
+            <MotionMoney
+              value={tax}
+              currency={routeData?.quote?.currencyCode ?? "USD"}
+              decimalPlaces={currencyDecimals}
+            />
           </HStack>
           <HStack className="justify-between text-sm text-muted-foreground w-full">
             {convertedShippingCost > 0 ? (
@@ -937,10 +920,10 @@ const QuoteSummary = ({
                     <Trans>Edit Shipping</Trans>
                   </Button>
                 </VStack>
-                <MotionNumber
+                <MotionMoney
                   value={convertedShippingCost}
-                  format={moneyFormat}
-                  locales={locale}
+                  currency={routeData?.quote?.currencyCode ?? "USD"}
+                  decimalPlaces={currencyDecimals}
                 />
               </>
             ) : isEditable ? (
@@ -956,7 +939,11 @@ const QuoteSummary = ({
           </HStack>
           <HStack className="justify-between text-xl font-semibold w-full">
             <span>Total:</span>
-            <MotionNumber value={total} format={moneyFormat} locales={locale} />
+            <MotionMoney
+              value={total}
+              currency={routeData?.quote?.currencyCode ?? "USD"}
+              decimalPlaces={currencyDecimals}
+            />
           </HStack>
         </VStack>
       </CardContent>
