@@ -13,8 +13,6 @@ import {
   Input,
   InputControlled,
   MultiSelect,
-  Number,
-  NumberControlled,
   Password,
   PhoneInput,
   Radios,
@@ -35,6 +33,7 @@ import Color from "./Color";
 import ConversionFactor from "./ConversionFactor";
 import CostCenter from "./CostCenter";
 import Currency from "./Currency";
+import { Number, NumberControlled } from "./CurrencyNumber";
 import Customer from "./Customer";
 import CustomerContact from "./CustomerContact";
 import CustomerLocation from "./CustomerLocation";
