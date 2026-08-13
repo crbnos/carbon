@@ -4,7 +4,7 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { deriveRate } from "@carbon/utils";
+import { deriveRate, taxableBase } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import {
@@ -191,8 +191,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         // canonical denominator (unit price x quantity + shipping).
         const taxPercent = deriveRate(
           selectedLine.supplierTaxAmount ?? 0,
-          (selectedLine.supplierUnitPrice ?? 0) * quantity +
-            (selectedLine.supplierShippingCost ?? 0)
+          taxableBase(
+            selectedLine.supplierUnitPrice ?? 0,
+            quantity,
+            selectedLine.supplierShippingCost ?? 0
+          )
         );
 
         if (existingPrice.data) {

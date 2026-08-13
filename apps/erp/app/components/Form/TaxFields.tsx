@@ -4,49 +4,73 @@
 // is exactly what left Tax Amount padded while the Shipping field beside it
 // wasn't. Any currency field must come from ./CurrencyNumber.
 
-import { applyRate, deriveRate, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import type { TaxPair } from "@carbon/utils";
+import {
+  INPUT_FORMAT,
+  INPUT_STEP,
+  taxableBase,
+  taxPairFromAmount,
+  taxPairFromPercent
+} from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import { NumberControlled } from "./CurrencyNumber";
 
-/** An EMPTIED number input commits NaN, not 0 — that is react-aria's empty
- *  state (`if (!newInputValue.length) setNumberValue(NaN)`). For a cost
- *  component, empty means zero, and it has to be read that way BEFORE the sum:
- *  once one NaN is in, `unitPrice * qty + NaN` is NaN and nothing downstream can
- *  recover the other terms. */
-const amount = (value: number) => (Number.isFinite(value) ? value : 0);
+type UseTaxPairArgs = {
+  /** The three terms of the canonical base. Read them off your state — field
+   *  names differ per document, so this hook never guesses at keys. */
+  unitPrice: number;
+  quantity: number;
+  shippingCost: number;
+  percent: number;
+  amount: number;
+  currency: string;
+  /** currency.decimalPlaces — data from the route, never a literal */
+  currencyDecimals: number;
+  onChange: (next: TaxPair) => void;
+};
+
+/** What the hook hands to the fields: the pair, the base it was derived
+ *  against, and the currency it renders in. The three base TERMS stay with the
+ *  caller — only their canonical combination travels. */
+export type TaxPairControl = TaxPair & {
+  subtotal: number;
+  currency: string;
+  currencyDecimals: number;
+  onChange: (next: TaxPair) => void;
+};
 
 /**
- * The canonical tax denominator — `unitPrice × qty + shippingCost`. One named
- * function so every document computes the base the same way, and so clearing a
- * cost field cannot poison it: clearing Shipping on a 300.00 line re-derives the
- * tax against 300, which is what the user asked for, rather than against NaN.
+ * Owns one document line's tax pair: the canonical base, and the re-derivation
+ * that keeps the amount honest when that base moves.
+ *
+ * The base is derived during render rather than mirrored into state — it is a
+ * function of values the caller already holds, so storing it could only let the
+ * two drift. The single effect exists for the one thing render cannot express:
+ * re-deriving the AMOUNT when the base changes, while skipping the first run so
+ * a saved line's manual amount override survives being reopened.
+ *
+ * Spread the result straight into <TaxFields>; it carries everything that
+ * component needs except the two form-field names.
  */
-export function taxableBase(
-  unitPrice: number,
-  quantity: number,
-  shippingCost: number
-) {
-  return amount(unitPrice) * amount(quantity) + amount(shippingCost);
-}
+export function useTaxPair({
+  unitPrice,
+  quantity,
+  shippingCost,
+  percent,
+  amount,
+  currency,
+  currencyDecimals,
+  onChange
+}: UseTaxPairArgs): TaxPairControl {
+  const subtotal = taxableBase(unitPrice, quantity, shippingCost);
 
-/**
- * Re-derives the tax amount from the stored rate when the base changes
- * (quantity, unit price, shipping). Skips the first run so a saved line's
- * stored pair — which may hold a manual amount override — is not recomputed
- * on mount.
- */
-export function useDerivedTaxAmount(
-  subtotal: number,
-  percent: number,
-  currencyDecimals: number,
-  onDerive: (amount: number) => void
-) {
   const isMounted = useRef(false);
   // In a ref so an inline closure doesn't re-fire the effect every render.
-  const derive = useRef(onDerive);
+  // React 18 has no useEffectEvent; this is its stand-in.
+  const latestOnChange = useRef(onChange);
   useEffect(() => {
-    derive.current = onDerive;
+    latestOnChange.current = onChange;
   });
 
   useEffect(() => {
@@ -56,34 +80,39 @@ export function useDerivedTaxAmount(
     }
     // A base this can't evaluate is never a reason to destroy the stored pair:
     // a NaN amount serializes to "" and saves as 0, leaving a 6.25% line with no
-    // tax. Callers build the base with taxableBase, so this should not fire —
-    // it is what makes "never write a non-finite amount" true by construction.
+    // tax. taxableBase already guards each term, so this should not fire — it is
+    // what makes "never write a non-finite amount" true by construction.
     if (percent !== 0 && Number.isFinite(subtotal)) {
-      derive.current(applyRate(subtotal, percent, currencyDecimals));
+      latestOnChange.current(
+        taxPairFromPercent(subtotal, percent, currencyDecimals)
+      );
     }
   }, [subtotal, percent, currencyDecimals]);
+
+  return {
+    subtotal,
+    percent,
+    amount,
+    currency,
+    currencyDecimals,
+    onChange
+  };
 }
 
-type TaxFieldsProps = {
+type TaxFieldsProps = TaxPairControl & {
   /** Form field name for the stored rate, e.g. "taxPercent" */
   percentName: string;
-  /** Form field name for the stored amount, e.g. "supplierTaxAmount" */
+  /** Form field name for the stored amount, e.g. "supplierTaxAmount". Kept
+   *  independent of the state key — purchase invoices store `taxAmount` but
+   *  submit `supplierTaxAmount`. */
   amountName: string;
-  /** Caller computes: unitPrice * quantity + shippingCost (the canonical denominator) */
-  subtotal: number;
-  currency: string;
-  /** currency.decimalPlaces — data from the route, never a literal */
-  currencyDecimals: number;
-  percent: number;
-  amount: number;
   isReadOnly?: boolean;
-  onChange: (next: { percent: number; amount: number }) => void;
 };
 
 /**
  * The tax value pair: one rate, one absolute amount. Every edit sets both, in
- * either direction. Controlled and stateless — base-change re-derivation is the
- * caller's useDerivedTaxAmount.
+ * either direction. Controlled and stateless — the base and its re-derivation
+ * belong to useTaxPair.
  */
 export function TaxFields({
   percentName,
@@ -108,12 +137,7 @@ export function TaxFields({
         formatOptions={INPUT_FORMAT.money(currency, currencyDecimals)}
         isReadOnly={isReadOnly}
         onChange={(value) =>
-          onChange({
-            // deriveRate rounds to internal scale, so the stored rate is what the
-            // input renders. No base to divide by -> keep the rate the user typed.
-            percent: subtotal > 0 ? deriveRate(value, subtotal) : percent,
-            amount: value
-          })
+          onChange(taxPairFromAmount(subtotal, value, percent))
         }
       />
       <NumberControlled
@@ -126,10 +150,7 @@ export function TaxFields({
         formatOptions={INPUT_FORMAT.rate}
         isReadOnly={isReadOnly}
         onChange={(value) =>
-          onChange({
-            percent: value,
-            amount: applyRate(subtotal, value, currencyDecimals)
-          })
+          onChange(taxPairFromPercent(subtotal, value, currencyDecimals))
         }
       />
     </>

@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { deriveRate } from "@carbon/utils";
+import { deriveRate, taxableBase } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -142,7 +142,13 @@ export async function action({ request }: ActionFunctionArgs) {
       // charged and stays authoritative; the rate is the derived half of the
       // pair, rounded to internal scale and held inside the 0..1 fraction the
       // validator and TaxFields both require.
-      const lineSubtotal = (item.unitPrice || 0) * (item.quantity || 1);
+      // No shipping term: this path hardcodes supplierShippingCost to 0 below,
+      // so the base is deliberately unit price x quantity only.
+      const lineSubtotal = taxableBase(
+        item.unitPrice || 0,
+        item.quantity || 1,
+        0
+      );
       const lineTaxPercent = Math.min(1, deriveRate(lineTax, lineSubtotal));
 
       // Map the line up front when the extracted text directly matches an

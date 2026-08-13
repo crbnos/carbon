@@ -24,7 +24,12 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { deriveRate, INPUT_FORMAT, pluralize } from "@carbon/utils";
+import {
+  deriveRate,
+  INPUT_FORMAT,
+  pluralize,
+  taxableBase
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -293,8 +298,11 @@ const LinePricingOptions = ({
           // denominator (unit price x quantity + shipping).
           taxPercent: deriveRate(
             overridePricing.supplierTaxAmount,
-            overridePricing.supplierUnitPrice * overridePricing.quantity +
+            taxableBase(
+              overridePricing.supplierUnitPrice,
+              overridePricing.quantity,
               overridePricing.supplierShippingCost
+            )
           )
         }
       }));

@@ -28,7 +28,13 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import {
+  getItemReadableId,
+  INPUT_FORMAT,
+  INPUT_STEP,
+  taxableBase,
+  taxPairFromPercent
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
@@ -53,8 +59,7 @@ import {
   StorageUnit,
   Submit,
   TaxFields,
-  taxableBase,
-  useDerivedTaxAmount
+  useTaxPair
 } from "~/components/Form";
 import {
   useCurrencyDecimals,
@@ -110,9 +115,9 @@ const SalesInvoiceLineForm = ({
   // paint, which matters because these formatters take part in the blur commit.
   // The hook covers documents whose loader doesn't carry the row; the single
   // documented last-resort lives inside it rather than as a literal here.
-  const configuredDecimals = useCurrencyDecimals(
-    routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode
-  );
+  const invoiceCurrency =
+    routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode;
+  const configuredDecimals = useCurrencyDecimals(invoiceCurrency);
   const currencyDecimals =
     routeData?.currency?.decimalPlaces ?? configuredDecimals;
 
@@ -143,20 +148,31 @@ const SalesInvoiceLineForm = ({
     shippingCost: initialValues.shippingCost ?? 0,
     unitOfMeasureCode: initialValues.unitOfMeasureCode ?? "",
     storageUnitId: initialValues.storageUnitId ?? "",
-    taxAmount:
-      ((initialValues.unitPrice ?? 0) * (initialValues.quantity ?? 1) +
-        (initialValues.shippingCost ?? 0)) *
-      (initialValues.taxPercent ?? 0),
+    // Seeded through the same coupling every later edit uses, so the opening
+    // amount is rounded to the currency's decimals rather than a raw product.
+    taxAmount: taxPairFromPercent(
+      taxableBase(
+        initialValues.unitPrice ?? 0,
+        initialValues.quantity ?? 1,
+        initialValues.shippingCost ?? 0
+      ),
+      initialValues.taxPercent ?? 0,
+      currencyDecimals
+    ).amount,
     taxPercent: initialValues.taxPercent ?? 0
   });
 
-  // Re-derive the tax amount when the line's base changes — never on mount.
-  useDerivedTaxAmount(
-    taxableBase(itemData.unitPrice, itemData.quantity, itemData.shippingCost),
-    itemData.taxPercent,
+  const itemTax = useTaxPair({
+    unitPrice: itemData.unitPrice,
+    quantity: itemData.quantity,
+    shippingCost: itemData.shippingCost,
+    percent: itemData.taxPercent,
+    amount: itemData.taxAmount,
+    currency: invoiceCurrency,
     currencyDecimals,
-    (taxAmount) => setItemData((d) => ({ ...d, taxAmount }))
-  );
+    onChange: ({ percent, amount }) =>
+      setItemData((d) => ({ ...d, taxPercent: percent, taxAmount: amount }))
+  });
 
   const isFixedAsset = initialValues.invoiceLineType === "Fixed Asset";
   const [activeTab, setActiveTab] = useState<"item" | "asset">(
@@ -366,9 +382,6 @@ const SalesInvoiceLineForm = ({
     decimalPlaces: currencyDecimals
   });
   const percentFormatter = usePercentFormatter();
-
-  const invoiceCurrency =
-    routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode;
 
   return (
     <Tabs
@@ -708,24 +721,9 @@ const SalesInvoiceLineForm = ({
                             }`}
                           >
                             <TaxFields
+                              {...itemTax}
                               amountName="taxAmount"
                               percentName="taxPercent"
-                              subtotal={taxableBase(
-                                itemData.unitPrice,
-                                itemData.quantity,
-                                itemData.shippingCost
-                              )}
-                              currency={invoiceCurrency}
-                              currencyDecimals={currencyDecimals}
-                              percent={itemData.taxPercent}
-                              amount={itemData.taxAmount}
-                              onChange={({ percent, amount }) =>
-                                setItemData((d) => ({
-                                  ...d,
-                                  taxPercent: percent,
-                                  taxAmount: amount
-                                }))
-                              }
                             />
                             <NumberControlled
                               name="shippingCost"

@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { applyRate, SCALE } from "@carbon/utils";
+import { applyRate, SCALE, taxableBase } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -400,10 +400,15 @@ export async function action({ request }: ActionFunctionArgs) {
                 conversionFactor: supplierPart?.conversionFactor ?? 1,
                 supplierUnitPrice: supplierPart?.unitPrice ?? 0,
                 // supplier.taxPercent is a 0..1 fraction; the amount follows
-                // the canonical denominator (unit price × quantity + shipping)
+                // the canonical denominator. Shipping is hardcoded 0 on this
+                // path, so it is passed explicitly rather than omitted.
                 taxPercent: supplier.taxPercent ?? 0,
                 supplierTaxAmount: applyRate(
-                  (supplierPart?.unitPrice ?? 0) * adjustedQuantity,
+                  taxableBase(
+                    supplierPart?.unitPrice ?? 0,
+                    adjustedQuantity,
+                    0
+                  ),
                   supplier.taxPercent ?? 0,
                   currencyDecimals.get(
                     supplier.currencyCode ?? baseCurrencyCode

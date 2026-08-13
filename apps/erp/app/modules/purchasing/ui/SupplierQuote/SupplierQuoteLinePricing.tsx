@@ -15,7 +15,13 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { applyRate, deriveRate, INPUT_FORMAT } from "@carbon/utils";
+import type { TaxPair } from "@carbon/utils";
+import {
+  INPUT_FORMAT,
+  taxableBase,
+  taxPairFromAmount,
+  taxPairFromPercent
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router";
@@ -81,91 +87,22 @@ const SupplierQuoteLinePricing = ({
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   // The loader's currency row first — correct on first paint; the hook covers
   // the case where it isn't loaded, and carries the one documented fallback.
-  const configuredDecimals = useCurrencyDecimals(
-    routeData?.quote?.currencyCode ?? baseCurrency
-  );
+  const quoteCurrency = routeData?.quote?.currencyCode ?? baseCurrency;
+  const configuredDecimals = useCurrencyDecimals(quoteCurrency);
   const currencyDecimals =
     routeData?.presentationCurrency?.decimalPlaces ?? configuredDecimals;
 
   const formatter = useCurrencyFormatter();
   const presentationCurrencyFormatter = useCurrencyFormatter({
-    currency: routeData?.quote?.currencyCode ?? baseCurrency
+    currency: quoteCurrency
   });
 
-  const onUpdatePrice = useCallback(
-    async (
-      key:
-        | "leadTime"
-        | "supplierUnitPrice"
-        | "supplierShippingCost"
-        | "supplierTaxAmount",
-      quantity: number,
-      value: number
-    ) => {
-      const hasPrice = !!editableFields.prices[quantity];
-
-      const oldPrices = { ...editableFields.prices };
-      const newPrices = { ...oldPrices };
-      if (!hasPrice) {
-        newPrices[quantity] = {
-          supplierQuoteId: id,
-          supplierQuoteLineId: lineId,
-          quantity,
-          leadTime: 0,
-          exchangeRate: exchangeRate ?? 1,
-          supplierUnitPrice: 0,
-          supplierShippingCost: 0,
-          supplierTaxAmount: 0,
-          createdBy: userId
-        } as unknown as SupplierQuoteLinePrice;
-      }
-      newPrices[quantity] = { ...newPrices[quantity], [key]: value };
-
-      setEditableFields((prev) => ({
-        ...prev,
-        prices: newPrices
-      }));
-
-      if (hasPrice) {
-        const update = await carbon
-          ?.from("supplierQuoteLinePrice")
-          .update({
-            [key]: value,
-            supplierQuoteLineId: lineId,
-            quantity,
-            updatedBy: userId
-          })
-          .eq("supplierQuoteLineId", lineId)
-          .eq("quantity", quantity);
-
-        if (update?.error) {
-          logger.error(update.error);
-          toast.error(t`Failed to update supplier quote line`);
-          setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
-        }
-      } else {
-        const insert = await carbon?.from("supplierQuoteLinePrice").insert({
-          ...newPrices[quantity],
-          supplierQuoteLineId: lineId,
-          quantity
-        });
-
-        if (insert?.error) {
-          logger.error(insert.error);
-          toast.error(t`Failed to insert supplier quote line`);
-          setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
-        }
-      }
-    },
-    [editableFields.prices, id, lineId, exchangeRate, userId, carbon, t]
-  );
-
-  // The tax value pair: any edit writes BOTH the rate and the amount
-  const onUpdateTaxPair = useCallback(
-    async (
-      quantity: number,
-      pair: { taxPercent: number; supplierTaxAmount: number }
-    ) => {
+  /** One writer for every price-break field. The optimistic patch, the
+   *  insert-or-update branch and the rollback are identical whichever field
+   *  moved, so they live here once; callers say WHAT changed, not how to save
+   *  it. */
+  const onUpdateFields = useCallback(
+    async (quantity: number, patch: Partial<SupplierQuoteLinePrice>) => {
       const hasPrice = !!editableFields.prices[quantity];
 
       const oldPrices = { ...editableFields.prices };
@@ -184,7 +121,7 @@ const SupplierQuoteLinePricing = ({
           createdBy: userId
         } as unknown as SupplierQuoteLinePrice;
       }
-      newPrices[quantity] = { ...newPrices[quantity], ...pair };
+      newPrices[quantity] = { ...newPrices[quantity], ...patch };
 
       setEditableFields((prev) => ({
         ...prev,
@@ -195,7 +132,7 @@ const SupplierQuoteLinePricing = ({
         const update = await carbon
           ?.from("supplierQuoteLinePrice")
           .update({
-            ...pair,
+            ...patch,
             supplierQuoteLineId: lineId,
             quantity,
             updatedBy: userId
@@ -223,6 +160,32 @@ const SupplierQuoteLinePricing = ({
       }
     },
     [editableFields.prices, id, lineId, exchangeRate, userId, carbon, t]
+  );
+
+  const onUpdatePrice = useCallback(
+    (
+      key:
+        | "leadTime"
+        | "supplierUnitPrice"
+        | "supplierShippingCost"
+        | "supplierTaxAmount",
+      quantity: number,
+      value: number
+    ) => onUpdateFields(quantity, { [key]: value }),
+    [onUpdateFields]
+  );
+
+  // The tax value pair: any edit writes BOTH the rate and the amount.
+  // NOTE: unlike the line forms, editing unit price or shipping here does NOT
+  // re-derive the amount for that break. That divergence is deliberate and
+  // predates this refactor — closing it is a product decision, not a cleanup.
+  const onUpdateTaxPair = useCallback(
+    (quantity: number, pair: TaxPair) =>
+      onUpdateFields(quantity, {
+        taxPercent: pair.percent,
+        supplierTaxAmount: pair.amount
+      }),
+    [onUpdateFields]
   );
 
   const unitOfMeasures = useUnitOfMeasure();
@@ -299,7 +262,7 @@ const SupplierQuoteLinePricing = ({
                     <EditableNumberCell
                       value={price}
                       formatOptions={INPUT_FORMAT.price(
-                        routeData?.quote?.currencyCode ?? baseCurrency,
+                        quoteCurrency,
                         currencyDecimals
                       )}
                       minValue={0}
@@ -354,7 +317,7 @@ const SupplierQuoteLinePricing = ({
                     <EditableNumberCell
                       value={shippingCost}
                       formatOptions={INPUT_FORMAT.money(
-                        routeData?.quote?.currencyCode ?? baseCurrency,
+                        quoteCurrency,
                         currencyDecimals
                       )}
                       minValue={0}
@@ -378,15 +341,17 @@ const SupplierQuoteLinePricing = ({
                 const price = editableFields.prices[quantity];
                 const taxAmount = price?.supplierTaxAmount ?? 0;
                 const taxPercent = price?.taxPercent ?? 0;
-                const breakSubtotal =
-                  (price?.supplierUnitPrice ?? 0) * quantity +
-                  (price?.supplierShippingCost ?? 0);
+                const breakSubtotal = taxableBase(
+                  price?.supplierUnitPrice ?? 0,
+                  quantity,
+                  price?.supplierShippingCost ?? 0
+                );
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <EditableNumberCell
                       value={taxAmount}
                       formatOptions={INPUT_FORMAT.money(
-                        routeData?.quote?.currencyCode ?? baseCurrency,
+                        quoteCurrency,
                         currencyDecimals
                       )}
                       minValue={0}
@@ -394,13 +359,10 @@ const SupplierQuoteLinePricing = ({
                       onChange={(value) =>
                         // Two-way: an amount edit restates the rate for this
                         // break, so the stored pair stays consistent
-                        onUpdateTaxPair(quantity, {
-                          taxPercent:
-                            breakSubtotal > 0
-                              ? deriveRate(value, breakSubtotal)
-                              : taxPercent,
-                          supplierTaxAmount: value
-                        })
+                        onUpdateTaxPair(
+                          quantity,
+                          taxPairFromAmount(breakSubtotal, value, taxPercent)
+                        )
                       }
                     />
                   </Td>
@@ -417,9 +379,11 @@ const SupplierQuoteLinePricing = ({
               {quantities.map((quantity, index) => {
                 const price = editableFields.prices[quantity];
                 const taxPercent = price?.taxPercent ?? 0;
-                const breakSubtotal =
-                  (price?.supplierUnitPrice ?? 0) * quantity +
-                  (price?.supplierShippingCost ?? 0);
+                const breakSubtotal = taxableBase(
+                  price?.supplierUnitPrice ?? 0,
+                  quantity,
+                  price?.supplierShippingCost ?? 0
+                );
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <EditableNumberCell
@@ -429,14 +393,14 @@ const SupplierQuoteLinePricing = ({
                       maxValue={1}
                       isEditable={isEditable}
                       onChange={(value) =>
-                        onUpdateTaxPair(quantity, {
-                          taxPercent: value,
-                          supplierTaxAmount: applyRate(
+                        onUpdateTaxPair(
+                          quantity,
+                          taxPairFromPercent(
                             breakSubtotal,
                             value,
                             currencyDecimals
                           )
-                        })
+                        )
                       }
                     />
                   </Td>
@@ -467,7 +431,7 @@ const SupplierQuoteLinePricing = ({
                 );
               })}
             </Tr>
-            {routeData?.quote?.currencyCode !== baseCurrency && (
+            {quoteCurrency !== baseCurrency && (
               <>
                 <Tr className="[&>td]:bg-muted/60">
                   <Td className="border-r border-border group-hover:bg-muted/50">

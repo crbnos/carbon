@@ -52,9 +52,8 @@ import {
   StorageUnit,
   Submit,
   TaxFields,
-  taxableBase,
   UnitOfMeasure,
-  useDerivedTaxAmount
+  useTaxPair
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
@@ -117,9 +116,9 @@ const PurchaseOrderLineForm = ({
   // paint, which matters because these formatters take part in the blur commit.
   // The hook covers documents whose loader doesn't carry the row; the single
   // documented last-resort lives inside it rather than as a literal here.
-  const configuredDecimals = useCurrencyDecimals(
-    routeData?.purchaseOrder?.currencyCode ?? company.baseCurrencyCode
-  );
+  const orderCurrency =
+    routeData?.purchaseOrder?.currencyCode ?? company.baseCurrencyCode;
+  const configuredDecimals = useCurrencyDecimals(orderCurrency);
   const currencyDecimals =
     routeData?.currency?.decimalPlaces ?? configuredDecimals;
 
@@ -167,18 +166,21 @@ const PurchaseOrderLineForm = ({
     taxPercent: initialValues.taxPercent ?? 0
   });
 
-  // Re-derive the tax amount when the line's base changes — never on mount, so
-  // a saved manual override survives being reopened.
-  useDerivedTaxAmount(
-    taxableBase(
-      itemData.supplierUnitPrice,
-      itemData.purchaseQuantity,
-      itemData.supplierShippingCost
-    ),
-    itemData.taxPercent,
+  const itemTax = useTaxPair({
+    unitPrice: itemData.supplierUnitPrice,
+    quantity: itemData.purchaseQuantity,
+    shippingCost: itemData.supplierShippingCost,
+    percent: itemData.taxPercent,
+    amount: itemData.supplierTaxAmount,
+    currency: orderCurrency,
     currencyDecimals,
-    (supplierTaxAmount) => setItemData((d) => ({ ...d, supplierTaxAmount }))
-  );
+    onChange: ({ percent, amount }) =>
+      setItemData((d) => ({
+        ...d,
+        taxPercent: percent,
+        supplierTaxAmount: amount
+      }))
+  });
 
   const isEditing = initialValues.id !== undefined;
   const isGLAccount = initialValues.purchaseOrderLineType === "G/L Account";
@@ -211,16 +213,21 @@ const PurchaseOrderLineForm = ({
     taxPercent: initialValues.taxPercent ?? 0
   });
 
-  useDerivedTaxAmount(
-    taxableBase(
-      indirectData.supplierUnitPrice,
-      indirectData.purchaseQuantity,
-      indirectData.supplierShippingCost
-    ),
-    indirectData.taxPercent,
+  const indirectTax = useTaxPair({
+    unitPrice: indirectData.supplierUnitPrice,
+    quantity: indirectData.purchaseQuantity,
+    shippingCost: indirectData.supplierShippingCost,
+    percent: indirectData.taxPercent,
+    amount: indirectData.supplierTaxAmount,
+    currency: orderCurrency,
     currencyDecimals,
-    (supplierTaxAmount) => setIndirectData((d) => ({ ...d, supplierTaxAmount }))
-  );
+    onChange: ({ percent, amount }) =>
+      setIndirectData((d) => ({
+        ...d,
+        taxPercent: percent,
+        supplierTaxAmount: amount
+      }))
+  });
 
   const costsDisclosure = useDisclosure();
   const indirectCostsDisclosure = useDisclosure();
@@ -297,13 +304,11 @@ const PurchaseOrderLineForm = ({
   // document's currency and decimals. Defaulting to base currency is what
   // printed a JPY shipping cost as "$20.00".
   const currencyFormatter = useCurrencyFormatter({
-    currency:
-      routeData?.purchaseOrder?.currencyCode ?? company.baseCurrencyCode,
+    currency: orderCurrency,
     decimalPlaces: currencyDecimals
   });
   const priceFormatter = usePriceFormatter({
-    currency:
-      routeData?.purchaseOrder?.currencyCode ?? company.baseCurrencyCode,
+    currency: orderCurrency,
     decimalPlaces: currencyDecimals
   });
   const percentFormatter = usePercentFormatter();
@@ -709,8 +714,7 @@ const PurchaseOrderLineForm = ({
                           label={t`Unit Price`}
                           value={itemData.supplierUnitPrice}
                           formatOptions={INPUT_FORMAT.price(
-                            routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode,
+                            orderCurrency,
                             currencyDecimals
                           )}
                           onChange={(value) =>
@@ -818,8 +822,7 @@ const PurchaseOrderLineForm = ({
                             minValue={0}
                             value={itemData.supplierShippingCost}
                             formatOptions={INPUT_FORMAT.money(
-                              routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode,
+                              orderCurrency,
                               currencyDecimals
                             )}
                             onChange={(value) =>
@@ -830,27 +833,9 @@ const PurchaseOrderLineForm = ({
                             }
                           />
                           <TaxFields
+                            {...itemTax}
                             amountName="supplierTaxAmount"
                             percentName="taxPercent"
-                            subtotal={taxableBase(
-                              itemData.supplierUnitPrice,
-                              itemData.purchaseQuantity,
-                              itemData.supplierShippingCost
-                            )}
-                            currency={
-                              routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode
-                            }
-                            currencyDecimals={currencyDecimals}
-                            percent={itemData.taxPercent}
-                            amount={itemData.supplierTaxAmount}
-                            onChange={({ percent, amount }) =>
-                              setItemData((d) => ({
-                                ...d,
-                                taxPercent: percent,
-                                supplierTaxAmount: amount
-                              }))
-                            }
                           />
                         </div>
                       </div>
@@ -974,8 +959,7 @@ const PurchaseOrderLineForm = ({
                             isOptional={false}
                             value={indirectData.supplierUnitPrice}
                             formatOptions={INPUT_FORMAT.price(
-                              routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode,
+                              orderCurrency,
                               currencyDecimals
                             )}
                             onChange={(value) =>
@@ -1043,8 +1027,7 @@ const PurchaseOrderLineForm = ({
                               minValue={0}
                               value={indirectData.supplierShippingCost}
                               formatOptions={INPUT_FORMAT.money(
-                                routeData?.purchaseOrder?.currencyCode ??
-                                  company.baseCurrencyCode,
+                                orderCurrency,
                                 currencyDecimals
                               )}
                               onChange={(value) =>
@@ -1055,27 +1038,9 @@ const PurchaseOrderLineForm = ({
                               }
                             />
                             <TaxFields
+                              {...indirectTax}
                               amountName="supplierTaxAmount"
                               percentName="taxPercent"
-                              subtotal={taxableBase(
-                                indirectData.supplierUnitPrice,
-                                indirectData.purchaseQuantity,
-                                indirectData.supplierShippingCost
-                              )}
-                              currency={
-                                routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
-                              }
-                              currencyDecimals={currencyDecimals}
-                              percent={indirectData.taxPercent}
-                              amount={indirectData.supplierTaxAmount}
-                              onChange={({ percent, amount }) =>
-                                setIndirectData((d) => ({
-                                  ...d,
-                                  taxPercent: percent,
-                                  supplierTaxAmount: amount
-                                }))
-                              }
                             />
                           </div>
                         </div>
