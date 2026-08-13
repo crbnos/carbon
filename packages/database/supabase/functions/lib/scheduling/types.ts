@@ -24,13 +24,6 @@ export type JobOperationStatus =
   Database["public"]["Enums"]["jobOperationStatus"];
 
 // ============================================================================
-// Scheduling Direction and Mode
-// ============================================================================
-
-export type SchedulingDirection = "backward" | "forward";
-export type SchedulingMode = "initial" | "reschedule";
-
-// ============================================================================
 // Base Types (existing)
 // ============================================================================
 
@@ -202,8 +195,6 @@ export type SchedulingOptions = {
   jobId: string;
   companyId: string;
   userId: string;
-  direction: SchedulingDirection;
-  mode: SchedulingMode;
 };
 
 export type SchedulingResult = {
@@ -227,8 +218,6 @@ export type OperationWithJobInfo = {
   deadlineType: DeadlineType | null;
   jobPriority: number | null;
   workCenterId: string | null;
-  durationHours?: number | null; // needed by SPT/WSPT/CR/MinSlack dispatch rules
-  createdAt?: string | null; // needed by FIFO
+  durationHours?: number | null;
+  createdAt?: string | null;
 };
-
-export type DispatchRule = "FIFO" | "EDD" | "SPT" | "WSPT" | "CR" | "MinSlack";

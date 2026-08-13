@@ -21,14 +21,14 @@ function makeOp(overrides: Partial<ScheduledOperation> = {}): ScheduledOperation
   };
 }
 
-const PASS_1_CONFLICT =
+const PRIOR_CONFLICT =
   "Operation must start on 2026-07-13 but current date is 2026-07-14";
 
-Deno.test("clean finite placement clears the pass-1 date conflict", () => {
+Deno.test("finite placement sets dates and clears any prior conflict", () => {
   const ops = new Map<string, ScheduledOperation>([
     [
       "op-1",
-      makeOp({ hasConflict: true, conflictReason: PASS_1_CONFLICT }),
+      makeOp({ hasConflict: true, conflictReason: PRIOR_CONFLICT }),
     ],
   ]);
   const selections = new Map<string, WorkCenterSelection>([
@@ -53,11 +53,11 @@ Deno.test("clean finite placement clears the pass-1 date conflict", () => {
   assertEquals(op.conflictReason, null);
 });
 
-Deno.test("late finite placement replaces the pass-1 conflict with the finite reason", () => {
+Deno.test("late finite placement records the finite conflict reason", () => {
   const ops = new Map<string, ScheduledOperation>([
     [
       "op-1",
-      makeOp({ hasConflict: true, conflictReason: PASS_1_CONFLICT }),
+      makeOp({ hasConflict: true, conflictReason: PRIOR_CONFLICT }),
     ],
   ]);
   const finiteReason =
@@ -82,11 +82,11 @@ Deno.test("late finite placement replaces the pass-1 conflict with the finite re
   assertEquals(op.conflictReason, finiteReason);
 });
 
-Deno.test("selection without a placement keeps the pass-1 conflict and dates", () => {
+Deno.test("selection without a placement leaves the op's dates and conflict untouched (e.g. a pin)", () => {
   const ops = new Map<string, ScheduledOperation>([
     [
       "op-1",
-      makeOp({ hasConflict: true, conflictReason: PASS_1_CONFLICT }),
+      makeOp({ hasConflict: true, conflictReason: PRIOR_CONFLICT }),
     ],
   ]);
   const selections = new Map<string, WorkCenterSelection>([
@@ -98,10 +98,10 @@ Deno.test("selection without a placement keeps the pass-1 conflict and dates", (
   assert(op);
   assertEquals(op.startDate, "2026-07-13");
   assertEquals(op.hasConflict, true);
-  assertEquals(op.conflictReason, PASS_1_CONFLICT);
+  assertEquals(op.conflictReason, PRIOR_CONFLICT);
 });
 
-Deno.test("outside placement (no work center) applies dates and clears the pass-1 conflict", () => {
+Deno.test("outside placement (no work center) applies dates and clears any prior conflict", () => {
   const ops = new Map<string, ScheduledOperation>([
     [
       "op-1",
@@ -109,7 +109,7 @@ Deno.test("outside placement (no work center) applies dates and clears the pass-
         startDate: "2026-06-17",
         dueDate: "2026-06-18",
         hasConflict: true,
-        conflictReason: PASS_1_CONFLICT,
+        conflictReason: PRIOR_CONFLICT,
       }),
     ],
   ]);
@@ -139,7 +139,7 @@ Deno.test("outside placement (no work center) applies dates and clears the pass-
 Deno.test("operation without a selection passes through unchanged", () => {
   const original = makeOp({
     hasConflict: true,
-    conflictReason: PASS_1_CONFLICT,
+    conflictReason: PRIOR_CONFLICT,
   });
   const ops = new Map<string, ScheduledOperation>([["op-1", original]]);
 

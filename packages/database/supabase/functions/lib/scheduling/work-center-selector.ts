@@ -97,12 +97,6 @@ export type FiniteSchedulingContext = {
    * dates are worded in the FACTORY's calendar day, not UTC's.
    */
   timeZone: string;
-  /**
-   * When true (reschedule mode), an operation that already has a work center
-   * keeps it — only timing/conflicts are recomputed. Work centers are only
-   * (re)selected at initial scheduling, or manually on the operations board.
-   */
-  stickyWorkCenters: boolean;
 };
 
 /**
@@ -128,6 +122,79 @@ function peopleInfoForWorkCenter(
     }
   }
   return { memberPeopleDates };
+}
+
+/**
+ * Deterministic topological placement order (Kahn's algorithm) over the
+ * operation dependency edges: a predecessor is always placed before the
+ * operations that depend on it, so its in-run reservation is visible to its
+ * successors' walks. The ready set is ordered by jobOperation."order" then id,
+ * so identical inputs always yield the identical order (the nervousness control
+ * that makes whole-location regeneration safe). A dependency cycle (should
+ * never occur) degrades to that same deterministic order for the leftover ops.
+ */
+function topologicalPlacementOrder<T extends { id: string; order?: number }>(
+  operations: T[],
+  dependencies: JobOperationDependency[]
+): T[] {
+  const opById = new Map(operations.map((o) => [o.id, o]));
+  const inDegree = new Map<string, number>();
+  for (const o of operations) inDegree.set(o.id, 0);
+  const dependents = new Map<string, string[]>(); // dependsOnId -> [operationId]
+  const seenEdge = new Set<string>();
+  for (const d of dependencies) {
+    if (!opById.has(d.operationId) || !opById.has(d.dependsOnId)) continue;
+    const key = `${d.operationId}<-${d.dependsOnId}`;
+    if (seenEdge.has(key)) continue;
+    seenEdge.add(key);
+    inDegree.set(d.operationId, (inDegree.get(d.operationId) ?? 0) + 1);
+    const list = dependents.get(d.dependsOnId) ?? [];
+    list.push(d.operationId);
+    dependents.set(d.dependsOnId, list);
+  }
+
+  const cmp = (a: T, b: T) => {
+    const ao = a.order ?? 0;
+    const bo = b.order ?? 0;
+    if (ao !== bo) return ao - bo;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  };
+
+  // Ready set (in-degree 0), kept sorted; take the smallest each round.
+  const ready = operations
+    .filter((o) => (inDegree.get(o.id) ?? 0) === 0)
+    .sort(cmp);
+  const result: T[] = [];
+  while (ready.length > 0) {
+    const op = ready.shift()!;
+    result.push(op);
+    for (const depId of dependents.get(op.id) ?? []) {
+      const deg = (inDegree.get(depId) ?? 0) - 1;
+      inDegree.set(depId, deg);
+      if (deg === 0) {
+        const depOp = opById.get(depId);
+        if (!depOp) continue;
+        // Binary-insert into the sorted ready set.
+        let lo = 0;
+        let hi = ready.length;
+        while (lo < hi) {
+          const mid = (lo + hi) >> 1;
+          if (cmp(ready[mid], depOp) <= 0) lo = mid + 1;
+          else hi = mid;
+        }
+        ready.splice(lo, 0, depOp);
+      }
+    }
+  }
+
+  if (result.length < operations.length) {
+    const done = new Set(result.map((o) => o.id));
+    for (const o of [...operations].sort(cmp)) {
+      if (!done.has(o.id)) result.push(o);
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -266,14 +333,11 @@ export class WorkCenterSelector {
       if (o.description) descriptionById.set(o.id, o.description);
     }
 
-    // Sort by start date so DAG order is approximated and in-run reservations
-    // from predecessors are visible to successors
-    const sorted = [...operations].sort((a, b) => {
-      if (!a.startDate && !b.startDate) return 0;
-      if (!a.startDate) return 1;
-      if (!b.startDate) return -1;
-      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-    });
+    // Deterministic topological placement order: each predecessor is placed
+    // before its dependents, so in-run reservations from predecessors are
+    // visible to their successors' walks. Pinned and outside ops participate in
+    // the same order.
+    const sorted = topologicalPlacementOrder(operations, ctx.dependencies);
 
     for (const op of sorted) {
       if (op.operationType === "Outside Processing") {
@@ -365,15 +429,13 @@ export class WorkCenterSelector {
         continue;
       }
 
-      // Sticky work centers: on reschedule, an already-assigned operation
-      // stays on its machine (setups/fixtures/operators live there) — the
-      // replan only refreshes its timing and conflicts. Falls back to full
-      // process candidates when the assigned work center has no capacity
-      // data (e.g. it was deactivated since assignment).
+      // Sticky work centers: an already-assigned operation stays on its machine
+      // (setups/fixtures/operators live there). Falls back to full process
+      // candidates when it has no work center yet, or its assigned work center
+      // has no capacity data (e.g. it was deactivated since assignment) — this
+      // is how new/unassigned ops get selection.
       const candidates =
-        ctx.stickyWorkCenters &&
-        op.workCenterId &&
-        ctx.capacityByWorkCenter.has(op.workCenterId)
+        op.workCenterId && ctx.capacityByWorkCenter.has(op.workCenterId)
           ? [op.workCenterId]
           : this.getWorkCentersForProcess(op.processId);
       if (candidates.length === 0) {
@@ -385,18 +447,13 @@ export class WorkCenterSelector {
         continue;
       }
 
-      // Earliest feasible start: DAG-computed start date, never in the past,
-      // never before an in-run predecessor placement. Track whether a
+      // Earliest feasible start: forward-ASAP from now, never before an in-run
+      // predecessor placement. No backward-pass floor — the projected finish
+      // must carry slack to be an overdue early-warning. Track whether a
       // predecessor's placement is the binding bound — a late placement that
       // never waited for its own resources inherited the delay from that dep.
       let earliestMs = ctx.now.getTime();
       let dominantDepId: string | null = null;
-      if (op.startDate) {
-        const backwardMs = new Date(op.startDate).getTime();
-        if (backwardMs > earliestMs) {
-          earliestMs = backwardMs;
-        }
-      }
       for (const depId of depsByOperation.get(op.id) ?? []) {
         const depEnd = placedEndByOperation.get(depId);
         if (depEnd && depEnd.getTime() > earliestMs) {

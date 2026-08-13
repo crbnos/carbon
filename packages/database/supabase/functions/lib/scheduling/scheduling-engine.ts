@@ -7,7 +7,7 @@ import {
   AssemblyHandler,
   buildMakeMethodDependencies,
 } from "./assembly-handler.ts";
-import { datetime, getCompanyTimeZone, getLocationTimeZone } from "../datetime.ts";
+import { getCompanyTimeZone, getLocationTimeZone } from "../datetime.ts";
 import {
   type CalendarShiftRow,
   type CalendarWindow,
@@ -22,12 +22,11 @@ import {
   extendWindowsByOvertime,
   subtractAbsences,
 } from "./people-utils.ts";
-import { calculateOperationDates } from "./date-calculator.ts";
+import { buildScheduledOperations } from "./date-calculator.ts";
 import { calculateDurationHours } from "./duration-calculator.ts";
 import {
   buildOperationDependencies,
   dependenciesToRecords,
-  DependencyGraphImpl,
 } from "./dependency-manager.ts";
 import {
   KyselyMasterDataProvider,
@@ -42,13 +41,10 @@ import {
 import type { ResourceCapacityData } from "./slot-allocator.ts";
 import type {
   BaseOperation,
-  DispatchRule,
   Job,
   JobOperationDependency,
   OperationWithJobInfo,
   ScheduledOperation,
-  SchedulingDirection,
-  SchedulingMode,
   SchedulingOptions,
   SchedulingResult,
 } from "./types.ts";
@@ -73,8 +69,6 @@ export class SchedulingEngine {
   private jobId: string;
   private companyId: string;
   private userId: string;
-  private direction: SchedulingDirection;
-  private mode: SchedulingMode;
 
   private job: Job | null = null;
   private operations: BaseOperation[] = [];
@@ -88,8 +82,6 @@ export class SchedulingEngine {
   private assemblyHandler: AssemblyHandler;
   private workCenterSelector: WorkCenterSelector | null = null;
   private materialManager: MaterialManager;
-  private dispatchRuleByWorkCenter: Map<string | null, DispatchRule> | null =
-    null;
   private reservationsWritten = 0;
 
   private provider: MasterDataProvider;
@@ -106,8 +98,6 @@ export class SchedulingEngine {
     this.jobId = options.jobId;
     this.companyId = options.companyId;
     this.userId = options.userId;
-    this.direction = options.direction;
-    this.mode = options.mode;
 
     this.provider =
       options.provider ??
@@ -152,10 +142,9 @@ export class SchedulingEngine {
     // so the date calculator can pull subassemblies earlier at assembly edges.
     await this.assignAssemblyLeadTimes();
 
-    // Load existing dependencies (for reschedule mode)
-    if (this.mode === "reschedule") {
-      this.dependencies = await this.provider.getDependencies(this.jobId);
-    }
+    // Load existing dependencies as a starting point; createDependencies()
+    // rebuilds the non-rework edges before placement.
+    this.dependencies = await this.provider.getDependencies(this.jobId);
 
     // Initialize material manager
     await this.materialManager.initialize(this.jobId);
@@ -415,32 +404,13 @@ export class SchedulingEngine {
   }
 
   /**
-   * Calculate dates for all operations
+   * Build the working operation map (durations, pins). There is no backward
+   * pass: dates start null and are filled by forward-ASAP placement in
+   * selectWorkCenters(); pinned ops keep their stored dates. Conflicts are
+   * counted after placement, not here.
    */
   async calculateDates(): Promise<void> {
-    // Build dependency graph
-    const graph = new DependencyGraphImpl(this.operations, this.dependencies);
-
-    // Get anchor date based on direction
-    const anchorDate =
-      this.direction === "backward" ? this.job?.dueDate ?? null : null; // Forward scheduling would use start date
-
-    // Calculate dates ("today" is judged in the factory's time zone)
-    this.scheduledOperations = calculateOperationDates(
-      this.operations,
-      graph,
-      anchorDate,
-      datetime.today(this.timezone).toString(),
-      this.direction
-    );
-
-    // Count conflicts
-    this.conflictsDetected = 0;
-    for (const op of this.scheduledOperations.values()) {
-      if (op.hasConflict) {
-        this.conflictsDetected++;
-      }
-    }
+    this.scheduledOperations = buildScheduledOperations(this.operations);
   }
 
   /**
@@ -671,10 +641,6 @@ export class SchedulingEngine {
       horizonDays: SCHEDULING_HORIZON_DAYS,
       windowsEnd: rangeEnd,
       timeZone,
-      // Reschedules (incl. the nightly replan) keep operations on their
-      // assigned work center — machines only get (re)picked at initial
-      // scheduling or by an explicit human move on the operations board.
-      stickyWorkCenters: this.mode === "reschedule",
     };
   }
 
@@ -727,27 +693,10 @@ export class SchedulingEngine {
    * Calculate priorities for all operations grouped by work center
    */
   /**
-   * Dispatch rule for a work center: per-WC policy row → company default row
-   * (workCenterId null) → 'EDD'.
+   * Per-work-center dispatch sequence = the forward-ASAP placement order
+   * (reservation start ascending). One source of truth for what runs next.
    */
-  private async resolveDispatchRules(): Promise<
-    (workCenterId: string | null) => DispatchRule
-  > {
-    if (!this.dispatchRuleByWorkCenter) {
-      const policies = await this.provider.getSchedulingPolicies();
-      this.dispatchRuleByWorkCenter = new Map(
-        policies.map((p) => [p.workCenterId, p.dispatchRule])
-      );
-    }
-    const rules = this.dispatchRuleByWorkCenter;
-    const companyDefault = rules.get(null) ?? "EDD";
-    return (workCenterId) =>
-      (workCenterId ? rules.get(workCenterId) : undefined) ?? companyDefault;
-  }
-
   async calculatePriorities(): Promise<void> {
-    const resolveRule = await this.resolveDispatchRules();
-
     // Get all operations at affected work centers (not just from this job)
     const workCenterIds = Array.from(this.affectedWorkCenters);
 
@@ -764,10 +713,7 @@ export class SchedulingEngine {
         );
       }
 
-      const priorities = calculatePrioritiesByWorkCenter(
-        opsWithInfo,
-        resolveRule
-      );
+      const priorities = calculatePrioritiesByWorkCenter(opsWithInfo);
       this.scheduledOperations = applyPriorities(
         this.scheduledOperations,
         priorities
@@ -853,7 +799,7 @@ export class SchedulingEngine {
     }
 
     // Calculate priorities
-    const priorities = calculatePrioritiesByWorkCenter(mergedOps, resolveRule);
+    const priorities = calculatePrioritiesByWorkCenter(mergedOps);
 
     // Apply to our scheduled operations
     this.scheduledOperations = applyPriorities(
@@ -1010,14 +956,10 @@ export class SchedulingEngine {
           .execute();
       }
 
-      // Update job status if initial scheduling
-      if (this.mode === "initial") {
-        await trx
-          .updateTable("job")
-          .set({ status: "Ready" })
-          .where("id", "=", this.jobId)
-          .execute();
-      }
+      // The scheduler is status-neutral: it forecasts and reserves capacity for
+      // jobs that are already released (Ready/In Progress/Paused). Releasing a
+      // job to Ready is the app's job-status flow (which raises jobReleased),
+      // never a side effect of scheduling.
     });
 
     this.reservationsWritten = planned.length;

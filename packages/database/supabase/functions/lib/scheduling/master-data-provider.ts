@@ -71,8 +71,6 @@ export type CrossJobOperation = {
   deadlineType: Database["public"]["Enums"]["deadlineType"] | null;
   jobPriority: number | null;
   workCenterId: string | null;
-  // Dispatch-rule inputs: FIFO needs createdAt; SPT/WSPT/CR/MinSlack need
-  // the time fields to derive durationHours
   createdAt: Date | string | null;
   setupTime: number | null;
   setupUnit: Database["public"]["Enums"]["factor"] | null;
@@ -92,11 +90,6 @@ export type LiveReservation = {
   jobId: string;
   /** Human-readable job number (job."jobId", e.g. J000001) for conflict messages */
   readableJobId: string;
-};
-
-export type SchedulingPolicyRow = {
-  workCenterId: string | null;
-  dispatchRule: "FIFO" | "EDD" | "SPT" | "WSPT" | "CR" | "MinSlack";
 };
 
 /** A process that requires an ability, with its 1:1 linked ability. */
@@ -166,7 +159,6 @@ export interface MasterDataProvider {
     fromDate: Date,
     excludeJobId: string
   ): Promise<LiveReservation[]>;
-  getSchedulingPolicies(): Promise<SchedulingPolicyRow[]>;
   getProcessRequirements(
     processIds: string[]
   ): Promise<ProcessRequirementRow[]>;
@@ -490,25 +482,6 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       endAt: new Date(r.endAt as unknown as string),
       jobId: r.jobId,
       readableJobId: r.readableJobId,
-    }));
-  }
-
-  async getSchedulingPolicies(): Promise<SchedulingPolicyRow[]> {
-    return this.cached("schedulingPolicies", () =>
-      this.loadSchedulingPolicies()
-    );
-  }
-
-  private async loadSchedulingPolicies(): Promise<SchedulingPolicyRow[]> {
-    const rows = await this.db
-      .selectFrom("schedulingPolicy")
-      .select(["workCenterId", "dispatchRule"])
-      .where("companyId", "=", this.companyId)
-      .execute();
-
-    return rows.map((r) => ({
-      workCenterId: r.workCenterId,
-      dispatchRule: r.dispatchRule as SchedulingPolicyRow["dispatchRule"],
     }));
   }
 

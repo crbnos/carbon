@@ -42,9 +42,8 @@ export function applyWorkCenterSelections(
       updated.workCenterId = selection.workCenterId;
     }
 
-    // Finite placement overrides the infinite-capacity dates — and with
-    // them the pass-1 date conflict, which was computed against the
-    // backward-scheduled dates this placement just replaced. Outside
+    // Forward-ASAP placement fills the (pre-placement null) dates and clears
+    // any prior conflict — the placement is the authoritative timing. Outside
     // operations have a placement but no work center.
     if (selection.placedStart && selection.placedEnd) {
       updated.startDate = businessDay(selection.placedStart, timeZone);

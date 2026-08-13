@@ -5,10 +5,6 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { KyselyMasterDataProvider } from "../lib/scheduling/master-data-provider.ts";
 import { SchedulingEngine } from "../lib/scheduling/scheduling-engine.ts";
-import type {
-  SchedulingDirection,
-  SchedulingMode,
-} from "../lib/scheduling/types.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
@@ -65,8 +61,6 @@ serve(async (req: Request) => {
         jobId: id,
         companyId,
         userId,
-        mode: mode as SchedulingMode,
-        direction: direction as SchedulingDirection,
       });
       result = await engine.run();
       batchResults.push({
