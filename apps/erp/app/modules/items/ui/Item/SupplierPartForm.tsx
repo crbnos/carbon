@@ -56,7 +56,12 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import Grid from "~/components/Grid";
-import { usePermissions, usePriceFormatter, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  usePermissions,
+  usePriceFormatter,
+  useUser
+} from "~/hooks";
 import { path } from "~/utils/path";
 import { supplierPartValidator } from "../../items.models";
 
@@ -107,6 +112,7 @@ const SupplierPartForm = ({
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   let { itemId } = useParams();
 
@@ -181,13 +187,14 @@ const SupplierPartForm = ({
                   label={t`Supplier Part ID`}
                   termId="supplier-part-id"
                 />
-                {/* 0 minimum: the currency's decimalPlaces isn't loaded on
-                    this route — the display side pads via usePriceFormatter */}
                 <Number
                   name="unitPrice"
                   label={t`Unit Price`}
                   minValue={0}
-                  formatOptions={INPUT_FORMAT.price(baseCurrency, 0)}
+                  formatOptions={INPUT_FORMAT.price(
+                    baseCurrency,
+                    currencyDecimals
+                  )}
                 />
                 <UnitOfMeasure
                   name="supplierUnitOfMeasureCode"
@@ -354,6 +361,7 @@ function PriceBreaks({
   baseCurrency: string;
   isDisabled: boolean;
 }) {
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
   const { t } = useLingui();
   const formatter = usePriceFormatter();
 
@@ -384,10 +392,10 @@ function PriceBreaks({
     () => ({
       quantity: EditableNumber(noOpMutation),
       unitPrice: EditableNumber(noOpMutation, {
-        formatOptions: INPUT_FORMAT.price(baseCurrency, 0)
+        formatOptions: INPUT_FORMAT.price(baseCurrency, currencyDecimals)
       })
     }),
-    [noOpMutation, baseCurrency]
+    [noOpMutation, baseCurrency, currencyDecimals]
   );
 
   const columns = useMemo<ColumnDef<PriceBreakRow>[]>(
