@@ -105,7 +105,7 @@ Display digits equal input digits for every kind. Editable fields MUST use `INPU
 | Percent / rate | min 0, max 3 | "5%", "6.25%", "6.255%" — trailing zeros never render |
 | Quantity | min 0, max 5 | "3", "4.33333", "0.00125" — no "<0.01" placeholder |
 | Money (settlement) | min = max = `currency.decimalPlaces` | "$4.50", "¥63", "BHD 0.563" — always padded |
-| Price (per-unit) | min = `currency.decimalPlaces`, max 5 | "$0.164", "$4.50" |
+| Price (per-unit) | min 0, max 5 | "$0.164", "$4.5", "$3" — a price carries only the digits it has; the currency's decimals have no say |
 
 `currency.decimalPlaces` (DB column) is authoritative over Intl/CLDR defaults. Call sites never pass `minimumFractionDigits`/`maximumFractionDigits` — they pick a named kind; module-local `*_PRECISION` constants are the same violation.
 

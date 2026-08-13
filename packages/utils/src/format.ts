@@ -14,15 +14,26 @@ export function moneyFormatOptions(
 }
 
 /** Per-unit prices (scale 5): distributors quote in thousandths (0.164/ea, 0.00125/g).
- *  min = settlement padding, max = SCALE so the full stored price always renders. */
+ *  A price carries only the digits it actually has — 3 renders "3", not "3.00" —
+ *  because its precision genuinely varies and padding a variable-width number to a
+ *  fixed one is noise. The max stays at SCALE so the full stored price renders.
+ *
+ *  Settlement money is the opposite and deliberately so: see moneyFormatOptions.
+ *  Its zeros state the amount in full ("three dollars and zero cents"), and it has
+ *  already been rounded TO the currency's decimals, so there is nothing past them
+ *  left to show.
+ *
+ *  `decimalPlaces` no longer affects the output. It is kept optional so the ~60
+ *  call sites that pass it still compile; they can drop the argument.
+ */
 export function priceFormatOptions(
   currency: string,
-  decimalPlaces: number
+  _decimalPlaces?: number
 ): Intl.NumberFormatOptions {
   return {
     style: "currency",
     currency,
-    minimumFractionDigits: decimalPlaces,
+    minimumFractionDigits: 0,
     maximumFractionDigits: SCALE
   };
 }

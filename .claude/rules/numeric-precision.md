@@ -105,7 +105,7 @@ is module-private so the two percent kinds can never drift apart):
 | Exchange rate | min 0, max 5 | "1.0852", "0.00781" — a plain multiplier, not a percent and not a currency. Intl's decimal default caps at 3, which truncates a stored rate on blur |
 | Quantity | min 0, max 5 | "3", "4.33333", "0.00125" — no "<0.01" placeholder |
 | Money (settlement) | min = max = `currency.decimalPlaces` | "$4.50", "¥63" — always padded |
-| Price (per-unit) | min = `currency.decimalPlaces`, max 5 | "$0.164", "$4.50" |
+| Price (per-unit) | min 0, max 5 | "$0.164", "$4.5", "$3" — a price carries only the digits it has; the currency's decimals have no say |
 
 Call sites pick a kind (`formatMoney/Price/Percent/Quantity`, the
 `useCurrencyFormatter`/`usePriceFormatter`/`usePercentFormatter`/

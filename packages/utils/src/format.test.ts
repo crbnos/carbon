@@ -35,8 +35,28 @@ describe("formatPrice", () => {
     expect(formatPrice(0.164, "en-US", "USD", 2)).toBe("$0.164");
   });
 
-  it("pads to settlement decimals when the price is coarse", () => {
-    expect(formatPrice(4.5, "en-US", "USD", 2)).toBe("$4.50");
+  it("carries only the digits the price actually has", () => {
+    // Non-significant zeros are noise on a value whose precision varies.
+    expect(formatPrice(4.5, "en-US", "USD", 2)).toBe("$4.5");
+    expect(formatPrice(3, "en-US", "USD", 2)).toBe("$3");
+    expect(formatPrice(3.03, "en-US", "USD", 2)).toBe("$3.03");
+    expect(formatPrice(3.1, "en-US", "USD", 2)).toBe("$3.1");
+    expect(formatPrice(3.003, "en-US", "USD", 2)).toBe("$3.003");
+  });
+
+  it("is unaffected by the currency's decimals", () => {
+    // The argument is vestigial — a price is an internal scale-5 value, so the
+    // settlement width has no say in how many digits it shows.
+    expect(formatPrice(3, "en-US", "BHD", 3)).toBe(
+      formatPrice(3, "en-US", "BHD", 0)
+    );
+  });
+
+  it("still pads settlement money, which is the opposite kind", () => {
+    // The contrast is the point: money's zeros state the amount in full, and it
+    // has already been rounded TO the currency's decimals.
+    expect(formatMoney(3, "en-US", "USD", 2)).toBe("$3.00");
+    expect(formatMoney(3.003, "en-US", "USD", 2)).toBe("$3.00");
   });
 });
 
