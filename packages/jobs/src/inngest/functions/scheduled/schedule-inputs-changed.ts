@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { activeJobStatuses, fetchAllFromTable } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import { NonRetriableError } from "inngest";
 import { z } from "zod";
 import { inngest } from "../../client";
@@ -269,7 +270,7 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
   },
   { event: "carbon/schedule.inputs.changed" },
   async ({ event, step }) => {
-    const { companyId } = event.data;
+    const { companyId, reason } = event.data;
     const serviceRole = getCarbonServiceRole();
 
     const locationIds = await step.run("get-stale-locations", async () => {
@@ -328,6 +329,31 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
       0
     );
     const newlyLate = results.flatMap((r) => r.newlyLate ?? []);
+
+    // One digest per assignee for the jobs this wave flipped to projected-late.
+    // Unassigned jobs are skipped in v1 (they still get badges/flags). This is
+    // edge-triggered by construction (the engine's before/after delta), so a
+    // second identical regen produces no entries and nothing is sent.
+    const jobIdsByAssignee = new Map<string, string[]>();
+    for (const job of newlyLate) {
+      if (!job.assignee) continue;
+      const list = jobIdsByAssignee.get(job.assignee) ?? [];
+      list.push(job.jobId);
+      jobIdsByAssignee.set(job.assignee, list);
+    }
+
+    for (const [userId, jobIds] of jobIdsByAssignee) {
+      await step.sendEvent(`notify-newly-late-${userId}`, {
+        name: "carbon/notify",
+        data: {
+          event: NotificationEvent.JobsProjectedLate,
+          companyId,
+          documentIds: jobIds,
+          recipient: { type: "user", userId },
+          body: reason
+        }
+      });
+    }
 
     return {
       locations: locationIds.length,
