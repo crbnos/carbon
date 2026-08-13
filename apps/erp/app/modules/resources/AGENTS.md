@@ -5,7 +5,7 @@ Locations, work centers, processes, abilities (skills), partners, contractors, e
 ## Key Domain Concepts
 
 - **Location** — physical site/facility. Every inventory record, job, and employee is scoped to a location. Has address, timezone, and GPS coordinates. Company-scoped.
-- **Work Center** — production station within a location. Operations schedule onto work centers. Have rates and active/inactive status. MUST soft-delete via `active: false`. Scheduling is always finite: one operation at a time per work center, always open (24×7) — no capacity knobs or calendars on the work center.
+- **Work Center** — production station within a location. Operations schedule onto work centers. Have rates and active/inactive status. MUST soft-delete via `active: false`. Scheduling is always finite (one operation at a time), and a work center now has **operating hours**: assign it one or more of the location's shifts via `workCenterShift` (empty = all shifts at the location), or set `alwaysOn` for genuine lights-out 24×7. The scheduler resolves hours through a ladder — `alwaysOn` → explicit `workCenterShift` rows → the location's `shift` rows → a stock Mon–Fri 8h week — so even a zero-config shop is bounded by real hours (it is no longer "always open 24×7"). An open maintenance dispatch flagged `takesWorkCenterOffline` subtracts its window(s) from the schedule until closed. The work center form edits both (an "Operating shifts" multiselect + a "Runs 24×7 (lights-out)" toggle), and work-center create/edit/deactivate/reactivate emit the `work-center` schedule input event.
 - **Process** — type of work (e.g., "CNC Milling", "Welding"). Operations reference a process. Linked to work centers via `workCenterProcess`. MUST soft-delete via `active: false`. `process.requiresAbility` gates scheduling and MES start: toggling it ON auto-creates an ability linked 1:1 to the process (`ability.processId`, named after the process) via `ensureProcessAbility`.
 - **Ability** — an employee qualification, usually linked 1:1 to a process (`ability.processId`). `employeeAbility` is effectively a map of the processes each person can do. Qualification is **presence-based**: an `employeeAbility` row means the person is qualified, subject only to expiry — `qualified = row exists ∧ (expiresAt IS NULL OR expiresAt ≥ today)` where `expiresAt` derives from `ability.recertifyEveryDays`. There is no `active` / `trainingCompleted` gate (dropped `20260812153418_simplify-employee-ability.sql`); "Remove Employee" is a **hard delete**. Admin UI at `x/resources/abilities`; each ability's detail page carries the roster of its qualified employees, and the person page's abilities panel is editable. Training is one path to a row: `training.grantsAbilityId` + the `grant_ability_on_training_completion` trigger upsert `employeeAbility` (sets `lastTrainingDate`, `expiresAt` from `recertifyEveryDays`) on completion — but manually adding the employee qualifies them just as well.
 - **Partner** — external supplier location with ability mappings for outsourced work.
@@ -45,13 +45,14 @@ pnpm --filter @carbon/erp test -- --testPathPattern=resources
 | Table / View | Purpose |
 |---|---|
 | `location` | Physical sites: address, timezone, coordinates |
-| `workCenter` / `workCenters` (view) / `workCentersWithBlockingStatus` (view) | Production stations with blocking info |
+| `workCenter` / `workCenters` (view) / `workCentersWithBlockingStatus` (view) | Production stations with blocking info; `alwaysOn` = lights-out 24×7 (exposed by the `workCenters` view since the capacity-planning migration recreated it) |
+| `workCenterShift` | Which shifts a work center operates (scheduling availability-ladder rung 1); empty = all shifts at the location. Unique `(workCenterId, shiftId, companyId)` |
 | `process` / `processes` (view) | Work types with active flag and `requiresAbility` |
 | `workCenterProcess` | Many-to-many link between work centers and processes |
 | `ability` / `employeeAbility` | Skills with learning curves and per-employee tracking |
 | `partner` / `partners` (view) | External supplier partners |
 | `contractor` / `contractors` (view) / `contractorAbility` | Contract labor with ability assignments |
-| `maintenanceDispatch` | Equipment work orders: status, priority, severity, OEE impact |
+| `maintenanceDispatch` | Equipment work orders: status, priority, severity, OEE impact; `takesWorkCenterOffline` subtracts the work center's scheduling hours while the dispatch is open |
 | `maintenanceDispatchEvent` / `maintenanceDispatchComment` / `maintenanceDispatchItem` | Dispatch time, comments, and consumed parts |
 | `maintenanceDispatchWorkCenter` / `maintenanceDispatchItemTrackedEntity` | Affected work centers and tracked items |
 | `maintenanceSchedule` / `maintenanceScheduleItem` | Preventive maintenance plans with spare parts |

@@ -1006,9 +1006,9 @@ export async function getWorkCenter(
     return workCenter;
   }
 
-  // "alwaysOn" is not exposed by the "workCenters" view (it selects wc.* from
-  // before the column existed), so read it from the base table; "workCenterShift"
-  // rows hold the operating-shift assignments.
+  // The "workCenters" view now exposes "alwaysOn" (recreated in the
+  // capacity-planning migration), but read it explicitly here alongside the
+  // "workCenterShift" operating-shift assignments the view does not carry.
   const [alwaysOn, shifts] = await Promise.all([
     client.from("workCenter").select("alwaysOn").eq("id", id).single(),
     client.from("workCenterShift").select("shiftId").eq("workCenterId", id)

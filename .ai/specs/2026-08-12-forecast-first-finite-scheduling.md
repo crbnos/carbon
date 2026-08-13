@@ -37,6 +37,8 @@ Machine availability comes from a three-rung ladder, resolved per work center (c
 
 The engine builds each work center's `windows` from this ladder instead of one open window. `findSlot`/`allocateOperation` already accumulate working time across window gaps, so ungated operations pause outside machine hours with **no allocator changes**. For attended operations the machine windows additionally clip the members' windows (a person can't run a closed machine), and the **unattended remainder accumulates on the machine's calendar** (an `alwaysOn` machine runs through the night; a shift-bound machine resumes next window).
 
+**Machine downtime is subtracted from the ladder's windows and derived from maintenance dispatches — not stored separately.** A dispatch that takes its work center(s) offline (`maintenanceDispatch.takesWorkCenterOffline`, new flag; affected WCs = `workCenterId` + `maintenanceDispatchWorkCenter` rows) contributes an outage window `[actualStartTime ?? plannedStartTime ?? createdAt, actualEndTime ?? plannedEndTime ?? horizon-end)` while its status is not Completed/Cancelled. No end estimate = down until further notice (subtract to horizon; sticky ops on that WC surface conflicts honestly). Closing or cancelling the dispatch restores the hours with no cleanup — the windows are computed, so there is no lifecycle to sync. The machine breaks, the maintenance tech logs the dispatch they'd log anyway, and the next regen reroutes/reflags everything affected.
+
 People defaults change to match: a person with no `employeeShift` rows defaults to **the location calendar (rung 2/3), not 24×7**. Because that equals the default machine window, unconfigured labor degrades to non-constraining *within plant hours* — the survey's "unconfigured labor is invisible" consensus, without the 24×7 absurdity.
 
 Every schedule computed on rung 2 or 3 is self-explaining in the UI: "Hours assumed from {Location} shifts" / "No shifts configured — assuming Mon–Fri, 8h days."
@@ -46,7 +48,7 @@ Every schedule computed on rung 2 or 3 is self-explaining in the UI: "Hours assu
 Scheduling becomes a single regenerative pass per **location**:
 
 - **Inputs:** all open operations of `Ready | In Progress | Paused` jobs at the location, machine calendars (ladder above), people data (qualifications, shifts, manning board, absences, overtime), manual pins, material-readiness bounds, and one `now` timestamp taken once at invocation. No `Date.now()` inside the engine.
-- **Order:** jobs sorted `dueDate ASC → job.priority ASC → createdAt ASC` (the wave's existing order); operations within a job in DAG order. Ties deterministic.
+- **Order:** jobs sorted **deadline class first** (`deadlineType`: ASAP → Hard Deadline → Soft Deadline → No Deadline, the ranking already in `priority-calculator.ts`), then `dueDate ASC NULLS LAST → job.priority ASC → createdAt ASC`; operations within a job in DAG order. Ties deterministic. Leading with deadline class is what makes a new ASAP order (which often has no due date) claim capacity first instead of sorting to the back on a null due date.
 - **Placement:** forward-ASAP — earliest feasible slot from `max(now, material-ready, predecessor finish)`. **The backward-pass floor is removed**; `date-calculator.ts`'s business-day targeting is deleted from the placement path. Sticky work centers are the default for ops that have one; ops without a work center get selection (earliest finish among process candidates) — this replaces the `initial`/`reschedule` mode split with one uniform rule.
 - **Remaining work, not standard work:** for started operations, remaining labor/machine hours = standard × `(1 − quantityComplete/operationQuantity)` (clamped ≥ 0); setup counts as done once any production event exists on the operation. Anchored at `now`.
 - **Outputs, written transactionally per run:** `jobOperation.startDate/dueDate` (placement results), per-op conflict flags + notes (unchanged shape), `capacityReservation` rows (now a **materialized output** — delete-all-for-location + bulk insert, `scenarioId IS NULL`), and `job.projectedCompletionAt` = last operation's placed end.
@@ -62,8 +64,10 @@ Determinism is a hard requirement: identical inputs + identical `now` ⇒ identi
 
 - All existing `notifyScheduleInputsChanged` call sites stay; the wave handler becomes: group stale jobs by location → **regenerate each affected location in full** (Inngest concurrency 1 per location, debounce **30s** — down from 3m, affordable because regen is idempotent and whole-location). The frozen-set semantics, `WAVE_BATCH_SIZE` slicing, and per-chunk flag-clearing disappear; `scheduleOutdatedReason` stamps stay as the between-edit-and-regen UI signal and are cleared once, at regen completion, fixing the stuck-stamp and lost-update defects by construction (a regen always covers the whole location).
 - `triggerJobSchedule` remains the exported entry point but becomes a thin emitter of `schedule.inputs.changed` (kind `job`); the immediate single-job reschedule path and the dates board's double-dispatch are deleted.
-- The dead `work-center` kind gets its emitters: work-center shift edits and `alwaysOn` toggles. `shift` edits already emit.
+- The dead `work-center` kind gets its emitters: work-center shift edits, `alwaysOn` toggles, work-center deactivation, and maintenance-dispatch writes that change an offline window (flag set/cleared, timing changed, status closed) — from both ERP and MES dispatch surfaces. `shift` edits already emit.
 - The nightly replan remains as the time-passing backstop: regen every location with open jobs.
+
+**Newly-late notification.** Each regen knows every job's before/after `projectedCompletionAt`, so the wave computes the delta: a job is *newly late* when it was on time (or unforecast) before the regen and its new projected business day exceeds its due date. The wave sends one digest `carbon/notify` per assignee (`NotificationEvent.JobsProjectedLate`, `documentIds` = the job ids — the notify pipeline already supports multi-document digests), with the triggering reason in the body ("after: Time off — J. Smith"). Unassigned newly-late jobs are skipped in v1 (they still get badges/flags); a configurable planner recipient group is a follow-up. This is the moment the system stops being a screen you check and starts telling you what changed.
 
 ### 5. Dispatch is the simulation's order — `schedulingPolicy` is deleted
 
@@ -72,6 +76,19 @@ The per-work-center execution sequence (`jobOperation.priority`) is simply the p
 ### 6. Capacity view rebuilt on one date basis
 
 The Capacity view becomes a lens on the simulation: per work center per day, **Scheduled** (reservation `workHours` prorated by day overlap — unchanged math, now the star) vs **Available** (machine-calendar hours from the ladder, with people-hours shown for staffed stations rather than *replacing* the calendar number — removing the fallback cliff). Load = Scheduled vs Available, same calendar-day basis. Demand-by-due-date survives as a secondary "Due" lens (it answers a different question), no longer the Load verdict. Assumption badges from §1. The null-`workHours` fallback overcount and the 28-day past-due truncation are fixed in passing.
+
+### 7. Uncertainty & scenario forward-compatibility (design constraints now, features later)
+
+Uncertainty (e.g. a quote that may or may not be ordered) is modeled as a property of the **input set**, never of the engine. The engine stays deterministic forever; what-ifs, scenarios, and (later, enterprise-tier) Monte Carlo are samplers in front of the pure function plus aggregators behind it. Four invariants v1 must hold so that layer is additive:
+
+1. **Seeded determinism.** All tie-breaking is deterministic; if randomness ever enters the engine, the seed is an input. Identical snapshot + identical `now` ⇒ identical schedule, always.
+2. **The input snapshot is a serializable value.** The engine consumes one snapshot object assembled up front (the `MasterDataProvider` boundary) and never reads the DB mid-walk. Sampling, overlays, and replay/debugging all operate on that object.
+3. **Simulate and persist are separate steps.** The engine returns a schedule; a writer decides its fate — live plan (persist, `scenarioId IS NULL`), scenario (persist under `scenarioId` — column already reserved), or what-if (return only; the expedite mode is the existing proof of this seam). Sim inputs are **operation-shaped values decoupled from DB rows**, so provisional demand can be injected without writing job rows. Never materialize maybe-demand as real Draft jobs — phantom load in live tables is the failure mode to avoid.
+4. **A single date is the degenerate case of a distribution.** `projectedCompletionAt` today; optionally `{p50, p90, overdueProbability}` later. UI components that render promise dates/slack take `{date, confidence?}` from day one so bands render additively.
+
+**Demand layers** (the input-set vocabulary): Layer 0 = released jobs (Ready/In Progress/Paused — the live schedule, v1 scope); Layer 1 = firm planned (Planned jobs, MRP planned orders); Layer 2 = provisional (`{sourceRef: quoteLineId, probability, expectedOrderDate, expectedDueDate}` — load profile synthesized in memory from the quote line's method/routing, the same derivation `convertSalesOrderLinesToJobs` uses).
+
+**Deterministic v1.x candidates** (no Monte Carlo, each ~one sim run): capable-to-promise on a quote (inject shadow job, run, don't persist — "if we win this, when can we ship, and what does it push late"); bracket scenarios (committed / expected / all-quotes-win bands); probability-weighted expected load in the medium-term capacity lens (`Σ probability × hours`, display math only). **Enterprise later:** Monte Carlo = Bernoulli win/no-win per quote + per-work-center duration noise calibrated from the projected-vs-actual data (§ queue-time capture), N parallel runs, aggregate to per-job overdue probability and percentile promise dates.
 
 ### Design Decisions
 
@@ -92,6 +109,10 @@ The Capacity view becomes a lens on the simulation: per work center per day, **S
 | Migration strategy | Revise the unmerged branch migration `20260720121629_capacity-planning.sql` in place (drop `schedulingPolicy`, add new columns/table) | Branch precedent (07-13 changelog: "Branch migrations rewritten in place (unmerged)"); nothing here is on main |
 | Multi-tenancy / RLS / services / forms | New table follows the standard template (`companyId`, composite PK, four policies gated on `resources_*`); service fns take `client` first; WC form stays `ValidatedForm` | House rules; heuristics 1–6 all standard, no exceptions |
 | Backward compatibility | No frozen surfaces touched; `capacityReservation`/`peopleAssignment` shapes unchanged; `jobOperation.startDate/dueDate` contract unchanged | Only placement *values* change (bounded by hours now) |
+| Uncertainty modeling | Engine stays deterministic forever; uncertainty = distributions over the input snapshot (§7 invariants); scenarios/CTP/Monte Carlo are samplers + aggregators around the pure function | Zero-refactor path to the enterprise tier; provisional demand never pollutes live tables |
+| Machine downtime | Derived from open maintenance dispatches (`takesWorkCenterOffline` flag + existing timing columns), never stored as separate downtime rows | No lifecycle sync to get wrong; the dispatch the tech logs anyway IS the downtime record; closing it restores hours automatically |
+| Job ordering | Deadline class (ASAP→Hard→Soft→None) before due date | An ASAP job with no due date must lead the queue, not trail it on NULLS LAST |
+| Newly-late alerting | Wave-computed before/after delta → one digest `carbon/notify` per assignee (`documentIds` multi-job); unassigned jobs skipped in v1 | Reuses the existing notify pipeline's digest support; the regen already knows the delta for free |
 
 ## Data Model Changes
 
@@ -123,11 +144,17 @@ ALTER TABLE "workCenterShift" ADD CONSTRAINT "workCenterShift_wc_shift_key"
 -- RLS: four standard policies; SELECT get_companies_with_employee_role(),
 -- writes get_companies_with_employee_permission('resources_<action>').
 
--- 3. Forecast output on the job
+-- 3. Machine downtime via maintenance dispatches (derived windows, no new table)
+ALTER TABLE "maintenanceDispatch"
+  ADD COLUMN "takesWorkCenterOffline" BOOLEAN NOT NULL DEFAULT false;
+COMMENT ON COLUMN "maintenanceDispatch"."takesWorkCenterOffline" IS
+  'While this dispatch is open, its work center(s) contribute no scheduling capacity between (actualStartTime ?? plannedStartTime ?? createdAt) and (actualEndTime ?? plannedEndTime ?? open-ended).';
+
+-- 4. Forecast output on the job
 ALTER TABLE "job" ADD COLUMN "projectedCompletionAt" TIMESTAMP WITH TIME ZONE;
 -- (job.scheduleOutdatedReason / scheduleOutdatedAt stay as-is)
 
--- 4. Deletions (edit the branch migration in place)
+-- 5. Deletions (edit the branch migration in place)
 --    DROP: "schedulingPolicy" table, "schedulingDispatchRule" enum, and their RLS.
 ```
 
@@ -173,6 +200,10 @@ No changes to `capacityReservation`, `peopleAssignment`, `peopleAbsence`, `emplo
 - [ ] With a blank People board and no gated processes, the schedule is bounded by machine calendars only (previously 24×7).
 - [ ] Editing a shift, an employee shift, a work-center shift set, `alwaysOn`, a qualification, the manning board, or a due date stamps affected jobs and a single location regen within ~30s clears every stamp it covers.
 - [ ] Envelope: regen of a location with 2,000 open operations completes in ≤ 10s locally (Deno test or timed invoke).
+- [ ] §7 invariants hold: the engine builds one snapshot before placement and issues no DB reads during the walk; the expedite path exercises simulate-without-persist; promise-date/slack UI components accept an optional confidence input (unused in v1).
+- [ ] An open dispatch with `takesWorkCenterOffline` and a `plannedEndTime` removes exactly that window from its work center's capacity: an op that would have run inside it schedules after (or on a sibling WC), and completing the dispatch restores the hours at the next regen with no other data change.
+- [ ] A job with `deadlineType = 'ASAP'` and no due date schedules ahead of a job with a due date next week; the displaced job's forecast updates in the same regen.
+- [ ] A regen that flips a previously on-time job to projected-late produces exactly one in-app notification to that job's assignee, listing every newly-late job for that assignee in one digest; a second identical regen produces none.
 - [ ] Docs sync: `.claude/rules/scheduling-data-structures.md`, production + resources `AGENTS.md` updated in the implementing PR.
 
 ## Risks
@@ -201,7 +232,13 @@ No changes to `capacityReservation`, `peopleAssignment`, `peopleAbsence`, `emplo
 - [x] Debounce for the regen wave? — **Autonomous:** 30s (from 3m), concurrency 1 per location. Regen is idempotent and whole-location, so aggressive coalescing is no longer needed for correctness.
 - [x] Manual pins under full regen? — **Autonomous:** unchanged — pinned ops reserve their window; the sim places around them (current `manuallyScheduled` semantics).
 - [x] Migration approach? — **Autonomous:** revise the unmerged branch migration in place, per the 07-13 precedent. Nothing touched is on main.
+- [x] How does the schedule respond automatically to disruptions (call-off, machine down, ASAP order)? — **Answer (Brad, 2026-08-12):** all three ride the existing input-event → stamp → 30s location-regen loop. Call-offs were already wired (People board absence emitters). Machine downtime folded into v1 via maintenance dispatches (this question's decision): derive outage windows from open dispatches flagged `takesWorkCenterOffline` — no separate downtime table (autonomous sub-decision: derived, not stored). ASAP orders: job ordering leads with deadline class so a no-due-date ASAP job claims capacity first. Work-center deactivation also emits the `work-center` event.
+- [x] Should the system push newly-late information instead of waiting to be checked? — **Answer (Brad, 2026-08-12):** yes — add the newly-late notification: wave computes the before/after projected-late delta per regen and sends one digest notification per assignee via the existing `carbon/notify` pipeline (autonomous sub-decisions: assignee-digest recipients, unassigned jobs skipped in v1, planner group as follow-up).
+- [x] How does uncertain demand (quotes that may or may not be ordered) fit without a later refactor? — **Answer (Brad, 2026-08-12):** design for it now, build it later (Monte Carlo is enterprise-tier). §7: uncertainty is a property of the input snapshot, never the engine; hold the four invariants (seeded determinism, serializable snapshot, simulate/persist separation with row-decoupled inputs, date-as-degenerate-distribution outputs); model demand as layers with provisional demand carrying probability + expected timing; deterministic CTP/bracket/weighted-load features are v1.x candidates.
 
 ## Changelog
 
+- 2026-08-13: Implementation landed via .ai/plans/2026-08-12-forecast-first-finite-scheduling.md (Tasks 1–14, 17, 18). Migration revised in place; engine, edge function, jobs wave, notifications, resources form, capacity view, and forecast surfaces implemented; Task 13 tested the placement engine at the WorkCenterSelector level.
+- 2026-08-12: Disruption-response additions (Brad): machine downtime derived from maintenance dispatches (`takesWorkCenterOffline` + existing timing columns, windows subtracted in the ladder — no new table); job ordering leads with deadline class so ASAP orders claim capacity first; work-center deactivation + dispatch writes emit the `work-center` event (ERP + MES); newly-late digest notification per assignee via `carbon/notify` after each regen. New acceptance criteria for all four.
+- 2026-08-12: Added §7 Uncertainty & scenario forward-compatibility (Brad): four v1 invariants (seeded determinism, serializable input snapshot, simulate/persist separation, distribution-ready outputs), demand-layer vocabulary with provisional quote demand, deterministic CTP/bracket/weighted-load as v1.x candidates, Monte Carlo deferred to enterprise tier. Design constraints only — no new v1 build scope beyond the §7 acceptance criterion.
 - 2026-08-12: Created. Distilled from the capacity-planning branch audit + design conversation (Brad): forecast-first objective, machine-hours ladder, deterministic whole-location forward simulation, expedite what-if, dispatch-rule and mark/wave-complexity deletions. Supersedes the go-forward direction of 2026-07-05-finite-capacity-scheduling.md and 2026-07-17-attended-window-labor-scheduling.md (both moved to implemented/ as as-built records).
