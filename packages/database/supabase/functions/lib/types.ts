@@ -6741,7 +6741,6 @@ export type Database = {
           digitalQuoteNotificationGroup: string[]
           enforceInspectionFourEyes: boolean
           gaugeCalibrationExpiredNotificationGroup: string[]
-          hideCurrencyTrailingZeros: boolean
           id: string
           includeMaterialsOnTraveler: boolean
           incompletePickingListPolicy: string
@@ -6764,6 +6763,7 @@ export type Database = {
           salesJobCompletedNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize: string | null
+          showCurrencyTrailingZeros: boolean
           showCustomerReadableId: boolean
           showSupplierReadableId: boolean
           supplierQuoteNotificationGroup: string[]
@@ -6789,7 +6789,6 @@ export type Database = {
           digitalQuoteNotificationGroup?: string[]
           enforceInspectionFourEyes?: boolean
           gaugeCalibrationExpiredNotificationGroup?: string[]
-          hideCurrencyTrailingZeros?: boolean
           id: string
           includeMaterialsOnTraveler?: boolean
           incompletePickingListPolicy?: string
@@ -6812,6 +6811,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize?: string | null
+          showCurrencyTrailingZeros?: boolean
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
           supplierQuoteNotificationGroup?: string[]
@@ -6837,7 +6837,6 @@ export type Database = {
           digitalQuoteNotificationGroup?: string[]
           enforceInspectionFourEyes?: boolean
           gaugeCalibrationExpiredNotificationGroup?: string[]
-          hideCurrencyTrailingZeros?: boolean
           id?: string
           includeMaterialsOnTraveler?: boolean
           incompletePickingListPolicy?: string
@@ -6860,6 +6859,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize?: string | null
+          showCurrencyTrailingZeros?: boolean
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
           supplierQuoteNotificationGroup?: string[]
@@ -10348,747 +10348,6 @@ export type Database = {
           table?: string
         }
         Relationships: []
-      }
-      cutList: {
-        Row: {
-          actualYieldPct: number | null
-          assignee: string | null
-          companyId: string
-          completedDate: string | null
-          createdAt: string
-          createdBy: string
-          customFields: Json | null
-          cutListId: string
-          endTrim: number
-          gripMargin: number
-          id: string
-          jobOperationBatchId: string | null
-          kerf: number
-          locationId: string | null
-          minRemnantLength: number
-          notes: Json | null
-          plannedYieldPct: number | null
-          processId: string | null
-          status: Database["public"]["Enums"]["cutListStatus"]
-          tags: string[] | null
-          unitOfDimension: string
-          updatedAt: string | null
-          updatedBy: string | null
-          workCenterId: string | null
-        }
-        Insert: {
-          actualYieldPct?: number | null
-          assignee?: string | null
-          companyId: string
-          completedDate?: string | null
-          createdAt?: string
-          createdBy: string
-          customFields?: Json | null
-          cutListId: string
-          endTrim?: number
-          gripMargin?: number
-          id?: string
-          jobOperationBatchId?: string | null
-          kerf?: number
-          locationId?: string | null
-          minRemnantLength?: number
-          notes?: Json | null
-          plannedYieldPct?: number | null
-          processId?: string | null
-          status?: Database["public"]["Enums"]["cutListStatus"]
-          tags?: string[] | null
-          unitOfDimension?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-          workCenterId?: string | null
-        }
-        Update: {
-          actualYieldPct?: number | null
-          assignee?: string | null
-          companyId?: string
-          completedDate?: string | null
-          createdAt?: string
-          createdBy?: string
-          customFields?: Json | null
-          cutListId?: string
-          endTrim?: number
-          gripMargin?: number
-          id?: string
-          jobOperationBatchId?: string | null
-          kerf?: number
-          locationId?: string | null
-          minRemnantLength?: number
-          notes?: Json | null
-          plannedYieldPct?: number | null
-          processId?: string | null
-          status?: Database["public"]["Enums"]["cutListStatus"]
-          tags?: string[] | null
-          unitOfDimension?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-          workCenterId?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cutList_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "cutList_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "cutList_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "cutList_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "cutList_jobOperationBatchId_fkey"
-            columns: ["jobOperationBatchId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationBatch"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "cutList_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "location"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_processId_fkey"
-            columns: ["processId"]
-            isOneToOne: false
-            referencedRelation: "process"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_processId_fkey"
-            columns: ["processId"]
-            isOneToOne: false
-            referencedRelation: "processes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "cutList_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "riskRegisters"
-            referencedColumns: ["workCenterId"]
-          },
-          {
-            foreignKeyName: "cutList_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCenter"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCenters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCentersWithBlockingStatus"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      cutListLine: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          cutListId: string
-          id: string
-          itemId: string
-          jobId: string | null
-          jobMaterialId: string | null
-          order: number
-          pieceLength: number
-          pieceWidth: number | null
-          quantity: number
-          quantityCut: number
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          cutListId: string
-          id?: string
-          itemId: string
-          jobId?: string | null
-          jobMaterialId?: string | null
-          order?: number
-          pieceLength: number
-          pieceWidth?: number | null
-          quantity: number
-          quantityCut?: number
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          cutListId?: string
-          id?: string
-          itemId?: string
-          jobId?: string | null
-          jobMaterialId?: string | null
-          order?: number
-          pieceLength?: number
-          pieceWidth?: number | null
-          quantity?: number
-          quantityCut?: number
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cutListLine_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "cutListLine_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "cutListLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "cutListLine_cutListId_fkey"
-            columns: ["cutListId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "cutList"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "cutListLine_cutListId_fkey"
-            columns: ["cutListId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "cutLists"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "cutListLine_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_jobId_fkey"
-            columns: ["jobId"]
-            isOneToOne: false
-            referencedRelation: "job"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_jobId_fkey"
-            columns: ["jobId"]
-            isOneToOne: false
-            referencedRelation: "jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_jobId_fkey"
-            columns: ["jobId"]
-            isOneToOne: false
-            referencedRelation: "openProductionOrders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_jobMaterialId_fkey"
-            columns: ["jobMaterialId"]
-            isOneToOne: false
-            referencedRelation: "jobMaterial"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_jobMaterialId_fkey"
-            columns: ["jobMaterialId"]
-            isOneToOne: false
-            referencedRelation: "jobMaterialWithMakeMethodId"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_jobMaterialId_fkey"
-            columns: ["jobMaterialId"]
-            isOneToOne: false
-            referencedRelation: "openJobMaterialLines"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutListLine_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      cutPattern: {
-        Row: {
-          actualRemnant: number | null
-          companyId: string
-          createdAt: string
-          createdBy: string
-          cutListId: string
-          expectedRemnant: number | null
-          id: string
-          isComplete: boolean
-          pattern: Json
-          piecesLength: number | null
-          sequence: number
-          stockItemId: string
-          stockLength: number | null
-          trackedEntityId: string | null
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          actualRemnant?: number | null
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          cutListId: string
-          expectedRemnant?: number | null
-          id?: string
-          isComplete?: boolean
-          pattern?: Json
-          piecesLength?: number | null
-          sequence: number
-          stockItemId: string
-          stockLength?: number | null
-          trackedEntityId?: string | null
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          actualRemnant?: number | null
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          cutListId?: string
-          expectedRemnant?: number | null
-          id?: string
-          isComplete?: boolean
-          pattern?: Json
-          piecesLength?: number | null
-          sequence?: number
-          stockItemId?: string
-          stockLength?: number | null
-          trackedEntityId?: string | null
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cutPattern_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "cutPattern_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "cutPattern_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "cutPattern_cutListId_fkey"
-            columns: ["cutListId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "cutList"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "cutPattern_cutListId_fkey"
-            columns: ["cutListId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "cutLists"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "cutPattern_stockItemId_fkey"
-            columns: ["stockItemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_stockItemId_fkey"
-            columns: ["stockItemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_stockItemId_fkey"
-            columns: ["stockItemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_stockItemId_fkey"
-            columns: ["stockItemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_stockItemId_fkey"
-            columns: ["stockItemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_stockItemId_fkey"
-            columns: ["stockItemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_trackedEntityId_fkey"
-            columns: ["trackedEntityId"]
-            isOneToOne: false
-            referencedRelation: "trackedEntity"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutPattern_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
       }
       demandActual: {
         Row: {
@@ -21737,189 +20996,6 @@ export type Database = {
           },
         ]
       }
-      itemStockDimension: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          id: string
-          itemId: string
-          stockLength: number | null
-          stockThickness: number | null
-          stockWidth: number | null
-          unitOfDimension: string
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          id?: string
-          itemId: string
-          stockLength?: number | null
-          stockThickness?: number | null
-          stockWidth?: number | null
-          unitOfDimension?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          itemId?: string
-          stockLength?: number | null
-          stockThickness?: number | null
-          stockWidth?: number | null
-          unitOfDimension?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "itemStockDimension_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemStockDimension_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
       itemStockQuantities: {
         Row: {
           companyId: string
@@ -23101,12 +22177,9 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          cutLength: number | null
-          cutWidth: number | null
           defaultStorageUnit: boolean | null
           description: string
           estimatedQuantity: number | null
-          grainLocked: boolean
           id: string
           itemId: string
           itemScrapPercentage: number
@@ -23136,12 +22209,9 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          cutLength?: number | null
-          cutWidth?: number | null
           defaultStorageUnit?: boolean | null
           description: string
           estimatedQuantity?: number | null
-          grainLocked?: boolean
           id?: string
           itemId: string
           itemScrapPercentage?: number
@@ -23171,12 +22241,9 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          cutLength?: number | null
-          cutWidth?: number | null
           defaultStorageUnit?: boolean | null
           description?: string
           estimatedQuantity?: number | null
-          grainLocked?: boolean
           id?: string
           itemId?: string
           itemScrapPercentage?: number
@@ -23481,7 +22548,6 @@ export type Database = {
           inspectionDocumentId: string | null
           jobId: string
           jobMakeMethodId: string | null
-          jobOperationBatchId: string | null
           laborRate: number
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
@@ -23531,7 +22597,6 @@ export type Database = {
           inspectionDocumentId?: string | null
           jobId: string
           jobMakeMethodId?: string | null
-          jobOperationBatchId?: string | null
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -23581,7 +22646,6 @@ export type Database = {
           inspectionDocumentId?: string | null
           jobId?: string
           jobMakeMethodId?: string | null
-          jobOperationBatchId?: string | null
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -23786,13 +22850,6 @@ export type Database = {
             referencedColumns: ["jobMakeMethodId"]
           },
           {
-            foreignKeyName: "jobOperation_jobOperationBatchId_fkey"
-            columns: ["jobOperationBatchId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationBatch"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
             foreignKeyName: "jobOperation_procedureId_fkey"
             columns: ["procedureId"]
             isOneToOne: false
@@ -23885,202 +22942,6 @@ export type Database = {
           },
           {
             foreignKeyName: "jobOperation_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCentersWithBlockingStatus"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      jobOperationBatch: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          customFields: Json | null
-          id: string
-          locationId: string
-          notes: string | null
-          processId: string
-          readableId: string
-          status: Database["public"]["Enums"]["jobOperationBatchStatus"]
-          updatedAt: string | null
-          updatedBy: string | null
-          workCenterId: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          customFields?: Json | null
-          id?: string
-          locationId: string
-          notes?: string | null
-          processId: string
-          readableId: string
-          status?: Database["public"]["Enums"]["jobOperationBatchStatus"]
-          updatedAt?: string | null
-          updatedBy?: string | null
-          workCenterId?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          customFields?: Json | null
-          id?: string
-          locationId?: string
-          notes?: string | null
-          processId?: string
-          readableId?: string
-          status?: Database["public"]["Enums"]["jobOperationBatchStatus"]
-          updatedAt?: string | null
-          updatedBy?: string | null
-          workCenterId?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "jobOperationBatch_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "location"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_processId_fkey"
-            columns: ["processId"]
-            isOneToOne: false
-            referencedRelation: "process"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_processId_fkey"
-            columns: ["processId"]
-            isOneToOne: false
-            referencedRelation: "processes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "riskRegisters"
-            referencedColumns: ["workCenterId"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCenter"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCenters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
             columns: ["workCenterId"]
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
@@ -28532,7 +27393,6 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          dimensionality: string | null
           id: string
           name: string
           tags: string[] | null
@@ -28545,7 +27405,6 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          dimensionality?: string | null
           id?: string
           name: string
           tags?: string[] | null
@@ -28558,7 +27417,6 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          dimensionality?: string | null
           id?: string
           name?: string
           tags?: string[] | null
@@ -29338,9 +28196,6 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          cutLength: number | null
-          cutWidth: number | null
-          grainLocked: boolean
           id: string
           itemId: string
           itemType: string
@@ -29365,9 +28220,6 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          cutLength?: number | null
-          cutWidth?: number | null
-          grainLocked?: boolean
           id?: string
           itemId: string
           itemType?: string
@@ -29392,9 +28244,6 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          cutLength?: number | null
-          cutWidth?: number | null
-          grainLocked?: boolean
           id?: string
           itemId?: string
           itemType?: string
@@ -38198,19 +37047,13 @@ export type Database = {
       process: {
         Row: {
           active: boolean
-          batchable: boolean
           companyId: string
           completeAllOnScan: boolean
           createdAt: string
           createdBy: string
           customFields: Json | null
-          defaultEndTrim: number | null
-          defaultGripMargin: number | null
-          defaultKerf: number | null
-          defaultMinRemnantLength: number | null
           defaultStandardFactor: Database["public"]["Enums"]["factor"]
           id: string
-          isCuttingProcess: boolean
           name: string
           processType: Database["public"]["Enums"]["operationType"]
           tags: string[] | null
@@ -38219,19 +37062,13 @@ export type Database = {
         }
         Insert: {
           active?: boolean
-          batchable?: boolean
           companyId: string
           completeAllOnScan?: boolean
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          defaultEndTrim?: number | null
-          defaultGripMargin?: number | null
-          defaultKerf?: number | null
-          defaultMinRemnantLength?: number | null
           defaultStandardFactor: Database["public"]["Enums"]["factor"]
           id?: string
-          isCuttingProcess?: boolean
           name: string
           processType?: Database["public"]["Enums"]["operationType"]
           tags?: string[] | null
@@ -38240,19 +37077,13 @@ export type Database = {
         }
         Update: {
           active?: boolean
-          batchable?: boolean
           companyId?: string
           completeAllOnScan?: boolean
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          defaultEndTrim?: number | null
-          defaultGripMargin?: number | null
-          defaultKerf?: number | null
-          defaultMinRemnantLength?: number | null
           defaultStandardFactor?: Database["public"]["Enums"]["factor"]
           id?: string
-          isCuttingProcess?: boolean
           name?: string
           processType?: Database["public"]["Enums"]["operationType"]
           tags?: string[] | null
@@ -38369,7 +37200,6 @@ export type Database = {
           employeeId: string | null
           endTime: string | null
           id: string
-          jobOperationBatchId: string | null
           jobOperationId: string
           notes: string | null
           postedToGL: boolean
@@ -38387,7 +37217,6 @@ export type Database = {
           employeeId?: string | null
           endTime?: string | null
           id?: string
-          jobOperationBatchId?: string | null
           jobOperationId: string
           notes?: string | null
           postedToGL?: boolean
@@ -38405,7 +37234,6 @@ export type Database = {
           employeeId?: string | null
           endTime?: string | null
           id?: string
-          jobOperationBatchId?: string | null
           jobOperationId?: string
           notes?: string | null
           postedToGL?: boolean
@@ -38513,13 +37341,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "productionEvent_jobOperationBatchId_fkey"
-            columns: ["jobOperationBatchId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationBatch"
-            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "productionEvent_jobOperationId_fkey"
@@ -43564,10 +42385,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          cutLength: number | null
-          cutWidth: number | null
           description: string
-          grainLocked: boolean
           id: string
           itemId: string
           itemType: string
@@ -43593,10 +42411,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          cutLength?: number | null
-          cutWidth?: number | null
           description: string
-          grainLocked?: boolean
           id?: string
           itemId: string
           itemType?: string
@@ -43622,10 +42437,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          cutLength?: number | null
-          cutWidth?: number | null
           description?: string
-          grainLocked?: boolean
           id?: string
           itemId?: string
           itemType?: string
@@ -44397,7 +43209,6 @@ export type Database = {
       }
       quoteOperationStep: {
         Row: {
-          assemblyInstructionStepId: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -44417,7 +43228,6 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
-          assemblyInstructionStepId?: string | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -44437,7 +43247,6 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
-          assemblyInstructionStepId?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -44540,13 +43349,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "quoteOperationStep_assemblyInstructionStepId_fkey"
-            columns: ["assemblyInstructionStepId"]
-            isOneToOne: false
-            referencedRelation: "assemblyInstructionStep"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -62347,225 +61149,6 @@ export type Database = {
         }
         Relationships: []
       }
-      cutLists: {
-        Row: {
-          actualYieldPct: number | null
-          assignee: string | null
-          assigneeFullName: string | null
-          companyId: string | null
-          completedDate: string | null
-          createdAt: string | null
-          createdBy: string | null
-          createdByFullName: string | null
-          customFields: Json | null
-          cutListId: string | null
-          endTrim: number | null
-          gripMargin: number | null
-          id: string | null
-          kerf: number | null
-          lineCount: number | null
-          locationId: string | null
-          locationName: string | null
-          minRemnantLength: number | null
-          notes: Json | null
-          plannedYieldPct: number | null
-          processId: string | null
-          processName: string | null
-          status: Database["public"]["Enums"]["cutListStatus"] | null
-          tags: string[] | null
-          totalPieces: number | null
-          totalPiecesCut: number | null
-          unitOfDimension: string | null
-          updatedAt: string | null
-          updatedBy: string | null
-          workCenterId: string | null
-          workCenterName: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cutList_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "cutList_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "cutList_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "cutList_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "cutList_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "location"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_processId_fkey"
-            columns: ["processId"]
-            isOneToOne: false
-            referencedRelation: "process"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_processId_fkey"
-            columns: ["processId"]
-            isOneToOne: false
-            referencedRelation: "processes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "cutList_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "riskRegisters"
-            referencedColumns: ["workCenterId"]
-          },
-          {
-            foreignKeyName: "cutList_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCenter"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCenters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cutList_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCentersWithBlockingStatus"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       dimensionValues: {
         Row: {
           companyGroupId: string | null
@@ -64616,12 +63199,9 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
-          cutLength: number | null
-          cutWidth: number | null
           defaultStorageUnit: boolean | null
           description: string | null
           estimatedQuantity: number | null
-          grainLocked: boolean | null
           id: string | null
           itemId: string | null
           itemReadableId: string | null
@@ -64888,7 +63468,6 @@ export type Database = {
           inspectionDocumentId: string | null
           jobId: string | null
           jobMakeMethodId: string | null
-          jobOperationBatchId: string | null
           laborRate: number | null
           laborTime: number | null
           laborUnit: Database["public"]["Enums"]["factor"] | null
@@ -64941,7 +63520,6 @@ export type Database = {
           inspectionDocumentId?: string | null
           jobId?: string | null
           jobMakeMethodId?: string | null
-          jobOperationBatchId?: string | null
           laborRate?: number | null
           laborTime?: number | null
           laborUnit?: Database["public"]["Enums"]["factor"] | null
@@ -64994,7 +63572,6 @@ export type Database = {
           inspectionDocumentId?: string | null
           jobId?: string | null
           jobMakeMethodId?: string | null
-          jobOperationBatchId?: string | null
           laborRate?: number | null
           laborTime?: number | null
           laborUnit?: Database["public"]["Enums"]["factor"] | null
@@ -65201,13 +63778,6 @@ export type Database = {
             referencedColumns: ["jobMakeMethodId"]
           },
           {
-            foreignKeyName: "jobOperation_jobOperationBatchId_fkey"
-            columns: ["jobOperationBatchId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationBatch"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
             foreignKeyName: "jobOperation_procedureId_fkey"
             columns: ["procedureId"]
             isOneToOne: false
@@ -65323,7 +63893,6 @@ export type Database = {
           inspectionDocumentId: string | null
           jobId: string | null
           jobMakeMethodId: string | null
-          jobOperationBatchId: string | null
           laborRate: number | null
           laborTime: number | null
           laborUnit: Database["public"]["Enums"]["factor"] | null
@@ -65529,13 +64098,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["jobMakeMethodId"]
-          },
-          {
-            foreignKeyName: "jobOperation_jobOperationBatchId_fkey"
-            columns: ["jobOperationBatchId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationBatch"
-            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "jobOperation_procedureId_fkey"
@@ -68259,19 +66821,13 @@ export type Database = {
       processes: {
         Row: {
           active: boolean | null
-          batchable: boolean | null
           companyId: string | null
           completeAllOnScan: boolean | null
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
-          defaultEndTrim: number | null
-          defaultGripMargin: number | null
-          defaultKerf: number | null
-          defaultMinRemnantLength: number | null
           defaultStandardFactor: Database["public"]["Enums"]["factor"] | null
           id: string | null
-          isCuttingProcess: boolean | null
           name: string | null
           processType: Database["public"]["Enums"]["operationType"] | null
           suppliers: Json | null
@@ -72845,14 +71401,14 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -77237,28 +75793,6 @@ export type Database = {
           trackedEntityId: string
         }[]
       }
-      get_batchable_operations: {
-        Args: { location_id: string; process_id: string }
-        Returns: {
-          batchReadableId: string
-          batchStatus: Database["public"]["Enums"]["jobOperationBatchStatus"]
-          batchWorkCenterId: string
-          companyId: string
-          description: string
-          id: string
-          itemDescription: string
-          itemReadableId: string
-          jobDueDate: string
-          jobId: string
-          jobOperationBatchId: string
-          jobReadableId: string
-          jobStatus: Database["public"]["Enums"]["jobStatus"]
-          materials: Json
-          operationQuantity: number
-          status: Database["public"]["Enums"]["jobOperationStatus"]
-          workCenterId: string
-        }[]
-      }
       get_claims: { Args: { company: string; uid: string }; Returns: Json }
       get_companies_with_any_role: { Args: never; Returns: string[] }
       get_companies_with_employee_permission: {
@@ -77927,11 +76461,8 @@ export type Database = {
       get_method_tree: {
         Args: { uid: string }
         Returns: {
-          cutLength: number
-          cutWidth: number
           description: string
           externalId: Json
-          grainLocked: boolean
           isPickDescendant: boolean
           isRoot: boolean
           itemId: string
@@ -79467,12 +77998,6 @@ export type Database = {
         | "Indirect Cost"
         | "Variance"
         | "Total"
-      cutListStatus:
-        | "Draft"
-        | "Released"
-        | "In Progress"
-        | "Completed"
-        | "Cancelled"
       deadlineType: "No Deadline" | "ASAP" | "Soft Deadline" | "Hard Deadline"
       demandForecastSourceType:
         | "Job Material"
@@ -79663,7 +78188,6 @@ export type Database = {
         | "Non-Conformance"
         | "Inbound Inspection"
         | "Inventory Count"
-        | "Cut List Consumption"
         | "Scrap"
       itemLedgerType:
         | "Purchase"
@@ -79695,7 +78219,6 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
-      jobOperationBatchStatus: "Active" | "Completed" | "Cancelled"
       jobOperationStatus:
         | "Canceled"
         | "Done"
@@ -80839,13 +79362,6 @@ export const Constants = {
         "Variance",
         "Total",
       ],
-      cutListStatus: [
-        "Draft",
-        "Released",
-        "In Progress",
-        "Completed",
-        "Cancelled",
-      ],
       deadlineType: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"],
       demandForecastSourceType: [
         "Job Material",
@@ -81052,7 +79568,6 @@ export const Constants = {
         "Non-Conformance",
         "Inbound Inspection",
         "Inventory Count",
-        "Cut List Consumption",
         "Scrap",
       ],
       itemLedgerType: [
@@ -81089,7 +79604,6 @@ export const Constants = {
         "Consumable",
         "Fixture",
       ],
-      jobOperationBatchStatus: ["Active", "Completed", "Cancelled"],
       jobOperationStatus: [
         "Canceled",
         "Done",
