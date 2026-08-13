@@ -40,7 +40,7 @@ Creating it changes nothing on hand: **<Term id="posting">posting</Term>** is th
 A posted shipment decrements stock and advances the order, and if accounting is enabled it writes the <Term id="cogs">COGS</Term> journal entries. What it does **not** do is create the invoice. Fulfillment and billing are deliberately separate steps.
 </Callout>
 
-<Screenshot label="Post shipment" caption="Posting the shipment: inventory moves, the line's sent quantity rises, the order advances." ratio="wide" />
+<Screenshot src="/screens/otc-post-shipment.png" label="Post shipment" caption="The Post Shipment confirmation. Posting is the move that drops inventory, raises the line's sent quantity, and advances the order." ratio="wide" />
 
 ## Raise the invoice
 
@@ -48,7 +48,7 @@ A sales invoice has two possible sources. You can bill straight from the **sales
 
 The invoice opens at **"Draft"**, fully editable. The moment it leaves "Draft" it locks, a guard against changing numbers that have already entered the books.
 
-<Screenshot label="Sales invoice" caption="A draft invoice drawn from the posted shipment, quantities matched to what shipped." ratio="wide" />
+<Screenshot src="/screens/otc-sales-invoice.png" label="Sales invoice" caption="AR000001 in Draft, its SAT-1000 line and Net 30 terms carried across from the order, still fully editable until it's posted." ratio="wide" />
 
 ## Post and get paid
 

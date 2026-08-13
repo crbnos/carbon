@@ -779,6 +779,10 @@ msgstr "Aceptación"
 msgid "Acceptance passed"
 msgstr "Aceptación aprobada"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "Aceptada el {0}"
+
 msgid "Account"
 msgstr "Cuenta"
 
@@ -2748,11 +2752,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "Dirección de Facturación Centralizada"
 
+msgid "Cert Version"
+msgstr "Versión de Certificado"
+
 msgid "Certificate Number"
 msgstr "Número de Certificado"
 
 msgid "Certificate uploaded"
 msgstr "Certificado cargado"
+
+msgid "Certified"
+msgstr "Certificado"
 
 msgid "Chain"
 msgstr "Cadena"
@@ -5776,6 +5786,15 @@ msgstr "Entidades a separar"
 msgid "Entity"
 msgstr "Entidad"
 
+msgid "Entity certification: Accepted"
+msgstr "Certificación de la entidad: Aceptada"
+
+msgid "Entity certification: Expired"
+msgstr "Certificación de la entidad: Vencida"
+
+msgid "Entity certification: Pending"
+msgstr "Certificación de la entidad: Pendiente"
+
 msgid "Entity Type"
 msgstr "Tipo de Entidad"
 
@@ -6039,6 +6058,7 @@ msgid "Expired"
 msgstr "Expirado"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Expirado {0}"
 
@@ -6050,6 +6070,10 @@ msgstr "Lotes Vencidos"
 
 msgid "Expires"
 msgstr "Expira"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "Vence el {0}"
 
 msgid "Expires <0/>"
 msgstr "Expira <0/>"
@@ -7242,6 +7266,9 @@ msgstr "Hypercare: soporte intenso durante las primeras semanas"
 msgid "I (reduced)"
 msgstr "I (reducido)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "Tengo una base razonable para creer que este individuo es una persona estadounidense según lo definido en 22 CFR 120.62"
+
 msgid "I'm Still Working"
 msgstr "Todavía estoy trabajando"
 
@@ -7630,6 +7657,9 @@ msgstr "Valoración de Inventario"
 msgid "Invite"
 msgstr "Invitar"
 
+msgid "Invite Expired"
+msgstr "Invitación Expirada"
+
 msgid "Invited"
 msgstr "Invitado"
 
@@ -7788,6 +7818,9 @@ msgstr "Fecha de Emisión"
 
 msgid "Issues"
 msgstr "Problemas"
+
+msgid "ITAR Certifications"
+msgstr "Certificaciones ITAR"
 
 msgid "item"
 msgstr "artículo"
@@ -8045,6 +8078,9 @@ msgstr "Último día"
 
 msgid "Last Fiscal Year"
 msgstr "Último Año Fiscal"
+
+msgid "Last Login"
+msgstr "Último Inicio de Sesión"
 
 msgid "Last Month"
 msgstr "Mes Pasado"
@@ -9644,6 +9680,9 @@ msgstr "No hay entidades restantes para inspeccionar."
 msgid "No reports match your search."
 msgstr "Ningún reporte coincide con su búsqueda."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "Ningún representante de esta empresa ha aceptado todavía el Carbon GovCloud Rider. Un administrador de esta empresa debe aceptarlo antes de que cualquier persona pueda acceder a Carbon — el personal de Carbon no puede aceptarlo en su nombre."
+
 msgid "No results"
 msgstr "Sin resultados"
 
@@ -9754,6 +9793,9 @@ msgstr "Normal"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "No es una tabla sino un saldo del libro mayor: el costo se acumula cuando se emiten materiales de trabajo y se borra cuando el trabajo se recibe en inventario."
+
+msgid "Not certified"
+msgstr "No certificado"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "No hay suficientes trabajos para cubrir la cantidad"
@@ -11871,6 +11913,9 @@ msgstr "Informes"
 msgid "Reprint"
 msgstr "Reimprimir"
 
+msgid "Request a new invite"
+msgstr "Solicitar una nueva invitación"
+
 msgid "Request access"
 msgstr "Solicitar acceso"
 
@@ -12104,6 +12149,10 @@ msgstr "Número de RFQ"
 
 msgid "RFQs"
 msgstr "RFQs"
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Elemento derecho"
@@ -14842,11 +14891,18 @@ msgstr "Esta información será visible para todos los usuarios, así que ten cu
 msgid "this inspection plan"
 msgstr "este plan de inspección"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "Esta invitación para unirse a {0} ha expirado. Puedes solicitar que se envíe una nueva invitación a tu correo electrónico."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Este es un artículo comprado — no tiene BoM/BoP; solo sus atributos y documentos pueden cambiar."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Este es un identificador único para el webhook"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "Este es un entorno controlado por ITAR. El acceso está restringido a personas estadounidenses."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Este es el mes en que comienza tu año fiscal."
@@ -15365,6 +15421,9 @@ msgstr "Tipo:"
 
 msgid "Types"
 msgstr "Tipos"
+
+msgid "U.S. Person Attestation"
+msgstr "Atestación de Persona Estadounidense"
 
 msgid "Unapplied"
 msgstr "No aplicado"

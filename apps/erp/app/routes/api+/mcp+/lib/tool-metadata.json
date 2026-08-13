@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-12T08:56:43.204Z",
-  "totalTools": 1432,
+  "generated": "2026-08-13T09:00:56.684Z",
+  "totalTools": 1435,
   "modules": 15,
   "tools": [
     {
@@ -44401,6 +44401,61 @@
           "fallbackUnitPrice",
           "exchangeRate"
         ]
+      }
+    },
+    {
+      "name": "users_getItarCertificationStatus",
+      "module": "users",
+      "classification": "READ",
+      "description": "get itar certification status",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "users_getItarEntityCertification",
+      "module": "users",
+      "classification": "READ",
+      "description": "get itar entity certification",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "users_getItarCertificationReport",
+      "module": "users",
+      "classification": "READ",
+      "description": "get itar certification report",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     },
     {

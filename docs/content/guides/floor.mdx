@@ -5,7 +5,7 @@ label: "(IV)"
 index: 3
 ---
 
-Time to build. You release the first <Term id="job">production job</Term>, the first 30 robots, to the shop floor, along with the <Term>subassembly</Term> jobs for the parts that feed it. This is the handoff most shops fumble; in Carbon it's a single, traceable step.
+Time to build. You release the first <Term id="job">production job</Term> to the shop floor, along with the <Term>subassembly</Term> jobs for the parts that feed it. This is the handoff most shops fumble; in Carbon it's a single, traceable step.
 
 <Figure illustration="shopfloor-loop" caption="On the floor, every operation reports back: material consumed, labor logged, parts scanned." />
 
@@ -19,36 +19,36 @@ The released work lands on the MES "Schedule" board, a Kanban with one column pe
 The MES board is a live read of the schedule, so operators can filter and focus but they don't drag work to reschedule it. Rebalancing the plan, moving an operation to a different work center or shifting a job's dates so Carbon reschedules it, happens on the [ERP scheduling boards](/guides/plan), where a planner owns the sequence. What lands here is the result.
 </Callout>
 
-<Screenshot label="MES schedule board" caption="The first 30-robot job and its subassemblies queued across work-center columns." ratio="wide" />
+<Screenshot src="/screens/floor-mes-schedule.png" label="MES schedule board" caption="Released operations queued across the work-center columns: Clean Room Bay A, CNC Mill, PCB Lab, Potting Station, and QC Bench." ratio="wide" />
 
 ## Operations & work centers
 
-Open a job and its <Term>routing</Term> is an ordered list of operations. Each operation names a process (Mill, Deburr, Anodize, Assemble) and the work center that runs it, with separate setup, labor, and machine time so estimates and costs are honest about where the hours go.
+Open a job and its <Term>routing</Term> is an ordered list of operations. Each operation names a process (Mill, Weld, Anodize, Assemble) and the work center that runs it, with separate setup, labor, and machine time so estimates and costs are honest about where the hours go.
 
 Most operations run on your floor. But some don't, and Carbon plans for that explicitly:
 
 - Inside operation: runs at one of your work centers, by your people.
-- <Term>Outside operation</Term>: performed by a supplier. Anodizing the arm part, say: the step leaves your floor, goes out, and comes back to finish its routing.
+- <Term>Outside operation</Term>: performed by a supplier. Hard-anodizing the structural panels, say: the step leaves your floor, goes out, and comes back to finish its routing.
 
 <Figure illustration="outside-processing" caption="An outside step leaves the floor for a supplier and raises its own PO — then rejoins the routing." />
 
 <Callout tone="blue" badge="OUTSIDE PROCESSING" title="A supplier-run step raises its own purchase order.">
-Tie a process to a supplier and mark the operation Outside. Releasing the job raises an Outside Processing PO for that step, priced at the supplier's rate, and its lead time takes its place in the routing, so the schedule knows the arm is away being anodized.
+Tie a process to a supplier and mark the operation Outside. Releasing the job raises an Outside Processing PO for that step, priced at the supplier's rate, and its lead time takes its place in the routing, so the schedule knows the frame is away being anodized.
 </Callout>
 
-<Screenshot label="Job routing with an outside operation" caption="The arm's routing: in-house milling, then an outside anodize step at a supplier." ratio="wide" />
+<Screenshot src="/screens/floor-outside-operation.png" label="Job routing with an outside operation" caption="The structural frame's routing on J000001: machining and welding in-house, then a hard-anodize step outside at AstroMill Machining." ratio="wide" />
 
 ## Work instructions
 
-On the shop-floor view, an operator doesn't see a spreadsheet — they see rich work instructions: ordered steps, with images, for the exact operation in front of them. It reads like a great minimal manual, and it's always the current revision.
+On the shop-floor view, an operator doesn't see a spreadsheet — they see rich work instructions: an ordered checklist of steps, each with its description and the measurement tolerance it has to meet, for the exact operation in front of them. It reads like a great minimal manual, and it's always the current revision.
 
-<Screenshot label="Shop-floor work instructions" caption="A step-by-step work instruction for assembling the arm, with reference images." ratio="wide" />
+<Screenshot src="/screens/floor-work-instructions.png" label="Shop-floor work instructions" caption="The step checklist for J000001's final assembly and torque operation, with the torque and squareness tolerances each step must hit." ratio="wide" />
 
 ## At the station
 
 When the operator opens their operation on the MES, the controls feel physical, closer to a machine panel than a form. A big Play button reads "Start"; press it and it becomes "Pause". Everything they do here flows straight back to the job:
 
-- Clock time with the "Setup", "Labor", and "Machine" toggles, each of which starts and stops a <Term id="production-event">production event</Term>, so the operation's estimated hours meet the actual ones.
+- Clock time against the operation's work type: the button beside the Play control reads "Labor", and starting and stopping it opens and closes a <Term id="production-event">production event</Term>, so the operation's estimated hours meet the actual ones. An operation that also carries setup or machine time offers those work types in the same control.
 - "Issue Material" to <Term id="material-issue">issue</Term> the operation's components onto the job as they're consumed.
 - "Log Completed" for good units, "Log Scrap" with a <Term>scrap</Term> reason, or "Log <Term>Rework</Term>" as pieces come off the operation. "Complete All" reports the whole remaining quantity in one tap.
 - "Finish" to close the operation. It ends every active production event in one move and flips the operation to "Done".
@@ -63,13 +63,13 @@ Logged hours multiply by the work center's labor and machine rates; issued mater
 "Finish" closes one operation for good. "End Operations", from the sidebar, is the end-of-shift move: it stops every production event you have running without completing or finishing any of them, so the clock stops but the work stays open for the next person to pick up. If time cards are turned on, clocking out does the same to your labor clock.
 </Callout>
 
-<Screenshot label="MES operation screen" caption="An operator running the arm's mill operation: time toggles, quantities, and material." ratio="wide" />
+<Screenshot src="/screens/floor-mes-operation.png" label="MES operation screen" caption="An operator on J000001's 'Machine structural panels' operation at the CNC Mill: the Labor work type, quantities, and the material list." ratio="wide" />
 
 ## Backflush & issue
 
 Material leaves inventory two ways in Carbon, and the BoM decides which one applies to each component, so stock stays accurate without busywork:
 
-- Issued: tracked material, like the serialized or batch-tracked motors, is issued to the operation (or picked to the line) so every unit is accounted for by its lot.
+- Issued: tracked material, like the serialized frames or the batch-tracked battery packs, is issued to the operation (or picked to the line) so every unit is accounted for by its lot.
 - <Term id="backflush">Backflushed</Term>: non-tracked material is pulled from stock automatically the moment the operation or job reports complete. No transactions, no keystrokes.
 
 <Callout tone="green" badge="BACKFLUSH" title="The everyday consumables update themselves as the floor builds.">
@@ -81,7 +81,7 @@ Flag a material to backflush and you never reconcile it by hand. The moment an o
 For parts that demand a paper trail, operators scan as they build. Under the hood, every physical thing (a serial, a batch, a lot) is a <Term>tracked entity</Term>. Scanning a child into the unit you're building records a [tracked activity](/docs/reference/traceability): the child is marked consumed, the unit is marked produced, and the link between them is permanent.
 
 <Callout tone="blue" badge="SERIAL vs BATCH" title="Two tracking modes, one genealogy.">
-<Term id="serial">Serialize</Term> what you track one-by-one: the finished robot, its arm, its leg. <Term id="batch">Batch-track</Term> what moves in lots: motors, fasteners, raw stock. Scan a serial into a batch and Carbon records the link, so the robot's record knows exactly which motor lot it carries.
+<Term id="serial">Serialize</Term> what you track one-by-one: the finished satellite, its structural frame, its solar array wings. <Term id="batch">Batch-track</Term> what moves in lots: battery packs, fasteners, aluminium plate. Scan a serial into a batch and Carbon records the link, so the satellite's record knows exactly which battery lot it carries.
 </Callout>
 
-<Screenshot label="Shop-floor scan" caption="An operator scanning a motor lot into robot serial #0001 at the assembly station." ratio="wide" />
+<Screenshot src="/screens/floor-shopfloor-scan.png" label="Shop-floor material issue" caption="An operator issuing one tracked Structural Frame Assembly into the job at the station." ratio="wide" />

@@ -1,5 +1,6 @@
 import {
   assertIsPost,
+  CONTROLLED_ENVIRONMENT,
   error,
   getAppUrl,
   RESEND_DOMAIN,
@@ -93,7 +94,8 @@ export async function action({ request }: ActionFunctionArgs) {
         companyName: company.data.name,
         inviteLink: `${getAppUrl()}/invite/${result.code}`,
         ip,
-        location
+        location,
+        controlledEnvironment: CONTROLLED_ENVIRONMENT
       })
     )
   });

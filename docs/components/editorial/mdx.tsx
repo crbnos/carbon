@@ -54,11 +54,17 @@ export function Figure({ illustration, caption }: { illustration: IllustrationKe
   );
 }
 
+/** A captured screenshot once `src` is set (a path under `docs/public/`, e.g.
+ *  "/screens/sales-order.png"); until then, the dashed placeholder box, so a slot can be
+ *  authored before the image exists. `label` is the alt text either way. A real image keeps
+ *  its own aspect — `ratio` only sizes the placeholder. */
 export function Screenshot({
+  src,
   label,
   caption,
   ratio = "wide",
 }: {
+  src?: string;
   label: string;
   caption?: string;
   ratio?: "wide" | "tall" | "square";
@@ -68,17 +74,27 @@ export function Screenshot({
   return (
     <figure className="my-10">
       <Zoomable>
-        <div
-          className={`relative w-full ${aspect} rounded-xl border border-dashed border-ed-warm-500 bg-ed-header overflow-hidden`}
-        >
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 px-6 text-center">
-            <ImageGlyph />
-            <span className="font-mono text-ed-10 tracking-[0.08em] uppercase text-ed-ink/70">
-              Carbon screenshot
-            </span>
-            <span className="text-ed-14 font-medium text-ed-ink/78 max-w-90">{label}</span>
+        {src ? (
+          // Plain <img>: the file is a static asset of known path but unknown intrinsic size,
+          // and next/image needs either a static import or explicit width/height.
+          <img
+            src={src}
+            alt={label}
+            className="block w-full h-auto rounded-xl border border-ed-hairline bg-ed-header"
+          />
+        ) : (
+          <div
+            className={`relative w-full ${aspect} rounded-xl border border-dashed border-ed-warm-500 bg-ed-header overflow-hidden`}
+          >
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 px-6 text-center">
+              <ImageGlyph />
+              <span className="font-mono text-ed-10 tracking-[0.08em] uppercase text-ed-ink/70">
+                Carbon screenshot
+              </span>
+              <span className="text-ed-14 font-medium text-ed-ink/78 max-w-90">{label}</span>
+            </div>
           </div>
-        </div>
+        )}
       </Zoomable>
       {caption && (
         <figcaption className="mt-3 text-center text-ed-12 text-ink-faint">{caption}</figcaption>

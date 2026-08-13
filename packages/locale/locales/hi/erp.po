@@ -779,6 +779,10 @@ msgstr "स्वीकृति"
 msgid "Acceptance passed"
 msgstr "स्वीकृति पारित"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "{0} को स्वीकृत"
+
 msgid "Account"
 msgstr "खाता"
 
@@ -2748,11 +2752,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "केंद्रीकृत बिलिंग पता"
 
+msgid "Cert Version"
+msgstr "सर्ट संस्करण"
+
 msgid "Certificate Number"
 msgstr "प्रमाणपत्र संख्या"
 
 msgid "Certificate uploaded"
 msgstr "प्रमाणपत्र अपलोड किया गया"
+
+msgid "Certified"
+msgstr "प्रमाणित"
 
 msgid "Chain"
 msgstr "श्रृंखला"
@@ -5776,6 +5786,15 @@ msgstr "विभाजित करने के लिए इकाइया�
 msgid "Entity"
 msgstr "इकाई"
 
+msgid "Entity certification: Accepted"
+msgstr "इकाई प्रमाणन: स्वीकृत"
+
+msgid "Entity certification: Expired"
+msgstr "इकाई प्रमाणन: समाप्त"
+
+msgid "Entity certification: Pending"
+msgstr "इकाई प्रमाणन: लंबित"
+
 msgid "Entity Type"
 msgstr "इकाई प्रकार"
 
@@ -6039,6 +6058,7 @@ msgid "Expired"
 msgstr "समाप्त"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "समाप्त {0}"
 
@@ -6050,6 +6070,10 @@ msgstr "समाप्त बैच"
 
 msgid "Expires"
 msgstr "समाप्त होता है"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "{0} को समाप्त होगा"
 
 msgid "Expires <0/>"
 msgstr "समाप्त होता है <0/>"
@@ -7242,6 +7266,9 @@ msgstr "हाइपरकेयर: पहले हफ्तों के ल�
 msgid "I (reduced)"
 msgstr "I (कम किया गया)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "मेरे पास यह मानने का उचित आधार है कि यह व्यक्ति 22 CFR 120.62 में परिभाषित अनुसार एक U.S. व्यक्ति है"
+
 msgid "I'm Still Working"
 msgstr "मैं अभी भी काम कर रहा हूँ"
 
@@ -7630,6 +7657,9 @@ msgstr "इन्वेंटरी मूल्यांकन"
 msgid "Invite"
 msgstr "आमंत्रित करें"
 
+msgid "Invite Expired"
+msgstr "आमंत्रण समाप्त हो गया"
+
 msgid "Invited"
 msgstr "आमंत्रित"
 
@@ -7788,6 +7818,9 @@ msgstr "जारी तारीख"
 
 msgid "Issues"
 msgstr "समस्याएं"
+
+msgid "ITAR Certifications"
+msgstr "ITAR प्रमाणपत्र"
 
 msgid "item"
 msgstr "आइटम"
@@ -8045,6 +8078,9 @@ msgstr "अंतिम दिन"
 
 msgid "Last Fiscal Year"
 msgstr "पिछला वित्तीय वर्ष"
+
+msgid "Last Login"
+msgstr "अंतिम लॉगिन"
 
 msgid "Last Month"
 msgstr "पिछला महीना"
@@ -9644,6 +9680,9 @@ msgstr "निरीक्षण के लिए कोई शेष इका�
 msgid "No reports match your search."
 msgstr "कोई रिपोर्ट आपकी खोज से मेल नहीं खाती।"
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "इस कंपनी के किसी भी प्रतिनिधि ने अभी तक Carbon GovCloud Rider स्वीकार नहीं किया है। किसी के भी Carbon तक पहुँचने से पहले इस कंपनी के एक व्यवस्थापक को इसे स्वीकार करना होगा — Carbon कर्मचारी इसे आपकी ओर से स्वीकार नहीं कर सकते।"
+
 msgid "No results"
 msgstr "कोई परिणाम नहीं"
 
@@ -9754,6 +9793,9 @@ msgstr "सामान्य"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "एक तालिका नहीं बल्कि एक सामान्य-बहीखाता संतुलन: काम की सामग्री जारी होने पर लागत जमा होती है और जब काम स्टॉक में प्राप्त होता है तो स्पष्ट हो जाता है।"
+
+msgid "Not certified"
+msgstr "प्रमाणित नहीं"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
@@ -11871,6 +11913,9 @@ msgstr "रिपोर्ट"
 msgid "Reprint"
 msgstr "दोबारा प्रिंट करें"
 
+msgid "Request a new invite"
+msgstr "नया आमंत्रण का अनुरोध करें"
+
 msgid "Request access"
 msgstr "प्रवेश का अनुरोध करें"
 
@@ -12104,6 +12149,10 @@ msgstr "RFQ संख्या"
 
 msgid "RFQs"
 msgstr "आरएफक्यू"
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "दाहिनी वस्तु"
@@ -14842,11 +14891,18 @@ msgstr "यह जानकारी सभी उपयोगकर्ताओ
 msgid "this inspection plan"
 msgstr "इस निरीक्षण योजना"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "यह आमंत्रण {0} में शामिल होने के लिए समाप्त हो गया है। आप अपने ईमेल पर भेजने के लिए नया आमंत्रण का अनुरोध कर सकते हैं।"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "यह एक खरीदा गया आइटम है — इसके पास कोई BoM/BoP नहीं है; केवल इसकी विशेषताओं और दस्तावेजों को बदला जा सकता है।"
 
 msgid "This is a unique identifier for the webhook"
 msgstr "यह वेबहुक के लिए एक अद्वितीय पहचानकर्ता है"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "यह एक ITAR-नियंत्रित वातावरण है। पहुंच U.S. व्यक्तियों तक सीमित है।"
 
 msgid "This is the month your fiscal year starts."
 msgstr "यह वह महीना है जब आपका वित्तीय वर्ष शुरू होता है।"
@@ -15365,6 +15421,9 @@ msgstr "प्रकार:"
 
 msgid "Types"
 msgstr "प्रकार"
+
+msgid "U.S. Person Attestation"
+msgstr "U.S. व्यक्ति साक्ष्य"
 
 msgid "Unapplied"
 msgstr "अप्रयुक्त"

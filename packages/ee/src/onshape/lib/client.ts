@@ -253,7 +253,7 @@ export class OnshapeClient {
   ): Promise<any> {
     return this.request(
       "GET",
-      `/api/v10/assemblies/d/${documentId}/v/${versionId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=true&includeItemMicroversions=false&includeTopLevelAssemblyRow=true&thumbnail=false`
+      `/api/v10/assemblies/d/${documentId}/v/${versionId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=false&includeTopLevelAssemblyRow=true&thumbnail=false`
     );
   }
 

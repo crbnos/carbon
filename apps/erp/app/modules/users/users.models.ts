@@ -25,7 +25,52 @@ export const createEmployeeValidator = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
   employeeType: z.string().min(1, { message: "Employee type is required" }),
-  locationId: z.string().min(1, { message: "Location is required" })
+  locationId: z.string().min(1, { message: "Location is required" }),
+  // Controlled environments (ITAR) require the inviter to attest a reasonable
+  // basis that the invitee is a U.S. person (22 CFR 120.62). Optional in the
+  // schema — the action enforces it only when CONTROLLED_ENVIRONMENT is on, so
+  // ordinary deployments (no checkbox rendered) still validate.
+  usPersonAttestation: zfd.checkbox()
+});
+
+// ITAR certification — Screen 1 (entity Rider acceptance). The two checkboxes
+// must be checked; z.literal(true) rejects an unchecked/absent box server-side
+// even though the browser also enforces `required`.
+export const itarEntityCertificationValidator = z.object({
+  authorityToBind: z.literal(true, {
+    errorMap: () => ({ message: "You must confirm your authority to bind" })
+  }),
+  acceptRider: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the Rider" })
+  }),
+  fullLegalName: z
+    .string()
+    .trim()
+    .min(1, { message: "Full legal name is required" }),
+  title: z.string().trim().min(1, { message: "Title is required" }),
+  complianceContact: z
+    .string()
+    .trim()
+    .min(1, { message: "Export compliance contact is required" })
+});
+
+// ITAR certification — Screen 2 (user U.S.-Person attestation).
+export const itarUserCertificationValidator = z.object({
+  certifyUsPerson: z.literal(true, {
+    errorMap: () => ({ message: "You must certify that you are a U.S. Person" })
+  }),
+  agreeNotify: z.literal(true, {
+    errorMap: () => ({
+      message: "You must agree to the notification requirement"
+    })
+  }),
+  understandPenalty: z.literal(true, {
+    errorMap: () => ({ message: "You must acknowledge the penalties" })
+  }),
+  fullLegalName: z
+    .string()
+    .trim()
+    .min(1, { message: "Full legal name is required" })
 });
 
 export const createOperatorValidator = z.object({

@@ -1,0 +1,23 @@
+diff --git a/scripts/postinstall.js b/scripts/postinstall.js
+index 517617ffbe2341bc318bdfbc222837d303a7aaf2..a8a19ec0f0136c9d02704c66a0f3c1a504a10f43 100755
+--- a/scripts/postinstall.js
++++ b/scripts/postinstall.js
+@@ -177,4 +177,17 @@ async function main() {
+   console.info("Installed Supabase CLI successfully");
+ }
+ 
+-await main();
++// The Supabase CLI is a dev/CI tool (local `crbn migrate`, CI migrations) — it is
++// never used to build or run the ERP/MES apps. Downloading its binary from GitHub
++// during `pnpm install` must not be able to fail the install (e.g. the app deploy
++// image build, where the network to GitHub can flake with ECONNRESET). Warn and
++// continue instead of throwing so the binary is installed when reachable but its
++// absence never breaks an install that doesn't need it.
++try {
++  await main();
++} catch (err) {
++  console.warn(
++    "Skipping Supabase CLI binary install:",
++    err && err.message ? err.message : err
++  );
++}
