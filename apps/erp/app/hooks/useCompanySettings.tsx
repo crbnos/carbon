@@ -4,6 +4,7 @@ import { path } from "~/utils/path";
 type CompanySettings = {
   showSupplierReadableId?: boolean | null;
   showCustomerReadableId?: boolean | null;
+  hideCurrencyTrailingZeros?: boolean | null;
 } & Record<string, unknown>;
 
 export function useCompanySettings(): CompanySettings | undefined {

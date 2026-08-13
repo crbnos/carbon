@@ -1,6 +1,7 @@
 import { moneyFormatOptions } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import MotionNumber from "motion-number";
+import { useCurrencyMinDecimals } from "~/hooks/useCurrencies";
 
 type MotionMoneyProps = {
   value: number;
@@ -27,12 +28,13 @@ const MotionMoney = ({
   className
 }: MotionMoneyProps) => {
   const { locale } = useLocale();
+  const minDecimals = useCurrencyMinDecimals();
 
   return (
     <MotionNumber
       value={value}
       format={{
-        ...moneyFormatOptions(currency, decimalPlaces),
+        ...moneyFormatOptions(currency, decimalPlaces, minDecimals),
         notation: "standard" as const
       }}
       locales={locale}

@@ -36,7 +36,8 @@ import { getDefaultAccounts } from "~/modules/accounting";
 import {
   getCompanySettings,
   updateAccountingEnabledSetting,
-  updateAssetTaxDepreciationSettings
+  updateAssetTaxDepreciationSettings,
+  updateHideCurrencyTrailingZerosSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -99,6 +100,17 @@ export async function action({ request }: ActionFunctionArgs) {
     );
     if (update.error) return { success: false, message: update.error.message };
     return { success: true, message: "Accounting settings updated" };
+  }
+
+  if (intent === "hideCurrencyTrailingZeros") {
+    const enabled = formData.get("enabled") === "true";
+    const update = await updateHideCurrencyTrailingZerosSetting(
+      client,
+      companyId,
+      enabled
+    );
+    if (update.error) return { success: false, message: update.error.message };
+    return { success: true, message: "Currency display updated" };
   }
 
   if (intent === "assetTaxDepreciationEnabled") {
@@ -194,6 +206,16 @@ export default function AccountingSettingsRoute() {
     [fetcher]
   );
 
+  const handleTrailingZerosToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "hideCurrencyTrailingZeros", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
   const handleTaxDepreciationToggle = useCallback(
     (checked: boolean) => {
       fetcher.submit(
@@ -263,6 +285,58 @@ export default function AccountingSettingsRoute() {
                 checked={(companySettings as any).accountingEnabled ?? false}
                 onCheckedChange={handleAccountingToggle}
                 disabled={!isInternal}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Currency</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Trailing Zeros</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                How currency amounts are displayed in the app. Each currency's
+                own decimal places still decide the width — this only chooses
+                whether the non-significant zeros are shown. Printed documents
+                always show them, and stored values are never affected.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {(companySettings as any).hideCurrencyTrailingZeros ? (
+                    <Trans>Amounts are shown as $300 and $3.5</Trans>
+                  ) : (
+                    <Trans>Amounts are shown as $300.00 and $3.50</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {(companySettings as any).hideCurrencyTrailingZeros ? (
+                    <Trans>
+                      Turn off to pad amounts to the currency's decimal places,
+                      which keeps columns of figures aligned.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Turn on to hide non-significant zeros. Fixed-width amounts
+                      are the accounting convention, so this is off by default.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={
+                  (companySettings as any).hideCurrencyTrailingZeros ?? false
+                }
+                onCheckedChange={handleTrailingZerosToggle}
               />
             </HStack>
           </CardContent>

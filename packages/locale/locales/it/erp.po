@@ -1310,6 +1310,12 @@ msgstr "Importo da applicare per {0}"
 msgid "Amount Type"
 msgstr "Tipo di Importo"
 
+msgid "Amounts are shown as $300 and $3.5"
+msgstr ""
+
+msgid "Amounts are shown as $300.00 and $3.50"
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Un bucket contabile che raggruppa le spese per dipartimento o funzione in modo che la GL possa riportare le spese per gruppo, non solo per conto."
 
@@ -7154,6 +7160,9 @@ msgstr "Come un articolo è approvvigionato quando aggiunto a una riga di metodo
 
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "Come il costo unitario di un articolo è valutato: Standard, Media, FIFO o LIFO. Impostato per articolo."
+
+msgid "How currency amounts are displayed in the app. Each currency's own decimal places still decide the width — this only chooses whether the non-significant zeros are shown. Printed documents always show them, and stored values are never affected."
+msgstr ""
 
 msgid "How items roll up for posting and reporting"
 msgstr "Come gli articoli si aggregano per la registrazione e la rendicontazione"
@@ -15320,6 +15329,9 @@ msgstr "Tipo di tracciamento"
 msgid "Tracking URL"
 msgstr "URL di tracciamento"
 
+msgid "Trailing Zeros"
+msgstr ""
+
 msgid "Train"
 msgstr "Formazione"
 
@@ -15392,8 +15404,14 @@ msgstr "Trigger"
 msgid "Tuesday"
 msgstr "Martedì"
 
+msgid "Turn off to pad amounts to the currency's decimal places, which keeps columns of figures aligned."
+msgstr ""
+
 msgid "Turn on the built-in pieces"
 msgstr "Attiva i componenti integrati"
+
+msgid "Turn on to hide non-significant zeros. Fixed-width amounts are the accounting convention, so this is off by default."
+msgstr ""
 
 msgid "Type"
 msgstr "Tipo"

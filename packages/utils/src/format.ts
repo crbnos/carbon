@@ -4,23 +4,29 @@ import { SCALE } from "./math";
  *  business's point of view a price is an amount in the same currency, so both
  *  render at that currency's decimals.
  *
- *  Those decimals are exact — min AND max — so the width states the amount in
- *  full: "$300.00" is three hundred dollars and zero cents, "¥63" is sixty-three
- *  yen, "BHD 0.563" is three fils places. `decimalPlaces` is
- *  `currency.decimalPlaces` — the DB column, authoritative over Intl/CLDR, and
- *  never a literal.
+ *  `decimalPlaces` is `currency.decimalPlaces` — the DB column, authoritative
+ *  over Intl/CLDR, and never a literal. It is always the MAXIMUM.
+ *
+ *  `minDecimalPlaces` decides whether the non-significant zeros it implies are
+ *  kept, and DEFAULTS to keeping them: "$300.00", "$3.50", "$0.00", "¥63".
+ *  Fixed-width money is the accounting convention — it keeps columns of amounts
+ *  aligned and an explicit ".00" reads as money rather than a bare count. Pass 0
+ *  to drop the padding ("$300", "$3.5"); that is a per-company display
+ *  preference (`companySettings.hideCurrencyTrailingZeros`), which is why it is
+ *  a parameter here rather than a second kind.
  *
  *  Display rounds to this width; STORAGE is a separate question — a value wider
  *  than the currency (a scale-5 unit price) is shown rounded, and the editable
  *  field commits at this width too (see INPUT_FORMAT). */
 export function moneyFormatOptions(
   currency: string,
-  decimalPlaces: number
+  decimalPlaces: number,
+  minDecimalPlaces: number = decimalPlaces
 ): Intl.NumberFormatOptions {
   return {
     style: "currency",
     currency,
-    minimumFractionDigits: decimalPlaces,
+    minimumFractionDigits: minDecimalPlaces,
     maximumFractionDigits: decimalPlaces
   };
 }
@@ -30,9 +36,10 @@ export function moneyFormatOptions(
  *  different set of digits, and must not become one. */
 export function priceFormatOptions(
   currency: string,
-  decimalPlaces: number
+  decimalPlaces: number,
+  minDecimalPlaces: number = decimalPlaces
 ): Intl.NumberFormatOptions {
-  return moneyFormatOptions(currency, decimalPlaces);
+  return moneyFormatOptions(currency, decimalPlaces, minDecimalPlaces);
 }
 
 /** How many digits a percent carries. A scale-5 fraction is 3 percent-digits,
@@ -84,10 +91,10 @@ export const INPUT_FORMAT = {
    *  so this options object is what decides the precision a typed amount is
    *  STORED at: at USD's 2 places a typed 300.22121 commits as 300.22, and at
    *  JPY's 0 a typed 63.4 commits as 63. */
-  money: (currency: string, decimalPlaces: number) =>
-    moneyFormatOptions(currency, decimalPlaces),
-  price: (currency: string, decimalPlaces: number) =>
-    moneyFormatOptions(currency, decimalPlaces)
+  money: (currency: string, decimalPlaces: number, minDecimalPlaces?: number) =>
+    moneyFormatOptions(currency, decimalPlaces, minDecimalPlaces),
+  price: (currency: string, decimalPlaces: number, minDecimalPlaces?: number) =>
+    moneyFormatOptions(currency, decimalPlaces, minDecimalPlaces)
 };
 
 const SCALE_STEP = 1 / 10 ** SCALE;
@@ -110,11 +117,12 @@ export function formatMoney(
   value: number,
   locale: string,
   currency: string,
-  decimalPlaces: number
+  decimalPlaces: number,
+  minDecimalPlaces?: number
 ): string {
   return new Intl.NumberFormat(
     locale,
-    moneyFormatOptions(currency, decimalPlaces)
+    moneyFormatOptions(currency, decimalPlaces, minDecimalPlaces)
   ).format(value);
 }
 

@@ -1,16 +1,23 @@
 import { moneyFormatOptions } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
-import { useConfiguredCurrencyDecimals } from "./useCurrencies";
+import {
+  useConfiguredCurrencyDecimals,
+  useCurrencyMinDecimals
+} from "./useCurrencies";
 import { useUser } from "./useUser";
 
 /**
  * Currency display — money and per-unit prices alike, because they are the same
  * kind. Digits come from the company group's configured `currency.decimalPlaces`
- * exactly — min AND max, so the width states the amount in full: "$300.00",
- * "$3.50", "¥63", "BHD 0.563". The DB column is authoritative over Intl/CLDR;
- * CLDR only decides when the currency isn't configured for the group (or the
- * list hasn't loaded yet).
+ * as the maximum. The DB column is authoritative over Intl/CLDR; CLDR only
+ * decides when the currency isn't configured for the group (or the list hasn't
+ * loaded yet).
+ *
+ * By default the amount is PADDED to those decimals, so its width states the
+ * amount in full: "$300.00", "$3.50", "¥63", "BHD 0.563". A company can drop the
+ * non-significant zeros with `hideCurrencyTrailingZeros`; that preference is read
+ * here once (useCurrencyMinDecimals) rather than at 55 call sites.
  *
  * `decimalPlaces` overrides the lookup when the caller already has the row
  * (e.g. from a loader). Any other Intl options a caller passes win over the
@@ -24,6 +31,7 @@ export function useCurrencyFormatter(
   const { locale } = useLocale();
   const currency = options?.currency ?? baseCurrency;
   const configuredDecimals = useConfiguredCurrencyDecimals(currency);
+  const minDecimals = useCurrencyMinDecimals();
 
   // Every call site passes an object literal, so depending on `options` by
   // identity meant the memo never hit: a new Intl.NumberFormat on every render,
@@ -39,9 +47,9 @@ export function useCurrencyFormatter(
     const decimals = decimalPlaces ?? configuredDecimals;
     return new Intl.NumberFormat(locale, {
       ...(decimals != null
-        ? moneyFormatOptions(currency, decimals)
+        ? moneyFormatOptions(currency, decimals, minDecimals)
         : { style: "currency" as const, currency }),
       ...opts
     });
-  }, [locale, currency, optionsKey, configuredDecimals]);
+  }, [locale, currency, optionsKey, configuredDecimals, minDecimals]);
 }

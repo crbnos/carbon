@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-13T09:00:56.684Z",
-  "totalTools": 1435,
+  "generated": "2026-08-13T11:40:16.248Z",
+  "totalTools": 1436,
   "modules": 15,
   "tools": [
     {
@@ -42800,6 +42800,33 @@
         },
         "required": [
           "defaultSupplierCc"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateHideCurrencyTrailingZerosSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update hide currency trailing zeros setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "hideCurrencyTrailingZeros"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "hideCurrencyTrailingZeros": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hideCurrencyTrailingZeros"
         ]
       }
     },

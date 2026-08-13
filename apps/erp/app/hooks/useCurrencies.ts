@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useFetcher } from "react-router";
 import type { getCurrenciesList } from "~/modules/accounting";
 import { path } from "~/utils/path";
+import { useCompanySettings } from "./useCompanySettings";
 
 /**
  * The ISO currency list with the company group's configured `decimalPlaces`
@@ -48,4 +49,19 @@ export function useCurrencyDecimals(
   currencyCode: string | null | undefined
 ): number {
   return useConfiguredCurrencyDecimals(currencyCode) ?? 2;
+}
+
+/**
+ * The MINIMUM digits a currency amount displays with — the company's
+ * `hideCurrencyTrailingZeros` preference resolved to a number for
+ * `moneyFormatOptions`.
+ *
+ * `undefined` means "pad to the currency's decimals", which is both the default
+ * and what an UNAUTHENTICATED context gets: the public quote share page has no
+ * company settings to read, and a customer-facing document should show money at
+ * full width regardless of an internal display preference.
+ */
+export function useCurrencyMinDecimals(): number | undefined {
+  const settings = useCompanySettings();
+  return settings?.hideCurrencyTrailingZeros ? 0 : undefined;
 }
