@@ -22,6 +22,7 @@
     "fumadocs-core": "^16",
     "fumadocs-mdx": "^15",
     "fumadocs-ui": "^16",
+    "mermaid": "^11.16.1",
     "motion": "^12",
     "next": "^16",
     "non.geist": "catalog:",

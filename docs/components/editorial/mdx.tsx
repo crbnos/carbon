@@ -1,6 +1,9 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { Field, FieldTable } from "./field-table";
 import { type IllustrationKey, illustrations } from "./illustrations";
+// remarkMermaid rewrites ```mermaid fences for both collections, so the Guide needs
+// the component registered too even though guide chapters carry no code fences today.
+import { Mermaid } from "./mermaid";
 import { Status, StatusFlow } from "./status-flow";
 import { Term } from "./term";
 import { Zoomable } from "./zoomable";
@@ -261,6 +264,7 @@ export const editorialMdxComponents = {
   a: Anchor,
   Figure,
   Screenshot,
+  Mermaid,
   Callout,
   Divider,
   Term,

@@ -88,6 +88,15 @@
 .prose :not(pre) > code::after {
   content: none !important;
 }
+/* …but nowrap on a phone means one long inline path (a full `apps/erp/app/modules/…`
+ * reference) widens the whole document and every section scrolls sideways with it.
+ * Below the tablet breakpoint, let those chips wrap; desktop keeps identifiers intact. */
+@media (max-width: 640px) {
+  .prose :not(pre) > code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
 
 /* Fenced code → our dark API-playground panel. The MDX `pre` is overridden by
  * <MdxCodeBlock>, which wraps the shiki output in `pre.mdx-shiki`; the token
@@ -299,4 +308,39 @@ figure.ed-codeblock figcaption {
 .nav-scroll-fade {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 24px);
   mask-image: linear-gradient(to bottom, transparent 0, #000 24px);
+}
+
+/* Mermaid diagrams (components/editorial/mermaid.tsx). Colors come from themeVariables
+ * in the component; what's left here is fitting the SVG to the prose column plus the two
+ * things themeVariables cannot reach — mermaid inlines a font-family per text node, and
+ * edge labels need an opaque backdrop. */
+.ed-mermaid svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.ed-mermaid svg text,
+.ed-mermaid svg .nodeLabel,
+.ed-mermaid svg .edgeLabel,
+.ed-mermaid svg .messageText,
+.ed-mermaid svg .actor {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+}
+
+/* Edge labels ride on top of their line; without an opaque fill the line strikes
+ * through the words. Mermaid's default is a transparent-ish rect. */
+.ed-mermaid svg .edgeLabel,
+.ed-mermaid svg .edgeLabel p {
+  background-color: #fbfbfb !important;
+  color: rgba(38, 35, 35, 0.72) !important;
+}
+
+/* Subgraph titles read as section labels, not node text. Only ever make them SMALLER:
+ * mermaid measures the label and sizes its foreignObject before this CSS lands, so
+ * anything that widens the text (mono, uppercase, letter-spacing) clips the last word. */
+.ed-mermaid svg .cluster-label .nodeLabel {
+  font-size: 11px;
+  color: rgba(38, 35, 35, 0.45) !important;
 }

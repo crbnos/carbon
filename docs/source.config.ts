@@ -58,9 +58,45 @@ function remarkStripAgentContext() {
   };
 }
 
+// Rewrite ```mermaid fences into <Mermaid chart="..."> before rehype sees them, so
+// authors write plain markdown and shiki never tries to highlight a diagram (there is
+// no "mermaid" grammar — it would fall through as unstyled text in a code panel).
+// Runs on mdast, i.e. ahead of rehypeCode, and the <Mermaid> component is supplied by
+// getMDXComponents like any other MDX component.
+function remarkMermaid() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (tree: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const walk = (node: any) => {
+      if (!node || !Array.isArray(node.children)) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      node.children = node.children.map((child: any) => {
+        if (child.type !== "code" || child.lang !== "mermaid") {
+          walk(child);
+          return child;
+        }
+        // `meta` after the language is used as the caption: ```mermaid The event chain
+        const caption = typeof child.meta === "string" ? child.meta.trim() : "";
+        return {
+          type: "mdxJsxFlowElement",
+          name: "Mermaid",
+          attributes: [
+            { type: "mdxJsxAttribute", name: "chart", value: child.value },
+            ...(caption
+              ? [{ type: "mdxJsxAttribute", name: "caption", value: caption }]
+              : []),
+          ],
+          children: [],
+        };
+      });
+    };
+    walk(tree);
+  };
+}
+
 export default defineConfig({
   mdxOptions: {
-    remarkPlugins: [remarkStripAgentContext],
+    remarkPlugins: [remarkStripAgentContext, remarkMermaid],
     // Dark code blocks everywhere, themed with Night Owl. Provide BOTH themes
     // explicitly (same theme) so fumadocs replaces its default github-light/github-dark-default
     // pair — a single `theme` leaves the default light theme referenced and shiki throws

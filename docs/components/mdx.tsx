@@ -7,6 +7,8 @@ import type { ComponentProps } from "react";
 import { Checklist, Check } from "@/components/checklist";
 import { Field, FieldTable } from "@/components/editorial/field-table";
 import { Glossary } from "@/components/editorial/glossary";
+// ```mermaid fences are rewritten to <Mermaid> by remarkMermaid (source.config.ts).
+import { Mermaid } from "@/components/editorial/mermaid";
 // Figure/Screenshot + the shared Zoomable island so the Reference gets the same
 // click-to-enlarge visuals as the Guide (one component, both surfaces).
 import { AgentContext, Figure, Screenshot } from "@/components/editorial/mdx";
@@ -63,6 +65,7 @@ export function getMDXComponents(components?: MDXComponents) {
     Status,
     Figure,
     Screenshot,
+    Mermaid,
     PlanBadge,
     Term,
     Step,
