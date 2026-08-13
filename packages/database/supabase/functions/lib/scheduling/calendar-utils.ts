@@ -2,10 +2,12 @@
  * Availability-window + slot-walking utilities for finite scheduling.
  * Pure functions — no DB access.
  *
- * Work centers are always open (24/7) — availability constraints come from
- * PEOPLE: a qualified employee's assigned shifts (`employeeShift` ⋈ `shift`)
- * expand into concrete UTC working windows. An employee with no shift
- * assignment is treated as always available.
+ * Work centers are no longer "always open": machine availability comes from the
+ * machine-availability ladder (explicit `workCenterShift` rows → the location's
+ * shifts → a stock Mon–Fri 08:00–17:00 week), or one continuous window for an
+ * `alwaysOn` (lights-out) machine. People windows (`employeeShift` ⋈ `shift`)
+ * refine the machine calendar for attended operations — a person can't run a
+ * closed machine, so member windows are intersected with the machine's.
  */
 
 import {
@@ -26,6 +28,16 @@ export type CalendarWindow = {
   start: Date;
   end: Date;
 };
+
+/**
+ * Stock default operating week (availability-ladder rung 3): Mon–Fri
+ * 08:00–17:00 in the location's timezone, used when a work center has no
+ * explicit shifts and its location has none either. The 9-hour wall span
+ * matches the UI's 8h-work + 1h-break convention (FALLBACK_SHIFT_HOURS = 8).
+ */
+export const STOCK_WEEK_SHIFTS: CalendarShiftRow[] = [1, 2, 3, 4, 5].map(
+  (dayOfWeek) => ({ dayOfWeek, startTime: "08:00", endTime: "17:00" })
+);
 
 
 /** Local calendar date (y/m/d) of a UTC instant in a timezone. */
@@ -172,6 +184,36 @@ export function unionWindows(windowLists: CalendarWindow[][]): CalendarWindow[] 
     }
   }
   return mergeIntervals(intervals);
+}
+
+/**
+ * Intersect two disjoint, chronologically sorted window lists into the time
+ * where BOTH are available (standard two-pointer sweep). Used to clip a
+ * person's availability to their machine's open hours — a person can't run a
+ * closed machine. Inputs must be disjoint + sorted (as produced by
+ * `expandCalendar`/`unionWindows`); the output is too.
+ */
+export function intersectWindows(
+  a: CalendarWindow[],
+  b: CalendarWindow[]
+): CalendarWindow[] {
+  const result: CalendarWindow[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    const start = Math.max(a[i].start.getTime(), b[j].start.getTime());
+    const end = Math.min(a[i].end.getTime(), b[j].end.getTime());
+    if (end > start) {
+      result.push({ start: new Date(start), end: new Date(end) });
+    }
+    // advance whichever window ends first — the other may still overlap the next
+    if (a[i].end.getTime() < b[j].end.getTime()) {
+      i++;
+    } else {
+      j++;
+    }
+  }
+  return result;
 }
 
 /** Whether an instant falls inside any window. */

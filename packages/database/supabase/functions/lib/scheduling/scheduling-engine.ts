@@ -478,13 +478,36 @@ export class SchedulingEngine {
       now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
     );
 
-    const [liveReservations, processRequirements, peopleRows, absenceRows] =
-      await Promise.all([
-        this.provider.getLiveReservations(now, this.jobId),
-        this.provider.getProcessRequirements(processIds),
-        this.provider.getPeopleAssignments(rangeStart, rangeEnd, this.timezone),
-        this.provider.getPeopleAbsences(rangeStart, rangeEnd, this.timezone),
-      ]);
+    const [
+      liveReservations,
+      processRequirements,
+      peopleRows,
+      absenceRows,
+      workCenterAvailability,
+      locationDefaultWindows,
+    ] = await Promise.all([
+      this.provider.getLiveReservations(now, this.jobId),
+      this.provider.getProcessRequirements(processIds),
+      this.provider.getPeopleAssignments(rangeStart, rangeEnd, this.timezone),
+      this.provider.getPeopleAbsences(rangeStart, rangeEnd, this.timezone),
+      this.provider.getWorkCenterAvailability(
+        [...workCenterIds],
+        rangeStart,
+        rangeEnd
+      ),
+      // People with no employeeShift rows default to the job location's calendar
+      // (plant hours), not 24×7 — matching the default machine window so
+      // unconfigured labor is non-constraining within plant hours.
+      this.job?.locationId
+        ? this.provider.getLocationCalendarWindows(
+            this.job.locationId,
+            rangeStart,
+            rangeEnd
+          )
+        : Promise.resolve<CalendarWindow[]>([
+            { start: rangeStart, end: rangeEnd },
+          ]),
+    ]);
 
     const abilityIds = Array.from(
       new Set(processRequirements.map((r) => r.abilityId))
@@ -500,13 +523,16 @@ export class SchedulingEngine {
     );
     const shiftRows = await this.provider.getEmployeeShiftWindows(employeeIds);
 
-    // Work centers: capacity 1, always open across the horizon; the
-    // reservations GATE placement (one op at a time) and feed attribution
+    // Work centers: capacity 1, open per the availability ladder (explicit
+    // workCenterShift rows → location shifts → stock Mon–Fri 8h, or one open
+    // window for an alwaysOn machine). Reservations GATE placement (one op at a
+    // time) and feed attribution. A WC with no resolved windows (e.g. deleted)
+    // schedules nothing and surfaces a conflict.
     const capacityByWorkCenter = new Map<string, ResourceCapacityData>();
     for (const wcId of workCenterIds) {
       capacityByWorkCenter.set(wcId, {
         workCenter: { id: wcId },
-        windows: [{ start: rangeStart, end: rangeEnd }],
+        windows: workCenterAvailability.get(wcId) ?? [],
         reservations: liveReservations
           .filter(
             (r) => r.resourceKind === "WorkCenter" && r.resourceId === wcId
@@ -555,14 +581,13 @@ export class SchedulingEngine {
       windowsByEmployee.set(employeeId, unionWindows(lists));
     }
 
-    // People with no shift assignment default to always-available (same value
-    // the ability pools fall back to) — materialized here so absences can
-    // subtract from them too
+    // People with no shift assignment default to the job location's calendar
+    // (plant hours, matching the default machine window) — not 24×7 — so
+    // unconfigured labor degrades to non-constraining within plant hours.
+    // Materialized here so absences/overtime can adjust it too.
     for (const employeeId of employeeIds) {
       if (!windowsByEmployee.has(employeeId)) {
-        windowsByEmployee.set(employeeId, [
-          { start: rangeStart, end: rangeEnd },
-        ]);
+        windowsByEmployee.set(employeeId, locationDefaultWindows);
       }
     }
 
@@ -609,9 +634,7 @@ export class SchedulingEngine {
       list.push({
         employeeId: e.employeeId,
         expiresAt: e.expiresAt,
-        windows: windowsByEmployee.get(e.employeeId) ?? [
-          { start: rangeStart, end: rangeEnd },
-        ],
+        windows: windowsByEmployee.get(e.employeeId) ?? locationDefaultWindows,
       });
       employeesByAbility.set(e.abilityId, list);
     }

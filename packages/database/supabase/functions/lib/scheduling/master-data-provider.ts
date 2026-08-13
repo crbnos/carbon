@@ -5,6 +5,13 @@ import { getJobMethodTree, type JobMethodTreeItem } from "../methods.ts";
 import type { Database } from "../types.ts";
 import { parseDate } from "@internationalized/date";
 import { businessDay, toIsoDate } from "./date-utils.ts";
+import type { CalendarWindow } from "./calendar-utils.ts";
+import {
+  type LadderShiftRow,
+  type WorkCenterAvailabilityInput,
+  resolveLocationWindows,
+  resolveWorkCenterWindows,
+} from "./machine-availability.ts";
 import {
   capacityHoldingJobStatuses,
   type BaseOperation,
@@ -167,6 +174,25 @@ export interface MasterDataProvider {
   getEmployeeShiftWindows(
     employeeIds: string[]
   ): Promise<EmployeeShiftRow[]>;
+  /**
+   * Machine-availability ladder per work center: explicit workCenterShift rows
+   * → the location's shifts → a stock Mon–Fri 08:00–17:00 week; or one open
+   * window for an `alwaysOn` machine. Returns id → open windows.
+   */
+  getWorkCenterAvailability(
+    workCenterIds: string[],
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<Map<string, CalendarWindow[]>>;
+  /**
+   * A location's default calendar (rung 2/3) — the fallback availability for
+   * people with no `employeeShift` rows (plant hours, not 24×7).
+   */
+  getLocationCalendarWindows(
+    locationId: string,
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<CalendarWindow[]>;
   getPeopleAssignments(
     rangeStart: Date,
     rangeEnd: Date,
@@ -614,6 +640,202 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       }
     }
     return result;
+  }
+
+  /** Flatten a shift row's weekday booleans into one LadderShiftRow per day. */
+  private expandShiftDays(row: {
+    startTime: unknown;
+    endTime: unknown;
+    timezone: string | null;
+    sunday: boolean | null;
+    monday: boolean | null;
+    tuesday: boolean | null;
+    wednesday: boolean | null;
+    thursday: boolean | null;
+    friday: boolean | null;
+    saturday: boolean | null;
+  }): LadderShiftRow[] {
+    const days = [
+      row.sunday,
+      row.monday,
+      row.tuesday,
+      row.wednesday,
+      row.thursday,
+      row.friday,
+      row.saturday,
+    ];
+    const out: LadderShiftRow[] = [];
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+      if (!days[dayOfWeek]) continue;
+      out.push({
+        dayOfWeek,
+        startTime: String(row.startTime),
+        endTime: String(row.endTime),
+        timezone: row.timezone ?? "UTC",
+      });
+    }
+    return out;
+  }
+
+  async getWorkCenterAvailability(
+    workCenterIds: string[],
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<Map<string, CalendarWindow[]>> {
+    if (workCenterIds.length === 0) {
+      return new Map();
+    }
+    return this.cached(
+      `workCenterAvailability:${[...workCenterIds].sort().join(",")}:${rangeStart.toISOString()}:${rangeEnd.toISOString()}`,
+      () => this.loadWorkCenterAvailability(workCenterIds, rangeStart, rangeEnd)
+    );
+  }
+
+  private async loadWorkCenterAvailability(
+    workCenterIds: string[],
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<Map<string, CalendarWindow[]>> {
+    // a. work centers with their lights-out flag + location timezone
+    const wcRows = await this.db
+      .selectFrom("workCenter as wc")
+      .leftJoin("location as l", "l.id", "wc.locationId")
+      .select(["wc.id", "wc.alwaysOn", "wc.locationId", "l.timezone"])
+      .where("wc.id", "in", workCenterIds)
+      .where("wc.companyId", "=", this.companyId)
+      .execute();
+    const workCenters: WorkCenterAvailabilityInput[] = wcRows.map((r) => ({
+      id: r.id,
+      alwaysOn: !!r.alwaysOn,
+      locationId: r.locationId ?? null,
+      timezone: r.timezone ?? "UTC",
+    }));
+
+    // b. explicit work-center shifts (rung 1)
+    const wcShiftRaw = await this.db
+      .selectFrom("workCenterShift as wcs")
+      .innerJoin("shift as s", "s.id", "wcs.shiftId")
+      .leftJoin("location as l", "l.id", "s.locationId")
+      .select([
+        "wcs.workCenterId",
+        "s.startTime",
+        "s.endTime",
+        "s.sunday",
+        "s.monday",
+        "s.tuesday",
+        "s.wednesday",
+        "s.thursday",
+        "s.friday",
+        "s.saturday",
+        "l.timezone",
+      ])
+      .where("wcs.workCenterId", "in", workCenterIds)
+      .where("wcs.companyId", "=", this.companyId)
+      .where("s.active", "=", true)
+      .execute();
+    const workCenterShiftRows = wcShiftRaw.flatMap((r) =>
+      this.expandShiftDays(r).map((d) => ({ ...d, workCenterId: r.workCenterId }))
+    );
+
+    // c. the location's shifts (rung 2)
+    const locationIds = Array.from(
+      new Set(
+        workCenters
+          .map((w) => w.locationId)
+          .filter((x): x is string => x != null)
+      )
+    );
+    const locShiftRaw =
+      locationIds.length === 0
+        ? []
+        : await this.db
+            .selectFrom("shift as s")
+            .leftJoin("location as l", "l.id", "s.locationId")
+            .select([
+              "s.locationId",
+              "s.startTime",
+              "s.endTime",
+              "s.sunday",
+              "s.monday",
+              "s.tuesday",
+              "s.wednesday",
+              "s.thursday",
+              "s.friday",
+              "s.saturday",
+              "l.timezone",
+            ])
+            .where("s.locationId", "in", locationIds)
+            .where("s.companyId", "=", this.companyId)
+            .where("s.active", "=", true)
+            .execute();
+    const locationShiftRows = locShiftRaw.flatMap((r) =>
+      this.expandShiftDays(r).map((d) => ({ ...d, locationId: r.locationId }))
+    );
+
+    return resolveWorkCenterWindows({
+      workCenters,
+      workCenterShiftRows,
+      locationShiftRows,
+      rangeStart,
+      rangeEnd,
+    });
+  }
+
+  async getLocationCalendarWindows(
+    locationId: string,
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<CalendarWindow[]> {
+    return this.cached(
+      `locationCalendar:${locationId}:${rangeStart.toISOString()}:${rangeEnd.toISOString()}`,
+      () => this.loadLocationCalendarWindows(locationId, rangeStart, rangeEnd)
+    );
+  }
+
+  private async loadLocationCalendarWindows(
+    locationId: string,
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<CalendarWindow[]> {
+    const rows = await this.db
+      .selectFrom("shift as s")
+      .leftJoin("location as l", "l.id", "s.locationId")
+      .select([
+        "s.startTime",
+        "s.endTime",
+        "s.sunday",
+        "s.monday",
+        "s.tuesday",
+        "s.wednesday",
+        "s.thursday",
+        "s.friday",
+        "s.saturday",
+        "l.timezone",
+      ])
+      .where("s.locationId", "=", locationId)
+      .where("s.companyId", "=", this.companyId)
+      .where("s.active", "=", true)
+      .execute();
+    const locationShiftRows = rows.flatMap((r) => this.expandShiftDays(r));
+
+    // The stock-week fallback needs the location tz even with no shifts.
+    let timezone = rows[0]?.timezone ?? null;
+    if (!timezone) {
+      const loc = await this.db
+        .selectFrom("location")
+        .select("timezone")
+        .where("id", "=", locationId)
+        .where("companyId", "=", this.companyId)
+        .executeTakeFirst();
+      timezone = loc?.timezone ?? "UTC";
+    }
+
+    return resolveLocationWindows({
+      timezone: timezone ?? "UTC",
+      locationShiftRows,
+      rangeStart,
+      rangeEnd,
+    });
   }
 
   async getPeopleAssignments(
