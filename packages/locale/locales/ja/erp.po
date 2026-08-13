@@ -122,6 +122,14 @@ msgstr "{0}個の値が見つかりません"
 msgid "{0}d"
 msgstr "{0}日"
 
+#. placeholder {0}: slack.absDays
+msgid "{0}d early"
+msgstr ""
+
+#. placeholder {0}: slack.absDays
+msgid "{0}d late"
+msgstr ""
+
 #. placeholder {0}: item.daysOff
 msgid "{0}d off"
 msgstr "{0}日休み"
@@ -11344,6 +11352,9 @@ msgstr "プロジェクト計画"
 
 msgid "Project start"
 msgstr "プロジェクト開始"
+
+msgid "Projected completion"
+msgstr ""
 
 msgid "Projected demand exploded from BOMs and forecasts."
 msgstr "予測在庫"

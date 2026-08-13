@@ -402,7 +402,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       machineDuration: 0,
       thumbnailPath: job.thumbnailPath,
       hasConflict: job.hasConflict,
-      scheduleOutdatedReason: job.scheduleOutdatedReason
+      scheduleOutdatedReason: job.scheduleOutdatedReason,
+      projectedCompletionAt: job.projectedCompletionAt
     };
   });
 

@@ -26,10 +26,12 @@ import {
   ModalTitle,
   Spinner,
   SplitButton,
+  Status,
   useDisclosure,
   useMount,
   VStack
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -159,6 +161,23 @@ const JobHeader = () => {
 
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
+  // Forecast slack: calendar days between the projected completion (forward-ASAP
+  // finish) and the promised due date. Positive = late, negative = early.
+  const projectedCompletionAt = routeData?.job?.projectedCompletionAt;
+  const jobDueDate = routeData?.job?.dueDate;
+  const slack = useMemo(() => {
+    if (!projectedCompletionAt || !jobDueDate) return null;
+    const days = parseDate(projectedCompletionAt.slice(0, 10)).compare(
+      parseDate(jobDueDate)
+    );
+    if (days === 0) return null;
+    return {
+      late: days > 0,
+      absDays: Math.abs(days),
+      projectedDate: formatDate(projectedCompletionAt.slice(0, 10))
+    };
+  }, [projectedCompletionAt, jobDueDate]);
+
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between p-2 bg-background border-b h-[50px] overflow-x-auto scrollbar-hide ">
@@ -240,6 +259,16 @@ const JobHeader = () => {
                 parseDate(routeData?.job?.dueDate) < todaysDate && (
                   <JobStatus status="Overdue" />
                 )}
+              {slack && (
+                <Status
+                  color={slack.late ? "red" : "green"}
+                  tooltip={`${t`Projected completion`}: ${slack.projectedDate}`}
+                >
+                  {slack.late
+                    ? t`${slack.absDays}d late`
+                    : t`${slack.absDays}d early`}
+                </Status>
+              )}
             </>
           )}
         </HStack>

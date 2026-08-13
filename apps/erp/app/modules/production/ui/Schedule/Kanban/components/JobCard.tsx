@@ -192,6 +192,21 @@ export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
   const dueDateValue = isDueDateValid && dueDate ? dueDate : null;
   const scheduleColumnIds = columnIds ?? [];
 
+  // Forecast slack: calendar days between projected completion and the due date.
+  // Positive = late (+2d, red), negative = early (-3d, muted).
+  const projectedCompletionOnly = getDateOnly(item.projectedCompletionAt);
+  const slackDays =
+    projectedCompletionOnly && dueDateValue
+      ? parseDate(projectedCompletionOnly).compare(parseDate(dueDateValue))
+      : 0;
+  const slack =
+    projectedCompletionOnly && slackDays !== 0
+      ? {
+          late: slackDays > 0,
+          label: `${slackDays > 0 ? "+" : ""}${slackDays}d`
+        }
+      : null;
+
   function submitDueDate(nextDueDate: string | null) {
     const columnId = nextDueDate
       ? nextDueDate
@@ -272,6 +287,24 @@ export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
                   </TooltipTrigger>
                   <TooltipContent>
                     Schedule outdated — {item.scheduleOutdatedReason}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {slack && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span
+                      className={cn(
+                        "text-xs font-medium tabular-nums flex-shrink-0",
+                        slack.late ? "text-red-500" : "text-muted-foreground"
+                      )}
+                    >
+                      {slack.label}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Projected{" "}
+                    <DateTime value={projectedCompletionOnly!} variant="date" />
                   </TooltipContent>
                 </Tooltip>
               )}

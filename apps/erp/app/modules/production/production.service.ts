@@ -3500,15 +3500,26 @@ export async function upsertJobOperationParameter(
 }
 
 /**
- * v1 of the spec's predictLeadTime: promise date = scheduled finish of the
- * job's last operation. Recomputed implicitly on every reschedule because it
- * reads live jobOperation dates.
+ * Promise date = the job's forward-ASAP forecast finish (`projectedCompletionAt`,
+ * stamped by every regen). Falls back to the scheduled finish of the job's last
+ * operation only before the first regen has run (projectedCompletionAt is null).
+ * Implements the §7 `{ date, confidence? }` contract — confidence is a string
+ * enum, "low" when the schedule may not hold (a conflicted op or a pending
+ * replan) and "scheduled" otherwise.
  */
 export async function getJobPromiseDate(
   client: SupabaseClient<Database>,
   jobId: string,
   companyId: string
 ) {
+  const job = await client
+    .from("job")
+    .select("projectedCompletionAt, scheduleOutdatedReason")
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .single();
+  if (job.error) return job;
+
   const operations = await client
     .from("jobOperation")
     .select("id, dueDate, hasConflict")
@@ -3516,18 +3527,27 @@ export async function getJobPromiseDate(
     .eq("companyId", companyId)
     .in("status", ["Todo", "Waiting", "Ready", "In Progress", "Paused"]);
   if (operations.error) return operations;
-  const dates = (operations.data ?? [])
-    .map((o) => o.dueDate)
-    .filter(Boolean) as string[];
-  const promiseDate = dates.length
-    ? dates.reduce((a, b) => (a > b ? a : b))
-    : null;
+
   const hasConflict = (operations.data ?? []).some((o) => o.hasConflict);
+  const confidence =
+    hasConflict || job.data.scheduleOutdatedReason
+      ? ("low" as const)
+      : ("scheduled" as const);
+
+  // Prefer the forecast finish; fall back to the max op due date pre-first-regen.
+  let promiseDate = job.data.projectedCompletionAt;
+  if (!promiseDate) {
+    const dates = (operations.data ?? [])
+      .map((o) => o.dueDate)
+      .filter(Boolean) as string[];
+    promiseDate = dates.length ? dates.reduce((a, b) => (a > b ? a : b)) : null;
+  }
+
   return {
     data: {
       promiseDate,
       basis: "schedule" as const,
-      confidence: hasConflict ? ("low" as const) : ("scheduled" as const)
+      confidence
     },
     error: null
   };

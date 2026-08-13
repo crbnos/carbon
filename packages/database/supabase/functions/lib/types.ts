@@ -65072,6 +65072,7 @@ export type Database = {
           notes: Json | null
           priority: number | null
           productionQuantity: number | null
+          projectedCompletionAt: string | null
           quantity: number | null
           quantityComplete: number | null
           quantityReceivedToInventory: number | null
@@ -65086,6 +65087,8 @@ export type Database = {
           salesOrderId: string | null
           salesOrderLineId: string | null
           salesOrderReadableId: string | null
+          scheduleOutdatedAt: string | null
+          scheduleOutdatedReason: string | null
           scrapQuantity: number | null
           secondsToComplete: number | null
           startDate: string | null
@@ -68820,14 +68823,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -72206,14 +72209,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -77147,6 +77150,7 @@ export type Database = {
           jobMakeMethodId: string
           operationCount: number
           priority: number
+          projectedCompletionAt: string
           quantity: number
           quantityComplete: number
           quantityShipped: number

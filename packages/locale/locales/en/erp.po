@@ -122,6 +122,14 @@ msgstr "{0} values missing"
 msgid "{0}d"
 msgstr "{0}d"
 
+#. placeholder {0}: slack.absDays
+msgid "{0}d early"
+msgstr "{0}d early"
+
+#. placeholder {0}: slack.absDays
+msgid "{0}d late"
+msgstr "{0}d late"
+
 #. placeholder {0}: item.daysOff
 msgid "{0}d off"
 msgstr "{0}d off"
@@ -11344,6 +11352,9 @@ msgstr "Project Plan"
 
 msgid "Project start"
 msgstr "Project start"
+
+msgid "Projected completion"
+msgstr "Projected completion"
 
 msgid "Projected demand exploded from BOMs and forecasts."
 msgstr "Projected demand exploded from BOMs and forecasts."

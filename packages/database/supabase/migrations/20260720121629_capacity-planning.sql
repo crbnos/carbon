@@ -446,12 +446,57 @@ COMMENT ON COLUMN "job"."scheduleOutdatedReason" IS
   'Why the stored schedule may be stale (e.g. "Qualification changed: Solder"). Null = schedule current.';
 
 -- ============================================================================
+-- Jobs view: expose the new job columns (projectedCompletionAt,
+-- scheduleOutdatedReason, scheduleOutdatedAt) added above. The view expands
+-- j.* at create time, so it must be recreated after the column adds to pick
+-- them up.
+-- ============================================================================
+DROP VIEW IF EXISTS "jobs";
+CREATE OR REPLACE VIEW "jobs" WITH(SECURITY_INVOKER=true) AS
+WITH job_model AS (
+  SELECT
+    j.id AS job_id,
+    j."companyId",
+    COALESCE(j."modelUploadId", i."modelUploadId") AS model_upload_id
+  FROM "job" j
+  INNER JOIN "item" i ON j."itemId" = i."id" AND j."companyId" = i."companyId"
+)
+SELECT
+  j.*,
+  jmm."id" as "jobMakeMethodId",
+  i.name,
+  i."readableIdWithRevision" as "itemReadableIdWithRevision",
+  i.type as "itemType",
+  i.name as "description",
+  i."itemTrackingType",
+  i.active,
+  i."replenishmentSystem",
+  mu.id as "modelId",
+  mu."autodeskUrn",
+  mu."modelPath",
+  CASE
+    WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+    ELSE i."thumbnailPath"
+  END as "thumbnailPath",
+  mu."name" as "modelName",
+  mu."size" as "modelSize",
+  so."salesOrderId" as "salesOrderReadableId",
+  qo."quoteId" as "quoteReadableId"
+FROM "job" j
+LEFT JOIN "jobMakeMethod" jmm ON jmm."jobId" = j.id AND jmm."parentMaterialId" IS NULL
+INNER JOIN "item" i ON j."itemId" = i."id" AND j."companyId" = i."companyId"
+LEFT JOIN job_model jm ON j.id = jm.job_id AND j."companyId" = jm."companyId"
+LEFT JOIN "modelUpload" mu ON mu.id = jm.model_upload_id
+LEFT JOIN "salesOrder" so on j."salesOrderId" = so.id AND j."companyId" = so."companyId"
+LEFT JOIN "quote" qo ON j."quoteId" = qo.id AND j."companyId" = qo."companyId";
+
+-- ============================================================================
 -- Schedule dates board: schedule-outdated reason
 -- ============================================================================
 -- Main's definition + scheduleOutdatedReason output column.
 DROP FUNCTION IF EXISTS get_jobs_by_date_range(TEXT, DATE, DATE);
 CREATE OR REPLACE FUNCTION public.get_jobs_by_date_range(location_id text, start_date date, end_date date)
- RETURNS TABLE(id text, "jobId" text, status "jobStatus", "dueDate" date, "completedDate" timestamp with time zone, "deadlineType" "deadlineType", "customerId" text, "customerName" text, "salesOrderReadableId" text, "salesOrderId" text, "salesOrderLineId" text, "itemId" text, "itemReadableId" text, "itemDescription" text, quantity numeric, "quantityComplete" numeric, "quantityShipped" numeric, priority double precision, assignee text, tags text[], "thumbnailPath" text, "operationCount" integer, "completedOperationCount" integer, "hasConflict" boolean, "jobMakeMethodId" text, "scheduleOutdatedReason" text)
+ RETURNS TABLE(id text, "jobId" text, status "jobStatus", "dueDate" date, "completedDate" timestamp with time zone, "deadlineType" "deadlineType", "customerId" text, "customerName" text, "salesOrderReadableId" text, "salesOrderId" text, "salesOrderLineId" text, "itemId" text, "itemReadableId" text, "itemDescription" text, quantity numeric, "quantityComplete" numeric, "quantityShipped" numeric, priority double precision, assignee text, tags text[], "thumbnailPath" text, "operationCount" integer, "completedOperationCount" integer, "hasConflict" boolean, "jobMakeMethodId" text, "scheduleOutdatedReason" text, "projectedCompletionAt" timestamp with time zone)
  LANGUAGE plpgsql
 AS $function$
 BEGIN
@@ -472,7 +517,8 @@ BEGIN
       j."assignee",
       j."tags",
       mu."thumbnailPath",
-      j."scheduleOutdatedReason"
+      j."scheduleOutdatedReason",
+      j."projectedCompletionAt"
     FROM "job" j
     LEFT JOIN "modelUpload" mu ON mu.id = j."modelUploadId"
     WHERE j."locationId" = location_id
@@ -545,7 +591,8 @@ BEGIN
     COALESCE(os."completedOperationCount", 0) AS "completedOperationCount",
     COALESCE(os."hasConflict", FALSE) AS "hasConflict",
     ji."jobMakeMethodId",
-    rj."scheduleOutdatedReason"
+    rj."scheduleOutdatedReason",
+    rj."projectedCompletionAt"
   FROM relevant_jobs rj
   LEFT JOIN "salesOrderLine" sol ON sol."id" = rj."salesOrderLineId"
   LEFT JOIN "salesOrder" so ON so."id" = sol."salesOrderId"

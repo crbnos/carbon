@@ -93,7 +93,8 @@ const operationItemValidator = baseItemValidator.extend({
 const jobItemValidator = baseItemValidator.extend({
   status: z.enum(jobStatus).optional(),
   completedDate: z.string().optional(),
-  jobMakeMethodId: z.string()
+  jobMakeMethodId: z.string(),
+  projectedCompletionAt: z.string().nullable().optional() // forecast finish (timestamptz)
 });
 
 export type OperationItem = z.infer<typeof operationItemValidator>;
