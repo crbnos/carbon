@@ -143,6 +143,11 @@ msgstr "{0}h 空闲"
 msgid "{0}h required"
 msgstr "{0}h 需要"
 
+#. placeholder {0}: formatHours(staffed)
+#. placeholder {0}: formatHours(staffedWeek)
+msgid "{0}h staffed"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} 个零件已跳过 — 它们已有待处理作业"
 
@@ -5279,6 +5284,9 @@ msgstr "直接发货"
 msgid "Due"
 msgstr "到期"
 
+msgid "Due (by due date)"
+msgstr ""
+
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
@@ -7313,6 +7321,9 @@ msgstr "托管、保护和备份平台"
 msgid "Hours"
 msgstr "时数"
 
+msgid "Hours assumed from location shifts"
+msgstr ""
+
 msgid "Hours at this station"
 msgstr "此工位的小时数"
 
@@ -7346,8 +7357,8 @@ msgstr "物品单位成本的估值方式：标准、平均、FIFO或LIFO。按�
 msgid "How coverage is worked out"
 msgstr "如何计算覆盖范围"
 
-msgid "how far over capacity the day is (+) or how many hours are still free."
-msgstr "该天超过容量的幅度 (+) 或仍有多少小时空闲。"
+msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
+msgstr ""
 
 msgid "How items roll up for posting and reporting"
 msgstr "项目如何汇总用于过账和报告"
@@ -9942,6 +9953,9 @@ msgstr "这里没有行。"
 
 msgid "No rules assigned"
 msgstr "未分配规则"
+
+msgid "No shifts configured — assuming Mon–Fri, 8h days"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "没有单一的、可信的库存或工作状态数字"
@@ -14724,8 +14738,8 @@ msgstr "此工作中心运行机械的每小时成本；与记录的机器小时
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "应用于此工作中心的每小时间接成本负担；劳动+机器与完整报价率之间的差异就是间接费用吸收的内容。"
 
-msgid "the hours the scheduler actually placed."
-msgstr "调度程序实际分配的小时数。"
+msgid "the hours the scheduler placed on the station."
+msgstr ""
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "工作流的网络钩子步骤发布到的 https 地址 — 拒绝纯 http、重定向和解析为私有或本地链接地址的主机，调用在十秒后放弃。"
@@ -14760,8 +14774,8 @@ msgstr "发货过账时确认的库存成本，按物品的成本计算方法评
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15、20、27.5、39年）。"
 
-msgid "the job hours due that day."
-msgstr "该天应完成的工作小时数。"
+msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "该外部处理行所涵盖的操作工作；行的收据关闭对该工作的操作。"
@@ -15019,9 +15033,6 @@ msgstr "用于在资产的使用寿命内分配该资产成本的折旧方法（
 msgid "The shelves and bins where stock physically sits"
 msgstr "库存物理上存放的货架和箱子"
 
-msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
-msgstr "您分配的工作团队的班次小时数。没有人员的工作站将回退到该位置的班次日历。"
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "您随时准备的店铺用品和消耗品"
 
@@ -15066,6 +15077,9 @@ msgstr "此报价行的状态 - 草稿、无报价、完成；无报价显示原
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "此组下所有帐户将使用的报表组。"
+
+msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
+msgstr ""
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "步骤的设置 — 此运行早于记录其使用的值。"

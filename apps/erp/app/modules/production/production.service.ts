@@ -4515,7 +4515,7 @@ export async function getPeopleAbsencesRange(
 export async function getPeopleCapacityOperations(
   client: SupabaseClient<Database>,
   companyId: string,
-  args: { locationId: string; startDate: string; endDate: string }
+  args: { locationId: string; startDate: string | null; endDate: string }
 ) {
   return fetchAllFromTable<{
     id: string;
@@ -4535,21 +4535,43 @@ export async function getPeopleCapacityOperations(
     `id, workCenterId, dueDate, status, operationQuantity,
      setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit,
      job!inner(status, locationId)`,
-    (query) =>
-      query
+    (query) => {
+      let scoped = query
         .eq("companyId", companyId)
         .eq("job.locationId", args.locationId)
         .not("workCenterId", "is", null)
-        .gte("dueDate", args.startDate)
         .lte("dueDate", args.endDate)
         .not("status", "in", '("Done","Canceled")')
         .not(
           "job.status",
           "in",
           '("Draft","Planned","Completed","Cancelled","Closed")'
-        )
-        .order("id")
+        );
+      // Null start = no floor: overdue work back to the earliest open op counts
+      // toward Past due (the released-only status filters already bound the set).
+      if (args.startDate != null) {
+        scoped = scoped.gte("dueDate", args.startDate);
+      }
+      return scoped.order("id");
+    }
   );
+}
+
+/**
+ * The `workCenterShift` links (rung 1 of the availability ladder) for a set of
+ * work centers, in ONE `.in()` query. Feeds the Capacity view's per-work-center
+ * calendar-hours DISPLAY mirror of the engine ladder.
+ */
+export async function getWorkCenterShifts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  workCenterIds: string[]
+) {
+  return client
+    .from("workCenterShift")
+    .select("workCenterId, shiftId")
+    .eq("companyId", companyId)
+    .in("workCenterId", workCenterIds);
 }
 
 /**

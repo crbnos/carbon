@@ -143,6 +143,11 @@ msgstr "{0}ч свободно"
 msgid "{0}h required"
 msgstr "{0}ч требуется"
 
+#. placeholder {0}: formatHours(staffed)
+#. placeholder {0}: formatHours(staffedWeek)
+msgid "{0}h staffed"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} деталей пропущено — у них уже есть открытые задания"
 
@@ -5279,6 +5284,9 @@ msgstr "Прямая доставка"
 msgid "Due"
 msgstr "Срок"
 
+msgid "Due (by due date)"
+msgstr ""
+
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
@@ -7313,6 +7321,9 @@ msgstr "Размещение, защита и резервное копиров�
 msgid "Hours"
 msgstr "Часы"
 
+msgid "Hours assumed from location shifts"
+msgstr ""
+
 msgid "Hours at this station"
 msgstr "Часы на этом рабочем месте"
 
@@ -7346,8 +7357,8 @@ msgstr "Как оценивается стоимость товара за ед�
 msgid "How coverage is worked out"
 msgstr "Как рассчитывается покрытие"
 
-msgid "how far over capacity the day is (+) or how many hours are still free."
-msgstr "насколько день переполнен по мощности (+) или сколько часов всё ещё свободно."
+msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
+msgstr ""
 
 msgid "How items roll up for posting and reporting"
 msgstr "Как элементы объединяются для учета и отчетности"
@@ -9942,6 +9953,9 @@ msgstr "Нет строк здесь."
 
 msgid "No rules assigned"
 msgstr "Нет назначенных правил"
+
+msgid "No shifts configured — assuming Mon–Fri, 8h days"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Нет единого надежного показателя для инвентаря или статуса работы"
@@ -14724,8 +14738,8 @@ msgstr "Почасовая стоимость работы механизмов 
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "Почасовая нагрузка косвенных затрат, применяемая к этому рабочему центру; разница между трудом + машиной и полной ставкой котировки - это то, что поглощает накладные расходы."
 
-msgid "the hours the scheduler actually placed."
-msgstr "часы, которые планировщик фактически разместил."
+msgid "the hours the scheduler placed on the station."
+msgstr ""
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "HTTPS-адрес, на который шаг вебхука рабочего процесса отправляет данные — простой http, перенаправления и хосты, разрешающие в приватные или link-local адреса, отклоняются, и вызов прекращается через десять секунд."
@@ -14760,8 +14774,8 @@ msgstr "Стоимость инвентаря, признаваемая при �
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Класс периода восстановления IRS для этого основного средства в соответствии с MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 лет)."
 
-msgid "the job hours due that day."
-msgstr "часы работы, назначенные на этот день."
+msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Работа, операция которой охватывает эту строку внешней обработки; квитанция по строке закрывает операцию для этой работы."
@@ -15019,9 +15033,6 @@ msgstr "Метод амортизации, используемый для ра�
 msgid "The shelves and bins where stock physically sits"
 msgstr "Полки и контейнеры, где физически находится запас"
 
-msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
-msgstr "часы смены назначенной вами бригады. Станции без персонала используют календарь смен места расположения."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Расходные материалы и товары, которые вы держите под рукой"
 
@@ -15066,6 +15077,9 @@ msgstr "Состояние этой строки котировки — Черн
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "Группа отчетов, которую будут использовать все учетные записи в этой группе."
+
+msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
+msgstr ""
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Параметры шага — этот прогон предшествует записи значений, которые он использовал."

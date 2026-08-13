@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-13T04:31:07.537Z",
-  "totalTools": 1466,
+  "generated": "2026-08-13T04:50:08.861Z",
+  "totalTools": 1467,
   "modules": 15,
   "tools": [
     {
@@ -22941,7 +22941,10 @@
             "type": "string"
           },
           "startDate": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "endDate": {
             "type": "string"
@@ -22951,6 +22954,35 @@
           "locationId",
           "startDate",
           "endDate"
+        ]
+      }
+    },
+    {
+      "name": "production_getWorkCenterShifts",
+      "module": "production",
+      "classification": "READ",
+      "description": "get work center shifts",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "workCenterIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "workCenterIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "workCenterIds"
         ]
       }
     },

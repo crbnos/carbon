@@ -143,6 +143,11 @@ msgstr "{0}h libere"
 msgid "{0}h required"
 msgstr "{0}h richieste"
 
+#. placeholder {0}: formatHours(staffed)
+#. placeholder {0}: formatHours(staffedWeek)
+msgid "{0}h staffed"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parti saltate — hanno già processi aperti"
 
@@ -5279,6 +5284,9 @@ msgstr "Spedizione Diretta"
 msgid "Due"
 msgstr "Scadenza"
 
+msgid "Due (by due date)"
+msgstr ""
+
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
@@ -7313,6 +7321,9 @@ msgstr "Ospitare, proteggere e eseguire il backup della piattaforma"
 msgid "Hours"
 msgstr "Ore"
 
+msgid "Hours assumed from location shifts"
+msgstr ""
+
 msgid "Hours at this station"
 msgstr "Ore presso questa stazione"
 
@@ -7346,8 +7357,8 @@ msgstr "Come il costo unitario di un articolo è valutato: Standard, Media, FIFO
 msgid "How coverage is worked out"
 msgstr "Come viene calcolata la copertura"
 
-msgid "how far over capacity the day is (+) or how many hours are still free."
-msgstr "quanto la giornata supera la capacità (+) o quante ore sono ancora libere."
+msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
+msgstr ""
 
 msgid "How items roll up for posting and reporting"
 msgstr "Come gli articoli si aggregano per la registrazione e la rendicontazione"
@@ -9942,6 +9953,9 @@ msgstr "Nessuna riga qui."
 
 msgid "No rules assigned"
 msgstr "Nessuna regola assegnata"
+
+msgid "No shifts configured — assuming Mon–Fri, 8h days"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Nessun numero unico e affidabile per l'inventario o lo stato del lavoro"
@@ -14724,8 +14738,8 @@ msgstr "Il costo orario di funzionamento dei macchinari in questo centro di lavo
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "L'onere di costo indiretto orario applicato a questo centro di lavoro; la differenza tra manodopera + macchina e il tasso di quotazione completo è ciò che assorbe il sovraccarico."
 
-msgid "the hours the scheduler actually placed."
-msgstr "le ore che lo scheduler ha effettivamente posizionato."
+msgid "the hours the scheduler placed on the station."
+msgstr ""
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "L'indirizzo https a cui il passaggio webhook di un flusso di lavoro invia post — http semplice, reindirizzamenti e host che si risolvono in indirizzi privati o link-local vengono rifiutati e la chiamata si arrende dopo dieci secondi."
@@ -14760,8 +14774,8 @@ msgstr "Il costo di magazzino riconosciuto quando viene registrata una spedizion
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "La classe di periodo di recupero IRS per questo bene secondo MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 anni)."
 
-msgid "the job hours due that day."
-msgstr "le ore di lavoro dovute quel giorno."
+msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Il lavoro la cui operazione copre questa riga di lavorazione esterna; la ricevuta della riga chiude l'operazione su questo lavoro."
@@ -15019,9 +15033,6 @@ msgstr "Il calendario utilizzato per distribuire il costo di questo asset sulla 
 msgid "The shelves and bins where stock physically sits"
 msgstr "Gli scaffali e i contenitori dove il magazzino si trova fisicamente"
 
-msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
-msgstr "le ore di turno dell'equipaggio che hai assegnato. Le stazioni senza nessuno ricadono nel calendario dei turni della posizione."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "I materiali di consumo e le forniture che tieni a portata di mano"
 
@@ -15066,6 +15077,9 @@ msgstr "Lo stato di questa riga di quotazione - Bozza, Nessun Preventivo, Comple
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "Il bucket del rendiconto che tutti gli account sotto questo gruppo utilizzeranno."
+
+msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
+msgstr ""
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Le impostazioni del passaggio — questa esecuzione precede la registrazione dei valori che ha utilizzato."

@@ -143,6 +143,11 @@ msgstr "{0}h free"
 msgid "{0}h required"
 msgstr "{0}h required"
 
+#. placeholder {0}: formatHours(staffed)
+#. placeholder {0}: formatHours(staffedWeek)
+msgid "{0}h staffed"
+msgstr "{0}h staffed"
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 
@@ -5279,6 +5284,9 @@ msgstr "Drop-ship"
 msgid "Due"
 msgstr "Due"
 
+msgid "Due (by due date)"
+msgstr "Due (by due date)"
+
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
@@ -7313,6 +7321,9 @@ msgstr "Host, secure, and back up the platform"
 msgid "Hours"
 msgstr "Hours"
 
+msgid "Hours assumed from location shifts"
+msgstr "Hours assumed from location shifts"
+
 msgid "Hours at this station"
 msgstr "Hours at this station"
 
@@ -7346,8 +7357,8 @@ msgstr "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set
 msgid "How coverage is worked out"
 msgstr "How coverage is worked out"
 
-msgid "how far over capacity the day is (+) or how many hours are still free."
-msgstr "how far over capacity the day is (+) or how many hours are still free."
+msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
+msgstr "how far the scheduled work is over the available hours (+) or how many hours are still free."
 
 msgid "How items roll up for posting and reporting"
 msgstr "How items roll up for posting and reporting"
@@ -9942,6 +9953,9 @@ msgstr "No rows here."
 
 msgid "No rules assigned"
 msgstr "No rules assigned"
+
+msgid "No shifts configured — assuming Mon–Fri, 8h days"
+msgstr "No shifts configured — assuming Mon–Fri, 8h days"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "No single, trusted number for inventory or job status"
@@ -14724,8 +14738,8 @@ msgstr "The hourly cost of running the machinery on this work center; combined w
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 
-msgid "the hours the scheduler actually placed."
-msgstr "the hours the scheduler actually placed."
+msgid "the hours the scheduler placed on the station."
+msgstr "the hours the scheduler placed on the station."
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
@@ -14760,8 +14774,8 @@ msgstr "The inventory cost recognized when a shipment posts, valued by the item'
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 
-msgid "the job hours due that day."
-msgstr "the job hours due that day."
+msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
@@ -15019,9 +15033,6 @@ msgstr "The schedule used to spread this asset's cost over its useful life (stra
 msgid "The shelves and bins where stock physically sits"
 msgstr "The shelves and bins where stock physically sits"
 
-msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
-msgstr "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "The shop supplies and consumables you keep on hand"
 
@@ -15066,6 +15077,9 @@ msgstr "The state of this quote line — Draft, No Quote, Complete; No Quote rev
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "The statement bucket all accounts under this group will use."
+
+msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
+msgstr "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "The step's settings — this run predates recording the values it used."

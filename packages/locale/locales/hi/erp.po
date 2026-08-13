@@ -143,6 +143,11 @@ msgstr "{0}घंटे मुक्त"
 msgid "{0}h required"
 msgstr "{0}घंटे आवश्यक"
 
+#. placeholder {0}: formatHours(staffed)
+#. placeholder {0}: formatHours(staffedWeek)
+msgid "{0}h staffed"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} भाग छोड़ दिए गए — उनके पास पहले से ही खुली नौकरियाँ हैं"
 
@@ -5279,6 +5284,9 @@ msgstr "ड्रॉप-शिप"
 msgid "Due"
 msgstr "देय"
 
+msgid "Due (by due date)"
+msgstr ""
+
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
@@ -7313,6 +7321,9 @@ msgstr "प्लेटफॉर्म को होस्ट करें, स�
 msgid "Hours"
 msgstr "घंटे"
 
+msgid "Hours assumed from location shifts"
+msgstr ""
+
 msgid "Hours at this station"
 msgstr "इस स्टेशन पर घंटे"
 
@@ -7346,8 +7357,8 @@ msgstr "किसी वस्तु की इकाई लागत का म
 msgid "How coverage is worked out"
 msgstr "कवरेज कैसे काम किया जाता है"
 
-msgid "how far over capacity the day is (+) or how many hours are still free."
-msgstr "दिन क्षमता से कितना अधिक है (+) या कितने घंटे अभी भी स्वतंत्र हैं।"
+msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
+msgstr ""
 
 msgid "How items roll up for posting and reporting"
 msgstr "पोस्टिंग और रिपोर्टिंग के लिए आइटम कैसे रोल अप होते हैं"
@@ -9942,6 +9953,9 @@ msgstr "यहाँ कोई पंक्तियाँ नहीं है�
 
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
+
+msgid "No shifts configured — assuming Mon–Fri, 8h days"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "इन्वेंटरी या जॉब स्थिति के लिए कोई एकल, विश्वसनीय संख्या नहीं"
@@ -14724,8 +14738,8 @@ msgstr "इस कार्य केंद्र पर मशीनरी च�
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "इस कार्य केंद्र पर लागू प्रति घंटा अप्रत्यक्ष-लागत बोझ; श्रम + मशीन और पूर्ण उद्धरण दर के बीच का अंतर वह है जो ओवरहेड अवशोषित करता है।"
 
-msgid "the hours the scheduler actually placed."
-msgstr "वे घंटे जो शेड्यूलर ने वास्तव में रखे हैं।"
+msgid "the hours the scheduler placed on the station."
+msgstr ""
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "वह https पता जिसमें एक workflow के webhook step को भेजा जाता है — plain http, redirects, और private या link-local addresses को resolve करने वाले hosts को अस्वीकार किया जाता है, और कॉल दस सेकंड के बाद रुक जाती है।"
@@ -14760,8 +14774,8 @@ msgstr "इन्वेंटरी लागत जो शिपमेंट �
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS के तहत इस संपत्ति के लिए IRS पुनर्प्राप्ति-अवधि वर्ग (3, 5, 7, 10, 15, 20, 27.5, 39-वर्ष)।"
 
-msgid "the job hours due that day."
-msgstr "उस दिन तक के कार्य घंटे।"
+msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "वह काम जिसका संचालन यह बाहरी-प्रसंस्करण लाइन कवर करता है; लाइन की रसीद इस काम के विरुद्ध संचालन को बंद करती है।"
@@ -15019,9 +15033,6 @@ msgstr "अनुसूची का उपयोग इस संपत्त�
 msgid "The shelves and bins where stock physically sits"
 msgstr "वह शेल्फ और बिन जहां स्टॉक भौतिक रूप से रखा जाता है"
 
-msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
-msgstr "आपके द्वारा असाइन किए गए क्रू के शिफ्ट घंटे। कोई भी न होने वाले स्टेशन स्थान के शिफ्ट कैलेंडर पर वापस जाते हैं।"
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "दुकान की आपूर्ति और उपभोग्य वस्तुएं जो आप हाथ में रखते हैं"
 
@@ -15066,6 +15077,9 @@ msgstr "इस उद्धरण पंक्ति की स्थिति -
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "विवरण बाल्टी जो इस समूह के सभी खाते उपयोग करेंगे।"
+
+msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
+msgstr ""
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "step की सेटिंग्स — यह run उन मानों को record करने से पहले का है जिनका उपयोग इसने किया था।"

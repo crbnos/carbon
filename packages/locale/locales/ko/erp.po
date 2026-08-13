@@ -143,6 +143,11 @@ msgstr "{0}시간 여유"
 msgid "{0}h required"
 msgstr "{0}h 필요"
 
+#. placeholder {0}: formatHours(staffed)
+#. placeholder {0}: formatHours(staffedWeek)
+msgid "{0}h staffed"
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}개 부품이 건너뜀 — 이미 활성 작업이 있음"
 
@@ -5279,6 +5284,9 @@ msgstr "직송"
 msgid "Due"
 msgstr "기한"
 
+msgid "Due (by due date)"
+msgstr ""
+
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
@@ -7313,6 +7321,9 @@ msgstr "플랫폼 호스팅, 보안, 백업"
 msgid "Hours"
 msgstr "시간"
 
+msgid "Hours assumed from location shifts"
+msgstr ""
+
 msgid "Hours at this station"
 msgstr "이 스테이션의 시간"
 
@@ -7346,8 +7357,8 @@ msgstr "품목의 단가가 평가되는 방식: 표준, 평균, FIFO, 또는 LI
 msgid "How coverage is worked out"
 msgstr "배치가 어떻게 계산되는지"
 
-msgid "how far over capacity the day is (+) or how many hours are still free."
-msgstr "그 날이 용량보다 얼마나 초과했는지(+) 또는 아직 남은 시간이 몇 시간인지."
+msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
+msgstr ""
 
 msgid "How items roll up for posting and reporting"
 msgstr "품목이 전기 및 보고를 위해 합산되는 방식"
@@ -9942,6 +9953,9 @@ msgstr "행이 없습니다."
 
 msgid "No rules assigned"
 msgstr "배정된 규칙이 없습니다"
+
+msgid "No shifts configured — assuming Mon–Fri, 8h days"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "재고나 작업 상태를 나타내는 신뢰할 수 있는 단일 수치가 없음"
@@ -14724,8 +14738,8 @@ msgstr "이 작업장에서 기계를 가동하는 시간당 비용입니다. �
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "이 작업장에 적용되는 시간당 간접비 부담률입니다. 노무비+기계비와 전체 견적 요율의 차이를 간접비가 흡수합니다."
 
-msgid "the hours the scheduler actually placed."
-msgstr "스케줄러가 실제로 배치한 시간입니다."
+msgid "the hours the scheduler placed on the station."
+msgstr ""
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "워크플로우의 웹훅 단계가 게시하는 https 주소입니다. 평문 http, 리다이렉트 및 프라이빗 또는 링크-로컬 주소로 확인되는 호스트는 거부되며, 호출은 10초 후 포기합니다."
@@ -14760,8 +14774,8 @@ msgstr "출하가 전기될 때 인식되는 재고 원가로, 품목의 원가 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 등급(3, 5, 7, 10, 15, 20, 27.5, 39년)입니다."
 
-msgid "the job hours due that day."
-msgstr "그 날의 작업 마감 시간입니다."
+msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "이 외주 라인이 처리하는 공정작업이 속한 작업입니다. 이 라인의 입고는 해당 작업의 공정작업을 마감합니다."
@@ -15019,9 +15033,6 @@ msgstr "이 자산의 원가를 내용연수에 걸쳐 배분하는 데 사용�
 msgid "The shelves and bins where stock physically sits"
 msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
 
-msgid "the shift hours of the people you've assigned. Stations with nobody on them fall back to the location's shift calendar."
-msgstr "배정된 크루의 근무 시간입니다. 아무도 없는 역은 위치의 근무 달력으로 돌아갑니다."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "보유하고 있는 공장 소모품 및 소모재"
 
@@ -15066,6 +15077,9 @@ msgstr "이 견적 라인의 상태입니다 — 초안, 견적 불가, 완료. 
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "이 그룹에 속한 모든 계정이 사용할 재무제표 구분입니다."
+
+msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
+msgstr ""
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "단계의 설정입니다 — 이 실행은 사용한 값을 기록하기 전의 것입니다."
