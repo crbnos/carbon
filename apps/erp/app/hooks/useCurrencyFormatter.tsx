@@ -1,10 +1,7 @@
 import { moneyFormatOptions } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
-import {
-  useConfiguredCurrencyDecimals,
-  useCurrencyMinDecimals
-} from "./useCurrencies";
+import { useCurrencyDecimals, useCurrencyMinDecimals } from "./useCurrencies";
 import { useUser } from "./useUser";
 
 /** Everything a call site is allowed to override, and nothing else.
@@ -27,10 +24,9 @@ export type CurrencyFormatterOptions = {
 
 /**
  * Currency display — money and per-unit prices alike, because they are the same
- * kind. Digits come from the company group's configured `currency.decimalPlaces`
- * as the maximum. The DB column is authoritative over Intl/CLDR; CLDR only
- * decides when the currency isn't configured for the group (or the list hasn't
- * loaded yet).
+ * kind. Digits come from `useCurrencyDecimals` — the group's configured
+ * `currency.decimalPlaces` row, or CLDR's own digits for that currency when it
+ * isn't configured.
  *
  * By default the amount is PADDED to those decimals, so its width states the
  * amount in full: "$300.00", "$3.50", "¥63", "BHD 0.563". A company can drop the
@@ -45,7 +41,7 @@ export function useCurrencyFormatter(options?: CurrencyFormatterOptions) {
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const { locale } = useLocale();
   const currency = options?.currency ?? baseCurrency;
-  const configuredDecimals = useConfiguredCurrencyDecimals(currency);
+  const currencyDecimals = useCurrencyDecimals(currency);
   const minDecimals = useCurrencyMinDecimals();
 
   // Every call site passes an object literal, so depending on `options` by
@@ -57,14 +53,12 @@ export function useCurrencyFormatter(options?: CurrencyFormatterOptions) {
   return useMemo(() => {
     // `wholeUnits` is a digit count of zero, expressed as the intent rather than
     // the number — this hook names kinds, it does not choose digits.
-    const decimals = wholeUnits ? 0 : (decimalPlaces ?? configuredDecimals);
+    const decimals = wholeUnits ? 0 : (decimalPlaces ?? currencyDecimals);
     return new Intl.NumberFormat(locale, {
-      ...(decimals != null
-        ? moneyFormatOptions(decimals, {
-            currency,
-            minDecimalPlaces: wholeUnits ? 0 : minDecimals
-          })
-        : { style: "currency" as const, currency }),
+      ...moneyFormatOptions(decimals, {
+        currency,
+        minDecimalPlaces: wholeUnits ? 0 : minDecimals
+      }),
       ...(compact
         ? { notation: "compact" as const, compactDisplay: "short" as const }
         : {})
@@ -72,7 +66,7 @@ export function useCurrencyFormatter(options?: CurrencyFormatterOptions) {
   }, [
     locale,
     currency,
-    configuredDecimals,
+    currencyDecimals,
     minDecimals,
     decimalPlaces,
     compact,

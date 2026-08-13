@@ -11,7 +11,7 @@ import {
   LuStar
 } from "react-icons/lu";
 import { DateTime, Table } from "~/components";
-import { useCurrencies } from "~/hooks";
+import { useCurrencyDecimalsLookup } from "~/hooks";
 import { intercompanyTransactionStatuses } from "../../accounting.models";
 import IntercompanyTransactionStatus from "./IntercompanyTransactionStatus";
 
@@ -41,16 +41,7 @@ const IntercompanyTransactionTable = memo(
     // Currency varies per row, so the formatter is built per cell from the
     // app locale rather than a single-currency hook instance.
     const { locale } = useLocale();
-    const currencies = useCurrencies();
-    const decimalsByCode = useMemo(
-      () =>
-        new Map(
-          currencies.flatMap((c) =>
-            c.decimalPlaces == null ? [] : [[c.code, c.decimalPlaces] as const]
-          )
-        ),
-      [currencies]
-    );
+    const currencyDecimals = useCurrencyDecimalsLookup();
     const columns = useMemo<ColumnDef<IntercompanyTransaction>[]>(() => {
       const defaultColumns: ColumnDef<IntercompanyTransaction>[] = [
         {
@@ -80,7 +71,7 @@ const IntercompanyTransactionTable = memo(
               row.original.amount,
               locale,
               code,
-              decimalsByCode.get(code) ?? 2
+              currencyDecimals(code)
             );
           },
           meta: {
@@ -130,7 +121,7 @@ const IntercompanyTransactionTable = memo(
         }
       ];
       return defaultColumns;
-    }, [t, locale]);
+    }, [t, locale, currencyDecimals]);
 
     return (
       <Table<IntercompanyTransaction>

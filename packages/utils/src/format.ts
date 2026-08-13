@@ -9,6 +9,36 @@ export type MoneyFormatOptions = {
   minDecimalPlaces?: number;
 };
 
+/** The one stand-in when no currency is in play at all. ISO's own default. */
+export const DEFAULT_CURRENCY_DECIMALS = 2;
+
+/** What CLDR says a currency's settlement decimals are — JPY 0, USD 2, BHD 3.
+ *  Per-currency, not per-locale, so the probe locale is arbitrary and the answer
+ *  is cached for the process.
+ *
+ *  This is the ONLY fallback when a currency has no configured `decimalPlaces`
+ *  row. Asking CLDR beats assuming 2, which is what made an unconfigured JPY
+ *  field offer two decimal places. A malformed code throws, so 2 stands in — the
+ *  same ISO default Intl uses for an unknown-but-well-formed one. */
+const cldrDecimalsByCode = new Map<string, number>();
+export function cldrCurrencyDecimals(currencyCode: string): number {
+  const cached = cldrDecimalsByCode.get(currencyCode);
+  if (cached !== undefined) return cached;
+
+  let decimals = DEFAULT_CURRENCY_DECIMALS;
+  try {
+    decimals =
+      new Intl.NumberFormat("en", {
+        style: "currency",
+        currency: currencyCode
+      }).resolvedOptions().maximumFractionDigits ?? DEFAULT_CURRENCY_DECIMALS;
+  } catch {
+    // Not a valid ISO code — keep the default rather than throwing at render.
+  }
+  cldrDecimalsByCode.set(currencyCode, decimals);
+  return decimals;
+}
+
 /** THE money kind. Money, per-unit prices, and bare document amounts are all
  *  this one thing: from the business's point of view a price is an amount in the
  *  same currency, so they render at the same decimals.
@@ -36,7 +66,9 @@ export function moneyFormatOptions(
     // question either way, answered once here — answering it twice is how the
     // PDF column and the email of the same document came to disagree, one
     // following `currency.decimalPlaces` and the other capped at CLDR's 2.
-    ...(currency ? { style: "currency" as const, currency } : { style: "decimal" as const }),
+    ...(currency
+      ? { style: "currency" as const, currency }
+      : { style: "decimal" as const }),
     minimumFractionDigits: minDecimalPlaces,
     maximumFractionDigits: decimalPlaces
   };

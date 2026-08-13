@@ -65,8 +65,9 @@ export async function action(args: ActionFunctionArgs) {
   const { userId, companyId, companyGroupId } = await requirePermissions(
     request,
     {
-    update: "purchasing"
-  });
+      update: "purchasing"
+    }
+  );
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");

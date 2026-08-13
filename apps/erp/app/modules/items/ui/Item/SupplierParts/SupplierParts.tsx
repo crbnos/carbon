@@ -8,7 +8,7 @@ import { SupplierAvatar } from "~/components";
 import Grid from "~/components/Grid";
 import Hyperlink from "~/components/Hyperlink";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, usePriceFormatter } from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useSuppliers } from "~/stores/suppliers";
 import type { SupplierPart } from "../../../types";
@@ -48,7 +48,7 @@ const SupplierParts = ({
   const permissions = usePermissions();
   const canEdit = permissions.can("update", "parts") && !isReadOnly;
   const canDelete = permissions.can("delete", "parts") && !isReadOnly;
-  const formatter = usePriceFormatter();
+  const formatter = useCurrencyFormatter();
   const customColumns = useCustomColumns<Part>("supplierPart");
   const [suppliers] = useSuppliers();
 

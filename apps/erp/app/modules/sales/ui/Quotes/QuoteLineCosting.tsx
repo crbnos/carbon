@@ -26,7 +26,7 @@ import { LuClock, LuInfo } from "react-icons/lu";
 import { useParams } from "react-router";
 import { MethodItemTypeIcon, TimeTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useCurrencyFormatter, usePriceFormatter } from "~/hooks";
+import { useCurrencyFormatter } from "~/hooks";
 import type { Costs } from "../../types";
 
 const QuoteLineCosting = ({
@@ -48,7 +48,7 @@ const QuoteLineCosting = ({
   }));
 
   const formatter = useCurrencyFormatter();
-  const unitCostFormatter = usePriceFormatter({
+  const unitCostFormatter = useCurrencyFormatter({
     decimalPlaces: unitPricePrecision
   });
 

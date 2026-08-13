@@ -14,11 +14,7 @@ import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
-import {
-  loadSqlFiles,
-  migrationsDir,
-  repoRoot
-} from "./sources/migrations";
+import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
 import { loadTypescriptFiles } from "./sources/typescript";

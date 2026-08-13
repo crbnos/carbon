@@ -8,9 +8,9 @@ import {
 import { useCompanySettings } from "./useCompanySettings";
 import { useCompanyTimeZone, useCompanyToday } from "./useCompanyTimeZone";
 import {
-  useConfiguredCurrencyDecimals,
   useCurrencies,
-  useCurrencyDecimals
+  useCurrencyDecimals,
+  useCurrencyDecimalsLookup
 } from "./useCurrencies";
 import { useCurrencyFormatter } from "./useCurrencyFormatter";
 import { useDateFormatter } from "./useDateFormatter";
@@ -26,7 +26,6 @@ import { useOnboarding } from "./useOnboarding";
 import { usePercentFormatter } from "./usePercentFormatter";
 import { usePermissions } from "./usePermissions";
 import { usePlanGate } from "./usePlanGate";
-import { usePriceFormatter } from "./usePriceFormatter";
 import { useQuantityFormatter } from "./useQuantityFormatter";
 import { useRealtime } from "./useRealtime";
 import { useScrollPosition } from "./useScrollPosition";
@@ -55,11 +54,10 @@ export {
   useNotifications,
   useOnboarding,
   useOptimisticLocation,
-  useConfiguredCurrencyDecimals,
   useCurrencies,
   useCurrencyDecimals,
+  useCurrencyDecimalsLookup,
   usePercentFormatter,
-  usePriceFormatter,
   usePermissions,
   usePlanGate,
   usePrinting,

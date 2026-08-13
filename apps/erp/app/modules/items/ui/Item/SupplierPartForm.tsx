@@ -58,8 +58,8 @@ import {
 import Grid from "~/components/Grid";
 import {
   useCurrencyDecimals,
+  useCurrencyFormatter,
   usePermissions,
-  usePriceFormatter,
   useUser
 } from "~/hooks";
 import { path } from "~/utils/path";
@@ -268,7 +268,7 @@ function PurchaseHistory({
   baseCurrency: string;
 }) {
   const { t } = useLingui();
-  const priceFormatter = usePriceFormatter({ currency: baseCurrency });
+  const priceFormatter = useCurrencyFormatter({ currency: baseCurrency });
   if (history.length === 0) return null;
 
   return (
@@ -363,7 +363,7 @@ function PriceBreaks({
 }) {
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
   const { t } = useLingui();
-  const formatter = usePriceFormatter();
+  const formatter = useCurrencyFormatter();
 
   const removeRow = useCallback(
     (index: number) => {

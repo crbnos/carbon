@@ -30,8 +30,9 @@ export async function action(args: ActionFunctionArgs) {
   const { companyId, companyGroupId, userId } = await requirePermissions(
     request,
     {
-    create: "sales"
-  });
+      create: "sales"
+    }
+  );
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");

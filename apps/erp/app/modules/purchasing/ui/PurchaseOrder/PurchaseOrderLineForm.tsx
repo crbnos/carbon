@@ -61,7 +61,6 @@ import {
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
-  usePriceFormatter,
   useRouteData,
   useUser
 } from "~/hooks";
@@ -307,7 +306,7 @@ const PurchaseOrderLineForm = ({
     currency: orderCurrency,
     decimalPlaces: currencyDecimals
   });
-  const priceFormatter = usePriceFormatter({
+  const priceFormatter = useCurrencyFormatter({
     currency: orderCurrency,
     decimalPlaces: currencyDecimals
   });

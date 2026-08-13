@@ -26,7 +26,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router";
 import { DateTime, Empty } from "~/components";
-import { usePriceFormatter } from "~/hooks";
+import { useCurrencyFormatter } from "~/hooks";
 import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
 import type { HistoricalQuotationPrice, SalesOrderLine } from "../../types";
@@ -65,7 +65,7 @@ const QuoteLinePricingHistory = ({
   // Default to the tab that has items
   const defaultTab = hasOrderLines ? "salesOrderLines" : "quoteLines";
   const [customers] = useCustomers();
-  const priceFormatter = usePriceFormatter({ currency: baseCurrency });
+  const priceFormatter = useCurrencyFormatter({ currency: baseCurrency });
 
   return (
     <Card>

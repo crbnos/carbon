@@ -26,9 +26,9 @@ export async function action(args: ActionFunctionArgs) {
 
     const { client, companyId, companyGroupId, userId } =
       await requirePermissions(request, {
-      create: "sales",
-      role: "employee"
-    });
+        create: "sales",
+        role: "employee"
+      });
 
     const { orderId } = params;
     if (!orderId) {

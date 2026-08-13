@@ -66,7 +66,6 @@ import {
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
-  usePriceFormatter,
   useRouteData,
   useUser
 } from "~/hooks";
@@ -377,7 +376,7 @@ const SalesInvoiceLineForm = ({
     currency: routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode,
     decimalPlaces: currencyDecimals
   });
-  const priceFormatter = usePriceFormatter({
+  const priceFormatter = useCurrencyFormatter({
     currency: routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode,
     decimalPlaces: currencyDecimals
   });

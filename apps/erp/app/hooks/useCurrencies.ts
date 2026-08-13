@@ -1,4 +1,5 @@
 import { useMount } from "@carbon/react";
+import { cldrCurrencyDecimals, DEFAULT_CURRENCY_DECIMALS } from "@carbon/utils";
 import { useMemo } from "react";
 import { useFetcher } from "react-router";
 import type { getCurrenciesList } from "~/modules/accounting";
@@ -23,35 +24,41 @@ export function useCurrencies() {
 }
 
 /**
- * The group's configured settlement decimals for a currency, or null when the
- * currency isn't configured (or the list hasn't loaded yet). The `currency`
- * row is authoritative over Intl/CLDR — display formatters fall back to CLDR
- * only when this returns null.
+ * Resolve settlement decimals for ANY currency code — a stable function, for
+ * the tables whose currency varies per row and so cannot call a hook per value.
+ *
+ * The group's configured `currency.decimalPlaces` row is authoritative; CLDR
+ * decides only when the currency isn't configured or the list is still loading.
+ * One index and one fallback policy, so a per-row table and a single-currency
+ * field can never disagree about how wide an amount is.
  */
-export function useConfiguredCurrencyDecimals(
+export function useCurrencyDecimalsLookup(): (
   currencyCode: string | null | undefined
-): number | null {
+) => number {
   const currencies = useCurrencies();
 
-  // Indexed rather than scanned: this runs inside every money formatter, which
-  // in a table means once per row per render against the full ISO list.
-  const decimalsByCode = useMemo(
-    () => new Map(currencies.map((c) => [c.code, c.decimalPlaces])),
-    [currencies]
-  );
-
-  return currencyCode ? (decimalsByCode.get(currencyCode) ?? null) : null;
+  return useMemo(() => {
+    // Indexed rather than scanned: this runs inside every money formatter,
+    // which in a table means once per row per render over the full ISO list.
+    const configured = new Map(
+      currencies.flatMap((c) =>
+        c.decimalPlaces == null ? [] : [[c.code, c.decimalPlaces] as const]
+      )
+    );
+    return (currencyCode) =>
+      currencyCode
+        ? (configured.get(currencyCode) ?? cldrCurrencyDecimals(currencyCode))
+        : DEFAULT_CURRENCY_DECIMALS;
+  }, [currencies]);
 }
 
-/**
- * Settlement decimals for money INPUTS, which need a concrete number for
- * `INPUT_FORMAT.money`: the configured value, or 2 as the last resort while
- * the list loads / for an unconfigured ISO currency.
- */
+/** Settlement decimals for one currency — money inputs need a concrete number
+ *  for `INPUT_FORMAT.money`, and display formatters want the same answer so an
+ *  editable amount and the read-only one beside it agree. */
 export function useCurrencyDecimals(
   currencyCode: string | null | undefined
 ): number {
-  return useConfiguredCurrencyDecimals(currencyCode) ?? 2;
+  return useCurrencyDecimalsLookup()(currencyCode);
 }
 
 /**

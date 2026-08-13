@@ -52,7 +52,7 @@ import {
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { usePriceFormatter, useRouteData } from "~/hooks";
+import { useCurrencyFormatter, useRouteData } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
@@ -101,7 +101,7 @@ export const PurchasingPlanningOrderDrawer = memo(
     const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { carbon } = useCarbon();
 
-    const formatter = usePriceFormatter();
+    const formatter = useCurrencyFormatter();
     const unitOfMeasureOptions = useUnitOfMeasure();
 
     const [activeTab, setActiveTab] = useState("ordering");

@@ -27,7 +27,6 @@ describe("no-inline-fraction-digits", () => {
     // that consumes a kind has nothing to exempt, so it must still be scanned.
     const src = "const opts = { maximumFractionDigits: 2 };";
     for (const file of [
-      "apps/erp/app/hooks/usePriceFormatter.tsx",
       "apps/erp/app/hooks/usePercentFormatter.tsx",
       "apps/erp/app/hooks/useQuantityFormatter.tsx",
       "packages/documents/src/utils/shared.ts"

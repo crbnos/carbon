@@ -171,8 +171,7 @@ export default function AccountingSettingsRoute() {
   const taxFetcher = useFetcher<typeof action>();
   const { isInternal } = useFlags();
 
-  const taxEnabled =
-    companySettings.assetTaxDepreciationEnabled ?? false;
+  const taxEnabled = companySettings.assetTaxDepreciationEnabled ?? false;
 
   useEffect(() => {
     if (fetcher.data && "success" in fetcher.data) {

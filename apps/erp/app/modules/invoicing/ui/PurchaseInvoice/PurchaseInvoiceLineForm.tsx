@@ -57,7 +57,6 @@ import {
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
-  usePriceFormatter,
   useRouteData,
   useUser
 } from "~/hooks";
@@ -287,7 +286,7 @@ const PurchaseInvoiceLineForm = ({
     currency: invoiceCurrency,
     decimalPlaces: currencyDecimals
   });
-  const priceFormatter = usePriceFormatter({
+  const priceFormatter = useCurrencyFormatter({
     currency: invoiceCurrency,
     decimalPlaces: currencyDecimals
   });

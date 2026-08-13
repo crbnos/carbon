@@ -50,7 +50,6 @@ import {
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
-  usePriceFormatter,
   useRouteData,
   useSettings,
   useUser
@@ -183,11 +182,11 @@ const QuoteLinePricing = ({
 
   const formatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
-  const unitPriceFormatter = usePriceFormatter({
+  const unitPriceFormatter = useCurrencyFormatter({
     currency: routeData?.quote?.currencyCode ?? baseCurrency,
     decimalPlaces: unitPricePrecision
   });
-  const presentationCurrencyFormatter = usePriceFormatter({
+  const presentationCurrencyFormatter = useCurrencyFormatter({
     currency: routeData?.quote?.currencyCode ?? baseCurrency,
     decimalPlaces: unitPricePrecision
   });

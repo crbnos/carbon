@@ -47,9 +47,9 @@ export async function action(args: ActionFunctionArgs) {
 
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, {
-    create: "purchasing",
-    role: "employee"
-  });
+      create: "purchasing",
+      role: "employee"
+    });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
