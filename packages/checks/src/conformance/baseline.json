@@ -446,6 +446,7 @@
   "no-raw-rounding::apps/mes/app/components/Inspection/InspectionView.tsx::const m = Math.floor((s % 3600) / 60)",
   "no-raw-rounding::apps/mes/app/components/Inspection/InspectionView.tsx::return Math.max(0, Math.floor((Date.now() - start) / 1000));",
   "no-raw-rounding::apps/mes/app/components/JobOperation/JobOperation.tsx::Math.floor(",
+  "no-raw-rounding::apps/mes/app/components/JobOperation/components/IssueMaterialModal.tsx::Array(Math.max(1, Math.ceil(initialQuantity)))",
   "no-raw-rounding::apps/mes/app/components/TimeCardButton.tsx::const hours = Math.floor(ms / 3600000);",
   "no-raw-rounding::apps/mes/app/components/TimeCardButton.tsx::const minutes = Math.floor((ms % 3600000) / 60000);",
   "no-raw-rounding::apps/mes/app/components/TimeCardWarning.tsx::const hoursElapsed = Math.floor(",
