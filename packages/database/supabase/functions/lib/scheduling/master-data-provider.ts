@@ -157,7 +157,7 @@ export interface MasterDataProvider {
   // ---- finite-capacity reads ----
   getLiveReservations(
     fromDate: Date,
-    excludeJobId: string
+    excludeJobIds: string[]
   ): Promise<LiveReservation[]>;
   /** The subset of the given operation ids that have ≥1 production event
    * (used by remaining-work netting to decide setup is already done). */
@@ -255,6 +255,9 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "job.deadlineType",
         "job.locationId",
         "job.priority",
+        "job.jobId as readableJobId",
+        "job.assignee",
+        "job.projectedCompletionAt",
         "location.timezone",
       ])
       .where("job.id", "=", jobId)
@@ -268,6 +271,10 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       ...job,
       dueDate: toIsoDate(job.dueDate),
       timezone: job.timezone ?? "UTC",
+      projectedCompletionAt:
+        job.projectedCompletionAt == null
+          ? null
+          : new Date(job.projectedCompletionAt as unknown as string).toISOString(),
     };
   }
 
@@ -454,9 +461,9 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
 
   async getLiveReservations(
     fromDate: Date,
-    excludeJobId: string
+    excludeJobIds: string[]
   ): Promise<LiveReservation[]> {
-    const rows = await this.db
+    let query = this.db
       .selectFrom("capacityReservation as cr")
       .innerJoin("job as j", "j.id", "cr.jobId")
       .select([
@@ -469,8 +476,13 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       ])
       .where("cr.companyId", "=", this.companyId)
       .where("cr.scenarioId", "is", null)
-      .where("cr.jobId", "!=", excludeJobId)
-      .where("cr.endAt", ">", fromDate.toISOString())
+      .where("cr.endAt", ">", fromDate.toISOString());
+    // Exclude the whole batch: each engine run sees only non-batch reservations
+    // plus the in-run placements of already-run batch jobs (no pre-clear step).
+    if (excludeJobIds.length > 0) {
+      query = query.where("cr.jobId", "not in", excludeJobIds);
+    }
+    const rows = await query
       // Reservations are only deleted when their job is rescheduled, so
       // rows from jobs outside these statuses linger (terminal jobs) or
       // pre-date release (Draft/Planned) — neither may hold capacity

@@ -2373,13 +2373,22 @@ export async function recalculateJobOperationDependencies(
     userId: string;
   }
 ) {
+  // Forecast-first scheduling regenerates the WHOLE LOCATION; resolve the job's
+  // location and regenerate it (the job is part of that pass).
+  const { data: job, error } = await client
+    .from("job")
+    .select("locationId")
+    .eq("id", params.jobId)
+    .eq("companyId", params.companyId)
+    .single();
+  if (error || !job?.locationId) {
+    return { data: null, error: error ?? new Error("Job has no location") };
+  }
   return client.functions.invoke("schedule", {
     body: {
-      jobId: params.jobId,
+      locationId: job.locationId,
       companyId: params.companyId,
-      userId: params.userId,
-      mode: "reschedule",
-      direction: "backward"
+      userId: params.userId
     }
   });
 }

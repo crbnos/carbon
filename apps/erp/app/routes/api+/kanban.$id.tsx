@@ -170,11 +170,9 @@ async function handleKanban({
         }),
         serviceRole.functions.invoke("schedule", {
           body: {
-            jobId: id,
+            locationId: kanban.data.locationId!,
             companyId,
-            userId,
-            mode: "initial",
-            direction: "backward"
+            userId
           }
         }),
         serviceRole

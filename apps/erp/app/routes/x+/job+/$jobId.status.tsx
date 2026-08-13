@@ -77,14 +77,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
 
       const serviceRole = getCarbonServiceRole();
+      // Forecast-first scheduling regenerates the whole location the job is in.
+      const { data: jobLocation } = await serviceRole
+        .from("job")
+        .select("locationId")
+        .eq("id", id)
+        .single();
       const [scheduler] = await Promise.all([
         serviceRole.functions.invoke("schedule", {
           body: {
-            jobId: id,
+            locationId: jobLocation?.locationId,
             companyId,
-            userId,
-            mode: "initial",
-            direction: "backward"
+            userId
           }
         }),
         serviceRole.functions.invoke("create", {

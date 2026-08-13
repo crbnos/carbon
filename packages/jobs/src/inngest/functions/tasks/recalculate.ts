@@ -90,11 +90,20 @@ async function recalculateJobMakeMethodRequirements(
     userId: string;
   }
 ) {
+  // Forecast-first scheduling regenerates the WHOLE LOCATION; resolve the job's
+  // location and regenerate it (the job is part of that pass).
+  const { data: job, error } = await client
+    .from("job")
+    .select("locationId")
+    .eq("id", params.id)
+    .eq("companyId", params.companyId)
+    .single();
+  if (error || !job?.locationId) {
+    return { data: null, error: error ?? new Error("Job has no location") };
+  }
   return client.functions.invoke("schedule", {
     body: {
-      mode: "initial",
-      direction: "backward",
-      jobId: params.id,
+      locationId: job.locationId,
       companyId: params.companyId,
       userId: params.userId
     }

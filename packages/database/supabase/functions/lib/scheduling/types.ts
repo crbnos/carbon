@@ -87,6 +87,12 @@ export type Job = {
   priority?: number;
   /** IANA time zone of the job's location; "UTC" when unset */
   timezone?: string;
+  /** Human-readable job number (job."jobId", e.g. J000001). */
+  readableJobId?: string | null;
+  /** Assigned user id (may be null). */
+  assignee?: string | null;
+  /** Prior forecast finish — the before-value for the newly-late delta. */
+  projectedCompletionAt?: string | null;
 };
 
 export enum SchedulingStrategy {

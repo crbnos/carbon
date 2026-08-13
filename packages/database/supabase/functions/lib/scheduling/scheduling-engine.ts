@@ -8,6 +8,7 @@ import {
   buildMakeMethodDependencies,
 } from "./assembly-handler.ts";
 import { getCompanyTimeZone, getLocationTimeZone } from "../datetime.ts";
+import { businessDay } from "./date-utils.ts";
 import {
   type CalendarShiftRow,
   type CalendarWindow,
@@ -84,6 +85,26 @@ export class SchedulingEngine {
   private materialManager: MaterialManager;
   private reservationsWritten = 0;
 
+  /**
+   * The single `now` for this run — captured ONCE by the caller and shared
+   * across every job in a batch so the whole location schedules against one
+   * clock (determinism: identical snapshot + identical now ⇒ identical
+   * schedule). Never `Date.now()` inside the engine's placement path.
+   */
+  private now: Date;
+  /** When false, run() simulates without writing anything (expedite what-if). */
+  private persist: boolean;
+  /**
+   * Job ids whose live reservations to EXCLUDE from the snapshot — the whole
+   * batch, so each run sees only non-batch reservations plus the in-run
+   * placements of already-run batch jobs. Defaults to just this job.
+   */
+  private excludeJobIds: string[];
+  /** Forecast finish (max placed end) — set after placement, persisted. */
+  private projectedCompletionAt: string | null = null;
+  /** True when this regen flipped the job from on-time (or unforecast) to late. */
+  private newlyLate = false;
+
   private provider: MasterDataProvider;
 
   constructor(
@@ -91,6 +112,12 @@ export class SchedulingEngine {
       client: SupabaseClient<Database>;
       db: Kysely<DB>;
       provider?: MasterDataProvider;
+      /** Shared run clock; defaults to a fresh Date if omitted. */
+      now?: Date;
+      /** Simulate-only when false (no writes). Defaults to true. */
+      persist?: boolean;
+      /** Batch job ids to exclude from the reservation snapshot. */
+      excludeJobIds?: string[];
     }
   ) {
     this.client = options.client;
@@ -98,6 +125,12 @@ export class SchedulingEngine {
     this.jobId = options.jobId;
     this.companyId = options.companyId;
     this.userId = options.userId;
+    this.now = options.now ?? new Date();
+    this.persist = options.persist ?? true;
+    this.excludeJobIds =
+      options.excludeJobIds && options.excludeJobIds.length > 0
+        ? options.excludeJobIds
+        : [this.jobId];
 
     this.provider =
       options.provider ??
@@ -149,8 +182,9 @@ export class SchedulingEngine {
     // Initialize material manager
     await this.materialManager.initialize(this.jobId);
 
-    // Assign operations to materials that don't have one
-    if (this.operations.length > 0) {
+    // Assign operations to materials that don't have one. Dry-run (expedite
+    // what-if) writes nothing, so skip this DB mutation.
+    if (this.operations.length > 0 && this.persist) {
       const operationsByJobMakeMethodId = this.operations.reduce<
         Record<string, BaseOperation[]>
       >((acc, op) => {
@@ -349,39 +383,42 @@ export class SchedulingEngine {
       this.companyId
     );
 
-    // One transaction: a partial rebuild (edges deleted but not re-inserted)
-    // would corrupt the dependency graph for the next scheduling run
-    await this.db.transaction().execute(async (trx) => {
-      let deleteQuery = trx
-        .deleteFrom("jobOperationDependency")
-        .where("jobId", "=", this.jobId);
+    // Dry-run (expedite what-if) computes the dependency graph in memory but
+    // writes nothing. One transaction otherwise: a partial rebuild (edges
+    // deleted but not re-inserted) would corrupt the graph for the next run.
+    if (this.persist) {
+      await this.db.transaction().execute(async (trx) => {
+        let deleteQuery = trx
+          .deleteFrom("jobOperationDependency")
+          .where("jobId", "=", this.jobId);
 
-      if (reworkOpIds.length > 0) {
-        deleteQuery = deleteQuery
-          .where("operationId", "not in", reworkOpIds)
-          .where("dependsOnId", "not in", reworkOpIds);
-      }
+        if (reworkOpIds.length > 0) {
+          deleteQuery = deleteQuery
+            .where("operationId", "not in", reworkOpIds)
+            .where("dependsOnId", "not in", reworkOpIds);
+        }
 
-      await deleteQuery.execute();
+        await deleteQuery.execute();
 
-      if (records.length > 0) {
-        await trx
-          .insertInto("jobOperationDependency")
-          .values(records)
-          .execute();
-      }
-
-      // Update operations with no dependencies to Ready status
-      for (const [opId, deps] of allDependencies) {
-        if (deps.size === 0) {
+        if (records.length > 0) {
           await trx
-            .updateTable("jobOperation")
-            .set({ status: "Ready" })
-            .where("id", "=", opId)
+            .insertInto("jobOperationDependency")
+            .values(records)
             .execute();
         }
-      }
-    });
+
+        // Update operations with no dependencies to Ready status
+        for (const [opId, deps] of allDependencies) {
+          if (deps.size === 0) {
+            await trx
+              .updateTable("jobOperation")
+              .set({ status: "Ready" })
+              .where("id", "=", opId)
+              .execute();
+          }
+        }
+      });
+    }
 
     // Store dependencies for date calculation (non-rework edges rebuilt above)
     this.dependencies = records.map((r) => ({
@@ -426,7 +463,8 @@ export class SchedulingEngine {
       return null;
     }
 
-    const now = new Date();
+    // The run's single clock (shared across the batch) — never Date.now() here.
+    const now = this.now;
     const operations = Array.from(this.scheduledOperations.values());
     const processIds = Array.from(
       new Set(operations.map((op) => op.processId).filter(Boolean))
@@ -461,7 +499,7 @@ export class SchedulingEngine {
       locationDefaultWindows,
       operationsWithEvents,
     ] = await Promise.all([
-      this.provider.getLiveReservations(now, this.jobId),
+      this.provider.getLiveReservations(now, this.excludeJobIds),
       this.provider.getProcessRequirements(processIds),
       this.provider.getPeopleAssignments(rangeStart, rangeEnd, this.timezone),
       this.provider.getPeopleAbsences(rangeStart, rangeEnd, this.timezone),
@@ -687,6 +725,22 @@ export class SchedulingEngine {
       }
     }
 
+    // Projected completion = the latest finish across ALL of this run's
+    // placements: selection.placedEnd covers regular + outside-processing ops;
+    // the planned reservations cover pinned (and regular) ops. Union = every op.
+    let maxEndMs: number | null = null;
+    const bump = (ms: number) => {
+      if (maxEndMs === null || ms > maxEndMs) maxEndMs = ms;
+    };
+    for (const selection of selections.values()) {
+      if (selection.placedEnd) bump(new Date(selection.placedEnd).getTime());
+    }
+    for (const p of this.workCenterSelector.getPlannedReservations()) {
+      if (p.endAt.getTime() > p.startAt.getTime()) bump(p.endAt.getTime());
+    }
+    this.projectedCompletionAt =
+      maxEndMs === null ? null : new Date(maxEndMs).toISOString();
+
     // Recount conflicts — finite allocation may add or resolve them
     this.conflictsDetected = 0;
     for (const op of this.scheduledOperations.values()) {
@@ -866,7 +920,8 @@ export class SchedulingEngine {
       );
       const firstOp = sortedOps[0];
 
-      if (firstOp?.id) {
+      // Dry-run writes nothing (expedite what-if).
+      if (firstOp?.id && this.persist) {
         await this.db
           .updateTable("jobMaterial")
           .set({ jobOperationId: firstOp.id })
@@ -885,6 +940,24 @@ export class SchedulingEngine {
     const planned = (
       this.workCenterSelector?.getPlannedReservations() ?? []
     ).filter((p) => p.endAt.getTime() > p.startAt.getTime());
+
+    // Newly-late = the job WAS on time (or unforecast) and its new projected
+    // business day now exceeds the due date. Edge-triggered by construction, so
+    // a second identical regen produces no entry. Jobs with no due date are
+    // never late. Computed on the FACTORY calendar (location tz).
+    const dueDate = this.job?.dueDate ?? null;
+    const tz = this.job?.timezone ?? "UTC";
+    if (dueDate && this.projectedCompletionAt) {
+      const priorProjected = this.job?.projectedCompletionAt ?? null;
+      const newBusinessDay = businessDay(this.projectedCompletionAt, tz);
+      const priorBusinessDay = priorProjected
+        ? businessDay(priorProjected, tz)
+        : null;
+      const wasOnTime = priorBusinessDay === null || priorBusinessDay <= dueDate;
+      this.newlyLate = wasOnTime && newBusinessDay > dueDate;
+    } else {
+      this.newlyLate = false;
+    }
 
     // One transaction: a partial write (reservations deleted but not
     // re-inserted) would free this job's capacity to other jobs' replans
@@ -963,10 +1036,23 @@ export class SchedulingEngine {
           .execute();
       }
 
-      // The scheduler is status-neutral: it forecasts and reserves capacity for
-      // jobs that are already released (Ready/In Progress/Paused). Releasing a
-      // job to Ready is the app's job-status flow (which raises jobReleased),
-      // never a side effect of scheduling.
+      // Write the forecast and clear the stale-schedule stamps for this job in
+      // the SAME transaction. The scheduler is status-neutral: it forecasts and
+      // reserves capacity for jobs already released (Ready/In Progress/Paused).
+      // Releasing a job to Ready is the app's job-status flow (which raises
+      // jobReleased), never a side effect of scheduling.
+      await trx
+        .updateTable("job")
+        .set({
+          projectedCompletionAt: this.projectedCompletionAt,
+          scheduleOutdatedReason: null,
+          scheduleOutdatedAt: null,
+          updatedAt: new Date().toISOString(),
+          updatedBy: this.userId,
+        })
+        .where("id", "=", this.jobId)
+        .where("companyId", "=", this.companyId)
+        .execute();
     });
 
     this.reservationsWritten = planned.length;
@@ -986,8 +1072,43 @@ export class SchedulingEngine {
     };
   }
 
+  /** Forecast finish (max placed end) after a run; null when no operations. */
+  getProjectedCompletionAt(): string | null {
+    return this.projectedCompletionAt;
+  }
+
+  /** True when this run flipped the job on-time (or unforecast) → late. */
+  isNewlyLate(): boolean {
+    return this.newlyLate;
+  }
+
+  getReadableJobId(): string | null {
+    return this.job?.readableJobId ?? null;
+  }
+
+  getAssignee(): string | null {
+    return this.job?.assignee ?? null;
+  }
+
   /**
-   * Run the full scheduling process
+   * The binding-resource explanation for this job's timing — the first
+   * conflict reason if any, else the first placement's schedule note. Feeds the
+   * expedite "best case" bottleneck sentence.
+   */
+  getCause(): string | null {
+    for (const op of this.scheduledOperations.values()) {
+      if (op.hasConflict && op.conflictReason) return op.conflictReason;
+    }
+    for (const p of this.workCenterSelector?.getPlannedReservations() ?? []) {
+      if (p.scheduleNote) return p.scheduleNote;
+    }
+    return null;
+  }
+
+  /**
+   * Run the full scheduling process. When `persist` is false (expedite
+   * what-if), everything runs EXCEPT the write — the forecast is computed and
+   * returned but nothing touches the database.
    */
   async run(): Promise<SchedulingResult> {
     await this.initialize();
@@ -1002,7 +1123,9 @@ export class SchedulingEngine {
     await this.selectWorkCenters();
     await this.calculatePriorities();
 
-    await this.persistChanges();
+    if (this.persist) {
+      await this.persistChanges();
+    }
 
     return this.getResult();
   }
