@@ -246,13 +246,37 @@ snapshotPath, foreign, includeGroup }`. `revert` reads the marker and reloads
 ## Onboarding seed
 
 `routes/onboarding+/industry.tsx` → `dataChoice: "template" | "import" | "none"`
-("Use a demo template" / "Restore from a backup" / "I don't need data"). A demo
-template is a committed data-only `.gz` at
-`packages/database/supabase/backups/<industryId>.carbon.json.gz` plus a sibling
-`<industryId>.assets/` folder of its storage files (one per `industry` row).
-`provisionCompanyData` (onboarding.server.ts) imports it on top of an
-identity-only seed, **referencing** the shared `_templates/<industryId>/` assets
-instead of copying files per company. No file → clean seed.
+("Use a demo template" / "Restore from a backup" / "I don't need data"). The whole
+step is internal-only (`isInternalEmail`); public signups create their company in the
+company step.
+
+**`template` is NOT a backup import.** It runs the dev seed's own tier code against the
+new company, so the demo data has exactly one definition:
+`packages/database/src/datasets/` — `tiers/` holds the insertion logic, `data/<key>/`
+holds one industry story each (`satellite` is the only one today), and `applyDataset()` in
+`datasets/index.ts` is the shared entry point. `pnpm db:seed:dev --dataset <key>` and
+onboarding are two callers of that one function.
+
+Flow: `provisionOnboardingCompany` (onboarding.server.ts) does a **full** clean
+`seedCompany` (the tiers' pre-flight needs a chart of accounts, a `location`, and
+`unitOfMeasure` code `EA`), creates the headquarters location and employee job, and
+**then** — deliberately last, because the pre-flight needs that location — triggers
+`carbon/company-template`. `packages/jobs/src/inngest/functions/tasks/company-template.ts`
+handles it: one `step.run`, concurrency 1 per company, a `getPostgresConnectionPool(2)`
+client (size 1 is the shared pool the event drainer uses), a refuse-if-`item`-rows-exist
+double-apply guard, and a marker on `externalIntegrationMapping`
+(`integration = "company-template"`) cleared on success and set `failed` on a throw.
+`applyDataset` wraps every tier in one transaction, so a failure leaves zero rows.
+
+`industry.id` → dataset is a code map (`datasetForIndustry`), not a column. An industry
+with no dataset (`precision_manufacturing`, `automotive_precision`) still records
+`industryId` and provisions a clean seed — same as today, no error.
+
+**Dormant** (built, never wired, do not revive without revisiting
+`.ai/specs/2026-08-13-onboarding-company-templates.md`): the `company-templates` bucket,
+`TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX`, `templateIndustryId` on
+`carbon/company-import`, `ci/src/upload-backup-templates.ts`, and
+`packages/database/supabase/backups/` (which now holds only a README saying so).
 
 ## CI publish
 
