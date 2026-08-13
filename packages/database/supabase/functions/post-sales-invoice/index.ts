@@ -1371,8 +1371,10 @@ serve(async (req: Request) => {
           ? journalEntries.map((entry) => ({
               accountId: entry.accountId,
               description: `VOID: ${entry.description}`,
-              amount: round(-entry.amount), // Reverse the amount
-              quantity: round(-entry.quantity),
+              // A reversal is a sign flip of an already-posted value, which is
+              // exact — no rounding to do.
+              amount: -entry.amount,
+              quantity: -entry.quantity,
               documentType: "Invoice" as const,
               documentId: salesInvoice.data?.id,
               externalDocumentId: entry.externalDocumentId,
@@ -1397,7 +1399,7 @@ serve(async (req: Request) => {
             reversingItemLedgerEntries.push({
               postingDate: today,
               itemId: entry.itemId,
-              quantity: round(-entry.quantity), // Reverse the quantity
+              quantity: -entry.quantity,
               locationId: entry.locationId,
               storageUnitId: entry.storageUnitId,
               entryType:

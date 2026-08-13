@@ -22,6 +22,7 @@ export * from "./labels";
 export * from "./llm";
 export * from "./math";
 export * from "./object";
+export * from "./precision";
 export * from "./receiving";
 export * from "./revalidate";
 export * from "./ssr";

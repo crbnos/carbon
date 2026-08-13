@@ -6,6 +6,7 @@ import {
   datetime,
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
+  isBalanced,
   MONTH_NUMBER,
   round,
   toDisplayCredit,
@@ -2448,6 +2449,12 @@ export type PeriodCloseUnpostedDocument = {
 
 const UNPOSTED_DOCUMENT_LIMIT = 25;
 
+/** Business refusal threshold for a journal's debits-vs-credits drift — looser
+ *  than EPSILON because multi-currency entries carry real cross-rate residuals.
+ *  Shared by the manual-JE validator and the period-close checklist so the two
+ *  can never disagree about which journals are unbalanced. */
+const JOURNAL_BALANCE_TOLERANCE = 0.001;
+
 async function computePeriodReadiness(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2571,7 +2578,11 @@ async function computePeriodReadiness(
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
-      Math.abs(Number(j.totalDebits ?? 0) - Number(j.totalCredits ?? 0)) > 0.001
+      !isBalanced(
+        Number(j.totalDebits ?? 0),
+        Number(j.totalCredits ?? 0),
+        JOURNAL_BALANCE_TOLERANCE
+      )
   );
 
   const pendingPostings =
@@ -4652,7 +4663,7 @@ export async function postJournalEntry(
     totalCredit += toDisplayCredit(Number(l.amount), accountClass);
   }
 
-  if (Math.abs(totalDebit - totalCredit) > 0.001) {
+  if (!isBalanced(totalDebit, totalCredit, JOURNAL_BALANCE_TOLERANCE)) {
     return {
       data: null,
       error: { message: "Total debits must equal total credits" }

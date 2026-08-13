@@ -3,12 +3,11 @@ import {
   applyRate,
   assertBalanced,
   deriveRate,
-  equals,
+  isBalanced,
   RoundingMode,
   round,
-  scrapAllowance,
-  sum
-} from "./math";
+  scrapAllowance
+} from "./precision";
 
 describe("round", () => {
   it("rounds 1.005 to 1.01 at 2dp (exponent-shift beats the float artifact)", () => {
@@ -82,19 +81,23 @@ describe("applyRate", () => {
   });
 });
 
-describe("sum", () => {
-  it("accumulates at full precision and rounds once", () => {
-    expect(sum([0.1, 0.2, 0.3], 2)).toBe(0.6);
-  });
-});
-
-describe("equals", () => {
-  it("absorbs float noise", () => {
-    expect(equals(0.1 + 0.2, 0.3)).toBe(true);
+describe("isBalanced", () => {
+  it("absorbs float noise at the default EPSILON", () => {
+    expect(isBalanced(0.1 + 0.2, 0.3)).toBe(true);
   });
 
   it("distinguishes adjacent scale-5 values", () => {
-    expect(equals(1.00002, 1.00003)).toBe(false);
+    expect(isBalanced(1.00002, 1.00003)).toBe(false);
+  });
+
+  it("accepts drift inside an explicit business tolerance and rejects it outside", () => {
+    expect(isBalanced(100, 100.0005, 0.001)).toBe(true);
+    expect(isBalanced(100, 100.002, 0.001)).toBe(false);
+  });
+
+  it("is sign-agnostic — credits over debits reads the same", () => {
+    expect(isBalanced(100.005, 100, 0.01)).toBe(true);
+    expect(isBalanced(100, 100.005, 0.01)).toBe(true);
   });
 });
 

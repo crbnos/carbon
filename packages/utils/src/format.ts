@@ -1,4 +1,4 @@
-import { SCALE } from "./math";
+import { SCALE } from "./precision";
 
 /** A currency amount. Money and per-unit prices are the SAME kind: from the
  *  business's point of view a price is an amount in the same currency, so both

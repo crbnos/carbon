@@ -31,17 +31,6 @@ export function round(
   return shift(fn(shift(value, scale)), -scale);
 }
 
-/** Accumulates at full precision, rounds once at the end. */
-export function sum(values: number[], scale: number = SCALE): number {
-  let total = 0;
-  for (const v of values) total += v;
-  return round(total, scale);
-}
-
-export function equals(a: number, b: number): boolean {
-  return Math.abs(a - b) < EPSILON;
-}
-
 /** The extra whole units to make/procure to cover scrap at `rate`. Ceils to
  *  whole units — you cannot make a third of a part to throw away — while the
  *  fractional target itself is NEVER rounded (callers add the two).
@@ -64,21 +53,34 @@ export function deriveRate(amount: number, subtotal: number): number {
   return subtotal > 0 ? round(amount / subtotal) : 0;
 }
 
-/** Ledger invariant. Throws with the drift so posting refuses rather than mis-posts.
- *  `tolerance` is a BUSINESS refusal threshold, distinct from EPSILON (float-noise guard):
- *  multi-currency journals legitimately carry small cross-rate residuals, so posting
- *  paths pass their domain tolerance explicitly (payment/memo: 0.01; manual/close: 0.001).
- *  The default EPSILON is for contexts that must balance exactly. */
+/** The ledger invariant, as a predicate. `tolerance` is a BUSINESS refusal
+ *  threshold, distinct from EPSILON (the float-noise guard): multi-currency
+ *  journals legitimately carry small cross-rate residuals, so callers pass their
+ *  domain tolerance explicitly. The default EPSILON is for contexts that must
+ *  balance exactly.
+ *
+ *  Use this where the caller decides what an imbalance MEANS — a validator
+ *  returning `{ data, error }`, or a filter listing unbalanced journals. Use
+ *  assertBalanced where the only correct response is to refuse. */
+export function isBalanced(
+  debits: number,
+  credits: number,
+  tolerance: number = EPSILON
+): boolean {
+  return Math.abs(debits - credits) <= tolerance;
+}
+
+/** isBalanced, for posting paths where an imbalance can only mean "stop": throws
+ *  with the drift so posting refuses rather than mis-posts. */
 export function assertBalanced(
   debits: number,
   credits: number,
   tolerance: number = EPSILON,
   label = "Journal"
 ): void {
-  const drift = debits - credits;
-  if (Math.abs(drift) > tolerance) {
+  if (!isBalanced(debits, credits, tolerance)) {
     throw new Error(
-      `${label} does not balance (off by ${round(drift)}); refusing to post`
+      `${label} does not balance (off by ${round(debits - credits)}); refusing to post`
     );
   }
 }

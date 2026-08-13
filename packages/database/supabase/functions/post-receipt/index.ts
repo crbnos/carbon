@@ -245,7 +245,7 @@ serve(async (req: Request) => {
         originalItemLedger.data.map((entry) => ({
           postingDate: today,
           itemId: entry.itemId,
-          quantity: round(-entry.quantity),
+          quantity: -entry.quantity,
           locationId: entry.locationId,
           storageUnitId: entry.storageUnitId,
           trackedEntityId: entry.trackedEntityId,
@@ -270,8 +270,10 @@ serve(async (req: Request) => {
             accountId: entry.accountId,
             accrual: entry.accrual,
             description: `VOID: ${entry.description}`,
-            amount: round(-entry.amount),
-            quantity: round(-entry.quantity),
+            // A reversal is a sign flip of an already-posted value, which is
+            // exact — no rounding to do.
+            amount: -entry.amount,
+            quantity: -entry.quantity,
             documentType: entry.documentType,
             documentId: entry.documentId,
             externalDocumentId: entry.externalDocumentId,

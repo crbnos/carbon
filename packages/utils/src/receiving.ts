@@ -1,4 +1,4 @@
-import { EPSILON, round } from "./math";
+import { EPSILON, round } from "./precision";
 import type { Violation } from "./storage-rules";
 
 export type OverReceiptReceiptLine = {
