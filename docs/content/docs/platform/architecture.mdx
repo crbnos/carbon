@@ -44,23 +44,23 @@ flowchart TB
   U3["Customer or supplier - public share link"]
 
   subgraph apps["Our Node.js apps"]
-    ERP["ERP app - the main product"]
-    MES["MES app - shop floor"]
+    ERP["ERP app - the main product"]:::app
+    MES["MES app - shop floor"]:::app
   end
 
   subgraph sb["Supabase services"]
-    REST["PostgREST - turns HTTP calls into SQL"]
-    AUTH["Auth - logins, tokens, invites"]
-    STORE["Storage - files, PDFs, CAD models"]
-    RT["Realtime - streams row changes to browsers"]
-    EDGE["Edge Functions - small Deno programs"]
-    PG[("Postgres - the source of truth")]
+    REST["PostgREST - turns HTTP calls into SQL"]:::svc
+    AUTH["Auth - logins, tokens, invites"]:::svc
+    STORE["Storage - files, PDFs, CAD models"]:::svc
+    RT["Realtime - streams row changes to browsers"]:::svc
+    EDGE["Edge Functions - small Deno programs"]:::svc
+    PG[("Postgres - the source of truth")]:::data
   end
 
-  JOBS["Inngest - background job runner"]
-  REDIS[("Redis - cache, locks, rate limits")]
-  ASM["Assembler - Rust service for 3D and CAD"]
-  EXT["Outside world - email, Slack, Stripe, Jira, Xero"]
+  JOBS["Inngest - background job runner"]:::async
+  REDIS[("Redis - cache, locks, rate limits")]:::data
+  ASM["Assembler - Rust service for 3D and CAD"]:::app
+  EXT["Outside world - email, Slack, Stripe, Jira, Xero"]:::ext
 
   U1 -->|"page loads and form posts"| ERP
   U2 -->|"page loads and form posts"| MES
@@ -86,6 +86,10 @@ flowchart TB
   ASM -->|"reads the CAD file, writes the 3D model"| STORE
   ASM -->|"job state and results"| REDIS
 ```
+
+Boxes are outlined by what they are, and the same colour means the same thing in every
+diagram on this page: **blue** our own apps, **green** a Supabase service, **pink** stored
+state, **amber** work that happens in the background. Grey is anything outside Carbon.
 
 **The five things worth taking from that picture:**
 
@@ -463,15 +467,15 @@ Picking the wrong one is the most common mistake made here.
 
 ```mermaid Four ways into the database, and what each one does about security rules.
 flowchart LR
-  CODE["Server code - loader, action, or job"]
+  CODE["Server code - loader, action, or job"]:::app
 
-  A["supabase-js - user scoped"]
-  B["supabase-js - service role"]
-  C["Kysely - direct SQL"]
-  D["Edge function - Deno"]
+  A["supabase-js - user scoped"]:::svc
+  B["supabase-js - service role"]:::svc
+  C["Kysely - direct SQL"]:::data
+  D["Edge function - Deno"]:::svc
 
-  REST["PostgREST"]
-  PG[("Postgres")]
+  REST["PostgREST"]:::svc
+  PG[("Postgres")]:::data
 
   CODE -->|"the default"| A
   CODE -->|"needs to see everything"| B
@@ -588,10 +592,10 @@ inserts a header, and the view derives everything else on read.
 ```mermaid Writes land in tables; reads come back through views, which is where computed values live.
 flowchart LR
   subgraph write["Write path"]
-    A1["action"] --> A2["service upsert"] --> A3[("purchaseOrder table")]
+    A1["action"]:::app --> A2["service upsert"]:::app --> A3[("purchaseOrder table")]:::data
   end
   subgraph read["Read path"]
-    B1["loader"] --> B2["service get"] --> B3["purchaseOrders view"]
+    B1["loader"]:::app --> B2["service get"]:::app --> B3["purchaseOrders view"]:::data
   end
   A3 -.->|"the view reads the table and joins the rest"| B3
 ```
@@ -637,20 +641,20 @@ none of it is visible from the code that did the write.
 
 ```mermaid One write becomes six side effects, none of them visible from the code that did the write.
 flowchart TB
-  W["Any write to purchaseOrder<br/>from anywhere at all"]
-  T["Postgres trigger - dispatch_event_batch<br/>runs inside the same transaction"]
-  Q[("PGMQ - a queue stored in Postgres tables")]
-  BELL["util.wake_event_queue - fires an HTTP ping after commit"]
-  EF["event-wake edge function"]
-  ING["Inngest"]
-  DR["event-queue job - drains the queue, groups by type"]
+  W["Any write to purchaseOrder<br/>from anywhere at all"]:::app
+  T["Postgres trigger - dispatch_event_batch<br/>runs inside the same transaction"]:::data
+  Q[("PGMQ - a queue stored in Postgres tables")]:::data
+  BELL["util.wake_event_queue - fires an HTTP ping after commit"]:::data
+  EF["event-wake edge function"]:::svc
+  ING["Inngest"]:::async
+  DR["event-queue job - drains the queue, groups by type"]:::async
 
-  H1["SEARCH - update the global search index"]
-  H2["WORKFLOW - run customer automations"]
-  H3["WEBHOOK - POST to a customer's URL"]
-  H4["AUDIT - write the audit log"]
-  H5["SYNC - push to Xero, Jira, Linear"]
-  H6["EMBEDDING - vectors for AI search"]
+  H1["SEARCH - update the global search index"]:::async
+  H2["WORKFLOW - run customer automations"]:::async
+  H3["WEBHOOK - POST to a customer's URL"]:::ext
+  H4["AUDIT - write the audit log"]:::async
+  H5["SYNC - push to Xero, Jira, Linear"]:::ext
+  H6["EMBEDDING - vectors for AI search"]:::async
 
   W --> T
   T -->|"one JSON message per subscriber"| Q
@@ -821,25 +825,25 @@ is in; the difference is entirely in configuration.
 ```mermaid The same code base in three shapes, and the four CI workflows that move it between them.
 flowchart TB
   subgraph dev["Your laptop"]
-    CLI["pnpm dev - runs the crbn CLI"]
-    DOCK["Docker: Postgres, PostgREST, Auth, Storage,<br/>Realtime, Kong, edge runtime, Studio,<br/>Inbucket mail catcher, Inngest"]
-    VITE["Vite dev servers for ERP and MES"]
+    CLI["pnpm dev - runs the crbn CLI"]:::app
+    DOCK["Docker: Postgres, PostgREST, Auth, Storage,<br/>Realtime, Kong, edge runtime, Studio,<br/>Inbucket mail catcher, Inngest"]:::app
+    VITE["Vite dev servers for ERP and MES"]:::app
     CLI -->|"boots the stack, applies migrations, regenerates types"| DOCK
     CLI -->|"starts the apps"| VITE
     VITE --> DOCK
   end
 
   subgraph ci["GitHub Actions on merge to main"]
-    CHK["check.yml - lint, typecheck, tests"]
-    DEP["deploy.yml - build Docker images, push to ECR"]
-    MIG["supabase.yml - apply migrations and edge functions"]
-    JOB["inngest.yml - register job functions"]
+    CHK["check.yml - lint, typecheck, tests"]:::async
+    DEP["deploy.yml - build Docker images, push to ECR"]:::async
+    MIG["supabase.yml - apply migrations and edge functions"]:::async
+    JOB["inngest.yml - register job functions"]:::async
   end
 
   subgraph prod["AWS - one stack per customer, defined in sst.config.ts"]
-    ALB["Load balancer plus WAF rate limiting"]
-    ECS["ECS Fargate: ERP containers and MES containers<br/>auto-scaling 1 to 10"]
-    SUPA[("Managed Supabase - Postgres")]
+    ALB["Load balancer plus WAF rate limiting"]:::app
+    ECS["ECS Fargate: ERP containers and MES containers<br/>auto-scaling 1 to 10"]:::app
+    SUPA[("Managed Supabase - Postgres")]:::data
     ALB --> ECS --> SUPA
   end
 

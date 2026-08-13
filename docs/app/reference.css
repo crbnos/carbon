@@ -337,6 +337,82 @@ figure.ed-codeblock figcaption {
   color: rgba(38, 35, 35, 0.72) !important;
 }
 
+/* Node roles — colour is identity, so a hue means the same thing in every diagram.
+ * Tag a node in MDX with `:::app` etc. Two constraints hold this to four bordered roles:
+ *
+ * The BORDER carries identity, never the fill — a fill pale enough for dark label text is
+ * near-white, and these four tints sit only ΔE 0.6–5.7 apart (floor 15), collapsing
+ * entirely under protanopia. And four is the cap: any two boxes can end up side by side,
+ * so the all-pairs CVD gate applies, which slots 1–4 clear at ΔE 13.0 and a 5th drops
+ * to 6.1. Greying actors, decision nodes and `ext` is what keeps it at four. */
+.ed-mermaid svg .node.app > rect,
+.ed-mermaid svg .node.app > path,
+.ed-mermaid svg .node.app > polygon {
+  fill: #e8f1fc !important;
+  stroke: #2a78d6 !important;
+}
+.ed-mermaid svg .node.svc > rect,
+.ed-mermaid svg .node.svc > path,
+.ed-mermaid svg .node.svc > polygon {
+  fill: #e3f5e3 !important;
+  stroke: #008300 !important;
+}
+.ed-mermaid svg .node.data > rect,
+.ed-mermaid svg .node.data > path,
+.ed-mermaid svg .node.data > polygon {
+  fill: #fceef3 !important;
+  stroke: #e87ba4 !important;
+}
+.ed-mermaid svg .node.async > rect,
+.ed-mermaid svg .node.async > path,
+.ed-mermaid svg .node.async > polygon {
+  fill: #fdf3e0 !important;
+  stroke: #eda100 !important;
+}
+.ed-mermaid svg .node.ext > rect,
+.ed-mermaid svg .node.ext > path,
+.ed-mermaid svg .node.ext > polygon {
+  fill: #f2f2f0 !important;
+  stroke: #9a9a9a !important;
+}
+
+/* Shared node shape — the soft, rounded card the editorial illustrations use. `rx`/`ry`
+ * round the corners (mermaid's own rounding is squarer), and the shadow lifts the box
+ * off the paper the way <Figure> art does. Cylinders are a <path>, so they take the
+ * shadow but ignore the radius. */
+.ed-mermaid svg .node > rect,
+.ed-mermaid svg .node > polygon {
+  rx: 9px !important;
+  ry: 9px !important;
+}
+.ed-mermaid svg .node > rect,
+.ed-mermaid svg .node > path,
+.ed-mermaid svg .node > polygon {
+  stroke-width: 1.5px !important;
+  filter: drop-shadow(0 1px 1.5px rgba(38, 35, 35, 0.07));
+}
+
+/* Label ink, one deeper step of the node's own hue. These are TEXT colours, not the
+ * categorical slots — the border keeps those. Each clears 4.5:1 on its own tint
+ * (4.59–5.94); the raw slot hues do not (pink 2.39, amber 1.97), so they are never
+ * used as text. Untagged nodes keep the default ink. */
+.ed-mermaid svg .node.app .nodeLabel,
+.ed-mermaid svg .node.app .nodeLabel p {
+  color: #1f5fa8 !important;
+}
+.ed-mermaid svg .node.svc .nodeLabel,
+.ed-mermaid svg .node.svc .nodeLabel p {
+  color: #006b00 !important;
+}
+.ed-mermaid svg .node.data .nodeLabel,
+.ed-mermaid svg .node.data .nodeLabel p {
+  color: #b04a72 !important;
+}
+.ed-mermaid svg .node.async .nodeLabel,
+.ed-mermaid svg .node.async .nodeLabel p {
+  color: #8a6000 !important;
+}
+
 /* Subgraph titles read as section labels, not node text. Only ever make them SMALLER:
  * mermaid measures the label and sizes its foreignObject before this CSS lands, so
  * anything that widens the text (mono, uppercase, letter-spacing) clips the last word. */
