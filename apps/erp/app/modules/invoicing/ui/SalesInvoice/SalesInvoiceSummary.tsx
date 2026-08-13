@@ -26,6 +26,7 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
   usePercentFormatter,
+  usePriceFormatter,
   useRouteData,
   useUser
 } from "~/hooks";
@@ -56,6 +57,12 @@ const LineItems = ({
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
+  // Per-unit prices, NOT settlement amounts: the money kind's maximum is the
+  // currency's decimals, so it would truncate a stored 300.33323 to "$300.33".
+  const priceFormatter = usePriceFormatter();
+  const presentationPriceFormatter = usePriceFormatter({
+    currency: currencyCode
+  });
   const [items] = useItems();
   const percentFormatter = usePercentFormatter();
   const [openItems, setOpenItems] = useState<string[]>([]);
@@ -192,7 +199,7 @@ const LineItems = ({
                           )}
                         </Badge>
                         <Badge variant="green">
-                          {formatter.format(line.unitPrice ?? 0)}{" "}
+                          {priceFormatter.format(line.unitPrice ?? 0)}{" "}
                           {
                             unitOfMeasures.find(
                               (uom) => uom.value === line.unitOfMeasureCode
@@ -247,10 +254,12 @@ const LineItems = ({
                       </Td>
                       <Td className="text-right">
                         <VStack spacing={0}>
-                          <span>{formatter.format(line.unitPrice ?? 0)}</span>
+                          <span>
+                            {priceFormatter.format(line.unitPrice ?? 0)}
+                          </span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
-                              {presentationCurrencyFormatter.format(
+                              {presentationPriceFormatter.format(
                                 line.convertedUnitPrice ?? 0
                               )}
                             </span>

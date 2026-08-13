@@ -53,7 +53,12 @@ import { Enumerable } from "~/components/Enumerable";
 import { CustomerContact, EmailRecipients } from "~/components/Form";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
-import { useCurrencyDecimals, useRouteData, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  usePriceFormatter,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { getDocumentType } from "~/modules/shared";
@@ -485,6 +490,10 @@ const LinePricingOptions = ({
 }: LinePricingOptionsProps) => {
   const [selectedValue, setSelectedValue] = useState("");
   const currencyDecimals = useCurrencyDecimals(quoteCurrency);
+  // A per-unit price is not a settlement amount: the money kind's maximum is the
+  // currency's decimals, so it would truncate a stored 300.33323 to "$300.33".
+  // Same currency as the money formatter beside it, so the two cannot disagree.
+  const priceFormatter = usePriceFormatter({ currency: quoteCurrency });
   const [showOverride, setShowOverride] = useState(false);
   const [overridePricing, setOverridePricing] = useState<SelectedLine>({
     quantity: 1,
@@ -662,7 +671,9 @@ const LinePricingOptions = ({
                       </Td>
                       <Td>{option.quantity}</Td>
                       <Td>
-                        {formatter.format(option.convertedNetUnitPrice ?? 0)}
+                        {priceFormatter.format(
+                          option.convertedNetUnitPrice ?? 0
+                        )}
                       </Td>
                       <Td>
                         {formatter.format(option.convertedShippingCost ?? 0)}

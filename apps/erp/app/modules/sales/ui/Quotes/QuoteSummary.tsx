@@ -29,6 +29,7 @@ import {
   useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
+  usePriceFormatter,
   useRouteData,
   useUser
 } from "~/hooks";
@@ -79,12 +80,14 @@ const deselectedLine: SelectedLine = {
 const LineItems = ({
   currencyCode,
   formatter,
+  priceFormatter,
   locale,
   selectedLines,
   setSelectedLines
 }: {
   currencyCode: string;
   formatter: Intl.NumberFormat;
+  priceFormatter: Intl.NumberFormat;
   locale: string;
   selectedLines: Record<string, SelectedLine>;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
@@ -243,6 +246,7 @@ const LineItems = ({
             >
               <LinePricingOptions
                 formatter={formatter}
+                priceFormatter={priceFormatter}
                 line={line}
                 options={pricingByLine[line.id!]}
                 quoteCurrency={routeData?.quote.currencyCode ?? "USD"}
@@ -268,6 +272,7 @@ type LinePricingOptionsProps = {
   quoteExchangeRate: number;
   locale: string;
   formatter: Intl.NumberFormat;
+  priceFormatter: Intl.NumberFormat;
   selectedLine: SelectedLine;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
 };
@@ -280,6 +285,7 @@ const LinePricingOptions = ({
   quoteExchangeRate,
   locale,
   formatter,
+  priceFormatter,
   selectedLine,
   setSelectedLines
 }: LinePricingOptionsProps) => {
@@ -481,7 +487,7 @@ const LinePricingOptions = ({
                       </Td>
                       <Td>{option.quantity}</Td>
                       <Td>
-                        {formatter.format(option.convertedUnitPrice ?? 0)}
+                        {priceFormatter.format(option.convertedUnitPrice ?? 0)}
                       </Td>
                       <Td>
                         {option.discountPercent > 0
@@ -684,6 +690,11 @@ const QuoteSummary = ({
   const formatter = useCurrencyFormatter({
     currency: routeData?.quote.currencyCode ?? "USD"
   });
+  // A per-unit price is not a settlement amount: the money kind's maximum is the
+  // currency's decimals, so it would truncate a stored 300.33323 to "$300.33".
+  const priceFormatter = usePriceFormatter({
+    currency: routeData?.quote.currencyCode ?? "USD"
+  });
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(
     routeData?.quote?.currencyCode ?? "USD"
@@ -872,6 +883,7 @@ const QuoteSummary = ({
           currencyCode={routeData?.quote.currencyCode ?? "USD"}
           locale={locale}
           formatter={formatter}
+          priceFormatter={priceFormatter}
           selectedLines={selectedLines}
           setSelectedLines={setSelectedLines}
         />

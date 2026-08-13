@@ -1,21 +1,21 @@
-import { priceFormatOptions, SCALE } from "@carbon/utils";
+import { priceFormatOptions } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
-import { useConfiguredCurrencyDecimals } from "./useCurrencies";
 import { useUser } from "./useUser";
 
 /**
- * Per-unit price displays: the currency's decimals as the MINIMUM padding, up to
- * storage scale as the maximum so the full stored price always renders
- * ("$0.164", "CA$9.999"). Digits come from the company group's configured
- * `currency.decimalPlaces` — the DB column is authoritative over Intl/CLDR, the
- * same rule `useCurrencyFormatter` follows, so the price and money kinds can
- * never disagree about the same currency.
+ * Per-unit price displays: no padding, up to storage scale as the maximum so the
+ * full stored price always renders ("$0.164", "$4.5", "$3"). A price carries only
+ * the digits it actually has — its precision genuinely varies, and the currency's
+ * settlement decimals have no say in it.
  *
- * `decimalPlaces` overrides the lookup when the caller already has the row
- * (e.g. from a loader). CLDR decides the minimum only when the currency isn't
- * configured for the group; the maximum is never left to Intl, whose currency
- * default of 2 would truncate a stored 1531.4475 to 1531.45.
+ * That is the whole reason this hook exists next to `useCurrencyFormatter`: the
+ * money kind's MAXIMUM is the currency's decimals, so running a price through it
+ * truncates the stored value on screen (a 300.33323 unit price reads "$300.33").
+ *
+ * `decimalPlaces` no longer affects the output — it is accepted so the call sites
+ * that pass it still compile, the same way `priceFormatOptions` keeps its second
+ * argument. `currency` still matters: it picks the symbol.
  */
 export function usePriceFormatter(options?: {
   currency?: string;
@@ -25,17 +25,9 @@ export function usePriceFormatter(options?: {
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const { locale } = useLocale();
   const currency = options?.currency ?? baseCurrency;
-  const configuredDecimals = useConfiguredCurrencyDecimals(currency);
-  const decimals = options?.decimalPlaces ?? configuredDecimals;
 
   return useMemo(
-    () =>
-      new Intl.NumberFormat(
-        locale,
-        decimals != null
-          ? priceFormatOptions(currency, decimals)
-          : { style: "currency", currency, maximumFractionDigits: SCALE }
-      ),
-    [locale, currency, decimals]
+    () => new Intl.NumberFormat(locale, priceFormatOptions(currency)),
+    [locale, currency]
   );
 }

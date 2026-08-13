@@ -53,6 +53,7 @@ import {
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
+  usePriceFormatter,
   useRouteData
 } from "~/hooks";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
@@ -92,6 +93,11 @@ const SalesOrderSummary = ({
 
   const { locale } = useLocale();
   const formatter = useCurrencyFormatter({
+    currency: routeData?.salesOrder?.currencyCode ?? "USD"
+  });
+  // A per-unit price is not a settlement amount: the money kind's maximum is the
+  // currency's decimals, so it would truncate a stored 300.33323 to "$300.33".
+  const priceFormatter = usePriceFormatter({
     currency: routeData?.salesOrder?.currencyCode ?? "USD"
   });
 
@@ -233,6 +239,7 @@ const SalesOrderSummary = ({
             currencyCode={routeData?.salesOrder?.currencyCode ?? "USD"}
             locale={locale}
             formatter={formatter}
+            priceFormatter={priceFormatter}
             lines={routeData?.lines ?? []}
           />
 
@@ -342,11 +349,13 @@ function LineItems({
   currencyCode,
   locale,
   formatter,
+  priceFormatter,
   lines,
   salesOrder
 }: {
   currencyCode: string;
   formatter: Intl.NumberFormat;
+  priceFormatter: Intl.NumberFormat;
   locale: string;
   lines: SalesOrderLine[];
   salesOrder?: SalesOrder;
@@ -473,7 +482,7 @@ function LineItems({
                           )}
                         </Badge>
                         <Badge variant="green">
-                          {formatter.format(line.unitPrice ?? 0)}{" "}
+                          {priceFormatter.format(line.unitPrice ?? 0)}{" "}
                           {line.unitOfMeasureCode}
                         </Badge>
                         {(line.taxPercent ?? 0) > 0 ? (

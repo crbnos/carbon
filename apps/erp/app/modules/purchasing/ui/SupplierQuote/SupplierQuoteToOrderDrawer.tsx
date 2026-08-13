@@ -32,7 +32,7 @@ import { LuImage } from "react-icons/lu";
 import { Form, useNavigation, useParams } from "react-router";
 import type { z } from "zod";
 import { useAccounts } from "~/components/Form/Account";
-import { useCurrencyDecimals, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePriceFormatter, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { selectedLineSchema } from "../../purchasing.models";
@@ -263,6 +263,12 @@ const LinePricingOptions = ({
 }: LinePricingOptionsProps) => {
   const { t } = useLingui();
   const currencyDecimals = useCurrencyDecimals(quoteCurrency);
+  // A per-unit price is not a settlement amount: the money kind's maximum is the
+  // currency's decimals, so it would truncate a stored 300.33323 to "$300.33".
+  // Same currency as the money formatter beside it, so the two cannot disagree.
+  const presentationPriceFormatter = usePriceFormatter({
+    currency: quoteCurrency
+  });
   const [selectedValue, setSelectedValue] = useState("");
   const [showOverride, setShowOverride] = useState(false);
   const [overridePricing, setOverridePricing] = useState<SelectedLine>({
@@ -386,7 +392,7 @@ const LinePricingOptions = ({
                       </Td>
                       <Td>{option.quantity}</Td>
                       <Td>
-                        {presentationCurrencyFormatter.format(
+                        {presentationPriceFormatter.format(
                           option.supplierUnitPrice ?? 0
                         )}
                       </Td>

@@ -34,7 +34,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LuArrowLeft, LuImage, LuStar } from "react-icons/lu";
 import { Form, useFetcher, useNavigation } from "react-router";
 import type { z } from "zod";
-import { useUser } from "~/hooks";
+import { usePriceFormatter, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { selectedLineSchema } from "../../purchasing.models";
@@ -741,6 +741,10 @@ const LinePricingOptions = ({
   setSelectedLines
 }: LinePricingOptionsProps) => {
   const selectedValue = selectedLines[line.id!]?.quantity?.toString() ?? "";
+  // A per-unit price is not a settlement amount: the money kind's maximum is the
+  // currency's decimals, so it would truncate a stored 300.33323 to "$300.33".
+  // Same currency as the money formatter beside it, so the two cannot disagree.
+  const priceFormatter = usePriceFormatter();
 
   return (
     <RadioGroup
@@ -815,7 +819,9 @@ const LinePricingOptions = ({
                     </label>
                   </Td>
                   <Td>{option.quantity}</Td>
-                  <Td>{formatter.format(option.supplierUnitPrice ?? 0)}</Td>
+                  <Td>
+                    {priceFormatter.format(option.supplierUnitPrice ?? 0)}
+                  </Td>
                   <Td>{formatter.format(option.supplierShippingCost ?? 0)}</Td>
                   <Td>
                     {option.leadTime ?? 0}{" "}
