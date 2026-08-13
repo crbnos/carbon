@@ -1,12 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { scheduleJobUpdateValidator } from "~/modules/production/production.models";
-import {
-  notifyScheduleInputsChanged,
-  triggerJobSchedule
-} from "~/modules/production/production.service";
+import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 
 const logger = getLogger("erp", "dates-update");
 
@@ -45,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
     dueDate,
     priority: validation.data.priority,
     updatedBy: userId,
-    updatedAt: new Date().toISOString()
+    updatedAt: datetime.timestamp()
   };
 
   const { error } = await client
@@ -57,20 +55,19 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: false, message: error.message };
   }
 
-  // Trigger background job rescheduling
+  // Stamp the affected jobs schedule-outdated; the debounced wave then
+  // regenerates the whole location coherently in dueDate -> priority order so
+  // the board's card order IS the queue order. No immediate single-job path —
+  // the wave is the single source of truth for placement.
   try {
-    await triggerJobSchedule(validation.data.id, companyId, userId);
-    // Immediate single-job reschedule above gives instant feedback; the
-    // debounced wave then rebuilds the affected jobs coherently in
-    // dueDate -> priority order so the board's card order IS the queue order
     await notifyScheduleInputsChanged(
       companyId,
       "reorder",
       "Schedule reordered"
     );
   } catch (rescheduleError) {
-    // Log error but don't fail the request - reschedule can retry
-    logger.error("Failed to trigger job reschedule", {
+    // Log error but don't fail the request - the wave can retry
+    logger.error("Failed to notify schedule inputs changed", {
       error: rescheduleError
     });
   }

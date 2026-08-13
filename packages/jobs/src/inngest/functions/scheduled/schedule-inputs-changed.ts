@@ -7,13 +7,24 @@ import { inngest } from "../../client";
 
 const log = getLogger("jobs", "schedule-replan");
 
-// One wave replans at most this many jobs (bounded step count per Inngest
-// run); a remainder chains a follow-up wave via a self-sent event
-const WAVE_BATCH_SIZE = 500;
-
 // PostgREST .in() filters are URL-encoded — thousands of ids in one filter
 // can exceed URL/statement limits and fail the whole step
 const IN_FILTER_CHUNK_SIZE = 200;
+
+/** One job the regen flipped from on-time (or unforecast) to projected-late. */
+type NewlyLateJob = {
+  jobId: string;
+  readableJobId: string | null;
+  assignee: string | null;
+  projectedCompletionAt: string | null;
+};
+
+type LocationRegenResult = {
+  locationId: string;
+  jobsScheduled: number;
+  conflictsDetected: number;
+  newlyLate: NewlyLateJob[];
+};
 
 const chunkArray = <T>(items: T[], size: number): T[][] => {
   const chunks: T[][] = [];
@@ -209,13 +220,18 @@ export const markScheduleStaleFunction = inngest.createFunction(
 /**
  * Reactive replanning, part 2 — WAVE (debounced, per company).
  *
- * Debounce coalesces a burst of input changes into ONE replan wave: the
- * timer resets on every event, and the timeout ceiling guarantees a wave at
- * least every 30 minutes under a continuous stream of edits. The wave clears
- * every stale job's reservations FIRST, then reschedules in due-date order —
- * one wave = one consistent queue (reschedule order must not become queue
- * priority, and all conflict notes must describe the same final world).
- * Manually scheduled operations are preserved by the engine as always.
+ * Debounce coalesces a burst of input changes into ONE wave: the timer resets
+ * on every event, and the 10m ceiling guarantees a wave at least that often
+ * under a continuous stream of edits. 30s is affordable because regen is
+ * idempotent and whole-location — there is no frozen-set to get wrong.
+ *
+ * The wave groups the stale jobs by LOCATION and regenerates each affected
+ * location in full (the edge function is a whole-location forward simulation).
+ * No pre-clear and no wave-side flag-clearing: the engine's reservation-
+ * exclusion list replaces the clear, and each engine run clears its own job's
+ * stale stamp on completion (fixing the stuck-stamp + lost-update defects by
+ * construction — a regen always covers the whole location). Manually scheduled
+ * operations are preserved by the engine as always.
  */
 export const scheduleReplanWaveFunction = inngest.createFunction(
   {
@@ -223,22 +239,19 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
     retries: 1,
     debounce: {
       key: "event.data.companyId",
-      period: "3m",
-      timeout: "30m"
+      period: "30s",
+      timeout: "10m"
     },
-    // env scope + the shared "schedule:" key puts this in the SAME
-    // serialization lane as the schedule-job function — per-function
-    // concurrency would let a wave and a user-triggered reschedule run
-    // concurrently for one company and double-book capacity
+    // env scope + the shared "schedule:" key serializes this per company so a
+    // wave and a user-triggered regen never run concurrently for one company
+    // and double-book capacity
     concurrency: {
       limit: 1,
       scope: "env",
       key: '"schedule:" + event.data.companyId'
     },
-    // The wave clears reservations up front (one wave = one consistent
-    // queue). If the run dies after that clear, the stale jobs would sit
-    // capacity-free until the nightly sweep — chain a recovery wave instead;
-    // the jobs are still stamped, so a continuation drains exactly them.
+    // A regen is idempotent, so a died run just needs re-running; the jobs are
+    // still stamped, so a continuation regenerates exactly their locations.
     onFailure: async ({ event, step }) => {
       const companyId = event.data.event.data?.companyId;
       if (companyId) {
@@ -259,124 +272,68 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
     const { companyId } = event.data;
     const serviceRole = getCarbonServiceRole();
 
-    const { staleJobs, remaining } = await step.run(
-      "get-stale-jobs",
-      async () => {
-        // fetchAllFromTable pages past PostgREST's 1000-row cap so the batch
-        // boundary below is OURS (explicit + logged), never a silent select cap
-        const result = await fetchAllFromTable<{ id: string }>(
-          serviceRole,
-          "job",
-          "id",
-          (query) =>
-            query
-              .eq("companyId", companyId)
-              .in("status", [...activeJobStatuses])
-              .not("scheduleOutdatedReason", "is", null)
-              .order("dueDate", { ascending: true })
-              // job.priority is the planner's manual ordering from the dates
-              // board drag — within the same due date, the top card goes first
-              .order("priority", { ascending: true })
-              .order("createdAt", { ascending: true })
-        );
-
-        if (result.error) {
-          throw new Error(`Failed to load stale jobs: ${result.error.message}`);
-        }
-        const ids = (result.data ?? []).map((j) => j.id);
-        return {
-          staleJobs: ids.slice(0, WAVE_BATCH_SIZE),
-          remaining: Math.max(ids.length - WAVE_BATCH_SIZE, 0)
-        };
-      }
-    );
-
-    if (staleJobs.length === 0) {
-      return { rescheduled: 0, failed: 0 };
-    }
-
-    // Clear the whole wave's reservations up front so the due-date-ordered
-    // rebuild starts from an empty queue for these jobs
-    await step.run("clear-stale-reservations", async () => {
-      const result = await serviceRole
-        .from("capacityReservation")
-        .delete()
-        .eq("companyId", companyId)
-        .in("jobId", staleJobs)
-        .is("scenarioId", null);
+    const locationIds = await step.run("get-stale-locations", async () => {
+      // fetchAllFromTable pages past PostgREST's 1000-row cap; distinct in TS.
+      const result = await fetchAllFromTable<{ locationId: string }>(
+        serviceRole,
+        "job",
+        "locationId",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .in("status", ["Ready", "In Progress", "Paused"])
+            .not("scheduleOutdatedAt", "is", null)
+      );
       if (result.error) {
         throw new Error(
-          `Failed to clear reservations: ${result.error.message}`
+          `Failed to load stale locations: ${result.error.message}`
         );
       }
+      return [...new Set((result.data ?? []).map((j) => j.locationId))];
     });
 
-    // Batch mode: one edge-function invocation schedules a CHUNK of jobs in
-    // order — the per-call HTTP overhead is paid once per chunk, not per job
-    const INVOKE_CHUNK_SIZE = 25;
-    const chunks: string[][] = [];
-    for (let i = 0; i < staleJobs.length; i += INVOKE_CHUNK_SIZE) {
-      chunks.push(staleJobs.slice(i, i + INVOKE_CHUNK_SIZE));
+    if (locationIds.length === 0) {
+      return { locations: 0 };
     }
 
-    let rescheduled = 0;
-    let failed = 0;
-    for (const [index, chunk] of chunks.entries()) {
-      const ok = await step.run(`replan-chunk-${index}`, async () => {
-        const { error } = await serviceRole.functions.invoke("schedule", {
-          body: {
-            jobIds: chunk,
-            companyId,
-            userId: "system",
-            mode: "reschedule",
-            direction: "backward"
-          }
+    // Regenerate each affected location in full, sequentially. The engine
+    // clears each job's stale stamp per run and returns the newly-late jobs.
+    const results: LocationRegenResult[] = [];
+    for (const locationId of locationIds) {
+      const result = await step.run(`regen-${locationId}`, async () => {
+        const { data, error } = await serviceRole.functions.invoke("schedule", {
+          body: { locationId, companyId, userId: "system" }
         });
         if (error) {
-          log.error("Replan wave chunk failed", {
+          log.error("Location regen failed", {
             companyId,
-            chunkIndex: index,
-            jobIds: chunk,
+            locationId,
             error: error.message ?? String(error)
           });
-          return false;
+          return null;
         }
-        const cleared = await serviceRole
-          .from("job")
-          .update({ scheduleOutdatedReason: null, scheduleOutdatedAt: null })
-          .in("id", chunk)
-          .eq("companyId", companyId);
-        if (cleared.error) {
-          // A silently-failed clear leaves rescheduled jobs stamped stale —
-          // the next wave would clear their reservations and redo them
-          throw new Error(
-            `Failed to clear outdated flags: ${cleared.error.message}`
-          );
-        }
-        return true;
+        return data as LocationRegenResult;
       });
-      if (ok) rescheduled += chunk.length;
-      else failed += chunk.length;
+      if (result) {
+        results.push(result);
+      }
     }
 
-    if (remaining > 0) {
-      // Never a silent cap: log the carry-over and chain a follow-up wave
-      // (debounce turns this into the next batch a few minutes later)
-      log.warning("Replan wave batch full — chaining follow-up wave", {
-        companyId,
-        remaining
-      });
-      await step.sendEvent("chain-next-wave", {
-        name: "carbon/schedule.inputs.changed",
-        data: {
-          companyId,
-          kind: "reorder",
-          reason: "Replan wave continuation",
-          continuation: true
-        }
-      });
-    }
+    const jobsScheduled = results.reduce(
+      (sum, r) => sum + (r.jobsScheduled ?? 0),
+      0
+    );
+    const conflictsDetected = results.reduce(
+      (sum, r) => sum + (r.conflictsDetected ?? 0),
+      0
+    );
+    const newlyLate = results.flatMap((r) => r.newlyLate ?? []);
 
-    return { rescheduled, failed, total: staleJobs.length, remaining };
+    return {
+      locations: locationIds.length,
+      jobsScheduled,
+      conflictsDetected,
+      newlyLate: newlyLate.length
+    };
   }
 );

@@ -79,7 +79,6 @@ import {
   printJobDeliverFunction,
   printJobFunction,
   recalculateFunction,
-  rescheduleJobFunction,
   updatePermissionsFunction,
   userAdminFunction
 } from "./functions/tasks";
@@ -124,7 +123,6 @@ export const functions = [
   recalculateFunction,
   userAdminFunction,
   postTransactionFunction,
-  rescheduleJobFunction,
   onboardFunction,
   printJobFunction,
   printJobDeliverFunction,

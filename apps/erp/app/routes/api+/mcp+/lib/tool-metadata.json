@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-13T03:26:09.024Z",
-  "totalTools": 1466,
+  "generated": "2026-08-13T03:33:06.525Z",
+  "totalTools": 1465,
   "modules": 15,
   "tools": [
     {
@@ -23647,38 +23647,6 @@
         "required": [
           "kind",
           "reason"
-        ]
-      }
-    },
-    {
-      "name": "production_triggerJobSchedule",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "trigger job schedule",
-      "paramCount": 3,
-      "serviceParams": [
-        "jobId",
-        "companyId",
-        "userId",
-        "mode",
-        "direction"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "string"
-          },
-          "mode": {},
-          "direction": {}
-        },
-        "required": [
-          "jobId",
-          "mode",
-          "direction"
         ]
       }
     },

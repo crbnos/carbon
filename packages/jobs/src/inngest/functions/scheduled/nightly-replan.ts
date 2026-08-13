@@ -10,8 +10,8 @@ import { inngest } from "../../client";
  * anything the event path missed (direct DB writes, a wave that exhausted
  * retries): it finds companies that still have schedule-outdated jobs and
  * emits one `carbon/schedule.inputs.changed` event per company — the wave
- * function does the actual work, with its usual per-company serialization.
- * Companies with nothing stale cost nothing.
+ * function then regenerates each affected location in full, with its usual
+ * per-company serialization. Companies with nothing stale cost nothing.
  */
 export const nightlyReplanFunction = inngest.createFunction(
   { id: "nightly-replan", retries: 2 },

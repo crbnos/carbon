@@ -5431,26 +5431,6 @@ export async function notifyScheduleInputsChanged(
   });
 }
 
-export async function triggerJobSchedule(
-  jobId: string,
-  companyId: string,
-  userId: string,
-  mode: "initial" | "reschedule" = "reschedule",
-  direction: "backward" | "forward" = "backward"
-) {
-  const { trigger } = await import("@carbon/jobs");
-
-  await trigger("schedule-job", {
-    jobId,
-    companyId,
-    userId,
-    mode,
-    direction
-  });
-
-  return { success: true };
-}
-
 // --- Assembly Instructions ---------------------------------------------
 
 export async function getAssemblyInstruction(

@@ -272,17 +272,6 @@ export type Events = {
         };
   };
 
-  // Job rescheduling
-  "carbon/reschedule-job": {
-    data: {
-      jobId: string;
-      companyId: string;
-      userId: string;
-      mode?: "initial" | "reschedule";
-      direction?: "backward" | "forward";
-    };
-  };
-
   // Scheduling inputs changed (shift/qualification/work-center/etc.) —
   // consumed by the mark + debounced replan-wave functions
   "carbon/schedule.inputs.changed": {
