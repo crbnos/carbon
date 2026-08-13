@@ -2,6 +2,7 @@ import {
   Number as BaseNumber,
   NumberControlled as BaseNumberControlled
 } from "@carbon/form";
+import { withMinimumDecimals } from "@carbon/utils";
 import type { ComponentProps } from "react";
 import { useCurrencyMinDecimals } from "~/hooks/useCurrencies";
 
@@ -30,7 +31,7 @@ function useTrailingZeroPreference(
     return formatOptions;
   }
 
-  return { ...formatOptions, minimumFractionDigits: minDecimals };
+  return withMinimumDecimals(formatOptions, minDecimals);
 }
 
 export function Number(props: ComponentProps<typeof BaseNumber>) {

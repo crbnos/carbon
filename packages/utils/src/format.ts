@@ -42,6 +42,22 @@ export function priceFormatOptions(
   return moneyFormatOptions(currency, decimalPlaces, minDecimalPlaces);
 }
 
+/** Already-built currency options with a different MINIMUM — the company's
+ *  trailing-zero preference, applied by the editable-field wrapper, which sees
+ *  a finished options object rather than the kind that produced it.
+ *
+ *  Lives here because this file is the one place digit counts are chosen; a
+ *  wrapper writing `minimumFractionDigits` itself is the drift
+ *  `no-inline-fraction-digits` exists to catch. Only the minimum moves, so the
+ *  value a field commits is unchanged (react-aria commits parse(format(x)) and
+ *  padding zeros carry no value). */
+export function withMinimumDecimals(
+  options: Intl.NumberFormatOptions,
+  minDecimalPlaces: number
+): Intl.NumberFormatOptions {
+  return { ...options, minimumFractionDigits: minDecimalPlaces };
+}
+
 /** How many digits a percent carries. A scale-5 fraction is 3 percent-digits,
  *  so a rate round-trips exactly through either of the two kinds below. */
 const PERCENT_DIGITS = 3;
