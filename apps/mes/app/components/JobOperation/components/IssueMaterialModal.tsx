@@ -342,7 +342,9 @@ export function IssueMaterialModal({
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<
     Array<{ index: number; id: string }>
   >(
-    Array(Math.max(1, initialQuantity))
+    // A batch material's quantity can be fractional (4.5 plate x 3 units), and
+    // Array() throws "Invalid array length" on a non-integer.
+    Array(Math.max(1, Math.ceil(initialQuantity)))
       .fill("")
       .map((_, index) => ({ index, id: "" }))
   );

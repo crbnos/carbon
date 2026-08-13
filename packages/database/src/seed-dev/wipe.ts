@@ -202,7 +202,9 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
     "salesOrder",
     "purchaseOrder",
     "quote",
-    "salesRfq"
+    "salesRfq",
+    "supplierQuote",
+    "purchasingRfq"
   ]) {
     if (deleteSet.has(t)) {
       await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [

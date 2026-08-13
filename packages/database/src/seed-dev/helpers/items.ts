@@ -52,6 +52,7 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
       name: spec.name,
       type: spec.type,
       makeMethodId: mm?.id ?? null,
+      isMake,
       unitCost: spec.standardCost ?? 0,
       unitOfMeasureCode: uom
     };
@@ -133,6 +134,7 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     name: spec.name,
     type: spec.type,
     makeMethodId,
+    isMake,
     unitCost: spec.standardCost ?? 0,
     unitOfMeasureCode: uom
   };
@@ -155,22 +157,47 @@ function extensionTableFor(type: ItemType): string {
   }
 }
 
+/**
+ * A Make component is a subassembly: `methodType` must say so, and
+ * `materialMakeMethodId` must point at the component's own active method, or the
+ * BOM renders as one flat level and the Subassembly/Kit control never appears.
+ */
 export async function addBomLine(
   ctx: Ctx,
   makeMethodId: string,
   componentItem: ItemRef,
   quantity: number,
-  order: number
-): Promise<void> {
-  await insertId(ctx, "methodMaterial", {
+  order: number,
+  opts: { methodType?: MethodType; kit?: boolean } = {}
+): Promise<string> {
+  const methodType =
+    opts.methodType ??
+    (componentItem.isMake ? "Make to Order" : "Pull from Inventory");
+  const isSubassembly = methodType === "Make to Order";
+
+  return insertId(ctx, "methodMaterial", {
     makeMethodId,
     itemId: componentItem.id,
     itemType: componentItem.type,
     unitOfMeasureCode: componentItem.unitOfMeasureCode,
+    methodType,
+    materialMakeMethodId: isSubassembly ? componentItem.makeMethodId : null,
+    kit: opts.kit ?? false,
     quantity,
     order
   });
 }
+
+export type MethodType =
+  | "Make to Order"
+  | "Pull from Inventory"
+  | "Purchase to Order";
+
+export type OperationType =
+  | "Process"
+  | "Assembly"
+  | "Inspection"
+  | "Outside Processing";
 
 export async function addBopOperation(
   ctx: Ctx,
@@ -179,7 +206,19 @@ export async function addBopOperation(
   workCenterId: string | undefined,
   description: string,
   order: number,
-  opts: { laborTime?: number; laborUnit?: string; setupTime?: number } = {}
+  opts: {
+    laborTime?: number;
+    laborUnit?: string;
+    setupTime?: number;
+    machineTime?: number;
+    operationType?: OperationType;
+    // Required by the UI for an Outside Processing step — without it the job
+    // cannot be released and no supplier name renders on the operation.
+    operationSupplierProcessId?: string;
+    operationLeadTime?: number;
+    operationUnitCost?: number;
+    procedureId?: string;
+  } = {}
 ): Promise<string> {
   return insertId(ctx, "methodOperation", {
     makeMethodId,
@@ -189,6 +228,12 @@ export async function addBopOperation(
     order,
     laborTime: opts.laborTime ?? 0.5,
     laborUnit: opts.laborUnit ?? "Hours/Piece",
-    setupTime: opts.setupTime ?? 0
+    setupTime: opts.setupTime ?? 0,
+    machineTime: opts.machineTime ?? 0,
+    operationType: opts.operationType ?? "Process",
+    operationSupplierProcessId: opts.operationSupplierProcessId ?? null,
+    operationLeadTime: opts.operationLeadTime ?? 0,
+    operationUnitCost: opts.operationUnitCost ?? 0,
+    procedureId: opts.procedureId ?? null
   });
 }
