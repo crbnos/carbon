@@ -9,7 +9,7 @@ import {
   composePlacementNote,
 } from "./conflict-messages.ts";
 import { businessDay } from "./date-utils.ts";
-import type { CalendarWindow } from "./calendar-utils.ts";
+import { type CalendarWindow, intersectWindows } from "./calendar-utils.ts";
 import type { PeopleDayRow } from "./people-utils.ts";
 import { clipWindowsToStation } from "./people-utils.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
@@ -473,12 +473,16 @@ export class WorkCenterSelector {
               const peopleQualified = (members ?? []).flatMap((m) => {
                 const dates = people.memberPeopleDates.get(m.employeeId);
                 if (!dates) return [];
-                const windows = clipWindowsToStation(
-                  m.windows,
-                  wcId,
-                  dates,
-                  ctx.peopleBudgets.get(m.employeeId),
-                  ctx.timeZone
+                const windows = intersectWindows(
+                  clipWindowsToStation(
+                    m.windows,
+                    wcId,
+                    dates,
+                    ctx.peopleBudgets.get(m.employeeId),
+                    ctx.timeZone
+                  ),
+                  // A person can't run a closed machine — clip to its hours
+                  capacity.windows
                 );
                 return windows.length > 0
                   ? [{ employeeId: m.employeeId, windows }]
@@ -503,13 +507,19 @@ export class WorkCenterSelector {
               }
             }
             if (!result) {
+              // Any-qualified relay: clip each member to the machine's hours so
+              // nobody is booked while the machine is closed.
+              const relayMembers = (members ?? []).map((m) => ({
+                employeeId: m.employeeId,
+                windows: intersectWindows(m.windows, capacity.windows),
+              }));
               const pass2 = allocateAttendedOperation({
                 attendedHours,
                 totalHours: durationHours,
                 earliestStart,
                 horizonEnd,
                 capacity,
-                members: members ?? [],
+                members: relayMembers,
                 busyByEmployee: ctx.reservationsByEmployee,
                 timeZone: ctx.timeZone,
               });
@@ -532,12 +542,16 @@ export class WorkCenterSelector {
             if (people && attendedHours > 0) {
               const peopleMembers: EligibleMember[] = [];
               for (const [employeeId, dates] of people.memberPeopleDates) {
-                const windows = clipWindowsToStation(
-                  ctx.windowsByEmployee.get(employeeId) ?? [],
-                  wcId,
-                  dates,
-                  ctx.peopleBudgets.get(employeeId),
-                  ctx.timeZone
+                const windows = intersectWindows(
+                  clipWindowsToStation(
+                    ctx.windowsByEmployee.get(employeeId) ?? [],
+                    wcId,
+                    dates,
+                    ctx.peopleBudgets.get(employeeId),
+                    ctx.timeZone
+                  ),
+                  // A person can't run a closed machine — clip to its hours
+                  capacity.windows
                 );
                 if (windows.length > 0) {
                   peopleMembers.push({ employeeId, windows });

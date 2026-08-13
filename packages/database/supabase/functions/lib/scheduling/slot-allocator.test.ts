@@ -2,7 +2,7 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import { expandCalendar } from "./calendar-utils.ts";
+import { expandCalendar, intersectWindows } from "./calendar-utils.ts";
 import {
   type AllocationResult,
   type AllocationSuccess,
@@ -169,6 +169,82 @@ Deno.test("conflict when the horizon is exhausted", () => {
   });
 
   assert(isConflict(result));
+});
+
+// --- machine hours bound placement (shift-bound work centers) ---------------
+
+Deno.test("machine hours bound an ungated op: 10h on an 8h/day machine spans two days", () => {
+  // The work center is open Mon–Fri 08:00–16:00 (8h/day), not 24×7.
+  const capacity: ResourceCapacityData = {
+    workCenter: { id: "wc1" },
+    windows: weekdayWindows,
+    reservations: [],
+  };
+  const slot = expectSlot(
+    allocateOperation({
+      durationHours: 10,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity,
+    })
+  );
+  assertEquals(slot.start.toISOString(), "2026-01-05T08:00:00.000Z");
+  // 8h Monday (08–16) + 2h Tuesday (08–10) — pauses overnight, never a weekend
+  assertEquals(slot.end.toISOString(), "2026-01-06T10:00:00.000Z");
+});
+
+Deno.test("attended remainder accumulates on machine windows: 4h from 1h before close resumes next window", () => {
+  // Machine open 08:00–16:00; a 4h unattended remainder starting at 15:00
+  // (1h before close) finishes 3h into the next window.
+  const capacity: ResourceCapacityData = {
+    workCenter: { id: "wc1" },
+    windows: weekdayWindows,
+    reservations: [],
+  };
+  const sam = member("emp-sam", weekdayWindows); // already machine-clipped
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 1, // 14:00–15:00
+      totalHours: 5, // + 4h unattended machine run
+      earliestStart: utc("2026-01-05T14:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity,
+      members: [sam],
+      busyByEmployee: new Map(),
+    })
+  );
+  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T15:00:00.000Z");
+  // 1h to close (16:00) + 3h into Tuesday's window (08:00–11:00)
+  assertEquals(r.end.toISOString(), "2026-01-06T11:00:00.000Z");
+});
+
+Deno.test("a 24×7 member clipped to an 8h machine window works only machine hours", () => {
+  const capacity: ResourceCapacityData = {
+    workCenter: { id: "wc1" },
+    windows: weekdayWindows, // 8h/day
+    reservations: [],
+  };
+  // Person is available around the clock, but the selector clips them to the
+  // machine's hours — a person can't run a closed machine.
+  const clipped = intersectWindows(alwaysOpen, capacity.windows);
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 12,
+      totalHours: 12,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity,
+      members: [member("emp-sam", clipped)],
+      busyByEmployee: new Map(),
+    })
+  );
+  // 8h Monday + 4h Tuesday — never overnight, despite the person being 24×7
+  assertEquals(r.segments.length, 2);
+  assertEquals(r.segments[0].startAt.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(r.segments[0].endAt.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(r.segments[1].startAt.toISOString(), "2026-01-06T08:00:00.000Z");
+  assertEquals(r.segments[1].endAt.toISOString(), "2026-01-06T12:00:00.000Z");
+  assertEquals(r.attendedEnd.toISOString(), "2026-01-06T12:00:00.000Z");
 });
 
 // --- attended windows, relay, lights-out (gated operations) -----------------

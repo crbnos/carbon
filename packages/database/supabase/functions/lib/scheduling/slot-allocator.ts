@@ -15,6 +15,7 @@
  */
 
 import {
+  addWorkingTime,
   type CalendarWindow,
   coversInstant,
   findSlot,
@@ -501,13 +502,17 @@ export function allocateAttendedOperation(args: {
     }
 
     // Unattended machine remainder: in team mode the machine gets credit for
-    // its run concurrent with the (possibly compressed) labor wall-clock
+    // its run concurrent with the (possibly compressed) labor wall-clock. The
+    // remainder accumulates on the machine's OWN windows — a shift-bound
+    // machine pauses overnight and resumes next window; an alwaysOn machine
+    // (one continuous window) runs straight through. Zero remainder finishes
+    // exactly at attendedEnd.
     const unattendedMs = team
       ? Math.max(0, Math.round(team.machineHours * HOUR_MS) - laborActiveWallMs)
       : remainderMs;
-    const end = new Date(sim.attendedEnd.getTime() + unattendedMs);
-    if (end.getTime() > horizonEnd.getTime()) {
-      return exhausted; // later starts only finish later — no point walking on
+    const end = addWorkingTime(sim.attendedEnd, unattendedMs, capacity.windows);
+    if (end === null || end.getTime() > horizonEnd.getTime()) {
+      return exhausted; // machine windows run out (or finish past the horizon)
     }
 
     const machine = machineIsFree(capacity, sim.start, end);

@@ -216,6 +216,36 @@ export function intersectWindows(
   return result;
 }
 
+/**
+ * Advance `from` by `durationMs` of IN-WINDOW time, skipping the gaps between
+ * windows (non-working time doesn't count). Returns the finish instant, or null
+ * when the windows run out before the duration accumulates. A zero (or
+ * negative) duration returns `from` unchanged — so an unattended remainder of 0
+ * finishes exactly at the attended end.
+ */
+export function addWorkingTime(
+  from: Date,
+  durationMs: number,
+  windows: CalendarWindow[]
+): Date | null {
+  if (durationMs <= 0) {
+    return new Date(from.getTime());
+  }
+  const fromMs = from.getTime();
+  let remaining = durationMs;
+  for (const w of windows) {
+    const we = w.end.getTime();
+    if (we <= fromMs) continue; // window entirely at/behind `from`
+    const segStart = Math.max(w.start.getTime(), fromMs);
+    const available = we - segStart;
+    if (available >= remaining) {
+      return new Date(segStart + remaining);
+    }
+    remaining -= available;
+  }
+  return null; // windows exhausted before the duration was reached
+}
+
 /** Whether an instant falls inside any window. */
 export function coversInstant(windows: CalendarWindow[], at: number): boolean {
   for (const w of windows) {
