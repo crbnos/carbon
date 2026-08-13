@@ -1,7 +1,13 @@
-import { NumberControlled } from "@carbon/form";
+// The SIBLING, not "@carbon/form" and not the ~/components/Form barrel: the
+// barrel imports this file, so taking it from there would be a cycle, and taking
+// it from @carbon/form would skip the company's trailing-zero preference — which
+// is exactly what left Tax Amount padded while the Shipping field beside it
+// wasn't. Any currency field must come from ./CurrencyNumber.
+
 import { applyRate, deriveRate, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
+import { NumberControlled } from "./CurrencyNumber";
 
 /** An EMPTIED number input commits NaN, not 0 — that is react-aria's empty
  *  state (`if (!newInputValue.length) setNumberValue(NaN)`). For a cost
