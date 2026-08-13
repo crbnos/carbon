@@ -327,6 +327,53 @@ const PROCEDURES: ProcedureSpec[] = [
     ]
   },
   {
+    name: "Satellite Systems Integration",
+    process: "Clean Room Assembly",
+    description:
+      "Clean room integration of the bus subsystems into the SAT-1000 airframe.",
+    versions: [
+      {
+        version: 1,
+        status: "Active",
+        steps: [
+          {
+            name: "Stage subsystems in the clean room",
+            type: "Checkbox",
+            instruction:
+              "Move the structural frame, power subsystem, avionics stack, comms payload and propulsion module into Bay A and confirm each serial against the traveler."
+          },
+          {
+            name: "Mate avionics stack to the frame",
+            type: "Task",
+            instruction:
+              "Seat the avionics stack on its rails, engage the captive fasteners and confirm the ground strap is bonded."
+          },
+          {
+            name: "Route and dress the harness",
+            type: "Checkbox",
+            instruction:
+              "Route HARNESS-001 through the frame raceways, tie at every bracket and confirm no connector is under strain."
+          },
+          {
+            name: "Measure stowed mass",
+            type: "Measurement",
+            instruction:
+              "Weigh the integrated bus with the wings stowed and record the mass in pounds.",
+            unitOfMeasureCode: "LB",
+            minValue: 305,
+            maxValue: 335
+          },
+          {
+            name: "Record integration lead",
+            type: "Person",
+            instruction:
+              "Sign off as the integration lead responsible for this bus."
+          }
+        ]
+      }
+    ]
+  },
+  {
     name: "TVAC Qualification Test",
     process: "Thermal Vacuum Test",
     description:

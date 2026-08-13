@@ -719,7 +719,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
         laborTime: 16,
         operationType: "Assembly",
         // Gives the MES assembly view its step checklist.
-        procedureId: ctx.refs.misc["procedure:Structural Frame Assembly"]
+        procedureId: ctx.refs.misc["procedure:Satellite Systems Integration"]
       }
     );
     await addBopOperation(

@@ -343,7 +343,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     methodType: "Make to Order",
     unitOfMeasureCode: "EA",
     quantity: EPS_BREAK_QUANTITIES,
-    status: "In Progress",
+    status: "Complete",
     sortOrder: 2
   });
   await insertPriceBreaks(ctx, quote2, quote2EpsLine, EPS_PRICE_BREAKS);
