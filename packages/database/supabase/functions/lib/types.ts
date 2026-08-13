@@ -21430,6 +21430,7 @@ export type Database = {
           notes: Json | null
           priority: number
           productionQuantity: number | null
+          projectedCompletionAt: string | null
           quantity: number
           quantityComplete: number
           quantityReceivedToInventory: number
@@ -21472,6 +21473,7 @@ export type Database = {
           notes?: Json | null
           priority?: number
           productionQuantity?: number | null
+          projectedCompletionAt?: string | null
           quantity?: number
           quantityComplete?: number
           quantityReceivedToInventory?: number
@@ -21514,6 +21516,7 @@ export type Database = {
           notes?: Json | null
           priority?: number
           productionQuantity?: number | null
+          projectedCompletionAt?: string | null
           quantity?: number
           quantityComplete?: number
           quantityReceivedToInventory?: number
@@ -25114,6 +25117,7 @@ export type Database = {
           source: Database["public"]["Enums"]["maintenanceSource"]
           status: Database["public"]["Enums"]["maintenanceDispatchStatus"]
           suspectedFailureModeId: string | null
+          takesWorkCenterOffline: boolean
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
@@ -25143,6 +25147,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["maintenanceSource"]
           status?: Database["public"]["Enums"]["maintenanceDispatchStatus"]
           suspectedFailureModeId?: string | null
+          takesWorkCenterOffline?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
@@ -25172,6 +25177,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["maintenanceSource"]
           status?: Database["public"]["Enums"]["maintenanceDispatchStatus"]
           suspectedFailureModeId?: string | null
+          takesWorkCenterOffline?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
@@ -48642,166 +48648,6 @@ export type Database = {
           },
         ]
       }
-      schedulingPolicy: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          dispatchRule: Database["public"]["Enums"]["schedulingDispatchRule"]
-          id: string
-          updatedAt: string | null
-          updatedBy: string | null
-          workCenterId: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          dispatchRule?: Database["public"]["Enums"]["schedulingDispatchRule"]
-          id?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-          workCenterId?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          dispatchRule?: Database["public"]["Enums"]["schedulingDispatchRule"]
-          id?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-          workCenterId?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "schedulingPolicy_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "riskRegisters"
-            referencedColumns: ["workCenterId"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCenter"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCenters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedulingPolicy_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCentersWithBlockingStatus"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       scrapReason: {
         Row: {
           companyId: string
@@ -58724,6 +58570,7 @@ export type Database = {
       workCenter: {
         Row: {
           active: boolean
+          alwaysOn: boolean
           companyId: string
           createdAt: string
           createdBy: string
@@ -58744,6 +58591,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          alwaysOn?: boolean
           companyId: string
           createdAt?: string
           createdBy: string
@@ -58764,6 +58612,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          alwaysOn?: boolean
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -59276,6 +59125,180 @@ export type Database = {
           },
           {
             foreignKeyName: "workCenterReplacementPart_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCentersWithBlockingStatus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workCenterShift: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          shiftId: string
+          updatedAt: string | null
+          updatedBy: string | null
+          workCenterId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          shiftId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCenterId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          shiftId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCenterId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workCenterShift_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "workCenterShift_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "workCenterShift_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "workCenterShift_shiftId_fkey"
+            columns: ["shiftId"]
+            isOneToOne: false
+            referencedRelation: "shift"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_shiftId_fkey"
+            columns: ["shiftId"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "workCenterShift_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "riskRegisters"
+            referencedColumns: ["workCenterId"]
+          },
+          {
+            foreignKeyName: "workCenterShift_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterShift_workCenterId_fkey"
             columns: ["workCenterId"]
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
@@ -72183,7 +72206,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -72197,7 +72220,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -72744,14 +72767,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -79326,13 +79349,6 @@ export type Database = {
       salesRfqStatus: "Draft" | "Ready for Quote" | "Closed" | "Quoted"
       samplingPlanType: "All" | "First" | "Percentage" | "AQL"
       samplingStandard: "ANSI_Z1_4" | "ISO_2859_1"
-      schedulingDispatchRule:
-        | "FIFO"
-        | "EDD"
-        | "SPT"
-        | "WSPT"
-        | "CR"
-        | "MinSlack"
       serviceType: "Internal" | "External"
       shelfLifeMode: "Fixed Duration" | "Calculated" | "Set on Receipt"
       shelfLifeTriggerTiming: "Before" | "After"
@@ -80749,7 +80765,6 @@ export const Constants = {
       salesRfqStatus: ["Draft", "Ready for Quote", "Closed", "Quoted"],
       samplingPlanType: ["All", "First", "Percentage", "AQL"],
       samplingStandard: ["ANSI_Z1_4", "ISO_2859_1"],
-      schedulingDispatchRule: ["FIFO", "EDD", "SPT", "WSPT", "CR", "MinSlack"],
       serviceType: ["Internal", "External"],
       shelfLifeMode: ["Fixed Duration", "Calculated", "Set on Receipt"],
       shelfLifeTriggerTiming: ["Before", "After"],
