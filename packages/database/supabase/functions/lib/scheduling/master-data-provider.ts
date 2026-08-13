@@ -159,6 +159,9 @@ export interface MasterDataProvider {
     fromDate: Date,
     excludeJobId: string
   ): Promise<LiveReservation[]>;
+  /** The subset of the given operation ids that have ≥1 production event
+   * (used by remaining-work netting to decide setup is already done). */
+  getOperationsWithEvents(operationIds: string[]): Promise<Set<string>>;
   getProcessRequirements(
     processIds: string[]
   ): Promise<ProcessRequirementRow[]>;
@@ -483,6 +486,31 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       jobId: r.jobId,
       readableJobId: r.readableJobId,
     }));
+  }
+
+  async getOperationsWithEvents(
+    operationIds: string[]
+  ): Promise<Set<string>> {
+    const result = new Set<string>();
+    if (operationIds.length === 0) {
+      return result;
+    }
+    // Chunk the IN list — one query per chunk, never per-row (N+1 rule).
+    const CHUNK = 200;
+    for (let i = 0; i < operationIds.length; i += CHUNK) {
+      const chunk = operationIds.slice(i, i + CHUNK);
+      const rows = await this.db
+        .selectFrom("productionEvent")
+        .select("jobOperationId")
+        .distinct()
+        .where("jobOperationId", "in", chunk)
+        .where("companyId", "=", this.companyId)
+        .execute();
+      for (const r of rows) {
+        if (r.jobOperationId) result.add(r.jobOperationId);
+      }
+    }
+    return result;
   }
 
   async getProcessRequirements(

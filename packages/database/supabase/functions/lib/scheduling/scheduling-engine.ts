@@ -448,6 +448,10 @@ export class SchedulingEngine {
       now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
     );
 
+    const operationIds = operations
+      .map((op) => op.id)
+      .filter((id): id is string => Boolean(id));
+
     const [
       liveReservations,
       processRequirements,
@@ -455,6 +459,7 @@ export class SchedulingEngine {
       absenceRows,
       workCenterAvailability,
       locationDefaultWindows,
+      operationsWithEvents,
     ] = await Promise.all([
       this.provider.getLiveReservations(now, this.jobId),
       this.provider.getProcessRequirements(processIds),
@@ -477,6 +482,7 @@ export class SchedulingEngine {
         : Promise.resolve<CalendarWindow[]>([
             { start: rangeStart, end: rangeEnd },
           ]),
+      this.provider.getOperationsWithEvents(operationIds),
     ]);
 
     const abilityIds = Array.from(
@@ -641,6 +647,7 @@ export class SchedulingEngine {
       horizonDays: SCHEDULING_HORIZON_DAYS,
       windowsEnd: rangeEnd,
       timeZone,
+      operationsWithEvents,
     };
   }
 

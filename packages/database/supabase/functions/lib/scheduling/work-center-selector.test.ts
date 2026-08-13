@@ -1,8 +1,14 @@
-import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import {
+  assert,
+  assertEquals,
+} from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import type { ScheduledOperation } from "./types.ts";
+import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
   applyWorkCenterSelections,
+  type FiniteSchedulingContext,
   hasPreassignedWorkCenter,
+  WorkCenterSelector,
 } from "./work-center-selector.ts";
 
 function makeOp(
@@ -56,4 +62,111 @@ Deno.test("applyWorkCenterSelections leaves ops untouched when selection has no 
 
   const result = applyWorkCenterSelections(ops, selections);
   assertEquals(result.get("op-1")?.workCenterId, null);
+});
+
+// --- remaining-work netting at the selector level ---------------------------
+
+function makeContext(
+  overrides: Partial<FiniteSchedulingContext> = {}
+): FiniteSchedulingContext {
+  const now = new Date("2026-01-05T00:00:00.000Z"); // Monday
+  const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
+  return {
+    capacityByWorkCenter: new Map([
+      [
+        "wc1",
+        {
+          workCenter: { id: "wc1" },
+          // one continuous window (alwaysOn-equivalent) so hours == wall clock
+          windows: [{ start: now, end: windowsEnd }],
+          reservations: [],
+        },
+      ],
+    ]),
+    requirementByProcess: new Map(),
+    employeesByAbility: new Map(),
+    reservationsByEmployee: new Map(),
+    dependencies: [],
+    now,
+    horizonDays: 365,
+    windowsEnd,
+    peopleByWorkCenter: new Map(),
+    peopleBudgets: new Map(),
+    windowsByEmployee: new Map(),
+    timeZone: "UTC",
+    operationsWithEvents: new Set<string>(),
+    ...overrides,
+  };
+}
+
+Deno.test("a half-complete op with a production event books half the hours", async () => {
+  // Ungated op, sticky on wc1: 4h of labor, 50% complete, setup already done
+  // (production event) → nets to 2h. A full op would book 4h.
+  const selector = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  selector.setFiniteContext(
+    makeContext({ operationsWithEvents: new Set(["op-1"]) })
+  );
+
+  const op = makeOp({
+    id: "op-1",
+    workCenterId: "wc1",
+    startDate: null,
+    dueDate: null,
+    setupTime: 0,
+    laborTime: 4,
+    laborUnit: "Total Hours",
+    machineTime: 0,
+    operationQuantity: 10,
+    quantityComplete: 5,
+  });
+
+  const selections = await selector.selectWorkCentersForOperations([op], {
+    jobDueDate: null,
+  });
+
+  const selection = selections.get("op-1");
+  assert(selection?.placedStart && selection.placedEnd);
+  const spanMs =
+    new Date(selection.placedEnd).getTime() -
+    new Date(selection.placedStart).getTime();
+  assertEquals(spanMs, 2 * 60 * 60 * 1000); // 2h, not the full 4h
+
+  const reservation = selector
+    .getPlannedReservations()
+    .find((r) => r.operationId === "op-1" && r.resourceKind === "WorkCenter");
+  assertEquals(reservation?.workHours, 2);
+});
+
+Deno.test("an untouched op books the full standard hours", async () => {
+  const selector = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  selector.setFiniteContext(makeContext());
+
+  const op = makeOp({
+    id: "op-1",
+    workCenterId: "wc1",
+    startDate: null,
+    dueDate: null,
+    setupTime: 0,
+    laborTime: 4,
+    laborUnit: "Total Hours",
+    machineTime: 0,
+    operationQuantity: 10,
+    quantityComplete: 0,
+  });
+
+  const selections = await selector.selectWorkCentersForOperations([op], {
+    jobDueDate: null,
+  });
+  const selection = selections.get("op-1");
+  assert(selection?.placedStart && selection.placedEnd);
+  const spanMs =
+    new Date(selection.placedEnd).getTime() -
+    new Date(selection.placedStart).getTime();
+  assertEquals(spanMs, 4 * 60 * 60 * 1000); // full 4h
 });

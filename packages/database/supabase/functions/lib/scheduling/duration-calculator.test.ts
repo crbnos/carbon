@@ -2,6 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import {
   calculateAttendedHours,
   calculateDurationHours,
+  remainingFractions,
 } from "./duration-calculator.ts";
 import type { BaseOperation } from "./types.ts";
 
@@ -63,4 +64,54 @@ Deno.test("attended respects per-piece units and quantity", () => {
   // 30 pieces x 2 min = 1h labor; machine 30h
   assertEquals(calculateAttendedHours(operation), 1);
   assertEquals(calculateDurationHours(operation), 30);
+});
+
+// --- remaining-work netting -------------------------------------------------
+
+Deno.test("remainingFractions: not started (0% complete, no event) = full work + full setup", () => {
+  assertEquals(
+    remainingFractions({ operationQuantity: 10, quantityComplete: 0 }, false),
+    { setup: 1, work: 1 }
+  );
+});
+
+Deno.test("remainingFractions: 50% complete with a production event nets half the work, no setup", () => {
+  assertEquals(
+    remainingFractions({ operationQuantity: 10, quantityComplete: 5 }, true),
+    { setup: 0, work: 0.5 }
+  );
+});
+
+Deno.test("remainingFractions: fully complete (100%) with an event = no work, no setup", () => {
+  assertEquals(
+    remainingFractions({ operationQuantity: 10, quantityComplete: 10 }, true),
+    { setup: 0, work: 0 }
+  );
+});
+
+Deno.test("remainingFractions: started but 0% done keeps full work, drops setup", () => {
+  // A production event exists (setup done) but no quantity is complete yet.
+  assertEquals(
+    remainingFractions({ operationQuantity: 10, quantityComplete: 0 }, true),
+    { setup: 0, work: 1 }
+  );
+});
+
+Deno.test("remainingFractions: over-complete clamps work to 0, not negative", () => {
+  assertEquals(
+    remainingFractions({ operationQuantity: 10, quantityComplete: 12 }, true),
+    { setup: 0, work: 0 }
+  );
+});
+
+Deno.test("remainingFractions: null quantities default to full work", () => {
+  assertEquals(
+    remainingFractions({ operationQuantity: null, quantityComplete: null }, false),
+    { setup: 1, work: 1 }
+  );
+  // null operationQuantity → treated as 1; 1 complete of 1 = done
+  assertEquals(
+    remainingFractions({ operationQuantity: null, quantityComplete: 1 }, true),
+    { setup: 0, work: 0 }
+  );
 });

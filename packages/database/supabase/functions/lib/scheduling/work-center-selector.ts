@@ -1,7 +1,7 @@
 import {
-  calculateAttendedHours,
   calculateDurationBreakdown,
   calculateDurationHours,
+  remainingFractions,
 } from "./duration-calculator.ts";
 import {
   classifyLatePlacement,
@@ -97,6 +97,12 @@ export type FiniteSchedulingContext = {
    * dates are worded in the FACTORY's calendar day, not UTC's.
    */
   timeZone: string;
+  /**
+   * Operation ids that already have ≥1 production event — their setup is done,
+   * so remaining-work netting reserves labor/machine (scaled by remaining
+   * quantity) but no setup time. Absent id => not started.
+   */
+  operationsWithEvents: Set<string>;
 };
 
 /**
@@ -478,25 +484,28 @@ export class WorkCenterSelector {
         ? this.buildEligibleMembers(requirement, earliestStart, ctx)
         : null;
 
-      const durationHours =
-        op.durationHours ??
-        calculateDurationHours({ ...op, priority: op.priority ?? undefined });
-      // Hands-on window (setup + labor); the rest of the span runs lights-out
-      const attendedHours = Math.min(
-        calculateAttendedHours({ ...op, priority: op.priority ?? undefined }),
-        durationHours
+      // Remaining-work netting: a started operation reserves only the work
+      // left. Labor + machine scale by remaining quantity; setup is done once
+      // any production event exists. A fully-complete op nets to 0 hours and is
+      // filtered from the reservation set in persistChanges (endAt > startAt).
+      const { setup: setupFrac, work: workFrac } = remainingFractions(
+        op,
+        ctx.operationsWithEvents.has(op.id)
       );
-      // Split components for people team mode (labor parallelizes across the
-      // present people; setup and machine time don't)
       const breakdown = calculateDurationBreakdown({
         ...op,
         priority: op.priority ?? undefined,
       });
-      const teamComponents = {
-        setupHours: breakdown.setupHours,
-        laborHours: breakdown.laborHours,
-        machineHours: breakdown.machineHours,
-      };
+      const setupHours = breakdown.setupHours * setupFrac;
+      const laborHours = breakdown.laborHours * workFrac;
+      const machineHours = breakdown.machineHours * workFrac;
+      // Total = setup + max(labor, machine) since labor and machine overlap
+      const durationHours = setupHours + Math.max(laborHours, machineHours);
+      // Hands-on window (setup + labor); the rest of the span runs lights-out
+      const attendedHours = Math.min(setupHours + laborHours, durationHours);
+      // Split components for people team mode (labor parallelizes across the
+      // present people; setup and machine time don't)
+      const teamComponents = { setupHours, laborHours, machineHours };
 
       let best: {
         wcId: string;

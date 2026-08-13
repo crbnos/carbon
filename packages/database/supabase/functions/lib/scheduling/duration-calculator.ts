@@ -210,4 +210,31 @@ export function calculateDurationBreakdown(operation: BaseOperation): {
   };
 }
 
+/**
+ * Remaining-work fractions for a (possibly started) operation, so the schedule
+ * reserves only the work left to do — not the full standard content — anchored
+ * at now.
+ *
+ * - `work` scales labor and machine time by the quantity still to run:
+ *   clamp(1 − quantityComplete / max(operationQuantity, 1), 0, 1).
+ * - `setup` is 1 until any production event exists on the operation, then 0
+ *   (setup is a one-time cost — once the machine is set up it stays set up).
+ *
+ * Quantity-proportional only (per spec): remaining time is derived from
+ * quantity, never from productionEvent durations.
+ */
+export function remainingFractions(
+  op: {
+    operationQuantity?: number | null;
+    quantityComplete?: number | null;
+  },
+  hasProductionEvent: boolean
+): { setup: number; work: number } {
+  const complete = op.quantityComplete ?? 0;
+  const total = Math.max(op.operationQuantity ?? 1, 1);
+  const work = Math.min(Math.max(1 - complete / total, 0), 1);
+  const setup = hasProductionEvent ? 0 : 1;
+  return { setup, work };
+}
+
 export { convertToHours, convertToMilliseconds, HOURS_PER_WORKDAY };

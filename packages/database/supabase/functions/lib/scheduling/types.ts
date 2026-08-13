@@ -42,6 +42,8 @@ export type BaseOperation = {
   machineUnit?: FactorUnit;
   operationOrder?: MethodOperationOrder;
   operationQuantity?: number | null;
+  /** Quantity already produced — remaining-work netting scales by what's left. */
+  quantityComplete?: number | null;
   operationType?: OperationType;
   operationLeadTime?: number;
   /**
