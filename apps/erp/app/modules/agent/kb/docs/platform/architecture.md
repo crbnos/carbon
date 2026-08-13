@@ -34,59 +34,9 @@ expect to live in application code lives _inside_ the database instead: permissi
 computed totals, and the "something changed" notifications. That is the single most
 important thing to understand about Carbon, and [Part 3](#part-3-layer-by-layer) explains why.
 
-```mermaid Everything Carbon runs, and the arrows between it. Bold arrows are the event path from Part 4.
-flowchart TB
-  U1["Office staff - browser"]
-  U2["Shop floor - tablet"]
-  U3["Customer or supplier - public share link"]
-
-  subgraph apps["Our Node.js apps"]
-    ERP["ERP app - the main product"]:::app
-    MES["MES app - shop floor"]:::app
-  end
-
-  subgraph sb["Supabase services"]
-    REST["PostgREST - turns HTTP calls into SQL"]:::svc
-    AUTH["Auth - logins, tokens, invites"]:::svc
-    STORE["Storage - files, PDFs, CAD models"]:::svc
-    RT["Realtime - streams row changes to browsers"]:::svc
-    EDGE["Edge Functions - small Deno programs"]:::svc
-    PG[("Postgres - the source of truth")]:::data
-  end
-
-  JOBS["Inngest - background job runner"]:::async
-  REDIS[("Redis - cache, locks, rate limits")]:::data
-  ASM["Assembler - Rust service for 3D and CAD"]:::app
-  EXT["Outside world - email, Slack, Stripe, Jira, Xero"]:::ext
-
-  U1 -->|"page loads and form posts"| ERP
-  U2 -->|"page loads and form posts"| MES
-  U3 -->|"tokenised public URL"| ERP
-
-  ERP -->|"most reads and writes"| REST
-  MES -->|"most reads and writes"| REST
-  REST -->|"SQL, with security rules applied"| PG
-  ERP -->|"direct SQL when it needs a transaction"| PG
-  ERP -->|"sign in, verify token"| AUTH
-  ERP -->|"upload and download files"| STORE
-  ERP -->|"call and wait for a heavy job"| EDGE
-  EDGE -->|"bulk SQL in one transaction"| PG
-
-  PG -->|"publishes every row change"| RT
-  RT -.->|"live updates, no refresh"| U1
-
-  PG ==>|"queues an event on every write - see Part 4"| JOBS
-  JOBS ==>|"calls back into the ERP over HTTP"| ERP
-  JOBS -->|"emails, syncs, notifications"| EXT
-  ERP -->|"cached permissions, locks"| REDIS
-  ERP -->|"convert a CAD file"| ASM
-  ASM -->|"reads the CAD file, writes the 3D model"| STORE
-  ASM -->|"job state and results"| REDIS
-```
-
-Boxes are outlined by what they are, and the same colour means the same thing in every
-diagram on this page: **blue** our own apps, **green** a Supabase service, **pink** stored
-state, **amber** work that happens in the background. Grey is anything outside Carbon.
+Colour is used sparingly in these diagrams, and it means the same thing in all of them:
+**blue** is our own apps, **pink** is stored state, **amber** is work that happens in the
+background. Everything else is left plain on purpose.
 
 **The five things worth taking from that picture:**
 
@@ -101,9 +51,10 @@ state, **amber** work that happens in the background. Grey is anything outside C
 3. **The database enforces permissions itself.** Even if application code forgets a
    filter, Postgres will not return another company's rows. (Except on one specific
    escape hatch: see [Part 3](#part-3-layer-by-layer).)
-4. **Writes cause events automatically.** A database trigger fires on every write, so
-   search indexing, webhooks, audit logs and customer automations happen without the
-   code that did the write knowing about them.
+4. **Writes on the right tables cause events automatically.** Around ninety tables opt
+   in to a database trigger, and where a company has subscribed to one, search indexing,
+   webhooks, audit logs and customer automations all happen without the code that did the
+   write knowing about them.
 5. **The Rust service is optional.** It turns uploaded CAD files into 3D models the
    browser can show, and works out the order parts come apart in for assembly
    instructions. Carbon runs fine without it.
@@ -119,37 +70,6 @@ check, a database write, logic living in Postgres, a background side effect, and
 screen updating. Every other feature in Carbon is a variation on it.
 
 ### The short version
-
-```mermaid Creating a purchase order, end to end. The request finishes at step 15; step 18 happens on its own afterwards.
-sequenceDiagram
-  autonumber
-  actor User as Buyer
-  participant UI as Browser - React
-  participant Route as ERP server - route action
-  participant Svc as Service function
-  participant PG as Postgres
-  participant Q as Event queue
-  participant Job as Background job
-
-  User->>UI: clicks "New Purchase Order", fills the form, hits Save
-  UI->>UI: checks the form against a zod schema
-  UI->>Route: HTTP POST with the form fields
-  Route->>Route: is this a POST? does this user have "create purchasing"?
-  Route->>Route: re-validate the fields on the server
-  Route->>Svc: insertPurchaseOrder(client, data)
-  Svc->>PG: ask for the next PO number
-  PG-->>Svc: "PO000123"
-  Svc->>PG: insert the order plus its delivery and payment rows
-  PG-->>Svc: the new row id
-  PG->>Q: a trigger queues "purchaseOrder was created"
-  Svc-->>Route: returns data or error, never throws
-  Route-->>UI: 302 redirect to the new order's page
-  UI->>Route: GET the order page - the loader runs
-  Route->>PG: read from the purchaseOrders view
-  PG-->>Route: the order, with totals already calculated
-  Route-->>User: the finished page
-  Q-->>Job: separately and later - index it for search
-```
 
 Notice the shape: the user's request finishes as soon as the row is written. The search
 indexing happens afterwards, on its own, and nobody waited for it.
@@ -462,30 +382,6 @@ routes are fully unauthenticated; a long unguessable token in the URL is the cre
 A service function's first argument is always a client, and there is more than one kind.
 Picking the wrong one is the most common mistake made here.
 
-```mermaid Four ways into the database, and what each one does about security rules.
-flowchart LR
-  CODE["Server code - loader, action, or job"]:::app
-
-  A["supabase-js - user scoped"]:::svc
-  B["supabase-js - service role"]:::svc
-  C["Kysely - direct SQL"]:::data
-  D["Edge function - Deno"]:::svc
-
-  REST["PostgREST"]:::svc
-  PG[("Postgres")]:::data
-
-  CODE -->|"the default"| A
-  CODE -->|"needs to see everything"| B
-  CODE -->|"needs a real transaction"| C
-  CODE -->|"heavy set-based work"| D
-
-  A -->|"HTTP - security rules ON"| REST
-  B -->|"HTTP - security rules OFF"| REST
-  REST --> PG
-  C -->|"one pooled connection - rules OFF"| PG
-  D -->|"its own pool and transaction"| PG
-```
-
 **1. The user-scoped client.** What `requirePermissions` normally returns. Every query
 runs as that user with RLS applied. Use it unless you have a reason not to.
 
@@ -586,17 +482,6 @@ name, sums the line amounts into `orderTotal`, converts currency, counts receive
 quantities, and fetches a thumbnail. So the create path never calculates a total: it
 inserts a header, and the view derives everything else on read.
 
-```mermaid Writes land in tables; reads come back through views, which is where computed values live.
-flowchart LR
-  subgraph write["Write path"]
-    A1["action"]:::app --> A2["service upsert"]:::app --> A3[("purchaseOrder table")]:::data
-  end
-  subgraph read["Read path"]
-    B1["loader"]:::app --> B2["service get"]:::app --> B3["purchaseOrders view"]:::data
-  end
-  A3 -.->|"the view reads the table and joins the rest"| B3
-```
-
 When a list screen shows a number you cannot find in any table, look for the view. They
 are defined in migrations, always with `WITH (security_invoker = true)` so the caller's
 RLS still applies.
@@ -636,37 +521,11 @@ per company and `temp-staging` for large CAD uploads.
 Back to that queued event. This chain is the piece most likely to surprise you, because
 none of it is visible from the code that did the write.
 
-```mermaid One write becomes six side effects, none of them visible from the code that did the write.
-flowchart TB
-  W["Any write to purchaseOrder<br/>from anywhere at all"]:::app
-  T["Postgres trigger - dispatch_event_batch<br/>runs inside the same transaction"]:::data
-  Q[("PGMQ - a queue stored in Postgres tables")]:::data
-  BELL["util.wake_event_queue - fires an HTTP ping after commit"]:::data
-  EF["event-wake edge function"]:::svc
-  ING["Inngest"]:::async
-  DR["event-queue job - drains the queue, groups by type"]:::async
-
-  H1["SEARCH - update the global search index"]:::async
-  H2["WORKFLOW - run customer automations"]:::async
-  H3["WEBHOOK - POST to a customer's URL"]:::ext
-  H4["AUDIT - write the audit log"]:::async
-  H5["SYNC - push to Xero, Jira, Linear"]:::ext
-  H6["EMBEDDING - vectors for AI search"]:::async
-
-  W --> T
-  T -->|"one JSON message per subscriber"| Q
-  T --> BELL
-  BELL -->|"pg_net HTTP POST"| EF
-  EF -->|"sends carbon/event-queue.process"| ING
-  ING -->|"HTTP POST /api/inngest on the ERP"| DR
-  DR -->|"reads a batch of messages"| Q
-  DR --> H1
-  DR --> H2
-  DR --> H3
-  DR --> H4
-  DR --> H5
-  DR --> H6
-```
+It is not every write, though. A table only emits events once a migration has opted it in
+with `attach_event_trigger('tableName')` — about ninety have — and even then the trigger
+enqueues nothing unless that company has an **active subscription** matching the table and
+the operation. So the same `UPDATE` can fan out to six handlers for one company and do
+absolutely nothing for another.
 
 Three unfamiliar pieces in that chain: PGMQ [[16]](#g16) is the queue, which lives in
 ordinary Postgres tables so a trigger can write to it inside the same transaction;
@@ -819,36 +678,6 @@ The same code base runs in three shapes: on a laptop, on the cloud Carbon operat
 customers, and on a server a customer owns. Nothing in the application knows which one it
 is in; the difference is entirely in configuration.
 
-```mermaid The same code base in three shapes, and the four CI workflows that move it between them.
-flowchart TB
-  subgraph dev["Your laptop"]
-    CLI["pnpm dev - runs the crbn CLI"]:::app
-    DOCK["Docker: Postgres, PostgREST, Auth, Storage,<br/>Realtime, Kong, edge runtime, Studio,<br/>Inbucket mail catcher, Inngest"]:::app
-    VITE["Vite dev servers for ERP and MES"]:::app
-    CLI -->|"boots the stack, applies migrations, regenerates types"| DOCK
-    CLI -->|"starts the apps"| VITE
-    VITE --> DOCK
-  end
-
-  subgraph ci["GitHub Actions on merge to main"]
-    CHK["check.yml - lint, typecheck, tests"]:::async
-    DEP["deploy.yml - build Docker images, push to ECR"]:::async
-    MIG["supabase.yml - apply migrations and edge functions"]:::async
-    JOB["inngest.yml - register job functions"]:::async
-  end
-
-  subgraph prod["AWS - one stack per customer, defined in sst.config.ts"]
-    ALB["Load balancer plus WAF rate limiting"]:::app
-    ECS["ECS Fargate: ERP containers and MES containers<br/>auto-scaling 1 to 10"]:::app
-    SUPA[("Managed Supabase - Postgres")]:::data
-    ALB --> ECS --> SUPA
-  end
-
-  CHK --> DEP --> ECS
-  MIG --> SUPA
-  JOB -.->|"tells Inngest which jobs exist"| ECS
-```
-
 ### 7.1 On a laptop
 
 `pnpm dev` runs `crbn up`, a custom CLI that boots an eleven-container Docker stack, waits
@@ -938,48 +767,6 @@ tracing.
 ## Part 8: There's a bug, where do I look?
 
 Start from what the user saw and walk inwards. This mirrors the order things happen.
-
-```mermaid Start from what the user saw and walk inwards.
-flowchart TB
-  S["A user reports something wrong"]
-  Q1{"Did the save fail,<br/>or is the data wrong?"}
-
-  F1["Save failed"]
-  Q2{"Any inline red text<br/>under a field?"}
-  V1["The zod schema rejected it<br/>go to module.models.ts"]
-  Q3{"A red toast at the top?"}
-  V2["The action's error branch<br/>→ routes/.../*.tsx, then the service function"]
-  V3["Nothing at all happened?<br/>Check the Network tab.<br/>No request → the browser-side validator.<br/>403 or a redirect → requirePermissions."]
-
-  D1["Data is wrong"]
-  Q4{"Is it wrong in the<br/>database too?"}
-  V4["Yes → the write is wrong.<br/>Read the service function,<br/>then any trigger on that table."]
-  Q5{"Is the field computed?"}
-  V5["Yes → read the VIEW definition,<br/>not the table. Totals live there."]
-  V6["No → the loader, or the component."]
-
-  A1["Something didn't happen<br/>afterwards - no email,<br/>not in search, no sync"]
-  V7["That's the event pipeline.<br/>Open the Inngest dashboard,<br/>find the run, read the failed step."]
-
-  S --> Q1
-  Q1 -->|"save failed"| F1
-  Q1 -->|"data is wrong"| D1
-  Q1 -->|"a side effect is missing"| A1
-
-  F1 --> Q2
-  Q2 -->|yes| V1
-  Q2 -->|no| Q3
-  Q3 -->|yes| V2
-  Q3 -->|no| V3
-
-  D1 --> Q4
-  Q4 -->|yes| V4
-  Q4 -->|no| Q5
-  Q5 -->|yes| V5
-  Q5 -->|no| V6
-
-  A1 --> V7
-```
 
 **A few specific traps, each of which has caught someone out:**
 

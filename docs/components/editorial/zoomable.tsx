@@ -23,8 +23,8 @@ function ignoreAbort(t: ViewTransitionLike | undefined) {
 }
 
 /* `wide` widens the lightbox for content that is much bigger than the prose column.
- * A screenshot at 1100px is already past its native resolution, but a mermaid flowchart
- * can be 2000px+ wide — capping it at 1100 keeps it unreadable even zoomed. */
+ * A screenshot at 1100px is already past its native resolution, but an architecture
+ * diagram is drawn far wider than the column it renders in. */
 export function Zoomable({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
