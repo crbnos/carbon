@@ -1310,12 +1310,6 @@ msgstr "{0} के लिए लागू करने की राशि"
 msgid "Amount Type"
 msgstr "राशि प्रकार"
 
-msgid "Amounts are shown as $300 and $3.5"
-msgstr ""
-
-msgid "Amounts are shown as $300.00 and $3.50"
-msgstr ""
-
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "एक लेखांकन बाल्टी जो विभाग या कार्य द्वारा व्यय को समूहबद्ध करती है ताकि GL खाते द्वारा नहीं बल्कि समूह द्वारा व्यय की रिपोर्ट कर सके।"
 
@@ -7161,9 +7155,6 @@ msgstr "जब किसी विधि या BOM लाइन में ज�
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "किसी वस्तु की इकाई लागत का मूल्यांकन कैसे किया जाता है: मानक, औसत, FIFO, या LIFO। प्रति आइटम सेट।"
 
-msgid "How currency amounts are displayed in the app. Each currency's own decimal places still decide the width — this only chooses whether the non-significant zeros are shown. Printed documents always show them, and stored values are never affected."
-msgstr ""
-
 msgid "How items roll up for posting and reporting"
 msgstr "पोस्टिंग और रिपोर्टिंग के लिए आइटम कैसे रोल अप होते हैं"
 
@@ -10379,6 +10370,9 @@ msgstr "स्वामित्व: {0}"
 msgid "Packing Slip"
 msgstr "पैकिंग स्लिप"
 
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
+
 msgid "Page"
 msgstr "पृष्ठ"
 
@@ -13232,6 +13226,9 @@ msgstr "आपूर्तिकर्ता आईडी दिखाएं"
 msgid "Show sync options"
 msgstr "सिंक विकल्प दिखाएं"
 
+msgid "Show Trailing Zeros"
+msgstr ""
+
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "दिखा रहा है {0} का {totalCount} — अपनी खोज को परिष्कृत करें"
@@ -15329,9 +15326,6 @@ msgstr "ट्रैकिंग प्रकार"
 msgid "Tracking URL"
 msgstr "ट्रैकिंग URL"
 
-msgid "Trailing Zeros"
-msgstr ""
-
 msgid "Train"
 msgstr "प्रशिक्षण"
 
@@ -15404,14 +15398,8 @@ msgstr "ट्रिगर"
 msgid "Tuesday"
 msgstr "मंगलवार"
 
-msgid "Turn off to pad amounts to the currency's decimal places, which keeps columns of figures aligned."
-msgstr ""
-
 msgid "Turn on the built-in pieces"
 msgstr "बिल्ट-इन पीसेस को चालू करें"
-
-msgid "Turn on to hide non-significant zeros. Fixed-width amounts are the accounting convention, so this is off by default."
-msgstr ""
 
 msgid "Type"
 msgstr "प्रकार"

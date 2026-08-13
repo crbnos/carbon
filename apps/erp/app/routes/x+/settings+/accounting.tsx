@@ -207,9 +207,12 @@ export default function AccountingSettingsRoute() {
   );
 
   const handleTrailingZerosToggle = useCallback(
-    (checked: boolean) => {
+    (showTrailingZeros: boolean) => {
       fetcher.submit(
-        { intent: "hideCurrencyTrailingZeros", enabled: String(checked) },
+        {
+          intent: "hideCurrencyTrailingZeros",
+          enabled: String(!showTrailingZeros)
+        },
         { method: "POST" }
       );
     },
@@ -296,50 +299,29 @@ export default function AccountingSettingsRoute() {
 
         <Card>
           <CardHeader>
-            <CardTitle>
-              <Trans>Trailing Zeros</Trans>
-            </CardTitle>
-            <CardDescription>
-              <Trans>
-                How currency amounts are displayed in the app. Each currency's
-                own decimal places still decide the width — this only chooses
-                whether the non-significant zeros are shown. Printed documents
-                always show them, and stored values are never affected.
-              </Trans>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
             <HStack className="justify-between items-center">
-              <VStack className="items-start" spacing={1}>
-                <span className="font-medium">
-                  {(companySettings as any).hideCurrencyTrailingZeros ? (
-                    <Trans>Amounts are shown as $300 and $3.5</Trans>
-                  ) : (
-                    <Trans>Amounts are shown as $300.00 and $3.50</Trans>
-                  )}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {(companySettings as any).hideCurrencyTrailingZeros ? (
-                    <Trans>
-                      Turn off to pad amounts to the currency's decimal places,
-                      which keeps columns of figures aligned.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Turn on to hide non-significant zeros. Fixed-width amounts
-                      are the accounting convention, so this is off by default.
-                    </Trans>
-                  )}
-                </span>
-              </VStack>
+              <div>
+                <CardTitle>
+                  <Trans>Show Trailing Zeros</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    Pad amounts to their currency's decimal places, so 300
+                    appears as 300.00 and columns of figures stay aligned. Turn
+                    this off to show only the digits that carry value. Printed
+                    documents and stored amounts are unaffected either way.
+                  </Trans>
+                </CardDescription>
+              </div>
+              {/* The switch reads positively; the column it writes is the
+                  negative `hideCurrencyTrailingZeros`, hence the inversion. */}
               <Switch
-                checked={
-                  (companySettings as any).hideCurrencyTrailingZeros ?? false
-                }
+                checked={!(companySettings as any).hideCurrencyTrailingZeros}
                 onCheckedChange={handleTrailingZerosToggle}
+                disabled={fetcher.state !== "idle"}
               />
             </HStack>
-          </CardContent>
+          </CardHeader>
         </Card>
 
         <SettingsSectionHeader>

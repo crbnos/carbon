@@ -1310,12 +1310,6 @@ msgstr "{0}에 적용할 금액"
 msgid "Amount Type"
 msgstr "금액 유형"
 
-msgid "Amounts are shown as $300 and $3.5"
-msgstr ""
-
-msgid "Amounts are shown as $300.00 and $3.50"
-msgstr ""
-
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "부서나 기능별로 비용을 그룹화하여 총계정원장이 계정뿐 아니라 그룹별로도 지출을 보고할 수 있게 하는 회계 버킷입니다."
 
@@ -7161,9 +7155,6 @@ msgstr "품목이 공정(BOP) 또는 BOM 라인에 추가될 때 조달되는 �
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "품목의 단가가 평가되는 방식: 표준, 평균, FIFO, 또는 LIFO. 품목별로 설정됩니다."
 
-msgid "How currency amounts are displayed in the app. Each currency's own decimal places still decide the width — this only chooses whether the non-significant zeros are shown. Printed documents always show them, and stored values are never affected."
-msgstr ""
-
 msgid "How items roll up for posting and reporting"
 msgstr "품목이 전기 및 보고를 위해 합산되는 방식"
 
@@ -10379,6 +10370,9 @@ msgstr "소유: {0}"
 msgid "Packing Slip"
 msgstr "포장명세서"
 
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
+
 msgid "Page"
 msgstr "페이지"
 
@@ -13232,6 +13226,9 @@ msgstr "공급업체 ID 표시"
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
 
+msgid "Show Trailing Zeros"
+msgstr ""
+
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "{0}개/총 {totalCount}개 표시 — 검색 범위 좁혀보기"
@@ -15329,9 +15326,6 @@ msgstr "추적 유형"
 msgid "Tracking URL"
 msgstr "추적 URL"
 
-msgid "Trailing Zeros"
-msgstr ""
-
 msgid "Train"
 msgstr "교육"
 
@@ -15404,14 +15398,8 @@ msgstr "트리거"
 msgid "Tuesday"
 msgstr "화요일"
 
-msgid "Turn off to pad amounts to the currency's decimal places, which keeps columns of figures aligned."
-msgstr ""
-
 msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
-
-msgid "Turn on to hide non-significant zeros. Fixed-width amounts are the accounting convention, so this is off by default."
-msgstr ""
 
 msgid "Type"
 msgstr "유형"

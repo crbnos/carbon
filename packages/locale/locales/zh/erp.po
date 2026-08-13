@@ -1310,12 +1310,6 @@ msgstr "应用于 {0} 的金额"
 msgid "Amount Type"
 msgstr "金额类型"
 
-msgid "Amounts are shown as $300 and $3.5"
-msgstr ""
-
-msgid "Amounts are shown as $300.00 and $3.50"
-msgstr ""
-
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "一个会计桶，按部门或职能对支出进行分组，以便GL可以按组而非按账户报告支出。"
 
@@ -7161,9 +7155,6 @@ msgstr "将物品添加到方法或BOM行时如何采购。"
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "物品单位成本的估值方式：标准、平均、FIFO或LIFO。按物品设置。"
 
-msgid "How currency amounts are displayed in the app. Each currency's own decimal places still decide the width — this only chooses whether the non-significant zeros are shown. Printed documents always show them, and stored values are never affected."
-msgstr ""
-
 msgid "How items roll up for posting and reporting"
 msgstr "项目如何汇总用于过账和报告"
 
@@ -10379,6 +10370,9 @@ msgstr "拥有：{0}"
 msgid "Packing Slip"
 msgstr "装箱单"
 
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
+
 msgid "Page"
 msgstr "页面"
 
@@ -13232,6 +13226,9 @@ msgstr "显示供应商ID"
 msgid "Show sync options"
 msgstr "显示同步选项"
 
+msgid "Show Trailing Zeros"
+msgstr ""
+
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "显示 {0} 个，共 {totalCount} 个 — 优化搜索"
@@ -15329,9 +15326,6 @@ msgstr "追踪类型"
 msgid "Tracking URL"
 msgstr "跟踪URL"
 
-msgid "Trailing Zeros"
-msgstr ""
-
 msgid "Train"
 msgstr "培训"
 
@@ -15404,14 +15398,8 @@ msgstr "触发器"
 msgid "Tuesday"
 msgstr "星期二"
 
-msgid "Turn off to pad amounts to the currency's decimal places, which keeps columns of figures aligned."
-msgstr ""
-
 msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
-
-msgid "Turn on to hide non-significant zeros. Fixed-width amounts are the accounting convention, so this is off by default."
-msgstr ""
 
 msgid "Type"
 msgstr "类型"

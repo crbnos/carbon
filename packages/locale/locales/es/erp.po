@@ -1310,12 +1310,6 @@ msgstr "Cantidad a aplicar para {0}"
 msgid "Amount Type"
 msgstr "Tipo de Cantidad"
 
-msgid "Amounts are shown as $300 and $3.5"
-msgstr ""
-
-msgid "Amounts are shown as $300.00 and $3.50"
-msgstr ""
-
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Un área contable que agrupa gastos por departamento o función para que la GL pueda reportar gastos por grupo, no solo por cuenta."
 
@@ -7161,9 +7155,6 @@ msgstr "Cómo se obtiene un artículo cuando se agrega a una línea de método o
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "Cómo se valora el costo unitario de un artículo: Estándar, Promedio, FIFO o LIFO. Se establece por artículo."
 
-msgid "How currency amounts are displayed in the app. Each currency's own decimal places still decide the width — this only chooses whether the non-significant zeros are shown. Printed documents always show them, and stored values are never affected."
-msgstr ""
-
 msgid "How items roll up for posting and reporting"
 msgstr "Cómo se agrupan los artículos para contabilización e informes"
 
@@ -10379,6 +10370,9 @@ msgstr "Propietario: {0}"
 msgid "Packing Slip"
 msgstr "Albarán de Empaque"
 
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
+
 msgid "Page"
 msgstr "Página"
 
@@ -13232,6 +13226,9 @@ msgstr "Mostrar IDs de Proveedores"
 msgid "Show sync options"
 msgstr "Mostrar opciones de sincronización"
 
+msgid "Show Trailing Zeros"
+msgstr ""
+
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "Mostrando {0} de {totalCount} — refine su búsqueda"
@@ -15329,9 +15326,6 @@ msgstr "Tipo de Seguimiento"
 msgid "Tracking URL"
 msgstr "URL de seguimiento"
 
-msgid "Trailing Zeros"
-msgstr ""
-
 msgid "Train"
 msgstr "Capacitar"
 
@@ -15404,14 +15398,8 @@ msgstr "Disparadores"
 msgid "Tuesday"
 msgstr "Martes"
 
-msgid "Turn off to pad amounts to the currency's decimal places, which keeps columns of figures aligned."
-msgstr ""
-
 msgid "Turn on the built-in pieces"
 msgstr "Activa las piezas integradas"
-
-msgid "Turn on to hide non-significant zeros. Fixed-width amounts are the accounting convention, so this is off by default."
-msgstr ""
 
 msgid "Type"
 msgstr "Tipo"
