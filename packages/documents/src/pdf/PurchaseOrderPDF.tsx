@@ -8,10 +8,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
-import {
-  getMoneyFormatter,
-  resolveRegistrationLine
-} from "../utils/shared";
+import { getMoneyFormatter, resolveRegistrationLine } from "../utils/shared";
 import type { PurchaseOrderData } from "./blocks/purchaseOrder";
 import {
   buildPurchaseOrderVars,

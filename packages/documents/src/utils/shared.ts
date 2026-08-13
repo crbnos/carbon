@@ -1,4 +1,8 @@
-import { formatPercent, moneyFormatOptions } from "@carbon/utils";
+import {
+  DEFAULT_CURRENCY_DECIMALS,
+  formatPercent,
+  moneyFormatOptions
+} from "@carbon/utils";
 import type { ResolvedSection } from "../template";
 import { DEFAULT_REGISTRATION_NUMBER, interpolateString } from "../template";
 
@@ -83,11 +87,6 @@ export const formatTaxPercent = (
   return formatPercent(taxPercent, locale);
 };
 
-/** The one fallback for a document whose currency row didn't load. Shared by
- *  every surface so an email and the PDF of the same document can never
- *  disagree about the width of an amount. */
-export const FALLBACK_CURRENCY_DECIMALS = 2;
-
 /** Money for documents. `currency` decides only whether the SYMBOL renders:
  *  pass it for emails ("$300.00"), omit it for the PDF amount columns, which
  *  print the currency code separately ("300.00"). The digits are the same
@@ -99,7 +98,7 @@ export const getMoneyFormatter = (
 ) =>
   new Intl.NumberFormat(
     locale,
-    moneyFormatOptions(decimalPlaces ?? FALLBACK_CURRENCY_DECIMALS, {
+    moneyFormatOptions(decimalPlaces ?? DEFAULT_CURRENCY_DECIMALS, {
       currency: currency ?? undefined
     })
   );

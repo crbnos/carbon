@@ -8,10 +8,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
-import {
-  getMoneyFormatter,
-  resolveRegistrationLine
-} from "../utils/shared";
+import { getMoneyFormatter, resolveRegistrationLine } from "../utils/shared";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
 import { buildQuoteVars, quoteBlockRegistry } from "./blocks/quote";
 import { Template } from "./components";

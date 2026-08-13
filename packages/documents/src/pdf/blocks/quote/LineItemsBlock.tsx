@@ -1,6 +1,11 @@
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { formatPercent, moneyFormatOptions, pluralize } from "@carbon/utils";
+import {
+  DEFAULT_CURRENCY_DECIMALS,
+  formatPercent,
+  moneyFormatOptions,
+  pluralize
+} from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -10,7 +15,6 @@ import {
   getLineDescription,
   getLineDescriptionDetails
 } from "../../../utils/quote";
-import { FALLBACK_CURRENCY_DECIMALS } from "../../../utils/shared";
 import { Note } from "../../components";
 import { itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
@@ -49,7 +53,7 @@ export function LineItemsBlock({
   // distinct precisions once instead of constructing a formatter per line.
   const unitPriceFormatters = new Map<number, Intl.NumberFormat>();
   const unitPriceFormatter = (precision: number | null | undefined) => {
-    const digits = precision ?? FALLBACK_CURRENCY_DECIMALS;
+    const digits = precision ?? DEFAULT_CURRENCY_DECIMALS;
     let formatter = unitPriceFormatters.get(digits);
     if (!formatter) {
       formatter = new Intl.NumberFormat(locale, moneyFormatOptions(digits));
