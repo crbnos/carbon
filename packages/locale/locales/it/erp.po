@@ -5762,6 +5762,9 @@ msgstr "Dipendenti"
 msgid "Empty"
 msgstr "Vuoto"
 
+msgid "Empty = all shifts at the location"
+msgstr ""
+
 msgid "Empty = match every item"
 msgstr "Vuoto = corrisponde a ogni articolo"
 
@@ -7469,6 +7472,9 @@ msgstr "Se qualcosa non è in linea"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Se desideri modificare i numeri di parte, fai clic su Annulla e assegna manualmente le parti per ogni elemento di riga prima della conversione."
+
+msgid "Ignore shift calendars — this machine can run unattended around the clock."
+msgstr ""
 
 msgid "II (normal default)"
 msgstr "II (normale predefinito)"
@@ -10357,6 +10363,9 @@ msgstr "Spese Operative"
 msgid "Operating Income"
 msgstr "Utile operativo"
 
+msgid "Operating shifts"
+msgstr ""
+
 msgid "Operation"
 msgstr "Operazione"
 
@@ -12555,6 +12564,9 @@ msgstr "In esecuzione..."
 
 msgid "Runs"
 msgstr "Esecuzioni"
+
+msgid "Runs 24×7 (lights-out)"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (speciale più grossolano)"

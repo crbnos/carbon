@@ -1,4 +1,5 @@
 import {
+  Boolean,
   Hidden,
   Input,
   Number,
@@ -21,13 +22,14 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import CustomFormFields from "~/components/Form/CustomFormFields";
 import Department from "~/components/Form/Department";
 import Location from "~/components/Form/Location";
 import Processes from "~/components/Form/Processes";
+import Shifts from "~/components/Form/Shifts";
 import StandardFactor from "~/components/Form/StandardFactor";
 import { usePermissions, useUser } from "~/hooks";
 import { workCenterValidator } from "~/modules/resources";
@@ -54,6 +56,10 @@ const WorkCenterForm = ({
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+
+  const [selectedLocationId, setSelectedLocationId] = useState<
+    string | undefined
+  >(initialValues.locationId);
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -115,8 +121,25 @@ const WorkCenterForm = ({
                     termId="work-center-processes"
                   />
                 )}
+                <Shifts
+                  name="shifts"
+                  label={t`Operating shifts`}
+                  locationId={selectedLocationId}
+                  helperText={t`Empty = all shifts at the location`}
+                />
+                <Boolean
+                  name="alwaysOn"
+                  label={t`Runs 24×7 (lights-out)`}
+                  description={t`Ignore shift calendars — this machine can run unattended around the clock.`}
+                />
                 <TextArea name="description" label={t`Description`} />
-                <Location name="locationId" label={t`Location`} />
+                <Location
+                  name="locationId"
+                  label={t`Location`}
+                  onChange={(location) =>
+                    setSelectedLocationId(location?.value)
+                  }
+                />
                 <Department name="departmentId" label={t`Department`} />
 
                 <Number

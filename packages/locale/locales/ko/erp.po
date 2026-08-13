@@ -5762,6 +5762,9 @@ msgstr "직원"
 msgid "Empty"
 msgstr "비어있음"
 
+msgid "Empty = all shifts at the location"
+msgstr ""
+
 msgid "Empty = match every item"
 msgstr "비어 있으면 모든 품목과 일치"
 
@@ -7469,6 +7472,9 @@ msgstr "일정에서 벗어난 경우"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "품목 번호를 변경하려면 취소를 클릭하고, 전환하기 전에 각 라인 항목에 대해 품목을 수동으로 지정하세요."
+
+msgid "Ignore shift calendars — this machine can run unattended around the clock."
+msgstr ""
 
 msgid "II (normal default)"
 msgstr "II(일반 기본값)"
@@ -10357,6 +10363,9 @@ msgstr "영업비용"
 msgid "Operating Income"
 msgstr "영업이익"
 
+msgid "Operating shifts"
+msgstr ""
+
 msgid "Operation"
 msgstr "공정작업"
 
@@ -12555,6 +12564,9 @@ msgstr "실행 중…"
 
 msgid "Runs"
 msgstr "실행"
+
+msgid "Runs 24×7 (lights-out)"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1(가장 완화된 특별수준)"

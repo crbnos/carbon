@@ -71,6 +71,7 @@ import {
   ShelfLifeStartTiming
 } from "./ShelfLifeStartEvent";
 import Shift from "./Shift";
+import Shifts from "./Shifts";
 import ShippingMethod from "./ShippingMethod";
 import StandardFactor from "./StandardFactor";
 import StorageTypes from "./StorageTypes";
@@ -163,6 +164,7 @@ export {
   StorageUnit,
   StorageTypes,
   Shift,
+  Shifts,
   ShippingMethod,
   StandardFactor,
   Submit,

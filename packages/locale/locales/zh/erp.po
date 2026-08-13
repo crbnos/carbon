@@ -5762,6 +5762,9 @@ msgstr "员工"
 msgid "Empty"
 msgstr "空"
 
+msgid "Empty = all shifts at the location"
+msgstr ""
+
 msgid "Empty = match every item"
 msgstr "空 = 匹配每个项目"
 
@@ -7469,6 +7472,9 @@ msgstr "如果有什么偏离轨道"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "如果您希望更改零件号，请点击\"取消\"并在转换前为每个行项目手动分配零件。"
+
+msgid "Ignore shift calendars — this machine can run unattended around the clock."
+msgstr ""
 
 msgid "II (normal default)"
 msgstr "II（正常默认值）"
@@ -10357,6 +10363,9 @@ msgstr "运营费用"
 msgid "Operating Income"
 msgstr "营业收入"
 
+msgid "Operating shifts"
+msgstr ""
+
 msgid "Operation"
 msgstr "操作"
 
@@ -12555,6 +12564,9 @@ msgstr "运行中…"
 
 msgid "Runs"
 msgstr "运行"
+
+msgid "Runs 24×7 (lights-out)"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最粗特殊）"

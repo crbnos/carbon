@@ -488,5 +488,7 @@ export const workCenterValidator = z.object({
   overheadRate: zfd.numeric(z.number().min(0)),
   processes: z
     .array(z.string().min(1, { message: "Invalid process" }))
-    .optional()
+    .optional(),
+  shifts: z.array(z.string().min(1, { message: "Invalid shift" })).optional(),
+  alwaysOn: zfd.checkbox()
 });

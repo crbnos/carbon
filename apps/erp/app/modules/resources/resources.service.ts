@@ -995,12 +995,33 @@ export async function getWorkCenter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client
+  const workCenter = await client
     .from("workCenters")
     .select("*")
     .eq("active", true)
     .eq("id", id)
     .single();
+
+  if (workCenter.error) {
+    return workCenter;
+  }
+
+  // "alwaysOn" is not exposed by the "workCenters" view (it selects wc.* from
+  // before the column existed), so read it from the base table; "workCenterShift"
+  // rows hold the operating-shift assignments.
+  const [alwaysOn, shifts] = await Promise.all([
+    client.from("workCenter").select("alwaysOn").eq("id", id).single(),
+    client.from("workCenterShift").select("shiftId").eq("workCenterId", id)
+  ]);
+
+  return {
+    ...workCenter,
+    data: {
+      ...workCenter.data,
+      alwaysOn: alwaysOn.data?.alwaysOn ?? false,
+      shifts: shifts.data?.map((shift) => shift.shiftId) ?? []
+    }
+  };
 }
 
 export async function getWorkCenters(
@@ -1895,7 +1916,7 @@ export async function upsertWorkCenter(
       })
 ) {
   if ("createdBy" in workCenter) {
-    const { processes, ...insert } = workCenter;
+    const { processes, shifts, ...insert } = workCenter;
     const workCenterInsert = await client
       .from("workCenter")
       .insert([insert])
@@ -1922,9 +1943,26 @@ export async function upsertWorkCenter(
       }
     }
 
+    const workCenterShifts = shifts?.map((shift) => ({
+      workCenterId,
+      shiftId: shift,
+      companyId: insert.companyId,
+      createdBy: insert.createdBy
+    }));
+
+    if (workCenterShifts) {
+      const workCenterShiftInsert = await client
+        .from("workCenterShift")
+        .insert(workCenterShifts);
+
+      if (workCenterShiftInsert.error) {
+        return workCenterShiftInsert;
+      }
+    }
+
     return workCenterInsert;
   }
-  const { processes, ...update } = workCenter;
+  const { processes, shifts, ...update } = workCenter;
   const workCenterUpdate = await client
     .from("workCenter")
     .update(sanitize(update))
@@ -1955,6 +1993,31 @@ export async function upsertWorkCenter(
       .insert(workCenterProcesses);
     if (workCenterProcessUpdate.error) {
       return workCenterProcessUpdate;
+    }
+  }
+
+  const deleteShifts = await client
+    .from("workCenterShift")
+    .delete()
+    .eq("workCenterId", workCenter.id);
+
+  if (deleteShifts.error) {
+    return deleteShifts;
+  }
+
+  const workCenterShifts = shifts?.map((shift) => ({
+    workCenterId: workCenter.id,
+    shiftId: shift,
+    companyId: update.companyId,
+    createdBy: update.updatedBy
+  }));
+
+  if (workCenterShifts) {
+    const workCenterShiftUpdate = await client
+      .from("workCenterShift")
+      .insert(workCenterShifts);
+    if (workCenterShiftUpdate.error) {
+      return workCenterShiftUpdate;
     }
   }
 

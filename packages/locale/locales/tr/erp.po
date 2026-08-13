@@ -5762,6 +5762,9 @@ msgstr "Çalışanlar"
 msgid "Empty"
 msgstr "Boş"
 
+msgid "Empty = all shifts at the location"
+msgstr ""
+
 msgid "Empty = match every item"
 msgstr "Boş = tüm öğeleri eşleştir"
 
@@ -7469,6 +7472,9 @@ msgstr "Bir şey yolunda değilse"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Parça numaralarını değiştirmek isterseniz, lütfen iptal'e tıklayın ve dönüştürmeden önce her bir satır öğesi için parçaları manuel olarak atayın."
+
+msgid "Ignore shift calendars — this machine can run unattended around the clock."
+msgstr ""
 
 msgid "II (normal default)"
 msgstr "II (normal varsayılan)"
@@ -10357,6 +10363,9 @@ msgstr "İşletme Giderleri"
 msgid "Operating Income"
 msgstr "İşletme Geliri"
 
+msgid "Operating shifts"
+msgstr ""
+
 msgid "Operation"
 msgstr "Operasyon"
 
@@ -12555,6 +12564,9 @@ msgstr "Çalışıyor…"
 
 msgid "Runs"
 msgstr "Çalışmalar"
+
+msgid "Runs 24×7 (lights-out)"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (en kalın özel)"

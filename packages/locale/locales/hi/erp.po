@@ -5762,6 +5762,9 @@ msgstr "कर्मचारी"
 msgid "Empty"
 msgstr "खाली"
 
+msgid "Empty = all shifts at the location"
+msgstr ""
+
 msgid "Empty = match every item"
 msgstr "खाली = हर आइटम से मेल खाएं"
 
@@ -7469,6 +7472,9 @@ msgstr "अगर कुछ गलत रास्ते पर है"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "यदि आप भाग संख्याओं को बदलना चाहते हैं, तो कृपया Cancel पर क्लिक करें और रूपांतरण से पहले प्रत्येक लाइन आइटम के लिए भागों को मैन्युअल रूप से असाइन करें।"
+
+msgid "Ignore shift calendars — this machine can run unattended around the clock."
+msgstr ""
 
 msgid "II (normal default)"
 msgstr "II (सामान्य डिफ़ॉल्ट)"
@@ -10357,6 +10363,9 @@ msgstr "परिचालन व्यय"
 msgid "Operating Income"
 msgstr "परिचालन आय"
 
+msgid "Operating shifts"
+msgstr ""
+
 msgid "Operation"
 msgstr "ऑपरेशन"
 
@@ -12555,6 +12564,9 @@ msgstr "चल रहा है…"
 
 msgid "Runs"
 msgstr "रन"
+
+msgid "Runs 24×7 (lights-out)"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (सबसे मोटे विशेष)"
