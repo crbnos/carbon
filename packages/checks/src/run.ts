@@ -2,6 +2,7 @@ import { keyOf, loadBaseline } from "./baseline";
 import type {
   ConformanceCheck,
   ModuleDir,
+  SourceFile,
   StructureCheck,
   Violation
 } from "./check";
@@ -16,8 +17,7 @@ import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import {
   loadSqlFiles,
   migrationsDir,
-  repoRoot,
-  type SqlFile
+  repoRoot
 } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
@@ -46,7 +46,7 @@ export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
 export type Finding = { checkId: string; violation: Violation };
 
 export function scanAll(
-  files: SqlFile[],
+  files: SourceFile[],
   checks: ConformanceCheck[] = CONFORMANCE_CHECKS
 ): Finding[] {
   const out: Finding[] = [];

@@ -1,10 +1,11 @@
 export type {
   ConformanceCheck,
   ModuleDir,
+  SourceFile,
   StructureCheck,
   Violation
 } from "./check";
-export { findClobbers, objectRefs, type SourceFile } from "./clobber";
+export { findClobbers, objectRefs } from "./clobber";
 export { moduleShape } from "./conformance/module-shape";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";

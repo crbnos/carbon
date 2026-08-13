@@ -1,6 +1,6 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { SqlFile } from "./migrations";
+import type { SourceFile } from "../check";
 
 // Directories the numeric-precision checks cover: everywhere app code does
 // arithmetic or builds number formatters. The two image functions are pure
@@ -41,14 +41,15 @@ const isTest = (name: string) =>
 const isTypescript = (name: string) =>
   name.endsWith(".ts") || name.endsWith(".tsx");
 
-function walk(dir: string, out: SqlFile[], repoRootDir: string) {
-  for (const entry of readdirSync(dir)) {
-    if (EXCLUDED_DIRS.has(entry)) continue;
-    const full = join(dir, entry);
-    const stat = statSync(full);
-    if (stat.isDirectory()) {
+function walk(dir: string, out: SourceFile[], repoRootDir: string) {
+  // withFileTypes so the directory read already tells us what each entry is —
+  // a stat() per entry over the whole app tree is the bulk of this walk.
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (EXCLUDED_DIRS.has(entry.name)) continue;
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
       walk(full, out, repoRootDir);
-    } else if (isTypescript(entry) && !isTest(entry)) {
+    } else if (isTypescript(entry.name) && !isTest(entry.name)) {
       out.push({
         // Repo-relative path so baseline keys are machine-independent
         file: full.slice(repoRootDir.length + 1),
@@ -58,8 +59,8 @@ function walk(dir: string, out: SqlFile[], repoRootDir: string) {
   }
 }
 
-export function loadTypescriptFiles(root: string): SqlFile[] {
-  const out: SqlFile[] = [];
+export function loadTypescriptFiles(root: string): SourceFile[] {
+  const out: SourceFile[] = [];
   for (const dir of TYPESCRIPT_ROOTS) {
     walk(join(root, dir), out, root);
   }
