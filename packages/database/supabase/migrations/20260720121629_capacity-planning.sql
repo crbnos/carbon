@@ -51,11 +51,10 @@ CREATE OR REPLACE VIEW "processes" WITH(SECURITY_INVOKER=true) AS
   ) sp ON p.id = sp."processId";
 
 -- ============================================================================
--- Capacity reservations + scheduling policy
+-- Capacity reservations
 -- ============================================================================
 -- 'OperatorPool' remains legal for old rows; the engine no longer writes it.
 CREATE TYPE "capacityResourceKind" AS ENUM ('WorkCenter', 'OperatorPool', 'Employee');
-CREATE TYPE "schedulingDispatchRule" AS ENUM ('FIFO', 'EDD', 'SPT', 'WSPT', 'CR', 'MinSlack');
 
 CREATE TABLE "capacityReservation" (
     "id" TEXT NOT NULL DEFAULT id('cres'),
@@ -92,25 +91,6 @@ CREATE INDEX "capacityReservation_operationId_idx" ON "capacityReservation" ("op
 CREATE INDEX "capacityReservation_jobId_idx" ON "capacityReservation" ("jobId");
 CREATE INDEX "capacityReservation_createdBy_idx" ON "capacityReservation" ("createdBy");
 
--- One company default row (workCenterId null) + per-work-center overrides
-CREATE TABLE "schedulingPolicy" (
-    "id" TEXT NOT NULL DEFAULT id('spol'),
-    "companyId" TEXT NOT NULL,
-    "workCenterId" TEXT REFERENCES "workCenter"("id") ON DELETE CASCADE,
-    "dispatchRule" "schedulingDispatchRule" NOT NULL DEFAULT 'EDD',
-    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "updatedBy" TEXT REFERENCES "user"("id"),
-    "updatedAt" TIMESTAMP WITH TIME ZONE,
-    PRIMARY KEY ("id", "companyId"),
-    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
-);
-CREATE UNIQUE INDEX "schedulingPolicy_company_wc_key"
-    ON "schedulingPolicy" ("companyId", COALESCE("workCenterId", ''));
-CREATE INDEX "schedulingPolicy_companyId_idx" ON "schedulingPolicy" ("companyId");
-CREATE INDEX "schedulingPolicy_workCenterId_idx" ON "schedulingPolicy" ("workCenterId");
-CREATE INDEX "schedulingPolicy_createdBy_idx" ON "schedulingPolicy" ("createdBy");
-
 ALTER TABLE "public"."capacityReservation" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."capacityReservation" FOR SELECT USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
@@ -125,19 +105,61 @@ CREATE POLICY "DELETE" ON "public"."capacityReservation" FOR DELETE USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_delete'))::text[])
 );
 
-ALTER TABLE "public"."schedulingPolicy" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."schedulingPolicy" FOR SELECT USING (
+-- ============================================================================
+-- Work center operating hours (availability ladder rung 1)
+-- ============================================================================
+-- Which shifts a work center operates. No rows = rung 2 (all shifts at the
+-- work center's location); no shifts at the location = rung 3 (stock Mon-Fri
+-- 08:00-17:00 in the location timezone). "alwaysOn" = lights-out, 24x7.
+ALTER TABLE "workCenter" ADD COLUMN "alwaysOn" BOOLEAN NOT NULL DEFAULT false;
+
+CREATE TABLE "workCenterShift" (
+    "id" TEXT NOT NULL DEFAULT id('wcsh'),
+    "companyId" TEXT NOT NULL,
+    "workCenterId" TEXT NOT NULL REFERENCES "workCenter"("id") ON DELETE CASCADE,
+    "shiftId" TEXT NOT NULL REFERENCES "shift"("id") ON DELETE CASCADE,
+    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updatedBy" TEXT REFERENCES "user"("id"),
+    "updatedAt" TIMESTAMP WITH TIME ZONE,
+    PRIMARY KEY ("id", "companyId"),
+    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+CREATE INDEX "workCenterShift_companyId_idx" ON "workCenterShift" ("companyId");
+CREATE INDEX "workCenterShift_workCenterId_idx" ON "workCenterShift" ("workCenterId");
+CREATE INDEX "workCenterShift_shiftId_idx" ON "workCenterShift" ("shiftId");
+CREATE INDEX "workCenterShift_createdBy_idx" ON "workCenterShift" ("createdBy");
+ALTER TABLE "workCenterShift" ADD CONSTRAINT "workCenterShift_wc_shift_key"
+    UNIQUE ("workCenterId", "shiftId", "companyId");
+
+ALTER TABLE "public"."workCenterShift" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."workCenterShift" FOR SELECT USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
 );
-CREATE POLICY "INSERT" ON "public"."schedulingPolicy" FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_create'))::text[])
+CREATE POLICY "INSERT" ON "public"."workCenterShift" FOR INSERT WITH CHECK (
+  "companyId" = ANY ((SELECT get_companies_with_employee_permission('resources_create'))::text[])
 );
-CREATE POLICY "UPDATE" ON "public"."schedulingPolicy" FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])
+CREATE POLICY "UPDATE" ON "public"."workCenterShift" FOR UPDATE USING (
+  "companyId" = ANY ((SELECT get_companies_with_employee_permission('resources_update'))::text[])
 );
-CREATE POLICY "DELETE" ON "public"."schedulingPolicy" FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_delete'))::text[])
+CREATE POLICY "DELETE" ON "public"."workCenterShift" FOR DELETE USING (
+  "companyId" = ANY ((SELECT get_companies_with_employee_permission('resources_delete'))::text[])
 );
+
+-- ============================================================================
+-- Machine downtime via maintenance dispatches (derived windows, no new table)
+-- ============================================================================
+ALTER TABLE "maintenanceDispatch"
+  ADD COLUMN "takesWorkCenterOffline" BOOLEAN NOT NULL DEFAULT false;
+COMMENT ON COLUMN "maintenanceDispatch"."takesWorkCenterOffline" IS
+  'While this dispatch is open, its work center(s) contribute no scheduling capacity between (actualStartTime ?? plannedStartTime ?? createdAt) and (actualEndTime ?? plannedEndTime ?? open-ended).';
+
+-- ============================================================================
+-- Forecast output on the job
+-- ============================================================================
+ALTER TABLE "job" ADD COLUMN "projectedCompletionAt" TIMESTAMP WITH TIME ZONE;
+COMMENT ON COLUMN "job"."projectedCompletionAt" IS
+  'Simulated finish of the job''s last operation (forward-ASAP finite schedule). Null until first regen.';
 
 -- ============================================================================
 -- Ready-at + queue time
