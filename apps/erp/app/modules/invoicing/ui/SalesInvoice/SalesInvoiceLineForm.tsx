@@ -53,6 +53,7 @@ import {
   StorageUnit,
   Submit,
   TaxFields,
+  taxableBase,
   useDerivedTaxAmount
 } from "~/components/Form";
 import {
@@ -151,7 +152,7 @@ const SalesInvoiceLineForm = ({
 
   // Re-derive the tax amount when the line's base changes — never on mount.
   useDerivedTaxAmount(
-    itemData.unitPrice * itemData.quantity + itemData.shippingCost,
+    taxableBase(itemData.unitPrice, itemData.quantity, itemData.shippingCost),
     itemData.taxPercent,
     currencyDecimals,
     (taxAmount) => setItemData((d) => ({ ...d, taxAmount }))
@@ -709,10 +710,11 @@ const SalesInvoiceLineForm = ({
                             <TaxFields
                               amountName="taxAmount"
                               percentName="taxPercent"
-                              subtotal={
-                                itemData.unitPrice * itemData.quantity +
+                              subtotal={taxableBase(
+                                itemData.unitPrice,
+                                itemData.quantity,
                                 itemData.shippingCost
-                              }
+                              )}
                               currency={invoiceCurrency}
                               currencyDecimals={currencyDecimals}
                               percent={itemData.taxPercent}

@@ -3,6 +3,27 @@ import { applyRate, deriveRate, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 
+/** An EMPTIED number input commits NaN, not 0 — that is react-aria's empty
+ *  state (`if (!newInputValue.length) setNumberValue(NaN)`). For a cost
+ *  component, empty means zero, and it has to be read that way BEFORE the sum:
+ *  once one NaN is in, `unitPrice * qty + NaN` is NaN and nothing downstream can
+ *  recover the other terms. */
+const amount = (value: number) => (Number.isFinite(value) ? value : 0);
+
+/**
+ * The canonical tax denominator — `unitPrice × qty + shippingCost`. One named
+ * function so every document computes the base the same way, and so clearing a
+ * cost field cannot poison it: clearing Shipping on a 300.00 line re-derives the
+ * tax against 300, which is what the user asked for, rather than against NaN.
+ */
+export function taxableBase(
+  unitPrice: number,
+  quantity: number,
+  shippingCost: number
+) {
+  return amount(unitPrice) * amount(quantity) + amount(shippingCost);
+}
+
 /**
  * Re-derives the tax amount from the stored rate when the base changes
  * (quantity, unit price, shipping). Skips the first run so a saved line's
@@ -27,7 +48,11 @@ export function useDerivedTaxAmount(
       isMounted.current = true;
       return;
     }
-    if (percent !== 0) {
+    // A base this can't evaluate is never a reason to destroy the stored pair:
+    // a NaN amount serializes to "" and saves as 0, leaving a 6.25% line with no
+    // tax. Callers build the base with taxableBase, so this should not fire —
+    // it is what makes "never write a non-finite amount" true by construction.
+    if (percent !== 0 && Number.isFinite(subtotal)) {
       derive.current(applyRate(subtotal, percent, currencyDecimals));
     }
   }, [subtotal, percent, currencyDecimals]);

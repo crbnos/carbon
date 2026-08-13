@@ -49,6 +49,7 @@ import {
   StorageUnit,
   Submit,
   TaxFields,
+  taxableBase,
   UnitOfMeasure,
   useDerivedTaxAmount
 } from "~/components/Form";
@@ -156,8 +157,11 @@ const PurchaseInvoiceLineForm = ({
   // Re-derive the tax amount when the line's base changes — never on mount, so
   // a saved manual override survives being reopened.
   useDerivedTaxAmount(
-    itemData.supplierUnitPrice * itemData.quantity +
-      itemData.supplierShippingCost,
+    taxableBase(
+      itemData.supplierUnitPrice,
+      itemData.quantity,
+      itemData.supplierShippingCost
+    ),
     itemData.taxPercent,
     currencyDecimals,
     (taxAmount) => setItemData((d) => ({ ...d, taxAmount }))
@@ -236,8 +240,11 @@ const PurchaseInvoiceLineForm = ({
   });
 
   useDerivedTaxAmount(
-    indirectData.supplierUnitPrice * indirectData.quantity +
-      indirectData.supplierShippingCost,
+    taxableBase(
+      indirectData.supplierUnitPrice,
+      indirectData.quantity,
+      indirectData.supplierShippingCost
+    ),
     indirectData.taxPercent,
     currencyDecimals,
     (taxAmount) => setIndirectData((d) => ({ ...d, taxAmount }))
@@ -742,10 +749,11 @@ const PurchaseInvoiceLineForm = ({
                         <TaxFields
                           amountName="supplierTaxAmount"
                           percentName="taxPercent"
-                          subtotal={
-                            itemData.supplierUnitPrice * itemData.quantity +
+                          subtotal={taxableBase(
+                            itemData.supplierUnitPrice,
+                            itemData.quantity,
                             itemData.supplierShippingCost
-                          }
+                          )}
                           currency={
                             routeData?.purchaseInvoice?.currencyCode ??
                             company.baseCurrencyCode
@@ -953,11 +961,11 @@ const PurchaseInvoiceLineForm = ({
                           <TaxFields
                             amountName="supplierTaxAmount"
                             percentName="taxPercent"
-                            subtotal={
-                              indirectData.supplierUnitPrice *
-                                indirectData.quantity +
+                            subtotal={taxableBase(
+                              indirectData.supplierUnitPrice,
+                              indirectData.quantity,
                               indirectData.supplierShippingCost
-                            }
+                            )}
                             currency={
                               routeData?.purchaseInvoice?.currencyCode ??
                               company.baseCurrencyCode

@@ -52,6 +52,7 @@ import {
   StorageUnit,
   Submit,
   TaxFields,
+  taxableBase,
   UnitOfMeasure,
   useDerivedTaxAmount
 } from "~/components/Form";
@@ -89,12 +90,6 @@ type PurchaseOrderLineFormProps = {
   type?: "card" | "modal";
   onClose?: () => void;
 };
-
-const getLineSubtotal = (
-  unitPrice: number,
-  quantity: number,
-  shippingCost: number
-) => unitPrice * quantity + shippingCost;
 
 const PurchaseOrderLineForm = ({
   initialValues,
@@ -175,7 +170,7 @@ const PurchaseOrderLineForm = ({
   // Re-derive the tax amount when the line's base changes — never on mount, so
   // a saved manual override survives being reopened.
   useDerivedTaxAmount(
-    getLineSubtotal(
+    taxableBase(
       itemData.supplierUnitPrice,
       itemData.purchaseQuantity,
       itemData.supplierShippingCost
@@ -217,7 +212,7 @@ const PurchaseOrderLineForm = ({
   });
 
   useDerivedTaxAmount(
-    getLineSubtotal(
+    taxableBase(
       indirectData.supplierUnitPrice,
       indirectData.purchaseQuantity,
       indirectData.supplierShippingCost
@@ -837,7 +832,7 @@ const PurchaseOrderLineForm = ({
                           <TaxFields
                             amountName="supplierTaxAmount"
                             percentName="taxPercent"
-                            subtotal={getLineSubtotal(
+                            subtotal={taxableBase(
                               itemData.supplierUnitPrice,
                               itemData.purchaseQuantity,
                               itemData.supplierShippingCost
@@ -1062,7 +1057,7 @@ const PurchaseOrderLineForm = ({
                             <TaxFields
                               amountName="supplierTaxAmount"
                               percentName="taxPercent"
-                              subtotal={getLineSubtotal(
+                              subtotal={taxableBase(
                                 indirectData.supplierUnitPrice,
                                 indirectData.purchaseQuantity,
                                 indirectData.supplierShippingCost

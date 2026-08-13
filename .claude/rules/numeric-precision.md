@@ -93,6 +93,17 @@ and blur commits an identical value, triggering nothing.
 re-derivation and deliberately skips its first run — a saved line's stored
 pair is displayed as stored rather than silently recomputed on mount.
 
+Build the denominator with `taxableBase(unitPrice, quantity, shippingCost)`
+(also from `TaxFields`), never inline arithmetic. An EMPTIED number input
+commits **NaN**, not 0 — that is react-aria's empty state
+(`if (!newInputValue.length) setNumberValue(NaN)`) — and one NaN term makes
+the whole sum NaN, so `applyRate` returns NaN, the amount field renders blank,
+and saving writes 0 against a live 6.25% percent. The pair is broken and the
+tax silently vanishes. `taxableBase` reads each term as 0 BEFORE the sum, which
+is the only place it can be done: once the terms are added, no downstream guard
+can recover them. `useDerivedTaxAmount` additionally refuses a non-finite
+subtotal, so "never overwrite a stored amount with NaN" holds by construction.
+
 ## Display digits = input digits (named kinds)
 
 `packages/utils/src/format.ts` defines the ONLY digit choices (`PERCENT_DIGITS`
