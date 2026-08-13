@@ -6,7 +6,7 @@ import { maybeOne, one } from "./sql.ts";
 import type { SeedWorkflow } from "./tiers/workflow-definitions.ts";
 
 // Must stay in step with DATASETS in index.ts — a key with no dataset is unusable.
-export type DatasetKey = "satellite";
+export type DatasetKey = "satellite" | "robotics";
 
 export type { ItemSpec };
 

@@ -13,8 +13,8 @@
 - [x] Task 5: Delete the dead `Dataset.companyName` field
 - [x] Task 6: **GATE** — prove satellite's seeded output is unchanged
 - [x] Task 7: Recover the robotics foundation + items slices from the stash
-- [ ] Task 8: Write the nine remaining robotics slices
-- [ ] Task 9: Register `robotics` and seed-verify it
+- [x] Task 8: Write the nine remaining robotics slices
+- [x] Task 9: Register `robotics` and seed-verify it
 - [ ] Task 10: Write the `precision` dataset
 - [ ] Task 11: Write the `motor` dataset
 - [ ] Task 12: End-to-end verification across all four datasets
