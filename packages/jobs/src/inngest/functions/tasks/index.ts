@@ -7,6 +7,7 @@ export {
   companyRestoreFunction,
   companyRestoreRevertFunction
 } from "./company-restore";
+export { companyTemplateFunction } from "./company-template";
 export { modelCompactFunction } from "./model-compact";
 export { modelOptimizeFunction } from "./model-optimize";
 export { modelThumbnailFunction } from "./model-thumbnail";

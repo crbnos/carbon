@@ -187,6 +187,19 @@ export type Events = {
     };
   };
 
+  // Onboarding demo template — applies a shared dataset to a freshly created
+  // company by running the same tier code the dev seed runs. Not an import: no
+  // archive, no bucket. `datasetKey` is a plain string so @carbon/lib does not
+  // take a dependency on @carbon/database; the job validates it.
+  "carbon/company-template": {
+    data: {
+      companyId: string;
+      userId: string;
+      datasetKey: string;
+      templateRunId: string;
+    };
+  };
+
   // In-place restore — replace a company's own data with one of its backups.
   // Three-step: snapshot current state to a hidden _pre-restore file, WIPE the
   // company's companyId-scoped data, then load the backup (ids preserved). A
