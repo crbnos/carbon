@@ -99,15 +99,32 @@
     {
       "slug": "docs/platform/architecture",
       "title": "Architecture",
-      "description": "How Carbon is built: the apps, packages, database, event system, background jobs, and auth behind a deployment.",
+      "description": "One journey from a button click, through the server, into Postgres, out to background jobs, and back to the screen.",
       "keywords": ["architecture", "docs", "platform"],
       "headings": [
-        "Apps",
-        "Packages",
-        "The stack",
-        "Database",
-        "Events & background jobs",
-        "Authentication",
+        "Part 1: The map",
+        "Part 2: Follow one click all the way down",
+        "The short version",
+        "The same story, with real files",
+        "Part 3: Layer by layer",
+        "3.1 The browser and the route file",
+        "3.2 The gate: who is allowed to do what",
+        "3.3 The service layer: four doors to the database",
+        "3.4 The database",
+        "Part 4: What happens after the write",
+        "Part 5: The other engines",
+        "Workflows: the customer's own automations",
+        "The Assembler: the Rust service",
+        "Part 6: The repo map",
+        "Part 7: Where it all runs",
+        "7.1 On a laptop",
+        "7.2 The cloud Carbon runs",
+        "7.3 On a customer's own server",
+        "7.4 How a merge becomes production",
+        "7.5 Knowing what is happening",
+        "Part 8: There's a bug, where do I look?",
+        "Part 9: House rules",
+        "Glossary",
         "Related"
       ]
     },
@@ -1542,7 +1559,7 @@
     {
       "slug": "guides/build",
       "title": "Inside the build",
-      "description": "How each robot part is made or bought.",
+      "description": "How each satellite part is made or bought.",
       "keywords": ["inside", "the", "build", "guides"],
       "headings": [
         "The bill of materials",
@@ -1618,7 +1635,7 @@
     {
       "slug": "guides/order",
       "title": "Start with the order",
-      "description": "A 90-unit robot order becomes real work.",
+      "description": "A 90-unit solar array wing order becomes real work.",
       "keywords": ["start", "with", "the", "order", "guides"],
       "headings": [
         "The sales order",

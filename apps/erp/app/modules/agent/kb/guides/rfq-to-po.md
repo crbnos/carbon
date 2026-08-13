@@ -2,7 +2,7 @@
 
 > Shop one item to many suppliers, then turn the winning quote into an order.
 
-Every robot the shop builds is mostly parts it buys. RFQ to bill is the procurement side of the house, the mirror image of quote to cash, run from the buyer's chair. You ask suppliers for a price, you place an order, the goods arrive, and a supplier bill lands that you reconcile against what you actually ordered and received.
+Every satellite the shop builds is mostly parts it buys. RFQ to bill is the procurement side of the house, the mirror image of quote to cash, run from the buyer's chair. You ask suppliers for a price, you place an order, the goods arrive, and a supplier bill lands that you reconcile against what you actually ordered and received.
 
 We'll follow one purchased part from a blank request all the way to a posted supplier invoice.
 

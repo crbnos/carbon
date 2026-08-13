@@ -2,7 +2,7 @@
 
 > An engineering change, drafted against the real method, reviewed as a diff, and released so planning phases over on its own.
 
-The robot's arm bracket needs a thicker wall and one fewer fastener. In a lot of systems that means editing
+The satellite bus's antenna pointing bracket needs a thicker wall and one fewer fastener. In a lot of systems that means editing
 the live part and hoping nothing in flight notices. Carbon makes you do it deliberately: you open a
 change notice, edit a hidden draft of the part's method, review exactly what changed, and release
 when it's ready. Until that moment, every job, plan, and cost calculation still sees the old bracket.

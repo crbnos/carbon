@@ -16,7 +16,7 @@ A sales order does not require a quote, and a quote does not require an RFQ. Eac
 
 ## Build the quote
 
-Open a new quote and add a line per item the customer asked about. Pricing lives on the line and supports quantity breaks, so the unit price for 10 can differ from the price for 100. The negotiated number you land on is what carries forward later.
+Open a new quote and add a line per item the customer asked about. Pricing lives on the line and supports quantity breaks, so the unit price for one can differ from the price for twenty-five. The negotiated number you land on is what carries forward later.
 
 A fresh quote sits at **"Draft"**. Each line moves through its own state as you work it up: **"Draft"**, **"In Progress"**, then **"Complete"** once you've settled its pricing. The line states let you quote a multi-item inquiry piecemeal instead of all at once, marking lines complete one by one rather than all at once.
 
@@ -26,7 +26,7 @@ When the numbers are ready, finalizing the quote moves it to **"Sent"** and mark
 
 Carbon can hand the customer the quote directly. With digital quotes enabled, a **"Sent"** quote exposes a private share link: an unguessable id, no login required. Internal notes are stripped before anything reaches the customer.
 
-From that link the customer does one of two things. They **accept**, optionally attaching their PO as a PDF, and the quote converts straight into a sales order. Or they **reject**, and the quote moves to **"Lost"**. Either way the outcome lands back in Carbon without a single email thread.
+From that link the customer does one of two things. They **accept** — the page ends with an **"Accept Quote"** button — and the quote converts straight into a sales order; the option to attach their PO as a PDF appears once they've accepted. Or they **reject**, via the **"Reject Quote"** link underneath, and the quote moves to **"Lost"**. Either way the outcome lands back in Carbon without a single email thread.
 
 The customer-facing share link turns an accept into a real conversion and a reject into a recorded outcome. A companion customer portal then shows them live order and job status as the work proceeds.
 
