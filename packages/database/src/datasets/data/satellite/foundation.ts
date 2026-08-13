@@ -1,7 +1,13 @@
 import type {
+  ContractorAgencySpec,
   FoundationData,
+  PlantSpec,
+  PrinterRouteSpec,
   ProcedureSpec,
-  ProcedureStepSpec
+  ProcedureStepSpec,
+  ShelfSpec,
+  ShiftSpec,
+  WarehouseSpec
 } from "../../types.ts";
 
 // ---------------------------------------------------------------------------
@@ -101,7 +107,82 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["Potting Station", "Potting & Conformal Coat"]
 ];
 
-export const BIN_LEVELS = ["L1", "L2", "L3"];
+export const PLANT: PlantSpec = {
+  name: "Manufacturing Plant",
+  addressLine1: "4500 Space Commerce Drive",
+  city: "Houston",
+  stateProvince: "TX",
+  postalCode: "77058",
+  countryCode: "US",
+  timezone: "America/Chicago"
+};
+
+export const SHIFTS: ShiftSpec[] = [
+  {
+    name: "Day Shift",
+    startTime: "06:00:00",
+    endTime: "14:30:00",
+    monday: true,
+    tuesday: true,
+    wednesday: true,
+    thursday: true,
+    friday: true
+  },
+  {
+    name: "Swing Shift",
+    startTime: "14:30:00",
+    endTime: "23:00:00",
+    monday: true,
+    tuesday: true,
+    wednesday: true,
+    thursday: true,
+    friday: true
+  }
+];
+
+export const WAREHOUSES: WarehouseSpec[] = [
+  {
+    key: "Main",
+    name: "Main Warehouse",
+    requiresPick: true,
+    requiresPutAway: true,
+    requiresBin: true
+  },
+  { key: "RMA", name: "RMA / Return" },
+  { key: "QC", name: "QC Hold", requiresBin: true }
+];
+
+export const STORAGE_TYPES = ["Shelf", "Bin", "Rack"];
+
+// Names here are the contract for OPENING_STOCK[].shelf — a mismatch is a hard
+// error, so the racking rows are listed rather than generated.
+export const SHELVES: ShelfSpec[] = [
+  { name: "Aisle-A", warehouse: "Main", storageType: "Rack" },
+  { name: "A1-L1", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
+  { name: "A1-L2", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
+  { name: "A1-L3", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
+  { name: "A2-L1", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
+  { name: "A2-L2", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
+  { name: "A2-L3", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
+  { name: "A3-L1", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
+  { name: "A3-L2", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
+  { name: "A3-L3", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
+  { name: "CleanRoom", warehouse: "Main", storageType: "Shelf" }
+];
+
+export const PRINTER_ROUTE: PrinterRouteSpec = {
+  name: "Main Label Printer",
+  format: "zpl",
+  printerUrl: "http://192.168.1.50:9100"
+};
+
+// Contractors are individuals who reference a supplierContact for their
+// identity, so they need an agency supplier to hang off.
+export const CONTRACTOR_AGENCY: ContractorAgencySpec = {
+  name: "Orbital Staffing",
+  type: "Services",
+  phone: "+1-281-555-1100"
+};
 
 export const CUSTOMER_TYPES = [
   "Government",
@@ -498,10 +579,21 @@ export const satelliteFoundation: FoundationData = {
   shippingTerms: SHIPPING_TERMS,
   itemPostingGroups: ITEM_POSTING_GROUPS,
   workCenterProcessLinks: WORK_CENTER_PROCESS_LINKS,
-  binLevels: BIN_LEVELS,
   customerTypes: CUSTOMER_TYPES,
   supplierTypes: SUPPLIER_TYPES,
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
-  contractors: CONTRACTORS
+  contractors: CONTRACTORS,
+  plant: PLANT,
+  shifts: SHIFTS,
+  warehouses: WAREHOUSES,
+  storageTypes: STORAGE_TYPES,
+  shelves: SHELVES,
+  printerRoute: PRINTER_ROUTE,
+  defaultShippingMethod: "UPS Ground",
+  contractorAgency: CONTRACTOR_AGENCY,
+  partyAddressCity: "Houston",
+  partyAddressStateProvince: "TX",
+  partyAddressPostalCode: "77058",
+  partyAddressCountryCode: "US"
 };

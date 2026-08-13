@@ -191,5 +191,7 @@ export const satelliteProduction: ProductionData = {
   jobs: JOBS,
   shifts: SHIFTS,
   genealogyInputs: GENEALOGY_INPUTS,
-  genealogyAssembly: GENEALOGY_ASSEMBLY
+  genealogyAssembly: GENEALOGY_ASSEMBLY,
+  eventsJobKey: "in-progress",
+  genealogyJobKey: "in-progress"
 };

@@ -19,7 +19,6 @@ export const satellite: Dataset = {
   key: "satellite",
   label: "Aerospace & Satellite",
   industryId: "aerospace_satellite",
-  companyName: "Orbital Systems Inc.",
   foundation: satelliteFoundation,
   items: satelliteItems,
   inventory: satelliteInventory,

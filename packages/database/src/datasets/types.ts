@@ -754,7 +754,6 @@ export type Dataset = {
   label: string;
   /** industry.id this dataset backs, or null for dev-only datasets. */
   industryId: string | null;
-  companyName: string;
   foundation: FoundationData;
   items: ItemsData;
   inventory: InventoryData;

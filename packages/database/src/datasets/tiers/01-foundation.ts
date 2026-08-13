@@ -1,4 +1,4 @@
-import { insertId, insertRow, one, RICH, rows } from "../sql.ts";
+import { insertId, insertRow, need, one, RICH, rows } from "../sql.ts";
 import type { Ctx } from "../types.ts";
 
 export async function runTier1(ctx: Ctx): Promise<void> {
@@ -14,28 +14,21 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
   // ── Shifts ────────────────────────────────────────────────────────────────
   ctx.log("shifts");
-  ctx.refs.shifts.Day = await insertId(ctx, "shift", {
-    name: "Day Shift",
-    startTime: "06:00:00",
-    endTime: "14:30:00",
-    locationId,
-    monday: true,
-    tuesday: true,
-    wednesday: true,
-    thursday: true,
-    friday: true
-  });
-  ctx.refs.shifts.Swing = await insertId(ctx, "shift", {
-    name: "Swing Shift",
-    startTime: "14:30:00",
-    endTime: "23:00:00",
-    locationId,
-    monday: true,
-    tuesday: true,
-    wednesday: true,
-    thursday: true,
-    friday: true
-  });
+  for (const shift of data.shifts) {
+    ctx.refs.shifts[shift.name] = await insertId(ctx, "shift", {
+      name: shift.name,
+      startTime: shift.startTime,
+      endTime: shift.endTime,
+      locationId,
+      monday: shift.monday ?? false,
+      tuesday: shift.tuesday ?? false,
+      wednesday: shift.wednesday ?? false,
+      thursday: shift.thursday ?? false,
+      friday: shift.friday ?? false,
+      saturday: shift.saturday ?? false,
+      sunday: shift.sunday ?? false
+    });
+  }
 
   // ── Abilities ─────────────────────────────────────────────────────────────
   ctx.log("abilities");
@@ -64,13 +57,13 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── Second location (manufacturing plant) ─────────────────────────────────
   ctx.log("manufacturing location");
   const plantId = await insertId(ctx, "location", {
-    name: "Manufacturing Plant",
-    addressLine1: "4500 Space Commerce Drive",
-    city: "Houston",
-    stateProvince: "TX",
-    postalCode: "77058",
-    countryCode: "US",
-    timezone: "America/Chicago"
+    name: data.plant.name,
+    addressLine1: data.plant.addressLine1,
+    city: data.plant.city,
+    stateProvince: data.plant.stateProvince,
+    postalCode: data.plant.postalCode,
+    countryCode: data.plant.countryCode,
+    timezone: data.plant.timezone
   });
   ctx.refs.locations.Plant = plantId;
   ctx.refs.locations.HQ = locationId;
@@ -86,60 +79,51 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
   // ── Warehouses ────────────────────────────────────────────────────────────
   ctx.log("warehouses");
-  ctx.refs.warehouses.Main = await insertId(ctx, "warehouse", {
-    name: "Main Warehouse",
-    locationId: plantId,
-    requiresPick: true,
-    requiresPutAway: true,
-    requiresBin: true
-  });
-  ctx.refs.warehouses.RMA = await insertId(ctx, "warehouse", {
-    name: "RMA / Return",
-    locationId: plantId
-  });
-  ctx.refs.warehouses.QC = await insertId(ctx, "warehouse", {
-    name: "QC Hold",
-    locationId: plantId,
-    requiresBin: true
-  });
+  for (const wh of data.warehouses) {
+    ctx.refs.warehouses[wh.key] = await insertId(ctx, "warehouse", {
+      name: wh.name,
+      locationId: plantId,
+      requiresPick: wh.requiresPick ?? false,
+      requiresPutAway: wh.requiresPutAway ?? false,
+      requiresBin: wh.requiresBin ?? false
+    });
+  }
 
   // ── Storage types ─────────────────────────────────────────────────────────
   ctx.log("storage types + units");
-  const stShelf = await insertId(ctx, "storageType", { name: "Shelf" });
-  const stBin = await insertId(ctx, "storageType", { name: "Bin" });
-  const stRack = await insertId(ctx, "storageType", { name: "Rack" });
-
-  // Top-level shelves (racking rows), then child bins
-  const aisleA = await insertId(ctx, "storageUnit", {
-    name: "Aisle-A",
-    locationId: plantId,
-    warehouseId: ctx.refs.warehouses.Main,
-    storageTypeIds: [stRack],
-    active: true
-  });
-  ctx.refs.shelves["Aisle-A"] = aisleA;
-
-  for (let row = 1; row <= 3; row++) {
-    for (const level of data.binLevels) {
-      const binName = `A${row}-${level}`;
-      const binId = await insertId(ctx, "storageUnit", {
-        name: binName,
-        locationId: plantId,
-        warehouseId: ctx.refs.warehouses.Main,
-        parentId: aisleA,
-        storageTypeIds: [stBin]
-      });
-      ctx.refs.shelves[binName] = binId;
-    }
+  const storageTypeIdByName = new Map<string, string>();
+  for (const name of data.storageTypes) {
+    storageTypeIdByName.set(name, await insertId(ctx, "storageType", { name }));
   }
 
-  const cleanRoomShelf = await insertId(ctx, "storageUnit", {
-    name: "Clean Room Shelf",
-    locationId: plantId,
-    warehouseId: ctx.refs.warehouses.Main,
-    storageTypeIds: [stShelf]
-  });
-  ctx.refs.shelves.CleanRoom = cleanRoomShelf;
+  // Array order is the contract: a parent shelf must be inserted before its
+  // children. A name mismatch here silently dropped all opening stock before,
+  // so every lookup throws instead.
+  for (const shelf of data.shelves) {
+    const storageTypeId = storageTypeIdByName.get(shelf.storageType);
+    if (!storageTypeId) {
+      throw new Error(
+        `Seed: shelf "${shelf.name}" names unknown storageType "${shelf.storageType}"`
+      );
+    }
+    let parentId: string | undefined;
+    if (shelf.parent) {
+      parentId = ctx.refs.shelves[shelf.parent];
+      if (!parentId) {
+        throw new Error(
+          `Seed: shelf "${shelf.name}" names parent "${shelf.parent}", which is not defined before it`
+        );
+      }
+    }
+    ctx.refs.shelves[shelf.name] = await insertId(ctx, "storageUnit", {
+      name: shelf.name,
+      locationId: plantId,
+      warehouseId: need(ctx.refs.warehouses, shelf.warehouse),
+      parentId,
+      storageTypeIds: [storageTypeId],
+      active: true
+    });
+  }
 
   // ── Work centers (need dept + ability + location) ─────────────────────────
   ctx.log("work centers");
@@ -250,7 +234,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     );
     await client.query(
       `UPDATE "customerShipping" SET "shippingMethodId" = $1 WHERE "customerId" = $2`,
-      [ctx.refs.shippingMethods["UPS Ground"], custId]
+      [need(ctx.refs.shippingMethods, data.defaultShippingMethod), custId]
     );
   }
 
@@ -268,10 +252,10 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
     const addrId = await insertId(ctx, "address", {
       addressLine1: "See parent",
-      city: "Houston",
-      stateProvince: "TX",
-      postalCode: "77058",
-      countryCode: "US"
+      city: data.partyAddressCity,
+      stateProvince: data.partyAddressStateProvince,
+      postalCode: data.partyAddressPostalCode,
+      countryCode: data.partyAddressCountryCode
     });
     const locId = await insertId(ctx, "customerLocation", {
       customerId,
@@ -306,7 +290,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     );
     await client.query(
       `UPDATE "supplierShipping" SET "shippingMethodId" = $1 WHERE "supplierId" = $2`,
-      [ctx.refs.shippingMethods["UPS Ground"], supId]
+      [need(ctx.refs.shippingMethods, data.defaultShippingMethod), supId]
     );
   }
 
@@ -324,10 +308,10 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
     const addrId = await insertId(ctx, "address", {
       addressLine1: "See supplier record",
-      city: "Houston",
-      stateProvince: "TX",
-      postalCode: "77058",
-      countryCode: "US"
+      city: data.partyAddressCity,
+      stateProvince: data.partyAddressStateProvince,
+      postalCode: data.partyAddressPostalCode,
+      countryCode: data.partyAddressCountryCode
     });
     const supLocId = await insertId(ctx, "supplierLocation", {
       supplierId,
@@ -361,47 +345,52 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
   // ── Contractors (need a supplierContact as their identity) ─────────────────
   // Contractors are individuals — they reference a supplierContact row for their
-  // base identity. We create a "Staffing Agencies" supplier for that purpose.
-  ctx.log("contractors");
-  const staffAgencyId = await insertId(ctx, "supplier", {
-    name: "Orbital Staffing",
-    supplierTypeId: ctx.refs.misc["stype:Services"],
-    phone: "+1-281-555-1100",
-    currencyCode: "USD"
-  });
-  ctx.refs.suppliers["Orbital Staffing"] = staffAgencyId;
+  // base identity, so they need an agency supplier to hang off.
+  const agency = data.contractorAgency;
+  if (agency) {
+    ctx.log("contractors");
+    const staffAgencyId = await insertId(ctx, "supplier", {
+      name: agency.name,
+      supplierTypeId: need(ctx.refs.misc, `stype:${agency.type}`),
+      phone: agency.phone,
+      currencyCode: "USD"
+    });
+    ctx.refs.suppliers[agency.name] = staffAgencyId;
 
-  for (const cd of data.contractors) {
-    const cContactId = await insertId(ctx, "contact", {
-      firstName: cd.firstName,
-      lastName: cd.lastName,
-      email: cd.email,
-      isCustomer: false
-    });
-    const supContactId = await insertId(ctx, "supplierContact", {
-      supplierId: staffAgencyId,
-      contactId: cContactId
-    });
-    // contractor.id = the supplierContact.id
-    await insertRow(ctx, "contractor", {
-      id: supContactId,
-      hoursPerWeek: 40
-    });
-    await insertRow(ctx, "contractorAbility", {
-      contractorId: supContactId,
-      abilityId: ctx.refs.abilities[cd.ability]
-    });
+    for (const cd of data.contractors) {
+      const cContactId = await insertId(ctx, "contact", {
+        firstName: cd.firstName,
+        lastName: cd.lastName,
+        email: cd.email,
+        isCustomer: false
+      });
+      const supContactId = await insertId(ctx, "supplierContact", {
+        supplierId: staffAgencyId,
+        contactId: cContactId
+      });
+      // contractor.id = the supplierContact.id
+      await insertRow(ctx, "contractor", {
+        id: supContactId,
+        hoursPerWeek: 40
+      });
+      await insertRow(ctx, "contractorAbility", {
+        contractorId: supContactId,
+        abilityId: ctx.refs.abilities[cd.ability]
+      });
+    }
   }
 
   // ── Printer routes ─────────────────────────────────────────────────────────
-  ctx.log("printer routes");
-  await insertRow(ctx, "printerRoute", {
-    name: "Main Label Printer",
-    locationId: plantId,
-    format: "zpl",
-    printerUrl: "http://192.168.1.50:9100",
-    companyId
-  });
+  if (data.printerRoute) {
+    ctx.log("printer routes");
+    await insertRow(ctx, "printerRoute", {
+      name: data.printerRoute.name,
+      locationId: plantId,
+      format: data.printerRoute.format,
+      printerUrl: data.printerRoute.printerUrl,
+      companyId
+    });
+  }
 
   // ── Procedures (shop-floor work instructions) ─────────────────────────────
   // Two versions of the same name: the version menu groups on `name`, so V1

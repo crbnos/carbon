@@ -98,7 +98,7 @@ async function seedProductionEvents(
   ctx: Ctx,
   data: ProductionData
 ): Promise<void> {
-  const jobId = need(ctx.refs.documents, "job:in-progress");
+  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
 
   const operations = await rows<{
     id: string;
@@ -160,7 +160,7 @@ async function seedProductionEvents(
  */
 async function seedGenealogy(ctx: Ctx, data: ProductionData): Promise<void> {
   const assembly = data.genealogyAssembly;
-  const jobId = need(ctx.refs.documents, "job:in-progress");
+  const jobId = need(ctx.refs.documents, `job:${data.genealogyJobKey}`);
   const satellite = ctx.refs.items[assembly.item];
   if (!satellite) return;
 
