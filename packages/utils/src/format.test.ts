@@ -27,39 +27,36 @@ describe("formatMoney / formatPrice", () => {
     }
   });
 
-  it("drops trailing zeros", () => {
-    expect(formatMoney(3, "en-US", "USD", 2)).toBe("$3");
-    expect(formatMoney(300, "en-US", "USD", 2)).toBe("$300");
-    expect(formatMoney(3.5, "en-US", "USD", 2)).toBe("$3.5");
-    expect(formatMoney(0, "en-US", "USD", 2)).toBe("$0");
+  it("pads to the currency's decimals, so the width states the amount in full", () => {
+    expect(formatMoney(300, "en-US", "USD", 2)).toBe("$300.00");
+    expect(formatMoney(3.5, "en-US", "USD", 2)).toBe("$3.50");
+    expect(formatMoney(0, "en-US", "USD", 2)).toBe("$0.00");
+    expect(formatMoney(1234.5, "en-US", "USD", 2)).toBe("$1,234.50");
   });
 
-  it("keeps the digits that are real", () => {
-    expect(formatMoney(3.03, "en-US", "USD", 2)).toBe("$3.03");
-    expect(formatMoney(18.76, "en-US", "USD", 2)).toBe("$18.76");
-    expect(formatMoney(1234.5, "en-US", "USD", 2)).toBe("$1,234.5");
-  });
-
-  it("takes the currency's decimals as the CEILING", () => {
+  it("takes the currency's decimals as the CEILING too", () => {
     // The DB column is authoritative, so a stored value wider than the currency
     // rounds to it on screen — storage keeps the rest.
-    expect(formatMoney(300.33323, "en-US", "USD", 2)).toBe("$300.33");
-    expect(formatMoney(1000.4, "en-US", "JPY", 0)).toBe("¥1,000");
+    expect(formatMoney(300.22121, "en-US", "USD", 2)).toBe("$300.22");
+    expect(formatMoney(18.7638, "en-US", "USD", 2)).toBe("$18.76");
+  });
+
+  it("respects a 0-decimal and a 3-decimal currency", () => {
+    expect(formatMoney(63, "en-US", "JPY", 0)).toBe("¥63");
+    expect(formatMoney(63.4, "en-US", "JPY", 0)).toBe("¥63");
     // Intl separates code and value with a non-breaking space
     expect(formatMoney(0.563, "en-US", "BHD", 3)).toBe("BHD\u00a00.563");
-    expect(formatMoney(0.5634, "en-US", "BHD", 3)).toBe("BHD\u00a00.563");
+    expect(formatMoney(0.5, "en-US", "BHD", 3)).toBe("BHD\u00a00.500");
   });
 
   it("gives editable fields the SAME digits they display with", () => {
     // react-aria's blur commit is setNumberValue(parse(format(x))), so this
     // options object decides the precision a typed amount is STORED at.
     const usd = new Intl.NumberFormat("en-US", INPUT_FORMAT.price("USD", 2));
-    expect(usd.format(300)).toBe("$300");
+    expect(usd.format(300)).toBe("$300.00");
     expect(usd.format(300.22121)).toBe("$300.22");
-    expect(usd.format(18.75)).toBe("$18.75");
 
     const jpy = new Intl.NumberFormat("en-US", INPUT_FORMAT.money("JPY", 0));
-    expect(jpy.format(63)).toBe("¥63");
     expect(jpy.format(63.4)).toBe("¥63");
   });
 
@@ -71,11 +68,6 @@ describe("formatMoney / formatPrice", () => {
         new Intl.NumberFormat("en-US", INPUT_FORMAT.money("USD", 2)).format(v)
       );
     }
-  });
-
-  it("renders an emptied cost as a bare zero", () => {
-    const money = new Intl.NumberFormat("en-US", INPUT_FORMAT.money("USD", 2));
-    expect(money.format(0)).toBe("$0");
   });
 });
 

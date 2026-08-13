@@ -4,14 +4,15 @@ import { SCALE } from "./math";
  *  business's point of view a price is an amount in the same currency, so both
  *  render at that currency's decimals.
  *
- *  Those decimals are the MAXIMUM, not a pad. Trailing zeros state nothing, so
- *  3 renders "$3" and 3.5 renders "$3.5", while 3.03 keeps both digits and a
- *  plain 0 reads "$0". `decimalPlaces` is `currency.decimalPlaces` — the DB
- *  column, authoritative over Intl/CLDR, and never a literal.
+ *  Those decimals are exact — min AND max — so the width states the amount in
+ *  full: "$300.00" is three hundred dollars and zero cents, "¥63" is sixty-three
+ *  yen, "BHD 0.563" is three fils places. `decimalPlaces` is
+ *  `currency.decimalPlaces` — the DB column, authoritative over Intl/CLDR, and
+ *  never a literal.
  *
- *  Display rounds to this width; STORAGE does not. A per-unit price is still
- *  held at SCALE, which is why the editable price input keeps its own width —
- *  see INPUT_FORMAT.price. */
+ *  Display rounds to this width; STORAGE is a separate question — a value wider
+ *  than the currency (a scale-5 unit price) is shown rounded, and the editable
+ *  field commits at this width too (see INPUT_FORMAT). */
 export function moneyFormatOptions(
   currency: string,
   decimalPlaces: number
@@ -19,7 +20,7 @@ export function moneyFormatOptions(
   return {
     style: "currency",
     currency,
-    minimumFractionDigits: 0,
+    minimumFractionDigits: decimalPlaces,
     maximumFractionDigits: decimalPlaces
   };
 }
@@ -78,11 +79,11 @@ export const INPUT_FORMAT = {
   quantity: quantityFormatOptions(),
   exchangeRate: exchangeRateFormatOptions(),
   /** Editable currency — money and per-unit prices alike, and the SAME digits
-   *  they display with. react-aria's blur commit is literally
-   *  `setNumberValue(parse(format(x)))`, so this options object is what decides
-   *  the precision a typed amount is STORED at: at USD's 2 places a typed
-   *  300.22121 commits as 300.22, and at JPY's 0 a typed 63.4 commits as 63.
-   *  Trailing zeros are dropped here too, so a 300.00 cost reads "$300". */
+   *  they display with, padding included: an empty cost reads "$0.00".
+   *  react-aria's blur commit is literally `setNumberValue(parse(format(x)))`,
+   *  so this options object is what decides the precision a typed amount is
+   *  STORED at: at USD's 2 places a typed 300.22121 commits as 300.22, and at
+   *  JPY's 0 a typed 63.4 commits as 63. */
   money: (currency: string, decimalPlaces: number) =>
     moneyFormatOptions(currency, decimalPlaces),
   price: (currency: string, decimalPlaces: number) =>

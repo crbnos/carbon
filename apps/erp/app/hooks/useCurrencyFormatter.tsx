@@ -7,9 +7,10 @@ import { useUser } from "./useUser";
 /**
  * Currency display — money and per-unit prices alike, because they are the same
  * kind. Digits come from the company group's configured `currency.decimalPlaces`
- * as the MAXIMUM (the DB column is authoritative over Intl/CLDR), and trailing
- * zeros are dropped: "$3", "$3.5", "$3.03", "¥63", "$0". CLDR only decides when
- * the currency isn't configured for the group (or the list hasn't loaded yet).
+ * exactly — min AND max, so the width states the amount in full: "$300.00",
+ * "$3.50", "¥63", "BHD 0.563". The DB column is authoritative over Intl/CLDR;
+ * CLDR only decides when the currency isn't configured for the group (or the
+ * list hasn't loaded yet).
  *
  * `decimalPlaces` overrides the lookup when the caller already has the row
  * (e.g. from a loader). Any other Intl options a caller passes win over the
