@@ -16,66 +16,54 @@ describe("formatPercent", () => {
   });
 });
 
-describe("formatMoney", () => {
-  it("pads settlement money to the currency's decimals", () => {
-    expect(formatMoney(4.5, "en-US", "USD", 2)).toBe("$4.50");
+describe("formatMoney / formatPrice", () => {
+  it("is ONE kind: a price and an amount format identically", () => {
+    // Money and per-unit prices are the same thing from the business's point of
+    // view, so they may not disagree about the same number in the same currency.
+    for (const v of [0, 3, 3.5, 4.5, 18.76, 1234.5]) {
+      expect(formatPrice(v, "en-US", "USD", 2)).toBe(
+        formatMoney(v, "en-US", "USD", 2)
+      );
+    }
   });
 
-  it("respects a 0-decimal currency", () => {
-    expect(formatMoney(1000, "en-US", "JPY", 0)).toBe("¥1,000");
-  });
-
-  it("respects a 3-decimal currency", () => {
-    // Intl separates code and value with a non-breaking space
-    expect(formatMoney(0.563, "en-US", "BHD", 3)).toBe("BHD 0.563");
-  });
-});
-
-describe("formatPrice", () => {
-  it("shows the full stored per-unit price", () => {
-    expect(formatPrice(0.164, "en-US", "USD", 2)).toBe("$0.164");
-  });
-
-  it("carries only the digits the price actually has", () => {
-    // Non-significant zeros are noise on a value whose precision varies.
-    expect(formatPrice(4.5, "en-US", "USD", 2)).toBe("$4.5");
-    expect(formatPrice(3, "en-US", "USD", 2)).toBe("$3");
-    expect(formatPrice(3.03, "en-US", "USD", 2)).toBe("$3.03");
-    expect(formatPrice(3.1, "en-US", "USD", 2)).toBe("$3.1");
-    expect(formatPrice(3.003, "en-US", "USD", 2)).toBe("$3.003");
-  });
-
-  it("is unaffected by the currency's decimals", () => {
-    // The argument is vestigial — a price is an internal scale-5 value, so the
-    // settlement width has no say in how many digits it shows.
-    expect(formatPrice(3, "en-US", "BHD", 3)).toBe(
-      formatPrice(3, "en-US", "BHD", 0)
-    );
-  });
-
-  it("still pads settlement money, which is the opposite kind", () => {
-    // The contrast is the point: money's zeros state the amount in full, and it
-    // has already been rounded TO the currency's decimals.
-    expect(formatMoney(3, "en-US", "USD", 2)).toBe("$3.00");
-    expect(formatMoney(3.003, "en-US", "USD", 2)).toBe("$3.00");
-  });
-
-  it("renders a plain zero bare, but keeps every other amount padded", () => {
-    // A zero has no cents to state. Anything else does — an invoice total
-    // reading "$1,234.5" looks truncated.
+  it("drops trailing zeros", () => {
+    expect(formatMoney(3, "en-US", "USD", 2)).toBe("$3");
+    expect(formatMoney(300, "en-US", "USD", 2)).toBe("$300");
+    expect(formatMoney(3.5, "en-US", "USD", 2)).toBe("$3.5");
     expect(formatMoney(0, "en-US", "USD", 2)).toBe("$0");
-    expect(formatMoney(0, "en-US", "BHD", 3)).toBe("BHD\u00a00");
-    expect(formatMoney(3.5, "en-US", "USD", 2)).toBe("$3.50");
-    expect(formatMoney(1234.5, "en-US", "USD", 2)).toBe("$1,234.50");
   });
 
-  it("drops the padding on editable money, which cannot vary by value", () => {
-    // react-aria takes static options, so an input can't special-case zero the
-    // way a display can — it drops the minimum so an empty cost reads "$0".
-    const f = new Intl.NumberFormat("en-US", INPUT_FORMAT.money("USD", 2));
-    expect(f.format(0)).toBe("$0");
-    expect(f.format(18.75)).toBe("$18.75");
-    expect(f.format(3.5)).toBe("$3.5");
+  it("keeps the digits that are real", () => {
+    expect(formatMoney(3.03, "en-US", "USD", 2)).toBe("$3.03");
+    expect(formatMoney(18.76, "en-US", "USD", 2)).toBe("$18.76");
+    expect(formatMoney(1234.5, "en-US", "USD", 2)).toBe("$1,234.5");
+  });
+
+  it("takes the currency's decimals as the CEILING", () => {
+    // The DB column is authoritative, so a stored value wider than the currency
+    // rounds to it on screen — storage keeps the rest.
+    expect(formatMoney(300.33323, "en-US", "USD", 2)).toBe("$300.33");
+    expect(formatMoney(1000.4, "en-US", "JPY", 0)).toBe("¥1,000");
+    // Intl separates code and value with a non-breaking space
+    expect(formatMoney(0.563, "en-US", "BHD", 3)).toBe("BHD\u00a00.563");
+    expect(formatMoney(0.5634, "en-US", "BHD", 3)).toBe("BHD\u00a00.563");
+  });
+
+  it("lets the editable price input hold what storage holds", () => {
+    // The one place the two part company: react-aria's blur commit runs
+    // parse(format(x)), so an input capped at the currency's decimals would
+    // round a typed 0.164/ea to 0.16 and SAVE it.
+    const input = new Intl.NumberFormat("en-US", INPUT_FORMAT.price("USD", 2));
+    expect(input.format(0.164)).toBe("$0.164");
+    expect(input.format(300.33323)).toBe("$300.33323");
+    expect(input.format(3)).toBe("$3");
+  });
+
+  it("steps editable money in the currency's own unit", () => {
+    const money = new Intl.NumberFormat("en-US", INPUT_FORMAT.money("USD", 2));
+    expect(money.format(0)).toBe("$0");
+    expect(money.format(18.75)).toBe("$18.75");
   });
 });
 

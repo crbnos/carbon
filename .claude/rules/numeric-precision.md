@@ -115,12 +115,12 @@ is module-private so the two percent kinds can never drift apart):
 | Percent points | min 0, max 3 | the same rate typed bare in a field already labelled "%" — `6.25`, caller divides by 100 |
 | Exchange rate | min 0, max 5 | "1.0852", "0.00781" — a plain multiplier, not a percent and not a currency. Intl's decimal default caps at 3, which truncates a stored rate on blur |
 | Quantity | min 0, max 5 | "3", "4.33333", "0.00125" — no "<0.01" placeholder |
-| Money (settlement) | min = max = `currency.decimalPlaces`, except a plain 0 | "$4.50", "¥63" — padded, because the zeros state the amount in full; but 0 renders "$0". Editable money can't vary by value (react-aria takes static options), so `INPUT_FORMAT.money` drops the minimum outright |
-| Price (per-unit) | min 0, max 5 | "$0.164", "$4.5", "$3" — a price carries only the digits it has; the currency's decimals have no say. Running one through the MONEY kind truncates it on screen (a stored 300.33323 reads "$300.33"), so document summaries take `usePriceFormatter`, not the money `formatter`, for `unitPrice` |
+| Currency (money AND price) | min 0, max `currency.decimalPlaces` | "$3", "$3.5", "$3.03", "¥63", "$0" — ONE kind. A price is an amount in the same currency, so both render at that currency's decimals and trailing zeros are dropped. The decimals are a CEILING, so a stored 300.33323 displays "$300.33"; storage keeps the rest. `usePriceFormatter` is an alias of `useCurrencyFormatter`, not a second implementation |
+| Editable price input | min 0, max 5 | the ONE place price and money differ, and they must: react-aria's blur commit runs `parse(format(x))`, so an input capped at the currency's decimals would round a typed 0.164/ea to 0.16 and SAVE it. `INPUT_FORMAT.price` ignores `decimalPlaces` for that reason |
 
 Call sites pick a kind (`formatMoney/Price/Percent/Quantity`, the
 `useCurrencyFormatter`/`usePriceFormatter`/`usePercentFormatter`/
-`useQuantityFormatter` hooks) — never `minimumFractionDigits`/
+`useQuantityFormatter` hooks — the first two are the same function) — never `minimumFractionDigits`/
 `maximumFractionDigits` inline (`no-inline-fraction-digits`), and module-local
 `*_PRECISION` constants are the same violation. **Editable inputs MUST use
 `INPUT_FORMAT.*`**: react-aria's blur commit runs `parse(format(x))`, so the

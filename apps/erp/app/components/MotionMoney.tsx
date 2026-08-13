@@ -1,4 +1,4 @@
-import { moneyFormatOptionsFor } from "@carbon/utils";
+import { moneyFormatOptions } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import MotionNumber from "motion-number";
 
@@ -13,13 +13,12 @@ type MotionMoneyProps = {
 };
 
 /**
- * An animated settlement amount. MotionNumber takes a STATIC `format` object,
- * so it cannot apply the money kind's zero case (a plain 0 renders "$0") on its
- * own — this picks the options per value, which is why the document summaries
- * render money through here instead of sharing one options object.
+ * An animated currency amount. Exists so the document summaries name the kind
+ * once instead of each spreading their own options object, and so the currency
+ * and its decimals always travel together.
  *
- * MotionNumber also narrows `notation` out of `Intl.NumberFormatOptions`, hence
- * the explicit value.
+ * MotionNumber narrows `notation` out of `Intl.NumberFormatOptions`, hence the
+ * explicit value.
  */
 const MotionMoney = ({
   value,
@@ -33,7 +32,7 @@ const MotionMoney = ({
     <MotionNumber
       value={value}
       format={{
-        ...moneyFormatOptionsFor(value, currency, decimalPlaces),
+        ...moneyFormatOptions(currency, decimalPlaces),
         notation: "standard" as const
       }}
       locales={locale}

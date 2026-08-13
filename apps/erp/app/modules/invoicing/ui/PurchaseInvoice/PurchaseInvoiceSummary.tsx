@@ -27,7 +27,6 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
   usePercentFormatter,
-  usePriceFormatter,
   useRouteData,
   useUser
 } from "~/hooks";
@@ -55,12 +54,6 @@ const LineItems = ({
   purchaseInvoiceLines: PurchaseInvoiceLine[];
   shouldConvertCurrency: boolean;
 }) => {
-  // Per-unit prices, NOT settlement amounts: the money kind's maximum is the
-  // currency's decimals, so it would truncate a stored 300.33323 to "$300.33".
-  const priceFormatter = usePriceFormatter();
-  const presentationPriceFormatter = usePriceFormatter({
-    currency: currencyCode
-  });
   const [items] = useItems();
   const accounts = useAccounts();
   const { invoiceId } = useParams();
@@ -200,7 +193,7 @@ const LineItems = ({
                           </Badge>
                         )}
                         <Badge variant="green">
-                          {priceFormatter.format(line.unitPrice ?? 0)}{" "}
+                          {formatter.format(line.unitPrice ?? 0)}{" "}
                           {
                             unitOfMeasures.find(
                               (uom) =>
@@ -270,12 +263,10 @@ const LineItems = ({
                       </Td>
                       <Td className="text-right">
                         <VStack spacing={0}>
-                          <span>
-                            {priceFormatter.format(line.unitPrice ?? 0)}
-                          </span>
+                          <span>{formatter.format(line.unitPrice ?? 0)}</span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
-                              {presentationPriceFormatter.format(
+                              {presentationCurrencyFormatter.format(
                                 line.supplierUnitPrice ?? 0
                               )}
                             </span>

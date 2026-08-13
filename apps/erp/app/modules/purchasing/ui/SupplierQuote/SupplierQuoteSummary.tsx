@@ -25,12 +25,7 @@ import { Link, useParams } from "react-router";
 import { DateTime, SupplierAvatar } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import {
-  useCurrencyFormatter,
-  usePriceFormatter,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { useCurrencyFormatter, useRouteData, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
@@ -43,12 +38,10 @@ import type {
 const LineItems = ({
   currencyCode,
   formatter,
-  priceFormatter,
   locale
 }: {
   currencyCode: string;
   formatter: Intl.NumberFormat;
-  priceFormatter: Intl.NumberFormat;
   locale: string;
 }) => {
   const { company } = useUser();
@@ -180,7 +173,6 @@ const LineItems = ({
             >
               <LinePricingOptions
                 formatter={formatter}
-                priceFormatter={priceFormatter}
                 line={line}
                 options={pricingByLine[line.id!]}
                 quoteCurrency={routeData?.quote.currencyCode ?? "USD"}
@@ -204,15 +196,13 @@ type LinePricingOptionsProps = {
   quoteExchangeRate: number;
   locale: string;
   formatter: Intl.NumberFormat;
-  priceFormatter: Intl.NumberFormat;
 };
 
 const LinePricingOptions = ({
   line,
   options,
   locale,
-  formatter,
-  priceFormatter
+  formatter
 }: LinePricingOptionsProps) => {
   const { id } = useParams();
   if (!id) throw new Error("Could not find quote id");
@@ -274,9 +264,7 @@ const LinePricingOptions = ({
                     </Td>
                     <Td>
                       <VStack spacing={0}>
-                        <span>
-                          {priceFormatter.format(option.unitPrice ?? 0)}
-                        </span>
+                        <span>{formatter.format(option.unitPrice ?? 0)}</span>
                         {line.conversionFactor !== 1 && (
                           <span className="text-muted-foreground text-xs">
                             {formatter.format(
@@ -327,9 +315,6 @@ const SupplierQuoteSummary = () => {
 
   const { locale } = useLocale();
   const formatter = useCurrencyFormatter();
-  // A per-unit price is not a settlement amount: the money kind's maximum is the
-  // currency's decimals, so it would truncate a stored 300.33323 to "$300.33".
-  const priceFormatter = usePriceFormatter();
 
   return (
     <Card>
@@ -360,7 +345,6 @@ const SupplierQuoteSummary = () => {
           currencyCode={routeData?.quote.currencyCode ?? "USD"}
           locale={locale}
           formatter={formatter}
-          priceFormatter={priceFormatter}
         />
       </CardContent>
     </Card>

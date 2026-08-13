@@ -1,13 +1,17 @@
 import { SCALE } from "./math";
 
-/** Settlement money: padded to the currency's decimals, because its zeros state
- *  the amount in full — "$3.00" is three dollars and zero cents, and an invoice
- *  total reading "$1,234.5" looks truncated.
+/** A currency amount. Money and per-unit prices are the SAME kind: from the
+ *  business's point of view a price is an amount in the same currency, so both
+ *  render at that currency's decimals.
  *
- *  A plain ZERO is the exception: there are no cents to state, so it renders
- *  "$0". Use moneyFormatOptionsFor(value, ...) wherever the value is known;
- *  editable inputs can't (react-aria takes static options) and use
- *  INPUT_FORMAT.money, which drops the padding so an empty cost shows "$0". */
+ *  Those decimals are the MAXIMUM, not a pad. Trailing zeros state nothing, so
+ *  3 renders "$3" and 3.5 renders "$3.5", while 3.03 keeps both digits and a
+ *  plain 0 reads "$0". `decimalPlaces` is `currency.decimalPlaces` — the DB
+ *  column, authoritative over Intl/CLDR, and never a literal.
+ *
+ *  Display rounds to this width; STORAGE does not. A per-unit price is still
+ *  held at SCALE, which is why the editable price input keeps its own width —
+ *  see INPUT_FORMAT.price. */
 export function moneyFormatOptions(
   currency: string,
   decimalPlaces: number
@@ -15,44 +19,19 @@ export function moneyFormatOptions(
   return {
     style: "currency",
     currency,
-    minimumFractionDigits: decimalPlaces,
+    minimumFractionDigits: 0,
     maximumFractionDigits: decimalPlaces
   };
 }
 
-/** moneyFormatOptions with the zero case applied — the digits a DISPLAY should
- *  use for this particular amount. */
-export function moneyFormatOptionsFor(
-  value: number,
+/** Per-unit prices render exactly like money. Kept as its own name so the call
+ *  sites that mean "price" still read that way — it is deliberately not a
+ *  different set of digits, and must not become one. */
+export function priceFormatOptions(
   currency: string,
   decimalPlaces: number
 ): Intl.NumberFormatOptions {
-  return moneyFormatOptions(currency, value === 0 ? 0 : decimalPlaces);
-}
-
-/** Per-unit prices (scale 5): distributors quote in thousandths (0.164/ea, 0.00125/g).
- *  A price carries only the digits it actually has — 3 renders "3", not "3.00" —
- *  because its precision genuinely varies and padding a variable-width number to a
- *  fixed one is noise. The max stays at SCALE so the full stored price renders.
- *
- *  Settlement money is the opposite and deliberately so: see moneyFormatOptions.
- *  Its zeros state the amount in full ("three dollars and zero cents"), and it has
- *  already been rounded TO the currency's decimals, so there is nothing past them
- *  left to show.
- *
- *  `decimalPlaces` no longer affects the output. It is kept optional so the ~60
- *  call sites that pass it still compile; they can drop the argument.
- */
-export function priceFormatOptions(
-  currency: string,
-  _decimalPlaces?: number
-): Intl.NumberFormatOptions {
-  return {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: SCALE
-  };
+  return moneyFormatOptions(currency, decimalPlaces);
 }
 
 /** How many digits a percent carries. A scale-5 fraction is 3 percent-digits,
@@ -98,17 +77,19 @@ export const INPUT_FORMAT = {
   percentPoints: percentPointsFormatOptions(),
   quantity: quantityFormatOptions(),
   exchangeRate: exchangeRateFormatOptions(),
-  /** Editable money. react-aria takes STATIC options, so this cannot vary by
-   *  value the way a display can — it drops the minimum outright so an empty
-   *  shipping cost reads "$0" rather than "$0.00". The cost is that a half
-   *  amount shows "$3.5" while being edited; it round-trips to the same
-   *  number, and a read-only total still reads "$3.50". */
-  money: (currency: string, decimalPlaces: number) => ({
-    ...moneyFormatOptions(currency, decimalPlaces),
-    minimumFractionDigits: 0
-  }),
-  price: (currency: string, decimalPlaces: number) =>
-    priceFormatOptions(currency, decimalPlaces)
+  money: (currency: string, decimalPlaces: number) =>
+    moneyFormatOptions(currency, decimalPlaces),
+  /** Editable per-unit price — the ONE place price and money differ, and they
+   *  have to. react-aria's blur commit runs parse(format(x)), so an input capped
+   *  at the currency's decimals would round a typed 0.164/ea to 0.16 and SAVE
+   *  it. Display rounds to the currency; the field a price is TYPED into must
+   *  hold what storage holds. `decimalPlaces` is ignored for that reason. */
+  price: (currency: string, _decimalPlaces?: number) => ({
+    style: "currency" as const,
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: SCALE
+  })
 };
 
 const SCALE_STEP = 1 / 10 ** SCALE;
@@ -133,7 +114,7 @@ export function formatMoney(
 ): string {
   return new Intl.NumberFormat(
     locale,
-    moneyFormatOptionsFor(value, currency, decimalPlaces)
+    moneyFormatOptions(currency, decimalPlaces)
   ).format(value);
 }
 
