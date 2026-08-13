@@ -2,7 +2,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import { scheduleJobUpdateValidator } from "~/modules/production/production.models";
+import {
+  isJobLocked,
+  JOB_LOCKED_STATUSES,
+  scheduleJobUpdateValidator
+} from "~/modules/production/production.models";
 import { triggerJobSchedule } from "~/modules/production/production.service";
 
 const logger = getLogger("erp", "dates-update");
@@ -20,6 +24,27 @@ export async function action({ request }: ActionFunctionArgs) {
     return {
       success: false,
       message: "Invalid form data"
+    };
+  }
+
+  // Completed, Closed, and Cancelled jobs are locked — reject the reschedule
+  // before persisting the new due date/priority so a drag on a locked card
+  // cannot rewrite its dates or trigger the scheduling engine.
+  const { data: job, error: jobError } = await client
+    .from("job")
+    .select("status")
+    .eq("id", validation.data.id)
+    .eq("companyId", companyId)
+    .single();
+
+  if (jobError || !job) {
+    return { success: false, message: "Job not found" };
+  }
+
+  if (isJobLocked(job.status)) {
+    return {
+      success: false,
+      message: "This job is locked and cannot be rescheduled"
     };
   }
 
@@ -45,13 +70,25 @@ export async function action({ request }: ActionFunctionArgs) {
     updatedAt: new Date().toISOString()
   };
 
-  const { error } = await client
+  const { data: updatedJob, error } = await client
     .from("job")
     .update(updateData)
-    .eq("id", validation.data.id);
+    .eq("id", validation.data.id)
+    .eq("companyId", companyId)
+    .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
+    .select("id")
+    .single();
 
   if (error) {
     return { success: false, message: error.message };
+  }
+
+  if (!updatedJob) {
+    // No row updated — job was locked by a concurrent request
+    return {
+      success: false,
+      message: "This job is locked and cannot be rescheduled"
+    };
   }
 
   // Trigger background job rescheduling
