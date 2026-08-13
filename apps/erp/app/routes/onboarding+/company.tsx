@@ -85,7 +85,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const companyId = await provisionOnboardingCompany(serviceRole, client, {
     userId,
     companyData,
-    backup: null
+    backup: null,
+    template: null
   });
 
   const companyRecord = await serviceRole
