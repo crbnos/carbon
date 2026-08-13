@@ -1,7 +1,6 @@
 import { insertId, insertRow, one } from "../sql.ts";
 import type { Ctx } from "../types.ts";
 import {
-  buildSeedWorkflows,
   EVENT_SOURCES,
   FORMAT_VERSION,
   type Node
@@ -66,6 +65,7 @@ async function reconcileSubscriptions(
 }
 
 export async function runTier11(ctx: Ctx): Promise<void> {
+  const data = ctx.dataset.workflows;
   const { userId } = ctx;
   const allEventIds: string[] = [];
 
@@ -76,7 +76,7 @@ export async function runTier11(ctx: Ctx): Promise<void> {
     [ctx.companyId]
   );
 
-  for (const workflow of buildSeedWorkflows({
+  for (const workflow of data.build({
     ownerId: userId,
     issueTypeId: issueType.id
   })) {

@@ -1,3 +1,4 @@
+import { resolveDate, weekRangesFrom } from "../dates.ts";
 import {
   insertId,
   insertMaybe,
@@ -12,23 +13,6 @@ import type { Ctx } from "../types.ts";
 // (the default) requires explicit demand and produces quantityToOrder = 0 when
 // safetyStockQuantity is 0 (which it is by default).
 
-const BUY_ITEM_IDS = [
-  "BAT-LIION-48V",
-  "RW-010",
-  "ST-050",
-  "TXRX-SBAND",
-  "THR-HYDRA-1N",
-  "TANK-TI-4L"
-];
-
-const MAKE_ITEM_IDS = [
-  "SAT-1000",
-  "BUS-STR-001",
-  "EPS-001",
-  "ADCS-001",
-  "COMMS-001"
-];
-
 // Mirrors WEEKS_TO_PROJECT in apps/erp/app/routes/x+/production+/projections.tsx.
 // The whole horizon is seeded (not just the weeks that carry demand) so
 // getOrCreatePeriods finds every period already present and returns them in the
@@ -36,24 +20,20 @@ const MAKE_ITEM_IDS = [
 // and the Week N column headers stop being consecutive.
 const WEEKS_TO_PROJECT = 12 * 4;
 
-// get_production_projections INNER JOINs demandProjection, so /x/production/
-// projections shows only items that have a forecast. These three are Make,
-// Inventory-tracked, active and already have an itemPlanning row at the Plant.
-const DEMAND_PROJECTIONS: { readableId: string; quantities: number[] }[] = [
-  { readableId: "SAT-1000", quantities: [2, 2, 3, 3, 4, 4, 5, 5] },
-  { readableId: "EPS-001", quantities: [6, 6, 8, 8, 10, 10, 12, 12] },
-  { readableId: "ADCS-001", quantities: [3, 4, 4, 5, 6, 6, 8, 8] }
-];
+/** Arbitrary but fixed — every seeder must pick the same number to serialize. */
+const PERIOD_LOCK_KEY = 4820260813;
 
 export async function runTier12(ctx: Ctx): Promise<void> {
+  const data = ctx.dataset.planning;
   const { client, companyId, userId, refs } = ctx;
   const plantId = refs.locations.Plant ?? ctx.locationId;
   const paymentTermId = ctx.refs.misc.paymentTermId;
-  const shippingMethodId = ctx.refs.shippingMethods["UPS Ground"];
+  const shippingMethodId =
+    ctx.refs.shippingMethods[data.demandOrder.shippingMethod];
 
   // ── 1. itemPlanning: Buy items → Fixed Reorder Quantity ─────────────────────
   ctx.log("itemPlanning — Buy items reorder policy");
-  for (const readableId of BUY_ITEM_IDS) {
+  for (const readableId of data.buyItemIds) {
     const item = refs.items[readableId];
     if (!item) {
       ctx.log(`  skip ${readableId} — not in refs`);
@@ -73,7 +53,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
 
   // ── 2. itemPlanning: Make items → Fixed Reorder Quantity ─────────────────────
   ctx.log("itemPlanning — Make items reorder policy");
-  for (const readableId of MAKE_ITEM_IDS) {
+  for (const readableId of data.makeItemIds) {
     const item = refs.items[readableId];
     if (!item) {
       ctx.log(`  skip ${readableId} — not in refs`);
@@ -96,25 +76,21 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   // quantityToSend is GENERATED ALWAYS from (saleQuantity - quantitySent) — do not insert it.
   // promisedDate must fall inside the 48-week planning horizon.
   ctx.log("SO — open order for buy-item demand");
-  const orbsec = refs.customers["ORBSEC Defense"]!;
-  const cLocOrbsec = refs.misc["cloc:ORBSEC Defense"] ?? null;
-  const batItem = refs.items["BAT-LIION-48V"]!;
-  const rwItem = refs.items["RW-010"]!;
+  const order = data.demandOrder;
+  const customerId = refs.customers[order.customer]!;
+  const customerLocationId = refs.misc[`cloc:${order.customer}`] ?? null;
 
-  const { rows: dateRows } = await client.query<{ d: string }>(
-    `SELECT (CURRENT_DATE + INTERVAL '56 days')::date::text AS d`
-  );
-  const promisedDate = dateRows[0]?.d ?? "2026-10-01";
+  const promisedDate = resolveDate(ctx.anchor, order.promisedDateOffset);
 
   const soId = await nextSequence(ctx, "salesOrder");
   const so = await insertId(ctx, "salesOrder", {
     salesOrderId: soId,
-    status: "To Ship",
-    customerId: orbsec,
-    customerLocationId: cLocOrbsec,
+    status: order.status,
+    customerId,
+    customerLocationId,
     locationId: plantId,
-    currencyCode: "USD",
-    orderDate: new Date().toISOString().split("T")[0]
+    currencyCode: order.currencyCode,
+    orderDate: resolveDate(ctx.anchor, 0)
   });
   await insertRow(ctx, "salesOrderPayment", {
     id: so,
@@ -125,39 +101,28 @@ export async function runTier12(ctx: Ctx): Promise<void> {
     id: so,
     locationId: plantId,
     shippingMethodId,
-    customerId: orbsec,
-    customerLocationId: cLocOrbsec,
+    customerId,
+    customerLocationId,
     companyId
   });
-  await insertId(ctx, "salesOrderLine", {
-    salesOrderId: so,
-    salesOrderLineType: "Part",
-    itemId: batItem.id,
-    description: batItem.name,
-    saleQuantity: 8,
-    unitPrice: batItem.unitCost * 1.5,
-    unitOfMeasureCode: "EA",
-    locationId: plantId,
-    methodType: "Pull from Inventory",
-    promisedDate,
-    status: "Ordered",
-    sortOrder: 1
-  });
-  await insertId(ctx, "salesOrderLine", {
-    salesOrderId: so,
-    salesOrderLineType: "Part",
-    itemId: rwItem.id,
-    description: rwItem.name,
-    saleQuantity: 4,
-    unitPrice: rwItem.unitCost * 1.5,
-    unitOfMeasureCode: "EA",
-    locationId: plantId,
-    methodType: "Pull from Inventory",
-    promisedDate,
-    status: "Ordered",
-    sortOrder: 2
-  });
-  ctx.refs.documents["so:planning-seed"] = so;
+  for (const line of order.lines) {
+    const item = refs.items[line.item]!;
+    await insertId(ctx, "salesOrderLine", {
+      salesOrderId: so,
+      salesOrderLineType: line.salesOrderLineType,
+      itemId: item.id,
+      description: item.name,
+      saleQuantity: line.saleQuantity,
+      unitPrice: item.unitCost * line.unitPriceMultiplier,
+      unitOfMeasureCode: line.unitOfMeasureCode,
+      locationId: plantId,
+      methodType: line.methodType,
+      promisedDate,
+      status: line.status,
+      sortOrder: line.sortOrder
+    });
+  }
+  ctx.refs.documents[order.ref] = so;
 
   // ── 4. demandProjection → /x/production/projections ─────────────────────────
   // getOrCreatePeriods(today, WEEKS_TO_PROJECT) keys periods on startDate +
@@ -165,17 +130,14 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   // ranges are derived the same way here. `period` has no companyId, so the wipe
   // leaves it alone — look up first, insert only what is missing, chronologically.
   ctx.log("period — weekly planning horizon");
-  const weekRanges = await rows<{ startDate: string; endDate: string }>(
-    client,
-    `SELECT to_char(d::date, 'YYYY-MM-DD') AS "startDate",
-            to_char(d::date + 6, 'YYYY-MM-DD') AS "endDate"
-       FROM generate_series(
-         CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int,
-         CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int + ($1::int - 1) * 7,
-         INTERVAL '7 days'
-       ) AS d`,
-    [WEEKS_TO_PROJECT]
-  );
+  const weekRanges = weekRangesFrom(ctx.anchor, WEEKS_TO_PROJECT);
+
+  // `period` is global — no companyId, and no unique key on
+  // ("periodType","startDate") to conflict against. Two companies onboarding at
+  // once would both read zero rows and both insert 48 weeks, giving EVERY tenant
+  // duplicate weeks. Serialize the read-then-insert; the lock is transaction
+  // scoped, so it releases on COMMIT or ROLLBACK.
+  await client.query(`SELECT pg_advisory_xact_lock($1)`, [PERIOD_LOCK_KEY]);
 
   const existingPeriods = await rows<{ id: string; startDate: string }>(
     client,
@@ -203,7 +165,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   }
 
   ctx.log("demandProjection — weekly forecast for make parts");
-  for (const spec of DEMAND_PROJECTIONS) {
+  for (const spec of data.demandProjections) {
     const item = refs.items[spec.readableId];
     if (!item) {
       ctx.log(`  skip ${spec.readableId} — not in refs`);

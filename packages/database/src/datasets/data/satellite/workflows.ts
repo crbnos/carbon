@@ -1,57 +1,7 @@
-// The dev company's starter workflows, as plain data. Split out from the tier that writes
-// them so `@carbon/workflows` can import it and assert every definition still passes
-// `validateDefinition` — the cycle blocks that check from running on this side.
+import type { Edge, SeedWorkflow } from "../../tiers/workflow-definitions.ts";
+import type { WorkflowData } from "../../types.ts";
 
-export const FORMAT_VERSION = 3;
-
-/** Mirrors each event's `match` block in the workflow catalog, spelled out here for the
- * same package-cycle reason. `null` is a business moment: it has no table to subscribe to. */
-export const EVENT_SOURCES: Record<
-  string,
-  { table: string; operation: string } | null
-> = {
-  "salesOrder.created": { table: "salesOrder", operation: "INSERT" },
-  "nonConformance.priority.changed": {
-    table: "nonConformance",
-    operation: "UPDATE"
-  },
-  "purchaseOrder.status.changed": {
-    table: "purchaseOrder",
-    operation: "UPDATE"
-  },
-  "shipment.status.changed": { table: "shipment", operation: "UPDATE" },
-  "supplier.supplierStatus.changed": {
-    table: "supplier",
-    operation: "UPDATE"
-  },
-  "production.jobReleased": null
-};
-
-export type Node = {
-  id: string;
-  name: string;
-  type: string;
-  position: { x: number; y: number };
-  expanded?: boolean;
-  data: Record<string, unknown>;
-};
-
-export type Edge = {
-  id: string;
-  source: string;
-  sourceHandle: string;
-  target: string;
-  targetHandle: string;
-};
-
-export type SeedWorkflow = {
-  name: string;
-  description: string;
-  /** Only the simplest one ships on; the rest are there to read and switch on deliberately. */
-  active: boolean;
-  nodes: Node[];
-  edges: Edge[];
-};
+// A factory, not a constant: every definition names ids that only exist once the seed has run.
 
 const ref = (nodeId: string, output: string, path: string[] = []) => ({
   kind: "ref" as const,
@@ -557,3 +507,5 @@ export function buildSeedWorkflows(refs: {
     }
   ];
 }
+
+export const satelliteWorkflows: WorkflowData = { build: buildSeedWorkflows };

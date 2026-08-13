@@ -1,122 +1,10 @@
+import { resolveDate, resolveTimestamp } from "../dates.ts";
 import {
   copyMethodToJob,
   type JobOperationStatus
 } from "../helpers/job-method.ts";
 import { insertId, insertRow, need, nextSequence, rows } from "../sql.ts";
-import type { Ctx } from "../types.ts";
-
-// Every non-deprecated jobStatus, each one hanging off a real salesOrderLine, so
-// the sales order → job link is exercised at every stage of the lifecycle.
-// "Overdue" / "Due Today" are deliberately absent: they are deprecated stored
-// statuses that the UI derives from dueDate instead.
-type JobSpec = {
-  key: string;
-  item: string;
-  status: string;
-  quantity: number;
-  quantityComplete?: number;
-  // Ref keys written by tier 4.
-  salesOrder: string;
-  salesOrderLine: string;
-  customer: string;
-  dueDate: string;
-  releasedDate?: string;
-  completedDate?: string;
-};
-
-const JOBS: JobSpec[] = [
-  {
-    key: "in-progress",
-    item: "SAT-1000",
-    status: "In Progress",
-    quantity: 3,
-    quantityComplete: 1,
-    salesOrder: "so:orbsec",
-    salesOrderLine: "soline:orbsec:sat",
-    customer: "ORBSEC Defense",
-    dueDate: "2026-02-27",
-    releasedDate: "2025-10-20"
-  },
-  {
-    key: "ready",
-    item: "SAT-1000",
-    status: "Ready",
-    quantity: 1,
-    salesOrder: "so:polar",
-    salesOrderLine: "soline:polar:sat",
-    customer: "PolarView Earth",
-    dueDate: "2026-03-13",
-    releasedDate: "2025-12-05"
-  },
-  {
-    key: "planned",
-    item: "BUS-STR-001",
-    status: "Planned",
-    quantity: 1,
-    salesOrder: "so:planned",
-    salesOrderLine: "soline:planned",
-    customer: "NovaSat Networks",
-    dueDate: "2026-05-15"
-  },
-  {
-    key: "draft",
-    item: "EPS-001",
-    status: "Draft",
-    quantity: 1,
-    salesOrder: "so:draft",
-    salesOrderLine: "soline:draft",
-    customer: "Apex Space Research",
-    dueDate: "2026-04-10"
-  },
-  {
-    key: "paused",
-    item: "ADCS-001",
-    status: "Paused",
-    quantity: 1,
-    salesOrder: "so:paused",
-    salesOrderLine: "soline:paused",
-    customer: "ORBSEC Defense",
-    dueDate: "2026-03-27",
-    releasedDate: "2025-11-20"
-  },
-  {
-    key: "completed",
-    item: "COMMS-001",
-    status: "Completed",
-    quantity: 1,
-    quantityComplete: 1,
-    salesOrder: "so:completed",
-    salesOrderLine: "soline:completed",
-    customer: "PolarView Earth",
-    dueDate: "2025-09-19",
-    releasedDate: "2025-06-05",
-    completedDate: "2025-09-15"
-  },
-  {
-    key: "closed",
-    item: "PROP-001",
-    status: "Closed",
-    quantity: 1,
-    quantityComplete: 1,
-    salesOrder: "so:closed",
-    salesOrderLine: "soline:closed",
-    customer: "NovaSat Networks",
-    dueDate: "2025-08-15",
-    releasedDate: "2025-05-16",
-    completedDate: "2025-08-11"
-  },
-  {
-    key: "cancelled",
-    item: "HARNESS-001",
-    status: "Cancelled",
-    quantity: 1,
-    salesOrder: "so:cancelled",
-    salesOrderLine: "soline:cancelled",
-    customer: "Apex Space Research",
-    dueDate: "2025-10-03",
-    releasedDate: "2025-09-10"
-  }
-];
+import type { Ctx, ProductionData } from "../types.ts";
 
 // A job's operations open in the state its own status implies — a Draft job's
 // work has not been handed to the floor, a released one's has.
@@ -138,10 +26,11 @@ function operationStatusFor(jobStatus: string): JobOperationStatus {
 }
 
 export async function runTier6(ctx: Ctx): Promise<void> {
+  const data = ctx.dataset.production;
   const { locationId } = ctx;
   const plantId = ctx.refs.locations.Plant ?? locationId;
 
-  for (const spec of JOBS) {
+  for (const spec of data.jobs) {
     ctx.log(`job ${spec.item} — ${spec.status}`);
     const item = need(ctx.refs.items, spec.item);
     const jobId = await nextSequence(ctx, "job");
@@ -158,9 +47,15 @@ export async function runTier6(ctx: Ctx): Promise<void> {
       salesOrderId: need(ctx.refs.documents, spec.salesOrder),
       salesOrderLineId: need(ctx.refs.documents, spec.salesOrderLine),
       deadlineType: "Hard Deadline",
-      dueDate: spec.dueDate,
-      releasedDate: spec.releasedDate ?? null,
-      completedDate: spec.completedDate ?? null
+      dueDate: resolveDate(ctx.anchor, spec.dueDateOffset),
+      releasedDate:
+        spec.releasedDateOffset === undefined
+          ? null
+          : resolveDate(ctx.anchor, spec.releasedDateOffset),
+      completedDate:
+        spec.completedDateOffset === undefined
+          ? null
+          : resolveDate(ctx.anchor, spec.completedDateOffset)
     });
     ctx.refs.documents[`job:${spec.key}`] = id;
 
@@ -190,8 +85,8 @@ export async function runTier6(ctx: Ctx): Promise<void> {
     );
   }
 
-  await seedProductionEvents(ctx);
-  await seedGenealogy(ctx);
+  await seedProductionEvents(ctx, data);
+  await seedGenealogy(ctx, data);
 }
 
 /**
@@ -199,7 +94,10 @@ export async function runTier6(ctx: Ctx): Promise<void> {
  * every WIP cost the docs describe are empty, because cost is posted per
  * production event at the work center's rates.
  */
-async function seedProductionEvents(ctx: Ctx): Promise<void> {
+async function seedProductionEvents(
+  ctx: Ctx,
+  data: ProductionData
+): Promise<void> {
   const jobId = need(ctx.refs.documents, "job:in-progress");
 
   const operations = await rows<{
@@ -219,56 +117,25 @@ async function seedProductionEvents(ctx: Ctx): Promise<void> {
   );
   if (operations.length === 0) return;
 
-  // Literal start/end pairs — the seed must produce identical rows on every run,
-  // and this repo does not use JS Date for time arithmetic.
-  const shifts: Array<Array<{ type: string; start: string; end: string }>> = [
-    [
-      {
-        type: "Setup",
-        start: "2026-08-04T13:00:00Z",
-        end: "2026-08-04T13:45:00Z"
-      },
-      {
-        type: "Labor",
-        start: "2026-08-04T13:45:00Z",
-        end: "2026-08-04T17:45:00Z"
-      },
-      {
-        type: "Machine",
-        start: "2026-08-04T13:45:00Z",
-        end: "2026-08-04T17:45:00Z"
-      }
-    ],
-    [
-      {
-        type: "Setup",
-        start: "2026-08-05T13:00:00Z",
-        end: "2026-08-05T13:20:00Z"
-      },
-      {
-        type: "Labor",
-        start: "2026-08-05T13:20:00Z",
-        end: "2026-08-05T16:20:00Z"
-      },
-      {
-        type: "Machine",
-        start: "2026-08-05T13:20:00Z",
-        end: "2026-08-05T16:20:00Z"
-      }
-    ]
-  ];
-
   ctx.log("production events");
   for (const [index, operation] of operations.entries()) {
-    const events = shifts[index] ?? shifts[0]!;
+    const events = data.shifts[index] ?? data.shifts[0]!;
 
     for (const event of events) {
       await insertRow(ctx, "productionEvent", {
         jobOperationId: operation.id,
         type: event.type,
-        startTime: event.start,
+        startTime: resolveTimestamp(
+          ctx.anchor,
+          event.startOffset,
+          event.startTimeOfDay
+        ),
         // `duration` is a generated column — Postgres derives it from the range.
-        endTime: event.end,
+        endTime: resolveTimestamp(
+          ctx.anchor,
+          event.endOffset,
+          event.endTimeOfDay
+        ),
         employeeId: ctx.userId,
         workCenterId: operation.workCenterId,
         postedToGL: false
@@ -283,21 +150,6 @@ async function seedProductionEvents(ctx: Ctx): Promise<void> {
   }
 }
 
-// Tracked components consumed into the first satellite. Item, lot/serial id,
-// and how many of that lot went in.
-const GENEALOGY_INPUTS: Array<{
-  item: string;
-  readableId: string;
-  quantity: number;
-}> = [
-  { item: "MAT-AL7075-PLT", readableId: "LOT-AL7075-2607", quantity: 4.5 },
-  { item: "BAT-LIION-48V", readableId: "LOT-BAT-2606", quantity: 1 },
-  { item: "RW-010", readableId: "RW010-SN-0041", quantity: 1 },
-  { item: "RW-010", readableId: "RW010-SN-0042", quantity: 1 },
-  { item: "RW-010", readableId: "RW010-SN-0043", quantity: 1 },
-  { item: "RW-010", readableId: "RW010-SN-0044", quantity: 1 }
-];
-
 /**
  * As-built genealogy for the first satellite off the in-progress job.
  *
@@ -306,9 +158,10 @@ const GENEALOGY_INPUTS: Array<{
  * parent being built. Seeding entities alone leaves the graph empty, which is
  * what it was.
  */
-async function seedGenealogy(ctx: Ctx): Promise<void> {
+async function seedGenealogy(ctx: Ctx, data: ProductionData): Promise<void> {
+  const assembly = data.genealogyAssembly;
   const jobId = need(ctx.refs.documents, "job:in-progress");
-  const satellite = ctx.refs.items["SAT-1000"];
+  const satellite = ctx.refs.items[assembly.item];
   if (!satellite) return;
 
   const assemblyOperation = await rows<{ id: string }>(
@@ -328,46 +181,46 @@ async function seedGenealogy(ctx: Ctx): Promise<void> {
   ctx.log("as-built genealogy");
 
   const serialId = await insertId(ctx, "trackedEntity", {
-    quantity: 1,
-    status: "Available",
-    sourceDocument: "Job",
+    quantity: assembly.serial.quantity,
+    status: assembly.serial.status,
+    sourceDocument: assembly.serial.sourceDocument,
     sourceDocumentId: jobId,
-    sourceDocumentReadableId: "SAT-1000",
-    readableId: "SAT1000-SN-0001",
+    sourceDocumentReadableId: assembly.serial.sourceDocumentReadableId,
+    readableId: assembly.serial.readableId,
     itemId: satellite.id,
     attributes: JSON.stringify({ Job: jobId }),
     updatedBy: ctx.userId
   });
-  ctx.refs.documents["trackedEntity:sat-0001"] = serialId;
+  ctx.refs.documents[assembly.ref] = serialId;
 
   // The unit exists because the operation produced it.
   const produceId = await insertId(ctx, "trackedActivity", {
-    type: "Produce",
-    sourceDocument: "Job Operation",
+    type: assembly.produce.type,
+    sourceDocument: assembly.produce.sourceDocument,
     sourceDocumentId: operationId,
-    sourceDocumentReadableId: "SAT-1000",
+    sourceDocumentReadableId: assembly.produce.sourceDocumentReadableId,
     attributes: JSON.stringify({
       "Job Operation": operationId,
       Employee: ctx.userId,
-      Quantity: 1
+      Quantity: assembly.produce.quantity
     }),
     updatedBy: ctx.userId
   });
   await insertRow(ctx, "trackedActivityOutput", {
     trackedActivityId: produceId,
     trackedEntityId: serialId,
-    quantity: 1,
+    quantity: assembly.produce.quantity,
     updatedBy: ctx.userId
   });
 
-  for (const input of GENEALOGY_INPUTS) {
+  for (const input of data.genealogyInputs) {
     const item = ctx.refs.items[input.item];
     if (!item) continue;
 
     const childId = await insertId(ctx, "trackedEntity", {
       quantity: input.quantity,
-      status: "Consumed",
-      sourceDocument: "Item",
+      status: assembly.consume.entityStatus,
+      sourceDocument: assembly.consume.entitySourceDocument,
       sourceDocumentId: item.id,
       sourceDocumentReadableId: item.readableId,
       readableId: input.readableId,
@@ -377,8 +230,8 @@ async function seedGenealogy(ctx: Ctx): Promise<void> {
     });
 
     const consumeId = await insertId(ctx, "trackedActivity", {
-      type: "Consume",
-      sourceDocument: "Job Material",
+      type: assembly.consume.type,
+      sourceDocument: assembly.consume.sourceDocument,
       sourceDocumentId: jobId,
       sourceDocumentReadableId: item.readableId,
       attributes: JSON.stringify({ Job: jobId, Employee: ctx.userId }),
@@ -393,7 +246,7 @@ async function seedGenealogy(ctx: Ctx): Promise<void> {
     await insertRow(ctx, "trackedActivityOutput", {
       trackedActivityId: consumeId,
       trackedEntityId: serialId,
-      quantity: 1,
+      quantity: assembly.consume.parentQuantity,
       updatedBy: ctx.userId
     });
   }

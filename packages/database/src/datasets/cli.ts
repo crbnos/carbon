@@ -24,31 +24,35 @@ export function loadEnv() {
 
 export type SeedArgs = {
   email: string;
+  dataset: string;
   tiers: number[] | null;
   skipWipe: boolean;
 };
 
-function printUsage() {
+function printUsage(datasets: string[]) {
   console.log(`
-Usage: pnpm run db:seed:dev -- --email <email> [--tiers 1,2,3] [--skip-wipe]
+Usage: pnpm run db:seed:dev -- --email <email> [--dataset <key>] [--tiers 1,2,3] [--skip-wipe]
 
 Arguments:
   --email, -e    Required. Seeds the company this user belongs to.
                  Unknown emails bootstrap a brand new user + company.
+  --dataset      Which industry story to seed (default: satellite).
+                 Available: ${datasets.join(", ")}
   --tiers        Dev only. Comma-separated tier numbers to run (default: all).
   --skip-wipe    Dev only. Leave existing business data in place.
 
 Example:
-  pnpm run db:seed:dev -- --email developer@example.com
+  pnpm run db:seed:dev -- --email developer@example.com --dataset satellite
 `);
 }
 
-export function parseSeedArgs(): SeedArgs {
+export function parseSeedArgs(datasets: string[]): SeedArgs {
   // The root script forwards a bare `--`, which strict parseArgs rejects.
   const { values } = parseArgs({
     args: process.argv.slice(2).filter((a) => a !== "--"),
     options: {
       email: { type: "string", short: "e" },
+      dataset: { type: "string", default: "satellite" },
       tiers: { type: "string" },
       "skip-wipe": { type: "boolean", default: false }
     },
@@ -58,7 +62,15 @@ export function parseSeedArgs(): SeedArgs {
   const email = values.email?.trim();
   if (!email) {
     console.error("Error: --email is required\n");
-    printUsage();
+    printUsage(datasets);
+    process.exit(1);
+  }
+
+  const dataset = values.dataset?.trim() ?? "satellite";
+  if (!datasets.includes(dataset)) {
+    console.error(
+      `Error: no such dataset "${dataset}" — available: ${datasets.join(", ")}\n`
+    );
     process.exit(1);
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -78,5 +90,5 @@ export function parseSeedArgs(): SeedArgs {
     }
   }
 
-  return { email, tiers, skipWipe: values["skip-wipe"] ?? false };
+  return { email, dataset, tiers, skipWipe: values["skip-wipe"] ?? false };
 }

@@ -211,18 +211,6 @@ export async function assertSingle(
   }
 }
 
-export async function countRows(
-  client: PoolClient,
-  table: string,
-  companyId: string
-): Promise<number> {
-  const res = await client.query<{ count: string }>(
-    `SELECT count(*)::text AS count FROM ${quote(table)} WHERE "companyId" = $1`,
-    [companyId]
-  );
-  return Number(res.rows[0]?.count ?? 0);
-}
-
 // get_next_sequence uses INTO STRICT and aborts the transaction if the row is
 // missing, so backfill any sequence added to seed.data.ts after this company
 // was created. Must run BEFORE resetSequences.
