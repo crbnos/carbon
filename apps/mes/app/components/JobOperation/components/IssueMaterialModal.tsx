@@ -37,11 +37,7 @@ import {
   TabsTrigger,
   toast
 } from "@carbon/react";
-import {
-  formatDate,
-  getItemReadableId,
-  SCALE_FORMAT
-} from "@carbon/utils";
+import { formatDate, getItemReadableId, SCALE_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
