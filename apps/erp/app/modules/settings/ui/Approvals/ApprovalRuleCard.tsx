@@ -42,10 +42,7 @@ const ApprovalRuleCard = memo(
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const currencyFormatter = useCurrencyFormatter({
-      notation: "compact", // short/compact form
-      compactDisplay: "short" // "short" → 1.2M, "long" → 1.2 million
-    });
+    const currencyFormatter = useCurrencyFormatter({ compact: true });
     const deleteDisclosure = useDisclosure();
 
     const canEdit = permissions.can("update", "settings");

@@ -62,7 +62,9 @@ export const handle: Handle = {
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
-  const { userId, companyId } = await requirePermissions(request, {
+  const { userId, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
     update: "purchasing"
   });
 
@@ -273,6 +275,15 @@ export async function action(args: ActionFunctionArgs) {
             getUser(serviceRole, userId)
           ]);
 
+          // Same decimals the PDF of this order uses.
+          const currencyRow = purchaseOrder.data.currencyCode
+            ? await getCurrencyByCode(
+                serviceRole,
+                companyGroupId,
+                purchaseOrder.data.currencyCode
+              )
+            : null;
+
           const supplierEmail = supplier?.data?.contact?.email;
           if (
             supplierEmail &&
@@ -284,6 +295,7 @@ export async function action(args: ActionFunctionArgs) {
             const emailTemplate = PurchaseOrderEmail({
               // @ts-expect-error TS2739 - TODO: fix type
               company: company.data,
+              currencyDecimals: currencyRow?.data?.decimalPlaces ?? null,
               locale: locales?.[0] ?? "en-US",
               purchaseOrder: purchaseOrder.data,
               purchaseOrderLines: purchaseOrderLines.data ?? [],

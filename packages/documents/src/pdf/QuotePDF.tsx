@@ -9,7 +9,7 @@ import {
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import {
-  getMoneyNumberFormatter,
+  getMoneyFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
@@ -63,7 +63,7 @@ const QuotePDF = ({
   const currencyCode = quote.currencyCode ?? company.baseCurrencyCode;
   const shouldConvertCurrency =
     !!currencyCode && currencyCode !== company.baseCurrencyCode;
-  const numberFormatter = getMoneyNumberFormatter(locale, currencyDecimals);
+  const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
 
   const pricesByLine = quoteLinePrices.reduce<Record<string, QuoteLinePrice[]>>(
     (acc, price) => {

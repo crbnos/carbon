@@ -17,10 +17,7 @@ type IntercompanyBalanceMatrixProps = {
 
 const IntercompanyBalanceMatrix = memo(
   ({ data }: IntercompanyBalanceMatrixProps) => {
-    const formatter = useCurrencyFormatter({
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    });
+    const formatter = useCurrencyFormatter({ wholeUnits: true });
     const { companies, matrix } = useMemo(() => {
       const companyMap = new Map<string, string>();
       for (const entry of data) {

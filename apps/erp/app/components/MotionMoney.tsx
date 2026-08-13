@@ -34,7 +34,10 @@ const MotionMoney = ({
     <MotionNumber
       value={value}
       format={{
-        ...moneyFormatOptions(currency, decimalPlaces, minDecimals),
+        ...moneyFormatOptions(decimalPlaces, {
+          currency,
+          minDecimalPlaces: minDecimals
+        }),
         notation: "standard" as const
       }}
       locales={locale}

@@ -33,11 +33,14 @@ export function useConfiguredCurrencyDecimals(
 ): number | null {
   const currencies = useCurrencies();
 
-  return useMemo(
-    () =>
-      currencies.find((c) => c.code === currencyCode)?.decimalPlaces ?? null,
-    [currencies, currencyCode]
+  // Indexed rather than scanned: this runs inside every money formatter, which
+  // in a table means once per row per render against the full ISO list.
+  const decimalsByCode = useMemo(
+    () => new Map(currencies.map((c) => [c.code, c.decimalPlaces])),
+    [currencies]
   );
+
+  return currencyCode ? (decimalsByCode.get(currencyCode) ?? null) : null;
 }
 
 /**

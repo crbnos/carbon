@@ -34,7 +34,7 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
-import { formatCityStatePostalCode, priceFormatOptions } from "@carbon/utils";
+import { formatCityStatePostalCode, moneyFormatOptions } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -586,10 +586,9 @@ const LinePricingOptions = ({
     () =>
       new Intl.NumberFormat(
         locale,
-        priceFormatOptions(
-          quote.currencyCode ?? "USD",
-          line.unitPricePrecision ?? 2
-        )
+        moneyFormatOptions(line.unitPricePrecision ?? 2, {
+          currency: quote.currencyCode ?? "USD"
+        })
       ),
     [locale, quote.currencyCode, line.unitPricePrecision]
   );

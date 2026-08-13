@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   formatMoney,
   formatPercent,
-  formatPrice,
   formatQuantity,
   INPUT_FORMAT,
   INPUT_STEP
@@ -16,17 +15,7 @@ describe("formatPercent", () => {
   });
 });
 
-describe("formatMoney / formatPrice", () => {
-  it("is ONE kind: a price and an amount format identically", () => {
-    // Money and per-unit prices are the same thing from the business's point of
-    // view, so they may not disagree about the same number in the same currency.
-    for (const v of [0, 3, 3.5, 4.5, 18.76, 1234.5]) {
-      expect(formatPrice(v, "en-US", "USD", 2)).toBe(
-        formatMoney(v, "en-US", "USD", 2)
-      );
-    }
-  });
-
+describe("formatMoney", () => {
   it("pads to the currency's decimals, so the width states the amount in full", () => {
     expect(formatMoney(300, "en-US", "USD", 2)).toBe("$300.00");
     expect(formatMoney(3.5, "en-US", "USD", 2)).toBe("$3.50");

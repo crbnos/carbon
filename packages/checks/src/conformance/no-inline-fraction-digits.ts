@@ -17,22 +17,21 @@ const BARE_CURRENCY_STYLE = /style:\s*["']currency["']/;
 // SUPPOSED to appear. Everything else picks a kind instead.
 const CURRENCY_STYLE_ALLOWED = new Set([
   "packages/utils/src/format.ts",
-  "apps/erp/app/hooks/useCurrencyFormatter.tsx",
-  "apps/erp/app/hooks/usePriceFormatter.tsx",
-  "packages/documents/src/utils/shared.ts"
+  // Builds the CLDR-only branch for a currency the group hasn't configured.
+  "apps/erp/app/hooks/useCurrencyFormatter.tsx"
 ]);
 
 // The formatter layer itself is where the digits are DEFINED. Note
 // useCurrencyFormatter is deliberately NOT excluded — it delegates to
 // moneyFormatOptions, so a digit literal creeping back in should flag.
-const EXCLUDED_FILES = new Set([
-  "packages/utils/src/format.ts",
-  "apps/erp/app/hooks/usePercentFormatter.tsx",
-  "apps/erp/app/hooks/useQuantityFormatter.tsx",
-  "apps/erp/app/hooks/usePriceFormatter.tsx",
-  // The documents package's formatter layer (react-pdf can't use the hooks).
-  "packages/documents/src/utils/shared.ts"
-]);
+//
+// Nothing else belongs here. A file that merely CONSUMES a kind has no digits
+// to exclude, and listing it exempts whatever gets added to it later — three
+// hook files were listed for exactly that reason and each exempted zero lines,
+// and packages/documents/src/utils/shared.ts was listed because it duplicated
+// the money kind instead of importing it, which is the drift this check exists
+// to catch rather than something to exempt.
+const EXCLUDED_FILES = new Set(["packages/utils/src/format.ts"]);
 
 export const noInlineFractionDigits: ConformanceCheck = {
   id: "no-inline-fraction-digits",
@@ -42,7 +41,7 @@ export const noInlineFractionDigits: ConformanceCheck = {
     deprecates:
       "inline minimumFractionDigits/maximumFractionDigits at call sites",
     replacedBy:
-      "moneyFormatOptions/priceFormatOptions/percentFormatOptions/quantityFormatOptions + INPUT_FORMAT from @carbon/utils",
+      "moneyFormatOptions + the PERCENT_FORMAT / PERCENT_POINTS_FORMAT / SCALE_FORMAT constants and INPUT_FORMAT from @carbon/utils",
     since: "2026-08-11"
   },
   scan(file: string, contents: string): Violation[] {

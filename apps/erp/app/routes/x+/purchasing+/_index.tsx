@@ -265,9 +265,8 @@ export default function PurchaseDashboard() {
 
   const currencyCompactFormatter = useCurrencyFormatter({
     currency: company.baseCurrencyCode,
-    maximumFractionDigits: 0,
-    notation: "compact",
-    compactDisplay: "short"
+    compact: true,
+    wholeUnits: true
   });
   const currencyFormatter = useCurrencyFormatter();
   const numberFormatter = useNumberFormatter({

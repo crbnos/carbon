@@ -27,7 +27,9 @@ const logger = getLogger("erp", "quoteid-convert");
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
     create: "sales"
   });
 
@@ -115,6 +117,7 @@ export async function action(args: ActionFunctionArgs) {
         await sendSalesOrderEmail({
           salesOrderId,
           companyId,
+          companyGroupId,
           userId,
           customerContactId: customerContact,
           cc,

@@ -9,7 +9,7 @@ import {
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
 import {
-  getMoneyNumberFormatter,
+  getMoneyFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
 import type { PurchaseOrderData } from "./blocks/purchaseOrder";
@@ -57,7 +57,7 @@ const PurchaseOrderPDF = ({
 }: PurchaseOrderPDFProps) => {
   const currencyCode =
     purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD";
-  const numberFormatter = getMoneyNumberFormatter(locale, currencyDecimals);
+  const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
 
   const headerTitle = purchaseOrder?.purchaseOrderId
     ? `${title}: ${purchaseOrder.purchaseOrderId}`

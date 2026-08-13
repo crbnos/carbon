@@ -7,6 +7,24 @@ import {
 } from "./useCurrencies";
 import { useUser } from "./useUser";
 
+/** Everything a call site is allowed to override, and nothing else.
+ *
+ * The set is deliberately closed rather than the full `Intl.NumberFormatOptions`:
+ * it is what the 71 call sites actually pass, every value is a primitive, and
+ * that is what lets the memo below depend on the fields instead of the object.
+ * Widening it back to `Intl.NumberFormatOptions` reintroduces the identity
+ * problem — add a field here instead. */
+export type CurrencyFormatterOptions = {
+  currency?: string;
+  /** Overrides the configured lookup when the caller already has the row */
+  decimalPlaces?: number;
+  /** "$1.2M" for dashboard tiles, instead of the full amount. */
+  compact?: boolean;
+  /** Drop the fraction entirely — a report that deliberately shows whole units.
+   *  Combined with `compact` this is "$1M" rather than "$1.2M". */
+  wholeUnits?: boolean;
+};
+
 /**
  * Currency display — money and per-unit prices alike, because they are the same
  * kind. Digits come from the company group's configured `currency.decimalPlaces`
@@ -16,16 +34,13 @@ import { useUser } from "./useUser";
  *
  * By default the amount is PADDED to those decimals, so its width states the
  * amount in full: "$300.00", "$3.50", "¥63", "BHD 0.563". A company can drop the
- * non-significant zeros with `hideCurrencyTrailingZeros`; that preference is read
+ * non-significant zeros with `showCurrencyTrailingZeros`; that preference is read
  * here once (useCurrencyMinDecimals) rather than at 55 call sites.
  *
- * `decimalPlaces` overrides the lookup when the caller already has the row
- * (e.g. from a loader). Any other Intl options a caller passes win over the
- * kind — reports that deliberately show whole units keep doing so.
+ * Anything the caller passes wins over the kind — reports that deliberately show
+ * whole units, or compact "$1.2M" tiles, keep doing so.
  */
-export function useCurrencyFormatter(
-  options?: Intl.NumberFormatOptions & { decimalPlaces?: number }
-) {
+export function useCurrencyFormatter(options?: CurrencyFormatterOptions) {
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const { locale } = useLocale();
@@ -36,20 +51,31 @@ export function useCurrencyFormatter(
   // Every call site passes an object literal, so depending on `options` by
   // identity meant the memo never hit: a new Intl.NumberFormat on every render,
   // and — since the formatter is itself a dep of the `columns` memo in several
-  // tables — a full column rebuild with it. Depend on the fields instead.
-  const optionsKey = options ? JSON.stringify(options) : "";
+  // tables — a full column rebuild with it. Depend on the primitive fields.
+  const { decimalPlaces, compact, wholeUnits } = options ?? {};
+
   return useMemo(() => {
-    const { decimalPlaces, ...opts } = optionsKey
-      ? (JSON.parse(optionsKey) as Intl.NumberFormatOptions & {
-          decimalPlaces?: number;
-        })
-      : {};
-    const decimals = decimalPlaces ?? configuredDecimals;
+    // `wholeUnits` is a digit count of zero, expressed as the intent rather than
+    // the number — this hook names kinds, it does not choose digits.
+    const decimals = wholeUnits ? 0 : (decimalPlaces ?? configuredDecimals);
     return new Intl.NumberFormat(locale, {
       ...(decimals != null
-        ? moneyFormatOptions(currency, decimals, minDecimals)
+        ? moneyFormatOptions(decimals, {
+            currency,
+            minDecimalPlaces: wholeUnits ? 0 : minDecimals
+          })
         : { style: "currency" as const, currency }),
-      ...opts
+      ...(compact
+        ? { notation: "compact" as const, compactDisplay: "short" as const }
+        : {})
     });
-  }, [locale, currency, optionsKey, configuredDecimals, minDecimals]);
+  }, [
+    locale,
+    currency,
+    configuredDecimals,
+    minDecimals,
+    decimalPlaces,
+    compact,
+    wholeUnits
+  ]);
 }

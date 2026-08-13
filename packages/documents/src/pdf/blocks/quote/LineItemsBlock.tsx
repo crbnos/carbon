@@ -1,6 +1,6 @@
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { formatPercent, pluralize } from "@carbon/utils";
+import { formatPercent, moneyFormatOptions, pluralize } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -10,6 +10,7 @@ import {
   getLineDescription,
   getLineDescriptionDetails
 } from "../../../utils/quote";
+import { FALLBACK_CURRENCY_DECIMALS } from "../../../utils/shared";
 import { Note } from "../../components";
 import { itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
@@ -42,6 +43,21 @@ export function LineItemsBlock({
   const overflow = itemTextOverflowStyle(opts);
   let rowIndex = 0;
 
+  // Unlike its sales-order/purchase-order siblings, a quote carries a PER-LINE
+  // unit-price precision (`quoteLine.unitPricePrecision`, constrained to 2/3/4),
+  // so it cannot reuse the single hoisted `numberFormatter`. Index the few
+  // distinct precisions once instead of constructing a formatter per line.
+  const unitPriceFormatters = new Map<number, Intl.NumberFormat>();
+  const unitPriceFormatter = (precision: number | null | undefined) => {
+    const digits = precision ?? FALLBACK_CURRENCY_DECIMALS;
+    let formatter = unitPriceFormatters.get(digits);
+    if (!formatter) {
+      formatter = new Intl.NumberFormat(locale, moneyFormatOptions(digits));
+      unitPriceFormatters.set(digits, formatter);
+    }
+    return formatter;
+  };
+
   return (
     <View>
       {/* Header */}
@@ -69,11 +85,9 @@ export function LineItemsBlock({
       </View>
 
       {quoteLines.map((line) => {
-        const unitPriceNumberFormatter = new Intl.NumberFormat(locale, {
-          style: "decimal",
-          minimumFractionDigits: line.unitPricePrecision ?? 2,
-          maximumFractionDigits: line.unitPricePrecision ?? 2
-        });
+        const unitPriceNumberFormatter = unitPriceFormatter(
+          line.unitPricePrecision
+        );
 
         const additionalCharges = line.additionalCharges ?? {};
 

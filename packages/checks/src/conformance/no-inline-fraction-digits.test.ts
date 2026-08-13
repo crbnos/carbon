@@ -14,17 +14,26 @@ describe("no-inline-fraction-digits", () => {
     expect(violations[0]?.message).toContain("named kind");
   });
 
-  it("excludes the formatter layer where digits are defined", () => {
+  it("excludes the one file where digits are defined", () => {
     const src = "const opts = { maximumFractionDigits: SCALE };";
     expect(
       noInlineFractionDigits.scan("packages/utils/src/format.ts", src)
     ).toHaveLength(0);
-    expect(
-      noInlineFractionDigits.scan(
-        "apps/erp/app/hooks/usePriceFormatter.tsx",
-        src
-      )
-    ).toHaveLength(0);
+  });
+
+  it("does NOT exclude a file that merely consumes a kind", () => {
+    // Hook files were once listed as exclusions even though they contain no
+    // digits at all, which exempted whatever got added to them later. A file
+    // that consumes a kind has nothing to exempt, so it must still be scanned.
+    const src = "const opts = { maximumFractionDigits: 2 };";
+    for (const file of [
+      "apps/erp/app/hooks/usePriceFormatter.tsx",
+      "apps/erp/app/hooks/usePercentFormatter.tsx",
+      "apps/erp/app/hooks/useQuantityFormatter.tsx",
+      "packages/documents/src/utils/shared.ts"
+    ]) {
+      expect(noInlineFractionDigits.scan(file, src)).toHaveLength(1);
+    }
   });
 
   it("allows named kinds", () => {

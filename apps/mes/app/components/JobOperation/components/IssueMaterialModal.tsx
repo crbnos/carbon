@@ -40,7 +40,7 @@ import {
 import {
   formatDate,
   getItemReadableId,
-  quantityFormatOptions
+  SCALE_FORMAT
 } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
@@ -134,7 +134,7 @@ export function IssueMaterialModal({
   const { carbon } = useCarbon();
   const { t } = useLingui();
   const [items] = useItems();
-  const numberFormatter = useNumberFormatter(quantityFormatOptions());
+  const numberFormatter = useNumberFormatter(SCALE_FORMAT);
 
   // Item selection state
   const [selectedItemId, setSelectedItemId] = useState<string>(

@@ -13,7 +13,7 @@ import {
   NumberInputGroup,
   NumberInputStepper
 } from "@carbon/react";
-import { quantityFormatOptions } from "@carbon/utils";
+import { SCALE_FORMAT } from "@carbon/utils";
 
 import { forwardRef } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
@@ -62,7 +62,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
     // arithmetic on the stored value, not decoration. Quantity is the right
     // fallback kind: it renders the full storage scale and no more. Money,
     // price and rate fields pass their own INPUT_FORMAT.* kind.
-    const formatOptions = rest.formatOptions ?? quantityFormatOptions();
+    const formatOptions = rest.formatOptions ?? SCALE_FORMAT;
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
 

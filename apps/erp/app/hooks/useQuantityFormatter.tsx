@@ -1,4 +1,4 @@
-import { quantityFormatOptions, SCALE } from "@carbon/utils";
+import { SCALE, SCALE_FORMAT } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 
@@ -37,7 +37,7 @@ export function useQuantityFormatter() {
   const { locale } = useLocale();
 
   return useMemo(() => {
-    const formatter = new Intl.NumberFormat(locale, quantityFormatOptions());
+    const formatter = new Intl.NumberFormat(locale, SCALE_FORMAT);
 
     return (quantity: number) => formatQuantityForDisplay(quantity, formatter);
   }, [locale]);

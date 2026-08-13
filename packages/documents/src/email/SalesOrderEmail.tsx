@@ -18,7 +18,7 @@ import {
   getLineTotal,
   getTotal
 } from "../utils/sales-order";
-import { getCurrencyFormatter } from "../utils/shared";
+import { getMoneyFormatter } from "../utils/shared";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
@@ -31,6 +31,8 @@ interface SalesOrderEmailProps extends Email {
   salesOrderLines: Database["public"]["Views"]["salesOrderLines"]["Row"][];
   salesOrderLocations: Database["public"]["Views"]["salesOrderLocations"]["Row"];
   paymentTerms: { id: string; name: string }[];
+  /** currency.decimalPlaces for the document currency; null falls back to 2 */
+  currencyDecimals?: number | null;
 }
 
 const SalesOrderEmail = ({
@@ -41,7 +43,8 @@ const SalesOrderEmail = ({
   salesOrderLocations,
   recipient,
   sender,
-  paymentTerms
+  paymentTerms,
+  currencyDecimals
 }: SalesOrderEmailProps) => {
   const {
     customerName,
@@ -60,9 +63,12 @@ const SalesOrderEmail = ({
     // paymentCountryName,
   } = salesOrderLocations;
 
-  const formatter = getCurrencyFormatter(
-    company.baseCurrencyCode ?? "USD",
-    locale
+  // The DOCUMENT's currency, not the company's — a supplier priced in JPY must
+  // not be emailed as "$20.00". Decimals come from that currency's row.
+  const formatter = getMoneyFormatter(
+    locale,
+    currencyDecimals,
+    salesOrder.currencyCode ?? company.baseCurrencyCode ?? "USD"
   );
   const preview = (
     <Preview>{`${salesOrder.salesOrderId} from ${company.name}`}</Preview>

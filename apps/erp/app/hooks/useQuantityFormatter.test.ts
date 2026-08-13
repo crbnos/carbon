@@ -1,8 +1,8 @@
-import { quantityFormatOptions } from "@carbon/utils";
+import { SCALE_FORMAT } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import { formatQuantityForDisplay } from "./useQuantityFormatter";
 
-const formatter = new Intl.NumberFormat("en-US", quantityFormatOptions());
+const formatter = new Intl.NumberFormat("en-US", SCALE_FORMAT);
 
 const format = (quantity: number) =>
   formatQuantityForDisplay(quantity, formatter);
@@ -57,14 +57,14 @@ describe("formatQuantityForDisplay", () => {
   });
 
   it("respects the locale of the formatter it is given", () => {
-    const de = new Intl.NumberFormat("de-DE", quantityFormatOptions());
+    const de = new Intl.NumberFormat("de-DE", SCALE_FORMAT);
     expect(formatQuantityForDisplay(3.232227, de)).toBe("3,23223");
     expect(formatQuantityForDisplay(1234.5, de)).toBe("1.234,5");
   });
 
   it("uses the locale's own negative sign below the threshold", () => {
     // sv-SE renders negatives with U+2212 MINUS SIGN, not an ASCII hyphen.
-    const sv = new Intl.NumberFormat("sv-SE", quantityFormatOptions());
+    const sv = new Intl.NumberFormat("sv-SE", SCALE_FORMAT);
     expect(formatQuantityForDisplay(-0.000001, sv)).toBe(
       `>${sv.format(-0.00001)}`
     );

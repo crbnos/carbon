@@ -9,7 +9,7 @@ import {
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import {
-  getMoneyNumberFormatter,
+  getMoneyFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
 import type { SalesOrderData, SalesOrderLocations } from "./blocks/salesOrder";
@@ -58,7 +58,7 @@ const SalesOrderPDF = ({
   title = "Sales Order"
 }: SalesOrderPDFProps) => {
   const currencyCode = salesOrder.currencyCode ?? company.baseCurrencyCode;
-  const numberFormatter = getMoneyNumberFormatter(locale, currencyDecimals);
+  const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
 
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("salesOrder", template);

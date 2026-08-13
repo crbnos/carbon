@@ -4,6 +4,7 @@ import {
 } from "@carbon/form";
 import { withMinimumDecimals } from "@carbon/utils";
 import type { ComponentProps } from "react";
+import { useMemo } from "react";
 import { useCurrencyMinDecimals } from "~/hooks/useCurrencies";
 
 /**
@@ -27,29 +28,25 @@ function useTrailingZeroPreference(
 ) {
   const minDecimals = useCurrencyMinDecimals();
 
-  if (minDecimals === undefined || formatOptions?.style !== "currency") {
-    return formatOptions;
-  }
-
-  return withMinimumDecimals(formatOptions, minDecimals);
+  // Memoized because react-stately keys its NumberFormatter off this object's
+  // identity — returning a fresh one each render rebuilds the formatter on
+  // every keystroke of every money field on the page.
+  return useMemo(() => {
+    if (minDecimals === undefined || formatOptions?.style !== "currency") {
+      return formatOptions;
+    }
+    return withMinimumDecimals(formatOptions, minDecimals);
+  }, [formatOptions, minDecimals]);
 }
 
 export function Number(props: ComponentProps<typeof BaseNumber>) {
-  return (
-    <BaseNumber
-      {...props}
-      formatOptions={useTrailingZeroPreference(props.formatOptions)}
-    />
-  );
+  const formatOptions = useTrailingZeroPreference(props.formatOptions);
+  return <BaseNumber {...props} formatOptions={formatOptions} />;
 }
 
 export function NumberControlled(
   props: ComponentProps<typeof BaseNumberControlled>
 ) {
-  return (
-    <BaseNumberControlled
-      {...props}
-      formatOptions={useTrailingZeroPreference(props.formatOptions)}
-    />
-  );
+  const formatOptions = useTrailingZeroPreference(props.formatOptions);
+  return <BaseNumberControlled {...props} formatOptions={formatOptions} />;
 }
