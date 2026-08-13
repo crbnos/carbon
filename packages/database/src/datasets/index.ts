@@ -9,6 +9,8 @@
 
 import { today } from "@internationalized/date";
 import type { PoolClient } from "pg";
+import { motor } from "./data/motor/index.ts";
+import { precision } from "./data/precision/index.ts";
 import { robotics } from "./data/robotics/index.ts";
 import { satellite } from "./data/satellite/index.ts";
 import { ensureSequences } from "./sql.ts";
@@ -24,7 +26,12 @@ import {
 export type { Ctx, Dataset, DatasetKey };
 export { resolveCompanyTimeZone };
 
-export const DATASETS: Record<DatasetKey, Dataset> = { satellite, robotics };
+export const DATASETS: Record<DatasetKey, Dataset> = {
+  satellite,
+  robotics,
+  precision,
+  motor
+};
 
 export function getDataset(key: string): Dataset | null {
   // hasOwn, not a bare index — "toString" would otherwise resolve up the

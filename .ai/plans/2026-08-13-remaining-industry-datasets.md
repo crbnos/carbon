@@ -15,9 +15,9 @@
 - [x] Task 7: Recover the robotics foundation + items slices from the stash
 - [x] Task 8: Write the nine remaining robotics slices
 - [x] Task 9: Register `robotics` and seed-verify it
-- [ ] Task 10: Write the `precision` dataset
-- [ ] Task 11: Write the `motor` dataset
-- [ ] Task 12: End-to-end verification across all four datasets
+- [x] Task 10: Write the `precision` dataset
+- [x] Task 11: Write the `motor` dataset
+- [x] Task 12: End-to-end verification across all four datasets
 - [ ] Task 13: Refresh the docs
 
 ## Dependencies
