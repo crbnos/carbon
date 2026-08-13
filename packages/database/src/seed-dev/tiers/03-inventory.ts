@@ -30,6 +30,36 @@ const OPENING_STOCK: Array<{
   { item: "CN-GREASE-001", qty: 2, cost: 95, shelf: "A1-L3" }
 ];
 
+// Lots/serials that back the tracked slice of the opening stock above.
+const ON_HAND_TRACKED: Array<{
+  item: string;
+  entities: Array<{ readableId: string; quantity: number }>;
+}> = [
+  {
+    item: "BAT-LIION-48V",
+    entities: [
+      { readableId: "LOT-BAT-2607", quantity: 2 },
+      { readableId: "LOT-BAT-2608", quantity: 1 }
+    ]
+  },
+  {
+    item: "RW-010",
+    entities: [
+      { readableId: "RW010-SN-0051", quantity: 1 },
+      { readableId: "RW010-SN-0052", quantity: 1 },
+      { readableId: "RW010-SN-0053", quantity: 1 },
+      { readableId: "RW010-SN-0054", quantity: 1 }
+    ]
+  },
+  {
+    item: "MAT-AL7075-PLT",
+    entities: [
+      { readableId: "LOT-AL7075-2608", quantity: 40 },
+      { readableId: "LOT-AL7075-2609", quantity: 20 }
+    ]
+  }
+];
+
 export async function runTier3(ctx: Ctx): Promise<void> {
   const { companyId, userId, locationId } = ctx;
   const plantId = ctx.refs.locations.Plant ?? locationId;
@@ -52,6 +82,29 @@ export async function runTier3(ctx: Ctx): Promise<void> {
       createdBy: userId,
       comment: "Opening balance"
     });
+  }
+
+  // ── Lots and serials on hand ──────────────────────────────────────────────
+  // A batch- or serial-tracked part is only issuable if a tracked entity for it
+  // is Available — without these the shop floor's scan-material picker is empty
+  // even though the item shows stock.
+  ctx.log("available lots and serials");
+  for (const stock of ON_HAND_TRACKED) {
+    const itemRef = ctx.refs.items[stock.item];
+    if (!itemRef) continue;
+    for (const entity of stock.entities) {
+      await insertId(ctx, "trackedEntity", {
+        quantity: entity.quantity,
+        status: "Available",
+        sourceDocument: "Item",
+        sourceDocumentId: itemRef.id,
+        sourceDocumentReadableId: itemRef.readableId,
+        readableId: entity.readableId,
+        itemId: itemRef.id,
+        attributes: JSON.stringify({}),
+        updatedBy: userId
+      });
+    }
   }
 
   // ── Kanbans (auto-replenishment cards) for high-usage buy parts ───────────

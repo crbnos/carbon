@@ -73,6 +73,10 @@ msgstr "{0}が正常に削除されました"
 msgid "{0} draft journal entries"
 msgstr "{0}件の下書き仕訳"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0}件のジョブが作成されました"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
@@ -109,6 +113,9 @@ msgstr "{0}が正常にアップロードされました"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount}件のパーツをスキップしました — 既にオープンジョブがあります"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}%の買掛金"
 
@@ -141,6 +148,9 @@ msgstr "{maxSizeMB}MB制限"
 msgid "{name} deleted"
 msgstr "{name}が削除されました"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount}件のパーツをスキップしました — 製造する必要がありません"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
 
@@ -158,6 +168,9 @@ msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount}件のジョブが更新されました"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} をアップロードしました — ドキュメントからフィールドに入力されました。"
@@ -193,6 +206,18 @@ msgstr "1日"
 
 msgid "1 draft journal entry"
 msgstr "1件の下書き仕訳"
+
+msgid "1 job created"
+msgstr "1件のジョブが作成されました"
+
+msgid "1 job updated"
+msgstr "1件のジョブが更新されました"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1件のパーツをスキップしました — 既にオープンジョブがあります"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1件のパーツをスキップしました — 製造する必要がありません"
 
 msgid "1 problem — not published"
 msgstr "1個の問題 — 未発行"
@@ -754,6 +779,10 @@ msgstr "受け入れ"
 msgid "Acceptance passed"
 msgstr "受け入れ完了"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "{0} に承認"
+
 msgid "Account"
 msgstr "アカウント"
 
@@ -1228,9 +1257,6 @@ msgstr "すべてのアイテムタイプ"
 
 msgid "All Items"
 msgstr "すべてのアイテム"
-
-msgid "All jobs completed"
-msgstr "すべてのジョブが完了しました"
 
 msgid "All Locations"
 msgstr "すべての場所"
@@ -2726,11 +2752,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "一元化された請求先住所"
 
+msgid "Cert Version"
+msgstr "認定バージョン"
+
 msgid "Certificate Number"
 msgstr "証明書番号"
 
 msgid "Certificate uploaded"
 msgstr "証明書がアップロードされました"
+
+msgid "Certified"
+msgstr "認定済み"
 
 msgid "Chain"
 msgstr "チェーン"
@@ -5754,6 +5786,15 @@ msgstr "分割するエンティティ"
 msgid "Entity"
 msgstr "エンティティ"
 
+msgid "Entity certification: Accepted"
+msgstr "事業体認定: 承認済み"
+
+msgid "Entity certification: Expired"
+msgstr "事業体認定: 期限切れ"
+
+msgid "Entity certification: Pending"
+msgstr "事業体認定: 保留中"
+
 msgid "Entity Type"
 msgstr "エンティティタイプ"
 
@@ -6017,6 +6058,7 @@ msgid "Expired"
 msgstr "期限切れ"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "期限切れ {0}"
 
@@ -6028,6 +6070,10 @@ msgstr "期限切れバッチ"
 
 msgid "Expires"
 msgstr "有効期限"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "有効期限 {0}"
 
 msgid "Expires <0/>"
 msgstr "有効期限：<0/>"
@@ -7220,6 +7266,9 @@ msgstr "ハイパーケア：最初の数週間の集中的なサポート"
 msgid "I (reduced)"
 msgstr "I（削減）"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "この個人は22 CFR 120.62で定義されている米国人である合理的な根拠があります"
+
 msgid "I'm Still Working"
 msgstr "まだ働いています"
 
@@ -7608,6 +7657,9 @@ msgstr "在庫評価"
 msgid "Invite"
 msgstr "招待"
 
+msgid "Invite Expired"
+msgstr "招待が期限切れになりました"
+
 msgid "Invited"
 msgstr "招待済み"
 
@@ -7767,6 +7819,9 @@ msgstr "発行日"
 msgid "Issues"
 msgstr "問題"
 
+msgid "ITAR Certifications"
+msgstr "ITAR認定"
+
 msgid "item"
 msgstr "アイテム"
 
@@ -7889,9 +7944,6 @@ msgstr "ジョブ"
 
 msgid "Jobs Assigned to Me"
 msgstr "私に割り当てられたジョブ"
-
-msgid "Jobs in progress"
-msgstr "進行中のジョブ"
 
 msgid "Jobs Required"
 msgstr "ジョブが必要です"
@@ -8026,6 +8078,9 @@ msgstr "最終日"
 
 msgid "Last Fiscal Year"
 msgstr "前年度"
+
+msgid "Last Login"
+msgstr "最後のログイン"
 
 msgid "Last Month"
 msgstr "先月"
@@ -9487,6 +9542,9 @@ msgstr "アイテムなし"
 msgid "No items have inventory activity here yet."
 msgstr "ここにはまだアイテムの在庫活動がありません。"
 
+msgid "No jobs were created"
+msgstr "ジョブが作成されていません"
+
 msgid "No journal lines in scope for this period"
 msgstr "この期間のスコープ内にジャーナルラインがありません"
 
@@ -9622,6 +9680,9 @@ msgstr "検査する残りのエンティティはありません。"
 msgid "No reports match your search."
 msgstr "検索に一致するレポートはありません。"
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "この会社の代表者はまだ Carbon GovCloud Rider を承認していません。誰かが Carbon にアクセスする前に、この会社の管理者が承認する必要があります — Carbon のスタッフが代わりに承認することはできません。"
+
 msgid "No results"
 msgstr "結果がありません"
 
@@ -9732,6 +9793,9 @@ msgstr "通常"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "テーブルではなく、総勘定元帳残高：ジョブ材料が発行されるにつれてコストが蓄積され、ジョブが在庫に受け取られるとクリアになります。"
+
+msgid "Not certified"
+msgstr "認定されていない"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
@@ -11849,6 +11913,9 @@ msgstr "レポート"
 msgid "Reprint"
 msgstr "再印刷"
 
+msgid "Request a new invite"
+msgstr "新しい招待をリクエストする"
+
 msgid "Request access"
 msgstr "アクセスをリクエスト"
 
@@ -12082,6 +12149,10 @@ msgstr "RFQ番号"
 
 msgid "RFQs"
 msgstr "RFQ"
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "右側の項目"
@@ -14820,11 +14891,18 @@ msgstr "この情報はすべてのユーザーに表示されるため、共有
 msgid "this inspection plan"
 msgstr "この検査計画"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "これは購入アイテムです。BoM/BoP はありません。属性と文書のみ変更できます。"
 
 msgid "This is a unique identifier for the webhook"
 msgstr "これはウェブフックの一意の識別子です"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "これはITAR管理環境です。アクセスは米国人に限定されています。"
 
 msgid "This is the month your fiscal year starts."
 msgstr "これはあなたの会計年度が始まる月です。"
@@ -15344,6 +15422,9 @@ msgstr "タイプ:"
 msgid "Types"
 msgstr "タイプ"
 
+msgid "U.S. Person Attestation"
+msgstr "米国人証明"
+
 msgid "Unapplied"
 msgstr "未適用"
 
@@ -15836,6 +15917,9 @@ msgstr "アクティブなジョブを表示"
 
 msgid "View Active Quotes"
 msgstr "アクティブな見積もりを表示"
+
+msgid "View all"
+msgstr "すべて表示"
 
 msgid "View All"
 msgstr "すべて表示"

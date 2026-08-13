@@ -73,6 +73,10 @@ msgstr "{0} eliminado correctamente"
 msgid "{0} draft journal entries"
 msgstr "{0} asientos de diario en borrador"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0} trabajos creados"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} líneas para mapear"
@@ -109,6 +113,9 @@ msgstr "{0} cargado exitosamente"
 msgid "{0} values missing"
 msgstr "{0} valores faltantes"
 
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount} piezas omitidas — ya tienen trabajos abiertos"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% de cuentas por pagar"
 
@@ -141,6 +148,9 @@ msgstr "{maxSizeMB}MB límite"
 msgid "{name} deleted"
 msgstr "{name} eliminado"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount} piezas omitidas — no hay nada que fabricar"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase restante} other {# fases restantes}}"
 
@@ -158,6 +168,9 @@ msgstr "{totalQuantity, plural, one {# unidad} other {# unidades}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# línea sin contar} other {# líneas sin contar}}"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount} trabajos actualizados"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "Se ha subido {uploadedFileName} — se han completado los campos a partir del documento."
@@ -193,6 +206,18 @@ msgstr "1 día"
 
 msgid "1 draft journal entry"
 msgstr "1 asiento de diario en borrador"
+
+msgid "1 job created"
+msgstr "1 trabajo creado"
+
+msgid "1 job updated"
+msgstr "1 trabajo actualizado"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1 pieza omitida — ya tiene un trabajo abierto"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1 pieza omitida — no hay nada que fabricar"
 
 msgid "1 problem — not published"
 msgstr "1 problema — no publicado"
@@ -754,6 +779,10 @@ msgstr "Aceptación"
 msgid "Acceptance passed"
 msgstr "Aceptación aprobada"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "Aceptada el {0}"
+
 msgid "Account"
 msgstr "Cuenta"
 
@@ -1228,9 +1257,6 @@ msgstr "Todos los tipos de artículos"
 
 msgid "All Items"
 msgstr "Todos los artículos"
-
-msgid "All jobs completed"
-msgstr "Todos los trabajos completados"
 
 msgid "All Locations"
 msgstr "Todas las Ubicaciones"
@@ -2726,11 +2752,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "Dirección de Facturación Centralizada"
 
+msgid "Cert Version"
+msgstr "Versión de Certificado"
+
 msgid "Certificate Number"
 msgstr "Número de Certificado"
 
 msgid "Certificate uploaded"
 msgstr "Certificado cargado"
+
+msgid "Certified"
+msgstr "Certificado"
 
 msgid "Chain"
 msgstr "Cadena"
@@ -5754,6 +5786,15 @@ msgstr "Entidades a separar"
 msgid "Entity"
 msgstr "Entidad"
 
+msgid "Entity certification: Accepted"
+msgstr "Certificación de la entidad: Aceptada"
+
+msgid "Entity certification: Expired"
+msgstr "Certificación de la entidad: Vencida"
+
+msgid "Entity certification: Pending"
+msgstr "Certificación de la entidad: Pendiente"
+
 msgid "Entity Type"
 msgstr "Tipo de Entidad"
 
@@ -6017,6 +6058,7 @@ msgid "Expired"
 msgstr "Expirado"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Expirado {0}"
 
@@ -6028,6 +6070,10 @@ msgstr "Lotes Vencidos"
 
 msgid "Expires"
 msgstr "Expira"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "Vence el {0}"
 
 msgid "Expires <0/>"
 msgstr "Expira <0/>"
@@ -7220,6 +7266,9 @@ msgstr "Hypercare: soporte intenso durante las primeras semanas"
 msgid "I (reduced)"
 msgstr "I (reducido)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "Tengo una base razonable para creer que este individuo es una persona estadounidense según lo definido en 22 CFR 120.62"
+
 msgid "I'm Still Working"
 msgstr "Todavía estoy trabajando"
 
@@ -7608,6 +7657,9 @@ msgstr "Valoración de Inventario"
 msgid "Invite"
 msgstr "Invitar"
 
+msgid "Invite Expired"
+msgstr "Invitación Expirada"
+
 msgid "Invited"
 msgstr "Invitado"
 
@@ -7767,6 +7819,9 @@ msgstr "Fecha de Emisión"
 msgid "Issues"
 msgstr "Problemas"
 
+msgid "ITAR Certifications"
+msgstr "Certificaciones ITAR"
+
 msgid "item"
 msgstr "artículo"
 
@@ -7889,9 +7944,6 @@ msgstr "Trabajos"
 
 msgid "Jobs Assigned to Me"
 msgstr "Trabajos Asignados a Mí"
-
-msgid "Jobs in progress"
-msgstr "Trabajos en progreso"
 
 msgid "Jobs Required"
 msgstr "Trabajos Requeridos"
@@ -8026,6 +8078,9 @@ msgstr "Último día"
 
 msgid "Last Fiscal Year"
 msgstr "Último Año Fiscal"
+
+msgid "Last Login"
+msgstr "Último Inicio de Sesión"
 
 msgid "Last Month"
 msgstr "Mes Pasado"
@@ -9487,6 +9542,9 @@ msgstr "Sin artículos"
 msgid "No items have inventory activity here yet."
 msgstr "Aún no hay actividad de inventario de artículos aquí."
 
+msgid "No jobs were created"
+msgstr "No se crearon trabajos"
+
 msgid "No journal lines in scope for this period"
 msgstr "Sin líneas de diario en alcance para este período"
 
@@ -9622,6 +9680,9 @@ msgstr "No hay entidades restantes para inspeccionar."
 msgid "No reports match your search."
 msgstr "Ningún reporte coincide con su búsqueda."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "Ningún representante de esta empresa ha aceptado todavía el Carbon GovCloud Rider. Un administrador de esta empresa debe aceptarlo antes de que cualquier persona pueda acceder a Carbon — el personal de Carbon no puede aceptarlo en su nombre."
+
 msgid "No results"
 msgstr "Sin resultados"
 
@@ -9732,6 +9793,9 @@ msgstr "Normal"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "No es una tabla sino un saldo del libro mayor: el costo se acumula cuando se emiten materiales de trabajo y se borra cuando el trabajo se recibe en inventario."
+
+msgid "Not certified"
+msgstr "No certificado"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "No hay suficientes trabajos para cubrir la cantidad"
@@ -11849,6 +11913,9 @@ msgstr "Informes"
 msgid "Reprint"
 msgstr "Reimprimir"
 
+msgid "Request a new invite"
+msgstr "Solicitar una nueva invitación"
+
 msgid "Request access"
 msgstr "Solicitar acceso"
 
@@ -12082,6 +12149,10 @@ msgstr "Número de RFQ"
 
 msgid "RFQs"
 msgstr "RFQs"
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Elemento derecho"
@@ -14820,11 +14891,18 @@ msgstr "Esta información será visible para todos los usuarios, así que ten cu
 msgid "this inspection plan"
 msgstr "este plan de inspección"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "Esta invitación para unirse a {0} ha expirado. Puedes solicitar que se envíe una nueva invitación a tu correo electrónico."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Este es un artículo comprado — no tiene BoM/BoP; solo sus atributos y documentos pueden cambiar."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Este es un identificador único para el webhook"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "Este es un entorno controlado por ITAR. El acceso está restringido a personas estadounidenses."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Este es el mes en que comienza tu año fiscal."
@@ -15344,6 +15422,9 @@ msgstr "Tipo:"
 msgid "Types"
 msgstr "Tipos"
 
+msgid "U.S. Person Attestation"
+msgstr "Atestación de Persona Estadounidense"
+
 msgid "Unapplied"
 msgstr "No aplicado"
 
@@ -15836,6 +15917,9 @@ msgstr "Ver trabajos activos"
 
 msgid "View Active Quotes"
 msgstr "Ver Cotizaciones Activas"
+
+msgid "View all"
+msgstr "Ver todo"
 
 msgid "View All"
 msgstr "Ver todo"

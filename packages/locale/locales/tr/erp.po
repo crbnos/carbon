@@ -73,6 +73,10 @@ msgstr "{0} başarıyla silindi"
 msgid "{0} draft journal entries"
 msgstr "{0} taslak muhasebe kaydı"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0} iş oluşturuldu"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
@@ -109,6 +113,9 @@ msgstr "{0} başarıyla yüklendi"
 msgid "{0} values missing"
 msgstr "{0} değeri eksik"
 
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount} parça atlandı — zaten açık işleri var"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% borç"
 
@@ -141,6 +148,9 @@ msgstr "{maxSizeMB}MB sınırı"
 msgid "{name} deleted"
 msgstr "{name} silindi"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount} parça atlandı — yapılacak bir şey yok"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
@@ -158,6 +168,9 @@ msgstr "{totalQuantity, plural, one {# birim} other {# birimler}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount} iş güncellendi"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} yüklendi — alanlar belgeden dolduruldu."
@@ -193,6 +206,18 @@ msgstr "1 gün"
 
 msgid "1 draft journal entry"
 msgstr "1 taslak muhasebe kaydı"
+
+msgid "1 job created"
+msgstr "1 iş oluşturuldu"
+
+msgid "1 job updated"
+msgstr "1 iş güncellendi"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1 parça atlandı — zaten açık bir işi var"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1 parça atlandı — yapılacak bir şey yok"
 
 msgid "1 problem — not published"
 msgstr "1 sorun — yayınlanmadı"
@@ -754,6 +779,10 @@ msgstr "Kabul"
 msgid "Acceptance passed"
 msgstr "Kabul edildi"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "{0} tarihinde kabul edildi"
+
 msgid "Account"
 msgstr "Hesap"
 
@@ -1228,9 +1257,6 @@ msgstr "Tüm öğe türleri"
 
 msgid "All Items"
 msgstr "Tüm Öğeler"
-
-msgid "All jobs completed"
-msgstr "Tüm işler tamamlandı"
 
 msgid "All Locations"
 msgstr "Tüm Konumlar"
@@ -2726,11 +2752,17 @@ msgstr "Bilgi"
 msgid "Centralized Billing Address"
 msgstr "Merkezi Faturalama Adresi"
 
+msgid "Cert Version"
+msgstr "Sertifika Versiyonu"
+
 msgid "Certificate Number"
 msgstr "Sertifika Numarası"
 
 msgid "Certificate uploaded"
 msgstr "Sertifika Yüklendi"
+
+msgid "Certified"
+msgstr "Sertifikalı"
 
 msgid "Chain"
 msgstr "Zincir"
@@ -5754,6 +5786,15 @@ msgstr "Ayrılacak varlıklar"
 msgid "Entity"
 msgstr "Varlık"
 
+msgid "Entity certification: Accepted"
+msgstr "Kuruluş sertifikasyonu: Kabul edildi"
+
+msgid "Entity certification: Expired"
+msgstr "Kuruluş sertifikasyonu: Süresi doldu"
+
+msgid "Entity certification: Pending"
+msgstr "Kuruluş sertifikasyonu: Beklemede"
+
 msgid "Entity Type"
 msgstr "Varlık Türü"
 
@@ -6017,6 +6058,7 @@ msgid "Expired"
 msgstr "Süresi Dolmuş"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Süresi dolmuş {0}"
 
@@ -6028,6 +6070,10 @@ msgstr "Süresi Dolmuş Lotlar"
 
 msgid "Expires"
 msgstr "Süresi Doluyor"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "{0} tarihinde sona eriyor"
 
 msgid "Expires <0/>"
 msgstr "Süresi doluyor <0/>"
@@ -7220,6 +7266,9 @@ msgstr "Hypercare: ilk haftalar için yoğun destek"
 msgid "I (reduced)"
 msgstr "I (azaltılmış)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "Bu kişinin 22 CFR 120.62'de tanımlanan şekilde ABD vatandaşı olduğuna inanmak için makul bir temelem var"
+
 msgid "I'm Still Working"
 msgstr "Hala Çalışıyorum"
 
@@ -7608,6 +7657,9 @@ msgstr "Envanter Değerlemesi"
 msgid "Invite"
 msgstr "Davet et"
 
+msgid "Invite Expired"
+msgstr "Davet Süresi Doldu"
+
 msgid "Invited"
 msgstr "Davetli"
 
@@ -7767,6 +7819,9 @@ msgstr "Düzenlenme Tarihi"
 msgid "Issues"
 msgstr "Sorunlar"
 
+msgid "ITAR Certifications"
+msgstr "ITAR Sertifikaları"
+
 msgid "item"
 msgstr "öğe"
 
@@ -7889,9 +7944,6 @@ msgstr "İşler"
 
 msgid "Jobs Assigned to Me"
 msgstr "Bana Atanan İşler"
-
-msgid "Jobs in progress"
-msgstr "Devam eden işler"
 
 msgid "Jobs Required"
 msgstr "İşler Gerekli"
@@ -8026,6 +8078,9 @@ msgstr "Son gün"
 
 msgid "Last Fiscal Year"
 msgstr "Son Mali Yıl"
+
+msgid "Last Login"
+msgstr "Son Giriş"
 
 msgid "Last Month"
 msgstr "Geçen Ay"
@@ -9487,6 +9542,9 @@ msgstr "Öğe yok"
 msgid "No items have inventory activity here yet."
 msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
 
+msgid "No jobs were created"
+msgstr "Hiçbir iş oluşturulmadı"
+
 msgid "No journal lines in scope for this period"
 msgstr "Bu dönem için kapsam içinde günlük satırı yok"
 
@@ -9622,6 +9680,9 @@ msgstr "İncelenecek kalan varlık yok."
 msgid "No reports match your search."
 msgstr "Aramanızla eşleşen rapor yok."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "Bu şirketin hiçbir temsilcisi Carbon GovCloud Rider'ı henüz kabul etmedi. Herhangi biri Carbon'a erişmeden önce bu şirketin bir yöneticisinin kabul etmesi gerekir — Carbon personeli bunu sizin adınıza kabul edemez."
+
 msgid "No results"
 msgstr "Sonuç bulunamadı"
 
@@ -9732,6 +9793,9 @@ msgstr "Normal"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Bir tablo değil, bir genel muhasebe dengesi: iş malzemeleri verildiğinde maliyetler birikir ve iş envantere alındığında temizlenir."
+
+msgid "Not certified"
+msgstr "Sertifikalı değil"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılayacak yeterli iş yok"
@@ -11849,6 +11913,9 @@ msgstr "Raporlar"
 msgid "Reprint"
 msgstr "Yeniden Yazdır"
 
+msgid "Request a new invite"
+msgstr "Yeni bir davet iste"
+
 msgid "Request access"
 msgstr "Erişim İste"
 
@@ -12082,6 +12149,10 @@ msgstr "Teklif Numarası"
 
 msgid "RFQs"
 msgstr "Teklif Talepleri"
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Sağ öğe"
@@ -14820,11 +14891,18 @@ msgstr "Bu bilgiler tüm kullanıcılar tarafından görülecektir, bu yüzden n
 msgid "this inspection plan"
 msgstr "bu muayene planı"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "{0} kuruluşuna katılmak için gönderilen bu davet süresi dolmuştur. E-postanıza yeni bir davet gönderilmesini isteyebilirsiniz."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Bu satın alınan bir üründür — BoM/BoP'si yoktur; yalnızca öznitelikleri ve belgeleri değişebilir."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Bu, web kancası için benzersiz bir tanımlayıcıdır"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "Bu ITAR tarafından kontrol edilen bir ortamdır. Erişim yalnızca ABD vatandaşları ile sınırlıdır."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Bu, mali yılınızın başladığı aydır."
@@ -15344,6 +15422,9 @@ msgstr "Tip:"
 msgid "Types"
 msgstr "Tipler"
 
+msgid "U.S. Person Attestation"
+msgstr "ABD Vatandaşı Tasdiki"
+
 msgid "Unapplied"
 msgstr "Uygulanmamış"
 
@@ -15836,6 +15917,9 @@ msgstr "Aktif İşleri Görüntüle"
 
 msgid "View Active Quotes"
 msgstr "Aktif Teklifleri Görüntüle"
+
+msgid "View all"
+msgstr "Tümünü Görüntüle"
 
 msgid "View All"
 msgstr "Tümünü Gör"

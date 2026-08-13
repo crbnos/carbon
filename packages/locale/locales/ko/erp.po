@@ -73,6 +73,10 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} draft journal entries"
 msgstr "{0}건의 임시 분개"
 
+#. placeholder {0}: jobs.length
+msgid "{0} jobs created"
+msgstr "{0}개 작업이 생성됨"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
@@ -109,6 +113,9 @@ msgstr "{0}이(가) 업로드되었습니다"
 msgid "{0} values missing"
 msgstr "{0}개 값 누락"
 
+msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
+msgstr "{alreadyPlannedItemCount}개 부품이 건너뜀 — 이미 활성 작업이 있음"
+
 msgid "{apOverduePct}% of payables"
 msgstr "매입채무의 {apOverduePct}%"
 
@@ -141,6 +148,9 @@ msgstr "{maxSizeMB}MB 제한"
 msgid "{name} deleted"
 msgstr "{name} 삭제됨"
 
+msgid "{noDemandItemCount} parts skipped — nothing to make"
+msgstr "{noDemandItemCount}개 부품이 건너뜀 — 만들 것이 없음"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
 
@@ -158,6 +168,9 @@ msgstr "{totalQuantity, plural, one {# 단위} other {# 단위}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
+
+msgid "{updatedJobCount} jobs updated"
+msgstr "{updatedJobCount}개 작업이 업데이트됨"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} 업로드됨 — 문서에서 필드가 채워졌습니다."
@@ -193,6 +206,18 @@ msgstr "1일"
 
 msgid "1 draft journal entry"
 msgstr "1건의 임시 분개"
+
+msgid "1 job created"
+msgstr "1개 작업이 생성됨"
+
+msgid "1 job updated"
+msgstr "1개 작업이 업데이트됨"
+
+msgid "1 part skipped — it already has an open job"
+msgstr "1개 부품이 건너뜀 — 이미 활성 작업이 있음"
+
+msgid "1 part skipped — nothing to make"
+msgstr "1개 부품이 건너뜀 — 만들 것이 없음"
 
 msgid "1 problem — not published"
 msgstr "1개 문제 — 발행되지 않음"
@@ -754,6 +779,10 @@ msgstr "승인"
 msgid "Acceptance passed"
 msgstr "승인 통과"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "{0}에 승인됨"
+
 msgid "Account"
 msgstr "계정"
 
@@ -1228,9 +1257,6 @@ msgstr "모든 품목 유형"
 
 msgid "All Items"
 msgstr "모든 품목"
-
-msgid "All jobs completed"
-msgstr "모든 작업 완료됨"
 
 msgid "All Locations"
 msgstr "모든 위치"
@@ -2726,11 +2752,17 @@ msgstr "참조"
 msgid "Centralized Billing Address"
 msgstr "통합 청구 주소"
 
+msgid "Cert Version"
+msgstr "인증 버전"
+
 msgid "Certificate Number"
 msgstr "인증서 번호"
 
 msgid "Certificate uploaded"
 msgstr "인증서가 업로드됨"
+
+msgid "Certified"
+msgstr "인증됨"
 
 msgid "Chain"
 msgstr "체인"
@@ -5754,6 +5786,15 @@ msgstr "분리할 개체"
 msgid "Entity"
 msgstr "개체"
 
+msgid "Entity certification: Accepted"
+msgstr "법인 인증: 승인됨"
+
+msgid "Entity certification: Expired"
+msgstr "법인 인증: 만료됨"
+
+msgid "Entity certification: Pending"
+msgstr "법인 인증: 대기 중"
+
 msgid "Entity Type"
 msgstr "개체 유형"
 
@@ -6017,6 +6058,7 @@ msgid "Expired"
 msgstr "만료됨"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "만료됨 {0}"
 
@@ -6028,6 +6070,10 @@ msgstr "만료된 배치"
 
 msgid "Expires"
 msgstr "만료"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "{0}에 만료"
 
 msgid "Expires <0/>"
 msgstr "만료 <0/>"
@@ -7220,6 +7266,9 @@ msgstr "하이퍼케어: 초기 몇 주간의 집중 지원"
 msgid "I (reduced)"
 msgstr "I(축소)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "나는 이 개인이 22 CFR 120.62에서 정의한 미국인이라고 합리적으로 믿을 이유가 있습니다"
+
 msgid "I'm Still Working"
 msgstr "아직 작업 중입니다"
 
@@ -7608,6 +7657,9 @@ msgstr "재고 평가"
 msgid "Invite"
 msgstr "초대"
 
+msgid "Invite Expired"
+msgstr "초대권 만료됨"
+
 msgid "Invited"
 msgstr "초대됨"
 
@@ -7767,6 +7819,9 @@ msgstr "출고일"
 msgid "Issues"
 msgstr "이슈"
 
+msgid "ITAR Certifications"
+msgstr "ITAR 인증"
+
 msgid "item"
 msgstr "품목"
 
@@ -7889,9 +7944,6 @@ msgstr "작업"
 
 msgid "Jobs Assigned to Me"
 msgstr "내게 배정된 작업"
-
-msgid "Jobs in progress"
-msgstr "진행 중인 작업"
 
 msgid "Jobs Required"
 msgstr "필요한 작업"
@@ -8026,6 +8078,9 @@ msgstr "마지막 날"
 
 msgid "Last Fiscal Year"
 msgstr "지난 회계연도"
+
+msgid "Last Login"
+msgstr "마지막 로그인"
 
 msgid "Last Month"
 msgstr "지난달"
@@ -9487,6 +9542,9 @@ msgstr "품목 없음"
 msgid "No items have inventory activity here yet."
 msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 
+msgid "No jobs were created"
+msgstr "생성된 작업이 없음"
+
 msgid "No journal lines in scope for this period"
 msgstr "이 기간에 대한 범위 내 분개선이 없습니다"
 
@@ -9622,6 +9680,9 @@ msgstr "검사할 개체가 남아 있지 않습니다."
 msgid "No reports match your search."
 msgstr "검색 결과와 일치하는 보고서가 없습니다."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "이 회사의 대표자가 아직 Carbon GovCloud Rider를 승인하지 않았습니다. 누구든지 Carbon에 접근하기 전에 이 회사의 관리자가 승인해야 합니다 — Carbon 직원은 귀사를 대신하여 승인할 수 없습니다."
+
 msgid "No results"
 msgstr "결과 없음"
 
@@ -9732,6 +9793,9 @@ msgstr "일반"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "테이블이 아니라 총계정원장 잔액입니다. 작업 자재가 투입되면서 원가가 누적되고, 작업이 재고로 입고되면 정산됩니다."
+
+msgid "Not certified"
+msgstr "인증되지 않음"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
@@ -11849,6 +11913,9 @@ msgstr "보고서"
 msgid "Reprint"
 msgstr "재출력"
 
+msgid "Request a new invite"
+msgstr "새 초대권 요청"
+
 msgid "Request access"
 msgstr "액세스 요청"
 
@@ -12082,6 +12149,10 @@ msgstr "RFQ 번호"
 
 msgid "RFQs"
 msgstr "RFQ"
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "올바른 품목"
@@ -14820,11 +14891,18 @@ msgstr "이 정보는 모든 사용자에게 표시되므로 공유하는 내용
 msgid "this inspection plan"
 msgstr "이 검사 계획"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "{0}에 참여하기 위한 이 초대권은 만료되었습니다. 이메일로 새 초대권을 보내달라고 요청할 수 있습니다."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "이것은 구매 항목입니다 — BoM/BoP가 없습니다. 해당 속성과 문서만 변경할 수 있습니다."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "웹훅의 고유 식별자입니다"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "이것은 ITAR 통제 환경입니다. 접근은 미국인에게만 제한됩니다."
 
 msgid "This is the month your fiscal year starts."
 msgstr "회계연도가 시작되는 월입니다."
@@ -15344,6 +15422,9 @@ msgstr "유형:"
 msgid "Types"
 msgstr "유형"
 
+msgid "U.S. Person Attestation"
+msgstr "미국인 증명"
+
 msgid "Unapplied"
 msgstr "미적용"
 
@@ -15836,6 +15917,9 @@ msgstr "진행 중인 작업 보기"
 
 msgid "View Active Quotes"
 msgstr "활성 견적 보기"
+
+msgid "View all"
+msgstr "모두 보기"
 
 msgid "View All"
 msgstr "전체 보기"

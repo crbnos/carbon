@@ -44,6 +44,24 @@ Deno edge function** — NOT Trigger.dev, and not inline in the app server.
      with the output: MRP **consumes `demandProjection`** (user-entered) and **writes
      `demandForecast`** (rebuilt each run — see Outputs below).
    - **Inputs (supply)**: views `openProductionOrders`, `openPurchaseOrderLines`.
+   - **Inputs (on-hand)**: the `itemStockQuantities` table (trigger-maintained,
+     `20260812002454`) — an indexed per-company read, replacing the old full
+     `itemLedger` GROUP BY that grew with total history. Excludes `Rejected`
+     tracked stock (matching `get_inventory_quantities`); the raw scan counted it.
+   - **Reads paginate**: every PostgREST read goes through `lib/fetch-all.ts`
+     (1000-row pages + stable `.order()`) — production `max_rows = 1000`
+     truncates bare `.select("*")` reads, and the dev stack does NOT enforce
+     the cap, so truncation is invisible locally.
+   - **Writes are atomic**: the Phase-7 delete-and-rewrite of
+     `demandForecast`/`demandForecastSource`/`supplyForecast` + actual inserts
+     runs in ONE Kysely transaction — a failed run leaves prior planning data
+     intact.
+   - **Key encoding**: every composite map key goes through `makeKey` /
+     `makeLocationItemKey` / `makeActualKey` in `lib/mrp-engine.ts` (joined on
+     `KEY_SEP = "\x1f"`). Never build `${a}-${b}` keys — ids are caller-supplied
+     TEXT (imports mint hyphenated UUIDs); "-"-joined keys truncated them on
+     parse and MRP 500'd for those tenants (Postgres 21000). Regression tests:
+     `lib/mrp-engine.test.ts` (deno test).
    - **BOM explosion**: for `Make` items, explodes the active make method to
      derive child demand with low-level-code ordering, per-period inventory
      netting, and lead-time offsetting.

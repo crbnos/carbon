@@ -107,7 +107,13 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
   `quantity`, `consumed30/90`, `storageUnitIds`, `snapshotCutoff`. pg_cron refresh every 30 min.
   Read only inside the SECURITY DEFINER quantity functions (REVOKEd from PostgREST roles); live
   reads add rows past `snapshotCutoff` plus ALL tracked rows, so results stay exact. Distinct
-  from `itemStockQuantities` (the approximate UI item-store matview used by RealtimeDataProvider).
+  from `itemStockQuantities` — since `20260812002454` a real TABLE maintained
+  transactionally by a statement-level handler on `itemLedger`
+  (`apply_item_stock_quantities`, attached via `attach_statement_handler`), no
+  longer an approximate matview. Excludes `Rejected` tracked stock; exact, with a
+  nightly `reconcile-item-stock-quantities` cron as drift backstop. Read by
+  RealtimeDataProvider (with realtime push), the workflow engine's
+  `item.quantityOnHand` operation, and the MRP edge function's on-hand input.
   The old `itemInventory` rollup table is DEAD — its maintaining trigger was dropped in
   `20250209170952_shipment.sql`; don't read or write it.
 - **`storageUnit`** — bins/locations. Renamed from `shelf` (`20260417000100`); supports nesting via

@@ -284,20 +284,20 @@ function KitVsSubassembly() {
       <text x={24} y={26} fontSize="11.5" fontWeight={600} fill={INK_60} fontFamily="var(--font-mono)">
         SUBASSEMBLY
       </text>
-      <Box x={110} y={42} w={150} h={46} label="Arm" sub="make to order" />
+      <Box x={110} y={42} w={150} h={46} label="Frame" sub="make to order" />
       <Arrow x1={185} y1={88} x2={185} y2={118} />
-      <Box x={100} y={118} w={170} h={48} label="Arm job" sub="own routing" accent />
+      <Box x={100} y={118} w={170} h={48} label="Frame job" sub="own routing" accent />
       <g stroke={LINE} strokeWidth={1.4} fill="none">
         <path d="M 185 166 L 185 184 M 145 184 L 265 184 M 145 184 L 145 198 M 265 184 L 265 198" />
       </g>
-      <Box x={90} y={198} w={110} h={38} label="Part" />
-      <Box x={210} y={198} w={110} h={38} label="Motor" />
+      <Box x={90} y={198} w={110} h={38} label="Panel" />
+      <Box x={210} y={198} w={110} h={38} label="Bracket" />
 
       {/* Kit — components issued straight into the parent */}
       <text x={400} y={26} fontSize="11.5" fontWeight={600} fill={INK_60} fontFamily="var(--font-mono)">
         KIT
       </text>
-      <Box x={465} y={42} w={150} h={46} label="Arm" sub="make to order" />
+      <Box x={465} y={42} w={150} h={46} label="Frame" sub="make to order" />
       <Arrow x1={540} y1={88} x2={540} y2={116} />
       <rect x={442} y={116} width={196} height={106} rx={12} fill="#EAF8FF" stroke={BRAND} strokeWidth={1.4} strokeDasharray="5 4" />
       <text x={540} y={137} textAnchor="middle" fontSize="10.5" fontWeight={600} fill={BRAND_INK} fontFamily="var(--font-mono)">
@@ -305,11 +305,11 @@ function KitVsSubassembly() {
       </text>
       <rect x={462} y={148} width={156} height={28} rx={7} fill="#FBFBF8" stroke={LINE} strokeWidth={1.3} />
       <text x={540} y={166} textAnchor="middle" fontSize="12.5" fontWeight={500} fill={INK}>
-        Part
+        Panel
       </text>
       <rect x={462} y={184} width={156} height={28} rx={7} fill="#FBFBF8" stroke={LINE} strokeWidth={1.3} />
       <text x={540} y={202} textAnchor="middle" fontSize="12.5" fontWeight={500} fill={INK}>
-        Motor
+        Bracket
       </text>
     </svg>
   );

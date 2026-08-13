@@ -413,6 +413,44 @@ export const auditConfig = {
       }
     },
 
+    itarCertification: {
+      label: "ITAR Certification",
+      tables: {
+        itarCertification: {
+          role: "root",
+          createFields: [
+            "type",
+            "userId",
+            "docVersion",
+            "docHash",
+            "fullLegalName",
+            "title",
+            "complianceContact",
+            "certifiedAt",
+            "expiresAt",
+            "ipAddress",
+            "userAgent"
+          ]
+        }
+      }
+    },
+
+    invite: {
+      label: "Invite",
+      tables: {
+        invite: {
+          role: "root",
+          createFields: [
+            "email",
+            "role",
+            "createdBy",
+            "attestedBy",
+            "attestedAt"
+          ]
+        }
+      }
+    },
+
     nonConformance: {
       label: "Non-Conformance",
       tables: {
