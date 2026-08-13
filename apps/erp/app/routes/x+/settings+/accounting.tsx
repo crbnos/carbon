@@ -37,7 +37,7 @@ import {
   getCompanySettings,
   updateAccountingEnabledSetting,
   updateAssetTaxDepreciationSettings,
-  updateHideCurrencyTrailingZerosSetting
+  updateShowCurrencyTrailingZerosSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -102,9 +102,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Accounting settings updated" };
   }
 
-  if (intent === "hideCurrencyTrailingZeros") {
+  if (intent === "showCurrencyTrailingZeros") {
     const enabled = formData.get("enabled") === "true";
-    const update = await updateHideCurrencyTrailingZerosSetting(
+    const update = await updateShowCurrencyTrailingZerosSetting(
       client,
       companyId,
       enabled
@@ -172,7 +172,7 @@ export default function AccountingSettingsRoute() {
   const { isInternal } = useFlags();
 
   const taxEnabled =
-    (companySettings as any).assetTaxDepreciationEnabled ?? false;
+    companySettings.assetTaxDepreciationEnabled ?? false;
 
   useEffect(() => {
     if (fetcher.data && "success" in fetcher.data) {
@@ -210,8 +210,8 @@ export default function AccountingSettingsRoute() {
     (showTrailingZeros: boolean) => {
       fetcher.submit(
         {
-          intent: "hideCurrencyTrailingZeros",
-          enabled: String(!showTrailingZeros)
+          intent: "showCurrencyTrailingZeros",
+          enabled: String(showTrailingZeros)
         },
         { method: "POST" }
       );
@@ -260,7 +260,7 @@ export default function AccountingSettingsRoute() {
               <VStack className="items-start" spacing={1}>
                 <HStack className="items-center gap-2">
                   <span className="font-medium">
-                    {(companySettings as any).accountingEnabled ? (
+                    {companySettings.accountingEnabled ? (
                       <Trans>Accounting is enabled</Trans>
                     ) : (
                       <Trans>Accounting is disabled</Trans>
@@ -271,7 +271,7 @@ export default function AccountingSettingsRoute() {
                   </Badge>
                 </HStack>
                 <span className="text-sm text-muted-foreground">
-                  {(companySettings as any).accountingEnabled ? (
+                  {companySettings.accountingEnabled ? (
                     <Trans>
                       Transactions will create journal entries and update the
                       general ledger.
@@ -285,7 +285,7 @@ export default function AccountingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
-                checked={(companySettings as any).accountingEnabled ?? false}
+                checked={companySettings.accountingEnabled ?? false}
                 onCheckedChange={handleAccountingToggle}
                 disabled={!isInternal}
               />
@@ -313,10 +313,8 @@ export default function AccountingSettingsRoute() {
                   </Trans>
                 </CardDescription>
               </div>
-              {/* The switch reads positively; the column it writes is the
-                  negative `hideCurrencyTrailingZeros`, hence the inversion. */}
               <Switch
-                checked={!(companySettings as any).hideCurrencyTrailingZeros}
+                checked={companySettings.showCurrencyTrailingZeros}
                 onCheckedChange={handleTrailingZerosToggle}
                 disabled={fetcher.state !== "idle"}
               />
@@ -335,9 +333,9 @@ export default function AccountingSettingsRoute() {
           fetcher={taxFetcher}
           defaultValues={{
             intent: "assetTaxDepreciation",
-            assetTaxRate: parseFloat(
-              (companySettings as any).assetTaxRate ?? "0"
-            ),
+            // Already a NUMERIC column; the parseFloat this replaced only
+            // worked because JS coerced the number back to a string first.
+            assetTaxRate: companySettings.assetTaxRate ?? 0,
             deferredTaxLiabilityAccountId:
               (accountDefaults as any)?.deferredTaxLiabilityAccountId ?? "",
             deferredTaxExpenseAccountId:

@@ -34,11 +34,11 @@ export type CurrencyFormatterOptions = {
  *
  * By default the amount is PADDED to those decimals, so its width states the
  * amount in full: "$300.00", "$3.50", "¥63", "BHD 0.563". A company can drop the
- * non-significant zeros with `showCurrencyTrailingZeros`; that preference is read
- * here once (useCurrencyMinDecimals) rather than at 55 call sites.
+ * non-significant zeros by turning `showCurrencyTrailingZeros` off; that
+ * preference is read here once (useCurrencyMinDecimals) rather than at 55 call sites.
  *
- * Anything the caller passes wins over the kind — reports that deliberately show
- * whole units, or compact "$1.2M" tiles, keep doing so.
+ * Callers pick a KIND, never a digit count: `wholeUnits` for a report that shows
+ * whole amounts, `compact` for a "$1.2M" dashboard tile.
  */
 export function useCurrencyFormatter(options?: CurrencyFormatterOptions) {
   const { company } = useUser();

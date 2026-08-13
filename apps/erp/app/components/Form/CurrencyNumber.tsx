@@ -8,7 +8,7 @@ import { useMemo } from "react";
 import { useCurrencyMinDecimals } from "~/hooks/useCurrencies";
 
 /**
- * Applies the company's `hideCurrencyTrailingZeros` preference to a number
+ * Applies the company's `showCurrencyTrailingZeros` preference to a number
  * field's `formatOptions`, so an editable amount shows the same digits the
  * read-only ones beside it do. Any field whose options are not currency-styled
  * is passed straight through — quantities, rates and exchange rates have their

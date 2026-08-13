@@ -21,7 +21,7 @@ export type MoneyFormatOptions = {
  *  Fixed-width money is the accounting convention — it keeps columns of amounts
  *  aligned and an explicit ".00" reads as money rather than a bare count. Pass 0
  *  to drop the padding ("$300", "$3.5"); that is a per-company display
- *  preference (`companySettings.hideCurrencyTrailingZeros`), which is why it is
+ *  preference (`companySettings.showCurrencyTrailingZeros`), which is why it is
  *  a parameter here rather than a second kind.
  *
  *  Display rounds to this width; STORAGE is a separate question — a value wider

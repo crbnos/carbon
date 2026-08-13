@@ -40,6 +40,45 @@ export function getRuntime() {
 // no-op for them).
 const poolCache = new Map<number, Pool>();
 
+/** NUMERIC. Both drivers hand it over as text by default, so a scale-5 price
+ *  would arrive as a string where the generated types promise a number. */
+const NUMERIC_OID = 1700;
+
+/** The deno-postgres constructor shape. "pg" resolves to node-postgres types in
+ *  the Node build, so the Deno branch has to describe its own driver — but it
+ *  describes it PROPERLY: the TLS block below is the one place a typo silently
+ *  turns encryption off, which is not something to hand to `unknown`. */
+type DenoTlsOptions = { enabled: boolean; enforce: boolean };
+type DenoClientOptions = {
+  user: string;
+  password: string;
+  hostname: string;
+  port: string | number;
+  database?: string;
+  tls?: DenoTlsOptions;
+  controls?: { decoders?: Record<number, (value: string) => unknown> };
+};
+type DenoPoolConstructor = new (
+  options: DenoClientOptions,
+  size: number
+) => Pool;
+
+/** node-postgres keeps type parsers in a PROCESS-GLOBAL registry, so this is
+ *  registered once at module load rather than as a side effect of constructing a
+ *  pool — a factory that reconfigures global state on every call is a trap for
+ *  whoever calls it next. No-ops on Deno, whose driver takes per-pool decoders
+ *  (see `controls` below) and exposes no `types` namespace. */
+function registerNodeNumericParser(): void {
+  (
+    pg as unknown as {
+      types?: {
+        setTypeParser: (oid: number, fn: (v: string) => unknown) => void;
+      };
+    }
+  ).types?.setTypeParser(NUMERIC_OID, Number);
+}
+registerNodeNumericParser();
+
 export function getPostgresConnectionPool(connections: number): Pool {
   const cached = poolCache.get(connections);
   // An ended pool can never serve connections again ("Cannot use a pool after
@@ -70,40 +109,26 @@ function createPostgresConnectionPool(connections: number): Pool {
       // and fall back (its default).
       const u = new URL(connectionPoolerUrl);
       const sslmode = u.searchParams.get("sslmode");
-      // "pg" resolves to node-postgres types in the Node build, so cast the
-      // deno-postgres (options, size) constructor shape explicitly.
-      const DenoPool = Pool as unknown as new (
-        options: unknown,
-        size: number
-      ) => Pool;
-      return new DenoPool(
-        {
-          user: decodeURIComponent(u.username),
-          password: decodeURIComponent(u.password),
-          hostname: decodeURIComponent(u.hostname),
-          port: u.port || 5432,
-          database: u.pathname.replace(/^\//, "") || undefined,
-          ...(sslmode
-            ? {
-                tls: {
-                  enabled: sslmode !== "disable",
-                  enforce: ["require", "verify-ca", "verify-full"].includes(
-                    sslmode
-                  ),
-                },
-              }
-            : {}),
-          controls: {
-            decoders: {
-              // NUMERIC (OID 1700) arrives as text; decode to a JS number so
-              // runtime values match the generated types. The driver applies
-              // this element-wise to numeric[] via the base-type fallback.
-              1700: (value: string) => Number(value),
-            },
-          },
+      const DenoPool = Pool as unknown as DenoPoolConstructor;
+      const options: DenoClientOptions = {
+        user: decodeURIComponent(u.username),
+        password: decodeURIComponent(u.password),
+        hostname: u.hostname,
+        port: u.port || 5432,
+        database: u.pathname.replace(/^\//, "") || undefined,
+        controls: {
+          // The driver applies this element-wise to numeric[] via the base-type
+          // fallback, so arrays decode too.
+          decoders: { [NUMERIC_OID]: Number },
         },
-        connections
-      );
+      };
+      if (sslmode) {
+        options.tls = {
+          enabled: sslmode !== "disable",
+          enforce: ["require", "verify-ca", "verify-full"].includes(sslmode),
+        };
+      }
+      return new DenoPool(options, connections);
     }
     case "node": {
       const url = process.env.SUPABASE_DB_URL!;
@@ -125,17 +150,6 @@ function createPostgresConnectionPool(connections: number): Pool {
       pool.on("error", (err) => {
         console.error("postgres pool: idle client error", err);
       });
-      // node-postgres returns NUMERIC as text by default; parse to a JS number
-      // so runtime values match the generated types (mirrors the Deno branch's
-      // custom decoder). `types` only exists on node-postgres — on Deno the
-      // namespace has no such export and this no-ops.
-      (
-        pg as unknown as {
-          types?: {
-            setTypeParser: (oid: number, fn: (v: string) => unknown) => void;
-          };
-        }
-      ).types?.setTypeParser(1700, (v: string) => Number(v));
       return pool;
     }
 

@@ -56,7 +56,7 @@ export function useCurrencyDecimals(
 
 /**
  * The MINIMUM digits a currency amount displays with — the company's
- * `hideCurrencyTrailingZeros` preference resolved to a number for
+ * `showCurrencyTrailingZeros` preference resolved to a number for
  * `moneyFormatOptions`.
  *
  * `undefined` means "pad to the currency's decimals", which is both the default
@@ -66,5 +66,5 @@ export function useCurrencyDecimals(
  */
 export function useCurrencyMinDecimals(): number | undefined {
   const settings = useCompanySettings();
-  return settings?.hideCurrencyTrailingZeros ? 0 : undefined;
+  return settings?.showCurrencyTrailingZeros === false ? 0 : undefined;
 }

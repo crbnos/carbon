@@ -1475,14 +1475,14 @@ export async function updateDefaultSupplierCc(
     .eq("id", companyId);
 }
 
-export async function updateHideCurrencyTrailingZerosSetting(
+export async function updateShowCurrencyTrailingZerosSetting(
   client: SupabaseClient<Database>,
   companyId: string,
-  hideCurrencyTrailingZeros: boolean
+  showCurrencyTrailingZeros: boolean
 ) {
   return client
     .from("companySettings")
-    .update(sanitize({ hideCurrencyTrailingZeros }))
+    .update(sanitize({ showCurrencyTrailingZeros }))
     .eq("id", companyId);
 }
 
