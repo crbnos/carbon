@@ -77,19 +77,16 @@ export const INPUT_FORMAT = {
   percentPoints: percentPointsFormatOptions(),
   quantity: quantityFormatOptions(),
   exchangeRate: exchangeRateFormatOptions(),
+  /** Editable currency — money and per-unit prices alike, and the SAME digits
+   *  they display with. react-aria's blur commit is literally
+   *  `setNumberValue(parse(format(x)))`, so this options object is what decides
+   *  the precision a typed amount is STORED at: at USD's 2 places a typed
+   *  300.22121 commits as 300.22, and at JPY's 0 a typed 63.4 commits as 63.
+   *  Trailing zeros are dropped here too, so a 300.00 cost reads "$300". */
   money: (currency: string, decimalPlaces: number) =>
     moneyFormatOptions(currency, decimalPlaces),
-  /** Editable per-unit price — the ONE place price and money differ, and they
-   *  have to. react-aria's blur commit runs parse(format(x)), so an input capped
-   *  at the currency's decimals would round a typed 0.164/ea to 0.16 and SAVE
-   *  it. Display rounds to the currency; the field a price is TYPED into must
-   *  hold what storage holds. `decimalPlaces` is ignored for that reason. */
-  price: (currency: string, _decimalPlaces?: number) => ({
-    style: "currency" as const,
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: SCALE
-  })
+  price: (currency: string, decimalPlaces: number) =>
+    moneyFormatOptions(currency, decimalPlaces)
 };
 
 const SCALE_STEP = 1 / 10 ** SCALE;
@@ -100,9 +97,11 @@ const SCALE_STEP = 1 / 10 ** SCALE;
 export const INPUT_STEP = {
   rate: SCALE_STEP,
   quantity: SCALE_STEP,
-  price: SCALE_STEP,
   exchangeRate: SCALE_STEP,
-  /** Settlement money steps in its own smallest unit (1 for JPY, 0.01 for USD). */
+  /** Currency steps in its own smallest unit (1 for JPY, 0.01 for USD) — for
+   *  money and prices alike, since they share one format. There is deliberately
+   *  no finer `price` step: react-aria commits parse(format(x)), so a step below
+   *  the field's own format can only produce values the formatter rounds away. */
   money: (decimalPlaces: number) => 1 / 10 ** decimalPlaces
 };
 

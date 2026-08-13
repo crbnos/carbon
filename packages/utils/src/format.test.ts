@@ -50,20 +50,32 @@ describe("formatMoney / formatPrice", () => {
     expect(formatMoney(0.5634, "en-US", "BHD", 3)).toBe("BHD\u00a00.563");
   });
 
-  it("lets the editable price input hold what storage holds", () => {
-    // The one place the two part company: react-aria's blur commit runs
-    // parse(format(x)), so an input capped at the currency's decimals would
-    // round a typed 0.164/ea to 0.16 and SAVE it.
-    const input = new Intl.NumberFormat("en-US", INPUT_FORMAT.price("USD", 2));
-    expect(input.format(0.164)).toBe("$0.164");
-    expect(input.format(300.33323)).toBe("$300.33323");
-    expect(input.format(3)).toBe("$3");
+  it("gives editable fields the SAME digits they display with", () => {
+    // react-aria's blur commit is setNumberValue(parse(format(x))), so this
+    // options object decides the precision a typed amount is STORED at.
+    const usd = new Intl.NumberFormat("en-US", INPUT_FORMAT.price("USD", 2));
+    expect(usd.format(300)).toBe("$300");
+    expect(usd.format(300.22121)).toBe("$300.22");
+    expect(usd.format(18.75)).toBe("$18.75");
+
+    const jpy = new Intl.NumberFormat("en-US", INPUT_FORMAT.money("JPY", 0));
+    expect(jpy.format(63)).toBe("¥63");
+    expect(jpy.format(63.4)).toBe("¥63");
   });
 
-  it("steps editable money in the currency's own unit", () => {
+  it("formats money and price inputs identically", () => {
+    for (const v of [0, 300, 300.22121, 18.75]) {
+      expect(
+        new Intl.NumberFormat("en-US", INPUT_FORMAT.price("USD", 2)).format(v)
+      ).toBe(
+        new Intl.NumberFormat("en-US", INPUT_FORMAT.money("USD", 2)).format(v)
+      );
+    }
+  });
+
+  it("renders an emptied cost as a bare zero", () => {
     const money = new Intl.NumberFormat("en-US", INPUT_FORMAT.money("USD", 2));
     expect(money.format(0)).toBe("$0");
-    expect(money.format(18.75)).toBe("$18.75");
   });
 });
 
@@ -85,7 +97,7 @@ describe("INPUT_STEP", () => {
     // a typed 6.255% into 6.25%, silently, before anything could format it.
     expect(INPUT_STEP.rate).toBe(1e-5);
     expect(INPUT_STEP.quantity).toBe(1e-5);
-    expect(INPUT_STEP.price).toBe(1e-5);
+    expect(INPUT_STEP.exchangeRate).toBe(1e-5);
   });
 
   it("lets every value the rate kind can DISPLAY also be committed", () => {

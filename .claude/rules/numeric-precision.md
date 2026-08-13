@@ -116,7 +116,7 @@ is module-private so the two percent kinds can never drift apart):
 | Exchange rate | min 0, max 5 | "1.0852", "0.00781" — a plain multiplier, not a percent and not a currency. Intl's decimal default caps at 3, which truncates a stored rate on blur |
 | Quantity | min 0, max 5 | "3", "4.33333", "0.00125" — no "<0.01" placeholder |
 | Currency (money AND price) | min 0, max `currency.decimalPlaces` | "$3", "$3.5", "$3.03", "¥63", "$0" — ONE kind. A price is an amount in the same currency, so both render at that currency's decimals and trailing zeros are dropped. The decimals are a CEILING, so a stored 300.33323 displays "$300.33"; storage keeps the rest. `usePriceFormatter` is an alias of `useCurrencyFormatter`, not a second implementation |
-| Editable price input | min 0, max 5 | the ONE place price and money differ, and they must: react-aria's blur commit runs `parse(format(x))`, so an input capped at the currency's decimals would round a typed 0.164/ea to 0.16 and SAVE it. `INPUT_FORMAT.price` ignores `decimalPlaces` for that reason |
+| Editable currency (`INPUT_FORMAT.money` / `.price`) | same as above | an input formats with the SAME digits it displays with. react-aria's blur commit is literally `setNumberValue(parse(format(x)))`, so this is not decoration — it is what a typed amount is STORED at: 300.22121 commits as 300.22 in USD, 63.4 commits as 63 in JPY. A per-unit price is entered and kept at the currency's decimals |
 
 Call sites pick a kind (`formatMoney/Price/Percent/Quantity`, the
 `useCurrencyFormatter`/`usePriceFormatter`/`usePercentFormatter`/
@@ -132,8 +132,11 @@ calls are safe.)
 nearest multiple of it, so a step coarser than the field's scale silently
 truncates what the formatter would otherwise display: `step={0.0001}` on a
 rate turned a typed 6.255% into 6.25%, and 12.345% into 12.34%. Take the step
-from `INPUT_STEP.*` (paired with the kinds above — `rate`/`quantity`/`price`
-at 1e-5, `money(decimalPlaces)` at the currency's own unit) or omit the prop.
+from `INPUT_STEP.*` (paired with the kinds above — `rate`/`quantity`/
+`exchangeRate` at 1e-5, `money(decimalPlaces)` at the currency's own unit for
+money AND prices) or omit the prop. There is deliberately no finer price step:
+since the commit rounds through the format, a step below the field's own format
+can only produce values the formatter discards.
 A step literal at a call site is a violation for the same reason a digit
 literal is.
 

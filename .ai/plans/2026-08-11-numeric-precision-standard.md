@@ -105,7 +105,7 @@ Display digits equal input digits for every kind. Editable fields MUST use `INPU
 | Percent / rate | min 0, max 3 | "5%", "6.25%", "6.255%" — trailing zeros never render |
 | Quantity | min 0, max 5 | "3", "4.33333", "0.00125" — no "<0.01" placeholder |
 | Currency (money AND price) | min 0, max `currency.decimalPlaces` | "$3", "$3.5", "$3.03", "¥63", "$0" — ONE kind. A price is an amount in the same currency, so both render at that currency's decimals and trailing zeros are dropped. The decimals are a CEILING, so a stored 300.33323 displays "$300.33"; storage keeps the rest. `usePriceFormatter` is an alias of `useCurrencyFormatter`, not a second implementation |
-| Editable price input | min 0, max 5 | the ONE place price and money differ, and they must: react-aria's blur commit runs `parse(format(x))`, so an input capped at the currency's decimals would round a typed 0.164/ea to 0.16 and SAVE it. `INPUT_FORMAT.price` ignores `decimalPlaces` for that reason |
+| Editable currency (`INPUT_FORMAT.money` / `.price`) | same as above | an input formats with the SAME digits it displays with. react-aria's blur commit is literally `setNumberValue(parse(format(x)))`, so this is not decoration — it is what a typed amount is STORED at: 300.22121 commits as 300.22 in USD, 63.4 commits as 63 in JPY. A per-unit price is entered and kept at the currency's decimals |
 
 `currency.decimalPlaces` (DB column) is authoritative over Intl/CLDR defaults. Call sites never pass `minimumFractionDigits`/`maximumFractionDigits` — they pick a named kind; module-local `*_PRECISION` constants are the same violation.
 
