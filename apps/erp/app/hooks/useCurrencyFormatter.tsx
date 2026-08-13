@@ -35,12 +35,35 @@ export function useCurrencyFormatter(
         })
       : {};
     const decimals = decimalPlaces ?? configuredDecimals;
-    return new Intl.NumberFormat(locale, {
-      ...(decimals != null
-        ? moneyFormatOptions(currency, decimals)
-        : { style: "currency" as const, currency }),
-      ...opts
-    });
+    const build = (digits: number | null) =>
+      new Intl.NumberFormat(locale, {
+        ...(digits != null
+          ? moneyFormatOptions(currency, digits)
+          : { style: "currency" as const, currency }),
+        ...opts
+      });
+
+    // A plain zero has no cents to state, so it reads "$0" rather than "$0.00".
+    // Every other amount keeps its full width — an invoice total showing
+    // "$1,234.5" looks truncated. Only `format` is ever called on this (270
+    // call sites, no formatToParts/resolvedOptions), so branching by value is
+    // safe; a static Intl.NumberFormat could not do it.
+    const padded = build(decimals);
+    const bare = build(0);
+    // Delegates everything except `format` so this stays a drop-in
+    // Intl.NumberFormat — several call sites pass it as one.
+    const wrapped: Intl.NumberFormat = {
+      format: (value) => (Number(value) === 0 ? bare : padded).format(value),
+      // Casts because the interface's parameter union is wider than the
+      // implementation overloads; nothing calls these today.
+      formatToParts: (value) => padded.formatToParts(value as number),
+      resolvedOptions: () => padded.resolvedOptions(),
+      formatRange: (start, end) =>
+        padded.formatRange(start as number, end as number),
+      formatRangeToParts: (start, end) =>
+        padded.formatRangeToParts(start as number, end as number)
+    };
+    return wrapped;
   }, [locale, currency, optionsKey, configuredDecimals]);
   return formatter;
 }

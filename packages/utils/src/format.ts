@@ -1,6 +1,13 @@
 import { SCALE } from "./math";
 
-/** Settlement money: padded to the currency's decimals — settlement zeros aren't empty. */
+/** Settlement money: padded to the currency's decimals, because its zeros state
+ *  the amount in full — "$3.00" is three dollars and zero cents, and an invoice
+ *  total reading "$1,234.5" looks truncated.
+ *
+ *  A plain ZERO is the exception: there are no cents to state, so it renders
+ *  "$0". Use moneyFormatOptionsFor(value, ...) wherever the value is known;
+ *  editable inputs can't (react-aria takes static options) and use
+ *  INPUT_FORMAT.money, which drops the padding so an empty cost shows "$0". */
 export function moneyFormatOptions(
   currency: string,
   decimalPlaces: number
@@ -11,6 +18,16 @@ export function moneyFormatOptions(
     minimumFractionDigits: decimalPlaces,
     maximumFractionDigits: decimalPlaces
   };
+}
+
+/** moneyFormatOptions with the zero case applied — the digits a DISPLAY should
+ *  use for this particular amount. */
+export function moneyFormatOptionsFor(
+  value: number,
+  currency: string,
+  decimalPlaces: number
+): Intl.NumberFormatOptions {
+  return moneyFormatOptions(currency, value === 0 ? 0 : decimalPlaces);
 }
 
 /** Per-unit prices (scale 5): distributors quote in thousandths (0.164/ea, 0.00125/g).
@@ -81,8 +98,15 @@ export const INPUT_FORMAT = {
   percentPoints: percentPointsFormatOptions(),
   quantity: quantityFormatOptions(),
   exchangeRate: exchangeRateFormatOptions(),
-  money: (currency: string, decimalPlaces: number) =>
-    moneyFormatOptions(currency, decimalPlaces),
+  /** Editable money. react-aria takes STATIC options, so this cannot vary by
+   *  value the way a display can — it drops the minimum outright so an empty
+   *  shipping cost reads "$0" rather than "$0.00". The cost is that a half
+   *  amount shows "$3.5" while being edited; it round-trips to the same
+   *  number, and a read-only total still reads "$3.50". */
+  money: (currency: string, decimalPlaces: number) => ({
+    ...moneyFormatOptions(currency, decimalPlaces),
+    minimumFractionDigits: 0
+  }),
   price: (currency: string, decimalPlaces: number) =>
     priceFormatOptions(currency, decimalPlaces)
 };
@@ -109,7 +133,7 @@ export function formatMoney(
 ): string {
   return new Intl.NumberFormat(
     locale,
-    moneyFormatOptions(currency, decimalPlaces)
+    moneyFormatOptionsFor(value, currency, decimalPlaces)
   ).format(value);
 }
 

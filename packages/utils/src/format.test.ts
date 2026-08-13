@@ -4,6 +4,7 @@ import {
   formatPercent,
   formatPrice,
   formatQuantity,
+  INPUT_FORMAT,
   INPUT_STEP
 } from "./format";
 
@@ -57,6 +58,24 @@ describe("formatPrice", () => {
     // has already been rounded TO the currency's decimals.
     expect(formatMoney(3, "en-US", "USD", 2)).toBe("$3.00");
     expect(formatMoney(3.003, "en-US", "USD", 2)).toBe("$3.00");
+  });
+
+  it("renders a plain zero bare, but keeps every other amount padded", () => {
+    // A zero has no cents to state. Anything else does — an invoice total
+    // reading "$1,234.5" looks truncated.
+    expect(formatMoney(0, "en-US", "USD", 2)).toBe("$0");
+    expect(formatMoney(0, "en-US", "BHD", 3)).toBe("BHD\u00a00");
+    expect(formatMoney(3.5, "en-US", "USD", 2)).toBe("$3.50");
+    expect(formatMoney(1234.5, "en-US", "USD", 2)).toBe("$1,234.50");
+  });
+
+  it("drops the padding on editable money, which cannot vary by value", () => {
+    // react-aria takes static options, so an input can't special-case zero the
+    // way a display can — it drops the minimum so an empty cost reads "$0".
+    const f = new Intl.NumberFormat("en-US", INPUT_FORMAT.money("USD", 2));
+    expect(f.format(0)).toBe("$0");
+    expect(f.format(18.75)).toBe("$18.75");
+    expect(f.format(3.5)).toBe("$3.5");
   });
 });
 

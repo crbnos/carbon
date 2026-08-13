@@ -104,7 +104,7 @@ is module-private so the two percent kinds can never drift apart):
 | Percent points | min 0, max 3 | the same rate typed bare in a field already labelled "%" — `6.25`, caller divides by 100 |
 | Exchange rate | min 0, max 5 | "1.0852", "0.00781" — a plain multiplier, not a percent and not a currency. Intl's decimal default caps at 3, which truncates a stored rate on blur |
 | Quantity | min 0, max 5 | "3", "4.33333", "0.00125" — no "<0.01" placeholder |
-| Money (settlement) | min = max = `currency.decimalPlaces` | "$4.50", "¥63" — always padded |
+| Money (settlement) | min = max = `currency.decimalPlaces`, except a plain 0 | "$4.50", "¥63" — padded, because the zeros state the amount in full; but 0 renders "$0". Editable money can't vary by value (react-aria takes static options), so `INPUT_FORMAT.money` drops the minimum outright |
 | Price (per-unit) | min 0, max 5 | "$0.164", "$4.5", "$3" — a price carries only the digits it has; the currency's decimals have no say |
 
 Call sites pick a kind (`formatMoney/Price/Percent/Quantity`, the
