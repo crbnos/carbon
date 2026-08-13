@@ -64,7 +64,8 @@ import {
   LuTable,
   LuTrash,
   LuTriangleAlert,
-  LuWorkflow
+  LuWorkflow,
+  LuZap
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
@@ -128,9 +129,16 @@ const JobHeader = () => {
   const cancelModal = useDisclosure();
   const completeModal = useDisclosure();
   const deleteJobModal = useDisclosure();
+  const expediteModal = useDisclosure();
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
   const statusFetcher = useFetcher<{}>();
+  const expediteFetcher = useFetcher<{
+    expedite: {
+      projectedCompletionAt: string | null;
+      cause: string | null;
+    } | null;
+  }>();
   const status = routeData?.job?.status;
 
   const getOptionFromPath = (jobId: string) => {
@@ -205,6 +213,24 @@ const JobHeader = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {auditLogTrigger}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={
+                  !["Ready", "In Progress", "Paused"].includes(status ?? "") ||
+                  expediteFetcher.state !== "idle" ||
+                  !permissions.can("view", "production")
+                }
+                onClick={() => {
+                  expediteModal.onOpen();
+                  expediteFetcher.submit(
+                    {},
+                    { method: "post", action: path.to.jobExpedite(jobId) }
+                  );
+                }}
+              >
+                <DropdownMenuIcon icon={<LuZap />} />
+                {t`Best case…`}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={
@@ -473,6 +499,13 @@ const JobHeader = () => {
           job={routeData?.job}
           onClose={completeModal.onClose}
           fetcher={statusFetcher}
+        />
+      )}
+      {expediteModal.isOpen && (
+        <JobExpediteModal
+          job={routeData?.job}
+          onClose={expediteModal.onClose}
+          fetcher={expediteFetcher}
         />
       )}
       {deleteJobModal.isOpen && (
@@ -969,6 +1002,108 @@ function JobCancelModal({
     </Modal>
   );
 }
+
+function JobExpediteModal({
+  job,
+  onClose,
+  fetcher
+}: {
+  job?: Job;
+  fetcher: FetcherWithComponents<{
+    expedite: {
+      projectedCompletionAt: string | null;
+      cause: string | null;
+    } | null;
+  }>;
+  onClose: () => void;
+}) {
+  const { t } = useLingui();
+
+  if (!job) return null;
+
+  const loading = fetcher.state !== "idle";
+  const expedite = fetcher.data?.expedite;
+
+  const currentProjection = job.projectedCompletionAt
+    ? formatDate(job.projectedCompletionAt.slice(0, 10))
+    : null;
+  const bestCaseProjection = expedite?.projectedCompletionAt
+    ? formatDate(expedite.projectedCompletionAt.slice(0, 10))
+    : null;
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>Best case</Trans> {job.jobId}
+          </ModalTitle>
+          <ModalDescription>
+            <Trans>
+              Projected completion if this job jumped to the front of its
+              location's schedule. Nothing is saved.
+            </Trans>
+          </ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          {loading ? (
+            <div className="flex flex-col h-[118px] w-full items-center justify-center gap-2">
+              <Spinner className="size-8" />
+              <p className="text-sm">
+                <Trans>Calculating best case…</Trans>
+              </p>
+            </div>
+          ) : expedite ? (
+            <VStack spacing={4}>
+              <div className="flex items-center justify-between w-full text-sm">
+                <span className="text-muted-foreground">
+                  <Trans>Current projection</Trans>
+                </span>
+                <span className="font-medium">
+                  {currentProjection ?? t`Not scheduled`}
+                </span>
+              </div>
+              <div className="flex items-center justify-between w-full text-sm">
+                <span className="text-muted-foreground">
+                  <Trans>Best case projection</Trans>
+                </span>
+                <span className="font-medium">
+                  {bestCaseProjection ?? t`Not scheduled`}
+                </span>
+              </div>
+              {expedite.cause && (
+                <Alert>
+                  <LuTriangleAlert />
+                  <AlertTitle>
+                    <Trans>Bottleneck</Trans>
+                  </AlertTitle>
+                  <AlertDescription>{expedite.cause}</AlertDescription>
+                </Alert>
+              )}
+            </VStack>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              <Trans>No forecast available for this job.</Trans>
+            </p>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={onClose}>
+            <Trans>Close</Trans>
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
 function JobCompleteModal({
   job,
   onClose,

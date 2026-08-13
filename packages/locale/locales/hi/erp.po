@@ -2454,6 +2454,15 @@ msgstr "चरणबद्ध रूप से बंद किया जा र
 msgid "Below safety stock"
 msgstr "सुरक्षा स्टॉक से नीचे"
 
+msgid "Best case"
+msgstr ""
+
+msgid "Best case projection"
+msgstr ""
+
+msgid "Best case…"
+msgstr ""
+
 msgid "Beta"
 msgstr "बीटा"
 
@@ -2538,6 +2547,9 @@ msgstr "पुस्तक मूल्यह्रास"
 
 msgid "Both"
 msgstr "दोनों"
+
+msgid "Bottleneck"
+msgstr ""
 
 msgid "Breadcrumb"
 msgstr "ब्रेडक्रम्ब"
@@ -2637,6 +2649,9 @@ msgstr "BOM से गणना करें"
 
 msgid "Calculated finished-good expiry"
 msgstr "गणना की गई तैयार-माल की समाप्ति"
+
+msgid "Calculating best case…"
+msgstr ""
 
 msgid "Calculation Method"
 msgstr "गणना विधि"
@@ -4119,6 +4134,9 @@ msgstr "वर्तमान नेट बुक वैल्यू:"
 
 msgid "Current Password"
 msgstr "वर्तमान पासवर्ड"
+
+msgid "Current projection"
+msgstr ""
 
 msgid "Current quantity"
 msgstr "वर्तमान मात्रा"
@@ -9739,6 +9757,9 @@ msgstr "इस आइटम के लिए कोई फ़ाइल नही
 msgid "No files uploaded"
 msgstr "कोई फ़ाइल अपलोड नहीं की गई"
 
+msgid "No forecast available for this job."
+msgstr ""
+
 msgid "No Gauge Selected"
 msgstr "कोई गेज चयनित नहीं"
 
@@ -10035,6 +10056,9 @@ msgstr "अभी तक कहीं भी संदर्भित नही�
 
 msgid "Not Required"
 msgstr "आवश्यक नहीं"
+
+msgid "Not scheduled"
+msgstr ""
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "शेड्यूल नहीं किया गया — कोई संभव स्लॉट नहीं। संग्रहीत तारीखें पिछड़ी-योजना प्लेसहोल्डर हैं, वास्तविक बुकिंग नहीं।"
@@ -11354,6 +11378,9 @@ msgid "Project start"
 msgstr "प्रोजेक्ट शुरुआत"
 
 msgid "Projected completion"
+msgstr ""
+
+msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr ""
 
 msgid "Projected demand exploded from BOMs and forecasts."

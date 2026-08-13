@@ -2454,6 +2454,15 @@ msgstr "Снимается с производства — преемник: <0>
 msgid "Below safety stock"
 msgstr "Ниже страховой запас"
 
+msgid "Best case"
+msgstr ""
+
+msgid "Best case projection"
+msgstr ""
+
+msgid "Best case…"
+msgstr ""
+
 msgid "Beta"
 msgstr "Бета"
 
@@ -2538,6 +2547,9 @@ msgstr "Амортизация по книге"
 
 msgid "Both"
 msgstr "Оба"
+
+msgid "Bottleneck"
+msgstr ""
 
 msgid "Breadcrumb"
 msgstr "Навигационная цепочка"
@@ -2637,6 +2649,9 @@ msgstr "Рассчитать из BOM"
 
 msgid "Calculated finished-good expiry"
 msgstr "Рассчитанный срок годности готовой продукции"
+
+msgid "Calculating best case…"
+msgstr ""
 
 msgid "Calculation Method"
 msgstr "Метод расчета"
@@ -4119,6 +4134,9 @@ msgstr "Текущая чистая балансовая стоимость:"
 
 msgid "Current Password"
 msgstr "Текущий пароль"
+
+msgid "Current projection"
+msgstr ""
 
 msgid "Current quantity"
 msgstr "Текущее количество"
@@ -9739,6 +9757,9 @@ msgstr "Нет файлов для этого элемента."
 msgid "No files uploaded"
 msgstr "Файлы не загружены"
 
+msgid "No forecast available for this job."
+msgstr ""
+
 msgid "No Gauge Selected"
 msgstr "Датчик не выбран"
 
@@ -10035,6 +10056,9 @@ msgstr "Пока не на что-либо ссылается."
 
 msgid "Not Required"
 msgstr "Не требуется"
+
+msgid "Not scheduled"
+msgstr ""
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "Не запланировано — нет доступного слота. Сохраненные даты являются заполнителями обратного планирования, а не реальным бронированием."
@@ -11354,6 +11378,9 @@ msgid "Project start"
 msgstr "Начало проекта"
 
 msgid "Projected completion"
+msgstr ""
+
+msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr ""
 
 msgid "Projected demand exploded from BOMs and forecasts."

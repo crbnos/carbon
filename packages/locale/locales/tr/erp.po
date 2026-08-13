@@ -2454,6 +2454,15 @@ msgstr "Aşamalı olarak kaldırılıyor — halef: <0>{0}</0>"
 msgid "Below safety stock"
 msgstr "Emniyet stoğunun altında"
 
+msgid "Best case"
+msgstr ""
+
+msgid "Best case projection"
+msgstr ""
+
+msgid "Best case…"
+msgstr ""
+
 msgid "Beta"
 msgstr "Beta"
 
@@ -2538,6 +2547,9 @@ msgstr "Defter Amortismanı"
 
 msgid "Both"
 msgstr "Her ikisi"
+
+msgid "Bottleneck"
+msgstr ""
 
 msgid "Breadcrumb"
 msgstr "Sayfa Yolu"
@@ -2637,6 +2649,9 @@ msgstr "BOM'dan Hesapla"
 
 msgid "Calculated finished-good expiry"
 msgstr "Hesaplanan bitmiş ürün son kullanma tarihi"
+
+msgid "Calculating best case…"
+msgstr ""
 
 msgid "Calculation Method"
 msgstr "Hesaplama Yöntemi"
@@ -4119,6 +4134,9 @@ msgstr "Cari Net Defter Değeri:"
 
 msgid "Current Password"
 msgstr "Mevcut Şifre"
+
+msgid "Current projection"
+msgstr ""
 
 msgid "Current quantity"
 msgstr "Mevcut miktar"
@@ -9739,6 +9757,9 @@ msgstr "Bu öğe için dosya yok."
 msgid "No files uploaded"
 msgstr "Yüklenmiş dosya yok"
 
+msgid "No forecast available for this job."
+msgstr ""
+
 msgid "No Gauge Selected"
 msgstr "Seçili Kalibrasyon Cihazı Yok"
 
@@ -10035,6 +10056,9 @@ msgstr "Henüz hiçbir yerde referans verilmemiş."
 
 msgid "Not Required"
 msgstr "Gerekli Değil"
+
+msgid "Not scheduled"
+msgstr ""
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "Planlanmamış — uygun slot yok. Saklanan tarihler geriye dönük planlama yer tutucularıdır, gerçek bir rezervasyon değildir."
@@ -11354,6 +11378,9 @@ msgid "Project start"
 msgstr "Proje başlangıcı"
 
 msgid "Projected completion"
+msgstr ""
+
+msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr ""
 
 msgid "Projected demand exploded from BOMs and forecasts."

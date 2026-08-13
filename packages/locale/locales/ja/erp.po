@@ -2454,6 +2454,15 @@ msgstr "段階的に廃止予定 — 後継品: <0>{0}</0>"
 msgid "Below safety stock"
 msgstr "安全在庫以下"
 
+msgid "Best case"
+msgstr ""
+
+msgid "Best case projection"
+msgstr ""
+
+msgid "Best case…"
+msgstr ""
+
 msgid "Beta"
 msgstr "ベータ"
 
@@ -2538,6 +2547,9 @@ msgstr "簿価償却"
 
 msgid "Both"
 msgstr "両方"
+
+msgid "Bottleneck"
+msgstr ""
 
 msgid "Breadcrumb"
 msgstr "パンくずリスト"
@@ -2637,6 +2649,9 @@ msgstr "BOMから計算"
 
 msgid "Calculated finished-good expiry"
 msgstr "計算済み完成品の有効期限"
+
+msgid "Calculating best case…"
+msgstr ""
 
 msgid "Calculation Method"
 msgstr "計算方法"
@@ -4119,6 +4134,9 @@ msgstr "現在の純簿価額:"
 
 msgid "Current Password"
 msgstr "現在のパスワード"
+
+msgid "Current projection"
+msgstr ""
 
 msgid "Current quantity"
 msgstr "現在の数量"
@@ -9739,6 +9757,9 @@ msgstr "このアイテムのファイルはありません。"
 msgid "No files uploaded"
 msgstr "ファイルがアップロードされていません"
 
+msgid "No forecast available for this job."
+msgstr ""
+
 msgid "No Gauge Selected"
 msgstr "ゲージが選択されていません"
 
@@ -10035,6 +10056,9 @@ msgstr "どこでも参照されていません。"
 
 msgid "Not Required"
 msgstr "不要"
+
+msgid "Not scheduled"
+msgstr ""
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "スケジュール未定 — 実行可能なスロットがありません。保存された日付は後ろからの計画プレースホルダであり、実際のブッキングではありません。"
@@ -11354,6 +11378,9 @@ msgid "Project start"
 msgstr "プロジェクト開始"
 
 msgid "Projected completion"
+msgstr ""
+
+msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr ""
 
 msgid "Projected demand exploded from BOMs and forecasts."

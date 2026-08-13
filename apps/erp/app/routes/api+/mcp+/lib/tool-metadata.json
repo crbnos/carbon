@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-13T04:24:21.705Z",
-  "totalTools": 1465,
+  "generated": "2026-08-13T04:31:07.537Z",
+  "totalTools": 1466,
   "modules": 15,
   "tools": [
     {
@@ -19089,6 +19089,33 @@
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobExpediteForecast",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job expedite forecast",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "jobId",
+        "companyId",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
         ]
       }
     },

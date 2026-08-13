@@ -2454,6 +2454,15 @@ msgstr "Wird auslaufen — Nachfolger: <0>{0}</0>"
 msgid "Below safety stock"
 msgstr "Unter Sicherheitsbestand"
 
+msgid "Best case"
+msgstr ""
+
+msgid "Best case projection"
+msgstr ""
+
+msgid "Best case…"
+msgstr ""
+
 msgid "Beta"
 msgstr "Beta"
 
@@ -2538,6 +2547,9 @@ msgstr "Abschreibung buchen"
 
 msgid "Both"
 msgstr "Beide"
+
+msgid "Bottleneck"
+msgstr ""
 
 msgid "Breadcrumb"
 msgstr "Breadcrumb-Navigation"
@@ -2637,6 +2649,9 @@ msgstr "Aus Stückliste berechnen"
 
 msgid "Calculated finished-good expiry"
 msgstr "Berechnete Verfallsdatum für Fertigprodukte"
+
+msgid "Calculating best case…"
+msgstr ""
 
 msgid "Calculation Method"
 msgstr "Berechnungsmethode"
@@ -4119,6 +4134,9 @@ msgstr "Aktueller Netto-Buchwert:"
 
 msgid "Current Password"
 msgstr "Aktuelles Passwort"
+
+msgid "Current projection"
+msgstr ""
 
 msgid "Current quantity"
 msgstr "Aktuelle Menge"
@@ -9739,6 +9757,9 @@ msgstr "Keine Dateien für dieses Element."
 msgid "No files uploaded"
 msgstr "Keine Dateien hochgeladen"
 
+msgid "No forecast available for this job."
+msgstr ""
+
 msgid "No Gauge Selected"
 msgstr "Keine Messuhr ausgewählt"
 
@@ -10035,6 +10056,9 @@ msgstr "Noch nirgendwo referenziert."
 
 msgid "Not Required"
 msgstr "Nicht erforderlich"
+
+msgid "Not scheduled"
+msgstr ""
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "Nicht geplant — kein durchführbarer Platz. Die gespeicherten Datumsangaben sind Rückwärtsplanungs-Platzhalter, keine echte Buchung."
@@ -11354,6 +11378,9 @@ msgid "Project start"
 msgstr "Projektstart"
 
 msgid "Projected completion"
+msgstr ""
+
+msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr ""
 
 msgid "Projected demand exploded from BOMs and forecasts."

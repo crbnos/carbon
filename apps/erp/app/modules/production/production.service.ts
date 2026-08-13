@@ -967,6 +967,53 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
+// Read-only "best case" what-if: runs the job first in its location's schedule
+// via the `schedule` edge function (persists nothing) and returns the projected
+// completion + bottleneck cause. Returns null when the job isn't in the
+// schedulable set (e.g. not Ready/In Progress/Paused).
+export async function getJobExpediteForecast(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string,
+  userId: string
+) {
+  const { data: job, error: jobError } = await client
+    .from("job")
+    .select("locationId")
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (jobError || !job) {
+    return { data: null, error: jobError };
+  }
+
+  const { data: response, error } = await client.functions.invoke<{
+    expedite: {
+      jobId: string;
+      projectedCompletionAt: string | null;
+      cause: string | null;
+    } | null;
+  }>("schedule", {
+    body: {
+      locationId: job.locationId,
+      companyId,
+      userId,
+      expediteJobId: jobId
+    }
+  });
+
+  return {
+    data: response?.expedite
+      ? {
+          projectedCompletionAt: response.expedite.projectedCompletionAt,
+          cause: response.expedite.cause
+        }
+      : null,
+    error
+  };
+}
+
 export async function getJobByOperationId(
   client: SupabaseClient<Database>,
   operationId: string

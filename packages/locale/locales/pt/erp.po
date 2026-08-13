@@ -2454,6 +2454,15 @@ msgstr "Sendo descontinuado — sucessor: <0>{0}</0>"
 msgid "Below safety stock"
 msgstr "Abaixo do estoque de segurança"
 
+msgid "Best case"
+msgstr ""
+
+msgid "Best case projection"
+msgstr ""
+
+msgid "Best case…"
+msgstr ""
+
 msgid "Beta"
 msgstr "Beta"
 
@@ -2538,6 +2547,9 @@ msgstr "Depreciação Contábil"
 
 msgid "Both"
 msgstr "Ambos"
+
+msgid "Bottleneck"
+msgstr ""
 
 msgid "Breadcrumb"
 msgstr "Migalha de pão"
@@ -2637,6 +2649,9 @@ msgstr "Calcular a partir da BOM"
 
 msgid "Calculated finished-good expiry"
 msgstr "Expiração do produto acabado calculada"
+
+msgid "Calculating best case…"
+msgstr ""
 
 msgid "Calculation Method"
 msgstr "Método de Cálculo"
@@ -4119,6 +4134,9 @@ msgstr "Valor Líquido Contábil Atual:"
 
 msgid "Current Password"
 msgstr "Senha Atual"
+
+msgid "Current projection"
+msgstr ""
 
 msgid "Current quantity"
 msgstr "Quantidade atual"
@@ -9739,6 +9757,9 @@ msgstr "Nenhum arquivo para este item."
 msgid "No files uploaded"
 msgstr "Nenhum arquivo enviado"
 
+msgid "No forecast available for this job."
+msgstr ""
+
 msgid "No Gauge Selected"
 msgstr "Nenhum Medidor Selecionado"
 
@@ -10035,6 +10056,9 @@ msgstr "Não referenciado em lugar nenhum ainda."
 
 msgid "Not Required"
 msgstr "Não Obrigatório"
+
+msgid "Not scheduled"
+msgstr ""
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "Não agendado — nenhum intervalo viável. As datas armazenadas são espaços reservados de planejamento retrógrado, não uma reserva real."
@@ -11354,6 +11378,9 @@ msgid "Project start"
 msgstr "Início do projeto"
 
 msgid "Projected completion"
+msgstr ""
+
+msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr ""
 
 msgid "Projected demand exploded from BOMs and forecasts."

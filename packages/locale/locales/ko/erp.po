@@ -2454,6 +2454,15 @@ msgstr "단계적으로 폐지 중 — 후속: <0>{0}</0>"
 msgid "Below safety stock"
 msgstr "안전재고 미만"
 
+msgid "Best case"
+msgstr ""
+
+msgid "Best case projection"
+msgstr ""
+
+msgid "Best case…"
+msgstr ""
+
 msgid "Beta"
 msgstr "베타"
 
@@ -2538,6 +2547,9 @@ msgstr "장부 감가상각"
 
 msgid "Both"
 msgstr "모두"
+
+msgid "Bottleneck"
+msgstr ""
 
 msgid "Breadcrumb"
 msgstr "이동 경로"
@@ -2637,6 +2649,9 @@ msgstr "BOM에서 계산"
 
 msgid "Calculated finished-good expiry"
 msgstr "계산된 완제품 유효기한"
+
+msgid "Calculating best case…"
+msgstr ""
 
 msgid "Calculation Method"
 msgstr "계산 방법"
@@ -4119,6 +4134,9 @@ msgstr "현재 순장부가액:"
 
 msgid "Current Password"
 msgstr "현재 비밀번호"
+
+msgid "Current projection"
+msgstr ""
 
 msgid "Current quantity"
 msgstr "현재 수량"
@@ -9739,6 +9757,9 @@ msgstr "이 항목에 대한 파일이 없습니다."
 msgid "No files uploaded"
 msgstr "업로드된 파일이 없습니다"
 
+msgid "No forecast available for this job."
+msgstr ""
+
 msgid "No Gauge Selected"
 msgstr "선택된 측정기 없음"
 
@@ -10035,6 +10056,9 @@ msgstr "아직 어디에서도 참조되지 않음."
 
 msgid "Not Required"
 msgstr "필수 아님"
+
+msgid "Not scheduled"
+msgstr ""
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "예약되지 않음 — 가능한 슬롯이 없습니다. 저장된 날짜는 역방향 계획 자리 표시자이며 실제 예약이 아닙니다."
@@ -11354,6 +11378,9 @@ msgid "Project start"
 msgstr "프로젝트 시작"
 
 msgid "Projected completion"
+msgstr ""
+
+msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr ""
 
 msgid "Projected demand exploded from BOMs and forecasts."

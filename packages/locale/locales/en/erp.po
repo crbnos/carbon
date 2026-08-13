@@ -2454,6 +2454,15 @@ msgstr "Being phased out — successor: <0>{0}</0>"
 msgid "Below safety stock"
 msgstr "Below safety stock"
 
+msgid "Best case"
+msgstr "Best case"
+
+msgid "Best case projection"
+msgstr "Best case projection"
+
+msgid "Best case…"
+msgstr "Best case…"
+
 msgid "Beta"
 msgstr "Beta"
 
@@ -2538,6 +2547,9 @@ msgstr "Book Depreciation"
 
 msgid "Both"
 msgstr "Both"
+
+msgid "Bottleneck"
+msgstr "Bottleneck"
 
 msgid "Breadcrumb"
 msgstr "Breadcrumb"
@@ -2637,6 +2649,9 @@ msgstr "Calculate from BOM"
 
 msgid "Calculated finished-good expiry"
 msgstr "Calculated finished-good expiry"
+
+msgid "Calculating best case…"
+msgstr "Calculating best case…"
 
 msgid "Calculation Method"
 msgstr "Calculation Method"
@@ -4119,6 +4134,9 @@ msgstr "Current Net Book Value:"
 
 msgid "Current Password"
 msgstr "Current Password"
+
+msgid "Current projection"
+msgstr "Current projection"
 
 msgid "Current quantity"
 msgstr "Current quantity"
@@ -9739,6 +9757,9 @@ msgstr "No files for this item."
 msgid "No files uploaded"
 msgstr "No files uploaded"
 
+msgid "No forecast available for this job."
+msgstr "No forecast available for this job."
+
 msgid "No Gauge Selected"
 msgstr "No Gauge Selected"
 
@@ -10035,6 +10056,9 @@ msgstr "Not referenced anywhere yet."
 
 msgid "Not Required"
 msgstr "Not Required"
+
+msgid "Not scheduled"
+msgstr "Not scheduled"
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
@@ -11355,6 +11379,9 @@ msgstr "Project start"
 
 msgid "Projected completion"
 msgstr "Projected completion"
+
+msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
+msgstr "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 
 msgid "Projected demand exploded from BOMs and forecasts."
 msgstr "Projected demand exploded from BOMs and forecasts."

@@ -2454,6 +2454,15 @@ msgstr "正在逐步淘汰 — 后继产品：<0>{0}</0>"
 msgid "Below safety stock"
 msgstr "低于安全库存"
 
+msgid "Best case"
+msgstr ""
+
+msgid "Best case projection"
+msgstr ""
+
+msgid "Best case…"
+msgstr ""
+
 msgid "Beta"
 msgstr "测试版"
 
@@ -2538,6 +2547,9 @@ msgstr "账面折旧"
 
 msgid "Both"
 msgstr "两者"
+
+msgid "Bottleneck"
+msgstr ""
 
 msgid "Breadcrumb"
 msgstr "面包屑"
@@ -2637,6 +2649,9 @@ msgstr "从物料清单计算"
 
 msgid "Calculated finished-good expiry"
 msgstr "计算成品过期时间"
+
+msgid "Calculating best case…"
+msgstr ""
 
 msgid "Calculation Method"
 msgstr "计算方法"
@@ -4119,6 +4134,9 @@ msgstr "当前净账面价值:"
 
 msgid "Current Password"
 msgstr "当前密码"
+
+msgid "Current projection"
+msgstr ""
 
 msgid "Current quantity"
 msgstr "当前数量"
@@ -9739,6 +9757,9 @@ msgstr "此项目没有文件。"
 msgid "No files uploaded"
 msgstr "未上传任何文件"
 
+msgid "No forecast available for this job."
+msgstr ""
+
 msgid "No Gauge Selected"
 msgstr "未选择量具"
 
@@ -10035,6 +10056,9 @@ msgstr "还没有在任何地方被引用。"
 
 msgid "Not Required"
 msgstr "不需要"
+
+msgid "Not scheduled"
+msgstr ""
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "未计划 — 没有可行的时隙。存储的日期是向后规划占位符，不是真实预订。"
@@ -11354,6 +11378,9 @@ msgid "Project start"
 msgstr "项目开始"
 
 msgid "Projected completion"
+msgstr ""
+
+msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr ""
 
 msgid "Projected demand exploded from BOMs and forecasts."
