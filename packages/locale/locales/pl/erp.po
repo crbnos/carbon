@@ -124,11 +124,11 @@ msgstr "{0}d"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d early"
-msgstr ""
+msgstr "{0}d wcześniej"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
-msgstr ""
+msgstr "{0}d opóźnienia"
 
 #. placeholder {0}: item.daysOff
 msgid "{0}d off"
@@ -146,7 +146,7 @@ msgstr "{0}h wymagane"
 #. placeholder {0}: formatHours(staffed)
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
-msgstr ""
+msgstr "{0}h obsadzone"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} części pominięto — mają już otwarte zadania"
@@ -2460,13 +2460,13 @@ msgid "Below safety stock"
 msgstr "Poniżej zapasu bezpieczeństwa"
 
 msgid "Best case"
-msgstr ""
+msgstr "Najlepszy scenariusz"
 
 msgid "Best case projection"
-msgstr ""
+msgstr "Projekcja najlepszego scenariusza"
 
 msgid "Best case…"
-msgstr ""
+msgstr "Najlepszy scenariusz…"
 
 msgid "Beta"
 msgstr "Beta"
@@ -2554,7 +2554,7 @@ msgid "Both"
 msgstr "Oba"
 
 msgid "Bottleneck"
-msgstr ""
+msgstr "Wąskie gardło"
 
 msgid "Breadcrumb"
 msgstr "Nawigacja"
@@ -2656,7 +2656,7 @@ msgid "Calculated finished-good expiry"
 msgstr "Obliczona data wygaśnięcia produktu gotowego"
 
 msgid "Calculating best case…"
-msgstr ""
+msgstr "Obliczanie najlepszego scenariusza…"
 
 msgid "Calculation Method"
 msgstr "Metoda Obliczania"
@@ -4141,7 +4141,7 @@ msgid "Current Password"
 msgstr "Bieżące hasło"
 
 msgid "Current projection"
-msgstr ""
+msgstr "Bieżąca projekcja"
 
 msgid "Current quantity"
 msgstr "Bieżąca ilość"
@@ -5285,7 +5285,7 @@ msgid "Due"
 msgstr "Termin"
 
 msgid "Due (by due date)"
-msgstr ""
+msgstr "Należne (do terminu)"
 
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
@@ -5797,7 +5797,7 @@ msgid "Empty"
 msgstr "Puste"
 
 msgid "Empty = all shifts at the location"
-msgstr ""
+msgstr "Puste = wszystkie zmiany w lokalizacji"
 
 msgid "Empty = match every item"
 msgstr "Puste = dopasuj każdy element"
@@ -7322,7 +7322,7 @@ msgid "Hours"
 msgstr "Godziny"
 
 msgid "Hours assumed from location shifts"
-msgstr ""
+msgstr "Godziny założone na podstawie zmian w lokalizacji"
 
 msgid "Hours at this station"
 msgstr "Godziny na tym stanowisku"
@@ -7358,7 +7358,7 @@ msgid "How coverage is worked out"
 msgstr "Jak ustalić pokrycie"
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
-msgstr ""
+msgstr "o ile zaplanowana praca przekracza dostępne godziny (+) lub ile godzin wciąż jest dostępnych."
 
 msgid "How items roll up for posting and reporting"
 msgstr "Jak pozycje są agregowane do księgowania i raportowania"
@@ -7511,7 +7511,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "Jeśli chcesz zmienić numery części, kliknij Anuluj i ręcznie przypisz części dla każdej pozycji wiersza przed konwersją."
 
 msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr ""
+msgstr "Ignoruj kalendarze zmian — ta maszyna może pracować nienadzorowana całodobowo."
 
 msgid "II (normal default)"
 msgstr "II (normalne domyślne)"
@@ -9769,7 +9769,7 @@ msgid "No files uploaded"
 msgstr "Brak przesłanych plików"
 
 msgid "No forecast available for this job."
-msgstr ""
+msgstr "Brak prognozy dostępnej dla tego zadania."
 
 msgid "No Gauge Selected"
 msgstr "Nie wybrano miernika"
@@ -9955,7 +9955,7 @@ msgid "No rules assigned"
 msgstr "Brak przypisanych reguł"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
-msgstr ""
+msgstr "Brak skonfigurowanych zmian — założenie pon–pt, dni po 8 godz."
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Brak jednej, zaufanej liczby dla zapasów lub statusu zadania"
@@ -10072,7 +10072,7 @@ msgid "Not Required"
 msgstr "Nie wymagane"
 
 msgid "Not scheduled"
-msgstr ""
+msgstr "Nie zaplanowano"
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "Nie zaplanowano — brak dostępnego slotu. Przechowywane daty to symbole zastępcze planowania wstecznego, a nie rzeczywista rezerwacja."
@@ -10410,7 +10410,7 @@ msgid "Operating Income"
 msgstr "Dochód z działalności operacyjnej"
 
 msgid "Operating shifts"
-msgstr ""
+msgstr "Zmiany robocze"
 
 msgid "Operation"
 msgstr "Operacja"
@@ -11392,10 +11392,10 @@ msgid "Project start"
 msgstr "Początek projektu"
 
 msgid "Projected completion"
-msgstr ""
+msgstr "Przewidywane zakończenie"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
-msgstr ""
+msgstr "Przewidywane zakończenie, gdyby to zadanie przeskoczyło na początek harmonogramu jego lokalizacji. Nic nie jest zapisywane."
 
 msgid "Projected demand exploded from BOMs and forecasts."
 msgstr "Zapasy Prognozowane"
@@ -12618,7 +12618,7 @@ msgid "Runs"
 msgstr "Uruchomienia"
 
 msgid "Runs 24×7 (lights-out)"
-msgstr ""
+msgstr "Pracuje 24×7 (bezobsługowo)"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (najgrubsze specjalne)"
@@ -14309,7 +14309,7 @@ msgid "taken"
 msgstr "wzięte"
 
 msgid "Takes work center offline"
-msgstr ""
+msgstr "Wyłącza centrum robocze z harmonogramu"
 
 msgid "Talk to Sales"
 msgstr "Porozmawiaj ze sprzedażą"
@@ -14739,7 +14739,7 @@ msgid "The hourly indirect-cost burden applied to this work center; the differen
 msgstr "Godzinowe obciążenie kosztu pośredniego zastosowane do tego centrum pracy; różnica między pracą + maszyną a pełną stawką ofertowania to to, co pochłania ogólne koszty."
 
 msgid "the hours the scheduler placed on the station."
-msgstr ""
+msgstr "godziny przypisane przez harmonogram na stanowisku."
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "Adres https, do którego krok webhooku przepływu pracy wysyła — zwykły http, przekierowania i hosty rozpoznawane jako adresy prywatne lub link-local są odrzucane, a połączenie kończy się po dziesięciu sekundach."
@@ -14775,7 +14775,7 @@ msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15
 msgstr "Klasa okresu odzyskania IRS dla tego zasobu w ramach MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 lat)."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr ""
+msgstr "godziny zadania należne tego dnia (na podstawie terminu, nie dnia wykonania), z zalegającymi pracami w Zalegające."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Zadanie, którego operacja pokrywa ta linia przetwarzania zewnętrznego; rachunek linii zamyka operację dla tego zadania."
@@ -15079,7 +15079,7 @@ msgid "The statement bucket all accounts under this group will use."
 msgstr "Grupa sprawozdań, którą będą używać wszystkie konta w tej grupie."
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr ""
+msgstr "godziny kalendarza stacji wynikające z jej zmian. Godziny obsadzone (przydzielone osoby) wyświetlane poniżej."
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Ustawienia kroku — to uruchomienie pochodzi sprzed rejestracji wartości, które zastosowało."
@@ -16917,7 +16917,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "Które zdarzenie produkcyjne uruchamia zegar czasu przechowywania — na przykład napełnianie, uszczelnianie lub ostateczną kontrolę jakości."
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
-msgstr ""
+msgstr "Podczas gdy ta dyspozycja jest otwarta, centrum robocze jest niedostępne dla harmonogramu (do zaplanowanego czasu końca lub do ukończenia dyspozycji)."
 
 msgid "Who Can Approve"
 msgstr "Kto może zatwierdzić"

@@ -124,11 +124,11 @@ msgstr "{0}天"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d early"
-msgstr ""
+msgstr "{0}天提前"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
-msgstr ""
+msgstr "{0}天延迟"
 
 #. placeholder {0}: item.daysOff
 msgid "{0}d off"
@@ -146,7 +146,7 @@ msgstr "{0}h 需要"
 #. placeholder {0}: formatHours(staffed)
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
-msgstr ""
+msgstr "{0}小时配置人员"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} 个零件已跳过 — 它们已有待处理作业"
@@ -2460,13 +2460,13 @@ msgid "Below safety stock"
 msgstr "低于安全库存"
 
 msgid "Best case"
-msgstr ""
+msgstr "最佳情况"
 
 msgid "Best case projection"
-msgstr ""
+msgstr "最佳情况预测"
 
 msgid "Best case…"
-msgstr ""
+msgstr "最佳情况…"
 
 msgid "Beta"
 msgstr "测试版"
@@ -2554,7 +2554,7 @@ msgid "Both"
 msgstr "两者"
 
 msgid "Bottleneck"
-msgstr ""
+msgstr "瓶颈"
 
 msgid "Breadcrumb"
 msgstr "面包屑"
@@ -2656,7 +2656,7 @@ msgid "Calculated finished-good expiry"
 msgstr "计算成品过期时间"
 
 msgid "Calculating best case…"
-msgstr ""
+msgstr "正在计算最佳情况…"
 
 msgid "Calculation Method"
 msgstr "计算方法"
@@ -4141,7 +4141,7 @@ msgid "Current Password"
 msgstr "当前密码"
 
 msgid "Current projection"
-msgstr ""
+msgstr "当前预测"
 
 msgid "Current quantity"
 msgstr "当前数量"
@@ -5285,7 +5285,7 @@ msgid "Due"
 msgstr "到期"
 
 msgid "Due (by due date)"
-msgstr ""
+msgstr "截止期限（按截止日期）"
 
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
@@ -5797,7 +5797,7 @@ msgid "Empty"
 msgstr "空"
 
 msgid "Empty = all shifts at the location"
-msgstr ""
+msgstr "空 = 该位置的所有班次"
 
 msgid "Empty = match every item"
 msgstr "空 = 匹配每个项目"
@@ -7322,7 +7322,7 @@ msgid "Hours"
 msgstr "时数"
 
 msgid "Hours assumed from location shifts"
-msgstr ""
+msgstr "从位置班次假设的小时数"
 
 msgid "Hours at this station"
 msgstr "此工位的小时数"
@@ -7358,7 +7358,7 @@ msgid "How coverage is worked out"
 msgstr "如何计算覆盖范围"
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
-msgstr ""
+msgstr "计划工作超过可用小时数的程度 (+)，或还有多少小时空闲。"
 
 msgid "How items roll up for posting and reporting"
 msgstr "项目如何汇总用于过账和报告"
@@ -7511,7 +7511,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "如果您希望更改零件号，请点击\"取消\"并在转换前为每个行项目手动分配零件。"
 
 msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr ""
+msgstr "忽略班次日历——此机器可全天无人值守运行。"
 
 msgid "II (normal default)"
 msgstr "II（正常默认值）"
@@ -9769,7 +9769,7 @@ msgid "No files uploaded"
 msgstr "未上传任何文件"
 
 msgid "No forecast available for this job."
-msgstr ""
+msgstr "此任务没有可用预测。"
 
 msgid "No Gauge Selected"
 msgstr "未选择量具"
@@ -9955,7 +9955,7 @@ msgid "No rules assigned"
 msgstr "未分配规则"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
-msgstr ""
+msgstr "未配置班次——假定周一至周五，每天8小时"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "没有单一的、可信的库存或工作状态数字"
@@ -10072,7 +10072,7 @@ msgid "Not Required"
 msgstr "不需要"
 
 msgid "Not scheduled"
-msgstr ""
+msgstr "未计划"
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "未计划 — 没有可行的时隙。存储的日期是向后规划占位符，不是真实预订。"
@@ -10410,7 +10410,7 @@ msgid "Operating Income"
 msgstr "营业收入"
 
 msgid "Operating shifts"
-msgstr ""
+msgstr "运营班次"
 
 msgid "Operation"
 msgstr "操作"
@@ -11392,10 +11392,10 @@ msgid "Project start"
 msgstr "项目开始"
 
 msgid "Projected completion"
-msgstr ""
+msgstr "预计完成"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
-msgstr ""
+msgstr "如果此任务跳到其位置计划的前面，则预计完成。不保存任何内容。"
 
 msgid "Projected demand exploded from BOMs and forecasts."
 msgstr "预测库存"
@@ -12618,7 +12618,7 @@ msgid "Runs"
 msgstr "运行"
 
 msgid "Runs 24×7 (lights-out)"
-msgstr ""
+msgstr "24×7 运行（无人值守）"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最粗特殊）"
@@ -14309,7 +14309,7 @@ msgid "taken"
 msgstr "已采取"
 
 msgid "Takes work center offline"
-msgstr ""
+msgstr "使工作中心离线"
 
 msgid "Talk to Sales"
 msgstr "与销售团队联系"
@@ -14739,7 +14739,7 @@ msgid "The hourly indirect-cost burden applied to this work center; the differen
 msgstr "应用于此工作中心的每小时间接成本负担；劳动+机器与完整报价率之间的差异就是间接费用吸收的内容。"
 
 msgid "the hours the scheduler placed on the station."
-msgstr ""
+msgstr "计划员在工作站上安排的小时数。"
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "工作流的网络钩子步骤发布到的 https 地址 — 拒绝纯 http、重定向和解析为私有或本地链接地址的主机，调用在十秒后放弃。"
@@ -14775,7 +14775,7 @@ msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15
 msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15、20、27.5、39年）。"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr ""
+msgstr "该天到期的任务小时数（以截止日期为基础，而不是工作运行的日期），逾期工作在逾期中。"
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "该外部处理行所涵盖的操作工作；行的收据关闭对该工作的操作。"
@@ -15079,7 +15079,7 @@ msgid "The statement bucket all accounts under this group will use."
 msgstr "此组下所有帐户将使用的报表组。"
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr ""
+msgstr "工作站从其班次的日历小时数。配置人员小时数（您分配的人员）显示在下方。"
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "步骤的设置 — 此运行早于记录其使用的值。"
@@ -16917,7 +16917,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "哪个制造事件启动保质期时钟 — 例如填充、密封或最终QC。"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
-msgstr ""
+msgstr "当此派遣打开时，工作中心对计划不可用（直到计划结束时间或派遣完成）。"
 
 msgid "Who Can Approve"
 msgstr "谁可以批准"

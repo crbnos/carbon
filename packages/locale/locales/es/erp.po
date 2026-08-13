@@ -124,11 +124,11 @@ msgstr "{0}d"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d early"
-msgstr ""
+msgstr "{0}d adelantado"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
-msgstr ""
+msgstr "{0}d atrasado"
 
 #. placeholder {0}: item.daysOff
 msgid "{0}d off"
@@ -146,7 +146,7 @@ msgstr "{0}h requeridas"
 #. placeholder {0}: formatHours(staffed)
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
-msgstr ""
+msgstr "{0}h asignado"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} piezas omitidas — ya tienen trabajos abiertos"
@@ -2460,13 +2460,13 @@ msgid "Below safety stock"
 msgstr "Por debajo del stock de seguridad"
 
 msgid "Best case"
-msgstr ""
+msgstr "Mejor caso"
 
 msgid "Best case projection"
-msgstr ""
+msgstr "Proyección del mejor caso"
 
 msgid "Best case…"
-msgstr ""
+msgstr "Mejor caso…"
 
 msgid "Beta"
 msgstr "Beta"
@@ -2554,7 +2554,7 @@ msgid "Both"
 msgstr "Ambos"
 
 msgid "Bottleneck"
-msgstr ""
+msgstr "Cuello de botella"
 
 msgid "Breadcrumb"
 msgstr "Migas de pan"
@@ -2656,7 +2656,7 @@ msgid "Calculated finished-good expiry"
 msgstr "Caducidad del producto terminado calculada"
 
 msgid "Calculating best case…"
-msgstr ""
+msgstr "Calculando mejor caso…"
 
 msgid "Calculation Method"
 msgstr "Método de Cálculo"
@@ -4141,7 +4141,7 @@ msgid "Current Password"
 msgstr "Contraseña Actual"
 
 msgid "Current projection"
-msgstr ""
+msgstr "Proyección actual"
 
 msgid "Current quantity"
 msgstr "Cantidad actual"
@@ -5285,7 +5285,7 @@ msgid "Due"
 msgstr "Vencimiento"
 
 msgid "Due (by due date)"
-msgstr ""
+msgstr "Vence (por fecha de vencimiento)"
 
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
@@ -5797,7 +5797,7 @@ msgid "Empty"
 msgstr "Vacío"
 
 msgid "Empty = all shifts at the location"
-msgstr ""
+msgstr "Vacío = todos los turnos en la ubicación"
 
 msgid "Empty = match every item"
 msgstr "Vacío = coincide con todos los elementos"
@@ -7322,7 +7322,7 @@ msgid "Hours"
 msgstr "Horas"
 
 msgid "Hours assumed from location shifts"
-msgstr ""
+msgstr "Horas asumidas de los turnos de ubicación"
 
 msgid "Hours at this station"
 msgstr "Horas en esta estación"
@@ -7358,7 +7358,7 @@ msgid "How coverage is worked out"
 msgstr "Cómo se calcula la cobertura"
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
-msgstr ""
+msgstr "cuán lejos está el trabajo programado sobre las horas disponibles (+) o cuántas horas aún están libres."
 
 msgid "How items roll up for posting and reporting"
 msgstr "Cómo se agrupan los artículos para contabilización e informes"
@@ -7511,7 +7511,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "Si deseas cambiar los números de parte, haz clic en Cancelar y asigna manualmente las partes para cada elemento de línea antes de convertir."
 
 msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr ""
+msgstr "Ignorar calendarios de turnos — esta máquina puede funcionar sin vigilancia todo el día."
 
 msgid "II (normal default)"
 msgstr "II (normal predeterminado)"
@@ -9769,7 +9769,7 @@ msgid "No files uploaded"
 msgstr "No hay archivos cargados"
 
 msgid "No forecast available for this job."
-msgstr ""
+msgstr "Sin pronóstico disponible para este trabajo."
 
 msgid "No Gauge Selected"
 msgstr "Sin calibrador seleccionado"
@@ -9955,7 +9955,7 @@ msgid "No rules assigned"
 msgstr "Sin reglas asignadas"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
-msgstr ""
+msgstr "Sin turnos configurados — asumiendo lun–vie, días de 8h"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Sin un único número confiable para inventario o estado del trabajo"
@@ -10072,7 +10072,7 @@ msgid "Not Required"
 msgstr "No requerido"
 
 msgid "Not scheduled"
-msgstr ""
+msgstr "No programado"
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "No programado — sin ranura viable. Las fechas almacenadas son marcadores de planificación hacia atrás, no una reserva real."
@@ -10410,7 +10410,7 @@ msgid "Operating Income"
 msgstr "Ingreso Operativo"
 
 msgid "Operating shifts"
-msgstr ""
+msgstr "Turnos de operación"
 
 msgid "Operation"
 msgstr "Operación"
@@ -11392,10 +11392,10 @@ msgid "Project start"
 msgstr "Inicio del proyecto"
 
 msgid "Projected completion"
-msgstr ""
+msgstr "Finalización proyectada"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
-msgstr ""
+msgstr "Finalización proyectada si este trabajo saltara al frente del cronograma de su ubicación. Nada se guarda."
 
 msgid "Projected demand exploded from BOMs and forecasts."
 msgstr "Inventario Proyectado"
@@ -12618,7 +12618,7 @@ msgid "Runs"
 msgstr "Ejecuciones"
 
 msgid "Runs 24×7 (lights-out)"
-msgstr ""
+msgstr "Funciona 24×7 (automático)"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (más grueso especial)"
@@ -14309,7 +14309,7 @@ msgid "taken"
 msgstr "tomado"
 
 msgid "Takes work center offline"
-msgstr ""
+msgstr "Lleva el centro de trabajo fuera de línea"
 
 msgid "Talk to Sales"
 msgstr "Hablar con Ventas"
@@ -14739,7 +14739,7 @@ msgid "The hourly indirect-cost burden applied to this work center; the differen
 msgstr "La carga de costo indirecto por hora aplicada a este centro de trabajo; la diferencia entre mano de obra + máquina y la tasa de cotización completa es lo que absorbe el overhead."
 
 msgid "the hours the scheduler placed on the station."
-msgstr ""
+msgstr "las horas que el programador colocó en la estación."
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "La dirección https a la que publica un paso de webhook de flujo de trabajo — se rechazan http simple, redireccionamientos y hosts que resuelven a direcciones privadas o locales, y la llamada se abandona después de diez segundos."
@@ -14775,7 +14775,7 @@ msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15
 msgstr "La clase de período de recuperación del IRS para este activo bajo MACRS (3, 5, 7, 10, 15, 20, 27.5, 39 años)."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr ""
+msgstr "las horas de trabajo vencidas ese día (en base a la fecha de vencimiento, no el día que se ejecuta el trabajo), con trabajo vencido en Vencido."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "El trabajo cuya operación cubre esta línea de procesamiento externo; el recibo de la línea cierra la operación contra este trabajo."
@@ -15079,7 +15079,7 @@ msgid "The statement bucket all accounts under this group will use."
 msgstr "El grupo de estados que utilizan todos los cuentas bajo este grupo."
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr ""
+msgstr "las horas de calendario de la estación de sus turnos. Las horas asignadas (las personas que ha asignado) se muestran debajo."
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "La configuración del paso — esta ejecución predice el registro de los valores que usó."
@@ -16917,7 +16917,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "Qué evento de fabricación inicia el reloj de vida útil — por ejemplo, rellenado, sellado o QC final."
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
-msgstr ""
+msgstr "Mientras este envío esté abierto, el centro de trabajo no estará disponible para el cronograma (hasta la hora de finalización planeada, o hasta que se complete el envío)."
 
 msgid "Who Can Approve"
 msgstr "Quién Puede Aprobar"

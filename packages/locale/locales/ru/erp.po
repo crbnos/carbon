@@ -124,11 +124,11 @@ msgstr "{0}д"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d early"
-msgstr ""
+msgstr "{0}д рано"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
-msgstr ""
+msgstr "{0}д поздно"
 
 #. placeholder {0}: item.daysOff
 msgid "{0}d off"
@@ -146,7 +146,7 @@ msgstr "{0}ч требуется"
 #. placeholder {0}: formatHours(staffed)
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
-msgstr ""
+msgstr "{0}ч укомплектовано"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} деталей пропущено — у них уже есть открытые задания"
@@ -2460,13 +2460,13 @@ msgid "Below safety stock"
 msgstr "Ниже страховой запас"
 
 msgid "Best case"
-msgstr ""
+msgstr "Лучший случай"
 
 msgid "Best case projection"
-msgstr ""
+msgstr "Прогноз лучшего случая"
 
 msgid "Best case…"
-msgstr ""
+msgstr "Лучший случай…"
 
 msgid "Beta"
 msgstr "Бета"
@@ -2554,7 +2554,7 @@ msgid "Both"
 msgstr "Оба"
 
 msgid "Bottleneck"
-msgstr ""
+msgstr "Узкое место"
 
 msgid "Breadcrumb"
 msgstr "Навигационная цепочка"
@@ -2656,7 +2656,7 @@ msgid "Calculated finished-good expiry"
 msgstr "Рассчитанный срок годности готовой продукции"
 
 msgid "Calculating best case…"
-msgstr ""
+msgstr "Расчет лучшего случая…"
 
 msgid "Calculation Method"
 msgstr "Метод расчета"
@@ -4141,7 +4141,7 @@ msgid "Current Password"
 msgstr "Текущий пароль"
 
 msgid "Current projection"
-msgstr ""
+msgstr "Текущий прогноз"
 
 msgid "Current quantity"
 msgstr "Текущее количество"
@@ -5285,7 +5285,7 @@ msgid "Due"
 msgstr "Срок"
 
 msgid "Due (by due date)"
-msgstr ""
+msgstr "Срок (по дате срока)"
 
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
@@ -5797,7 +5797,7 @@ msgid "Empty"
 msgstr "Пусто"
 
 msgid "Empty = all shifts at the location"
-msgstr ""
+msgstr "Пусто = все смены в этом месте"
 
 msgid "Empty = match every item"
 msgstr "Пусто = соответствует каждому товару"
@@ -7322,7 +7322,7 @@ msgid "Hours"
 msgstr "Часы"
 
 msgid "Hours assumed from location shifts"
-msgstr ""
+msgstr "Часы предполагаются на основе смен в месте"
 
 msgid "Hours at this station"
 msgstr "Часы на этом рабочем месте"
@@ -7358,7 +7358,7 @@ msgid "How coverage is worked out"
 msgstr "Как рассчитывается покрытие"
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
-msgstr ""
+msgstr "насколько запланированная работа превышает доступные часы (+) или сколько часов все еще свободно."
 
 msgid "How items roll up for posting and reporting"
 msgstr "Как элементы объединяются для учета и отчетности"
@@ -7511,7 +7511,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "Если вы хотите изменить номера деталей, нажмите Отмена и вручную назначьте детали для каждого элемента строки перед преобразованием."
 
 msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr ""
+msgstr "Игнорировать календари смен — эта машина может работать без присмотра круглосуточно."
 
 msgid "II (normal default)"
 msgstr "II (обычно по умолчанию)"
@@ -9769,7 +9769,7 @@ msgid "No files uploaded"
 msgstr "Файлы не загружены"
 
 msgid "No forecast available for this job."
-msgstr ""
+msgstr "Прогноз недоступен для этой работы."
 
 msgid "No Gauge Selected"
 msgstr "Датчик не выбран"
@@ -9955,7 +9955,7 @@ msgid "No rules assigned"
 msgstr "Нет назначенных правил"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
-msgstr ""
+msgstr "Смены не настроены — предполагается Пн–Пт, 8ч дни"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Нет единого надежного показателя для инвентаря или статуса работы"
@@ -10072,7 +10072,7 @@ msgid "Not Required"
 msgstr "Не требуется"
 
 msgid "Not scheduled"
-msgstr ""
+msgstr "Не запланировано"
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "Не запланировано — нет доступного слота. Сохраненные даты являются заполнителями обратного планирования, а не реальным бронированием."
@@ -10410,7 +10410,7 @@ msgid "Operating Income"
 msgstr "Операционный доход"
 
 msgid "Operating shifts"
-msgstr ""
+msgstr "Рабочие смены"
 
 msgid "Operation"
 msgstr "Операция"
@@ -11392,10 +11392,10 @@ msgid "Project start"
 msgstr "Начало проекта"
 
 msgid "Projected completion"
-msgstr ""
+msgstr "Прогнозное завершение"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
-msgstr ""
+msgstr "Прогнозное завершение, если эта работа переместится в начало расписания её места. Ничего не сохраняется."
 
 msgid "Projected demand exploded from BOMs and forecasts."
 msgstr "Прогнозируемый запас"
@@ -12618,7 +12618,7 @@ msgid "Runs"
 msgstr "Запуски"
 
 msgid "Runs 24×7 (lights-out)"
-msgstr ""
+msgstr "Работает 24×7 (без присмотра)"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (самый грубый специальный)"
@@ -14309,7 +14309,7 @@ msgid "taken"
 msgstr "взято"
 
 msgid "Takes work center offline"
-msgstr ""
+msgstr "Отключает рабочий центр"
 
 msgid "Talk to Sales"
 msgstr "Поговорить с отделом продаж"
@@ -14739,7 +14739,7 @@ msgid "The hourly indirect-cost burden applied to this work center; the differen
 msgstr "Почасовая нагрузка косвенных затрат, применяемая к этому рабочему центру; разница между трудом + машиной и полной ставкой котировки - это то, что поглощает накладные расходы."
 
 msgid "the hours the scheduler placed on the station."
-msgstr ""
+msgstr "часы, которые планировщик разместил на станции."
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "HTTPS-адрес, на который шаг вебхука рабочего процесса отправляет данные — простой http, перенаправления и хосты, разрешающие в приватные или link-local адреса, отклоняются, и вызов прекращается через десять секунд."
@@ -14775,7 +14775,7 @@ msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15
 msgstr "Класс периода восстановления IRS для этого основного средства в соответствии с MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 лет)."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr ""
+msgstr "рабочие часы, подлежащие в этот день (на основе даты срока, не дня выполнения работы), с просроченной работой в разделе «Просроченные»."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Работа, операция которой охватывает эту строку внешней обработки; квитанция по строке закрывает операцию для этой работы."
@@ -15079,7 +15079,7 @@ msgid "The statement bucket all accounts under this group will use."
 msgstr "Группа отчетов, которую будут использовать все учетные записи в этой группе."
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr ""
+msgstr "плановые часы станции из её смен. Укомплектованные часы (люди, которых вы назначили) показаны ниже."
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Параметры шага — этот прогон предшествует записи значений, которые он использовал."
@@ -16917,7 +16917,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
-msgstr ""
+msgstr "Пока это отправление открыто, рабочий центр недоступен для расписания (до запланированного времени окончания или до завершения отправления)."
 
 msgid "Who Can Approve"
 msgstr "Кто может одобрить"

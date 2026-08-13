@@ -124,11 +124,11 @@ msgstr "{0}g"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d early"
-msgstr ""
+msgstr "{0}g erken"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
-msgstr ""
+msgstr "{0}g geç"
 
 #. placeholder {0}: item.daysOff
 msgid "{0}d off"
@@ -146,7 +146,7 @@ msgstr "{0}s gerekli"
 #. placeholder {0}: formatHours(staffed)
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
-msgstr ""
+msgstr "{0}s personel kaynaklandı"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parça atlandı — zaten açık işleri var"
@@ -2460,13 +2460,13 @@ msgid "Below safety stock"
 msgstr "Emniyet stoğunun altında"
 
 msgid "Best case"
-msgstr ""
+msgstr "En iyi durum"
 
 msgid "Best case projection"
-msgstr ""
+msgstr "En iyi durum projeksiyonu"
 
 msgid "Best case…"
-msgstr ""
+msgstr "En iyi durum…"
 
 msgid "Beta"
 msgstr "Beta"
@@ -2554,7 +2554,7 @@ msgid "Both"
 msgstr "Her ikisi"
 
 msgid "Bottleneck"
-msgstr ""
+msgstr "Darboğaz"
 
 msgid "Breadcrumb"
 msgstr "Sayfa Yolu"
@@ -2656,7 +2656,7 @@ msgid "Calculated finished-good expiry"
 msgstr "Hesaplanan bitmiş ürün son kullanma tarihi"
 
 msgid "Calculating best case…"
-msgstr ""
+msgstr "En iyi durum hesaplanıyor…"
 
 msgid "Calculation Method"
 msgstr "Hesaplama Yöntemi"
@@ -4141,7 +4141,7 @@ msgid "Current Password"
 msgstr "Mevcut Şifre"
 
 msgid "Current projection"
-msgstr ""
+msgstr "Mevcut projeksiyon"
 
 msgid "Current quantity"
 msgstr "Mevcut miktar"
@@ -5285,7 +5285,7 @@ msgid "Due"
 msgstr "Vade"
 
 msgid "Due (by due date)"
-msgstr ""
+msgstr "Vadesi (vade tarihine göre)"
 
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
@@ -5797,7 +5797,7 @@ msgid "Empty"
 msgstr "Boş"
 
 msgid "Empty = all shifts at the location"
-msgstr ""
+msgstr "Boş = konumdaki tüm vardiyalar"
 
 msgid "Empty = match every item"
 msgstr "Boş = tüm öğeleri eşleştir"
@@ -7322,7 +7322,7 @@ msgid "Hours"
 msgstr "Saatler"
 
 msgid "Hours assumed from location shifts"
-msgstr ""
+msgstr "Konum vardiyalarından varsayılan saatler"
 
 msgid "Hours at this station"
 msgstr "Bu istasyonda saatler"
@@ -7358,7 +7358,7 @@ msgid "How coverage is worked out"
 msgstr "Kapasite nasıl hesaplanır"
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
-msgstr ""
+msgstr "planlanan işin mevcut saatleri ne kadar aştığı (+) veya hala kaç saatin boş olduğu."
 
 msgid "How items roll up for posting and reporting"
 msgstr "Öğelerin deftere nakil ve raporlama için nasıl toplandığı"
@@ -7511,7 +7511,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "Parça numaralarını değiştirmek isterseniz, lütfen iptal'e tıklayın ve dönüştürmeden önce her bir satır öğesi için parçaları manuel olarak atayın."
 
 msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr ""
+msgstr "Vardiya takvimlerini yoksay — bu makine 24/7 gözetimsiz çalışabilir."
 
 msgid "II (normal default)"
 msgstr "II (normal varsayılan)"
@@ -9769,7 +9769,7 @@ msgid "No files uploaded"
 msgstr "Yüklenmiş dosya yok"
 
 msgid "No forecast available for this job."
-msgstr ""
+msgstr "Bu iş için tahmin mevcut değil."
 
 msgid "No Gauge Selected"
 msgstr "Seçili Kalibrasyon Cihazı Yok"
@@ -9955,7 +9955,7 @@ msgid "No rules assigned"
 msgstr "Atanmış kural yok"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
-msgstr ""
+msgstr "Vardiya yapılandırılmadı — Pzt–Cum, 8s günler varsayılıyor"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Envanter veya iş durumu için tek bir güvenilir sayı yok"
@@ -10072,7 +10072,7 @@ msgid "Not Required"
 msgstr "Gerekli Değil"
 
 msgid "Not scheduled"
-msgstr ""
+msgstr "Planlanmadı"
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "Planlanmamış — uygun slot yok. Saklanan tarihler geriye dönük planlama yer tutucularıdır, gerçek bir rezervasyon değildir."
@@ -10410,7 +10410,7 @@ msgid "Operating Income"
 msgstr "İşletme Geliri"
 
 msgid "Operating shifts"
-msgstr ""
+msgstr "Çalışma vardiyaları"
 
 msgid "Operation"
 msgstr "Operasyon"
@@ -11392,10 +11392,10 @@ msgid "Project start"
 msgstr "Proje başlangıcı"
 
 msgid "Projected completion"
-msgstr ""
+msgstr "Öngörülen tamamlanma"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
-msgstr ""
+msgstr "Bu iş konumunun planının başına geçerse öngörülen tamamlanma. Hiçbir şey kaydedilmez."
 
 msgid "Projected demand exploded from BOMs and forecasts."
 msgstr "Öngörülen Stok"
@@ -12618,7 +12618,7 @@ msgid "Runs"
 msgstr "Çalışmalar"
 
 msgid "Runs 24×7 (lights-out)"
-msgstr ""
+msgstr "24×7 çalışır (ışıksız)"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (en kalın özel)"
@@ -14309,7 +14309,7 @@ msgid "taken"
 msgstr "alındı"
 
 msgid "Takes work center offline"
-msgstr ""
+msgstr "İş merkezini çevrimdışı alır"
 
 msgid "Talk to Sales"
 msgstr "Satın Alma Ekibi ile Görüşün"
@@ -14739,7 +14739,7 @@ msgid "The hourly indirect-cost burden applied to this work center; the differen
 msgstr "Bu iş merkezine uygulanan saatlik dolaylı maliyet yükü; işçilik + makine ile tam alıntı oranı arasındaki fark, genel masrafların absorpladığıdır."
 
 msgid "the hours the scheduler placed on the station."
-msgstr ""
+msgstr "zamanlayıcının istasyona yerleştirdiği saatler."
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "İş akışının webhook adımının gönderdiği https adresi — düz http, yönlendirmeler ve özel ya da link-yerel adreslere çözümlenen konaklar reddedilir ve çağrı on saniyeden sonra vazgeçer."
@@ -14775,7 +14775,7 @@ msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15
 msgstr "Bu varlık için MACRS kapsamında IRS kurtarma süresi sınıfı (3, 5, 7, 10, 15, 20, 27.5, 39 yıl)."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr ""
+msgstr "o gün vadesi olan iş saatleri (çalışmanın çalıştığı günü değil, vade tarihine göre), gecikmiş iş Gecikmede."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Bu dış işleme satırının kapsadığı işlem, işi; satırın alındığı bu işi karşı operasyonu kapatır."
@@ -15079,7 +15079,7 @@ msgid "The statement bucket all accounts under this group will use."
 msgstr "Bu grup altındaki tüm hesapların kullanacağı beyan grubu."
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr ""
+msgstr "istasyonun vardiyalarından takvim saatleri. Kadrolandırılmış saatler (atadığınız kişiler) aşağıda gösterilir."
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Adımın ayarları — bu çalıştırma, kullanılan değerleri kaydetmekten öncedir."
@@ -16917,7 +16917,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "Hangi üretim olayı raf ömrü saatini başlatır — örneğin, doldurma, mühürleme veya nihai QC."
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
-msgstr ""
+msgstr "Bu sevkiyat açık olsa da, iş merkezi plana kullanılamaz (planlanan bitiş saatine veya sevkiyat tamamlanana kadar)."
 
 msgid "Who Can Approve"
 msgstr "Kimler Onaylayabilir"

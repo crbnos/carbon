@@ -124,11 +124,11 @@ msgstr "{0}d"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d early"
-msgstr ""
+msgstr "{0}일 조기"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
-msgstr ""
+msgstr "{0}일 늦음"
 
 #. placeholder {0}: item.daysOff
 msgid "{0}d off"
@@ -146,7 +146,7 @@ msgstr "{0}h 필요"
 #. placeholder {0}: formatHours(staffed)
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
-msgstr ""
+msgstr "{0}시간 인원배치"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}개 부품이 건너뜀 — 이미 활성 작업이 있음"
@@ -2460,13 +2460,13 @@ msgid "Below safety stock"
 msgstr "안전재고 미만"
 
 msgid "Best case"
-msgstr ""
+msgstr "최선의 경우"
 
 msgid "Best case projection"
-msgstr ""
+msgstr "최선의 경우 예측"
 
 msgid "Best case…"
-msgstr ""
+msgstr "최선의 경우…"
 
 msgid "Beta"
 msgstr "베타"
@@ -2554,7 +2554,7 @@ msgid "Both"
 msgstr "모두"
 
 msgid "Bottleneck"
-msgstr ""
+msgstr "병목"
 
 msgid "Breadcrumb"
 msgstr "이동 경로"
@@ -2656,7 +2656,7 @@ msgid "Calculated finished-good expiry"
 msgstr "계산된 완제품 유효기한"
 
 msgid "Calculating best case…"
-msgstr ""
+msgstr "최선의 경우 계산 중…"
 
 msgid "Calculation Method"
 msgstr "계산 방법"
@@ -4141,7 +4141,7 @@ msgid "Current Password"
 msgstr "현재 비밀번호"
 
 msgid "Current projection"
-msgstr ""
+msgstr "현재 예측"
 
 msgid "Current quantity"
 msgstr "현재 수량"
@@ -5285,7 +5285,7 @@ msgid "Due"
 msgstr "기한"
 
 msgid "Due (by due date)"
-msgstr ""
+msgstr "기한 (기한일 기준)"
 
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
@@ -5797,7 +5797,7 @@ msgid "Empty"
 msgstr "비어있음"
 
 msgid "Empty = all shifts at the location"
-msgstr ""
+msgstr "비어있음 = 해당 위치의 모든 교대근무"
 
 msgid "Empty = match every item"
 msgstr "비어 있으면 모든 품목과 일치"
@@ -7322,7 +7322,7 @@ msgid "Hours"
 msgstr "시간"
 
 msgid "Hours assumed from location shifts"
-msgstr ""
+msgstr "위치 교대근무에서 가정된 시간"
 
 msgid "Hours at this station"
 msgstr "이 스테이션의 시간"
@@ -7358,7 +7358,7 @@ msgid "How coverage is worked out"
 msgstr "배치가 어떻게 계산되는지"
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
-msgstr ""
+msgstr "예약된 작업이 가용 시간을 초과한 정도(+) 또는 남은 여유 시간."
 
 msgid "How items roll up for posting and reporting"
 msgstr "품목이 전기 및 보고를 위해 합산되는 방식"
@@ -7511,7 +7511,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "품목 번호를 변경하려면 취소를 클릭하고, 전환하기 전에 각 라인 항목에 대해 품목을 수동으로 지정하세요."
 
 msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr ""
+msgstr "교대근무 캘린더 무시 — 이 기계는 24시간 무인으로 운영될 수 있습니다."
 
 msgid "II (normal default)"
 msgstr "II(일반 기본값)"
@@ -9769,7 +9769,7 @@ msgid "No files uploaded"
 msgstr "업로드된 파일이 없습니다"
 
 msgid "No forecast available for this job."
-msgstr ""
+msgstr "이 작업에 사용 가능한 예측이 없습니다."
 
 msgid "No Gauge Selected"
 msgstr "선택된 측정기 없음"
@@ -9955,7 +9955,7 @@ msgid "No rules assigned"
 msgstr "배정된 규칙이 없습니다"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
-msgstr ""
+msgstr "교대근무 구성 없음 — 월–금, 8시간 근무일 가정"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "재고나 작업 상태를 나타내는 신뢰할 수 있는 단일 수치가 없음"
@@ -10072,7 +10072,7 @@ msgid "Not Required"
 msgstr "필수 아님"
 
 msgid "Not scheduled"
-msgstr ""
+msgstr "예약되지 않음"
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "예약되지 않음 — 가능한 슬롯이 없습니다. 저장된 날짜는 역방향 계획 자리 표시자이며 실제 예약이 아닙니다."
@@ -10410,7 +10410,7 @@ msgid "Operating Income"
 msgstr "영업이익"
 
 msgid "Operating shifts"
-msgstr ""
+msgstr "운영 교대근무"
 
 msgid "Operation"
 msgstr "공정작업"
@@ -11392,10 +11392,10 @@ msgid "Project start"
 msgstr "프로젝트 시작"
 
 msgid "Projected completion"
-msgstr ""
+msgstr "예상 완료"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
-msgstr ""
+msgstr "이 작업이 해당 위치의 일정 맨 앞으로 이동한 경우의 예상 완료. 저장되지 않습니다."
 
 msgid "Projected demand exploded from BOMs and forecasts."
 msgstr "BOM과 예측을 전개하여 산출한 예상 수요입니다."
@@ -12618,7 +12618,7 @@ msgid "Runs"
 msgstr "실행"
 
 msgid "Runs 24×7 (lights-out)"
-msgstr ""
+msgstr "24×7 실행 (무인 운영)"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1(가장 완화된 특별수준)"
@@ -14309,7 +14309,7 @@ msgid "taken"
 msgstr "사용됨"
 
 msgid "Takes work center offline"
-msgstr ""
+msgstr "작업 센터를 오프라인으로 설정"
 
 msgid "Talk to Sales"
 msgstr "영업팀에 문의"
@@ -14739,7 +14739,7 @@ msgid "The hourly indirect-cost burden applied to this work center; the differen
 msgstr "이 작업장에 적용되는 시간당 간접비 부담률입니다. 노무비+기계비와 전체 견적 요율의 차이를 간접비가 흡수합니다."
 
 msgid "the hours the scheduler placed on the station."
-msgstr ""
+msgstr "스케줄러가 스테이션에 배치한 시간."
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "워크플로우의 웹훅 단계가 게시하는 https 주소입니다. 평문 http, 리다이렉트 및 프라이빗 또는 링크-로컬 주소로 확인되는 호스트는 거부되며, 호출은 10초 후 포기합니다."
@@ -14775,7 +14775,7 @@ msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15
 msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 등급(3, 5, 7, 10, 15, 20, 27.5, 39년)입니다."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr ""
+msgstr "해당 날짜에 기한이 있는 작업 시간(작업이 실행되는 날이 아닌 기한일 기준), 연체 작업은 \"기한 경과\"에 표시됨."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "이 외주 라인이 처리하는 공정작업이 속한 작업입니다. 이 라인의 입고는 해당 작업의 공정작업을 마감합니다."
@@ -15079,7 +15079,7 @@ msgid "The statement bucket all accounts under this group will use."
 msgstr "이 그룹에 속한 모든 계정이 사용할 재무제표 구분입니다."
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr ""
+msgstr "스테이션의 교대근무에서 가져온 캘린더 시간. 인원배치 시간(할당한 사람)은 아래에 표시됩니다."
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "단계의 설정입니다 — 이 실행은 사용한 값을 기록하기 전의 것입니다."
@@ -16917,7 +16917,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
-msgstr ""
+msgstr "이 지시가 열려있는 동안 작업 센터는 일정에 사용할 수 없습니다(계획된 종료 시간까지 또는 지시가 완료될 때까지)."
 
 msgid "Who Can Approve"
 msgstr "승인 가능자"

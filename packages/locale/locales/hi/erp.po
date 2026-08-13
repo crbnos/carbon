@@ -124,11 +124,11 @@ msgstr "{0}द"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d early"
-msgstr ""
+msgstr "{0}d जल्दी"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
-msgstr ""
+msgstr "{0}d देर से"
 
 #. placeholder {0}: item.daysOff
 msgid "{0}d off"
@@ -146,7 +146,7 @@ msgstr "{0}घंटे आवश्यक"
 #. placeholder {0}: formatHours(staffed)
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
-msgstr ""
+msgstr "{0}h स्टाफ किया गया"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} भाग छोड़ दिए गए — उनके पास पहले से ही खुली नौकरियाँ हैं"
@@ -2460,13 +2460,13 @@ msgid "Below safety stock"
 msgstr "सुरक्षा स्टॉक से नीचे"
 
 msgid "Best case"
-msgstr ""
+msgstr "सर्वश्रेष्ठ स्थिति"
 
 msgid "Best case projection"
-msgstr ""
+msgstr "सर्वश्रेष्ठ स्थिति प्रक्षेपण"
 
 msgid "Best case…"
-msgstr ""
+msgstr "सर्वश्रेष्ठ स्थिति…"
 
 msgid "Beta"
 msgstr "बीटा"
@@ -2554,7 +2554,7 @@ msgid "Both"
 msgstr "दोनों"
 
 msgid "Bottleneck"
-msgstr ""
+msgstr "अड़चन"
 
 msgid "Breadcrumb"
 msgstr "ब्रेडक्रम्ब"
@@ -2656,7 +2656,7 @@ msgid "Calculated finished-good expiry"
 msgstr "गणना की गई तैयार-माल की समाप्ति"
 
 msgid "Calculating best case…"
-msgstr ""
+msgstr "सर्वश्रेष्ठ स्थिति की गणना जारी है…"
 
 msgid "Calculation Method"
 msgstr "गणना विधि"
@@ -4141,7 +4141,7 @@ msgid "Current Password"
 msgstr "वर्तमान पासवर्ड"
 
 msgid "Current projection"
-msgstr ""
+msgstr "वर्तमान प्रक्षेपण"
 
 msgid "Current quantity"
 msgstr "वर्तमान मात्रा"
@@ -5285,7 +5285,7 @@ msgid "Due"
 msgstr "देय"
 
 msgid "Due (by due date)"
-msgstr ""
+msgstr "देय (देय तारीख तक)"
 
 #. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
@@ -5797,7 +5797,7 @@ msgid "Empty"
 msgstr "खाली"
 
 msgid "Empty = all shifts at the location"
-msgstr ""
+msgstr "खाली = स्थान पर सभी पारियाँ"
 
 msgid "Empty = match every item"
 msgstr "खाली = हर आइटम से मेल खाएं"
@@ -7322,7 +7322,7 @@ msgid "Hours"
 msgstr "घंटे"
 
 msgid "Hours assumed from location shifts"
-msgstr ""
+msgstr "स्थान की पारियों से मानी गई घंटे"
 
 msgid "Hours at this station"
 msgstr "इस स्टेशन पर घंटे"
@@ -7358,7 +7358,7 @@ msgid "How coverage is worked out"
 msgstr "कवरेज कैसे काम किया जाता है"
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
-msgstr ""
+msgstr "अनुसूचित कार्य उपलब्ध घंटों से कितना अधिक है (+) या कितने घंटे अभी भी मुक्त हैं।"
 
 msgid "How items roll up for posting and reporting"
 msgstr "पोस्टिंग और रिपोर्टिंग के लिए आइटम कैसे रोल अप होते हैं"
@@ -7511,7 +7511,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "यदि आप भाग संख्याओं को बदलना चाहते हैं, तो कृपया Cancel पर क्लिक करें और रूपांतरण से पहले प्रत्येक लाइन आइटम के लिए भागों को मैन्युअल रूप से असाइन करें।"
 
 msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr ""
+msgstr "शिफ्ट कैलेंडर को अनदेखा करें — यह मशीन दिन रात बिना निगरानी के चल सकती है।"
 
 msgid "II (normal default)"
 msgstr "II (सामान्य डिफ़ॉल्ट)"
@@ -9769,7 +9769,7 @@ msgid "No files uploaded"
 msgstr "कोई फ़ाइल अपलोड नहीं की गई"
 
 msgid "No forecast available for this job."
-msgstr ""
+msgstr "इस नौकरी के लिए कोई पूर्वानुमान उपलब्ध नहीं है।"
 
 msgid "No Gauge Selected"
 msgstr "कोई गेज चयनित नहीं"
@@ -9955,7 +9955,7 @@ msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
-msgstr ""
+msgstr "कोई पारियाँ कॉन्फ़िगर नहीं — सोमवार–शुक्रवार, 8 घंटे की दिन मानी जा रही है"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "इन्वेंटरी या जॉब स्थिति के लिए कोई एकल, विश्वसनीय संख्या नहीं"
@@ -10072,7 +10072,7 @@ msgid "Not Required"
 msgstr "आवश्यक नहीं"
 
 msgid "Not scheduled"
-msgstr ""
+msgstr "अनुसूचित नहीं"
 
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "शेड्यूल नहीं किया गया — कोई संभव स्लॉट नहीं। संग्रहीत तारीखें पिछड़ी-योजना प्लेसहोल्डर हैं, वास्तविक बुकिंग नहीं।"
@@ -10410,7 +10410,7 @@ msgid "Operating Income"
 msgstr "परिचालन आय"
 
 msgid "Operating shifts"
-msgstr ""
+msgstr "कार्य पारियाँ"
 
 msgid "Operation"
 msgstr "ऑपरेशन"
@@ -11392,10 +11392,10 @@ msgid "Project start"
 msgstr "प्रोजेक्ट शुरुआत"
 
 msgid "Projected completion"
-msgstr ""
+msgstr "अनुमानित पूर्णता"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
-msgstr ""
+msgstr "अनुमानित पूर्णता यदि यह नौकरी अपने स्थान के अनुसूचन के सामने कूद गई। कुछ भी सहेजा नहीं जाता है।"
 
 msgid "Projected demand exploded from BOMs and forecasts."
 msgstr "अनुमानित इन्वेंटरी"
@@ -12618,7 +12618,7 @@ msgid "Runs"
 msgstr "रन"
 
 msgid "Runs 24×7 (lights-out)"
-msgstr ""
+msgstr "24×7 चलता है (रोशनी बंद)"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (सबसे मोटे विशेष)"
@@ -14309,7 +14309,7 @@ msgid "taken"
 msgstr "लिया गया"
 
 msgid "Takes work center offline"
-msgstr ""
+msgstr "कार्य केंद्र को ऑफलाइन ले जाता है"
 
 msgid "Talk to Sales"
 msgstr "बिक्रय टीम से बात करें"
@@ -14739,7 +14739,7 @@ msgid "The hourly indirect-cost burden applied to this work center; the differen
 msgstr "इस कार्य केंद्र पर लागू प्रति घंटा अप्रत्यक्ष-लागत बोझ; श्रम + मशीन और पूर्ण उद्धरण दर के बीच का अंतर वह है जो ओवरहेड अवशोषित करता है।"
 
 msgid "the hours the scheduler placed on the station."
-msgstr ""
+msgstr "स्टेशन पर शेड्यूलर द्वारा रखे गए घंटे।"
 
 msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
 msgstr "वह https पता जिसमें एक workflow के webhook step को भेजा जाता है — plain http, redirects, और private या link-local addresses को resolve करने वाले hosts को अस्वीकार किया जाता है, और कॉल दस सेकंड के बाद रुक जाती है।"
@@ -14775,7 +14775,7 @@ msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15
 msgstr "MACRS के तहत इस संपत्ति के लिए IRS पुनर्प्राप्ति-अवधि वर्ग (3, 5, 7, 10, 15, 20, 27.5, 39-वर्ष)।"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr ""
+msgstr "उस दिन देय नौकरी के घंटे (देय तारीख आधार पर, वह दिन नहीं जब काम चलता है), अतिदेय कार्य पिछली देय में।"
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "वह काम जिसका संचालन यह बाहरी-प्रसंस्करण लाइन कवर करता है; लाइन की रसीद इस काम के विरुद्ध संचालन को बंद करती है।"
@@ -15079,7 +15079,7 @@ msgid "The statement bucket all accounts under this group will use."
 msgstr "विवरण बाल्टी जो इस समूह के सभी खाते उपयोग करेंगे।"
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr ""
+msgstr "स्टेशन की पारियों से स्टेशन के कैलेंडर घंटे। स्टाफ किए गए घंटे (आपने जो लोग नियुक्त किए हैं) नीचे दिखाई देते हैं।"
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "step की सेटिंग्स — यह run उन मानों को record करने से पहले का है जिनका उपयोग इसने किया था।"
@@ -16917,7 +16917,7 @@ msgid "Which manufacturing event starts the shelf-life clock — for example, fi
 msgstr "कौन सी विनिर्माण घटना शेल्फ-जीवन घड़ी शुरू करती है — उदाहरण के लिए, भरना, सील करना, या अंतिम क्यूसी।"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
-msgstr ""
+msgstr "जब तक यह प्रेषण खुला है, कार्य केंद्र अनुसूचन के लिए अनुपलब्ध है (नियोजित समाप्ति समय तक, या जब तक प्रेषण पूरा न हो जाए)।"
 
 msgid "Who Can Approve"
 msgstr "कौन अनुमोदन कर सकता है"
