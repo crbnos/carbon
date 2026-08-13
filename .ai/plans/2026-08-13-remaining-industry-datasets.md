@@ -6,13 +6,13 @@
 
 ## Progress
 
-- [ ] Task 1: Add the new foundation/production spec types
-- [ ] Task 2: Move satellite's tier-1 content into its data slice
-- [ ] Task 3: Make `tiers/01-foundation.ts` read the dataset instead of its own literals
-- [ ] Task 4: Dataset-drive the two job ref keys in `tiers/06-production.ts`
-- [ ] Task 5: Delete the dead `Dataset.companyName` field
-- [ ] Task 6: **GATE** — prove satellite's seeded output is unchanged
-- [ ] Task 7: Recover the robotics foundation + items slices from the stash
+- [x] Task 1: Add the new foundation/production spec types
+- [x] Task 2: Move satellite's tier-1 content into its data slice
+- [x] Task 3: Make `tiers/01-foundation.ts` read the dataset instead of its own literals
+- [x] Task 4: Dataset-drive the two job ref keys in `tiers/06-production.ts`
+- [x] Task 5: Delete the dead `Dataset.companyName` field
+- [x] Task 6: **GATE** — prove satellite's seeded output is unchanged
+- [x] Task 7: Recover the robotics foundation + items slices from the stash
 - [ ] Task 8: Write the nine remaining robotics slices
 - [ ] Task 9: Register `robotics` and seed-verify it
 - [ ] Task 10: Write the `precision` dataset
