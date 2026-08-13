@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How Carbon Works</title>
+    <meta
+      name="description"
+      content="An architecture tour of Carbon: one journey from a button click, through the server, into Postgres, out to background jobs, and back to the screen."
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/styles/github.min.css"
+      id="hljs-light"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/styles/github-dark.min.css"
+      id="hljs-dark"
+      disabled
+    />
+
+    <style>
+      /* ---------------------------------------------------------------- tokens */
+      :root {
+        --bg: #ffffff;
+        --bg-soft: #f7f8fa;
+        --bg-inset: #f0f2f5;
+        --fg: #1b1f24;
+        --fg-muted: #59636e;
+        --fg-faint: #848d97;
+        --border: #d8dee4;
+        --border-soft: #e8ebef;
+        --accent: #0b6bcb;
+        --accent-soft: #e7f0fb;
+        --warn-bg: #fff8e6;
+        --warn-border: #e6c34a;
+        --radius: 7px;
+        --sidebar-w: 288px;
+        --header-h: 56px;
+        --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+          "Liberation Mono", monospace;
+      }
+      html[data-theme="dark"] {
+        --bg: #0d1117;
+        --bg-soft: #12181f;
+        --bg-inset: #161b22;
+        --fg: #e6edf3;
+        --fg-muted: #9198a1;
+        --fg-faint: #6e7681;
+        --border: #2a313a;
+        --border-soft: #21262d;
+        --accent: #4493f8;
+        --accent-soft: #16283f;
+        --warn-bg: #241c07;
+        --warn-border: #6b5416;
+      }
+
+      /* ----------------------------------------------------------------- reset */
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.7;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      [id] {
+        scroll-margin-top: calc(var(--header-h) + 24px);
+      }
+
+      /* ---------------------------------------------------------------- header */
+      header.topbar {
+        position: fixed;
+        inset: 0 0 auto 0;
+        height: var(--header-h);
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 0 20px;
+        background: color-mix(in srgb, var(--bg) 86%, transparent);
+        backdrop-filter: saturate(160%) blur(12px);
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .topbar .brand {
+        font-weight: 650;
+        font-size: 15px;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+      }
+      .topbar .brand span {
+        color: var(--fg-faint);
+        font-weight: 450;
+      }
+      .topbar .spacer {
+        flex: 1;
+      }
+      .iconbtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 32px;
+        min-width: 32px;
+        padding: 0 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg-soft);
+        color: var(--fg-muted);
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
+      }
+      .iconbtn:hover {
+        background: var(--bg-inset);
+        color: var(--fg);
+        border-color: var(--fg-faint);
+      }
+      .iconbtn svg {
+        width: 15px;
+        height: 15px;
+      }
+      #menuBtn {
+        display: none;
+      }
+
+      /* --------------------------------------------------------------- sidebar */
+      aside.toc {
+        position: fixed;
+        top: var(--header-h);
+        bottom: 0;
+        left: 0;
+        width: var(--sidebar-w);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 22px 12px 60px 20px;
+        border-right: 1px solid var(--border-soft);
+        background: var(--bg);
+        z-index: 40;
+      }
+      .toc h2 {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--fg-faint);
+        margin: 0 0 10px 10px;
+        font-weight: 650;
+      }
+      .toc a {
+        display: block;
+        padding: 5px 10px;
+        margin: 1px 0;
+        border-radius: 5px;
+        border-left: 2px solid transparent;
+        color: var(--fg-muted);
+        text-decoration: none;
+        font-size: 13.5px;
+        line-height: 1.45;
+      }
+      .toc a:hover {
+        background: var(--bg-soft);
+        color: var(--fg);
+      }
+      .toc a.lvl3 {
+        padding-left: 24px;
+        font-size: 12.5px;
+        color: var(--fg-faint);
+      }
+      .toc a.active {
+        color: var(--accent);
+        background: var(--accent-soft);
+        border-left-color: var(--accent);
+        font-weight: 560;
+      }
+
+      /* ------------------------------------------------------------------ main */
+      main {
+        margin-left: var(--sidebar-w);
+        padding: calc(var(--header-h) + 40px) 40px 140px;
+        max-width: calc(var(--sidebar-w) + 900px);
+      }
+      article {
+        max-width: 820px;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.25;
+        letter-spacing: -0.018em;
+        scroll-margin-top: calc(var(--header-h) + 24px);
+      }
+      h1 {
+        font-size: 2.3rem;
+        font-weight: 700;
+        margin: 0 0 0.6em;
+      }
+      h2 {
+        font-size: 1.55rem;
+        font-weight: 660;
+        margin: 3.2em 0 0.8em;
+        padding-bottom: 0.35em;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      h3 {
+        font-size: 1.16rem;
+        font-weight: 640;
+        margin: 2.4em 0 0.6em;
+      }
+      h4 {
+        font-size: 1rem;
+        font-weight: 640;
+        margin: 1.8em 0 0.5em;
+      }
+      h1 + p,
+      h2 + p,
+      h3 + p {
+        margin-top: 0;
+      }
+
+      p,
+      li {
+        color: var(--fg);
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        text-underline-offset: 2px;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      strong {
+        font-weight: 640;
+      }
+      hr {
+        border: 0;
+        border-top: 1px solid var(--border-soft);
+        margin: 3em 0;
+      }
+      ul,
+      ol {
+        padding-left: 1.4em;
+      }
+      li {
+        margin: 0.35em 0;
+      }
+      li > p {
+        margin: 0.4em 0;
+      }
+
+      blockquote {
+        margin: 1.6em 0;
+        padding: 0.9em 1.2em;
+        background: var(--accent-soft);
+        border-left: 3px solid var(--accent);
+        border-radius: 0 var(--radius) var(--radius) 0;
+      }
+      blockquote p {
+        margin: 0;
+        font-weight: 560;
+      }
+
+      /* glossary reference chips: [[7]](#g7) */
+      a.ref {
+        display: inline-block;
+        min-width: 1.5em;
+        padding: 0 0.35em;
+        margin: 0 0.1em;
+        border-radius: 4px;
+        background: var(--bg-inset);
+        border: 1px solid var(--border-soft);
+        color: var(--fg-muted);
+        font-size: 0.72em;
+        font-weight: 640;
+        line-height: 1.55;
+        vertical-align: 0.32em;
+        text-align: center;
+        font-family: var(--font-mono);
+      }
+      a.ref:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        text-decoration: none;
+      }
+      .gloss-hit {
+        animation: gloss 1.6s ease-out;
+        border-radius: 4px;
+      }
+      @keyframes gloss {
+        0%,
+        45% {
+          background: var(--accent-soft);
+          box-shadow: 0 0 0 6px var(--accent-soft);
+        }
+        100% {
+          background: transparent;
+          box-shadow: none;
+        }
+      }
+
+      /* heading permalink */
+      .anchor {
+        margin-left: 0.4em;
+        color: var(--fg-faint);
+        opacity: 0;
+        font-weight: 400;
+        text-decoration: none;
+        font-size: 0.8em;
+        transition: opacity 0.12s;
+      }
+      h2:hover .anchor,
+      h3:hover .anchor,
+      h4:hover .anchor {
+        opacity: 1;
+      }
+
+      /* ------------------------------------------------------------------ code */
+      code {
+        font-family: var(--font-mono);
+        font-size: 0.875em;
+        background: var(--bg-inset);
+        border: 1px solid var(--border-soft);
+        padding: 0.12em 0.38em;
+        border-radius: 4px;
+        word-break: break-word;
+      }
+      pre {
+        background: var(--bg-soft);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        overflow-x: auto;
+        margin: 1.5em 0;
+        font-size: 13.5px;
+        line-height: 1.62;
+      }
+      pre code {
+        background: none;
+        border: 0;
+        padding: 0;
+        font-size: inherit;
+        white-space: pre;
+      }
+      pre.lang::before {
+        content: attr(data-lang);
+        display: block;
+        margin: -4px 0 10px;
+        font: 600 10.5px/1 var(--font-mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--fg-faint);
+      }
+
+      /* ---------------------------------------------------------------- tables */
+      .table-wrap {
+        overflow-x: auto;
+        margin: 1.6em 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14.5px;
+      }
+      th,
+      td {
+        padding: 10px 14px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-soft);
+        vertical-align: top;
+      }
+      th {
+        background: var(--bg-soft);
+        font-weight: 620;
+        font-size: 13px;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+      }
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+      tbody tr:hover {
+        background: var(--bg-soft);
+      }
+
+      /* -------------------------------------------------------------- diagrams */
+      /* Diagrams break out past the prose column; they need the room to stay legible. */
+      .diagram {
+        margin: 2.2em 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-soft);
+        overflow: hidden;
+        position: relative;
+        width: min(1360px, calc(100vw - var(--sidebar-w) - 72px));
+      }
+      @media (max-width: 1080px) {
+        .diagram {
+          width: 100%;
+        }
+      }
+      .diagram-viewport {
+        position: relative;
+        height: clamp(440px, 68vh, 760px);
+        overflow: hidden;
+        cursor: grab;
+        touch-action: none;
+        background: radial-gradient(
+            circle at 1px 1px,
+            var(--border) 1px,
+            transparent 0
+          )
+          0 0 / 22px 22px;
+      }
+      .diagram-viewport.grabbing {
+        cursor: grabbing;
+      }
+      .diagram-viewport > svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform-origin: 0 0;
+        max-width: none !important;
+        user-select: none;
+      }
+      .diagram-bar {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 4px;
+        z-index: 5;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .diagram:hover .diagram-bar,
+      .diagram-viewport:focus-within + .diagram-bar {
+        opacity: 1;
+      }
+      .diagram-bar button {
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        background: var(--bg);
+        color: var(--fg-muted);
+        cursor: pointer;
+        font: inherit;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
+      }
+      .diagram-bar button:hover {
+        color: var(--fg);
+        border-color: var(--fg-faint);
+      }
+      .diagram-bar button svg {
+        width: 15px;
+        height: 15px;
+      }
+      .diagram-hint {
+        position: absolute;
+        left: 12px;
+        bottom: 10px;
+        z-index: 5;
+        font-size: 11.5px;
+        color: var(--fg-faint);
+        background: color-mix(in srgb, var(--bg) 82%, transparent);
+        padding: 3px 9px;
+        border-radius: 20px;
+        border: 1px solid var(--border-soft);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .diagram:hover .diagram-hint {
+        opacity: 1;
+      }
+      .diagram-hint kbd {
+        font: inherit;
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        background: var(--bg-inset);
+        border: 1px solid var(--border-soft);
+        border-radius: 3px;
+        padding: 0 4px;
+      }
+      .diagram:fullscreen {
+        border-radius: 0;
+        background: var(--bg);
+      }
+      .diagram:fullscreen .diagram-viewport {
+        height: 100vh;
+      }
+      .diagram-err {
+        padding: 20px;
+        color: #b4423a;
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        white-space: pre-wrap;
+      }
+
+      /* -------------------------------------------------------------- glossary */
+      .gloss-entry {
+        padding: 12px 16px;
+        margin: 8px 0;
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        background: var(--bg-soft);
+      }
+      .gloss-entry p {
+        margin: 0;
+      }
+      .gloss-entry strong {
+        color: var(--fg);
+      }
+
+      /* -------------------------------------------------------------- responsive */
+      @media (max-width: 1080px) {
+        #menuBtn {
+          display: inline-flex;
+        }
+        aside.toc {
+          transform: translateX(-100%);
+          transition: transform 0.2s ease;
+          box-shadow: 0 0 40px rgba(0, 0, 0, 0.16);
+        }
+        body.toc-open aside.toc {
+          transform: none;
+        }
+        main {
+          margin-left: 0;
+          padding: calc(var(--header-h) + 28px) 22px 120px;
+        }
+        h1 {
+          font-size: 1.9rem;
+        }
+      }
+      @media print {
+        header.topbar,
+        aside.toc,
+        .diagram-bar,
+        .diagram-hint {
+          display: none !important;
+        }
+        main {
+          margin: 0;
+          padding: 0;
+          max-width: none;
+        }
+        .diagram-viewport {
+          height: auto;
+          overflow: visible;
+        }
+        .diagram-viewport > svg {
+          position: static;
+          transform: none !important;
+        }
+        pre,
+        .diagram,
+        .table-wrap {
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <button class="iconbtn" id="menuBtn" aria-label="Toggle contents">
+        <svg viewBox="0 0 16 16" fill="currentColor">
+          <path
+            d="M2 4h12v1.5H2V4Zm0 3.25h12v1.5H2v-1.5ZM2 10.5h12V12H2v-1.5Z"
+          />
+        </svg>
+      </button>
+      <div class="brand">How Carbon Works</div>
+      <div class="spacer"></div>
+      <button
+        class="iconbtn"
+        id="themeBtn"
+        aria-label="Toggle theme"
+        title="Toggle light / dark"
+      ></button>
+    </header>
+
+    <aside class="toc" id="toc">
+      <h2>Contents</h2>
+      <nav id="tocNav"></nav>
+    </aside>
+
+    <main>
+      <article id="content">
+        <p style="color: var(--fg-faint)">Rendering…</p>
+      </article>
+    </main>
+
+    <!-- The whole document lives here as plain Markdown. Edit it directly; the page
+     renders it on load. Do not introduce the literal string "</scr"+"ipt" below. -->
+    <!-- prettier-ignore -->
+    <script id="md-source" type="text/markdown">
+# How Carbon Works: An Architecture Tour
+
+_Accurate as of August 2026. The file paths, line numbers and counts throughout are a
+snapshot of the repository at that date; the ideas outlast them._
+
+**What Carbon is.** Software that runs a manufacturing business: what it buys, what it
+holds in stock, what it builds, what it ships, and whether the quality held up. Two
+separate apps do that. The **ERP** is the office app, where people quote, purchase, plan
+and invoice. The **MES** is the shop floor app, used on tablets next to the machines to
+run and record the actual work.
+
+**How to read it:** the doc follows one journey. A user clicks a button, something is
+saved, other things happen because of it, and the screen updates. Everything else hangs
+off that spine. [Part 1](#part-1-the-map) and
+[Part 2](#part-2-follow-one-click-all-the-way-down) are the ones to read in order. The
+rest stands on its own, so take it in any order you like.
+
+Any term you might not know is marked with a number the first time it appears, like this:
+Postgres [[17]](#g17). The number links to a one-line definition in the
+[Glossary](#glossary) at the end. Nothing is assumed.
+
+---
+
+## Table of contents
+
+1. [The map: what runs where](#part-1-the-map)
+2. [Follow one click all the way down](#part-2-follow-one-click-all-the-way-down)
+3. [Layer by layer](#part-3-layer-by-layer)
+4. [What happens after the write](#part-4-what-happens-after-the-write)
+5. [The other engines](#part-5-the-other-engines)
+6. [The repo map](#part-6-the-repo-map)
+7. [Where it all runs](#part-7-where-it-all-runs)
+8. [There&#39;s a bug: where do I look?](#part-8-theres-a-bug-where-do-i-look)
+9. [House rules](#part-9-house-rules)
+10. [Glossary](#glossary)
+
+---
+
+## Part 1: The map
+
+Carbon is a monorepo [[10]](#g10): one Git repository holding several applications and
+about twenty-five shared libraries, built together by pnpm workspaces and
+Turborepo [[25]](#g25). Two of those applications are the products people log into, the
+ERP and the MES. Everything else exists to serve them.
+
+The centre of gravity is a single Postgres [[17]](#g17) database. Almost every arrow in
+this doc eventually points at it. Unusually for a web app, a lot of logic that you might
+expect to live in application code lives _inside_ the database instead: permissions,
+computed totals, and the "something changed" notifications. That is the single most
+important thing to understand about Carbon, and [Part 3](#part-3-layer-by-layer) explains why.
+
+```mermaid
+flowchart TB
+  U1["Office staff - browser"]
+  U2["Shop floor - tablet"]
+  U3["Customer or supplier - public share link"]
+
+  subgraph apps["Our Node.js apps"]
+    ERP["ERP app - the main product"]
+    MES["MES app - shop floor"]
+  end
+
+  subgraph sb["Supabase services"]
+    REST["PostgREST - turns HTTP calls into SQL"]
+    AUTH["Auth - logins, tokens, invites"]
+    STORE["Storage - files, PDFs, CAD models"]
+    RT["Realtime - streams row changes to browsers"]
+    EDGE["Edge Functions - small Deno programs"]
+    PG[("Postgres - the source of truth")]
+  end
+
+  JOBS["Inngest - background job runner"]
+  REDIS[("Redis - cache, locks, rate limits")]
+  ASM["Assembler - Rust service for 3D and CAD"]
+  EXT["Outside world - email, Slack, Stripe, Jira, Xero"]
+
+  U1 -->|"page loads and form posts"| ERP
+  U2 -->|"page loads and form posts"| MES
+  U3 -->|"tokenised public URL"| ERP
+
+  ERP -->|"most reads and writes"| REST
+  MES -->|"most reads and writes"| REST
+  REST -->|"SQL, with security rules applied"| PG
+  ERP -->|"direct SQL when it needs a transaction"| PG
+  ERP -->|"sign in, verify token"| AUTH
+  ERP -->|"upload and download files"| STORE
+  ERP -->|"call and wait for a heavy job"| EDGE
+  EDGE -->|"bulk SQL in one transaction"| PG
+
+  PG -->|"publishes every row change"| RT
+  RT -.->|"live updates, no refresh"| U1
+
+  PG ==>|"queues an event on every write - see Part 4"| JOBS
+  JOBS ==>|"calls back into the ERP over HTTP"| ERP
+  JOBS -->|"emails, syncs, notifications"| EXT
+  ERP -->|"cached permissions, locks"| REDIS
+  ERP -->|"convert a CAD file"| ASM
+```
+
+**The five things worth taking from that picture:**
+
+1. **The ERP app is the hub.** It serves pages, and it is also where background jobs
+   execute. Inngest [[5]](#g5) does not run our code on its own machines; it calls back
+   into the ERP container.
+2. **Most database access is not raw SQL.** It goes through PostgREST [[18]](#g18), a
+   service that turns `client.from("purchaseOrder").select(...)` into a SQL query. We use
+   the `supabase-js` library to talk to it.
+3. **The database enforces permissions itself.** Even if application code forgets a
+   filter, Postgres will not return another company's rows. (Except on one specific
+   escape hatch: see [Part 3](#part-3-layer-by-layer).)
+4. **Writes cause events automatically.** A database trigger fires on every write, so
+   search indexing, webhooks, audit logs and customer automations happen without the
+   code that did the write knowing about them.
+5. **The Rust service is optional.** Carbon runs fine without it; it only handles 3D
+   models.
+
+---
+
+## Part 2: Follow one click all the way down
+
+Here is the whole system in one story: **a buyer creates a Purchase Order.**
+
+Pick this one apart and you have seen every layer: a form, validation, a permission
+check, a database write, logic living in Postgres, a background side effect, and the
+screen updating. Every other feature in Carbon is a variation on it.
+
+### The short version
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User as Buyer
+  participant UI as Browser - React
+  participant Route as ERP server - route action
+  participant Svc as Service function
+  participant PG as Postgres
+  participant Q as Event queue
+  participant Job as Background job
+
+  User->>UI: clicks "New Purchase Order", fills the form, hits Save
+  UI->>UI: checks the form against a zod schema
+  UI->>Route: HTTP POST with the form fields
+  Route->>Route: is this a POST? does this user have "create purchasing"?
+  Route->>Route: re-validate the fields on the server
+  Route->>Svc: insertPurchaseOrder(client, data)
+  Svc->>PG: ask for the next PO number
+  PG-->>Svc: "PO000123"
+  Svc->>PG: insert the order plus its delivery and payment rows
+  PG-->>Svc: the new row id
+  PG->>Q: a trigger queues "purchaseOrder was created"
+  Svc-->>Route: returns data or error, never throws
+  Route-->>UI: 302 redirect to the new order's page
+  UI->>Route: GET the order page - the loader runs
+  Route->>PG: read from the purchaseOrders view
+  PG-->>Route: the order, with totals already calculated
+  Route-->>User: the finished page
+  Q-->>Job: separately and later - index it for search
+```
+
+Notice the shape: the user's request finishes as soon as the row is written. The search
+indexing happens afterwards, on its own, and nobody waited for it.
+
+### The same story, with real files
+
+Every path below is real. Open them in your editor as you read.
+
+**1. The button.** It is a link, not a submit button.
+
+`apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrdersTable.tsx:502`
+
+```tsx
+primaryAction={
+  permissions.can("create", "purchasing") && (
+    <New label={t`Purchase Order`} to={path.to.newPurchaseOrder} />
+  )
+}
+```
+
+Two conventions in three lines. `permissions.can(...)` hides UI the user is not allowed
+to use; this is _cosmetic only_, the real check happens on the server. And the URL comes
+from `path.to.*`, a single registry of every URL in the app
+(`apps/erp/app/utils/path.ts`, ~2,200 lines). **Never hardcode a URL string.**
+
+**2. The form.** `apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderForm.tsx:116`
+
+```tsx
+<ValidatedForm
+  method="post"
+  validator={purchaseOrderValidator}
+  defaultValues={initialValues}
+>
+```
+
+`ValidatedForm` is our wrapper around a plain HTML form. You hand it a schema; it blocks
+submission and shows inline field errors if the data is wrong, and it re-displays server
+errors in the same place. Fields (`<Input name="...">`, `<Supplier name="...">`) come
+from `~/components/Form`, which re-exports generic inputs plus about ninety
+Carbon-specific pickers (Customer, Supplier, Item, Location, Currency…).
+
+**3. The schema.** `apps/erp/app/modules/purchasing/purchasing.models.ts:127`
+
+```ts
+export const purchaseOrderValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  purchaseOrderId: zfd.text(z.string().optional()),
+  purchaseOrderType: z.enum(purchaseOrderTypeType, {
+    /* ... */
+  }),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
+  locationId: zfd.text(z.string().optional()),
+});
+```
+
+zod [[28]](#g28) is a schema library: you describe the shape of the data once, and get
+both runtime validation and a TypeScript type from it. `zfd` (`zod-form-data`) handles the
+fact that HTML forms send everything as strings: `zfd.text()` turns an empty field into
+`undefined` rather than `""`.
+
+**One schema, used in three places:** the browser validates against it, the server
+re-validates against it, and the service function's argument type is derived from it. That
+is why the three can never drift apart.
+
+**4. The route.** `apps/erp/app/routes/x+/purchase-order+/new.tsx:29`
+
+```ts
+export async function action({ request }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      create: "purchasing",
+      bypassRls: true,
+    });
+
+  const formData = await request.formData();
+  const validation = await validator(newPurchaseOrderValidator).validate(
+    formData
+  );
+  if (validation.error) return validationError(validation.error);
+
+  const result = await insertPurchaseOrder(client, {
+    ...validation.data,
+    companyId,
+    companyGroupId,
+    createdBy: userId,
+    customFields: setCustomFields(formData),
+  });
+
+  if (result.error || !result.data) {
+    throw redirect(
+      path.to.purchaseOrders,
+      await flash(
+        request,
+        error(result.error, "Failed to insert purchase order")
+      )
+    );
+  }
+  throw redirect(path.to.purchaseOrder(result.data.id));
+}
+```
+
+This is the shape of _every_ write in Carbon:
+
+> **assert the method → check permissions → validate → call a service → redirect.**
+
+A file under `apps/erp/app/routes/` can export up to three things that matter here:
+
+| Export              | Runs where                 | Job                         |
+| ------------------- | -------------------------- | --------------------------- |
+| `loader` [[8]](#g8) | server only                | fetch the data a page needs |
+| `action` [[1]](#g1) | server only                | handle a form submission    |
+| `export default`    | server first, then browser | the React component         |
+
+`loader` and `action` are stripped out of the JavaScript sent to the browser, so it is
+safe to use secrets and database clients in them. This is the same idea as Next.js
+server components or a traditional controller; the file just happens to hold both
+halves.
+
+**5. The service function.** `apps/erp/app/modules/purchasing/purchasing.service.ts:1393`
+
+Routes never talk to the database directly. They call a _service function_: a plain
+function whose first argument is a database client and which returns Supabase's raw
+`{ data, error }` without throwing.
+
+```ts
+const seq = await client.rpc("get_next_sequence", {
+  sequence_name: "purchaseOrder",
+  company_id: input.companyId,
+});
+
+const order = await client
+  .from("purchaseOrder")
+  .insert({
+    purchaseOrderId,
+    supplierId: input.supplierId,
+    status: "Draft",
+    companyId: input.companyId,
+    createdBy: input.createdBy /* ... */,
+  })
+  .select("id, purchaseOrderId")
+  .single();
+
+const [delivery, payment] = await Promise.all([
+  client.from("purchaseOrderDelivery").insert({
+    /* ... */
+  }),
+  client.from("purchaseOrderPayment").insert({
+    /* ... */
+  }),
+]);
+
+if (delivery.error || payment.error) {
+  await deletePurchaseOrder(client, orderId); // manual undo
+  return { data: null, error: delivery.error ?? payment.error };
+}
+```
+
+That last block is the honest, ugly truth about `supabase-js`: **three `.insert()` calls
+are three separate HTTP requests, so they are not a transaction.** If the second fails,
+the first is already committed, and we have to undo it by hand. When you need a real
+transaction, use Kysely [[6]](#g6) instead. See
+[Part 3.3](#33-the-service-layer-four-doors-to-the-database).
+
+**6. What Postgres does by itself.** Two things happened that no TypeScript asked for.
+
+_The order number._ `client.rpc("get_next_sequence", ...)` calls an RPC [[21]](#g21), a
+function that lives _inside_ the database
+(`packages/database/supabase/migrations/20241115101526_rpc-get-next-sequence.sql`). It
+reads and bumps a counter and formats the result (`PO` + zero-padding + optional date
+tokens) in a single atomic step. Doing this in application code would hand two
+simultaneous buyers the same number.
+
+_The event._ Every insert into `purchaseOrder` fires a Postgres **trigger**, a function
+the database runs automatically on a write. It drops a small JSON message onto a queue
+that lives in a database table. Nothing in the route knows this is happening. [Part 4](#part-4-what-happens-after-the-write)
+follows that message to the end.
+
+**7. The screen updates.** The action ends with `throw redirect(...)`. React Router
+follows the redirect and runs the destination's `loader`, which re-reads from the
+database and renders the finished page. There is no client-side cache to invalidate and
+no "add the new row to the list in state" code. **After any non-GET submission, React
+Router automatically re-runs the loaders for the current page.** That is the whole
+refresh mechanism.
+
+---
+
+## Part 3: Layer by layer
+
+### 3.1 The browser and the route file
+
+The apps are **React Router v7** in framework mode: server-rendered React, where a
+single file owns both a URL's data-loading and its UI. (It is not Remix and not Next.js,
+though it is the direct descendant of Remix.) Vite [[27]](#g27) builds it; Tailwind v4
+styles it.
+
+**Routes are files on disk.** `apps/erp/app/routes/` has about 1,400 of them, and the
+folder structure _is_ the URL structure, with a few conventions:
+
+| In a filename   | Means                                                                              |
+| --------------- | ---------------------------------------------------------------------------------- |
+| `x+/`           | a URL segment and a folder: `x+/purchase-order+/new.tsx` → `/x/purchase-order/new` |
+| `_public+/`     | a folder for grouping that adds **no** URL segment                                 |
+| `_layout.tsx`   | a wrapper shared by every route in the folder                                      |
+| `$orderId`      | a URL parameter: `$orderId.tsx` → `/:orderId`                                      |
+| `.` in the name | a `/` in the URL: `dimensions.new.tsx` → `dimensions/new`                          |
+| `_index.tsx`    | the page for the folder's own URL                                                  |
+| `*.server.ts`   | ignored by the router; a helper file that never reaches the browser                |
+
+Top-level namespaces: `x+` is the logged-in app (66 module folders), `api+` holds JSON
+endpoints with no UI, `_public+` is login/logout, and `share+` is the _unauthenticated_
+surface: links you email to a customer to view a quote.
+
+**Getting data in.** A `loader` runs on the server, calls service functions, and returns
+plain JSON; the component reads it with `useLoaderData<typeof loader>()`. Data shared by
+the whole app (the current user, their company, their permissions, feature flags) is
+loaded once in `apps/erp/app/routes/x+/_layout.tsx` (about eighteen parallel queries) and
+read anywhere via hooks like `useUser()`, `usePermissions()`, `useCompanySettings()`.
+Those hooks read the layout route's loader data, not a React context.
+
+**Getting data out.** Forms post to an `action`, as in [Part 2](#part-2-follow-one-click-all-the-way-down). For writes that should
+_not_ navigate (reordering rows, an inline edit, a delete button), use `useFetcher()`,
+which posts in the background and still triggers the automatic revalidation.
+
+**Shared UI.** Look in two places before writing a component:
+
+- `packages/react/`: the design system (`@carbon/react`). Buttons, modals, comboboxes,
+  menus, layout primitives. Built on Radix UI [[19]](#g19) and Tailwind.
+- `apps/erp/app/components/`: app-level pieces. The big one is
+  `components/Table/Table.tsx`, a single generic table (~1,500 lines, built on TanStack
+  Table) that every list screen uses. It handles sorting, filtering, pagination, saved
+  views, CSV import/export, column visibility and inline editing. You pass `data`,
+  `columns` and `count`; the server does the paging via URL search params.
+
+**Client state** is deliberately small. Reference lists that everything needs (items,
+customers, suppliers, people) live in nanostores [[13]](#g13) and are kept fresh by
+`RealtimeDataProvider`. Ephemeral UI state (is the search modal open) uses
+zustand [[29]](#g29). User and permission data lives in _neither_; it comes from the
+route loader.
+
+**Translations** use Lingui [[7]](#g7): wrap a string in `` t`...`  `` or `<Trans>`, run
+`pnpm lingui:extract`, and translators fill in thirteen locale files.
+
+**MES is the same stack, simpler.** No `modules/` folder: services sit flat in
+`apps/mes/app/services/`, all validators in one `models.ts`, routes are one flat level,
+and the UI is built for gloved hands on a tablet.
+
+### 3.2 The gate: who is allowed to do what
+
+Every server-side entry point in Carbon starts with the same call. There are about 1,600
+of them.
+
+```ts
+const { client, companyId, userId } = await requirePermissions(request, {
+  create: "purchasing",
+});
+```
+
+Defined at `packages/auth/src/services/auth.server.ts:195`. It does four jobs at once:
+
+1. **Identifies the caller.** Either from the session cookie (a browser) or from a
+   `carbon-key` header (our public API, which additionally gets rate-limited and scope-checked).
+2. **Loads their permissions.** Permissions are stored as `<module>_<action>` keys such
+   as `purchasing_create` or `sales_view`, each mapping to the list of companies where the
+   user holds it. They are fetched by a Postgres function called `get_claims` and cached
+   in Redis for an hour. They are _not_ in the JWT.
+3. **Refuses if they lack it.** Redirect to login if not signed in at all, or an "Access
+   Denied" toast otherwise.
+4. **Hands back a database client already scoped to this user**, plus their `companyId`
+   and `userId`.
+
+**Multi-tenancy** [[12]](#g12) is the reason for a lot of what follows: Carbon is one
+database serving many customer companies. Nearly every table has a `companyId` column and
+a composite primary key `("id", "companyId")`. Which company you are acting as is read
+from your session cookie, never from the URL.
+
+**RLS (Row Level Security)** [[20]](#g20) is the part worth understanding even if you
+never write SQL. It is a Postgres feature where each table carries a rule that is silently
+`AND`ed onto every query the database receives. Ours look like this:
+
+```sql
+CREATE POLICY "SELECT" ON "public"."reportPin"
+FOR SELECT USING (
+  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
+);
+```
+
+So if a query for another company's purchase orders reaches Postgres, it returns zero
+rows. The tenant boundary is enforced by the database, not by us remembering a `.eq()`.
+Service functions still filter by `companyId` anyway, as a second line of defence.
+
+**The escape hatch.** Notice `bypassRls: true` in the Purchase Order action. RLS costs
+real query time on hot paths, so for trusted employee requests we hand back a service-role
+[[22]](#g22) client that skips it entirely. That is a deliberate trade, and it moves the
+responsibility back to us: any loader using `bypassRls` must re-check the tenant by hand,
+as the PO detail route does:
+
+```ts
+if (purchaseOrder.data?.companyId !== companyId)
+  throw redirect(path.to.purchaseOrders);
+```
+
+**Three kinds of user** share one login system, distinguished by a `role` on their
+company membership: `employee`, `customer`, `supplier`. Portal users get much narrower
+permission sets, and routes can demand `{ role: "employee" }`. Separately, `share+/`
+routes are fully unauthenticated; a long unguessable token in the URL is the credential.
+
+### 3.3 The service layer: four doors to the database
+
+A service function's first argument is always a client, and there is more than one kind.
+Picking the wrong one is the most common mistake made here.
+
+```mermaid
+flowchart LR
+  CODE["Server code - loader, action, or job"]
+
+  A["supabase-js - user scoped"]
+  B["supabase-js - service role"]
+  C["Kysely - direct SQL"]
+  D["Edge function - Deno"]
+
+  REST["PostgREST"]
+  PG[("Postgres")]
+
+  CODE -->|"the default"| A
+  CODE -->|"needs to see everything"| B
+  CODE -->|"needs a real transaction"| C
+  CODE -->|"heavy set-based work"| D
+
+  A -->|"HTTP - security rules ON"| REST
+  B -->|"HTTP - security rules OFF"| REST
+  REST --> PG
+  C -->|"one pooled connection - rules OFF"| PG
+  D -->|"its own pool and transaction"| PG
+```
+
+**1. The user-scoped client.** What `requirePermissions` normally returns. Every query
+runs as that user with RLS applied. Use it unless you have a reason not to.
+
+**2. The service-role client** (`getCarbonServiceRole()`) ignores RLS entirely. Needed
+by background jobs (which have no logged-in user), by `share+/` routes, and by
+`bypassRls: true` requests. **You are now the only thing standing between a bug and a
+cross-tenant data leak.**
+
+**3. Kysely** is a TypeScript SQL query builder that holds a real connection to Postgres,
+so it can open a real transaction. This is the answer to the "three inserts aren't
+atomic" problem from [Part 2](#part-2-follow-one-click-all-the-way-down):
+
+```ts
+return db.transaction().execute(async (trx) => {
+  for (const { id, sortOrder, updatedBy } of updates) {
+    await trx
+      .updateTable("quoteLine")
+      .set({ sortOrder, updatedBy })
+      .where("id", "=", id)
+      .execute();
+  }
+});
+```
+
+Two warnings: Kysely **throws** on failure rather than returning `{ error }`, so wrap it
+in `try/catch`; and it applies **no** RLS, so authorise before you call it.
+
+**4. Edge functions** are small programs written for Deno [[2]](#g2), deployed next to the
+database and called over HTTP [[4]](#g4). There are about forty in
+`packages/database/supabase/functions/`, and they own the genuinely heavy work:
+MRP [[11]](#g11), production scheduling, posting a shipment or an invoice to the general
+ledger, CSV import, exporting a whole company. Call one and wait for its answer:
+
+```ts
+const { data, error } = await client.functions.invoke("post-shipment", {
+  body: { type: "post", shipmentId, userId, companyId },
+});
+```
+
+They exist for two reasons: they can hold a database connection pool and run a big
+multi-thousand-row transaction properly, and they are callable from anywhere (the ERP,
+the MES, a background job, the public API), not just from a route handler.
+
+There is also a fifth, narrower door: **RPCs**, plain Postgres functions called with
+`client.rpc("name", args)`. About 85 call sites. `get_next_sequence` from [Part 2](#part-2-follow-one-click-all-the-way-down) is one.
+
+### 3.4 The database
+
+Postgres 15, wrapped by Supabase [[24]](#g24), an open-source bundle that adds an
+auto-generated REST API (PostgREST), user authentication, file storage, a realtime change
+feed, and the edge function runtime, all on top of one ordinary Postgres database.
+
+Rough size, for a sense of scale: **923 migration files**, 362 tables,
+101 views, 238 database functions, 154 enum types.
+
+**Migrations** [[9]](#g9). Every schema change is a timestamped SQL file in
+`packages/database/supabase/migrations/`, named `YYYYMMDDHHMMSS_kebab-name.sql`. Create
+one with `pnpm db:migrate:new <name>`, apply with `pnpm db:migrate`. They are applied in
+filename order and never edited after merge.
+
+A typical table shows every convention at once:
+
+```sql
+CREATE TABLE "itarCertification" (
+    "id" TEXT NOT NULL DEFAULT id('itc'),
+    "companyId" TEXT NOT NULL,
+    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updatedBy" TEXT REFERENCES "user"("id"),
+    "updatedAt" TIMESTAMP WITH TIME ZONE,
+    PRIMARY KEY ("id", "companyId"),
+    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+);
+ALTER TABLE "public"."itarCertification" ENABLE ROW LEVEL SECURITY;
+```
+
+`id('itc')` generates a prefixed, sortable, URL-safe id such as `itc_3xK9...`. The prefix tells
+you what an id refers to at a glance.
+
+**Views** [[26]](#g26) **are the read path.** This is the second-most-important idea in
+Carbon after RLS.
+
+We **write to tables** but **read from views**. A view is a saved query that behaves like
+a table. `purchaseOrders` (plural, that is the naming convention) joins in the supplier
+name, sums the line amounts into `orderTotal`, converts currency, counts received
+quantities, and fetches a thumbnail. So the create path never calculates a total: it
+inserts a header, and the view derives everything else on read.
+
+```mermaid
+flowchart LR
+  subgraph write["Write path"]
+    A1["action"] --> A2["service upsert"] --> A3[("purchaseOrder table")]
+  end
+  subgraph read["Read path"]
+    B1["loader"] --> B2["service get"] --> B3["purchaseOrders view"]
+  end
+  A3 -.->|"the view reads the table and joins the rest"| B3
+```
+
+When a list screen shows a number you cannot find in any table, look for the view. They
+are defined in migrations, always with `WITH (security_invoker = true)` so the caller's
+RLS still applies.
+
+**Types are generated, never written.** `pnpm run generate:types` points the Supabase CLI
+at your local database and writes `packages/database/src/types.ts`, about 80,000 lines
+describing every table, view, function and enum. App code imports from it:
+
+```ts
+import type { Database } from "@carbon/database";
+type PurchaseOrderRow =
+  Database["public"]["Tables"]["purchaseOrder"]["Row"];
+```
+
+**Run `pnpm run generate:types` after pulling migrations or writing one, before you
+typecheck.** Half of all "this property doesn't exist" errors are a stale types file.
+
+**Logic that lives in Postgres.** We push logic into the database when it must hold true
+for _every_ writer: the ERP, the MES, an edge function, a background job, the public
+API, or someone running SQL by hand. Two examples:
+
+- `update_picking_list_status()` is a trigger that recomputes a picking list's header
+  status whenever one of its lines changes. Written from four different places;
+  recomputing it in each caller would drift.
+- `dispatch_event_batch()` is the event trigger from [Part 4](#part-4-what-happens-after-the-write). It must enqueue in the _same
+  transaction_ as the write that caused it, so a rolled-back write never emits a
+  phantom event.
+
+**Files** live in Supabase Storage buckets: `private` is the workhorse (attachments,
+drawings, quality records), `public` and `avatars` are self-explanatory, plus one bucket
+per company and `temp-staging` for large CAD uploads.
+
+---
+
+## Part 4: What happens after the write
+
+Back to that queued event. This chain is the piece most likely to surprise you, because
+none of it is visible from the code that did the write.
+
+```mermaid
+flowchart TB
+  W["Any write to purchaseOrder<br/>from anywhere at all"]
+  T["Postgres trigger - dispatch_event_batch<br/>runs inside the same transaction"]
+  Q[("PGMQ - a queue stored in Postgres tables")]
+  BELL["util.wake_event_queue - fires an HTTP ping after commit"]
+  EF["event-wake edge function"]
+  ING["Inngest"]
+  DR["event-queue job - drains the queue, groups by type"]
+
+  H1["SEARCH - update the global search index"]
+  H2["WORKFLOW - run customer automations"]
+  H3["WEBHOOK - POST to a customer's URL"]
+  H4["AUDIT - write the audit log"]
+  H5["SYNC - push to Xero, Jira, Linear"]
+  H6["EMBEDDING - vectors for AI search"]
+
+  W --> T
+  T -->|"one JSON message per subscriber"| Q
+  T --> BELL
+  BELL -->|"pg_net HTTP POST"| EF
+  EF -->|"sends carbon/event-queue.process"| ING
+  ING -->|"HTTP POST /api/inngest on the ERP"| DR
+  DR -->|"reads a batch of messages"| Q
+  DR --> H1
+  DR --> H2
+  DR --> H3
+  DR --> H4
+  DR --> H5
+  DR --> H6
+```
+
+Three unfamiliar pieces in that chain: PGMQ [[16]](#g16) is the queue, which lives in
+ordinary Postgres tables so a trigger can write to it inside the same transaction;
+pg_net [[15]](#g15) is what lets the database make the outbound HTTP ping after that
+transaction commits; and Inngest [[5]](#g5) is the background job runner.
+
+In plain terms, Inngest works like this: you send it a named event, it calls one of your
+registered functions over HTTP, and it remembers how far that function got. Each
+`step.run("id", fn)` inside a function is a checkpoint: if step four fails and retries,
+steps one to three are not re-executed; their saved results are handed back. That is why
+it is used for anything that must survive a crash.
+
+The wiring is three files:
+
+| What                             | Where                                 |
+| -------------------------------- | ------------------------------------- |
+| The client                       | `packages/lib/src/inngest/client.ts`  |
+| The list of all 55 job functions | `packages/jobs/src/inngest/index.ts`  |
+| The HTTP endpoint Inngest calls  | `apps/erp/app/routes/api+/inngest.ts` |
+
+That last row is the surprising one: **background jobs run inside the ERP container.**
+Inngest is a scheduler and a memory, not a compute host.
+
+**Firing a job on purpose.** The automatic trigger path above is for row changes. When
+code wants to _deliberately_ kick something off, it calls the typed helper `trigger()`
+(about 108 call sites):
+
+```ts
+await trigger("notify", {
+  event: NotificationEvent.JobAssignment /* ... */,
+});
+```
+
+Event names are always `carbon/<something>`.
+
+**Scheduled work** comes from two places. Inngest crons handle app-level jobs: MRP every
+three hours, notification digests every fifteen minutes, exchange rates and audit
+archiving nightly, workflow-run cleanup at 04:00. All of them are UTC, and any job that
+needs a company's local day computes it inside the run. Database-level maintenance uses
+pg_cron [[14]](#g14) instead, for refreshing cached aggregate tables and sweeping the event
+queue.
+
+**Notifications** fan out from one job (`packages/jobs/.../notifications/notify.ts`) to
+three destinations: in-app rows (which the topbar picks up live over Realtime), email via
+Resend, and Slack. `packages/notifications` itself is only the list of event types; it
+sends nothing.
+
+---
+
+## Part 5: The other engines
+
+### Workflows: the customer's own automations
+
+Carbon ships a drag-and-drop canvas where a _customer_ builds "when a quote is accepted,
+notify the account manager and create a job". Confusingly these are also called
+workflows, and they are a completely different thing from Inngest jobs:
+
+|            | Inngest jobs                  | Workflows                                |
+| ---------- | ----------------------------- | ---------------------------------------- |
+| Written by | us, in TypeScript             | customers, on a canvas                   |
+| Stored as  | code                          | JSON rows in `workflowVersion`           |
+| Runs as    | service role, sees everything | **the workflow's owner**, with their RLS |
+| Changed by | a deploy                      | the customer, at any moment              |
+
+They reuse the event pipeline from [Part 4](#part-4-what-happens-after-the-write), the `WORKFLOW` branch. A matcher takes the
+row change, works out which catalog events it corresponds to, finds subscribed workflows,
+and queues one run each. `packages/workflows` holds the pure definition/validation logic
+and touches nothing; `packages/jobs/src/workflows/` holds the runtime that actually does
+things. Every run and every step is recorded, so a customer can open a run and see what
+happened.
+
+### The Assembler: the Rust service
+
+`apps/assembler` plus `crates/` is a Rust HTTP service that converts CAD files (STEP) into
+web-renderable 3D (GLB) and plans a collision-free disassembly sequence for assembly
+instructions. It wraps two C++ libraries (OpenCASCADE for geometry, FCL for collision).
+The ERP and MES call it over HTTP; `packages/viewer` renders its output in the browser.
+It is entirely optional; everything else boots without it.
+
+---
+
+## Part 6: The repo map
+
+**Applications** (`apps/`, plus `docs/` at the root):
+
+| App         | What it is                                                                  | Dev port |
+| ----------- | --------------------------------------------------------------------------- | -------- |
+| `erp`       | The main product, and the host for all background jobs. By far the largest. | 3000     |
+| `mes`       | Shop floor: job operations, work centres, scheduling. Touch-first.          | 3001     |
+| `academy`   | Training app for new Carbon users.                                          | 4111     |
+| `starter`   | A minimal example app showing auth + database + forms.                      | 4000     |
+| `assembler` | The Rust CAD/3D service.                                                    | varies   |
+| `docs`      | Public documentation site. The only Next.js app here.                       | 3002     |
+
+**Libraries** (`packages/`). The ones you will actually touch are near the top:
+
+| Package         | What it does                                                            |
+| --------------- | ----------------------------------------------------------------------- |
+| `react`         | The design system. **Check here before writing any UI.**                |
+| `database`      | Generated types, migrations, edge functions, database clients.          |
+| `auth`          | Login, sessions, `requirePermissions`, API keys, permission caching.    |
+| `form`          | `ValidatedForm`, field components, zod helpers.                         |
+| `jobs`          | Every Inngest background function, plus the workflow runtime.           |
+| `lib`           | Shared server utilities: the Inngest client, `trigger()`, email, Slack. |
+| `utils`         | Pure helpers: dates, money, arrays, strings, BOM maths.                 |
+| `workflows`     | Customer workflow schema, validation and pure runtime. No I/O.          |
+| `documents`     | PDF generation, email templates, barcode and label rendering.           |
+| `locale`        | Lingui setup and language switching.                                    |
+| `env`           | The one place environment variables are read and validated.             |
+| `logger`        | Structured logging, with request-id correlation.                        |
+| `notifications` | The notification event taxonomy (enums only).                           |
+| `printing`      | Printer registry, label queue, physical print delivery.                 |
+| `onboarding`    | New-company setup, the "Implementation Hub".                            |
+| `kv`            | Redis client plus rate limiting.                                        |
+| `stripe`        | Billing. Cloud edition only.                                            |
+| `ee`            | Enterprise-only code: Xero, Slack, Jira, Linear, Onshape, plan gating.  |
+| `viewer`        | 3D model and assembly-instruction rendering.                            |
+| `tiptap`        | Rich text editor.                                                       |
+| `dev`           | The `crbn` CLI that runs your local stack.                              |
+| `checks`        | Repo conformance rules enforced in CI.                                  |
+| `config`        | Shared tsconfig, Tailwind theme, vitest preset. No runtime code.        |
+| `glossary`      | Canonical manufacturing term definitions used in field help.            |
+| `harness`       | Internal AI-agent tooling. Not shipped.                                 |
+
+**Inside an ERP module** (there are eighteen, under `apps/erp/app/modules/{module}/`):
+
+```
+purchasing/
+├── purchasing.models.ts    zod schemas and the types derived from them
+├── purchasing.service.ts   every database operation for this module
+├── purchasing.server.ts    server-only helpers (optional)
+├── types.ts                shared types
+├── index.ts                barrel, import from "~/modules/purchasing"
+└── ui/                     React components, grouped by feature
+```
+
+---
+
+## Part 7: Where it all runs
+
+```mermaid
+flowchart TB
+  subgraph dev["Your laptop"]
+    CLI["pnpm dev - runs the crbn CLI"]
+    DOCK["Docker: Postgres, PostgREST, Auth, Storage,<br/>Realtime, Kong, edge runtime, Studio,<br/>Inbucket mail catcher, Inngest"]
+    VITE["Vite dev servers for ERP and MES"]
+    CLI -->|"boots the stack, applies migrations, regenerates types"| DOCK
+    CLI -->|"starts the apps"| VITE
+    VITE --> DOCK
+  end
+
+  subgraph ci["GitHub Actions on merge to main"]
+    CHK["check.yml - lint, typecheck, tests"]
+    DEP["deploy.yml - build Docker images, push to ECR"]
+    MIG["supabase.yml - apply migrations and edge functions"]
+    JOB["inngest.yml - register job functions"]
+  end
+
+  subgraph prod["AWS - defined in sst.config.ts"]
+    ALB["Load balancer plus WAF rate limiting"]
+    ECS["ECS Fargate: ERP containers and MES containers<br/>auto-scaling 1 to 10"]
+    SUPA[("Managed Supabase - Postgres")]
+    ALB --> ECS --> SUPA
+  end
+
+  CHK --> DEP --> ECS
+  MIG --> SUPA
+  JOB -.->|"tells Inngest which jobs exist"| ECS
+```
+
+**Locally**, `pnpm dev` runs `crbn up`, a custom CLI that boots an eleven-container Docker
+stack, waits for Postgres, applies migrations, regenerates the database types, seeds a
+test user, and starts the apps. Each Git worktree (a second checkout of the same
+repository) gets its own ports and its own database, so you can run several branches at
+once. Redis is shared across all of them.
+
+**In production**, the ERP and MES run as Docker containers on ECS Fargate [[3]](#g3)
+behind a load balancer, defined in `sst.config.ts` (SST [[23]](#g23) is
+infrastructure-as-code, where you describe cloud resources in TypeScript instead of clicking in
+a console). Postgres is managed Supabase. There are no Lambdas and nothing on Vercel,
+despite some leftover Vercel packages.
+
+**Observability** is deliberately thin: structured logs via LogTape with a request id
+threaded through everything, and PostHog for product analytics. There is no Sentry and
+no distributed tracing.
+
+---
+
+## Part 8: There's a bug, where do I look?
+
+Start from what the user saw and walk inwards. This mirrors the order things happen.
+
+```mermaid
+flowchart TB
+  S["A user reports something wrong"]
+  Q1{"Did the save fail,<br/>or is the data wrong?"}
+
+  F1["Save failed"]
+  Q2{"Any inline red text<br/>under a field?"}
+  V1["The zod schema rejected it<br/>go to module.models.ts"]
+  Q3{"A red toast at the top?"}
+  V2["The action's error branch<br/>→ routes/.../*.tsx, then the service function"]
+  V3["Nothing at all happened?<br/>Check the Network tab.<br/>No request → the browser-side validator.<br/>403 or a redirect → requirePermissions."]
+
+  D1["Data is wrong"]
+  Q4{"Is it wrong in the<br/>database too?"}
+  V4["Yes → the write is wrong.<br/>Read the service function,<br/>then any trigger on that table."]
+  Q5{"Is the field computed?"}
+  V5["Yes → read the VIEW definition,<br/>not the table. Totals live there."]
+  V6["No → the loader, or the component."]
+
+  A1["Something didn't happen<br/>afterwards - no email,<br/>not in search, no sync"]
+  V7["That's the event pipeline.<br/>Open the Inngest dashboard,<br/>find the run, read the failed step."]
+
+  S --> Q1
+  Q1 -->|"save failed"| F1
+  Q1 -->|"data is wrong"| D1
+  Q1 -->|"a side effect is missing"| A1
+
+  F1 --> Q2
+  Q2 -->|yes| V1
+  Q2 -->|no| Q3
+  Q3 -->|yes| V2
+  Q3 -->|no| V3
+
+  D1 --> Q4
+  Q4 -->|yes| V4
+  Q4 -->|no| Q5
+  Q5 -->|yes| V5
+  Q5 -->|no| V6
+
+  A1 --> V7
+```
+
+**A few specific traps, each of which has caught someone out:**
+
+- _TypeScript says a column doesn't exist._ Run `pnpm run generate:types`. Your generated
+  types are behind your migrations.
+- _A query returns nothing but the row is definitely there._ RLS. Either the `companyId`
+  is wrong or you are using a user-scoped client where you needed service role.
+- _A write half-succeeded._ Chained `supabase-js` calls are not a transaction. Look for a
+  manual rollback that didn't cover the failure.
+- _You see another company's data._ Something is using `bypassRls: true` or the
+  service-role client without re-checking the tenant. **Treat this as urgent.**
+- _A number on a list screen is wrong._ It is almost certainly computed in a view.
+
+---
+
+## Part 9: House rules
+
+The full list is in `AGENTS.md` at the repo root. The ones that cause
+the most damage when broken:
+
+- **`pnpm`, never `npm`.**
+- **Never use JavaScript `Date`** for parsing, formatting or arithmetic. Use
+  `@internationalized/date` and `@carbon/utils`. A build check enforces this. Timezones in
+  a manufacturing schedule are not cosmetic.
+- **Never hand-edit the generated database types.** Regenerate them.
+- **Never skip `companyId` scoping**, even though RLS would probably catch it.
+- **Never chain `supabase-js` writes and call it a transaction.** Use Kysely, or an RPC.
+- **Never query inside a loop.** Collect the ids and make one `.in()` call.
+- **One `{module}.service.ts` and one `{module}.models.ts` per module.** Don't scatter them.
+- **Run `pnpm run generate:types` after any migration, before typechecking.**
+
+Useful commands:
+
+```bash
+pnpm dev                                        # boot everything
+pnpm db:migrate:new <name>                      # create a migration
+pnpm db:migrate                                 # apply migrations
+pnpm run generate:types                         # regenerate database types
+pnpm exec turbo run typecheck --filter=erp      # typecheck one package
+pnpm run lint                                   # Biome
+pnpm run test                                   # unit tests
+```
+
+Typechecking the whole repo at once runs out of memory, so always use `--filter`.
+
+---
+
+## Glossary
+
+Numbered so the body can point at them. Alphabetical.
+
+<a id="g1"></a>
+**1. Action:** the function a route file exports to handle a form submission. Runs on the
+server only, never shipped to the browser.
+
+<a id="g2"></a>
+**2. Deno:** an alternative JavaScript runtime to Node.js. Our edge functions are written
+for it, which is why they use `https://` imports instead of `node_modules`.
+
+<a id="g3"></a>
+**3. ECS Fargate:** Amazon's service for running Docker containers without managing the
+servers underneath. The ERP and MES run here in production.
+
+<a id="g4"></a>
+**4. Edge function:** a small server-side program deployed next to the database, called
+over HTTP and awaited like a normal function. Ours are written for Deno.
+
+<a id="g5"></a>
+**5. Inngest:** the background job runner. Send it an event; it calls your function over
+HTTP and remembers each completed step, so a retry resumes rather than restarts.
+
+<a id="g6"></a>
+**6. Kysely:** a TypeScript SQL query builder. Unlike `supabase-js` it holds a real
+database connection, so it can run real transactions. It also bypasses RLS.
+
+<a id="g7"></a>
+**7. Lingui:** the translation library. You mark strings in code; it extracts them into
+per-language files for translators.
+
+<a id="g8"></a>
+**8. Loader:** the function a route file exports to fetch the data its page needs. Runs
+on the server only.
+
+<a id="g9"></a>
+**9. Migration:** one timestamped SQL file describing a schema change. The full ordered
+set of them _is_ the schema; there is no separate schema file.
+
+<a id="g10"></a>
+**10. Monorepo:** one Git repository holding several applications and shared libraries
+that are versioned and released together.
+
+<a id="g11"></a>
+**11. MRP:** Material Requirements Planning. Works out what to buy and make, and when,
+given demand and current stock. Runs as an edge function.
+
+<a id="g12"></a>
+**12. Multi-tenancy:** one database and one running application serving many separate
+customer companies, with each company's data invisible to the others.
+
+<a id="g13"></a>
+**13. nanostores:** a very small state library. We use it for reference lists (items,
+customers, suppliers) that many screens read and Realtime keeps fresh.
+
+<a id="g14"></a>
+**14. pg_cron:** a Postgres extension that runs SQL on a schedule, inside the database.
+Used for cache refreshes and queue sweeping.
+
+<a id="g15"></a>
+**15. pg_net:** a Postgres extension that lets the database make outbound HTTP calls. We
+use it for exactly one thing: pinging the event queue awake after a commit.
+
+<a id="g16"></a>
+**16. PGMQ:** a message queue implemented in ordinary Postgres tables. Lets a database
+trigger enqueue work inside the same transaction as the write that caused it.
+
+<a id="g17"></a>
+**17. Postgres:** the relational database everything in Carbon is built on. Version 15.
+
+<a id="g18"></a>
+**18. PostgREST:** a service that exposes Postgres tables and views as a REST API. Every
+`client.from(...).select(...)` is a PostgREST call, not raw SQL.
+
+<a id="g19"></a>
+**19. Radix UI:** an unstyled, accessible React component library. Our design system adds
+Tailwind styling on top of it.
+
+<a id="g20"></a>
+**20. RLS (Row Level Security):** a Postgres feature where a per-table rule is
+automatically added to every query. It is what keeps one company's data invisible to
+another.
+
+<a id="g21"></a>
+**21. RPC:** here, calling a function defined inside Postgres from application code, via
+`client.rpc("name", args)`.
+
+<a id="g22"></a>
+**22. Service role:** a database credential that bypasses all RLS. Powerful; use
+carefully.
+
+<a id="g23"></a>
+**23. SST:** infrastructure-as-code for AWS, written in TypeScript. `sst.config.ts`
+defines our production cluster.
+
+<a id="g24"></a>
+**24. Supabase:** an open-source bundle around Postgres: REST API, auth, storage,
+realtime and edge functions. We run its containers locally and use the managed version in
+production.
+
+<a id="g25"></a>
+**25. Turborepo:** the build orchestrator that knows which packages depend on which, so
+`pnpm build` only rebuilds what changed.
+
+<a id="g26"></a>
+**26. View:** a saved query that behaves like a read-only table. Carbon writes to tables
+and reads from views; computed values like order totals live in the view.
+
+<a id="g27"></a>
+**27. Vite:** the build tool and dev server behind all our React apps.
+
+<a id="g28"></a>
+**28. zod:** a schema library. Describe data once, get validation and a TypeScript type
+from the same definition.
+
+<a id="g29"></a>
+**29. zustand:** a small React state library. We use it only for throwaway UI state, like
+whether a modal is open.
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
+
+    <script>
+      (function () {
+        "use strict";
+
+        /* ------------------------------------------------------ read the source */
+        var markdown = document
+          .getElementById("md-source")
+          .textContent.replace(/^\n/, "");
+
+        /* A formatter will happily re-indent the markdown block above, which would turn
+           the whole document into one code fence. Take the common indent back off. */
+        var rows = markdown.split("\n"),
+          pad = Infinity;
+        rows.forEach(function (r) {
+          if (r.trim())
+            pad = Math.min(pad, r.length - r.replace(/^ +/, "").length);
+        });
+        if (pad > 0 && pad < Infinity) {
+          markdown = rows
+            .map(function (r) {
+              return r.slice(pad);
+            })
+            .join("\n");
+        }
+
+        /* --------------------------------- pull mermaid blocks out before marked */
+        var diagrams = [];
+        markdown = markdown.replace(
+          /```mermaid\n([\s\S]*?)```/g,
+          function (_, code) {
+            diagrams.push(code);
+            return (
+              '\n<div class="diagram" data-diagram="' +
+              (diagrams.length - 1) +
+              '"></div>\n'
+            );
+          }
+        );
+
+        /* ------------------------------------------------------------- markdown */
+        marked.setOptions({
+          gfm: true,
+          breaks: false,
+          mangle: false,
+          headerIds: false,
+        });
+        var content = document.getElementById("content");
+        content.innerHTML = marked.parse(markdown);
+
+        /* -------------------------------------- GitHub-compatible heading slugs */
+        function slug(text) {
+          return text
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, "")
+            .trim()
+            .replace(/\s+/g, "-");
+        }
+        /* A link may carry an older slug of the same heading, e.g. the double-dash form
+     GitHub produces. Keep a loose key so those still resolve. */
+        function looseKey(hash) {
+          return hash.replace(/^#/, "").replace(/-+/g, "-");
+        }
+        var aliases = Object.create(null);
+        var seen = Object.create(null);
+        content.querySelectorAll("h1,h2,h3,h4,h5,h6").forEach(function (h) {
+          var base = slug(h.textContent),
+            id = base,
+            n = 0;
+          while (seen[id]) {
+            n += 1;
+            id = base + "-" + n;
+          }
+          seen[id] = true;
+          h.id = id;
+          aliases[looseKey(id)] = id;
+          if (h.tagName !== "H1") {
+            var a = document.createElement("a");
+            a.className = "anchor";
+            a.href = "#" + id;
+            a.textContent = "#";
+            a.setAttribute("aria-label", "Link to this section");
+            h.appendChild(a);
+          }
+        });
+
+        /* ------------------------------------- style the [[n]] glossary markers */
+        content.querySelectorAll('a[href^="#g"]').forEach(function (a) {
+          if (/^\[\d+\]$/.test(a.textContent.trim())) {
+            a.classList.add("ref");
+            a.textContent = a.textContent.trim().slice(1, -1);
+            a.title = "Jump to glossary entry " + a.textContent;
+          }
+        });
+
+        /* ---------------------------- wrap each glossary definition in its card */
+        content.querySelectorAll('a[id^="g"]').forEach(function (anchor) {
+          var p = anchor.closest("p") || anchor.nextElementSibling;
+          if (!p || p.tagName !== "P") return;
+          var box = document.createElement("div");
+          box.className = "gloss-entry";
+          p.parentNode.insertBefore(box, p);
+          box.appendChild(p);
+        });
+
+        /* --------- drop the in-page contents list; the sidebar replaces it here */
+        var tocHeading = content.querySelector("#table-of-contents");
+        if (tocHeading) {
+          var node = tocHeading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            var next = node.nextElementSibling;
+            if (
+              node.tagName === "OL" ||
+              node.tagName === "UL" ||
+              node.tagName === "HR"
+            )
+              node.remove();
+            node = next;
+          }
+          var lead = tocHeading.previousElementSibling;
+          if (lead && lead.tagName === "HR") lead.remove();
+          tocHeading.remove();
+        }
+
+        /* ------------------------------------------------- tables + code blocks */
+        content.querySelectorAll("table").forEach(function (t) {
+          var w = document.createElement("div");
+          w.className = "table-wrap";
+          t.parentNode.insertBefore(w, t);
+          w.appendChild(t);
+        });
+        content.querySelectorAll("pre code").forEach(function (c) {
+          var m = /language-([\w-]+)/.exec(c.className);
+          if (m) {
+            c.parentNode.classList.add("lang");
+            c.parentNode.dataset.lang = m[1];
+            try {
+              hljs.highlightElement(c);
+            } catch (e) {
+              /* unknown language */
+            }
+          }
+        });
+
+        /* ------------------------------------------------ table of contents */
+        var nav = document.getElementById("tocNav");
+        var heads = [].slice.call(content.querySelectorAll("h2, h3"));
+        heads.forEach(function (h) {
+          var a = document.createElement("a");
+          a.href = "#" + h.id;
+          a.textContent = h.textContent.replace(/#$/, "").trim();
+          if (h.tagName === "H3") a.className = "lvl3";
+          nav.appendChild(a);
+        });
+        var links = [].slice.call(nav.children);
+        var spy = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (e) {
+              if (!e.isIntersecting) return;
+              links.forEach(function (l) {
+                l.classList.toggle(
+                  "active",
+                  l.getAttribute("href") === "#" + e.target.id
+                );
+              });
+            });
+          },
+          { rootMargin: "-80px 0px -75% 0px" }
+        );
+        heads.forEach(function (h) {
+          spy.observe(h);
+        });
+
+        /* --------------------------------------------- flash the glossary target */
+        function flash() {
+          if (!/^#g\d+$/.test(location.hash)) return;
+          var el = document.querySelector(location.hash);
+          var card = el && el.closest(".gloss-entry");
+          if (!card) return;
+          card.classList.remove("gloss-hit");
+          void card.offsetWidth;
+          card.classList.add("gloss-hit");
+        }
+        window.addEventListener("hashchange", flash);
+
+        /* ----------------------------------------------------- theme management */
+        var root = document.documentElement;
+        var themeBtn = document.getElementById("themeBtn");
+        var SUN =
+          '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0 1.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9ZM7.25 0h1.5v2.5h-1.5V0Zm0 13.5h1.5V16h-1.5v-2.5ZM16 7.25v1.5h-2.5v-1.5H16ZM2.5 7.25v1.5H0v-1.5h2.5Zm10.87-5.62 1.06 1.06-1.77 1.77-1.06-1.06 1.77-1.77ZM2.34 12.66l1.06 1.06-1.77 1.77-1.06-1.06 1.77-1.77Zm11.03 1.06-1.06 1.06-1.77-1.77 1.06-1.06 1.77 1.77ZM3.4 2.34l-1.06 1.06L.57 1.63 1.63.57 3.4 2.34Z"/></svg>';
+        var MOON =
+          '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.6.2a8 8 0 1 0 6.2 10.6A6.5 6.5 0 0 1 9.6.2Z"/></svg>';
+
+        function currentTheme() {
+          return (
+            localStorage.getItem("carbon-arch-theme") ||
+            (matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light")
+          );
+        }
+        function applyTheme(t, rerender) {
+          root.dataset.theme = t;
+          themeBtn.innerHTML = t === "dark" ? SUN : MOON;
+          document.getElementById("hljs-light").disabled = t === "dark";
+          document.getElementById("hljs-dark").disabled = t !== "dark";
+          if (rerender) renderDiagrams();
+        }
+        themeBtn.addEventListener("click", function () {
+          var next = root.dataset.theme === "dark" ? "light" : "dark";
+          localStorage.setItem("carbon-arch-theme", next);
+          applyTheme(next, true);
+        });
+
+        /* -------------------------------------------- pan + zoom for a diagram */
+        var ZOOM_MIN = 0.15,
+          ZOOM_MAX = 10;
+        function attachPanZoom(viewport, svg) {
+          var w =
+            svg.viewBox.baseVal.width ||
+            svg.getBoundingClientRect().width ||
+            800;
+          var h =
+            svg.viewBox.baseVal.height ||
+            svg.getBoundingClientRect().height ||
+            400;
+          svg.removeAttribute("width");
+          svg.removeAttribute("height");
+          svg.style.width = w + "px";
+          svg.style.height = h + "px";
+
+          var x = 0,
+            y = 0,
+            k = 1;
+          function apply() {
+            svg.style.transform =
+              "translate(" + x + "px," + y + "px) scale(" + k + ")";
+          }
+          function clamp(v) {
+            return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, v));
+          }
+
+          // Whole diagram in view: what the reset button and double-click give you.
+          function fit() {
+            var vw = viewport.clientWidth,
+              vh = viewport.clientHeight;
+            k = Math.min(Math.min(vw / w, vh / h) * 0.94, 1);
+            x = (vw - w * k) / 2;
+            y = (vh - h * k) / 2;
+            apply();
+          }
+          // Opening view. A big diagram shrunk to fit is unreadable, and pan/zoom exists
+          // precisely so it doesn't have to: never open below 0.8, and when the whole
+          // thing can't be shown at that size, start at its top-left and let the reader pan.
+          var OPEN_MIN = 0.8;
+          function open() {
+            var vw = viewport.clientWidth,
+              vh = viewport.clientHeight;
+            var whole = Math.min(vw / w, vh / h) * 0.94;
+            k = Math.min(Math.max(whole, OPEN_MIN), 1);
+            if (whole >= OPEN_MIN) {
+              x = (vw - w * k) / 2;
+              y = (vh - h * k) / 2;
+            } else {
+              x = 16;
+              y = 16;
+            }
+            apply();
+          }
+          function zoomAt(cx, cy, factor) {
+            var nk = clamp(k * factor);
+            x = cx - (cx - x) * (nk / k);
+            y = cy - (cy - y) * (nk / k);
+            k = nk;
+            apply();
+          }
+
+          viewport.addEventListener(
+            "wheel",
+            function (e) {
+              e.preventDefault();
+              var r = viewport.getBoundingClientRect();
+              if (e.ctrlKey || e.metaKey) {
+                zoomAt(
+                  e.clientX - r.left,
+                  e.clientY - r.top,
+                  Math.exp(-e.deltaY * 0.01)
+                );
+              } else {
+                x -= e.deltaX;
+                y -= e.deltaY;
+                apply();
+              }
+            },
+            { passive: false }
+          );
+
+          var dragging = false,
+            ox = 0,
+            oy = 0;
+          viewport.addEventListener("pointerdown", function (e) {
+            if (e.button !== 0) return;
+            dragging = true;
+            ox = e.clientX - x;
+            oy = e.clientY - y;
+            viewport.setPointerCapture(e.pointerId);
+            viewport.classList.add("grabbing");
+          });
+          viewport.addEventListener("pointermove", function (e) {
+            if (!dragging) return;
+            x = e.clientX - ox;
+            y = e.clientY - oy;
+            apply();
+          });
+          ["pointerup", "pointercancel", "pointerleave"].forEach(function (t) {
+            viewport.addEventListener(t, function () {
+              dragging = false;
+              viewport.classList.remove("grabbing");
+            });
+          });
+          viewport.addEventListener("dblclick", fit);
+
+          requestAnimationFrame(open);
+          return {
+            fit: fit,
+            open: open,
+            zoom: function (f) {
+              zoomAt(viewport.clientWidth / 2, viewport.clientHeight / 2, f);
+            },
+          };
+        }
+
+        /* ------------------------------------------------------ render diagrams */
+        var ICON = {
+          plus: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M7.25 2h1.5v5.25H14v1.5H8.75V14h-1.5V8.75H2v-1.5h5.25V2Z"/></svg>',
+          minus:
+            '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 7.25h12v1.5H2z"/></svg>',
+          fit: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h4.5v1.5H3.5V6.5H2V2Zm7.5 0H14v4.5h-1.5V3.5H9.5V2ZM2 9.5h1.5v3h3V14H2V9.5Zm10.5 0H14V14H9.5v-1.5h3v-3Z"/></svg>',
+          full: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1.5h5V3H3v3.5H1.5v-5Zm8 0h5v5H13V3H9.5V1.5ZM3 9.5V13h3.5v1.5h-5v-5H3Zm10 0h1.5v5h-5V13H13V9.5Z"/></svg>',
+        };
+
+        // Mermaid's stock palettes (lavender nodes, yellow subgraphs) fight the page.
+        // "base" + explicit variables is the only combination that fully overrides them.
+        var PALETTE = {
+          light: {
+            background: "#ffffff",
+            primaryColor: "#eef2f7",
+            primaryBorderColor: "#aab4c0",
+            primaryTextColor: "#1b1f24",
+            secondaryColor: "#f3f5f8",
+            tertiaryColor: "#f7f8fa",
+            lineColor: "#7d8894",
+            textColor: "#1b1f24",
+            clusterBkg: "#f4f6f9",
+            clusterBorder: "#d3dae1",
+            edgeLabelBackground: "#ffffff",
+            nodeBorder: "#aab4c0",
+            actorBkg: "#eef2f7",
+            actorBorder: "#aab4c0",
+            actorTextColor: "#1b1f24",
+            signalColor: "#7d8894",
+            signalTextColor: "#1b1f24",
+            labelBoxBkgColor: "#eef2f7",
+            labelBoxBorderColor: "#aab4c0",
+            labelTextColor: "#1b1f24",
+            noteBkgColor: "#fdf6e3",
+            noteBorderColor: "#e3d49b",
+            noteTextColor: "#1b1f24",
+            sequenceNumberColor: "#ffffff",
+          },
+          dark: {
+            background: "#12181f",
+            primaryColor: "#1c2530",
+            primaryBorderColor: "#3d4855",
+            primaryTextColor: "#e6edf3",
+            secondaryColor: "#182029",
+            tertiaryColor: "#161b22",
+            lineColor: "#7d8590",
+            textColor: "#e6edf3",
+            clusterBkg: "#151c24",
+            clusterBorder: "#2c333c",
+            edgeLabelBackground: "#12181f",
+            nodeBorder: "#3d4855",
+            actorBkg: "#1c2530",
+            actorBorder: "#3d4855",
+            actorTextColor: "#e6edf3",
+            signalColor: "#7d8590",
+            signalTextColor: "#e6edf3",
+            labelBoxBkgColor: "#1c2530",
+            labelBoxBorderColor: "#3d4855",
+            labelTextColor: "#e6edf3",
+            noteBkgColor: "#241f14",
+            noteBorderColor: "#4d422a",
+            noteTextColor: "#e6edf3",
+            sequenceNumberColor: "#12181f",
+          },
+        };
+
+        function renderDiagrams() {
+          var dark = root.dataset.theme === "dark";
+          var vars = PALETTE[dark ? "dark" : "light"];
+          vars.fontFamily = getComputedStyle(document.body).fontFamily;
+          vars.fontSize = "15px";
+          mermaid.initialize({
+            startOnLoad: false,
+            securityLevel: "loose",
+            theme: "base",
+            fontFamily: getComputedStyle(document.body).fontFamily,
+            themeVariables: vars,
+            flowchart: {
+              curve: "basis",
+              htmlLabels: true,
+              padding: 18,
+              nodeSpacing: 48,
+              rankSpacing: 56,
+              wrappingWidth: 520,
+            },
+            sequence: {
+              useMaxWidth: false,
+              boxMargin: 10,
+              mirrorActors: false,
+            },
+          });
+
+          content
+            .querySelectorAll("[data-diagram]")
+            .forEach(function (host, i) {
+              var code = diagrams[+host.dataset.diagram];
+              host.innerHTML = "";
+              var viewport = document.createElement("div");
+              viewport.className = "diagram-viewport";
+              viewport.tabIndex = 0;
+              host.appendChild(viewport);
+
+              mermaid
+                .render("mmd-" + host.dataset.diagram + "-" + Date.now(), code)
+                .then(function (out) {
+                  viewport.innerHTML = out.svg;
+                  var svg = viewport.querySelector("svg");
+                  var pz = attachPanZoom(viewport, svg);
+
+                  var bar = document.createElement("div");
+                  bar.className = "diagram-bar";
+                  [
+                    [
+                      "plus",
+                      "Zoom in",
+                      function () {
+                        pz.zoom(1.3);
+                      },
+                    ],
+                    [
+                      "minus",
+                      "Zoom out",
+                      function () {
+                        pz.zoom(1 / 1.3);
+                      },
+                    ],
+                    ["fit", "Reset view", pz.fit],
+                    [
+                      "full",
+                      "Fullscreen",
+                      function () {
+                        if (document.fullscreenElement)
+                          document.exitFullscreen();
+                        else
+                          host.requestFullscreen().then(function () {
+                            setTimeout(pz.fit, 120);
+                          });
+                      },
+                    ],
+                  ].forEach(function (spec) {
+                    var b = document.createElement("button");
+                    b.innerHTML = ICON[spec[0]];
+                    b.title = spec[1];
+                    b.setAttribute("aria-label", spec[1]);
+                    b.addEventListener("click", spec[2]);
+                    bar.appendChild(b);
+                  });
+                  host.appendChild(bar);
+
+                  var hint = document.createElement("div");
+                  hint.className = "diagram-hint";
+                  hint.innerHTML =
+                    "drag to pan · scroll to move · <kbd>ctrl</kbd>/pinch to zoom · double-click to reset";
+                  host.appendChild(hint);
+
+                  host.addEventListener("fullscreenchange", function () {
+                    setTimeout(pz.fit, 120);
+                  });
+                })
+                .catch(function (err) {
+                  viewport.outerHTML =
+                    '<div class="diagram-err">Diagram ' +
+                    (i + 1) +
+                    " failed to render:\n" +
+                    String((err && err.message) || err) +
+                    "</div>";
+                });
+            });
+        }
+
+        /* --------------------------------------------------- in-page navigation */
+        function resolve(hash) {
+          if (!hash || hash.charAt(0) !== "#" || hash.length < 2) return null;
+          var el = null;
+          try {
+            el = document.querySelector(hash);
+          } catch (e) {
+            /* not a valid selector */
+          }
+          if (el) return el;
+          var id = aliases[looseKey(hash)];
+          return id ? document.getElementById(id) : null;
+        }
+        /* Let the browser handle cmd/ctrl-click, middle-click and shift-click, so a
+           glossary link can still be opened in a new tab or window. */
+        function wantsNewTab(e) {
+          return e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+        }
+        function goTo(el, instant) {
+          el.scrollIntoView(
+            instant ? { behavior: "instant", block: "start" } : undefined
+          );
+          if (location.hash !== "#" + el.id)
+            history.replaceState(null, "", "#" + el.id);
+          flash();
+        }
+        /* Body links: keep the smooth scroll, but repair any stale anchor. */
+        content.addEventListener("click", function (e) {
+          if (wantsNewTab(e)) return;
+          var a = e.target.closest && e.target.closest('a[href^="#"]');
+          if (!a) return;
+          var el = resolve(a.getAttribute("href"));
+          if (!el) return;
+          e.preventDefault();
+          goTo(el, false);
+        });
+
+        /* ------------------------------------------------------------- sidebar */
+        document
+          .getElementById("menuBtn")
+          .addEventListener("click", function () {
+            document.body.classList.toggle("toc-open");
+          });
+        /* Contents jumps land instantly; smooth scrolling a whole document is slow to read. */
+        nav.addEventListener("click", function (e) {
+          document.body.classList.remove("toc-open");
+          if (wantsNewTab(e)) return;
+          var a = e.target.closest && e.target.closest('a[href^="#"]');
+          if (!a) return;
+          var el = resolve(a.getAttribute("href"));
+          if (!el) return;
+          e.preventDefault();
+          goTo(el, true);
+        });
+
+        /* --------------------------------------------------------------- start */
+        applyTheme(currentTheme(), false);
+        renderDiagrams();
+        if (location.hash)
+          setTimeout(function () {
+            var el = resolve(location.hash);
+            if (el) {
+              el.scrollIntoView();
+              flash();
+            }
+          }, 60);
+      })();
+    </script>
+  </body>
+</html>
