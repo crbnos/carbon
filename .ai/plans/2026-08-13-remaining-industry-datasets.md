@@ -18,7 +18,7 @@
 - [x] Task 10: Write the `precision` dataset
 - [x] Task 11: Write the `motor` dataset
 - [x] Task 12: End-to-end verification across all four datasets
-- [ ] Task 13: Refresh the docs
+- [x] Task 13: Refresh the docs
 
 ## Dependencies
 

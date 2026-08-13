@@ -51,9 +51,10 @@ pnpm --filter @carbon/database typecheck
 `company-template` job go through the same `applyDataset()` entry point (`./datasets`).
 
 - **Data** — `data/<key>/`, one file per slice, pure TypeScript literals with no SQL and no
-  ids. Registered in `DATASETS` (`datasets/index.ts`). **New seed data goes here**, not in a
-  tier: the tiers are industry-agnostic shared code, and hard-coding one industry's content
-  into them breaks every other dataset.
+  ids. Registered in `DATASETS` (`datasets/index.ts`). Four keys ship today, one per
+  onboarding industry: `satellite`, `robotics`, `precision`, `motor`. **New seed data goes
+  here**, not in a tier: the tiers are industry-agnostic shared code, and hard-coding one
+  industry's content into them breaks every other dataset.
 - **Engine** — `tiers/01-foundation.ts` … `tiers/12-planning.ts`, run in numeric order because
   each tier depends on ids the earlier ones put in `ctx.refs`. The ordering IS the contract.
   Change a tier only to support a new *shape* of data.

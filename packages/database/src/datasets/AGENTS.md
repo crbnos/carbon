@@ -4,6 +4,10 @@ Fills a company with one industry's worth of a working ERP: items, BOMs, custome
 orders, jobs, non-conformances, change orders, ledger entries, workflows. Two callers share
 every line of it — `pnpm db:seed:dev` and onboarding's `company-template` Inngest job.
 
+Four datasets ship today, one per onboarding industry: `satellite` (Orbital Systems, Houston
+TX), `robotics` (Helix Robotics, Pittsburgh PA), `precision` (Meridian Precision Works,
+Rockford IL) and `motor` (Torque Dynamics, Fort Wayne IN).
+
 Feature-level context (how onboarding reaches this, the failure marker, adding an industry)
 lives in `.claude/rules/onboarding-company-templates.md`. This file is about the code shape.
 
@@ -16,7 +20,8 @@ lives in `.claude/rules/onboarding-company-templates.md`. This file is about the
 
 New content goes in `data/`. Touch a tier only to support a new *shape* of data. The one
 standing violation is `tiers/workflow-definitions.ts`, which re-exports satellite's workflows
-so `@carbon/database/seed-workflows` stays a single import — fix it when a second dataset lands.
+so `@carbon/database/seed-workflows` stays a single import — so `seed-workflows.test.ts`
+validates satellite's definitions only, not the other three datasets'.
 
 ## `applyDataset` is the only entry point
 
@@ -69,6 +74,10 @@ correctly; 1/2/3/12 still use non-null assertions in places.
 - **`period` is global** — no `companyId`, no unique key. Tier 12 takes `pg_advisory_xact_lock`
   before its read-then-insert; two companies onboarding at once would otherwise both insert the
   same 48 weeks, visible to every tenant.
+- **Shelves are declared, not generated.** `FoundationData.shelves` lists every storage unit by
+  name, in an order where a parent precedes its children, and `openingStock[].shelf` joins on
+  that name. A name with no matching `ShelfSpec` is a hard error — it used to silently drop the
+  company's entire opening stock while still looking provisioned.
 
 ## Verifying a change
 
@@ -87,9 +96,6 @@ a re-seed will NOT correct a journal you just fixed in the data. Delete the rows
 
 ## Known rough edges
 
-- Tier 1 hard-codes satellite specifics into shared code: the Houston/`America/Chicago` plant
-  address, shift names, warehouse names, and a `printerRoute` at a LAN IP. A second dataset will
-  have to lift these into `data/`.
 - `04-sales.ts` / `05-purchasing.ts` key their order-line maps by item, so two lines for the same
   item collapse to the last one — a shipment or invoice line would attach to the wrong order line.
   Key on the line's `ref` if a dataset ever needs that.

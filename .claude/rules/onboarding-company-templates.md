@@ -100,16 +100,22 @@ none of which covers `packages/database/src/**`. This is convention only.
 
 ## Adding an industry
 
-1. `data/<key>/` — one file per slice, mirroring `data/satellite/`.
+1. `data/<key>/` — one file per slice, mirroring `data/robotics/` (the newest and closest
+   model). All eleven slices are required; none may be empty.
 2. Register it in `DATASETS` in `datasets/index.ts`.
 3. Add `"<key>"` to `DatasetKey` in `types.ts`.
 4. Set `industryId` on the dataset to the matching `industry` row id, and add that row in
    a migration if it does not exist yet (`aerospace_satellite` was added by
-   `20260813023744_add-aerospace-industry.sql`).
+   `20260813023744_add-aerospace-industry.sql`; the other three shipped in
+   `20260617100002_onboarding-and-backups.sql`).
 
-Volume is the coverage contract: match satellite's row counts roughly, so every list
-screen in the ERP has rows and every detail screen opens. An industry with no dataset is
-fine — onboarding just provisions a clean company.
+Volume is the coverage contract: match the existing datasets' row counts roughly, so every
+list screen in the ERP has rows and every detail screen opens.
+
+All four industries have a dataset today. An industry without one is **hidden** from the
+onboarding picker (`industry.tsx` filters on `datasetForIndustry`) rather than silently
+provisioning a clean company — a card promising sample data that delivers none is worse
+than no card.
 
 ## Verifying a change to the tiers
 
@@ -117,8 +123,8 @@ The tiers are shared, so a refactor that "looks fine" can silently drop rows. Se
 diff the printed `Seeded row counts` block against a known-good run, and check the
 structural sums that counts alone would not catch (`methodMaterial` count + quantity sum,
 `methodOperation` count + time sums, `salesOrderLine` count + quantity sum). Baselines
-live in `.ai/runs/2026-08-13-seed-baseline.txt`, and the structural sums in the sibling
-`.ai/runs/2026-08-13-seed-baseline-structural.txt`.
+live in `.ai/runs/2026-08-13-seed-baseline.txt` (satellite, with structural sums in the
+sibling `-structural.txt`), plus `-robotics-`, `-precision-` and `-motor-baseline.txt`.
 
 ## What is NOT how this works
 
