@@ -14244,6 +14244,9 @@ msgstr "이 품목을 만드는 데 사용된 자재 중 가장 짧은 잔여 �
 msgid "taken"
 msgstr "사용됨"
 
+msgid "Takes work center offline"
+msgstr ""
+
 msgid "Talk to Sales"
 msgstr "영업팀에 문의"
 
@@ -16848,6 +16851,9 @@ msgstr "보낼 요청의 종류: GET은 읽고, POST는 만들고, PUT과 PATCH�
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
+
+msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "승인 가능자"

@@ -14244,6 +14244,9 @@ msgstr "Take the shortest remaining shelf life across the materials consumed to 
 msgid "taken"
 msgstr "taken"
 
+msgid "Takes work center offline"
+msgstr "Takes work center offline"
+
 msgid "Talk to Sales"
 msgstr "Talk to Sales"
 
@@ -16848,6 +16851,9 @@ msgstr "Which kind of request to send: GET reads something, POST creates, PUT an
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
+
+msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
+msgstr "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 
 msgid "Who Can Approve"
 msgstr "Who Can Approve"

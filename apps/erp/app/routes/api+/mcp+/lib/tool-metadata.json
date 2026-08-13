@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-13T03:33:06.525Z",
+  "generated": "2026-08-13T03:49:41.199Z",
   "totalTools": 1465,
   "modules": 15,
   "tools": [
@@ -33926,7 +33926,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "insert maintenance dispatch",
-      "paramCount": 13,
+      "paramCount": 14,
       "serviceParams": [
         "client",
         "input"
@@ -33984,6 +33984,9 @@
           "plannedEndTime": {
             "type": "string"
           },
+          "takesWorkCenterOffline": {
+            "type": "boolean"
+          },
           "content": {}
         },
         "required": [
@@ -33996,7 +33999,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "update maintenance dispatch",
-      "paramCount": 17,
+      "paramCount": 18,
       "serviceParams": [
         "client",
         "input"
@@ -34086,6 +34089,9 @@
               "null"
             ]
           },
+          "takesWorkCenterOffline": {
+            "type": "boolean"
+          },
           "content": {}
         },
         "required": [
@@ -34098,7 +34104,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance dispatch",
-      "paramCount": 13,
+      "paramCount": 14,
       "serviceParams": [
         "client",
         "dispatch"
@@ -34144,6 +34150,9 @@
           "plannedEndTime": {
             "type": "string"
           },
+          "takesWorkCenterOffline": {
+            "type": "string"
+          },
           "assignee": {
             "type": "string"
           },
@@ -34154,7 +34163,8 @@
         "required": [
           "status",
           "priority",
-          "locationId"
+          "locationId",
+          "takesWorkCenterOffline"
         ]
       }
     },

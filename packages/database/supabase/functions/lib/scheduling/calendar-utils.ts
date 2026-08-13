@@ -246,6 +246,46 @@ export function addWorkingTime(
   return null; // windows exhausted before the duration was reached
 }
 
+/**
+ * Subtract outage intervals from availability windows — pure interval
+ * subtraction. Each window is split around every overlapping outage; empty
+ * remainders are dropped. Used to remove machine-downtime windows (open
+ * maintenance dispatches) from the ladder's resolved windows. Inputs need not
+ * be sorted relative to each other; the output preserves window order.
+ */
+export function subtractIntervals(
+  windows: CalendarWindow[],
+  outages: CalendarWindow[]
+): CalendarWindow[] {
+  if (outages.length === 0) {
+    return windows.map((w) => ({ start: new Date(w.start.getTime()), end: new Date(w.end.getTime()) }));
+  }
+  const result: CalendarWindow[] = [];
+  for (const w of windows) {
+    let segments = [{ start: w.start.getTime(), end: w.end.getTime() }];
+    for (const o of outages) {
+      const os = o.start.getTime();
+      const oe = o.end.getTime();
+      const next: { start: number; end: number }[] = [];
+      for (const seg of segments) {
+        if (oe <= seg.start || os >= seg.end) {
+          next.push(seg); // no overlap
+          continue;
+        }
+        if (os > seg.start) next.push({ start: seg.start, end: os });
+        if (oe < seg.end) next.push({ start: oe, end: seg.end });
+      }
+      segments = next;
+    }
+    for (const seg of segments) {
+      if (seg.end > seg.start) {
+        result.push({ start: new Date(seg.start), end: new Date(seg.end) });
+      }
+    }
+  }
+  return result;
+}
+
 /** Whether an instant falls inside any window. */
 export function coversInstant(windows: CalendarWindow[], at: number): boolean {
   for (const w of windows) {

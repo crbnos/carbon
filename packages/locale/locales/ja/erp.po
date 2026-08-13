@@ -14244,6 +14244,9 @@ msgstr "このアイテムを製造するために消費される材料全体で
 msgid "taken"
 msgstr "実施"
 
+msgid "Takes work center offline"
+msgstr ""
+
 msgid "Talk to Sales"
 msgstr "営業に相談"
 
@@ -16848,6 +16851,9 @@ msgstr "送信するリクエストの種類：GETは何かを読み取り、POS
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "どの製造イベントが保存期間時計を開始するか — たとえば、塗りつぶし、シール、または最終QC。"
+
+msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "誰が承認できるか"

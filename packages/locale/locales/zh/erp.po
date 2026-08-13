@@ -14244,6 +14244,9 @@ msgstr "采用消耗的材料中最短的剩余保质期来制造此物品。当
 msgid "taken"
 msgstr "已采取"
 
+msgid "Takes work center offline"
+msgstr ""
+
 msgid "Talk to Sales"
 msgstr "与销售团队联系"
 
@@ -16848,6 +16851,9 @@ msgstr "要发送的请求类型：GET 读取内容，POST 创建，PUT 和 PATC
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "哪个制造事件启动保质期时钟 — 例如填充、密封或最终QC。"
+
+msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "谁可以批准"

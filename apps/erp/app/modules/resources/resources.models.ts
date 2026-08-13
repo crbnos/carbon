@@ -182,6 +182,7 @@ export const maintenanceDispatchValidator = z.object({
   suspectedFailureModeId: zfd.text(z.string().optional()),
   plannedStartTime: zfd.text(z.string().optional()),
   plannedEndTime: zfd.text(z.string().optional()),
+  takesWorkCenterOffline: zfd.checkbox(),
   assignee: zfd.text(z.string().optional()),
   content: zfd.text(z.string().optional())
 });

@@ -14244,6 +14244,9 @@ msgstr "Weź najkrótszy pozostały okres przydatności spośród materiałów z
 msgid "taken"
 msgstr "wzięte"
 
+msgid "Takes work center offline"
+msgstr ""
+
 msgid "Talk to Sales"
 msgstr "Porozmawiaj ze sprzedażą"
 
@@ -16848,6 +16851,9 @@ msgstr "Jaki rodzaj żądania wysłać: GET odczytuje, POST tworzy, PUT i PATCH 
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Które zdarzenie produkcyjne uruchamia zegar czasu przechowywania — na przykład napełnianie, uszczelnianie lub ostateczną kontrolę jakości."
+
+msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "Kto może zatwierdzić"

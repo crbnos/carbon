@@ -2,7 +2,7 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import { intersectWindows } from "./calendar-utils.ts";
+import { intersectWindows, subtractIntervals } from "./calendar-utils.ts";
 import {
   type LadderShiftRow,
   resolveLocationWindows,
@@ -179,6 +179,60 @@ Deno.test("intersectWindows: disjoint windows produce nothing", () => {
     [{ start: utc("2026-01-05T12:00:00Z"), end: utc("2026-01-05T14:00:00Z") }]
   );
   assertEquals(out.length, 0);
+});
+
+// --- machine downtime (subtractIntervals) -----------------------------------
+
+Deno.test("downtime: an outage with a planned end splits a day's window in two", () => {
+  const day = [
+    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T16:00:00Z") },
+  ];
+  // Dispatch offline 10:00–12:00
+  const out = subtractIntervals(day, [
+    { start: utc("2026-01-05T10:00:00Z"), end: utc("2026-01-05T12:00:00Z") },
+  ]);
+  assertEquals(out.length, 2);
+  assertEquals(out[0].start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(out[0].end.toISOString(), "2026-01-05T10:00:00.000Z");
+  assertEquals(out[1].start.toISOString(), "2026-01-05T12:00:00.000Z");
+  assertEquals(out[1].end.toISOString(), "2026-01-05T16:00:00.000Z");
+});
+
+Deno.test("downtime: an open-ended outage empties the week's windows to the horizon", () => {
+  const week = [
+    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T16:00:00Z") },
+    { start: utc("2026-01-06T08:00:00Z"), end: utc("2026-01-06T16:00:00Z") },
+  ];
+  // No end estimate → outage runs to the horizon (2026-02-05)
+  const out = subtractIntervals(week, [
+    { start: utc("2026-01-05T00:00:00Z"), end: utc("2026-02-05T00:00:00Z") },
+  ]);
+  assertEquals(out.length, 0);
+});
+
+Deno.test("downtime: no outages (e.g. a Completed dispatch) leaves the windows unchanged", () => {
+  const week = [
+    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T16:00:00Z") },
+  ];
+  const out = subtractIntervals(week, []);
+  assertEquals(out.length, 1);
+  assertEquals(out[0].start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(out[0].end.toISOString(), "2026-01-05T16:00:00.000Z");
+});
+
+Deno.test("downtime: multiple outages in one window split it into the gaps", () => {
+  const day = [
+    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T18:00:00Z") },
+  ];
+  const out = subtractIntervals(day, [
+    { start: utc("2026-01-05T09:00:00Z"), end: utc("2026-01-05T10:00:00Z") },
+    { start: utc("2026-01-05T14:00:00Z"), end: utc("2026-01-05T15:00:00Z") },
+  ]);
+  assertEquals(out.length, 3);
+  assertEquals(out[0].end.toISOString(), "2026-01-05T09:00:00.000Z");
+  assertEquals(out[1].start.toISOString(), "2026-01-05T10:00:00.000Z");
+  assertEquals(out[1].end.toISOString(), "2026-01-05T14:00:00.000Z");
+  assertEquals(out[2].start.toISOString(), "2026-01-05T15:00:00.000Z");
 });
 
 Deno.test("intersectWindows: multi-window sweep intersects each overlap once", () => {

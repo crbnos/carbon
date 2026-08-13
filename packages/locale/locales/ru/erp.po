@@ -14244,6 +14244,9 @@ msgstr "Возьмите самый короткий оставшийся сро
 msgid "taken"
 msgstr "взято"
 
+msgid "Takes work center offline"
+msgstr ""
+
 msgid "Talk to Sales"
 msgstr "Поговорить с отделом продаж"
 
@@ -16848,6 +16851,9 @@ msgstr "Какой тип запроса отправить: GET читает, P
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."
+
+msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "Кто может одобрить"

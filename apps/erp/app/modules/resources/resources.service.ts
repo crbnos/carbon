@@ -1387,6 +1387,7 @@ export async function insertMaintenanceDispatch(
     suspectedFailureModeId?: string;
     plannedStartTime?: string;
     plannedEndTime?: string;
+    takesWorkCenterOffline?: boolean;
     content?: Json;
   }
 ): Promise<{
@@ -1429,6 +1430,7 @@ export async function insertMaintenanceDispatch(
       suspectedFailureModeId: input.suspectedFailureModeId ?? null,
       plannedStartTime: input.plannedStartTime ?? null,
       plannedEndTime: input.plannedEndTime ?? null,
+      takesWorkCenterOffline: input.takesWorkCenterOffline ?? false,
       content: input.content,
       companyId: input.companyId,
       createdBy: input.createdBy,
@@ -1472,6 +1474,7 @@ export async function updateMaintenanceDispatch(
     plannedEndTime?: string | null;
     actualStartTime?: string | null;
     actualEndTime?: string | null;
+    takesWorkCenterOffline?: boolean;
     content?: Json;
   }
 ): Promise<{

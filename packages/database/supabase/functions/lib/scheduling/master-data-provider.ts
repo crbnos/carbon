@@ -5,7 +5,7 @@ import { getJobMethodTree, type JobMethodTreeItem } from "../methods.ts";
 import type { Database } from "../types.ts";
 import { parseDate } from "@internationalized/date";
 import { businessDay, toIsoDate } from "./date-utils.ts";
-import type { CalendarWindow } from "./calendar-utils.ts";
+import { type CalendarWindow, subtractIntervals } from "./calendar-utils.ts";
 import {
   type LadderShiftRow,
   type WorkCenterAvailabilityInput,
@@ -785,13 +785,106 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       this.expandShiftDays(r).map((d) => ({ ...d, locationId: r.locationId }))
     );
 
-    return resolveWorkCenterWindows({
+    const windowsMap = resolveWorkCenterWindows({
       workCenters,
       workCenterShiftRows,
       locationShiftRows,
       rangeStart,
       rangeEnd,
     });
+
+    // Machine downtime: subtract open maintenance dispatches flagged
+    // takesWorkCenterOffline from the resolved windows (derived, not stored —
+    // completing the dispatch restores the hours at the next regen). Even an
+    // alwaysOn machine is subtracted: a broken lights-out machine is still down.
+    const outagesByWc = await this.loadDowntimeOutages(
+      workCenterIds,
+      rangeEnd
+    );
+    for (const [wcId, outages] of outagesByWc) {
+      const windows = windowsMap.get(wcId);
+      if (windows) {
+        windowsMap.set(wcId, subtractIntervals(windows, outages));
+      }
+    }
+
+    return windowsMap;
+  }
+
+  /**
+   * Outage windows per work center from OPEN maintenance dispatches flagged
+   * takesWorkCenterOffline. One dispatch is down from
+   * (actualStartTime ?? plannedStartTime ?? createdAt) to
+   * (actualEndTime ?? plannedEndTime ?? rangeEnd — open-ended = down to the
+   * horizon), and applies to its own workCenterId AND every joined work center.
+   * Two selects (no per-WC queries).
+   */
+  private async loadDowntimeOutages(
+    workCenterIds: string[],
+    rangeEnd: Date
+  ): Promise<Map<string, CalendarWindow[]>> {
+    const outagesByWc = new Map<string, CalendarWindow[]>();
+    if (workCenterIds.length === 0) return outagesByWc;
+
+    const dispatches = await this.db
+      .selectFrom("maintenanceDispatch")
+      .select([
+        "id",
+        "workCenterId",
+        "plannedStartTime",
+        "plannedEndTime",
+        "actualStartTime",
+        "actualEndTime",
+        "createdAt",
+      ])
+      .where("companyId", "=", this.companyId)
+      .where("takesWorkCenterOffline", "=", true)
+      .where("status", "not in", ["Completed", "Cancelled"])
+      .execute();
+    if (dispatches.length === 0) return outagesByWc;
+
+    // The work centers each dispatch takes offline via the join table.
+    const joinRows = await this.db
+      .selectFrom("maintenanceDispatchWorkCenter")
+      .select(["maintenanceDispatchId", "workCenterId"])
+      .where(
+        "maintenanceDispatchId",
+        "in",
+        dispatches.map((d) => d.id)
+      )
+      .execute();
+    const joinByDispatch = new Map<string, string[]>();
+    for (const j of joinRows) {
+      const list = joinByDispatch.get(j.maintenanceDispatchId) ?? [];
+      list.push(j.workCenterId);
+      joinByDispatch.set(j.maintenanceDispatchId, list);
+    }
+
+    const wcIdSet = new Set(workCenterIds);
+    const toDate = (v: unknown) => new Date(v as unknown as string);
+    for (const d of dispatches) {
+      const start = toDate(
+        d.actualStartTime ?? d.plannedStartTime ?? d.createdAt
+      );
+      const end = d.actualEndTime
+        ? toDate(d.actualEndTime)
+        : d.plannedEndTime
+          ? toDate(d.plannedEndTime)
+          : rangeEnd; // no end estimate = down until further notice
+      const affected = new Set<string>();
+      if (d.workCenterId && wcIdSet.has(d.workCenterId)) {
+        affected.add(d.workCenterId);
+      }
+      for (const wcId of joinByDispatch.get(d.id) ?? []) {
+        if (wcIdSet.has(wcId)) affected.add(wcId);
+      }
+      for (const wcId of affected) {
+        const list = outagesByWc.get(wcId) ?? [];
+        list.push({ start, end });
+        outagesByWc.set(wcId, list);
+      }
+    }
+    return outagesByWc;
   }
 
   async getLocationCalendarWindows(

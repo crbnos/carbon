@@ -14244,6 +14244,9 @@ msgstr "इस आइटम को बनाने के लिए उपयो
 msgid "taken"
 msgstr "लिया गया"
 
+msgid "Takes work center offline"
+msgstr ""
+
 msgid "Talk to Sales"
 msgstr "बिक्रय टीम से बात करें"
 
@@ -16848,6 +16851,9 @@ msgstr "किस प्रकार का अनुरोध भेजना �
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "कौन सी विनिर्माण घटना शेल्फ-जीवन घड़ी शुरू करती है — उदाहरण के लिए, भरना, सील करना, या अंतिम क्यूसी।"
+
+msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
+msgstr ""
 
 msgid "Who Can Approve"
 msgstr "कौन अनुमोदन कर सकता है"
