@@ -89,6 +89,63 @@ export type ContractorSpec = {
   ability: string;
 };
 
+export type ShiftSpec = {
+  name: string;
+  /** "HH:MM:SS", plant-local wall clock. */
+  startTime: string;
+  endTime: string;
+  monday?: boolean;
+  tuesday?: boolean;
+  wednesday?: boolean;
+  thursday?: boolean;
+  friday?: boolean;
+  saturday?: boolean;
+  sunday?: boolean;
+};
+
+export type PlantSpec = {
+  name: string;
+  addressLine1: string;
+  city: string;
+  stateProvince: string;
+  postalCode: string;
+  countryCode: string;
+  timezone: string;
+};
+
+export type WarehouseSpec = {
+  /** ctx.refs.warehouses key, and what ShelfSpec.warehouse references. */
+  key: string;
+  name: string;
+  requiresPick?: boolean;
+  requiresPutAway?: boolean;
+  requiresBin?: boolean;
+};
+
+export type ShelfSpec = {
+  /** The exact string openingStock[].shelf and the inventory count reference. */
+  name: string;
+  /** WarehouseSpec.key this shelf lives in. */
+  warehouse: string;
+  /** One of FoundationData.storageTypes. */
+  storageType: string;
+  /** Another ShelfSpec.name this nests under, for racking rows. */
+  parent?: string;
+};
+
+export type PrinterRouteSpec = {
+  name: string;
+  format: string;
+  printerUrl: string;
+};
+
+export type ContractorAgencySpec = {
+  name: string;
+  /** One of FoundationData.supplierTypes. */
+  type: string;
+  phone: string;
+};
+
 export type FoundationData = {
   departments: string[];
   abilities: string[];
@@ -104,12 +161,26 @@ export type FoundationData = {
   shippingTerms: string[];
   itemPostingGroups: string[];
   workCenterProcessLinks: Array<[string, string]>;
-  binLevels: string[];
   customerTypes: string[];
   supplierTypes: string[];
   costCenters: string[];
   noQuoteReasons: string[];
   contractors: ContractorSpec[];
+  plant: PlantSpec;
+  shifts: ShiftSpec[];
+  warehouses: WarehouseSpec[];
+  storageTypes: string[];
+  /** Insertion order matters — a parent shelf must precede its children. */
+  shelves: ShelfSpec[];
+  printerRoute: PrinterRouteSpec | null;
+  /** Must be one of shippingMethods; applied to every customer and supplier. */
+  defaultShippingMethod: string;
+  contractorAgency: ContractorAgencySpec | null;
+  /** Billing address used for every customer and supplier location. */
+  partyAddressCity: string;
+  partyAddressStateProvince: string;
+  partyAddressPostalCode: string;
+  partyAddressCountryCode: string;
 };
 
 export type SupplierLinkSpec = {
@@ -503,9 +574,14 @@ export type GenealogyAssemblySpec = {
 
 export type ProductionData = {
   jobs: JobSpec[];
+  /** Production-event blocks, indexed by operation position — not shift rows. */
   shifts: ShiftEventSpec[][];
   genealogyInputs: GenealogyInputSpec[];
   genealogyAssembly: GenealogyAssemblySpec;
+  /** JobSpec.key whose operations get production events. */
+  eventsJobKey: string;
+  /** JobSpec.key the as-built genealogy hangs off. */
+  genealogyJobKey: string;
 };
 
 export type NonConformanceSpec = {
