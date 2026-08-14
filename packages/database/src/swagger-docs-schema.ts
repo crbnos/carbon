@@ -9222,6 +9222,303 @@ export default {
         tags: ["assemblyInstructionStepMaterial"]
       }
     },
+    "/purchaseReturnOrder": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.purchaseReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.replacementPurchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.orderDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.internalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.externalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/purchaseReturnOrder"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["purchaseReturnOrder"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.purchaseReturnOrder"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["purchaseReturnOrder"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.purchaseReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.replacementPurchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.orderDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.internalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.externalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["purchaseReturnOrder"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.purchaseReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.supplierReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.replacementPurchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.orderDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.internalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.externalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrder.customFields"
+          },
+          {
+            $ref: "#/parameters/body.purchaseReturnOrder"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["purchaseReturnOrder"]
+      }
+    },
     "/productionQuantity": {
       get: {
         parameters: [
@@ -12321,6 +12618,195 @@ export default {
         tags: ["materialGrades"]
       }
     },
+    "/salesReturnOrderCreditLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.memoId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.restockFee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesReturnOrderCreditLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["salesReturnOrderCreditLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.salesReturnOrderCreditLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["salesReturnOrderCreditLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.memoId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.restockFee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["salesReturnOrderCreditLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.memoId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.restockFee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderCreditLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.salesReturnOrderCreditLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["salesReturnOrderCreditLine"]
+      }
+    },
     "/receiptLines": {
       get: {
         parameters: [
@@ -14331,6 +14817,303 @@ export default {
         tags: ["maintenanceFailureMode"]
       }
     },
+    "/salesReturnOrder": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.salesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.replacementSalesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.orderDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.internalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.externalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesReturnOrder"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["salesReturnOrder"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.salesReturnOrder"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["salesReturnOrder"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.salesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.replacementSalesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.orderDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.internalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.externalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["salesReturnOrder"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customerReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.salesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.replacementSalesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.orderDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.internalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.externalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrder.customFields"
+          },
+          {
+            $ref: "#/parameters/body.salesReturnOrder"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["salesReturnOrder"]
+      }
+    },
     "/gaugeCalibrationRecords": {
       get: {
         parameters: [
@@ -15205,6 +15988,12 @@ export default {
             $ref: "#/parameters/rowFilter.memo.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.memo.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.memo.purchaseReturnOrderId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -15339,6 +16128,12 @@ export default {
             $ref: "#/parameters/rowFilter.memo.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.memo.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.memo.purchaseReturnOrderId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -15425,6 +16220,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.memo.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.memo.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.memo.purchaseReturnOrderId"
           },
           {
             $ref: "#/parameters/body.memo"
@@ -25084,6 +25885,129 @@ export default {
           }
         },
         tags: ["supplierTax"]
+      }
+    },
+    "/salesReturnOrders": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.customerLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.customerContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.customerReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.salesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.replacementSalesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.orderDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.internalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.externalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.linesCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.quantityAuthorized"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.quantityReceived"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrders.quantityCredited"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesReturnOrders"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["salesReturnOrders"]
       }
     },
     "/materialDimensions": {
@@ -37207,6 +38131,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -37422,6 +38349,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -37589,6 +38519,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -42387,6 +43320,129 @@ export default {
         tags: ["maintenanceDispatchWorkCenter"]
       }
     },
+    "/purchaseReturnOrders": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.purchaseReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.supplierLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.supplierContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.supplierReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.replacementPurchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.orderDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.internalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.externalNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.linesCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.quantityAuthorized"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.quantityShipped"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrders.quantityCredited"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/purchaseReturnOrders"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["purchaseReturnOrders"]
+      }
+    },
     "/jobFavorite": {
       get: {
         parameters: [
@@ -47071,6 +48127,168 @@ export default {
           }
         },
         tags: ["costCenter"]
+      }
+    },
+    "/purchaseReturnOrderLineTrackedEntity": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.purchaseReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/purchaseReturnOrderLineTrackedEntity"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["purchaseReturnOrderLineTrackedEntity"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.purchaseReturnOrderLineTrackedEntity"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["purchaseReturnOrderLineTrackedEntity"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.purchaseReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["purchaseReturnOrderLineTrackedEntity"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.purchaseReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLineTrackedEntity.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.purchaseReturnOrderLineTrackedEntity"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["purchaseReturnOrderLineTrackedEntity"]
       }
     },
     "/riskRegister": {
@@ -55791,6 +57009,168 @@ export default {
         tags: ["trackedEntity"]
       }
     },
+    "/salesReturnOrderLineTrackedEntity": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesReturnOrderLineTrackedEntity"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["salesReturnOrderLineTrackedEntity"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.salesReturnOrderLineTrackedEntity"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["salesReturnOrderLineTrackedEntity"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["salesReturnOrderLineTrackedEntity"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLineTrackedEntity.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.salesReturnOrderLineTrackedEntity"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["salesReturnOrderLineTrackedEntity"]
+      }
+    },
     "/assemblyInstructionStepTool": {
       get: {
         parameters: [
@@ -60372,6 +61752,186 @@ export default {
         tags: ["tools"]
       }
     },
+    "/nonConformanceSalesReturnOrderLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.nonConformanceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.salesReturnOrderReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/nonConformanceSalesReturnOrderLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["nonConformanceSalesReturnOrderLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.nonConformanceSalesReturnOrderLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["nonConformanceSalesReturnOrderLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.nonConformanceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.salesReturnOrderReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["nonConformanceSalesReturnOrderLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.nonConformanceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.salesReturnOrderReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceSalesReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.nonConformanceSalesReturnOrderLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["nonConformanceSalesReturnOrderLine"]
+      }
+    },
     "/changeOrderRequiredAction": {
       get: {
         parameters: [
@@ -60892,6 +62452,177 @@ export default {
           }
         },
         tags: ["group"]
+      }
+    },
+    "/returnReason": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.returnReason.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.inventoryValueZero"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/returnReason"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["returnReason"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.returnReason"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["returnReason"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.returnReason.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.inventoryValueZero"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["returnReason"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.returnReason.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.inventoryValueZero"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.returnReason.customFields"
+          },
+          {
+            $ref: "#/parameters/body.returnReason"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["returnReason"]
       }
     },
     "/ability": {
@@ -66256,6 +67987,195 @@ export default {
           }
         },
         tags: ["quoteOperationsWithMakeMethods"]
+      }
+    },
+    "/nonConformancePurchaseReturnOrderLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.nonConformanceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.purchaseReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.purchaseReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.purchaseReturnOrderReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/nonConformancePurchaseReturnOrderLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["nonConformancePurchaseReturnOrderLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.nonConformancePurchaseReturnOrderLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["nonConformancePurchaseReturnOrderLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.nonConformanceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.purchaseReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.purchaseReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.purchaseReturnOrderReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["nonConformancePurchaseReturnOrderLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.nonConformanceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.purchaseReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.purchaseReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.purchaseReturnOrderReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformancePurchaseReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.nonConformancePurchaseReturnOrderLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["nonConformancePurchaseReturnOrderLine"]
       }
     },
     "/config": {
@@ -74650,6 +76570,285 @@ export default {
           }
         },
         tags: ["workCentersWithBlockingStatus"]
+      }
+    },
+    "/salesReturnOrderLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.lineNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.quantityReceived"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.unitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.restockFeePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.returnReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.salesOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.shipmentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.salesInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.disposition"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.closedComplete"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesReturnOrderLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["salesReturnOrderLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.salesReturnOrderLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["salesReturnOrderLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.lineNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.quantityReceived"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.unitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.restockFeePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.returnReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.salesOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.shipmentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.salesInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.disposition"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.closedComplete"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["salesReturnOrderLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.lineNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.quantityReceived"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.unitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.restockFeePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.returnReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.salesOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.shipmentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.salesInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.disposition"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.closedComplete"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesReturnOrderLine.customFields"
+          },
+          {
+            $ref: "#/parameters/body.salesReturnOrderLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["salesReturnOrderLine"]
       }
     },
     "/purchaseOrderDelivery": {
@@ -83091,6 +85290,276 @@ export default {
         tags: ["itemCost"]
       }
     },
+    "/purchaseReturnOrderLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.purchaseReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.lineNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.quantityShipped"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.unitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.restockFeePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.returnReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.purchaseOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.receiptLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.purchaseInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.closedComplete"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/purchaseReturnOrderLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["purchaseReturnOrderLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.purchaseReturnOrderLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["purchaseReturnOrderLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.purchaseReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.lineNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.quantityShipped"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.unitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.restockFeePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.returnReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.purchaseOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.receiptLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.purchaseInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.closedComplete"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["purchaseReturnOrderLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.purchaseReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.lineNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.quantityShipped"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.unitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.restockFeePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.returnReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.purchaseOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.receiptLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.purchaseInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.closedComplete"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderLine.customFields"
+          },
+          {
+            $ref: "#/parameters/body.purchaseReturnOrderLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["purchaseReturnOrderLine"]
+      }
+    },
     "/opportunity": {
       get: {
         parameters: [
@@ -84562,6 +87031,195 @@ export default {
           }
         },
         tags: ["customFieldTables"]
+      }
+    },
+    "/purchaseReturnOrderCreditLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.memoId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.purchaseReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.restockFee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/purchaseReturnOrderCreditLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["purchaseReturnOrderCreditLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.purchaseReturnOrderCreditLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["purchaseReturnOrderCreditLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.memoId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.purchaseReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.restockFee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["purchaseReturnOrderCreditLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.memoId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.purchaseReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.restockFee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseReturnOrderCreditLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.purchaseReturnOrderCreditLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["purchaseReturnOrderCreditLine"]
       }
     },
     "/materialGrade": {
@@ -102068,6 +104726,145 @@ export default {
       },
       type: "object"
     },
+    purchaseReturnOrder: {
+      required: [
+        "id",
+        "purchaseReturnOrderId",
+        "status",
+        "supplierId",
+        "currencyCode",
+        "exchangeRate",
+        "orderDate",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pret'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseReturnOrderId: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Draft",
+          enum: [
+            "Draft",
+            "Confirmed",
+            "Partially Shipped",
+            "Shipped",
+            "Completed",
+            "Cancelled"
+          ],
+          format: 'public."purchaseReturnOrderStatus"',
+          type: "string"
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierContact.id`.<fk table='supplierContact' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierReference: {
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrder.id`.<fk table='purchaseOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        replacementPurchaseOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrder.id`.<fk table='purchaseOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        exchangeRate: {
+          default: 1,
+          format: "numeric",
+          type: "number"
+        },
+        orderDate: {
+          format: "date",
+          type: "string"
+        },
+        expirationDate: {
+          format: "date",
+          type: "string"
+        },
+        internalNotes: {
+          format: "json"
+        },
+        externalNotes: {
+          format: "json"
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     productionQuantity: {
       required: [
         "id",
@@ -103367,6 +106164,78 @@ export default {
       },
       type: "object"
     },
+    salesReturnOrderCreditLine: {
+      required: [
+        "id",
+        "memoId",
+        "salesReturnOrderLineId",
+        "quantity",
+        "unitPrice",
+        "restockFee",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        memoId: {
+          description:
+            "Note:\nThis is a Foreign Key to `memo.id`.<fk table='memo' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        salesReturnOrderLineId: {
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        restockFee: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     receiptLines: {
       properties: {
         id: {
@@ -104331,6 +107200,145 @@ export default {
       },
       type: "object"
     },
+    salesReturnOrder: {
+      required: [
+        "id",
+        "salesReturnOrderId",
+        "status",
+        "customerId",
+        "currencyCode",
+        "exchangeRate",
+        "orderDate",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('sro'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        salesReturnOrderId: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Draft",
+          enum: [
+            "Draft",
+            "Confirmed",
+            "Partially Received",
+            "Received",
+            "Completed",
+            "Cancelled"
+          ],
+          format: 'public."salesReturnOrderStatus"',
+          type: "string"
+        },
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerLocation.id`.<fk table='customerLocation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerReference: {
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        replacementSalesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        exchangeRate: {
+          default: 1,
+          format: "numeric",
+          type: "number"
+        },
+        orderDate: {
+          format: "date",
+          type: "string"
+        },
+        expirationDate: {
+          format: "date",
+          type: "string"
+        },
+        internalNotes: {
+          format: "json"
+        },
+        externalNotes: {
+          format: "json"
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     gaugeCalibrationRecords: {
       properties: {
         id: {
@@ -104859,6 +107867,14 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        salesReturnOrderId: {
+          format: "text",
+          type: "string"
+        },
+        purchaseReturnOrderId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -109776,6 +112792,145 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    salesReturnOrders: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        salesReturnOrderId: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          enum: [
+            "Draft",
+            "Confirmed",
+            "Partially Received",
+            "Received",
+            "Completed",
+            "Cancelled"
+          ],
+          format: 'public."salesReturnOrderStatus"',
+          type: "string"
+        },
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerLocation.id`.<fk table='customerLocation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerReference: {
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        replacementSalesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number"
+        },
+        orderDate: {
+          format: "date",
+          type: "string"
+        },
+        expirationDate: {
+          format: "date",
+          type: "string"
+        },
+        internalNotes: {
+          format: "json"
+        },
+        externalNotes: {
+          format: "json"
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        },
+        linesCount: {
+          format: "bigint",
+          type: "integer"
+        },
+        quantityAuthorized: {
+          format: "numeric",
+          type: "number"
+        },
+        quantityReceived: {
+          format: "numeric",
+          type: "number"
+        },
+        quantityCredited: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -115630,6 +118785,12 @@ export default {
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
+        },
+        salesReturnsAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -117918,6 +121079,145 @@ export default {
       },
       type: "object"
     },
+    purchaseReturnOrders: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseReturnOrderId: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          enum: [
+            "Draft",
+            "Confirmed",
+            "Partially Shipped",
+            "Shipped",
+            "Completed",
+            "Cancelled"
+          ],
+          format: 'public."purchaseReturnOrderStatus"',
+          type: "string"
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierContact.id`.<fk table='supplierContact' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierReference: {
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrder.id`.<fk table='purchaseOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        replacementPurchaseOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrder.id`.<fk table='purchaseOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number"
+        },
+        orderDate: {
+          format: "date",
+          type: "string"
+        },
+        expirationDate: {
+          format: "date",
+          type: "string"
+        },
+        internalNotes: {
+          format: "json"
+        },
+        externalNotes: {
+          format: "json"
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        },
+        linesCount: {
+          format: "bigint",
+          type: "integer"
+        },
+        quantityAuthorized: {
+          format: "numeric",
+          type: "number"
+        },
+        quantityShipped: {
+          format: "numeric",
+          type: "number"
+        },
+        quantityCredited: {
+          format: "numeric",
+          type: "number"
+        }
+      },
+      type: "object"
+    },
     jobFavorite: {
       required: ["jobId", "userId"],
       properties: {
@@ -120158,6 +123458,62 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    purchaseReturnOrderLineTrackedEntity: {
+      required: [
+        "purchaseReturnOrderLineId",
+        "trackedEntityId",
+        "quantity",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        purchaseReturnOrderLineId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        trackedEntityId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          default: 1,
+          format: "numeric",
+          type: "number"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -123841,6 +127197,62 @@ export default {
       },
       type: "object"
     },
+    salesReturnOrderLineTrackedEntity: {
+      required: [
+        "salesReturnOrderLineId",
+        "trackedEntityId",
+        "quantity",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        salesReturnOrderLineId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        trackedEntityId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          default: 1,
+          format: "numeric",
+          type: "number"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     assemblyInstructionStepTool: {
       required: [
         "id",
@@ -126256,6 +129668,72 @@ export default {
       },
       type: "object"
     },
+    nonConformanceSalesReturnOrderLine: {
+      required: [
+        "id",
+        "nonConformanceId",
+        "salesReturnOrderLineId",
+        "salesReturnOrderId",
+        "salesReturnOrderReadableId",
+        "companyId",
+        "createdAt",
+        "createdBy"
+      ],
+      properties: {
+        id: {
+          default: "public.id('ncsro'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        nonConformanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `nonConformance.id`.<fk table='nonConformance' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        salesReturnOrderLineId: {
+          format: "text",
+          type: "string"
+        },
+        salesReturnOrderId: {
+          format: "text",
+          type: "string"
+        },
+        salesReturnOrderReadableId: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     changeOrderRequiredAction: {
       required: ["id", "companyId", "name", "active", "createdBy", "createdAt"],
       properties: {
@@ -126420,6 +129898,64 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    returnReason: {
+      required: [
+        "id",
+        "name",
+        "inventoryValueZero",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        inventoryValueZero: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -129269,6 +132805,78 @@ export default {
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    nonConformancePurchaseReturnOrderLine: {
+      required: [
+        "id",
+        "nonConformanceId",
+        "purchaseReturnOrderLineId",
+        "purchaseReturnOrderId",
+        "purchaseReturnOrderReadableId",
+        "quantity",
+        "companyId",
+        "createdAt",
+        "createdBy"
+      ],
+      properties: {
+        id: {
+          default: "public.id('ncpro'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        nonConformanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `nonConformance.id`.<fk table='nonConformance' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseReturnOrderLineId: {
+          format: "text",
+          type: "string"
+        },
+        purchaseReturnOrderId: {
+          format: "text",
+          type: "string"
+        },
+        purchaseReturnOrderReadableId: {
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -133045,6 +136653,146 @@ export default {
         blockingDispatchReadableId: {
           format: "text",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    salesReturnOrderLine: {
+      required: [
+        "id",
+        "salesReturnOrderId",
+        "lineNumber",
+        "itemId",
+        "quantity",
+        "quantityReceived",
+        "unitPrice",
+        "restockFeePercent",
+        "disposition",
+        "closedComplete",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('srol'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        salesReturnOrderId: {
+          format: "text",
+          type: "string"
+        },
+        lineNumber: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        quantityReceived: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string"
+        },
+        unitPrice: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        restockFeePercent: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        returnReasonId: {
+          format: "text",
+          type: "string"
+        },
+        salesOrderLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrderLine.id`.<fk table='salesOrderLine' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        shipmentLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shipmentLine.id`.<fk table='shipmentLine' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        salesInvoiceLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesInvoiceLine.id`.<fk table='salesInvoiceLine' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        disposition: {
+          default: "Pending",
+          enum: [
+            "Conditional Acceptance",
+            "Deviation Accepted",
+            "Hold",
+            "No Action Required",
+            "Pending",
+            "Quarantine",
+            "Repair",
+            "Return to Supplier",
+            "Rework",
+            "Scrap",
+            "Use As Is",
+            "Return to Customer"
+          ],
+          format: "public.disposition",
+          type: "string"
+        },
+        closedComplete: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -137353,6 +141101,126 @@ export default {
       },
       type: "object"
     },
+    purchaseReturnOrderLine: {
+      required: [
+        "id",
+        "purchaseReturnOrderId",
+        "lineNumber",
+        "itemId",
+        "quantity",
+        "quantityShipped",
+        "unitPrice",
+        "restockFeePercent",
+        "closedComplete",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pretl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseReturnOrderId: {
+          format: "text",
+          type: "string"
+        },
+        lineNumber: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        quantityShipped: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string"
+        },
+        unitPrice: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        restockFeePercent: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        returnReasonId: {
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrderLine.id`.<fk table='purchaseOrderLine' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        receiptLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `receiptLine.id`.<fk table='receiptLine' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseInvoiceLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseInvoiceLine.id`.<fk table='purchaseInvoiceLine' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        closedComplete: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     opportunity: {
       required: ["id", "companyId"],
       properties: {
@@ -138039,6 +141907,78 @@ export default {
         },
         fields: {
           format: "json"
+        }
+      },
+      type: "object"
+    },
+    purchaseReturnOrderCreditLine: {
+      required: [
+        "id",
+        "memoId",
+        "purchaseReturnOrderLineId",
+        "quantity",
+        "unitPrice",
+        "restockFee",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        memoId: {
+          description:
+            "Note:\nThis is a Foreign Key to `memo.id`.<fk table='memo' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseReturnOrderLineId: {
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        restockFee: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
