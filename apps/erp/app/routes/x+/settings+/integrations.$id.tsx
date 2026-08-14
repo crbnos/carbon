@@ -8,6 +8,7 @@ import {
   ProviderID,
   type XeroProvider
 } from "@carbon/ee/accounting";
+import { listAvalaraCompanies } from "@carbon/ee/avalara";
 import {
   ensureOnshapeReleaseWebhook,
   getIntegrationServerHooks,
@@ -126,6 +127,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const integration = availableIntegrations.find((i) => i.id === integrationId);
   if (!integration) throw new Error("Integration not found");
 
+  // Avalara's companyCode dropdown must populate BEFORE install (so a code can
+  // be chosen), so resolve it up front independent of install state.
+  let avalaraCompanyOptions: Array<{ value: string; label: string }> = [];
+  if (integrationId === "avalara") {
+    try {
+      const { data: companies, error: listError } = await listAvalaraCompanies(
+        client,
+        companyId
+      );
+      if (listError) {
+        console.error(
+          "Failed to fetch Avalara companies for settings:",
+          listError.message
+        );
+      }
+      avalaraCompanyOptions = (companies ?? []).map((company) => ({
+        value: company.companyCode,
+        label: company.name
+          ? `${company.name} (${company.companyCode})`
+          : company.companyCode
+      }));
+    } catch (err) {
+      console.error("Failed to fetch Avalara companies for settings:", err);
+    }
+  }
+
   const integrationData = await getIntegration(
     client,
     integrationId,
@@ -133,10 +160,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   if (integrationData.error || !integrationData.data) {
+    const preInstallOptions: Record<
+      string,
+      Array<{ value: string; label: string; description?: string }>
+    > = {};
+    if (avalaraCompanyOptions.length > 0) {
+      preInstallOptions.companyCode = avalaraCompanyOptions;
+    }
     return {
       installed: false,
       metadata: {},
-      dynamicOptions: {}
+      dynamicOptions: preInstallOptions
     };
   }
 
@@ -188,6 +222,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
       // Continue without dynamic options - form will show empty selects
     }
+  }
+
+  if (integrationId === "avalara" && avalaraCompanyOptions.length > 0) {
+    dynamicOptions = { companyCode: avalaraCompanyOptions };
   }
 
   return {

@@ -61,7 +61,7 @@ function IntegrationActionButton({
       const data = await response.json();
 
       if (data.success) {
-        toast.success(`${action.label} started`);
+        toast.success(data.message || `${action.label} started`);
         setStatus("completed");
       } else {
         setStatus("idle");

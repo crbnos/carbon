@@ -113,7 +113,7 @@ export function usePurchaseInvoiceAutoFill(
       });
 
       const [supplierDetails, paymentTermData] = await Promise.all([
-        // @ts-ignore Supabase composite key issue
+        // @ts-ignore TS2589: type instantiation depth - tsgo flakiness on composite relation (flaky error, so @ts-ignore not @ts-expect-error)
         carbon
           .from("supplier")
           .select(

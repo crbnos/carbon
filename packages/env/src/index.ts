@@ -5,6 +5,7 @@ declare global {
   interface Window {
     env: {
       AUTH_PROVIDERS: string;
+      AVALARA_ACCOUNT_ID: string;
       CARBON_EDITION: string;
       CARBON_API_URL: string;
       CARBON_SLACK_ENABLED: string;
@@ -32,6 +33,10 @@ declare global {
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
+      AVALARA_ACCOUNT_ID: string;
+      AVALARA_LICENSE_KEY: string;
+      AVALARA_CLIENT_ID: string;
+      AVALARA_CLIENT_SECRET: string;
       CARBON_EDITION: string;
       CARBON_API_URL: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
@@ -377,6 +382,29 @@ export const XERO_WEBHOOK_SECRET = getEnv("XERO_WEBHOOK_SECRET", {
   isSecret: true
 });
 
+// Avalara (tax determination + e-invoicing). The integration is hidden unless
+// AVALARA_ACCOUNT_ID and AVALARA_LICENSE_KEY are both set. The account id is
+// non-secret (like an OAuth client id) and is exposed to the browser so the
+// integration card's `active` flag can be computed client-side; the license
+// key and e-invoicing client secret are server-only secrets and never reach
+// the browser.
+export const AVALARA_ACCOUNT_ID = getEnv("AVALARA_ACCOUNT_ID", {
+  isRequired: false,
+  isSecret: false
+});
+export const AVALARA_LICENSE_KEY = getEnv("AVALARA_LICENSE_KEY", {
+  isRequired: false,
+  isSecret: true
+});
+export const AVALARA_CLIENT_ID = getEnv("AVALARA_CLIENT_ID", {
+  isRequired: false,
+  isSecret: false
+});
+export const AVALARA_CLIENT_SECRET = getEnv("AVALARA_CLIENT_SECRET", {
+  isRequired: false,
+  isSecret: true
+});
+
 export const JIRA_CLIENT_ID = getEnv("JIRA_CLIENT_ID", {
   isRequired: false
 });
@@ -488,6 +516,7 @@ export function getMESUrl() {
 export function getBrowserEnv() {
   return {
     AUTH_PROVIDERS,
+    AVALARA_ACCOUNT_ID,
     CARBON_API_URL,
     CARBON_EDITION,
     CARBON_SLACK_ENABLED: CARBON_SLACK_ENABLED ? "true" : "",

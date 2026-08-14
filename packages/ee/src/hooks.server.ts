@@ -1,3 +1,8 @@
+import {
+  avalaraHealthcheck,
+  avalaraOnInstall,
+  avalaraOnUninstall
+} from "./avalara/hooks.server";
 import { emailHealthcheck } from "./email/hooks.server";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
@@ -27,6 +32,11 @@ import {
  * their server-only lifecycle hooks.
  */
 const serverHooks: Record<string, IntegrationServerHooks> = {
+  avalara: {
+    onHealthcheck: avalaraHealthcheck,
+    onInstall: avalaraOnInstall,
+    onUninstall: avalaraOnUninstall
+  },
   email: {
     onHealthcheck: emailHealthcheck
   },
