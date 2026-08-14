@@ -16,7 +16,23 @@ lives in `.claude/rules/onboarding-company-templates.md`. This file is about the
 | Layer | Where | What it may contain |
 |-------|-------|---------------------|
 | **Data** | `data/<key>/` | Plain TypeScript literals. No SQL, no ids, no `Date`. One file per slice; `index.ts` assembles them into a `Dataset`. |
+| **Art** | `assets/<industryId>/<readableId>.svg` | One vector thumbnail per item, keyed on the dataset's `industryId` and the item's `readableId`. |
 | **Engine** | `tiers/01-…` … `tiers/12-…`, `sql.ts`, `helpers/` | Insertion logic. Industry-agnostic — a tier reads `ctx.dataset.<slice>` and knows nothing about which industry it is inserting. |
+
+## Part thumbnails are bundled, not uploaded
+
+`createItem` writes `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"`, and
+`assets.ts` (exported as `@carbon/database/dataset-assets`) resolves that prefix to the
+bundled asset via `import.meta.glob`. Both apps' `getPrivateUrl` call it first and fall back
+to the storage proxy for everything else, so a demo thumbnail is never a storage object and
+the `_templates/` prefix is never served by `file+/preview+/$bucket.$.tsx`.
+
+Adding an item to a dataset means adding its SVG. A missing one is not fatal:
+`getDatasetAssetUrl` returns `null` and `ItemThumbnail` renders the type icon. A dataset with
+`industryId: null` gets `null` and keeps the icon for every item.
+
+`assets.ts` is browser-only — never import it from a tier, `seed-dev.ts`, or `@carbon/jobs`,
+which run under plain Node where `import.meta.glob` does not exist.
 
 New content goes in `data/`. Touch a tier only to support a new *shape* of data. The one
 standing violation is `tiers/workflow-definitions.ts`, which re-exports satellite's workflows

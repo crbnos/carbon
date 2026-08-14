@@ -98,6 +98,26 @@ day. Note there is NO automated guard: `@carbon/checks` scans `apps/mes/app/serv
 `packages/jobs/src`, `packages/database/supabase/functions` and the ERP module/route files,
 none of which covers `packages/database/src/**`. This is convention only.
 
+## Part thumbnails ship with the app
+
+Every seeded item gets `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"`,
+written by `createItem`. **That is not a storage object.** The artwork is 132 committed
+vector files under `packages/database/src/datasets/assets/<industryId>/`, exposed by
+`@carbon/database/dataset-assets` and resolved by both apps' `getPrivateUrl`, which tries
+`getDatasetAssetUrl(path)` before falling back to `/file/preview/private/${path}`. So the
+`_templates/` prefix never reaches `file+/preview+/$bucket.$.tsx` and its companyId
+authorization is untouched.
+
+Bundling rather than uploading is deliberate: the files are vector and tiny, so they work in
+local dev, preview builds and self-hosted installs with no upload step, no bucket, and no
+read-only storage exception. A missing SVG degrades to the type icon (`getDatasetAssetUrl`
+returns `null`), and `ItemThumbnail` in both apps additionally falls back on an image load
+error, so a broken-image glyph is not a reachable state.
+
+Do NOT connect this to `TEMPLATE_ASSET_PREFIX` / `company-templates` in
+`packages/jobs/src/inngest/functions/tasks/company-backup.ts`. That is the dormant archive
+design described below and shares nothing with this path but a string.
+
 ## Adding an industry
 
 1. `data/<key>/` — one file per slice, mirroring `data/robotics/` (the newest and closest
