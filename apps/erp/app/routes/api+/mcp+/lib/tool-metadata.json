@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-14T07:28:59.938Z",
-  "totalTools": 1483,
+  "generated": "2026-08-14T07:48:48.115Z",
+  "totalTools": 1487,
   "modules": 15,
   "tools": [
     {
@@ -29111,6 +29111,84 @@
       }
     },
     {
+      "name": "purchasing_createPurchaseReturnOrderCredit",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "create purchase return order credit",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "db",
+        "{\n    purchaseReturnOrderId,\n    companyId,\n    companyGroupId,\n    userId,\n    memoDate,\n    lines\n  }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseReturnOrderId": {
+            "type": "string"
+          },
+          "memoDate": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "purchaseReturnOrderLineId": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "purchaseReturnOrderLineId",
+                "quantity"
+              ]
+            }
+          }
+        },
+        "required": [
+          "purchaseReturnOrderId",
+          "memoDate",
+          "lines"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_createReplacementPurchaseOrder",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "create replacement purchase order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "{\n    purchaseReturnOrderId,\n    companyId,\n    companyGroupId,\n    userId\n  }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purchaseReturnOrderId"
+        ]
+      }
+    },
+    {
       "name": "quality_activateGauge",
       "module": "quality",
       "classification": "WRITE",
@@ -41993,6 +42071,84 @@
       ],
       "injectAuth": [
         "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_createSalesReturnOrderCredit",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "create sales return order credit",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "db",
+        "{\n    salesReturnOrderId,\n    companyId,\n    companyGroupId,\n    userId,\n    memoDate,\n    lines\n  }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesReturnOrderId": {
+            "type": "string"
+          },
+          "memoDate": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "salesReturnOrderLineId": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "salesReturnOrderLineId",
+                "quantity"
+              ]
+            }
+          }
+        },
+        "required": [
+          "salesReturnOrderId",
+          "memoDate",
+          "lines"
+        ]
+      }
+    },
+    {
+      "name": "sales_createReplacementSalesOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "create replacement sales order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "{\n    salesReturnOrderId,\n    companyId,\n    companyGroupId,\n    userId\n  }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
       ],
       "schema": {
         "type": "object",

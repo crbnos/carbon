@@ -288,6 +288,82 @@ export async function action({ request, params }: ActionFunctionArgs) {
         };
       }
       break;
+    case "salesReturnOrderLines":
+      const salesReturnOrder = await client
+        .from("salesReturnOrder")
+        .select("id, salesReturnOrderId")
+        .eq("id", id)
+        .single();
+      if (salesReturnOrder.error) {
+        logger.error("Failed to create association", {
+          error: salesReturnOrder.error
+        });
+        return {
+          success: false,
+          message: "Failed to create issue sales return order line"
+        };
+      }
+
+      const salesReturnOrderLine = await client
+        .from("nonConformanceSalesReturnOrderLine")
+        .insert({
+          salesReturnOrderLineId: lineId!,
+          salesReturnOrderId: salesReturnOrder.data?.id,
+          salesReturnOrderReadableId: salesReturnOrder.data?.salesReturnOrderId,
+          nonConformanceId,
+          createdBy: userId,
+          companyId: companyId
+        });
+
+      if (salesReturnOrderLine.error) {
+        logger.error("Failed to create association", {
+          error: salesReturnOrderLine.error
+        });
+        return {
+          success: false,
+          message: "Failed to create issue sales return order line"
+        };
+      }
+      break;
+    case "purchaseReturnOrderLines":
+      const purchaseReturnOrder = await client
+        .from("purchaseReturnOrder")
+        .select("id, purchaseReturnOrderId")
+        .eq("id", id)
+        .single();
+      if (purchaseReturnOrder.error) {
+        logger.error("Failed to create association", {
+          error: purchaseReturnOrder.error
+        });
+        return {
+          success: false,
+          message: "Failed to create issue purchase return order line"
+        };
+      }
+
+      const purchaseReturnOrderLine = await client
+        .from("nonConformancePurchaseReturnOrderLine")
+        .insert({
+          purchaseReturnOrderLineId: lineId!,
+          purchaseReturnOrderId: purchaseReturnOrder.data?.id,
+          purchaseReturnOrderReadableId:
+            purchaseReturnOrder.data?.purchaseReturnOrderId,
+          nonConformanceId,
+          createdBy: userId,
+          companyId: companyId,
+          quantity: 0
+        });
+
+      if (purchaseReturnOrderLine.error) {
+        logger.error("Failed to create association", {
+          error: purchaseReturnOrderLine.error
+        });
+        return {
+          success: false,
+          message: "Failed to create issue purchase return order line"
+        };
+      }
+      break;
     case "trackedEntities":
       const { error: trackedEntityError } = await client
         .from("nonConformanceTrackedEntity")

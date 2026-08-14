@@ -129,6 +129,16 @@ export async function deleteIssueAssociation(
         .from("nonConformanceReceiptLine")
         .delete()
         .eq("id", associationId);
+    case "salesReturnOrderLines":
+      return await client
+        .from("nonConformanceSalesReturnOrderLine")
+        .delete()
+        .eq("id", associationId);
+    case "purchaseReturnOrderLines":
+      return await client
+        .from("nonConformancePurchaseReturnOrderLine")
+        .delete()
+        .eq("id", associationId);
     case "trackedEntities":
       return await client
         .from("nonConformanceTrackedEntity")
@@ -495,6 +505,8 @@ export async function getIssueAssociations(
     salesOrderLines,
     shipmentLines,
     receiptLines,
+    salesReturnOrderLines,
+    purchaseReturnOrderLines,
     trackedEntities,
     customers,
     suppliers,
@@ -625,6 +637,34 @@ export async function getIssueAssociations(
         receiptLineId,
         receiptId,
         receiptReadableId
+      `
+      )
+      .eq("nonConformanceId", nonConformanceId)
+      .eq("companyId", companyId),
+
+    // Sales Return Order Lines
+    client
+      .from("nonConformanceSalesReturnOrderLine")
+      .select(
+        `
+        id,
+        salesReturnOrderLineId,
+        salesReturnOrderId,
+        salesReturnOrderReadableId
+      `
+      )
+      .eq("nonConformanceId", nonConformanceId)
+      .eq("companyId", companyId),
+
+    // Purchase Return Order Lines
+    client
+      .from("nonConformancePurchaseReturnOrderLine")
+      .select(
+        `
+        id,
+        purchaseReturnOrderLineId,
+        purchaseReturnOrderId,
+        purchaseReturnOrderReadableId
       `
       )
       .eq("nonConformanceId", nonConformanceId)
@@ -766,6 +806,22 @@ export async function getIssueAssociations(
         documentId: item.receiptId ?? "",
         documentLineId: item.receiptLineId,
         documentReadableId: item.receiptReadableId || ""
+      })) || [],
+    salesReturnOrderLines:
+      salesReturnOrderLines.data?.map((item) => ({
+        id: item.id,
+        type: "salesReturnOrderLines",
+        documentId: item.salesReturnOrderId ?? "",
+        documentLineId: item.salesReturnOrderLineId,
+        documentReadableId: item.salesReturnOrderReadableId || ""
+      })) || [],
+    purchaseReturnOrderLines:
+      purchaseReturnOrderLines.data?.map((item) => ({
+        id: item.id,
+        type: "purchaseReturnOrderLines",
+        documentId: item.purchaseReturnOrderId ?? "",
+        documentLineId: item.purchaseReturnOrderLineId,
+        documentReadableId: item.purchaseReturnOrderReadableId || ""
       })) || [],
     trackedEntities:
       trackedEntities.data?.map((item) => ({
