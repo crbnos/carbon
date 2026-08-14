@@ -147,9 +147,12 @@
       "keywords": ["licensing", "docs", "platform"],
       "headings": [
         "Editions",
-        "Open core vs. Enterprise",
+        "How to buy",
+        "Carbon Cloud — we run it",
+        "Self-hosted — you run it",
         "The AGPL obligation",
         "You can't resell Carbon as a service",
+        "How the agreements fit together",
         "When you need a commercial license"
       ]
     },
