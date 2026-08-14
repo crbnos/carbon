@@ -53,6 +53,30 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       throw redirect(path.to.receiptDetails(purchaseOrderReceipt.data.id));
+    case "Sales Return Order":
+      const salesReturnOrderReceipt = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "receiptFromSalesReturnOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          salesReturnOrderId: sourceDocumentId,
+          receiptId: undefined,
+          userId: userId
+        }
+      });
+      if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(salesReturnOrderReceipt.error, "Failed to create receipt")
+          )
+        );
+      }
+
+      throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
     case "Inbound Transfer":
       const warehouseTransferReceipt = await serviceRole.functions.invoke<{
         id: string;

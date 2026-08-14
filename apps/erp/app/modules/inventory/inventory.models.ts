@@ -72,7 +72,7 @@ export const replenishmentSystemTypes = [
 export const receiptSourceDocumentType = [
   // "Sales Order",
   // "Sales Invoice",
-  // "Sales Return Order",
+  "Sales Return Order",
   "Purchase Order",
   "Purchase Invoice",
   // "Purchase Return Order",
