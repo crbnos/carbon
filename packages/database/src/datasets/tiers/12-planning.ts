@@ -3,6 +3,7 @@ import {
   insertId,
   insertMaybe,
   insertRow,
+  need,
   nextSequence,
   rows
 } from "../sql.ts";
@@ -28,8 +29,10 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   const { client, companyId, userId, refs } = ctx;
   const plantId = refs.locations.Plant ?? ctx.locationId;
   const paymentTermId = ctx.refs.misc.paymentTermId;
-  const shippingMethodId =
-    ctx.refs.shippingMethods[data.demandOrder.shippingMethod];
+  const shippingMethodId = need(
+    ctx.refs.shippingMethods,
+    data.demandOrder.shippingMethod
+  );
 
   // ── 1. itemPlanning: Buy items → Fixed Reorder Quantity ─────────────────────
   ctx.log("itemPlanning — Buy items reorder policy");

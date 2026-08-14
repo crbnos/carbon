@@ -12,7 +12,10 @@ export async function runTier5(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.purchasing;
   const { companyId, locationId } = ctx;
   const plantId = ctx.refs.locations.Plant ?? locationId;
-  const shippingMethodId = ctx.refs.shippingMethods["UPS Ground"];
+  const shippingMethodId = need(
+    ctx.refs.shippingMethods,
+    ctx.dataset.foundation.defaultShippingMethod
+  );
   const paymentTermId = ctx.refs.misc.paymentTermId;
 
   // ── Purchase orders written directly, each with its own receipt/invoice ────
