@@ -28,36 +28,36 @@ Also carried from the spec verbatim: **the customer-RMA-from-NCR direction is OU
 
 ## Progress
 
-- [ ] Task 1: Preflight — reset contaminated generated files, create branch
-- [ ] Task 2: Migration: sales-side schema (`sales-return-orders`)
-- [ ] Task 3: Migration: purchase-side schema (`purchase-return-orders`)
-- [ ] Task 4: Apply migrations + regenerate DB types
-- [ ] Task 5: New-company seeds (returnReason, sequences, salesReturnsAccount)
-- [ ] Task 6: `sales.models.ts` — validators + const arrays
-- [ ] Task 7: `sales.service.ts` — CRUD, list, return reasons
-- [ ] Task 8: `sales.service.ts` — lifecycle, transactional caps, returnable-lines + shipped-entities queries
-- [ ] Task 9: `create` edge fn — `receiptFromSalesReturnOrder`
-- [ ] Task 10: `post-receipt` — Sales Return Order post + void branch (+ cost helper + deno test)
-- [ ] Task 11: Return receipt tracked-entity assignment (route branch + ReceiptLines UI)
-- [ ] Task 12: Receipts UI activation for "Sales Return Order"
-- [ ] Task 13: Paths, nav, Return Reasons CRUD quartet
-- [ ] Task 14: RMA list route + `SalesReturnOrdersTable`
-- [ ] Task 15: RMA detail shell + new/update routes
-- [ ] Task 16: RMA line routes + line form
-- [ ] Task 17: RMA PDF (template type + blocks + file route)
-- [ ] Task 18: RMA status actions (confirm/cancel/complete/line short-close)
-- [ ] Task 19: Credit generation (post-memo branch, service, route, dialog)
-- [ ] Task 20: Replacement sales order
-- [ ] Task 21: Issue association type `salesReturnOrderLines`
-- [ ] Task 22: RMA dispositions (Use As Is, set-disposition, escalate to Issue)
-- [ ] Task 23: Return-to-customer shipment (create + post-shipment + UI activation)
-- [ ] Task 24: `purchasing.models.ts` + `purchasing.service.ts` — supplier returns
-- [ ] Task 25: `create` + `post-shipment` — Purchase Return Order branches (+ void)
-- [ ] Task 26: Purchasing paths, nav, list route + table
-- [ ] Task 27: Supplier return PDF
-- [ ] Task 28: Supplier return detail tree + lines + status actions + shipments UI activation
-- [ ] Task 29: Supplier credit + replacement purchase order
-- [ ] Task 30: Issue association `purchaseReturnOrderLines` + quality bridge (Create Supplier Return, closeIssue guard + write-off reduction)
+- [x] Task 1: Preflight — reset contaminated generated files, create branch
+- [x] Task 2: Migration: sales-side schema (`sales-return-orders`)
+- [x] Task 3: Migration: purchase-side schema (`purchase-return-orders`)
+- [x] Task 4: Apply migrations + regenerate DB types
+- [x] Task 5: New-company seeds (returnReason, sequences, salesReturnsAccount)
+- [x] Task 6: `sales.models.ts` — validators + const arrays
+- [x] Task 7: `sales.service.ts` — CRUD, list, return reasons
+- [x] Task 8: `sales.service.ts` — lifecycle, transactional caps, returnable-lines + shipped-entities queries
+- [x] Task 9: `create` edge fn — `receiptFromSalesReturnOrder`
+- [x] Task 10: `post-receipt` — Sales Return Order post + void branch (+ cost helper + deno test)
+- [x] Task 11: Return receipt tracked-entity assignment (route branch + ReceiptLines UI)
+- [x] Task 12: Receipts UI activation for "Sales Return Order"
+- [x] Task 13: Paths, nav, Return Reasons CRUD quartet
+- [x] Task 14: RMA list route + `SalesReturnOrdersTable`
+- [x] Task 15: RMA detail shell + new/update routes
+- [x] Task 16: RMA line routes + line form
+- [x] Task 17: RMA PDF (template type + blocks + file route)
+- [x] Task 18: RMA status actions (confirm/cancel/complete/line short-close)
+- [x] Task 19: Credit generation (post-memo branch, service, route, dialog)
+- [x] Task 20: Replacement sales order
+- [x] Task 21: Issue association type `salesReturnOrderLines`
+- [x] Task 22: RMA dispositions (Use As Is, set-disposition, escalate to Issue)
+- [x] Task 23: Return-to-customer shipment (create + post-shipment + UI activation)
+- [x] Task 24: `purchasing.models.ts` + `purchasing.service.ts` — supplier returns
+- [x] Task 25: `create` + `post-shipment` — Purchase Return Order branches (+ void)
+- [x] Task 26: Purchasing paths, nav, list route + table
+- [x] Task 27: Supplier return PDF
+- [x] Task 28: Supplier return detail tree + lines + status actions + shipments UI activation
+- [x] Task 29: Supplier credit + replacement purchase order
+- [x] Task 30: Issue association `purchaseReturnOrderLines` + quality bridge (Create Supplier Return, closeIssue guard + write-off reduction)
 - [ ] Task 31: Docs sync (module AGENTS.md) + i18n translate
 - [ ] Task 32: Validation gates (lint, scoped typechecks, tests)
 - [ ] Task 33: Browser verification via /test
