@@ -7,14 +7,18 @@ import { SAMPLE_JOB_TRAVELER } from "./jobTraveler.samples";
 import PackingSlipPDF from "./PackingSlipPDF";
 import ProductLabelPDF from "./ProductLabelPDF";
 import PurchaseOrderPDF from "./PurchaseOrderPDF";
+import PurchaseReturnOrderPDF from "./PurchaseReturnOrderPDF";
 import { SAMPLE_PACKING_SLIP } from "./packingSlip.samples";
 import { SAMPLE_PURCHASE_ORDER } from "./purchaseOrder.samples";
+import { SAMPLE_PURCHASE_RETURN_ORDER } from "./purchaseReturnOrder.samples";
 import QuotePDF from "./QuotePDF";
 import { SAMPLE_QUOTE } from "./quote.samples";
 import SalesInvoicePDF from "./SalesInvoicePDF";
 import SalesOrderPDF from "./SalesOrderPDF";
+import SalesReturnOrderPDF from "./SalesReturnOrderPDF";
 import StockTransferPDF from "./StockTransferPDF";
 import { SAMPLE_SALES_ORDER } from "./salesOrder.samples";
+import { SAMPLE_SALES_RETURN_ORDER } from "./salesReturnOrder.samples";
 import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_STOCK_TRANSFER } from "./stockTransfer.samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
@@ -29,9 +33,17 @@ type PreviewEntry = { Component: ComponentType<any>; sample: any };
 export const DOCUMENT_PDFS: Record<DocumentTemplateType, PreviewEntry> = {
   salesInvoice: { Component: SalesInvoicePDF, sample: SAMPLE_SALES_INVOICE },
   salesOrder: { Component: SalesOrderPDF, sample: SAMPLE_SALES_ORDER },
+  salesReturnOrder: {
+    Component: SalesReturnOrderPDF,
+    sample: SAMPLE_SALES_RETURN_ORDER
+  },
   purchaseOrder: {
     Component: PurchaseOrderPDF,
     sample: SAMPLE_PURCHASE_ORDER
+  },
+  purchaseReturnOrder: {
+    Component: PurchaseReturnOrderPDF,
+    sample: SAMPLE_PURCHASE_RETURN_ORDER
   },
   quote: { Component: QuotePDF, sample: SAMPLE_QUOTE },
   packingSlip: { Component: PackingSlipPDF, sample: SAMPLE_PACKING_SLIP },
