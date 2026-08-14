@@ -1,5 +1,5 @@
 import { addBomLine, addBopOperation, createItem } from "../helpers/items.ts";
-import { insertId, insertRow } from "../sql.ts";
+import { insertId, insertRow, need } from "../sql.ts";
 import type { Ctx, ItemRef } from "../types.ts";
 
 export async function runTier2(ctx: Ctx): Promise<void> {
@@ -53,7 +53,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
   const wc = ctx.refs.workCenters;
   const pr = ctx.refs.processes;
 
-  function need(id: string): ItemRef {
+  function needItem(id: string): ItemRef {
     const ref = i[id];
     if (!ref) throw new Error(`Seed: item "${id}" not in refs`);
     return ref;
@@ -65,7 +65,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       await addBomLine(
         ctx,
         mm,
-        need(line.component),
+        needItem(line.component),
         line.quantity,
         line.order,
         {
@@ -78,8 +78,8 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       await addBopOperation(
         ctx,
         mm,
-        pr[op.process]!,
-        op.workCenter ? wc[op.workCenter] : undefined,
+        need(pr, op.process),
+        op.workCenter ? need(wc, op.workCenter) : undefined,
         op.description,
         op.order,
         {
@@ -88,12 +88,16 @@ export async function runTier2(ctx: Ctx): Promise<void> {
           setupTime: op.setupTime,
           machineTime: op.machineTime,
           operationType: op.operationType,
+          // An Outside Processing step with no supplier process blocks job release,
+          // so an unresolved name must stop the seed rather than write null.
           operationSupplierProcessId: op.supplierProcess
-            ? ctx.refs.misc[op.supplierProcess]
+            ? need(ctx.refs.misc, op.supplierProcess)
             : undefined,
           operationLeadTime: op.operationLeadTime,
           operationUnitCost: op.operationUnitCost,
-          procedureId: op.procedure ? ctx.refs.misc[op.procedure] : undefined
+          procedureId: op.procedure
+            ? need(ctx.refs.misc, op.procedure)
+            : undefined
         }
       );
     }
@@ -102,9 +106,8 @@ export async function runTier2(ctx: Ctx): Promise<void> {
   // ── Supplier parts (which supplier can supply what) ────────────────────────
   ctx.log("supplier parts");
   for (const sl of data.supplierLinks) {
-    const itemRef = i[sl.item];
-    const supplierId = ctx.refs.suppliers[sl.supplier];
-    if (!itemRef || !supplierId) continue;
+    const itemRef = needItem(sl.item);
+    const supplierId = need(ctx.refs.suppliers, sl.supplier);
 
     const spId = await insertId(ctx, "supplierPart", {
       itemId: itemRef.id,

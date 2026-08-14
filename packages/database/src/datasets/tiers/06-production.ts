@@ -117,6 +117,8 @@ async function seedProductionEvents(
   );
   if (operations.length === 0) return;
 
+  if (data.shifts.length === 0) return;
+
   ctx.log("production events");
   for (const [index, operation] of operations.entries()) {
     const events = data.shifts[index] ?? data.shifts[0]!;

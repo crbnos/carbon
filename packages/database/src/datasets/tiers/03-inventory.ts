@@ -1,4 +1,4 @@
-import { insertId, insertRow, nextSequence } from "../sql.ts";
+import { insertId, insertRow, need, nextSequence } from "../sql.ts";
 import type { Ctx } from "../types.ts";
 
 export async function runTier3(ctx: Ctx): Promise<void> {
@@ -9,9 +9,8 @@ export async function runTier3(ctx: Ctx): Promise<void> {
   // ── Opening itemLedger entries (positive adjustments) ─────────────────────
   ctx.log("opening inventory balances");
   for (const entry of data.openingStock) {
-    const itemRef = ctx.refs.items[entry.item];
-    const shelfId = ctx.refs.shelves[entry.shelf];
-    if (!itemRef || !shelfId) continue;
+    const itemRef = need(ctx.refs.items, entry.item);
+    const shelfId = need(ctx.refs.shelves, entry.shelf);
 
     await insertRow(ctx, "itemLedger", {
       entryType: "Positive Adjmt.",
@@ -32,8 +31,7 @@ export async function runTier3(ctx: Ctx): Promise<void> {
   // even though the item shows stock.
   ctx.log("available lots and serials");
   for (const stock of data.onHandTracked) {
-    const itemRef = ctx.refs.items[stock.item];
-    if (!itemRef) continue;
+    const itemRef = need(ctx.refs.items, stock.item);
     for (const entity of stock.entities) {
       await insertId(ctx, "trackedEntity", {
         quantity: entity.quantity,
@@ -52,9 +50,8 @@ export async function runTier3(ctx: Ctx): Promise<void> {
   // ── Kanbans (auto-replenishment cards) for high-usage buy parts ───────────
   ctx.log("kanban cards");
   for (const kb of data.kanbanItems) {
-    const itemRef = ctx.refs.items[kb.item];
-    const supplierId = ctx.refs.suppliers[kb.supplier];
-    if (!itemRef || !supplierId) continue;
+    const itemRef = need(ctx.refs.items, kb.item);
+    const supplierId = need(ctx.refs.suppliers, kb.supplier);
     await insertId(ctx, "kanban", {
       itemId: itemRef.id,
       replenishmentSystem: "Buy",
@@ -78,9 +75,8 @@ export async function runTier3(ctx: Ctx): Promise<void> {
   // Add a few count lines for the items we put in stock
   const sampleLines = data.openingStock.slice(0, 6);
   for (const entry of sampleLines) {
-    const itemRef = ctx.refs.items[entry.item];
-    const shelfId = ctx.refs.shelves[entry.shelf];
-    if (!itemRef || !shelfId) continue;
+    const itemRef = need(ctx.refs.items, entry.item);
+    const shelfId = need(ctx.refs.shelves, entry.shelf);
     await insertId(ctx, "inventoryCountLine", {
       inventoryCountId: icId,
       itemId: itemRef.id,
