@@ -1,4 +1,5 @@
 import { Combobox, HStack, VStack } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo } from "react";
@@ -162,7 +163,9 @@ export function ReturnEntityForm({
     );
   }
 
-  const slots = Math.max(0, Math.floor(line.receivedQuantity ?? 0));
+  // Serial quantities are integral by construction; round() is the
+  // sanctioned integer coercion (no-raw-rounding).
+  const slots = Math.max(0, round(line.receivedQuantity ?? 0, 0));
   const assignedByIndex = new Map<number, string>();
   for (const [entityId, { index }] of assignedByEntityId) {
     if (index != null) assignedByIndex.set(index, entityId);

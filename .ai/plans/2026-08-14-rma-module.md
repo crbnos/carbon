@@ -58,7 +58,7 @@ Also carried from the spec verbatim: **the customer-RMA-from-NCR direction is OU
 - [x] Task 28: Supplier return detail tree + lines + status actions + shipments UI activation
 - [x] Task 29: Supplier credit + replacement purchase order
 - [x] Task 30: Issue association `purchaseReturnOrderLines` + quality bridge (Create Supplier Return, closeIssue guard + write-off reduction)
-- [ ] Task 31: Docs sync (module AGENTS.md) + i18n translate
+- [x] Task 31: Docs sync (module AGENTS.md) + i18n translate
 - [ ] Task 32: Validation gates (lint, scoped typechecks, tests)
 - [ ] Task 33: Browser verification via /test
 
