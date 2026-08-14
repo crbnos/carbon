@@ -432,17 +432,17 @@ export const accountingPullSweepFunction = inngest.createFunction(
       const result = await step.run(
         `sweep-${target.providerId}-${target.companyId}`,
         async () => {
+          // getPostgresConnectionPool returns a process-lifetime singleton
+          // (cached, shared with any other caller requesting the same size) —
+          // never end it here, or a concurrent invocation queries an ended pool
+          // (matches events/sync.ts).
           const pool = getPostgresConnectionPool(5);
           const database = getPostgresClient(pool, PostgresDriver);
-          try {
-            return await sweepCompanyProvider({
-              companyId: target.companyId,
-              providerId: target.providerId,
-              database
-            });
-          } finally {
-            await pool.end();
-          }
+          return await sweepCompanyProvider({
+            companyId: target.companyId,
+            providerId: target.providerId,
+            database
+          });
         }
       );
 

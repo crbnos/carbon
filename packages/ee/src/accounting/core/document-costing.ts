@@ -91,7 +91,11 @@ export async function loadBillCostingLines(
 
   const rows = await db
     .selectFrom("journalLine")
-    .innerJoin("journal", "journal.id", "journalLine.journalId")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
     .leftJoin("account", "account.id", "journalLine.accountId")
     .select([
       "journalLine.id",
@@ -102,6 +106,7 @@ export async function loadBillCostingLines(
       "account.class as accountClass"
     ])
     .where("journalLine.documentId", "=", args.billId)
+    .where("journalLine.companyId", "=", args.companyId)
     .where("journal.sourceType", "=", "Purchase Invoice")
     .where("journal.status", "=", "Posted")
     .where("journal.companyId", "=", args.companyId)
