@@ -14,6 +14,10 @@ const log = getLogger("jobs", "schedule-replan");
 // can exceed URL/statement limits and fail the whole step
 const IN_FILTER_CHUNK_SIZE = 200;
 
+// A recovery wave re-triggers this same function. Without a cap, a
+// deterministic failure would retry forever, one cycle per debounce period.
+const MAX_RECOVERY_ATTEMPTS = 3;
+
 /** One job the regen flipped from on-time (or unforecast) to projected-late. */
 type NewlyLateJob = {
   jobId: string;
@@ -50,7 +54,10 @@ const scheduleInputsChangedData = z.object({
   ]),
   reason: z.string(),
   entityId: z.string().optional(),
-  continuation: z.boolean().optional()
+  continuation: z.boolean().optional(),
+  // Set only by the wave's own onFailure recovery send; a normal carry-over
+  // continuation leaves it unset so the counter resets on real progress
+  recoveryAttempt: z.number().int().min(0).optional()
 });
 
 /**
@@ -257,17 +264,27 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
     // still stamped, so a continuation regenerates exactly their locations.
     onFailure: async ({ event, step }) => {
       const companyId = event.data.event.data?.companyId;
-      if (companyId) {
-        await step.sendEvent("recover-replan-wave", {
-          name: "carbon/schedule.inputs.changed",
-          data: {
-            companyId,
-            kind: "reorder",
-            reason: "Replan wave recovery",
-            continuation: true
-          }
-        });
+      if (!companyId) return;
+      // Bounded: this event re-triggers THIS function, so an unbounded
+      // recovery turns a deterministic failure into an endless retry loop
+      const attempt = (event.data.event.data?.recoveryAttempt ?? 0) + 1;
+      if (attempt > MAX_RECOVERY_ATTEMPTS) {
+        log.error(
+          "Replan wave recovery exhausted — jobs stay stale until the nightly sweep",
+          { companyId, attempts: attempt - 1 }
+        );
+        return;
       }
+      await step.sendEvent("recover-replan-wave", {
+        name: "carbon/schedule.inputs.changed",
+        data: {
+          companyId,
+          kind: "reorder",
+          reason: "Replan wave recovery",
+          continuation: true,
+          recoveryAttempt: attempt
+        }
+      });
     }
   },
   { event: "carbon/schedule.inputs.changed" },

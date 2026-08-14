@@ -95,7 +95,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {
+    view: "production"
+  });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

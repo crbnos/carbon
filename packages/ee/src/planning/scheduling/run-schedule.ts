@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
+import { getFunctionLogger } from "@carbon/database/logging";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { toInstantMs } from "./date-utils.ts";
@@ -31,6 +32,7 @@ export type NewlyLateJob = {
 export type LocationScheduleResult = {
   locationId: string;
   jobsScheduled: number;
+  jobsFailed: number;
   conflictsDetected: number;
   newlyLate: NewlyLateJob[];
 };
@@ -48,6 +50,8 @@ type BaseParams = {
   companyId: string;
   userId: string;
 };
+
+const log = getFunctionLogger("schedule");
 
 const deadlineRank = (deadlineType: string | null | undefined): number =>
   DEADLINE_PRIORITY[deadlineType ?? "No Deadline"] ?? 3;
@@ -116,6 +120,7 @@ export async function runLocationSchedule(
   });
 
   let conflictsDetected = 0;
+  const failedJobIds: string[] = [];
   const newlyLate: NewlyLateJob[] = [];
 
   for (let i = 0; i < batch.length; i++) {
@@ -131,21 +136,35 @@ export async function runLocationSchedule(
       persist: true,
       excludeJobIds: batch.slice(i)
     });
-    const result = await engine.run();
-    conflictsDetected += result.conflictsDetected;
-    if (engine.isNewlyLate()) {
-      newlyLate.push({
+    // One job's failure must not abandon the rest of the batch — its stale
+    // stamp only clears inside the persist transaction, so a failed job stays
+    // stamped for a later wave while the jobs behind it still run
+    try {
+      const result = await engine.run();
+      conflictsDetected += result.conflictsDetected;
+      if (engine.isNewlyLate()) {
+        newlyLate.push({
+          jobId: id,
+          readableJobId: engine.getReadableJobId(),
+          assignee: engine.getAssignee(),
+          projectedCompletionAt: engine.getProjectedCompletionAt()
+        });
+      }
+    } catch (err) {
+      log.error("Job failed to schedule", {
         jobId: id,
-        readableJobId: engine.getReadableJobId(),
-        assignee: engine.getAssignee(),
-        projectedCompletionAt: engine.getProjectedCompletionAt()
+        locationId,
+        companyId,
+        error: err instanceof Error ? err.message : String(err)
       });
+      failedJobIds.push(id);
     }
   }
 
   return {
     locationId,
-    jobsScheduled: batch.length,
+    jobsScheduled: batch.length - failedJobIds.length,
+    jobsFailed: failedJobIds.length,
     conflictsDetected,
     newlyLate
   };
