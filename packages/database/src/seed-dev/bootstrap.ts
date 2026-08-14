@@ -20,6 +20,7 @@ import {
   nonConformanceTypes,
   paymentTerms,
   periodCloseTaskDefinitions,
+  returnReasons,
   scrapReasons,
   sequences,
   unitOfMeasures
@@ -169,6 +170,13 @@ export async function bootstrap(
     for (const name of scrapReasons) {
       await client.query(
         `INSERT INTO "scrapReason" (name, "companyId", "createdBy") VALUES ($1, $2, 'system')`,
+        [name, companyId]
+      );
+    }
+
+    for (const name of returnReasons) {
+      await client.query(
+        `INSERT INTO "returnReason" (name, "inventoryValueZero", "companyId", "createdBy") VALUES ($1, false, $2, 'system')`,
         [name, companyId]
       );
     }
