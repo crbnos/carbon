@@ -587,6 +587,9 @@ msgstr "El estado de un recibo cambia"
 msgid "A receipt's supplier changes"
 msgstr "El proveedor de un recibo cambia"
 
+msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
+msgstr ""
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "Un conjunto reutilizable y versionado de instrucciones de trabajo adjunto a un proceso, que proporciona a una operación sus pasos ordenados para registrar y verificar, además de los parámetros en los que se ejecuta."
 
@@ -1058,6 +1061,9 @@ msgstr "Agregar Línea"
 
 msgid "Add Line Item"
 msgstr "Agregar Artículo de Línea"
+
+msgid "Add lines from document"
+msgstr ""
 
 msgid "Add match"
 msgstr "Agregar coincidencia"
@@ -1632,11 +1638,20 @@ msgstr "¿Está seguro de que desea cancelar {0}? Esto cerrará el pedido."
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "¿Estás seguro de que deseas cancelar este trabajo? Ya no estará disponible en el piso de producción."
 
+msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
+msgstr ""
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "¿Estás seguro de que deseas cambiar la propiedad {propertyName}? Como utilizas IDs de material generados, esto cambiará el ID de la pieza de esta pieza y todas las revisiones relacionadas."
 
+msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
+msgstr ""
+
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "¿Estás seguro de que deseas completar esta transferencia de inventario?"
+
+msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
+msgstr ""
 
 msgid "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
 msgstr "¿Está seguro de que desea confirmar este pedido de venta? Confirmar el pedido afectará las cantidades de pedido utilizadas para calcular la oferta y la demanda."
@@ -1929,6 +1944,9 @@ msgstr "¿Estás seguro de que deseas eliminar este registro?"
 
 msgid "Are you sure you want to delete this required action?"
 msgstr "¿Está seguro de que desea eliminar esta acción requerida?"
+
+msgid "Are you sure you want to delete this return order line? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete this risk?"
 msgstr "¿Estás seguro de que deseas eliminar este riesgo?"
@@ -2594,6 +2612,10 @@ msgstr "No se puede descargar este archivo"
 msgid "Cancel"
 msgstr "Cancelar"
 
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Cancel {0}"
+msgstr ""
+
 msgid "Cancel change notice"
 msgstr "Cancelar aviso de cambio"
 
@@ -2608,6 +2630,9 @@ msgstr "Cancelar pedido"
 
 msgid "Cancel Purchase Order"
 msgstr "Cancelar orden de compra"
+
+msgid "Cancel RMA"
+msgstr ""
 
 msgid "Cancel Sales Order"
 msgstr "Cancelar Orden de Venta"
@@ -3080,6 +3105,10 @@ msgstr "Comparar Cotizaciones de Proveedores"
 msgid "Complete"
 msgstr "Completar"
 
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Complete {0}"
+msgstr ""
+
 msgid "Complete All"
 msgstr "Completar Todo"
 
@@ -3207,6 +3236,7 @@ msgid "Confirm"
 msgstr "Confirmar"
 
 #. placeholder {0}: salesOrder?.salesOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "Confirmar {0}"
 
@@ -3486,6 +3516,9 @@ msgstr "Copiar enlace a la pieza"
 msgid "Copy link to procedure"
 msgstr "Copiar enlace al procedimiento"
 
+msgid "Copy link to RMA"
+msgstr ""
+
 msgid "Copy link to service"
 msgstr "Copiar enlace al servicio"
 
@@ -3536,6 +3569,9 @@ msgstr "Copiar Presupuesto"
 
 msgid "Copy Quote number"
 msgstr "Copiar número de cotización"
+
+msgid "Copy RMA number"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "Copiar número de servicio"
@@ -3781,6 +3817,9 @@ msgstr "Crear Proyección"
 
 msgid "Create Quote Revision"
 msgstr "Crear Revisión de Cotización"
+
+msgid "Create Replacement"
+msgstr ""
 
 msgid "Create Revision"
 msgstr "Crear Revisión"
@@ -4712,6 +4751,9 @@ msgstr "Eliminar RFQ"
 
 msgid "Delete Risk"
 msgstr "Eliminar Riesgo"
+
+msgid "Delete RMA"
+msgstr ""
 
 msgid "Delete row"
 msgstr "Eliminar fila"
@@ -7788,6 +7830,9 @@ msgstr "Problema"
 msgid "Issue (material)"
 msgstr "Emisión (material)"
 
+msgid "Issue Credit"
+msgstr ""
+
 msgid "Issue description"
 msgstr "Descripción del problema"
 
@@ -8215,6 +8260,9 @@ msgstr "Modo Claro"
 
 msgid "Likelihood"
 msgstr "Probabilidad"
+
+msgid "Line"
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "Descripción de línea (opcional)"
@@ -9265,6 +9313,9 @@ msgstr "Nueva Revisión"
 msgid "New RFQ"
 msgstr "Nuevo RFQ"
 
+msgid "New RMA"
+msgstr ""
+
 msgid "New rule"
 msgstr "Nueva regla"
 
@@ -9475,6 +9526,9 @@ msgstr "No se requiere conversión"
 msgid "No cost history found"
 msgstr "No se encontró historial de costos"
 
+msgid "No credits yet"
+msgstr ""
+
 msgid "No Data"
 msgstr "Sin datos"
 
@@ -9552,6 +9606,9 @@ msgstr "Sin planes de inspección"
 
 msgid "No issue types configured"
 msgstr "No hay tipos de problemas configurados"
+
+msgid "No issues yet"
+msgstr ""
 
 msgid "No items"
 msgstr "Sin artículos"
@@ -9681,6 +9738,9 @@ msgstr "Motivo sin cotización"
 
 msgid "No Quote Reasons"
 msgstr "Razones sin cotización"
+
+msgid "No receipts yet"
+msgstr ""
 
 msgid "No receivables"
 msgstr "Sin cuentas por cobrar"
@@ -11909,6 +11969,9 @@ msgstr "Reemplazar precios existentes con valores de origen"
 msgid "Replace PDF"
 msgstr "Reemplazar PDF"
 
+msgid "Replacement Order"
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Reemplazar el PDF elimina todas las ubicaciones de globos en este documento. Las filas de características y sus valores se mantienen; puede colocar globos nuevamente en el nuevo dibujo."
 
@@ -12070,6 +12133,9 @@ msgstr "Reintentar"
 msgid "Return Home"
 msgstr "Volver al Inicio"
 
+msgid "Return Location"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
@@ -12205,6 +12271,9 @@ msgid "Risks"
 msgstr "Riesgos"
 
 msgid "RMA"
+msgstr ""
+
+msgid "RMA ID"
 msgstr ""
 
 msgid "RMA Number"
@@ -13427,6 +13496,9 @@ msgstr "Lista de origen"
 msgid "Source Method"
 msgstr "Método de Origen"
 
+msgid "Source Sales Order"
+msgstr ""
+
 msgid "Source Version"
 msgstr "Versión de Origen"
 
@@ -14322,6 +14394,9 @@ msgstr "La fecha en que los bienes realmente salen del almacén; se registra en 
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "La fecha en que se requiere el artículo en el sitio para cubrir la demanda proyectada del período."
 
+msgid "The date the return authorization expires"
+msgstr ""
+
 msgid "The date this asset is retired from service; depreciation stops on this date and remaining net book value is booked to the disposal account."
 msgstr "La fecha en que este activo se retira de servicio; la depreciación se detiene en esta fecha y el valor neto en libros restante se registra en la cuenta de disposición."
 
@@ -14507,6 +14582,9 @@ msgstr "La ubicación desde la que se cumplirá esta cotización si se convierte
 
 msgid "The location this RFQ would fulfill from if it converts to a quote and then an order."
 msgstr "La ubicación desde la que se cumpliría esta solicitud si se convierte en una cotización y luego en un pedido."
+
+msgid "The location where the goods will be received"
+msgstr ""
 
 msgid "The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution."
 msgstr "El registro de riesgos y oportunidades planteadas contra cualquier entidad, cada una calificada por severidad independiente de 1–5 y probabilidad e impulsada hacia una resolución."
@@ -16103,6 +16181,9 @@ msgstr "Ver Recepción"
 msgid "View Receivables"
 msgstr "Ver Cuentas por Cobrar"
 
+msgid "View replacement sales order"
+msgstr ""
+
 msgid "View Run"
 msgstr "Ver Ejecución"
 
@@ -16111,6 +16192,9 @@ msgstr "Ver Programado"
 
 msgid "View Shipment"
 msgstr "Ver Envío"
+
+msgid "View source sales order"
+msgstr ""
 
 msgid "View Status"
 msgstr "Ver Estado"

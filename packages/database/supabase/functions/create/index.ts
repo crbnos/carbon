@@ -121,6 +121,22 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
+    type: z.literal("shipmentFromPurchaseReturnOrder"),
+    purchaseReturnOrderId: z.string(),
+    shipmentId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("shipmentFromSalesReturnOrder"),
+    salesReturnOrderId: z.string(),
+    shipmentId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("shipmentFromSalesOrder"),
     locationId: z.string(),
     salesOrderId: z.string(),
@@ -170,7 +186,9 @@ serve(async (req: Request) => {
     shipmentDefault: { create: "inventory" },
     shipmentFromPurchaseOrder: { create: "inventory" },
     shipmentFromWarehouseTransfer: { create: "inventory" },
+    shipmentFromPurchaseReturnOrder: { create: "inventory" },
     shipmentFromSalesOrder: { create: "inventory" },
+    shipmentFromSalesReturnOrder: { create: "inventory" },
     shipmentFromSalesOrderLine: { create: "inventory" },
     shipmentLineSplit: { create: "inventory" },
     journalEntry: { create: "accounting" },
@@ -1853,6 +1871,372 @@ serve(async (req: Request) => {
                 sourceDocument: "Outbound Transfer",
                 sourceDocumentId: warehouseTransferId,
                 sourceDocumentReadableId: warehouseTransfer.data.transferId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+
+            id = insertShipment[0]?.id ?? "";
+          }
+
+          await trx
+            .deleteFrom("shipmentLine")
+            .where("shipmentId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("shipmentLine")
+            .values(
+              shipmentLineItems.map((lineItem) => ({
+                ...lineItem,
+                shipmentId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return jsonResponse(result, 201);
+      } catch (err) {
+        return errorResponse(err, 500);
+      }
+    }
+    case "shipmentFromSalesReturnOrder": {
+      // Return-to-customer shipment: ships back RECEIVED quantity on lines
+      // dispositioned "Return to Customer", minus what earlier posted
+      // shipments of this source already sent back.
+      const {
+        salesReturnOrderId,
+        shipmentId: existingShipmentId,
+        locationId: userLocationId,
+      } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        salesReturnOrderId,
+        existingShipmentId,
+        userId,
+      });
+
+      try {
+        const [salesReturnOrder, salesReturnOrderLines, shipment] =
+          await Promise.all([
+            client
+              .from("salesReturnOrder")
+              .select("*")
+              .eq("id", salesReturnOrderId)
+              .single(),
+            client
+              .from("salesReturnOrderLine")
+              .select("*")
+              .eq("salesReturnOrderId", salesReturnOrderId),
+            client
+              .from("shipment")
+              .select("*")
+              .eq("id", existingShipmentId)
+              .maybeSingle(),
+          ]);
+
+        if (!salesReturnOrder.data)
+          throw new Error("Sales return order not found");
+        if (salesReturnOrderLines.error)
+          throw new Error(salesReturnOrderLines.error.message);
+
+        const locationId =
+          userLocationId ?? salesReturnOrder.data.locationId ?? null;
+        if (!locationId)
+          throw new Error("The return order has no location");
+
+        const returnLines = salesReturnOrderLines.data.filter(
+          (d) => d.disposition === "Return to Customer"
+        );
+        if (returnLines.length === 0)
+          throw new Error(
+            'No lines are dispositioned "Return to Customer"'
+          );
+
+        // Quantity already shipped back by earlier posted shipments
+        const priorShipments = await client
+          .from("shipment")
+          .select("id")
+          .eq("sourceDocumentId", salesReturnOrderId)
+          .eq("sourceDocument", "Sales Return Order")
+          .eq("status", "Posted")
+          .eq("companyId", companyId);
+        const priorShipmentIds = (priorShipments.data ?? []).map((d) => d.id);
+        const shippedBackByLine = new Map<string, number>();
+        if (priorShipmentIds.length > 0) {
+          const priorLines = await client
+            .from("shipmentLine")
+            .select("lineId, shippedQuantity")
+            .in("shipmentId", priorShipmentIds);
+          for (const line of priorLines.data ?? []) {
+            if (!line.lineId) continue;
+            shippedBackByLine.set(
+              line.lineId,
+              (shippedBackByLine.get(line.lineId) ?? 0) +
+                (line.shippedQuantity ?? 0)
+            );
+          }
+        }
+
+        const returnItemIds = returnLines
+          .map((d) => d.itemId)
+          .filter(Boolean) as string[];
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", returnItemIds);
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const hasShipment = !!shipment.data?.id;
+
+        const shipmentLineItems = returnLines.reduce<ShipmentLineItem[]>(
+          (acc, d) => {
+            if (!d.itemId) return acc;
+            const outstanding = Math.max(
+              0,
+              (d.quantityReceived ?? 0) - (shippedBackByLine.get(d.id) ?? 0)
+            );
+            if (outstanding === 0) return acc;
+
+            acc.push({
+              lineId: d.id,
+              itemId: d.itemId,
+              locationId,
+              requiresSerialTracking: serializedItems.has(d.itemId),
+              requiresBatchTracking: batchItems.has(d.itemId),
+              shippedQuantity: outstanding,
+              outstandingQuantity: outstanding,
+              orderQuantity: d.quantityReceived ?? 0,
+              // No revenue on a rejected-claim return
+              unitPrice: 0,
+              unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+              companyId,
+              createdBy: userId,
+            });
+            return acc;
+          },
+          []
+        );
+
+        if (shipmentLineItems.length === 0) {
+          throw new Error("No quantity remains to ship back");
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const shipmentId = await getNextSequence(trx, "shipment", companyId);
+
+          let id: string;
+          if (hasShipment) {
+            id = shipment.data!.id;
+            await trx
+              .updateTable("shipment")
+              .set({
+                sourceDocument: "Sales Return Order",
+                sourceDocumentId: salesReturnOrderId,
+                sourceDocumentReadableId:
+                  salesReturnOrder.data.salesReturnOrderId,
+                customerId: salesReturnOrder.data.customerId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertShipment = await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId,
+                sourceDocument: "Sales Return Order",
+                sourceDocumentId: salesReturnOrderId,
+                sourceDocumentReadableId:
+                  salesReturnOrder.data.salesReturnOrderId,
+                customerId: salesReturnOrder.data.customerId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+
+            id = insertShipment[0]?.id ?? "";
+          }
+
+          await trx
+            .deleteFrom("shipmentLine")
+            .where("shipmentId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("shipmentLine")
+            .values(
+              shipmentLineItems.map((lineItem) => ({
+                ...lineItem,
+                shipmentId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return jsonResponse(result, 201);
+      } catch (err) {
+        return errorResponse(err, 500);
+      }
+    }
+    case "shipmentFromPurchaseReturnOrder": {
+      // Supplier return shipment: open (not short-closed) return lines,
+      // quantity minus already shipped. Quantities are inventory units.
+      const {
+        purchaseReturnOrderId,
+        shipmentId: existingShipmentId,
+        locationId: userLocationId,
+      } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        purchaseReturnOrderId,
+        existingShipmentId,
+        userId,
+      });
+
+      try {
+        const [purchaseReturnOrder, purchaseReturnOrderLines, shipment] =
+          await Promise.all([
+            client
+              .from("purchaseReturnOrder")
+              .select("*")
+              .eq("id", purchaseReturnOrderId)
+              .single(),
+            client
+              .from("purchaseReturnOrderLine")
+              .select("*")
+              .eq("purchaseReturnOrderId", purchaseReturnOrderId),
+            client
+              .from("shipment")
+              .select("*")
+              .eq("id", existingShipmentId)
+              .maybeSingle(),
+          ]);
+
+        if (!purchaseReturnOrder.data)
+          throw new Error("Purchase return order not found");
+        if (
+          !["Confirmed", "Partially Shipped"].includes(
+            purchaseReturnOrder.data.status
+          )
+        )
+          throw new Error(
+            `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
+          );
+        if (purchaseReturnOrderLines.error)
+          throw new Error(purchaseReturnOrderLines.error.message);
+
+        const locationId =
+          userLocationId ?? purchaseReturnOrder.data.locationId ?? null;
+        if (!locationId)
+          throw new Error("The return order has no location");
+
+        const returnItemIds = purchaseReturnOrderLines.data
+          .map((d) => d.itemId)
+          .filter(Boolean) as string[];
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", returnItemIds);
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const hasShipment = !!shipment.data?.id;
+
+        const shipmentLineItems = purchaseReturnOrderLines.data.reduce<
+          ShipmentLineItem[]
+        >((acc, d) => {
+          if (!d.itemId || d.closedComplete) return acc;
+          const outstanding = Math.max(
+            0,
+            (d.quantity ?? 0) - (d.quantityShipped ?? 0)
+          );
+          if (outstanding === 0) return acc;
+
+          acc.push({
+            lineId: d.id,
+            itemId: d.itemId,
+            locationId,
+            requiresSerialTracking: serializedItems.has(d.itemId),
+            requiresBatchTracking: batchItems.has(d.itemId),
+            shippedQuantity: outstanding,
+            outstandingQuantity: outstanding,
+            orderQuantity: d.quantity ?? 0,
+            unitPrice: d.unitPrice ?? 0,
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            companyId,
+            createdBy: userId,
+          });
+          return acc;
+        }, []);
+
+        if (shipmentLineItems.length === 0) {
+          throw new Error("No lines to ship");
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const shipmentId = await getNextSequence(trx, "shipment", companyId);
+
+          let id: string;
+          if (hasShipment) {
+            id = shipment.data!.id;
+            await trx
+              .updateTable("shipment")
+              .set({
+                sourceDocument: "Purchase Return Order",
+                sourceDocumentId: purchaseReturnOrderId,
+                sourceDocumentReadableId:
+                  purchaseReturnOrder.data.purchaseReturnOrderId,
+                supplierId: purchaseReturnOrder.data.supplierId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertShipment = await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId,
+                sourceDocument: "Purchase Return Order",
+                sourceDocumentId: purchaseReturnOrderId,
+                sourceDocumentReadableId:
+                  purchaseReturnOrder.data.purchaseReturnOrderId,
+                supplierId: purchaseReturnOrder.data.supplierId,
                 locationId,
                 status: "Draft",
                 companyId,

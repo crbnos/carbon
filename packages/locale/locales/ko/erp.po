@@ -587,6 +587,9 @@ msgstr "입고의 상태가 변경되었습니다"
 msgid "A receipt's supplier changes"
 msgstr "입고의 공급자가 변경되었습니다"
 
+msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
+msgstr ""
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "공정에 연결된, 버전 관리가 되는 재사용 가능한 작업 지시서 모음으로, 공정작업이 기록·확인할 순서화된 단계와 실행 파라미터를 제공합니다."
 
@@ -1058,6 +1061,9 @@ msgstr "라인 추가"
 
 msgid "Add Line Item"
 msgstr "라인 항목 추가"
+
+msgid "Add lines from document"
+msgstr ""
 
 msgid "Add match"
 msgstr "일치 추가"
@@ -1632,11 +1638,20 @@ msgstr "{0}을(를) 취소하시겠습니까? 주문이 종료됩니다."
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "이 작업을 취소하시겠습니까? 더 이상 현장에서 사용할 수 없게 됩니다."
 
+msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
+msgstr ""
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "{propertyName} 속성을 변경하시겠습니까? 자동 생성된 자재 ID를 사용하고 있으므로, 이 변경으로 해당 품목의 품목 ID와 관련된 모든 리비전이 변경됩니다."
 
+msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
+msgstr ""
+
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "이 재고 이동을 완료하시겠습니까?"
+
+msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
+msgstr ""
 
 msgid "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
 msgstr "이 판매주문을 확정하시겠습니까? 주문을 확정하면 공급과 수요 계산에 사용되는 주문 수량에 영향을 줍니다."
@@ -1929,6 +1944,9 @@ msgstr "이 레코드를 삭제하시겠습니까?"
 
 msgid "Are you sure you want to delete this required action?"
 msgstr "이 필수 조치를 삭제하시겠습니까?"
+
+msgid "Are you sure you want to delete this return order line? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete this risk?"
 msgstr "이 리스크를 삭제하시겠습니까?"
@@ -2594,6 +2612,10 @@ msgstr "이 파일을 다운로드할 수 없습니다"
 msgid "Cancel"
 msgstr "취소"
 
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Cancel {0}"
+msgstr ""
+
 msgid "Cancel change notice"
 msgstr "변경 공지 취소"
 
@@ -2608,6 +2630,9 @@ msgstr "주문 취소"
 
 msgid "Cancel Purchase Order"
 msgstr "구매주문 취소"
+
+msgid "Cancel RMA"
+msgstr ""
 
 msgid "Cancel Sales Order"
 msgstr "판매주문 취소"
@@ -3080,6 +3105,10 @@ msgstr "공급업체 견적 비교"
 msgid "Complete"
 msgstr "완료"
 
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Complete {0}"
+msgstr ""
+
 msgid "Complete All"
 msgstr "모두 완료"
 
@@ -3207,6 +3236,7 @@ msgid "Confirm"
 msgstr "확인"
 
 #. placeholder {0}: salesOrder?.salesOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "{0} 확인"
 
@@ -3486,6 +3516,9 @@ msgstr "품목 링크 복사"
 msgid "Copy link to procedure"
 msgstr "절차 링크 복사"
 
+msgid "Copy link to RMA"
+msgstr ""
+
 msgid "Copy link to service"
 msgstr "서비스 링크 복사"
 
@@ -3536,6 +3569,9 @@ msgstr "견적 복사"
 
 msgid "Copy Quote number"
 msgstr "견적 번호 복사"
+
+msgid "Copy RMA number"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "서비스 번호 복사"
@@ -3781,6 +3817,9 @@ msgstr "예측 생성"
 
 msgid "Create Quote Revision"
 msgstr "견적 리비전 생성"
+
+msgid "Create Replacement"
+msgstr ""
 
 msgid "Create Revision"
 msgstr "리비전 생성"
@@ -4712,6 +4751,9 @@ msgstr "RFQ 삭제"
 
 msgid "Delete Risk"
 msgstr "리스크 삭제"
+
+msgid "Delete RMA"
+msgstr ""
 
 msgid "Delete row"
 msgstr "행 삭제"
@@ -7788,6 +7830,9 @@ msgstr "이슈"
 msgid "Issue (material)"
 msgstr "출고(자재)"
 
+msgid "Issue Credit"
+msgstr ""
+
 msgid "Issue description"
 msgstr "이슈 설명"
 
@@ -8215,6 +8260,9 @@ msgstr "라이트 모드"
 
 msgid "Likelihood"
 msgstr "가능성"
+
+msgid "Line"
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "행 설명 (선택 사항)"
@@ -9265,6 +9313,9 @@ msgstr "새 리비전"
 msgid "New RFQ"
 msgstr "새 RFQ"
 
+msgid "New RMA"
+msgstr ""
+
 msgid "New rule"
 msgstr "새 규칙"
 
@@ -9475,6 +9526,9 @@ msgstr "변환이 필요하지 않습니다"
 msgid "No cost history found"
 msgstr "원가 이력이 없습니다"
 
+msgid "No credits yet"
+msgstr ""
+
 msgid "No Data"
 msgstr "데이터 없음"
 
@@ -9552,6 +9606,9 @@ msgstr "검사 계획 없음"
 
 msgid "No issue types configured"
 msgstr "설정된 이슈 유형이 없습니다"
+
+msgid "No issues yet"
+msgstr ""
 
 msgid "No items"
 msgstr "품목 없음"
@@ -9681,6 +9738,9 @@ msgstr "견적 불가 사유"
 
 msgid "No Quote Reasons"
 msgstr "견적 불가 사유"
+
+msgid "No receipts yet"
+msgstr ""
 
 msgid "No receivables"
 msgstr "매출채권이 없습니다"
@@ -11909,6 +11969,9 @@ msgstr "기존 가격을 원본 값으로 교체"
 msgid "Replace PDF"
 msgstr "PDF 교체"
 
+msgid "Replacement Order"
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF를 교체하면 이 문서의 모든 풍선 표시가 제거됩니다. 기능 행과 값은 유지되며, 새 도면에 풍선을 다시 배치할 수 있습니다."
 
@@ -12070,6 +12133,9 @@ msgstr "재시도"
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
 
+msgid "Return Location"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
@@ -12205,6 +12271,9 @@ msgid "Risks"
 msgstr "리스크"
 
 msgid "RMA"
+msgstr ""
+
+msgid "RMA ID"
 msgstr ""
 
 msgid "RMA Number"
@@ -13427,6 +13496,9 @@ msgstr "원본 목록"
 msgid "Source Method"
 msgstr "소스 방법"
 
+msgid "Source Sales Order"
+msgstr ""
+
 msgid "Source Version"
 msgstr "소스 버전"
 
@@ -14322,6 +14394,9 @@ msgstr "재화가 실제로 창고를 떠나는 날짜로, 출하 전표에 기�
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "해당 기간의 예상 수요를 충족하기 위해 품목이 현장에 필요한 날짜입니다."
 
+msgid "The date the return authorization expires"
+msgstr ""
+
 msgid "The date this asset is retired from service; depreciation stops on this date and remaining net book value is booked to the disposal account."
 msgstr "이 자산이 사용 중단되는 날짜로, 이 날짜에 감가상각이 중단되고 남은 순장부가액이 처분 계정에 계상됩니다."
 
@@ -14507,6 +14582,9 @@ msgstr "이 견적이 주문으로 전환될 경우 처리할 위치입니다. �
 
 msgid "The location this RFQ would fulfill from if it converts to a quote and then an order."
 msgstr "이 RFQ가 견적을 거쳐 주문으로 전환될 경우 처리할 위치입니다."
+
+msgid "The location where the goods will be received"
+msgstr ""
 
 msgid "The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution."
 msgstr "모든 엔티티에 대해 제기된 위험 및 기회의 로그로, 각각 독립적인 1~5 심각도 및 가능성으로 평가되고 해결로 이끌어짐."
@@ -16103,6 +16181,9 @@ msgstr "입고 보기"
 msgid "View Receivables"
 msgstr "매출채권 보기"
 
+msgid "View replacement sales order"
+msgstr ""
+
 msgid "View Run"
 msgstr "실행 보기"
 
@@ -16111,6 +16192,9 @@ msgstr "예정 정비 보기"
 
 msgid "View Shipment"
 msgstr "출하 보기"
+
+msgid "View source sales order"
+msgstr ""
 
 msgid "View Status"
 msgstr "상태 보기"

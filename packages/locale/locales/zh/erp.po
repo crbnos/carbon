@@ -587,6 +587,9 @@ msgstr "收据的状态已更改"
 msgid "A receipt's supplier changes"
 msgstr "收据的供应商已更改"
 
+msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
+msgstr ""
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "一套可重复使用的、版本化的工作说明，附加到流程中，为操作提供有序的步骤以记录和检查，以及它运行的参数。"
 
@@ -1058,6 +1061,9 @@ msgstr "添加行"
 
 msgid "Add Line Item"
 msgstr "添加行项目"
+
+msgid "Add lines from document"
+msgstr ""
 
 msgid "Add match"
 msgstr "添加匹配"
@@ -1632,11 +1638,20 @@ msgstr "确定要取消{0}吗？这将关闭订单。"
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "你确定要取消此工作吗？它将不再在车间可用。"
 
+msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
+msgstr ""
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "你确定要更改 {propertyName} 属性吗？由于你使用生成的材料 ID，这将更改此零件的零件 ID 及其所有相关版本。"
 
+msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
+msgstr ""
+
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "你确定要完成此库存转移吗？"
+
+msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
+msgstr ""
 
 msgid "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
 msgstr "你确定要确认此销售订单吗？确认订单将影响用于计算供应和需求的订单数量。"
@@ -1929,6 +1944,9 @@ msgstr "你确定要删除此记录吗？"
 
 msgid "Are you sure you want to delete this required action?"
 msgstr "你确定要删除此必需操作吗？"
+
+msgid "Are you sure you want to delete this return order line? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete this risk?"
 msgstr "你确定要删除此风险吗？"
@@ -2594,6 +2612,10 @@ msgstr "无法下载此文件"
 msgid "Cancel"
 msgstr "取消"
 
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Cancel {0}"
+msgstr ""
+
 msgid "Cancel change notice"
 msgstr "取消更改单"
 
@@ -2608,6 +2630,9 @@ msgstr "取消订单"
 
 msgid "Cancel Purchase Order"
 msgstr "取消采购订单"
+
+msgid "Cancel RMA"
+msgstr ""
 
 msgid "Cancel Sales Order"
 msgstr "取消销售订单"
@@ -3080,6 +3105,10 @@ msgstr "比较供应商报价"
 msgid "Complete"
 msgstr "完成"
 
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Complete {0}"
+msgstr ""
+
 msgid "Complete All"
 msgstr "全部完成"
 
@@ -3207,6 +3236,7 @@ msgid "Confirm"
 msgstr "确认"
 
 #. placeholder {0}: salesOrder?.salesOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "确认 {0}"
 
@@ -3486,6 +3516,9 @@ msgstr "复制零件链接"
 msgid "Copy link to procedure"
 msgstr "复制程序链接"
 
+msgid "Copy link to RMA"
+msgstr ""
+
 msgid "Copy link to service"
 msgstr "复制服务链接"
 
@@ -3536,6 +3569,9 @@ msgstr "复制报价"
 
 msgid "Copy Quote number"
 msgstr "复制报价单号"
+
+msgid "Copy RMA number"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "复制服务编号"
@@ -3781,6 +3817,9 @@ msgstr "创建预测"
 
 msgid "Create Quote Revision"
 msgstr "创建报价修订"
+
+msgid "Create Replacement"
+msgstr ""
 
 msgid "Create Revision"
 msgstr "创建修订版"
@@ -4712,6 +4751,9 @@ msgstr "删除询价单"
 
 msgid "Delete Risk"
 msgstr "删除风险"
+
+msgid "Delete RMA"
+msgstr ""
 
 msgid "Delete row"
 msgstr "删除行"
@@ -7788,6 +7830,9 @@ msgstr "问题"
 msgid "Issue (material)"
 msgstr "发行（材料）"
 
+msgid "Issue Credit"
+msgstr ""
+
 msgid "Issue description"
 msgstr "问题描述"
 
@@ -8215,6 +8260,9 @@ msgstr "浅色模式"
 
 msgid "Likelihood"
 msgstr "可能性"
+
+msgid "Line"
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "行描述(可选)"
@@ -9265,6 +9313,9 @@ msgstr "新修订版"
 msgid "New RFQ"
 msgstr "新建 RFQ"
 
+msgid "New RMA"
+msgstr ""
+
 msgid "New rule"
 msgstr "新规则"
 
@@ -9475,6 +9526,9 @@ msgstr "不需要转换"
 msgid "No cost history found"
 msgstr "未找到成本历史记录"
 
+msgid "No credits yet"
+msgstr ""
+
 msgid "No Data"
 msgstr "无数据"
 
@@ -9552,6 +9606,9 @@ msgstr "无检验计划"
 
 msgid "No issue types configured"
 msgstr "未配置问题类型"
+
+msgid "No issues yet"
+msgstr ""
 
 msgid "No items"
 msgstr "无项目"
@@ -9681,6 +9738,9 @@ msgstr "无报价原因"
 
 msgid "No Quote Reasons"
 msgstr "无报价原因"
+
+msgid "No receipts yet"
+msgstr ""
 
 msgid "No receivables"
 msgstr "无应收账款"
@@ -11909,6 +11969,9 @@ msgstr "用源值替换现有定价"
 msgid "Replace PDF"
 msgstr "替换 PDF"
 
+msgid "Replacement Order"
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "替换 PDF 将删除此文档上的所有气球标注。功能行及其值保持不变；您可以在新绘图上重新放置气球。"
 
@@ -12070,6 +12133,9 @@ msgstr "重试"
 msgid "Return Home"
 msgstr "返回首页"
 
+msgid "Return Location"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
@@ -12205,6 +12271,9 @@ msgid "Risks"
 msgstr "风险"
 
 msgid "RMA"
+msgstr ""
+
+msgid "RMA ID"
 msgstr ""
 
 msgid "RMA Number"
@@ -13427,6 +13496,9 @@ msgstr "源列表"
 msgid "Source Method"
 msgstr "源方法"
 
+msgid "Source Sales Order"
+msgstr ""
+
 msgid "Source Version"
 msgstr "源版本"
 
@@ -14322,6 +14394,9 @@ msgstr "商品实际离开仓库的日期；记录在出货过账中，用于按
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "该项目需要在现场到达的日期，以满足该期间的预计需求。"
 
+msgid "The date the return authorization expires"
+msgstr ""
+
 msgid "The date this asset is retired from service; depreciation stops on this date and remaining net book value is booked to the disposal account."
 msgstr "资产退役的日期；折旧在该日期停止，剩余净账面价值记入处置账户。"
 
@@ -14507,6 +14582,9 @@ msgstr "如果此报价转换为订单，将履行此报价的位置；规划用
 
 msgid "The location this RFQ would fulfill from if it converts to a quote and then an order."
 msgstr "如果此报价请求转换为报价，然后转换为订单，将履行此报价请求的位置。"
+
+msgid "The location where the goods will be received"
+msgstr ""
 
 msgid "The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution."
 msgstr "针对任何实体记录的风险和机会日志，每个都由独立的1-5严重程度和可能性评级，并推动解决。"
@@ -16103,6 +16181,9 @@ msgstr "查看收据"
 msgid "View Receivables"
 msgstr "查看应收账款"
 
+msgid "View replacement sales order"
+msgstr ""
+
 msgid "View Run"
 msgstr "查看运行"
 
@@ -16111,6 +16192,9 @@ msgstr "查看已排期"
 
 msgid "View Shipment"
 msgstr "查看发货单"
+
+msgid "View source sales order"
+msgstr ""
 
 msgid "View Status"
 msgstr "查看状态"

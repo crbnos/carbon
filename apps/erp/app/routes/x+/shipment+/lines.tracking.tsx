@@ -19,12 +19,20 @@ export async function action({ request }: ActionFunctionArgs) {
   const trackedEntityId = formData.get("trackedEntityId") as string;
 
   // Fetch the current tracked entity to get existing attributes
-  const trackedEntityResponse = await client
-    .from("trackedEntity")
-    .select("*")
-    .eq("id", trackedEntityId)
-    .eq("companyId", companyId)
-    .single();
+  const [trackedEntityResponse, shipmentResponse] = await Promise.all([
+    client
+      .from("trackedEntity")
+      .select("*")
+      .eq("id", trackedEntityId)
+      .eq("companyId", companyId)
+      .single(),
+    client
+      .from("shipment")
+      .select("sourceDocument")
+      .eq("id", shipmentId)
+      .eq("companyId", companyId)
+      .single()
+  ]);
 
   if (trackedEntityResponse.error) {
     return data(
@@ -38,7 +46,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const trackedEntity = trackedEntityResponse.data;
 
-  if (trackedEntity.status !== "Available") {
+  // Return-to-customer shipments (source "Sales Return Order") ship returned
+  // stock, which is deliberately On Hold until dispositioned/shipped back —
+  // everything else ships Available stock only.
+  const allowedStatus =
+    shipmentResponse.data?.sourceDocument === "Sales Return Order"
+      ? "On Hold"
+      : "Available";
+
+  if (trackedEntity.status !== allowedStatus) {
     return data(
       {
         success: false,
@@ -130,7 +146,7 @@ export async function action({ request }: ActionFunctionArgs) {
       attributes: newAttributes
     })
     .eq("id", trackedEntityId)
-    .eq("status", "Available");
+    .eq("status", allowedStatus);
 
   if (updateResponse.error) {
     return data(
