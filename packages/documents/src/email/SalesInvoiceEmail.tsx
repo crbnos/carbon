@@ -18,7 +18,7 @@ import {
   getLineTotal,
   getTotal
 } from "../utils/sales-invoice";
-import { getCurrencyFormatter } from "../utils/shared";
+import { getMoneyFormatter } from "../utils/shared";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
@@ -32,6 +32,8 @@ interface SalesInvoiceEmailProps extends Email {
   salesInvoiceLocations: Database["public"]["Views"]["salesInvoiceLocations"]["Row"];
   salesInvoiceShipment: Database["public"]["Tables"]["salesInvoiceShipment"]["Row"];
   paymentTerms: { id: string; name: string }[];
+  /** currency.decimalPlaces for the document currency; null falls back to 2 */
+  currencyDecimals?: number | null;
 }
 
 const SalesInvoiceEmail = ({
@@ -43,6 +45,7 @@ const SalesInvoiceEmail = ({
   salesInvoiceShipment,
   recipient,
   sender,
+  currencyDecimals,
   paymentTerms
 }: SalesInvoiceEmailProps) => {
   const {
@@ -56,7 +59,7 @@ const SalesInvoiceEmail = ({
   } = salesInvoiceLocations;
 
   const currencyCode = salesInvoice.currencyCode ?? company.baseCurrencyCode;
-  const formatter = getCurrencyFormatter(currencyCode ?? "USD", locale);
+  const formatter = getMoneyFormatter(locale, currencyDecimals, currencyCode);
   const preview = (
     <Preview>{`${salesInvoice.invoiceId} from ${company.name}`}</Preview>
   );

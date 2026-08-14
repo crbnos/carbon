@@ -11,10 +11,11 @@ import {
   ModalDrawerTitle,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useFetcher } from "react-router";
 import { DatePicker, Number, Submit } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import { fixedAssetRegisterValidator } from "../../accounting.models";
 
 type FixedAssetRegisterFormProps = {
@@ -25,6 +26,9 @@ const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(
+    company?.baseCurrencyCode ?? "USD"
+  );
   const fetcher = useFetcher();
 
   return (
@@ -60,10 +64,10 @@ const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
                   label={t`Acquisition Cost`}
                   termId="fixed-asset-acquisition-cost"
                   minValue={0}
-                  formatOptions={{
-                    style: "currency",
-                    currency: company?.baseCurrencyCode ?? "USD"
-                  }}
+                  formatOptions={INPUT_FORMAT.money(
+                    company?.baseCurrencyCode ?? "USD",
+                    currencyDecimals
+                  )}
                 />
                 <DatePicker
                   name="acquisitionDate"
@@ -74,10 +78,10 @@ const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
                   label={t`Accumulated Depreciation`}
                   termId="fixed-asset-opening-accumulated-depreciation"
                   minValue={0}
-                  formatOptions={{
-                    style: "currency",
-                    currency: company?.baseCurrencyCode ?? "USD"
-                  }}
+                  formatOptions={INPUT_FORMAT.money(
+                    company?.baseCurrencyCode ?? "USD",
+                    currencyDecimals
+                  )}
                 />
                 <DatePicker
                   name="depreciationStartDate"

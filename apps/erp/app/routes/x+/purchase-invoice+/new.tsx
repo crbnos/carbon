@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { deriveRate, taxableBase } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -136,6 +137,20 @@ export async function action({ request }: ActionFunctionArgs) {
       const lineTax = !taxApplied ? extractedTaxAmount : 0;
       taxApplied = true;
 
+      // The whole document's tax lands on the first line, so it can exceed that
+      // one line's own subtotal. The AMOUNT is what the supplier actually
+      // charged and stays authoritative; the rate is the derived half of the
+      // pair, rounded to internal scale and held inside the 0..1 fraction the
+      // validator and TaxFields both require.
+      // No shipping term: this path hardcodes supplierShippingCost to 0 below,
+      // so the base is deliberately unit price x quantity only.
+      const lineSubtotal = taxableBase(
+        item.unitPrice || 0,
+        item.quantity || 1,
+        0
+      );
+      const lineTaxPercent = Math.min(1, deriveRate(lineTax, lineSubtotal));
+
       // Map the line up front when the extracted text directly matches an
       // existing record — only lines with no direct match are left as
       // comments for the review modal.
@@ -156,6 +171,7 @@ export async function action({ request }: ActionFunctionArgs) {
           supplierUnitPrice: item.unitPrice || 0,
           supplierShippingCost: 0,
           supplierTaxAmount: lineTax,
+          taxPercent: lineTaxPercent,
           locationId: d.locationId,
           companyId,
           createdBy: userId,

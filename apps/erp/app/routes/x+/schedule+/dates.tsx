@@ -49,9 +49,11 @@ import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useUrlParams } from "~/hooks";
 import { getJobsByDateRange, getUnscheduledJobs } from "~/modules/production";
+import { isDateColumnSentinel } from "~/modules/production/production.models";
 import type { Column, JobItem } from "~/modules/production/ui/Schedule";
 import type { DisplaySettings } from "~/modules/production/ui/Schedule/Kanban";
 import { DateKanban } from "~/modules/production/ui/Schedule/Kanban/DateKanban";
+import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import { getTagsList } from "~/modules/shared";
 import { resolveLocationId } from "~/modules/shared/location.server";
@@ -513,7 +515,7 @@ function DateKanbanSchedule() {
   const columns = useMemo(() => {
     return loaderColumns.map((col) => {
       // Skip non-date columns
-      if (["unscheduled", "next-week", "next-month"].includes(col.id)) {
+      if (isDateColumnSentinel(col.id)) {
         if (col.id === "next-month") {
           // Reformat the month name with locale
           const monthStart = startOfMonth(parseDate(currentDate));
@@ -575,7 +577,7 @@ function DateKanbanSchedule() {
   }, [initialItems]);
 
   const sortItems = useCallback((items: JobItem[]) => {
-    return [...items].sort((a, b) => a.priority - b.priority);
+    return [...items].sort(comparePriorityThenId);
   }, []);
 
   useEffect(() => {
@@ -862,6 +864,7 @@ function DateKanbanSchedule() {
           <DateKanban
             columns={columns}
             items={items}
+            locationId={locationId}
             progressByItemId={{}}
             tags={tags}
             showCustomer={displaySettings.showCustomer}

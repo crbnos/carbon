@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { memo, useMemo } from "react";
+import { useCurrencyFormatter } from "~/hooks";
 
 type BalanceEntry = {
   sourceCompanyId: string;
@@ -16,6 +17,7 @@ type IntercompanyBalanceMatrixProps = {
 
 const IntercompanyBalanceMatrix = memo(
   ({ data }: IntercompanyBalanceMatrixProps) => {
+    const formatter = useCurrencyFormatter({ wholeUnits: true });
     const { companies, matrix } = useMemo(() => {
       const companyMap = new Map<string, string>();
       for (const entry of data) {
@@ -42,13 +44,7 @@ const IntercompanyBalanceMatrix = memo(
       return null;
     }
 
-    const formatAmount = (amount: number) =>
-      new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(amount);
+    const formatAmount = (amount: number) => formatter.format(amount);
 
     return (
       <Card>

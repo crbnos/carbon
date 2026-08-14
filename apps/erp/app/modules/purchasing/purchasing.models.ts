@@ -233,7 +233,8 @@ export const purchaseOrderLineValidator = z
     supplierPartId: zfd.text(z.string().optional()),
     supplierShippingCost: zfd.numeric(z.number().optional()),
     supplierTaxAmount: zfd.numeric(z.number().optional()),
-    supplierUnitPrice: zfd.numeric(z.number().optional())
+    supplierUnitPrice: zfd.numeric(z.number().optional()),
+    taxPercent: zfd.numeric(z.number().min(0).max(1).optional().default(0))
   })
   .refine(
     (data) =>
@@ -321,6 +322,9 @@ export const selectedLineSchema = z.object({
   supplierShippingCost: z.number(),
   supplierUnitPrice: z.number(),
   supplierTaxAmount: z.number(),
+  // Same 0..1 fraction contract as purchaseOrderLineValidator — the two feed the
+  // same columns, so an unbounded rate here would bypass the form's bound.
+  taxPercent: z.number().min(0).max(1).optional().default(0),
   unitPrice: z.number()
 });
 

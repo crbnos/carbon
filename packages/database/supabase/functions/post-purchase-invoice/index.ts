@@ -22,6 +22,7 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
+import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -263,6 +264,8 @@ serve(async (req: Request) => {
             accountId: entry.accountId,
             accrual: entry.accrual,
             description: `VOID: ${entry.description}`,
+            // A reversal is a sign flip of an already-posted value, which is
+            // exact — no rounding to do.
             amount: -entry.amount,
             quantity: -entry.quantity,
             documentType: entry.documentType,
@@ -435,10 +438,10 @@ serve(async (req: Request) => {
                 documentId: child.documentId,
                 externalDocumentId: child.externalDocumentId,
                 itemId: child.itemId,
-                quantity: child.quantity,
-                nominalCost: -child.nominalCost,
-                cost: -child.cost,
-                remainingQuantity: child.remainingQuantity,
+                quantity: round(child.quantity),
+                nominalCost: round(-child.nominalCost),
+                cost: round(-child.cost),
+                remainingQuantity: round(child.remainingQuantity),
                 supplierId: child.supplierId,
                 companyId,
                 postingDate: today,
@@ -470,9 +473,9 @@ serve(async (req: Request) => {
                 documentId: layer.documentId,
                 externalDocumentId: layer.externalDocumentId,
                 itemId: layer.itemId,
-                quantity: -layer.quantity,
-                nominalCost: -layer.nominalCost,
-                cost: -layer.cost,
+                quantity: round(-layer.quantity),
+                nominalCost: round(-layer.nominalCost),
+                cost: round(-layer.cost),
                 remainingQuantity: 0,
                 supplierId: layer.supplierId,
                 companyId,
@@ -879,7 +882,7 @@ serve(async (req: Request) => {
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: invoiceLine.itemId!,
-                  quantity: invoiceLineQuantityInInventoryUnit,
+                  quantity: round(invoiceLineQuantityInInventoryUnit),
                   locationId: invoiceLine.locationId,
                   storageUnitId: invoiceLine.storageUnitId,
                   entryType: "Positive Adjmt.",
@@ -905,11 +908,12 @@ serve(async (req: Request) => {
                   externalDocumentId:
                     purchaseInvoice.data?.supplierReference ?? undefined,
                   itemId: invoiceLine.itemId,
-                  quantity: invoiceLineQuantityInInventoryUnit,
-                  nominalCost:
-                    invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
-                  cost: totalLineCostWithWeightedShipping,
-                  remainingQuantity: invoiceLineQuantityInInventoryUnit,
+                  quantity: round(invoiceLineQuantityInInventoryUnit),
+                  nominalCost: round(
+                    invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
+                  ),
+                  cost: round(totalLineCostWithWeightedShipping),
+                  remainingQuantity: round(invoiceLineQuantityInInventoryUnit),
                   supplierId: purchaseInvoice.data?.supplierId,
                   companyId,
                   postingDate: today,
@@ -941,8 +945,8 @@ serve(async (req: Request) => {
                 journalLineInserts.push({
                   accountId: debitAccount,
                   description: debitDescription,
-                  amount: debit("asset", totalLineCostWithWeightedShipping),
-                  quantity: invoiceLineQuantityInInventoryUnit,
+                  amount: round(debit("asset", totalLineCostWithWeightedShipping)),
+                  quantity: round(invoiceLineQuantityInInventoryUnit),
                   documentType: "Invoice",
                   documentId: purchaseInvoice.data?.id,
                   externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -953,8 +957,8 @@ serve(async (req: Request) => {
                 journalLineInserts.push({
                   accountId: accountDefaults.data.payablesAccount,
                   description: "Accounts Payable",
-                  amount: credit("liability", totalLineCostWithWeightedShipping),
-                  quantity: invoiceLineQuantityInInventoryUnit,
+                  amount: round(credit("liability", totalLineCostWithWeightedShipping)),
+                  quantity: round(invoiceLineQuantityInInventoryUnit),
                   documentType: "Invoice",
                   documentId: purchaseInvoice.data?.id,
                   externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1089,8 +1093,8 @@ serve(async (req: Request) => {
                   accountId:
                     accountDefaults.data.goodsReceivedNotInvoicedAccount,
                   description: "GR/IR Clearing",
-                  amount: debit("liability", receiptCostForReversedQty),
-                  quantity: quantityToReverse,
+                  amount: round(debit("liability", receiptCostForReversedQty)),
+                  quantity: round(quantityToReverse),
                   documentType: "Invoice",
                   documentId: purchaseInvoice.data?.id,
                   externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1198,10 +1202,10 @@ serve(async (req: Request) => {
                         externalDocumentId:
                           purchaseInvoice.data?.supplierReference ?? undefined,
                         itemId: invoiceLine.itemId,
-                        quantity: entry.appliedQuantity,
-                        nominalCost: entry.adjustmentCost,
-                        cost: entry.adjustmentCost,
-                        remainingQuantity: entry.appliedQuantity,
+                        quantity: round(entry.appliedQuantity),
+                        nominalCost: round(entry.adjustmentCost),
+                        cost: round(entry.adjustmentCost),
+                        remainingQuantity: round(entry.appliedQuantity),
                         supplierId: purchaseInvoice.data?.supplierId,
                         companyId,
                         postingDate: today,
@@ -1257,13 +1261,15 @@ serve(async (req: Request) => {
                         externalDocumentId:
                           purchaseInvoice.data?.supplierReference ?? undefined,
                         itemId: invoiceLine.itemId,
-                        quantity: coveredQuantity,
-                        nominalCost:
-                          coveredQuantity * invoiceLineUnitCostInInventoryUnit,
-                        cost:
+                        quantity: round(coveredQuantity),
+                        nominalCost: round(
+                          coveredQuantity * invoiceLineUnitCostInInventoryUnit
+                        ),
+                        cost: round(
                           receiptCostForReversedQty * coverageRatio +
-                          allocation.inventoryShare,
-                        remainingQuantity: coveredQuantity,
+                            allocation.inventoryShare
+                        ),
+                        remainingQuantity: round(coveredQuantity),
                         supplierId: purchaseInvoice.data?.supplierId,
                         companyId,
                         postingDate: today,
@@ -1286,8 +1292,8 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: inventoryAccount.account,
                     description: inventoryAccount.description,
-                    amount: debit("asset", allocation.inventoryShare),
-                    quantity: quantityToReverse,
+                    amount: round(debit("asset", allocation.inventoryShare)),
+                    quantity: round(quantityToReverse),
                     documentType: "Invoice",
                     documentId: purchaseInvoice.data?.id,
                     externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1304,8 +1310,8 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: accountDefaults.data.purchaseVarianceAccount,
                     description: "Purchase Price Variance",
-                    amount: debit("expense", allocation.ppvShare),
-                    quantity: quantityToReverse,
+                    amount: round(debit("expense", allocation.ppvShare)),
+                    quantity: round(quantityToReverse),
                     documentType: "Invoice",
                     documentId: purchaseInvoice.data?.id,
                     externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1321,8 +1327,8 @@ serve(async (req: Request) => {
                 journalLineInserts.push({
                   accountId: accountDefaults.data.payablesAccount,
                   description: "Accounts Payable",
-                  amount: credit("liability", invoiceCostForReversedQty),
-                  quantity: quantityToReverse,
+                  amount: round(credit("liability", invoiceCostForReversedQty)),
+                  quantity: round(quantityToReverse),
                   documentType: "Invoice",
                   documentId: purchaseInvoice.data?.id,
                   externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1373,8 +1379,8 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: accountDefaults.data.indirectCostAccount,
                     description: "Indirect Cost Account",
-                    amount: debit("asset", accrualCost),
-                    quantity: quantityToAccrue,
+                    amount: round(debit("asset", accrualCost)),
+                    quantity: round(quantityToAccrue),
                     documentType: "Invoice",
                     documentId: purchaseInvoice.data?.id,
                     externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1393,8 +1399,8 @@ serve(async (req: Request) => {
                       accountDefaults.data.goodsReceivedNotInvoicedAccount,
                     description: "GR/IR Clearing",
                     accrual: true,
-                    amount: debit("liability", accrualCost),
-                    quantity: quantityToAccrue,
+                    amount: round(debit("liability", accrualCost)),
+                    quantity: round(quantityToAccrue),
                     documentType: "Invoice",
                     documentId: purchaseInvoice.data?.id,
                     externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1413,8 +1419,8 @@ serve(async (req: Request) => {
                   accountId: accountDefaults.data.payablesAccount,
                   description: "Accounts Payable",
                   accrual: isService ? undefined : true,
-                  amount: credit("liability", accrualCost),
-                  quantity: quantityToAccrue,
+                  amount: round(credit("liability", accrualCost)),
+                  quantity: round(quantityToAccrue),
                   documentType: "Invoice",
                   documentId: purchaseInvoice.data?.id,
                   externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1514,8 +1520,8 @@ serve(async (req: Request) => {
                 accountId:
                   accountDefaults.data.goodsReceivedNotInvoicedAccount,
                 description: "GR/IR Clearing",
-                amount: debit("liability", receiptCost),
-                quantity: invoiceLineQuantityInInventoryUnit,
+                amount: round(debit("liability", receiptCost)),
+                quantity: round(invoiceLineQuantityInInventoryUnit),
                 documentType: "Invoice",
                 documentId: purchaseInvoice.data?.id,
                 externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1530,8 +1536,8 @@ serve(async (req: Request) => {
                 journalLineInserts.push({
                   accountId: accountDefaults.data.purchaseVarianceAccount,
                   description: "Purchase Price Variance",
-                  amount: debit("expense", variance),
-                  quantity: invoiceLineQuantityInInventoryUnit,
+                  amount: round(debit("expense", variance)),
+                  quantity: round(invoiceLineQuantityInInventoryUnit),
                   documentType: "Invoice",
                   documentId: purchaseInvoice.data?.id,
                   externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1547,8 +1553,8 @@ serve(async (req: Request) => {
               journalLineInserts.push({
                 accountId: accountDefaults.data.payablesAccount,
                 description: "Accounts Payable",
-                amount: credit("liability", invoiceCost),
-                quantity: invoiceLineQuantityInInventoryUnit,
+                amount: round(credit("liability", invoiceCost)),
+                quantity: round(invoiceLineQuantityInInventoryUnit),
                 documentType: "Invoice",
                 documentId: purchaseInvoice.data?.id,
                 externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1599,8 +1605,8 @@ serve(async (req: Request) => {
                 accountId: (assetRecord.data.fixedAssetClass as any)
                   .assetAccountId,
                 description: "Fixed Asset Acquisition",
-                amount: debit("asset", totalLineCostWithWeightedShipping),
-                quantity: invoiceLineQuantityInInventoryUnit,
+                amount: round(debit("asset", totalLineCostWithWeightedShipping)),
+                quantity: round(invoiceLineQuantityInInventoryUnit),
                 documentType: "Invoice",
                 documentId: purchaseInvoice.data?.id,
                 externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1616,8 +1622,8 @@ serve(async (req: Request) => {
               journalLineInserts.push({
                 accountId: accountDefaults.data.payablesAccount,
                 description: "Accounts Payable",
-                amount: credit("liability", totalLineCostWithWeightedShipping),
-                quantity: invoiceLineQuantityInInventoryUnit,
+                amount: round(credit("liability", totalLineCostWithWeightedShipping)),
+                quantity: round(invoiceLineQuantityInInventoryUnit),
                 documentType: "Invoice",
                 documentId: purchaseInvoice.data?.id,
                 externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1692,8 +1698,8 @@ serve(async (req: Request) => {
             journalLineInserts.push({
               accountId: account.data.id,
               description: account.data.name!,
-              amount: debit("asset", totalLineCostWithWeightedShipping),
-              quantity: invoiceLineQuantityInInventoryUnit,
+              amount: round(debit("asset", totalLineCostWithWeightedShipping)),
+              quantity: round(invoiceLineQuantityInInventoryUnit),
               documentType: "Invoice",
               documentId: purchaseInvoice.data?.id,
               externalDocumentId: purchaseInvoice.data?.supplierReference,
@@ -1709,8 +1715,8 @@ serve(async (req: Request) => {
             journalLineInserts.push({
               accountId: accountDefaults.data.payablesAccount,
               description: "Accounts Payable",
-              amount: credit("liability", totalLineCostWithWeightedShipping),
-              quantity: invoiceLineQuantityInInventoryUnit,
+              amount: round(credit("liability", totalLineCostWithWeightedShipping)),
+              quantity: round(invoiceLineQuantityInInventoryUnit),
               documentType: "Invoice",
               documentId: purchaseInvoice.data?.id,
               externalDocumentId: purchaseInvoice.data?.supplierReference,

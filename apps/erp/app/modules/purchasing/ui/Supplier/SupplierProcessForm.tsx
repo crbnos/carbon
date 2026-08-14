@@ -12,6 +12,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
@@ -25,7 +26,7 @@ import {
   Submit,
   Supplier
 } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import type { SupplierProcess } from "~/modules/purchasing";
 import { supplierProcessValidator } from "~/modules/purchasing";
 import { path } from "~/utils/path";
@@ -52,6 +53,7 @@ const SupplierProcessForm = ({
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -118,10 +120,10 @@ const SupplierProcessForm = ({
                 <Number
                   name="minimumCost"
                   label={t`Minimum Cost`}
-                  formatOptions={{
-                    style: "currency",
-                    currency: baseCurrency
-                  }}
+                  formatOptions={INPUT_FORMAT.rate(
+                    baseCurrency,
+                    currencyDecimals
+                  )}
                   minValue={0}
                   termId="supplier-process-minimum-cost"
                 />

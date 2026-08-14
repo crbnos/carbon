@@ -6,7 +6,9 @@ import {
   datetime,
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
+  isBalanced,
   MONTH_NUMBER,
+  round,
   toDisplayCredit,
   toDisplayDebit,
   toStoredAmount
@@ -460,8 +462,7 @@ function overlayTranslationOnSeries<
         // Translated period delta: apply the same per-account rate to netChange
         // so flow reads (income statement / executive P&L) get a translated
         // activity figure rather than the translated cumulative balance.
-        translatedNetChange:
-          Math.round(existing.netChange * exchangeRate * 10000) / 10000,
+        translatedNetChange: round(existing.netChange * exchangeRate),
         exchangeRate
       };
     }
@@ -1690,6 +1691,34 @@ export async function getCurrency(
     .single();
 }
 
+/**
+ * Settlement decimals for the company's base currency. Fixed-asset and GL
+ * amounts are booked in base currency, so this is the scale their rounding must
+ * use. Falls back to 2 only when the currency row is unreachable.
+ */
+export async function getBaseCurrencyDecimalPlaces(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  companyGroupId: string
+): Promise<number> {
+  const company = await client
+    .from("company")
+    .select("baseCurrencyCode")
+    .eq("id", companyId)
+    .single();
+
+  if (company.error || !company.data?.baseCurrencyCode) return 2;
+
+  const currency = await client
+    .from("currencies")
+    .select("decimalPlaces")
+    .eq("code", company.data.baseCurrencyCode)
+    .eq("companyGroupId", companyGroupId)
+    .single();
+
+  return currency.data?.decimalPlaces ?? 2;
+}
+
 export async function getCurrencyByCode(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -1725,11 +1754,40 @@ export async function getCurrencies(
   return query;
 }
 
-export async function getCurrenciesList(client: SupabaseClient<Database>) {
-  return client
-    .from("currencyCode")
-    .select("code, name")
-    .order("name", { ascending: true });
+/**
+ * The full ISO currency list for pickers, carrying the company group's
+ * configured `decimalPlaces` where the currency has been set up. Callers that
+ * format or round money need the settlement scale alongside the code — the DB
+ * column is authoritative over Intl/CLDR, so it has to travel with the option.
+ * `decimalPlaces` is null for an ISO currency the group has not configured.
+ */
+export async function getCurrenciesList(
+  client: SupabaseClient<Database>,
+  companyGroupId: string
+) {
+  const [codes, configured] = await Promise.all([
+    client.from("currencyCode").select("code, name").order("name", {
+      ascending: true
+    }),
+    client
+      .from("currencies")
+      .select("code, decimalPlaces")
+      .eq("companyGroupId", companyGroupId)
+  ]);
+
+  if (codes.error) return codes;
+
+  const decimalsByCode = new Map(
+    (configured.data ?? []).map((c) => [c.code, c.decimalPlaces])
+  );
+
+  return {
+    ...codes,
+    data: codes.data.map((c) => ({
+      ...c,
+      decimalPlaces: decimalsByCode.get(c.code) ?? null
+    }))
+  };
 }
 
 export async function getCurrentAccountingPeriod(
@@ -2391,6 +2449,12 @@ export type PeriodCloseUnpostedDocument = {
 
 const UNPOSTED_DOCUMENT_LIMIT = 25;
 
+/** Business refusal threshold for a journal's debits-vs-credits drift — looser
+ *  than EPSILON because multi-currency entries carry real cross-rate residuals.
+ *  Shared by the manual-JE validator and the period-close checklist so the two
+ *  can never disagree about which journals are unbalanced. */
+const JOURNAL_BALANCE_TOLERANCE = 0.001;
+
 async function computePeriodReadiness(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2514,7 +2578,11 @@ async function computePeriodReadiness(
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
-      Math.abs(Number(j.totalDebits ?? 0) - Number(j.totalCredits ?? 0)) > 0.001
+      !isBalanced(
+        Number(j.totalDebits ?? 0),
+        Number(j.totalCredits ?? 0),
+        JOURNAL_BALANCE_TOLERANCE
+      )
   );
 
   const pendingPostings =
@@ -3930,8 +3998,7 @@ export async function translateCompanyBalances(
 
     const exchangeRate = rateFor(account.consolidatedRate);
     const localBalance = Number(account.balanceAtDate ?? 0);
-    const translatedBalance =
-      Math.round(localBalance * exchangeRate * 10000) / 10000;
+    const translatedBalance = round(localBalance * exchangeRate);
 
     rows.push({
       accountId: account.id,
@@ -4596,7 +4663,7 @@ export async function postJournalEntry(
     totalCredit += toDisplayCredit(Number(l.amount), accountClass);
   }
 
-  if (Math.abs(totalDebit - totalCredit) > 0.001) {
+  if (!isBalanced(totalDebit, totalCredit, JOURNAL_BALANCE_TOLERANCE)) {
     return {
       data: null,
       error: { message: "Total debits must equal total credits" }

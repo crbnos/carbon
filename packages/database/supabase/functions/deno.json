@@ -7,7 +7,7 @@
   "imports": {
     "@internationalized/date": "npm:@internationalized/date@3.12.0",
     "kysely": "npm:kysely@0.26.3",
-    "pg": "https://deno.land/x/postgres@v0.17.0/mod.ts",
+    "pg": "jsr:@db/postgres@0.19.5",
     "@supabase/supabase-js": "npm:@supabase/supabase-js@2.33.1",
     "@logtape/logtape": "jsr:@logtape/logtape@2.2.3",
     "@logtape/redaction": "jsr:@logtape/redaction@2.2.3"

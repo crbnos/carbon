@@ -52,7 +52,7 @@ is frozen so jobs already running against it don't shift mid-build.
 
 ## Related
 
-  - Inside the build See method types, kits, and Get Method in the story of a robot build.
+  - Inside the build See method types, kits, and Get Method in the story of a satellite build.
   - Reordering policy How the replenishment system pairs with a part's reordering policy.
 
 ## Troubleshooting

@@ -10370,6 +10370,9 @@ msgstr "拥有：{0}"
 msgid "Packing Slip"
 msgstr "装箱单"
 
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
+
 msgid "Page"
 msgstr "页面"
 
@@ -13222,6 +13225,9 @@ msgstr "显示供应商ID"
 
 msgid "Show sync options"
 msgstr "显示同步选项"
+
+msgid "Show Trailing Zeros"
+msgstr ""
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"

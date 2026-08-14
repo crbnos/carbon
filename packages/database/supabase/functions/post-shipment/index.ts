@@ -15,6 +15,7 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
+import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -348,7 +349,7 @@ serve(async (req: Request) => {
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
-                  quantity: -shippedQuantity,
+                  quantity: round(-shippedQuantity),
                   locationId: shipmentLine.locationId ?? locationId,
                   storageUnitId: shipmentLine.storageUnitId,
                   entryType: "Negative Adjmt.",
@@ -364,7 +365,7 @@ serve(async (req: Request) => {
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
-                  quantity: -shippedQuantity,
+                  quantity: round(-shippedQuantity),
                   locationId: shipmentLine.locationId ?? locationId,
                   storageUnitId: shipmentLine.storageUnitId,
                   entryType: "Negative Adjmt.",
@@ -437,7 +438,7 @@ serve(async (req: Request) => {
                   accountId: accountDefaults.data.costOfGoodsSoldAccount,
                   description: "Cost of Goods Sold",
                   amount: 0,
-                  quantity: shippedQuantity,
+                  quantity: round(shippedQuantity),
                   documentType: "Sales Shipment",
                   documentId: shipment.data?.id,
                   externalDocumentId: salesOrder.data?.customerReference ?? undefined,
@@ -454,7 +455,7 @@ serve(async (req: Request) => {
                   accountId: inventoryAccount.account,
                   description: inventoryAccount.description,
                   amount: 0,
-                  quantity: shippedQuantity,
+                  quantity: round(shippedQuantity),
                   documentType: "Sales Shipment",
                   documentId: shipment.data?.id,
                   externalDocumentId: salesOrder.data?.customerReference ?? undefined,
@@ -590,7 +591,7 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: assetClass.accumulatedDepreciationAccountId,
                     description: "Clear accumulated depreciation",
-                    amount: debit("asset", accumulatedDepreciation),
+                    amount: round(debit("asset", accumulatedDepreciation)),
                     quantity: 1,
                     documentType: "Sales Shipment",
                     documentId: shipment.data?.id,
@@ -622,7 +623,7 @@ serve(async (req: Request) => {
                     // holding, not a P&L loss) until the invoice recognizes
                     // proceeds and clears it back to zero — no interim full loss.
                     description: "Transfer net book value to disposal clearing",
-                    amount: debit("expense", nbv),
+                    amount: round(debit("expense", nbv)),
                     quantity: 1,
                     documentType: "Sales Shipment",
                     documentId: shipment.data?.id,
@@ -649,7 +650,7 @@ serve(async (req: Request) => {
                 journalLineInserts.push({
                   accountId: assetClass.assetAccountId,
                   description: "Remove asset at cost",
-                  amount: credit("asset", acquisitionCost),
+                  amount: round(credit("asset", acquisitionCost)),
                   quantity: 1,
                   documentType: "Sales Shipment",
                   documentId: shipment.data?.id,
@@ -967,7 +968,12 @@ serve(async (req: Request) => {
                     .where("id", "=", splitInfo.originalEntityId)
                     .execute();
 
-                  itemLedgerInserts.push(...split.ledgerInserts);
+                  itemLedgerInserts.push(
+                    ...split.ledgerInserts.map((ledgerRow) => ({
+                      ...ledgerRow,
+                      quantity: round(ledgerRow.quantity),
+                    }))
+                  );
 
                   // The shipment's own ledger rows (built per line above)
                   // and its activity input book against the shipped child.
@@ -1091,8 +1097,12 @@ serve(async (req: Request) => {
                         : (lineQty / info.totalQuantity) * cogsResult.totalCost;
 
                     costAssigned += lineCost;
-                    journalLineInserts[jlIdx].amount = debit("expense", lineCost);
-                    journalLineInserts[jlIdx + 1].amount = credit("asset", lineCost);
+                    journalLineInserts[jlIdx].amount = round(
+                      debit("expense", lineCost)
+                    );
+                    journalLineInserts[jlIdx + 1].amount = round(
+                      credit("asset", lineCost)
+                    );
                   }
 
                   await trx
@@ -1104,8 +1114,8 @@ serve(async (req: Request) => {
                       documentType: "Sales Shipment",
                       documentId: shipment.data?.id ?? "",
                       itemId,
-                      quantity: -info.totalQuantity,
-                      cost: -cogsResult.totalCost,
+                      quantity: round(-info.totalQuantity),
+                      cost: round(-cogsResult.totalCost),
                       remainingQuantity: 0,
                       companyId,
                       postingDate: today,
@@ -1679,7 +1689,7 @@ serve(async (req: Request) => {
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
-                  quantity: -shippedQuantity, // Negative for outbound transfer
+                  quantity: round(-shippedQuantity), // Negative for outbound transfer
                   locationId: shipmentLine.locationId,
                   storageUnitId: shipmentLine.storageUnitId,
                   entryType: "Transfer",
@@ -1828,6 +1838,8 @@ serve(async (req: Request) => {
                   accountId: entry.accountId,
                   accrual: entry.accrual,
                   description: `VOID: ${entry.description}`,
+                  // A reversal is a sign flip of an already-posted value, which
+                  // is exact — no rounding to do.
                   amount: -entry.amount,
                   quantity: -entry.quantity,
                   documentType: entry.documentType,
@@ -1941,7 +1953,7 @@ serve(async (req: Request) => {
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
-                  quantity: shippedQuantity, // Positive to restore inventory
+                  quantity: round(shippedQuantity), // Positive to restore inventory
                   locationId: shipmentLine.locationId ?? locationId,
                   storageUnitId: shipmentLine.storageUnitId,
                   entryType: "Positive Adjmt.",
@@ -1957,7 +1969,7 @@ serve(async (req: Request) => {
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
-                  quantity: shippedQuantity, // Positive to restore inventory
+                  quantity: round(shippedQuantity), // Positive to restore inventory
                   locationId: shipmentLine.locationId ?? locationId,
                   storageUnitId: shipmentLine.storageUnitId,
                   entryType: "Positive Adjmt.",
@@ -2483,7 +2495,7 @@ serve(async (req: Request) => {
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
-                  quantity: -shippedQuantity, // Negative to remove inventory
+                  quantity: round(-shippedQuantity), // Negative to remove inventory
                   locationId: shipmentLine.locationId ?? locationId,
                   storageUnitId: shipmentLine.storageUnitId,
                   entryType: "Negative Adjmt.",
@@ -2499,7 +2511,7 @@ serve(async (req: Request) => {
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
-                  quantity: -shippedQuantity, // Negative to remove inventory
+                  quantity: round(-shippedQuantity), // Negative to remove inventory
                   locationId: shipmentLine.locationId ?? locationId,
                   storageUnitId: shipmentLine.storageUnitId,
                   entryType: "Negative Adjmt.",
@@ -2707,7 +2719,7 @@ serve(async (req: Request) => {
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
-                  quantity: shippedQuantity, // Positive to restore inventory
+                  quantity: round(shippedQuantity), // Positive to restore inventory
                   locationId: shipmentLine.locationId,
                   storageUnitId: shipmentLine.storageUnitId,
                   entryType: "Transfer",

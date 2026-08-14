@@ -10370,6 +10370,9 @@ msgstr "소유: {0}"
 msgid "Packing Slip"
 msgstr "포장명세서"
 
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
+
 msgid "Page"
 msgstr "페이지"
 
@@ -13222,6 +13225,9 @@ msgstr "공급업체 ID 표시"
 
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
+
+msgid "Show Trailing Zeros"
+msgstr ""
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"

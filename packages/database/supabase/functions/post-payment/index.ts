@@ -11,9 +11,9 @@ import { getNextSequence } from "../shared/get-next-sequence.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
 import {
   buildPaymentJournal,
-  round4,
   type PaymentJournalLine,
 } from "./build-payment-journal.ts";
+import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -283,7 +283,7 @@ serve(async (req: Request) => {
       0
     );
     const paymentTotalBase = Number(payment.data.totalAmount) * Number(payment.data.exchangeRate);
-    const overAppliedBase = round4(totalAppliedBase - paymentTotalBase);
+    const overAppliedBase = round(totalAppliedBase - paymentTotalBase);
 
     // --------------------------------------------------------------
     // Build journal lines (in base currency)
@@ -706,9 +706,9 @@ serve(async (req: Request) => {
           }
         }
 
-        if (overAppliedBase > round4(availableCreditBase) + 0.0001) {
+        if (overAppliedBase > round(availableCreditBase) + 0.0001) {
           throw new Error(
-            `Applied exceeds payment cash by ${overAppliedBase} in base currency, but only ${round4(availableCreditBase)} of on-account credit is available for this ${isAR ? "customer" : "supplier"}`
+            `Applied exceeds payment cash by ${overAppliedBase} in base currency, but only ${round(availableCreditBase)} of on-account credit is available for this ${isAR ? "customer" : "supplier"}`
           );
         }
       }

@@ -12,7 +12,7 @@ import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
   finalizePurchaseOrder,
@@ -45,10 +45,11 @@ export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
 
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "purchasing",
-    role: "employee"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      create: "purchasing",
+      role: "employee"
+    });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
@@ -316,9 +317,19 @@ export async function action(args: ActionFunctionArgs) {
         if (!paymentTerms.data) throw new Error("Failed to get payment terms");
         if (!supplier.data.contact.email) break;
 
+        // Same decimals the PDF of this order uses.
+        const currencyRow = purchaseOrder.data.currencyCode
+          ? await getCurrencyByCode(
+              serviceRole,
+              companyGroupId,
+              purchaseOrder.data.currencyCode
+            )
+          : null;
+
         const emailTemplate = PurchaseOrderEmail({
           // @ts-expect-error TS2739 - TODO: fix type
           company: company.data,
+          currencyDecimals: currencyRow?.data?.decimalPlaces ?? null,
           locale: locales?.[0] ?? "en-US",
           purchaseOrder: purchaseOrder.data,
           purchaseOrderLines: purchaseOrderLines.data ?? [],

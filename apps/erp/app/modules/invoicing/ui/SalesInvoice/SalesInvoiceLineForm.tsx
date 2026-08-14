@@ -28,9 +28,15 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import {
+  getItemReadableId,
+  INPUT_FORMAT,
+  INPUT_STEP,
+  taxableBase,
+  taxPairFromPercent
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   LuBox,
   LuChevronRight,
@@ -51,9 +57,12 @@ import {
   NumberControlled,
   SelectControlled,
   StorageUnit,
-  Submit
+  Submit,
+  TaxFields,
+  useTaxPair
 } from "~/components/Form";
 import {
+  useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
@@ -96,7 +105,20 @@ const SalesInvoiceLineForm = ({
   const [items] = useItems();
   const routeData = useRouteData<{
     salesInvoice: SalesInvoice;
+    currency: { decimalPlaces: number } | null;
   }>(path.to.salesInvoice(invoiceId));
+
+  // Settlement decimals come from the document currency's row (loader data);
+  // 2 is only the last resort for a currency-less document
+  // The loader's currency row is the primary source — it is correct on first
+  // paint, which matters because these formatters take part in the blur commit.
+  // The hook covers documents whose loader doesn't carry the row; the single
+  // documented last-resort lives inside it rather than as a literal here.
+  const invoiceCurrency =
+    routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode;
+  const configuredDecimals = useCurrencyDecimals(invoiceCurrency);
+  const currencyDecimals =
+    routeData?.currency?.decimalPlaces ?? configuredDecimals;
 
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isEditable = !isLocked;
@@ -125,29 +147,31 @@ const SalesInvoiceLineForm = ({
     shippingCost: initialValues.shippingCost ?? 0,
     unitOfMeasureCode: initialValues.unitOfMeasureCode ?? "",
     storageUnitId: initialValues.storageUnitId ?? "",
-    taxAmount:
-      ((initialValues.unitPrice ?? 0) * (initialValues.quantity ?? 1) +
-        (initialValues.shippingCost ?? 0)) *
-      (initialValues.taxPercent ?? 0),
+    // Seeded through the same coupling every later edit uses, so the opening
+    // amount is rounded to the currency's decimals rather than a raw product.
+    taxAmount: taxPairFromPercent(
+      taxableBase(
+        initialValues.unitPrice ?? 0,
+        initialValues.quantity ?? 1,
+        initialValues.shippingCost ?? 0
+      ),
+      initialValues.taxPercent ?? 0,
+      currencyDecimals
+    ).amount,
     taxPercent: initialValues.taxPercent ?? 0
   });
 
-  // update tax amount when quantity or unit price changes
-  useEffect(() => {
-    const subtotal =
-      itemData.unitPrice * itemData.quantity + itemData.shippingCost;
-    if (itemData.taxPercent !== 0) {
-      setItemData((d) => ({
-        ...d,
-        taxAmount: subtotal * itemData.taxPercent
-      }));
-    }
-  }, [
-    itemData.unitPrice,
-    itemData.quantity,
-    itemData.shippingCost,
-    itemData.taxPercent
-  ]);
+  const itemTax = useTaxPair({
+    unitPrice: itemData.unitPrice,
+    quantity: itemData.quantity,
+    shippingCost: itemData.shippingCost,
+    percent: itemData.taxPercent,
+    amount: itemData.taxAmount,
+    currency: invoiceCurrency,
+    currencyDecimals,
+    onChange: ({ percent, amount }) =>
+      setItemData((d) => ({ ...d, taxPercent: percent, taxAmount: amount }))
+  });
 
   const isFixedAsset = initialValues.invoiceLineType === "Fixed Asset";
   const [activeTab, setActiveTab] = useState<"item" | "asset">(
@@ -345,11 +369,19 @@ const SalesInvoiceLineForm = ({
     }));
   };
 
-  const currencyFormatter = useCurrencyFormatter();
+  // These badges render DOCUMENT-currency values, so both formatters take the
+  // document's currency and decimals. Defaulting to base currency is what
+  // printed a JPY shipping cost as "$20.00".
+  const currencyFormatter = useCurrencyFormatter({
+    currency: routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode,
+    decimalPlaces: currencyDecimals
+  });
+  const priceFormatter = useCurrencyFormatter({
+    rate: true,
+    currency: routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode,
+    decimalPlaces: currencyDecimals
+  });
   const percentFormatter = usePercentFormatter();
-
-  const invoiceCurrency =
-    routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode;
 
   return (
     <Tabs
@@ -423,7 +455,7 @@ const SalesInvoiceLineForm = ({
                             )}
                           </Badge>
                           <Badge variant="green">
-                            {currencyFormatter.format(
+                            {priceFormatter.format(
                               initialValues?.unitPrice ?? 0
                             )}{" "}
                             {initialValues?.unitOfMeasureCode}
@@ -567,10 +599,10 @@ const SalesInvoiceLineForm = ({
                             name="unitPrice"
                             label={t`Unit Price`}
                             value={itemData.unitPrice}
-                            formatOptions={{
-                              style: "currency",
-                              currency: invoiceCurrency
-                            }}
+                            formatOptions={INPUT_FORMAT.rate(
+                              invoiceCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setItemData((d) => ({
                                 ...d,
@@ -688,58 +720,20 @@ const SalesInvoiceLineForm = ({
                               costsDisclosure.isOpen ? "" : "hidden"
                             }`}
                           >
-                            <NumberControlled
-                              name="taxPercent"
-                              label={t`Tax Percent`}
-                              value={itemData.taxPercent}
-                              minValue={0}
-                              maxValue={1}
-                              step={0.0001}
-                              formatOptions={{
-                                style: "percent",
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 2
-                              }}
-                              onChange={(value) => {
-                                const subtotal =
-                                  itemData.unitPrice * itemData.quantity +
-                                  itemData.shippingCost;
-                                setItemData((d) => ({
-                                  ...d,
-                                  taxPercent: value,
-                                  taxAmount: subtotal * value
-                                }));
-                              }}
-                            />
-                            <NumberControlled
-                              name="taxAmount"
-                              label={t`Tax Amount`}
-                              value={itemData.taxAmount}
-                              formatOptions={{
-                                style: "currency",
-                                currency: invoiceCurrency
-                              }}
-                              onChange={(value) => {
-                                const subtotal =
-                                  itemData.unitPrice * itemData.quantity +
-                                  itemData.shippingCost;
-                                setItemData((d) => ({
-                                  ...d,
-                                  taxAmount: value,
-                                  taxPercent:
-                                    subtotal > 0 ? value / subtotal : 0
-                                }));
-                              }}
+                            <TaxFields
+                              {...itemTax}
+                              amountName="taxAmount"
+                              percentName="taxPercent"
                             />
                             <NumberControlled
                               name="shippingCost"
                               label={t`Shipping Cost`}
                               value={itemData.shippingCost}
                               minValue={0}
-                              formatOptions={{
-                                style: "currency",
-                                currency: invoiceCurrency
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                invoiceCurrency,
+                                currencyDecimals
+                              )}
                               onChange={(value) =>
                                 setItemData((d) => ({
                                   ...d,
@@ -750,18 +744,18 @@ const SalesInvoiceLineForm = ({
                             <Number
                               name="addOnCost"
                               label={t`Add-On Cost`}
-                              formatOptions={{
-                                style: "currency",
-                                currency: invoiceCurrency
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                invoiceCurrency,
+                                currencyDecimals
+                              )}
                             />
                             <Number
                               name="nonTaxableAddOnCost"
                               label={t`Non-Taxable Add-On Cost`}
-                              formatOptions={{
-                                style: "currency",
-                                currency: invoiceCurrency
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                invoiceCurrency,
+                                currencyDecimals
+                              )}
                             />
                           </div>
                         </div>
@@ -823,10 +817,10 @@ const SalesInvoiceLineForm = ({
                           label={t`Unit Price`}
                           isOptional={false}
                           value={assetData.unitPrice}
-                          formatOptions={{
-                            style: "currency",
-                            currency: invoiceCurrency
-                          }}
+                          formatOptions={INPUT_FORMAT.rate(
+                            invoiceCurrency,
+                            currencyDecimals
+                          )}
                           onChange={(value) =>
                             setAssetData((d) => ({ ...d, unitPrice: value }))
                           }
@@ -879,12 +873,8 @@ const SalesInvoiceLineForm = ({
                             value={assetData.taxPercent}
                             minValue={0}
                             maxValue={1}
-                            step={0.0001}
-                            formatOptions={{
-                              style: "percent",
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 2
-                            }}
+                            step={INPUT_STEP.percent}
+                            formatOptions={INPUT_FORMAT.percent}
                             onChange={(value) =>
                               setAssetData((d) => ({
                                 ...d,
@@ -897,10 +887,10 @@ const SalesInvoiceLineForm = ({
                             label={t`Shipping Cost`}
                             value={assetData.shippingCost}
                             minValue={0}
-                            formatOptions={{
-                              style: "currency",
-                              currency: invoiceCurrency
-                            }}
+                            formatOptions={INPUT_FORMAT.money(
+                              invoiceCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setAssetData((d) => ({
                                 ...d,
@@ -912,10 +902,10 @@ const SalesInvoiceLineForm = ({
                             name="addOnCost"
                             label={t`Add-On Cost`}
                             value={assetData.addOnCost}
-                            formatOptions={{
-                              style: "currency",
-                              currency: invoiceCurrency
-                            }}
+                            formatOptions={INPUT_FORMAT.money(
+                              invoiceCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setAssetData((d) => ({
                                 ...d,
@@ -927,10 +917,10 @@ const SalesInvoiceLineForm = ({
                             name="nonTaxableAddOnCost"
                             label={t`Non-Taxable Add-On Cost`}
                             value={assetData.nonTaxableAddOnCost}
-                            formatOptions={{
-                              style: "currency",
-                              currency: invoiceCurrency
-                            }}
+                            formatOptions={INPUT_FORMAT.money(
+                              invoiceCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setAssetData((d) => ({
                                 ...d,

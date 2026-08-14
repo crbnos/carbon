@@ -10370,6 +10370,9 @@ msgstr "Possiede: {0}"
 msgid "Packing Slip"
 msgstr "Documento di trasporto"
 
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
+
 msgid "Page"
 msgstr "Pagina"
 
@@ -13222,6 +13225,9 @@ msgstr "Mostra ID Fornitore"
 
 msgid "Show sync options"
 msgstr "Mostra opzioni di sincronizzazione"
+
+msgid "Show Trailing Zeros"
+msgstr ""
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"

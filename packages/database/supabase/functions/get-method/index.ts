@@ -34,6 +34,7 @@ import {
     getNextRevisionSequence,
     getNextSequence,
 } from "../shared/get-next-sequence.ts";
+import { scrapAllowance } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -614,17 +615,19 @@ serve(async (req: Request) => {
             // - For Buy/Pick parts: estimatedQuantity = target + scrap (what we need to procure)
             // - scrapQuantity = targetQuantity * scrapRate (the extra needed for scrap)
             // - totalForChildren = target + scrap (passed to children for cascade)
-            const nodeScrapQuantity = targetQuantity * nodeScrapPercentage;
+            const nodeScrapQuantity = scrapAllowance(
+              targetQuantity,
+              nodeScrapPercentage
+            );
             const totalWithScrap = targetQuantity + nodeScrapQuantity;
 
             // For Make: estimatedQuantity is the good quantity (without scrap)
             // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
             const estimatedQuantity =
               node.data.methodType === "Make to Order" ? targetQuantity : totalWithScrap;
-            // operationQuantity should be the total (including scrap) since that's what we need to make
-            // Operation/production counts stay whole even when material
-            // quantities are fractional
-            const operationQuantity = Math.ceil(totalWithScrap);
+            // operationQuantity is the total (including scrap); fractional
+            // targets flow through — the scrap allowance is already whole
+            const operationQuantity = totalWithScrap;
             // Pass total (including scrap) to children so cascade works correctly
             const totalQuantityForChildren = totalWithScrap;
 
@@ -1093,7 +1096,10 @@ serve(async (req: Request) => {
               // targetQuantity for this child = parent's total (including scrap) * quantity per parent
               const childTargetQuantity = totalQuantityForChildren * quantity;
               // scrapQuantity = portion attributable to scrap
-              const childScrapQuantity = childTargetQuantity * itemScrapPercentage;
+              const childScrapQuantity = scrapAllowance(
+                childTargetQuantity,
+                itemScrapPercentage
+              );
               const childTotalWithScrap =
                 childTargetQuantity + childScrapQuantity;
               // For Make: estimatedQuantity is the good quantity (without scrap)
@@ -1525,13 +1531,16 @@ serve(async (req: Request) => {
             // Calculate quantities:
             // - For Make parts: estimatedQuantity = targetQuantity (good quantity, NOT including scrap)
             // - For Buy/Pick parts: estimatedQuantity = target + scrap (what we need to procure)
-            const nodeScrapQuantity = targetQuantity * nodeScrapPercentage;
+            const nodeScrapQuantity = scrapAllowance(
+              targetQuantity,
+              nodeScrapPercentage
+            );
             const totalWithScrap = targetQuantity + nodeScrapQuantity;
             const estimatedQuantity =
               node.data.methodType === "Make to Order" ? targetQuantity : totalWithScrap;
-            // Operation/production counts stay whole even when material
-            // quantities are fractional
-            const operationQuantity = Math.ceil(totalWithScrap);
+            // operationQuantity is the total (including scrap); fractional
+            // targets flow through — the scrap allowance is already whole
+            const operationQuantity = totalWithScrap;
             const totalQuantityForChildren = totalWithScrap;
 
             const relatedOperations = await client
@@ -1781,8 +1790,10 @@ serve(async (req: Request) => {
               // Use totalQuantityForChildren (parent's total including scrap) for child calculations
               const childTargetQuantity =
                 totalQuantityForChildren * (child.data.quantity ?? 1);
-              const childScrapQuantity =
-                childTargetQuantity * itemScrapPercentage;
+              const childScrapQuantity = scrapAllowance(
+                childTargetQuantity,
+                itemScrapPercentage
+              );
               const childTotalWithScrap =
                 childTargetQuantity + childScrapQuantity;
               // For Make: estimatedQuantity is the good quantity (without scrap)
@@ -4897,7 +4908,10 @@ serve(async (req: Request) => {
                 );
                 const rootTarget = job.data?.quantity ?? 1;
                 // Scrap applies to every method type (mirrors itemToJob)
-                const rootScrapQuantity = rootTarget * rootScrapPercentage;
+                const rootScrapQuantity = scrapAllowance(
+                  rootTarget,
+                  rootScrapPercentage
+                );
                 const rootTotalWithScrap = rootTarget + rootScrapQuantity;
                 // For Make: estimatedQuantity is good quantity (without scrap)
                 // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
@@ -4942,8 +4956,10 @@ serve(async (req: Request) => {
                 const childTargetQuantity =
                   nodeTotalForChildren * (child.data.quantity ?? 1);
                 // Scrap applies to every method type (mirrors itemToJob)
-                const childScrapQuantity =
-                  childTargetQuantity * itemScrapPercentage;
+                const childScrapQuantity = scrapAllowance(
+                  childTargetQuantity,
+                  itemScrapPercentage
+                );
                 const childTotalWithScrap =
                   childTargetQuantity + childScrapQuantity;
                 // For Make: estimatedQuantity is good quantity (without scrap)
@@ -5114,9 +5130,8 @@ serve(async (req: Request) => {
                 tags: op.tags ?? [],
                 workInstruction: parts.workInstructions ? op.workInstruction : {},
                 targetQuantity: opQuantities.targetQuantity,
-                // Operation/production counts stay whole even when material
-                // quantities are fractional
-                operationQuantity: Math.ceil(opQuantities.totalWithScrap),
+                // Fractional targets flow through; the scrap allowance is already whole
+                operationQuantity: opQuantities.totalWithScrap,
                 companyId,
                 createdBy: userId,
                 customFields: {},

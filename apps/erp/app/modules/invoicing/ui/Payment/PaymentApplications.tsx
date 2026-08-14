@@ -11,6 +11,7 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
+import { SCALE_FORMAT } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { DateTime, Hyperlink } from "~/components";
@@ -58,10 +59,7 @@ const PaymentApplications = ({
   paymentTotal
 }: PaymentApplicationsProps) => {
   const currencyFormatter = useCurrencyFormatter();
-  const rateFormatter = useNumberFormatter({
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4
-  });
+  const rateFormatter = useNumberFormatter(SCALE_FORMAT);
 
   const totalApplied = applications.reduce(
     (sum, a) =>

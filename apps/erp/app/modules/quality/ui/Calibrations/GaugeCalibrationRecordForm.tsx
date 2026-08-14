@@ -42,6 +42,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import { nanoid } from "nanoid";
@@ -324,11 +325,7 @@ const GaugeCalibrationRecordForm = ({
                 <Number
                   name="humidity"
                   label={t`Humidity`}
-                  formatOptions={{
-                    maximumFractionDigits: 2,
-                    style: "percent",
-                    minimumFractionDigits: 0
-                  }}
+                  formatOptions={INPUT_FORMAT.percent}
                 />
                 <Input
                   name="measurementStandard"

@@ -34,6 +34,7 @@ import ItemThumbnail from "./ItemThumbnail";
 import Location from "./Location";
 import MetricCard from "./MetricCard";
 import { ModelOptimizedIndicator } from "./ModelOptimizedIndicator";
+import MotionMoney from "./MotionMoney";
 import New from "./New";
 import PeriodSelector from "./PeriodSelector";
 import RealtimeDataProvider from "./RealtimeDataProvider";
@@ -74,6 +75,7 @@ export {
   MethodItemTypeIcon,
   MetricCard,
   ModelOptimizedIndicator,
+  MotionMoney,
   ModuleIcon,
   New,
   OperationStatusIcon,

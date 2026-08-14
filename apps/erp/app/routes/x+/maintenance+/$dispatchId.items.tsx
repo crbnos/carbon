@@ -5,7 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import { Card, CardContent, HStack, VStack } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useParams } from "react-router";
-import { useRouteData } from "~/hooks";
+import { useCurrencyFormatter, useRouteData } from "~/hooks";
 import {
   isMaintenanceDispatchLocked,
   maintenanceDispatchItemValidator,
@@ -68,6 +68,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function MaintenanceDispatchItemsRoute() {
   const { dispatchId } = useParams();
+  const currencyFormatter = useCurrencyFormatter();
   if (!dispatchId) throw new Error("dispatchId not found");
 
   const routeData = useRouteData<{
@@ -105,13 +106,13 @@ export default function MaintenanceDispatchItemsRoute() {
                   <div>
                     <span className="text-muted-foreground">Unit Cost:</span>{" "}
                     {item.unitCost
-                      ? `$${Number(item.unitCost).toFixed(2)}`
+                      ? currencyFormatter.format(Number(item.unitCost))
                       : "-"}
                   </div>
                   <div>
                     <span className="text-muted-foreground">Total Cost:</span>{" "}
                     {item.totalCost
-                      ? `$${Number(item.totalCost).toFixed(2)}`
+                      ? currencyFormatter.format(Number(item.totalCost))
                       : "-"}
                   </div>
                 </div>

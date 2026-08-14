@@ -1,4 +1,5 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import { type ArchitectureDiagramKey, architectureDiagrams } from "./architecture-diagrams";
 import { Field, FieldTable } from "./field-table";
 import { type IllustrationKey, illustrations } from "./illustrations";
 import { Status, StatusFlow } from "./status-flow";
@@ -45,6 +46,27 @@ export function Figure({ illustration, caption }: { illustration: IllustrationKe
       <Zoomable>
         <div className="rounded-xl border border-ed-hairline bg-ed-paper px-6 py-7 shadow-[inset_0_1px_0_#fff]">
           {Illustration ? <Illustration /> : null}
+        </div>
+      </Zoomable>
+      {caption && (
+        <figcaption className="mt-3 text-center text-ed-12 text-ink-faint">{caption}</figcaption>
+      )}
+    </figure>
+  );
+}
+
+/** A hand-laid architecture diagram (`architecture-diagrams.tsx`). Wider than the prose
+ *  column on purpose: these are drawn on a ~740-unit canvas and the column is ~595px, so
+ *  without the bleed every label renders a fifth smaller than it was drawn. The negative
+ *  margin is clamped at 0 and only applies from `xl`, where the article really is 47.5rem
+ *  wide; below that the figure just fills the column. */
+export function Diagram({ name, caption }: { name: ArchitectureDiagramKey; caption?: ReactNode }) {
+  const Svg = architectureDiagrams[name];
+  return (
+    <figure className="my-10 xl:mr-[min(0px,calc(100%_-_47.5rem))]">
+      <Zoomable wide>
+        <div className="rounded-xl border border-ed-hairline bg-ed-paper px-5 py-6 shadow-[inset_0_1px_0_#fff] sm:px-7">
+          <Svg />
         </div>
       </Zoomable>
       {caption && (
@@ -261,6 +283,7 @@ export const editorialMdxComponents = {
   a: Anchor,
   Figure,
   Screenshot,
+  Diagram,
   Callout,
   Divider,
   Term,

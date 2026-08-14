@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
+import { EPSILON } from "@carbon/utils";
 import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { getDatabaseClient } from "~/services/database.server";
@@ -480,9 +481,9 @@ export async function splitIssueItem(args: {
       } else if (typeof splitQuantity === "number" && splitQuantity > 0) {
         let remaining = splitQuantity;
         for (const link of links) {
-          if (remaining <= 1e-6) break;
+          if (remaining <= EPSILON) break;
           const q = Number(link.linkQuantity ?? 0);
-          if (q <= remaining + 1e-6) {
+          if (q <= remaining + EPSILON) {
             moves.push({ link, moveQty: q });
             remaining -= q;
           } else {
@@ -491,7 +492,7 @@ export async function splitIssueItem(args: {
             break;
           }
         }
-        if (remaining > 1e-6) {
+        if (remaining > EPSILON) {
           throw new Error("Split quantity exceeds the linked entity quantity");
         }
       } else {
@@ -523,7 +524,7 @@ export async function splitIssueItem(args: {
       for (const { link, moveQty } of moves) {
         const entityQty = Number(link.entityQuantity ?? 0);
 
-        if (moveQty >= entityQty - 1e-6) {
+        if (moveQty >= entityQty - EPSILON) {
           // Whole lot moving — re-point the link, no physical change.
           await trx
             .updateTable("nonConformanceItemTrackedEntity")
@@ -678,7 +679,7 @@ export async function closeIssue(
     // sum or status to reconcile, so the disposition alone is enough.
     if (row.links.length === 0) continue;
     const sum = row.links.reduce((acc, l) => acc + l.quantity, 0);
-    if (Math.abs(sum - row.quantity) > 1e-6) {
+    if (Math.abs(sum - row.quantity) > EPSILON) {
       blockers.push({
         nonConformanceItemId: row.id,
         reason: `Linked entity quantity (${sum}) does not match row quantity (${row.quantity})`
@@ -902,7 +903,7 @@ export async function closeIssue(
         }
         if (row.links.length === 0) continue;
         const sum = row.links.reduce((acc, l) => acc + l.quantity, 0);
-        if (Math.abs(sum - row.quantity) > 1e-6) {
+        if (Math.abs(sum - row.quantity) > EPSILON) {
           throw new Error("Quantities changed while closing; please retry.");
         }
         for (const link of row.links) {

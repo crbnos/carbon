@@ -24,10 +24,11 @@ export async function action(args: ActionFunctionArgs) {
   try {
     assertIsPost(request);
 
-    const { client, companyId, userId } = await requirePermissions(request, {
-      create: "sales",
-      role: "employee"
-    });
+    const { client, companyId, companyGroupId, userId } =
+      await requirePermissions(request, {
+        create: "sales",
+        role: "employee"
+      });
 
     const { orderId } = params;
     if (!orderId) {
@@ -109,6 +110,7 @@ export async function action(args: ActionFunctionArgs) {
           const emailResult = await sendSalesOrderEmail({
             salesOrderId: orderId,
             companyId,
+            companyGroupId,
             userId,
             customerContactId: customerContact,
             cc: ccSelections,

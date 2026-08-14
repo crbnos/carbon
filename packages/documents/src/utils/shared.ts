@@ -1,3 +1,9 @@
+import {
+  DEFAULT_CURRENCY_DECIMALS,
+  formatPercent,
+  moneyFormatOptions,
+  SCALE
+} from "@carbon/utils";
 import type { ResolvedSection } from "../template";
 import { DEFAULT_REGISTRATION_NUMBER, interpolateString } from "../template";
 
@@ -75,20 +81,43 @@ export const resolveRegistrationLine = ({
 };
 
 export const formatTaxPercent = (
-  taxPercent: number | null | undefined
+  taxPercent: number | null | undefined,
+  locale: string
 ): string | null => {
   if (!taxPercent) return null;
-  return `${(taxPercent * 100).toFixed(2)}%`;
+  return formatPercent(taxPercent, locale);
 };
 
-export const getCurrencyFormatter = (
-  baseCurrencyCode: string,
+/** Money for documents. `currency` decides only whether the SYMBOL renders:
+ *  pass it for emails ("$300.00"), omit it for the PDF amount columns, which
+ *  print the currency code separately ("300.00"). The digits are the same
+ *  question either way and come from the currency row. */
+export const getMoneyFormatter = (
   locale: string,
-  maximumFractionDigits?: number
-) => {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: baseCurrencyCode,
-    maximumFractionDigits: maximumFractionDigits ?? 2
-  });
-};
+  decimalPlaces?: number | null,
+  currency?: string | null
+) =>
+  new Intl.NumberFormat(
+    locale,
+    moneyFormatOptions(decimalPlaces ?? DEFAULT_CURRENCY_DECIMALS, {
+      currency: currency ?? undefined
+    })
+  );
+
+/** A per-unit RATE for documents — same padding as getMoneyFormatter, but the
+ *  currency's decimals are a FLOOR, not a ceiling: a printed $0.164 unit price
+ *  stays $0.164 instead of rounding to $0.16. Use for a unit-price COLUMN;
+ *  totals, tax, and shipping on the same document stay on getMoneyFormatter,
+ *  since those are settlement amounts, not rates. */
+export const getRateFormatter = (
+  locale: string,
+  decimalPlaces?: number | null,
+  currency?: string | null
+) =>
+  new Intl.NumberFormat(
+    locale,
+    moneyFormatOptions(decimalPlaces ?? DEFAULT_CURRENCY_DECIMALS, {
+      currency: currency ?? undefined,
+      maxDecimalPlaces: SCALE
+    })
+  );
