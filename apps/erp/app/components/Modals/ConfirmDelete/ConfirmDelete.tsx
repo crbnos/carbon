@@ -18,6 +18,8 @@ type ConfirmDeleteProps = {
   name: string;
   text: string;
   deleteText?: string;
+  /** Blocks the delete while still explaining why in `text`. */
+  isDisabled?: boolean;
   onCancel: () => void;
   onSubmit?: () => void;
 };
@@ -28,6 +30,7 @@ const ConfirmDelete = ({
   name,
   text,
   deleteText = "Delete",
+  isDisabled = false,
   onCancel,
   onSubmit
 }: ConfirmDeleteProps) => {
@@ -68,8 +71,8 @@ const ConfirmDelete = ({
           >
             <Button
               variant="destructive"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
+              isLoading={!isDisabled && fetcher.state !== "idle"}
+              isDisabled={isDisabled || fetcher.state !== "idle"}
               type="submit"
             >
               {deleteText}
