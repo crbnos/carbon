@@ -3246,6 +3246,9 @@ msgstr "Confirm Password"
 msgid "Confirm Skip"
 msgstr "Confirm Skip"
 
+msgid "Confirmed"
+msgstr "Confirmed"
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Confirmed incoming stock — purchase & production orders (bars above zero)."
 
@@ -3967,6 +3970,9 @@ msgstr "Credit accounts used when manufacturing costs are absorbed into WIP"
 
 msgid "Credit Memo"
 msgstr "Credit Memo"
+
+msgid "Credited"
+msgstr "Credited"
 
 msgid "Credits"
 msgstr "Credits"
@@ -10453,6 +10459,9 @@ msgstr "Part Supersession"
 msgid "Partial"
 msgstr "Partial"
 
+msgid "Partially Received"
+msgstr "Partially Received"
+
 msgid "Partner"
 msgstr "Partner"
 
@@ -12194,6 +12203,12 @@ msgstr "Risk register"
 
 msgid "Risks"
 msgstr "Risks"
+
+msgid "RMA"
+msgstr "RMA"
+
+msgid "RMA Number"
+msgstr "RMA Number"
 
 msgid "RMAs"
 msgstr "RMAs"

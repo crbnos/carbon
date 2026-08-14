@@ -3246,6 +3246,9 @@ msgstr "Conferma Password"
 msgid "Confirm Skip"
 msgstr "Conferma Salto"
 
+msgid "Confirmed"
+msgstr ""
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Stock in entrata confermato — ordini di acquisto e di produzione (barre sopra zero)."
 
@@ -3967,6 +3970,9 @@ msgstr "Conti di credito utilizzati quando i costi di produzione vengono assorbi
 
 msgid "Credit Memo"
 msgstr "Nota di Credito"
+
+msgid "Credited"
+msgstr ""
 
 msgid "Credits"
 msgstr "Crediti"
@@ -10453,6 +10459,9 @@ msgstr "Sostituzione Pezzo"
 msgid "Partial"
 msgstr "Parziale"
 
+msgid "Partially Received"
+msgstr ""
+
 msgid "Partner"
 msgstr "Partner"
 
@@ -12194,6 +12203,12 @@ msgstr "Registro dei rischi"
 
 msgid "Risks"
 msgstr "Rischi"
+
+msgid "RMA"
+msgstr ""
+
+msgid "RMA Number"
+msgstr ""
 
 msgid "RMAs"
 msgstr ""

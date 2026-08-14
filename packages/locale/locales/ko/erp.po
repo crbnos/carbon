@@ -3246,6 +3246,9 @@ msgstr "비밀번호 확인"
 msgid "Confirm Skip"
 msgstr "건너뛰기 확인"
 
+msgid "Confirmed"
+msgstr ""
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "확정된 입고 재고 — 구매주문 및 생산주문(0 이상 막대)."
 
@@ -3967,6 +3970,9 @@ msgstr "제조 비용이 진행 중인 작업(WIP)에 흡수될 때 사용되는
 
 msgid "Credit Memo"
 msgstr "대변전표"
+
+msgid "Credited"
+msgstr ""
 
 msgid "Credits"
 msgstr "대변"
@@ -10453,6 +10459,9 @@ msgstr "부품 대체"
 msgid "Partial"
 msgstr "부분"
 
+msgid "Partially Received"
+msgstr ""
+
 msgid "Partner"
 msgstr "파트너"
 
@@ -12194,6 +12203,12 @@ msgstr "리스크 레지스터"
 
 msgid "Risks"
 msgstr "리스크"
+
+msgid "RMA"
+msgstr ""
+
+msgid "RMA Number"
+msgstr ""
 
 msgid "RMAs"
 msgstr ""

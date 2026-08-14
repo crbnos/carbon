@@ -3246,6 +3246,9 @@ msgstr "Potwierdź hasło"
 msgid "Confirm Skip"
 msgstr "Potwierdź Pominięcie"
 
+msgid "Confirmed"
+msgstr ""
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Potwierdzone zapasy przychodzące — zamówienia zakupu i produkcji (słupki powyżej zera)."
 
@@ -3967,6 +3970,9 @@ msgstr "Konta kredytowe używane, gdy koszty produkcji są absorbowane do ZW"
 
 msgid "Credit Memo"
 msgstr "Notatka kredytowa"
+
+msgid "Credited"
+msgstr ""
 
 msgid "Credits"
 msgstr "Kredyty"
@@ -10453,6 +10459,9 @@ msgstr "Zastąpienie części"
 msgid "Partial"
 msgstr "Częściowa"
 
+msgid "Partially Received"
+msgstr ""
+
 msgid "Partner"
 msgstr "Partner"
 
@@ -12194,6 +12203,12 @@ msgstr "Rejestr ryzyka"
 
 msgid "Risks"
 msgstr "Ryzyka"
+
+msgid "RMA"
+msgstr ""
+
+msgid "RMA Number"
+msgstr ""
 
 msgid "RMAs"
 msgstr ""

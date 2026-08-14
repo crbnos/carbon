@@ -3246,6 +3246,9 @@ msgstr "パスワードを確認"
 msgid "Confirm Skip"
 msgstr "スキップを確認"
 
+msgid "Confirmed"
+msgstr ""
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "確認された入荷在庫 — 購買および生産注文（ゼロ以上のバー）。"
 
@@ -3967,6 +3970,9 @@ msgstr "製造原価がWIPに吸収される場合に使用されるクレジッ
 
 msgid "Credit Memo"
 msgstr "貸方メモ"
+
+msgid "Credited"
+msgstr ""
 
 msgid "Credits"
 msgstr "クレジット"
@@ -10453,6 +10459,9 @@ msgstr "パーツの廃止予定"
 msgid "Partial"
 msgstr "部分"
 
+msgid "Partially Received"
+msgstr ""
+
 msgid "Partner"
 msgstr "パートナー"
 
@@ -12194,6 +12203,12 @@ msgstr "リスク登録簿"
 
 msgid "Risks"
 msgstr "リスク"
+
+msgid "RMA"
+msgstr ""
+
+msgid "RMA Number"
+msgstr ""
 
 msgid "RMAs"
 msgstr ""

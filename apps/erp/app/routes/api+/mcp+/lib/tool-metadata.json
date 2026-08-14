@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-14T07:05:30.968Z",
-  "totalTools": 1462,
+  "generated": "2026-08-14T07:28:59.938Z",
+  "totalTools": 1483,
   "modules": 15,
   "tools": [
     {
@@ -28388,6 +28388,725 @@
         "required": [
           "supplierId",
           "itemIds"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getPurchaseReturnOrders",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get purchase return orders",
+      "paramCount": 5,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "supplierId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "purchasing_getPurchaseReturnOrder",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get purchase return order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "purchaseReturnOrderId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purchaseReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getPurchaseReturnOrderLines",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get purchase return order lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "purchaseReturnOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purchaseReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getPurchaseReturnOrderLine",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get purchase return order line",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "lineId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lineId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getPurchaseReturnOrderLineTrackedEntities",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get purchase return order line tracked entities",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "lineIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "lineIds"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_insertPurchaseReturnOrder",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "insert purchase return order",
+      "paramCount": 12,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "supplierId": {
+            "type": "string"
+          },
+          "purchaseReturnOrderId": {
+            "type": "string"
+          },
+          "orderDate": {
+            "type": "string"
+          },
+          "supplierLocationId": {
+            "type": "string"
+          },
+          "supplierContactId": {
+            "type": "string"
+          },
+          "supplierReference": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "expirationDate": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          },
+          "customFields": {}
+        },
+        "required": [
+          "supplierId",
+          "orderDate"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_updatePurchaseReturnOrder",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "update purchase return order",
+      "paramCount": 14,
+      "serviceParams": [
+        "client",
+        "purchaseReturnOrder"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "purchaseReturnOrderId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "supplierId": {
+            "type": "string"
+          },
+          "supplierLocationId": {
+            "type": "string"
+          },
+          "supplierContactId": {
+            "type": "string"
+          },
+          "supplierReference": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "exchangeRate": {
+            "type": "number"
+          },
+          "orderDate": {
+            "type": "string"
+          },
+          "expirationDate": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "supplierId",
+          "orderDate"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_upsertPurchaseReturnOrderLine",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "upsert purchase return order line",
+      "paramCount": 12,
+      "serviceParams": [
+        "client",
+        "line"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "purchaseReturnOrderId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "restockFeePercent": {
+            "type": "number"
+          },
+          "returnReasonId": {
+            "type": "string"
+          },
+          "purchaseOrderLineId": {
+            "type": "string"
+          },
+          "receiptLineId": {
+            "type": "string"
+          },
+          "purchaseInvoiceLineId": {
+            "type": "string"
+          },
+          "trackedEntityIds": {
+            "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
+        },
+        "required": [
+          "purchaseReturnOrderId",
+          "itemId",
+          "_operation"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_deletePurchaseReturnOrder",
+      "module": "purchasing",
+      "classification": "DESTRUCTIVE",
+      "description": "delete purchase return order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "purchaseReturnOrderId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purchaseReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_deletePurchaseReturnOrderLine",
+      "module": "purchasing",
+      "classification": "DESTRUCTIVE",
+      "description": "delete purchase return order line",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "lineId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lineId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_setPurchaseReturnOrderLineTrackedEntities",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "set purchase return order line tracked entities",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "lineId",
+        "companyId",
+        "entityIds",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "entityIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "lineId",
+          "entityIds"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getPurchaseReturnOrderShipments",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get purchase return order shipments",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "purchaseReturnOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purchaseReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getPurchaseReturnOrderCredits",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get purchase return order credits",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "purchaseReturnOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purchaseReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getPurchaseReturnOrderIssues",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get purchase return order issues",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "purchaseReturnOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purchaseReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_confirmPurchaseReturnOrder",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "confirm purchase return order",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "{ id, companyId }",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_cancelPurchaseReturnOrder",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "cancel purchase return order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "{ id, companyId, userId }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_completePurchaseReturnOrder",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "complete purchase return order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "{ id, companyId, userId }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_shortClosePurchaseReturnOrderLine",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "short close purchase return order line",
+      "paramCount": 3,
+      "serviceParams": [
+        "db",
+        "{\n    lineId,\n    purchaseReturnOrderId,\n    companyId,\n    userId,\n    intent\n  }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "purchaseReturnOrderId": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "close",
+              "reopen"
+            ]
+          }
+        },
+        "required": [
+          "lineId",
+          "purchaseReturnOrderId",
+          "intent"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getReturnableLinesForSupplier",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get returnable lines for supplier",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "supplierId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "supplierId": {
+            "type": "string"
+          },
+          "args": {
+            "type": "object",
+            "properties": {
+              "purchaseOrderId": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "supplierId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getReturnableEntitiesForSupplier",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get returnable entities for supplier",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "supplierId",
+        "itemId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "supplierId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "supplierId",
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_getCreditableQuantitiesForPurchaseReturn",
+      "module": "purchasing",
+      "classification": "READ",
+      "description": "get creditable quantities for purchase return",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "purchaseReturnOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purchaseReturnOrderId"
         ]
       }
     },

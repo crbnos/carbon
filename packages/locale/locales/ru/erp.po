@@ -3246,6 +3246,9 @@ msgstr "Подтвердить пароль"
 msgid "Confirm Skip"
 msgstr "Подтвердить пропуск"
 
+msgid "Confirmed"
+msgstr ""
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Подтвержденный входящий запас — заказы на покупку и производство (столбцы выше нуля)."
 
@@ -3967,6 +3970,9 @@ msgstr "Кредитовые счета, используемые при пог�
 
 msgid "Credit Memo"
 msgstr "Кредит-нота"
+
+msgid "Credited"
+msgstr ""
 
 msgid "Credits"
 msgstr "Кредиты"
@@ -10453,6 +10459,9 @@ msgstr "Замена детали"
 msgid "Partial"
 msgstr "Частично"
 
+msgid "Partially Received"
+msgstr ""
+
 msgid "Partner"
 msgstr "Партнер"
 
@@ -12194,6 +12203,12 @@ msgstr "Реестр рисков"
 
 msgid "Risks"
 msgstr "Риски"
+
+msgid "RMA"
+msgstr ""
+
+msgid "RMA Number"
+msgstr ""
 
 msgid "RMAs"
 msgstr ""

@@ -3246,6 +3246,9 @@ msgstr "Passwort bestätigen"
 msgid "Confirm Skip"
 msgstr "Überspringen bestätigen"
 
+msgid "Confirmed"
+msgstr ""
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Bestätigter eingehender Bestand — Kauf- und Produktionsaufträge (Balken über Null)."
 
@@ -3967,6 +3970,9 @@ msgstr "Aktienkonten, die verwendet werden, wenn Herstellungskosten in laufende 
 
 msgid "Credit Memo"
 msgstr "Gutschrift"
+
+msgid "Credited"
+msgstr ""
 
 msgid "Credits"
 msgstr "Guthaben"
@@ -10453,6 +10459,9 @@ msgstr "Teilersatz"
 msgid "Partial"
 msgstr "Teilbestand"
 
+msgid "Partially Received"
+msgstr ""
+
 msgid "Partner"
 msgstr "Partner"
 
@@ -12194,6 +12203,12 @@ msgstr "Risikoverzeichnis"
 
 msgid "Risks"
 msgstr "Risiken"
+
+msgid "RMA"
+msgstr ""
+
+msgid "RMA Number"
+msgstr ""
 
 msgid "RMAs"
 msgstr ""

@@ -3246,6 +3246,9 @@ msgstr "确认密码"
 msgid "Confirm Skip"
 msgstr "确认跳过"
 
+msgid "Confirmed"
+msgstr ""
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "确认的入库存货 — 采购和生产订单（零以上的条形图）。"
 
@@ -3967,6 +3970,9 @@ msgstr "制造成本吸收到在产品中时使用的贷方科目"
 
 msgid "Credit Memo"
 msgstr "贷方备忘录"
+
+msgid "Credited"
+msgstr ""
 
 msgid "Credits"
 msgstr "贷方"
@@ -10453,6 +10459,9 @@ msgstr "零件取代"
 msgid "Partial"
 msgstr "部分"
 
+msgid "Partially Received"
+msgstr ""
+
 msgid "Partner"
 msgstr "合作伙伴"
 
@@ -12194,6 +12203,12 @@ msgstr "风险登记册"
 
 msgid "Risks"
 msgstr "风险"
+
+msgid "RMA"
+msgstr ""
+
+msgid "RMA Number"
+msgstr ""
 
 msgid "RMAs"
 msgstr ""

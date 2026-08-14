@@ -3246,6 +3246,9 @@ msgstr "Şifreyi Onayla"
 msgid "Confirm Skip"
 msgstr "Atlamayı Onayla"
 
+msgid "Confirmed"
+msgstr ""
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Onaylanan gelen stok — satın alma ve üretim siparişleri (sıfırın üzerindeki çubuklar)."
 
@@ -3967,6 +3970,9 @@ msgstr "Üretim maliyetleri devam eden işlere emildiğinde kullanılan kredi he
 
 msgid "Credit Memo"
 msgstr "Alacak Notu"
+
+msgid "Credited"
+msgstr ""
 
 msgid "Credits"
 msgstr "Krediler"
@@ -10453,6 +10459,9 @@ msgstr "Parça Yerini Alma"
 msgid "Partial"
 msgstr "Kısmi"
 
+msgid "Partially Received"
+msgstr ""
+
 msgid "Partner"
 msgstr "İş Ortağı"
 
@@ -12194,6 +12203,12 @@ msgstr "Risk kaydı"
 
 msgid "Risks"
 msgstr "Riskler"
+
+msgid "RMA"
+msgstr ""
+
+msgid "RMA Number"
+msgstr ""
 
 msgid "RMAs"
 msgstr ""

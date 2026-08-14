@@ -3246,6 +3246,9 @@ msgstr "पासवर्ड की पुष्टि करें"
 msgid "Confirm Skip"
 msgstr "छोड़ने की पुष्टि करें"
 
+msgid "Confirmed"
+msgstr ""
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "पुष्टि की गई आने वाली स्टॉक — खरीद और उत्पादन आदेश (बार शून्य से ऊपर)।"
 
@@ -3967,6 +3970,9 @@ msgstr "जब विनिर्माण लागत को WIP में अ
 
 msgid "Credit Memo"
 msgstr "क्रेडिट मेमो"
+
+msgid "Credited"
+msgstr ""
 
 msgid "Credits"
 msgstr "जमा"
@@ -10453,6 +10459,9 @@ msgstr "भाग प्रतिस्थापन"
 msgid "Partial"
 msgstr "आंशिक"
 
+msgid "Partially Received"
+msgstr ""
+
 msgid "Partner"
 msgstr "साथी"
 
@@ -12194,6 +12203,12 @@ msgstr "जोखिम रजिस्टर"
 
 msgid "Risks"
 msgstr "जोखिमें"
+
+msgid "RMA"
+msgstr ""
+
+msgid "RMA Number"
+msgstr ""
 
 msgid "RMAs"
 msgstr ""
