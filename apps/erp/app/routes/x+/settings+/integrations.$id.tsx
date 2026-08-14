@@ -62,7 +62,7 @@ import {
 // Deep service import (not the ~/modules/accounting barrel) to keep this
 // route's type graph light — see the TS2589 note in
 // ~/modules/settings/ui/Integrations/index.ts.
-import { getActiveDimensionsWithValues } from "~/modules/accounting/accounting.service";
+import { getActiveDimensionsWithValues } from "~/modules/accounting/accounting.ee.service";
 import {
   getIntegration,
   IntegrationForm,

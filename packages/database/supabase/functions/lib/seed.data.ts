@@ -865,7 +865,7 @@ export const fiscalYearSettings = {
  * Default period-close checklist (NetSuite-style). Seeded per company as system
  * task definitions; getPeriodCloseChecklist instantiates a periodCloseTask per
  * period from the active definitions. `autoCheckKey` binds Auto tasks to a
- * readiness evaluator in accounting.service.ts (computePeriodReadiness).
+ * readiness evaluator in accounting.ee.service.ts (computePeriodReadiness).
  */
 export const periodCloseTaskDefinitions = [
   {

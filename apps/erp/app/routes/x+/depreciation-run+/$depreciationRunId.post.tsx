@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getOrCreateAccountingPeriod } from "~/modules/accounting";
-import { postDepreciationRun } from "~/modules/accounting/accounting.server";
+import { postDepreciationRun } from "~/modules/accounting/accounting.ee.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

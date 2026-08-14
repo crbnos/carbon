@@ -1,3 +1,3 @@
+export * from "./accounting.ee.service";
 export * from "./accounting.models";
-export * from "./accounting.service";
 export * from "./types";

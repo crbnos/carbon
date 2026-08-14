@@ -15,7 +15,7 @@ import { DateTime, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { path } from "~/utils/path";
-import type { AccountingSyncTieOutListItem } from "../../accounting.service";
+import type { AccountingSyncTieOutListItem } from "../../accounting.ee.service";
 
 type SyncTieOutTableProps = {
   data: AccountingSyncTieOutListItem[];

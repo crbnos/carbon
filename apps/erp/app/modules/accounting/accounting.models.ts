@@ -109,7 +109,7 @@ export const analyticsReportKeys = [
 export type AnalyticsReportKey = (typeof analyticsReportKeys)[number];
 
 // Account scope: exactly one selector. "scrapAccounts" resolves at runtime to
-// accountDefault.scrapAccount (getScrapAccountIds in accounting.service.ts).
+// accountDefault.scrapAccount (getScrapAccountIds in accounting.ee.service.ts).
 export type AnalyticsAccountScope =
   | { classes: (typeof accountClassTypes)[number][] }
   | { types: (typeof accountTypes)[number][] }
