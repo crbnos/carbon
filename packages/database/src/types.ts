@@ -82552,6 +82552,13 @@ export type Database = {
           version: number
         }[]
       }
+      get_unit_of_measure_usage: {
+        Args: { p_id: string }
+        Returns: {
+          count: number
+          tableName: string
+        }[]
+      }
       get_unscheduled_jobs: {
         Args: { location_id: string }
         Returns: {

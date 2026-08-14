@@ -89,6 +89,9 @@ msgstr "{0} доступно для кредитования ({1} / {2} скре
 #. placeholder {0}: distinctCustomers.length
 msgid "{0} customers"
 msgstr "{0} клиентов"
+#. placeholder {0}: unitOfMeasure.name
+msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
+msgstr ""
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
