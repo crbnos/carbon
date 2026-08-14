@@ -78,6 +78,72 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       throw redirect(path.to.shipmentDetails(salesOrderShipment.data.id));
+    case "Sales Return Order": {
+      const salesReturnShipment = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "shipmentFromSalesReturnOrder",
+          companyId,
+          salesReturnOrderId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId
+        }
+      });
+      if (!salesReturnShipment.data || salesReturnShipment.error) {
+        logger.error("Failed to create shipment", {
+          error: salesReturnShipment.error
+        });
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              salesReturnShipment.error,
+              await getEdgeFunctionErrorMessage(
+                salesReturnShipment.error,
+                "Failed to create shipment"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.shipmentDetails(salesReturnShipment.data.id));
+    }
+    case "Purchase Return Order": {
+      const purchaseReturnShipment = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "shipmentFromPurchaseReturnOrder",
+          companyId,
+          purchaseReturnOrderId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId
+        }
+      });
+      if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
+        logger.error("Failed to create shipment", {
+          error: purchaseReturnShipment.error
+        });
+        throw redirect(
+          path.to.purchaseReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              purchaseReturnShipment.error,
+              await getEdgeFunctionErrorMessage(
+                purchaseReturnShipment.error,
+                "Failed to create shipment"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.shipmentDetails(purchaseReturnShipment.data.id));
+    }
     case "Purchase Order":
       if (!defaults.data?.locationId) {
         throw redirect(

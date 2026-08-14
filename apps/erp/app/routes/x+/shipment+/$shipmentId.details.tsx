@@ -93,6 +93,54 @@ export async function action({ request }: ActionFunctionArgs) {
           );
         }
         break;
+      case "Sales Return Order": {
+        const salesReturnShipment = await serviceRole.functions.invoke<{
+          id: string;
+        }>("create", {
+          body: {
+            type: "shipmentFromSalesReturnOrder",
+            companyId,
+            locationId: d.locationId,
+            salesReturnOrderId: d.sourceDocumentId,
+            shipmentId: id,
+            userId: userId
+          }
+        });
+        if (!salesReturnShipment.data || salesReturnShipment.error) {
+          throw redirect(
+            path.to.shipment(id),
+            await flash(
+              request,
+              error(salesReturnShipment.error, "Failed to create shipment")
+            )
+          );
+        }
+        break;
+      }
+      case "Purchase Return Order": {
+        const purchaseReturnShipment = await serviceRole.functions.invoke<{
+          id: string;
+        }>("create", {
+          body: {
+            type: "shipmentFromPurchaseReturnOrder",
+            companyId,
+            locationId: d.locationId,
+            purchaseReturnOrderId: d.sourceDocumentId,
+            shipmentId: id,
+            userId: userId
+          }
+        });
+        if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
+          throw redirect(
+            path.to.shipment(id),
+            await flash(
+              request,
+              error(purchaseReturnShipment.error, "Failed to create shipment")
+            )
+          );
+        }
+        break;
+      }
       case "Purchase Order":
         const purchaseOrderShipment = await serviceRole.functions.invoke<{
           id: string;

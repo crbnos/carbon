@@ -87,6 +87,44 @@ export default function useShipmentForm({
             }
           });
         break;
+      case "Sales Return Order":
+        carbon
+          ?.from("salesReturnOrder")
+          .select("id, salesReturnOrderId")
+          .eq("companyId", user.company.id)
+          .in("status", ["Partially Received", "Received"])
+          .then((response) => {
+            if (response.error) {
+              setError(response.error.message);
+            } else {
+              setSourceDocuments(
+                response.data.map((d) => ({
+                  name: d.salesReturnOrderId,
+                  id: d.id
+                }))
+              );
+            }
+          });
+        break;
+      case "Purchase Return Order":
+        carbon
+          ?.from("purchaseReturnOrder")
+          .select("id, purchaseReturnOrderId")
+          .eq("companyId", user.company.id)
+          .in("status", ["Confirmed", "Partially Shipped"])
+          .then((response) => {
+            if (response.error) {
+              setError(response.error.message);
+            } else {
+              setSourceDocuments(
+                response.data.map((d) => ({
+                  name: d.purchaseReturnOrderId,
+                  id: d.id
+                }))
+              );
+            }
+          });
+        break;
       case "Outbound Transfer":
         carbon
           ?.from("warehouseTransfer")
