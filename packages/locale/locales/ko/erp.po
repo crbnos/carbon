@@ -12050,6 +12050,9 @@ msgstr "재시도"
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
 
+msgid "Return Reasons"
+msgstr ""
+
 msgid "Returned"
 msgstr "반환됨"
 
@@ -12168,6 +12171,9 @@ msgstr "리스크 레지스터"
 
 msgid "Risks"
 msgstr "리스크"
+
+msgid "RMAs"
+msgstr ""
 
 msgid "Role"
 msgstr "역할"
@@ -13855,6 +13861,9 @@ msgstr "공급업체 참조"
 
 msgid "Supplier Reference"
 msgstr "공급업체 참조"
+
+msgid "Supplier Returns"
+msgstr ""
 
 msgid "Supplier Status"
 msgstr "공급업체 상태"

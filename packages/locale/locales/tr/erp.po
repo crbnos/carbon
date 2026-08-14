@@ -12050,6 +12050,9 @@ msgstr "Tekrar Dene"
 msgid "Return Home"
 msgstr "Ana Sayfaya Dön"
 
+msgid "Return Reasons"
+msgstr ""
+
 msgid "Returned"
 msgstr "İade Edildi"
 
@@ -12168,6 +12171,9 @@ msgstr "Risk kaydı"
 
 msgid "Risks"
 msgstr "Riskler"
+
+msgid "RMAs"
+msgstr ""
 
 msgid "Role"
 msgstr "Rol"
@@ -13855,6 +13861,9 @@ msgstr "Tedarikçi referansı"
 
 msgid "Supplier Reference"
 msgstr "Tedarikçi Referansı"
+
+msgid "Supplier Returns"
+msgstr ""
 
 msgid "Supplier Status"
 msgstr "Tedarikçi Durumu"

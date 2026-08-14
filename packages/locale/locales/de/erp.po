@@ -12050,6 +12050,9 @@ msgstr "Erneut versuchen"
 msgid "Return Home"
 msgstr "Zur Startseite zurück"
 
+msgid "Return Reasons"
+msgstr ""
+
 msgid "Returned"
 msgstr "Zurückgegeben"
 
@@ -12168,6 +12171,9 @@ msgstr "Risikoverzeichnis"
 
 msgid "Risks"
 msgstr "Risiken"
+
+msgid "RMAs"
+msgstr ""
 
 msgid "Role"
 msgstr "Rolle"
@@ -13855,6 +13861,9 @@ msgstr "Lieferantenreferenz"
 
 msgid "Supplier Reference"
 msgstr "Lieferantenreferenz"
+
+msgid "Supplier Returns"
+msgstr ""
 
 msgid "Supplier Status"
 msgstr "Lieferantenstatus"

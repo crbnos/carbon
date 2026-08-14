@@ -12050,6 +12050,9 @@ msgstr "पुनः प्रयास करें"
 msgid "Return Home"
 msgstr "घर लौटें"
 
+msgid "Return Reasons"
+msgstr ""
+
 msgid "Returned"
 msgstr "लौटाया गया"
 
@@ -12168,6 +12171,9 @@ msgstr "जोखिम रजिस्टर"
 
 msgid "Risks"
 msgstr "जोखिमें"
+
+msgid "RMAs"
+msgstr ""
 
 msgid "Role"
 msgstr "भूमिका"
@@ -13855,6 +13861,9 @@ msgstr "आपूर्तिकर्ता संदर्भ"
 
 msgid "Supplier Reference"
 msgstr "आपूर्तिकर्ता संदर्भ"
+
+msgid "Supplier Returns"
+msgstr ""
 
 msgid "Supplier Status"
 msgstr "आपूर्तिकर्ता स्थिति"

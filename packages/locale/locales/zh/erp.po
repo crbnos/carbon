@@ -12050,6 +12050,9 @@ msgstr "重试"
 msgid "Return Home"
 msgstr "返回首页"
 
+msgid "Return Reasons"
+msgstr ""
+
 msgid "Returned"
 msgstr "已返回"
 
@@ -12168,6 +12171,9 @@ msgstr "风险登记册"
 
 msgid "Risks"
 msgstr "风险"
+
+msgid "RMAs"
+msgstr ""
 
 msgid "Role"
 msgstr "角色"
@@ -13855,6 +13861,9 @@ msgstr "供应商参考"
 
 msgid "Supplier Reference"
 msgstr "供应商参考"
+
+msgid "Supplier Returns"
+msgstr ""
 
 msgid "Supplier Status"
 msgstr "供应商状态"
