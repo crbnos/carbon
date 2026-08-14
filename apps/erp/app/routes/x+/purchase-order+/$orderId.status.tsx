@@ -9,9 +9,11 @@ import { runMRP } from "~/modules/production";
 import {
   isPurchaseOrderLocked,
   purchaseOrderStatusType,
+  reopenPurchaseOrderAsRevision,
   updatePurchaseOrderStatus
 } from "~/modules/purchasing";
 import { canApproveRequest } from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "orderid-status");
@@ -47,6 +49,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const currentStatus = currentPo.data?.status;
   const isCurrentlyLocked = isPurchaseOrderLocked(currentStatus);
+
+  // A revision is only created on explicit request (the "Create PO Revision"
+  // header action) — a plain Reopen of a released order does not bump.
+  // Eligibility is re-checked in SQL by reopenPurchaseOrderAsRevision, so this
+  // flag alone can never produce a revision on an ineligible order.
+  const createRevisionRequested =
+    status === "Draft" && formData.get("createRevision") === "true";
 
   // Determine required permission:
   // - Reopening (Draft) from a locked status requires delete permission
@@ -155,6 +164,41 @@ export async function action({ request, params }: ActionFunctionArgs) {
           .eq("status", "Pending");
       }
     }
+  }
+
+  if (createRevisionRequested) {
+    // Atomic compare-and-swap: status + revisionId move together, and the
+    // eligibility conditions live in the WHERE clause. 0 rows means the order
+    // was never released, so there is no revision to create.
+    let rowsUpdated = 0;
+    try {
+      rowsUpdated = await reopenPurchaseOrderAsRevision(getDatabaseClient(), {
+        id,
+        companyId,
+        updatedBy: userId
+      });
+    } catch (err) {
+      logger.error("Failed to create purchase order revision", { error: err });
+      throw redirect(
+        requestReferrer(request) ?? path.to.purchaseOrder(id),
+        await flash(request, error(err, "Failed to create revision"))
+      );
+    }
+
+    if (rowsUpdated === 0) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.purchaseOrder(id),
+        await flash(
+          request,
+          error(null, "Only a released purchase order can be revised")
+        )
+      );
+    }
+
+    throw redirect(
+      requestReferrer(request) ?? path.to.purchaseOrder(id),
+      await flash(request, success("Created a new purchase order revision"))
+    );
   }
 
   const update = await updatePurchaseOrderStatus(client, {

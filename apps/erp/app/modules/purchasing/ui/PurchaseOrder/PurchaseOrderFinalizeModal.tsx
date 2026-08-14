@@ -1,3 +1,4 @@
+import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -76,7 +77,9 @@ const PurchaseOrderFinalizeModal = ({
           fetcher={fetcher}
         >
           <ModalHeader>
-            <ModalTitle>{`Finalize ${purchaseOrder?.purchaseOrderId}`}</ModalTitle>
+            <ModalTitle>{`Finalize ${getPurchaseOrderDisplayId(
+              purchaseOrder
+            )}`}</ModalTitle>
             <ModalDescription>
               Are you sure you want to finalize the purchase order? Finalizing
               the order will affect on order quantities used to calculate supply

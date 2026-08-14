@@ -113,6 +113,11 @@ msgstr "{0} 上传成功"
 msgid "{0} values missing"
 msgstr "{0} 个值缺失"
 
+#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "This purchase order"
+#. placeholder {1}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{0} will be reopened for editing as revision {1}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{0} 将重新打开以编辑为修订版本 {1}。已发送给供应商的文件在你最终确定并重新发送订单之前保持不变。"
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} 个零件已跳过 — 它们已有待处理作业"
 
@@ -1606,7 +1611,7 @@ msgstr "已归档"
 msgid "Archived Logs"
 msgstr "已归档日志"
 
-#. placeholder {0}: quote.quoteId
+#. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
 msgid "Are you sure you want to accept quote {0} for {1}?"
 msgstr "你确定要接受报价 {0} 的 {1} 吗？"
@@ -1625,7 +1630,7 @@ msgstr "您确定要取消 {0} 吗?在您重新打开之前，它将被关闭并
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "您确定要取消 {0} 吗？这也将取消所有相关的供应商报价。"
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
+#. placeholder {0}: routeData?.purchaseOrder ? getPurchaseOrderDisplayId(routeData.purchaseOrder) : "this purchase order"
 msgid "Are you sure you want to cancel {0}? This will close the order."
 msgstr "确定要取消{0}吗？这将关闭订单。"
 
@@ -1683,9 +1688,9 @@ msgstr "你确定要从此操作中删除 {0} 吗？此操作无法撤销。"
 msgid "Are you sure you want to delete {0}?"
 msgstr "你确定要删除 {0} 吗？"
 
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: initialValues.memoId
 #. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "您确定要删除 {0} 吗？此操作无法撤销。"
 
@@ -3762,6 +3767,9 @@ msgstr "创建看板"
 
 msgid "Create new rule"
 msgstr "创建新规则"
+
+msgid "Create PO Revision"
+msgstr "创建采购订单修订版本"
 
 msgid "Create Production Event"
 msgstr "创建生产事件"
@@ -10371,7 +10379,7 @@ msgid "Packing Slip"
 msgstr "装箱单"
 
 msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
-msgstr ""
+msgstr "将金额填充至其货币的小数位数，使得 300 显示为 300.00，数字列保持对齐。关闭此选项以仅显示有意义的数字。无论哪种方式，打印文件和存储的金额都不受影响。"
 
 msgid "Page"
 msgstr "页面"
@@ -13227,7 +13235,7 @@ msgid "Show sync options"
 msgstr "显示同步选项"
 
 msgid "Show Trailing Zeros"
-msgstr ""
+msgstr "显示尾随零"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"

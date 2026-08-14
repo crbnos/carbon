@@ -113,6 +113,11 @@ msgstr "{0}が正常にアップロードされました"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "This purchase order"
+#. placeholder {1}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{0} will be reopened for editing as revision {1}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{0}は編集のため改訂版{1}として再度開かれます。サプライヤーに既に送信されたドキュメントは、注文を最終化して再送信するまで変わりません。"
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}件のパーツをスキップしました — 既にオープンジョブがあります"
 
@@ -1606,7 +1611,7 @@ msgstr "アーカイブ済み"
 msgid "Archived Logs"
 msgstr "アーカイブされたログ"
 
-#. placeholder {0}: quote.quoteId
+#. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
 msgid "Are you sure you want to accept quote {0} for {1}?"
 msgstr "本当に見積書 {0} を {1} で受け入れてもよろしいですか？"
@@ -1625,7 +1630,7 @@ msgstr "{0}をキャンセルしてもよろしいですか？閉じられて、
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}をキャンセルしてもよろしいですか？これにより、関連するすべてのサプライヤー見積もりもキャンセルされます。"
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
+#. placeholder {0}: routeData?.purchaseOrder ? getPurchaseOrderDisplayId(routeData.purchaseOrder) : "this purchase order"
 msgid "Are you sure you want to cancel {0}? This will close the order."
 msgstr "{0}をキャンセルしてもよろしいですか？注文が閉じられます。"
 
@@ -1683,9 +1688,9 @@ msgstr "{0}をこの操作から削除してもよろしいですか?これは�
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}を削除してもよろしいですか？"
 
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: initialValues.memoId
 #. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "本当に{0}を削除してもよろしいですか？この操作は取り消せません。"
 
@@ -3762,6 +3767,9 @@ msgstr "カンバンを作成"
 
 msgid "Create new rule"
 msgstr "新しいルールを作成"
+
+msgid "Create PO Revision"
+msgstr "PO改訂版を作成"
 
 msgid "Create Production Event"
 msgstr "生産イベントを作成"
@@ -10371,7 +10379,7 @@ msgid "Packing Slip"
 msgstr "梱包明細書"
 
 msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
-msgstr ""
+msgstr "金額を通貨の小数点以下の桁数に合わせてパディングすると、300は300.00と表示され、数字の列が揃ったままになります。これをオフにすると、値を持つ数字だけが表示されます。印刷ドキュメントと保存された金額はどちらの方法でも影響を受けません。"
 
 msgid "Page"
 msgstr "ページ"
@@ -13227,7 +13235,7 @@ msgid "Show sync options"
 msgstr "同期オプションを表示"
 
 msgid "Show Trailing Zeros"
-msgstr ""
+msgstr "末尾のゼロを表示"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"

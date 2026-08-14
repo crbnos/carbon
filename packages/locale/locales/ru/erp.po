@@ -113,6 +113,11 @@ msgstr "{0} успешно загружен"
 msgid "{0} values missing"
 msgstr "{0} значений отсутствует"
 
+#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "This purchase order"
+#. placeholder {1}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{0} will be reopened for editing as revision {1}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{0} будет переоткрыт для редактирования как редакция {1}. Документ, уже отправленный поставщику, останется неизменным до тех пор, пока вы не завершите и не отправите повторно заказ."
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} деталей пропущено — у них уже есть открытые задания"
 
@@ -1606,7 +1611,7 @@ msgstr "Архивировано"
 msgid "Archived Logs"
 msgstr "Архивированные журналы"
 
-#. placeholder {0}: quote.quoteId
+#. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
 msgid "Are you sure you want to accept quote {0} for {1}?"
 msgstr "Вы уверены, что хотите принять предложение {0} на сумму {1}?"
@@ -1625,7 +1630,7 @@ msgstr "Вы уверены, что хотите отменить {0}? Он бу
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Вы уверены, что хотите отменить {0}? Это также отменит все связанные предложения поставщиков."
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
+#. placeholder {0}: routeData?.purchaseOrder ? getPurchaseOrderDisplayId(routeData.purchaseOrder) : "this purchase order"
 msgid "Are you sure you want to cancel {0}? This will close the order."
 msgstr "Вы уверены, что хотите отменить {0}? Это закроет заказ."
 
@@ -1683,9 +1688,9 @@ msgstr "Вы уверены, что хотите удалить {0} из это�
 msgid "Are you sure you want to delete {0}?"
 msgstr "Вы уверены, что хотите удалить {0}?"
 
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: initialValues.memoId
 #. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить {0}? Это действие невозможно отменить."
 
@@ -3762,6 +3767,9 @@ msgstr "Создать Kanban"
 
 msgid "Create new rule"
 msgstr "Создать новое правило"
+
+msgid "Create PO Revision"
+msgstr "Создать редакцию ПО"
 
 msgid "Create Production Event"
 msgstr "Создать производственное событие"
@@ -10371,7 +10379,7 @@ msgid "Packing Slip"
 msgstr "Упаковочный лист"
 
 msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
-msgstr ""
+msgstr "Выравнивайте суммы по десятичным разрядам валюты, чтобы 300 отображался как 300,00, а столбцы чисел оставались выровненными. Отключите эту опцию, чтобы показывать только значащие цифры. На печатные документы и сохраненные суммы это никак не влияет."
 
 msgid "Page"
 msgstr "Страница"
@@ -13227,7 +13235,7 @@ msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
 
 msgid "Show Trailing Zeros"
-msgstr ""
+msgstr "Показывать нулевые разряды"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"

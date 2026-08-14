@@ -113,6 +113,11 @@ msgstr "{0} başarıyla yüklendi"
 msgid "{0} values missing"
 msgstr "{0} değeri eksik"
 
+#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "This purchase order"
+#. placeholder {1}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{0} will be reopened for editing as revision {1}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{0} düzenleme için revizyon {1} olarak yeniden açılacak. Tedarikçiye gönderilen belge, siparişi sonuçlandırıp yeniden gönderene kadar değiştirilmeden kalır."
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parça atlandı — zaten açık işleri var"
 
@@ -1606,7 +1611,7 @@ msgstr "Arşivlenmiş"
 msgid "Archived Logs"
 msgstr "Arşivlenmiş Kayıtlar"
 
-#. placeholder {0}: quote.quoteId
+#. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
 msgid "Are you sure you want to accept quote {0} for {1}?"
 msgstr "Teklif {0}'ı {1} için kabul etmek istediğinizden emin misiniz?"
@@ -1625,7 +1630,7 @@ msgstr "{0} öğesini iptal etmek istediğinizden emin misiniz? Yeniden açana k
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}'yi iptal etmek istediğinizden emin misiniz? Bu aynı zamanda tüm ilgili tedarikçi tekliflerini de iptal edecektir."
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
+#. placeholder {0}: routeData?.purchaseOrder ? getPurchaseOrderDisplayId(routeData.purchaseOrder) : "this purchase order"
 msgid "Are you sure you want to cancel {0}? This will close the order."
 msgstr "{0} siparişini iptal etmek istediğinizden emin misiniz? Bu siparişi kapatacaktır."
 
@@ -1683,9 +1688,9 @@ msgstr "Bu işlemden {0}'ı silmek istediğinizden emin misiniz? Bu geri alınam
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0} öğesini silmek istediğinizden emin misiniz?"
 
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: initialValues.memoId
 #. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Emin misiniz ki {0}'ı silmek istiyorsunuz? Bu geri alınamaz."
 
@@ -3762,6 +3767,9 @@ msgstr "Kanban Oluştur"
 
 msgid "Create new rule"
 msgstr "Yeni kural oluştur"
+
+msgid "Create PO Revision"
+msgstr "PO Revizyonu Oluştur"
 
 msgid "Create Production Event"
 msgstr "Üretim Etkinliği Oluştur"
@@ -10371,7 +10379,7 @@ msgid "Packing Slip"
 msgstr "Paketleme Fişi"
 
 msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
-msgstr ""
+msgstr "Tutarları kendi para biriminin ondalık basamaklarına göre doldur, böylece 300 şu şekilde görünür: 300.00 ve rakam sütunları hizalı kalır. Sadece değer taşıyan rakamları göstermek için bunu kapatın. Yazdırılan belgeler ve depolanan tutarlar her iki şekilde de etkilenmez."
 
 msgid "Page"
 msgstr "Sayfa"
@@ -13227,7 +13235,7 @@ msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
 
 msgid "Show Trailing Zeros"
-msgstr ""
+msgstr "Sondaki Sıfırları Göster"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"

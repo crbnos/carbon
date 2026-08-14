@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -220,7 +221,7 @@ export async function action(args: ActionFunctionArgs) {
 
     file = await pdf.arrayBuffer();
     fileName = stripSpecialCharacters(
-      `${purchaseOrder.data.purchaseOrderId} - ${new Date()
+      `${getPurchaseOrderDisplayId(purchaseOrder.data)} - ${new Date()
         .toISOString()
         .slice(0, -5)}.pdf`
     );

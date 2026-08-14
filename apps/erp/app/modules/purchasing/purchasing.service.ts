@@ -41,6 +41,7 @@ import type {
   supplierTypeValidator,
   supplierValidator
 } from "./purchasing.models";
+import { PURCHASE_ORDER_LOCKED_STATUSES } from "./purchasing.models";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
 
 const PURCHASE_ORDERS_LIST_COLUMNS =
@@ -1210,6 +1211,48 @@ export async function updatePurchaseOrderStatus(
   }
 ) {
   return client.from("purchaseOrder").update(update).eq("id", update.id);
+}
+
+/**
+ * Reopens a released purchase order to Draft as its next revision.
+ *
+ * The increment is `revisionId = revisionId + 1` computed in SQL, not read then
+ * written, so two concurrent "Create PO Revision" requests cannot both land on
+ * the same revision number. The eligibility conditions are part of the WHERE
+ * clause rather than a prior read, making this a compare-and-swap: an order
+ * that is not in a released (locked) state, or was never finalized (no
+ * `orderDate`), matches no rows and is left untouched.
+ *
+ * Returns the number of rows updated — 0 means the order was not eligible.
+ */
+export async function reopenPurchaseOrderAsRevision(
+  db: Kysely<KyselyDatabase>,
+  {
+    id,
+    companyId,
+    updatedBy
+  }: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const result = await db
+    .updateTable("purchaseOrder")
+    .set((eb) => ({
+      status: "Draft" as const,
+      assignee: null,
+      revisionId: eb("revisionId", "+", 1),
+      updatedBy,
+      updatedAt: datetime.timestamp()
+    }))
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .where("status", "in", [...PURCHASE_ORDER_LOCKED_STATUSES])
+    .where("orderDate", "is not", null)
+    .executeTakeFirst();
+
+  return Number(result.numUpdatedRows ?? 0);
 }
 
 export async function updateSupplierAccounting(

@@ -631,3 +631,25 @@ export function isPurchaseOrderLocked(
     status as PurchaseOrderLockedStatus
   );
 }
+
+/**
+ * Whether a status change is ELIGIBLE to increment `purchaseOrder.revisionId`.
+ * The bump itself only happens when the user explicitly asks for it (the
+ * "Create PO Revision" header action posts `createRevision=true`); a plain
+ * Reopen never bumps. This guard makes the explicit request meaningless
+ * outside the one valid transition: moving to Draft from a locked status on
+ * an order that was actually released (`orderDate` is only set at finalize).
+ * Reopening from "Needs Approval", or an order closed straight from Draft,
+ * never reached the supplier and can never create a revision.
+ */
+export function canCreatePurchaseOrderRevision(transition: {
+  newStatus: (typeof purchaseOrderStatusType)[number];
+  currentStatus: string | null | undefined;
+  orderDate: string | null | undefined;
+}): boolean {
+  return (
+    transition.newStatus === "Draft" &&
+    isPurchaseOrderLocked(transition.currentStatus) &&
+    Boolean(transition.orderDate)
+  );
+}

@@ -1,3 +1,4 @@
+import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import {
   Button,
   cn,
@@ -285,11 +286,7 @@ const SupplierInteractionState = ({
             const orderItems = orders.map((order) => ({
               id: order.id!,
               label: order.purchaseOrderId
-                ? `${order.purchaseOrderId}${
-                    order.revisionId && order.revisionId > 0
-                      ? `-${order.revisionId}`
-                      : ""
-                  }`
+                ? getPurchaseOrderDisplayId(order)
                 : `Order ${order.id}`,
               path: path.to.purchaseOrderDetails(order.id!)
             }));
