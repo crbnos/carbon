@@ -76,6 +76,14 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
+    type: z.literal("receiptFromSalesReturnOrder"),
+    salesReturnOrderId: z.string(),
+    receiptId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("receiptFromWarehouseTransfer"),
     warehouseTransferId: z.string(),
     receiptId: z.string().optional(),
@@ -156,6 +164,7 @@ serve(async (req: Request) => {
     receiptDefault: { create: "inventory" },
     receiptFromPurchaseOrder: { create: "inventory" },
     receiptFromInboundTransfer: { create: "inventory" },
+    receiptFromSalesReturnOrder: { create: "inventory" },
     receiptFromWarehouseTransfer: { create: "inventory" },
     receiptLineSplit: { create: "inventory" },
     shipmentDefault: { create: "inventory" },
@@ -1161,6 +1170,190 @@ serve(async (req: Request) => {
                 sourceDocument: "Inbound Transfer",
                 sourceDocumentId: warehouseTransferId,
                 sourceDocumentReadableId: warehouseTransfer.data.transferId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+
+            id = insertReceipt[0]?.id ?? "";
+          }
+
+          await trx
+            .deleteFrom("receiptLine")
+            .where("receiptId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("receiptLine")
+            .values(
+              receiptLineItems.map((lineItem) => ({
+                ...lineItem,
+                receiptId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return jsonResponse(result, 201);
+      } catch (err) {
+        return errorResponse(err, 500);
+      }
+    }
+    case "receiptFromSalesReturnOrder": {
+      const {
+        salesReturnOrderId,
+        receiptId: existingReceiptId,
+        locationId: userLocationId,
+      } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        salesReturnOrderId,
+        existingReceiptId,
+        userId,
+      });
+
+      try {
+        const [salesReturnOrder, salesReturnOrderLines, receipt] =
+          await Promise.all([
+            client
+              .from("salesReturnOrder")
+              .select("*")
+              .eq("id", salesReturnOrderId)
+              .single(),
+            client
+              .from("salesReturnOrderLine")
+              .select("*")
+              .eq("salesReturnOrderId", salesReturnOrderId),
+            client
+              .from("receipt")
+              .select("*")
+              .eq("id", existingReceiptId)
+              .maybeSingle(),
+          ]);
+
+        if (!salesReturnOrder.data)
+          throw new Error("Sales return order not found");
+        if (
+          !["Confirmed", "Partially Received"].includes(
+            salesReturnOrder.data.status
+          )
+        )
+          throw new Error(
+            `Cannot receive against a return order in ${salesReturnOrder.data.status} status`
+          );
+        if (salesReturnOrderLines.error)
+          throw new Error(salesReturnOrderLines.error.message);
+
+        const locationId =
+          userLocationId ?? salesReturnOrder.data.locationId ?? null;
+        if (!locationId)
+          throw new Error(
+            "The return order has no receiving location — set one before creating a receipt"
+          );
+
+        const returnItemIds = salesReturnOrderLines.data
+          .map((d) => d.itemId)
+          .filter(Boolean) as string[];
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", returnItemIds);
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const pickMethods = await client
+          .from("pickMethod")
+          .select("itemId, locationId, defaultStorageUnitId")
+          .in("itemId", returnItemIds);
+        const defaultStorageUnitByItem = new Map<string, string>();
+        for (const row of pickMethods.data ?? []) {
+          if (row.defaultStorageUnitId && row.locationId === locationId) {
+            defaultStorageUnitByItem.set(row.itemId, row.defaultStorageUnitId);
+          }
+        }
+
+        const hasReceipt = !!receipt.data?.id;
+
+        const receiptLineItems = salesReturnOrderLines.data.reduce<
+          ReceiptLineItem[]
+        >((acc, d) => {
+          if (!d.itemId || !d.quantity || d.closedComplete) return acc;
+
+          const outstanding = Math.max(
+            0,
+            (d.quantity ?? 0) - (d.quantityReceived ?? 0)
+          );
+          if (outstanding === 0) return acc;
+
+          acc.push({
+            lineId: d.id,
+            itemId: d.itemId,
+            locationId,
+            storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
+            requiresSerialTracking: serializedItems.has(d.itemId),
+            requiresBatchTracking: batchItems.has(d.itemId),
+            receivedQuantity: outstanding,
+            outstandingQuantity: outstanding,
+            // Cost is resolved at posting (original outbound cost / current /
+            // zero-value reason) — never the line's credit-basis unitPrice.
+            unitPrice: 0,
+            conversionFactor: 1,
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            companyId,
+            createdBy: userId,
+            orderQuantity: d.quantity ?? 0,
+          });
+
+          return acc;
+        }, []);
+
+        if (receiptLineItems.length === 0) {
+          throw new Error("No lines to receive");
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const receiptId = await getNextSequence(trx, "receipt", companyId);
+
+          let id: string;
+          if (hasReceipt) {
+            id = receipt.data!.id;
+            await trx
+              .updateTable("receipt")
+              .set({
+                sourceDocument: "Sales Return Order",
+                sourceDocumentId: salesReturnOrderId,
+                sourceDocumentReadableId:
+                  salesReturnOrder.data.salesReturnOrderId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertReceipt = await trx
+              .insertInto("receipt")
+              .values({
+                receiptId,
+                sourceDocument: "Sales Return Order",
+                sourceDocumentId: salesReturnOrderId,
+                sourceDocumentReadableId:
+                  salesReturnOrder.data.salesReturnOrderId,
                 locationId,
                 status: "Draft",
                 companyId,
