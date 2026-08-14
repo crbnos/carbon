@@ -26,6 +26,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router";
 import { DateTime, Empty } from "~/components";
+import { useCurrencyFormatter } from "~/hooks";
 import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
 import type { HistoricalQuotationPrice, SalesOrderLine } from "../../types";
@@ -64,6 +65,10 @@ const QuoteLinePricingHistory = ({
   // Default to the tab that has items
   const defaultTab = hasOrderLines ? "salesOrderLines" : "quoteLines";
   const [customers] = useCustomers();
+  const priceFormatter = useCurrencyFormatter({
+    rate: true,
+    currency: baseCurrency
+  });
 
   return (
     <Card>
@@ -165,10 +170,9 @@ const QuoteLinePricingHistory = ({
                                     <Tr>
                                       <Td>{line.saleQuantity}</Td>
                                       <Td>
-                                        {new Intl.NumberFormat("en-US", {
-                                          style: "currency",
-                                          currency: baseCurrency
-                                        }).format(line.unitPrice ?? 0)}
+                                        {priceFormatter.format(
+                                          line.unitPrice ?? 0
+                                        )}
                                       </Td>
                                     </Tr>
                                   </Tbody>
@@ -260,10 +264,9 @@ const QuoteLinePricingHistory = ({
                                         <Tr key={quantity}>
                                           <Td>{quantity}</Td>
                                           <Td>
-                                            {new Intl.NumberFormat("en-US", {
-                                              style: "currency",
-                                              currency: baseCurrency
-                                            }).format(price as number)}
+                                            {priceFormatter.format(
+                                              price as number
+                                            )}
                                           </Td>
                                         </Tr>
                                       )

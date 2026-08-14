@@ -25,6 +25,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
+import { scrapAllowance } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -104,12 +105,18 @@ export function SalesOrderLineJobs({
     quantity: number;
     scrapQuantity: number;
   }>(() => {
-    const quantity = itemReplenishment.lotSize
-      ? Math.min(quantityRequired, itemReplenishment.lotSize)
-      : quantityRequired;
+    // quantityRequired goes negative once jobs cover more than the sale
+    // quantity; without the clamp the scrap allowance below initializes
+    // negative, which the field's minValue={0} can no longer undo.
+    const quantity = Math.max(
+      0,
+      itemReplenishment.lotSize
+        ? Math.min(quantityRequired, itemReplenishment.lotSize)
+        : quantityRequired
+    );
     return {
       quantity,
-      scrapQuantity: Math.ceil(quantity * scrapPercentage)
+      scrapQuantity: scrapAllowance(quantity, scrapPercentage)
     };
   });
 
@@ -227,7 +234,7 @@ export function SalesOrderLineJobs({
                       setQuantities((prev) => ({
                         ...prev,
                         quantity: value,
-                        scrapQuantity: Math.ceil(value * scrapPercentage)
+                        scrapQuantity: scrapAllowance(value, scrapPercentage)
                       }));
                     }}
                     minValue={0}

@@ -7,6 +7,7 @@ import { Transaction } from "kysely";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getJobMethodTree, JobMethodTreeItem } from "../lib/methods.ts";
 import { requirePermissions } from "../lib/supabase.ts";
+import { scrapAllowance } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -222,7 +223,8 @@ const updateJobQuantities = async (
   // scrapQuantity = portion attributable to scrap
   // totalWithScrap = target + scrap allowance (what we need to make/procure)
   // estimatedQuantity: For Make = good quantity (without scrap), For Buy/Pick = total
-  const scrapQuantity = targetQuantity * scrapPercentage;
+  // Whole-unit scrap allowance; the fractional target itself is never rounded
+  const scrapQuantity = scrapAllowance(targetQuantity, scrapPercentage);
   const totalWithScrap = targetQuantity + scrapQuantity;
   // For Make: estimatedQuantity is good quantity (without scrap)
   // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
@@ -255,9 +257,8 @@ const updateJobQuantities = async (
         .updateTable("jobOperation")
         .set({
           targetQuantity: targetQuantity,
-          // Operation/production counts stay whole even when material
-          // quantities are fractional
-          operationQuantity: Math.ceil(totalWithScrap),
+          // Fractional targets flow through; the scrap allowance is already whole
+          operationQuantity: totalWithScrap,
         })
         .where("jobMakeMethodId", "=", tree.data.jobMaterialMakeMethodId)
         .where("reworkId", "is", null)
@@ -270,7 +271,7 @@ const updateJobQuantities = async (
         .set({
           quantity: jobMakeMethod.requiresSerialTracking
             ? 1
-            : Math.ceil(totalWithScrap),
+            : totalWithScrap,
         })
         .where("id", "=", jobMakeMethod.trackedEntityId)
         .execute();

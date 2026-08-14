@@ -22,7 +22,10 @@ function ignoreAbort(t: ViewTransitionLike | undefined) {
   t?.ready?.catch(() => {});
 }
 
-export function Zoomable({ children }: { children: ReactNode }) {
+/* `wide` widens the lightbox for content that is much bigger than the prose column.
+ * A screenshot at 1100px is already past its native resolution, but an architecture
+ * diagram is drawn far wider than the column it renders in. */
+export function Zoomable({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   // True only while a zoom open/close transition is in flight — see `set`.
@@ -103,7 +106,9 @@ export function Zoomable({ children }: { children: ReactNode }) {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{ viewTransitionName: name }}
-              className="relative z-10 max-h-[88vh] w-full max-w-[min(1100px,92vw)] cursor-zoom-out overflow-auto"
+              className={`relative z-10 max-h-[88vh] w-full cursor-zoom-out overflow-auto ${
+                wide ? "max-w-[min(1900px,96vw)]" : "max-w-[min(1100px,92vw)]"
+              }`}
             >
               {children}
             </div>

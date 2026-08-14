@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-14T05:56:54.440Z",
-  "totalTools": 1435,
+  "generated": "2026-08-14T06:07:23.088Z",
+  "totalTools": 1440,
   "modules": 15,
   "tools": [
     {
@@ -1292,6 +1292,25 @@
       }
     },
     {
+      "name": "accounting_getBaseCurrencyDecimalPlaces",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get base currency decimal places",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "companyGroupId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
       "name": "accounting_getCurrencyByCode",
       "module": "accounting",
       "classification": "READ",
@@ -1363,7 +1382,8 @@
       "description": "get currencies list",
       "paramCount": 0,
       "serviceParams": [
-        "client"
+        "client",
+        "companyGroupId"
       ],
       "injectAuth": [
         "companyId"
@@ -2383,10 +2403,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "account": {}
+          "account": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "account"
+          "account",
+          "_operation"
         ]
       }
     },
@@ -2422,10 +2451,19 @@
           },
           "historicalExchangeRate": {
             "type": "number"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "code"
+          "code",
+          "_operation"
         ]
       }
     },
@@ -2464,11 +2502,20 @@
           },
           "calculationMethod": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "name",
-          "calculationMethod"
+          "calculationMethod",
+          "_operation"
         ]
       }
     },
@@ -2626,11 +2673,20 @@
           },
           "ownerId": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "name",
-          "ownerId"
+          "ownerId",
+          "_operation"
         ]
       }
     },
@@ -2723,10 +2779,19 @@
             "items": {
               "type": "string"
             }
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "dimension"
+          "dimension",
+          "_operation"
         ]
       }
     },
@@ -3464,10 +3529,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "data": {}
+          "data": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "data"
+          "data",
+          "_operation"
         ]
       }
     },
@@ -3816,10 +3890,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "data": {}
+          "data": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "data"
+          "data",
+          "_operation"
         ]
       }
     },
@@ -4532,13 +4615,22 @@
           },
           "writeGroups": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "id",
           "name",
           "readGroups",
-          "writeGroups"
+          "writeGroups",
+          "_operation"
         ]
       }
     },
@@ -7319,10 +7411,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "kanban": {}
+          "kanban": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "kanban"
+          "kanban",
+          "_operation"
         ]
       }
     },
@@ -7367,11 +7468,20 @@
           },
           "supplierId": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "id",
-          "receiptId"
+          "receiptId",
+          "_operation"
         ]
       }
     },
@@ -7413,11 +7523,20 @@
           },
           "storageTypeIds": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "name",
-          "locationId"
+          "locationId",
+          "_operation"
         ]
       }
     },
@@ -7447,10 +7566,19 @@
           },
           "carrier": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -7498,11 +7626,20 @@
           },
           "customerId": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "id",
-          "shipmentId"
+          "shipmentId",
+          "_operation"
         ]
       }
     },
@@ -7524,10 +7661,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "stockTransfer": {}
+          "stockTransfer": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "stockTransfer"
+          "stockTransfer",
+          "_operation"
         ]
       }
     },
@@ -7549,10 +7695,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "stockTransferLine": {}
+          "stockTransferLine": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "stockTransferLine"
+          "stockTransferLine",
+          "_operation"
         ]
       }
     },
@@ -7607,10 +7762,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "transfer": {}
+          "transfer": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "transfer"
+          "transfer",
+          "_operation"
         ]
       }
     },
@@ -7936,10 +8100,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -8283,10 +8456,19 @@
           },
           "notes": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "locationId"
+          "locationId",
+          "_operation"
         ]
       }
     },
@@ -8387,13 +8569,22 @@
           },
           "storageUnitId": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "pickingListId",
           "jobId",
           "jobMaterialId",
-          "itemId"
+          "itemId",
+          "_operation"
         ]
       }
     },
@@ -10304,10 +10495,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "payment": {}
+          "payment": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "payment"
+          "payment",
+          "_operation"
         ]
       }
     },
@@ -10354,10 +10554,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "app": {}
+          "app": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "app"
+          "app",
+          "_operation"
         ]
       }
     },
@@ -10528,10 +10737,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "memo": {}
+          "memo": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "memo"
+          "memo",
+          "_operation"
         ]
       }
     },
@@ -14348,10 +14566,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "consumable": {}
+          "consumable": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "consumable"
+          "consumable",
+          "_operation"
         ]
       }
     },
@@ -14424,10 +14651,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "part": {}
+          "part": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "part"
+          "part",
+          "_operation"
         ]
       }
     },
@@ -14534,11 +14770,20 @@
           },
           "sortMethod": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "itemId",
-          "locationId"
+          "locationId",
+          "_operation"
         ]
       }
     },
@@ -14599,10 +14844,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "partPlanning": {}
+          "partPlanning": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "partPlanning"
+          "partPlanning",
+          "_operation"
         ]
       }
     },
@@ -14696,10 +14950,19 @@
           },
           "description": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -14747,11 +15010,20 @@
           },
           "unitPrice": {
             "type": "number"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "itemId",
-          "supplierId"
+          "supplierId",
+          "_operation"
         ]
       }
     },
@@ -14888,11 +15160,20 @@
           },
           "itemType": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "id",
-          "makeMethodId"
+          "makeMethodId",
+          "_operation"
         ]
       }
     },
@@ -14914,10 +15195,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodOperation": {}
+          "methodOperation": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "methodOperation"
+          "methodOperation",
+          "_operation"
         ]
       }
     },
@@ -14939,10 +15229,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodOperationStep": {}
+          "methodOperationStep": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "methodOperationStep"
+          "methodOperationStep",
+          "_operation"
         ]
       }
     },
@@ -14991,10 +15290,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "slide": {}
+          "slide": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "slide"
+          "slide",
+          "_operation"
         ]
       }
     },
@@ -15016,10 +15324,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodOperationParameter": {}
+          "methodOperationParameter": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "methodOperationParameter"
+          "methodOperationParameter",
+          "_operation"
         ]
       }
     },
@@ -15041,10 +15358,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodOperationTool": {}
+          "methodOperationTool": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "methodOperationTool"
+          "methodOperationTool",
+          "_operation"
         ]
       }
     },
@@ -15167,10 +15493,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "material": {}
+          "material": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "material"
+          "material",
+          "_operation"
         ]
       }
     },
@@ -15268,11 +15603,20 @@
           },
           "code": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "name",
-          "code"
+          "code",
+          "_operation"
         ]
       }
     },
@@ -15498,11 +15842,20 @@
           },
           "code": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "name",
-          "code"
+          "code",
+          "_operation"
         ]
       }
     },
@@ -15524,10 +15877,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "service": {}
+          "service": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "service"
+          "service",
+          "_operation"
         ]
       }
     },
@@ -15583,10 +15945,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "tool": {}
+          "tool": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "tool"
+          "tool",
+          "_operation"
         ]
       }
     },
@@ -16036,10 +16407,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeNoticeType": {}
+          "changeNoticeType": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "changeNoticeType"
+          "changeNoticeType",
+          "_operation"
         ]
       }
     },
@@ -17738,11 +18118,20 @@
           },
           "date": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "name",
-          "date"
+          "date",
+          "_operation"
         ]
       }
     },
@@ -17799,6 +18188,14 @@
           },
           "sunday": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
@@ -17812,7 +18209,8 @@
           "thursday",
           "friday",
           "saturday",
-          "sunday"
+          "sunday",
+          "_operation"
         ]
       }
     },
@@ -21320,10 +21718,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "productionEvent": {}
+          "productionEvent": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "productionEvent"
+          "productionEvent",
+          "_operation"
         ]
       }
     },
@@ -21673,10 +22080,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "jobOperation": {}
+          "jobOperation": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "jobOperation"
+          "jobOperation",
+          "_operation"
         ]
       }
     },
@@ -21698,10 +22114,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "jobOperationStep": {}
+          "jobOperationStep": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "jobOperationStep"
+          "jobOperationStep",
+          "_operation"
         ]
       }
     },
@@ -21750,10 +22175,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "slide": {}
+          "slide": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "slide"
+          "slide",
+          "_operation"
         ]
       }
     },
@@ -21775,10 +22209,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "jobOperationParameter": {}
+          "jobOperationParameter": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "jobOperationParameter"
+          "jobOperationParameter",
+          "_operation"
         ]
       }
     },
@@ -21800,10 +22243,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "jobOperationTool": {}
+          "jobOperationTool": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "jobOperationTool"
+          "jobOperationTool",
+          "_operation"
         ]
       }
     },
@@ -22332,10 +22784,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -22362,10 +22823,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -22422,11 +22892,20 @@
           },
           "content": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "status",
-          "priority"
+          "priority",
+          "_operation"
         ]
       }
     },
@@ -22456,11 +22935,20 @@
           },
           "comment": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "maintenanceDispatchId",
-          "comment"
+          "comment",
+          "_operation"
         ]
       }
     },
@@ -22482,10 +22970,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "event": {}
+          "event": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "event"
+          "event",
+          "_operation"
         ]
       }
     },
@@ -22524,12 +23021,21 @@
           },
           "unitCost": {
             "type": "number"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "maintenanceDispatchId",
           "itemId",
-          "unitOfMeasureCode"
+          "unitOfMeasureCode",
+          "_operation"
         ]
       }
     },
@@ -22559,11 +23065,20 @@
           },
           "workCenterId": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "maintenanceDispatchId",
-          "workCenterId"
+          "workCenterId",
+          "_operation"
         ]
       }
     },
@@ -22608,6 +23123,14 @@
           },
           "active": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
@@ -22615,7 +23138,8 @@
           "workCenterId",
           "frequency",
           "priority",
-          "active"
+          "active",
+          "_operation"
         ]
       }
     },
@@ -22651,12 +23175,21 @@
           },
           "unitOfMeasureCode": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "maintenanceScheduleId",
           "itemId",
-          "unitOfMeasureCode"
+          "unitOfMeasureCode",
+          "_operation"
         ]
       }
     },
@@ -23421,10 +23954,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "slide": {}
+          "slide": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "slide"
+          "slide",
+          "_operation"
         ]
       }
     },
@@ -26994,11 +27536,20 @@
           },
           "supplierStatus": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "name",
-          "supplierStatus"
+          "supplierStatus",
+          "_operation"
         ]
       }
     },
@@ -27034,11 +27585,20 @@
           },
           "leadTime": {
             "type": "number"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "supplierId",
-          "processId"
+          "processId",
+          "_operation"
         ]
       }
     },
@@ -27179,10 +27739,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "supplierQuote": {}
+          "supplierQuote": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "supplierQuote"
+          "supplierQuote",
+          "_operation"
         ]
       }
     },
@@ -27264,10 +27833,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -29816,11 +30394,20 @@
           },
           "calibrationIntervalInMonths": {
             "type": "number"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "gaugeTypeId",
-          "gaugeRole"
+          "gaugeRole",
+          "_operation"
         ]
       }
     },
@@ -29880,6 +30467,14 @@
           },
           "notes": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
@@ -29889,7 +30484,8 @@
           "requiresAction",
           "requiresAdjustment",
           "requiresRepair",
-          "calibrationAttempts"
+          "calibrationAttempts",
+          "_operation"
         ]
       }
     },
@@ -29916,10 +30512,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -30202,6 +30807,14 @@
           },
           "operationSupplierProcessId": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
@@ -30210,7 +30823,8 @@
           "name",
           "locationId",
           "nonConformanceTypeId",
-          "openDate"
+          "openDate",
+          "_operation"
         ]
       }
     },
@@ -30240,10 +30854,19 @@
           },
           "content": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -30270,10 +30893,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -30300,10 +30932,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -32841,10 +33482,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "contractorWithAbilities": {}
+          "contractorWithAbilities": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "contractorWithAbilities"
+          "contractorWithAbilities",
+          "_operation"
         ]
       }
     },
@@ -32915,11 +33565,20 @@
           },
           "type": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "name",
-          "type"
+          "type",
+          "_operation"
         ]
       }
     },
@@ -33176,12 +33835,21 @@
           },
           "content": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "status",
           "priority",
-          "locationId"
+          "locationId",
+          "_operation"
         ]
       }
     },
@@ -33211,11 +33879,20 @@
           },
           "comment": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "maintenanceDispatchId",
-          "comment"
+          "comment",
+          "_operation"
         ]
       }
     },
@@ -33237,10 +33914,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "event": {}
+          "event": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "event"
+          "event",
+          "_operation"
         ]
       }
     },
@@ -33279,12 +33965,21 @@
           },
           "unitCost": {
             "type": "number"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "maintenanceDispatchId",
           "itemId",
-          "unitOfMeasureCode"
+          "unitOfMeasureCode",
+          "_operation"
         ]
       }
     },
@@ -33314,11 +34009,20 @@
           },
           "workCenterId": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "maintenanceDispatchId",
-          "workCenterId"
+          "workCenterId",
+          "_operation"
         ]
       }
     },
@@ -33387,6 +34091,14 @@
           },
           "sunday": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
@@ -33401,7 +34113,8 @@
           "thursday",
           "friday",
           "saturday",
-          "sunday"
+          "sunday",
+          "_operation"
         ]
       }
     },
@@ -33437,12 +34150,21 @@
           },
           "unitOfMeasureCode": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "maintenanceScheduleId",
           "itemId",
-          "unitOfMeasureCode"
+          "unitOfMeasureCode",
+          "_operation"
         ]
       }
     },
@@ -33497,10 +34219,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "process": {}
+          "process": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "process"
+          "process",
+          "_operation"
         ]
       }
     },
@@ -33628,11 +34359,20 @@
           },
           "defaultStandardFactor": {
             "type": "number"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "name",
-          "description"
+          "description",
+          "_operation"
         ]
       }
     },
@@ -37013,10 +37753,19 @@
           },
           "website": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -37420,10 +38169,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -37450,10 +38208,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -37480,10 +38247,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -38154,11 +38930,20 @@
           },
           "digitalQuoteAcceptedByEmail": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "customerId",
-          "locationId"
+          "locationId",
+          "_operation"
         ]
       }
     },
@@ -38804,10 +39589,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "operation": {}
+          "operation": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "operation"
+          "operation",
+          "_operation"
         ]
       }
     },
@@ -38829,10 +39623,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "quoteOperationStep": {}
+          "quoteOperationStep": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "quoteOperationStep"
+          "quoteOperationStep",
+          "_operation"
         ]
       }
     },
@@ -38854,10 +39657,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "quoteOperationParameter": {}
+          "quoteOperationParameter": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "quoteOperationParameter"
+          "quoteOperationParameter",
+          "_operation"
         ]
       }
     },
@@ -38879,10 +39691,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "quoteOperationTool": {}
+          "quoteOperationTool": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "quoteOperationTool"
+          "quoteOperationTool",
+          "_operation"
         ]
       }
     },
@@ -39613,11 +40434,20 @@
           },
           "salesPersonId": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "customerId",
-          "rfqDate"
+          "rfqDate",
+          "_operation"
         ]
       }
     },
@@ -39668,13 +40498,22 @@
           },
           "modelUploadId": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
           "salesRfqId",
           "customerPartId",
           "quantity",
-          "unitOfMeasureCode"
+          "unitOfMeasureCode",
+          "_operation"
         ]
       }
     },
@@ -40529,10 +41368,19 @@
           },
           "size": {
             "type": "number"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "itemId"
+          "itemId",
+          "_operation"
         ]
       }
     },
@@ -40812,13 +41660,22 @@
           "placement": {},
           "content": {},
           "config": {},
-          "} & ({ createdBy": {}
+          "} & ({ createdBy": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
           "name",
           "placement",
           "content",
-          "} & ({ createdBy"
+          "} & ({ createdBy",
+          "_operation"
         ]
       }
     },
@@ -42001,10 +42858,19 @@
           },
           "expiresAt": {
             "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name"
+          "name",
+          "_operation"
         ]
       }
     },
@@ -42063,6 +42929,33 @@
         },
         "required": [
           "defaultSupplierCc"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateShowCurrencyTrailingZerosSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update show currency trailing zeros setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "showCurrencyTrailingZeros"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "showCurrencyTrailingZeros": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "showCurrencyTrailingZeros"
         ]
       }
     },
@@ -42227,10 +43120,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "webhook": {}
+          "webhook": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "webhook"
+          "webhook",
+          "_operation"
         ]
       }
     },
@@ -43347,10 +44249,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "upload": {}
+          "upload": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
         },
         "required": [
-          "upload"
+          "upload",
+          "_operation"
         ]
       }
     },
@@ -43646,6 +44557,61 @@
           "fallbackUnitPrice",
           "exchangeRate"
         ]
+      }
+    },
+    {
+      "name": "users_getItarCertificationStatus",
+      "module": "users",
+      "classification": "READ",
+      "description": "get itar certification status",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "users_getItarEntityCertification",
+      "module": "users",
+      "classification": "READ",
+      "description": "get itar entity certification",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "users_getItarCertificationReport",
+      "module": "users",
+      "classification": "READ",
+      "description": "get itar certification report",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     },
     {

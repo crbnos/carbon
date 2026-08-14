@@ -7,6 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
+import { getCurrencyByCode } from "~/modules/accounting";
 import {
   getCompanyHasOpenCredits,
   getSalesInvoice,
@@ -33,9 +34,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
-  });
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      view: "invoicing"
+    }
+  );
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -58,7 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const [customer, opportunity, companySettings, orgHasCredits] =
+  const [customer, opportunity, companySettings, orgHasCredits, currency] =
     await Promise.all([
       salesInvoice.data?.customerId
         ? getCustomer(client, salesInvoice.data.customerId)
@@ -67,7 +71,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ? getOpportunity(client, salesInvoice.data.opportunityId)
         : null,
       getCompanySettings(serviceRole, companyId),
-      getCompanyHasOpenCredits(client, companyId, "sales")
+      getCompanyHasOpenCredits(client, companyId, "sales"),
+      salesInvoice.data?.currencyCode
+        ? getCurrencyByCode(
+            serviceRole,
+            companyGroupId,
+            salesInvoice.data.currencyCode
+          )
+        : null
     ]);
 
   const defaultCc = customer?.data?.defaultCc?.length
@@ -76,6 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     salesInvoice: salesInvoice.data,
+    currency: currency?.data ?? null,
     salesInvoiceLines: salesInvoiceLines.data ?? [],
     salesInvoiceShipment: salesInvoiceShipment.data,
     files: getOpportunityDocuments(

@@ -19,6 +19,7 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
+import { round } from "../shared/precision.ts";
 import {
   resolveFeatureSamplingPlan,
   resolveSamplingPlan,
@@ -269,6 +270,8 @@ serve(async (req: Request) => {
             accountId: entry.accountId,
             accrual: entry.accrual,
             description: `VOID: ${entry.description}`,
+            // A reversal is a sign flip of an already-posted value, which is
+            // exact — no rounding to do.
             amount: -entry.amount,
             quantity: -entry.quantity,
             documentType: entry.documentType,
@@ -1138,8 +1141,8 @@ serve(async (req: Request) => {
               journalLineInserts.push({
                 accountId: accountDefaults.data.goodsReceivedNotInvoicedAccount,
                 description: "Goods Received Not Invoiced",
-                amount: debit("liability", cost),
-                quantity: absReceivedQuantity,
+                amount: round(debit("liability", cost)),
+                quantity: round(absReceivedQuantity),
                 documentType: "Receipt",
                 documentId: receipt.data?.id ?? undefined,
                 externalDocumentId:
@@ -1155,8 +1158,8 @@ serve(async (req: Request) => {
               journalLineInserts.push({
                 accountId: debitAccount,
                 description: debitDescription,
-                amount: credit("asset", cost),
-                quantity: absReceivedQuantity,
+                amount: round(credit("asset", cost)),
+                quantity: round(absReceivedQuantity),
                 documentType: "Receipt",
                 documentId: receipt.data?.id ?? undefined,
                 externalDocumentId:
@@ -1183,8 +1186,8 @@ serve(async (req: Request) => {
               journalLineInserts.push({
                 accountId: debitAccount,
                 description: debitDescription,
-                amount: debit("asset", glCost),
-                quantity: absReceivedQuantity,
+                amount: round(debit("asset", glCost)),
+                quantity: round(absReceivedQuantity),
                 documentType: "Receipt",
                 documentId: receipt.data?.id ?? undefined,
                 externalDocumentId:
@@ -1199,8 +1202,8 @@ serve(async (req: Request) => {
               journalLineInserts.push({
                 accountId: accountDefaults.data.goodsReceivedNotInvoicedAccount,
                 description: "Goods Received Not Invoiced",
-                amount: credit("liability", glCost),
-                quantity: absReceivedQuantity,
+                amount: round(credit("liability", glCost)),
+                quantity: round(absReceivedQuantity),
                 documentType: "Receipt",
                 documentId: receipt.data?.id ?? undefined,
                 externalDocumentId:
@@ -1236,10 +1239,10 @@ serve(async (req: Request) => {
                 externalDocumentId:
                   receipt.data?.externalDocumentId ?? undefined,
                 itemId: receiptLine.itemId,
-                quantity: invoiceFirstQty,
-                nominalCost: invoiceFirstQty * (receiptLine.unitPrice ?? 0),
-                cost: invoiceFirstPortionCost,
-                remainingQuantity: invoiceFirstQty,
+                quantity: round(invoiceFirstQty),
+                nominalCost: round(invoiceFirstQty * (receiptLine.unitPrice ?? 0)),
+                cost: round(invoiceFirstPortionCost),
+                remainingQuantity: round(invoiceFirstQty),
                 supplierId: purchaseOrder.data?.supplierId ?? undefined,
                 companyId,
                 postingDate: today,
@@ -1257,10 +1260,10 @@ serve(async (req: Request) => {
                 externalDocumentId:
                   receipt.data?.externalDocumentId ?? undefined,
                 itemId: receiptLine.itemId,
-                quantity: normalQty,
-                nominalCost: normalQty * (receiptLine.unitPrice ?? 0),
-                cost: normalPortionCost,
-                remainingQuantity: normalQty,
+                quantity: round(normalQty),
+                nominalCost: round(normalQty * (receiptLine.unitPrice ?? 0)),
+                cost: round(normalPortionCost),
+                remainingQuantity: round(normalQty),
                 supplierId: purchaseOrder.data?.supplierId ?? undefined,
                 companyId,
                 postingDate: today,
@@ -1276,7 +1279,7 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,
-              quantity: receivedQuantity,
+              quantity: round(receivedQuantity),
               locationId: receiptLine.locationId,
               storageUnitId: receiptLine.storageUnitId,
               entryType,
@@ -1295,7 +1298,7 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,
-              quantity: receivedQuantity,
+              quantity: round(receivedQuantity),
               locationId: receiptLine.locationId,
               storageUnitId: receiptLine.storageUnitId,
               entryType,
@@ -1342,7 +1345,7 @@ serve(async (req: Request) => {
               itemLedgerInserts.push({
                 postingDate: today,
                 itemId: receiptLine.itemId,
-                quantity: quantityPerEntry,
+                quantity: round(quantityPerEntry),
                 locationId: receiptLine.locationId,
                 storageUnitId: receiptLine.storageUnitId,
                 entryType,
@@ -1429,8 +1432,8 @@ serve(async (req: Request) => {
               accountId: (assetRecord.data.fixedAssetClass as any)
                 .assetAccountId,
               description: "Fixed Asset Acquisition",
-              amount: debit("asset", cost),
-              quantity,
+              amount: round(debit("asset", cost)),
+              quantity: round(quantity),
               documentType: "Receipt",
               documentId: receipt.data?.id ?? undefined,
               externalDocumentId:
@@ -1443,8 +1446,8 @@ serve(async (req: Request) => {
             journalLineInserts.push({
               accountId: accountDefaults.data.goodsReceivedNotInvoicedAccount,
               description: "Goods Received Not Invoiced",
-              amount: credit("liability", cost),
-              quantity,
+              amount: round(credit("liability", cost)),
+              quantity: round(quantity),
               documentType: "Receipt",
               documentId: receipt.data?.id ?? undefined,
               externalDocumentId:
@@ -1527,14 +1530,13 @@ serve(async (req: Request) => {
                 ? cogsResult.totalCost
                 : consumption.fallbackCost;
             if (consumption.grIrLineIndex !== null) {
-              journalLineInserts[consumption.grIrLineIndex].amount = debit(
-                "liability",
-                consumedCost
+              journalLineInserts[consumption.grIrLineIndex].amount = round(
+                debit("liability", consumedCost)
               );
             }
             if (consumption.inventoryLineIndex !== null) {
               journalLineInserts[consumption.inventoryLineIndex].amount =
-                credit("asset", consumedCost);
+                round(credit("asset", consumedCost));
             }
             costLedgerInserts.push({
               itemLedgerType: "Purchase",
@@ -1543,8 +1545,8 @@ serve(async (req: Request) => {
               documentType: "Purchase Receipt",
               documentId: receipt.data?.id ?? undefined,
               itemId: consumption.itemId,
-              quantity: -consumption.quantity,
-              cost: -consumedCost,
+              quantity: round(-consumption.quantity),
+              cost: round(-consumedCost),
               remainingQuantity: 0,
               supplierId: purchaseOrder.data?.supplierId ?? undefined,
               companyId,
@@ -1650,11 +1652,11 @@ serve(async (req: Request) => {
                   const layerQty = rowQty - excludedQty;
                   if (layerQty <= 0) continue;
                   const scale = layerQty / rowQty;
-                  insertRow.quantity = layerQty;
-                  insertRow.cost = Number(insertRow.cost ?? 0) * scale;
+                  insertRow.quantity = round(layerQty);
+                  insertRow.cost = round(Number(insertRow.cost ?? 0) * scale);
                   insertRow.nominalCost =
-                    Number(insertRow.nominalCost ?? 0) * scale;
-                  insertRow.remainingQuantity = layerQty;
+                    round(Number(insertRow.nominalCost ?? 0) * scale);
+                  insertRow.remainingQuantity = round(layerQty);
                 }
               }
               costLedgerRows.push(insertRow);
@@ -2096,8 +2098,8 @@ serve(async (req: Request) => {
             journalLineInserts.push({
               accountId: inventoryAccount.account,
               description: `Transfer Out - ${warehouseTransfer.data?.transferId}`,
-              amount: credit("asset", totalValue),
-              quantity: Math.abs(receivedQuantity),
+              amount: round(credit("asset", totalValue)),
+              quantity: round(Math.abs(receivedQuantity)),
               documentType: "Receipt",
               documentId: receipt.data?.id,
               externalDocumentId: warehouseTransfer.data?.transferId,
@@ -2109,8 +2111,8 @@ serve(async (req: Request) => {
             journalLineInserts.push({
               accountId: inventoryAccount.account,
               description: `Transfer In - ${warehouseTransfer.data?.transferId}`,
-              amount: debit("asset", totalValue),
-              quantity: Math.abs(receivedQuantity),
+              amount: round(debit("asset", totalValue)),
+              quantity: round(Math.abs(receivedQuantity)),
               documentType: "Receipt",
               documentId: receipt.data?.id,
               externalDocumentId: warehouseTransfer.data?.transferId,

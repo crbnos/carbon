@@ -44,6 +44,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 | Table / View | Purpose |
 |---|---|
 | `itemLedger` / `itemLedgers` (view) | Append-only movement log: item, location, quantity, document ref, trackedEntityId |
+| `itemStockQuantities` | On-hand per (item, company, location) — a real TABLE maintained transactionally by a statement-level event handler on `itemLedger` (`apply_item_stock_quantities`, attached via `attach_statement_handler`; was a 30-min-refresh matview until `20260812002454`). Excludes `Rejected` tracked stock. Never write to it directly — it is derived state; the nightly `reconcile-item-stock-quantities` cron repairs any drift. Read by the item-dropdown store (with realtime push), the workflow engine's `item.quantityOnHand`, and MRP's on-hand input |
 | `storageUnit` | Hierarchical bins/shelves via `parentId`; scoped to location |
 | `storageType` | Storage unit type definitions (capacity, constraints) |
 | `trackedEntity` | Serial/batch/lot instances with readableId, status, quantity, expirationDate |

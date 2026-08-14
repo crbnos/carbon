@@ -29,6 +29,8 @@ export type ItemRef = {
   name: string;
   type: ItemType;
   makeMethodId: string | null;
+  // Drives the BOM line's methodType — a Make component is a subassembly.
+  isMake: boolean;
   unitCost: number;
   unitOfMeasureCode: string;
 };

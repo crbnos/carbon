@@ -821,6 +821,10 @@ msgstr "Akceptacja"
 msgid "Acceptance passed"
 msgstr "Akceptacja przebiegła pomyślnie"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "Zaakceptowano {0}"
+
 msgid "Account"
 msgstr "Konto"
 
@@ -2849,11 +2853,17 @@ msgstr "DW"
 msgid "Centralized Billing Address"
 msgstr "Scentralizowany adres rozliczeniowy"
 
+msgid "Cert Version"
+msgstr "Wersja certyfikatu"
+
 msgid "Certificate Number"
 msgstr "Numer Certyfikatu"
 
 msgid "Certificate uploaded"
 msgstr "Certifikat przesłany"
+
+msgid "Certified"
+msgstr "Certyfikowany"
 
 msgid "Chain"
 msgstr "Łańcuch"
@@ -5905,6 +5915,15 @@ msgstr "Jednostki do oddzielenia"
 msgid "Entity"
 msgstr "Jednostka"
 
+msgid "Entity certification: Accepted"
+msgstr "Certyfikacja podmiotu: Zaakceptowana"
+
+msgid "Entity certification: Expired"
+msgstr "Certyfikacja podmiotu: Wygasła"
+
+msgid "Entity certification: Pending"
+msgstr "Certyfikacja podmiotu: Oczekująca"
+
 msgid "Entity Type"
 msgstr "Typ Jednostki"
 
@@ -6174,6 +6193,7 @@ msgid "Expired"
 msgstr "Wygasło"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Wygasło {0}"
 
@@ -6185,6 +6205,10 @@ msgstr "Wygasłe partie"
 
 msgid "Expires"
 msgstr "Wygasa"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "Wygasa {0}"
 
 msgid "Expires <0/>"
 msgstr "Wygasa <0/>"
@@ -7389,6 +7413,9 @@ msgstr "Hypercare: intensywne wsparcie w pierwszych tygodniach"
 msgid "I (reduced)"
 msgstr "I (zmniejszony)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "Mam uzasadnioną podstawę, aby wierzyć, że ta osoba jest osobą ze Stanów Zjednoczonych zgodnie z definicją w 22 CFR 120.62"
+
 msgid "I'm Still Working"
 msgstr "Wciąż pracuję"
 
@@ -7786,6 +7813,9 @@ msgstr "Wycena zapasów"
 msgid "Invite"
 msgstr "Zaproś"
 
+msgid "Invite Expired"
+msgstr "Zaproszenie wygasło"
+
 msgid "Invited"
 msgstr "Zaproszony"
 
@@ -7944,6 +7974,9 @@ msgstr "Data wystawienia"
 
 msgid "Issues"
 msgstr "Problemy"
+
+msgid "ITAR Certifications"
+msgstr "Certyfikacje ITAR"
 
 msgid "item"
 msgstr "element"
@@ -8210,6 +8243,9 @@ msgstr "Ostatni dzień"
 
 msgid "Last Fiscal Year"
 msgstr "Ostatni rok obrachunkowy"
+
+msgid "Last Login"
+msgstr "Ostatnie logowanie"
 
 msgid "Last Month"
 msgstr "Ostatni miesiąc"
@@ -9852,6 +9888,9 @@ msgstr "Brak pozostałych jednostek do sprawdzenia."
 msgid "No reports match your search."
 msgstr "Brak raportów pasujących do wyszukiwania."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "Żaden przedstawiciel tej firmy nie zaakceptował jeszcze Carbon GovCloud Rider. Administrator tej firmy musi zaakceptować ten dokument, zanim ktokolwiek będzie mógł uzyskać dostęp do Carbon — zespół Carbon nie może zaakceptować tego dokumentu w Twoim imieniu."
+
 msgid "No results"
 msgstr "Brak wyników"
 
@@ -9971,6 +10010,9 @@ msgstr "Normalny"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Nie tabela, ale saldo księgi głównej: koszt gromadzi się w miarę wystawiania materiałów zadania i jest czyszczony po otrzymaniu zadania na magazyn."
+
+msgid "Not certified"
+msgstr "Nie certyfikowany"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająca liczba zadań do pokrycia ilości"
@@ -10550,6 +10592,9 @@ msgstr "Odpowiada za: {0}"
 
 msgid "Packing Slip"
 msgstr "Dokument wysyłki"
+
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
 
 msgid "Page"
 msgstr "Strona"
@@ -12163,6 +12208,9 @@ msgstr "Raporty"
 msgid "Reprint"
 msgstr "Wydruk ponownie"
 
+msgid "Request a new invite"
+msgstr "Poproś o nowe zaproszenie"
+
 msgid "Request access"
 msgstr "Poproś o dostęp"
 
@@ -12405,6 +12453,10 @@ msgstr "Zapytania ofertowe"
 
 msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
 msgstr "Dołącz wymiary Carbon do wysyłanych dzienników. Każdy slot mapuje jeden wymiar Carbon na jeden cel analityki dostawcy; mapowanie wartości poniżej łączy poszczególne wartości wymiarów z opcjami dostawcy."
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Prawy element"
@@ -13489,6 +13541,9 @@ msgstr "Pokaż identyfikatory dostawców"
 
 msgid "Show sync options"
 msgstr "Pokaż opcje synchronizacji"
+
+msgid "Show Trailing Zeros"
+msgstr ""
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
@@ -15188,11 +15243,18 @@ msgstr "Te informacje będą widoczne dla wszystkich użytkowników, więc uważ
 msgid "this inspection plan"
 msgstr "ten plan inspekcji"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "To zaproszenie do dołączenia do {0} wygasło. Możesz poprosić o wysłanie nowego zaproszenia na Twoją wiadomość e-mail."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "To jest element nabywany — nie ma BoM/BoP; mogą zmieniać się tylko jego atrybuty i dokumenty."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "To jest unikalny identyfikator dla webhooka"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "To jest środowisko kontrolowane przez ITAR. Dostęp jest ograniczony do osób ze Stanów Zjednoczonych."
 
 msgid "This is the month your fiscal year starts."
 msgstr "To jest miesiąc, w którym rozpoczyna się Twój rok obrachunkowy."
@@ -15714,6 +15776,9 @@ msgstr "Typ:"
 
 msgid "Types"
 msgstr "Typy"
+
+msgid "U.S. Person Attestation"
+msgstr "Zaświadczenie osoby ze Stanów Zjednoczonych"
 
 msgid "Unapplied"
 msgstr "Niezastosowane"

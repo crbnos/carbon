@@ -1,7 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/utils";
+import { datetime, EPSILON, round } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -1651,7 +1651,7 @@ export async function getAvailableOnAccountCredit(
       Number(p.totalAmount) * Number(p.exchangeRate) -
       (appliedBaseByPayment.get(p.id) ?? 0);
   }
-  return Math.max(0, Math.round(baseCredit * 10000) / 10000);
+  return Math.max(0, round(baseCredit));
 }
 
 export async function upsertPayment(
@@ -2018,10 +2018,9 @@ export async function getAvailableCreditsForParty(
 
   const result = rows
     .map((m) => {
-      const remaining =
-        Math.round(
-          (Number(m.amount) - (appliedByMemo.get(m.id) ?? 0)) * 10000
-        ) / 10000;
+      const remaining = round(
+        Number(m.amount) - (appliedByMemo.get(m.id) ?? 0)
+      );
       return {
         id: m.id as string,
         memoId: m.memoId as string,
@@ -2334,13 +2333,13 @@ export async function applyCreditsToInvoices(
       const invoiceOpen =
         Number(balById.get(app.invoiceId)?.balance ?? 0) -
         (cashByInvoice.get(app.invoiceId) ?? 0);
-      if (invoiceUse.get(app.invoiceId)! > invoiceOpen + 0.0001)
+      if (invoiceUse.get(app.invoiceId)! > invoiceOpen + EPSILON)
         throw new Error(
-          invoiceOpen <= 0.0001
+          invoiceOpen <= EPSILON
             ? `Invoice ${invoiceLabel} has no open balance to apply credit to (it is already fully settled)`
             : `Credit applied to invoice ${invoiceLabel} (${invoiceUse.get(
                 app.invoiceId
-              )}) exceeds its open balance of ${invoiceOpen.toFixed(2)}`
+              )}) exceeds its open balance of ${round(invoiceOpen)}`
         );
     }
 

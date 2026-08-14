@@ -4,6 +4,7 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { deriveRate, taxableBase } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import {
@@ -186,6 +187,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
         const { lineId, quantity, selectedLine } = priceRecordsToProcess[i];
         const existingPrice = existingPriceChecks[i];
 
+        // The portal collects amounts only; seed the stored rate from the
+        // canonical denominator (unit price x quantity + shipping).
+        const taxPercent = deriveRate(
+          selectedLine.supplierTaxAmount ?? 0,
+          taxableBase(
+            selectedLine.supplierUnitPrice ?? 0,
+            quantity,
+            selectedLine.supplierShippingCost ?? 0
+          )
+        );
+
         if (existingPrice.data) {
           // Update existing price record
           priceUpdates.push(
@@ -196,6 +208,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
                 leadTime: selectedLine.leadTime ?? 0,
                 supplierShippingCost: selectedLine.supplierShippingCost ?? 0,
                 supplierTaxAmount: selectedLine.supplierTaxAmount ?? 0,
+                taxPercent,
                 updatedAt: new Date().toISOString(),
                 updatedBy: quote.data.createdBy
               })
@@ -213,19 +226,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
             leadTime: selectedLine.leadTime ?? 0,
             supplierShippingCost: selectedLine.supplierShippingCost ?? 0,
             supplierTaxAmount: selectedLine.supplierTaxAmount ?? 0,
+            taxPercent,
             exchangeRate: quote.data.exchangeRate ?? 1,
             createdBy: quote.data.createdBy
           });
         }
       }
 
-      // Execute all updates and inserts
-      await Promise.all([
+      // Execute all updates and inserts. The Supabase client resolves rather
+      // than throwing, so a failed price write is invisible unless every result
+      // is inspected — without this the quote still flipped to Active carrying
+      // the supplier's old prices.
+      const priceWrites = await Promise.all([
         ...priceUpdates,
         priceInserts.length > 0
           ? serviceRole.from("supplierQuoteLinePrice").insert(priceInserts)
           : Promise.resolve({ data: null, error: null })
       ]);
+
+      const priceWriteError = priceWrites.find(
+        (result) => result?.error
+      )?.error;
+      if (priceWriteError) {
+        logger.error("Failed to save digital quote prices", {
+          error: priceWriteError,
+          quoteId: quote.data.id
+        });
+        return { success: false, message: "Failed to save quote prices" };
+      }
 
       const now = new Date().toISOString();
 

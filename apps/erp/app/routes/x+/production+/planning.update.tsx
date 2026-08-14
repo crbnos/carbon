@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
+import { scrapAllowance } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -224,10 +225,10 @@ export async function action({ request }: ActionFunctionArgs) {
               // Calculate scrap quantity based on scrap percentage
               const updateScrapPercentage =
                 manufacturing.data?.scrapPercentage ?? 0;
-              const updateScrapQuantity =
-                updateScrapPercentage > 0
-                  ? Math.ceil(order.quantity * updateScrapPercentage)
-                  : 0;
+              const updateScrapQuantity = scrapAllowance(
+                order.quantity,
+                updateScrapPercentage
+              );
 
               const updateJob = await client
                 .from("job")

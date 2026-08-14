@@ -103,7 +103,8 @@ export default function NewPurchaseOrderLineRoute() {
     storageUnitId: "",
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
-    supplierUnitPrice: 0
+    supplierUnitPrice: 0,
+    taxPercent: 0
   };
 
   return <PurchaseOrderLineForm initialValues={initialValues} />;

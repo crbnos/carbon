@@ -821,6 +821,10 @@ msgstr "受け入れ"
 msgid "Acceptance passed"
 msgstr "受け入れ完了"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "{0} に承認"
+
 msgid "Account"
 msgstr "アカウント"
 
@@ -2849,11 +2853,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "一元化された請求先住所"
 
+msgid "Cert Version"
+msgstr "認定バージョン"
+
 msgid "Certificate Number"
 msgstr "証明書番号"
 
 msgid "Certificate uploaded"
 msgstr "証明書がアップロードされました"
+
+msgid "Certified"
+msgstr "認定済み"
 
 msgid "Chain"
 msgstr "チェーン"
@@ -5905,6 +5915,15 @@ msgstr "分割するエンティティ"
 msgid "Entity"
 msgstr "エンティティ"
 
+msgid "Entity certification: Accepted"
+msgstr "事業体認定: 承認済み"
+
+msgid "Entity certification: Expired"
+msgstr "事業体認定: 期限切れ"
+
+msgid "Entity certification: Pending"
+msgstr "事業体認定: 保留中"
+
 msgid "Entity Type"
 msgstr "エンティティタイプ"
 
@@ -6174,6 +6193,7 @@ msgid "Expired"
 msgstr "期限切れ"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "期限切れ {0}"
 
@@ -6185,6 +6205,10 @@ msgstr "期限切れバッチ"
 
 msgid "Expires"
 msgstr "有効期限"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "有効期限 {0}"
 
 msgid "Expires <0/>"
 msgstr "有効期限：<0/>"
@@ -7389,6 +7413,9 @@ msgstr "ハイパーケア：最初の数週間の集中的なサポート"
 msgid "I (reduced)"
 msgstr "I（削減）"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "この個人は22 CFR 120.62で定義されている米国人である合理的な根拠があります"
+
 msgid "I'm Still Working"
 msgstr "まだ働いています"
 
@@ -7786,6 +7813,9 @@ msgstr "在庫評価"
 msgid "Invite"
 msgstr "招待"
 
+msgid "Invite Expired"
+msgstr "招待が期限切れになりました"
+
 msgid "Invited"
 msgstr "招待済み"
 
@@ -7944,6 +7974,9 @@ msgstr "発行日"
 
 msgid "Issues"
 msgstr "問題"
+
+msgid "ITAR Certifications"
+msgstr "ITAR認定"
 
 msgid "item"
 msgstr "アイテム"
@@ -8210,6 +8243,9 @@ msgstr "最終日"
 
 msgid "Last Fiscal Year"
 msgstr "前年度"
+
+msgid "Last Login"
+msgstr "最後のログイン"
 
 msgid "Last Month"
 msgstr "先月"
@@ -9852,6 +9888,9 @@ msgstr "検査する残りのエンティティはありません。"
 msgid "No reports match your search."
 msgstr "検索に一致するレポートはありません。"
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "この会社の代表者はまだ Carbon GovCloud Rider を承認していません。誰かが Carbon にアクセスする前に、この会社の管理者が承認する必要があります — Carbon のスタッフが代わりに承認することはできません。"
+
 msgid "No results"
 msgstr "結果がありません"
 
@@ -9971,6 +10010,9 @@ msgstr "通常"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "テーブルではなく、総勘定元帳残高：ジョブ材料が発行されるにつれてコストが蓄積され、ジョブが在庫に受け取られるとクリアになります。"
+
+msgid "Not certified"
+msgstr "認定されていない"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
@@ -10550,6 +10592,9 @@ msgstr "所有者: {0}"
 
 msgid "Packing Slip"
 msgstr "梱包明細書"
+
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
 
 msgid "Page"
 msgstr "ページ"
@@ -12163,6 +12208,9 @@ msgstr "レポート"
 msgid "Reprint"
 msgstr "再印刷"
 
+msgid "Request a new invite"
+msgstr "新しい招待をリクエストする"
+
 msgid "Request access"
 msgstr "アクセスをリクエスト"
 
@@ -12405,6 +12453,10 @@ msgstr "RFQ"
 
 msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
 msgstr "プッシュされたジャーナルに沿ってCarbonディメンションを含める。各スロットは1つのCarbonディメンションを1つのプロバイダー分析ターゲットにマップします。以下の値マッピングは個々のディメンション値をプロバイダーオプションとペアリングします。"
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "右側の項目"
@@ -13489,6 +13541,9 @@ msgstr "仕入先IDを表示"
 
 msgid "Show sync options"
 msgstr "同期オプションを表示"
+
+msgid "Show Trailing Zeros"
+msgstr ""
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
@@ -15188,11 +15243,18 @@ msgstr "この情報はすべてのユーザーに表示されるため、共有
 msgid "this inspection plan"
 msgstr "この検査計画"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "これは購入アイテムです。BoM/BoP はありません。属性と文書のみ変更できます。"
 
 msgid "This is a unique identifier for the webhook"
 msgstr "これはウェブフックの一意の識別子です"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "これはITAR管理環境です。アクセスは米国人に限定されています。"
 
 msgid "This is the month your fiscal year starts."
 msgstr "これはあなたの会計年度が始まる月です。"
@@ -15714,6 +15776,9 @@ msgstr "タイプ:"
 
 msgid "Types"
 msgstr "タイプ"
+
+msgid "U.S. Person Attestation"
+msgstr "米国人証明"
 
 msgid "Unapplied"
 msgstr "未適用"

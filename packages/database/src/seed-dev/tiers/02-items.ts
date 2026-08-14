@@ -26,6 +26,9 @@ const BUY_PARTS: ItemSpec[] = [
     name: "Li-Ion Battery Pack 48V 100Wh",
     type: "Part",
     replenishment: "Buy",
+    // Batch-tracked: receiving captures a lot, and the lot is what gets scanned
+    // into an assembly on the floor.
+    trackingType: "Batch",
     standardCost: 2400,
     unitSalePrice: 3600,
     leadTime: 60
@@ -43,6 +46,7 @@ const BUY_PARTS: ItemSpec[] = [
     name: "Reaction Wheel 0.010 Nm",
     type: "Part",
     replenishment: "Buy",
+    trackingType: "Serial",
     standardCost: 14500,
     unitSalePrice: 21750,
     leadTime: 90
@@ -128,6 +132,7 @@ const MATERIALS: ItemSpec[] = [
     readableId: "MAT-AL7075-PLT",
     name: "Aluminum 7075-T651 Plate",
     type: "Material",
+    trackingType: "Batch",
     standardCost: 12,
     unitOfMeasureCode: "LB",
     leadTime: 10
@@ -224,6 +229,8 @@ const MAKE_PARTS: ItemSpec[] = [
     name: "ESPA-Class Smallsat Bus (Complete)",
     type: "Part",
     replenishment: "Make",
+    // Serial-tracked: each satellite gets its own genealogy in traceability.
+    trackingType: "Serial",
     standardCost: 0,
     unitSalePrice: 1800000
   },
@@ -364,6 +371,10 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     return ref;
   }
 
+  // Fractional per-unit quantities are kept to halves, quarters and eighths.
+  // Extended quantity is float multiplication, so 0.05 x 3 renders as
+  // 0.15000000000000002 on the shop floor — these values multiply out clean.
+
   // -- Structural Frame (BUS-STR-001) --
   {
     const mm = needMM(i, "BUS-STR-001");
@@ -371,7 +382,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     await addBomLine(ctx, mm, need("FST-M4-TI"), 48, 2);
     await addBomLine(ctx, mm, need("FST-M6-A286"), 24, 3);
     await addBomLine(ctx, mm, need("BRG-6201"), 4, 4);
-    await addBomLine(ctx, mm, need("CN-GREASE-001"), 0.05, 5);
+    await addBomLine(ctx, mm, need("CN-GREASE-001"), 0.25, 5);
     await addBopOperation(
       ctx,
       mm,
@@ -390,14 +401,36 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       2,
       { laborTime: 2 }
     );
+    // Sent out to AstroMill for hard anodize between welding and assembly.
+    await addBopOperation(
+      ctx,
+      mm,
+      pr["Outside Processing"]!,
+      undefined,
+      "Hard anodize (Type III) at supplier",
+      3,
+      {
+        operationType: "Outside Processing",
+        operationSupplierProcessId:
+          ctx.refs.misc["sp:AstroMill Machining:Outside Processing"],
+        operationLeadTime: 7,
+        operationUnitCost: 240,
+        laborTime: 0,
+        laborUnit: "Total Hours"
+      }
+    );
     await addBopOperation(
       ctx,
       mm,
       pr["Clean Room Assembly"]!,
       wc["Clean Room Bay A"],
       "Final assembly & torque",
-      3,
-      { laborTime: 3 }
+      4,
+      {
+        laborTime: 3,
+        // Gives the MES operation screen an Instructions tab with real steps.
+        procedureId: ctx.refs.misc["procedure:Structural Frame Assembly"]
+      }
     );
   }
 
@@ -405,7 +438,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
   {
     const mm = needMM(i, "SAW-001");
     await addBomLine(ctx, mm, need("MAT-GAAS-CELL"), 64, 1);
-    await addBomLine(ctx, mm, need("MAT-CF-LAM"), 0.8, 2);
+    await addBomLine(ctx, mm, need("MAT-CF-LAM"), 0.75, 2);
     await addBomLine(ctx, mm, need("MAT-KAPTON"), 2.5, 3);
     await addBopOperation(
       ctx,
@@ -440,8 +473,8 @@ export async function runTier2(ctx: Ctx): Promise<void> {
   {
     const mm = needMM(i, "PCB-EPS-R1");
     await addBomLine(ctx, mm, need("PCB-BARE-REV3"), 1, 1);
-    await addBomLine(ctx, mm, need("MAT-SYLGARD"), 0.05, 2);
-    await addBomLine(ctx, mm, need("MAT-CONFCOAT"), 0.1, 3);
+    await addBomLine(ctx, mm, need("MAT-SYLGARD"), 0.25, 2);
+    await addBomLine(ctx, mm, need("MAT-CONFCOAT"), 0.125, 3);
     await addBopOperation(
       ctx,
       mm,
@@ -475,7 +508,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
   {
     const mm = needMM(i, "PCB-ADCS-R1");
     await addBomLine(ctx, mm, need("PCB-BARE-REV3"), 1, 1);
-    await addBomLine(ctx, mm, need("MAT-CONFCOAT"), 0.08, 2);
+    await addBomLine(ctx, mm, need("MAT-CONFCOAT"), 0.125, 2);
     await addBopOperation(
       ctx,
       mm,
@@ -563,8 +596,8 @@ export async function runTier2(ctx: Ctx): Promise<void> {
   // -- Patch Antenna (ANT-PATCH-01) --
   {
     const mm = needMM(i, "ANT-PATCH-01");
-    await addBomLine(ctx, mm, need("MAT-CF-LAM"), 0.1, 1);
-    await addBomLine(ctx, mm, need("MAT-KAPTON"), 0.3, 2);
+    await addBomLine(ctx, mm, need("MAT-CF-LAM"), 0.125, 1);
+    await addBomLine(ctx, mm, need("MAT-KAPTON"), 0.25, 2);
     await addBopOperation(
       ctx,
       mm,
@@ -680,7 +713,14 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       wc["Clean Room Bay A"],
       "Systems integration",
       1,
-      { laborTime: 16 }
+      // Assembly (not Process) so the MES routes this operation to the assembly
+      // view, where tracked components are scanned into the serial being built.
+      {
+        laborTime: 16,
+        operationType: "Assembly",
+        // Gives the MES assembly view its step checklist.
+        procedureId: ctx.refs.misc["procedure:Satellite Systems Integration"]
+      }
     );
     await addBopOperation(
       ctx,
@@ -689,7 +729,11 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       wc["TVAC Chamber 1"],
       "TVAC qualification test",
       2,
-      { laborTime: 72, laborUnit: "Total Hours" }
+      {
+        laborTime: 72,
+        laborUnit: "Total Hours",
+        procedureId: ctx.refs.misc["procedure:TVAC Qualification Test"]
+      }
     );
     await addBopOperation(
       ctx,

@@ -1,6 +1,4 @@
-import type { Violation } from "./check";
-
-export type SourceFile = { file: string; contents: string };
+import type { SourceFile, Violation } from "./check";
 
 /** Patterns that identify a FULL redefinition of a DB object. Add a row to grow coverage. */
 const OBJECT_PATTERNS: { kind: string; re: RegExp }[] = [

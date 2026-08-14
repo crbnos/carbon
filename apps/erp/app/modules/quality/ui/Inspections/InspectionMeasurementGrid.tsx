@@ -596,11 +596,8 @@ const InspectionMeasurementGrid = ({
     > = {};
     for (let i = 0; i < columnCount; i++) {
       const key = sampleKey(i);
-      const numberEditor = EditableNumber<FeatureGridRow>(
+      const NumberEditor = EditableNumber<FeatureGridRow>(
         onCellEdit,
-        // react-aria NumberField defaults to 3 fraction digits, which rounds
-        // fine measurements (e.g. thousandths/ten-thousandths of an inch) on
-        // blur. Allow up to 6 so precision readings persist intact.
         { formatOptions: { maximumFractionDigits: 6 } },
         {
           clearable: true
@@ -608,10 +605,9 @@ const InspectionMeasurementGrid = ({
       );
       components[key] = (props) => {
         if (!props.row.isNumeric) {
-          // Attribute feature: keep the Pass/Fail toggle visible when focused.
           return renderPassFail(props.row, i);
         }
-        return numberEditor(props);
+        return <NumberEditor {...props} />;
       };
     }
     return components;

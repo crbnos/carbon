@@ -469,6 +469,49 @@ function computeInjectAuth(
   return ["companyId"];
 }
 
+// Services that pick insert-vs-update this way are the only ones MCP can't infer.
+function usesCreatedByDiscriminator(
+  content: string,
+  funcName: string
+): boolean {
+  const regex = new RegExp(
+    `export\\s+(?:async\\s+)?function\\s+${funcName}\\s*\\(`
+  );
+  const match = regex.exec(content);
+  if (!match) return false;
+  const closeParen = findMatchingBrace(
+    content,
+    match.index + match[0].length - 1
+  );
+  const nextExport = content.indexOf("\nexport ", closeParen);
+  const body = content.substring(
+    closeParen,
+    nextExport === -1 ? content.length : nextExport
+  );
+  return stripComments(body).includes('"createdBy" in');
+}
+
+// The `:` guard keeps `https://` intact.
+function stripComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
+function addOperationArg(schema: Record<string, unknown>): void {
+  const properties = (schema.properties ?? {}) as Record<string, unknown>;
+  properties._operation = {
+    type: "string",
+    enum: ["create", "update"],
+    description:
+      "Required. 'create' inserts a new record, 'update' modifies the existing record with this id.",
+  };
+  schema.properties = properties;
+  const required = ((schema.required as string[] | undefined) ?? []).slice();
+  if (!required.includes("_operation")) required.push("_operation");
+  schema.required = required;
+}
+
 function generateDescription(funcName: string): string {
   return funcName
     .replace(/([A-Z])/g, " $1")
@@ -606,6 +649,12 @@ export function generateToolMetadata(): void {
         DESCRIPTION_OVERRIDES[toolName] || generateDescription(func.name);
       const serviceParams = func.params.map((p) => p.name);
       const { schema, paramCount } = buildToolSchema(func, modelsContent);
+      if (
+        injectAuth.includes("createdBy") &&
+        usesCreatedByDiscriminator(content, func.name)
+      ) {
+        addOperationArg(schema);
+      }
 
       allTools.push({
         name: toolName,

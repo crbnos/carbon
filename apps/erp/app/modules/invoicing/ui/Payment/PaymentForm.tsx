@@ -12,6 +12,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCheckCheck, LuTicketX, LuTrash } from "react-icons/lu";
@@ -35,7 +36,7 @@ import {
   TextArea
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   isPaymentLocked,
   paymentType,
@@ -90,6 +91,9 @@ type PaymentFormProps = {
 const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(
+    company?.baseCurrencyCode ?? "USD"
+  );
   const permissions = usePermissions();
   const post = useFetcher();
   const voidFetcher = useFetcher();
@@ -228,18 +232,16 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
                 <Number
                   name="exchangeRate"
                   label={t`Exchange Rate`}
-                  formatOptions={{
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 4
-                  }}
+                  step={INPUT_STEP.exchangeRate}
+                  formatOptions={INPUT_FORMAT.exchangeRate}
                 />
                 <Number
                   name="totalAmount"
                   label={t`Total Amount`}
-                  formatOptions={{
-                    style: "currency",
-                    currency: company?.baseCurrencyCode ?? "USD"
-                  }}
+                  formatOptions={INPUT_FORMAT.money(
+                    company?.baseCurrencyCode ?? "USD",
+                    currencyDecimals
+                  )}
                 />
                 <Account
                   name="bankAccount"

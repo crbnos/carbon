@@ -31,7 +31,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -51,10 +51,13 @@ import {
   NumberControlled,
   StorageUnit,
   Submit,
-  UnitOfMeasure
+  TaxFields,
+  UnitOfMeasure,
+  useTaxPair
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
+  useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
@@ -86,22 +89,6 @@ type PurchaseOrderLineFormProps = {
   onClose?: () => void;
 };
 
-const getLineSubtotal = (
-  unitPrice: number,
-  quantity: number,
-  shippingCost: number
-) => unitPrice * quantity + shippingCost;
-
-const getLineTaxPercent = (
-  unitPrice: number,
-  quantity: number,
-  shippingCost: number,
-  taxAmount: number
-) => {
-  const subtotal = getLineSubtotal(unitPrice, quantity, shippingCost);
-  return subtotal > 0 ? taxAmount / subtotal : 0;
-};
-
 const PurchaseOrderLineForm = ({
   initialValues,
   type,
@@ -119,7 +106,20 @@ const PurchaseOrderLineForm = ({
 
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
+    currency: { decimalPlaces: number } | null;
   }>(path.to.purchaseOrder(orderId));
+
+  // Settlement decimals come from the document currency's row (loader data);
+  // 2 is only the last resort for a currency-less document
+  // The loader's currency row is the primary source — it is correct on first
+  // paint, which matters because these formatters take part in the blur commit.
+  // The hook covers documents whose loader doesn't carry the row; the single
+  // documented last-resort lives inside it rather than as a literal here.
+  const orderCurrency =
+    routeData?.purchaseOrder?.currencyCode ?? company.baseCurrencyCode;
+  const configuredDecimals = useCurrencyDecimals(orderCurrency);
+  const currencyDecimals =
+    routeData?.currency?.decimalPlaces ?? configuredDecimals;
 
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
@@ -162,33 +162,24 @@ const PurchaseOrderLineForm = ({
     supplierShippingCost: initialValues.supplierShippingCost ?? 0,
     supplierTaxAmount: initialValues.supplierTaxAmount ?? 0,
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
-    taxPercent: getLineTaxPercent(
-      initialValues.supplierUnitPrice ?? 0,
-      initialValues.purchaseQuantity ?? 1,
-      initialValues.supplierShippingCost ?? 0,
-      initialValues.supplierTaxAmount ?? 0
-    )
+    taxPercent: initialValues.taxPercent ?? 0
   });
 
-  // update tax amount when quantity or unit price changes
-  useEffect(() => {
-    const subtotal = getLineSubtotal(
-      itemData.supplierUnitPrice,
-      itemData.purchaseQuantity,
-      itemData.supplierShippingCost
-    );
-    if (itemData.taxPercent !== 0) {
+  const itemTax = useTaxPair({
+    unitPrice: itemData.supplierUnitPrice,
+    quantity: itemData.purchaseQuantity,
+    shippingCost: itemData.supplierShippingCost,
+    percent: itemData.taxPercent,
+    amount: itemData.supplierTaxAmount,
+    currency: orderCurrency,
+    currencyDecimals,
+    onChange: ({ percent, amount }) =>
       setItemData((d) => ({
         ...d,
-        supplierTaxAmount: subtotal * itemData.taxPercent
-      }));
-    }
-  }, [
-    itemData.supplierUnitPrice,
-    itemData.purchaseQuantity,
-    itemData.supplierShippingCost,
-    itemData.taxPercent
-  ]);
+        taxPercent: percent,
+        supplierTaxAmount: amount
+      }))
+  });
 
   const isEditing = initialValues.id !== undefined;
   const isGLAccount = initialValues.purchaseOrderLineType === "G/L Account";
@@ -218,32 +209,24 @@ const PurchaseOrderLineForm = ({
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
     supplierShippingCost: initialValues.supplierShippingCost ?? 0,
     supplierTaxAmount: initialValues.supplierTaxAmount ?? 0,
-    taxPercent: getLineTaxPercent(
-      initialValues.supplierUnitPrice ?? 0,
-      initialValues.purchaseQuantity ?? 1,
-      initialValues.supplierShippingCost ?? 0,
-      initialValues.supplierTaxAmount ?? 0
-    )
+    taxPercent: initialValues.taxPercent ?? 0
   });
 
-  useEffect(() => {
-    const subtotal = getLineSubtotal(
-      indirectData.supplierUnitPrice,
-      indirectData.purchaseQuantity,
-      indirectData.supplierShippingCost
-    );
-    if (indirectData.taxPercent !== 0) {
+  const indirectTax = useTaxPair({
+    unitPrice: indirectData.supplierUnitPrice,
+    quantity: indirectData.purchaseQuantity,
+    shippingCost: indirectData.supplierShippingCost,
+    percent: indirectData.taxPercent,
+    amount: indirectData.supplierTaxAmount,
+    currency: orderCurrency,
+    currencyDecimals,
+    onChange: ({ percent, amount }) =>
       setIndirectData((d) => ({
         ...d,
-        supplierTaxAmount: subtotal * indirectData.taxPercent
-      }));
-    }
-  }, [
-    indirectData.supplierUnitPrice,
-    indirectData.purchaseQuantity,
-    indirectData.supplierShippingCost,
-    indirectData.taxPercent
-  ]);
+        taxPercent: percent,
+        supplierTaxAmount: amount
+      }))
+  });
 
   const costsDisclosure = useDisclosure();
   const indirectCostsDisclosure = useDisclosure();
@@ -316,7 +299,18 @@ const PurchaseOrderLineForm = ({
     : !permissions.can("create", "purchasing");
 
   const deleteDisclosure = useDisclosure();
-  const currencyFormatter = useCurrencyFormatter();
+  // These badges render DOCUMENT-currency values, so both formatters take the
+  // document's currency and decimals. Defaulting to base currency is what
+  // printed a JPY shipping cost as "$20.00".
+  const currencyFormatter = useCurrencyFormatter({
+    currency: orderCurrency,
+    decimalPlaces: currencyDecimals
+  });
+  const priceFormatter = useCurrencyFormatter({
+    rate: true,
+    currency: orderCurrency,
+    decimalPlaces: currencyDecimals
+  });
   const percentFormatter = usePercentFormatter();
 
   const onTypeChange = (t: ItemType | "Item") => {
@@ -461,12 +455,7 @@ const PurchaseOrderLineForm = ({
     }));
   };
 
-  const collapsedTaxPercent = getLineTaxPercent(
-    initialValues?.supplierUnitPrice ?? 0,
-    initialValues?.purchaseQuantity ?? 1,
-    initialValues?.supplierShippingCost ?? 0,
-    initialValues?.supplierTaxAmount ?? 0
-  );
+  const collapsedTaxPercent = initialValues?.taxPercent ?? 0;
 
   return (
     <>
@@ -555,7 +544,7 @@ const PurchaseOrderLineForm = ({
                               {initialValues?.purchaseQuantity}
                             </Badge>
                             <Badge variant="green">
-                              {currencyFormatter.format(
+                              {priceFormatter.format(
                                 (initialValues?.supplierUnitPrice ?? 0) +
                                   (initialValues?.supplierShippingCost ?? 0)
                               )}{" "}
@@ -724,12 +713,10 @@ const PurchaseOrderLineForm = ({
                           name="supplierUnitPrice"
                           label={t`Unit Price`}
                           value={itemData.supplierUnitPrice}
-                          formatOptions={{
-                            style: "currency",
-                            currency:
-                              routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode
-                          }}
+                          formatOptions={INPUT_FORMAT.rate(
+                            orderCurrency,
+                            currencyDecimals
+                          )}
                           onChange={(value) =>
                             setItemData((d) => ({
                               ...d,
@@ -834,12 +821,10 @@ const PurchaseOrderLineForm = ({
                             termId="purchase-order-line-shipping"
                             minValue={0}
                             value={itemData.supplierShippingCost}
-                            formatOptions={{
-                              style: "currency",
-                              currency:
-                                routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
-                            }}
+                            formatOptions={INPUT_FORMAT.money(
+                              orderCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setItemData((d) => ({
                                 ...d,
@@ -847,51 +832,10 @@ const PurchaseOrderLineForm = ({
                               }))
                             }
                           />
-                          <NumberControlled
-                            name="supplierTaxAmount"
-                            label={t`Tax Amount`}
-                            value={itemData.supplierTaxAmount}
-                            formatOptions={{
-                              style: "currency",
-                              currency:
-                                routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
-                            }}
-                            onChange={(value) => {
-                              const subtotal =
-                                itemData.supplierUnitPrice *
-                                  itemData.purchaseQuantity +
-                                itemData.supplierShippingCost;
-                              setItemData((d) => ({
-                                ...d,
-                                supplierTaxAmount: value,
-                                taxPercent: subtotal > 0 ? value / subtotal : 0
-                              }));
-                            }}
-                          />
-                          <NumberControlled
-                            name="taxPercent"
-                            label={t`Tax Percent`}
-                            value={itemData.taxPercent}
-                            minValue={0}
-                            maxValue={1}
-                            step={0.0001}
-                            formatOptions={{
-                              style: "percent",
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 2
-                            }}
-                            onChange={(value) => {
-                              const subtotal =
-                                itemData.supplierUnitPrice *
-                                  itemData.purchaseQuantity +
-                                itemData.supplierShippingCost;
-                              setItemData((d) => ({
-                                ...d,
-                                taxPercent: value,
-                                supplierTaxAmount: subtotal * value
-                              }));
-                            }}
+                          <TaxFields
+                            {...itemTax}
+                            amountName="supplierTaxAmount"
+                            percentName="taxPercent"
                           />
                         </div>
                       </div>
@@ -1014,12 +958,10 @@ const PurchaseOrderLineForm = ({
                             label={t`Unit Price`}
                             isOptional={false}
                             value={indirectData.supplierUnitPrice}
-                            formatOptions={{
-                              style: "currency",
-                              currency:
-                                routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
-                            }}
+                            formatOptions={INPUT_FORMAT.rate(
+                              orderCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setIndirectData((d) => ({
                                 ...d,
@@ -1084,12 +1026,10 @@ const PurchaseOrderLineForm = ({
                               termId="purchase-order-line-shipping"
                               minValue={0}
                               value={indirectData.supplierShippingCost}
-                              formatOptions={{
-                                style: "currency",
-                                currency:
-                                  routeData?.purchaseOrder?.currencyCode ??
-                                  company.baseCurrencyCode
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                orderCurrency,
+                                currencyDecimals
+                              )}
                               onChange={(value) =>
                                 setIndirectData((d) => ({
                                   ...d,
@@ -1097,52 +1037,10 @@ const PurchaseOrderLineForm = ({
                                 }))
                               }
                             />
-                            <NumberControlled
-                              name="supplierTaxAmount"
-                              label={t`Tax Amount`}
-                              value={indirectData.supplierTaxAmount}
-                              formatOptions={{
-                                style: "currency",
-                                currency:
-                                  routeData?.purchaseOrder?.currencyCode ??
-                                  company.baseCurrencyCode
-                              }}
-                              onChange={(value) => {
-                                const subtotal =
-                                  indirectData.supplierUnitPrice *
-                                    indirectData.purchaseQuantity +
-                                  indirectData.supplierShippingCost;
-                                setIndirectData((d) => ({
-                                  ...d,
-                                  supplierTaxAmount: value,
-                                  taxPercent:
-                                    subtotal > 0 ? value / subtotal : 0
-                                }));
-                              }}
-                            />
-                            <NumberControlled
-                              name="taxPercent"
-                              label={t`Tax Percent`}
-                              value={indirectData.taxPercent}
-                              minValue={0}
-                              maxValue={1}
-                              step={0.0001}
-                              formatOptions={{
-                                style: "percent",
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 2
-                              }}
-                              onChange={(value) => {
-                                const subtotal =
-                                  indirectData.supplierUnitPrice *
-                                    indirectData.purchaseQuantity +
-                                  indirectData.supplierShippingCost;
-                                setIndirectData((d) => ({
-                                  ...d,
-                                  taxPercent: value,
-                                  supplierTaxAmount: subtotal * value
-                                }));
-                              }}
+                            <TaxFields
+                              {...indirectTax}
+                              amountName="supplierTaxAmount"
+                              percentName="taxPercent"
                             />
                           </div>
                         </div>

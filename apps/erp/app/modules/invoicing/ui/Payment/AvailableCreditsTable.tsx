@@ -16,12 +16,17 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
+import { INPUT_FORMAT, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import { LuSave } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePermissions
+} from "~/hooks";
 import { path } from "~/utils/path";
 
 // An available credit (a posted, balance-reducing memo) the party can apply to an
@@ -64,10 +69,6 @@ type CreditRow = {
   amount: number;
 };
 
-function round4(n: number): number {
-  return Math.round(n * 10000) / 10000;
-}
-
 const GRID =
   "grid grid-cols-[2rem_minmax(8rem,1fr)_7rem_minmax(9rem,1fr)_8rem] gap-3";
 
@@ -83,6 +84,7 @@ const AvailableCreditsTable = ({
   const permissions = usePermissions();
   const fetcher = useFetcher();
   const currencyFormatter = useCurrencyFormatter({ currency });
+  const currencyDecimals = useCurrencyDecimals(currency);
   const canEdit = permissions.can("update", "invoicing");
 
   const balanceByInvoice = useMemo(
@@ -118,7 +120,7 @@ const AvailableCreditsTable = ({
   // invoice's open balance.
   const capFor = useCallback(
     (remaining: number, invoiceId: string) =>
-      round4(Math.min(remaining, Number(balanceByInvoice.get(invoiceId) ?? 0))),
+      round(Math.min(remaining, Number(balanceByInvoice.get(invoiceId) ?? 0))),
     [balanceByInvoice]
   );
 
@@ -162,7 +164,7 @@ const AvailableCreditsTable = ({
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== id) return r;
-          const amount = round4(Math.max(0, value));
+          const amount = round(Math.max(0, value));
           return { ...r, amount, checked: amount > 0 };
         })
       ),
@@ -293,10 +295,10 @@ const AvailableCreditsTable = ({
                       }
                       minValue={0}
                       isDisabled={!canEdit}
-                      formatOptions={{
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 4
-                      }}
+                      formatOptions={INPUT_FORMAT.money(
+                        currency,
+                        currencyDecimals
+                      )}
                     >
                       <NumberInputGroup>
                         <NumberInput className="text-right tabular-nums" />

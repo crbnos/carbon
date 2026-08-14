@@ -7117,6 +7117,7 @@ export type Database = {
           salesJobCompletedNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize: string | null
+          showCurrencyTrailingZeros: boolean
           showCustomerReadableId: boolean
           showSupplierReadableId: boolean
           supplierQuoteNotificationGroup: string[]
@@ -7164,6 +7165,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize?: string | null
+          showCurrencyTrailingZeros?: boolean
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
           supplierQuoteNotificationGroup?: string[]
@@ -7211,6 +7213,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize?: string | null
+          showCurrencyTrailingZeros?: boolean
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
           supplierQuoteNotificationGroup?: string[]
@@ -18870,6 +18873,8 @@ export type Database = {
       invite: {
         Row: {
           acceptedAt: string | null
+          attestedAt: string | null
+          attestedBy: string | null
           code: string
           companyId: string
           createdAt: string
@@ -18883,6 +18888,8 @@ export type Database = {
         }
         Insert: {
           acceptedAt?: string | null
+          attestedAt?: string | null
+          attestedBy?: string | null
           code: string
           companyId: string
           createdAt?: string
@@ -18896,6 +18903,8 @@ export type Database = {
         }
         Update: {
           acceptedAt?: string | null
+          attestedAt?: string | null
+          attestedBy?: string | null
           code?: string
           companyId?: string
           createdAt?: string
@@ -18908,6 +18917,41 @@ export type Database = {
           updatedBy?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "invite_attestedBy_fkey"
+            columns: ["attestedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_attestedBy_fkey"
+            columns: ["attestedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_attestedBy_fkey"
+            columns: ["attestedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_attestedBy_fkey"
+            columns: ["attestedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_attestedBy_fkey"
+            columns: ["attestedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "invite_companyId_fkey"
             columns: ["companyId"]
@@ -19227,6 +19271,200 @@ export type Database = {
           {
             foreignKeyName: "invoiceSettlement_updatedBy_fkey"
             columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      itarCertification: {
+        Row: {
+          certifiedAt: string
+          companyId: string
+          complianceContact: string | null
+          createdAt: string
+          createdBy: string
+          docHash: string
+          docVersion: string
+          expiresAt: string
+          fullLegalName: string
+          id: string
+          ipAddress: string | null
+          title: string | null
+          type: string
+          updatedAt: string | null
+          updatedBy: string | null
+          userAgent: string | null
+          userId: string
+        }
+        Insert: {
+          certifiedAt?: string
+          companyId: string
+          complianceContact?: string | null
+          createdAt?: string
+          createdBy: string
+          docHash: string
+          docVersion: string
+          expiresAt: string
+          fullLegalName: string
+          id?: string
+          ipAddress?: string | null
+          title?: string | null
+          type: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userAgent?: string | null
+          userId: string
+        }
+        Update: {
+          certifiedAt?: string
+          companyId?: string
+          complianceContact?: string | null
+          createdAt?: string
+          createdBy?: string
+          docHash?: string
+          docVersion?: string
+          expiresAt?: string
+          fullLegalName?: string
+          id?: string
+          ipAddress?: string | null
+          title?: string | null
+          type?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userAgent?: string | null
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itarCertification_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itarCertification_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itarCertification_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "itarCertification_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "itarCertification_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itarCertification_userId_fkey"
+            columns: ["userId"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -21111,6 +21349,27 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
+      }
+      itemStockQuantities: {
+        Row: {
+          companyId: string
+          itemId: string
+          locationId: string
+          quantityOnHand: number
+        }
+        Insert: {
+          companyId: string
+          itemId: string
+          locationId?: string
+          quantityOnHand?: number
+        }
+        Update: {
+          companyId?: string
+          itemId?: string
+          locationId?: string
+          quantityOnHand?: number
+        }
+        Relationships: []
       }
       itemSupersession: {
         Row: {
@@ -61534,20 +61793,6 @@ export type Database = {
           tableName: string | null
           type: string | null
         }
-        Insert: {
-          attachedFunctions?: never
-          status?: never
-          systemTriggerName?: unknown
-          tableName?: never
-          type?: never
-        }
-        Update: {
-          attachedFunctions?: never
-          status?: never
-          systemTriggerName?: unknown
-          tableName?: never
-          type?: never
-        }
         Relationships: []
       }
       gaugeCalibrationRecords: {
@@ -62873,6 +63118,7 @@ export type Database = {
           locationName: string | null
           postingDate: string | null
           quantity: number | null
+          scrapReasonId: string | null
           storageUnitId: string | null
           storageUnitName: string | null
           thumbnailPath: string | null
@@ -62966,6 +63212,13 @@ export type Database = {
             columns: ["locationId"]
             isOneToOne: false
             referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_scrapReasonId_fkey"
+            columns: ["scrapReasonId"]
+            isOneToOne: false
+            referencedRelation: "scrapReason"
             referencedColumns: ["id"]
           },
           {
@@ -63294,86 +63547,6 @@ export type Database = {
           },
         ]
       }
-      itemStockQuantities: {
-        Row: {
-          companyId: string | null
-          itemId: string | null
-          locationId: string | null
-          quantityOnHand: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "partLeger_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "partLeger_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "partLeger_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "partLeger_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-        ]
-      }
       jobMaterialWithMakeMethodId: {
         Row: {
           companyId: string | null
@@ -63404,6 +63577,8 @@ export type Database = {
           scrapQuantity: number | null
           storageUnitId: string | null
           storageUnitName: string | null
+          substitutedFromItemId: string | null
+          substitutionFactor: number | null
           unitCost: number | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -63644,6 +63819,7 @@ export type Database = {
           dueDate: string | null
           hasConflict: boolean | null
           id: string | null
+          inspectionDocumentId: string | null
           jobId: string | null
           jobMakeMethodId: string | null
           laborRate: number | null
@@ -63695,6 +63871,7 @@ export type Database = {
           dueDate?: string | null
           hasConflict?: boolean | null
           id?: string | null
+          inspectionDocumentId?: string | null
           jobId?: string | null
           jobMakeMethodId?: string | null
           laborRate?: number | null
@@ -63746,6 +63923,7 @@ export type Database = {
           dueDate?: string | null
           hasConflict?: boolean | null
           id?: string | null
+          inspectionDocumentId?: string | null
           jobId?: string | null
           jobMakeMethodId?: string | null
           laborRate?: number | null
@@ -63896,6 +64074,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocument"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocuments"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "jobOperation_jobId_fkey"
@@ -64052,6 +64244,7 @@ export type Database = {
           dueDate: string | null
           hasConflict: boolean | null
           id: string | null
+          inspectionDocumentId: string | null
           jobId: string | null
           jobMakeMethodId: string | null
           laborRate: number | null
@@ -64203,6 +64396,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocument"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocuments"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "jobOperation_jobId_fkey"
@@ -69208,12 +69415,15 @@ export type Database = {
           modelSize: number | null
           modelUploadId: string | null
           noQuoteReason: string | null
+          priceTrace: Json | null
+          pricingRuleId: string | null
           qty: number | null
           quantity: number[] | null
           quoteCreatedAt: string | null
           quoteId: string | null
           quoteReadableId: string | null
           quoteRevisionId: number | null
+          sortOrder: number | null
           status: Database["public"]["Enums"]["quoteLineStatus"] | null
           tags: string[] | null
           taxPercent: number | null
@@ -69393,6 +69603,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesRfqLines"
             referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "quoteLine_pricingRuleId_fkey"
+            columns: ["pricingRuleId"]
+            isOneToOne: false
+            referencedRelation: "pricingRule"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quoteLine_quoteId_fkey"
@@ -70000,12 +70217,14 @@ export type Database = {
       }
       quoteOperationsWithMakeMethods: {
         Row: {
+          assemblyInstructionId: string | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
           description: string | null
           id: string | null
+          inspectionDocumentId: string | null
           laborRate: number | null
           laborTime: number | null
           laborUnit: Database["public"]["Enums"]["factor"] | null
@@ -70037,6 +70256,20 @@ export type Database = {
           workInstruction: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "quoteOperation_assemblyInstructionId_fkey"
+            columns: ["assemblyInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstruction"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_assemblyInstructionId_fkey"
+            columns: ["assemblyInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quoteOperation_companyId_fkey"
             columns: ["companyId"]
@@ -70099,6 +70332,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "quoteOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocument"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocuments"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quoteOperation_operationSupplierProcessId_fkey"
@@ -71508,6 +71755,13 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipmentCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -71515,7 +71769,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -73683,6 +73937,7 @@ export type Database = {
           processId: string | null
           processName: string | null
           supplierId: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -75429,19 +75684,18 @@ export type Database = {
           netChange: number
         }[]
       }
-      attach_event_trigger:
-        | {
-            Args: { sync_functions?: string[]; table_name_text: string }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              after_sync_functions?: string[]
-              sync_functions?: string[]
-              table_name_text: string
-            }
-            Returns: undefined
-          }
+      attach_event_trigger: {
+        Args: {
+          after_sync_functions?: string[]
+          sync_functions?: string[]
+          table_name_text: string
+        }
+        Returns: undefined
+      }
+      attach_statement_handler: {
+        Args: { handler_functions?: string[]; table_name_text: string }
+        Returns: undefined
+      }
       backflush_job_materials: {
         Args: {
           p_company_id: string
@@ -77453,6 +77707,13 @@ export type Database = {
         Returns: boolean
       }
       is_valid_timezone: { Args: { tz: string }; Returns: boolean }
+      item_ledger_on_hand_contribution: {
+        Args: {
+          quantity: number
+          tracked_entity_status: Database["public"]["Enums"]["trackedEntityStatus"]
+        }
+        Returns: number
+      }
       items_search: {
         Args: {
           match_count: number
@@ -77640,6 +77901,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      reconcile_item_stock_quantities: { Args: never; Returns: undefined }
       resolve_shelf_life_start_for_receipt: {
         Args: { p_item_id: string; p_receipt_id: string }
         Returns: string
@@ -77748,6 +78010,14 @@ export type Database = {
         Returns: undefined
       }
       sync_archive_other_quality_documents: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_check_job_material_self_reference: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_check_method_material_self_reference: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }

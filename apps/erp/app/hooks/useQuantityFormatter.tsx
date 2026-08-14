@@ -1,17 +1,20 @@
+import { SCALE, SCALE_FORMAT } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 
-const MAXIMUM_FRACTION_DIGITS = 2;
-const SMALLEST_DISPLAYABLE_QUANTITY = 0.01;
+/** Smallest quantity the storage scale can represent. Below it a value is real
+ *  but unrenderable, and "0" would be a lie. */
+const SMALLEST_DISPLAYABLE_QUANTITY = 1 / 10 ** SCALE;
 
 /**
- * Formats a quantity for display at two decimals. This is presentation only —
- * the underlying quantity is never rounded, so BOMs, costing, reports, exports
- * and the API keep the exact value.
+ * Formats a quantity for display at full storage precision (up to five
+ * decimals). Presentation only — the underlying quantity is never rounded, so
+ * BOMs, costing, reports, exports and the API keep the exact value.
  *
- * - Whole numbers stay whole: `3` renders as "3", not "3.00".
- * - A non-zero quantity too small to render at two decimals shows as "<0.01"
- *   rather than a misleading "0".
+ * - Whole numbers stay whole: `3` renders as "3", not "3.00000".
+ * - A stored value renders itself: `0.00125`, not a placeholder.
+ * - A non-zero quantity too small to render at all shows as "<0.00001" rather
+ *   than a misleading "0".
  */
 export function formatQuantityForDisplay(
   quantity: number,
@@ -34,10 +37,7 @@ export function useQuantityFormatter() {
   const { locale } = useLocale();
 
   return useMemo(() => {
-    const formatter = new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: MAXIMUM_FRACTION_DIGITS
-    });
+    const formatter = new Intl.NumberFormat(locale, SCALE_FORMAT);
 
     return (quantity: number) => formatQuantityForDisplay(quantity, formatter);
   }, [locale]);

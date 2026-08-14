@@ -5,6 +5,75 @@ import type { Ctx } from "../types.ts";
 // test for the whole seed. Every detail page (opportunity, rfq, quote,
 // salesOrder, shipment, salesInvoice) must open without a 500 or redirect.
 
+// Only these four columns are stored on quoteLinePrice — every net* and
+// converted* column is GENERATED ALWAYS from them.
+type PriceBreak = {
+  quantity: number;
+  unitPrice: number;
+  leadTime: number;
+  discountPercent?: number;
+  shippingCost?: number;
+};
+
+// The public page filters price rows against the line's own quantity array, so
+// a break that isn't in quoteLine.quantity is invisible. Keep the two in step.
+const SAT_PRICE_BREAKS: readonly PriceBreak[] = [
+  { quantity: 1, unitPrice: 1950000, leadTime: 240 },
+  { quantity: 5, unitPrice: 1840000, leadTime: 270, discountPercent: 0.03 },
+  { quantity: 10, unitPrice: 1725000, leadTime: 300, discountPercent: 0.06 },
+  { quantity: 25, unitPrice: 1580000, leadTime: 360, discountPercent: 0.1 }
+];
+const SAT_BREAK_QUANTITIES = SAT_PRICE_BREAKS.map((b) => b.quantity);
+
+const EPS_PRICE_BREAKS: readonly PriceBreak[] = [
+  { quantity: 2, unitPrice: 128000, leadTime: 120 },
+  {
+    quantity: 10,
+    unitPrice: 118000,
+    leadTime: 150,
+    discountPercent: 0.05,
+    shippingCost: 2400
+  }
+];
+const EPS_BREAK_QUANTITIES = EPS_PRICE_BREAKS.map((b) => b.quantity);
+
+// The Sent quote is the one the docs screenshot at /share/quote/:externalLinkId,
+// so the link id is fixed rather than generated — the URL has to survive a
+// re-seed. expiresAt / expirationDate must stay ahead of "today" or the public
+// page renders its Expired state instead of the quote.
+const NOVASAT_QUOTE_LINK_ID = "5eed0000-0000-4000-8000-000000000001";
+const NOVASAT_QUOTE_EXPIRATION = "2027-06-30";
+
+// Three deliveries of the same make part, three weeks apart. Gives the docs a
+// real delivery schedule, and three Make to Order lines with no job attached is
+// what puts the "Jobs Required" / Create Jobs card on the order.
+const STAGGERED_DELIVERIES = [
+  { key: "1", promisedDate: "2026-09-04", sortOrder: 1 },
+  { key: "2", promisedDate: "2026-09-25", sortOrder: 2 },
+  { key: "3", promisedDate: "2026-10-16", sortOrder: 3 }
+] as const;
+
+async function insertPriceBreaks(
+  ctx: Ctx,
+  quoteId: string,
+  quoteLineId: string,
+  breaks: readonly PriceBreak[]
+): Promise<void> {
+  for (const brk of breaks) {
+    await insertRow(ctx, "quoteLinePrice", {
+      quoteId,
+      quoteLineId,
+      quantity: brk.quantity,
+      unitPrice: brk.unitPrice,
+      leadTime: brk.leadTime,
+      discountPercent: brk.discountPercent ?? 0,
+      shippingCost: brk.shippingCost ?? 0,
+      exchangeRate: 1,
+      priceSource: "system"
+    });
+  }
+}
+
 export async function runTier4(ctx: Ctx): Promise<void> {
   const { companyId, userId, locationId } = ctx;
   const plantId = ctx.refs.locations.Plant ?? locationId;
@@ -33,6 +102,26 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   const commsItem = ctx.refs.items["COMMS-001"]!;
   const propItem = ctx.refs.items["PROP-001"]!;
   const harnessItem = ctx.refs.items["HARNESS-001"]!;
+  const sawItem = ctx.refs.items["SAW-001"]!;
+
+  // companySettings has no companyId column, so the wipe preserves it — the row
+  // already exists and only needs the digital-quote flags flipped on. Without
+  // digitalQuoteEnabled the public quote page renders no Accept/Reject buttons,
+  // and without digitalQuoteIncludesPurchaseOrders the PO-upload field is gone.
+  ctx.log("company settings — digital quotes enabled");
+  await insertRow(
+    ctx,
+    "companySettings",
+    {
+      id: companyId,
+      digitalQuoteEnabled: true,
+      digitalQuoteIncludesPurchaseOrders: true
+    },
+    {
+      onConflict:
+        '("id") DO UPDATE SET "digitalQuoteEnabled" = true, "digitalQuoteIncludesPurchaseOrders" = true'
+    }
+  );
 
   // ── Opportunity 1: ORBSEC — complete chain (rfq → quote → SO → shipment → invoice) ──
   ctx.log("opportunity 1 — full chain (ORBSEC)");
@@ -87,7 +176,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     shippingMethodId,
     companyId
   });
-  await insertId(ctx, "quoteLine", {
+  const quote1Line = await insertId(ctx, "quoteLine", {
     quoteId: quote1,
     itemId: satItem.id,
     itemType: "Part",
@@ -98,7 +187,11 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     status: "Complete",
     sortOrder: 1
   });
+  await insertPriceBreaks(ctx, quote1, quote1Line, [
+    { quantity: 3, unitPrice: 1800000, leadTime: 260 }
+  ]);
   ctx.refs.documents["quote:orbsec"] = quote1;
+  ctx.refs.documents["quoteline:orbsec:sat"] = quote1Line;
 
   const so1Id = await nextSequence(ctx, "salesOrder");
   const so1 = await insertId(ctx, "salesOrder", {
@@ -217,7 +310,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     locationId: plantId,
     currencyCode: "USD",
     opportunityId: opp2Id,
-    expirationDate: "2025-12-31"
+    expirationDate: NOVASAT_QUOTE_EXPIRATION
   });
   await insertRow(ctx, "quotePayment", {
     id: quote2,
@@ -230,29 +323,50 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     shippingMethodId,
     companyId
   });
-  await insertId(ctx, "quoteLine", {
+  const quote2SatLine = await insertId(ctx, "quoteLine", {
     quoteId: quote2,
     itemId: satItem.id,
     itemType: "Part",
     description: satItem.name,
     methodType: "Make to Order",
     unitOfMeasureCode: "EA",
-    quantity: [2],
+    quantity: SAT_BREAK_QUANTITIES,
     status: "Complete",
     sortOrder: 1
   });
-  await insertId(ctx, "quoteLine", {
+  await insertPriceBreaks(ctx, quote2, quote2SatLine, SAT_PRICE_BREAKS);
+  const quote2EpsLine = await insertId(ctx, "quoteLine", {
     quoteId: quote2,
     itemId: epsItem.id,
     itemType: "Part",
     description: epsItem.name,
     methodType: "Make to Order",
     unitOfMeasureCode: "EA",
-    quantity: [2],
-    status: "In Progress",
+    quantity: EPS_BREAK_QUANTITIES,
+    status: "Complete",
     sortOrder: 2
   });
+  await insertPriceBreaks(ctx, quote2, quote2EpsLine, EPS_PRICE_BREAKS);
+
+  // The external link is what /share/quote/:id resolves against. It has to be
+  // created after the quote (it stores the quote's id) and pointed back at it,
+  // which is the same two-step upsertExternalLink does when a quote is created.
+  const quote2Link = await insertId(ctx, "externalLink", {
+    id: NOVASAT_QUOTE_LINK_ID,
+    documentType: "Quote",
+    documentId: quote2,
+    customerId: customers.novasat,
+    expiresAt: NOVASAT_QUOTE_EXPIRATION
+  });
+  await ctx.client.query(
+    `UPDATE "quote" SET "externalLinkId" = $1 WHERE id = $2 AND "companyId" = $3`,
+    [quote2Link, quote2, companyId]
+  );
+
   ctx.refs.documents["quote:novasat"] = quote2;
+  ctx.refs.documents["quoteline:novasat:sat"] = quote2SatLine;
+  ctx.refs.documents["quoteline:novasat:eps"] = quote2EpsLine;
+  ctx.refs.documents["quotelink:novasat"] = quote2Link;
   ctx.refs.documents["opp:novasat"] = opp2Id;
 
   // ── Opportunity 3: Apex — RFQ only (no quote yet) ─────────────────────────
@@ -311,7 +425,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     shippingMethodId,
     companyId
   });
-  await insertId(ctx, "quoteLine", {
+  const quote4Line = await insertId(ctx, "quoteLine", {
     quoteId: quote4,
     itemId: satItem.id,
     itemType: "Part",
@@ -322,7 +436,11 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     status: "Complete",
     sortOrder: 1
   });
+  await insertPriceBreaks(ctx, quote4, quote4Line, [
+    { quantity: 1, unitPrice: 1800000, leadTime: 240 }
+  ]);
   ctx.refs.documents["quote:polar"] = quote4;
+  ctx.refs.documents["quoteline:polar:sat"] = quote4Line;
 
   const so4Id = await nextSequence(ctx, "salesOrder");
   const so4 = await insertId(ctx, "salesOrder", {
@@ -470,4 +588,59 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     ctx.refs.documents[`soline:${spec.key}`] = lineId;
     ctx.refs.documents[`opp:${spec.key}`] = oppId;
   }
+
+  // ── Released order — "To Ship and Invoice" ────────────────────────────────
+  // The status is written by the app (releaseSalesOrder), not derived by a
+  // trigger, but it must still agree with what getSalesOrderStatus would
+  // compute: nothing sent and nothing invoiced on any line.
+  ctx.log("sales order — To Ship and Invoice (NovaSat, staggered deliveries)");
+  const opp5Id = await insertId(ctx, "opportunity", {
+    customerId: customers.novasat
+  });
+  const so5Id = await nextSequence(ctx, "salesOrder");
+  const so5 = await insertId(ctx, "salesOrder", {
+    salesOrderId: so5Id,
+    status: "To Ship and Invoice",
+    customerId: customers.novasat,
+    customerLocationId: cLocs.novasat ?? null,
+    locationId: plantId,
+    currencyCode: "USD",
+    opportunityId: opp5Id,
+    orderDate: "2026-08-03"
+  });
+  await insertRow(ctx, "salesOrderPayment", {
+    id: so5,
+    paymentTermId,
+    companyId
+  });
+  await insertRow(ctx, "salesOrderShipment", {
+    id: so5,
+    locationId: plantId,
+    shippingMethodId,
+    customerId: customers.novasat,
+    customerLocationId: cLocs.novasat ?? null,
+    companyId
+  });
+
+  for (const delivery of STAGGERED_DELIVERIES) {
+    ctx.log(`  delivery ${delivery.key} — promised ${delivery.promisedDate}`);
+    const lineId = await insertId(ctx, "salesOrderLine", {
+      salesOrderId: so5,
+      salesOrderLineType: "Part",
+      itemId: sawItem.id,
+      description: sawItem.name,
+      saleQuantity: 30,
+      unitPrice: 35000,
+      unitOfMeasureCode: "EA",
+      locationId: plantId,
+      methodType: "Make to Order",
+      status: "Ordered",
+      promisedDate: delivery.promisedDate,
+      sortOrder: delivery.sortOrder
+    });
+    ctx.refs.documents[`soline:toshipinvoice:${delivery.key}`] = lineId;
+  }
+
+  ctx.refs.documents["so:toshipinvoice"] = so5;
+  ctx.refs.documents["opp:toshipinvoice"] = opp5Id;
 }

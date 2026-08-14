@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
+import { applyRate, SCALE, taxableBase } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -156,22 +157,27 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         }
 
-        const [suppliers, supplierParts, periods, company] = await Promise.all([
-          client
-            .from("supplier")
-            .select("id, name, taxPercent, currencyCode")
-            .in("id", Array.from(supplierIds)),
-          client
-            .from("supplierPart")
-            .select("*")
-            .in("itemId", Array.from(itemIds)),
-          client.from("period").select("*").in("id", Array.from(periodIds)),
-          client
-            .from("company")
-            .select("id, baseCurrencyCode")
-            .eq("id", companyId)
-            .single()
-        ]);
+        const [suppliers, supplierParts, periods, company, currencies] =
+          await Promise.all([
+            client
+              .from("supplier")
+              .select("id, name, taxPercent, currencyCode")
+              .in("id", Array.from(supplierIds)),
+            client
+              .from("supplierPart")
+              .select("*")
+              .in("itemId", Array.from(itemIds)),
+            client.from("period").select("*").in("id", Array.from(periodIds)),
+            client
+              .from("company")
+              .select("id, baseCurrencyCode")
+              .eq("id", companyId)
+              .single(),
+            client
+              .from("currencies")
+              .select("code, decimalPlaces")
+              .eq("companyGroupId", companyGroupId)
+          ]);
 
         if (suppliers.error) {
           logger.error("Failed to fetch suppliers", { error: suppliers.error });
@@ -225,6 +231,12 @@ export async function action({ request }: ActionFunctionArgs) {
         );
 
         const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
+
+        // Settlement amounts round at the currency's own decimals, so the
+        // planned order carries a real money value rather than a raw product.
+        const currencyDecimals = new Map(
+          currencies.data?.map((c) => [c.code, c.decimalPlaces]) ?? []
+        );
 
         let processedItems = 0;
 
@@ -387,10 +399,21 @@ export async function action({ request }: ActionFunctionArgs) {
                 inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
                 conversionFactor: supplierPart?.conversionFactor ?? 1,
                 supplierUnitPrice: supplierPart?.unitPrice ?? 0,
-                supplierTaxAmount:
-                  ((supplierPart?.unitPrice ?? 0) *
-                    (supplier.taxPercent ?? 0)) /
-                  100,
+                // supplier.taxPercent is a 0..1 fraction; the amount follows
+                // the canonical denominator. Shipping is hardcoded 0 on this
+                // path, so it is passed explicitly rather than omitted.
+                taxPercent: supplier.taxPercent ?? 0,
+                supplierTaxAmount: applyRate(
+                  taxableBase(
+                    supplierPart?.unitPrice ?? 0,
+                    adjustedQuantity,
+                    0
+                  ),
+                  supplier.taxPercent ?? 0,
+                  currencyDecimals.get(
+                    supplier.currencyCode ?? baseCurrencyCode
+                  ) ?? SCALE
+                ),
                 supplierShippingCost: 0,
                 requiredDate: order.dueDate ?? undefined,
                 locationId,

@@ -54,6 +54,7 @@ import type {
   Progress
 } from "~/modules/production/ui/Schedule/Kanban";
 import { Kanban } from "~/modules/production/ui/Schedule/Kanban";
+import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import {
   getProcessesList,
@@ -341,7 +342,7 @@ function KanbanSchedule() {
   }, [initialItems]);
 
   const sortItems = useCallback((items: OperationItem[]) => {
-    return [...items].sort((a, b) => a.priority - b.priority);
+    return [...items].sort(comparePriorityThenId);
   }, []);
 
   useEffect(() => {

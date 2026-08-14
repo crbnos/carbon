@@ -1,3 +1,6 @@
+/** A source file handed to a check: any text file, SQL or TypeScript. */
+export type SourceFile = { file: string; contents: string };
+
 /** One occurrence of a forbidden pattern. */
 export type Violation = {
   /** Migration file basename, e.g. "20260101120000_foo.sql", or "<inline>" in unit tests. */

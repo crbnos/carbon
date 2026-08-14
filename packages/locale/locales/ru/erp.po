@@ -821,6 +821,10 @@ msgstr "Приемка"
 msgid "Acceptance passed"
 msgstr "Приемка пройдена"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "Принята {0}"
+
 msgid "Account"
 msgstr "Счет"
 
@@ -2849,11 +2853,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "Централизованный адрес выставления счетов"
 
+msgid "Cert Version"
+msgstr "Версия сертификата"
+
 msgid "Certificate Number"
 msgstr "Номер сертификата"
 
 msgid "Certificate uploaded"
 msgstr "Сертификат загружен"
+
+msgid "Certified"
+msgstr "Сертифицировано"
 
 msgid "Chain"
 msgstr "Цепь"
@@ -5905,6 +5915,15 @@ msgstr "Сущности для разделения"
 msgid "Entity"
 msgstr "Сущность"
 
+msgid "Entity certification: Accepted"
+msgstr "Сертификация организации: Принята"
+
+msgid "Entity certification: Expired"
+msgstr "Сертификация организации: Истекла"
+
+msgid "Entity certification: Pending"
+msgstr "Сертификация организации: Ожидание"
+
 msgid "Entity Type"
 msgstr "Тип Сущности"
 
@@ -6174,6 +6193,7 @@ msgid "Expired"
 msgstr "Истекло"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Истекла {0}"
 
@@ -6185,6 +6205,10 @@ msgstr "Истекшие партии"
 
 msgid "Expires"
 msgstr "Истекает"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "Истекает {0}"
 
 msgid "Expires <0/>"
 msgstr "Истекает <0/>"
@@ -7389,6 +7413,9 @@ msgstr "Гиперуход: интенсивная поддержка в пер�
 msgid "I (reduced)"
 msgstr "I (сокращено)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "У меня есть разумные основания полагать, что это лицо является лицом США, как определено в 22 CFR 120.62"
+
 msgid "I'm Still Working"
 msgstr "Я всё ещё работаю"
 
@@ -7786,6 +7813,9 @@ msgstr "Оценка товарно-материального запаса"
 msgid "Invite"
 msgstr "Пригласить"
 
+msgid "Invite Expired"
+msgstr "Приглашение истекло"
+
 msgid "Invited"
 msgstr "Приглашено"
 
@@ -7944,6 +7974,9 @@ msgstr "Дата выпуска"
 
 msgid "Issues"
 msgstr "Проблемы"
+
+msgid "ITAR Certifications"
+msgstr "Сертификации ITAR"
 
 msgid "item"
 msgstr "элемент"
@@ -8210,6 +8243,9 @@ msgstr "Последний день"
 
 msgid "Last Fiscal Year"
 msgstr "Прошлый финансовый год"
+
+msgid "Last Login"
+msgstr "Последний вход"
 
 msgid "Last Month"
 msgstr "Прошлый месяц"
@@ -9852,6 +9888,9 @@ msgstr "Нет оставшихся объектов для проверки."
 msgid "No reports match your search."
 msgstr "Никакие отчеты не соответствуют вашему поиску."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "Ни один представитель этой компании ещё не принял Carbon GovCloud Rider. Администратор этой компании должен принять его, прежде чем кто-либо получит доступ к Carbon — сотрудники Carbon не могут принять его от вашего имени."
+
 msgid "No results"
 msgstr "Нет результатов"
 
@@ -9971,6 +10010,9 @@ msgstr "Обычный"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Не таблица, а баланс главной книги: стоимость накапливается по мере выдачи материалов задания и очищается при поступлении задания на склад."
+
+msgid "Not certified"
+msgstr "Не сертифицировано"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно заданий для покрытия количества"
@@ -10550,6 +10592,9 @@ msgstr "Владеет: {0}"
 
 msgid "Packing Slip"
 msgstr "Упаковочный лист"
+
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
 
 msgid "Page"
 msgstr "Страница"
@@ -12163,6 +12208,9 @@ msgstr "Отчеты"
 msgid "Reprint"
 msgstr "Перепечать"
 
+msgid "Request a new invite"
+msgstr "Запросить новое приглашение"
+
 msgid "Request access"
 msgstr "Запросить доступ"
 
@@ -12405,6 +12453,10 @@ msgstr "РФЗ"
 
 msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
 msgstr "Передайте размерности Carbon вместе с отправленными журналами. Каждый слот отображает одну размерность Carbon в одну цель аналитики провайдера; приведенное ниже отображение значений связывает отдельные значения размерности с параметрами провайдера."
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Правый элемент"
@@ -13489,6 +13541,9 @@ msgstr "Показать ID поставщиков"
 
 msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
+
+msgid "Show Trailing Zeros"
+msgstr ""
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
@@ -15188,11 +15243,18 @@ msgstr "Эта информация будет видна всем пользо�
 msgid "this inspection plan"
 msgstr "этот план проверки"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "Это приглашение присоединиться к {0} истекло. Вы можете запросить новое приглашение, которое будет отправлено на вашу электронную почту."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Это купленный элемент — у него нет BoM/BoP; могут изменяться только его атрибуты и документы."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Это уникальный идентификатор для вебхука"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "Это среда, контролируемая ITAR. Доступ ограничен для лиц США."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Это месяц, когда начинается ваш финансовый год."
@@ -15714,6 +15776,9 @@ msgstr "Тип:"
 
 msgid "Types"
 msgstr "Типы"
+
+msgid "U.S. Person Attestation"
+msgstr "Удостоверение лица США"
 
 msgid "Unapplied"
 msgstr "Неприменённые"

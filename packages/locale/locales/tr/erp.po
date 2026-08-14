@@ -821,6 +821,10 @@ msgstr "Kabul"
 msgid "Acceptance passed"
 msgstr "Kabul edildi"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "{0} tarihinde kabul edildi"
+
 msgid "Account"
 msgstr "Hesap"
 
@@ -2849,11 +2853,17 @@ msgstr "Bilgi"
 msgid "Centralized Billing Address"
 msgstr "Merkezi Faturalama Adresi"
 
+msgid "Cert Version"
+msgstr "Sertifika Versiyonu"
+
 msgid "Certificate Number"
 msgstr "Sertifika Numarası"
 
 msgid "Certificate uploaded"
 msgstr "Sertifika Yüklendi"
+
+msgid "Certified"
+msgstr "Sertifikalı"
 
 msgid "Chain"
 msgstr "Zincir"
@@ -5905,6 +5915,15 @@ msgstr "Ayrılacak varlıklar"
 msgid "Entity"
 msgstr "Varlık"
 
+msgid "Entity certification: Accepted"
+msgstr "Kuruluş sertifikasyonu: Kabul edildi"
+
+msgid "Entity certification: Expired"
+msgstr "Kuruluş sertifikasyonu: Süresi doldu"
+
+msgid "Entity certification: Pending"
+msgstr "Kuruluş sertifikasyonu: Beklemede"
+
 msgid "Entity Type"
 msgstr "Varlık Türü"
 
@@ -6174,6 +6193,7 @@ msgid "Expired"
 msgstr "Süresi Dolmuş"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Süresi dolmuş {0}"
 
@@ -6185,6 +6205,10 @@ msgstr "Süresi Dolmuş Lotlar"
 
 msgid "Expires"
 msgstr "Süresi Doluyor"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "{0} tarihinde sona eriyor"
 
 msgid "Expires <0/>"
 msgstr "Süresi doluyor <0/>"
@@ -7389,6 +7413,9 @@ msgstr "Hypercare: ilk haftalar için yoğun destek"
 msgid "I (reduced)"
 msgstr "I (azaltılmış)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "Bu kişinin 22 CFR 120.62'de tanımlanan şekilde ABD vatandaşı olduğuna inanmak için makul bir temelem var"
+
 msgid "I'm Still Working"
 msgstr "Hala Çalışıyorum"
 
@@ -7786,6 +7813,9 @@ msgstr "Envanter Değerlemesi"
 msgid "Invite"
 msgstr "Davet et"
 
+msgid "Invite Expired"
+msgstr "Davet Süresi Doldu"
+
 msgid "Invited"
 msgstr "Davetli"
 
@@ -7944,6 +7974,9 @@ msgstr "Düzenlenme Tarihi"
 
 msgid "Issues"
 msgstr "Sorunlar"
+
+msgid "ITAR Certifications"
+msgstr "ITAR Sertifikaları"
 
 msgid "item"
 msgstr "öğe"
@@ -8210,6 +8243,9 @@ msgstr "Son gün"
 
 msgid "Last Fiscal Year"
 msgstr "Son Mali Yıl"
+
+msgid "Last Login"
+msgstr "Son Giriş"
 
 msgid "Last Month"
 msgstr "Geçen Ay"
@@ -9852,6 +9888,9 @@ msgstr "İncelenecek kalan varlık yok."
 msgid "No reports match your search."
 msgstr "Aramanızla eşleşen rapor yok."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "Bu şirketin hiçbir temsilcisi Carbon GovCloud Rider'ı henüz kabul etmedi. Herhangi biri Carbon'a erişmeden önce bu şirketin bir yöneticisinin kabul etmesi gerekir — Carbon personeli bunu sizin adınıza kabul edemez."
+
 msgid "No results"
 msgstr "Sonuç bulunamadı"
 
@@ -9971,6 +10010,9 @@ msgstr "Normal"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Bir tablo değil, bir genel muhasebe dengesi: iş malzemeleri verildiğinde maliyetler birikir ve iş envantere alındığında temizlenir."
+
+msgid "Not certified"
+msgstr "Sertifikalı değil"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılayacak yeterli iş yok"
@@ -10550,6 +10592,9 @@ msgstr "Sahibi: {0}"
 
 msgid "Packing Slip"
 msgstr "Paketleme Fişi"
+
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
 
 msgid "Page"
 msgstr "Sayfa"
@@ -12163,6 +12208,9 @@ msgstr "Raporlar"
 msgid "Reprint"
 msgstr "Yeniden Yazdır"
 
+msgid "Request a new invite"
+msgstr "Yeni bir davet iste"
+
 msgid "Request access"
 msgstr "Erişim İste"
 
@@ -12405,6 +12453,10 @@ msgstr "Teklif Talepleri"
 
 msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
 msgstr "Carbon boyutlarını gönderilen defterlerle birlikte taşıyın. Her yuva bir Carbon boyutunu bir sağlayıcı analitik hedefine eşler; aşağıdaki değer eşlemesi bireysel boyut değerlerini sağlayıcı seçenekleriyle eşleştirir."
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Sağ öğe"
@@ -13489,6 +13541,9 @@ msgstr "Tedarikçi Kimliklerini Göster"
 
 msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
+
+msgid "Show Trailing Zeros"
+msgstr ""
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
@@ -15188,11 +15243,18 @@ msgstr "Bu bilgiler tüm kullanıcılar tarafından görülecektir, bu yüzden n
 msgid "this inspection plan"
 msgstr "bu muayene planı"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "{0} kuruluşuna katılmak için gönderilen bu davet süresi dolmuştur. E-postanıza yeni bir davet gönderilmesini isteyebilirsiniz."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Bu satın alınan bir üründür — BoM/BoP'si yoktur; yalnızca öznitelikleri ve belgeleri değişebilir."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Bu, web kancası için benzersiz bir tanımlayıcıdır"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "Bu ITAR tarafından kontrol edilen bir ortamdır. Erişim yalnızca ABD vatandaşları ile sınırlıdır."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Bu, mali yılınızın başladığı aydır."
@@ -15714,6 +15776,9 @@ msgstr "Tip:"
 
 msgid "Types"
 msgstr "Tipler"
+
+msgid "U.S. Person Attestation"
+msgstr "ABD Vatandaşı Tasdiki"
 
 msgid "Unapplied"
 msgstr "Uygulanmamış"

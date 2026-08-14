@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
@@ -20,7 +21,12 @@ import {
   ShippingMethod,
   Submit
 } from "~/components/Form";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { incoterms } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { isQuoteLocked, quoteShipmentValidator } from "../../sales.models";
@@ -72,6 +78,7 @@ const QuoteShipmentForm = forwardRef<
   const isEditable = !isLocked;
 
   const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(company?.baseCurrencyCode);
 
   return (
     <Card
@@ -100,10 +107,10 @@ const QuoteShipmentForm = forwardRef<
             <Number
               name="shippingCost"
               label={t`Shipping Cost`}
-              formatOptions={{
-                style: "currency",
-                currency: company?.baseCurrencyCode
-              }}
+              formatOptions={INPUT_FORMAT.money(
+                company?.baseCurrencyCode,
+                currencyDecimals
+              )}
               minValue={0}
               ref={shippingCostRef}
             />

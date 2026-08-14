@@ -16,9 +16,10 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Employee, Users } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import type { ApprovalRule } from "~/modules/shared";
 import {
   type ApprovalDocumentType,
@@ -43,6 +44,7 @@ const ApprovalRuleForm = ({
   const {
     company: { baseCurrencyCode }
   } = useUser();
+  const currencyDecimals = useCurrencyDecimals(baseCurrencyCode);
   const isEditing = !!rule?.id;
   const isDisabled = !permissions.can("update", "settings");
   const effectiveDocumentType = rule?.documentType || documentType;
@@ -107,10 +109,10 @@ const ApprovalRuleForm = ({
                     name="lowerBoundAmount"
                     label={t`Minimum Amount`}
                     helperText={t`Approval is required at or above this amount, up to the next rule's minimum`}
-                    formatOptions={{
-                      style: "currency",
-                      currency: baseCurrencyCode
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      baseCurrencyCode,
+                      currencyDecimals
+                    )}
                   />
                 )}
 

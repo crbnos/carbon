@@ -821,6 +821,10 @@ msgstr "验收"
 msgid "Acceptance passed"
 msgstr "验收通过"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "于 {0} 接受"
+
 msgid "Account"
 msgstr "账户"
 
@@ -2849,11 +2853,17 @@ msgstr "抄送"
 msgid "Centralized Billing Address"
 msgstr "集中式账单地址"
 
+msgid "Cert Version"
+msgstr "证书版本"
+
 msgid "Certificate Number"
 msgstr "证书编号"
 
 msgid "Certificate uploaded"
 msgstr "证书已上传"
+
+msgid "Certified"
+msgstr "已认证"
 
 msgid "Chain"
 msgstr "链"
@@ -5905,6 +5915,15 @@ msgstr "要分割的实体"
 msgid "Entity"
 msgstr "实体"
 
+msgid "Entity certification: Accepted"
+msgstr "实体认证：已接受"
+
+msgid "Entity certification: Expired"
+msgstr "实体认证：已过期"
+
+msgid "Entity certification: Pending"
+msgstr "实体认证：待处理"
+
 msgid "Entity Type"
 msgstr "实体类型"
 
@@ -6174,6 +6193,7 @@ msgid "Expired"
 msgstr "已过期"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "已过期 {0}"
 
@@ -6185,6 +6205,10 @@ msgstr "过期批次"
 
 msgid "Expires"
 msgstr "过期"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "于 {0} 到期"
 
 msgid "Expires <0/>"
 msgstr "过期于 <0/>"
@@ -7389,6 +7413,9 @@ msgstr "超级护理：前几周的密集支持"
 msgid "I (reduced)"
 msgstr "I（已减少）"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "我有合理的理由相信该个人是根据 22 CFR 120.62 定义的美国人"
+
 msgid "I'm Still Working"
 msgstr "我仍在工作"
 
@@ -7786,6 +7813,9 @@ msgstr "库存估值"
 msgid "Invite"
 msgstr "邀请"
 
+msgid "Invite Expired"
+msgstr "邀请已过期"
+
 msgid "Invited"
 msgstr "已邀请"
 
@@ -7944,6 +7974,9 @@ msgstr "签发日期"
 
 msgid "Issues"
 msgstr "问题"
+
+msgid "ITAR Certifications"
+msgstr "ITAR 认证"
 
 msgid "item"
 msgstr "项"
@@ -8210,6 +8243,9 @@ msgstr "最后一天"
 
 msgid "Last Fiscal Year"
 msgstr "上一财政年度"
+
+msgid "Last Login"
+msgstr "最后登录"
 
 msgid "Last Month"
 msgstr "上个月"
@@ -9852,6 +9888,9 @@ msgstr "没有剩余的实体可检查。"
 msgid "No reports match your search."
 msgstr "未找到与搜索条件匹配的报告。"
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "本公司尚无代表接受 Carbon GovCloud Rider。在任何人访问 Carbon 之前，必须由本公司的管理员接受 — Carbon 员工无法代表贵公司接受。"
+
 msgid "No results"
 msgstr "无结果"
 
@@ -9971,6 +10010,9 @@ msgstr "正常"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "不是表格而是总账余额：当发出工作物料时成本积累，当工作收到库存时清除。"
+
+msgid "Not certified"
+msgstr "未认证"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
@@ -10550,6 +10592,9 @@ msgstr "拥有：{0}"
 
 msgid "Packing Slip"
 msgstr "装箱单"
+
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr ""
 
 msgid "Page"
 msgstr "页面"
@@ -12163,6 +12208,9 @@ msgstr "报告"
 msgid "Reprint"
 msgstr "重新打印"
 
+msgid "Request a new invite"
+msgstr "请求新邀请"
+
 msgid "Request access"
 msgstr "请求访问"
 
@@ -12405,6 +12453,10 @@ msgstr "询价单"
 
 msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
 msgstr "在推送的日记账上附加 Carbon 维度。每个插槽将一个 Carbon 维度映射到一个提供商分析目标；下面的值映射将单个维度值与提供商选项配对。"
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "右项"
@@ -13489,6 +13541,9 @@ msgstr "显示供应商ID"
 
 msgid "Show sync options"
 msgstr "显示同步选项"
+
+msgid "Show Trailing Zeros"
+msgstr ""
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
@@ -15188,11 +15243,18 @@ msgstr "此信息将对所有用户可见，请谨慎分享。"
 msgid "this inspection plan"
 msgstr "这个检验计划"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "加入 {0} 的邀请已过期。您可以请求将新邀请发送到您的电子邮件。"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "这是一个采购项目 — 它没有BoM/BoP；只有其属性和文档可以更改。"
 
 msgid "This is a unique identifier for the webhook"
 msgstr "这是webhook的唯一标识符"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "这是一个 ITAR 受控环境。访问仅限于美国人。"
 
 msgid "This is the month your fiscal year starts."
 msgstr "这是您的财政年度开始的月份。"
@@ -15714,6 +15776,9 @@ msgstr "类型："
 
 msgid "Types"
 msgstr "类型"
+
+msgid "U.S. Person Attestation"
+msgstr "美国人证明"
 
 msgid "Unapplied"
 msgstr "未应用"

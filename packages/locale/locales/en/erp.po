@@ -821,6 +821,10 @@ msgstr "Acceptance"
 msgid "Acceptance passed"
 msgstr "Acceptance passed"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "Accepted {0}"
+
 msgid "Account"
 msgstr "Account"
 
@@ -2849,11 +2853,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "Centralized Billing Address"
 
+msgid "Cert Version"
+msgstr "Cert Version"
+
 msgid "Certificate Number"
 msgstr "Certificate Number"
 
 msgid "Certificate uploaded"
 msgstr "Certificate uploaded"
+
+msgid "Certified"
+msgstr "Certified"
 
 msgid "Chain"
 msgstr "Chain"
@@ -5905,6 +5915,15 @@ msgstr "Entities to split off"
 msgid "Entity"
 msgstr "Entity"
 
+msgid "Entity certification: Accepted"
+msgstr "Entity certification: Accepted"
+
+msgid "Entity certification: Expired"
+msgstr "Entity certification: Expired"
+
+msgid "Entity certification: Pending"
+msgstr "Entity certification: Pending"
+
 msgid "Entity Type"
 msgstr "Entity Type"
 
@@ -6174,6 +6193,7 @@ msgid "Expired"
 msgstr "Expired"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Expired {0}"
 
@@ -6185,6 +6205,10 @@ msgstr "Expired Batches"
 
 msgid "Expires"
 msgstr "Expires"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "Expires {0}"
 
 msgid "Expires <0/>"
 msgstr "Expires <0/>"
@@ -7389,6 +7413,9 @@ msgstr "Hypercare: intense support for the first weeks"
 msgid "I (reduced)"
 msgstr "I (reduced)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+
 msgid "I'm Still Working"
 msgstr "I'm Still Working"
 
@@ -7786,6 +7813,9 @@ msgstr "Inventory Valuation"
 msgid "Invite"
 msgstr "Invite"
 
+msgid "Invite Expired"
+msgstr "Invite Expired"
+
 msgid "Invited"
 msgstr "Invited"
 
@@ -7944,6 +7974,9 @@ msgstr "Issued Date"
 
 msgid "Issues"
 msgstr "Issues"
+
+msgid "ITAR Certifications"
+msgstr "ITAR Certifications"
 
 msgid "item"
 msgstr "item"
@@ -8210,6 +8243,9 @@ msgstr "Last day"
 
 msgid "Last Fiscal Year"
 msgstr "Last Fiscal Year"
+
+msgid "Last Login"
+msgstr "Last Login"
 
 msgid "Last Month"
 msgstr "Last Month"
@@ -9852,6 +9888,9 @@ msgstr "No remaining entities to inspect."
 msgid "No reports match your search."
 msgstr "No reports match your search."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+
 msgid "No results"
 msgstr "No results"
 
@@ -9971,6 +10010,9 @@ msgstr "Normal"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
+
+msgid "Not certified"
+msgstr "Not certified"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
@@ -10550,6 +10592,9 @@ msgstr "Owns: {0}"
 
 msgid "Packing Slip"
 msgstr "Packing Slip"
+
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
 
 msgid "Page"
 msgstr "Page"
@@ -12163,6 +12208,9 @@ msgstr "Reports"
 msgid "Reprint"
 msgstr "Reprint"
 
+msgid "Request a new invite"
+msgstr "Request a new invite"
+
 msgid "Request access"
 msgstr "Request access"
 
@@ -12405,6 +12453,10 @@ msgstr "RFQs"
 
 msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
 msgstr "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Right item"
@@ -13489,6 +13541,9 @@ msgstr "Show Supplier IDs"
 
 msgid "Show sync options"
 msgstr "Show sync options"
+
+msgid "Show Trailing Zeros"
+msgstr "Show Trailing Zeros"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
@@ -15188,11 +15243,18 @@ msgstr "This information will be visible to all users, so be careful what you sh
 msgid "this inspection plan"
 msgstr "this inspection plan"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "This is a unique identifier for the webhook"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 
 msgid "This is the month your fiscal year starts."
 msgstr "This is the month your fiscal year starts."
@@ -15714,6 +15776,9 @@ msgstr "Type:"
 
 msgid "Types"
 msgstr "Types"
+
+msgid "U.S. Person Attestation"
+msgstr "U.S. Person Attestation"
 
 msgid "Unapplied"
 msgstr "Unapplied"
