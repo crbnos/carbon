@@ -1842,6 +1842,10 @@ msgstr "Вы уверены, что хотите удалить принтер \
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить строку счета-фактуры покупателя для {0} {1}? Это действие невозможно отменить."
 
+#. placeholder {0}: returnReason.name
+msgid "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: salesInvoiceLine.quantity ?? 0
 #. placeholder {1}: salesInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
@@ -3895,6 +3899,9 @@ msgstr "Процесс создан"
 
 msgid "Created required action"
 msgstr "Требуемое действие создано"
+
+msgid "Created return reason"
+msgstr ""
 
 msgid "Created scrap reason"
 msgstr "Причина брака создана"
@@ -6242,6 +6249,10 @@ msgstr "Не удалось создать условие платежа: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Ошибка при создании процесса: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create return reason: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
@@ -12050,11 +12061,23 @@ msgstr "Повторить"
 msgid "Return Home"
 msgstr "Вернуться на главную"
 
+msgid "Return Reason"
+msgstr ""
+
 msgid "Return Reasons"
 msgstr ""
 
 msgid "Returned"
 msgstr "Возвращено"
+
+msgid "Returned batch"
+msgstr ""
+
+msgid "Returned goods re-enter inventory at zero value"
+msgstr ""
+
+msgid "Returned serial numbers"
+msgstr ""
 
 msgid "Returning unused picked material"
 msgstr "Возврат неиспользованного отобранного материала"
@@ -16874,6 +16897,12 @@ msgstr "Уровень контроля Z1.4 (I / II / III); более высо
 
 msgid "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
 msgstr "Серьезность Z1.4 (Нормальная / Ужесточенная / Сокращенная); переключается по правилу на основе недавней истории приемки партии."
+
+msgid "Zero inventory value"
+msgstr ""
+
+msgid "Zero Inventory Value"
+msgstr ""
 
 msgid "Zoom Box"
 msgstr "Масштабирование"

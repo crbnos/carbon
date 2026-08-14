@@ -1842,6 +1842,10 @@ msgstr "このプリンター「{0}」を削除してもよろしいですか？
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 msgstr "購入請求書行の{0} {1}を削除してもよろしいですか？この操作は取り消せません。"
 
+#. placeholder {0}: returnReason.name
+msgid "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: salesInvoiceLine.quantity ?? 0
 #. placeholder {1}: salesInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
@@ -3895,6 +3899,9 @@ msgstr "プロセスを作成しました"
 
 msgid "Created required action"
 msgstr "必須アクションを作成しました"
+
+msgid "Created return reason"
+msgstr ""
 
 msgid "Created scrap reason"
 msgstr "スクラップ理由を作成しました"
@@ -6242,6 +6249,10 @@ msgstr "支払い条件の作成に失敗しました: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "プロセスの作成に失敗しました: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create return reason: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
@@ -12050,11 +12061,23 @@ msgstr "再試行"
 msgid "Return Home"
 msgstr "ホームに戻る"
 
+msgid "Return Reason"
+msgstr ""
+
 msgid "Return Reasons"
 msgstr ""
 
 msgid "Returned"
 msgstr "返却"
+
+msgid "Returned batch"
+msgstr ""
+
+msgid "Returned goods re-enter inventory at zero value"
+msgstr ""
+
+msgid "Returned serial numbers"
+msgstr ""
 
 msgid "Returning unused picked material"
 msgstr "未使用の仕分け材料を返却中"
@@ -16874,6 +16897,12 @@ msgstr "Z1.4検査レベル(I / II / III);高いレベルは同じロットの�
 
 msgid "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
 msgstr "Z1.4の重大度(通常/厳格化/削減);最近のロット受け入れ履歴に基づいてルールで切り替えます。"
+
+msgid "Zero inventory value"
+msgstr ""
+
+msgid "Zero Inventory Value"
+msgstr ""
 
 msgid "Zoom Box"
 msgstr "ズームボックス"

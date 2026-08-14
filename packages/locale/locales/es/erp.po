@@ -1842,6 +1842,10 @@ msgstr "¿Estás seguro de que deseas eliminar la impresora \"{0}\"? Se borrará
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 msgstr "¿Estás seguro de que deseas eliminar la línea de factura de compra para {0} {1}? Esto no se puede deshacer."
 
+#. placeholder {0}: returnReason.name
+msgid "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: salesInvoiceLine.quantity ?? 0
 #. placeholder {1}: salesInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
@@ -3895,6 +3899,9 @@ msgstr "Proceso creado"
 
 msgid "Created required action"
 msgstr "Acción requerida creada"
+
+msgid "Created return reason"
+msgstr ""
 
 msgid "Created scrap reason"
 msgstr "Razón de rechazo creada"
@@ -6242,6 +6249,10 @@ msgstr "Error al crear el término de pago: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Error al crear proceso: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create return reason: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
@@ -12050,11 +12061,23 @@ msgstr "Reintentar"
 msgid "Return Home"
 msgstr "Volver al Inicio"
 
+msgid "Return Reason"
+msgstr ""
+
 msgid "Return Reasons"
 msgstr ""
 
 msgid "Returned"
 msgstr "Devuelto"
+
+msgid "Returned batch"
+msgstr ""
+
+msgid "Returned goods re-enter inventory at zero value"
+msgstr ""
+
+msgid "Returned serial numbers"
+msgstr ""
 
 msgid "Returning unused picked material"
 msgstr "Devolviendo material recogido no utilizado"
@@ -16874,6 +16897,12 @@ msgstr "Nivel de inspección Z1.4 (I / II / III); los niveles más altos signifi
 
 msgid "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
 msgstr "Severidad de Z1.4 (Normal / Tightened / Reduced); cambia por regla basado en el historial de aceptación de lotes recientes."
+
+msgid "Zero inventory value"
+msgstr ""
+
+msgid "Zero Inventory Value"
+msgstr ""
 
 msgid "Zoom Box"
 msgstr "Cuadro de zoom"

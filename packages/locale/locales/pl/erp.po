@@ -1842,6 +1842,10 @@ msgstr "Czy na pewno chcesz usunąć drukarkę „{0}\"? Wszystkie przypisania o
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć wiersz faktury zakupu dla {0} {1}? Tej operacji nie można cofnąć."
 
+#. placeholder {0}: returnReason.name
+msgid "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: salesInvoiceLine.quantity ?? 0
 #. placeholder {1}: salesInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
@@ -3895,6 +3899,9 @@ msgstr "Proces utworzony"
 
 msgid "Created required action"
 msgstr "Utworzono wymaganą akcję"
+
+msgid "Created return reason"
+msgstr ""
 
 msgid "Created scrap reason"
 msgstr "Utworzono przyczynę złomu"
@@ -6242,6 +6249,10 @@ msgstr "Nie udało się utworzyć warunku płatności: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Nie udało się utworzyć procesu: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create return reason: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
@@ -12050,11 +12061,23 @@ msgstr "Ponów"
 msgid "Return Home"
 msgstr "Wróć do domu"
 
+msgid "Return Reason"
+msgstr ""
+
 msgid "Return Reasons"
 msgstr ""
 
 msgid "Returned"
 msgstr "Zwrócone"
+
+msgid "Returned batch"
+msgstr ""
+
+msgid "Returned goods re-enter inventory at zero value"
+msgstr ""
+
+msgid "Returned serial numbers"
+msgstr ""
 
 msgid "Returning unused picked material"
 msgstr "Zwracanie nieużywanego pobranego materiału"
@@ -16874,6 +16897,12 @@ msgstr "Poziom kontroli Z1.4 (I / II / III); wyższe poziomy oznaczają większe
 
 msgid "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
 msgstr "Ważność Z1.4 (Normalna / Wzmocniona / Zmniejszona); przełącza się według reguły na podstawie ostatnich historii akceptacji partii."
+
+msgid "Zero inventory value"
+msgstr ""
+
+msgid "Zero Inventory Value"
+msgstr ""
 
 msgid "Zoom Box"
 msgstr "Pole powiększenia"

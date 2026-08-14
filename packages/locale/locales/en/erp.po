@@ -1842,6 +1842,10 @@ msgstr "Are you sure you want to delete the printer \"{0}\"? Any assignments ref
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 msgstr "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 
+#. placeholder {0}: returnReason.name
+msgid "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+msgstr "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+
 #. placeholder {0}: salesInvoiceLine.quantity ?? 0
 #. placeholder {1}: salesInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
@@ -3895,6 +3899,9 @@ msgstr "Created process"
 
 msgid "Created required action"
 msgstr "Created required action"
+
+msgid "Created return reason"
+msgstr "Created return reason"
 
 msgid "Created scrap reason"
 msgstr "Created scrap reason"
@@ -6242,6 +6249,10 @@ msgstr "Failed to create payment term: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Failed to create process: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create return reason: {0}"
+msgstr "Failed to create return reason: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
@@ -12050,11 +12061,23 @@ msgstr "Retry"
 msgid "Return Home"
 msgstr "Return Home"
 
+msgid "Return Reason"
+msgstr "Return Reason"
+
 msgid "Return Reasons"
 msgstr "Return Reasons"
 
 msgid "Returned"
 msgstr "Returned"
+
+msgid "Returned batch"
+msgstr "Returned batch"
+
+msgid "Returned goods re-enter inventory at zero value"
+msgstr "Returned goods re-enter inventory at zero value"
+
+msgid "Returned serial numbers"
+msgstr "Returned serial numbers"
 
 msgid "Returning unused picked material"
 msgstr "Returning unused picked material"
@@ -16878,6 +16901,12 @@ msgstr "Z1.4 inspection level (I / II / III); higher levels mean larger sample s
 
 msgid "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
 msgstr "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
+
+msgid "Zero inventory value"
+msgstr "Zero inventory value"
+
+msgid "Zero Inventory Value"
+msgstr "Zero Inventory Value"
 
 msgid "Zoom Box"
 msgstr "Zoom Box"

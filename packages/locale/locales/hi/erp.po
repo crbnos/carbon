@@ -1842,6 +1842,10 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} {1} के लिए खरीद चालान लाइन को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
+#. placeholder {0}: returnReason.name
+msgid "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: salesInvoiceLine.quantity ?? 0
 #. placeholder {1}: salesInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
@@ -3895,6 +3899,9 @@ msgstr "प्रक्रिया बनाई गई"
 
 msgid "Created required action"
 msgstr "आवश्यक कार्रवाई बनाई गई"
+
+msgid "Created return reason"
+msgstr ""
 
 msgid "Created scrap reason"
 msgstr "स्क्रैप कारण बनाया गया"
@@ -6242,6 +6249,10 @@ msgstr "भुगतान शर्त बनाने में विफल: 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "प्रक्रिया बनाने में विफल: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create return reason: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
@@ -12050,11 +12061,23 @@ msgstr "पुनः प्रयास करें"
 msgid "Return Home"
 msgstr "घर लौटें"
 
+msgid "Return Reason"
+msgstr ""
+
 msgid "Return Reasons"
 msgstr ""
 
 msgid "Returned"
 msgstr "लौटाया गया"
+
+msgid "Returned batch"
+msgstr ""
+
+msgid "Returned goods re-enter inventory at zero value"
+msgstr ""
+
+msgid "Returned serial numbers"
+msgstr ""
 
 msgid "Returning unused picked material"
 msgstr "अप्रयुक्त सामग्री को वापस किया जा रहा है"
@@ -16874,6 +16897,12 @@ msgstr "Z1.4 निरीक्षण स्तर (I / II / III); उच्च 
 
 msgid "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
 msgstr "Z1.4 गंभीरता (सामान्य / कठोर / कम); हाल की लॉट-स्वीकृति इतिहास के आधार पर नियम द्वारा स्विच करता है।"
+
+msgid "Zero inventory value"
+msgstr ""
+
+msgid "Zero Inventory Value"
+msgstr ""
 
 msgid "Zoom Box"
 msgstr "ज़ूम बॉक्स"
