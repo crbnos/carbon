@@ -59,7 +59,7 @@ Every entry point routes through the durable **`accountingSyncOperation`** ledge
 `packages/ee/src/accounting/core/subscriptions.ts` (exported from the `./accounting` barrel) is the single source of truth for the SYNC event-system subscriptions each provider's outbound sync needs: `REQUIRED_SYNC_SUBSCRIPTIONS[providerId]` + the idempotent `ensureProviderSubscriptions(client, companyId, providerId)` (the create RPC upserts on `(companyId, name, table)`; rows for tables no longer required are deleted). Subscription name: `${providerId}-sync` (`getSyncSubscriptionName`).
 
 - **Converged from three call sites** — the install hook, the `onUpdate` hook (every settings save of an installed integration), and the outbound sweep — so existing installs self-heal at runtime. **No migration ever backfills subscription rows**; migrations only attach table triggers (`20260807152238_payment-event-trigger.sql` is the precedent).
-- **The set**: every provider gets `customer`/`supplier`/`item`/`salesInvoice`/`purchaseInvoice` (INSERT/UPDATE/DELETE) + `journal` (INSERT/UPDATE only — journals are immutable once posted and DELETE sync doesn't exist). Rillet adds `payment` (Phase G outbound push); Xero adds `purchaseOrder` + `salesOrder`; QBO adds `purchaseOrder` only. **`address` is deliberately absent everywhere** — address edits reach sync via the parent-row `updatedAt` bump interceptor; a direct address subscription is a dead letter.
+- **The set**: every provider gets `customer`/`supplier`/`item`/`salesInvoice`/`purchaseInvoice` (INSERT/UPDATE/DELETE) + `journal` (INSERT/UPDATE only — journals are immutable once posted and DELETE sync doesn't exist). all three providers add `payment` (INSERT/UPDATE — Phase G outbound push, now Rillet/Xero/QBO); Xero adds `purchaseOrder` + `salesOrder`; QBO adds `purchaseOrder` only. **`address` is deliberately absent everywhere** — address edits reach sync via the parent-row `updatedAt` bump interceptor; a direct address subscription is a dead letter.
 - Provider hooks (`packages/ee/src/{rillet,xero,quickbooks}/hooks.server.ts`) are thin wrappers over the convergence. The QBO install hook is **no longer a no-op** (its syncers shipped), and `quickbooksOnUninstall` exists. `onUpdate` is a new `IntegrationServerHooks` member (`packages/ee/src/types.ts`; registry `packages/ee/src/hooks.server.ts`; wired in `apps/erp/app/routes/x+/settings+/integrations.$id.tsx`).
 - **Invariant test**: `packages/jobs/src/inngest/functions/events/subscriptions-mapping.test.ts` pins every subscribed table ↔ a `TABLE_TO_ENTITY_MAP` entry (`events/sync-tables.ts`) ↔ a registered syncer for that provider — a subscription that routes nowhere fails CI. (`salesOrder` got its map entry as part of this; it was a dead Xero subscription before.)
 
@@ -138,7 +138,7 @@ into Carbon as `payment` + `invoiceSettlement` rows that close the
   means Carbon owns the payment (v3 Phase 4 pushes it outbound). `shouldSync` also
   benignly skips a payment whose settled document has no local mapping (ownership).
 
-### Outbound payment write-back (Phase G — Rillet)
+### Outbound payment write-back (Phase G — Rillet, Xero, QBO)
 
 Payments executed OUTSIDE the provider (e.g. a bill paid through Ramp, recorded
 in Carbon, or a manual Carbon payment) push back so the provider's bill/invoice
@@ -151,20 +151,27 @@ BEFORE post-payment flips it to Posted, so its Posted event finds the mapping an
 skips). A mapping-less Carbon-born payment is pushed via the provider adapter
 `pushRemotePayment` (one provider payment per settled document), then linked under
 the composite id with `metadata.origin = "carbon"` so a later void echoes out and
-a later pull no-ops. `supportsPaymentPush` gates the whole thing (Rillet true;
-QBO/Xero keep rejecting push). v1 is single-settlement, base-currency, no
-discount, no void-echo (Rillet has no payment-void endpoint) — everything else
-parks as Skipped. The paid date goes through `toPostingDateString` (Kysely's pg
-driver returns DATE columns as JS `Date`s; a bare `.slice` crashed the push).
-Rillet client: `createInvoicePayment`/`createBillPayment` — the bill path is
-**VERIFIED** (sandbox 2026-08-11): `POST /bills/{id}/payments` takes a FLAT body
-`{ amount, date, account_code }` (`date`, NOT `payment_date` — that 400s) and
-returns the created payment flat (status UNCLEARED); the invoice path is assumed
-to mirror it, not separately confirmed. Trigger: the `payment` table has an event
-trigger (`20260807152238_payment-event-trigger.sql`) + a `rillet-sync`
-subscription from `REQUIRED_SYNC_SUBSCRIPTIONS` convergence (Rillet-only; no
-migration backfill — see the subscriptions section); `getPaymentPushDecision`
-enqueues push only on a transition to Posted/Voided. (Phase G design lived in the
+a later pull no-ops. `supportsPaymentPush` gates the whole thing — **Rillet, Xero,
+AND QBO all set it true** (2026-08-14 parity). The capability set
+`PAYMENT_PUSH_PROVIDERS` (`core/payment-syncer.ts`, must stay in sync with the
+syncer flags) is what the reconcile executor and outbound sweep read instead of the
+old `providerId === "rillet"` literal. v1 is single-settlement, base-currency, no
+discount, no void-echo — everything else parks as Skipped. The paid date goes
+through `toPostingDateString` (Kysely's pg driver returns DATE columns as JS
+`Date`s; a bare `.slice` crashed the push). Provider adapters (`pushRemotePayment`):
+**Rillet** `createInvoicePayment`/`createBillPayment` (`POST /{invoices,bills}/{id}/payments`,
+flat body `{ amount, date, account_code }` — `date`, NOT `payment_date`; bill path
+VERIFIED sandbox 2026-08-11). **Xero** `createPayment` (`PUT /Payments`
+`{ Payments:[{ Invoice:{InvoiceID}, Account:{Code}, Amount, Date }] }` —
+**live-VERIFIED sandbox 2026-08-14**: bill flipped to PAID; the Account must be a
+Xero `Type:"BANK"` account, and `EnablePaymentsToAccount` is NOT the gate for bank
+accounts). **QBO** AP `createBillPayment` / AR `createPayment` via `writeEntity`
+(payload VERIFY-flagged — no QBO sandbox; needs `VendorRef`/`CustomerRef` +
+`PayType`/`BankAccountRef` (AP) or `DepositToAccountRef` (AR)). Trigger: the
+`payment` table has an event trigger (`20260807152238_payment-event-trigger.sql`)
++ a `${provider}-sync` `payment` subscription from `REQUIRED_SYNC_SUBSCRIPTIONS`
+convergence (now Rillet/Xero/QBO; no migration backfill — see the subscriptions
+section); the reconciler enqueues push only on a transition to Posted/Voided. (Phase G design lived in the
 removed v2 engine spec; the behavior is documented in this section — see git for history.)
 
 ## Document representation model (bills, invoices, items)

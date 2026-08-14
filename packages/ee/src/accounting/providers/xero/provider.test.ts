@@ -263,10 +263,11 @@ describe("XeroProvider.listChanges (SupportsIncrementalPull — payments)", () =
   });
 });
 
-describe("buildXeroSyncConfig — payment force-enable (pull-only)", () => {
-  it("force-enables `payment` as pull-only even when the stored config disables it", () => {
+describe("buildXeroSyncConfig — payment force-enable (two-way)", () => {
+  it("force-enables `payment` as two-way even when the stored config disables it", () => {
     // DEFAULT_SYNC_CONFIG ships `payment` disabled — the provider must override
-    // it so inbound payment sync-back works as soon as the integration connects.
+    // it so two-way payment sync (Phase G push + inbound pull) works as soon as the
+    // integration connects.
     expect(DEFAULT_SYNC_CONFIG.entities.payment.enabled).toBe(false);
 
     const stored = structuredClone(DEFAULT_SYNC_CONFIG);
@@ -278,7 +279,7 @@ describe("buildXeroSyncConfig — payment force-enable (pull-only)", () => {
 
     expect(buildXeroSyncConfig(stored).entities.payment).toEqual({
       enabled: true,
-      direction: "pull-from-accounting",
+      direction: "two-way",
       owner: "accounting"
     });
   });
@@ -286,7 +287,7 @@ describe("buildXeroSyncConfig — payment force-enable (pull-only)", () => {
   it("exposes the forced payment config through a constructed provider's getSyncConfig", () => {
     expect(makeProvider().getSyncConfig("payment")).toEqual({
       enabled: true,
-      direction: "pull-from-accounting",
+      direction: "two-way",
       owner: "accounting"
     });
   });

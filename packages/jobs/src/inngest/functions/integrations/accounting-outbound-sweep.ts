@@ -26,6 +26,7 @@ import {
   ensureProviderSubscriptions,
   getAccountingIntegration,
   getProviderIntegration,
+  PAYMENT_PUSH_PROVIDERS,
   ProviderID,
   resolvePostingSyncSettings,
   type SyncContext
@@ -271,7 +272,7 @@ async function sweepCompanyProvider(args: {
     skippedReasons.push("invoices: push disabled");
   }
 
-  if (providerId === ProviderID.RILLET) {
+  if (PAYMENT_PUSH_PROVIDERS.has(providerId)) {
     const floor = getSweepFloorDate({ todayIso: ctx.todayIso });
     const paymentIds = await pageIds({
       ctx,

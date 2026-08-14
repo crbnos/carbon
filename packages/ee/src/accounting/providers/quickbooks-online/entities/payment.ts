@@ -1,8 +1,13 @@
 import type { NormalizedPayment } from "../../../core/payment-application";
-import { PaymentSyncerBase } from "../../../core/payment-syncer";
+import {
+  type PaymentPushContext,
+  PaymentSyncerBase
+} from "../../../core/payment-syncer";
+import { JournalEntrySyncError } from "../../../core/posting";
 import type { ShouldSyncContext } from "../../../core/types";
 import { parseQboDate, type Qbo } from "../models";
 import type { QboProvider } from "../provider";
+import { loadQboAccountRefsById } from "./shared";
 
 /**
  * QboPaymentSyncer — the first QBO payment syncer, on the shared
@@ -10,7 +15,8 @@ import type { QboProvider } from "../provider";
  * invoices (AP); QBO `Payment` objects settle Carbon sales invoices (AR). The
  * base writes a Draft `payment` + `invoiceSettlement` and then invokes the
  * native `post-payment` edge function (GL journal + Posted/Voided status).
- * Pushing is a rejection stub.
+ * Two-way as of Phase G: a Carbon-born Posted payment pushes back out as a QBO
+ * Payment (AR) / BillPayment (AP) document (see `pushRemotePayment`).
  *
  * Entity-id contract: the sync operation's entityId is a COMPOSITE, kept
  * identical to the Rillet AP convention. AR is prefix-less
@@ -133,6 +139,22 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
     return this.provider as QboProvider;
   }
 
+  /** QBO accepts Carbon-born payments back out (Phase G). */
+  protected supportsPaymentPush = true;
+
+  /** Carbon account.id → QBO AccountRef, read once per syncer instance. */
+  private accountRefsByIdPromise?: Promise<Map<string, Qbo.Ref>>;
+
+  private getAccountRefsById(): Promise<Map<string, Qbo.Ref>> {
+    if (!this.accountRefsByIdPromise) {
+      this.accountRefsByIdPromise = loadQboAccountRefsById(this.database, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      });
+    }
+    return this.accountRefsByIdPromise;
+  }
+
   // =================================================================
   // 1. REMOTE FETCH — composite id → the payment is addressable by id
   // =================================================================
@@ -181,10 +203,8 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
   protected async shouldSync(
     context: ShouldSyncContext<QboPayment, QboPayment>
   ): Promise<boolean | string> {
-    if (context.direction === "push") {
-      return "Payments are pull-only for QuickBooks Online: pushing Carbon payments to QuickBooks Online is not supported";
-    }
-
+    // Push is gated entirely in PaymentSyncerBase.pushToAccounting (origin,
+    // documents-mode, single-settlement, FX) — shouldSync only governs the pull.
     const { family, documentRemoteId } = parseQboPaymentSyncEntityId(
       context.entityId
     );
@@ -264,5 +284,162 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
       status: totalAmt === 0 ? "void" : "settled",
       ...(linkedDocuments.length > 0 ? { linkedDocuments } : {})
     };
+  }
+
+  // =================================================================
+  // 4. PUSH (Phase G — Carbon-born payment → QBO Payment / BillPayment)
+  // =================================================================
+
+  /**
+   * Create one QBO payment document for the settled document. Resolves the
+   * settled document's QBO id, the counterparty ref (QBO requires CustomerRef on
+   * a Payment / VendorRef on a BillPayment), and the bank account's QBO ref from
+   * the mappings. A missing document/counterparty mapping → UNSYNCED_DOCUMENT
+   * Warning (sync the dependency first); a missing bank ref → UNMAPPED_ACCOUNTS
+   * Warning (map it on the integration settings page). AP → POST /billpayment,
+   * AR → POST /payment; each links its `Amount` to the Bill/Invoice via
+   * LinkedTxn. Returns the created id + the composite mapping id.
+   */
+  protected async pushRemotePayment(
+    context: PaymentPushContext
+  ): Promise<{ remoteId: string; compositeEntityId: string }> {
+    const documentRemoteId = await this.mappingService.getExternalId(
+      context.family === "ar" ? "invoice" : "bill",
+      context.targetDocumentId,
+      this.provider.id
+    );
+    if (!documentRemoteId) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNSYNCED_DOCUMENT",
+        message: `The settled ${
+          context.family === "ar" ? "invoice" : "bill"
+        } has not synced to QuickBooks Online yet — sync it, then retry the payment`,
+        warning: true,
+        metadata: { targetDocumentId: context.targetDocumentId }
+      });
+    }
+
+    const bankRef = (await this.getAccountRefsById()).get(
+      context.bankAccountId
+    );
+    if (!bankRef) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        message: `The payment's bank/cash account is not mapped to a QuickBooks Online account — map it on the integration settings page, then retry`,
+        warning: true,
+        metadata: { bankAccountId: context.bankAccountId }
+      });
+    }
+
+    // QBO requires the counterparty ref (CustomerRef on a Payment, VendorRef on
+    // a BillPayment); it is NOT inferable from the LinkedTxn alone.
+    const counterpartyRef = await this.resolveCounterpartyRef(context);
+
+    if (context.family === "ap") {
+      // VERIFY (QBO sandbox): a bank-cleared BillPayment uses PayType "Check"
+      // with CheckPayment.BankAccountRef; confirm this is accepted for a plain
+      // bank disbursement (vs "CreditCard"/other) and that BankAccountRef takes
+      // the Account id value.
+      const remoteId = await this.qboProvider.createBillPayment({
+        VendorRef: counterpartyRef,
+        TotalAmt: context.amount,
+        TxnDate: context.paidDate,
+        PayType: "Check",
+        CheckPayment: { BankAccountRef: bankRef },
+        Line: [
+          {
+            Amount: context.amount,
+            LinkedTxn: [{ TxnId: documentRemoteId, TxnType: "Bill" }]
+          }
+        ]
+      });
+      return {
+        remoteId,
+        compositeEntityId: getQboBillPaymentSyncEntityId(
+          documentRemoteId,
+          remoteId
+        )
+      };
+    }
+
+    // VERIFY (QBO sandbox): a Payment deposits to DepositToAccountRef (the
+    // Account id value); confirm the receipt lands in the mapped bank account.
+    const remoteId = await this.qboProvider.createPayment({
+      CustomerRef: counterpartyRef,
+      TotalAmt: context.amount,
+      TxnDate: context.paidDate,
+      DepositToAccountRef: bankRef,
+      Line: [
+        {
+          Amount: context.amount,
+          LinkedTxn: [{ TxnId: documentRemoteId, TxnType: "Invoice" }]
+        }
+      ]
+    });
+    return {
+      remoteId,
+      compositeEntityId: getQboPaymentSyncEntityId(documentRemoteId, remoteId)
+    };
+  }
+
+  /**
+   * Resolve the settled document's counterparty as a QBO ref: the Carbon
+   * salesInvoice.customerId (AR) / purchaseInvoice.supplierId (AP), then that
+   * entity's QBO mapping. A missing customer/supplier or an unsynced one →
+   * UNSYNCED_DOCUMENT Warning (a dependency-ordering issue the operator fixes by
+   * syncing the master record).
+   */
+  private async resolveCounterpartyRef(
+    context: PaymentPushContext
+  ): Promise<Qbo.Ref> {
+    const counterpartyId =
+      context.family === "ar"
+        ? ((
+            await this.database
+              .selectFrom("salesInvoice")
+              .select("customerId")
+              .where("id", "=", context.targetDocumentId)
+              .where("companyId", "=", this.companyId)
+              .executeTakeFirst()
+          )?.customerId ?? null)
+        : ((
+            await this.database
+              .selectFrom("purchaseInvoice")
+              .select("supplierId")
+              .where("id", "=", context.targetDocumentId)
+              .where("companyId", "=", this.companyId)
+              .executeTakeFirst()
+          )?.supplierId ?? null);
+
+    if (!counterpartyId) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNSYNCED_DOCUMENT",
+        message: `The settled ${
+          context.family === "ar" ? "sales invoice" : "purchase invoice"
+        } ${context.targetDocumentId} has no ${
+          context.family === "ar" ? "customer" : "supplier"
+        } — cannot record the payment's counterparty in QuickBooks Online`,
+        warning: true,
+        metadata: { targetDocumentId: context.targetDocumentId }
+      });
+    }
+
+    const counterpartyRemoteId = await this.mappingService.getExternalId(
+      context.family === "ar" ? "customer" : "vendor",
+      counterpartyId,
+      this.provider.id
+    );
+    if (!counterpartyRemoteId) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNSYNCED_DOCUMENT",
+        message: `The payment's ${
+          context.family === "ar" ? "customer" : "supplier"
+        } has not synced to QuickBooks Online yet — sync it, then retry the payment`,
+        warning: true,
+        metadata: { counterpartyId }
+      });
+    }
+
+    return { value: counterpartyRemoteId };
   }
 }

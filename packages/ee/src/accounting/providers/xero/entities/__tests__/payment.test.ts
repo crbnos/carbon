@@ -245,15 +245,6 @@ describe("XeroPaymentSyncer.shouldSync ownership gate", () => {
     expect(result).toContain("ap");
   });
 
-  it("rejects push (pull-only)", async () => {
-    const result = await makeSyncer("purchase-invoice-1").shouldSync({
-      direction: "push",
-      entityId: "bill:bill-remote-1:pay-1",
-      isFirstSync: false
-    });
-    expect(result).toContain("pull-only");
-  });
-
   it("skips (does not fail) an AP payment on a bill with no local mapping", async () => {
     const result = await makeSyncer(null).shouldSync({
       direction: "pull",

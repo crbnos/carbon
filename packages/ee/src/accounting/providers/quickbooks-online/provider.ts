@@ -284,14 +284,18 @@ type QboProviderConfig = ProviderConfig<{
 };
 
 /**
- * Entities QBO PULLS as a pull-only, always-enabled capability: `payment` (QBO
- * Payment/BillPayment settlements flowing back onto Carbon sales/purchase
- * invoices). Forced on so the inbound webhook + CDC sweep work as soon as the
- * integration is connected — there is no per-company toggle for it yet. QBO has
- * no outbound payment push yet, so this stays pull-only (unlike Rillet, which is
- * two-way as of Phase G).
+ * Entities QBO syncs TWO-WAY: `payment`. Inbound (pull) — QBO Payment/BillPayment
+ * settlements flow back onto Carbon sales/purchase invoices (Phase F). Outbound
+ * (push) — Carbon-born Posted payments are written to QBO as Payment/BillPayment
+ * documents so the settled invoice/bill closes (Phase G). Which direction fires
+ * per record is decided by origin: a payment already carrying a `payment`
+ * mapping is provider-known and skips push; a mapping-less Carbon payment is
+ * pushed. Forced two-way AND enabled — both halves must work as soon as the
+ * integration is connected (there is no per-company toggle for it; the
+ * documents-mode families gate governs whether it actually runs). Mirrors
+ * Rillet's RILLET_TWO_WAY_ENTITIES.
  */
-export const QBO_PULL_ONLY_ENTITIES = [
+export const QBO_TWO_WAY_ENTITIES = [
   "payment"
 ] as const satisfies readonly AccountingEntityType[];
 
@@ -305,7 +309,7 @@ export const QBO_PULL_ONLY_ENTITIES = [
  * it mirrors Rillet's RILLET_PUSH_ONLY_ENTITIES. Their per-company `enabled`
  * flag survives — this constrains ownership, not whether they sync. `payment`
  * is deliberately excluded: the accounting system owns payments (see
- * QBO_PULL_ONLY_ENTITIES).
+ * QBO_TWO_WAY_ENTITIES).
  */
 export const QBO_CARBON_OWNED_ENTITIES = [
   "customer",
@@ -318,8 +322,9 @@ export const QBO_CARBON_OWNED_ENTITIES = [
 /**
  * Overlay QBO's capability + ownership forcing on a resolved sync config:
  * customers/vendors/items/invoices/bills forced push-only + owner "carbon"
- * (Carbon owns them); `payment` forced pull-only + enabled (the accounting
- * system owns it). Every other entity keeps its resolved config.
+ * (Carbon owns them); `payment` forced two-way + enabled (the accounting system
+ * owns it; Carbon-born payments push back out — Phase G). Every other entity
+ * keeps its resolved config.
  */
 export function buildQboSyncConfig(
   resolved: GlobalSyncConfig
@@ -339,10 +344,10 @@ export function buildQboSyncConfig(
     };
   }
 
-  for (const entityType of QBO_PULL_ONLY_ENTITIES) {
+  for (const entityType of QBO_TWO_WAY_ENTITIES) {
     entities[entityType] = {
       ...entities[entityType],
-      direction: "pull-from-accounting",
+      direction: "two-way",
       owner: "accounting",
       enabled: true
     };
@@ -373,7 +378,7 @@ export class QboProvider extends BaseProvider {
 
   constructor(public config: Omit<QboProviderConfig, "id">) {
     super();
-    // `payment` is forced pull-only + enabled (see buildQboSyncConfig).
+    // `payment` is forced two-way + enabled (see buildQboSyncConfig).
     this.syncConfig = buildQboSyncConfig(config.syncConfig);
     this.http = new HTTPClient(
       config.environment === "sandbox" ? QBO_SANDBOX_HOST : QBO_PRODUCTION_HOST
@@ -753,7 +758,7 @@ export class QboProvider extends BaseProvider {
   }
 
   // =================================================================
-  // Payments (pull-only) — directly addressable by id
+  // Payments (two-way) — directly addressable by id
   // =================================================================
 
   /** GET /payment/{id} — a QBO Payment (Accounts Receivable). */
@@ -764,6 +769,42 @@ export class QboProvider extends BaseProvider {
   /** GET /billpayment/{id} — a QBO BillPayment (Accounts Payable). */
   async getBillPayment(id: string): Promise<Qbo.BillPayment | null> {
     return this.readEntity<Qbo.BillPayment>("billpayment", "BillPayment", id);
+  }
+
+  /**
+   * Create a QBO Payment (POST /payment) — a customer payment applied to
+   * Invoice(s) via `Line[].LinkedTxn{TxnType:"Invoice"}` (Phase G AR
+   * write-back). The write payload carries CustomerRef + DepositToAccountRef,
+   * which the read schema omits; writeEntity sends it as-is and QBO echoes back
+   * the created Payment. Returns the created payment Id.
+   */
+  async createPayment(payload: QboPaymentCreatePayload): Promise<string> {
+    const created = await this.writeEntity<Qbo.Payment>(
+      "payment",
+      "Payment",
+      "create payment",
+      payload
+    );
+    return created.Id;
+  }
+
+  /**
+   * Create a QBO BillPayment (POST /billpayment) — a vendor payment applied to
+   * Bill(s) via `Line[].LinkedTxn{TxnType:"Bill"}` (Phase G AP write-back). The
+   * write payload carries VendorRef + PayType/CheckPayment, which the read
+   * schema omits; writeEntity sends it as-is and QBO echoes back the created
+   * BillPayment. Returns the created bill-payment Id.
+   */
+  async createBillPayment(
+    payload: QboBillPaymentCreatePayload
+  ): Promise<string> {
+    const created = await this.writeEntity<Qbo.BillPayment>(
+      "billpayment",
+      "BillPayment",
+      "create bill payment",
+      payload
+    );
+    return created.Id;
   }
 
   async getJournalEntry(id: string): Promise<Qbo.JournalEntry | null> {
@@ -1093,6 +1134,37 @@ export const QBO_CDC_ENTITY_TYPES = {
 } as const satisfies Record<string, AccountingEntityType>;
 
 export type QboCdcEntityName = keyof typeof QBO_CDC_ENTITY_TYPES;
+
+/**
+ * Write payload for POST /payment (Phase G AR outbound write-back). QBO
+ * requires CustomerRef (the payer) and a DepositToAccountRef (the bank the
+ * receipt lands in); each `Line` applies its `Amount` to an Invoice via
+ * LinkedTxn. Deliberately structural (not QboCreatePayload<Qbo.Payment>) — the
+ * read schema omits these write-only refs.
+ */
+export type QboPaymentCreatePayload = {
+  CustomerRef: Qbo.Ref;
+  TotalAmt: number;
+  TxnDate: string;
+  DepositToAccountRef: Qbo.Ref;
+  Line: Qbo.PaymentLine[];
+};
+
+/**
+ * Write payload for POST /billpayment (Phase G AP outbound write-back). QBO
+ * requires VendorRef (the payee) and a PayType with the matching detail; a
+ * "Check" payment carries CheckPayment.BankAccountRef (the bank the
+ * disbursement clears through). Each `Line` applies its `Amount` to a Bill via
+ * LinkedTxn.
+ */
+export type QboBillPaymentCreatePayload = {
+  VendorRef: Qbo.Ref;
+  TotalAmt: number;
+  TxnDate: string;
+  PayType: "Check";
+  CheckPayment: { BankAccountRef: Qbo.Ref };
+  Line: Qbo.PaymentLine[];
+};
 
 /**
  * Envelope returned by GET /cdc. Each CDCResponse carries one

@@ -1,6 +1,7 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { sql } from "kysely";
 import { createMappingService } from "./external-mapping";
+import { ProviderID } from "./models";
 import {
   type NormalizedPayment,
   SETTLEMENT_KEY_SEPARATOR,
@@ -41,6 +42,24 @@ import { withTriggersDisabled } from "./utils";
 
 export const PAYMENT_PULL_ONLY_MESSAGE =
   "Payments are pull-only: pushing Carbon payments to the accounting provider is not supported";
+
+/**
+ * Providers whose payment syncer overrides `supportsPaymentPush = true` — i.e.
+ * they can write a Carbon-born payment back out as a provider payment document
+ * (Phase G outbound write-back). The reconciler and the outbound sweep read
+ * this to decide whether to page posted payments as candidate push refs.
+ *
+ * MUST stay in sync with each provider syncer's `supportsPaymentPush` override
+ * (RilletPaymentSyncer, XeroPaymentSyncer, QboPaymentSyncer) — a provider in
+ * this set whose syncer still rejects push would enqueue ops that only ever
+ * Skip, and a provider absent from it whose syncer supports push would never be
+ * swept.
+ */
+export const PAYMENT_PUSH_PROVIDERS: ReadonlySet<ProviderID> = new Set([
+  ProviderID.RILLET,
+  ProviderID.XERO,
+  ProviderID.QUICKBOOKS
+]);
 
 type PendingPost = {
   paymentRowId: string;

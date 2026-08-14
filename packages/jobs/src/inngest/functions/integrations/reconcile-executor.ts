@@ -11,7 +11,9 @@
  */
 import type { Database } from "@carbon/database";
 import {
+  PAYMENT_PUSH_PROVIDERS,
   type PostingSyncSettings,
+  type ProviderID,
   resolvePostingSyncSettings,
   resolveSyncConfig,
   type SyncContext,
@@ -352,7 +354,9 @@ export async function reconcileEntities(args: {
         context: {
           journalEntryPushEnabled,
           entityPushEnabled,
-          providerSupportsPaymentPush: args.providerId === "rillet",
+          providerSupportsPaymentPush: PAYMENT_PUSH_PROVIDERS.has(
+            args.providerId as ProviderID
+          ),
           settings: settings as PostingSyncSettings,
           docSync: {
             invoiceEnabled: syncConfig.entities.invoice.enabled,

@@ -65,16 +65,19 @@ export const REQUIRED_SYNC_SUBSCRIPTIONS: Record<
     ...COMMON_PUSH_TABLES,
     JOURNAL_SUBSCRIPTION,
     { table: "purchaseOrder", operations: ["INSERT", "UPDATE", "DELETE"] },
-    { table: "salesOrder", operations: ["INSERT", "UPDATE", "DELETE"] }
-    // No `payment`: Xero's outbound payment push half is not shipped
-    // (supportsPaymentPush false); inbound payments ride the pull sweep.
+    { table: "salesOrder", operations: ["INSERT", "UPDATE", "DELETE"] },
+    // Phase G outbound payment write-back: push on the transition to
+    // Posted/Voided. Inbound payments still ride the pull sweep.
+    { table: "payment", operations: ["INSERT", "UPDATE"] }
   ],
   [ProviderID.QUICKBOOKS]: [
     ...COMMON_PUSH_TABLES,
     JOURNAL_SUBSCRIPTION,
-    { table: "purchaseOrder", operations: ["INSERT", "UPDATE", "DELETE"] }
-    // No `salesOrder` (no QBO salesOrder syncer registered) and no
-    // `payment` (QBO payment sync is pull-only via CDC + webhook).
+    { table: "purchaseOrder", operations: ["INSERT", "UPDATE", "DELETE"] },
+    // No `salesOrder` (no QBO salesOrder syncer registered). Phase G outbound
+    // payment write-back: push on the transition to Posted/Voided. Inbound
+    // payments still ride the CDC pull sweep + webhook.
+    { table: "payment", operations: ["INSERT", "UPDATE"] }
   ]
 };
 

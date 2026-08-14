@@ -1,17 +1,24 @@
+import { loadAccountCodesById } from "../../../core/account-mapping";
 import type { NormalizedPayment } from "../../../core/payment-application";
-import { PaymentSyncerBase } from "../../../core/payment-syncer";
+import {
+  type PaymentPushContext,
+  PaymentSyncerBase
+} from "../../../core/payment-syncer";
+import { JournalEntrySyncError } from "../../../core/posting";
 import type { ShouldSyncContext } from "../../../core/types";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 
 /**
- * XeroPaymentSyncer — the pull-only payment syncer for Xero, on the shared
+ * XeroPaymentSyncer — the two-way payment syncer for Xero, on the shared
  * family-agnostic `PaymentSyncerBase`. A Xero `Payment` (on the /Payments
  * endpoint) settles exactly ONE invoice: an ACCPAY invoice (a bill → AP,
  * settling a Carbon purchaseInvoice) or an ACCREC invoice (a sales invoice →
  * AR, settling a Carbon salesInvoice). The base writes a Draft `payment` +
  * `invoiceSettlement` and then invokes the native `post-payment` edge function
- * (GL journal + Posted/Voided status). Pushing is a rejection stub.
+ * (GL journal + Posted/Voided status). Two-way as of Phase G: a Carbon-born
+ * Posted payment pushes back out as a Xero `/Payments` document (see
+ * `pushRemotePayment`).
  *
  * Entity-id contract: the sync operation's entityId is a COMPOSITE, identical
  * to the Rillet AP reference. AR keeps the prefix-less
@@ -87,6 +94,32 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
     return this.provider as XeroProvider;
   }
 
+  /** Xero accepts Carbon-born payments back out (Phase G). */
+  protected supportsPaymentPush = true;
+
+  /** Carbon account.id → Xero account code, read once per syncer instance. */
+  private accountCodesByIdPromise?: Promise<Map<string, string>>;
+
+  private getAccountCodesById(): Promise<Map<string, string>> {
+    if (!this.accountCodesByIdPromise) {
+      this.accountCodesByIdPromise = loadAccountCodesById(this.database, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      });
+    }
+    return this.accountCodesByIdPromise;
+  }
+
+  /** Xero chart of accounts, read once per syncer instance (BANK-type check). */
+  private chartOfAccountsPromise?: Promise<Xero.Account[]>;
+
+  private getChartOfAccounts(): Promise<Xero.Account[]> {
+    if (!this.chartOfAccountsPromise) {
+      this.chartOfAccountsPromise = this.xeroProvider.listChartOfAccounts();
+    }
+    return this.chartOfAccountsPromise;
+  }
+
   // =================================================================
   // 1. REMOTE FETCH — composite id → GET /Payments/{PaymentID}
   // =================================================================
@@ -131,10 +164,8 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
   protected async shouldSync(
     context: ShouldSyncContext<Xero.Payment, Xero.Payment>
   ): Promise<boolean | string> {
-    if (context.direction === "push") {
-      return "Payments are pull-only for Xero: pushing Carbon payments to Xero is not supported";
-    }
-
+    // Push is gated entirely in PaymentSyncerBase.pushToAccounting (origin,
+    // documents-mode, single-settlement, FX) — shouldSync only governs the pull.
     const { family, documentRemoteId } = parseXeroPaymentSyncEntityId(
       context.entityId
     );
@@ -196,5 +227,89 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
       reference: paymentRemoteId,
       status: remote.Status === "DELETED" ? "void" : "settled"
     };
+  }
+
+  // =================================================================
+  // 4. PUSH (Phase G — Carbon-born payment → Xero /Payments document)
+  // =================================================================
+
+  /**
+   * Create one Xero payment for the settled invoice. Resolves the settled
+   * document's Xero InvoiceID and the bank account's Xero code from the
+   * mappings. A missing document mapping → UNSYNCED_DOCUMENT Warning (the
+   * invoice/bill must sync first — a dependency-ordering issue, NOT a missing
+   * account); a missing bank account code → UNMAPPED_ACCOUNTS Warning (map it on
+   * the integration settings page). Xero's /Payments endpoint additionally
+   * requires the payment Account to be a BANK-type account with payments
+   * enabled — the mapped code is checked against the chart before the PUT so a
+   * non-bank code surfaces a fixable Warning instead of an opaque Xero 400. AR
+   * (ACCREC) and AP (ACCPAY) both settle through the same /Payments call.
+   */
+  protected async pushRemotePayment(
+    context: PaymentPushContext
+  ): Promise<{ remoteId: string; compositeEntityId: string }> {
+    const documentRemoteId = await this.mappingService.getExternalId(
+      context.family === "ar" ? "invoice" : "bill",
+      context.targetDocumentId,
+      this.provider.id
+    );
+    if (!documentRemoteId) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNSYNCED_DOCUMENT",
+        message: `The settled ${
+          context.family === "ar" ? "invoice" : "bill"
+        } has not synced to Xero yet — sync it, then retry the payment`,
+        warning: true,
+        metadata: { targetDocumentId: context.targetDocumentId }
+      });
+    }
+
+    const bankCode = (await this.getAccountCodesById()).get(
+      context.bankAccountId
+    );
+    if (!bankCode) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        message: `The payment's bank/cash account is not mapped to a Xero account — map it on the integration settings page, then retry`,
+        warning: true,
+        metadata: { bankAccountId: context.bankAccountId }
+      });
+    }
+
+    // Xero /Payments rejects a payment whose Account is not a BANK-type account
+    // with payments enabled. Resolve the mapped code against the chart and
+    // refuse early with a fixable Warning.
+    const bankAccount = (await this.getChartOfAccounts()).find(
+      (account) => account.Code === bankCode
+    );
+    // Xero /Payments requires the Account to be Type BANK. `EnablePaymentsToAccount`
+    // is NOT the gate here — it enables NON-bank accounts as payment targets; a
+    // BANK account always accepts payments even with the flag false (verified on
+    // the Xero sandbox 2026-08-14: a payment posted to a BANK account with
+    // EnablePaymentsToAccount=false).
+    if (!bankAccount || bankAccount.Type !== "BANK") {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        message: `The payment's bank/cash account must map to a Xero BANK-type account (mapped code ${bankCode}). Map it to a Xero bank account on the integration settings page, then retry.`,
+        warning: true,
+        metadata: { bankAccountId: context.bankAccountId, bankCode }
+      });
+    }
+
+    const payload = {
+      Invoice: { InvoiceID: documentRemoteId },
+      Account: { Code: bankCode },
+      Amount: context.amount,
+      Date: context.paidDate
+    };
+
+    const remoteId = await this.xeroProvider.createPayment(payload);
+
+    const compositeEntityId =
+      context.family === "ar"
+        ? getXeroPaymentSyncEntityId(documentRemoteId, remoteId)
+        : getXeroBillPaymentSyncEntityId(documentRemoteId, remoteId);
+
+    return { remoteId, compositeEntityId };
   }
 }

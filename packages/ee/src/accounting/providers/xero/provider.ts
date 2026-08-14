@@ -78,15 +78,18 @@ export function parseXeroTrackingTarget(target: string): string | null {
 // \********************************************************/
 
 /**
- * Entities Xero PULLS from the accounting system: payments (both AR
- * ACCREC and AP ACCPAY) settle Carbon invoices/bills. Forced pull-only AND
- * enabled — inbound payment sync-back must work as soon as the integration is
- * connected (there is no per-company toggle for it yet; see Phase 0.4). Every
- * other Xero entity keeps its resolved (possibly two-way) config untouched;
- * only `payment` is constrained here. Xero has no outbound payment push yet, so
- * this stays pull-only (unlike Rillet, which is two-way as of Phase G).
+ * Entities Xero syncs TWO-WAY: `payment`. Inbound (pull) — Xero payments (both
+ * AR ACCREC and AP ACCPAY) settle Carbon invoices/bills (Phase F). Outbound
+ * (push) — Carbon-born Posted payments are written to Xero as `/Payments`
+ * documents so the settled ACCREC/ACCPAY invoice closes (Phase G). Which
+ * direction fires per record is decided by origin: a payment already carrying a
+ * `payment` mapping is provider-known and skips push; a mapping-less Carbon
+ * payment is pushed. Forced two-way AND enabled — both halves must work as soon
+ * as the integration is connected (there is no per-company toggle for it; the
+ * documents-mode families gate governs whether it actually runs). Mirrors
+ * Rillet's RILLET_TWO_WAY_ENTITIES.
  */
-export const XERO_PULL_ONLY_ENTITIES = [
+export const XERO_TWO_WAY_ENTITIES = [
   "payment"
 ] as const satisfies readonly AccountingEntityType[];
 
@@ -100,7 +103,7 @@ export const XERO_PULL_ONLY_ENTITIES = [
  * it mirrors Rillet's RILLET_PUSH_ONLY_ENTITIES. Their per-company `enabled`
  * flag survives — this constrains ownership, not whether they sync. `payment`
  * is deliberately excluded: the accounting system owns payments (see
- * XERO_PULL_ONLY_ENTITIES).
+ * XERO_TWO_WAY_ENTITIES).
  */
 export const XERO_CARBON_OWNED_ENTITIES = [
   "customer",
@@ -113,8 +116,9 @@ export const XERO_CARBON_OWNED_ENTITIES = [
 /**
  * Constrain a resolved sync config to Xero's capabilities and Carbon's
  * ownership stance: customers/vendors/items/invoices/bills forced push-only +
- * owner "carbon" (Carbon owns them); `payment` forced pull-only + enabled (the
- * accounting system owns it). Everything else passes through as resolved.
+ * owner "carbon" (Carbon owns them); `payment` forced two-way + enabled (the
+ * accounting system owns it; Carbon-born payments push back out — Phase G).
+ * Everything else passes through as resolved.
  */
 export function buildXeroSyncConfig(
   resolved: GlobalSyncConfig
@@ -134,10 +138,10 @@ export function buildXeroSyncConfig(
     };
   }
 
-  for (const entityType of XERO_PULL_ONLY_ENTITIES) {
+  for (const entityType of XERO_TWO_WAY_ENTITIES) {
     entities[entityType] = {
       ...entities[entityType],
-      direction: "pull-from-accounting",
+      direction: "two-way",
       owner: "accounting",
       enabled: true
     };
@@ -477,6 +481,41 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     }
 
     return response.data?.ManualJournals?.[0] ?? null;
+  }
+
+  /**
+   * Create a payment (PUT /Payments) applying an amount to a Xero invoice.
+   * Xero's single /Payments endpoint settles BOTH families — an ACCREC (sales
+   * invoice / AR) and an ACCPAY (bill / AP) invoice — so one method covers the
+   * Phase G outbound write-back for both. The `Account.Code` must map to a Xero
+   * BANK-type account (the caller pre-checks this against the chart). Throws an
+   * AccountingApiError when Xero rejects the payload; returns the created
+   * PaymentID.
+   */
+  async createPayment(payment: {
+    Invoice: { InvoiceID: string };
+    Account: { Code: string };
+    Amount: number;
+    Date: string;
+  }): Promise<string> {
+    const response = await this.request<{ Payments: Xero.Payment[] }>(
+      "PUT",
+      "/Payments",
+      { body: JSON.stringify({ Payments: [payment] }) }
+    );
+
+    if (response.error) {
+      throwXeroApiError("create payment", response);
+    }
+
+    const created = response.data?.Payments?.[0];
+    if (!created?.PaymentID) {
+      throw new Error(
+        "Xero API returned success but no PaymentID was returned"
+      );
+    }
+
+    return created.PaymentID;
   }
 
   /**

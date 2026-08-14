@@ -52,13 +52,17 @@ describe("REQUIRED_SYNC_SUBSCRIPTIONS", () => {
     }
   });
 
-  it("subscribes payment only for Rillet (the only push-capable provider)", () => {
+  it("subscribes payment for every push-capable provider (Xero, QBO, Rillet)", () => {
     const withPayment = Object.values(ProviderID).filter((providerId) =>
       REQUIRED_SYNC_SUBSCRIPTIONS[providerId].some(
         (subscription) => subscription.table === "payment"
       )
     );
-    expect(withPayment).toEqual([ProviderID.RILLET]);
+    expect(withPayment).toEqual([
+      ProviderID.XERO,
+      ProviderID.QUICKBOOKS,
+      ProviderID.RILLET
+    ]);
   });
 });
 

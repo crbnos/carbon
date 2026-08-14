@@ -5,6 +5,7 @@ export * from "./core/document-costing";
 export * from "./core/external-mapping";
 export * from "./core/models";
 export * from "./core/operations";
+export * from "./core/payment-syncer";
 export * from "./core/payment-tombstone";
 export * from "./core/posting";
 export * from "./core/remote-journal";
