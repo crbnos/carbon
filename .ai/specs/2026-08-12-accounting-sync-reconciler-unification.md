@@ -3,10 +3,12 @@
 **Status:** implemented (2026-08-12, Steps A–D) — see the changelog at the
 bottom for the two implementation deviations.
 **Date:** 2026-08-12
-**Builds on:** `.ai/specs/implemented/2026-08-11-accounting-sync-delivery-robustness.md`
-(v4 — implemented, live-verified). v2/document-representation are implemented
-(`.ai/specs/implemented/`); v3 remains active only for its Phase 4 (AR/AP
-journal-families mode), which this spec does not touch.
+**Builds on:** the v4 delivery-robustness work (implemented, live-verified; its spec was
+removed 2026-08-13 — the behavior now lives in `.claude/rules/accounting-sync-handlers.md`
+and git). AR/AP document representation:
+`.ai/specs/implemented/2026-08-05-accounting-document-representation.md`. The AR/AP
+journal-families mode (formerly v3 Phase 4) is now owned by
+`.ai/plans/2026-08-13-accounting-sync-automated-postings-only.md`.
 
 ## Why this spec exists
 

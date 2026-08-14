@@ -284,22 +284,56 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
     expect(createBillPayment).not.toHaveBeenCalled();
   });
 
-  it("skips a multi-settlement payment (single-settlement only in v1)", async () => {
+  it("fans a multi-settlement payment out to one provider payment per document, each linked under a suffixed key", async () => {
+    let call = 0;
+    const createBillPayment = vi.fn(async (..._args: unknown[]) => ({
+      id: `rillet-pay-${++call}`,
+      status: "SUCCESSFUL"
+    }));
     const { syncer } = makeSyncer({
       db: makePushDb({
         payment: apPayment,
         settlements: [
-          apSettlement,
-          { ...apSettlement, targetPurchaseInvoiceId: "pinv-2" }
+          {
+            ...apSettlement,
+            targetPurchaseInvoiceId: "pinv-2",
+            appliedAmount: 40
+          },
+          apSettlement
         ],
         linkSink: []
       }),
-      mapping: null
+      mapping: null,
+      documentRemoteId: "bill-remote-1",
+      createBillPayment
     });
 
     const result = await syncer.pushToAccounting("pay_1");
-    expect(result.status).toBe("skipped");
-    expect(result.error).toContain("multi-document");
+    expect(result.status).toBe("success");
+
+    // One provider payment per settlement, in deterministic target order
+    // (pinv-1 before pinv-2), each for ITS applied amount.
+    expect(createBillPayment).toHaveBeenCalledTimes(2);
+    expect(createBillPayment.mock.calls[0]?.[1]).toMatchObject({
+      amount: { amount: "100.00", currency: "USD" }
+    });
+    expect(createBillPayment.mock.calls[1]?.[1]).toMatchObject({
+      amount: { amount: "40.00", currency: "USD" }
+    });
+
+    // Each fan-out leg links under `<paymentId>:<targetDocId>` so a partial
+    // failure resumes instead of double-creating.
+    expect(txLinkSink).toHaveLength(2);
+    expect(txLinkSink[0]).toMatchObject({
+      entityType: "payment",
+      entityId: "pay_1:pinv-1",
+      externalId: "bill:bill-remote-1:rillet-pay-1",
+      metadata: { origin: "carbon" }
+    });
+    expect(txLinkSink[1]).toMatchObject({
+      entityId: "pay_1:pinv-2",
+      externalId: "bill:bill-remote-1:rillet-pay-2"
+    });
   });
 
   it("skips a foreign-currency payment", async () => {
@@ -416,11 +450,11 @@ describe("RilletPaymentSyncer.pushRemotePayment — mapping Warnings", () => {
     reference: "PAY-1"
   };
 
-  it("warns (UNMAPPED_ACCOUNTS) when the settled document has not synced", async () => {
+  it("warns (UNSYNCED_DOCUMENT) when the settled document has not synced", async () => {
     await expect(
       adapter({ documentRemoteId: null }).pushRemotePayment(ctx)
     ).rejects.toMatchObject({
-      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+      failure: { errorCode: "UNSYNCED_DOCUMENT", warning: true }
     });
   });
 

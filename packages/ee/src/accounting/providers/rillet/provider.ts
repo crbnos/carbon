@@ -310,6 +310,11 @@ export function buildRilletSyncConfig(
     entities[entityType] = { ...entities[entityType], enabled: false };
   }
 
+  // Always-on: automated postings sync whenever the integration is connected.
+  // Forced here (defense-in-depth over the DEFAULT_SYNC_CONFIG default) so a
+  // stale stored `enabled: false` override can't silently turn journals off.
+  entities.journalEntry = { ...entities.journalEntry, enabled: true };
+
   return { entities };
 }
 
@@ -623,25 +628,57 @@ export class RilletProvider extends BaseProvider {
   /**
    * Upsert a Field pick-list value BY NAME
    * (POST /fields/{id}/values `{ name }`) — Rillet returns the FULL Field
-   * including the (created or pre-existing) value's uuid. Naturally
-   * idempotent, so no Idempotency-Key is needed. Returns the value; throws
-   * when Rillet accepts the write but the value cannot be found on the
-   * returned Field (contract drift — fail loud, not with a broken ref).
+   * including the created value's uuid. NOT idempotent server-side (verified
+   * on sandbox 2026-08-14: a name that already exists — e.g. provisioned by
+   * an earlier Carbon instance whose mappings are gone, or seeded in the
+   * Rillet UI — 400s `Value "<name>" already exists`), so on that rejection
+   * the existing value is recovered by name via `GET /fields` (there is no
+   * `GET /fields/{id}` — 405). Throws when Rillet accepts the write but the
+   * value cannot be found on the returned Field (contract drift — fail loud,
+   * not with a broken ref).
    */
   async upsertFieldValue(
     fieldId: string,
-    name: string
+    rawName: string
   ): Promise<Rillet.FieldValue> {
-    const field = await this.writeEntity<Rillet.Field>({
-      method: "POST",
-      path: `/fields/${fieldId}/values`,
-      envelopeKey: "field",
-      operation: "upsert field value",
-      payload: { name }
-    });
+    // Rillet TRIMS value names on write and dedupes them trim-insensitively
+    // (verified on sandbox 2026-08-14: creating "Test " comes back stored as
+    // "Test", and a later POST of "Test" 400s `already exists`). Carbon's
+    // dimension labels can carry inconsistent whitespace across lines ("Test"
+    // vs "Test "), so we normalize to Rillet's own behavior — trim on write and
+    // match trimmed on both sides — so those resolve to ONE Field value instead
+    // of failing the whole journal on an exact-string miss.
+    const name = rawName.trim();
+    let field: Rillet.Field;
+    try {
+      field = await this.writeEntity<Rillet.Field>({
+        method: "POST",
+        path: `/fields/${fieldId}/values`,
+        envelopeKey: "field",
+        operation: "upsert field value",
+        payload: { name }
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (/already exists/i.test(message)) {
+        const existingField = (await this.listFields()).find(
+          (candidate) => candidate.id === fieldId
+        );
+        const existingValue =
+          existingField?.values?.find(
+            (candidate) =>
+              candidate.name?.trim() === name && !candidate.deactivated
+          ) ??
+          existingField?.values?.find(
+            (candidate) => candidate.name?.trim() === name
+          );
+        if (existingValue) return existingValue;
+      }
+      throw err;
+    }
 
     const value = (field.values ?? []).find(
-      (candidate) => candidate.name === name
+      (candidate) => candidate.name?.trim() === name
     );
     if (!value) {
       throw new Error(
@@ -953,24 +990,49 @@ export class RilletProvider extends BaseProvider {
   }
 
   /**
+   * Bills changed since `updatedAfter` (VERIFIED on sandbox 2026-08-13:
+   * `GET /bills?updated.gt` returns the `{ bills, pagination }` envelope,
+   * accepts `sort_by=updated`, and paying a bill bumps its `updated_at` —
+   * so the bill feed is a complete change signal for payment activity).
+   */
+  async listBillsUpdatedSince(updatedAfter: string): Promise<Rillet.Bill[]> {
+    return this.listPaginated<Rillet.Bill>(
+      `/bills?updated.gt=${encodeURIComponent(updatedAfter)}&sort_by=updated`,
+      (data) => data.bills as Rillet.Bill[] | undefined
+    );
+  }
+
+  /**
    * All bill payments in the organization changed since `updatedAfter`
-   * (org-wide; AP mirror of listInvoicePaymentsUpdatedSince).
+   * (AP mirror of listInvoicePaymentsUpdatedSince).
    *
-   * VERIFY: the `GET /bill-payments` endpoint and its `updated.gt` /
-   * `sort_by=updated` filters are assumed to mirror `/invoice-payments`, but
-   * are NOT confirmed in the live Rillet OpenAPI. If the endpoint/filters
-   * differ, fall back to polling `GET /bills` and diffing open balance (note
-   * the degradation). Names/shape mirror the invoice-payment method.
+   * There is NO org-wide bill-payment feed: `GET /bill-payments` does not
+   * exist (VERIFIED on sandbox 2026-08-13 — 404, which threw here and killed
+   * every pull sweep). Composed instead from the two endpoints that do
+   * exist: bills changed since the cursor (payment activity bumps the
+   * bill's `updated_at`), then each changed bill's payments via
+   * GET /bills/{id}/payments. Costs one extra request per changed bill,
+   * bounded by the sweep window. Bill payments from the per-bill endpoint
+   * carry no `updated_at` of their own, so each is stamped with its bill's
+   * — the change signal that surfaced it.
    */
   async listBillPaymentsUpdatedSince(
     updatedAfter: string
   ): Promise<Rillet.BillPayment[]> {
-    return this.listPaginated<Rillet.BillPayment>(
-      `/bill-payments?updated.gt=${encodeURIComponent(
-        updatedAfter
-      )}&sort_by=updated`,
-      (data) => data.payments as Rillet.BillPayment[] | undefined
-    );
+    const bills = await this.listBillsUpdatedSince(updatedAfter);
+
+    const payments: Rillet.BillPayment[] = [];
+    for (const bill of bills) {
+      const billPayments = await this.listBillPayments(bill.id);
+      for (const payment of billPayments) {
+        payments.push({
+          ...payment,
+          bill_id: payment.bill_id ?? bill.id,
+          updated_at: payment.updated_at ?? bill.updated_at
+        });
+      }
+    }
+    return payments;
   }
 
   /**

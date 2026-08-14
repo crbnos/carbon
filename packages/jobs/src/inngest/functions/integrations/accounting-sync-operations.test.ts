@@ -167,25 +167,25 @@ describe("getJournalPostingDecision", () => {
 });
 
 describe("isJournalEntryPostingEnabled", () => {
-  it("is disabled by default (posting sync is opt-in per company)", () => {
-    expect(isJournalEntryPostingEnabled(undefined)).toBe(false);
-    expect(isJournalEntryPostingEnabled({})).toBe(false);
+  it("is enabled by default (posting sync is always-on)", () => {
+    expect(isJournalEntryPostingEnabled(undefined)).toBe(true);
+    expect(isJournalEntryPostingEnabled({})).toBe(true);
   });
 
-  it("is enabled when the stored sync config enables journalEntry", () => {
+  it("honors a stored explicit disable at this seam (legacy escape hatch — the provider configs force it back on for the syncers)", () => {
     expect(
       isJournalEntryPostingEnabled({
-        syncConfig: { entities: { journalEntry: { enabled: true } } }
+        syncConfig: { entities: { journalEntry: { enabled: false } } }
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  it("ignores invalid stored fragments and keeps the disabled default", () => {
+  it("ignores invalid stored fragments and keeps the always-on default", () => {
     expect(
       isJournalEntryPostingEnabled({
         syncConfig: { entities: { journalEntry: { enabled: "yes" } } }
       })
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 

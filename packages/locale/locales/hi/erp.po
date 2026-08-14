@@ -5783,9 +5783,6 @@ msgstr "सेटिंग्स में सक्षम करें"
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "जब कोई RFQ उद्धरण के लिए तैयार के रूप में चिह्नित किया जाता है तो सूचनाएं सक्षम करें।"
 
-msgid "Enable posting sync"
-msgstr "पोस्टिंग सिंक सक्षम करें"
-
 msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 msgstr "MES टर्मिनल के लिए साझा वर्कस्टेशन मोड सक्षम करें। ऑपरेटर काम करने से पहले PIN के माध्यम से स्वयं की पहचान करते हैं।"
 
@@ -11030,8 +11027,8 @@ msgstr "द्वारा पोस्ट किया गया"
 msgid "Posted By"
 msgstr "द्वारा पोस्ट किया गया"
 
-msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
-msgstr "इन स्रोत प्रकारों वाली पोस्ट की गई पत्रिकाएं पुश की जाती हैं। दैनिक सारांश एक दिन की पत्रिकाओं को प्रति खाते एक प्रदाता प्रविष्टि में समूहीकृत करता है।"
+msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
+msgstr "पोस्ट किए गए जर्नल इन स्रोत प्रकारों के साथ हमेशा सिंक करते हैं। दैनिक सारांश एक दिन के जर्नल को प्रति खाते में एक प्रदाता प्रविष्टि में समूहित करता है।"
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "एक बार पोस्ट किया गया, {corrections} बार सही किया गया।"
@@ -11497,9 +11494,6 @@ msgstr "धकेलें"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "इसे पहले खुले दिन तक पुनः-तारीखित करें, मूल तारीख को विवरण में रखते हुए।"
-
-msgid "Push posted journals for the enabled source types to the accounting provider."
-msgstr "सक्षम स्रोत प्रकारों के लिए पोस्ट की गई जर्नल को लेखांकन प्रदाता को धकेलें।"
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "रिकॉर्ड परिवर्तनों को बाहरी सिस्टम में तुरंत भेजें जब वे होते हैं।"

@@ -5783,9 +5783,6 @@ msgstr "Ayarlarda Etkinleştir"
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Bir RFQ teklif için hazır olarak işaretlendiğinde bildirimleri etkinleştir."
 
-msgid "Enable posting sync"
-msgstr "Deftere nakil eşitlemesini etkinleştir"
-
 msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 msgstr "MES terminalleri için paylaşımlı iş istasyonu modunu etkinleştirin. Operatörler çalışmaya başlamadan önce kendilerini PIN ile tanımlarlar."
 
@@ -11030,8 +11027,8 @@ msgstr "Yayınlayan"
 msgid "Posted By"
 msgstr "Gönderen"
 
-msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
-msgstr "Bu kaynak türlerine sahip deftere alınan günlükler gönderilir. Günlük özet, bir günün günlüklerini hesap başına bir sağlayıcı girişine gruplar."
+msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
+msgstr "Bu kaynak türlerine sahip nakledilen yevmiye defterleri her zaman senkronize olur. Günlük özet, bir günün yevmiye defteri kayıtlarını sağlayıcı hesabı başına bir girişe gruplandırır."
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "Bir kez deftere kaydedildi, {corrections} kez düzeltildi."
@@ -11497,9 +11494,6 @@ msgstr "Gönder"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "İlk açık güne yeniden tarihlendir, orijinal tarihi açıklamada tut."
-
-msgid "Push posted journals for the enabled source types to the accounting provider."
-msgstr "Etkinleştirilen kaynak türleri için yayınlanan günlükleri muhasebe sağlayıcısına gönderin."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Kayıt değişikliklerini gerçekleştiği anda harici sistemlere gönderin."

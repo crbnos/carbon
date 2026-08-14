@@ -493,6 +493,55 @@ describe("golden: payments", () => {
     ).toEqual(["nothing"]);
   });
 
+  it("re-drives a payment parked UNSYNCED_DOCUMENT once its settled document is mapped", () => {
+    // The dependency-chain heal: invoice fails -> payment parks -> invoice
+    // syncs -> the payment must follow without a human retry (mirror of
+    // the bill UNMAPPED_ACCOUNTS re-drive).
+    const parked = {
+      id: "op_1",
+      status: "Warning",
+      errorCode: "UNSYNCED_DOCUMENT",
+      attemptCount: 3,
+      createdAt: "2026-08-12T00:00:00Z"
+    };
+    expect(
+      computeReconcileDecision(
+        input({
+          entityType: "payment",
+          snapshot: { status: "Posted" },
+          latestOperation: parked,
+          settledDocumentMapped: true
+        })
+      ).actions
+    ).toEqual([{ kind: "re-drive", operationId: "op_1" }]);
+
+    // Still unmapped -> stays parked; attempt cap respected
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "payment",
+            snapshot: { status: "Posted" },
+            latestOperation: parked,
+            settledDocumentMapped: false
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "payment",
+            snapshot: { status: "Posted" },
+            latestOperation: { ...parked, attemptCount: 5 },
+            settledDocumentMapped: true
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
   it("FIX-4: a Voided payment with prior ops records nothing (no void echo in v1)", () => {
     expect(
       kinds(

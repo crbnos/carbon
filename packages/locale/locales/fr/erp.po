@@ -5783,9 +5783,6 @@ msgstr "Activer dans les paramètres"
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Activer les notifications lorsqu'une demande de devis est marquée comme prête pour la cotation."
 
-msgid "Enable posting sync"
-msgstr "Activer la synchronisation de comptabilisation"
-
 msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 msgstr "Activez le mode de poste de travail partagé pour les terminaux MES. Les opérateurs s'identifient via un code PIN avant d'effectuer le travail."
 
@@ -11030,8 +11027,8 @@ msgstr "Publié par"
 msgid "Posted By"
 msgstr "Publié par"
 
-msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
-msgstr "Les journaux comptables avec ces types de sources sont poussés. Le résumé quotidien regroupe les journaux d'une journée en une seule entrée de fournisseur par compte."
+msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
+msgstr "Les journaux publiés avec ces types de sources se synchronisent toujours. Le résumé quotidien regroupe les journaux d'une journée en une seule entrée de fournisseur par compte."
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "Posté une fois, corrigé {corrections} fois."
@@ -11497,9 +11494,6 @@ msgstr "Envoyer"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Repousser sa date au premier jour ouvert, en conservant la date d'origine dans la narration."
-
-msgid "Push posted journals for the enabled source types to the accounting provider."
-msgstr "Envoyer les journaux validés pour les types de source activés au fournisseur comptable."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Poussez les modifications d'enregistrements vers des systèmes externes au moment où elles se produisent."

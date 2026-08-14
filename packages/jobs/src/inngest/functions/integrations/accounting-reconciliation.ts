@@ -751,9 +751,6 @@ async function reconcileCompany(args: {
   );
 
   const settings = resolvePostingSyncSettings(integration.metadata);
-  if (!settings.enabled) {
-    return { ...summary, skippedReason: "posting sync not enabled" };
-  }
 
   const provider = getProviderIntegration(
     client,

@@ -104,6 +104,16 @@ export async function bootstrap(
       [companyId, DEV_COMPANY_NAME, companyGroupId]
     );
 
+    // Dev/test convenience: enable accounting so posting flows create GL
+    // journals out of the box (the companySettings row was just created by
+    // the company-insert trigger with the column default, false). Production
+    // deliberately keeps accountingEnabled=false by default — this runs only
+    // through the dev seed.
+    await client.query(
+      `UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = $1`,
+      [companyId]
+    );
+
     await client.query(
       `INSERT INTO storage.buckets (id, name, public) VALUES ($1, $2, false)`,
       [companyId, companyId]

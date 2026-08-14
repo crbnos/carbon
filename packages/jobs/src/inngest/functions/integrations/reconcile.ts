@@ -91,6 +91,12 @@ export type ReconcileEntityInput = {
    * the input the account-costed replay needs (the re-drive condition).
    */
   hasPostedBackingJournal?: boolean;
+  /**
+   * payment only: the document the parked payment settles
+   * (latest op's metadata.targetDocumentId) NOW has a provider mapping —
+   * the UNSYNCED_DOCUMENT re-drive condition.
+   */
+  settledDocumentMapped?: boolean;
   context: ReconcileContext;
 };
 
@@ -331,6 +337,23 @@ function reconcilePayment(input: ReconcileEntityInput): ReconcileDecision {
       `payment status '${snapshot.status ?? "unknown"}' is not posted`
     );
   }
+
+  // Re-drive (mirror of the bill UNMAPPED_ACCOUNTS rule): a payment parked
+  // because its settled document had not synced flips back to Pending once
+  // that document has a provider mapping — the fix-arrives-later path the
+  // dependency chain creates (invoice fails → payment parks → invoice
+  // heals → payment must follow without a human).
+  const latest = input.latestOperation;
+  if (
+    !input.hasLiveOperation &&
+    latest?.status === "Warning" &&
+    latest.errorCode === "UNSYNCED_DOCUMENT" &&
+    input.settledDocumentMapped === true &&
+    latest.attemptCount < MAX_REDRIVE_ATTEMPTS
+  ) {
+    return { actions: [{ kind: "re-drive", operationId: latest.id }] };
+  }
+
   if (input.hasLiveOperation || input.latestOperation !== null) {
     return nothing("payment already has a recorded push operation");
   }

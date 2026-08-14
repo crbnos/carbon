@@ -318,26 +318,33 @@ describe("getPostingSyncSourceTypeSkipReason", () => {
     }
   });
 
-  it("pushes Manual journals only when includeManual is enabled", () => {
+  it("never pushes Manual journals — even a stored includeManual cannot enable them", () => {
     expect(
       getPostingSyncSourceTypeSkipReason("Manual", makeSettings())
-    ).toContain("Manual journals are not enabled");
+    ).toContain("Manual journals are never synced");
+    // The v2 shim maps includeManual → sourceTypes.Manual.enabled, but the
+    // policy (syncable: false) overrides any stored config: Manual is the
+    // only path to arbitrary/unmapped accounts and the external ledger owns
+    // manual journals.
     expect(
       getPostingSyncSourceTypeSkipReason(
         "Manual",
         makeSettings({ includeManual: true })
       )
-    ).toBeNull();
+    ).toContain("Manual journals are never synced");
   });
 
-  it("respects a stored sourceTypes override for non-excluded types", () => {
+  it("always-on: a narrowed stored sourceTypes list cannot disable an automated type", () => {
     const narrowed = makeSettings({ sourceTypes: ["Purchase Receipt"] });
     expect(
       getPostingSyncSourceTypeSkipReason("Purchase Receipt", narrowed)
     ).toBeNull();
+    // Sales Shipment is absent from the stored v2 list, but automated
+    // postings always sync — stored per-type enables are parse-compatible
+    // legacy fields the decision no longer reads.
     expect(
       getPostingSyncSourceTypeSkipReason("Sales Shipment", narrowed)
-    ).toContain("not enabled for posting sync");
+    ).toBeNull();
   });
 
   it("skips journals without a source type", () => {
@@ -348,7 +355,7 @@ describe("getPostingSyncSourceTypeSkipReason", () => {
 });
 
 describe("resolvePostingSyncSettings", () => {
-  it("defaults to disabled posting sync when nothing is stored", () => {
+  it("defaults to ALWAYS-ON posting sync when nothing is stored", () => {
     expect(resolvePostingSyncSettings(undefined)).toEqual(
       DEFAULT_POSTING_SYNC_SETTINGS
     );
@@ -359,9 +366,10 @@ describe("resolvePostingSyncSettings", () => {
       DEFAULT_POSTING_SYNC_SETTINGS
     );
 
-    // v3 defaults: disabled, documents-mode families, source-type record
-    // total over the enum with policy defaults, warn on unmapped dims
-    expect(DEFAULT_POSTING_SYNC_SETTINGS.enabled).toBe(false);
+    // Always-on defaults: enabled (legacy field, no longer read by the
+    // decision core), documents-mode families, source-type record total over
+    // the enum with policy defaults, warn on unmapped dims
+    expect(DEFAULT_POSTING_SYNC_SETTINGS.enabled).toBe(true);
     expect(DEFAULT_POSTING_SYNC_SETTINGS.families).toEqual({
       ar: "documents",
       ap: "documents"

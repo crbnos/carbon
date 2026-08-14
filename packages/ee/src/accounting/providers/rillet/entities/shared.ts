@@ -71,6 +71,28 @@ export function carbonCompanyExternalReference(
 }
 
 /**
+ * Rillet's built-in "custom source" external-reference type. When a Rillet org
+ * has Revenue Recognition enabled, rev-rec validation rejects an AR invoice
+ * unless the invoice + items carry a reference from a KNOWN integration —
+ * billing/rev-rec partners (TABS, Maxio, …) or the generic CUSTOMER_HISTORICAL /
+ * CUSTOMER_CUSTOM. Carbon's `"carbon"` type is not on that list. Carbon IS a
+ * custom source, so it tags AR invoices with CUSTOMER_CUSTOM (alongside the
+ * `"carbon"` audit refs) so they land whether or not the org runs rev-rec —
+ * without depending on Rillet-side configuration.
+ */
+export const RILLET_CUSTOMER_CUSTOM_REFERENCE_TYPE = "CUSTOMER_CUSTOM";
+
+export function customerCustomExternalReference(
+  id: string,
+  url: string
+): Rillet.ExternalReference {
+  // Rillet REQUIRES a url on CUSTOMER_CUSTOM references ("The URL is
+  // required for external reference for Customer_Custom", verified on the
+  // sandbox 2026-08-12) — it is the link back into the source system.
+  return { type: RILLET_CUSTOMER_CUSTOM_REFERENCE_TYPE, id, url };
+}
+
+/**
  * Run a Rillet write, and when the org hasn't registered Carbon's
  * external-reference type slugs (dashboard-only setup: Rillet Settings →
  * External References), retry once WITHOUT the optional

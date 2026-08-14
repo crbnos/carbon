@@ -5783,9 +5783,6 @@ msgstr "Enable in Settings"
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Enable notifications when an RFQ is marked as ready for quote."
 
-msgid "Enable posting sync"
-msgstr "Enable posting sync"
-
 msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 msgstr "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 
@@ -11030,8 +11027,8 @@ msgstr "Posted by"
 msgid "Posted By"
 msgstr "Posted By"
 
-msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
-msgstr "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
+msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
+msgstr "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "Posted once, corrected {corrections} times."
@@ -11497,9 +11494,6 @@ msgstr "Push"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Push it re-dated to the first open day, keeping the original date in the narration."
-
-msgid "Push posted journals for the enabled source types to the accounting provider."
-msgstr "Push posted journals for the enabled source types to the accounting provider."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Push record changes to external systems the moment they happen."

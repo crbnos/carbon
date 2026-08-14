@@ -499,15 +499,15 @@ export const accountMappingAiSuggestValidator = z.object({
  * Posting-sync settings persisted (deep-merged) at
  * companyIntegration.metadata.settings.postingSync in the v3 shape. Field
  * semantics mirror @carbon/ee/accounting's PostingSyncSettingsSchema:
- * `sourceTypeConfigs` is a repeated hidden field of
- * "<sourceType>|<granularity>" for the ENABLED journal-represented source
- * types (absent = disabled); `familyAr`/`familyAp` are the AR/AP
- * representation modes ("journals" is schema-valid but UI-gated until the
- * spec's Phase 4 ships).
+ * posting sync is ALWAYS-ON (no master enable, no per-type enable — Manual
+ * never syncs per POSTING_POLICY); `sourceTypeConfigs` is a repeated hidden
+ * field of "<sourceType>|<granularity>" carrying each non-Manual
+ * journal-represented type's granularity; `familyAr`/`familyAp` are the
+ * AR/AP representation modes ("journals" is schema-valid but UI-gated until
+ * the spec's Phase 4 ships).
  */
 export const postingSyncSettingsValidator = z.object({
   intent: z.literal("update-posting-settings"),
-  enabled: zfd.checkbox(),
   sourceTypeConfigs: zfd.repeatable(
     z.array(
       z

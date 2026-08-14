@@ -5783,9 +5783,6 @@ msgstr "설정에서 활성화"
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "RFQ가 견적 준비 완료로 표시될 때 알림을 활성화하세요."
 
-msgid "Enable posting sync"
-msgstr "게시 동기화 활성화"
-
 msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 msgstr "MES 단말기에 공유 워크스테이션 모드를 활성화하세요. 작업자는 작업 수행 전에 PIN으로 본인을 인증합니다."
 
@@ -11030,8 +11027,8 @@ msgstr "게시자"
 msgid "Posted By"
 msgstr "전기자"
 
-msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
-msgstr "이러한 소스 유형의 게시된 저널이 푸시됩니다. 일일 요약은 하루의 저널을 계정당 하나의 공급자 항목으로 그룹화합니다."
+msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
+msgstr "이러한 소스 유형의 게시된 저널은 항상 동기화됩니다. 일일 요약은 하루의 저널을 계정별로 하나의 공급자 항목으로 그룹화합니다."
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "한 번 게시되었으며 {corrections}번 수정되었습니다."
@@ -11497,9 +11494,6 @@ msgstr "푸시"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "원본 날짜를 설명에 유지하면서 첫 번째 개시 날짜로 재날짜를 지정합니다."
-
-msgid "Push posted journals for the enabled source types to the accounting provider."
-msgstr "활성화된 소스 유형에 대한 전기 분개를 회계 공급자에게 푸시합니다."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "레코드 변경 사항이 발생하는 즉시 외부 시스템으로 전송합니다."

@@ -5783,9 +5783,6 @@ msgstr "在设置中启用"
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "在RFQ标记为准备报价时启用通知。"
 
-msgid "Enable posting sync"
-msgstr "启用过账同步"
-
 msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 msgstr "为MES终端启用共享工作站模式。操作员在执行工作前通过PIN进行身份识别。"
 
@@ -11030,8 +11027,8 @@ msgstr "发布者"
 msgid "Posted By"
 msgstr "发布者"
 
-msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
-msgstr "将具有这些来源类型的已过账日记推送。每日汇总将一天的日记按科目分组为一个供应商条目。"
+msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
+msgstr "这些来源类型的已过账日记账始终进行同步。每日汇总将一天的日记账合并为每个账户的一条提供商记录。"
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "发布一次，修正了 {corrections} 次。"
@@ -11497,9 +11494,6 @@ msgstr "推送"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "将其推送至第一个可用日期，在备注中保留原始日期"
-
-msgid "Push posted journals for the enabled source types to the accounting provider."
-msgstr "将已过账日记账的启用源类型推送到会计提供商。"
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "将记录更改实时推送到外部系统。"

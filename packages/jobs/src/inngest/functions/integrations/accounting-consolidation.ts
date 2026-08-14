@@ -170,9 +170,8 @@ async function consolidateCompany(args: {
     integration.metadata
   );
   if (
-    !settings.enabled ||
-    (settings.consolidation !== "daily" &&
-      !hasDailySummarySourceTypes(settings))
+    settings.consolidation !== "daily" &&
+    !hasDailySummarySourceTypes(settings)
   ) {
     return {
       ...summary,
@@ -733,9 +732,8 @@ export const accountingConsolidationFunction = inngest.createFunction(
           .filter((row) => {
             const settings = resolvePostingSyncSettings(row.metadata);
             return (
-              settings.enabled &&
-              (settings.consolidation === "daily" ||
-                hasDailySummarySourceTypes(settings))
+              settings.consolidation === "daily" ||
+              hasDailySummarySourceTypes(settings)
             );
           })
           .map((row) => ({ companyId: row.companyId, providerId: row.id }));

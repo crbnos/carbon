@@ -348,6 +348,11 @@ export function buildQboSyncConfig(
     };
   }
 
+  // Always-on: automated postings sync whenever the integration is connected.
+  // Forced here (defense-in-depth over the DEFAULT_SYNC_CONFIG default) so a
+  // stale stored `enabled: false` override can't silently turn journals off.
+  entities.journalEntry = { ...entities.journalEntry, enabled: true };
+
   return { entities };
 }
 

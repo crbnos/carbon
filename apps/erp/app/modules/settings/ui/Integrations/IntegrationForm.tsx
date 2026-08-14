@@ -401,7 +401,7 @@ function SwitchField({ setting }: { setting: IntegrationSetting }) {
   const checked = value === true;
 
   return (
-    <div className="flex items-center justify-between gap-4 w-full py-2">
+    <div className="flex items-center justify-between gap-4 w-full p-3 border rounded-lg">
       <div className="flex flex-col flex-1">
         <span className="text-sm font-medium">{setting.label}</span>
         {setting.description && (

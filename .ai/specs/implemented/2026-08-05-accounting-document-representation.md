@@ -1,20 +1,18 @@
 # Accounting Document Representation — Journal-Replay Bills, Item-Referenced Invoices, Non-Tracked Provider Items
 
 > Status: implemented — executed 2026-08-05 as **Part B** of the accounting handoff run
-> (`.ai/plans/archived/2026-08-05-accounting-handoff.md`, executing
-> `.ai/plans/archived/2026-08-05-accounting-document-representation.md`; run log
-> `.ai/runs/2026-08-05-accounting-handoff-run.md`). Sandbox-gated acceptance items remain
-> env-gated; the tie-out acceptance criterion awaits v4 Phase 3 (see the note in
-> Acceptance Criteria).
+> (execution plans removed 2026-08-13; see git history). Sandbox-gated acceptance items remain
+> env-gated; the tie-out acceptance criterion shipped with the delivery-robustness work (see the
+> note in Acceptance Criteria).
 > Author: Brad Barbin + Claude
 > Date: 2026-08-05
 > Research: provider-capability survey (2026-08-05, this session) + codebase audit of all
 > transaction syncers; provider GL-behavior facts flagged VERIFY where inferred from API docs
 > rather than observed on a sandbox.
-> Related specs: [2026-07-09-accounting-sync-engine.md](2026-07-09-accounting-sync-engine.md)
-> (v2 — engine, posting policy, document/journal split), [2026-08-02-accounting-sync-engine-v3.md](2026-08-02-accounting-sync-engine-v3.md)
-> (journal policy, dimensions, tie-out). This spec fixes how AR/AP **documents** represent
-> their lines; it does not change the posting policy or the journal push.
+> Related: the posting policy + journal push are documented in
+> `.claude/rules/accounting-sync-handlers.md` (the v2 engine and v3 journal-policy specs were
+> removed 2026-08-13; see git). This spec fixes how AR/AP **documents** represent their lines;
+> it does not change the posting policy or the journal push.
 
 ## TLDR
 
@@ -308,10 +306,9 @@ items sync as non-inventory and per-SKU valuation lives in Carbon — nice-to-ha
 
 ## Acceptance Criteria
 
-> **Note (2026-08-11):** the **Tie-out** criterion below references the v3 §5 account × period
-> tie-out, which was never built; its implementation is now owned by v4 Phase 3 — see
-> 2026-08-11-accounting-sync-delivery-robustness.md §Pillar E. That criterion becomes
-> verifiable once v4 Phase 3 ships.
+> **Note:** the **Tie-out** criterion below (account × period tie-out) shipped as part of the
+> delivery-robustness work; it is documented in `.claude/rules/accounting-sync-handlers.md`
+> (Reconciliation + tie-out).
 
 - [ ] **AP GR-IR clears (per provider).** In a sandbox: receive an item on a PO (Carbon pushes
       `Dr Inventory / Cr GR-IR`), then post + sync the bill. The provider's **GR-IR account nets
@@ -410,6 +407,5 @@ items sync as non-inventory and per-SKU valuation lives in Carbon — nice-to-ha
   sales account). PO / `buildQboExpenseLines` explicitly untouched. New risks: QBO
   negative-line VERIFY; paid-document re-sync. Plan updated in lockstep.
 - 2026-08-11: Reconciliation pass — status set to **implemented** (executed 2026-08-05 as
-  Part B of the accounting handoff run, `.ai/plans/archived/2026-08-05-accounting-handoff.md`); the
-  tie-out acceptance criterion annotated as awaiting v4 Phase 3
-  (2026-08-11-accounting-sync-delivery-robustness.md §Pillar E). No design changes.
+  Part B of the accounting handoff run); the tie-out acceptance criterion was later delivered by
+  the delivery-robustness work (see `.claude/rules/accounting-sync-handlers.md`). No design changes.

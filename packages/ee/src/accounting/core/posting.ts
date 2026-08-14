@@ -186,18 +186,16 @@ export function getJournalPostingPolicyDecision(args: {
   const config = settings.sourceTypes[sourceType];
 
   if (policy.representation === "journal") {
-    if (!config.enabled) {
-      if (sourceType === "Manual") {
-        return {
-          kind: "exclude",
-          reason: "MANUAL_DISABLED",
-          message: "Manual journals are not enabled for posting sync"
-        };
-      }
+    // Manual journals are NEVER synced — the external ledger owns manual
+    // journals (payroll, etc.) and they can touch arbitrary/unmapped accounts.
+    // Every other automated journal-represented posting always pushes; there is
+    // no per-source-type on/off (granularity remains configurable).
+    if (policy.syncable === false) {
       return {
         kind: "exclude",
-        reason: "SOURCE_TYPE_DISABLED",
-        message: `Source type "${sourceType}" is not enabled for posting sync`
+        reason: "MANUAL_DISABLED",
+        message:
+          "Manual journals are never synced — the external ledger owns manual journals; Carbon syncs only its automated postings"
       };
     }
     return { kind: "push", granularity: config.granularity };
@@ -443,7 +441,14 @@ export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   // A document push was skipped because the provider rejects edits to a
   // document that already carries payments (Xero paid/partially-paid bills).
   // User-fixable: void/unapply the payment in the provider, then retry.
-  "DOC_HAS_PAYMENTS"
+  "DOC_HAS_PAYMENTS",
+  // An outbound payment settles a document (invoice/bill) that hasn't been
+  // pushed to the provider yet — the provider payment references the document's
+  // remote id, so the document must sync first. A dependency-ordering Warning,
+  // NOT an account-mapping problem: it self-resolves once the document syncs
+  // (the outbound sweep / manual Retry re-drives the payment). Kept distinct
+  // from UNMAPPED_ACCOUNTS so it stops masquerading as a missing account.
+  "UNSYNCED_DOCUMENT"
 ] as const;
 
 export type JournalEntrySyncErrorCode =

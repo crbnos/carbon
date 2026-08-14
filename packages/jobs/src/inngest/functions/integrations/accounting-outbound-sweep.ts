@@ -193,8 +193,10 @@ async function sweepCompanyProvider(args: {
   };
 
   // 2. Candidate refs. Paging filters are SCOPE (which rows are worth
-  // asking about); every decision belongs to the reconciler.
-  if (isJournalEntryPostingEnabled(integration.metadata) && settings.enabled) {
+  // asking about); every decision belongs to the reconciler. Journal posting
+  // is always-on; the entity flag is a legacy escape hatch forced on by the
+  // provider configs.
+  if (isJournalEntryPostingEnabled(integration.metadata)) {
     const floor = getSweepFloorDate({
       todayIso: ctx.todayIso,
       syncFromDate: settings.syncFromDate

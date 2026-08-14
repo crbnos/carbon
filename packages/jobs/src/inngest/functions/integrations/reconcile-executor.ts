@@ -96,6 +96,7 @@ type LedgerRow = {
   errorCode: string | null;
   attemptCount: number;
   createdAt: string;
+  metadata: Record<string, unknown> | null;
 };
 
 /**
@@ -119,8 +120,12 @@ export async function reconcileEntities(args: {
 
   const settings = resolvePostingSyncSettings(args.integrationMetadata);
   const syncConfig = resolveSyncConfig(args.integrationMetadata);
-  const journalEntryPushEnabled =
-    isJournalEntryPostingEnabled(args.integrationMetadata) && settings.enabled;
+  // Always-on: automated postings sync whenever an accounting integration is
+  // connected — the old settings.enabled master gate is gone. The entity flag
+  // now defaults true and provider configs force it on.
+  const journalEntryPushEnabled = isJournalEntryPostingEnabled(
+    args.integrationMetadata
+  );
 
   const byType = new Map<ReconcileEntityType, string[]>();
   for (const ref of args.refs) {
@@ -165,7 +170,9 @@ export async function reconcileEntities(args: {
         : ids;
     const operations = await args.client
       .from("accountingSyncOperation")
-      .select("id, entityId, status, errorCode, attemptCount, createdAt")
+      .select(
+        "id, entityId, status, errorCode, attemptCount, createdAt, metadata"
+      )
       .eq("companyId", args.companyId)
       .eq("integration", args.providerId)
       .eq("entityType", entityType)
@@ -179,6 +186,7 @@ export async function reconcileEntities(args: {
     const coveredEntityIds = new Set<string>();
     const liveByEntity = new Set<string>();
     const latestByEntity = new Map<string, ReconcileLatestOperation>();
+    const targetDocumentByEntity = new Map<string, string>();
     for (const operation of (operations.data ?? []) as LedgerRow[]) {
       coveredEntityIds.add(operation.entityId);
       if (operation.status === "Pending" || operation.status === "In Flight") {
@@ -193,6 +201,12 @@ export async function reconcileEntities(args: {
           attemptCount: operation.attemptCount,
           createdAt: operation.createdAt
         });
+        const targetDocumentId = operation.metadata?.targetDocumentId;
+        if (typeof targetDocumentId === "string") {
+          targetDocumentByEntity.set(operation.entityId, targetDocumentId);
+        } else {
+          targetDocumentByEntity.delete(operation.entityId);
+        }
       }
     }
 
@@ -250,6 +264,44 @@ export async function reconcileEntities(args: {
       }
     }
 
+    // Payments parked Warning UNSYNCED_DOCUMENT: has the settled document
+    // (op metadata.targetDocumentId) since gained a provider mapping? One
+    // batched lookup across invoice + bill mappings for just those targets.
+    const mappedSettledTargets = new Set<string>();
+    if (entityType === "payment") {
+      const parkedTargets = [
+        ...new Set(
+          ids.flatMap((id) => {
+            const latest = latestByEntity.get(id);
+            const target = targetDocumentByEntity.get(id);
+            return latest?.status === "Warning" &&
+              latest.errorCode === "UNSYNCED_DOCUMENT" &&
+              target
+              ? [target]
+              : [];
+          })
+        )
+      ];
+      if (parkedTargets.length > 0) {
+        const targetMappings = await args.client
+          .from("externalIntegrationMapping")
+          .select("entityId")
+          .eq("companyId", args.companyId)
+          .eq("integration", args.providerId)
+          .in("entityType", ["invoice", "bill"])
+          .not("externalId", "is", null)
+          .in("entityId", parkedTargets);
+        if (targetMappings.error) {
+          throw new Error(
+            `Failed to load settled-document mappings: ${targetMappings.error.message}`
+          );
+        }
+        for (const row of targetMappings.data ?? []) {
+          mappedSettledTargets.add(row.entityId);
+        }
+      }
+    }
+
     const entityPushEnabled = isEntityPushEnabled(syncConfig, entityType);
 
     for (const entityId of ids) {
@@ -288,6 +340,14 @@ export async function reconcileEntities(args: {
           : {}),
         ...(entityType === "bill"
           ? { hasPostedBackingJournal: backingJournalByBill.has(entityId) }
+          : {}),
+        ...(entityType === "payment"
+          ? {
+              settledDocumentMapped: (() => {
+                const target = targetDocumentByEntity.get(entityId);
+                return target ? mappedSettledTargets.has(target) : false;
+              })()
+            }
           : {}),
         context: {
           journalEntryPushEnabled,

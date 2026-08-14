@@ -10,7 +10,7 @@ paths:
 
 Syncs Carbon entities <-> external accounting providers. **Three live providers**: Xero (`ProviderID.XERO`), QuickBooks Online (`ProviderID.QBO`), and Rillet (`ProviderID.RILLET`). (QuickBooks *Desktop* shipped then was removed 2026-08-01; Sage was never built.) `SyncFactory` is a **provider-keyed registry** (`registries[providerId][entityType]`) — each provider's `index.ts` barrel calls `SyncFactory.register(...)`. Runs on **Inngest** (the old trigger.dev `from-/to-accounting-sync` task design is gone — do not look for `UPSERT_MAP`/`DELETE_MAP` or a `trigger/` dir; neither exists).
 
-Design specs: `.ai/specs/implemented/2026-07-09-accounting-sync-engine.md` (v2 — engine, providers, ledger, pull sweep, **§Phase F inbound payment sync-back**), `.ai/specs/2026-08-02-accounting-sync-engine-v3.md` (journal policy, dimensions, tie-out), `.ai/specs/implemented/2026-08-11-accounting-sync-delivery-robustness.md` (v4 — delivery correctness: converged subscriptions, truthful ledger, outbound sweep, tie-out enforcement), and `.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md` (v5 — ONE state-shaped decision core; events are hints; the authoritative capstone where it conflicts with earlier specs).
+Design specs: `.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md` (v5 — ONE state-shaped decision core; events are hints; the authoritative design of record) and `.ai/specs/implemented/2026-08-05-accounting-document-representation.md` (AR/AP documents replay their posting journal; provider items non-tracked). The superseded v2/v3/v4 specs (engine + ledger + pull sweep + Phase F/G payment sync-back; journal policy/dimensions/tie-out; delivery robustness — converged subscriptions, truthful ledger, outbound sweep, tie-out enforcement) were removed 2026-08-13 — their shipped behavior is documented in THIS rule; their history is in git. **Always-on (implemented 2026-08-13, plan `.ai/plans/2026-08-13-accounting-sync-automated-postings-only.md` Tasks 1–6+8):** posting sync mirrors Carbon's automated GL postings whenever an accounting integration is connected — no master `postingSync.enabled` toggle, no per-source-type on/off, no `journalEntry` entity gate (defaulted on in `DEFAULT_SYNC_CONFIG` and forced on in every `build*SyncConfig`). `Manual` journals NEVER sync (`POSTING_POLICY.Manual.syncable: false` → permanent `MANUAL_DISABLED`). Legacy `enabled` fields stay in the stored schema for parse-compat but are never read; per-type granularity (individual vs daily-summary) remains the only per-type setting. Plan Tasks 7 (reversal/void propagation audit) and 9 (lock AR/AP families to documents) remain open.
 
 ## Architecture: class-per-entity syncers, not a handler map
 
@@ -85,7 +85,7 @@ Doctrine, mirroring the inbound pull sweep: **events are latency; the sweep is o
 
 - **Presence** — pages the last 90 days of Completed journalEntry ops and verifies each distinct externalId still exists remotely via `fetchRemoteJournalTotals` (`core/remote-journal.ts` — dispatches on the concrete provider class: Xero manual journals, Rillet journal entries, QBO journal entries; returns net debit-signed totals per remote account ref, `found: false` for missing/voided/deleted, never throws except `RatelimitError`). Drift entries land at `companyIntegration.metadata.settings.postingSync.lastReconciliation` (the SyncActivity banner's feed).
 - **Tie-out** — writes one `accountingSyncTieOut` row per (integration × accountingPeriod × account) (migration `20260811223145`; single-column FK to `accountingPeriod` — its PK is `(id)` alone; RLS is SELECT-only under `accounting_view`, rows written by the cron via service role). Per cell: `carbonPostedAmount` split into `synced/docBacked/excluded/pending/blocked` by each journal's ledger disposition (least-delivered bucket wins across an op + its `:reversal` twin; `DOC_BACKED` counts as delivered only while the backing document really synced), `providerAmount` from the presence fetches (strictly reused, never fetched twice; NULL when uncovered), `internalDelta` (I1: carbonPosted − sum of buckets) and `externalDelta` (I5: synced − provider).
-- **ERP surface** — `x+/accounting+/sync-tieout.tsx` (+ `$cellId` drawer drill-down), nav item under Accounting → Reports (`path.to.accountingSyncTieOut`); the SyncActivity tab gets a tie-out summary card + a Failed/Warning count badge. **Period close**: the "External GL sync complete" Blocker auto-check (`autoCheckKey: "external-gl-sync"`, seeded for new companies and reconciled for existing ones in the same migration) is computed by `getPeriodExternalGlSyncReadiness` (apps/erp `accounting.service.ts`) — every journal posted into the period must carry a terminal disposition (Completed/Excluded/Skipped) for every active posting-sync-enabled integration; auto-passes when no integration has posting sync on.
+- **ERP surface** — `x+/accounting+/sync-tieout.tsx` (+ `$cellId` drawer drill-down), nav item under Accounting → Reports (`path.to.accountingSyncTieOut`); the SyncActivity tab gets a tie-out summary card + a Failed/Warning count badge. **Period close**: the "External GL sync complete" Blocker auto-check (`autoCheckKey: "external-gl-sync"`, seeded for new companies and reconciled for existing ones in the same migration) is computed by `getPeriodExternalGlSyncReadiness` (apps/erp `accounting.service.ts`) — every journal posted into the period must carry a terminal disposition (Completed/Excluded/Skipped) for every active accounting integration; auto-passes only when NO active accounting integration exists (posting sync is always-on when one is connected).
 
 ## externalIntegrationMapping table
 
@@ -125,7 +125,12 @@ into Carbon as `payment` + `invoiceSettlement` rows that close the
 - Provider syncers: `providers/{rillet,quickbooks-online,xero}/entities/payment.ts`.
   Composite entity-id convention: AR = `<documentRemoteId>:<paymentRemoteId>` (no
   prefix, back-compat), AP = `bill:<billRemoteId>:<paymentRemoteId>`.
-  Detection: Rillet `/invoice-payments` + `/bill-payments` (poll); QBO `Payment` +
+  Detection: Rillet AR = `/invoice-payments?updated.gt` (poll). Rillet AP has NO
+  org-wide feed — `GET /bill-payments` does not exist (verified 404 on sandbox
+  2026-08-13; the unguarded call used to kill every pull sweep), so
+  `listBillPaymentsUpdatedSince` is composed: `GET /bills?updated.gt` (paying a
+  bill bumps its `updated_at`) then `GET /bills/{id}/payments` per changed bill,
+  each payment stamped with its bill's `updated_at`. QBO `Payment` +
   `BillPayment` (CDC + `webhook.quickbooks.$companyId.ts`); Xero `/Payments` via a
   new `listChanges` (`If-Modified-Since`) + Invoice-update webhook accelerator.
 - Gate: `isPaymentSyncbackEnabled(metadata, family)` — pull-back only when the
@@ -159,8 +164,8 @@ to mirror it, not separately confirmed. Trigger: the `payment` table has an even
 trigger (`20260807152238_payment-event-trigger.sql`) + a `rillet-sync`
 subscription from `REQUIRED_SYNC_SUBSCRIPTIONS` convergence (Rillet-only; no
 migration backfill — see the subscriptions section); `getPaymentPushDecision`
-enqueues push only on a transition to Posted/Voided. Spec:
-`.ai/specs/implemented/2026-07-09-accounting-sync-engine.md` §Phase G.
+enqueues push only on a transition to Posted/Voided. (Phase G design lived in the
+removed v2 engine spec; the behavior is documented in this section — see git for history.)
 
 ## Document representation model (bills, invoices, items)
 

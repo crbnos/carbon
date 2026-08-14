@@ -3,6 +3,7 @@ import { sql } from "kysely";
 import { createMappingService } from "./external-mapping";
 import {
   type NormalizedPayment,
+  SETTLEMENT_KEY_SEPARATOR,
   upsertLocalPaymentDraft
 } from "./payment-application";
 import {
@@ -124,6 +125,41 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
   // =================================================================
   // Pull overrides: base upsert (Draft) + post-payment after commit
   // =================================================================
+
+  /**
+   * Payment mappings are identity-critical, so the base link is unsafe here:
+   * a payment Carbon pushed already carries this remote id — under a
+   * settlement-scoped key (`<paymentId>:<docId>`) for a multi-settlement
+   * fan-out — with `metadata.origin = "carbon"` (the void-echo routing flag).
+   * The base `link` would insert a second row for the same externalId (fatal:
+   * the mapping table's unique-externalId constraint) or, on the bare-id
+   * upsert path, `doUpdateSet` the metadata to null and wipe the origin.
+   * When ANY payment mapping already carries this remote id, refresh its sync
+   * timestamps and leave the row alone; only a genuinely new pull links.
+   */
+  protected async linkEntities(
+    tx: KyselyTx,
+    localId: string,
+    remoteId: string,
+    remoteUpdatedAt?: Date
+  ): Promise<void> {
+    const txMapping = createMappingService(tx, this.companyId);
+    const existing = await txMapping.getByExternalId(
+      this.provider.id,
+      remoteId,
+      "payment"
+    );
+    if (existing) {
+      await txMapping.touchLastSyncedAt(
+        "payment",
+        existing.entityId,
+        this.provider.id,
+        remoteUpdatedAt
+      );
+      return;
+    }
+    await super.linkEntities(tx, localId, remoteId, remoteUpdatedAt);
+  }
 
   async pullFromAccounting(remoteId: string): Promise<SyncResult> {
     const result = await super.pullFromAccounting(remoteId);
@@ -435,25 +471,33 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
         };
       }
 
-      // A Carbon-born payment: push it. v1 supports the single-settlement case
-      // (the Ramp scenario — one bill, one payment); multi-settlement,
-      // discounted, and FX payments are parked as Skipped (documented follow-ups).
-      const settlements = payment.settlements;
+      // A Carbon-born payment: push it — ONE provider payment per settled
+      // document (a multi-document payment fans out to N provider
+      // payments, each for its settlement's appliedAmount). Discounted and
+      // FX payments remain parked as Skipped (documented follow-ups).
+      const settlements = [...payment.settlements].sort((a, b) => {
+        const aTarget =
+          (family === "ar"
+            ? a.targetSalesInvoiceId
+            : a.targetPurchaseInvoiceId) ?? "";
+        const bTarget =
+          (family === "ar"
+            ? b.targetSalesInvoiceId
+            : b.targetPurchaseInvoiceId) ?? "";
+        return aTarget.localeCompare(bTarget);
+      });
       if (settlements.length === 0) {
         return skipped(
           entityId,
           `Payment ${entityId} has no settlements — nothing to push`
         );
       }
-      if (settlements.length > 1) {
-        return skipped(
-          entityId,
-          `Payment ${entityId} settles ${settlements.length} documents — outbound push of multi-document payments is not supported in v1`
-        );
-      }
-
-      const settlement = settlements[0]!;
-      if (settlement.discountAmount !== 0 || settlement.writeOffAmount !== 0) {
+      if (
+        settlements.some(
+          (settlement) =>
+            settlement.discountAmount !== 0 || settlement.writeOffAmount !== 0
+        )
+      ) {
         return skipped(
           entityId,
           `Payment ${entityId} carries a discount or write-off — outbound push of adjusted payments is not supported in v1`
@@ -466,49 +510,77 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
         );
       }
 
-      const targetDocumentId =
-        family === "ar"
-          ? settlement.targetSalesInvoiceId
-          : settlement.targetPurchaseInvoiceId;
-      if (!targetDocumentId) {
-        return skipped(
-          entityId,
-          `Payment ${entityId} settlement has no ${
-            family === "ar" ? "sales" : "purchase"
-          } invoice target`
-        );
-      }
+      // One mapping row per settlement makes the fan-out RESUMABLE: each
+      // pushed provider payment is linked immediately, so a failure on
+      // settlement k (e.g. its document not yet synced) leaves 1..k-1
+      // durable, and the retry pushes only what is still uncovered.
+      // Mapping entity keys: the bare payment id for single-settlement
+      // (back-compat with every existing v1 mapping) and
+      // `<paymentId>:<targetDocumentId>` per settlement otherwise.
+      const settlementKey = (targetDocumentId: string): string =>
+        settlements.length === 1
+          ? entityId
+          : `${entityId}${SETTLEMENT_KEY_SEPARATOR}${targetDocumentId}`;
 
-      const { remoteId, compositeEntityId } = await this.pushRemotePayment({
-        carbonPaymentId: entityId,
-        family,
-        targetDocumentId,
-        bankAccountId: payment.bankAccount,
-        amount: settlement.appliedAmount,
-        currencyCode: payment.currencyCode,
-        paidDate: payment.paidDate,
-        reference: payment.reference
-      });
+      let firstRemoteId: string | null = null;
+      for (const settlement of settlements) {
+        const targetDocumentId =
+          family === "ar"
+            ? settlement.targetSalesInvoiceId
+            : settlement.targetPurchaseInvoiceId;
+        if (!targetDocumentId) {
+          return skipped(
+            entityId,
+            `Payment ${entityId} settlement has no ${
+              family === "ar" ? "sales" : "purchase"
+            } invoice target`
+          );
+        }
 
-      // Stamp origin:"carbon" so a subsequent void of THIS payment echoes out
-      // (pulled payments have no origin and never echo their void back), and so
-      // a later pull of the same provider payment recognizes the composite and
-      // no-ops. Trigger-suppressed to break the sync loop.
-      await withTriggersDisabled(this.database, async (tx) => {
-        await createMappingService(tx, this.companyId).link(
+        const covered = await this.mappingService.getByEntity(
           "payment",
-          entityId,
-          this.provider.id,
-          compositeEntityId,
-          { metadata: { origin: "carbon" } }
+          settlementKey(targetDocumentId),
+          this.provider.id
         );
-      });
+        if (covered?.externalId) {
+          firstRemoteId ??= covered.externalId;
+          continue;
+        }
+
+        const { remoteId, compositeEntityId } = await this.pushRemotePayment({
+          carbonPaymentId: entityId,
+          family,
+          targetDocumentId,
+          bankAccountId: payment.bankAccount,
+          amount: settlement.appliedAmount,
+          currencyCode: payment.currencyCode,
+          paidDate: payment.paidDate,
+          reference: payment.reference
+        });
+        firstRemoteId ??= remoteId;
+
+        // Stamp origin:"carbon" so a subsequent void of THIS payment echoes
+        // out (pulled payments have no origin and never echo their void
+        // back), and so a later pull of the same provider payment
+        // recognizes the composite and no-ops. Linked per settlement so
+        // partial fan-out progress survives a failure. Trigger-suppressed
+        // to break the sync loop.
+        await withTriggersDisabled(this.database, async (tx) => {
+          await createMappingService(tx, this.companyId).link(
+            "payment",
+            settlementKey(targetDocumentId),
+            this.provider.id,
+            compositeEntityId,
+            { metadata: { origin: "carbon" } }
+          );
+        });
+      }
 
       return {
         status: "success",
         action: "created",
         localId: entityId,
-        remoteId
+        remoteId: firstRemoteId ?? undefined
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {

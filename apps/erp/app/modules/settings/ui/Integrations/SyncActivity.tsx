@@ -31,12 +31,13 @@ import {
   LuChevronLeft,
   LuChevronRight,
   LuCircleSlash,
+  LuRefreshCw,
   LuRotateCw,
   LuScale,
   LuSend,
   LuTriangleAlert
 } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { Link, useFetcher, useRevalidator } from "react-router";
 import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -244,6 +245,11 @@ export function SyncActivity({
   const fetcher = useFetcher();
   const isTransitioning = fetcher.state !== "idle";
 
+  // The tab's data (operations, tie-out, reconciliation) lives in the
+  // route loader, so a manual refresh re-runs the loader in place.
+  const revalidator = useRevalidator();
+  const isRefreshing = revalidator.state === "loading";
+
   const submitTransition = useCallback(
     (ids: string[], to: "Pending" | "Skipped") => {
       if (ids.length === 0) return;
@@ -327,18 +333,39 @@ export function SyncActivity({
               </Button>
             ))}
           </div>
-          {(status === "Failed" || status === "Warning") &&
-            retryableIds.length > 0 && (
-              <Button
-                size="sm"
-                variant="secondary"
-                leftIcon={<LuRotateCw />}
-                isDisabled={!canUpdate || isTransitioning}
-                onClick={() => submitTransition(retryableIds, "Pending")}
-              >
-                <Trans>Retry all</Trans>
-              </Button>
-            )}
+          <div className="flex items-center gap-1">
+            {(status === "Failed" || status === "Warning") &&
+              retryableIds.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  leftIcon={<LuRotateCw />}
+                  isDisabled={!canUpdate || isTransitioning}
+                  onClick={() => submitTransition(retryableIds, "Pending")}
+                >
+                  <Trans>Retry all</Trans>
+                </Button>
+              )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <IconButton
+                  aria-label={t`Refresh`}
+                  icon={
+                    <LuRefreshCw
+                      className={cn(isRefreshing && "animate-spin")}
+                    />
+                  }
+                  variant="secondary"
+                  size="sm"
+                  isDisabled={isRefreshing}
+                  onClick={() => revalidator.revalidate()}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <Trans>Refresh</Trans>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
         <div className="w-full rounded-lg border border-border">

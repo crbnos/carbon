@@ -5783,9 +5783,6 @@ msgstr "Включить в параметрах"
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Включить уведомления, когда запрос коммерческого предложения отмечен как готовый к цитированию."
 
-msgid "Enable posting sync"
-msgstr "Включить синхронизацию проводок"
-
 msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 msgstr "Включите режим общей рабочей станции для терминалов MES. Операторы идентифицируют себя по PIN-коду перед выполнением работы."
 
@@ -11030,8 +11027,8 @@ msgstr "Опубликовано"
 msgid "Posted By"
 msgstr "Опубликовано"
 
-msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
-msgstr "Опубликованные журналы с этими типами источников отправляются. Ежедневная сводка объединяет журналы дня в одну запись провайдера по каждому счету."
+msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
+msgstr "Опубликованные журналы с этими типами источников всегда синхронизируются. Ежедневная сводка группирует журналы дня в одну запись поставщика для каждого счета."
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "Опубликовано один раз, исправлено {corrections} раз(а)."
@@ -11497,9 +11494,6 @@ msgstr "Отправить"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Переместить его с переустановленной датой на первый открытый день, сохраняя исходную дату в примечании."
-
-msgid "Push posted journals for the enabled source types to the accounting provider."
-msgstr "Отправить опубликованные журналы для включенных типов источников поставщику учета."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Отправляйте изменения записей во внешние системы в момент их возникновения."

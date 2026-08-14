@@ -778,13 +778,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const postingSync = resolvedPostingSettings
     ? {
         settings: {
-          enabled: resolvedPostingSettings.enabled,
           families: resolvedPostingSettings.families,
           sourceTypes: resolvedPostingSettings.sourceTypes,
           periodLockPolicy: resolvedPostingSettings.periodLockPolicy,
           lockDate: resolvedPostingSettings.lockDate
         },
-        policy: JOURNAL_ENTRY_SOURCE_TYPES.map((sourceType) => ({
+        // Manual never syncs (POSTING_POLICY syncable: false) and is never
+        // rendered as a configurable row.
+        policy: JOURNAL_ENTRY_SOURCE_TYPES.filter(
+          (sourceType) => sourceType !== "Manual"
+        ).map((sourceType) => ({
           sourceType,
           representation: POSTING_POLICY[sourceType].representation,
           family: POSTING_POLICY[sourceType].family ?? null
@@ -1237,7 +1240,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const {
-      enabled,
       sourceTypeConfigs,
       familyAr,
       familyAp,
@@ -1246,13 +1248,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     } = validation.data;
 
     // "<sourceType>|<granularity>" hidden fields → the v3 per-source-type
-    // record (journal-represented types only; document-represented types
-    // fill from POSTING_POLICY defaults at resolution time)
+    // record. Always-on: every non-Manual journal-represented type is
+    // enabled; the form only carries granularity. Manual is hard-excluded
+    // (POSTING_POLICY marks it syncable: false; resolution fills its entry
+    // from defaults). Document-represented types fill from POSTING_POLICY
+    // defaults at resolution time.
     const sourceTypes: Record<
       string,
       { enabled: boolean; granularity: "individual" | "daily-summary" }
     > = {};
-    const enabledConfigs = new Map(
+    const granularityBySourceType = new Map(
       sourceTypeConfigs.map((config) => {
         const separator = config.lastIndexOf("|");
         return [
@@ -1263,13 +1268,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
     for (const sourceType of JOURNAL_ENTRY_SOURCE_TYPES) {
       if (POSTING_POLICY[sourceType].representation !== "journal") continue;
-      const granularity = enabledConfigs.get(sourceType);
-      sourceTypes[sourceType] = granularity
-        ? { enabled: true, granularity }
-        : {
-            enabled: false,
-            granularity: POSTING_POLICY[sourceType].defaultGranularity
-          };
+      if (sourceType === "Manual") continue;
+      sourceTypes[sourceType] = {
+        enabled: true,
+        granularity:
+          granularityBySourceType.get(sourceType) ??
+          POSTING_POLICY[sourceType].defaultGranularity
+      };
     }
 
     const existing = await getIntegration(client, integrationId, companyId);
@@ -1302,39 +1307,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
       | Record<string, unknown>
       | undefined) ?? {}) as Record<string, unknown>;
 
-    // The Posting toggle must flip BOTH gates: the syncers' shouldSync
-    // reads settings.postingSync.enabled, while the enqueue path
-    // (isJournalEntryPostingEnabled in @carbon/jobs) reads the resolved
-    // syncConfig.entities.journalEntry.enabled (default false). Mirroring
-    // the flag here keeps one switch in the UI.
-    const existingSyncConfig =
-      (existingMetadata.syncConfig as Record<string, unknown> | undefined) ??
-      {};
-    const existingSyncEntities =
-      (existingSyncConfig.entities as Record<string, unknown> | undefined) ??
-      {};
+    // Always-on: posting sync has no master toggle anymore. `enabled` is no
+    // longer written to postingSync (the stored-schema default is true, and
+    // the decision core doesn't read it), and there is no
+    // syncConfig.entities.journalEntry mirror to maintain — the provider
+    // configs force journalEntry on. Writing the v3 shape also strips any
+    // stale stored `enabled: false` from both places on the next save.
+    const { enabled: _legacyEnabled, ...postingSyncWithoutEnabled } =
+      existingPostingSync;
 
     const metadata = {
       ...existingMetadata,
       settings: {
         ...existingSettings,
         postingSync: {
-          ...existingPostingSync,
-          enabled,
+          ...postingSyncWithoutEnabled,
           families: { ar: familyAr, ap: familyAp },
           sourceTypes,
           periodLockPolicy,
           ...(lockDate ? { lockDate } : {})
-        }
-      },
-      syncConfig: {
-        ...existingSyncConfig,
-        entities: {
-          ...existingSyncEntities,
-          journalEntry: {
-            ...(existingSyncEntities.journalEntry as Record<string, unknown>),
-            enabled
-          }
         }
       }
     };

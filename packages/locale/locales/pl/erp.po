@@ -5783,9 +5783,6 @@ msgstr "Włącz w Ustawieniach"
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Włącz powiadomienia, gdy RFQ zostanie oznaczone jako gotowe do wyceny."
 
-msgid "Enable posting sync"
-msgstr "Włącz synchronizację księgowania"
-
 msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 msgstr "Włącz tryb wspólnej stacji roboczej dla terminali MES. Operatorzy identyfikują się za pomocą PIN przed wykonaniem pracy."
 
@@ -11030,8 +11027,8 @@ msgstr "Opublikowane przez"
 msgid "Posted By"
 msgstr "Opublikowano przez"
 
-msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
-msgstr "Zaksięgowane dzienniki z tymi typami źródła są wypychane. Podsumowanie dzienne grupuje dzienniki dnia w jeden wpis dostawcy na konto."
+msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
+msgstr "Zaksięgowane dzienniki z tymi typami źródeł zawsze się synchronizują. Dzienne podsumowanie grupuje dzienniki z jednego dnia w jeden wpis dostawcy na konto."
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "Opublikowane raz, poprawione {corrections} razy."
@@ -11497,9 +11494,6 @@ msgstr "Wyślij"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "Przesuń go z nową datą na pierwszy otwarty dzień, zachowując oryginalną datę w naracji."
-
-msgid "Push posted journals for the enabled source types to the accounting provider."
-msgstr "Wyślij zaksięgowane dzienniki dla włączonych typów źródła do dostawcy systemu księgowego."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Wyślij zmiany rekordów do systemów zewnętrznych w momencie ich wystąpienia."

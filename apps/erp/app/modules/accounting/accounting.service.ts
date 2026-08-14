@@ -2405,15 +2405,13 @@ const TERMINAL_SYNC_OPERATION_STATUSES = new Set([
  * The "External GL sync complete" close auto-check (autoCheckKey
  * "external-gl-sync"): every journal posted into the period must carry a
  * terminal disposition (Completed / Excluded / Skipped) in the
- * accountingSyncOperation ledger for EVERY active accounting integration
- * whose posting sync is enabled. A reversal journal (reversalOfId set) is
- * delivered through the ORIGINAL journal's "<id>:reversal" operation — the
- * reversal row never gets its own ledger entry (see
- * getJournalSyncCompleteness). Auto-passes (failing false, count 0) when no
- * active accounting integration has posting sync on. Reads
- * metadata.settings.postingSync directly instead of importing
- * @carbon/ee/accounting — see the TS2589 notes in the settings Integrations
- * components.
+ * accountingSyncOperation ledger for EVERY active accounting integration.
+ * Posting sync is ALWAYS-ON when an integration is connected, so the check
+ * gates on integration presence alone — it auto-passes (failing false,
+ * count 0) only when NO active accounting integration exists. A reversal
+ * journal (reversalOfId set) is delivered through the ORIGINAL journal's
+ * "<id>:reversal" operation — the reversal row never gets its own ledger
+ * entry (see getJournalSyncCompleteness).
  */
 export async function getPeriodExternalGlSyncReadiness(
   client: SupabaseClient<Database>,
@@ -2423,22 +2421,14 @@ export async function getPeriodExternalGlSyncReadiness(
 ): Promise<{ failing: boolean; count: number; postingSyncEnabled: boolean }> {
   const integrations = await client
     .from("companyIntegration")
-    .select("id, metadata")
+    .select("id")
     .eq("companyId", companyId)
     .eq("active", true)
     .in("id", ACCOUNTING_SYNC_INTEGRATION_IDS);
 
-  const enabledIntegrationIds = (integrations.data ?? [])
-    .filter((integration) => {
-      const settings =
-        integration.metadata &&
-        typeof integration.metadata === "object" &&
-        !Array.isArray(integration.metadata)
-          ? (integration.metadata as Record<string, any>).settings
-          : null;
-      return settings?.postingSync?.enabled === true;
-    })
-    .map((integration) => integration.id);
+  const enabledIntegrationIds = (integrations.data ?? []).map(
+    (integration) => integration.id
+  );
 
   if (enabledIntegrationIds.length === 0) {
     return { failing: false, count: 0, postingSyncEnabled: false };
@@ -2721,12 +2711,13 @@ async function computePeriodReadiness(
       failing: unbalanced.length > 0,
       count: unbalanced.length
     },
-    // Auto-pass when posting sync is off: getPeriodExternalGlSyncReadiness
-    // returns failing false / count 0 with no enabled integration. This
-    // evaluator MUST exist for the seeded "External GL sync complete" task
-    // (autoCheckKey "external-gl-sync") — an Auto task with no registered
-    // evaluator fails closed in evaluateCloseChecklist and would block every
-    // close.
+    // Auto-pass only when NO accounting integration is connected:
+    // getPeriodExternalGlSyncReadiness returns failing false / count 0 with
+    // no active integration (posting sync is always-on when one exists).
+    // This evaluator MUST exist for the seeded "External GL sync complete"
+    // task (autoCheckKey "external-gl-sync") — an Auto task with no
+    // registered evaluator fails closed in evaluateCloseChecklist and would
+    // block every close.
     {
       autoCheckKey: "external-gl-sync",
       severity: "Blocker",
@@ -5701,8 +5692,9 @@ export async function getAccountingSyncTieOut(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: {
-    integration?: string | null;
+    integration?: string | string[] | null;
     accountingPeriodId?: string | null;
+    accountId?: string | string[] | null;
   }
 ): Promise<{
   data: AccountingSyncTieOutListItem[] | null;
@@ -5715,10 +5707,17 @@ export async function getAccountingSyncTieOut(
     (query: any) => {
       let filtered = query.eq("companyId", companyId);
       if (args?.integration) {
-        filtered = filtered.eq("integration", args.integration);
+        filtered = Array.isArray(args.integration)
+          ? filtered.in("integration", args.integration)
+          : filtered.eq("integration", args.integration);
       }
       if (args?.accountingPeriodId) {
         filtered = filtered.eq("accountingPeriodId", args.accountingPeriodId);
+      }
+      if (args?.accountId) {
+        filtered = Array.isArray(args.accountId)
+          ? filtered.in("accountId", args.accountId)
+          : filtered.eq("accountId", args.accountId);
       }
       return filtered.order("id", { ascending: true });
     }

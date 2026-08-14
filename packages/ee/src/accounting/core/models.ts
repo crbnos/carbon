@@ -240,7 +240,11 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
       owner: "carbon"
     },
     journalEntry: {
-      enabled: false, // posting sync is opt-in per company
+      // Always-on: automated postings ARE the sync (the always-on model) —
+      // connecting an accounting integration means Carbon's automated GL
+      // postings mirror to it. Manual journals are excluded by POSTING_POLICY
+      // (syncable: false), not by this flag.
+      enabled: true,
       direction: "push-to-accounting",
       owner: "carbon"
     }
@@ -277,6 +281,13 @@ export type PostingPolicyEntry = {
    * those park loudly in documents mode instead of excluding silently.
    */
   backingEntityType?: "invoice" | "bill" | "payment" | null;
+  /**
+   * `false` ONLY for `Manual` — manual journals are NEVER synced in any engine.
+   * They can touch arbitrary/unmapped accounts, and the external ledger owns
+   * manual journals (payroll, etc.); Carbon syncs only its automated postings.
+   * Omitted ⇒ syncable (every automated posting type).
+   */
+  syncable?: boolean;
   defaultEnabled: boolean;
   defaultGranularity: PostingGranularity;
 };
@@ -293,6 +304,7 @@ export const POSTING_POLICY: Record<
 > = {
   Manual: {
     representation: "journal",
+    syncable: false,
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
@@ -534,7 +546,12 @@ function normalizeStoredPostingSyncSettings(raw: unknown): unknown {
 }
 
 const PostingSyncStoredSchema = z.object({
-  enabled: z.boolean().default(false),
+  /**
+   * Kept for backward-compatible parsing of stored fragments ONLY (D2:
+   * keep-but-ignore). The decision core no longer reads it — posting sync is
+   * always-on when an accounting integration is connected.
+   */
+  enabled: z.boolean().default(true),
   syncFromDate: z.string().optional(),
   /**
    * AR/AP family representation (spec §2): documents (default — native
@@ -590,10 +607,12 @@ export const PostingSyncSettingsSchema = z.preprocess(
       };
     }
 
+    // Always-on: the set of syncing journal types is defined by POSTING_POLICY
+    // (journal-represented, non-Manual), never by stored per-type enables.
     const enabledJournalTypes = JOURNAL_ENTRY_SOURCE_TYPES.filter(
       (sourceType) =>
         POSTING_POLICY[sourceType].representation === "journal" &&
-        sourceTypes[sourceType].enabled
+        POSTING_POLICY[sourceType].syncable !== false
     );
     const consolidation: "individual" | "daily" =
       enabledJournalTypes.length > 0 &&

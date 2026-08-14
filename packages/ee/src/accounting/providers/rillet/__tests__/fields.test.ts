@@ -172,6 +172,173 @@ describe("RilletProvider.upsertFieldValue", () => {
       makeProvider().upsertFieldValue(DEPARTMENT_FIELD.id, "Not There")
     ).rejects.toThrowError(/not on the returned field/);
   });
+
+  it("trims a trailing-space value and matches Rillet's trimmed store (production-event field failure)", async () => {
+    // Carbon dimension labels can carry inconsistent whitespace ("Test " vs
+    // "Test"); Rillet trims on write. POST must carry the trimmed name and the
+    // match must be trim-tolerant, else the whole journal fails on a string miss
+    // ("Test " is not on the returned field ...).
+    const fieldWithTest = {
+      ...DEPARTMENT_FIELD,
+      values: [
+        ...DEPARTMENT_FIELD.values,
+        {
+          id: "fv100000-0000-0000-0000-00000000000b",
+          name: "Test",
+          deactivated: false
+        }
+      ]
+    };
+    fetchMock.mockResolvedValueOnce(jsonResponse({ field: fieldWithTest }));
+
+    const value = await makeProvider().upsertFieldValue(
+      DEPARTMENT_FIELD.id,
+      "Test "
+    );
+
+    expect(value.id).toBe("fv100000-0000-0000-0000-00000000000b");
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      name: "Test"
+    });
+  });
+
+  it("recovers across whitespace when Rillet 400s 'already exists' but stored the value trimmed", async () => {
+    // A prior line created "Test " → Rillet stored "Test". This line upserts
+    // "Test" → 400 already-exists; recovery must match the stored value by
+    // trimmed name, not exact string.
+    const fieldWithTest = {
+      ...DEPARTMENT_FIELD,
+      values: [
+        ...DEPARTMENT_FIELD.values,
+        {
+          id: "fv100000-0000-0000-0000-00000000000c",
+          name: "Test ",
+          deactivated: false
+        }
+      ]
+    };
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            title: "Bad Request",
+            status: 400,
+            detail: 'Value "Test" already exists.'
+          },
+          400
+        )
+      )
+      .mockResolvedValueOnce(jsonResponse({ fields: [fieldWithTest] }));
+
+    const value = await makeProvider().upsertFieldValue(
+      DEPARTMENT_FIELD.id,
+      "Test"
+    );
+
+    expect(value.id).toBe("fv100000-0000-0000-0000-00000000000c");
+  });
+
+  it("recovers the existing value's uuid when Rillet 400s 'already exists' (mapping lost / value seeded in Rillet)", async () => {
+    // POST /fields/{id}/values rejects a name that already exists (Rillet is
+    // NOT idempotent by name — the bill-sync failure in the field). The
+    // recovery reads the value back by name via GET /fields.
+    const fieldWithHeadquarters = {
+      ...DEPARTMENT_FIELD,
+      values: [
+        ...DEPARTMENT_FIELD.values,
+        {
+          id: "fv100000-0000-0000-0000-00000000000a",
+          name: "Headquarters",
+          deactivated: false
+        }
+      ]
+    };
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            title: "Bad Request",
+            status: 400,
+            detail: 'Value "Headquarters" already exists.'
+          },
+          400
+        )
+      )
+      .mockResolvedValueOnce(jsonResponse({ fields: [fieldWithHeadquarters] }));
+
+    const value = await makeProvider().upsertFieldValue(
+      DEPARTMENT_FIELD.id,
+      "Headquarters"
+    );
+
+    expect(value.id).toBe("fv100000-0000-0000-0000-00000000000a");
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe("POST");
+    expect(String(fetchMock.mock.calls[1]?.[0])).toBe(
+      "https://api.rillet.com/fields"
+    );
+  });
+
+  it("prefers a non-deactivated existing value when recovering by name", async () => {
+    const fieldWithDupes = {
+      ...DEPARTMENT_FIELD,
+      values: [
+        {
+          id: "fv-deactivated",
+          name: "Headquarters",
+          deactivated: true
+        },
+        {
+          id: "fv-active",
+          name: "Headquarters",
+          deactivated: false
+        }
+      ]
+    };
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(
+          { detail: 'Value "Headquarters" already exists.', status: 400 },
+          400
+        )
+      )
+      .mockResolvedValueOnce(jsonResponse({ fields: [fieldWithDupes] }));
+
+    const value = await makeProvider().upsertFieldValue(
+      DEPARTMENT_FIELD.id,
+      "Headquarters"
+    );
+
+    expect(value.id).toBe("fv-active");
+  });
+
+  it("re-throws an 'already exists' 400 when the value cannot be recovered (contract drift)", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(
+          { detail: 'Value "Headquarters" already exists.', status: 400 },
+          400
+        )
+      )
+      // GET /fields returns the field but WITHOUT the value — should not
+      // swallow the error into a broken ref.
+      .mockResolvedValueOnce(jsonResponse({ fields: [DEPARTMENT_FIELD] }));
+
+    await expect(
+      makeProvider().upsertFieldValue(DEPARTMENT_FIELD.id, "Headquarters")
+    ).rejects.toBeInstanceOf(AccountingApiError);
+  });
+
+  it("re-throws a non-'already exists' 400 without attempting recovery", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ detail: "Field not found.", status: 400 }, 400)
+    );
+
+    await expect(
+      makeProvider().upsertFieldValue(DEPARTMENT_FIELD.id, "Headquarters")
+    ).rejects.toBeInstanceOf(AccountingApiError);
+    // Only the POST — no GET /fields recovery attempt.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("RilletProvider.journalDimensionTargets", () => {

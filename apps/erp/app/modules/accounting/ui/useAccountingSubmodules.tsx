@@ -23,6 +23,10 @@ import { path } from "~/utils/path";
 
 const multiCompanyRoutes = new Set<string>([path.to.intercompany]);
 
+/** Routes that only make sense with an active accounting integration
+ * (xero/quickbooks/rillet) — hidden otherwise. */
+const integrationRoutes = new Set<string>([path.to.accountingSyncTieOut]);
+
 export default function useAccountingSubmodules() {
   const { t } = useLingui();
   const accountingRoutes: AuthenticatedRouteGroup[] = useMemo(
@@ -143,14 +147,19 @@ export default function useAccountingSubmodules() {
   );
 
   const permissions = usePermissions();
-  const routeData = useRouteData<{ hasMultipleCompanies: boolean }>(
-    path.to.accounting
-  );
+  const routeData = useRouteData<{
+    hasMultipleCompanies: boolean;
+    accountingIntegrations: string[];
+  }>(path.to.accounting);
   const hasMultipleCompanies = routeData?.hasMultipleCompanies ?? false;
+  const hasAccountingIntegration =
+    (routeData?.accountingIntegrations?.length ?? 0) > 0;
 
   const isRouteVisible = (route: { to: string; role?: string }) => {
     if (route.role && !permissions.is(route.role as Role)) return false;
     if (!hasMultipleCompanies && multiCompanyRoutes.has(route.to)) return false;
+    if (!hasAccountingIntegration && integrationRoutes.has(route.to))
+      return false;
     return true;
   };
 

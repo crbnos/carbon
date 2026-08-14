@@ -1,5 +1,4 @@
 import {
-  Boolean as BooleanField,
   ChoiceCardGroup,
   DatePicker,
   Select,
@@ -33,7 +32,6 @@ import { postingSyncSettingsValidator } from "~/modules/settings/settings.models
 export type PostingSyncFamilyMode = "documents" | "journals" | "none";
 
 export type PostingSyncSettingsValues = {
-  enabled: boolean;
   families: { ar: PostingSyncFamilyMode; ap: PostingSyncFamilyMode };
   sourceTypes: Record<
     string,
@@ -60,7 +58,6 @@ type PostingSyncSettingsProps = {
 };
 
 type SourceTypeRowState = {
-  enabled: boolean;
   dailySummary: boolean;
 };
 
@@ -116,7 +113,11 @@ export function PostingSyncSettings({
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "settings");
 
-  const journalRows = policy.filter((row) => row.representation === "journal");
+  // Always-on: every automated (non-Manual) journal type syncs; Manual never
+  // does and is never rendered. The only per-type control is granularity.
+  const journalRows = policy.filter(
+    (row) => row.representation === "journal" && row.sourceType !== "Manual"
+  );
   const documentRows = policy.filter(
     (row) => row.representation === "document"
   );
@@ -128,10 +129,7 @@ export function PostingSyncSettings({
           const config = settings.sourceTypes[row.sourceType];
           return [
             row.sourceType,
-            {
-              enabled: config?.enabled ?? false,
-              dailySummary: config?.granularity === "daily-summary"
-            }
+            { dailySummary: config?.granularity === "daily-summary" }
           ];
         })
       )
@@ -144,7 +142,6 @@ export function PostingSyncSettings({
     setRowState((current) => ({
       ...current,
       [sourceType]: {
-        enabled: current[sourceType]?.enabled ?? false,
         dailySummary: current[sourceType]?.dailySummary ?? false,
         ...patch
       }
@@ -171,7 +168,6 @@ export function PostingSyncSettings({
       method="post"
       defaultValues={{
         intent: "update-posting-settings",
-        enabled: settings.enabled,
         familyAr:
           settings.families.ar === "journals"
             ? "documents"
@@ -186,28 +182,20 @@ export function PostingSyncSettings({
       className="flex h-full min-h-0 flex-1 flex-col"
     >
       <input type="hidden" name="intent" value="update-posting-settings" />
-      {journalRows
-        .filter((row) => rowState[row.sourceType]?.enabled)
-        .map((row) => (
-          <input
-            key={row.sourceType}
-            type="hidden"
-            name="sourceTypeConfigs"
-            value={`${row.sourceType}|${
-              rowState[row.sourceType]?.dailySummary
-                ? "daily-summary"
-                : "individual"
-            }`}
-          />
-        ))}
+      {journalRows.map((row) => (
+        <input
+          key={row.sourceType}
+          type="hidden"
+          name="sourceTypeConfigs"
+          value={`${row.sourceType}|${
+            rowState[row.sourceType]?.dailySummary
+              ? "daily-summary"
+              : "individual"
+          }`}
+        />
+      ))}
       <DrawerBody className="gap-6">
         {tabs}
-        <BooleanField
-          name="enabled"
-          bordered
-          label={t`Enable posting sync`}
-          description={t`Push posted journals for the enabled source types to the accounting provider.`}
-        />
         {mappingReadiness && (
           <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5 text-sm">
             <span>
@@ -238,7 +226,7 @@ export function PostingSyncSettings({
             </span>
             <p className="text-xs text-muted-foreground">
               <Trans>
-                Posted journals with these source types are pushed. Daily
+                Posted journals with these source types always sync. Daily
                 summary groups a day's journals into one provider entry per
                 account.
               </Trans>
@@ -252,40 +240,25 @@ export function PostingSyncSettings({
                   key={row.sourceType}
                   className="flex items-center gap-3 px-3 py-2.5"
                 >
-                  <Checkbox
-                    id={`postingSourceType:${row.sourceType}`}
-                    checked={state?.enabled ?? false}
-                    disabled={!canUpdate}
-                    onCheckedChange={(next) =>
-                      setRow(row.sourceType, { enabled: next === true })
-                    }
-                  />
-                  <label
-                    htmlFor={`postingSourceType:${row.sourceType}`}
-                    className="flex-1 cursor-pointer text-sm"
-                  >
-                    {row.sourceType}
-                  </label>
-                  {state?.enabled && (
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id={`postingGranularity:${row.sourceType}`}
-                        checked={state.dailySummary}
-                        disabled={!canUpdate}
-                        onCheckedChange={(next) =>
-                          setRow(row.sourceType, {
-                            dailySummary: next === true
-                          })
-                        }
-                      />
-                      <label
-                        htmlFor={`postingGranularity:${row.sourceType}`}
-                        className="cursor-pointer text-xs text-muted-foreground"
-                      >
-                        <Trans>Daily summary</Trans>
-                      </label>
-                    </div>
-                  )}
+                  <span className="flex-1 text-sm">{row.sourceType}</span>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`postingGranularity:${row.sourceType}`}
+                      checked={state?.dailySummary ?? false}
+                      disabled={!canUpdate}
+                      onCheckedChange={(next) =>
+                        setRow(row.sourceType, {
+                          dailySummary: next === true
+                        })
+                      }
+                    />
+                    <label
+                      htmlFor={`postingGranularity:${row.sourceType}`}
+                      className="cursor-pointer text-xs text-muted-foreground"
+                    >
+                      <Trans>Daily summary</Trans>
+                    </label>
+                  </div>
                 </div>
               );
             })}

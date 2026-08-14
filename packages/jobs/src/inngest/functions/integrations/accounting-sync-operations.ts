@@ -223,10 +223,10 @@ export function getJournalPostingDecision(
 }
 
 /**
- * Posting sync is opt-in per company: journal events enqueue only when the
- * integration's RESOLVED sync config enables the journalEntry entity
- * (disabled in DEFAULT_SYNC_CONFIG, so a company must have stored an
- * override).
+ * Journal posting is ALWAYS-ON: enabled in DEFAULT_SYNC_CONFIG and forced on
+ * by every provider's build*SyncConfig, so this resolves true for any
+ * connected accounting integration. Kept as a function (not a constant) so a
+ * future provider that genuinely can't take journals has a seam to say so.
  */
 export function isJournalEntryPostingEnabled(
   integrationMetadata: unknown

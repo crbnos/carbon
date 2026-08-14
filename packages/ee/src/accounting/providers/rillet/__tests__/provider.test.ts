@@ -344,6 +344,55 @@ describe("RilletProvider chart of accounts", () => {
   });
 });
 
+describe("RilletProvider field values", () => {
+  it("recovers the existing value when the create 400s with already-exists", async () => {
+    // POST /fields/{id}/values is NOT idempotent server-side (sandbox-verified
+    // 2026-08-14): a value provisioned by an earlier instance or seeded in the
+    // Rillet UI 400s. The provider must fall back to GET /fields and return
+    // the existing value instead of failing the whole document push.
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          title: "Bad Request",
+          status: 400,
+          detail: 'Value "Headquarters" already exists'
+        },
+        400
+      )
+    );
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        fields: [
+          {
+            id: "field-1",
+            name: "Location",
+            values: [{ id: "val-1", name: "Headquarters" }]
+          }
+        ]
+      })
+    );
+
+    const provider = makeProvider();
+    await expect(
+      provider.upsertFieldValue("field-1", "Headquarters")
+    ).resolves.toMatchObject({ id: "val-1", name: "Headquarters" });
+
+    const urls = fetchMock.mock.calls.map((call) => call[0] as string);
+    expect(urls[0]).toContain("/fields/field-1/values");
+    expect(urls[1]).toContain("/fields");
+  });
+
+  it("rethrows a non-duplicate failure without listing fields", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ title: "Unauthorized", status: 401 }, 401)
+    );
+
+    const provider = makeProvider();
+    await expect(provider.upsertFieldValue("field-1", "HQ")).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("RilletProvider cursor pagination", () => {
   it("follows pagination.next_cursor with limit=100 until absent", async () => {
     fetchMock.mockResolvedValueOnce(
@@ -429,10 +478,21 @@ describe("buildRilletSyncConfig", () => {
     });
     expect(built.entities.journalEntry.direction).toBe("push-to-accounting");
     expect(built.entities.journalEntry.owner).toBe("carbon");
-    // journalEntry enabled survives from the resolved config (default off)
-    expect(built.entities.journalEntry.enabled).toBe(
-      DEFAULT_SYNC_CONFIG.entities.journalEntry.enabled
-    );
+    // Always-on: journalEntry is FORCED enabled — a stale stored
+    // enabled:false override cannot turn automated postings off.
+    expect(built.entities.journalEntry.enabled).toBe(true);
+    expect(
+      buildRilletSyncConfig({
+        entities: {
+          ...DEFAULT_SYNC_CONFIG.entities,
+          journalEntry: {
+            enabled: false,
+            direction: "push-to-accounting",
+            owner: "carbon"
+          }
+        }
+      }).entities.journalEntry.enabled
+    ).toBe(true);
 
     // Payment: two-way (pull inbound + push Carbon-born outbound, Phase G),
     // owner accounting, and FORCED enabled (no per-company toggle — the
@@ -472,8 +532,8 @@ describe("listChanges (SupportsIncrementalPull)", () => {
         ]
       })
     );
-    // AP bill-payments feed — empty for this AR-focused case.
-    fetchMock.mockResolvedValueOnce(jsonResponse({ payments: [] }));
+    // AP changed-bills feed — empty for this AR-focused case.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ bills: [] }));
 
     const result = await makeProvider().listChanges({
       since: "2026-07-30T00:00:00.000Z"
@@ -499,7 +559,13 @@ describe("listChanges (SupportsIncrementalPull)", () => {
   it("lists changed bill payments as `bill:`-prefixed changes with a bill dependency", async () => {
     // AR invoice-payments feed — empty for this AP-focused case.
     fetchMock.mockResolvedValueOnce(jsonResponse({ payments: [] }));
-    // AP bill-payments feed.
+    // AP feed is COMPOSED (GET /bill-payments does not exist): changed bills…
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        bills: [{ id: "bill-1", updated_at: "2026-08-01T12:00:00.000Z" }]
+      })
+    );
+    // …then that bill's payments.
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
         payments: [
@@ -510,7 +576,7 @@ describe("listChanges (SupportsIncrementalPull)", () => {
             amount: { amount: "500.00", currency: "USD" },
             updated_at: "2026-08-01T12:00:00.000Z"
           },
-          // No bill_id → unaddressable, logged and dropped
+          // No bill_id / updated_at of its own → stamped with the bill's
           { id: "bp-2", status: "UNCLEARED" }
         ]
       })
@@ -520,17 +586,26 @@ describe("listChanges (SupportsIncrementalPull)", () => {
       since: "2026-07-30T00:00:00.000Z"
     });
 
-    const billUrl = fetchMock.mock.calls[1]?.[0] as string;
-    expect(billUrl).toContain("/bill-payments?");
-    expect(billUrl).toContain(
+    const billsUrl = fetchMock.mock.calls[1]?.[0] as string;
+    expect(billsUrl).toContain("/bills?");
+    expect(billsUrl).toContain(
       `updated.gt=${encodeURIComponent("2026-07-30T00:00:00.000Z")}`
     );
-    expect(billUrl).toContain("sort_by=updated");
+    expect(billsUrl).toContain("sort_by=updated");
+
+    const billPaymentsUrl = fetchMock.mock.calls[2]?.[0] as string;
+    expect(billPaymentsUrl).toContain("/bills/bill-1/payments");
 
     expect(result.changes).toEqual([
       {
         entityType: "payment",
         remoteId: "bill:bill-1:bp-1",
+        updatedAt: "2026-08-01T12:00:00.000Z",
+        dependsOnMapping: { entityType: "bill", remoteId: "bill-1" }
+      },
+      {
+        entityType: "payment",
+        remoteId: "bill:bill-1:bp-2",
         updatedAt: "2026-08-01T12:00:00.000Z",
         dependsOnMapping: { entityType: "bill", remoteId: "bill-1" }
       }
@@ -548,6 +623,11 @@ describe("listChanges (SupportsIncrementalPull)", () => {
             updated_at: "2026-07-31T12:00:00.000Z"
           }
         ]
+      })
+    );
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        bills: [{ id: "bill-1", updated_at: "2026-08-01T12:00:00.000Z" }]
       })
     );
     fetchMock.mockResolvedValueOnce(
@@ -604,14 +684,14 @@ describe("listChanges (SupportsIncrementalPull)", () => {
           pagination: { next_cursor: null }
         })
       )
-      // AP bill-payments feed — single empty page.
-      .mockResolvedValueOnce(jsonResponse({ payments: [] }));
+      // AP changed-bills feed — single empty page, so no per-bill calls.
+      .mockResolvedValueOnce(jsonResponse({ bills: [] }));
 
     const result = await makeProvider().listChanges({
       since: "2026-07-30T00:00:00.000Z"
     });
 
-    // 2 invoice-payment pages + 1 bill-payment page
+    // 2 invoice-payment pages + 1 changed-bills page
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(result.changes.map((change) => change.remoteId)).toEqual([
       "inv-1:pay-1",

@@ -541,7 +541,11 @@ function makeFakeTx(store: {
     if (b.table === "purchaseInvoice") return store.purchaseInvoice;
     if (b.table === "payment") {
       if (b.op === "insert") return { id: store.newPaymentId };
-      return store.existingPayment ?? undefined;
+      // Resolve by the queried id, like the real table — the settlement-keyed
+      // mapping regression below depends on a wrong id NOT matching.
+      return store.existingPayment && where("id") === store.existingPayment.id
+        ? store.existingPayment
+        : undefined;
     }
     return undefined;
   };
@@ -821,6 +825,53 @@ describe("upsertLocalPaymentDraft (AP bill payment)", () => {
       store.records.some(
         (r) => r.table === "payment" && (r.op === "insert" || r.op === "update")
       )
+    ).toBe(false);
+  });
+
+  it("no-ops on a payment Carbon pushed with a settlement-keyed mapping (echo guard)", async () => {
+    // The outbound multi-settlement push links the mapping under
+    // `<paymentId>:<targetDocumentId>`, not the bare payment row id. Pulling
+    // that payment back must resolve the row through the key's prefix and
+    // leave the Posted payment untouched — before the fix it missed the row,
+    // re-inserted the payment, and died on the mapping's unique-externalId
+    // constraint.
+    const store = {
+      docMappings: { "bill-remote-1": "purchase-invoice-1" },
+      purchaseInvoice: {
+        id: "purchase-invoice-1",
+        supplierId: "supplier-1",
+        currencyCode: "USD"
+      },
+      paymentMapping: { entityId: "pmt-1:purchase-invoice-1" },
+      existingPayment: { id: "pmt-1", status: "Posted" },
+      newPaymentId: "unused",
+      records: [] as Array<{ op: string; table: string; values: unknown }>
+    };
+
+    const result = await upsertLocalPaymentDraft(makeFakeTx(store), {
+      providerId: "rillet",
+      companyId: "company-1",
+      actorId: "user-1",
+      bankAccount: "bank-1",
+      paymentMappingId: "bill:bill-remote-1:bp-1",
+      getNextReadableId: async () => "PAY000012",
+      normalized: settledAp
+    });
+
+    expect(result).toEqual({
+      paymentRowId: "pmt-1",
+      family: "ap",
+      postAction: "none"
+    });
+
+    // No new payment row, no settlement rewrite, no duplicate mapping link.
+    expect(
+      store.records.some(
+        (r) => r.table === "payment" && (r.op === "insert" || r.op === "update")
+      )
+    ).toBe(false);
+    expect(
+      store.records.some((r) => r.table === "externalIntegrationMapping")
     ).toBe(false);
   });
 });

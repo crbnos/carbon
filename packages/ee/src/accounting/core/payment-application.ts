@@ -72,6 +72,14 @@ export function getSettledInvoiceStatus(args: {
   return "Partially Paid";
 }
 
+/**
+ * Separator in the outbound push's per-settlement `payment` mapping key
+ * (`<paymentId>:<targetDocumentId>` — see PaymentSyncerBase.pushToAccounting).
+ * The pull anchor splits on it to recover the payment row id; payment ids
+ * never contain ":".
+ */
+export const SETTLEMENT_KEY_SEPARATOR = ":";
+
 /** What the caller should do with `post-payment` after the Draft write commits. */
 export type PaymentPostAction = "post" | "void" | "none";
 
@@ -185,7 +193,14 @@ export async function upsertLocalPaymentDraft(
     paymentMappingId,
     "payment"
   );
-  const existingPaymentId = existingMapping?.entityId ?? null;
+  // The mapping's entityId is either a bare payment row id (pull-created, or a
+  // single-settlement push) or the multi-settlement push fan-out's
+  // `<paymentId>:<targetDocumentId>` key — payment ids never contain ":", so
+  // the prefix is always the row id. Without this, pulling back a payment
+  // Carbon pushed with several settlements missed the row, re-inserted it, and
+  // died on the mapping's unique-externalId constraint.
+  const existingPaymentId =
+    existingMapping?.entityId?.split(SETTLEMENT_KEY_SEPARATOR)[0] ?? null;
   const existingPayment = existingPaymentId
     ? await tx
         .selectFrom("payment")

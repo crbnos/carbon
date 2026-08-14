@@ -366,10 +366,11 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
 
   /**
    * Create one Rillet payment for the settled document. Resolves the document's
-   * Rillet id and the bank account's Rillet code from the mappings (either
-   * missing → structured UNMAPPED_ACCOUNTS Warning: the bill/invoice must sync
-   * first, and the bank account must be mapped on the integration settings
-   * page), then POSTs the payment and returns its id + the composite mapping id.
+   * Rillet id and the bank account's Rillet code from the mappings. A missing
+   * document mapping → UNSYNCED_DOCUMENT Warning (the bill/invoice must sync
+   * first — a dependency-ordering issue, NOT a missing account); a missing bank
+   * account code → UNMAPPED_ACCOUNTS Warning (map it on the integration settings
+   * page). Otherwise POSTs the payment and returns its id + the composite mapping id.
    */
   protected async pushRemotePayment(
     context: PaymentPushContext
@@ -381,7 +382,7 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
     );
     if (!documentRemoteId) {
       throw new JournalEntrySyncError({
-        errorCode: "UNMAPPED_ACCOUNTS",
+        errorCode: "UNSYNCED_DOCUMENT",
         message: `The settled ${
           context.family === "ar" ? "invoice" : "bill"
         } has not synced to Rillet yet — sync it, then retry the payment`,

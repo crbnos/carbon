@@ -15,6 +15,7 @@ import {
 import {
   carbonCompanyExternalReference,
   carbonExternalReference,
+  customerCustomExternalReference,
   RILLET_CARBON_COMPANY_REFERENCE_TYPE,
   RILLET_CARBON_REFERENCE_TYPE,
   RilletTransactionSyncer,
@@ -101,6 +102,9 @@ export function mapSalesInvoiceToRilletInvoice(args: {
   itemRemoteIds: ReadonlyMap<string, string>;
   subsidiaryId: string | null;
   companyId: string;
+  /** Link back to the Carbon invoice — REQUIRED by Rillet on
+   * CUSTOMER_CUSTOM references. */
+  documentUrl: string;
 }): RilletInvoiceCreate {
   const { invoice } = args;
   const currency = invoice.currencyCode;
@@ -130,7 +134,16 @@ export function mapSalesInvoiceToRilletInvoice(args: {
       description: line.description ?? line.itemCode ?? "Invoice line",
       quantity: line.quantity,
       total_amount: toRilletMoney(line.quantity * line.unitPrice, currency),
-      external_references: [carbonExternalReference(line.id)]
+      // CUSTOMER_CUSTOM satisfies rev-rec validation and carries the line id
+      // for audit. NO `carbon` ref here: Rillet counts header + item
+      // references together for RESTRICTED types, and organizations that
+      // register `carbon` as restricted reject a document carrying it on
+      // both the header and a line ("multiple references of a restricted
+      // type" — verified on the sandbox 2026-08-12). The header's carbon
+      // ref is the document's single origin link.
+      external_references: [
+        customerCustomExternalReference(line.id, args.documentUrl)
+      ]
     };
   });
 
@@ -152,9 +165,12 @@ export function mapSalesInvoiceToRilletInvoice(args: {
       : {}),
     ...(args.subsidiaryId ? { subsidiary_id: args.subsidiaryId } : {}),
     items,
+    // CUSTOMER_CUSTOM satisfies Rillet rev-rec validation (accepted integration
+    // type); the carbon / carbon-company refs stay for origin auditing.
     external_references: [
       carbonExternalReference(invoice.id),
-      carbonCompanyExternalReference(args.companyId)
+      carbonCompanyExternalReference(args.companyId),
+      customerCustomExternalReference(invoice.id, args.documentUrl)
     ]
   };
 }
@@ -352,12 +368,18 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
       }
     }
 
+    // Dynamic import: keeps @carbon/env (module-load env validation) out of
+    // the module graph for consumers and tests that never push an invoice
+    // (same pattern as the payment syncer's auth import).
+    const { getAppUrl } = await import("@carbon/env");
+
     return mapSalesInvoiceToRilletInvoice({
       invoice: local,
       customerRemoteId,
       itemRemoteIds,
       subsidiaryId: this.rilletProvider.subsidiaryId,
-      companyId: this.companyId
+      companyId: this.companyId,
+      documentUrl: `${getAppUrl()}/x/sales-invoice/${local.id}`
     });
   }
 

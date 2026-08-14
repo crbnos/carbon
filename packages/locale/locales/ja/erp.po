@@ -5783,9 +5783,6 @@ msgstr "設定で有効にする"
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "RFQが見積もり準備完了としてマークされたときに通知を有効にします。"
 
-msgid "Enable posting sync"
-msgstr "転記同期を有効にする"
-
 msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 msgstr "MESターミナル用の共有ワークステーションモードを有効にします。オペレーターは作業を実行する前にPINで自分自身を識別します。"
 
@@ -11030,8 +11027,8 @@ msgstr "投稿者"
 msgid "Posted By"
 msgstr "投稿者"
 
-msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
-msgstr "これらのソースタイプを持つ転記済み仕訳がプッシュされます。日次サマリーは 1 日の仕訳を勘定ごとに 1 つのプロバイダーエントリにグループ化します。"
+msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
+msgstr "これらのソースタイプで転記された仕訳は常に同期されます。日次サマリーは、1日の仕訳をアカウントごとに1つのプロバイダーエントリにグループ化します。"
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "1回投稿され、{corrections}回訂正されました。"
@@ -11497,9 +11494,6 @@ msgstr "プッシュ"
 
 msgid "Push it re-dated to the first open day, keeping the original date in the narration."
 msgstr "元の日付を説明に保持しながら、最初の開いている日に再日付してプッシュする"
-
-msgid "Push posted journals for the enabled source types to the accounting provider."
-msgstr "有効なソースタイプの転記済みジャーナルを会計プロバイダにプッシュします。"
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "レコードの変更が発生した瞬間に外部システムにプッシュします。"

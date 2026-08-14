@@ -215,11 +215,6 @@ export const accountingBackfillFunction = inngest.createFunction(
       }
 
       const settings = resolvePostingSyncSettings(phaseIntegration.metadata);
-      if (!settings.enabled) {
-        summary.skippedReason = "postingSync.enabled is false";
-        return summary;
-      }
-
       const syncFromDate = settings.syncFromDate?.slice(0, 10);
       if (!syncFromDate) {
         summary.skippedReason =

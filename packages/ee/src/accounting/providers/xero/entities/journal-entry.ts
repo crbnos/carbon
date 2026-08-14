@@ -541,10 +541,6 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
     }
 
     const settings = await this.getPostingSyncSettings();
-    if (!settings.enabled) {
-      return "Posting sync is not enabled for this integration";
-    }
-
     const sourceTypeSkipReason = getPostingSyncSourceTypeSkipReason(
       local.sourceType,
       settings,

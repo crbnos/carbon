@@ -106,23 +106,25 @@ describe("getJournalPostingPolicyDecision", () => {
     ).toEqual({ kind: "push", granularity: "daily-summary" });
   });
 
-  it("excludes disabled journal types (SOURCE_TYPE_DISABLED) and disabled Manual (MANUAL_DISABLED)", () => {
+  it("always-on: a stored enabled:false cannot exclude an automated type; Manual is permanently excluded (MANUAL_DISABLED)", () => {
+    // Always-on model: automated journal types push regardless of any stored
+    // per-type enable flag (kept in the schema for backward-compatible
+    // parsing but never read by the decision).
     const settings = settingsWith({
       sourceTypes: {
         "Purchase Receipt": { enabled: false, granularity: "individual" }
       }
     });
 
-    const disabled = getJournalPostingPolicyDecision({
+    const stillPushes = getJournalPostingPolicyDecision({
       sourceType: "Purchase Receipt",
       settings,
       docSync: DOC_SYNC_ON
     });
-    expect(disabled).toMatchObject({
-      kind: "exclude",
-      reason: "SOURCE_TYPE_DISABLED"
-    });
+    expect(stillPushes).toMatchObject({ kind: "push" });
 
+    // Manual is the only non-syncable type (POSTING_POLICY syncable: false) —
+    // excluded permanently, regardless of stored config.
     const manual = getJournalPostingPolicyDecision({
       sourceType: "Manual",
       settings,

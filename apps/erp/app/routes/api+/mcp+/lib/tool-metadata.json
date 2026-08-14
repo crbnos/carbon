@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-12T04:24:24.675Z",
+  "generated": "2026-08-14T05:56:54.440Z",
   "totalTools": 1435,
   "modules": 15,
   "tools": [
@@ -4129,7 +4129,7 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get accounting sync tie out",
-      "paramCount": 2,
+      "paramCount": 3,
       "serviceParams": [
         "client",
         "companyId",
@@ -4143,15 +4143,23 @@
         "properties": {
           "integration": {
             "type": [
-              "string",
+              "array",
               "null"
-            ]
+            ],
+            "items": {}
           },
           "accountingPeriodId": {
             "type": [
               "string",
               "null"
             ]
+          },
+          "accountId": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {}
           }
         }
       }
