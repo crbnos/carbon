@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-14T07:02:07.623Z",
-  "totalTools": 1455,
+  "generated": "2026-08-14T07:05:30.968Z",
+  "totalTools": 1462,
   "modules": 15,
   "tools": [
     {
@@ -41061,6 +41061,211 @@
       "module": "sales",
       "classification": "READ",
       "description": "get sales return order issues",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "salesReturnOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_confirmSalesReturnOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "confirm sales return order",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "{ id, companyId }",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_cancelSalesReturnOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "cancel sales return order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "{ id, companyId, userId }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_completeSalesReturnOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "complete sales return order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "{ id, companyId, userId }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_shortCloseSalesReturnOrderLine",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "short close sales return order line",
+      "paramCount": 3,
+      "serviceParams": [
+        "db",
+        "{\n    lineId,\n    salesReturnOrderId,\n    companyId,\n    userId,\n    intent\n  }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "salesReturnOrderId": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "close",
+              "reopen"
+            ]
+          }
+        },
+        "required": [
+          "lineId",
+          "salesReturnOrderId",
+          "intent"
+        ]
+      }
+    },
+    {
+      "name": "sales_getReturnableLinesForCustomer",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get returnable lines for customer",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "customerId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string"
+          },
+          "args": {
+            "type": "object",
+            "properties": {
+              "salesOrderId": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "customerId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getShippedTrackedEntitiesForCustomer",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get shipped tracked entities for customer",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "customerId",
+        "itemId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customerId",
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getCreditableQuantities",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get creditable quantities",
       "paramCount": 1,
       "serviceParams": [
         "client",
