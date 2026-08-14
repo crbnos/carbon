@@ -20,8 +20,9 @@ lives in `.claude/rules/onboarding-company-templates.md`. This file is about the
 
 New content goes in `data/`. Touch a tier only to support a new *shape* of data. The one
 standing violation is `tiers/workflow-definitions.ts`, which re-exports satellite's workflows
-so `@carbon/database/seed-workflows` stays a single import — so `seed-workflows.test.ts`
-validates satellite's definitions only, not the other three datasets'.
+so `@carbon/database/seed-workflows` stays a single import. It also exports
+`SEED_WORKFLOW_BUILDERS`, so `seed-workflows.test.ts` validates all four datasets' definitions
+— add a new dataset's builder there or its workflows go unchecked.
 
 ## `applyDataset` is the only entry point
 
@@ -54,9 +55,10 @@ or adding a tier that reads a ref an earlier tier didn't write, breaks silently.
 | `refs.misc["cloc:<customer>"]` / `["sloc:<supplier>"]` | customer / supplier location |
 | `refs.misc["procedure:<name>"]`, `["period:weekN"]`, `["sqlink:<key>"]` | as named |
 
-Use `need(map, key)` from `sql.ts` rather than `map[key]!` — node-postgres turns an `undefined`
-parameter into `NULL`, so a missing ref writes a null FK instead of failing. Tiers 4/5/6 do this
-correctly; 1/2/3/12 still use non-null assertions in places.
+Use `need(map, key)` from `sql.ts` rather than `map[key]!` or a `continue` — node-postgres turns
+an `undefined` parameter into `NULL`, so a missing ref writes a null FK instead of failing, and a
+silent `continue` drops the row entirely. Tiers 2/3/4/5/6/12 do this; tier 1 still has non-null
+assertions in places.
 
 ## Rules that are not optional
 

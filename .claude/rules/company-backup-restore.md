@@ -268,24 +268,21 @@ double-apply guard, and a marker on `externalIntegrationMapping`
 (`integration = "company-template"`) cleared on success and set `failed` on a throw.
 `applyDataset` wraps every tier in one transaction, so a failure leaves zero rows.
 
-`industry.id` → dataset is a code map (`datasetForIndustry`), not a column. An industry
-with no dataset (`precision_manufacturing`, `automotive_precision`) still records
-`industryId` and provisions a clean seed — same as today, no error.
+`industry.id` → dataset is a code map (`datasetForIndustry`), not a column. All four
+industries have a dataset today; an industry without one is hidden from the onboarding
+picker rather than provisioning a clean company.
 
 **Dormant** (built, never wired, do not revive without revisiting
-`.ai/specs/2026-08-13-onboarding-company-templates.md`): the `company-templates` bucket,
-`TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX`, `templateIndustryId` on
-`carbon/company-import`, `ci/src/upload-backup-templates.ts`, and
+`.ai/specs/implemented/2026-08-13-onboarding-company-templates.md`): the
+`company-templates` bucket, `TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX`,
+`templateIndustryId` on `carbon/company-import`, `ci/src/upload-backup-templates.ts`, and
 `packages/database/supabase/backups/` (which now holds only a README saying so).
 
-## CI publish
+## CI publish (dormant)
 
-`ci/src/upload-backup-templates.ts` — **manual, idempotent** (`--force` to
-overwrite). Uploads each committed `.gz` to every workspace's `company-templates`
-bucket and fans the files from the committed `<industryId>.assets/` folder into
-`private/_templates/<industryId>/` (assets live as real files in the sibling
-folder, not embedded in the gz). Run via the `Publish backup templates` workflow
-(`.github/workflows/publish-templates.yml`, `workflow_dispatch`) or
-`pnpm --filter ci ci:upload-backup-templates`. NOT run on every deploy (templates
-are large + change rarely). The script hardcodes the `_templates` and `.assets`
-literals — keep in sync with `TEMPLATE_ASSET_PREFIX` / `BACKUP_GZ_SUFFIX`.
+`ci/src/upload-backup-templates.ts` is part of the dormant set above and publishes
+nothing today — onboarding templates never go through a storage bucket. It is described
+here only so the next reader knows what the script and the `Publish backup templates`
+workflow (`.github/workflows/publish-templates.yml`, `workflow_dispatch`) were for:
+a manual, idempotent upload of committed `.gz` archives and their sibling
+`<industryId>.assets/` folders into each workspace's `company-templates` bucket.

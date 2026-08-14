@@ -84,6 +84,8 @@ export async function applyDataset(
     timeZone: string;
     tiers?: number[] | null;
     log?: (message: string) => void;
+    // Dev-only hook so the CLI's wipe runs inside the same transaction.
+    beforeTiers?: (ctx: Ctx) => Promise<void>;
   }
 ): Promise<void>;
 ```
@@ -98,6 +100,8 @@ Tier files keep every line of insertion logic and lose every data literal. A dat
 is a plain object of per-tier slices:
 
 ```typescript
+// Superseded: the shipped key set is "satellite" | "robotics" | "precision" | "motor",
+// and `companyName` was dropped as dead (see the remaining-industry-datasets spec).
 export type DatasetKey = "satellite" | "robotics";
 
 export type Dataset = {
@@ -158,7 +162,7 @@ A new Inngest task, modelled on `company-import`:
 // concurrency: { key: "event.data.companyId", limit: 1 }
 ```
 
-It opens its own `getPostgresConnectionPool(1)` (the engine needs a `PoolClient` for
+It opens its own `getPostgresConnectionPool(2)` (the engine needs a `PoolClient` for
 `BEGIN`/`SET LOCAL`, which the shared Kysely handle does not give), resolves the
 company timezone, and calls `applyDataset`. Progress and failure are recorded on
 `externalIntegrationMapping` with `integration = "company-template"` — the same marker
@@ -304,8 +308,10 @@ Minimal — the three-way picker already exists and already collects the industr
       seven days.
 - [ ] Ordering invariants survive the date port: for every seeded sales order,
       `orderDate <= promisedDate`; for every job, `releasedDate <= dueDate`.
-- [ ] Triggering `company-template` against a company that already has `item` rows
-      fails with a clear error and writes no rows.
+- [ ] Triggering `company-template` against a company that already has `item` rows is an
+      idempotent no-op: it writes no rows, clears the marker and returns
+      `{ skipped: true, alreadyApplied }`. It must NOT fail, or onboarding re-entry and a
+      retry whose first attempt already committed would both be recorded as broken.
 - [ ] Forcing a mid-tier throw leaves the company with zero dataset rows (transaction
       rolled back) and a `failed` marker.
 - [ ] `pnpm exec turbo run typecheck --filter=erp --filter=@carbon/database --filter=@carbon/jobs`

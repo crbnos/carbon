@@ -160,7 +160,7 @@ Seeded row counts
 Dev environment seeded successfully!
 ========================================
 
-  Email:      test@carbon.ms
-  Password:   password (only set when the user was just created)
-  Company ID: d9uhui8im0gg282odrl0
+  Email:      [redacted]
+  Password:   [redacted] (only set when the user was just created)
+  Company ID: [redacted]
 

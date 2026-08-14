@@ -589,8 +589,10 @@ psql "$SUPABASE_DB_URL" -c "SELECT COUNT(*) FROM \"quoteLinePrice\";"
 (13-26). Then convert the four inline purchase-order chains — PO1 + receipt (132-205),
 PO2 + invoice (207-274), PO3 draft (276-312), PO4 (438-505) — and the RFQ header
 (314-344) into a `purchaseOrders: PurchaseOrderSpec[]` array, same transcribe-don't-
-redesign rule as Task 8. **Keep the `externalLinkId` values in `RFQ_QUOTES` (30-112)
-exactly as they are** — they are deliberately fixed ids, not generated.
+redesign rule as Task 8. **Superseded: do NOT keep the fixed `externalLinkId` values in
+`RFQ_QUOTES` (30-112).** `externalLink` is keyed on `id` alone, so a literal collides on
+the second company seeded into the same database. Omit the id and read back the one the
+column default mints.
 
 **Verify:** the shared block above, with `taskN` = `task9`.
 

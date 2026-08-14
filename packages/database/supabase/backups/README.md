@@ -12,16 +12,17 @@ Onboarding's `template` choice runs the **dev seed's own tier code** against the
 created company — the same data, the same insertion logic, no archive in between. The
 data lives in exactly one place: `packages/database/src/datasets/`.
 
-- Data: `packages/database/src/datasets/data/<datasetKey>/` (`satellite` is the only one today)
+- Data: `packages/database/src/datasets/data/<datasetKey>/` (`satellite`, `robotics`,
+  `precision` and `motor` ship today, one per onboarding industry)
 - Engine: `packages/database/src/datasets/tiers/` + `applyDataset()` in `index.ts`
 - Dev entry point: `pnpm db:seed:dev -- --email you@example.com --dataset satellite`
 - Onboarding entry point: `apps/erp/app/services/onboarding.server.ts` triggers
   `carbon/company-template`, handled by
   `packages/jobs/src/inngest/functions/tasks/company-template.ts`
 - An `industry` row is mapped to a dataset in code by `datasetForIndustry()`; an
-  industry with no dataset still provisions a clean seed.
+  industry with no dataset is hidden from the onboarding picker.
 
-See `.ai/specs/2026-08-13-onboarding-company-templates.md` and
+See `.ai/specs/implemented/2026-08-13-onboarding-company-templates.md` and
 `.claude/rules/company-backup-restore.md`.
 
 ## Dormant code this leaves behind

@@ -30,7 +30,7 @@
 
 ## Environment notes
 
-- The local Supabase stack must be up. If `pnpm db:seed:dev` fails with `SELF_SIGNED_CERT_IN_CHAIN` or `Failed to create user: fetch failed`, prefix the command with `NODE_TLS_REJECT_UNAUTHORIZED=0` — that is a local-cert workaround only, never a code change.
+- The local Supabase stack must be up. If `pnpm db:seed:dev` fails with `SELF_SIGNED_CERT_IN_CHAIN` or `Failed to create user: fetch failed`, your local certificate chain is the problem. Point Node at the local CA with `NODE_EXTRA_CA_CERTS=/path/to/local-ca.pem`, or fix the chain. Do not disable certificate validation.
 - To query the database directly:
   ```bash
   DBURL=$(grep -h '^SUPABASE_DB_URL=' .env.local .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"')
