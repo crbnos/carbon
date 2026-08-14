@@ -1225,6 +1225,8 @@ export const path = {
       generatePath(`${x}/issue/${id}/dispositions`),
     issueReview: (id: string) => generatePath(`${x}/issue/${id}/review`),
     issueStatus: (id: string) => generatePath(`${x}/issue/${id}/status`),
+    issueSupplierReturn: (id: string) =>
+      generatePath(`${x}/issue/${id}/supplier-return`),
     issues: `${x}/quality/issues`,
     issueTaskStatus: (id: string) =>
       generatePath(`${x}/issue/task/${id}/status`),

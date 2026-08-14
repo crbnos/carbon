@@ -3834,6 +3834,9 @@ msgstr "Revision erstellen"
 msgid "Create Rule"
 msgstr "Regel erstellen"
 
+msgid "Create Supplier Return"
+msgstr ""
+
 msgid "Create Transfer"
 msgstr "Übertrag erstellen"
 
@@ -5148,6 +5151,9 @@ msgstr "Vorlage herunterladen"
 
 msgid "Draft"
 msgstr "Entwurf"
+
+msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
+msgstr ""
 
 msgid "Draft is editable; Active is in use and requires a new version to change; Archived is retired."
 msgstr "Entwurf ist bearbeitbar; Aktiv ist in Verwendung und erfordert eine neue Version zum Ändern; Archiviert ist deaktiviert."
@@ -13933,6 +13939,9 @@ msgstr "Lieferant"
 
 msgid "Supplier"
 msgstr "Lieferant"
+
+msgid "Supplier (optional — auto-resolved)"
+msgstr ""
 
 msgid "Supplier Accounts"
 msgstr "Lieferantenkonten"
