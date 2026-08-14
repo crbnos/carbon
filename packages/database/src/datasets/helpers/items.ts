@@ -68,6 +68,9 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     itemTrackingType: spec.trackingType ?? "Inventory",
     unitOfMeasureCode: uom,
     description: spec.description ?? null,
+    thumbnailPath: ctx.dataset.industryId
+      ? `_templates/${ctx.dataset.industryId}/${spec.readableId}.svg`
+      : null,
     active: true
   });
 
