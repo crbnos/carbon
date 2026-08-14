@@ -758,6 +758,7 @@ export const accounts = [
   { key: "7070", number: "7070", name: "Income Tax Expense", isGroup: false, parentKey: "other-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "7080", number: "7080", name: "R&D Expenses", isGroup: false, parentKey: "other-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "7090", number: "7090", name: "Deferred Tax Expense", isGroup: false, parentKey: "other-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
+  { key: "7095", number: "7095", name: "Intercompany Differences", isGroup: false, parentKey: "other-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
 ] as const;
 
 export const accountDefaults = {
@@ -793,6 +794,7 @@ export const accountDefaults = {
   workInProgressAccount: "1230",
   receivablesAccount: "1110",
   intercompanyReceivablesAccount: "1130",
+  intercompanyDifferenceAccount: "7095",
   bankCashAccount: "1010",
   bankLocalCurrencyAccount: "1020",
   bankForeignCurrencyAccount: "1030",

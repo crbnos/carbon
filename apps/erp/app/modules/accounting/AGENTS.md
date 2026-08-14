@@ -16,7 +16,7 @@ The **Executive P&L** (`executive-pnl.tsx`) shares the income statement's loader
 - **Dimensions** — analytical tags on journal lines (Location, Department, Project, etc.). Entity-type dimensions resolve values from their source table; Custom dimensions use `dimensionValue`.
 - **Cost Centers** — hierarchical organizational units for cost allocation via `parentCostCenterId`.
 - **Fixed Assets** — capital assets with depreciation. Supports straight-line, declining balance, MACRS, and units-of-production methods. Depreciation runs generate journal entries. See `.claude/rules/fixed-asset-lifecycle.md`.
-- **Intercompany** — transactions between companies in a group. `runIntercompanyMatching` pairs them; `generateEliminations` creates reversing entries for consolidation.
+- **Intercompany** — transactions between companies in a group. `runIntercompanyMatching` pairs them via a three-pass matcher in `matchIntercompanyTransactions` (exact base amount → FX document-currency equality → same-base-currency tolerance within `companyGroup.intercompanyMatchingTolerance`, default 1.00), recording `intercompanyTransaction.differenceKind`/`matchedDifference`. `generateEliminations` creates reversing entries for consolidation and posts any FX/tolerance residual to `accountDefault.intercompanyDifferenceAccount` (account 7095; unset ⇒ explicit error, never a silent imbalance).
 - **Net Income** — computed equity line on the balance sheet, never a posted account. Uses synthetic `NET_INCOME_ACCOUNT_ID` constant.
 
 ## Safety
