@@ -1,4 +1,4 @@
-// Per-item "Item rules" card — the item-rule counterpart of
+// Per-item "Sales rules" card — the sales-rule counterpart of
 // `~/modules/inventory/ui/StorageRules/RuleAssignmentsList`. Forked (not parameterized)
 // because that component hard-codes the STORAGE_RULES plan gate, the storage
 // path constants, storage SurfaceChips, and targetType copy; a fork is the
@@ -21,7 +21,7 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { ITEM_RULE_SURFACES, type ItemRuleSurface } from "@carbon/utils";
+import { SALES_RULE_SURFACES, type SalesRuleSurface } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuLibrary, LuPlus, LuShieldCheck, LuTrash } from "react-icons/lu";
@@ -39,20 +39,20 @@ import { usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
 
-const ITEM_RULE_SURFACE_LABELS: Record<ItemRuleSurface, string> = {
+const SALES_RULE_SURFACE_LABELS: Record<SalesRuleSurface, string> = {
   quoteLine: "Quote line",
   salesOrderLine: "Sales order line"
 };
 
-type AssignedItemRule = {
+type AssignedSalesRule = {
   ruleId: string;
-  itemRule: {
+  salesRule: {
     id: string;
     name: string;
     severity: "error" | "warn";
     message: string;
     active: boolean;
-    surfaces?: ItemRuleSurface[];
+    surfaces?: SalesRuleSurface[];
   };
   /**
    * `"__all__"` marks a broadcast rule (matched via the rule's item filters,
@@ -63,31 +63,31 @@ type AssignedItemRule = {
   inheritedFromName?: string | null;
 };
 
-type ItemRuleLibraryRule = {
+type SalesRuleLibraryRule = {
   id: string;
   name: string;
   severity: "error" | "warn";
   active: boolean;
 };
 
-type ItemRuleAssignmentsListProps = {
+type SalesRuleAssignmentsListProps = {
   itemId: string;
-  assignments: AssignedItemRule[];
-  library: ItemRuleLibraryRule[];
+  assignments: AssignedSalesRule[];
+  library: SalesRuleLibraryRule[];
 };
 
-export default function ItemRuleAssignmentsList({
+export default function SalesRuleAssignmentsList({
   itemId,
   assignments,
   library
-}: ItemRuleAssignmentsListProps) {
+}: SalesRuleAssignmentsListProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher();
-  const { isGated } = usePlanGate({ feature: "ITEM_RULES" });
-  // Assignment mutations are gated on `update: "parts"` (the assign/unassign
+  const { isGated } = usePlanGate({ feature: "SALES_RULES" });
+  // Assignment mutations are gated on `update: "sales"` (the assign/unassign
   // routes), so the UI mirrors that single permission.
-  const canUpdate = permissions.can("update", "parts");
+  const canUpdate = permissions.can("update", "sales");
   const description = t`Enforce checks on quote and sales order lines for this item.`;
 
   const assignedSet = useMemo(
@@ -111,7 +111,7 @@ export default function ItemRuleAssignmentsList({
     fd.set("ruleId", ruleId);
     fetcher.submit(fd, {
       method: "post",
-      action: path.to.itemRuleAssign(itemId)
+      action: path.to.salesRuleAssign(itemId)
     });
   };
 
@@ -122,7 +122,7 @@ export default function ItemRuleAssignmentsList({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold">
-            <Trans>Item rules</Trans>
+            <Trans>Sales rules</Trans>
           </h2>
           {!isEmpty && (
             <span className="text-sm font-normal text-muted-foreground tabular-nums">
@@ -147,7 +147,7 @@ export default function ItemRuleAssignmentsList({
             />
           )}
           <Button variant="primary" leftIcon={<LuPlus />} asChild>
-            <Link to={path.to.newItemRule}>
+            <Link to={path.to.newSalesRule}>
               <Trans>Add rule</Trans>
             </Link>
           </Button>
@@ -167,7 +167,7 @@ export default function ItemRuleAssignmentsList({
             </UpgradeOverlayIcon>
             <UpgradeOverlayContent>
               <UpgradeOverlayTitle>
-                <Trans>Upgrade to unlock item rules</Trans>
+                <Trans>Upgrade to unlock sales rules</Trans>
               </UpgradeOverlayTitle>
               <UpgradeOverlayDescription>
                 {description}
@@ -216,7 +216,7 @@ export default function ItemRuleAssignmentsList({
                 size="sm"
                 leftIcon={<LuPlus />}
               >
-                <Link to={path.to.newItemRule}>
+                <Link to={path.to.newSalesRule}>
                   <Trans>Create new rule</Trans>
                 </Link>
               </Button>
@@ -229,12 +229,12 @@ export default function ItemRuleAssignmentsList({
                 size="sm"
                 leftIcon={<LuLibrary />}
               >
-                <Link to={path.to.itemRules}>
+                <Link to={path.to.salesRules}>
                   <Trans>Browse library</Trans>
                 </Link>
               </Button>
               <Button asChild size="sm" leftIcon={<LuPlus />}>
-                <Link to={path.to.newItemRule}>
+                <Link to={path.to.newSalesRule}>
                   <Trans>Create new rule</Trans>
                 </Link>
               </Button>
@@ -269,17 +269,17 @@ export default function ItemRuleAssignmentsList({
         {assignments.map((a) => {
           const isBroadcast = a.inheritedFromId === "__all__";
           const surfaces =
-            a.itemRule.surfaces && a.itemRule.surfaces.length > 0
-              ? a.itemRule.surfaces
-              : [...ITEM_RULE_SURFACES];
+            a.salesRule.surfaces && a.salesRule.surfaces.length > 0
+              ? a.salesRule.surfaces
+              : [...SALES_RULE_SURFACES];
           return (
             <Tr key={a.ruleId}>
               <Td className="whitespace-nowrap">
                 <HStack className="gap-2 items-center flex-wrap">
-                  <Hyperlink to={path.to.itemRule(a.ruleId)}>
+                  <Hyperlink to={path.to.salesRule(a.ruleId)}>
                     <HStack className="gap-2 items-center">
                       <LuShieldCheck className="text-muted-foreground shrink-0" />
-                      <span>{a.itemRule.name}</span>
+                      <span>{a.salesRule.name}</span>
                     </HStack>
                   </Hyperlink>
                   {isBroadcast && (
@@ -293,7 +293,7 @@ export default function ItemRuleAssignmentsList({
                 </HStack>
               </Td>
               <Td>
-                {a.itemRule.severity === "error" ? (
+                {a.salesRule.severity === "error" ? (
                   <Badge variant="red">
                     <Trans>Error</Trans>
                   </Badge>
@@ -307,13 +307,13 @@ export default function ItemRuleAssignmentsList({
                 <div className="flex items-center gap-1">
                   {surfaces.map((s) => (
                     <Badge key={s} variant="secondary">
-                      {ITEM_RULE_SURFACE_LABELS[s]}
+                      {SALES_RULE_SURFACE_LABELS[s]}
                     </Badge>
                   ))}
                 </div>
               </Td>
               <Td>
-                {a.itemRule.active ? (
+                {a.salesRule.active ? (
                   <Status color="green">
                     <Trans>Active</Trans>
                   </Status>
@@ -325,13 +325,13 @@ export default function ItemRuleAssignmentsList({
               </Td>
               <Td className="w-full max-w-0">
                 <p className="text-muted-foreground truncate max-w-xl">
-                  {a.itemRule.message}
+                  {a.salesRule.message}
                 </p>
               </Td>
               <Td className="text-right">
                 <Form
                   method="post"
-                  action={path.to.itemRuleUnassign(itemId, a.ruleId)}
+                  action={path.to.salesRuleUnassign(itemId, a.ruleId)}
                 >
                   <IconButton
                     type="submit"

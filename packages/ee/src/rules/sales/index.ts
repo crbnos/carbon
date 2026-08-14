@@ -2,9 +2,9 @@
 // (evaluator + plan gate) is NOT exported here; import it via
 // `@carbon/ee/rules.server`.
 export {
-  buildItemRuleLineContext,
+  buildSalesRuleLineContext,
   type CustomerCtxInput,
-  type ItemRuleItemCtxRow,
-  type ItemRuleLineInput
+  type SalesRuleItemCtxRow,
+  type SalesRuleLineInput
 } from "./context";
 export * from "./service";

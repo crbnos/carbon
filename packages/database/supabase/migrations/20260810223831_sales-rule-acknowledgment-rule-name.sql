@@ -3,4 +3,4 @@
 -- reference (no FK) so evidence can neither be cascaded away by a rule delete
 -- nor block one; deactivation ("active" = false) is the recommended lifecycle
 -- for retiring rules that have fired.
-ALTER TABLE "itemRuleAcknowledgment" ADD COLUMN IF NOT EXISTS "ruleName" TEXT;
+ALTER TABLE "salesRuleAcknowledgment" ADD COLUMN IF NOT EXISTS "ruleName" TEXT;

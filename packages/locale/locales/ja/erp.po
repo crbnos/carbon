@@ -5667,8 +5667,8 @@ msgstr "完全な発生主義会計を有効にし、仕訳帳エントリ、財
 msgid "Enable in Settings"
 msgstr "設定で有効にする"
 
-msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "見積書または販売注文行でアイテムルール違反がブロックまたは確認されたときに通知を有効にします。"
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "見積書または販売注文行で販売ルール違反がブロックまたは確認されたときに通知を有効にします。"
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "RFQが見積もり準備完了としてマークされたときに通知を有効にします。"
@@ -7887,15 +7887,6 @@ msgstr "アイテムは選択されたタイプまたは選択されたグルー
 
 msgid "Item Name"
 msgstr "品目名"
-
-msgid "Item Rule Violations"
-msgstr "アイテムルール違反"
-
-msgid "Item rules"
-msgstr "アイテムルール"
-
-msgid "Item Rules"
-msgstr "アイテムルール"
 
 msgid "Item Scope"
 msgstr "アイテムスコープ"
@@ -12416,6 +12407,15 @@ msgstr "営業担当者"
 msgid "Sales Revenue"
 msgstr "売上収益"
 
+msgid "Sales Rule Violations"
+msgstr "販売ルール違反"
+
+msgid "Sales rules"
+msgstr "販売ルール"
+
+msgid "Sales Rules"
+msgstr "販売ルール"
+
 msgid "Sales Tax Payable"
 msgstr "売上税支払い勘定"
 
@@ -15708,8 +15708,8 @@ msgstr "{0}ルールのロックを解除するにはアップグレード"
 msgid "Upgrade to unlock audit history"
 msgstr "監査履歴のロックを解除するにはアップグレードしてください"
 
-msgid "Upgrade to unlock item rules"
-msgstr "アイテムルールのロックを解除するにはアップグレードしてください"
+msgid "Upgrade to unlock sales rules"
+msgstr "販売ルールのロックを解除するにはアップグレードしてください"
 
 msgid "Upload"
 msgstr "アップロード"
@@ -16580,14 +16580,14 @@ msgstr "RFQが見積もり準備完了とマークされたときに、誰が通
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "営業ジョブが完了したときに、誰が通知を受け取るべきですか？"
 
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "販売ルール違反がブロックまたは確認されたときに、誰が通知を受け取るべきですか？"
+
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "サプライヤーの見積もりが送信されたときに、誰が通知を受け取るべきですか？"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "在库存工作完成时，谁应该收到通知？"
-
-msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
-msgstr "アイテムルール違反がブロックまたは確認されたときに、誰が通知を受け取るべきですか？"
 
 msgid "Who you buy from."
 msgstr "あなたが購入する相手。"

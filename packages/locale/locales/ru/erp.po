@@ -5667,8 +5667,8 @@ msgstr "Включите полный учет по методу начисле�
 msgid "Enable in Settings"
 msgstr "Включить в параметрах"
 
-msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Включить уведомления, когда нарушение правила товара заблокировано или подтверждено в строке предложения или заказа продажи."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Включить уведомления, когда нарушение правила продаж заблокировано или подтверждено в строке предложения или заказа продажи."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Включить уведомления, когда запрос коммерческого предложения отмечен как готовый к цитированию."
@@ -7887,15 +7887,6 @@ msgstr "Товар должен соответствовать выбранно�
 
 msgid "Item Name"
 msgstr "Название позиции"
-
-msgid "Item Rule Violations"
-msgstr "Нарушения правил товара"
-
-msgid "Item rules"
-msgstr "Правила товара"
-
-msgid "Item Rules"
-msgstr "Правила товара"
 
 msgid "Item Scope"
 msgstr "Область применения товара"
@@ -12416,6 +12407,15 @@ msgstr "Менеджер по продажам"
 msgid "Sales Revenue"
 msgstr "Выручка от продаж"
 
+msgid "Sales Rule Violations"
+msgstr "Нарушения правил продаж"
+
+msgid "Sales rules"
+msgstr "Правила продаж"
+
+msgid "Sales Rules"
+msgstr "Правила продаж"
+
 msgid "Sales Tax Payable"
 msgstr "Налог на продажи к уплате"
 
@@ -15708,8 +15708,8 @@ msgstr "Обновитесь, чтобы разблокировать прави
 msgid "Upgrade to unlock audit history"
 msgstr "Обновитесь, чтобы разблокировать историю аудита"
 
-msgid "Upgrade to unlock item rules"
-msgstr "Обновите, чтобы разблокировать правила товара"
+msgid "Upgrade to unlock sales rules"
+msgstr "Обновите, чтобы разблокировать правила продаж"
 
 msgid "Upload"
 msgstr "Загрузить"
@@ -16580,14 +16580,14 @@ msgstr "Кто должен получать уведомления, когда 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Кто должен получать уведомления при завершении заказа продаж?"
 
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Кто должен получать уведомления, когда нарушение правила продаж заблокировано или подтверждено?"
+
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Кто должен получать уведомления при отправке предложения поставщика?"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Кто должен получать уведомления при завершении работы инвентаризации?"
-
-msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
-msgstr "Кто должен получать уведомления, когда нарушение правила товара заблокировано или подтверждено?"
 
 msgid "Who you buy from."
 msgstr "Кто вам поставляет."

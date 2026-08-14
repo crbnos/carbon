@@ -913,7 +913,7 @@ function WizardFooter({ locationId }: { locationId: string }) {
   const linesCount = useStockTransferWizardLinesCount();
   const totalQuantity = useStockTransferWizardTotalQuantity();
 
-  // Item Rule pre-flight on Create Transfer (auto-released → the stock-commit
+  // Sales Rule pre-flight on Create Transfer (auto-released → the stock-commit
   // gate sits here). The modal surfaces violations before the transfer exists.
   const createRules = useRuleViolations<Result>({
     action: path.to.newStockTransfer,

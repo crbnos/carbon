@@ -12,8 +12,8 @@ import {
   compileWithCache,
   evaluateRules,
   getFieldDef,
-  type ItemRuleFilter,
-  itemRuleAppliesToItem,
+  ruleAppliesToItem,
+  type SalesRuleFilter,
   type Severity,
   type TargetType,
   type TransactionSurface,
@@ -118,7 +118,7 @@ async function loadCompiledRulesForTargets(
 ): Promise<{
   byTarget: Map<string, CompiledRule[]>;
   broadcasts: CompiledRule[];
-  broadcastFilters: Map<string, ItemRuleFilter>;
+  broadcastFilters: Map<string, SalesRuleFilter>;
 }> {
   const byTarget = new Map<string, CompiledRule[]>();
 
@@ -194,7 +194,7 @@ const LOADERS: Record<ValueOptionsLoader, LoaderFn | null> = {
   itemTypes: null,
   replenishmentSystems: null,
   itemTrackingTypes: null,
-  // Item-rule loaders (customer-context fields).
+  // Sales-rule loaders (customer-context fields).
   customerTypes: async (c, id) => {
     const { data } = await c
       .from("customerType")
@@ -343,7 +343,7 @@ export async function evaluateLinesForSurface({
     if (line.workCenterId) workCenterIds.add(line.workCenterId);
     if (line.operation?.itemId) itemIds.add(line.operation.itemId);
   }
-  // No early-return on empty targetIds — broadcasts (all active item rules, or
+  // No early-return on empty targetIds — broadcasts (all active sales rules, or
   // appliesToAll rules for non-item targets) must still fire against every line.
   // Explicit-assignment lookup short-circuits inside `getActiveRulesForTargets`
   // when targetIds is empty.
@@ -351,7 +351,7 @@ export async function evaluateLinesForSurface({
   // Walk the storage-unit tree for every line that carries a bin id so storage
   // types cascade: a child bin implicitly carries every `storageTypeIds`
   // declared on itself OR any ancestor. The evaluator unions them when
-  // populating `ctx.storageUnit.storageTypeId` below (item rules referencing
+  // populating `ctx.storageUnit.storageTypeId` below (sales rules referencing
   // `storageUnit.storageTypeId` on place/pick depend on this). One round-trip;
   // selects `storageTypeIds` so the union doesn't need a second fetch.
   const ancestorsByBin = new Map<string, string[]>();
@@ -525,8 +525,8 @@ export async function evaluateLinesForSurface({
       if (seen.has(r.id)) continue;
       if (targetType === "item") {
         if (!itemForLine) continue;
-        const filter: ItemRuleFilter = broadcastFilters.get(r.id) ?? {};
-        if (!itemRuleAppliesToItem(itemForLine, filter)) continue;
+        const filter: SalesRuleFilter = broadcastFilters.get(r.id) ?? {};
+        if (!ruleAppliesToItem(itemForLine, filter)) continue;
       }
       seen.add(r.id);
       compiledForLine.push(r);

@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
-  evaluateItemRulesForSalesDocument,
+  evaluateSalesRulesForSalesDocument,
   isBlocked
 } from "@carbon/ee/rules.server";
 import { validator } from "@carbon/form";
@@ -81,7 +81,7 @@ export async function action(args: ActionFunctionArgs) {
   // server runtime). Gating here covers this path without duplicating the
   // evaluator into a tree CI never typechecks or tests.
   const acknowledged = formData.get("acknowledged") === "true";
-  const { violations, ruleNames } = await evaluateItemRulesForSalesDocument({
+  const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
     client: serviceRole,
     companyId,
     userId,

@@ -55,7 +55,7 @@ type ConditionRowProps = {
    */
   surfaces?: TransactionSurface[];
   /**
-   * Explicit field pool forwarded to the field picker (item rules). When
+   * Explicit field pool forwarded to the field picker (sales rules). When
    * provided it replaces the targetType-derived registry lookup.
    */
   fields?: FieldDef[];

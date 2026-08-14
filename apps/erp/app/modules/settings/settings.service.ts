@@ -1215,14 +1215,14 @@ export async function updateAccountsReceivableEmail(
     .eq("id", companyId);
 }
 
-export async function updateItemRuleNotificationSetting(
+export async function updateSalesRuleNotificationSetting(
   client: SupabaseClient<Database>,
   companyId: string,
-  itemRuleNotificationGroup: string[]
+  salesRuleNotificationGroup: string[]
 ) {
   return client
     .from("companySettings")
-    .update(sanitize({ itemRuleNotificationGroup }))
+    .update(sanitize({ salesRuleNotificationGroup }))
     .eq("id", companyId);
 }
 

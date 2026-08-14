@@ -4,40 +4,40 @@ import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { unassignItemRule } from "~/modules/items";
+import { unassignSalesRule } from "~/modules/sales";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await requirePermissions(request, {
-    update: "parts"
+    update: "sales"
   });
 
   await requirePlan({
     request,
     client,
     companyId,
-    feature: "ITEM_RULES",
-    redirectTo: path.to.itemRules
+    feature: "SALES_RULES",
+    redirectTo: path.to.salesRules
   });
 
   const { itemId, ruleId } = params;
   if (!itemId || !ruleId) throw new Error("itemId and ruleId required");
 
-  const result = await unassignItemRule(client, {
+  const result = await unassignSalesRule(client, {
     itemId,
     ruleId,
     companyId
   });
   if (result.error) {
     throw redirect(
-      request.headers.get("Referer") ?? path.to.itemRules,
+      request.headers.get("Referer") ?? path.to.salesRules,
       await flash(request, error(result.error, "Failed to unassign rule"))
     );
   }
 
   throw redirect(
-    request.headers.get("Referer") ?? path.to.itemRules,
+    request.headers.get("Referer") ?? path.to.salesRules,
     await flash(request, success("Rule unassigned"))
   );
 }

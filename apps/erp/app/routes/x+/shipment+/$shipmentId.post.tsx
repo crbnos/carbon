@@ -4,8 +4,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
-  evaluateItemRulesForSalesDocument,
   evaluateLinesForSurface,
+  evaluateSalesRulesForSalesDocument,
   isBlocked
 } from "@carbon/ee/rules.server";
 import { trigger } from "@carbon/jobs";
@@ -40,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const acknowledged = formData.get("acknowledged") === "true";
 
-  // Item Rule evaluation across every line on this shipment before posting.
+  // Sales Rule evaluation across every line on this shipment before posting.
   const serviceRole = getCarbonServiceRole();
   const { data: lines } = await serviceRole
     .from("shipmentLine")
@@ -88,7 +88,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Pick pass — the bin side of the shipment. Same lines, same item target;
-  // item rules own the `pick` surface. Transfers double-up via the
+  // sales rules own the `pick` surface. Transfers double-up via the
   // warehouseTransfer surface (dedupe collapses the overlap).
   const pickSurfaces: ("pick" | "warehouseTransfer")[] = ["pick"];
   if (shipmentForSurface?.sourceDocument === "Outbound Transfer") {
@@ -107,8 +107,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     Object.assign(allRuleNames, ruleNames);
   }
 
-  // Item rules on the originating sales order — the last physical checkpoint.
-  // Item rules have no `shipment` surface (their enum is sales-document only),
+  // Sales rules on the originating sales order — the last physical checkpoint.
+  // Sales rules have no `shipment` surface (their enum is sales-document only),
   // so this re-evaluates the SO under `salesOrderLine` rather than inventing a
   // surface. It is what catches an order confirmed BEFORE a rule was authored,
   // and it is the first moment a real shipped quantity exists.
@@ -116,7 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     shipmentForSurface?.sourceDocument === "Sales Order" &&
     shipmentForSurface.sourceDocumentId
   ) {
-    const { violations, ruleNames } = await evaluateItemRulesForSalesDocument({
+    const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
       client: serviceRole,
       companyId,
       userId,

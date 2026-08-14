@@ -1,10 +1,10 @@
-// List table for Items → Item Rules. Mirrors
+// List table for Items → Sales Rules. Mirrors
 // `~/modules/inventory/ui/StorageRules/StorageRulesTable` minus the targetType column;
 // permission checks use `parts` (the Items module permission).
 
 import type { Json } from "@carbon/database";
 import { Badge, MenuIcon, MenuItem, Status } from "@carbon/react";
-import { ITEM_RULE_SURFACES, type ItemRuleSurface } from "@carbon/utils";
+import { SALES_RULE_SURFACES, type SalesRuleSurface } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -16,7 +16,7 @@ import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 
-type ItemRuleRowView = {
+type SalesRuleRowView = {
   id: string;
   name: string;
   severity: "error" | "warn";
@@ -26,25 +26,25 @@ type ItemRuleRowView = {
   updatedAt?: string | null;
   customFields: Json;
   assignmentCount?: number;
-  surfaces?: ItemRuleSurface[];
+  surfaces?: SalesRuleSurface[];
 };
 
-const ITEM_RULE_SURFACE_LABELS: Record<ItemRuleSurface, string> = {
+const SALES_RULE_SURFACE_LABELS: Record<SalesRuleSurface, string> = {
   quoteLine: "Quote line",
   salesOrderLine: "Sales order line"
 };
 
-type ItemRulesTableProps = {
-  data: ItemRuleRowView[];
+type SalesRulesTableProps = {
+  data: SalesRuleRowView[];
   count: number;
 };
 
-const ItemRulesTable = memo(({ data, count }: ItemRulesTableProps) => {
+const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const customColumns = useCustomColumns<ItemRuleRowView>("itemRule");
+  const customColumns = useCustomColumns<SalesRuleRowView>("salesRule");
 
   const rows = useMemo(() => data, [data]);
 
@@ -55,7 +55,7 @@ const ItemRulesTable = memo(({ data, count }: ItemRulesTableProps) => {
         header: t`Name`,
         cell: ({ row }) => (
           <Hyperlink
-            to={`${path.to.itemRule(row.original.id)}?${params.toString()}`}
+            to={`${path.to.salesRule(row.original.id)}?${params.toString()}`}
           >
             <Enumerable value={row.original.name} />
           </Hyperlink>
@@ -83,12 +83,12 @@ const ItemRulesTable = memo(({ data, count }: ItemRulesTableProps) => {
           const surfaces =
             row.original.surfaces && row.original.surfaces.length > 0
               ? row.original.surfaces
-              : [...ITEM_RULE_SURFACES];
+              : [...SALES_RULE_SURFACES];
           return (
             <div className="flex items-center gap-1">
               {surfaces.map((s) => (
                 <Badge key={s} variant="secondary">
-                  {ITEM_RULE_SURFACE_LABELS[s]}
+                  {SALES_RULE_SURFACE_LABELS[s]}
                 </Badge>
               ))}
             </div>
@@ -126,19 +126,19 @@ const ItemRulesTable = memo(({ data, count }: ItemRulesTableProps) => {
     (row: (typeof rows)[number]) => (
       <>
         <MenuItem
-          disabled={!permissions.can("update", "parts")}
+          disabled={!permissions.can("update", "sales")}
           onClick={() => {
-            navigate(`${path.to.itemRule(row.id)}?${params.toString()}`);
+            navigate(`${path.to.salesRule(row.id)}?${params.toString()}`);
           }}
         >
           <MenuIcon icon={<LuPencil />} />
           <Trans>Edit Rule</Trans>
         </MenuItem>
         <MenuItem
-          disabled={!permissions.can("delete", "parts")}
+          disabled={!permissions.can("delete", "sales")}
           destructive
           onClick={() => {
-            navigate(`${path.to.deleteItemRule(row.id)}?${params.toString()}`);
+            navigate(`${path.to.deleteSalesRule(row.id)}?${params.toString()}`);
           }}
         >
           <MenuIcon icon={<LuTrash />} />
@@ -155,18 +155,18 @@ const ItemRulesTable = memo(({ data, count }: ItemRulesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "parts") && (
+        permissions.can("create", "sales") && (
           <New
             label={t`Rule`}
-            to={`${path.to.newItemRule}?${params.toString()}`}
+            to={`${path.to.newSalesRule}?${params.toString()}`}
           />
         )
       }
       renderContextMenu={renderContextMenu}
-      title={t`Item Rules`}
+      title={t`Sales Rules`}
     />
   );
 });
 
-ItemRulesTable.displayName = "ItemRulesTable";
-export default ItemRulesTable;
+SalesRulesTable.displayName = "SalesRulesTable";
+export default SalesRulesTable;

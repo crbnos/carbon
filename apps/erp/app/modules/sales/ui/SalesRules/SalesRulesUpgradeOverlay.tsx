@@ -1,4 +1,4 @@
-// Plan-gate overlay for Items → Item Rules. Mirrors
+// Plan-gate overlay for Items → Sales Rules. Mirrors
 // `~/modules/inventory/ui/StorageRules/StorageRulesUpgradeOverlay`.
 
 import { Trans } from "@lingui/react/macro";
@@ -14,7 +14,7 @@ import {
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton
 } from "~/components/UpgradeOverlay";
-import ItemRulesTable from "./ItemRulesTable";
+import SalesRulesTable from "./SalesRulesTable";
 
 const mockRules = [
   {
@@ -55,11 +55,11 @@ const mockRules = [
   }
 ];
 
-export default function ItemRulesUpgradeOverlay() {
+export default function SalesRulesUpgradeOverlay() {
   return (
     <UpgradeOverlay>
       <UpgradeOverlayPreview>
-        <ItemRulesTable data={mockRules as never} count={mockRules.length} />
+        <SalesRulesTable data={mockRules as never} count={mockRules.length} />
       </UpgradeOverlayPreview>
       <UpgradeOverlayCard>
         <UpgradeOverlayIcon>
@@ -67,7 +67,7 @@ export default function ItemRulesUpgradeOverlay() {
         </UpgradeOverlayIcon>
         <UpgradeOverlayContent>
           <UpgradeOverlayTitle>
-            <Trans>Item Rules</Trans>
+            <Trans>Sales Rules</Trans>
           </UpgradeOverlayTitle>
           <UpgradeOverlayDescription>
             <Trans>

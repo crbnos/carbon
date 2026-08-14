@@ -1,29 +1,29 @@
-// Anti-drift contract test for item rules. Locks the registry (what the
-// item-rule builder offers) to the runtime code path (what
-// `buildItemRuleLineContext` actually populates) per sales-document surface.
+// Anti-drift contract test for sales rules. Locks the registry (what the
+// sales-rule builder offers) to the runtime code path (what
+// `buildSalesRuleLineContext` actually populates) per sales-document surface.
 //
-// If someone adds a field to ITEM_RULE_FIELD_REGISTRY (or widens
-// `getFieldsForItemRules`) without populating it in `buildItemRuleLineContext`
-// / the server SELECTs, or edits ITEM_RULE_SURFACE_CONTEXT_AVAILABILITY out of
+// If someone adds a field to SALES_RULE_FIELD_REGISTRY (or widens
+// `getFieldsForSalesRules`) without populating it in `buildSalesRuleLineContext`
+// / the server SELECTs, or edits SALES_RULE_SURFACE_CONTEXT_AVAILABILITY out of
 // sync — one of these assertions fails. Mirrors
 // `../storage/context.test.ts`.
 
 import {
   buildResolver,
   type FieldContext,
-  getFieldsForItemRuleSurfaces,
-  ITEM_RULE_SURFACE_CONTEXT_AVAILABILITY,
-  ITEM_RULE_SURFACES,
-  type ItemRuleSurface
+  getFieldsForSalesRuleSurfaces,
+  SALES_RULE_SURFACE_CONTEXT_AVAILABILITY,
+  SALES_RULE_SURFACES,
+  type SalesRuleSurface
 } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
-  buildItemRuleLineContext,
+  buildSalesRuleLineContext,
   type CustomerCtxInput,
-  type ItemRuleLineInput
+  type SalesRuleLineInput
 } from "./context";
 
-// Fully-populated rows mirroring the shape `evaluateItemRuleLines` builds
+// Fully-populated rows mirroring the shape `evaluateSalesRuleLines` builds
 // AFTER its post-query flattening (itemPostingGroupId off itemCost; readable
 // id onto `id`; ship-to country onto `customer.location`). Every
 // registry-referenced key is present.
@@ -41,18 +41,18 @@ const CUSTOMER_ROW: CustomerCtxInput = {
   location: { countryCode: "US" }
 };
 
-// Item-rule FieldContext values map 1:1 onto RuleContext root keys (no
+// Sales-rule FieldContext values map 1:1 onto RuleContext root keys (no
 // "storage" → "storageUnit" remap on these surfaces).
 const ctxRootKeyFor = (context: FieldContext): string => context;
 
-const lineFor = (): ItemRuleLineInput => ({
+const lineFor = (): SalesRuleLineInput => ({
   lineId: "line_1",
   itemId: ITEM_ROW.id,
   quantity: 5
 });
 
-const ctxFor = (surface: ItemRuleSurface) =>
-  buildItemRuleLineContext({
+const ctxFor = (surface: SalesRuleSurface) =>
+  buildSalesRuleLineContext({
     line: lineFor(),
     surface,
     userId: "user_1",
@@ -60,11 +60,11 @@ const ctxFor = (surface: ItemRuleSurface) =>
     customer: CUSTOMER_ROW
   });
 
-describe("registry ↔ runtime ctx contract (item rules)", () => {
-  for (const surface of ITEM_RULE_SURFACES) {
+describe("registry ↔ runtime ctx contract (sales rules)", () => {
+  for (const surface of SALES_RULE_SURFACES) {
     it(`every field offered on "${surface}" resolves in the runtime ctx`, () => {
       const ctx = ctxFor(surface);
-      const offered = getFieldsForItemRuleSurfaces([surface]);
+      const offered = getFieldsForSalesRuleSurfaces([surface]);
       expect(offered.length).toBeGreaterThan(0);
       for (const f of offered) {
         expect(
@@ -76,7 +76,7 @@ describe("registry ↔ runtime ctx contract (item rules)", () => {
 
     it(`ctx for "${surface}" populates exactly the declared contexts`, () => {
       const ctx = ctxFor(surface) as Record<string, unknown>;
-      for (const context of ITEM_RULE_SURFACE_CONTEXT_AVAILABILITY[surface]) {
+      for (const context of SALES_RULE_SURFACE_CONTEXT_AVAILABILITY[surface]) {
         expect(
           ctx[ctxRootKeyFor(context)],
           `context "${context}" declared available on "${surface}" but not built`
@@ -93,7 +93,7 @@ describe("registry ↔ runtime ctx contract (item rules)", () => {
 
 describe("customer location semantics", () => {
   it("missing location yields customer.location === undefined", () => {
-    const ctx = buildItemRuleLineContext({
+    const ctx = buildSalesRuleLineContext({
       line: lineFor(),
       surface: "quoteLine",
       userId: "user_1",
@@ -107,7 +107,7 @@ describe("customer location semantics", () => {
   });
 
   it("null location normalizes to undefined (never {})", () => {
-    const ctx = buildItemRuleLineContext({
+    const ctx = buildSalesRuleLineContext({
       line: lineFor(),
       surface: "salesOrderLine",
       userId: "user_1",
@@ -118,7 +118,7 @@ describe("customer location semantics", () => {
   });
 
   it("no customer yields customer === undefined", () => {
-    const ctx = buildItemRuleLineContext({
+    const ctx = buildSalesRuleLineContext({
       line: lineFor(),
       surface: "quoteLine",
       userId: "user_1",
@@ -131,7 +131,7 @@ describe("customer location semantics", () => {
 
 describe("item fallback", () => {
   it("missing item row falls back to id-only ctx so {item.id} tokens resolve", () => {
-    const ctx = buildItemRuleLineContext({
+    const ctx = buildSalesRuleLineContext({
       line: { lineId: "line_1", itemId: "item_x", quantity: 1 },
       surface: "quoteLine",
       userId: "user_1",
@@ -141,7 +141,7 @@ describe("item fallback", () => {
   });
 
   it("line without an item builds no item ctx", () => {
-    const ctx = buildItemRuleLineContext({
+    const ctx = buildSalesRuleLineContext({
       line: { lineId: "line_1", itemId: null, quantity: 1 },
       surface: "salesOrderLine",
       userId: "user_1",

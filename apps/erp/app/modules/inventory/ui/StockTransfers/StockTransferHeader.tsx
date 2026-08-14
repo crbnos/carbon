@@ -57,7 +57,7 @@ const StockTransferHeader = () => {
   const postModal = useDisclosure();
   const deleteModal = useDisclosure();
   const statusFetcher = useFetcher<Result>();
-  // Item rules fire on Release + Complete (the "go" transitions). Each gets
+  // Sales rules fire on Release + Complete (the "go" transitions). Each gets
   // its own fetcher so Release's loading state doesn't disable Complete and
   // vice versa, and violations surface via a single shared modal.
   const releaseRules = useRuleViolations({

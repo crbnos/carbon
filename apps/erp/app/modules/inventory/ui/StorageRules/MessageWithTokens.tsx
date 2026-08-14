@@ -48,7 +48,7 @@ type MessageWithTokensProps = {
    */
   targetType?: "item" | "workCenter";
   /**
-   * Explicit field pool (item rules). When provided it replaces the
+   * Explicit field pool (sales rules). When provided it replaces the
    * targetType/registry lookup for the token dropdown entirely.
    */
   fields?: FieldDef[];
@@ -60,7 +60,7 @@ type TokenGroup = { heading: string; tokens: TokenItem[] };
 /**
  * Maps each surface to the ctx-block keys whose fields will be populated
  * at eval time. Used to filter the FIELD_REGISTRY into a relevant
- * suggestion list. Keyed by the full `RuleSurface` union so the item-rule
+ * suggestion list. Keyed by the full `RuleSurface` union so the sales-rule
  * form (sales-document surfaces) reuses this component unchanged.
  */
 const CTX_KEYS_BY_SURFACE: Record<RuleSurface, FieldDef["context"][]> = {
@@ -106,7 +106,7 @@ for (const f of FIELD_REGISTRY) FIELDS_BY_CTX[f.context].push(f);
 // allocate a fresh `[]` every render, busting the `groups` memo — and
 // re-running the per-condition token assembly even when nothing changed.
 const EMPTY_SURFACES: RuleSurface[] = [];
-// `customer` is only ever in `allowedCtx` for item-rule surfaces, so storage
+// `customer` is only ever in `allowedCtx` for sales-rule surfaces, so storage
 // rules render identically with it in the ordered list.
 const ORDERED_CTX: FieldDef["context"][] = [
   "customer",
@@ -129,7 +129,7 @@ const TOKEN_RE =
 // generic dotted-path resolver. Treat any such token as known so the editor
 // stops painting valid custom-field references as errors.
 const CUSTOM_FIELD_PREFIX = "item.customFields.";
-// Same for `customer.customFields.*` — only honored when an explicit item-rule
+// Same for `customer.customFields.*` — only honored when an explicit sales-rule
 // `fields` pool is provided, so storage-rule highlighting is unchanged.
 const CUSTOMER_CUSTOM_FIELD_PREFIX = "customer.customFields.";
 
@@ -207,7 +207,7 @@ export default function MessageWithTokens({
   const groups = useMemo<TokenGroup[]>(() => {
     const out: TokenGroup[] = [];
     const conds = conditions ?? [];
-    // Field pool: an explicit `fields` prop wins (item rules), then the
+    // Field pool: an explicit `fields` prop wins (sales rules), then the
     // rule's targetType; falls back to full registry when neither is
     // provided (legacy usage).
     const scopedFieldsByCtx: Partial<Record<FieldDef["context"], FieldDef[]>> =

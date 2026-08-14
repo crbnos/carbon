@@ -267,8 +267,8 @@ export const rfqReadyValidator = z.object({
     .optional()
 });
 
-export const itemRuleNotificationValidator = z.object({
-  itemRuleNotificationGroup: z
+export const salesRuleNotificationValidator = z.object({
+  salesRuleNotificationGroup: z
     .array(z.string().min(1, { message: "Invalid selection" }))
     .optional()
 });

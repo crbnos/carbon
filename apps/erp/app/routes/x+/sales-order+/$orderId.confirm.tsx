@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   dedupeViolations,
-  evaluateItemRulesForSalesDocument,
+  evaluateSalesRulesForSalesDocument,
   isBlocked
 } from "@carbon/ee/rules.server";
 import { validator } from "@carbon/form";
@@ -59,7 +59,7 @@ export async function action(args: ActionFunctionArgs) {
       };
     }
 
-    // Terminal gate: re-evaluate item rules across EVERY line on the order,
+    // Terminal gate: re-evaluate sales rules across EVERY line on the order,
     // with today's context. Per-line checks only cover lines added through the
     // line routes — conversions, duplication, integrations and the API all
     // write lines without them — and a line that passed weeks ago may violate
@@ -68,7 +68,7 @@ export async function action(args: ActionFunctionArgs) {
     const formData = await request.formData();
     const acknowledged = formData.get("acknowledged") === "true";
 
-    const { violations, ruleNames } = await evaluateItemRulesForSalesDocument({
+    const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
       client: serviceRole,
       companyId,
       userId,
@@ -79,7 +79,7 @@ export async function action(args: ActionFunctionArgs) {
     if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
       return {
         success: false,
-        message: "Item rule violations must be resolved before confirming",
+        message: "Sales rule violations must be resolved before confirming",
         violations: deduped,
         ruleNames
       };

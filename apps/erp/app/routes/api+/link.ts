@@ -59,7 +59,7 @@ function resolve(
     case NotificationEvent.SalesRfqAssignment:
     case NotificationEvent.SalesRfqReady:
       return path.to.salesRfq(documentId);
-    case NotificationEvent.ItemRuleViolation: {
+    case NotificationEvent.SalesRuleViolation: {
       // Compound documentId: "<quote|salesOrder>:<documentId>:<outcome>"
       const [docType, docId] = documentId.split(":");
       if (!docId) return null;

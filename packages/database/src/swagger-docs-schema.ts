@@ -14931,50 +14931,50 @@ export default {
         tags: ["documentExtraction"]
       }
     },
-    "/itemRuleAcknowledgment": {
+    "/salesRuleAcknowledgment": {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.id"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.id"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.companyId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.ruleId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.documentType"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentType"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.documentId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.documentLineId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentLineId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.itemId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.itemId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.severity"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.severity"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.outcome"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.outcome"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.message"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.message"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.createdBy"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.createdAt"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.updatedBy"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.ruleName"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleName"
           },
           {
             $ref: "#/parameters/select"
@@ -15003,7 +15003,7 @@ export default {
             description: "OK",
             schema: {
               items: {
-                $ref: "#/definitions/itemRuleAcknowledgment"
+                $ref: "#/definitions/salesRuleAcknowledgment"
               },
               type: "array"
             }
@@ -15012,12 +15012,12 @@ export default {
             description: "Partial Content"
           }
         },
-        tags: ["itemRuleAcknowledgment"]
+        tags: ["salesRuleAcknowledgment"]
       },
       post: {
         parameters: [
           {
-            $ref: "#/parameters/body.itemRuleAcknowledgment"
+            $ref: "#/parameters/body.salesRuleAcknowledgment"
           },
           {
             $ref: "#/parameters/select"
@@ -15031,51 +15031,51 @@ export default {
             description: "Created"
           }
         },
-        tags: ["itemRuleAcknowledgment"]
+        tags: ["salesRuleAcknowledgment"]
       },
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.id"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.id"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.companyId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.ruleId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.documentType"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentType"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.documentId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.documentLineId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentLineId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.itemId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.itemId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.severity"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.severity"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.outcome"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.outcome"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.message"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.message"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.createdBy"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.createdAt"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.updatedBy"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.ruleName"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleName"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -15086,54 +15086,54 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["itemRuleAcknowledgment"]
+        tags: ["salesRuleAcknowledgment"]
       },
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.id"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.id"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.companyId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.ruleId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.documentType"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentType"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.documentId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.documentLineId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentLineId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.itemId"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.itemId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.severity"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.severity"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.outcome"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.outcome"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.message"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.message"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.createdBy"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.createdAt"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.updatedBy"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAcknowledgment.ruleName"
+            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleName"
           },
           {
-            $ref: "#/parameters/body.itemRuleAcknowledgment"
+            $ref: "#/parameters/body.salesRuleAcknowledgment"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -15144,7 +15144,7 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["itemRuleAcknowledgment"]
+        tags: ["salesRuleAcknowledgment"]
       }
     },
     "/pickMethod": {
@@ -25287,23 +25287,23 @@ export default {
         tags: ["supplierTax"]
       }
     },
-    "/itemRuleAssignment": {
+    "/salesRuleAssignment": {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.itemId"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.itemId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.ruleId"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.ruleId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.companyId"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdBy"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdAt"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdAt"
           },
           {
             $ref: "#/parameters/select"
@@ -25332,7 +25332,7 @@ export default {
             description: "OK",
             schema: {
               items: {
-                $ref: "#/definitions/itemRuleAssignment"
+                $ref: "#/definitions/salesRuleAssignment"
               },
               type: "array"
             }
@@ -25341,12 +25341,12 @@ export default {
             description: "Partial Content"
           }
         },
-        tags: ["itemRuleAssignment"]
+        tags: ["salesRuleAssignment"]
       },
       post: {
         parameters: [
           {
-            $ref: "#/parameters/body.itemRuleAssignment"
+            $ref: "#/parameters/body.salesRuleAssignment"
           },
           {
             $ref: "#/parameters/select"
@@ -25360,24 +25360,24 @@ export default {
             description: "Created"
           }
         },
-        tags: ["itemRuleAssignment"]
+        tags: ["salesRuleAssignment"]
       },
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.itemId"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.itemId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.ruleId"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.ruleId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.companyId"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdBy"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdAt"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -25388,27 +25388,27 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["itemRuleAssignment"]
+        tags: ["salesRuleAssignment"]
       },
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.itemId"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.itemId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.ruleId"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.ruleId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.companyId"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdBy"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdAt"
+            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdAt"
           },
           {
-            $ref: "#/parameters/body.itemRuleAssignment"
+            $ref: "#/parameters/body.salesRuleAssignment"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -25419,7 +25419,7 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["itemRuleAssignment"]
+        tags: ["salesRuleAssignment"]
       }
     },
     "/materialDimensions": {
@@ -39276,59 +39276,59 @@ export default {
         tags: ["document"]
       }
     },
-    "/itemRule": {
+    "/salesRule": {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.itemRule.id"
+            $ref: "#/parameters/rowFilter.salesRule.id"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.companyId"
+            $ref: "#/parameters/rowFilter.salesRule.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.name"
+            $ref: "#/parameters/rowFilter.salesRule.name"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.description"
+            $ref: "#/parameters/rowFilter.salesRule.description"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.message"
+            $ref: "#/parameters/rowFilter.salesRule.message"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.severity"
+            $ref: "#/parameters/rowFilter.salesRule.severity"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.conditionAst"
+            $ref: "#/parameters/rowFilter.salesRule.conditionAst"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.surfaces"
+            $ref: "#/parameters/rowFilter.salesRule.surfaces"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.filteredItemTypes"
+            $ref: "#/parameters/rowFilter.salesRule.filteredItemTypes"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.filteredItemGroupIds"
+            $ref: "#/parameters/rowFilter.salesRule.filteredItemGroupIds"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.filteredItemMatchAll"
+            $ref: "#/parameters/rowFilter.salesRule.filteredItemMatchAll"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.active"
+            $ref: "#/parameters/rowFilter.salesRule.active"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.createdBy"
+            $ref: "#/parameters/rowFilter.salesRule.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.createdAt"
+            $ref: "#/parameters/rowFilter.salesRule.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.updatedBy"
+            $ref: "#/parameters/rowFilter.salesRule.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.updatedAt"
+            $ref: "#/parameters/rowFilter.salesRule.updatedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.customFields"
+            $ref: "#/parameters/rowFilter.salesRule.customFields"
           },
           {
             $ref: "#/parameters/select"
@@ -39357,7 +39357,7 @@ export default {
             description: "OK",
             schema: {
               items: {
-                $ref: "#/definitions/itemRule"
+                $ref: "#/definitions/salesRule"
               },
               type: "array"
             }
@@ -39366,12 +39366,12 @@ export default {
             description: "Partial Content"
           }
         },
-        tags: ["itemRule"]
+        tags: ["salesRule"]
       },
       post: {
         parameters: [
           {
-            $ref: "#/parameters/body.itemRule"
+            $ref: "#/parameters/body.salesRule"
           },
           {
             $ref: "#/parameters/select"
@@ -39385,60 +39385,60 @@ export default {
             description: "Created"
           }
         },
-        tags: ["itemRule"]
+        tags: ["salesRule"]
       },
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.itemRule.id"
+            $ref: "#/parameters/rowFilter.salesRule.id"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.companyId"
+            $ref: "#/parameters/rowFilter.salesRule.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.name"
+            $ref: "#/parameters/rowFilter.salesRule.name"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.description"
+            $ref: "#/parameters/rowFilter.salesRule.description"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.message"
+            $ref: "#/parameters/rowFilter.salesRule.message"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.severity"
+            $ref: "#/parameters/rowFilter.salesRule.severity"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.conditionAst"
+            $ref: "#/parameters/rowFilter.salesRule.conditionAst"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.surfaces"
+            $ref: "#/parameters/rowFilter.salesRule.surfaces"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.filteredItemTypes"
+            $ref: "#/parameters/rowFilter.salesRule.filteredItemTypes"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.filteredItemGroupIds"
+            $ref: "#/parameters/rowFilter.salesRule.filteredItemGroupIds"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.filteredItemMatchAll"
+            $ref: "#/parameters/rowFilter.salesRule.filteredItemMatchAll"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.active"
+            $ref: "#/parameters/rowFilter.salesRule.active"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.createdBy"
+            $ref: "#/parameters/rowFilter.salesRule.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.createdAt"
+            $ref: "#/parameters/rowFilter.salesRule.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.updatedBy"
+            $ref: "#/parameters/rowFilter.salesRule.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.updatedAt"
+            $ref: "#/parameters/rowFilter.salesRule.updatedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.customFields"
+            $ref: "#/parameters/rowFilter.salesRule.customFields"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -39449,63 +39449,63 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["itemRule"]
+        tags: ["salesRule"]
       },
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.itemRule.id"
+            $ref: "#/parameters/rowFilter.salesRule.id"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.companyId"
+            $ref: "#/parameters/rowFilter.salesRule.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.name"
+            $ref: "#/parameters/rowFilter.salesRule.name"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.description"
+            $ref: "#/parameters/rowFilter.salesRule.description"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.message"
+            $ref: "#/parameters/rowFilter.salesRule.message"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.severity"
+            $ref: "#/parameters/rowFilter.salesRule.severity"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.conditionAst"
+            $ref: "#/parameters/rowFilter.salesRule.conditionAst"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.surfaces"
+            $ref: "#/parameters/rowFilter.salesRule.surfaces"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.filteredItemTypes"
+            $ref: "#/parameters/rowFilter.salesRule.filteredItemTypes"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.filteredItemGroupIds"
+            $ref: "#/parameters/rowFilter.salesRule.filteredItemGroupIds"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.filteredItemMatchAll"
+            $ref: "#/parameters/rowFilter.salesRule.filteredItemMatchAll"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.active"
+            $ref: "#/parameters/rowFilter.salesRule.active"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.createdBy"
+            $ref: "#/parameters/rowFilter.salesRule.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.createdAt"
+            $ref: "#/parameters/rowFilter.salesRule.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.updatedBy"
+            $ref: "#/parameters/rowFilter.salesRule.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.updatedAt"
+            $ref: "#/parameters/rowFilter.salesRule.updatedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.itemRule.customFields"
+            $ref: "#/parameters/rowFilter.salesRule.customFields"
           },
           {
-            $ref: "#/parameters/body.itemRule"
+            $ref: "#/parameters/body.salesRule"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -39516,7 +39516,7 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["itemRule"]
+        tags: ["salesRule"]
       }
     },
     "/supplierQuoteLines": {
@@ -85384,7 +85384,7 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.itemRuleNotificationGroup"
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/select"
@@ -85581,7 +85581,7 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.itemRuleNotificationGroup"
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -85732,7 +85732,7 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.itemRuleNotificationGroup"
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -105197,7 +105197,7 @@ export default {
       },
       type: "object"
     },
-    itemRuleAcknowledgment: {
+    salesRuleAcknowledgment: {
       required: [
         "id",
         "companyId",
@@ -110402,7 +110402,7 @@ export default {
       },
       type: "object"
     },
-    itemRuleAssignment: {
+    salesRuleAssignment: {
       required: ["itemId", "ruleId", "companyId", "createdBy", "createdAt"],
       properties: {
         itemId: {
@@ -116882,7 +116882,7 @@ export default {
       },
       type: "object"
     },
-    itemRule: {
+    salesRule: {
       required: [
         "id",
         "companyId",
@@ -116931,7 +116931,7 @@ export default {
           format: "jsonb"
         },
         surfaces: {
-          format: 'public."itemRuleSurface"[]',
+          format: 'public."salesRuleSurface"[]',
           items: {
             type: "string"
           },
@@ -138818,7 +138818,7 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
-        "itemRuleNotificationGroup"
+        "salesRuleNotificationGroup"
       ],
       properties: {
         id: {
@@ -139065,7 +139065,7 @@ export default {
           format: "text",
           type: "string"
         },
-        itemRuleNotificationGroup: {
+        salesRuleNotificationGroup: {
           format: "text[]",
           items: {
             type: "string"
@@ -147343,94 +147343,94 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.itemRuleAcknowledgment": {
-      name: "itemRuleAcknowledgment",
-      description: "itemRuleAcknowledgment",
+    "body.salesRuleAcknowledgment": {
+      name: "salesRuleAcknowledgment",
+      description: "salesRuleAcknowledgment",
       required: false,
       in: "body",
       schema: {
-        $ref: "#/definitions/itemRuleAcknowledgment"
+        $ref: "#/definitions/salesRuleAcknowledgment"
       }
     },
-    "rowFilter.itemRuleAcknowledgment.id": {
+    "rowFilter.salesRuleAcknowledgment.id": {
       name: "id",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.companyId": {
+    "rowFilter.salesRuleAcknowledgment.companyId": {
       name: "companyId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.ruleId": {
+    "rowFilter.salesRuleAcknowledgment.ruleId": {
       name: "ruleId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.documentType": {
+    "rowFilter.salesRuleAcknowledgment.documentType": {
       name: "documentType",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.documentId": {
+    "rowFilter.salesRuleAcknowledgment.documentId": {
       name: "documentId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.documentLineId": {
+    "rowFilter.salesRuleAcknowledgment.documentLineId": {
       name: "documentLineId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.itemId": {
+    "rowFilter.salesRuleAcknowledgment.itemId": {
       name: "itemId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.severity": {
+    "rowFilter.salesRuleAcknowledgment.severity": {
       name: "severity",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.outcome": {
+    "rowFilter.salesRuleAcknowledgment.outcome": {
       name: "outcome",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.message": {
+    "rowFilter.salesRuleAcknowledgment.message": {
       name: "message",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.createdBy": {
+    "rowFilter.salesRuleAcknowledgment.createdBy": {
       name: "createdBy",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.createdAt": {
+    "rowFilter.salesRuleAcknowledgment.createdAt": {
       name: "createdAt",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.updatedBy": {
+    "rowFilter.salesRuleAcknowledgment.updatedBy": {
       name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAcknowledgment.ruleName": {
+    "rowFilter.salesRuleAcknowledgment.ruleName": {
       name: "ruleName",
       required: false,
       in: "query",
@@ -153223,40 +153223,40 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.itemRuleAssignment": {
-      name: "itemRuleAssignment",
-      description: "itemRuleAssignment",
+    "body.salesRuleAssignment": {
+      name: "salesRuleAssignment",
+      description: "salesRuleAssignment",
       required: false,
       in: "body",
       schema: {
-        $ref: "#/definitions/itemRuleAssignment"
+        $ref: "#/definitions/salesRuleAssignment"
       }
     },
-    "rowFilter.itemRuleAssignment.itemId": {
+    "rowFilter.salesRuleAssignment.itemId": {
       name: "itemId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAssignment.ruleId": {
+    "rowFilter.salesRuleAssignment.ruleId": {
       name: "ruleId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAssignment.companyId": {
+    "rowFilter.salesRuleAssignment.companyId": {
       name: "companyId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAssignment.createdBy": {
+    "rowFilter.salesRuleAssignment.createdBy": {
       name: "createdBy",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRuleAssignment.createdAt": {
+    "rowFilter.salesRuleAssignment.createdAt": {
       name: "createdAt",
       required: false,
       in: "query",
@@ -160356,112 +160356,112 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.itemRule": {
-      name: "itemRule",
-      description: "itemRule",
+    "body.salesRule": {
+      name: "salesRule",
+      description: "salesRule",
       required: false,
       in: "body",
       schema: {
-        $ref: "#/definitions/itemRule"
+        $ref: "#/definitions/salesRule"
       }
     },
-    "rowFilter.itemRule.id": {
+    "rowFilter.salesRule.id": {
       name: "id",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.companyId": {
+    "rowFilter.salesRule.companyId": {
       name: "companyId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.name": {
+    "rowFilter.salesRule.name": {
       name: "name",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.description": {
+    "rowFilter.salesRule.description": {
       name: "description",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.message": {
+    "rowFilter.salesRule.message": {
       name: "message",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.severity": {
+    "rowFilter.salesRule.severity": {
       name: "severity",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.conditionAst": {
+    "rowFilter.salesRule.conditionAst": {
       name: "conditionAst",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.surfaces": {
+    "rowFilter.salesRule.surfaces": {
       name: "surfaces",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.filteredItemTypes": {
+    "rowFilter.salesRule.filteredItemTypes": {
       name: "filteredItemTypes",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.filteredItemGroupIds": {
+    "rowFilter.salesRule.filteredItemGroupIds": {
       name: "filteredItemGroupIds",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.filteredItemMatchAll": {
+    "rowFilter.salesRule.filteredItemMatchAll": {
       name: "filteredItemMatchAll",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.active": {
+    "rowFilter.salesRule.active": {
       name: "active",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.createdBy": {
+    "rowFilter.salesRule.createdBy": {
       name: "createdBy",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.createdAt": {
+    "rowFilter.salesRule.createdAt": {
       name: "createdAt",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.updatedBy": {
+    "rowFilter.salesRule.updatedBy": {
       name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.updatedAt": {
+    "rowFilter.salesRule.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemRule.customFields": {
+    "rowFilter.salesRule.customFields": {
       name: "customFields",
       required: false,
       in: "query",
@@ -185065,8 +185065,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.itemRuleNotificationGroup": {
-      name: "itemRuleNotificationGroup",
+    "rowFilter.companySettings.salesRuleNotificationGroup": {
+      name: "salesRuleNotificationGroup",
       required: false,
       in: "query",
       type: "string"

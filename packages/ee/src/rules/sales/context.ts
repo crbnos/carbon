@@ -1,12 +1,12 @@
-// Pure RuleContext assembly for item-rules evaluation (sales-document
+// Pure RuleContext assembly for sales-rules evaluation (sales-document
 // surfaces). Deliberately side-effect-free (no auth/env/DB imports) so the
 // registry↔code-path contract can be unit-tested without booting the server
-// environment. `server.ts` owns the DB I/O and calls `buildItemRuleLineContext`
+// environment. `server.ts` owns the DB I/O and calls `buildSalesRuleLineContext`
 // with the rows it loaded. Mirrors `../storage/context.ts`.
 
-import type { ItemRuleSurface, RuleContext } from "@carbon/utils";
+import type { RuleContext, SalesRuleSurface } from "@carbon/utils";
 
-export type ItemRuleLineInput = {
+export type SalesRuleLineInput = {
   /** Diagnostic identifier — not used in eval. */
   lineId: string;
   /** Item the sales-document line references. */
@@ -15,7 +15,7 @@ export type ItemRuleLineInput = {
   quantity: number;
 };
 
-export type ItemRuleItemCtxRow = Record<string, unknown> & {
+export type SalesRuleItemCtxRow = Record<string, unknown> & {
   customFields?: Record<string, unknown>;
 };
 
@@ -37,18 +37,18 @@ export type CustomerCtxInput = {
  * Assemble the `RuleContext` for a single sales-document line. Pure — so the
  * registry↔code-path contract (which root contexts get populated per surface)
  * can be unit-tested without a DB client. See the anti-drift test in
- * `context.test.ts` and `ITEM_RULE_SURFACE_CONTEXT_AVAILABILITY` in
+ * `context.test.ts` and `SALES_RULE_SURFACE_CONTEXT_AVAILABILITY` in
  * `@carbon/utils`.
  *
  * `item` is the row loaded from the DB (or undefined when the lookup missed);
  * the id-only fallback keeps token interpolation working when a join didn't
  * materialize (RLS, late insert).
  */
-export const buildItemRuleLineContext = (args: {
-  line: ItemRuleLineInput;
-  surface: ItemRuleSurface;
+export const buildSalesRuleLineContext = (args: {
+  line: SalesRuleLineInput;
+  surface: SalesRuleSurface;
   userId: string;
-  item?: ItemRuleItemCtxRow;
+  item?: SalesRuleItemCtxRow;
   customer?: CustomerCtxInput;
 }): RuleContext => {
   const { line, surface, userId } = args;

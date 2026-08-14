@@ -220,7 +220,7 @@ export const FIELD_REGISTRY: FieldDef[] = [
 
   // ── StorageUnit context (item target) ─────────────────────────────────────
   // Loaded by the evaluator when `line.storageUnitId` is set. `nullable: true`
-  // on every entry so item rules can guard with `isSet`/`isNotSet`.
+  // on every entry so sales rules can guard with `isSet`/`isNotSet`.
   fields.synthetic({
     path: "storageUnit.id",
     derivedFrom: "The bin chosen on this transaction line.",
@@ -307,11 +307,11 @@ export const FIELD_REGISTRY: FieldDef[] = [
   })
 ];
 
-// ITEM_RULE_FIELD_REGISTRY holds fields ONLY item rules (sales-document
+// SALES_RULE_FIELD_REGISTRY holds fields ONLY sales rules (sales-document
 // surfaces) may reference. Kept SEPARATE from FIELD_REGISTRY so the storage
 // rule builder/validator never sees customer fields — the storage evaluator
 // never builds a `customer` ctx.
-export const ITEM_RULE_FIELD_REGISTRY: FieldDef[] = [
+export const SALES_RULE_FIELD_REGISTRY: FieldDef[] = [
   fields.database({
     table: "customer",
     column: "customerTypeId",
@@ -364,16 +364,16 @@ export const getFieldsForTargetType = (targetType: TargetType): FieldDef[] =>
   });
 
 /**
- * Full field set an ITEM RULE may reference: the item + shared slice of the
- * storage registry (no storage/workCenter/operation contexts — the item-rule
+ * Full field set an SALES RULE may reference: the item + shared slice of the
+ * storage registry (no storage/workCenter/operation contexts — the sales-rule
  * evaluator never builds those) plus the customer-context fields above.
- * Narrow further by surfaces via `getFieldsForItemRuleSurfaces`.
+ * Narrow further by surfaces via `getFieldsForSalesRuleSurfaces`.
  */
-export const getFieldsForItemRules = (): FieldDef[] => [
+export const getFieldsForSalesRules = (): FieldDef[] => [
   ...FIELD_REGISTRY.filter(
     (f) => f.context === "item" || f.targetType === "shared"
   ),
-  ...ITEM_RULE_FIELD_REGISTRY
+  ...SALES_RULE_FIELD_REGISTRY
 ];
 
 export const getFieldDef = (path: string): FieldDef | undefined => {
@@ -389,7 +389,7 @@ export const getFieldDef = (path: string): FieldDef | undefined => {
       description: "Custom field on the item record."
     };
   }
-  // Same synthesis for customer custom fields (item-rule surfaces only).
+  // Same synthesis for customer custom fields (sales-rule surfaces only).
   if (path.startsWith("customer.customFields.")) {
     return {
       path,
@@ -403,6 +403,6 @@ export const getFieldDef = (path: string): FieldDef | undefined => {
   }
   return (
     FIELD_REGISTRY.find((f) => f.path === path) ??
-    ITEM_RULE_FIELD_REGISTRY.find((f) => f.path === path)
+    SALES_RULE_FIELD_REGISTRY.find((f) => f.path === path)
   );
 };

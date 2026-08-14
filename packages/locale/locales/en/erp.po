@@ -5667,8 +5667,8 @@ msgstr "Enable full accrual accounting with journal entries, financial reports, 
 msgid "Enable in Settings"
 msgstr "Enable in Settings"
 
-msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Enable notifications when an RFQ is marked as ready for quote."
@@ -7887,15 +7887,6 @@ msgstr "Item must match a selected type OR a selected group"
 
 msgid "Item Name"
 msgstr "Item Name"
-
-msgid "Item Rule Violations"
-msgstr "Item Rule Violations"
-
-msgid "Item rules"
-msgstr "Item rules"
-
-msgid "Item Rules"
-msgstr "Item Rules"
 
 msgid "Item Scope"
 msgstr "Item Scope"
@@ -12416,6 +12407,15 @@ msgstr "Sales Person"
 msgid "Sales Revenue"
 msgstr "Sales Revenue"
 
+msgid "Sales Rule Violations"
+msgstr "Sales Rule Violations"
+
+msgid "Sales rules"
+msgstr "Sales rules"
+
+msgid "Sales Rules"
+msgstr "Sales Rules"
+
 msgid "Sales Tax Payable"
 msgstr "Sales Tax Payable"
 
@@ -15708,8 +15708,8 @@ msgstr "Upgrade to unlock {0} rules"
 msgid "Upgrade to unlock audit history"
 msgstr "Upgrade to unlock audit history"
 
-msgid "Upgrade to unlock item rules"
-msgstr "Upgrade to unlock item rules"
+msgid "Upgrade to unlock sales rules"
+msgstr "Upgrade to unlock sales rules"
 
 msgid "Upload"
 msgstr "Upload"
@@ -16580,14 +16580,14 @@ msgstr "Who should receive notifications when a RFQ is marked ready for quote?"
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Who should receive notifications when a sales job is completed?"
 
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Who should receive notifications when a supplier quote is submitted?"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Who should receive notifications when an inventory job is completed?"
-
-msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
-msgstr "Who should receive notifications when an item rule violation is blocked or acknowledged?"
 
 msgid "Who you buy from."
 msgstr "Who you buy from."

@@ -311,7 +311,7 @@ const QuoteToOrderDrawer = ({
     }
   };
 
-  // Converting re-evaluates item rules across every quote line (the terminal
+  // Converting re-evaluates sales rules across every quote line (the terminal
   // gate in the action) before the edge function writes sales order lines.
   // Submitting through the violations hook — rather than a plain navigation —
   // is what lets a blocked convert surface the shared modal.

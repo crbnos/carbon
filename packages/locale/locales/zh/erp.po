@@ -5667,8 +5667,8 @@ msgstr "启用完整的权责发生制会计，包括日记账分录、财务报
 msgid "Enable in Settings"
 msgstr "在设置中启用"
 
-msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "当在报价或销售订单行上阻止或确认项目规则违反时启用通知。"
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "当报价单或销售订单行上的销售规则违规被阻止或确认时启用通知。"
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "在RFQ标记为准备报价时启用通知。"
@@ -7887,15 +7887,6 @@ msgstr "项目必须匹配选定的类型或选定的组"
 
 msgid "Item Name"
 msgstr "物料名称"
-
-msgid "Item Rule Violations"
-msgstr "项目规则违反"
-
-msgid "Item rules"
-msgstr "项目规则"
-
-msgid "Item Rules"
-msgstr "项目规则"
 
 msgid "Item Scope"
 msgstr "物品范围"
@@ -12416,6 +12407,15 @@ msgstr "销售人员"
 msgid "Sales Revenue"
 msgstr "销售收入"
 
+msgid "Sales Rule Violations"
+msgstr "销售规则违规"
+
+msgid "Sales rules"
+msgstr "销售规则"
+
+msgid "Sales Rules"
+msgstr "销售规则"
+
 msgid "Sales Tax Payable"
 msgstr "应付销售税"
 
@@ -15708,8 +15708,8 @@ msgstr "升级以解锁 {0} 规则"
 msgid "Upgrade to unlock audit history"
 msgstr "升级以解锁审计历史"
 
-msgid "Upgrade to unlock item rules"
-msgstr "升级以解锁项目规则"
+msgid "Upgrade to unlock sales rules"
+msgstr "升级以解锁销售规则"
 
 msgid "Upload"
 msgstr "上传"
@@ -16580,14 +16580,14 @@ msgstr "当RFQ标记为准备报价时，谁应该收到通知？"
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "销售工作完成时，谁应该收到通知？"
 
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "当销售规则违规被阻止或确认时，谁应该收到通知？"
+
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "供应商报价提交时，谁应该收到通知？"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "当库存工作完成时，谁应该收到通知？"
-
-msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
-msgstr "当项目规则违反被阻止或确认时，谁应该收到通知？"
 
 msgid "Who you buy from."
 msgstr "你从谁那里购买。"

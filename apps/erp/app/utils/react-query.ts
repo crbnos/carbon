@@ -195,8 +195,8 @@ export const uomsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Medium
 });
 
-export const itemRulesQuery = (companyId: string | null) => ({
-  queryKey: ["itemRules", companyId ?? "null"],
+export const salesRulesQuery = (companyId: string | null) => ({
+  queryKey: ["salesRules", companyId ?? "null"],
   staleTime: RefreshRate.Low
 });
 

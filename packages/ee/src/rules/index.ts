@@ -4,8 +4,8 @@
 //
 // Covers both rule families sharing the `@carbon/utils` engine:
 // - storage rules (`./storage`): warehouse/MES transaction surfaces
-// - item rules (`./item`): sales-document surfaces
-export * from "./item";
+// - sales rules (`./item`): sales-document surfaces
+export * from "./sales";
 export * from "./storage/context";
 export * from "./storage/service";
 export {

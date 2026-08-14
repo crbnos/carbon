@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  // Item Rule evaluation at "go" transitions — Released is the user's
+  // Sales Rule evaluation at "go" transitions — Released is the user's
   // commitment to the transfer plan; pre-flight here so violations surface
   // before any picking happens. Completed kept as a defense-in-depth gate.
   // Draft / In Progress excluded — Draft is editing, In Progress is auto-set

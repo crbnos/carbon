@@ -5667,8 +5667,8 @@ msgstr "전표, 재무 보고서, 총계정원장 전기를 포함한 완전 발
 msgid "Enable in Settings"
 msgstr "설정에서 활성화"
 
-msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "견적서 또는 판매 주문 라인에서 항목 규칙 위반이 차단되거나 승인될 때 알림을 활성화합니다."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "견적서 또는 판매 주문 라인에서 판매 규칙 위반이 차단되거나 승인될 때 알림을 활성화합니다."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "RFQ가 견적 준비 완료로 표시될 때 알림을 활성화하세요."
@@ -7887,15 +7887,6 @@ msgstr "품목은 선택한 유형 또는 선택한 그룹 중 하나를 충족�
 
 msgid "Item Name"
 msgstr "품목명"
-
-msgid "Item Rule Violations"
-msgstr "항목 규칙 위반"
-
-msgid "Item rules"
-msgstr "항목 규칙"
-
-msgid "Item Rules"
-msgstr "항목 규칙"
 
 msgid "Item Scope"
 msgstr "품목 범위"
@@ -12416,6 +12407,15 @@ msgstr "영업 담당자"
 msgid "Sales Revenue"
 msgstr "매출"
 
+msgid "Sales Rule Violations"
+msgstr "판매 규칙 위반"
+
+msgid "Sales rules"
+msgstr "판매 규칙"
+
+msgid "Sales Rules"
+msgstr "판매 규칙"
+
 msgid "Sales Tax Payable"
 msgstr "미지급 판매세"
 
@@ -15708,8 +15708,8 @@ msgstr "{0}개의 규칙을 사용하려면 업그레이드하세요"
 msgid "Upgrade to unlock audit history"
 msgstr "감사 기록을 사용하려면 업그레이드하세요"
 
-msgid "Upgrade to unlock item rules"
-msgstr "항목 규칙을 잠금 해제하려면 업그레이드하십시오"
+msgid "Upgrade to unlock sales rules"
+msgstr "판매 규칙을 잠금 해제하려면 업그레이드하십시오"
 
 msgid "Upload"
 msgstr "업로드"
@@ -16580,14 +16580,14 @@ msgstr "RFQ가 견적 준비 완료로 표시될 때 알림을 누가 받아야 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "판매 작업이 완료될 때 알림을 누가 받아야 합니까?"
 
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "판매 규칙 위반이 차단되거나 승인될 때 누가 알림을 받아야 합니까?"
+
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "공급업체 견적이 제출될 때 알림을 누가 받아야 합니까?"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "재고 작업이 완료될 때 알림을 누가 받아야 합니까?"
-
-msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
-msgstr "항목 규칙 위반이 차단되거나 승인될 때 누가 알림을 받아야 합니까?"
 
 msgid "Who you buy from."
 msgstr "누구에게서 구매하는지."

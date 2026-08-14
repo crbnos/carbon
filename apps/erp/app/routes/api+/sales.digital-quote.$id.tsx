@@ -2,7 +2,7 @@ import { assertIsPost, notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   dedupeViolations,
-  evaluateItemRulesForSalesDocument
+  evaluateSalesRulesForSalesDocument
 } from "@carbon/ee/rules.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -98,21 +98,21 @@ export async function action(args: ActionFunctionArgs) {
       // acknowledge a warning, and internal compliance text must never reach
       // the customer. Errors refuse with a neutral message; warnings are logged
       // for the seller and the order proceeds.
-      const { violations: itemRuleViolations } =
-        await evaluateItemRulesForSalesDocument({
+      const { violations: salesRuleViolations } =
+        await evaluateSalesRulesForSalesDocument({
           client: serviceRole,
           companyId: quote.data.companyId,
           userId: quote.data.createdBy,
           documentType: "quote",
           documentId: quote.data.id
         });
-      const dedupedItemRuleViolations = dedupeViolations(itemRuleViolations);
-      const blockingViolations = dedupedItemRuleViolations.filter(
+      const dedupedSalesRuleViolations = dedupeViolations(salesRuleViolations);
+      const blockingViolations = dedupedSalesRuleViolations.filter(
         (v) => v.severity === "error"
       );
 
       if (blockingViolations.length > 0) {
-        logger.error("Digital quote acceptance blocked by item rules", {
+        logger.error("Digital quote acceptance blocked by sales rules", {
           quoteId: quote.data.id,
           companyId: quote.data.companyId,
           violations: blockingViolations
@@ -124,11 +124,11 @@ export async function action(args: ActionFunctionArgs) {
         };
       }
 
-      if (dedupedItemRuleViolations.length > 0) {
-        logger.warn("Digital quote accepted with item rule warnings", {
+      if (dedupedSalesRuleViolations.length > 0) {
+        logger.warn("Digital quote accepted with sales rule warnings", {
           quoteId: quote.data.id,
           companyId: quote.data.companyId,
-          violations: dedupedItemRuleViolations
+          violations: dedupedSalesRuleViolations
         });
       }
 

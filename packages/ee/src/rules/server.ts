@@ -2,18 +2,18 @@
 // evaluator families. Never import from a client module.
 //
 // `isBlocked` / `dedupeViolations` are shared: block/dedupe semantics are
-// identical for storage and item rules, so both come from `./storage/server`.
+// identical for storage and sales rules, so both come from `./storage/server`.
 
 export {
-  type EvaluateItemRuleLinesArgs,
-  type EvaluateItemRuleLinesResult,
-  type EvaluateItemRulesForSalesDocumentArgs,
-  evaluateItemRuleLines,
-  evaluateItemRulesForSalesDocument,
-  isItemRulesEnabledForCompany,
+  type EvaluateSalesRuleLinesArgs,
+  type EvaluateSalesRuleLinesResult,
+  type EvaluateSalesRulesForSalesDocumentArgs,
+  evaluateSalesRuleLines,
+  evaluateSalesRulesForSalesDocument,
+  isSalesRulesEnabledForCompany,
   resolveSalesOrderShipTo,
   type SalesDocumentType
-} from "./item/server";
+} from "./sales/server";
 export {
   dedupeViolations,
   type EvaluateLinesForSurfaceArgs,

@@ -18,8 +18,6 @@ import type { PartSummary, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getBomHasShelfLifeManagedInput,
   getItemQuantities,
-  getItemRuleAssignmentsForItem,
-  getItemRulesList,
   getItemShelfLife,
   getItemStorageUnitQuantities,
   getPickMethod,
@@ -29,8 +27,12 @@ import {
   upsertPickMethodWithShelfLife
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
-import { ItemRuleAssignmentsList } from "~/modules/items/ui/ItemRules";
 import { getLocationsList } from "~/modules/resources";
+import {
+  getSalesRuleAssignmentsForItem,
+  getSalesRulesList
+} from "~/modules/sales";
+import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores";
@@ -120,8 +122,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     shelfLife,
     bomHasShelfLifeManagedInput,
     rulesData,
-    itemRuleAssignments,
-    itemRuleLibrary
+    salesRuleAssignments,
+    salesRuleLibrary
   ] = await Promise.all([
     getItemQuantities(client, itemId, companyId, locationId),
     getItemStorageUnitQuantities(client, itemId, companyId, locationId),
@@ -132,8 +134,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       targetId: itemId,
       companyId
     }),
-    getItemRuleAssignmentsForItem(client, { itemId, companyId }),
-    getItemRulesList(client, companyId)
+    getSalesRuleAssignmentsForItem(client, { itemId, companyId }),
+    getSalesRulesList(client, companyId)
   ]);
   if (quantities.error) {
     throw redirect(
@@ -172,8 +174,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId,
     ruleAssignments: rulesData.assignments,
     ruleLibrary: rulesData.library,
-    itemRuleAssignments: itemRuleAssignments.data ?? [],
-    itemRuleLibrary: itemRuleLibrary.data ?? []
+    salesRuleAssignments: salesRuleAssignments.data ?? [],
+    salesRuleLibrary: salesRuleLibrary.data ?? []
   };
 }
 
@@ -249,8 +251,8 @@ export default function PartInventoryRoute() {
     itemId,
     ruleAssignments,
     ruleLibrary,
-    itemRuleAssignments,
-    itemRuleLibrary
+    salesRuleAssignments,
+    salesRuleLibrary
   } = useLoaderData<typeof loader>();
 
   const partData = useRouteData<{
@@ -307,10 +309,10 @@ export default function PartInventoryRoute() {
         assignments={ruleAssignments as never}
         library={ruleLibrary as never}
       />
-      <ItemRuleAssignmentsList
+      <SalesRuleAssignmentsList
         itemId={itemId}
-        assignments={itemRuleAssignments as never}
-        library={itemRuleLibrary as never}
+        assignments={salesRuleAssignments as never}
+        library={salesRuleLibrary as never}
       />
     </VStack>
   );

@@ -5,6 +5,7 @@ import {
   LuList,
   LuPercent,
   LuShapes,
+  LuShieldCheck,
   LuSquareUser,
   LuStar
 } from "react-icons/lu";
@@ -72,6 +73,12 @@ export default function useSalesSubmodules() {
           to: path.to.salesPricingRules,
           role: "employee",
           icon: <LuPercent />
+        },
+        {
+          name: t`Sales Rules`,
+          to: path.to.salesRules,
+          role: "employee",
+          icon: <LuShieldCheck />
         },
         {
           name: t`No Quote Reasons`,

@@ -8,22 +8,22 @@
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import {
-  type ItemRuleFilter,
-  itemRuleAppliesToItem,
+  ruleAppliesToItem,
+  type SalesRuleFilter,
   type Severity,
   type StorageRuleRow,
   type TargetType,
   type TransactionSurface,
-  toItemRuleFilter
+  toSalesRuleFilter
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { itemPostingGroupIdFromEmbed } from "./context";
 
 // Nullable filter columns appended to broadcast selects for item-target rules.
-const ITEM_RULE_FILTER_COLUMNS =
+const SALES_RULE_FILTER_COLUMNS =
   "filteredItemTypes, filteredItemGroupIds, filteredItemMatchAll";
 
-// Filter columns carried on broadcast item rules. PostgREST's typed-select
+// Filter columns carried on broadcast sales rules. PostgREST's typed-select
 // parser can't narrow our dynamically-built select string, so broadcast queries
 // type their rows explicitly via this shape rather than the generated Row type.
 type ItemFilterColumns = {
@@ -72,7 +72,7 @@ type RuleRowSelect = Pick<
  * `data` keys are targetIds (explicit-assignment rules only).
  * `broadcasts` carries rules that fire beyond explicit assignments — caller
  * merges them into every line:
- *   - item targets: EVERY active item rule broadcasts, then the caller gates it
+ *   - item targets: EVERY active sales rule broadcasts, then the caller gates it
  *     per line via the rule's `filteredItem*` filters (see `broadcastFilters`);
  *     empty filters = every item.
  *   - workCenter targets: rules with `appliesToAll = TRUE` only.
@@ -93,11 +93,11 @@ export async function getActiveRulesForTargets(
 ): Promise<{
   data: Map<string, StorageRuleRow[]>;
   broadcasts: StorageRuleRow[];
-  broadcastFilters: Map<string, ItemRuleFilter>;
+  broadcastFilters: Map<string, SalesRuleFilter>;
   error: unknown;
 }> {
   const out = new Map<string, StorageRuleRow[]>();
-  const broadcastFilters = new Map<string, ItemRuleFilter>();
+  const broadcastFilters = new Map<string, SalesRuleFilter>();
 
   const ruleCols =
     "id, targetType, severity, message, conditionAst, surfaces, updatedAt, active";
@@ -106,7 +106,7 @@ export async function getActiveRulesForTargets(
   // Annotated `string` so PostgREST yields generically-typed rows (the dynamic
   // select string can't be statically parsed); rows are cast explicitly below.
   const broadcastCols: string = isItem
-    ? `${ruleCols}, ${ITEM_RULE_FILTER_COLUMNS}`
+    ? `${ruleCols}, ${SALES_RULE_FILTER_COLUMNS}`
     : ruleCols;
 
   const table = assignmentTableFor(args.targetType);
@@ -127,7 +127,7 @@ export async function getActiveRulesForTargets(
           .in(idCol, args.targetIds)
           .eq("companyId", args.companyId)
       : Promise.resolve({ data: [], error: null }),
-    // Item rules all broadcast (filtered per item); non-item only when appliesToAll.
+    // Sales rules all broadcast (filtered per item); non-item only when appliesToAll.
     isItem ? broadcastBase : broadcastBase.eq("appliesToAll", true)
   ]);
 
@@ -169,7 +169,7 @@ export async function getActiveRulesForTargets(
 
   if (isItem) {
     for (const row of broadcasts) {
-      broadcastFilters.set(row.id, toItemRuleFilter(row));
+      broadcastFilters.set(row.id, toSalesRuleFilter(row));
     }
   }
 
@@ -216,7 +216,7 @@ export async function getRuleAssignmentsForTarget(
   // alongside explicit + inherited rows so the drawer shows the full set the
   // evaluator will fire (was previously hidden — drawer showed "0 assignments"
   // while broadcasts still triggered).
-  //   - item: EVERY active item rule broadcasts, gated per item by its
+  //   - item: EVERY active sales rule broadcasts, gated per item by its
   //     type/group filters (empty = all items) — mirrors the evaluator.
   //   - workCenter: rules with `appliesToAll = TRUE`.
   const isItem = args.targetType === "item";
@@ -224,7 +224,7 @@ export async function getRuleAssignmentsForTarget(
     "id, name, targetType, severity, message, active, surfaces, appliesToAll, createdAt";
   // `string` so PostgREST yields generic rows; cast explicitly at the loop.
   const broadcastCols: string = isItem
-    ? `${baseBroadcastCols}, ${ITEM_RULE_FILTER_COLUMNS}`
+    ? `${baseBroadcastCols}, ${SALES_RULE_FILTER_COLUMNS}`
     : baseBroadcastCols;
   const broadcastBase = client
     .from("storageRule")
@@ -323,12 +323,12 @@ export async function getRuleAssignmentsForTarget(
     if (b.active === false) continue;
     if (byRuleId.has(b.id)) continue;
 
-    // Item rules: only surface those whose filter matches this item. Label by
+    // Sales rules: only surface those whose filter matches this item. Label by
     // reach so the drawer reads "All items" vs a filtered match.
     let label = "Applies to all";
     if (isItem) {
-      const filter = toItemRuleFilter(b);
-      if (itemCtx && !itemRuleAppliesToItem(itemCtx, filter)) continue;
+      const filter = toSalesRuleFilter(b);
+      if (itemCtx && !ruleAppliesToItem(itemCtx, filter)) continue;
       const filterless =
         (filter.filteredItemTypes?.length ?? 0) === 0 &&
         (filter.filteredItemGroupIds?.length ?? 0) === 0;

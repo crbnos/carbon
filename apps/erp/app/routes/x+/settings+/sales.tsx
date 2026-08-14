@@ -40,16 +40,16 @@ import {
   digitalQuoteValidator,
   getAccountsReceivableBillingAddress,
   getCompanySettings,
-  itemRuleNotificationValidator,
   quoteLineCategoryMarkupsSettingsValidator,
   rfqReadyValidator,
+  salesRuleNotificationValidator,
   updateAccountsReceivableAddressSetting,
   updateAccountsReceivableBillingAddress,
   updateDefaultCustomerCc,
   updateDigitalQuoteSetting,
-  updateItemRuleNotificationSetting,
   updateQuoteLineCategoryMarkups,
   updateRfqReadySetting,
+  updateSalesRuleNotificationSetting,
   updateShowCustomerReadableIdSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -166,27 +166,27 @@ export async function action({ request }: ActionFunctionArgs) {
 
       return { success: true, message: "RFQ setting updated" };
 
-    case "itemRuleViolations":
-      const itemRuleValidation = await validator(
-        itemRuleNotificationValidator
+    case "salesRuleViolations":
+      const salesRuleValidation = await validator(
+        salesRuleNotificationValidator
       ).validate(formData);
 
-      if (itemRuleValidation.error) {
+      if (salesRuleValidation.error) {
         return { success: false, message: "Invalid form data" };
       }
 
-      const itemRuleSettings = await updateItemRuleNotificationSetting(
+      const salesRuleSettings = await updateSalesRuleNotificationSetting(
         client,
         companyId,
-        itemRuleValidation.data.itemRuleNotificationGroup ?? []
+        salesRuleValidation.data.salesRuleNotificationGroup ?? []
       );
 
-      if (itemRuleSettings.error)
-        return { success: false, message: itemRuleSettings.error.message };
+      if (salesRuleSettings.error)
+        return { success: false, message: salesRuleSettings.error.message };
 
       return {
         success: true,
-        message: "Item rule notification settings updated"
+        message: "Sales rule notification settings updated"
       };
 
     case "categoryMarkups":
@@ -627,21 +627,21 @@ export default function SalesSettingsRoute() {
         <Card>
           <ValidatedForm
             method="post"
-            validator={itemRuleNotificationValidator}
+            validator={salesRuleNotificationValidator}
             defaultValues={{
-              itemRuleNotificationGroup:
-                companySettings.itemRuleNotificationGroup ?? []
+              salesRuleNotificationGroup:
+                companySettings.salesRuleNotificationGroup ?? []
             }}
             fetcher={fetcher}
           >
-            <input type="hidden" name="intent" value="itemRuleViolations" />
+            <input type="hidden" name="intent" value="salesRuleViolations" />
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Trans>Item Rule Violations</Trans>
+                <Trans>Sales Rule Violations</Trans>
               </CardTitle>
               <CardDescription>
                 <Trans>
-                  Enable notifications when an item rule violation is blocked or
+                  Enable notifications when a sales rule violation is blocked or
                   acknowledged on a quote or sales order line.
                 </Trans>
               </CardDescription>
@@ -653,8 +653,8 @@ export default function SalesSettingsRoute() {
                     <Trans>Notifications</Trans>
                   </Label>
                   <Users
-                    name="itemRuleNotificationGroup"
-                    label={t`Who should receive notifications when an item rule violation is blocked or acknowledged?`}
+                    name="salesRuleNotificationGroup"
+                    label={t`Who should receive notifications when a sales rule violation is blocked or acknowledged?`}
                     type="employee"
                   />
                 </div>
@@ -665,7 +665,7 @@ export default function SalesSettingsRoute() {
                 isDisabled={fetcher.state !== "idle"}
                 isLoading={
                   fetcher.state !== "idle" &&
-                  fetcher.formData?.get("intent") === "itemRuleViolations"
+                  fetcher.formData?.get("intent") === "salesRuleViolations"
                 }
               >
                 <Trans>Save</Trans>

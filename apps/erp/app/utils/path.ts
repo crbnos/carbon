@@ -665,8 +665,6 @@ export const path = {
     deleteItem: (id: string) => generatePath(`${x}/items/delete/${id}`),
     deleteItemPostingGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
-    deleteItemRule: (id: string) =>
-      generatePath(`${x}/items/item-rules/${id}/delete`),
     deleteJob: (id: string) => generatePath(`${x}/job/${id}/delete`),
     deleteJobMaterial: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/material/delete/${id}`),
@@ -791,6 +789,8 @@ export const path = {
     deleteSalesRfq: (id: string) => generatePath(`${x}/sales-rfq/${id}/delete`),
     deleteSalesRfqLine: (id: string, lineId: string) =>
       generatePath(`${x}/sales-rfq/${id}/${lineId}/delete`),
+    deleteSalesRule: (id: string) =>
+      generatePath(`${x}/sales/sales-rules/${id}/delete`),
     deleteSavedView: (id: string) =>
       generatePath(`${x}/shared/views/delete/${id}`),
     deleteScrapReason: (id: string) =>
@@ -1226,12 +1226,6 @@ export const path = {
     itemPostingGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
     itemPostingGroups: `${x}/items/groups`,
     itemProperties: (id: string) => generatePath(`${x}/items/${id}/properties`),
-    itemRule: (id: string) => generatePath(`${x}/items/item-rules/${id}`),
-    itemRuleAssign: (itemId: string) =>
-      generatePath(`${x}/items/item-rules/assign/${itemId}`),
-    itemRules: `${x}/items/item-rules`,
-    itemRuleUnassign: (itemId: string, ruleId: string) =>
-      generatePath(`${x}/items/item-rules/unassign/${itemId}/${ruleId}`),
     items: `${x}/items`,
     itemsSettings: `${x}/settings/items`,
     job: (id: string) => generatePath(`${x}/job/${id}`),
@@ -1477,7 +1471,6 @@ export const path = {
     newIssueType: `${x}/quality/issue-types/new`,
     newIssueWorkflow: `${x}/issue-workflow/new`,
     newItemPostingGroup: `${x}/items/groups/new`,
-    newItemRule: `${x}/items/item-rules/new`,
     newJob: `${x}/job/new`,
     newJobMaterial: (jobId: string) =>
       generatePath(`${x}/job/methods/${jobId}/material/new`),
@@ -1566,6 +1559,7 @@ export const path = {
       generatePath(`${x}/sales-order/${id}/${lineId}/shipment`),
     newSalesRFQ: `${x}/sales-rfq/new`,
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
+    newSalesRule: `${x}/sales/sales-rules/new`,
     newScrapReason: `${x}/production/scrap-reasons/new`,
     newSerialNumberSequence: `${x}/settings/serial-numbers/new`,
     newService: `${x}/service/new`,
@@ -1950,6 +1944,12 @@ export const path = {
     salesRfqRoot: `${x}/sales-rfq`,
     salesRfqStatus: (id: string) => generatePath(`${x}/sales-rfq/${id}/status`),
     salesRfqs: `${x}/sales/rfqs`,
+    salesRule: (id: string) => generatePath(`${x}/sales/sales-rules/${id}`),
+    salesRuleAssign: (itemId: string) =>
+      generatePath(`${x}/sales/sales-rules/assign/${itemId}`),
+    salesRules: `${x}/sales/sales-rules`,
+    salesRuleUnassign: (itemId: string, ruleId: string) =>
+      generatePath(`${x}/sales/sales-rules/unassign/${itemId}/${ruleId}`),
     salesSettings: `${x}/settings/sales`,
     saveInspectionDocument: (id: string) =>
       generatePath(`${x}/inspection-document/${id}/save`),

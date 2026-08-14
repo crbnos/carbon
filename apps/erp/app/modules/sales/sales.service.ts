@@ -3,7 +3,12 @@ import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import type { PickPartial } from "@carbon/utils";
+import type {
+  ConditionAst,
+  PickPartial,
+  SalesRuleSurface,
+  Severity
+} from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import type {
   PostgrestError,
@@ -6101,4 +6106,123 @@ export async function updateSalesRFQLineOrder(
         .execute();
     }
   });
+}
+
+// -----------------------------------------------------------------------------
+// Sales Rules
+// -----------------------------------------------------------------------------
+// ERP-only admin CRUD for the Sales → Sales Rules page. Cross-app queries
+// (assignment loaders, list fetch for tab data, assign/unassign) live in
+// `@carbon/ee/rules` and are re-exported from this module's barrel.
+
+type SalesRuleFilters = {
+  filteredItemTypes?: string[];
+  filteredItemGroupIds?: string[];
+  filteredItemMatchAll?: boolean;
+};
+
+type SalesRuleInsert = SalesRuleFilters & {
+  name: string;
+  description?: string | null;
+  message: string;
+  severity: Severity;
+  conditionAst: ConditionAst;
+  surfaces: SalesRuleSurface[];
+  active: boolean;
+  companyId: string;
+  createdBy: string;
+  customFields?: Json;
+};
+
+type SalesRuleUpdate = SalesRuleFilters & {
+  id: string;
+  name: string;
+  description?: string | null;
+  message: string;
+  severity: Severity;
+  conditionAst: ConditionAst;
+  surfaces: SalesRuleSurface[];
+  active: boolean;
+  updatedBy: string;
+  customFields?: Json;
+};
+
+export async function getSalesRules(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("salesRule")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args ?? {}, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getSalesRule(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("salesRule").select("*").eq("id", id).single();
+}
+
+export async function upsertSalesRule(
+  client: SupabaseClient<Database>,
+  rule: SalesRuleInsert | SalesRuleUpdate
+) {
+  if ("createdBy" in rule) {
+    return client
+      .from("salesRule")
+      .insert({ ...rule, conditionAst: rule.conditionAst as unknown as Json })
+      .select("id")
+      .single();
+  }
+  return client
+    .from("salesRule")
+    .update({
+      ...sanitize(rule),
+      conditionAst: rule.conditionAst as unknown as Json,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", rule.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteSalesRule(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("salesRule").delete().eq("id", id);
+}
+
+export async function getSalesRuleAssignmentCounts(
+  client: SupabaseClient<Database>,
+  ruleIds: string[]
+) {
+  if (ruleIds.length === 0) return { data: {}, error: null };
+
+  const { data, error } = await client
+    .from("salesRuleAssignment")
+    .select("ruleId")
+    .in("ruleId", ruleIds);
+
+  if (error) return { data: {}, error };
+
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? []) as Array<{ ruleId: string }>) {
+    counts[row.ruleId] = (counts[row.ruleId] ?? 0) + 1;
+  }
+
+  return { data: counts, error: null };
 }

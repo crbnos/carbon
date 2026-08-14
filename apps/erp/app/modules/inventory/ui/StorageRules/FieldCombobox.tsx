@@ -78,7 +78,7 @@ type FieldComboboxProps = {
    */
   surfaces?: TransactionSurface[];
   /**
-   * Explicit field pool (item rules). When provided it replaces the
+   * Explicit field pool (sales rules). When provided it replaces the
    * targetType-derived registry lookup entirely.
    */
   fields?: FieldDef[];

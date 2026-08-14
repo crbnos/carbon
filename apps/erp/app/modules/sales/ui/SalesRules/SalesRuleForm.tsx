@@ -1,8 +1,8 @@
-// Create/edit drawer for Item Rules. Mirrors
+// Create/edit drawer for Sales Rules. Mirrors
 // `~/modules/inventory/ui/StorageRules/StorageRuleForm` minus targetType/appliesToAll —
-// item rules are always item-target and broadcast via the item filters.
+// sales rules are always item-target and broadcast via the item filters.
 // Reuses the shared storage-rules builder components, parameterized with the
-// item-rule surface catalog + field pool.
+// sales-rule surface catalog + field pool.
 
 import { Boolean, ValidatedForm } from "@carbon/form";
 import {
@@ -20,9 +20,9 @@ import {
 import {
   type Condition,
   type ConditionAst,
-  getFieldsForItemRuleSurfaces,
-  ITEM_RULE_SURFACES,
-  type ItemRuleSurface
+  getFieldsForSalesRuleSurfaces,
+  SALES_RULE_SURFACES,
+  type SalesRuleSurface
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
@@ -42,10 +42,10 @@ import RuleBuilder from "~/modules/inventory/ui/StorageRules/RuleBuilder";
 import SeveritySelect from "~/modules/inventory/ui/StorageRules/SeveritySelect";
 import SurfacesField from "~/modules/inventory/ui/StorageRules/SurfacesField";
 import { path } from "~/utils/path";
-import { itemRuleValidator } from "../../items.models";
+import { salesRuleValidator } from "../../sales.models";
 
-const ITEM_RULE_SURFACE_OPTIONS: {
-  value: ItemRuleSurface;
+const SALES_RULE_SURFACE_OPTIONS: {
+  value: SalesRuleSurface;
   label: string;
   description?: string;
   icon?: JSX.Element;
@@ -64,28 +64,28 @@ const ITEM_RULE_SURFACE_OPTIONS: {
   }
 ];
 
-type ItemRuleFormInitial = Partial<z.infer<typeof itemRuleValidator>> & {
+type SalesRuleFormInitial = Partial<z.infer<typeof salesRuleValidator>> & {
   conditionAst?: ConditionAst;
 };
 
-type ItemRuleFormProps = {
-  initialValues: ItemRuleFormInitial;
+type SalesRuleFormProps = {
+  initialValues: SalesRuleFormInitial;
   open?: boolean;
   onClose: () => void;
 };
 
-export default function ItemRuleForm({
+export default function SalesRuleForm({
   initialValues,
   open = true,
   onClose
-}: ItemRuleFormProps) {
+}: SalesRuleFormProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
 
   const isEditing = !!initialValues.id;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.can("update", "sales")
+    : !permissions.can("create", "sales");
 
   const conditionAstInitial: ConditionAst = (initialValues.conditionAst as
     | ConditionAst
@@ -100,19 +100,19 @@ export default function ItemRuleForm({
     conditionAstInitial.conditions
   );
 
-  // Default new rules to all item-rule surfaces. Editing keeps whatever was
+  // Default new rules to all sales-rule surfaces. Editing keeps whatever was
   // saved.
   const defaultSurfaces = (initialValues.surfaces ?? [
-    ...ITEM_RULE_SURFACES
-  ]) as ItemRuleSurface[];
+    ...SALES_RULE_SURFACES
+  ]) as SalesRuleSurface[];
 
   const [liveSurfaces, setLiveSurfaces] =
-    useState<ItemRuleSurface[]>(defaultSurfaces);
+    useState<SalesRuleSurface[]>(defaultSurfaces);
 
   // Field pool the builder + token dropdown may reference, narrowed by the
   // rule's live surfaces (mirrors the save-time validator gate).
-  const itemRuleFields = useMemo(
-    () => getFieldsForItemRuleSurfaces(liveSurfaces),
+  const salesRuleFields = useMemo(
+    () => getFieldsForSalesRuleSurfaces(liveSurfaces),
     [liveSurfaces]
   );
 
@@ -139,12 +139,12 @@ export default function ItemRuleForm({
       >
         <ModalDrawerContent size="lg">
           <ValidatedForm
-            validator={itemRuleValidator}
+            validator={salesRuleValidator}
             method="post"
             action={
               isEditing
-                ? path.to.itemRule(initialValues.id!)
-                : path.to.newItemRule
+                ? path.to.salesRule(initialValues.id!)
+                : path.to.newSalesRule
             }
             defaultValues={defaults}
             className="flex flex-col h-full"
@@ -171,23 +171,23 @@ export default function ItemRuleForm({
                 />
                 <SeveritySelect name="severity" />
                 <ItemFilterSelector />
-                <SurfacesField<ItemRuleSurface>
+                <SurfacesField<SalesRuleSurface>
                   name="surfaces"
-                  surfaceOptions={ITEM_RULE_SURFACE_OPTIONS}
+                  surfaceOptions={SALES_RULE_SURFACE_OPTIONS}
                   onSurfacesChange={setLiveSurfaces}
                 />
                 <RuleBuilder
                   name="conditionAst"
                   initial={conditionAstInitial}
                   onConditionsChange={setLiveConditions}
-                  fields={itemRuleFields}
+                  fields={salesRuleFields}
                 />
                 <MessageWithTokens
                   name="message"
                   conditions={liveConditions}
-                  fields={itemRuleFields}
+                  fields={salesRuleFields}
                 />
-                <CustomFormFields table="itemRule" />
+                <CustomFormFields table="salesRule" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

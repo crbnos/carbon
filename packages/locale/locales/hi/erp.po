@@ -5667,8 +5667,8 @@ msgstr "पूर्ण प्रोद्भवन लेखांकन को
 msgid "Enable in Settings"
 msgstr "सेटिंग्स में सक्षम करें"
 
-msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "जब किसी उद्धरण या बिक्रय आदेश लाइन पर एक आइटम नियम उल्लंघन अवरुद्ध या स्वीकार किया जाता है तो सूचनाएं सक्षम करें।"
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "जब किसी उद्धरण या बिक्रय आदेश लाइन पर एक बिक्री नियम उल्लंघन अवरुद्ध या स्वीकार किया जाता है तो सूचनाएं सक्षम करें।"
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "जब कोई RFQ उद्धरण के लिए तैयार के रूप में चिह्नित किया जाता है तो सूचनाएं सक्षम करें।"
@@ -7887,15 +7887,6 @@ msgstr "आइटम को एक चयनित प्रकार OR एक 
 
 msgid "Item Name"
 msgstr "आइटम नाम"
-
-msgid "Item Rule Violations"
-msgstr "आइटम नियम उल्लंघन"
-
-msgid "Item rules"
-msgstr "आइटम नियम"
-
-msgid "Item Rules"
-msgstr "आइटम नियम"
 
 msgid "Item Scope"
 msgstr "आइटम स्कोप"
@@ -12416,6 +12407,15 @@ msgstr "विक्रय व्यक्ति"
 msgid "Sales Revenue"
 msgstr "बिक्रय राजस्व"
 
+msgid "Sales Rule Violations"
+msgstr "बिक्री नियम उल्लंघन"
+
+msgid "Sales rules"
+msgstr "बिक्री नियम"
+
+msgid "Sales Rules"
+msgstr "बिक्री नियम"
+
 msgid "Sales Tax Payable"
 msgstr "देय बिक्रय कर"
 
@@ -15708,8 +15708,8 @@ msgstr "{0} नियमों को अनलॉक करने के लि
 msgid "Upgrade to unlock audit history"
 msgstr "ऑडिट इतिहास को अनलॉक करने के लिए अपग्रेड करें"
 
-msgid "Upgrade to unlock item rules"
-msgstr "आइटम नियमों को अनलॉक करने के लिए अपग्रेड करें"
+msgid "Upgrade to unlock sales rules"
+msgstr "बिक्री नियमों को अनलॉक करने के लिए अपग्रेड करें"
 
 msgid "Upload"
 msgstr "अपलोड करें"
@@ -16580,14 +16580,14 @@ msgstr "जब कोई RFQ उद्धरण के लिए तैयार
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "बिक्रय कार्य पूर्ण होने पर कौन सूचनाएं प्राप्त करनी चाहिए?"
 
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "जब किसी बिक्री नियम उल्लंघन को अवरुद्ध या स्वीकार किया जाता है तो किसे सूचनाएं प्राप्त करनी चाहिए?"
+
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "जब कोई आपूर्तिकर्ता उद्धरण जमा करे तो किसे सूचनाएं प्राप्त करनी चाहिए?"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "इन्वेंटरी जॉब पूरा होने पर कौन सूचनाएं प्राप्त करना चाहिए?"
-
-msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
-msgstr "जब किसी आइटम नियम उल्लंघन को अवरुद्ध या स्वीकार किया जाता है तो किसे सूचनाएं प्राप्त करनी चाहिए?"
 
 msgid "Who you buy from."
 msgstr "आप किससे खरीदते हैं।"

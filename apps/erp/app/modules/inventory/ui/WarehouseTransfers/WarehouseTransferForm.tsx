@@ -68,7 +68,7 @@ const WarehouseTransferForm = ({
 }: WarehouseTransferFormProps) => {
   const { company } = useUser();
   const permissions = usePermissions();
-  // Item rules eval at every "go" status transition (Confirm/Ship/Receive/
+  // Sales rules eval at every "go" status transition (Confirm/Ship/Receive/
   // Complete). Surface violations through the hook's modal rather than the
   // plain navigation path.
   const statusRules = useRuleViolations<typeof statusAction>({

@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents/email";
 import {
   dedupeViolations,
-  evaluateItemRulesForSalesDocument,
+  evaluateSalesRulesForSalesDocument,
   isBlocked
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
@@ -60,7 +60,7 @@ export async function action(args: ActionFunctionArgs) {
   // Runs before the external link + PDF so a blocked quote produces neither.
   const formData = await request.clone().formData();
   const acknowledged = formData.get("acknowledged") === "true";
-  const { violations, ruleNames } = await evaluateItemRulesForSalesDocument({
+  const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
     client,
     companyId,
     userId,

@@ -13,8 +13,8 @@ import {
   getFieldsForTargetTypeAndSurfaces,
   interpolateMessage,
   isFieldAvailableOnSurfaces,
-  itemRuleAppliesToItem,
   type RuleContext,
+  ruleAppliesToItem,
   type StorageRuleRow,
   SURFACE_CONTEXT_AVAILABILITY,
   TRANSACTION_SURFACES
@@ -629,7 +629,7 @@ describe("per-surface field availability", () => {
     expect(wcFields.some((f) => f.path === "transaction.quantity")).toBe(true);
   });
 
-  it("item-surface fields stay offered for item rules", () => {
+  it("item-surface fields stay offered for sales rules", () => {
     const itemFields = getFieldsForTargetTypeAndSurfaces("item", ["receipt"]);
     expect(itemFields.some((f) => f.path === "item.type")).toBe(true);
     expect(itemFields.some((f) => f.context === "storage")).toBe(true);
@@ -654,13 +654,13 @@ describe("per-surface field availability", () => {
   });
 });
 
-describe("itemRuleAppliesToItem", () => {
+describe("ruleAppliesToItem", () => {
   const part = { type: "Part", itemPostingGroupId: "grp_a" };
 
   it("empty filters → applies to all items", () => {
-    expect(itemRuleAppliesToItem(part, {})).toBe(true);
+    expect(ruleAppliesToItem(part, {})).toBe(true);
     expect(
-      itemRuleAppliesToItem(part, {
+      ruleAppliesToItem(part, {
         filteredItemTypes: [],
         filteredItemGroupIds: []
       })
@@ -669,13 +669,13 @@ describe("itemRuleAppliesToItem", () => {
 
   it("single dimension (type) — OR and AND behave the same", () => {
     expect(
-      itemRuleAppliesToItem(part, { filteredItemTypes: ["Part", "Material"] })
+      ruleAppliesToItem(part, { filteredItemTypes: ["Part", "Material"] })
     ).toBe(true);
+    expect(ruleAppliesToItem(part, { filteredItemTypes: ["Material"] })).toBe(
+      false
+    );
     expect(
-      itemRuleAppliesToItem(part, { filteredItemTypes: ["Material"] })
-    ).toBe(false);
-    expect(
-      itemRuleAppliesToItem(part, {
+      ruleAppliesToItem(part, {
         filteredItemTypes: ["Material"],
         filteredItemMatchAll: true
       })
@@ -683,23 +683,23 @@ describe("itemRuleAppliesToItem", () => {
   });
 
   it("single dimension (group)", () => {
-    expect(
-      itemRuleAppliesToItem(part, { filteredItemGroupIds: ["grp_a"] })
-    ).toBe(true);
-    expect(
-      itemRuleAppliesToItem(part, { filteredItemGroupIds: ["grp_b"] })
-    ).toBe(false);
+    expect(ruleAppliesToItem(part, { filteredItemGroupIds: ["grp_a"] })).toBe(
+      true
+    );
+    expect(ruleAppliesToItem(part, { filteredItemGroupIds: ["grp_b"] })).toBe(
+      false
+    );
   });
 
   it("OR (default) — either dimension matches", () => {
     expect(
-      itemRuleAppliesToItem(part, {
+      ruleAppliesToItem(part, {
         filteredItemTypes: ["Material"],
         filteredItemGroupIds: ["grp_a"]
       })
     ).toBe(true);
     expect(
-      itemRuleAppliesToItem(part, {
+      ruleAppliesToItem(part, {
         filteredItemTypes: ["Material"],
         filteredItemGroupIds: ["grp_b"]
       })
@@ -708,14 +708,14 @@ describe("itemRuleAppliesToItem", () => {
 
   it("AND — both dimensions must match", () => {
     expect(
-      itemRuleAppliesToItem(part, {
+      ruleAppliesToItem(part, {
         filteredItemTypes: ["Part"],
         filteredItemGroupIds: ["grp_a"],
         filteredItemMatchAll: true
       })
     ).toBe(true);
     expect(
-      itemRuleAppliesToItem(part, {
+      ruleAppliesToItem(part, {
         filteredItemTypes: ["Part"],
         filteredItemGroupIds: ["grp_b"],
         filteredItemMatchAll: true
@@ -725,7 +725,7 @@ describe("itemRuleAppliesToItem", () => {
 
   it("null/absent posting group never matches a group filter", () => {
     expect(
-      itemRuleAppliesToItem(
+      ruleAppliesToItem(
         { type: "Part", itemPostingGroupId: null },
         { filteredItemGroupIds: ["grp_a"] }
       )

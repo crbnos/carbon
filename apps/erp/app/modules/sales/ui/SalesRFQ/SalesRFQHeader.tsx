@@ -415,7 +415,7 @@ function ConvertToQuoteModal({
     path.to.salesRfq(rfqId)
   );
 
-  // Converting re-evaluates item rules across the RFQ's mapped lines (the
+  // Converting re-evaluates sales rules across the RFQ's mapped lines (the
   // terminal gate in the action) before the edge function mints quote lines.
   // Route the submission through the violations hook so a blocked convert
   // opens the shared modal instead of silently doing nothing.
@@ -434,7 +434,7 @@ function ConvertToQuoteModal({
   // NOTE: do NOT close on `fetcher.state === "loading"`. A fetcher passes
   // through `loading` (revalidation) even when the action RETURNS data, so that
   // would unmount this modal — and the nested ViolationModal — the moment the
-  // item-rule gate returns violations. Closing is owned by the hook's
+  // sales-rule gate returns violations. Closing is owned by the hook's
   // `onSuccess`, which fires only when the action actually succeeded.
 
   return (

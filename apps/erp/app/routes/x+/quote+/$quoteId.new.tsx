@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
-  evaluateItemRuleLines,
+  evaluateSalesRuleLines,
   isBlocked
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
@@ -70,11 +70,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  // Item-rule enforcement: evaluate before the line is written. Blocked
+  // Sales-rule enforcement: evaluate before the line is written. Blocked
   // submissions return violations for the form's violation modal;
   // acknowledged warns pass through on re-submit.
   const acknowledged = formData.get("acknowledged") === "true";
-  const { violations, ruleNames } = await evaluateItemRuleLines({
+  const { violations, ruleNames } = await evaluateSalesRuleLines({
     client: serviceRole,
     companyId,
     userId,
@@ -102,7 +102,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // exists on a blocked create, so documentLineId stays null. Failures
       // must never break the submission.
       const acknowledgmentInsert = await serviceRole
-        .from("itemRuleAcknowledgment")
+        .from("salesRuleAcknowledgment")
         .insert(
           deduped.map((v) => ({
             companyId,
@@ -119,7 +119,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           }))
         );
       if (acknowledgmentInsert.error) {
-        logger.error("Failed to record item rule acknowledgments", {
+        logger.error("Failed to record sales rule acknowledgments", {
           error: acknowledgmentInsert.error
         });
       }
@@ -129,20 +129,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // must never break the submission.
     try {
       const companySettings = await getCompanySettings(serviceRole, companyId);
-      if (companySettings.data?.itemRuleNotificationGroup?.length) {
+      if (companySettings.data?.salesRuleNotificationGroup?.length) {
         await trigger("notify", {
           companyId,
           documentId: `quote:${quoteId}:${outcome}`,
-          event: NotificationEvent.ItemRuleViolation,
+          event: NotificationEvent.SalesRuleViolation,
           recipient: {
             type: "group",
-            groupIds: companySettings.data.itemRuleNotificationGroup
+            groupIds: companySettings.data.salesRuleNotificationGroup
           },
           from: userId
         });
       }
     } catch (err) {
-      logger.error("Failed to trigger item rule violation notification", {
+      logger.error("Failed to trigger sales rule violation notification", {
         error: err
       });
     }
@@ -180,7 +180,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // the submission.
   if (deduped.length > 0 && !blocked) {
     const acknowledgmentInsert = await serviceRole
-      .from("itemRuleAcknowledgment")
+      .from("salesRuleAcknowledgment")
       .insert(
         deduped.map((v) => ({
           companyId,
@@ -197,7 +197,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }))
       );
     if (acknowledgmentInsert.error) {
-      logger.error("Failed to record item rule acknowledgments", {
+      logger.error("Failed to record sales rule acknowledgments", {
         error: acknowledgmentInsert.error
       });
     }

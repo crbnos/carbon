@@ -585,7 +585,7 @@ async function buildEventContent(
       };
     }
 
-    case NotificationEvent.ItemRuleViolation: {
+    case NotificationEvent.SalesRuleViolation: {
       // Compound documentId (same pattern as JobOperation*):
       // "<quote|salesOrder>:<documentId>:<blocked|acknowledged>"
       const [docType, docId, outcome] = documentId.split(":");
@@ -593,8 +593,8 @@ async function buildEventContent(
 
       const phrase =
         outcome === "blocked"
-          ? "blocked by item rules"
-          : "flagged by item rules and acknowledged";
+          ? "blocked by sales rules"
+          : "flagged by sales rules and acknowledged";
       const outcomeLabel = outcome === "blocked" ? "Blocked" : "Acknowledged";
 
       if (docType === "salesOrder") {
@@ -1288,7 +1288,7 @@ export function getActorLabel(type: NotificationEvent): string | null {
       return "Rejected by";
     case NotificationEvent.MaintenanceDispatchCreated:
       return "Created by";
-    case NotificationEvent.ItemRuleViolation:
+    case NotificationEvent.SalesRuleViolation:
       return "Submitted by";
     default:
       return null;

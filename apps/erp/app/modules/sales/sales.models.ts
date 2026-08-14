@@ -1,3 +1,10 @@
+import {
+  conditionAstFormField,
+  getFieldDef,
+  isFieldAvailableOnSalesRuleSurfaces,
+  RULE_SEVERITIES,
+  SALES_RULE_SURFACES
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
@@ -985,3 +992,52 @@ export function isSalesRfqLocked(status: string | null | undefined): boolean {
 export function isQuoteLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
+
+// -----------------------------------------------------------------------------
+// Sales Rules — predicate rules evaluated when an item is added to a sales
+// document (quote line / sales order line). Distinct from storage rules
+// (`~/modules/inventory`, warehouse/MES surfaces) and the configurator's
+// `configurationRule`. The AST schema and engine are shared via @carbon/utils.
+// -----------------------------------------------------------------------------
+export const salesRuleSeverities = RULE_SEVERITIES;
+
+export const salesRuleValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }).max(120),
+    description: zfd.text(z.string().optional()),
+    message: z.string().min(1, { message: "Message is required" }).max(500),
+    severity: z.enum(salesRuleSeverities),
+    // Sales rules are always item-target and broadcast via the filteredItem*
+    // columns (empty = all items), so there is no targetType/appliesToAll.
+    filteredItemTypes: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemGroupIds: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemMatchAll: zfd.checkbox(),
+    active: zfd.checkbox(),
+    surfaces: zfd
+      .repeatableOfType(z.enum(SALES_RULE_SURFACES))
+      .refine((arr) => arr.length >= 1, {
+        message: "Pick at least one surface"
+      }),
+    conditionAst: conditionAstFormField
+  })
+  .superRefine((val, ctx) => {
+    // Reject conditions on a registry field whose context the evaluator won't
+    // populate for every selected surface (else it resolves undefined → false
+    // "X is required"). Unknown paths are left to runtime presence handling.
+    val.conditionAst.conditions.forEach((c, i) => {
+      const def = getFieldDef(c.field);
+      if (def && !isFieldAvailableOnSalesRuleSurfaces(def, val.surfaces)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["conditionAst", "conditions", i, "field"],
+          message: `"${def.label}" isn't available on the selected surface(s)`
+        });
+      }
+    });
+  });
+
+export const salesRuleAssignmentValidator = z.object({
+  itemId: z.string().min(1, { message: "Item ID is required" }),
+  ruleId: z.string().min(1, { message: "Rule ID is required" })
+});

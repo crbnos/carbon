@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Item Rule evaluation at every "go" transition — the user is committing to
+  // Sales Rule evaluation at every "go" transition — the user is committing to
   // the transfer plan. Pre-flight blocks early (before child shipment/receipt
   // are created). Cancel + Reopen are intentionally excluded — they're not
   // commits.

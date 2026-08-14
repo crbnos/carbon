@@ -73,6 +73,34 @@ pnpm --filter @carbon/erp test -- --testPathPattern=sales
 import { resolvePrice, applyPriceRules, getCustomer } from "~/modules/sales";
 ```
 
+## Sales Rules (sub-area)
+
+Configurable if-condition-then-error/warn rules evaluated when an item is added to a **sales document** (quote line, sales order line) — e.g. "if item type is X and the customer's ship-to country is Y → block". Lives **inside** this module: validators in `sales.models.ts`, CRUD in `sales.service.ts`, UI in `ui/SalesRules/`. There is no `modules/sales-rules` directory — a rule feature is not its own domain.
+
+Distinct from **storage rules** (`~/modules/inventory`, warehouse/MES surfaces) and **configurator rules** (`configurationRule`, `x+/part+/$itemId.rule*.tsx`) — three separate features sharing naming discipline: `salesRule*` / `storageRule*` / `configurationRule*`, never bare `rule`.
+
+- **Rule** — `salesRule` row: `conditionAst` JSONB (`{kind: all|any|none, conditions:[{field,op,value}]}`), `severity` (`error` blocks; `warn` requires acknowledgment), `message` with `{token}` interpolation, `surfaces` (`salesRuleSurface` enum: `quoteLine` | `salesOrderLine`), item scoping via `filteredItemTypes`/`filteredItemGroupIds`/`filteredItemMatchAll` (empty = all items) or explicit `salesRuleAssignment` pins.
+- **Shared engine** — the AST compiler/evaluator lives in `@carbon/utils` (`rules.ts` + `field-registry.ts`, with the zod AST mirror in `rules-schema.ts`): `compileSalesRuleWithCache`, `evaluateRules`, `SALES_RULE_SURFACES`, `getFieldsForSalesRuleSurfaces`, `SALES_RULE_FIELD_REGISTRY` (customer type/status/country + synthesized `customer.customFields.*`). Countries are **alpha-2** codes.
+- **Evaluator** — `@carbon/ee/rules.server` `evaluateSalesRuleLines` (service-role client; plan-gated on `SALES_RULES`). Missing ship-to → the engine's required-field semantics emit "Customer location is required" at the rule's severity.
+- **One modal** — enforcement actions return `{ violations, ruleNames }`; forms submit via `useRuleViolations` and render the shared `RuleViolationModal` (`@carbon/ee/rules`). Do not add a second violation UI.
+- **Acknowledgment log** — `salesRuleAcknowledgment` (append-only): one row per deduped violation on blocked attempts and acknowledged overrides.
+
+### Sales Rules safety
+
+- MUST evaluate with the **service role** client in route actions AFTER `requirePermissions` — the check must see full truth regardless of the acting user's read permissions.
+- MUST gate write routes with `requirePlan({ feature: "SALES_RULES" })` (key in `packages/ee/src/plan.ts`).
+- The shared rule-builder components (`RuleBuilder`, `SurfacesField`, `MessageWithTokens`, `SeveritySelect`, `ItemFilterSelector`) live in `~/modules/inventory/ui/StorageRules/` and are imported by **deep path**. Keep any parameterization **additive** (defaults preserve storage behavior), and never import a module *barrel* from these components — keep the dependency a one-way deep import from `sales` into the inventory UI folder to avoid a barrel cycle. The shared zod AST schema lives in `@carbon/utils` for the same reason.
+- Never extend the storage `transactionSurface` DB enum for sales surfaces — sales rules own `salesRuleSurface`.
+- Never duplicate `isBlocked`/`dedupeViolations`/the violation modal — import from `@carbon/ee/rules(.server)`.
+
+| Table | Purpose |
+|---|---|
+| `salesRule` | Rule definitions (house PK `("id","companyId")`; RLS writes `sales_*`) |
+| `salesRuleAssignment` | Explicit per-item pins, PK `(itemId, ruleId)` |
+| `salesRuleAcknowledgment` | Append-only override/block evidence (INSERT via `sales_create`) |
+
+Service functions: `getSalesRules` / `getSalesRule` / `upsertSalesRule` / `deleteSalesRule` / `getSalesRuleAssignmentCounts` (in `sales.service.ts`); cross-app `getActiveSalesRulesForItems` / `getSalesRuleAssignmentsForItem` / `getSalesRulesList` / `assignSalesRule` / `unassignSalesRule` re-exported from `@carbon/ee/rules` through the module barrel. Routes: `x+/sales+/sales-rules*` (list/new/edit/delete/assign/unassign), sidebar entry in `useSalesSubmodules`, per-item "Sales rules" card on `x+/part+/$itemId.inventory.tsx`. Enforcement: the quote and sales-order line create + edit actions.
+
 ## Related Modules
 
 - **production** — sales order lines create jobs for Make to Order items

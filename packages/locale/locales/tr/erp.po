@@ -5667,8 +5667,8 @@ msgstr "Yevmiye kayıtları, finansal raporlar ve genel defter kaydı ile tam ta
 msgid "Enable in Settings"
 msgstr "Ayarlarda Etkinleştir"
 
-msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Bir alıntı veya satış siparişi satırında bir öğe kuralı ihlali engellendiğinde veya onaylandığında bildirimleri etkinleştirin."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Bir teklif veya satış siparişi satırında bir satış kuralı ihlali engellendiğinde veya onaylandığında bildirimleri etkinleştirin."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Bir RFQ teklif için hazır olarak işaretlendiğinde bildirimleri etkinleştir."
@@ -7887,15 +7887,6 @@ msgstr "Öğe seçilen bir tür VEYA seçilen bir gruba uymalıdır"
 
 msgid "Item Name"
 msgstr "Kalem Adı"
-
-msgid "Item Rule Violations"
-msgstr "Öğe Kuralı İhlafleri"
-
-msgid "Item rules"
-msgstr "Öğe kuralları"
-
-msgid "Item Rules"
-msgstr "Öğe Kuralları"
 
 msgid "Item Scope"
 msgstr "Ürün Kapsamı"
@@ -12416,6 +12407,15 @@ msgstr "Satış Temsilcisi"
 msgid "Sales Revenue"
 msgstr "Satış Geliri"
 
+msgid "Sales Rule Violations"
+msgstr "Satış Kuralı İhlalleri"
+
+msgid "Sales rules"
+msgstr "Satış kuralları"
+
+msgid "Sales Rules"
+msgstr "Satış Kuralları"
+
 msgid "Sales Tax Payable"
 msgstr "Ödenmesi gereken satış vergisi"
 
@@ -15708,8 +15708,8 @@ msgstr "Üniforma kurallarını açmak için yükseltin"
 msgid "Upgrade to unlock audit history"
 msgstr "Denetim geçmişini açmak için yükseltin"
 
-msgid "Upgrade to unlock item rules"
-msgstr "Öğe kurallarının kilidini açmak için yükseltin"
+msgid "Upgrade to unlock sales rules"
+msgstr "Satış kurallarının kilidini açmak için yükseltin"
 
 msgid "Upload"
 msgstr "Yükle"
@@ -16580,14 +16580,14 @@ msgstr "Bir RFQ teklif için hazır olarak işaretlendiğinde kim bildirim almal
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Satış işi tamamlandığında kimler bildirim almalı?"
 
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Bir satış kuralı ihlali engellendiğinde veya onaylandığında kim bildirimler almalıdır?"
+
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Bir tedarikçi teklifi gönderildiğinde kimler bildirim almalı?"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Envanter işi tamamlandığında kimler bildirim almalı?"
-
-msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
-msgstr "Bir öğe kuralı ihlali engellendiğinde veya onaylandığında kim bildirimler almalıdır?"
 
 msgid "Who you buy from."
 msgstr "Kimden satın aldığınız."

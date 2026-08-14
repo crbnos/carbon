@@ -1,6 +1,6 @@
 # @carbon/utils
 
-Pure utility functions shared across all Carbon packages and apps. Covers accounting, arrays, BOM, dates, math, strings, status helpers, the storage/item rule engine, URL manipulation, and more.
+Pure utility functions shared across all Carbon packages and apps. Covers accounting, arrays, BOM, dates, math, strings, status helpers, the storage/sales rule engine, URL manipulation, and more.
 
 ## Always
 
@@ -12,7 +12,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 ## Ask First
 
 - Adding new dependencies — this package is imported everywhere; new deps increase bundle size across all apps.
-- Modifying `rules.ts` / `field-registry.ts` / `rules-schema.ts` — the rule-evaluation engine (condition AST compiler, operators, field registry) and its zod mirror. The `Operator` union is shared with `@carbon/workflows`; the evaluator gates real inventory transactions and sales-document lines. Used by storage rules (`~/modules/inventory`) and item rules (`~/modules/items`) across ERP and MES.
+- Modifying `rules.ts` / `field-registry.ts` / `rules-schema.ts` — the rule-evaluation engine (condition AST compiler, operators, field registry) and its zod mirror. The `Operator` union is shared with `@carbon/workflows`; the evaluator gates real inventory transactions and sales-document lines. Used by storage rules (`~/modules/inventory`) and sales rules (`~/modules/sales`) across ERP and MES.
 - Changing `Edition` enum or `isBrowser` detection — used by `@carbon/env` and auth logic.
 
 ## Never
@@ -42,7 +42,7 @@ pnpm --filter @carbon/utils typecheck
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
 | `revalidate` | `isSearchParamOnlyNavigation` — shared by both apps' shell `shouldRevalidate` |
 | `status` | Status resolution, status color mapping |
-| `rules` | Rule engine: condition AST, the shared `Operator` vocabulary, JIT-compiled evaluator + surfaces for storage rules and item rules |
+| `rules` | Rule engine: condition AST, the shared `Operator` vocabulary, JIT-compiled evaluator + surfaces for storage rules and sales rules |
 | `rules-schema` | Zod mirror of the rule AST (`conditionAstSchema`, `conditionAstFormField`, `RULE_OPERATORS`/`RULE_MATCH_KINDS`/`RULE_SEVERITIES`). Shared by both ERP rule form validators so neither module imports the other |
 | `supabase` | Typed Supabase query helpers |
 | `types` | Shared TypeScript types (`Edition`, generic utility types) |

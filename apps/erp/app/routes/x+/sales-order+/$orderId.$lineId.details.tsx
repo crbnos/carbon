@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
-  evaluateItemRuleLines,
+  evaluateSalesRuleLines,
   isBlocked,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
@@ -143,7 +143,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     d.assetId = undefined;
   }
 
-  // Item-rule enforcement — only for lines that reference an item (Comment
+  // Sales-rule enforcement — only for lines that reference an item (Comment
   // and Fixed Asset lines carry no itemId). Blocked submissions return
   // violations for the form's violation modal; acknowledged warns pass
   // through on re-submit.
@@ -157,7 +157,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       orderId,
       companyId
     );
-    const { violations, ruleNames } = await evaluateItemRuleLines({
+    const { violations, ruleNames } = await evaluateSalesRuleLines({
       client: serviceRole,
       companyId,
       userId,
@@ -176,7 +176,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // Persist override evidence — one row per deduped violation. Failures
       // must never break the submission.
       const acknowledgmentInsert = await serviceRole
-        .from("itemRuleAcknowledgment")
+        .from("salesRuleAcknowledgment")
         .insert(
           deduped.map((v) => ({
             companyId,
@@ -193,7 +193,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           }))
         );
       if (acknowledgmentInsert.error) {
-        logger.error("Failed to record item rule acknowledgments", {
+        logger.error("Failed to record sales rule acknowledgments", {
           error: acknowledgmentInsert.error
         });
       }
@@ -205,20 +205,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
           serviceRole,
           companyId
         );
-        if (companySettings.data?.itemRuleNotificationGroup?.length) {
+        if (companySettings.data?.salesRuleNotificationGroup?.length) {
           await trigger("notify", {
             companyId,
             documentId: `salesOrder:${orderId}:${outcome}`,
-            event: NotificationEvent.ItemRuleViolation,
+            event: NotificationEvent.SalesRuleViolation,
             recipient: {
               type: "group",
-              groupIds: companySettings.data.itemRuleNotificationGroup
+              groupIds: companySettings.data.salesRuleNotificationGroup
             },
             from: userId
           });
         }
       } catch (err) {
-        logger.error("Failed to trigger item rule violation notification", {
+        logger.error("Failed to trigger sales rule violation notification", {
           error: err
         });
       }

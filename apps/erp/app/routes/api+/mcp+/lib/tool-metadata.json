@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-12T22:21:41.550Z",
+  "generated": "2026-08-14T22:57:42.734Z",
   "totalTools": 1444,
   "modules": 15,
   "tools": [
@@ -17183,157 +17183,6 @@
         },
         "required": [
           "changeNoticeId"
-        ]
-      }
-    },
-    {
-      "name": "items_getItemRules",
-      "module": "items",
-      "classification": "READ",
-      "description": "get item rules",
-      "paramCount": 3,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "args": {
-            "type": "object",
-            "properties": {
-              "limit": {
-                "type": "integer",
-                "default": 100
-              },
-              "offset": {
-                "type": "integer",
-                "default": 0
-              },
-              "search": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "items_getItemRule",
-      "module": "items",
-      "classification": "READ",
-      "description": "get item rule",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "items_upsertItemRule",
-      "module": "items",
-      "classification": "WRITE",
-      "description": "upsert item rule",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "rule"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "rule": {},
-          "_operation": {
-            "type": "string",
-            "enum": [
-              "create",
-              "update"
-            ],
-            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
-          }
-        },
-        "required": [
-          "rule",
-          "_operation"
-        ]
-      }
-    },
-    {
-      "name": "items_deleteItemRule",
-      "module": "items",
-      "classification": "DESTRUCTIVE",
-      "description": "delete item rule",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "items_getItemRuleAssignmentCounts",
-      "module": "items",
-      "classification": "READ",
-      "description": "get item rule assignment counts",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "ruleIds"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "ruleIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "ruleIds"
         ]
       }
     },
@@ -40674,6 +40523,157 @@
       }
     },
     {
+      "name": "sales_getSalesRules",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales rules",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "sales_getSalesRule",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales rule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertSalesRule",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert sales rule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "rule"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "rule": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
+        },
+        "required": [
+          "rule",
+          "_operation"
+        ]
+      }
+    },
+    {
+      "name": "sales_deleteSalesRule",
+      "module": "sales",
+      "classification": "DESTRUCTIVE",
+      "description": "delete sales rule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_getSalesRuleAssignmentCounts",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales rule assignment counts",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "ruleIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ruleIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ruleIds"
+        ]
+      }
+    },
+    {
       "name": "settings_getAccountsPayableBillingAddress",
       "module": "settings",
       "classification": "READ",
@@ -42811,15 +42811,15 @@
       }
     },
     {
-      "name": "settings_updateItemRuleNotificationSetting",
+      "name": "settings_updateSalesRuleNotificationSetting",
       "module": "settings",
       "classification": "WRITE",
-      "description": "update item rule notification setting",
+      "description": "update sales rule notification setting",
       "paramCount": 1,
       "serviceParams": [
         "client",
         "companyId",
-        "itemRuleNotificationGroup"
+        "salesRuleNotificationGroup"
       ],
       "injectAuth": [
         "companyId",
@@ -42828,7 +42828,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "itemRuleNotificationGroup": {
+          "salesRuleNotificationGroup": {
             "type": "array",
             "items": {
               "type": "string"
@@ -42836,7 +42836,7 @@
           }
         },
         "required": [
-          "itemRuleNotificationGroup"
+          "salesRuleNotificationGroup"
         ]
       }
     },

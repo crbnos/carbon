@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
   dedupeViolations,
-  evaluateItemRuleLines,
+  evaluateSalesRuleLines,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
@@ -95,9 +95,9 @@ function enrichWithAuthContext(
 }
 
 /**
- * Item-rule backstop for sales line writes reached through MCP.
+ * Sales-rule backstop for sales line writes reached through MCP.
  *
- * The route actions that add quote / sales-order lines evaluate item rules
+ * The route actions that add quote / sales-order lines evaluate sales rules
  * before writing. This executor calls the same service functions by name, so
  * those checks never run — an agent holding an OAuth token or API key could
  * otherwise put a restricted item on a sales document.
@@ -111,7 +111,7 @@ function enrichWithAuthContext(
  * it, and there is no human on this path — warns are allowed through so the
  * agent isn't wedged on a rule a person could have waved past.
  */
-async function checkItemRulesForSalesLineWrite(
+async function checkSalesRulesForSalesLineWrite(
   functionName: string,
   context: ExecutorContext,
   args?: Record<string, any>
@@ -167,7 +167,7 @@ async function checkItemRulesForSalesLineWrite(
           ? args.quantity
           : 1;
 
-  const { violations } = await evaluateItemRuleLines({
+  const { violations } = await evaluateSalesRuleLines({
     client: serviceRole,
     companyId: context.companyId,
     userId: context.userId,
@@ -190,7 +190,7 @@ async function checkItemRulesForSalesLineWrite(
 
   return {
     success: false,
-    error: `Blocked by item rules: ${errors.map((v) => v.message).join("; ")}`
+    error: `Blocked by sales rules: ${errors.map((v) => v.message).join("; ")}`
   };
 }
 
@@ -251,12 +251,12 @@ export async function executeFunction(
     };
   }
 
-  const itemRuleBlock = await checkItemRulesForSalesLineWrite(
+  const salesRuleBlock = await checkSalesRulesForSalesLineWrite(
     functionName,
     context,
     normalizedArgs
   );
-  if (itemRuleBlock) return itemRuleBlock;
+  if (salesRuleBlock) return salesRuleBlock;
 
   // Parse the function name to get module and function
   const parts = functionName.split("_");

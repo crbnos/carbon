@@ -55,7 +55,7 @@ type RuleListItem = {
 };
 
 // How a rule reaches its targets, for the badge + assignment display.
-// Item rules use type/group filters (empty = all items); other targets use the
+// Sales rules use type/group filters (empty = all items); other targets use the
 // appliesToAll broadcast flag.
 function ruleReach(rule: RuleListItem): {
   broadcastLabel: string | null;
@@ -150,7 +150,7 @@ const StorageRulesGroups = memo(({ rules }: StorageRulesGroupsProps) => {
 
   // Only item (storage) rules are shown here; workCenter rules are managed via
   // Resources and hidden until their entry point + MES modal ship.
-  const itemRules = useMemo(
+  const salesRules = useMemo(
     () => rules.filter((r) => r.targetType === "item"),
     [rules]
   );
@@ -178,7 +178,7 @@ const StorageRulesGroups = memo(({ rules }: StorageRulesGroupsProps) => {
           newRuleHref={`${path.to.newStorageRule}?targetType=item`}
           newRuleLabel="Storage Rule"
           canCreate={canCreate}
-          rules={itemRules}
+          rules={salesRules}
         />
       </VStack>
     </ScrollArea>

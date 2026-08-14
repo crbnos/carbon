@@ -5667,8 +5667,8 @@ msgstr "Activez la comptabilité d'exercice complète avec les écritures de jou
 msgid "Enable in Settings"
 msgstr "Activer dans les paramètres"
 
-msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Activez les notifications lorsqu'une violation de règle d'article est bloquée ou reconnue sur une ligne de devis ou de commande client."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Activez les notifications lorsqu'une violation de règle de vente est bloquée ou reconnue sur une ligne de devis ou de commande client."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Activer les notifications lorsqu'une demande de devis est marquée comme prête pour la cotation."
@@ -7887,15 +7887,6 @@ msgstr "L'article doit correspondre à un type sélectionné OU à un groupe sé
 
 msgid "Item Name"
 msgstr "Nom de l'article"
-
-msgid "Item Rule Violations"
-msgstr "Violations de règles d'article"
-
-msgid "Item rules"
-msgstr "Règles d'article"
-
-msgid "Item Rules"
-msgstr "Règles d'article"
 
 msgid "Item Scope"
 msgstr "Portée des articles"
@@ -12416,6 +12407,15 @@ msgstr "Responsable commercial"
 msgid "Sales Revenue"
 msgstr "Chiffre d'affaires"
 
+msgid "Sales Rule Violations"
+msgstr "Violations de règles de vente"
+
+msgid "Sales rules"
+msgstr "Règles de vente"
+
+msgid "Sales Rules"
+msgstr "Règles de vente"
+
 msgid "Sales Tax Payable"
 msgstr "Taxes de vente à payer"
 
@@ -15708,8 +15708,8 @@ msgstr "Passer à la version supérieure pour déverrouiller les règles {0}"
 msgid "Upgrade to unlock audit history"
 msgstr "Passez à la version supérieure pour déverrouiller l'historique d'audit"
 
-msgid "Upgrade to unlock item rules"
-msgstr "Mettez à niveau pour déverrouiller les règles d'article"
+msgid "Upgrade to unlock sales rules"
+msgstr "Mettez à niveau pour déverrouiller les règles de vente"
 
 msgid "Upload"
 msgstr "Télécharger"
@@ -16580,14 +16580,14 @@ msgstr "Qui devrait recevoir des notifications quand une RFQ est marquée comme 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Qui devrait recevoir des notifications lorsqu'une tâche de vente est terminée ?"
 
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Qui devrait recevoir des notifications lorsqu'une violation de règle de vente est bloquée ou reconnue?"
+
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Qui devrait recevoir des notifications lorsqu'un devis fournisseur est soumis ?"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Qui devrait recevoir des notifications lorsqu'une tâche d'inventaire est terminée ?"
-
-msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
-msgstr "Qui devrait recevoir des notifications lorsqu'une violation de règle d'article est bloquée ou reconnue?"
 
 msgid "Who you buy from."
 msgstr "Vos fournisseurs et vendeurs."

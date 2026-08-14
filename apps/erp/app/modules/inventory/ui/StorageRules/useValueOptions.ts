@@ -35,7 +35,7 @@ export function useValueOptions(): ValueOptionsByLoader {
   const locations = useLocations();
   const storageTypes = useStorageTypes();
   const itemPostingGroups = useItemPostingGroups();
-  // Item-rule loaders (customer-context fields). `countries` values are
+  // Sales-rule loaders (customer-context fields). `countries` values are
   // alpha-2 codes, matching the persisted `customer.location.countryCode`.
   const customerTypes = useCustomerTypes();
   const customerStatuses = useCustomerStatuses();

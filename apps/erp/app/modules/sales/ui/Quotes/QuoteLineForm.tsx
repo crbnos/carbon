@@ -90,7 +90,7 @@ const QuoteLineForm = ({
 
   if (!quoteId) throw new Error("quoteId not found");
 
-  // Item-rule enforcement: submissions run through the violation hook's
+  // Sales-rule enforcement: submissions run through the violation hook's
   // fetcher so a blocked response opens <rules.ViolationModal /> with an
   // acknowledge-and-resubmit path for warns. Modal close happens on success
   // (not on submit) so violations can surface first.

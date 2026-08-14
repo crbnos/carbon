@@ -1,20 +1,20 @@
-// Item-rule extensions of the shared rule engine. Storage-rule behavior is
-// covered by rules.test.ts — these cases lock the additive item-rule
-// surface: customer ctx resolution, compileItemRuleWithCache + evaluateRules
-// on sales-document surfaces, and the item-rule field registry slice.
+// Sales-rule extensions of the shared rule engine. Storage-rule behavior is
+// covered by rules.test.ts — these cases lock the additive sales-rule
+// surface: customer ctx resolution, compileSalesRuleWithCache + evaluateRules
+// on sales-document surfaces, and the sales-rule field registry slice.
 import { beforeEach, describe, expect, it } from "vitest";
 import { getFieldDef } from "./field-registry";
 import {
   __resetStorageRulesCache,
   buildResolver,
-  compileItemRuleWithCache,
+  compileSalesRuleWithCache,
   evaluateRules,
-  getFieldsForItemRuleSurfaces,
-  type ItemRuleRow,
-  type RuleContext
+  getFieldsForSalesRuleSurfaces,
+  type RuleContext,
+  type SalesRuleRow
 } from "./rules";
 
-const itemRuleOf = (overrides: Partial<ItemRuleRow> = {}): ItemRuleRow => ({
+const salesRuleOf = (overrides: Partial<SalesRuleRow> = {}): SalesRuleRow => ({
   id: overrides.id ?? "item_rule_1",
   severity: overrides.severity ?? "error",
   message: overrides.message ?? "violated",
@@ -34,7 +34,7 @@ const itemRuleOf = (overrides: Partial<ItemRuleRow> = {}): ItemRuleRow => ({
   active: true
 });
 
-describe("item rules", () => {
+describe("sales rules", () => {
   beforeEach(() => __resetStorageRulesCache());
 
   it("buildResolver resolves customer.location.countryCode from ctx", () => {
@@ -46,11 +46,11 @@ describe("item rules", () => {
     expect(resolve({})).toBeUndefined();
   });
 
-  it("compileItemRuleWithCache + evaluateRules fire a violation on quoteLine when conditions are unsatisfied", () => {
-    const compiled = compileItemRuleWithCache(
-      itemRuleOf({ message: "{item.name} fails the embargo rule" })
+  it("compileSalesRuleWithCache + evaluateRules fire a violation on quoteLine when conditions are unsatisfied", () => {
+    const compiled = compileSalesRuleWithCache(
+      salesRuleOf({ message: "{item.name} fails the embargo rule" })
     );
-    // Default surfaces = every item-rule surface.
+    // Default surfaces = every sales-rule surface.
     expect(compiled.surfaces).toEqual(["quoteLine", "salesOrderLine"]);
     expect(compiled.targetType).toBe("item");
 
@@ -78,7 +78,7 @@ describe("item rules", () => {
   });
 
   it("produces a required-field violation when customer.location is absent", () => {
-    const compiled = compileItemRuleWithCache(itemRuleOf());
+    const compiled = compileSalesRuleWithCache(salesRuleOf());
     const ctx: RuleContext = {
       item: { name: "Widget", type: "Part" },
       customer: { id: "cust_1" }, // no location → countryCode unresolvable
@@ -90,8 +90,8 @@ describe("item rules", () => {
   });
 
   it("skips rules not subscribed to the evaluated surface", () => {
-    const compiled = compileItemRuleWithCache(
-      itemRuleOf({ id: "item_rule_so", surfaces: ["salesOrderLine"] })
+    const compiled = compileSalesRuleWithCache(
+      salesRuleOf({ id: "item_rule_so", surfaces: ["salesOrderLine"] })
     );
     const ctx: RuleContext = {
       item: { name: "Widget", type: "Part" },
@@ -102,8 +102,8 @@ describe("item rules", () => {
     expect(evaluateRules([compiled], ctx, "salesOrderLine")).toHaveLength(1);
   });
 
-  it("getFieldsForItemRuleSurfaces includes customer fields and excludes storage/workCenter fields", () => {
-    const paths = getFieldsForItemRuleSurfaces(["quoteLine"]).map(
+  it("getFieldsForSalesRuleSurfaces includes customer fields and excludes storage/workCenter fields", () => {
+    const paths = getFieldsForSalesRuleSurfaces(["quoteLine"]).map(
       (f) => f.path
     );
     expect(paths).toContain("customer.customerTypeId");
@@ -117,13 +117,13 @@ describe("item rules", () => {
 
     // Same set on both surfaces (identical context availability).
     expect(
-      getFieldsForItemRuleSurfaces(["quoteLine", "salesOrderLine"]).map(
+      getFieldsForSalesRuleSurfaces(["quoteLine", "salesOrderLine"]).map(
         (f) => f.path
       )
     ).toEqual(paths);
   });
 
-  it("getFieldDef resolves item-rule registry fields and synthesizes customer custom fields", () => {
+  it("getFieldDef resolves sales-rule registry fields and synthesizes customer custom fields", () => {
     expect(getFieldDef("customer.location.countryCode")?.label).toBe(
       "Customer country"
     );

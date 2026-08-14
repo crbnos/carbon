@@ -9,35 +9,35 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useNavigate } from "react-router";
-import { itemRuleValidator, upsertItemRule } from "~/modules/items";
-import { ItemRuleForm } from "~/modules/items/ui/ItemRules";
+import { salesRuleValidator, upsertSalesRule } from "~/modules/sales";
+import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, itemRulesQuery } from "~/utils/react-query";
+import { getCompanyId, salesRulesQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, { create: "parts" });
+  await requirePermissions(request, { create: "sales" });
   return {};
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts"
+    create: "sales"
   });
 
   await requirePlan({
     request,
     client,
     companyId,
-    feature: "ITEM_RULES",
-    redirectTo: path.to.itemRules
+    feature: "SALES_RULES",
+    redirectTo: path.to.salesRules
   });
 
   const formData = await request.formData();
-  const validation = await validator(itemRuleValidator).validate(formData);
+  const validation = await validator(salesRuleValidator).validate(formData);
   if (validation.error) return validation.error;
 
-  const insert = await upsertItemRule(client, {
+  const insert = await upsertSalesRule(client, {
     ...validation.data,
     description: validation.data.description ?? null,
     companyId,
@@ -51,26 +51,26 @@ export async function action({ request }: ActionFunctionArgs) {
     ).then(() => null);
   }
 
-  throw redirect(`${path.to.itemRules}?${getParams(request)}`);
+  throw redirect(`${path.to.salesRules}?${getParams(request)}`);
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
   window?.clientCache?.setQueryData(
-    itemRulesQuery(getCompanyId()).queryKey,
+    salesRulesQuery(getCompanyId()).queryKey,
     null
   );
   return await serverAction();
 }
 
-export default function NewItemRuleRoute() {
+export default function NewSalesRuleRoute() {
   const navigate = useNavigate();
   // navigate(-1) breaks when the page was opened directly (no history entry
   // to pop). Always navigate forward to the parent list route — closes the
   // drawer regardless of how the user got here.
   return (
-    <ItemRuleForm
+    <SalesRuleForm
       initialValues={{}}
-      onClose={() => navigate(path.to.itemRules)}
+      onClose={() => navigate(path.to.salesRules)}
     />
   );
 }

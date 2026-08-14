@@ -85,7 +85,7 @@ A rule reaches the lines it applies to in one of two ways:
   - **Message**: Shown on a violation; supports `{token}` interpolation.
   - **Surfaces**: Which transactions the rule fires on.
   - **Target**: `item` or `workCenter`.
-  - **Item filters**: Item types and/or groups to scope an item rule (empty = all items).
+  - **Item filters**: Item types and/or groups to scope a rule (empty = all items).
   - **Active**: Whether the rule is currently evaluated.
 
 ## Where to manage them

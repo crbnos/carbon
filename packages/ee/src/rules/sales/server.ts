@@ -1,5 +1,5 @@
-// Server-side item-rules evaluator. Cross-app entry point — the ERP quote /
-// sales-order line actions call `evaluateItemRuleLines`. Mirrors
+// Server-side sales-rules evaluator. Cross-app entry point — the ERP quote /
+// sales-order line actions call `evaluateSalesRuleLines`. Mirrors
 // `../storage/server.ts`.
 //
 // All functions here are server-only. Never import from a client module.
@@ -7,12 +7,12 @@
 import type { Database } from "@carbon/database";
 import {
   type CompiledRule,
-  compileItemRuleWithCache,
+  compileSalesRuleWithCache,
   evaluateRules,
-  type ItemRuleFilter,
-  type ItemRuleSurface,
-  itemRuleAppliesToItem,
-  toItemRuleFilter,
+  ruleAppliesToItem,
+  type SalesRuleFilter,
+  type SalesRuleSurface,
+  toSalesRuleFilter,
   type Violation
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -20,12 +20,12 @@ import { companyHasPlan } from "../../plan.server";
 import { itemPostingGroupIdFromEmbed } from "../storage/context";
 import { dedupeViolations } from "../storage/server";
 import {
-  buildItemRuleLineContext,
+  buildSalesRuleLineContext,
   type CustomerCtxInput,
-  type ItemRuleItemCtxRow,
-  type ItemRuleLineInput
+  type SalesRuleItemCtxRow,
+  type SalesRuleLineInput
 } from "./context";
-import { getActiveItemRulesForItems } from "./service";
+import { getActiveSalesRulesForItems } from "./service";
 
 // Block/dedupe semantics are identical to storage rules — the
 // `@carbon/ee/rules.server` barrel (`../server.ts`) re-exports `isBlocked` /
@@ -37,39 +37,39 @@ type Client = SupabaseClient<Database>;
 // Plan gate
 // ---------------------------------------------------------------------------
 
-export const isItemRulesEnabledForCompany = (
+export const isSalesRulesEnabledForCompany = (
   client: Client,
   companyId: string
 ): Promise<boolean> =>
-  companyHasPlan(client, companyId, { feature: "ITEM_RULES" });
+  companyHasPlan(client, companyId, { feature: "SALES_RULES" });
 
 // ---------------------------------------------------------------------------
 // Per-line evaluator — single entry point the sales line actions call
 // ---------------------------------------------------------------------------
 
-export type EvaluateItemRuleLinesArgs = {
+export type EvaluateSalesRuleLinesArgs = {
   client: Client;
   companyId: string;
   userId: string;
-  surface: ItemRuleSurface;
-  lines: ItemRuleLineInput[];
+  surface: SalesRuleSurface;
+  lines: SalesRuleLineInput[];
   /** The sales document's customer. null → no customer ctx is built. */
   customerId: string | null;
   /** The document's ship-to location; resolves `customer.location.countryCode`. */
   customerLocationId: string | null;
 };
 
-export type EvaluateItemRuleLinesResult = {
+export type EvaluateSalesRuleLinesResult = {
   violations: Violation[];
   ruleNames: Record<string, string>;
 };
 
-const EMPTY_RESULT: EvaluateItemRuleLinesResult = {
+const EMPTY_RESULT: EvaluateSalesRuleLinesResult = {
   violations: [],
   ruleNames: {}
 };
 
-export async function evaluateItemRuleLines({
+export async function evaluateSalesRuleLines({
   client,
   companyId,
   userId,
@@ -77,11 +77,11 @@ export async function evaluateItemRuleLines({
   lines,
   customerId,
   customerLocationId
-}: EvaluateItemRuleLinesArgs): Promise<EvaluateItemRuleLinesResult> {
+}: EvaluateSalesRuleLinesArgs): Promise<EvaluateSalesRuleLinesResult> {
   if (lines.length === 0) {
     return EMPTY_RESULT;
   }
-  if (!(await isItemRulesEnabledForCompany(client, companyId))) {
+  if (!(await isSalesRulesEnabledForCompany(client, companyId))) {
     return EMPTY_RESULT;
   }
 
@@ -121,7 +121,7 @@ export async function evaluateItemRuleLines({
           .in("id", Array.from(itemIds))
           .eq("companyId", companyId)
       : Promise.resolve({ data: [], error: null }),
-    getActiveItemRulesForItems(client, companyId, Array.from(itemIds))
+    getActiveSalesRulesForItems(client, companyId, Array.from(itemIds))
   ]);
 
   const { rules, assignmentsByItemId } = rulesRes;
@@ -132,7 +132,7 @@ export async function evaluateItemRuleLines({
   // went unnoticed. Surface it instead.
   if (itemsRes.error) {
     throw new Error(
-      `Item rule evaluation could not load items: ${
+      `Sales rule evaluation could not load items: ${
         itemsRes.error.message ?? String(itemsRes.error)
       }`
     );
@@ -174,7 +174,7 @@ export async function evaluateItemRuleLines({
       }
     : undefined;
 
-  const itemsById = new Map<string, ItemRuleItemCtxRow>();
+  const itemsById = new Map<string, SalesRuleItemCtxRow>();
   for (const it of itemsRes.data ?? []) {
     const row = it as unknown as Record<string, unknown>;
     const readable = row.readableIdWithRevision as string | null | undefined;
@@ -193,11 +193,11 @@ export async function evaluateItemRuleLines({
   }
 
   const compiledById = new Map<string, CompiledRule>();
-  const filtersById = new Map<string, ItemRuleFilter>();
+  const filtersById = new Map<string, SalesRuleFilter>();
   const ruleNamesById = new Map<string, string>();
   for (const rule of rules) {
-    compiledById.set(rule.id, compileItemRuleWithCache(rule));
-    filtersById.set(rule.id, toItemRuleFilter(rule));
+    compiledById.set(rule.id, compileSalesRuleWithCache(rule));
+    filtersById.set(rule.id, toSalesRuleFilter(rule));
     ruleNamesById.set(rule.id, rule.name);
   }
 
@@ -219,14 +219,14 @@ export async function evaluateItemRuleLines({
       if (!isExplicit) {
         if (!itemForLine) continue;
         const filter = filtersById.get(rule.id) ?? {};
-        if (!itemRuleAppliesToItem(itemForLine, filter)) continue;
+        if (!ruleAppliesToItem(itemForLine, filter)) continue;
       }
       compiledForLine.push(compiledById.get(rule.id)!);
     }
 
     if (compiledForLine.length === 0) continue;
 
-    const ctx = buildItemRuleLineContext({
+    const ctx = buildSalesRuleLineContext({
       line,
       surface,
       userId,
@@ -264,7 +264,7 @@ export async function evaluateItemRuleLines({
 
 export type SalesDocumentType = "salesRfq" | "quote" | "salesOrder";
 
-export type EvaluateItemRulesForSalesDocumentArgs = {
+export type EvaluateSalesRulesForSalesDocumentArgs = {
   client: Client;
   companyId: string;
   userId: string;
@@ -317,7 +317,7 @@ export async function resolveSalesOrderShipTo(
  * Evaluate every item-bearing line on a sales document, using the context as it
  * stands right now.
  *
- * This is the terminal-gate counterpart to `evaluateItemRuleLines`: rather than
+ * This is the terminal-gate counterpart to `evaluateSalesRuleLines`: rather than
  * trusting that each line was checked when it was written, it re-reads the
  * whole document. That covers lines created by paths that never ran the
  * per-line check (conversions, duplication, integrations, the API) and catches
@@ -326,14 +326,14 @@ export async function resolveSalesOrderShipTo(
  *
  * Returned violations carry `lineId`, so callers can attribute them.
  */
-export async function evaluateItemRulesForSalesDocument({
+export async function evaluateSalesRulesForSalesDocument({
   client,
   companyId,
   userId,
   documentType,
   documentId
-}: EvaluateItemRulesForSalesDocumentArgs): Promise<EvaluateItemRuleLinesResult> {
-  if (!(await isItemRulesEnabledForCompany(client, companyId))) {
+}: EvaluateSalesRulesForSalesDocumentArgs): Promise<EvaluateSalesRuleLinesResult> {
+  if (!(await isSalesRulesEnabledForCompany(client, companyId))) {
     return EMPTY_RESULT;
   }
 
@@ -357,7 +357,7 @@ export async function evaluateItemRulesForSalesDocument({
         .eq("companyId", companyId)
     ]);
 
-    const lines: ItemRuleLineInput[] = (linesRes.data ?? [])
+    const lines: SalesRuleLineInput[] = (linesRes.data ?? [])
       .filter((l) => !!l.itemId)
       .map((l) => ({
         lineId: l.id,
@@ -365,7 +365,7 @@ export async function evaluateItemRulesForSalesDocument({
         quantity: Math.max(1, ...(l.quantity ?? [1]))
       }));
 
-    return evaluateItemRuleLines({
+    return evaluateSalesRuleLines({
       client,
       companyId,
       userId,
@@ -391,7 +391,7 @@ export async function evaluateItemRulesForSalesDocument({
         .eq("companyId", companyId)
     ]);
 
-    const lines: ItemRuleLineInput[] = (linesRes.data ?? [])
+    const lines: SalesRuleLineInput[] = (linesRes.data ?? [])
       .filter((l) => !!l.itemId)
       .map((l) => ({
         lineId: l.id,
@@ -402,7 +402,7 @@ export async function evaluateItemRulesForSalesDocument({
         quantity: Math.max(1, ...(l.quantity ?? [1]))
       }));
 
-    return evaluateItemRuleLines({
+    return evaluateSalesRuleLines({
       client,
       companyId,
       userId,
@@ -422,7 +422,7 @@ export async function evaluateItemRulesForSalesDocument({
       .eq("companyId", companyId)
   ]);
 
-  const lines: ItemRuleLineInput[] = (linesRes.data ?? [])
+  const lines: SalesRuleLineInput[] = (linesRes.data ?? [])
     .filter((l) => !!l.itemId)
     .map((l) => ({
       lineId: l.id,
@@ -430,7 +430,7 @@ export async function evaluateItemRulesForSalesDocument({
       quantity: l.saleQuantity ?? 1
     }));
 
-  return evaluateItemRuleLines({
+  return evaluateSalesRuleLines({
     client,
     companyId,
     userId,

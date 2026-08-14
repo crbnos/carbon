@@ -608,8 +608,8 @@ export const pickQuantityValidator = z.object({
 
 // -----------------------------------------------------------------------------
 // Storage Rules — predicate rules evaluated on warehouse/MES transaction
-// surfaces (receipt, shipment, pick, place, …). Sibling feature to item rules
-// (`~/modules/items`, sales-document surfaces); both share the engine and the
+// surfaces (receipt, shipment, pick, place, …). Sibling feature to sales rules
+// (`~/modules/sales`, sales-document surfaces); both share the engine and the
 // AST schema in @carbon/utils.
 // -----------------------------------------------------------------------------
 export const storageRuleSeverities = RULE_SEVERITIES;

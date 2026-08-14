@@ -30,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const acknowledged = formData.get("acknowledged") === "true";
 
-  // Item Rule evaluation across every line on this receipt before posting.
+  // Sales Rule evaluation across every line on this receipt before posting.
   // Use service role so item / storageUnit reads are not blocked by RLS for
   // users who have `inventory.update` but not `parts.view` etc.
   const serviceRole = getCarbonServiceRole();
@@ -93,7 +93,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Place pass — the bin side of the receipt. Same lines, same item target;
-  // item rules own the `place` surface. Transfers double-up via the
+  // sales rules own the `place` surface. Transfers double-up via the
   // warehouseTransfer surface (dedupe collapses the overlap).
   const placeSurfaces: ("place" | "warehouseTransfer")[] = ["place"];
   if (receiptForSurface?.sourceDocument === "Inbound Transfer") {

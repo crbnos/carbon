@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
-  evaluateItemRulesForSalesDocument,
+  evaluateSalesRulesForSalesDocument,
   isBlocked
 } from "@carbon/ee/rules.server";
 import type { ActionFunctionArgs } from "react-router";
@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // (it is Deno and cannot import the ERP server runtime the plan gate needs).
   const acknowledged =
     (await request.formData()).get("acknowledged") === "true";
-  const { violations, ruleNames } = await evaluateItemRulesForSalesDocument({
+  const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
     client: serviceRole,
     companyId,
     userId,

@@ -2,7 +2,7 @@
 // `MatchKind`, `Condition`, `ConditionAst`).
 //
 // Lives here rather than in an ERP module because BOTH rule families validate
-// the same AST: storage rules (`~/modules/inventory`) and item rules
+// the same AST: storage rules (`~/modules/inventory`) and sales rules
 // (`~/modules/items`). Keeping it in the engine package means neither module
 // has to import the other — `inventory` already depends on `items`, so the
 // reverse edge would be a cycle.

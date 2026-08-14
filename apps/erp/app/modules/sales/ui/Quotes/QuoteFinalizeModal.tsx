@@ -60,7 +60,7 @@ const QuotationFinalizeModal = ({
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
-  // Finalizing re-evaluates item rules across every line (the terminal gate in
+  // Finalizing re-evaluates sales rules across every line (the terminal gate in
   // the action). Route the submission through the violations hook so a blocked
   // finalize opens the shared modal instead of silently doing nothing, and only
   // close this modal once the action actually succeeds.

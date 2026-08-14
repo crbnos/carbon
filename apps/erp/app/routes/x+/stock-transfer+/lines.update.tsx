@@ -50,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: `Invalid field: ${field}` }, data: null };
   }
 
-  // Item Rule evaluation runs at commit time (when the transfer is posted),
+  // Sales Rule evaluation runs at commit time (when the transfer is posted),
   // not on per-line edits. Saves go straight through.
   const update = await client
     .from("stockTransferLine")

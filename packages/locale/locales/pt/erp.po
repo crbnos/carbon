@@ -5667,8 +5667,8 @@ msgstr "Ativar contabilidade de competência completa com lançamentos de diári
 msgid "Enable in Settings"
 msgstr "Ativar nas Configurações"
 
-msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Ative notificações quando uma violação de regra de item é bloqueada ou confirmada em uma linha de cotação ou pedido de venda."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Ative notificações quando uma violação de regra de vendas é bloqueada ou confirmada em uma linha de cotação ou pedido de venda."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Ativar notificações quando uma RFQ é marcada como pronta para cotação."
@@ -7887,15 +7887,6 @@ msgstr "Item deve corresponder a um tipo selecionado OU um grupo selecionado"
 
 msgid "Item Name"
 msgstr "Nome do item"
-
-msgid "Item Rule Violations"
-msgstr "Violações de Regra de Item"
-
-msgid "Item rules"
-msgstr "Regras de item"
-
-msgid "Item Rules"
-msgstr "Regras de Item"
 
 msgid "Item Scope"
 msgstr "Escopo do Item"
@@ -12416,6 +12407,15 @@ msgstr "Pessoa de Vendas"
 msgid "Sales Revenue"
 msgstr "Receita de Vendas"
 
+msgid "Sales Rule Violations"
+msgstr "Violações de Regra de Vendas"
+
+msgid "Sales rules"
+msgstr "Regras de vendas"
+
+msgid "Sales Rules"
+msgstr "Regras de Vendas"
+
 msgid "Sales Tax Payable"
 msgstr "Imposto sobre vendas a pagar"
 
@@ -15708,8 +15708,8 @@ msgstr "Atualize para desbloquear regras de {0}"
 msgid "Upgrade to unlock audit history"
 msgstr "Atualize para desbloquear histórico de auditoria"
 
-msgid "Upgrade to unlock item rules"
-msgstr "Atualize para desbloquear regras de item"
+msgid "Upgrade to unlock sales rules"
+msgstr "Atualize para desbloquear regras de vendas"
 
 msgid "Upload"
 msgstr "Carregar"
@@ -16580,14 +16580,14 @@ msgstr "Quem deve receber notificações quando um RFQ é marcado como pronto pa
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Quem deve receber notificações quando um trabalho de vendas é concluído?"
 
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Quem deve receber notificações quando uma violação de regra de vendas é bloqueada ou confirmada?"
+
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Quem deve receber notificações quando uma cotação de fornecedor é enviada?"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Quem deve receber notificações quando um trabalho de inventário é concluído?"
-
-msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
-msgstr "Quem deve receber notificações quando uma violação de regra de item é bloqueada ou confirmada?"
 
 msgid "Who you buy from."
 msgstr "De quem você compra."

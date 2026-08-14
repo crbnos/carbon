@@ -38,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     validation.data;
   const acknowledged = formData.get("acknowledged") === "true";
 
-  // Business rule evaluation. Item rules fire on the `inventoryAdjustment`
+  // Business rule evaluation. Sales rules fire on the `inventoryAdjustment`
   // surface, and on `place` when the adjustment lands stock in a bin (positive
   // delta) or `pick` when it removes from a bin (negative delta) — so bin-level
   // rules tied to those surfaces also kick in for manual adjustments.
@@ -70,7 +70,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // Pick the bin surface from `adjustmentType` only. `quantity` is a
     // positive magnitude per `inventoryAdjustmentValidator` — sign-based
     // direction detection would misclassify `Negative Adjmt.` as `place`.
-    // Item rules own the `place`/`pick` surfaces. Scrap removes from a bin
+    // Sales rules own the `place`/`pick` surfaces. Scrap removes from a bin
     // (pick); Unscrap restores to a bin (place).
     const isNegative =
       d.adjustmentType === "Negative Adjmt." || d.adjustmentType === "Scrap";

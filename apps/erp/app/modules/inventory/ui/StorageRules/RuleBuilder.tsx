@@ -33,8 +33,8 @@ type RuleBuilderProps = {
    */
   surfaces?: TransactionSurface[];
   /**
-   * Explicit field pool (e.g. item rules pass
-   * `getFieldsForItemRuleSurfaces(...)`). When provided it replaces the
+   * Explicit field pool (e.g. sales rules pass
+   * `getFieldsForSalesRuleSurfaces(...)`). When provided it replaces the
    * targetType-derived registry lookup entirely.
    */
   fields?: FieldDef[];

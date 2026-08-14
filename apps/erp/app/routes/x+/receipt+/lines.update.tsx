@@ -22,7 +22,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: `Invalid field: ${field}` }, data: null };
   }
 
-  // Item Rule evaluation runs at post time only (`$receiptId.post.tsx`).
+  // Sales Rule evaluation runs at post time only (`$receiptId.post.tsx`).
   // Per-line saves go straight through.
   const update = await client
     .from("receiptLine")

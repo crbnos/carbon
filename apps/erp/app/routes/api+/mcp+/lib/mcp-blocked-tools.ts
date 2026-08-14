@@ -14,7 +14,7 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   "production_returnPickedRemaindersForJob",
   // Bulk sales-order line insert. It has no in-app caller — it is reachable
   // only through this executor, which exposes every named export of
-  // sales.service.ts. It writes lines without the item-rule evaluation the
+  // sales.service.ts. It writes lines without the sales-rule evaluation the
   // route action performs, and unlike `upsertSalesOrderLine` there is no
   // single-line path to gate.
   "sales_insertSalesOrderLines"

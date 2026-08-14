@@ -11,19 +11,19 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import {
-  getItemRule,
-  itemRuleValidator,
-  upsertItemRule
-} from "~/modules/items";
-import { ItemRuleForm } from "~/modules/items/ui/ItemRules";
+  getSalesRule,
+  salesRuleValidator,
+  upsertSalesRule
+} from "~/modules/sales";
+import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, itemRulesQuery } from "~/utils/react-query";
+import { getCompanyId, salesRulesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, { view: "parts" });
+  const { client } = await requirePermissions(request, { view: "sales" });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getItemRule(client, id);
+  const rule = await getSalesRule(client, id);
   if (rule.error || !rule.data) throw notFound("Rule not found");
   return { rule: rule.data };
 }
@@ -31,25 +31,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+    update: "sales"
   });
 
   await requirePlan({
     request,
     client,
     companyId,
-    feature: "ITEM_RULES",
-    redirectTo: path.to.itemRules
+    feature: "SALES_RULES",
+    redirectTo: path.to.salesRules
   });
 
   const { id } = params;
   if (!id) throw new Error("id required");
 
   const formData = await request.formData();
-  const validation = await validator(itemRuleValidator).validate(formData);
+  const validation = await validator(salesRuleValidator).validate(formData);
   if (validation.error) return validation.error;
 
-  const update = await upsertItemRule(client, {
+  const update = await upsertSalesRule(client, {
     ...validation.data,
     id,
     description: validation.data.description ?? null,
@@ -63,22 +63,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ).then(() => null);
   }
 
-  throw redirect(`${path.to.itemRules}?${getParams(request)}`);
+  throw redirect(`${path.to.salesRules}?${getParams(request)}`);
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
   window?.clientCache?.setQueryData(
-    itemRulesQuery(getCompanyId()).queryKey,
+    salesRulesQuery(getCompanyId()).queryKey,
     null
   );
   return await serverAction();
 }
 
-export default function EditItemRuleRoute() {
+export default function EditSalesRuleRoute() {
   const { rule } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   return (
-    <ItemRuleForm
+    <SalesRuleForm
       initialValues={
         {
           ...((rule ?? {}) as Record<string, unknown>),
@@ -86,7 +86,7 @@ export default function EditItemRuleRoute() {
             .conditionAst as unknown as ConditionAst
         } as never
       }
-      onClose={() => navigate(path.to.itemRules)}
+      onClose={() => navigate(path.to.salesRules)}
     />
   );
 }

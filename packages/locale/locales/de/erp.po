@@ -5667,8 +5667,8 @@ msgstr "Aktivieren Sie die vollständige Periodenrechnung mit Journaleinträgen,
 msgid "Enable in Settings"
 msgstr "In Einstellungen aktivieren"
 
-msgid "Enable notifications when an item rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Aktivieren Sie Benachrichtigungen, wenn eine Verletzung einer Elementregel auf einer Angebots- oder Verkaufsauftragszeile blockiert oder bestätigt wird."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Aktivieren Sie Benachrichtigungen, wenn eine Verletzung einer Verkaufsregel auf einer Angebots- oder Verkaufsauftragszeile blockiert oder bestätigt wird."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Aktivieren Sie Benachrichtigungen, wenn eine Anfrage als angebotbereit markiert wird."
@@ -7887,15 +7887,6 @@ msgstr "Artikel muss einem ausgewählten Typ ODER einer ausgewählten Gruppe ent
 
 msgid "Item Name"
 msgstr "Artikelname"
-
-msgid "Item Rule Violations"
-msgstr "Verstöße gegen Elementregeln"
-
-msgid "Item rules"
-msgstr "Elementregeln"
-
-msgid "Item Rules"
-msgstr "Elementregeln"
 
 msgid "Item Scope"
 msgstr "Artikelbereich"
@@ -12416,6 +12407,15 @@ msgstr "Verkäufer"
 msgid "Sales Revenue"
 msgstr "Verkaufsumsatz"
 
+msgid "Sales Rule Violations"
+msgstr "Verstöße gegen Verkaufsregeln"
+
+msgid "Sales rules"
+msgstr "Verkaufsregeln"
+
+msgid "Sales Rules"
+msgstr "Verkaufsregeln"
+
 msgid "Sales Tax Payable"
 msgstr "Umsatzsteuer"
 
@@ -15708,8 +15708,8 @@ msgstr "Upgrade to unlock {0} rules"
 msgid "Upgrade to unlock audit history"
 msgstr "Upgrade freischalten, um Audit-Verlauf zu entsperren"
 
-msgid "Upgrade to unlock item rules"
-msgstr "Upgraden Sie, um Elementregeln freizuschalten"
+msgid "Upgrade to unlock sales rules"
+msgstr "Upgraden Sie, um Verkaufsregeln freizuschalten"
 
 msgid "Upload"
 msgstr "Hochladen"
@@ -16580,14 +16580,14 @@ msgstr "Wer sollte Benachrichtigungen erhalten, wenn eine Anfrage als angebotber
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Wer sollte Benachrichtigungen erhalten, wenn ein Verkaufsauftrag abgeschlossen ist?"
 
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Wer sollte Benachrichtigungen erhalten, wenn eine Verletzung einer Verkaufsregel blockiert oder bestätigt wird?"
+
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Wer sollte benachrichtigt werden, wenn ein Lieferantengebot eingereicht wird?"
 
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Wer sollte Benachrichtigungen erhalten, wenn ein Bestandsverwaltungsauftrag abgeschlossen ist?"
-
-msgid "Who should receive notifications when an item rule violation is blocked or acknowledged?"
-msgstr "Wer sollte Benachrichtigungen erhalten, wenn eine Verletzung einer Elementregel blockiert oder bestätigt wird?"
 
 msgid "Who you buy from."
 msgstr "Von wem Sie kaufen."

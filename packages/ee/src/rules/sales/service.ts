@@ -1,4 +1,4 @@
-// Cross-app DB queries for Item Rules (sales-document surfaces). The ERP
+// Cross-app DB queries for Sales Rules (sales-document surfaces). The ERP
 // admin UI and the enforcement actions both import from here. Mirrors
 // `../storage/service.ts`.
 //
@@ -10,33 +10,33 @@ import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import {
   type ConditionAst,
-  type ItemRuleFilter,
-  type ItemRuleSurface,
-  itemRuleAppliesToItem,
+  ruleAppliesToItem,
+  type SalesRuleFilter,
+  type SalesRuleSurface,
   type Severity,
-  toItemRuleFilter
+  toSalesRuleFilter
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { itemPostingGroupIdFromEmbed } from "../storage/context";
 
-// Filter columns carried on every itemRule row (NOT NULL with defaults in the
+// Filter columns carried on every salesRule row (NOT NULL with defaults in the
 // DB, unlike storageRule's nullable trio).
-const ITEM_RULE_FILTER_COLUMNS =
+const SALES_RULE_FILTER_COLUMNS =
   "filteredItemTypes, filteredItemGroupIds, filteredItemMatchAll";
 
-const ITEM_RULE_EVAL_COLUMNS = `id, name, severity, message, conditionAst, surfaces, updatedAt, active, ${ITEM_RULE_FILTER_COLUMNS}`;
+const SALES_RULE_EVAL_COLUMNS = `id, name, severity, message, conditionAst, surfaces, updatedAt, active, ${SALES_RULE_FILTER_COLUMNS}`;
 
 /**
- * Raw `itemRule` row shape the evaluator consumes. `conditionAst` arrives as
+ * Raw `salesRule` row shape the evaluator consumes. `conditionAst` arrives as
  * generic Json from PostgREST; rows are cast once at the query boundary.
  */
-export type ItemRuleDbRow = {
+export type SalesRuleDbRow = {
   id: string;
   name: string;
   severity: Severity;
   message: string;
   conditionAst: ConditionAst;
-  surfaces: ItemRuleSurface[];
+  surfaces: SalesRuleSurface[];
   updatedAt: string | null;
   active: boolean;
   filteredItemTypes: string[];
@@ -46,23 +46,23 @@ export type ItemRuleDbRow = {
 
 /**
  * Loads the rules applicable to a set of items:
- *   - `rules` — EVERY active item rule for the company. Each rule fires on a
+ *   - `rules` — EVERY active sales rule for the company. Each rule fires on a
  *     line when it has an explicit assignment for that line's item OR its
- *     `filteredItem*` filters match the item (`itemRuleAppliesToItem`; empty
+ *     `filteredItem*` filters match the item (`ruleAppliesToItem`; empty
  *     filters = every item). Filter matching happens in `server.ts` where the
  *     item rows exist.
- *   - `assignmentsByItemId` — explicit `itemRuleAssignment` rows for
+ *   - `assignmentsByItemId` — explicit `salesRuleAssignment` rows for
  *     `itemIds`, as itemId → Set<ruleId>.
  *
  * Two round-trips. The rules fetch always runs, even when `itemIds` is empty,
  * so a request with no item still sees broadcasts.
  */
-export async function getActiveItemRulesForItems(
+export async function getActiveSalesRulesForItems(
   client: SupabaseClient<Database>,
   companyId: string,
   itemIds: string[]
 ): Promise<{
-  rules: ItemRuleDbRow[];
+  rules: SalesRuleDbRow[];
   assignmentsByItemId: Map<string, Set<string>>;
   error: unknown;
 }> {
@@ -70,13 +70,13 @@ export async function getActiveItemRulesForItems(
 
   const [rulesRes, assignmentsRes] = await Promise.all([
     client
-      .from("itemRule")
-      .select(ITEM_RULE_EVAL_COLUMNS)
+      .from("salesRule")
+      .select(SALES_RULE_EVAL_COLUMNS)
       .eq("companyId", companyId)
       .eq("active", true),
     itemIds.length > 0
       ? client
-          .from("itemRuleAssignment")
+          .from("salesRuleAssignment")
           .select("itemId, ruleId")
           .in("itemId", itemIds)
           .eq("companyId", companyId)
@@ -97,31 +97,31 @@ export async function getActiveItemRulesForItems(
   }
 
   return {
-    rules: (rulesRes.data ?? []) as unknown as ItemRuleDbRow[],
+    rules: (rulesRes.data ?? []) as unknown as SalesRuleDbRow[],
     assignmentsByItemId,
     error: null
   };
 }
 
 /**
- * Loader-style row returned from `getItemRuleAssignmentsForItem`. Direct
+ * Loader-style row returned from `getSalesRuleAssignmentsForItem`. Direct
  * assignments leave `inheritedFromId` / `inheritedFromName` null; broadcast
  * rules use the `__all__` sentinel so the UI can render an "All items" /
  * "Matches item filters" badge and suppress unassign. Mirrors
  * `RuleAssignmentRow` in `../storage/service.ts`.
  */
-export type ItemRuleAssignmentRow = {
+export type SalesRuleAssignmentRow = {
   /** Owner of the assignment row (the item id, or the `__all__` sentinel). */
   ownerId: string;
   ruleId: string;
   createdAt: string | null;
-  itemRule: {
+  salesRule: {
     id: string;
     name: string;
     severity: Severity;
     message: string;
     active: boolean;
-    surfaces: ItemRuleSurface[];
+    surfaces: SalesRuleSurface[];
   };
   /** null when the assignment is direct on `args.itemId`. */
   inheritedFromId: string | null;
@@ -134,26 +134,26 @@ export type ItemRuleAssignmentRow = {
  * same way the evaluator gates them, so the drawer shows exactly the set that
  * will fire.
  */
-export async function getItemRuleAssignmentsForItem(
+export async function getSalesRuleAssignmentsForItem(
   client: SupabaseClient<Database>,
   args: { itemId: string; companyId: string }
-): Promise<{ data: ItemRuleAssignmentRow[]; error: unknown }> {
+): Promise<{ data: SalesRuleAssignmentRow[]; error: unknown }> {
   // Annotated `string` so PostgREST yields generically-typed rows — the typed
   // select parser blows its instantiation depth on the composite-FK embed
-  // (`itemRule:ruleId` resolves over ("ruleId","companyId")). Rows are cast
+  // (`salesRule:ruleId` resolves over ("ruleId","companyId")). Rows are cast
   // explicitly below, mirroring the storage-rules service.
   const assignmentCols: string =
-    "itemId, ruleId, createdAt, itemRule:ruleId(id, name, severity, message, active, surfaces)";
+    "itemId, ruleId, createdAt, salesRule:ruleId(id, name, severity, message, active, surfaces)";
   const [res, broadcastsRes, itemCtxRes] = await Promise.all([
     client
-      .from("itemRuleAssignment")
+      .from("salesRuleAssignment")
       .select(assignmentCols)
       .eq("itemId", args.itemId)
       .eq("companyId", args.companyId),
     client
-      .from("itemRule")
+      .from("salesRule")
       .select(
-        `id, name, severity, message, active, surfaces, createdAt, ${ITEM_RULE_FILTER_COLUMNS}`
+        `id, name, severity, message, active, surfaces, createdAt, ${SALES_RULE_FILTER_COLUMNS}`
       )
       .eq("companyId", args.companyId),
     // Item type/group for this item so we can gate broadcasts the same way
@@ -185,23 +185,25 @@ export async function getItemRuleAssignmentsForItem(
 
   // Item assignments are always direct (no inheritance), so every explicit
   // row's owner is the item itself.
-  const byRuleId = new Map<string, ItemRuleAssignmentRow>();
+  const byRuleId = new Map<string, SalesRuleAssignmentRow>();
   for (const r of res.data ?? []) {
     const row = r as unknown as {
       [k: string]: unknown;
-      itemRule:
-        | ItemRuleAssignmentRow["itemRule"]
-        | ItemRuleAssignmentRow["itemRule"][]
+      salesRule:
+        | SalesRuleAssignmentRow["salesRule"]
+        | SalesRuleAssignmentRow["salesRule"][]
         | null;
     };
-    const node = Array.isArray(row.itemRule) ? row.itemRule[0] : row.itemRule;
+    const node = Array.isArray(row.salesRule)
+      ? row.salesRule[0]
+      : row.salesRule;
     if (!node) continue;
 
-    const candidate: ItemRuleAssignmentRow = {
+    const candidate: SalesRuleAssignmentRow = {
       ownerId: row.itemId as string,
       ruleId: row.ruleId as string,
       createdAt: (row.createdAt as string | null) ?? null,
-      itemRule: node,
+      salesRule: node,
       inheritedFromId: null,
       inheritedFromName: null
     };
@@ -220,7 +222,7 @@ export async function getItemRuleAssignmentsForItem(
     severity: Severity;
     message: string;
     active: boolean;
-    surfaces: ItemRuleSurface[];
+    surfaces: SalesRuleSurface[];
     createdAt: string | null;
     filteredItemTypes: string[];
     filteredItemGroupIds: string[];
@@ -231,8 +233,8 @@ export async function getItemRuleAssignmentsForItem(
 
     // Only surface rules whose filter matches this item. Label by reach so
     // the drawer reads "All items" vs a filtered match.
-    const filter: ItemRuleFilter = toItemRuleFilter(b);
-    if (itemCtx && !itemRuleAppliesToItem(itemCtx, filter)) continue;
+    const filter: SalesRuleFilter = toSalesRuleFilter(b);
+    if (itemCtx && !ruleAppliesToItem(itemCtx, filter)) continue;
     const filterless =
       (filter.filteredItemTypes?.length ?? 0) === 0 &&
       (filter.filteredItemGroupIds?.length ?? 0) === 0;
@@ -241,7 +243,7 @@ export async function getItemRuleAssignmentsForItem(
       ownerId: "__all__",
       ruleId: b.id,
       createdAt: b.createdAt,
-      itemRule: {
+      salesRule: {
         id: b.id,
         name: b.name,
         severity: b.severity,
@@ -257,7 +259,7 @@ export async function getItemRuleAssignmentsForItem(
   return { data: Array.from(byRuleId.values()), error: null };
 }
 
-export async function getItemRulesList(
+export async function getSalesRulesList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
@@ -266,13 +268,13 @@ export async function getItemRulesList(
     name: string;
     severity: Severity;
     active: boolean;
-    surfaces: ItemRuleSurface[];
-  }>(client, "itemRule", "id, name, severity, active, surfaces", (query) =>
+    surfaces: SalesRuleSurface[];
+  }>(client, "salesRule", "id, name, severity, active, surfaces", (query) =>
     query.eq("companyId", companyId).order("name")
   );
 }
 
-export async function assignItemRule(
+export async function assignSalesRule(
   client: SupabaseClient<Database>,
   args: { itemId: string; ruleId: string; companyId: string; createdBy: string }
 ) {
@@ -280,7 +282,7 @@ export async function assignItemRule(
   // insert a foreign rule id; the evaluator filters defensively but the
   // orphan row still inflates assignment counts.
   const ruleRes = await client
-    .from("itemRule")
+    .from("salesRule")
     .select("id")
     .eq("id", args.ruleId)
     .eq("companyId", args.companyId)
@@ -293,7 +295,7 @@ export async function assignItemRule(
   }
 
   return client
-    .from("itemRuleAssignment")
+    .from("salesRuleAssignment")
     .insert({
       itemId: args.itemId,
       ruleId: args.ruleId,
@@ -304,12 +306,12 @@ export async function assignItemRule(
     .single();
 }
 
-export async function unassignItemRule(
+export async function unassignSalesRule(
   client: SupabaseClient<Database>,
   args: { itemId: string; ruleId: string; companyId: string }
 ) {
   return client
-    .from("itemRuleAssignment")
+    .from("salesRuleAssignment")
     .delete()
     .eq("itemId", args.itemId)
     .eq("ruleId", args.ruleId)

@@ -94,7 +94,7 @@ type SurfacesFieldProps<S extends string> = {
   label?: string;
   targetType?: "item" | "workCenter";
   /**
-   * Custom surface catalog (e.g. item-rule sales surfaces). When provided it
+   * Custom surface catalog (e.g. sales-rule sales surfaces). When provided it
    * replaces the storage `TransactionSurface` catalog entirely and
    * `targetType` is ignored. Omit for storage rules — the default behavior
    * is unchanged.

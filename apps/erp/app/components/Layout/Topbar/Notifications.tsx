@@ -237,7 +237,7 @@ function GenericNotification({
           {...props}
         />
       );
-    case NotificationEvent.ItemRuleViolation: {
+    case NotificationEvent.SalesRuleViolation: {
       // Compound documentId: "<quote|salesOrder>:<documentId>:<outcome>"
       const [docType, docId] = id.split(":");
       return (
