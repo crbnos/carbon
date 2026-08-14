@@ -2435,6 +2435,9 @@ msgstr "청구지 주소"
 msgid "Bills of material"
 msgstr "자재명세서"
 
+msgid "Blind"
+msgstr ""
+
 msgid "Blind Count"
 msgstr "블라인드 실사"
 
@@ -4010,6 +4013,9 @@ msgstr "웹훅 생성됨"
 msgid "Created work center"
 msgstr "작업장 생성됨"
 
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr ""
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "회계연도의 12개월 기간을 생성합니다. 이미 존재하는 기간은 유지됩니다."
 
@@ -4043,6 +4049,12 @@ msgstr "제조 비용이 진행 중인 작업(WIP)에 흡수될 때 사용되는
 
 msgid "Credit Memo"
 msgstr "대변전표"
+
+msgid "Credit total"
+msgstr ""
+
+msgid "creditable"
+msgstr ""
 
 msgid "credited"
 msgstr ""
@@ -9849,11 +9861,17 @@ msgstr "결과가 없습니다"
 msgid "No returnable lines found for this customer"
 msgstr ""
 
+msgid "No returnable lines found for this supplier"
+msgstr ""
+
 msgid "No rows here."
 msgstr "행이 없습니다."
 
 msgid "No rules assigned"
 msgstr "배정된 규칙이 없습니다"
+
+msgid "No shipments yet"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "재고나 작업 상태를 나타내는 신뢰할 수 있는 단일 수치가 없음"
@@ -11792,6 +11810,9 @@ msgstr "입고 일시"
 msgid "Received By"
 msgstr "입고 담당자"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr ""
+
 msgid "Received Qty"
 msgstr "입고 수량"
 
@@ -12195,6 +12216,9 @@ msgstr "리소스"
 msgid "Resources"
 msgstr "리소스"
 
+msgid "restock fee"
+msgstr ""
+
 msgid "Restock Fee Percent"
 msgstr ""
 
@@ -12244,6 +12268,9 @@ msgid "Return ID"
 msgstr ""
 
 msgid "Return Location"
+msgstr ""
+
+msgid "Return Number"
 msgstr ""
 
 msgid "Return Quantity"
@@ -15261,6 +15288,9 @@ msgstr "이 기간에는 게시된 분개가 없으며 영구적으로 삭제할
 
 msgid "This Quarter"
 msgstr "이번 분기"
+
+msgid "This return order has no lines to credit"
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "이 개정본이 릴리스되었습니다(프로덕션). 변경 사항은 일반적으로 변경 공지를 통해 처리되어야 합니다."

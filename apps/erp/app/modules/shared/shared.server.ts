@@ -17,6 +17,8 @@ import {
 import { getCompany } from "~/modules/settings";
 import { getTimezoneNames } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.server";
+// Created concurrently with the returns module; see routes/file+/purchase-return-order+/
+import { loader as purchaseReturnOrderPdfLoader } from "~/routes/file+/purchase-return-order+/$id[.]pdf";
 // Created concurrently with the RMA module; see routes/file+/sales-return-order+/
 import { loader as salesReturnOrderPdfLoader } from "~/routes/file+/sales-return-order+/$id[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
@@ -277,6 +279,83 @@ export async function generateAndAttachSalesReturnOrderPdf(
     name: fileName,
     size: Math.round(file.byteLength / 1024),
     sourceDocument: "Sales Return Order",
+    sourceDocumentId: id,
+    readGroups: [userId],
+    writeGroups: [userId],
+    createdBy: userId,
+    companyId
+  });
+
+  if (documentResult.error) {
+    throw new Error("Failed to create document record");
+  }
+
+  return { file, fileName, documentFilePath };
+}
+
+/**
+ * Generates a purchase return order (supplier return) PDF via the pdf route
+ * loader, uploads it to Supabase storage under the return order path, and
+ * creates a document DB record.
+ *
+ * Returns the PDF ArrayBuffer and the generated file name.
+ */
+export async function generateAndAttachPurchaseReturnOrderPdf(
+  /** A service-role Supabase client for storage + DB writes */
+  serviceRole: SupabaseClient<Database>,
+  args: {
+    /** The original action/loader args from the route */
+    routeArgs: LoaderFunctionArgs;
+    /** Purchase return order DB id */
+    id: string;
+    /** Human-readable return identifier (e.g. "PRO000001") */
+    purchaseReturnOrderIdentifier: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ file: ArrayBuffer; fileName: string; documentFilePath: string }> {
+  const { routeArgs, id, purchaseReturnOrderIdentifier, companyId, userId } =
+    args;
+
+  // 1. Generate the PDF
+  const pdfArgs = {
+    ...routeArgs,
+    params: { ...routeArgs.params, id }
+  };
+  const pdf = await purchaseReturnOrderPdfLoader(pdfArgs);
+
+  if (pdf.headers.get("content-type") !== "application/pdf") {
+    throw new Error("Failed to generate PDF");
+  }
+
+  const file = await pdf.arrayBuffer();
+  const fileName = stripSpecialCharacters(
+    `${purchaseReturnOrderIdentifier} - ${new Date()
+      .toISOString()
+      .slice(0, -5)}.pdf`
+  );
+
+  // 2. Upload to Supabase storage
+  const documentFilePath = `${companyId}/purchase-return-order/${id}/${fileName}`;
+
+  const uploadResult = await serviceRole.storage
+    .from("private")
+    .upload(documentFilePath, file, {
+      cacheControl: `${12 * 60 * 60}`,
+      contentType: "application/pdf",
+      upsert: true
+    });
+
+  if (uploadResult.error) {
+    throw new Error("Failed to upload PDF to storage");
+  }
+
+  // 3. Create the document DB record
+  const documentResult = await upsertDocument(serviceRole, {
+    path: documentFilePath,
+    name: fileName,
+    size: Math.round(file.byteLength / 1024),
+    sourceDocument: "Purchase Return Order",
     sourceDocumentId: id,
     readGroups: [userId],
     writeGroups: [userId],

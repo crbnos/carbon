@@ -2435,6 +2435,9 @@ msgstr "账单地址"
 msgid "Bills of material"
 msgstr "物料清单"
 
+msgid "Blind"
+msgstr ""
+
 msgid "Blind Count"
 msgstr "盲点库存"
 
@@ -4010,6 +4013,9 @@ msgstr "已创建 webhook"
 msgid "Created work center"
 msgstr "已创建工作中心"
 
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr ""
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "为会计年度创建12个月度期间。已存在的期间保持不变。"
 
@@ -4043,6 +4049,12 @@ msgstr "制造成本吸收到在产品中时使用的贷方科目"
 
 msgid "Credit Memo"
 msgstr "贷方备忘录"
+
+msgid "Credit total"
+msgstr ""
+
+msgid "creditable"
+msgstr ""
 
 msgid "credited"
 msgstr ""
@@ -9849,11 +9861,17 @@ msgstr "未找到结果"
 msgid "No returnable lines found for this customer"
 msgstr ""
 
+msgid "No returnable lines found for this supplier"
+msgstr ""
+
 msgid "No rows here."
 msgstr "这里没有行。"
 
 msgid "No rules assigned"
 msgstr "未分配规则"
+
+msgid "No shipments yet"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "没有单一的、可信的库存或工作状态数字"
@@ -11792,6 +11810,9 @@ msgstr "接收于"
 msgid "Received By"
 msgstr "接收人"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr ""
+
 msgid "Received Qty"
 msgstr "已收货数量"
 
@@ -12195,6 +12216,9 @@ msgstr "资源"
 msgid "Resources"
 msgstr "资源"
 
+msgid "restock fee"
+msgstr ""
+
 msgid "Restock Fee Percent"
 msgstr ""
 
@@ -12244,6 +12268,9 @@ msgid "Return ID"
 msgstr ""
 
 msgid "Return Location"
+msgstr ""
+
+msgid "Return Number"
 msgstr ""
 
 msgid "Return Quantity"
@@ -15261,6 +15288,9 @@ msgstr "此期间未过账任何日记账分录，可以永久删除。此操作
 
 msgid "This Quarter"
 msgstr "本季度"
+
+msgid "This return order has no lines to credit"
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "此修订版已发布（生产版）。更改应该通过更改单进行。"

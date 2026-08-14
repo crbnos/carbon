@@ -2435,6 +2435,9 @@ msgstr "Adres rozliczeniowy"
 msgid "Bills of material"
 msgstr "Zestawienia materiałowe"
 
+msgid "Blind"
+msgstr ""
+
 msgid "Blind Count"
 msgstr "Niewidoczna inwentaryzacja"
 
@@ -4010,6 +4013,9 @@ msgstr "Webhook utworzony"
 msgid "Created work center"
 msgstr "Utworzono centrum pracy"
 
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr ""
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Tworzy 12 miesięcznych okresów dla roku obrachunkowego. Istniejące okresy są zachowywane."
 
@@ -4043,6 +4049,12 @@ msgstr "Konta kredytowe używane, gdy koszty produkcji są absorbowane do ZW"
 
 msgid "Credit Memo"
 msgstr "Notatka kredytowa"
+
+msgid "Credit total"
+msgstr ""
+
+msgid "creditable"
+msgstr ""
 
 msgid "credited"
 msgstr ""
@@ -9849,11 +9861,17 @@ msgstr "Nie znaleziono wyników"
 msgid "No returnable lines found for this customer"
 msgstr ""
 
+msgid "No returnable lines found for this supplier"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Brak wierszy tutaj."
 
 msgid "No rules assigned"
 msgstr "Brak przypisanych reguł"
+
+msgid "No shipments yet"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Brak jednej, zaufanej liczby dla zapasów lub statusu zadania"
@@ -11792,6 +11810,9 @@ msgstr "Otrzymano o"
 msgid "Received By"
 msgstr "Otrzymane od"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr ""
+
 msgid "Received Qty"
 msgstr "Otrzymana Ilość"
 
@@ -12195,6 +12216,9 @@ msgstr "zasoby"
 msgid "Resources"
 msgstr "Zasoby"
 
+msgid "restock fee"
+msgstr ""
+
 msgid "Restock Fee Percent"
 msgstr ""
 
@@ -12244,6 +12268,9 @@ msgid "Return ID"
 msgstr ""
 
 msgid "Return Location"
+msgstr ""
+
+msgid "Return Number"
 msgstr ""
 
 msgid "Return Quantity"
@@ -15261,6 +15288,9 @@ msgstr "Ten okres nie ma żadnych wpisów w dzienniku i może być trwale usuni�
 
 msgid "This Quarter"
 msgstr "Ten Kwartał"
+
+msgid "This return order has no lines to credit"
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "Ta wersja jest wydana (Produkcja). Zmiany powinny normalnie przebiegać przez zgłoszenie zmian."

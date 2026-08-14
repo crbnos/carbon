@@ -2435,6 +2435,9 @@ msgstr "बिलिंग पता"
 msgid "Bills of material"
 msgstr "सामग्री के बिल"
 
+msgid "Blind"
+msgstr ""
+
 msgid "Blind Count"
 msgstr "ब्लाइंड काउंट"
 
@@ -4010,6 +4013,9 @@ msgstr "वेबहुक बनाया गया"
 msgid "Created work center"
 msgstr "कार्य केंद्र बनाया गया"
 
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr ""
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "एक वित्तीय वर्ष के लिए 12 मासिक अवधियाँ बनाता है। जो अवधियाँ पहले से मौजूद हैं वे रखी जाती हैं।"
 
@@ -4043,6 +4049,12 @@ msgstr "जब विनिर्माण लागत को WIP में अ
 
 msgid "Credit Memo"
 msgstr "क्रेडिट मेमो"
+
+msgid "Credit total"
+msgstr ""
+
+msgid "creditable"
+msgstr ""
 
 msgid "credited"
 msgstr ""
@@ -9849,11 +9861,17 @@ msgstr "कोई परिणाम नहीं मिला"
 msgid "No returnable lines found for this customer"
 msgstr ""
 
+msgid "No returnable lines found for this supplier"
+msgstr ""
+
 msgid "No rows here."
 msgstr "यहाँ कोई पंक्तियाँ नहीं हैं।"
 
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
+
+msgid "No shipments yet"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "इन्वेंटरी या जॉब स्थिति के लिए कोई एकल, विश्वसनीय संख्या नहीं"
@@ -11792,6 +11810,9 @@ msgstr "प्राप्त किया गया"
 msgid "Received By"
 msgstr "द्वारा प्राप्त"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr ""
+
 msgid "Received Qty"
 msgstr "प्राप्त मात्रा"
 
@@ -12195,6 +12216,9 @@ msgstr "संसाधन"
 msgid "Resources"
 msgstr "संसाधन"
 
+msgid "restock fee"
+msgstr ""
+
 msgid "Restock Fee Percent"
 msgstr ""
 
@@ -12244,6 +12268,9 @@ msgid "Return ID"
 msgstr ""
 
 msgid "Return Location"
+msgstr ""
+
+msgid "Return Number"
 msgstr ""
 
 msgid "Return Quantity"
@@ -15261,6 +15288,9 @@ msgstr "इस अवधि में कोई जर्नल प्रवि�
 
 msgid "This Quarter"
 msgstr "इस त्रैमासिक"
+
+msgid "This return order has no lines to credit"
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "यह संशोधन जारी किया गया है (उत्पादन)। परिवर्तन सामान्यतः एक परिवर्तन सूचना के माध्यम से होने चाहिए।"

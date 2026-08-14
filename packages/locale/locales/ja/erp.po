@@ -2435,6 +2435,9 @@ msgstr "請求先住所"
 msgid "Bills of material"
 msgstr "部品表"
 
+msgid "Blind"
+msgstr ""
+
 msgid "Blind Count"
 msgstr "ブラインドカウント"
 
@@ -4010,6 +4013,9 @@ msgstr "ウェブフックを作成しました"
 msgid "Created work center"
 msgstr "ワークセンターを作成しました"
 
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr ""
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "会計年度の12ヶ月間の期間を作成します。既に存在する期間は保持されます。"
 
@@ -4043,6 +4049,12 @@ msgstr "製造原価がWIPに吸収される場合に使用されるクレジッ
 
 msgid "Credit Memo"
 msgstr "貸方メモ"
+
+msgid "Credit total"
+msgstr ""
+
+msgid "creditable"
+msgstr ""
 
 msgid "credited"
 msgstr ""
@@ -9849,11 +9861,17 @@ msgstr "検索結果が見つかりません"
 msgid "No returnable lines found for this customer"
 msgstr ""
 
+msgid "No returnable lines found for this supplier"
+msgstr ""
+
 msgid "No rows here."
 msgstr "ここに行はありません。"
 
 msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
+
+msgid "No shipments yet"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "在庫またはジョブステータスの単一の信頼できる数値がない"
@@ -11792,6 +11810,9 @@ msgstr "受け取った日時"
 msgid "Received By"
 msgstr "受け取った人"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr ""
+
 msgid "Received Qty"
 msgstr "受け取り数量"
 
@@ -12195,6 +12216,9 @@ msgstr "リソース"
 msgid "Resources"
 msgstr "リソース"
 
+msgid "restock fee"
+msgstr ""
+
 msgid "Restock Fee Percent"
 msgstr ""
 
@@ -12244,6 +12268,9 @@ msgid "Return ID"
 msgstr ""
 
 msgid "Return Location"
+msgstr ""
+
+msgid "Return Number"
 msgstr ""
 
 msgid "Return Quantity"
@@ -15261,6 +15288,9 @@ msgstr "この期間には転記された仕訳がなく、永久に削除でき
 
 msgid "This Quarter"
 msgstr "今四半期"
+
+msgid "This return order has no lines to credit"
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "このリビジョンはリリース済み（本番環境）です。変更は通常、変更通知を通じて実施されるべきです。"

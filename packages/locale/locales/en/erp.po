@@ -2435,6 +2435,9 @@ msgstr "Billing Address"
 msgid "Bills of material"
 msgstr "Bills of material"
 
+msgid "Blind"
+msgstr "Blind"
+
 msgid "Blind Count"
 msgstr "Blind Count"
 
@@ -4010,6 +4013,9 @@ msgstr "Created webhook"
 msgid "Created work center"
 msgstr "Created work center"
 
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 
@@ -4043,6 +4049,12 @@ msgstr "Credit accounts used when manufacturing costs are absorbed into WIP"
 
 msgid "Credit Memo"
 msgstr "Credit Memo"
+
+msgid "Credit total"
+msgstr "Credit total"
+
+msgid "creditable"
+msgstr "creditable"
 
 msgid "credited"
 msgstr "credited"
@@ -9849,11 +9861,17 @@ msgstr "No results found"
 msgid "No returnable lines found for this customer"
 msgstr "No returnable lines found for this customer"
 
+msgid "No returnable lines found for this supplier"
+msgstr "No returnable lines found for this supplier"
+
 msgid "No rows here."
 msgstr "No rows here."
 
 msgid "No rules assigned"
 msgstr "No rules assigned"
+
+msgid "No shipments yet"
+msgstr "No shipments yet"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "No single, trusted number for inventory or job status"
@@ -11792,6 +11810,9 @@ msgstr "Received At"
 msgid "Received By"
 msgstr "Received By"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr "Received lines from this supplier with quantity remaining to return"
+
 msgid "Received Qty"
 msgstr "Received Qty"
 
@@ -12195,6 +12216,9 @@ msgstr "resources"
 msgid "Resources"
 msgstr "Resources"
 
+msgid "restock fee"
+msgstr "restock fee"
+
 msgid "Restock Fee Percent"
 msgstr "Restock Fee Percent"
 
@@ -12245,6 +12269,9 @@ msgstr "Return ID"
 
 msgid "Return Location"
 msgstr "Return Location"
+
+msgid "Return Number"
+msgstr "Return Number"
 
 msgid "Return Quantity"
 msgstr "Return Quantity"
@@ -15261,6 +15288,9 @@ msgstr "This period has no journal entries posted to it and can be permanently d
 
 msgid "This Quarter"
 msgstr "This Quarter"
+
+msgid "This return order has no lines to credit"
+msgstr "This return order has no lines to credit"
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "This revision is released (Production). Changes should normally flow through a change notice."

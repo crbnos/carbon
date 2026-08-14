@@ -2435,6 +2435,9 @@ msgstr "Адрес выставления счета"
 msgid "Bills of material"
 msgstr "Спецификации материалов"
 
+msgid "Blind"
+msgstr ""
+
 msgid "Blind Count"
 msgstr "Слепой подсчет"
 
@@ -4010,6 +4013,9 @@ msgstr "Webhook создан"
 msgid "Created work center"
 msgstr "Рабочий центр создан"
 
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr ""
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Создает 12 ежемесячных периодов для финансового года. Уже существующие периоды сохраняются."
 
@@ -4043,6 +4049,12 @@ msgstr "Кредитовые счета, используемые при пог�
 
 msgid "Credit Memo"
 msgstr "Кредит-нота"
+
+msgid "Credit total"
+msgstr ""
+
+msgid "creditable"
+msgstr ""
 
 msgid "credited"
 msgstr ""
@@ -9849,11 +9861,17 @@ msgstr "Результатов не найдено"
 msgid "No returnable lines found for this customer"
 msgstr ""
 
+msgid "No returnable lines found for this supplier"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Нет строк здесь."
 
 msgid "No rules assigned"
 msgstr "Нет назначенных правил"
+
+msgid "No shipments yet"
+msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Нет единого надежного показателя для инвентаря или статуса работы"
@@ -11792,6 +11810,9 @@ msgstr "Получено в"
 msgid "Received By"
 msgstr "Получено от"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr ""
+
 msgid "Received Qty"
 msgstr "Полученное кол-во"
 
@@ -12195,6 +12216,9 @@ msgstr "ресурсы"
 msgid "Resources"
 msgstr "Ресурсы"
 
+msgid "restock fee"
+msgstr ""
+
 msgid "Restock Fee Percent"
 msgstr ""
 
@@ -12244,6 +12268,9 @@ msgid "Return ID"
 msgstr ""
 
 msgid "Return Location"
+msgstr ""
+
+msgid "Return Number"
 msgstr ""
 
 msgid "Return Quantity"
@@ -15261,6 +15288,9 @@ msgstr "В этот период не размещены записи журна
 
 msgid "This Quarter"
 msgstr "Этот квартал"
+
+msgid "This return order has no lines to credit"
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "Эта редакция выпущена (Производство). Изменения должны нормально проходить через уведомление об изменении."

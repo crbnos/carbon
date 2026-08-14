@@ -1789,9 +1789,11 @@ export const path = {
       generatePath(`${x}/purchase-return-order/${orderId}/${lineId}/receiving`),
     purchaseReturnOrderReplacement: (id: string) =>
       generatePath(`${x}/purchase-return-order/${id}/replacement`),
+    purchaseReturnOrderReturnableLines: `${x}/purchase-return-order/returnable-lines`,
     purchaseReturnOrderStatus: (id: string) =>
       generatePath(`${x}/purchase-return-order/${id}/status`),
     purchaseReturnOrders: `${x}/purchasing/supplier-returns`,
+    purchaseReturnOrderUpdate: `${x}/purchase-return-order/update`,
     purchasesReport: `${x}/reports/purchases`,
     purchasing: `${x}/purchasing`,
     purchasingPlanning: `${x}/purchasing/planning`,
