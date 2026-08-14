@@ -985,3 +985,118 @@ export function isSalesRfqLocked(status: string | null | undefined): boolean {
 export function isQuoteLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
+
+// ─── Sales Return Orders (RMAs) ───
+
+export const salesReturnOrderStatusType = [
+  "Draft",
+  "Confirmed",
+  "Partially Received",
+  "Received",
+  "Completed",
+  "Cancelled"
+] as const;
+
+// Picker subset of the DB `disposition` enum for RMA lines — same
+// commented-subset technique as `disposition` in quality.models.ts. Scrap and
+// Rework are set via Issue escalation, not directly.
+export const salesReturnDispositionType = [
+  // "Conditional Acceptance",
+  // "Deviation Accepted",
+  // "Hold",
+  // "No Action Required",
+  "Pending",
+  // "Quarantine",
+  // "Repair",
+  "Return to Customer",
+  "Rework",
+  "Scrap",
+  "Use As Is"
+] as const;
+
+export const SALES_RETURN_ORDER_LOCKED_STATUSES = [
+  "Completed",
+  "Cancelled"
+] as const;
+
+export function isSalesReturnOrderLocked(
+  status: string | null | undefined
+): boolean {
+  return SALES_RETURN_ORDER_LOCKED_STATUSES.includes(
+    status as (typeof SALES_RETURN_ORDER_LOCKED_STATUSES)[number]
+  );
+}
+
+export const returnReasonValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  inventoryValueZero: zfd.checkbox()
+});
+
+export const salesReturnOrderValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  salesReturnOrderId: zfd.text(z.string().optional()),
+  status: z.enum(salesReturnOrderStatusType).optional(),
+  customerId: z.string().min(1, { message: "Customer is required" }),
+  customerLocationId: zfd.text(z.string().optional()),
+  customerContactId: zfd.text(z.string().optional()),
+  customerReference: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
+  salesOrderId: zfd.text(z.string().optional()),
+  currencyCode: zfd.text(z.string().optional()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  orderDate: z.string().min(1, { message: "Order date is required" }),
+  expirationDate: zfd.text(z.string().optional()),
+  assignee: zfd.text(z.string().optional())
+});
+
+export const salesReturnOrderLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  salesReturnOrderId: z
+    .string()
+    .min(1, { message: "Return order is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  quantity: zfd.numeric(
+    z.number().gt(0, { message: "Quantity must be positive" })
+  ),
+  unitOfMeasureCode: zfd.text(z.string().optional()),
+  unitPrice: zfd.numeric(z.number().min(0)),
+  restockFeePercent: zfd.numeric(z.number().min(0).max(1).optional()),
+  returnReasonId: zfd.text(z.string().optional()),
+  salesOrderLineId: zfd.text(z.string().optional()),
+  shipmentLineId: zfd.text(z.string().optional()),
+  salesInvoiceLineId: zfd.text(z.string().optional()),
+  trackedEntityIds: zfd.repeatableOfType(z.string()).optional()
+});
+
+export const salesReturnOrderDispositionValidator = z.object({
+  lineId: z.string().min(1),
+  disposition: z.enum(salesReturnDispositionType, {
+    errorMap: () => ({ message: "Disposition is required" })
+  })
+});
+
+// Credit dialog: repeatable per-line quantity rows (same encoding as
+// selectedLines in purchasing.models.ts — a JSON-encoded field)
+export const salesReturnOrderCreditValidator = z.object({
+  lines: z
+    .string()
+    .transform((val, ctx) => {
+      try {
+        return JSON.parse(val) as unknown;
+      } catch {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+        return z.NEVER;
+      }
+    })
+    .pipe(
+      z
+        .array(
+          z.object({
+            salesReturnOrderLineId: z.string().min(1),
+            quantity: z.number().min(0)
+          })
+        )
+        .min(1, { message: "At least one line is required" })
+    )
+});
