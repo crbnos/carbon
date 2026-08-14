@@ -1,4 +1,5 @@
 import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
+import { getDatasetAssetUrl } from "@carbon/database/dataset-assets";
 import { generatePath } from "react-router";
 
 const x = "/x"; // from ~/routes/x+ folder
@@ -2201,7 +2202,9 @@ export const getParams = (request: Request) => {
 };
 
 export const getPrivateUrl = (path: string) => {
-  return `/file/preview/private/${path}`;
+  // Demo-template artwork ships with the app, so it never goes through the
+  // storage proxy. Anything else is a real tenant file.
+  return getDatasetAssetUrl(path) ?? `/file/preview/private/${path}`;
 };
 
 /** Raw model source for the viewer's WASM fallback tier — bucket varies by era
