@@ -4,7 +4,6 @@ import type { TrackedEntityOption } from "@carbon/react";
 import {
   Badge,
   Button,
-  FormLabel,
   HStack,
   IconButton,
   ModalCard,
@@ -338,9 +337,10 @@ const PurchaseReturnOrderLineForm = ({
 
               {isEditing && isTracked && returnableEntities && (
                 <VStack spacing={2} className="pt-4">
-                  <FormLabel>
+                  {/* plain label: FormLabel requires a FormControl context */}
+                  <label className="text-sm font-medium">
                     <Trans>Serials/batches to return</Trans>
-                  </FormLabel>
+                  </label>
                   <HStack spacing={2} className="flex-wrap">
                     {selectedEntityIds.map((entityId) => (
                       <Badge key={entityId} variant="secondary">

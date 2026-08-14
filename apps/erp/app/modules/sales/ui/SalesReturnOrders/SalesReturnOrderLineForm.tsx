@@ -382,9 +382,10 @@ const SalesReturnOrderLineForm = ({
 
               {isEditing && isTracked && shippedEntities && (
                 <VStack spacing={2} className="pt-4">
-                  <FormLabel>
+                  {/* plain label: FormLabel requires a FormControl context */}
+                  <label className="text-sm font-medium">
                     <Trans>Expected serials/batches</Trans>
-                  </FormLabel>
+                  </label>
                   <HStack spacing={2} className="flex-wrap">
                     {selectedEntityIds.map((entityId) => (
                       <Badge key={entityId} variant="secondary">
