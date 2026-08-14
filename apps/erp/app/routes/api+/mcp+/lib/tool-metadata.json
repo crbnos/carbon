@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-13T15:12:30.047Z",
-  "totalTools": 1436,
+  "generated": "2026-08-14T07:02:07.623Z",
+  "totalTools": 1455,
   "modules": 15,
   "tools": [
     {
@@ -40415,6 +40415,670 @@
         "required": [
           "id",
           "sortOrder"
+        ]
+      }
+    },
+    {
+      "name": "sales_getReturnReasons",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get return reasons",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "sales_getReturnReasonsList",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get return reasons list",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "sales_getReturnReason",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get return reason",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "returnReasonId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "returnReasonId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "returnReasonId"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertReturnReason",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert return reason",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "returnReason"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "inventoryValueZero": {
+            "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
+        },
+        "required": [
+          "name",
+          "inventoryValueZero",
+          "_operation"
+        ]
+      }
+    },
+    {
+      "name": "sales_deleteReturnReason",
+      "module": "sales",
+      "classification": "DESTRUCTIVE",
+      "description": "delete return reason",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "returnReasonId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "returnReasonId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "returnReasonId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getSalesReturnOrders",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales return orders",
+      "paramCount": 5,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "customerId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "sales_getSalesReturnOrder",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales return order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "salesReturnOrderId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getSalesReturnOrderLines",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales return order lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "salesReturnOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getSalesReturnOrderLine",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales return order line",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "lineId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lineId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getSalesReturnOrderLineTrackedEntities",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales return order line tracked entities",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "lineIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "lineIds"
+        ]
+      }
+    },
+    {
+      "name": "sales_insertSalesReturnOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "insert sales return order",
+      "paramCount": 12,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string"
+          },
+          "salesReturnOrderId": {
+            "type": "string"
+          },
+          "orderDate": {
+            "type": "string"
+          },
+          "customerLocationId": {
+            "type": "string"
+          },
+          "customerContactId": {
+            "type": "string"
+          },
+          "customerReference": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "salesOrderId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "expirationDate": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          },
+          "customFields": {}
+        },
+        "required": [
+          "customerId",
+          "orderDate"
+        ]
+      }
+    },
+    {
+      "name": "sales_updateSalesReturnOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "update sales return order",
+      "paramCount": 14,
+      "serviceParams": [
+        "client",
+        "salesReturnOrder"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "salesReturnOrderId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "customerLocationId": {
+            "type": "string"
+          },
+          "customerContactId": {
+            "type": "string"
+          },
+          "customerReference": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "salesOrderId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "exchangeRate": {
+            "type": "number"
+          },
+          "orderDate": {
+            "type": "string"
+          },
+          "expirationDate": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customerId",
+          "orderDate"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertSalesReturnOrderLine",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert sales return order line",
+      "paramCount": 12,
+      "serviceParams": [
+        "client",
+        "line"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "salesReturnOrderId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "restockFeePercent": {
+            "type": "number"
+          },
+          "returnReasonId": {
+            "type": "string"
+          },
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "shipmentLineId": {
+            "type": "string"
+          },
+          "salesInvoiceLineId": {
+            "type": "string"
+          },
+          "trackedEntityIds": {
+            "type": "string"
+          },
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
+        },
+        "required": [
+          "salesReturnOrderId",
+          "itemId",
+          "_operation"
+        ]
+      }
+    },
+    {
+      "name": "sales_deleteSalesReturnOrder",
+      "module": "sales",
+      "classification": "DESTRUCTIVE",
+      "description": "delete sales return order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "salesReturnOrderId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_deleteSalesReturnOrderLine",
+      "module": "sales",
+      "classification": "DESTRUCTIVE",
+      "description": "delete sales return order line",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "lineId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lineId"
+        ]
+      }
+    },
+    {
+      "name": "sales_setSalesReturnOrderLineTrackedEntities",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "set sales return order line tracked entities",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "lineId",
+        "companyId",
+        "entityIds",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "entityIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "lineId",
+          "entityIds"
+        ]
+      }
+    },
+    {
+      "name": "sales_getSalesReturnOrderReceipts",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales return order receipts",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "salesReturnOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getSalesReturnOrderCredits",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales return order credits",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "salesReturnOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getSalesReturnOrderIssues",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get sales return order issues",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "salesReturnOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesReturnOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesReturnOrderId"
         ]
       }
     },

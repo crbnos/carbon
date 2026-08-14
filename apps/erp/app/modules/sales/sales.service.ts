@@ -48,11 +48,15 @@ import type {
   quoteShipmentValidator,
   quoteStatusType,
   quoteValidator,
+  returnReasonValidator,
   salesOrderLineValidator,
   salesOrderPaymentValidator,
   salesOrderShipmentValidator,
   salesOrderStatusType,
   salesOrderValidator,
+  salesReturnOrderLineValidator,
+  salesReturnOrderStatusType,
+  salesReturnOrderValidator,
   salesRFQStatusType,
   salesRfqLineValidator,
   salesRfqValidator,
@@ -6101,4 +6105,423 @@ export async function updateSalesRFQLineOrder(
         .execute();
     }
   });
+}
+
+// ─── Sales Return Orders (RMAs) ───
+
+export async function getReturnReasons(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("returnReason")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getReturnReasonsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("returnReason")
+    .select("id, name, inventoryValueZero")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function getReturnReason(
+  client: SupabaseClient<Database>,
+  returnReasonId: string
+) {
+  return client
+    .from("returnReason")
+    .select("*")
+    .eq("id", returnReasonId)
+    .single();
+}
+
+export async function upsertReturnReason(
+  client: SupabaseClient<Database>,
+  returnReason:
+    | (Omit<z.infer<typeof returnReasonValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof returnReasonValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in returnReason) {
+    return client
+      .from("returnReason")
+      .insert([returnReason])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("returnReason")
+    .update({
+      ...sanitize(returnReason),
+      inventoryValueZero: returnReason.inventoryValueZero,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", returnReason.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteReturnReason(
+  client: SupabaseClient<Database>,
+  returnReasonId: string
+) {
+  return client.from("returnReason").delete().eq("id", returnReasonId);
+}
+
+export async function getSalesReturnOrders(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    status: string | null;
+    customerId: string | null;
+  }
+) {
+  let query = client
+    .from("salesReturnOrders")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `salesReturnOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.status) {
+    query = query.eq(
+      "status",
+      args.status as (typeof salesReturnOrderStatusType)[number]
+    );
+  }
+
+  if (args.customerId) {
+    query = query.eq("customerId", args.customerId);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getSalesReturnOrder(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string
+) {
+  return client
+    .from("salesReturnOrders")
+    .select("*")
+    .eq("id", salesReturnOrderId)
+    .single();
+}
+
+export async function getSalesReturnOrderLines(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("salesReturnOrderLine")
+    .select(
+      "*, returnReason(name), item(name, readableIdWithRevision, itemTrackingType)"
+    )
+    .eq("salesReturnOrderId", salesReturnOrderId)
+    .eq("companyId", companyId)
+    .order("lineNumber");
+}
+
+export async function getSalesReturnOrderLine(
+  client: SupabaseClient<Database>,
+  lineId: string
+) {
+  return client
+    .from("salesReturnOrderLine")
+    .select("*")
+    .eq("id", lineId)
+    .single();
+}
+
+export async function getSalesReturnOrderLineTrackedEntities(
+  client: SupabaseClient<Database>,
+  lineIds: string[]
+) {
+  return client
+    .from("salesReturnOrderLineTrackedEntity")
+    .select("*, trackedEntity(id, readableId, status, quantity)")
+    .in("salesReturnOrderLineId", lineIds);
+}
+
+export async function insertSalesReturnOrder(
+  client: SupabaseClient<Database>,
+  input: {
+    customerId: string;
+    companyId: string;
+    companyGroupId: string;
+    createdBy: string;
+    salesReturnOrderId?: string;
+    orderDate: string;
+    customerLocationId?: string;
+    customerContactId?: string;
+    customerReference?: string;
+    locationId?: string;
+    salesOrderId?: string;
+    currencyCode?: string;
+    expirationDate?: string;
+    assignee?: string;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string; salesReturnOrderId: string } | null;
+  error: PostgrestError | null;
+}> {
+  let salesReturnOrderId: string;
+  if (input.salesReturnOrderId) {
+    salesReturnOrderId = input.salesReturnOrderId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "salesReturnOrder",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({ message: "Failed to generate RMA sequence" } as PostgrestError)
+      };
+    }
+    salesReturnOrderId = seq.data;
+  }
+
+  let currencyCode = input.currencyCode;
+  if (!currencyCode) {
+    const [customer, company] = await Promise.all([
+      client
+        .from("customer")
+        .select("currencyCode")
+        .eq("id", input.customerId)
+        .single(),
+      client
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", input.companyId)
+        .single()
+    ]);
+    currencyCode =
+      customer.data?.currencyCode ?? company.data?.baseCurrencyCode ?? "USD";
+  }
+
+  let exchangeRate = 1;
+  if (currencyCode) {
+    const currency = await getCurrencyByCode(
+      client,
+      input.companyGroupId,
+      currencyCode
+    );
+    if (currency.data) {
+      exchangeRate = currency.data.exchangeRate ?? 1;
+    }
+  }
+
+  const order = await client
+    .from("salesReturnOrder")
+    .insert({
+      salesReturnOrderId,
+      customerId: input.customerId,
+      customerLocationId: input.customerLocationId,
+      customerContactId: input.customerContactId,
+      customerReference: input.customerReference ?? null,
+      locationId: input.locationId,
+      salesOrderId: input.salesOrderId,
+      currencyCode,
+      exchangeRate,
+      orderDate: input.orderDate,
+      expirationDate: input.expirationDate,
+      assignee: input.assignee,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      customFields: input.customFields
+    })
+    .select("id, salesReturnOrderId")
+    .single();
+
+  return order;
+}
+
+export async function updateSalesReturnOrder(
+  client: SupabaseClient<Database>,
+  salesReturnOrder: Omit<
+    z.infer<typeof salesReturnOrderValidator>,
+    "id" | "salesReturnOrderId" | "status"
+  > & {
+    id: string;
+    updatedBy: string;
+    customFields?: Json;
+  }
+) {
+  const { id, ...update } = salesReturnOrder;
+  return client
+    .from("salesReturnOrder")
+    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+export async function upsertSalesReturnOrderLine(
+  client: SupabaseClient<Database>,
+  line:
+    | (Omit<
+        z.infer<typeof salesReturnOrderLineValidator>,
+        "id" | "trackedEntityIds"
+      > & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<
+        z.infer<typeof salesReturnOrderLineValidator>,
+        "id" | "trackedEntityIds"
+      > & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in line) {
+    const existing = await client
+      .from("salesReturnOrderLine")
+      .select("lineNumber")
+      .eq("salesReturnOrderId", line.salesReturnOrderId)
+      .eq("companyId", line.companyId)
+      .order("lineNumber", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return client
+      .from("salesReturnOrderLine")
+      .insert([
+        {
+          ...line,
+          lineNumber: (existing.data?.lineNumber ?? 0) + 1
+        }
+      ])
+      .select("id")
+      .single();
+  }
+  const { id, ...update } = line;
+  return client
+    .from("salesReturnOrderLine")
+    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+export async function deleteSalesReturnOrder(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string
+) {
+  return client.from("salesReturnOrder").delete().eq("id", salesReturnOrderId);
+}
+
+export async function deleteSalesReturnOrderLine(
+  client: SupabaseClient<Database>,
+  lineId: string
+) {
+  return client.from("salesReturnOrderLine").delete().eq("id", lineId);
+}
+
+export async function setSalesReturnOrderLineTrackedEntities(
+  client: SupabaseClient<Database>,
+  lineId: string,
+  companyId: string,
+  entityIds: string[],
+  userId: string
+) {
+  const deleteExisting = await client
+    .from("salesReturnOrderLineTrackedEntity")
+    .delete()
+    .eq("salesReturnOrderLineId", lineId)
+    .eq("companyId", companyId);
+  if (deleteExisting.error) return deleteExisting;
+  if (entityIds.length === 0) return deleteExisting;
+
+  return client.from("salesReturnOrderLineTrackedEntity").insert(
+    entityIds.map((trackedEntityId) => ({
+      salesReturnOrderLineId: lineId,
+      trackedEntityId,
+      quantity: 1,
+      companyId,
+      createdBy: userId
+    }))
+  );
+}
+
+export async function getSalesReturnOrderReceipts(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("receipt")
+    .select("id, receiptId, status, postingDate, createdAt")
+    .eq("sourceDocumentId", salesReturnOrderId)
+    .eq("sourceDocument", "Sales Return Order")
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
+export async function getSalesReturnOrderCredits(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("memo")
+    .select("id, memoId, status, amount, currencyCode, memoDate, postingDate")
+    .eq("salesReturnOrderId", salesReturnOrderId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
+export async function getSalesReturnOrderIssues(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceSalesReturnOrderLine")
+    .select(
+      "id, salesReturnOrderLineId, nonConformance(id, nonConformanceId, name, status)"
+    )
+    .eq("salesReturnOrderId", salesReturnOrderId)
+    .eq("companyId", companyId);
 }
