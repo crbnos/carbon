@@ -630,33 +630,33 @@ refuses to start without it.
 
 **Libraries** (`packages/`). The ones you will actually touch are near the top:
 
-| Package         | What it does                                                            |
-| --------------- | ----------------------------------------------------------------------- |
-| `react`         | The design system. **Check here before writing any UI.**                |
-| `database`      | Generated types, migrations, edge functions, database clients.          |
-| `auth`          | Login, sessions, `requirePermissions`, API keys, permission caching.    |
-| `form`          | `ValidatedForm`, field components, zod helpers.                         |
-| `jobs`          | Every Inngest background function, plus the workflow runtime.           |
-| `lib`           | Shared server utilities: the Inngest client, `trigger()`, email, Slack. |
-| `utils`         | Pure helpers: dates, money, arrays, strings, BOM maths.                 |
-| `workflows`     | Customer workflow schema, validation and pure runtime. No I/O.          |
-| `documents`     | PDF generation, email templates, barcode and label rendering.           |
-| `locale`        | Lingui setup and language switching.                                    |
+| Package         | What it does                                                                             |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| `react`         | The design system. **Check here before writing any UI.**                                 |
+| `database`      | Generated types, migrations, edge functions, database clients.                           |
+| `auth`          | Login, sessions, `requirePermissions`, API keys, permission caching.                     |
+| `form`          | `ValidatedForm`, field components, zod helpers.                                          |
+| `jobs`          | Every Inngest background function, plus the workflow runtime.                            |
+| `lib`           | Shared server utilities: the Inngest client, `trigger()`, email, Slack.                  |
+| `utils`         | Pure helpers: dates, money, arrays, strings, BOM maths.                                  |
+| `workflows`     | Customer workflow schema, validation and pure runtime. No I/O.                           |
+| `documents`     | PDF generation, email templates, barcode and label rendering.                            |
+| `locale`        | Lingui setup and language switching.                                                     |
 | `env`           | The one place `docs/platform/self-hosting/environment-variables` are read and validated. |
-| `logger`        | Structured logging, with request-id correlation.                        |
-| `notifications` | The notification event taxonomy (enums only).                           |
-| `printing`      | Printer registry, label queue, physical print delivery.                 |
-| `onboarding`    | New-company setup, the "Implementation Hub".                            |
-| `kv`            | Redis client plus rate limiting.                                        |
-| `stripe`        | Billing. Cloud edition only.                                            |
-| `ee`            | Enterprise-only code: Xero, Slack, Jira, Linear, Onshape, plan gating.  |
-| `viewer`        | 3D model and assembly-instruction rendering.                            |
-| `tiptap`        | Rich text editor.                                                       |
-| `dev`           | The `crbn` CLI that runs your local stack.                              |
-| `checks`        | Repo conformance rules enforced in CI.                                  |
-| `config`        | Shared tsconfig, Tailwind theme, vitest preset. No runtime code.        |
-| `glossary`      | Canonical manufacturing term definitions used in field help.            |
-| `harness`       | Internal AI-agent tooling. Not shipped.                                 |
+| `logger`        | Structured logging, with request-id correlation.                                         |
+| `notifications` | The notification event taxonomy (enums only).                                            |
+| `printing`      | Printer registry, label queue, physical print delivery.                                  |
+| `onboarding`    | New-company setup, the "Implementation Hub".                                             |
+| `kv`            | Redis client plus rate limiting.                                                         |
+| `stripe`        | Billing. Cloud edition only.                                                             |
+| `ee`            | Enterprise-only code: Xero, Slack, Jira, Linear, Onshape, plan gating.                   |
+| `viewer`        | 3D model and assembly-instruction rendering.                                             |
+| `tiptap`        | Rich text editor.                                                                        |
+| `dev`           | The `crbn` CLI that runs your local stack.                                               |
+| `checks`        | Repo conformance rules enforced in CI.                                                   |
+| `config`        | Shared tsconfig, Tailwind theme, vitest preset. No runtime code.                         |
+| `glossary`      | Canonical manufacturing term definitions used in field help.                             |
+| `harness`       | Internal AI-agent tooling. Not shipped.                                                  |
 
 **Inside an ERP module** (there are eighteen, under `apps/erp/app/modules/{module}/`):
 
@@ -750,12 +750,12 @@ through its Git integration, with no workflow in this repository involved. Every
 below is the AWS side — four GitHub Actions workflows, deliberately independent of each
 other rather than one pipeline:
 
-| Workflow | Fires when | What it does |
-| --- | --- | --- |
-| `check.yml` | every pull request | Biome, typecheck, tests, translation and workflow-catalog checks |
-| `deploy.yml` | merge to `main` touching `apps/erp`, `apps/mes` or `packages` | builds both images from the one root `Dockerfile`, pushes them to Amazon's image registry tagged with the commit, then fans out `sst deploy` per workspace |
-| `supabase.yml` | merge touching `packages/database/supabase` | applies migrations and deploys edge functions, per workspace |
-| `inngest.yml` | after `deploy.yml` succeeds | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs |
+| Workflow       | Fires when                                                    | What it does                                                                                                                                               |
+| -------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check.yml`    | every pull request                                            | Biome, typecheck, tests, translation and workflow-catalog checks                                                                                           |
+| `deploy.yml`   | merge to `main` touching `apps/erp`, `apps/mes` or `packages` | builds both images from the one root `Dockerfile`, pushes them to Amazon's image registry tagged with the commit, then fans out `sst deploy` per workspace |
+| `supabase.yml` | merge touching `packages/database/supabase`                   | applies migrations and deploys edge functions, per workspace                                                                                               |
+| `inngest.yml`  | after `deploy.yml` succeeds                                   | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs                                                                            |
 
 Two consequences worth knowing. First, `check.yml` never builds the apps, so a pull
 request can go green and still break the image build on merge. Second, migrations and app
@@ -792,8 +792,6 @@ Start from what the user saw and walk inwards. This mirrors the order things hap
   is wrong or you are using a user-scoped client where you needed service role.
 - _A write half-succeeded._ Chained `supabase-js` calls are not a transaction. Look for a
   manual rollback that didn't cover the failure.
-- _You see another company's data._ Something is using `bypassRls: true` or the
-  service-role client without re-checking the tenant. **Treat this as urgent.**
 - _A number on a list screen is wrong._ It is almost certainly computed in a view.
 
 ---
