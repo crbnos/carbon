@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.34" stop-color="#dfe6ea"/>
+      <stop offset="0.7" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeSide" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#9aa2a9"/>
+      <stop offset="0.5" stop-color="#6d747a"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="blast" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="blastFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8d9296"/>
+      <stop offset="0.45" stop-color="#787d81"/>
+      <stop offset="1" stop-color="#4b4f52"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="tubeV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.2" stop-color="#dfe4e7"/>
+      <stop offset="0.45" stop-color="#eef1f3"/>
+      <stop offset="0.75" stop-color="#98a0a6"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="524" cy="812" rx="300" ry="66" fill="url(#shadow)"/>
+
+  <!-- lead wires out of the potted grommet -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M372 268 C 300 258 232 288 176 342" stroke="#1b1e21" stroke-width="15"/>
+    <path d="M372 268 C 300 258 232 288 176 342" stroke="#2e3338" stroke-width="9"/>
+    <path d="M376 300 C 296 300 226 336 172 396" stroke="#43201c" stroke-width="15"/>
+    <path d="M376 300 C 296 300 226 336 172 396" stroke="#7a2c26" stroke-width="9"/>
+  </g>
+
+  <!-- opposed tube stubs (weld prep) -->
+  <path d="M356 540 L152 572 L152 652 L356 620 Z" fill="url(#tubeV)" stroke="#4c5257" stroke-width="2.5"/>
+  <ellipse cx="152" cy="612" rx="17" ry="40" fill="#9aa2a9" stroke="#4c5257" stroke-width="2.5" transform="rotate(-8 152 612)"/>
+  <ellipse cx="152" cy="612" rx="9" ry="26" fill="#31363a" transform="rotate(-8 152 612)"/>
+  <path d="M700 508 L900 476 L900 556 L700 588 Z" fill="url(#tubeV)" stroke="#4c5257" stroke-width="2.5"/>
+  <ellipse cx="900" cy="516" rx="17" ry="40" fill="#c3c9cd" stroke="#4c5257" stroke-width="2.5" transform="rotate(-8 900 516)"/>
+  <ellipse cx="900" cy="516" rx="9" ry="26" fill="#31363a" transform="rotate(-8 900 516)"/>
+
+  <!-- mounting tab -->
+  <path d="M252 500 L252 522 L364 506 L364 484 Z" fill="url(#chromeSide)" stroke="#41474c" stroke-width="2.5"/>
+  <path d="M364 462 L256 478 L252 500 L364 484 Z" fill="url(#chromeFace)" stroke="#41474c" stroke-width="2.5"/>
+  <ellipse cx="300" cy="487" rx="25" ry="10" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2.5"/>
+  <ellipse cx="300" cy="488" rx="17" ry="7" fill="#3a4045"/>
+
+  <!-- valve body: front face, right side face, top face -->
+  <path d="M714 434 L714 648 L672 682 L672 468 Z" fill="url(#chromeSide)" stroke="#41474c" stroke-width="3"/>
+  <path d="M350 468 L672 468 L714 434 L392 434 Z" fill="url(#chromeFace)" stroke="#41474c" stroke-width="3"/>
+  <path d="M350 468 L672 468 L672 682 L350 682 Z" fill="url(#chrome)" stroke="#41474c" stroke-width="3"/>
+
+  <!-- machined flats + tool marks on the body front -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2">
+    <path d="M366 500 L656 500"/>
+    <path d="M366 660 L656 660"/>
+    <path d="M362 468 L362 682"/>
+    <path d="M660 468 L660 682"/>
+  </g>
+  <g fill="none" stroke="#2a2f33" stroke-opacity="0.28" stroke-width="1.6">
+    <path d="M356 520 L666 520"/><path d="M356 546 L666 546"/>
+    <path d="M356 634 L666 634"/><path d="M356 606 L666 606"/>
+  </g>
+  <!-- weld collars where the stubs meet the body -->
+  <ellipse cx="352" cy="580" rx="12" ry="42" fill="none" stroke="#c3c9cd" stroke-width="7" opacity="0.7" transform="rotate(-8 352 580)"/>
+  <ellipse cx="704" cy="548" rx="12" ry="42" fill="none" stroke="#c3c9cd" stroke-width="7" opacity="0.7" transform="rotate(-8 704 548)"/>
+
+  <!-- coil can barrel -->
+  <path d="M372 214 L372 452 Q522 508 672 452 L672 214 Z" fill="url(#blast)" stroke="#33373a" stroke-width="3"/>
+  <!-- crimped seams on the can -->
+  <g fill="none" stroke="#2b2f32" stroke-opacity="0.55" stroke-width="3">
+    <path d="M372 262 Q522 318 672 262"/>
+    <path d="M372 414 Q522 470 672 414"/>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2">
+    <path d="M372 272 Q522 328 672 272"/>
+    <path d="M372 424 Q522 480 672 424"/>
+  </g>
+  <!-- bead-blasted speckle -->
+  <g fill="#ffffff" opacity="0.09">
+    <ellipse cx="430" cy="320" rx="26" ry="70"/>
+    <ellipse cx="470" cy="360" rx="10" ry="46"/>
+  </g>
+  <g fill="#15181a" opacity="0.16">
+    <ellipse cx="628" cy="330" rx="18" ry="76"/>
+  </g>
+  <!-- can top face -->
+  <ellipse cx="522" cy="214" rx="150" ry="57" fill="url(#blastFace)" stroke="#33373a" stroke-width="3"/>
+  <ellipse cx="522" cy="214" rx="132" ry="50" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2.5"/>
+  <ellipse cx="522" cy="216" rx="70" ry="27" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+  <ellipse cx="522" cy="218" rx="34" ry="13" fill="url(#steel)" stroke="#4c5257" stroke-width="2.5"/>
+
+  <!-- potted grommet with the wire exit -->
+  <path d="M356 250 Q356 232 384 232 L384 316 Q356 316 356 298 Z" fill="#2c3033" stroke="#15181a" stroke-width="2.5"/>
+  <ellipse cx="382" cy="274" rx="24" ry="46" fill="#3b4044" stroke="#15181a" stroke-width="2.5"/>
+  <ellipse cx="382" cy="274" rx="14" ry="32" fill="#212528" opacity="0.9"/>
+</svg>

@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ssBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ssFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#e2e7ea"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="bossFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f0f3f5"/>
+      <stop offset="0.5" stop-color="#c6cdd1"/>
+      <stop offset="1" stop-color="#8f979d"/>
+    </linearGradient>
+    <linearGradient id="socket" x1="0.3" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#3f454a"/>
+      <stop offset="1" stop-color="#6d757b"/>
+    </linearGradient>
+    <radialGradient id="bore" cx="0.42" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#5c6368"/>
+      <stop offset="0.55" stop-color="#33393e"/>
+      <stop offset="1" stop-color="#1d2225"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="686" rx="414" ry="91" fill="url(#shadow)"/>
+
+  <!-- flange body (14mm thick disc) -->
+  <path d="M152 450 L152 542 Q512 679 872 542 L872 450 Z" fill="url(#ssBarrel)" stroke="#484e53" stroke-width="3"/>
+  <!-- bead-blasted outer edge band -->
+  <path d="M152 470 Q512 607 872 470" fill="none" stroke="#8e969c" stroke-width="6" stroke-opacity="0.35"/>
+  <path d="M152 528 Q512 665 872 528" fill="none" stroke="#7b8288" stroke-width="3" opacity="0.7"/>
+
+  <!-- top face -->
+  <ellipse cx="512" cy="450" rx="360" ry="137" fill="url(#ssFace)" stroke="#484e53" stroke-width="3"/>
+  <!-- rim chamfer -->
+  <ellipse cx="512" cy="450" rx="342" ry="130" fill="none" stroke="#9aa2a8" stroke-width="3" opacity="0.9"/>
+
+  <!-- concentric turning rings -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+    <ellipse cx="512" cy="450" rx="322" ry="122"/>
+    <ellipse cx="512" cy="450" rx="252" ry="96"/>
+    <ellipse cx="512" cy="450" rx="228" ry="87"/>
+  </g>
+  <g fill="none" stroke="#5f666c" stroke-opacity="0.32" stroke-width="1.5">
+    <ellipse cx="512" cy="450" rx="336" ry="128"/>
+    <ellipse cx="512" cy="450" rx="240" ry="91"/>
+  </g>
+
+  <!-- clearance reliefs milled between the bolt holes -->
+  <g fill="none" stroke="#8a9299" stroke-width="16" stroke-opacity="0.30" stroke-linecap="round">
+    <path d="M760 384 Q712 356 660 356"/>
+    <path d="M760 516 Q712 544 660 544"/>
+    <path d="M264 384 Q312 356 364 356"/>
+    <path d="M264 516 Q312 544 364 544"/>
+    <path d="M436 560 Q512 574 588 560"/>
+    <path d="M436 340 Q512 326 588 340"/>
+  </g>
+
+  <!-- bolt holes on a 6-hole circle: counterbore ring + through hole -->
+  <g>
+    <g>
+      <ellipse cx="800" cy="450" rx="54" ry="21" fill="#9199a0" stroke="#6e757b" stroke-width="2"/>
+      <ellipse cx="800" cy="452" rx="38" ry="15" fill="#3a4045"/>
+    </g>
+    <g>
+      <ellipse cx="224" cy="450" rx="54" ry="21" fill="#9199a0" stroke="#6e757b" stroke-width="2"/>
+      <ellipse cx="224" cy="452" rx="38" ry="15" fill="#3a4045"/>
+    </g>
+    <g>
+      <ellipse cx="368" cy="356" rx="54" ry="21" fill="#9199a0" stroke="#6e757b" stroke-width="2"/>
+      <ellipse cx="368" cy="358" rx="38" ry="15" fill="#3a4045"/>
+    </g>
+    <g>
+      <ellipse cx="656" cy="356" rx="54" ry="21" fill="#9199a0" stroke="#6e757b" stroke-width="2"/>
+      <ellipse cx="656" cy="358" rx="38" ry="15" fill="#3a4045"/>
+    </g>
+  </g>
+
+  <!-- raised register boss -->
+  <path d="M316 388 L316 450 Q512 525 708 450 L708 388 Z" fill="url(#ssBarrel)" stroke="#484e53" stroke-width="2"/>
+  <ellipse cx="512" cy="388" rx="196" ry="74" fill="url(#bossFace)" stroke="#4d5358" stroke-width="3"/>
+  <ellipse cx="512" cy="388" rx="182" ry="69" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.85"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+    <ellipse cx="512" cy="388" rx="170" ry="64"/>
+    <ellipse cx="512" cy="388" rx="158" ry="60"/>
+  </g>
+
+  <!-- 45mm through bore -->
+  <path d="M365 388 L365 424 Q512 480 659 424 L659 388 Z" fill="#252b2f"/>
+  <ellipse cx="512" cy="388" rx="147" ry="56" fill="url(#bore)" stroke="#7d858b" stroke-width="3"/>
+  <ellipse cx="512" cy="386" rx="136" ry="51" fill="none" stroke="#aeb6bc" stroke-width="2" opacity="0.55"/>
+
+  <!-- two heavy stainless socket head cap screws fitted in the front holes -->
+  <g>
+    <ellipse cx="368" cy="544" rx="56" ry="22" fill="#7f868c" stroke="#5a6065" stroke-width="2"/>
+    <path d="M310 502 L310 544 Q368 566 426 544 L426 502 Z" fill="url(#ssBarrel)" stroke="#484e53" stroke-width="2"/>
+    <ellipse cx="368" cy="502" rx="58" ry="22" fill="url(#bossFace)" stroke="#5f666b" stroke-width="2"/>
+    <ellipse cx="368" cy="502" rx="50" ry="19" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.8"/>
+    <g transform="translate(368 503) scale(1 0.39)">
+      <polygon points="0,-31 27,-15.5 27,15.5 0,31 -27,15.5 -27,-15.5" fill="url(#socket)" stroke="#4a5055" stroke-width="3"/>
+      <polygon points="0,-24 21,-12 21,12 0,24 -21,12 -21,-12" fill="#2f353a" opacity="0.55"/>
+    </g>
+  </g>
+  <g>
+    <ellipse cx="656" cy="544" rx="56" ry="22" fill="#7f868c" stroke="#5a6065" stroke-width="2"/>
+    <path d="M598 502 L598 544 Q656 566 714 544 L714 502 Z" fill="url(#ssBarrel)" stroke="#484e53" stroke-width="2"/>
+    <ellipse cx="656" cy="502" rx="58" ry="22" fill="url(#bossFace)" stroke="#5f666b" stroke-width="2"/>
+    <ellipse cx="656" cy="502" rx="50" ry="19" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.8"/>
+    <g transform="translate(656 503) scale(1 0.39)">
+      <polygon points="0,-31 27,-15.5 27,15.5 0,31 -27,15.5 -27,-15.5" fill="url(#socket)" stroke="#4a5055" stroke-width="3"/>
+      <polygon points="0,-24 21,-12 21,12 0,24 -21,12 -21,-12" fill="#2f353a" opacity="0.55"/>
+    </g>
+  </g>
+</svg>

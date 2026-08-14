@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="steelBar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="chromeBar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="oxBar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="endFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#8b9298"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="520" cy="792" rx="404" ry="89" fill="url(#shadow)"/>
+
+  <!-- mandrel 1 : largest, knurled expanding collet nut -->
+  <g>
+    <rect x="170" y="240" width="130" height="96" fill="url(#chromeBar)"/>
+    <rect x="300" y="252" width="460" height="72" fill="url(#steelBar)"/>
+    <rect x="760" y="246" width="110" height="84" fill="url(#chromeBar)"/>
+    <path d="M170 240 L870 240" fill="none" stroke="#4b5156" stroke-width="2.5" opacity="0"/>
+    <ellipse cx="300" cy="288" rx="18" ry="48" fill="#8f969c" opacity="0.8"/>
+    <ellipse cx="760" cy="288" rx="16" ry="42" fill="#8f969c" opacity="0.8"/>
+    <!-- knurled collet nut -->
+    <rect x="380" y="230" width="120" height="116" fill="url(#oxBar)" stroke="#0f1113" stroke-width="2.5"/>
+    <g stroke="#7b828a" stroke-width="2" opacity="0.55">
+      <path d="M388 232 L400 344"/><path d="M404 232 L416 344"/><path d="M420 232 L432 344"/>
+      <path d="M436 232 L448 344"/><path d="M452 232 L464 344"/><path d="M468 232 L480 344"/>
+      <path d="M484 232 L496 344"/>
+    </g>
+    <ellipse cx="380" cy="288" rx="20" ry="58" fill="#33383d" stroke="#0f1113" stroke-width="2"/>
+    <!-- ground journal lines -->
+    <g stroke="#ffffff" stroke-opacity="0.24" stroke-width="2">
+      <path d="M180 262 L292 262"/><path d="M180 276 L292 276"/><path d="M772 258 L862 258"/><path d="M772 272 L862 272"/>
+      <path d="M512 268 L750 268"/><path d="M512 300 L750 300"/>
+    </g>
+    <!-- end face + centre hole -->
+    <ellipse cx="170" cy="288" rx="18" ry="48" fill="url(#endFace)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="170" cy="288" rx="12" ry="34" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2"/>
+    <ellipse cx="170" cy="288" rx="5" ry="13" fill="#2f353a"/>
+  </g>
+
+  <!-- mandrel 2 : knurled expanding collet nut -->
+  <g>
+    <rect x="170" y="380" width="120" height="82" fill="url(#chromeBar)"/>
+    <rect x="290" y="390" width="410" height="62" fill="url(#steelBar)"/>
+    <rect x="700" y="385" width="110" height="72" fill="url(#chromeBar)"/>
+    <ellipse cx="290" cy="421" rx="16" ry="41" fill="#8f969c" opacity="0.8"/>
+    <ellipse cx="700" cy="421" rx="14" ry="36" fill="#8f969c" opacity="0.8"/>
+    <rect x="360" y="371" width="110" height="100" fill="url(#oxBar)" stroke="#0f1113" stroke-width="2.5"/>
+    <g stroke="#7b828a" stroke-width="2" opacity="0.55">
+      <path d="M368 373 L378 469"/><path d="M384 373 L394 469"/><path d="M400 373 L410 469"/>
+      <path d="M416 373 L426 469"/><path d="M432 373 L442 469"/><path d="M448 373 L458 469"/>
+    </g>
+    <ellipse cx="360" cy="421" rx="17" ry="50" fill="#33383d" stroke="#0f1113" stroke-width="2"/>
+    <g stroke="#ffffff" stroke-opacity="0.24" stroke-width="2">
+      <path d="M180 398 L282 398"/><path d="M180 410 L282 410"/><path d="M712 398 L802 398"/>
+      <path d="M480 402 L692 402"/><path d="M480 430 L692 430"/>
+    </g>
+    <ellipse cx="170" cy="421" rx="16" ry="41" fill="url(#endFace)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="170" cy="421" rx="10" ry="28" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2"/>
+    <ellipse cx="170" cy="421" rx="4.5" ry="11" fill="#2f353a"/>
+  </g>
+
+  <!-- mandrel 3 : fine thread and slim locking ring -->
+  <g>
+    <rect x="170" y="506" width="110" height="68" fill="url(#chromeBar)"/>
+    <rect x="280" y="514" width="370" height="52" fill="url(#steelBar)"/>
+    <rect x="650" y="510" width="100" height="60" fill="url(#chromeBar)"/>
+    <ellipse cx="280" cy="540" rx="14" ry="34" fill="#8f969c" opacity="0.8"/>
+    <ellipse cx="650" cy="540" rx="12" ry="30" fill="#8f969c" opacity="0.8"/>
+    <!-- fine thread -->
+    <g stroke="#767d83" stroke-width="2.5" opacity="0.8">
+      <path d="M430 514 L436 566"/><path d="M446 514 L452 566"/><path d="M462 514 L468 566"/>
+      <path d="M478 514 L484 566"/><path d="M494 514 L500 566"/><path d="M510 514 L516 566"/>
+      <path d="M526 514 L532 566"/><path d="M542 514 L548 566"/><path d="M558 514 L564 566"/>
+    </g>
+    <g stroke="#f2f5f6" stroke-width="1.8" opacity="0.5">
+      <path d="M436 514 L442 566"/><path d="M452 514 L458 566"/><path d="M468 514 L474 566"/>
+      <path d="M484 514 L490 566"/><path d="M500 514 L506 566"/><path d="M516 514 L522 566"/>
+      <path d="M532 514 L538 566"/><path d="M548 514 L554 566"/><path d="M564 514 L570 566"/>
+    </g>
+    <!-- slim locking ring -->
+    <rect x="586" y="504" width="34" height="72" fill="url(#oxBar)" stroke="#0f1113" stroke-width="2.5"/>
+    <ellipse cx="586" cy="540" rx="12" ry="36" fill="#33383d" stroke="#0f1113" stroke-width="2"/>
+    <g stroke="#ffffff" stroke-opacity="0.24" stroke-width="2">
+      <path d="M180 520 L272 520"/><path d="M180 530 L272 530"/><path d="M662 520 L742 520"/>
+      <path d="M300 522 L420 522"/><path d="M300 552 L420 552"/>
+    </g>
+    <ellipse cx="170" cy="540" rx="14" ry="34" fill="url(#endFace)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="170" cy="540" rx="9" ry="23" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2"/>
+    <ellipse cx="170" cy="540" rx="4" ry="9" fill="#2f353a"/>
+  </g>
+
+  <!-- mandrel 4 : plain stepped -->
+  <g>
+    <rect x="170" y="618" width="100" height="56" fill="url(#chromeBar)"/>
+    <rect x="270" y="625" width="330" height="42" fill="url(#steelBar)"/>
+    <rect x="600" y="621" width="90" height="50" fill="url(#chromeBar)"/>
+    <ellipse cx="270" cy="646" rx="12" ry="28" fill="#8f969c" opacity="0.8"/>
+    <ellipse cx="600" cy="646" rx="10" ry="25" fill="#8f969c" opacity="0.8"/>
+    <rect x="420" y="614" width="26" height="64" fill="url(#steelBar)" stroke="#5d6368" stroke-width="2"/>
+    <ellipse cx="420" cy="646" rx="9" ry="32" fill="#b6bdc2" stroke="#5d6368" stroke-width="1.8"/>
+    <g stroke="#ffffff" stroke-opacity="0.24" stroke-width="2">
+      <path d="M180 630 L262 630"/><path d="M180 640 L262 640"/><path d="M612 630 L682 630"/>
+      <path d="M460 632 L592 632"/><path d="M460 658 L592 658"/>
+    </g>
+    <ellipse cx="170" cy="646" rx="12" ry="28" fill="url(#endFace)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="170" cy="646" rx="7.5" ry="19" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2"/>
+    <ellipse cx="170" cy="646" rx="3.5" ry="8" fill="#2f353a"/>
+  </g>
+
+  <!-- mandrel 5 : smallest -->
+  <g>
+    <rect x="170" y="718" width="90" height="44" fill="url(#chromeBar)"/>
+    <rect x="260" y="723" width="290" height="34" fill="url(#steelBar)"/>
+    <rect x="550" y="721" width="80" height="38" fill="url(#chromeBar)"/>
+    <ellipse cx="260" cy="740" rx="10" ry="22" fill="#8f969c" opacity="0.8"/>
+    <ellipse cx="550" cy="740" rx="8" ry="19" fill="#8f969c" opacity="0.8"/>
+    <rect x="380" y="715" width="22" height="50" fill="url(#steelBar)" stroke="#5d6368" stroke-width="2"/>
+    <ellipse cx="380" cy="740" rx="8" ry="25" fill="#b6bdc2" stroke="#5d6368" stroke-width="1.8"/>
+    <g stroke="#ffffff" stroke-opacity="0.24" stroke-width="2">
+      <path d="M180 728 L252 728"/><path d="M180 736 L252 736"/><path d="M562 728 L622 728"/>
+      <path d="M416 729 L542 729"/><path d="M416 750 L542 750"/>
+    </g>
+    <ellipse cx="170" cy="740" rx="10" ry="22" fill="url(#endFace)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="170" cy="740" rx="6" ry="15" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2"/>
+    <ellipse cx="170" cy="740" rx="3" ry="6.5" fill="#2f353a"/>
+  </g>
+</svg>

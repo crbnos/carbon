@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="rubBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <linearGradient id="rubTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#3f4448"/>
+      <stop offset="0.4" stop-color="#2c3033"/>
+      <stop offset="1" stop-color="#131618"/>
+    </linearGradient>
+    <linearGradient id="lipInner" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#454b4f"/>
+      <stop offset="0.3" stop-color="#33383c"/>
+      <stop offset="0.62" stop-color="#24282b"/>
+      <stop offset="1" stop-color="#14171a"/>
+    </linearGradient>
+    <linearGradient id="lipOuter" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#2a2e31"/>
+      <stop offset="0.45" stop-color="#1c1f22"/>
+      <stop offset="1" stop-color="#0b0d0e"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="786" rx="352" ry="77" fill="url(#shadow)"/>
+
+  <!-- thick square-section body ring -->
+  <path d="M260 560 A 252 96 0 0 0 764 560 L 764 700 A 252 96 0 0 1 260 700 Z"
+        fill="url(#rubBody)" stroke="#0a0c0d" stroke-width="3"/>
+  <!-- mould parting line around the body -->
+  <path d="M262 630 A 252 96 0 0 0 762 630" fill="none" stroke="#5c6368" stroke-opacity="0.30" stroke-width="2"/>
+  <path d="M262 634 A 252 96 0 0 0 762 634" fill="none" stroke="#000000" stroke-opacity="0.35" stroke-width="2"/>
+  <!-- satin rollover on the body -->
+  <path d="M280 596 A 252 96 0 0 0 660 640" fill="none" stroke="#7b838a" stroke-opacity="0.13" stroke-width="16"/>
+  <!-- small sprue witness -->
+  <ellipse cx="690" cy="646" rx="15" ry="11" fill="#2f3438"/>
+  <ellipse cx="687" cy="643" rx="7" ry="5" fill="#565d62" fill-opacity="0.5"/>
+
+  <!-- body top face -->
+  <path d="M260 560 A 252 96 0 0 1 764 560 A 252 96 0 0 1 260 560 Z" fill="url(#rubTop)"/>
+  <ellipse cx="512" cy="560" rx="252" ry="96" fill="url(#rubTop)" stroke="#0a0c0d" stroke-width="2"/>
+
+  <!-- shaft bore -->
+  <ellipse cx="512" cy="560" rx="150" ry="57" fill="#0a0c0d" stroke="#2b2f33" stroke-width="2"/>
+  <path d="M362 560 A 150 57 0 0 1 662 560 L 662 700 A 150 57 0 0 0 362 700 Z" fill="#1b1f22"/>
+  <path d="M362 700 A 150 57 0 0 0 662 700 A 150 57 0 0 0 362 700 Z" fill="#070809"/>
+  <ellipse cx="512" cy="560" rx="150" ry="57" fill="none" stroke="#71797f" stroke-opacity="0.22" stroke-width="2.5"/>
+
+  <!-- conical lip: far half shows the concave inner face -->
+  <path d="M110 380 A 402 153 0 0 1 914 380 L 764 560 A 252 96 0 0 0 260 560 Z"
+        fill="url(#lipInner)" stroke="#0a0c0d" stroke-width="3"/>
+  <g stroke="#8a9298" stroke-opacity="0.10" stroke-width="2" fill="none">
+    <path d="M150 372 A 380 145 0 0 1 874 372"/>
+    <path d="M210 400 A 320 122 0 0 1 814 400"/>
+  </g>
+  <path d="M200 300 A 402 153 0 0 1 620 246" fill="none" stroke="#9aa2a8" stroke-opacity="0.13" stroke-width="18"/>
+
+  <!-- conical lip: near half droops under its own weight -->
+  <path d="M110 380 C 162 536 330 592 512 574 C 706 592 874 528 914 380 L 764 560 A 252 96 0 0 1 260 560 Z"
+        fill="url(#lipOuter)" stroke="#0a0c0d" stroke-width="3"/>
+  <path d="M138 400 C 190 528 336 576 512 558 C 700 576 862 516 892 400"
+        fill="none" stroke="#6d757b" stroke-opacity="0.16" stroke-width="3"/>
+
+  <!-- flexible hinge web where the lip joins the body -->
+  <path d="M262 556 A 252 96 0 0 0 762 556" fill="none" stroke="#000000" stroke-opacity="0.55" stroke-width="9"/>
+  <path d="M262 550 A 252 96 0 0 0 762 550" fill="none" stroke="#767e84" stroke-opacity="0.18" stroke-width="2.5"/>
+
+  <!-- soft rim edge on the drooping lip -->
+  <path d="M116 382 C 166 528 330 584 512 566 C 704 584 870 522 908 382"
+        fill="none" stroke="#8d959b" stroke-opacity="0.22" stroke-width="3"/>
+  <path d="M118 372 A 394 150 0 0 1 906 372" fill="none" stroke="#9aa2a8" stroke-opacity="0.20" stroke-width="3"/>
+</svg>

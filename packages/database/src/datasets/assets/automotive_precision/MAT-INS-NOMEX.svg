@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- cream aramid paper: warmer than white, matte, low contrast -->
+    <linearGradient id="paperBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b0a68f"/>
+      <stop offset="0.2" stop-color="#e5decb"/>
+      <stop offset="0.45" stop-color="#f3eee0"/>
+      <stop offset="0.72" stop-color="#cec6b1"/>
+      <stop offset="1" stop-color="#9d937d"/>
+    </linearGradient>
+    <linearGradient id="paperFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f3eee0"/>
+      <stop offset="0.45" stop-color="#ded7c3"/>
+      <stop offset="1" stop-color="#a89e87"/>
+    </linearGradient>
+    <!-- the free sheet: light on the crest of the wave, shaded in the trough -->
+    <linearGradient id="sheetWave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c8c0aa"/>
+      <stop offset="0.16" stop-color="#efe9db"/>
+      <stop offset="0.42" stop-color="#b9b09a"/>
+      <stop offset="0.66" stop-color="#f4efe2"/>
+      <stop offset="0.88" stop-color="#d3cbb6"/>
+      <stop offset="1" stop-color="#aca391"/>
+    </linearGradient>
+    <linearGradient id="kraft" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#bd9468"/>
+      <stop offset="0.45" stop-color="#a8815a"/>
+      <stop offset="1" stop-color="#6f5238"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="rollBody">
+      <path d="M232 286 L232 712 Q440 870 648 712 L648 286 Z"/>
+    </clipPath>
+    <clipPath id="rollFace">
+      <ellipse cx="440" cy="286" rx="208" ry="79"/>
+    </clipPath>
+    <clipPath id="sheetClip">
+      <path d="M648 292 C704 306 742 340 780 316 C796 306 810 286 806 262 L806 682 C810 706 796 726 780 736 C742 760 704 746 648 712 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="496" cy="780" rx="292" ry="64" fill="url(#shadow)"/>
+
+  <!-- the free end, drawn behind the roll where it wraps away -->
+  <g>
+    <path d="M648 292 C704 306 742 340 780 316 C796 306 810 286 806 262 L806 682 C810 706 796 726 780 736 C742 760 704 746 648 712 Z"
+          fill="url(#sheetWave)" stroke="#8e856f" stroke-width="2.5" stroke-linejoin="round"/>
+    <g clip-path="url(#sheetClip)">
+      <!-- faint felted fibre texture in raking light -->
+      <g stroke="#8e856f" stroke-opacity="0.16" stroke-width="2" fill="none">
+        <path d="M660 340 C700 352 740 384 782 362"/>
+        <path d="M660 430 C700 442 740 474 782 452"/>
+        <path d="M660 520 C700 532 740 564 782 542"/>
+        <path d="M660 612 C700 624 740 656 782 634"/>
+      </g>
+      <g stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.6" fill="none">
+        <path d="M660 386 C700 398 740 430 782 408"/>
+        <path d="M660 476 C700 488 740 520 782 498"/>
+        <path d="M660 566 C700 578 740 610 782 588"/>
+        <path d="M660 658 C700 670 740 702 782 680"/>
+      </g>
+      <!-- single crisp fold line: hard crease plus its bright shoulder -->
+      <path d="M714 306 L719 726" stroke="#8b8267" stroke-width="4" stroke-opacity="0.8" fill="none"/>
+      <path d="M722 307 L727 727" stroke="#ffffff" stroke-width="3" stroke-opacity="0.55" fill="none"/>
+      <!-- lift-off shading where the sheet leaves the roll -->
+      <path d="M648 292 L676 296 L676 718 L648 712 Z" fill="#8e856f" opacity="0.22"/>
+    </g>
+    <!-- curled tip: clean slit edge seen edge-on, showing the underside -->
+    <path d="M806 262 C826 272 828 296 812 306 L812 692 C828 702 826 726 806 736"
+          fill="none" stroke="#9c937c" stroke-width="3"/>
+    <path d="M786 268 C806 278 808 300 792 310 L792 688 C808 698 806 722 786 732 L806 736 C826 726 828 702 812 692 L812 306 C828 296 826 272 806 262 Z"
+          fill="#c2b9a2" opacity="0.75"/>
+    <path d="M800 300 L800 700" stroke="#ffffff" stroke-opacity="0.45" stroke-width="3"/>
+  </g>
+
+  <!-- roll body -->
+  <path d="M232 286 L232 712 Q440 870 648 712 L648 286 Z" fill="url(#paperBarrel)"/>
+  <g clip-path="url(#rollBody)">
+    <g stroke="#8e856f" stroke-opacity="0.14" stroke-width="2.5" fill="none">
+      <path d="M296 286 L296 760"/><path d="M368 286 L368 786"/>
+      <path d="M472 286 L472 792"/><path d="M556 286 L556 768"/>
+      <path d="M612 286 L612 736"/>
+    </g>
+    <g stroke="#ffffff" stroke-opacity="0.26" stroke-width="2" fill="none">
+      <path d="M330 286 L330 776"/><path d="M420 286 L420 792"/>
+      <path d="M516 286 L516 782"/><path d="M584 286 L584 754"/>
+    </g>
+    <!-- lap where the outermost layer starts, and the slit edge shading at the base -->
+    <path d="M616 286 L616 742" stroke="#8b8267" stroke-width="4" stroke-opacity="0.55"/>
+    <path d="M622 286 L622 740" stroke="#ffffff" stroke-width="3" stroke-opacity="0.4"/>
+    <path d="M232 690 Q440 848 648 690 L648 730 Q440 890 232 730 Z" fill="#8e856f" opacity="0.2"/>
+  </g>
+  <path d="M232 286 L232 712 Q440 870 648 712 L648 286 Z" fill="none" stroke="#8b8267" stroke-width="2.5"/>
+
+  <!-- roll end: tightly stacked layers spiralling in to the kraft core -->
+  <ellipse cx="440" cy="286" rx="208" ry="79" fill="url(#paperFace)" stroke="#8b8267" stroke-width="2.5"/>
+  <g clip-path="url(#rollFace)">
+    <g fill="none" stroke="#9d937d" stroke-opacity="0.55" stroke-width="2">
+      <ellipse cx="440" cy="286" rx="198" ry="75"/>
+      <ellipse cx="440" cy="287" rx="184" ry="70"/>
+      <ellipse cx="440" cy="288" rx="170" ry="65"/>
+      <ellipse cx="440" cy="288" rx="156" ry="59"/>
+      <ellipse cx="440" cy="289" rx="142" ry="54"/>
+      <ellipse cx="441" cy="289" rx="128" ry="49"/>
+      <ellipse cx="441" cy="290" rx="114" ry="43"/>
+      <ellipse cx="441" cy="290" rx="100" ry="38"/>
+      <ellipse cx="442" cy="291" rx="88" ry="33"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.6">
+      <ellipse cx="440" cy="283" rx="191" ry="73"/>
+      <ellipse cx="440" cy="284" rx="163" ry="62"/>
+      <ellipse cx="441" cy="285" rx="135" ry="51"/>
+      <ellipse cx="441" cy="286" rx="107" ry="41"/>
+    </g>
+  </g>
+  <!-- calendered outer edge break -->
+  <ellipse cx="440" cy="286" rx="200" ry="76" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3"/>
+
+  <!-- plain kraft core -->
+  <ellipse cx="441" cy="292" rx="78" ry="30" fill="url(#kraft)" stroke="#5f452f" stroke-width="2.5"/>
+  <ellipse cx="441" cy="294" rx="58" ry="22" fill="#4a3826" stroke="#33251a" stroke-width="2"/>
+  <path d="M389 298 Q441 322 493 298" fill="none" stroke="#8a6a48" stroke-width="5" stroke-opacity="0.85"/>
+  <ellipse cx="441" cy="292" rx="68" ry="26" fill="none" stroke="#d9b98f" stroke-opacity="0.4" stroke-width="2"/>
+</svg>

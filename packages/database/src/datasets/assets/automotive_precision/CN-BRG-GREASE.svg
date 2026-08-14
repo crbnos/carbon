@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="tub" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b9bfc4"/>
+      <stop offset="0.18" stop-color="#e6eaec"/>
+      <stop offset="0.42" stop-color="#f7f9fa"/>
+      <stop offset="0.7" stop-color="#d3d9dd"/>
+      <stop offset="1" stop-color="#a8aeb3"/>
+    </linearGradient>
+    <linearGradient id="tubFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f7f9fa"/>
+      <stop offset="0.5" stop-color="#dde2e5"/>
+      <stop offset="1" stop-color="#aab0b5"/>
+    </linearGradient>
+    <linearGradient id="grease" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="greaseWall" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6b420d"/>
+      <stop offset="0.35" stop-color="#a06f22"/>
+      <stop offset="0.7" stop-color="#8a5a12"/>
+      <stop offset="1" stop-color="#5f3a0b"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="470" cy="818" rx="378" ry="83" fill="url(#shadow)"/>
+
+  <!-- tub body, slight draft taper -->
+  <path d="M313 372 L342 748 Q545 826 748 748 L777 372 Z" fill="url(#tub)" stroke="#8d9398" stroke-width="3"/>
+
+  <!-- moulded ribs following the barrel -->
+  <g fill="none" stroke="#8d9398" stroke-width="3" opacity="0.55">
+    <path d="M322 494 Q545 656 768 494"/>
+    <path d="M329 592 Q545 748 761 592"/>
+    <path d="M336 686 Q545 836 754 686"/>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.5">
+    <path d="M324 506 Q545 668 766 506"/>
+    <path d="M331 604 Q545 760 759 604"/>
+    <path d="M338 698 Q545 848 752 698"/>
+  </g>
+
+  <!-- rolled rim -->
+  <ellipse cx="545" cy="372" rx="232" ry="88" fill="url(#tubFace)" stroke="#8d9398" stroke-width="3"/>
+  <ellipse cx="545" cy="378" rx="232" ry="88" fill="none" stroke="#9aa0a5" stroke-width="4" opacity="0.65"/>
+  <ellipse cx="545" cy="372" rx="211" ry="80" fill="#c9ced2" stroke="#93999e" stroke-width="2"/>
+
+  <!-- grease inner wall then domed surface -->
+  <path d="M334 372 A211 80 0 0 0 756 372 L756 400 A211 80 0 0 1 334 400 Z" fill="url(#greaseWall)"/>
+  <ellipse cx="545" cy="386" rx="205" ry="78" fill="url(#grease)"/>
+  <path d="M340 386 Q545 300 750 386 Q545 462 340 386 Z" fill="url(#grease)" opacity="0.85"/>
+
+  <!-- scoop furrow cut through the surface -->
+  <path d="M418 356 Q545 300 664 350 Q612 404 545 412 Q470 406 418 356 Z" fill="#7a4e10" opacity="0.75"/>
+  <path d="M430 362 Q545 316 652 356 Q600 396 545 402 Q478 398 430 362 Z" fill="#6b420d" opacity="0.6"/>
+  <path d="M430 362 Q545 316 652 356" fill="none" stroke="#e8c383" stroke-width="4" opacity="0.55"/>
+
+  <!-- soft peak where the paddle lifted away -->
+  <path d="M600 420 Q628 372 660 418 Q632 442 600 420 Z" fill="#e0b25f" opacity="0.9"/>
+  <path d="M614 418 Q630 388 646 416" fill="none" stroke="#f2d49b" stroke-width="4" opacity="0.7"/>
+
+  <!-- oil sheen -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="3">
+    <ellipse cx="545" cy="386" rx="176" ry="62"/>
+    <ellipse cx="545" cy="386" rx="140" ry="48"/>
+  </g>
+  <path d="M400 400 Q460 428 520 424" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="6"/>
+
+  <!-- press-fit lid tilted off, leaning on the tub -->
+  <g transform="rotate(-70 250 662)">
+    <ellipse cx="250" cy="678" rx="200" ry="76" fill="#9aa0a5"/>
+    <ellipse cx="250" cy="662" rx="200" ry="76" fill="url(#tubFace)" stroke="#8d9398" stroke-width="3"/>
+    <ellipse cx="250" cy="662" rx="176" ry="66" fill="none" stroke="#9aa0a5" stroke-width="3" opacity="0.8"/>
+    <ellipse cx="250" cy="662" rx="120" ry="45" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="3"/>
+    <ellipse cx="250" cy="662" rx="72" ry="27" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3"/>
+    <path d="M50 662 Q250 738 450 662" fill="none" stroke="#a8aeb3" stroke-width="4" opacity="0.7"/>
+  </g>
+</svg>

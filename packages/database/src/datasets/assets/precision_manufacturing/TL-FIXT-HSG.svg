@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="alFront" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#7d848a"/>
+      <stop offset="0.2" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/>
+      <stop offset="0.72" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <linearGradient id="alTop" x1="0.15" y1="1" x2="0.9" y2="0">
+      <stop offset="0" stop-color="#a9b1b7"/>
+      <stop offset="0.3" stop-color="#e8edf0"/>
+      <stop offset="0.62" stop-color="#f4f7f8"/>
+      <stop offset="1" stop-color="#b8c0c6"/>
+    </linearGradient>
+    <linearGradient id="alEnd" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#98a0a6"/>
+      <stop offset="0.5" stop-color="#828a90"/>
+      <stop offset="1" stop-color="#646b71"/>
+    </linearGradient>
+    <linearGradient id="anodFront" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="anodTop" x1="0.15" y1="1" x2="0.9" y2="0">
+      <stop offset="0" stop-color="#b2bac0"/>
+      <stop offset="0.35" stop-color="#f0f4f6"/>
+      <stop offset="1" stop-color="#c2cad0"/>
+    </linearGradient>
+    <linearGradient id="anodEnd" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a3abb1"/>
+      <stop offset="0.5" stop-color="#8d959b"/>
+      <stop offset="1" stop-color="#6f777d"/>
+    </linearGradient>
+    <linearGradient id="pocketWall" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4e555b"/>
+      <stop offset="0.3" stop-color="#8d959b"/>
+      <stop offset="0.62" stop-color="#b6bec4"/>
+      <stop offset="1" stop-color="#5a6167"/>
+    </linearGradient>
+    <linearGradient id="bush" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <clipPath id="topClip">
+      <path d="M120 560 L740 560 L896 448 L276 448 Z"/>
+    </clipPath>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="508" cy="690" rx="446" ry="98" fill="url(#shadow)"/>
+
+  <!-- ===== tooling plate ===== -->
+  <path d="M740 560 L896 448 L896 578 L740 690 Z" fill="url(#alEnd)" stroke="#4e555b" stroke-width="2.5"/>
+  <!-- bead-blasted matte striation on the end face -->
+  <g stroke="#ffffff" stroke-opacity="0.08" stroke-width="4" fill="none">
+    <path d="M748 672 L890 570"/><path d="M748 636 L890 534"/>
+    <path d="M748 600 L890 498"/><path d="M748 564 L890 462"/>
+  </g>
+  <path d="M746 556 L890 452" fill="none" stroke="#dfe4e8" stroke-opacity="0.5" stroke-width="2.5"/>
+
+  <!-- top face -->
+  <path d="M120 560 L740 560 L896 448 L276 448 Z" fill="url(#alTop)" stroke="#4e555b" stroke-width="2.5"/>
+  <!-- circular tool witness marks -->
+  <g clip-path="url(#topClip)" stroke="#8f979d" stroke-opacity="0.30" stroke-width="2" fill="none">
+    <ellipse cx="496" cy="504" rx="80" ry="30"/>
+    <ellipse cx="496" cy="504" rx="150" ry="57"/>
+    <ellipse cx="496" cy="504" rx="220" ry="84"/>
+    <ellipse cx="496" cy="504" rx="290" ry="110"/>
+    <ellipse cx="496" cy="504" rx="360" ry="137"/>
+    <ellipse cx="496" cy="504" rx="430" ry="163"/>
+  </g>
+  <g clip-path="url(#topClip)" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.6" fill="none">
+    <ellipse cx="496" cy="497" rx="115" ry="44"/>
+    <ellipse cx="496" cy="497" rx="185" ry="70"/>
+    <ellipse cx="496" cy="497" rx="255" ry="97"/>
+    <ellipse cx="496" cy="497" rx="325" ry="124"/>
+    <ellipse cx="496" cy="497" rx="395" ry="150"/>
+  </g>
+  <!-- top-edge chamfer -->
+  <path d="M132 552 L737 552 L884 446 L280 446 Z" fill="none" stroke="#f2f5f6" stroke-opacity="0.65" stroke-width="2.5"/>
+
+  <!-- machined cradle pocket for the round pump housing -->
+  <g>
+    <ellipse cx="495.6" cy="504" rx="125" ry="47.5" fill="#5a6167"/>
+    <g clip-path="url(#topClip)">
+      <path d="M370.6 504 L370.6 540 Q495.6 587.5 620.6 540 L620.6 504 Z" fill="url(#pocketWall)"/>
+    </g>
+    <ellipse cx="495.6" cy="540" rx="125" ry="47.5" fill="#767e85"/>
+    <ellipse cx="495.6" cy="540" rx="104" ry="39.5" fill="#8e969c"/>
+    <g stroke="#ffffff" stroke-opacity="0.20" stroke-width="2" fill="none">
+      <ellipse cx="495.6" cy="540" rx="86" ry="32.7"/>
+      <ellipse cx="495.6" cy="540" rx="62" ry="23.6"/>
+      <ellipse cx="495.6" cy="540" rx="36" ry="13.7"/>
+    </g>
+    <!-- relief bore in the pocket floor -->
+    <ellipse cx="495.6" cy="540" rx="30" ry="11.4" fill="#3a4045"/>
+    <!-- pocket lip chamfer -->
+    <ellipse cx="495.6" cy="504" rx="125" ry="47.5" fill="none" stroke="#4a5157" stroke-width="3"/>
+    <ellipse cx="495.6" cy="502" rx="134" ry="51" fill="none" stroke="#f2f5f6" stroke-opacity="0.6" stroke-width="2.5"/>
+  </g>
+
+  <!-- hardened dowel bushings -->
+  <g>
+    <ellipse cx="329.4" cy="543.2" rx="34" ry="12.9" fill="#8a9298"/>
+    <ellipse cx="329.4" cy="543.2" rx="27" ry="10.3" fill="url(#bush)" stroke="#4e555b" stroke-width="2"/>
+    <ellipse cx="329.4" cy="544.5" rx="15" ry="5.7" fill="#2f353a"/>
+    <ellipse cx="329.4" cy="542" rx="15" ry="5.7" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2"/>
+    <ellipse cx="661.8" cy="464.8" rx="34" ry="12.9" fill="#8a9298"/>
+    <ellipse cx="661.8" cy="464.8" rx="27" ry="10.3" fill="url(#bush)" stroke="#4e555b" stroke-width="2"/>
+    <ellipse cx="661.8" cy="466.1" rx="15" ry="5.7" fill="#2f353a"/>
+    <ellipse cx="661.8" cy="463.6" rx="15" ry="5.7" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2"/>
+  </g>
+
+  <!-- counterbored socket screws in the plate -->
+  <g>
+    <ellipse cx="272" cy="548.8" rx="26" ry="9.9" fill="#9aa2a8"/>
+    <ellipse cx="272" cy="548.8" rx="20" ry="7.6" fill="#4a5055" stroke="#2f353a" stroke-width="1.5"/>
+    <ellipse cx="272" cy="548.8" rx="12" ry="4.6" fill="#20252a"/>
+    <ellipse cx="396.8" cy="459.2" rx="26" ry="9.9" fill="#9aa2a8"/>
+    <ellipse cx="396.8" cy="459.2" rx="20" ry="7.6" fill="#4a5055" stroke="#2f353a" stroke-width="1.5"/>
+    <ellipse cx="396.8" cy="459.2" rx="12" ry="4.6" fill="#20252a"/>
+    <ellipse cx="594.4" cy="548.8" rx="26" ry="9.9" fill="#9aa2a8"/>
+    <ellipse cx="594.4" cy="548.8" rx="20" ry="7.6" fill="#4a5055" stroke="#2f353a" stroke-width="1.5"/>
+    <ellipse cx="594.4" cy="548.8" rx="12" ry="4.6" fill="#20252a"/>
+    <ellipse cx="719.2" cy="459.2" rx="26" ry="9.9" fill="#9aa2a8"/>
+    <ellipse cx="719.2" cy="459.2" rx="20" ry="7.6" fill="#4a5055" stroke="#2f353a" stroke-width="1.5"/>
+    <ellipse cx="719.2" cy="459.2" rx="12" ry="4.6" fill="#20252a"/>
+  </g>
+
+  <!-- plate front face -->
+  <path d="M120 560 L740 560 L740 690 L120 690 Z" fill="url(#alFront)" stroke="#4e555b" stroke-width="3"/>
+  <path d="M120 570 L740 570" fill="none" stroke="#f2f5f6" stroke-opacity="0.55" stroke-width="2.5"/>
+  <path d="M120 680 L740 680" fill="none" stroke="#5b6268" stroke-opacity="0.6" stroke-width="2.5"/>
+  <g stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" fill="none">
+    <path d="M124 596 L736 596"/><path d="M124 620 L736 620"/><path d="M124 654 L736 654"/>
+  </g>
+  <!-- side clamp slots through the plate edge -->
+  <g fill="#3a4045" stroke="#252a2e" stroke-width="2">
+    <rect x="196" y="606" width="86" height="24" rx="12"/>
+    <rect x="578" y="606" width="86" height="24" rx="12"/>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2">
+    <path d="M196 618 Q196 606 208 606 L270 606"/>
+    <path d="M578 618 Q578 606 590 606 L652 606"/>
+  </g>
+
+  <!-- ===== soft jaw block, left ===== -->
+  <g>
+    <path d="M250.4 432.6 L250.4 537.6 L344 470.4 L344 365.4 Z" fill="url(#anodEnd)" stroke="#5b6268" stroke-width="2.5"/>
+    <path d="M176 432.6 L250.4 432.6 L344 365.4 L269.6 365.4 Z" fill="url(#anodTop)" stroke="#5b6268" stroke-width="2.5"/>
+    <path d="M176 432.6 L250.4 432.6 L250.4 537.6 L176 537.6 Z" fill="url(#anodFront)" stroke="#5b6268" stroke-width="2.5"/>
+    <path d="M184 426 L248 426 L336 363 L272 363 Z" fill="none" stroke="#f2f5f6" stroke-opacity="0.6" stroke-width="2"/>
+    <!-- machined cradle radius cut into the jaw face -->
+    <path d="M250.4 458 Q296 486 344 452 L344 396 Q296 430 250.4 402 Z" fill="#8d959b" opacity="0.85"/>
+    <path d="M250.4 458 Q296 486 344 452" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2.5"/>
+    <path d="M250.4 402 Q296 430 344 396" fill="none" stroke="#5b6268" stroke-opacity="0.7" stroke-width="2.5"/>
+    <g stroke="#ffffff" stroke-opacity="0.18" stroke-width="2" fill="none">
+      <path d="M180 448 L246 448"/><path d="M180 476 L246 476"/><path d="M180 508 L246 508"/>
+    </g>
+    <!-- hold-down socket screws in the block top -->
+    <ellipse cx="241.3" cy="412.4" rx="20" ry="7.6" fill="#9aa2a8"/>
+    <ellipse cx="241.3" cy="412.4" rx="15" ry="5.7" fill="#4a5055" stroke="#2f353a" stroke-width="1.5"/>
+    <ellipse cx="241.3" cy="412.4" rx="9" ry="3.4" fill="#20252a"/>
+    <ellipse cx="283.4" cy="382.2" rx="20" ry="7.6" fill="#9aa2a8"/>
+    <ellipse cx="283.4" cy="382.2" rx="15" ry="5.7" fill="#4a5055" stroke="#2f353a" stroke-width="1.5"/>
+    <ellipse cx="283.4" cy="382.2" rx="9" ry="3.4" fill="#20252a"/>
+  </g>
+
+  <!-- ===== soft jaw block, right ===== -->
+  <g>
+    <path d="M721.6 432.6 L721.6 537.6 L815.2 470.4 L815.2 365.4 Z" fill="url(#anodEnd)" stroke="#5b6268" stroke-width="2.5"/>
+    <path d="M647.2 432.6 L721.6 432.6 L815.2 365.4 L740.8 365.4 Z" fill="url(#anodTop)" stroke="#5b6268" stroke-width="2.5"/>
+    <path d="M647.2 432.6 L721.6 432.6 L721.6 537.6 L647.2 537.6 Z" fill="url(#anodFront)" stroke="#5b6268" stroke-width="2.5"/>
+    <path d="M655 426 L719 426 L807 363 L743 363 Z" fill="none" stroke="#f2f5f6" stroke-opacity="0.6" stroke-width="2"/>
+    <!-- machined cradle radius cut into the jaw face -->
+    <path d="M647.2 458 Q666 424 647.2 402 L664 402 Q684 428 664 458 Z" fill="#8d959b" opacity="0.85"/>
+    <path d="M647.2 402 Q684 428 664 458" fill="none" stroke="#5b6268" stroke-opacity="0.6" stroke-width="2.5"/>
+    <g stroke="#ffffff" stroke-opacity="0.18" stroke-width="2" fill="none">
+      <path d="M676 448 L718 448"/><path d="M676 476 L718 476"/><path d="M676 508 L718 508"/>
+    </g>
+    <ellipse cx="712.5" cy="412.4" rx="20" ry="7.6" fill="#9aa2a8"/>
+    <ellipse cx="712.5" cy="412.4" rx="15" ry="5.7" fill="#4a5055" stroke="#2f353a" stroke-width="1.5"/>
+    <ellipse cx="712.5" cy="412.4" rx="9" ry="3.4" fill="#20252a"/>
+    <ellipse cx="754.6" cy="382.2" rx="20" ry="7.6" fill="#9aa2a8"/>
+    <ellipse cx="754.6" cy="382.2" rx="15" ry="5.7" fill="#4a5055" stroke="#2f353a" stroke-width="1.5"/>
+    <ellipse cx="754.6" cy="382.2" rx="9" ry="3.4" fill="#20252a"/>
+  </g>
+</svg>

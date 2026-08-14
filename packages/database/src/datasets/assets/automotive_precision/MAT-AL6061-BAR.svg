@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- machined bare aluminium, rolled across a horizontal barrel -->
+    <linearGradient id="alBarrel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7d848a"/>
+      <stop offset="0.2" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/>
+      <stop offset="0.72" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <linearGradient id="alFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e8edf0"/>
+      <stop offset="0.32" stop-color="#ced5da"/>
+      <stop offset="0.68" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#7d848a"/>
+    </linearGradient>
+    <!-- chalky mill bloom: flattens the barrel contrast and warms it slightly -->
+    <linearGradient id="bloom" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#efeade" stop-opacity="0.05"/>
+      <stop offset="0.4" stop-color="#f4f0e6" stop-opacity="0.26"/>
+      <stop offset="0.75" stop-color="#e6e1d6" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#cdc9c0" stop-opacity="0.06"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="alBar">
+      <path d="M-320 -155 L320 -155 A59 155 0 0 1 320 155 L-320 155 A59 155 0 0 0 -320 -155 Z"/>
+    </clipPath>
+    <clipPath id="alCut">
+      <ellipse cx="-320" cy="0" rx="59" ry="155"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="676" rx="440" ry="96" fill="url(#shadow)" transform="rotate(-9 512 676)"/>
+
+  <g transform="translate(512 500) rotate(-9)">
+    <!-- barrel -->
+    <path d="M-320 -155 L320 -155 A59 155 0 0 1 320 155 L-320 155 A59 155 0 0 0 -320 -155 Z" fill="url(#alBarrel)"/>
+    <g clip-path="url(#alBar)">
+      <rect x="-390" y="-160" width="790" height="320" fill="url(#bloom)"/>
+      <!-- faint longitudinal extrusion drag lines -->
+      <g stroke="#767d83" stroke-opacity="0.3" stroke-width="3" fill="none">
+        <path d="M-330 -122 L340 -122"/>
+        <path d="M-330 -74 L340 -74"/>
+        <path d="M-330 -12 L340 -12"/>
+        <path d="M-330 44 L340 44"/>
+        <path d="M-330 88 L340 88"/>
+        <path d="M-330 126 L340 126"/>
+      </g>
+      <g stroke="#ffffff" stroke-opacity="0.3" stroke-width="2.5" fill="none">
+        <path d="M-330 -100 L340 -100"/>
+        <path d="M-330 -48 L340 -48"/>
+        <path d="M-330 14 L340 14"/>
+        <path d="M-330 66 L340 66"/>
+        <path d="M-330 106 L340 106"/>
+      </g>
+      <!-- broad soft hand-oil sheen along the crown, no hard specular -->
+      <path d="M-320 -74 L340 -74 L340 -32 L-320 -32 Z" fill="#ffffff" opacity="0.16"/>
+      <path d="M-320 118 L340 118 L340 158 L-320 158 Z" fill="#5f666c" opacity="0.2"/>
+      <!-- squarely faced far end reads as a bright band before the rim -->
+      <path d="M296 -155 L340 -155 L340 155 L296 155 Z" fill="#ffffff" opacity="0.14"/>
+    </g>
+    <path d="M-320 -155 L320 -155 A59 155 0 0 1 320 155 L-320 155 A59 155 0 0 0 -320 -155 Z"
+          fill="none" stroke="#5a6167" stroke-width="3"/>
+    <!-- far end: squarely faced and bright, soft chamfer break -->
+    <path d="M320 -155 A59 155 0 0 1 320 155" fill="none" stroke="#eef2f4" stroke-width="5" stroke-opacity="0.6"/>
+    <path d="M310 -146 A50 146 0 0 1 310 146" fill="none" stroke="#8d949a" stroke-width="3" stroke-opacity="0.6"/>
+
+    <!-- near end: fresh bandsaw cut -->
+    <ellipse cx="-320" cy="0" rx="59" ry="155" fill="url(#alFace)" stroke="#5a6167" stroke-width="3"/>
+    <g clip-path="url(#alCut)">
+      <!-- parallel blade witness marks -->
+      <g stroke="#8b9298" stroke-opacity="0.55" stroke-width="3" fill="none">
+        <path d="M-382 -138 Q-320 -132 -258 -142"/>
+        <path d="M-382 -112 Q-320 -106 -258 -116"/>
+        <path d="M-382 -86 Q-320 -80 -258 -90"/>
+        <path d="M-382 -60 Q-320 -54 -258 -64"/>
+        <path d="M-382 -34 Q-320 -28 -258 -38"/>
+        <path d="M-382 -8 Q-320 -2 -258 -12"/>
+        <path d="M-382 18 Q-320 24 -258 14"/>
+        <path d="M-382 44 Q-320 50 -258 40"/>
+        <path d="M-382 70 Q-320 76 -258 66"/>
+        <path d="M-382 96 Q-320 102 -258 92"/>
+        <path d="M-382 122 Q-320 128 -258 118"/>
+      </g>
+      <g stroke="#ffffff" stroke-opacity="0.4" stroke-width="2" fill="none">
+        <path d="M-382 -125 Q-320 -119 -258 -129"/>
+        <path d="M-382 -73 Q-320 -67 -258 -77"/>
+        <path d="M-382 -21 Q-320 -15 -258 -25"/>
+        <path d="M-382 31 Q-320 37 -258 27"/>
+        <path d="M-382 83 Q-320 89 -258 79"/>
+        <path d="M-382 135 Q-320 141 -258 131"/>
+      </g>
+      <ellipse cx="-338" cy="-58" rx="30" ry="80" fill="#ffffff" opacity="0.2"/>
+    </g>
+    <!-- bright freshly sheared rim, then the soft chamfer inboard of it -->
+    <ellipse cx="-320" cy="0" rx="59" ry="155" fill="none" stroke="#f2f5f7" stroke-width="4" stroke-opacity="0.55"/>
+    <ellipse cx="-320" cy="0" rx="50" ry="143" fill="none" stroke="#9aa1a7" stroke-width="3" stroke-opacity="0.75"/>
+    <!-- burr curl lifted off the cut edge -->
+    <path d="M-352 128 C-372 146 -378 162 -362 168 C-350 172 -344 160 -348 150"
+          fill="#c3cace" stroke="#6b7278" stroke-width="2.5"/>
+  </g>
+</svg>

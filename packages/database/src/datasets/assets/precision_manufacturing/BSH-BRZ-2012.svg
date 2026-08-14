@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="brz" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6b4a2c"/><stop offset="0.2" stop-color="#c08b52"/>
+      <stop offset="0.45" stop-color="#e0b077"/><stop offset="0.72" stop-color="#9a6f42"/>
+      <stop offset="1" stop-color="#5d3f26"/>
+    </linearGradient>
+    <linearGradient id="brzFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6b4a2c"/><stop offset="0.2" stop-color="#c08b52"/>
+      <stop offset="0.45" stop-color="#e0b077"/><stop offset="0.72" stop-color="#9a6f42"/>
+      <stop offset="1" stop-color="#5d3f26"/>
+    </linearGradient>
+    <linearGradient id="brzBore" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2b1c10"/><stop offset="0.35" stop-color="#6a4a2c"/>
+      <stop offset="0.6" stop-color="#8a6238"/><stop offset="1" stop-color="#22160c"/>
+    </linearGradient>
+    <pattern id="sinter" width="17" height="17" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="5" r="2.1" fill="#4a3220" opacity="0.34"/>
+      <circle cx="12.5" cy="11" r="1.7" fill="#3c2819" opacity="0.30"/>
+      <circle cx="9" cy="2.5" r="1.2" fill="#f0cd9c" opacity="0.20"/>
+      <circle cx="15" cy="15.5" r="1.4" fill="#f0cd9c" opacity="0.16"/>
+      <circle cx="2" cy="13" r="1.1" fill="#33220f" opacity="0.26"/>
+    </pattern>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="506" cy="836" rx="352" ry="77" fill="url(#shadow)"/>
+
+  <g transform="rotate(-6 512 520)">
+    <!-- barrel -->
+    <clipPath id="bodyC"><path d="M212 260 L212 750 Q512 864 812 750 L812 260 Z"/></clipPath>
+    <path d="M212 260 L212 750 Q512 864 812 750 L812 260 Z" fill="url(#brz)" stroke="#3f2a18" stroke-width="3"/>
+    <g clip-path="url(#bodyC)">
+      <rect x="200" y="240" width="624" height="640" fill="url(#sinter)" opacity="0.85"/>
+      <!-- soft matte band, no hard specular -->
+      <rect x="300" y="240" width="86" height="640" fill="#f2d3a6" opacity="0.13"/>
+      <rect x="700" y="240" width="60" height="640" fill="#2c1c0e" opacity="0.16"/>
+      <!-- bottom chamfer break -->
+      <path d="M212 706 Q512 820 812 706" fill="none" stroke="#3b2716" stroke-width="7" opacity="0.55"/>
+      <path d="M212 722 Q512 836 812 722" fill="none" stroke="#f0cd9c" stroke-width="4" opacity="0.20"/>
+    </g>
+
+    <!-- top annular face -->
+    <ellipse cx="512" cy="260" rx="300" ry="114" fill="url(#brzFace)" stroke="#4a3220" stroke-width="3"/>
+    <clipPath id="topC"><ellipse cx="512" cy="260" rx="300" ry="114"/></clipPath>
+    <g clip-path="url(#topC)"><rect x="212" y="146" width="600" height="228" fill="url(#sinter)" opacity="0.8"/></g>
+    <!-- OD chamfer -->
+    <ellipse cx="512" cy="260" rx="288" ry="109" fill="none" stroke="#7d5934" stroke-width="2.5" opacity="0.85"/>
+    <!-- faint facing tool marks -->
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.15" stroke-width="2">
+      <ellipse cx="512" cy="260" rx="266" ry="101"/>
+      <ellipse cx="512" cy="260" rx="238" ry="90"/>
+      <ellipse cx="512" cy="260" rx="212" ry="80"/>
+    </g>
+    <!-- bore lead-in chamfer -->
+    <ellipse cx="512" cy="260" rx="196" ry="74" fill="#8a6238" opacity="0.75"/>
+    <ellipse cx="512" cy="260" rx="196" ry="74" fill="none" stroke="#c69357" stroke-width="2" opacity="0.7"/>
+    <!-- bore -->
+    <ellipse cx="512" cy="260" rx="180" ry="68" fill="#1d1309"/>
+    <path d="M332 260 Q512 124 692 260 L692 356 Q512 220 332 356 Z" fill="url(#brzBore)"/>
+    <path d="M348 250 Q512 138 676 250" fill="none" stroke="#c99a5e" stroke-width="3" opacity="0.35"/>
+    <!-- oil sheen darkening down the bore wall -->
+    <path d="M332 268 Q512 132 692 268 L692 300 Q512 164 332 300 Z" fill="#0f0a05" opacity="0.35"/>
+    <ellipse cx="512" cy="260" rx="180" ry="68" fill="none" stroke="#3d2a17" stroke-width="3"/>
+  </g>
+</svg>

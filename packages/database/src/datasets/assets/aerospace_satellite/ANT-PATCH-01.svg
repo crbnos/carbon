@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="cfTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="cfSide" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#33383d"/>
+      <stop offset="0.5" stop-color="#22262a"/>
+      <stop offset="1" stop-color="#111315"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="amberEdge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7a4e10"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="copper" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6d3a22"/>
+      <stop offset="0.2" stop-color="#c07a4d"/>
+      <stop offset="0.45" stop-color="#e0a071"/>
+      <stop offset="0.72" stop-color="#96593a"/>
+      <stop offset="1" stop-color="#5a2f1c"/>
+    </linearGradient>
+    <linearGradient id="goldBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7a5d19"/>
+      <stop offset="0.2" stop-color="#c9a445"/>
+      <stop offset="0.45" stop-color="#e8cd7c"/>
+      <stop offset="0.72" stop-color="#a8853a"/>
+      <stop offset="1" stop-color="#6a4f16"/>
+    </linearGradient>
+    <linearGradient id="goldFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e8cd7c"/>
+      <stop offset="0.45" stop-color="#c19c40"/>
+      <stop offset="1" stop-color="#7a5d19"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="cfClip">
+      <path d="M512 318 L912 470 L512 622 L112 470 Z"/>
+    </clipPath>
+    <clipPath id="patchClip">
+      <path d="M512 386 L622 428 L512 470 L402 428 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="668" rx="460" ry="101" fill="url(#shadow)"/>
+
+  <!-- ===== rear-mounted SMA connector, projecting from behind the far edge ===== -->
+  <g>
+    <!-- coupling barrel -->
+    <path d="M636 236 L636 372 Q674 386 712 372 L712 236 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2.5"/>
+    <!-- knurl on the coupling nut -->
+    <g stroke="#6a4f16" stroke-width="3" opacity="0.6" fill="none">
+      <path d="M642 250 L642 340"/><path d="M654 246 L654 348"/><path d="M666 244 L666 352"/>
+      <path d="M678 244 L678 353"/><path d="M690 246 L690 350"/><path d="M702 250 L702 344"/>
+    </g>
+    <g stroke="#f0dda2" stroke-width="2" opacity="0.35" fill="none">
+      <path d="M648 250 L648 344"/><path d="M660 246 L660 350"/><path d="M672 244 L672 353"/>
+      <path d="M684 244 L684 352"/><path d="M696 248 L696 347"/>
+    </g>
+    <!-- hex mounting flat below the nut -->
+    <path d="M628 356 L628 402 Q670 418 712 402 L712 356 Z" fill="url(#goldBarrel)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M628 372 Q670 388 712 372" fill="none" stroke="#4a3a12" stroke-width="2.5" opacity="0.6"/>
+    <!-- interface face -->
+    <ellipse cx="674" cy="236" rx="38" ry="15" fill="url(#goldFace)" stroke="#5c4413" stroke-width="2.5"/>
+    <ellipse cx="674" cy="236" rx="29" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2"/>
+    <ellipse cx="674" cy="237" rx="19" ry="7.2" fill="#efeade" stroke="#8f8a7c" stroke-width="1.5"/>
+    <ellipse cx="674" cy="237" rx="5" ry="2" fill="#c9a445"/>
+    <path d="M646 231 A38 15 0 0 1 700 229" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="3"/>
+  </g>
+
+  <!-- ===== plate edge: polyimide film wrap on the two visible side faces ===== -->
+  <path d="M112 470 L512 622 L512 670 L112 518 Z" fill="url(#amberEdge)" stroke="#5f3c0c" stroke-width="2.5"/>
+  <path d="M512 622 L912 470 L912 518 L512 670 Z" fill="url(#amberEdge)" stroke="#5f3c0c" stroke-width="2.5"/>
+  <!-- carbon core showing as a dark seam under the film -->
+  <path d="M112 500 L512 652" fill="none" stroke="#1c1f22" stroke-width="7" opacity="0.55"/>
+  <path d="M512 652 L912 500" fill="none" stroke="#1c1f22" stroke-width="7" opacity="0.55"/>
+  <path d="M112 480 L512 632" fill="none" stroke="#f0d69a" stroke-width="3" opacity="0.4"/>
+  <path d="M512 632 L912 480" fill="none" stroke="#f0d69a" stroke-width="3" opacity="0.28"/>
+
+  <!-- ===== substrate top face: glossy carbon twill ===== -->
+  <path d="M512 318 L912 470 L512 622 L112 470 Z" fill="url(#cfTop)" stroke="#0e1012" stroke-width="3"/>
+  <g clip-path="url(#cfClip)">
+    <!-- twill weave: two families of fine tows on the plate axes -->
+    <g stroke="#8b949b" stroke-opacity="0.16" stroke-width="3" fill="none">
+      <path d="M112 318 L912 622"/><path d="M112 342 L912 646"/><path d="M112 366 L912 670"/>
+      <path d="M112 390 L912 694"/><path d="M112 414 L912 718"/><path d="M112 246 L912 550"/>
+      <path d="M112 222 L912 526"/><path d="M112 198 L912 502"/><path d="M112 174 L912 478"/>
+      <path d="M112 270 L912 574"/><path d="M112 294 L912 598"/><path d="M112 150 L912 454"/>
+    </g>
+    <g stroke="#8b949b" stroke-opacity="0.16" stroke-width="3" fill="none">
+      <path d="M912 318 L112 622"/><path d="M912 342 L112 646"/><path d="M912 366 L112 670"/>
+      <path d="M912 390 L112 694"/><path d="M912 414 L112 718"/><path d="M912 246 L112 550"/>
+      <path d="M912 222 L112 526"/><path d="M912 198 L112 502"/><path d="M912 174 L112 478"/>
+      <path d="M912 270 L112 574"/><path d="M912 294 L112 598"/><path d="M912 150 L112 454"/>
+    </g>
+    <g stroke="#0d0f11" stroke-opacity="0.3" stroke-width="3" fill="none">
+      <path d="M112 330 L912 634"/><path d="M112 378 L912 682"/><path d="M112 258 L912 562"/>
+      <path d="M112 210 L912 514"/><path d="M912 330 L112 634"/><path d="M912 378 L112 682"/>
+      <path d="M912 258 L112 562"/><path d="M912 210 L112 514"/>
+    </g>
+    <!-- gloss sweep from the upper-left key light -->
+    <path d="M112 470 L512 318 L732 402 L332 554 Z" fill="#ffffff" opacity="0.07"/>
+    <path d="M232 424 L512 318 L612 356 L332 462 Z" fill="#ffffff" opacity="0.06"/>
+  </g>
+
+  <!-- ===== polyimide border band inset from the plate edge ===== -->
+  <path d="M512 318 L912 470 L512 622 L112 470 Z
+           M512 358 L832 480 L512 602 L192 480 Z"
+        fill="url(#amber)" fill-rule="evenodd" opacity="0.95"/>
+  <path d="M512 318 L912 470 L512 622 L112 470 Z" fill="none" stroke="#5f3c0c" stroke-width="3"/>
+  <path d="M512 358 L832 480 L512 602 L192 480 Z" fill="none" stroke="#5f3c0c" stroke-width="2.5" opacity="0.85"/>
+  <path d="M512 338 L872 475 L512 612 L152 475 Z" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2.5"/>
+
+  <!-- ===== copper radiating patch, faintly gold-toned ===== -->
+  <path d="M512 386 L622 428 L512 470 L402 428 Z" fill="url(#copper)" stroke="#4a2616" stroke-width="2.5"/>
+  <g clip-path="url(#patchClip)">
+    <path d="M402 428 L512 386 L572 409 L462 451 Z" fill="#e8cd7c" opacity="0.22"/>
+    <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" fill="none">
+      <path d="M418 428 L512 392"/><path d="M448 440 L512 416"/>
+      <path d="M606 428 L512 392"/><path d="M576 440 L512 416"/>
+    </g>
+  </g>
+  <path d="M512 396 L604 431 L512 466 L420 431 Z" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+  <!-- feed point on the patch -->
+  <ellipse cx="482" cy="437" rx="9" ry="3.6" fill="#3a2418"/>
+  <ellipse cx="482" cy="436" rx="4.5" ry="1.8" fill="#e8cd7c"/>
+
+  <!-- ===== four gold-ringed corner mounting holes ===== -->
+  <g>
+    <ellipse cx="512" cy="366" rx="26" ry="10" fill="url(#goldFace)" stroke="#5c4413" stroke-width="2"/>
+    <ellipse cx="512" cy="367" rx="14" ry="5.4" fill="#15181a"/>
+    <path d="M492 363 A26 10 0 0 1 530 361" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2"/>
+
+    <ellipse cx="512" cy="594" rx="26" ry="10" fill="url(#goldFace)" stroke="#5c4413" stroke-width="2"/>
+    <ellipse cx="512" cy="595" rx="14" ry="5.4" fill="#15181a"/>
+    <path d="M492 591 A26 10 0 0 1 530 589" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2"/>
+
+    <ellipse cx="212" cy="470" rx="26" ry="10" fill="url(#goldFace)" stroke="#5c4413" stroke-width="2"/>
+    <ellipse cx="212" cy="471" rx="14" ry="5.4" fill="#15181a"/>
+    <path d="M192 467 A26 10 0 0 1 230 465" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2"/>
+
+    <ellipse cx="812" cy="470" rx="26" ry="10" fill="url(#goldFace)" stroke="#5c4413" stroke-width="2"/>
+    <ellipse cx="812" cy="471" rx="14" ry="5.4" fill="#15181a"/>
+    <path d="M792 467 A26 10 0 0 1 830 465" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2"/>
+  </g>
+
+  <!-- crisp lit edge along the two lit top rails -->
+  <path d="M112 470 L512 318" fill="none" stroke="#f4e3ad" stroke-opacity="0.5" stroke-width="3"/>
+  <path d="M512 318 L912 470" fill="none" stroke="#f4e3ad" stroke-opacity="0.3" stroke-width="3"/>
+</svg>
