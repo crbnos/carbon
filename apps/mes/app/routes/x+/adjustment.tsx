@@ -30,11 +30,16 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (itemLedger.error) {
-    const flashMessage =
-      itemLedger.error.message ===
-      "Insufficient quantity for negative adjustment"
-        ? "Insufficient quantity for negative adjustment"
-        : "Failed to create manual inventory adjustment";
+    // Same passthrough set as the ERP adjustment route — these are business
+    // validations the operator can act on, not internal failures.
+    const flashMessage = [
+      "Insufficient quantity for negative adjustment",
+      "Serial number not found",
+      "Batch number not found",
+      "Tracked entity not found"
+    ].includes(itemLedger.error.message)
+      ? itemLedger.error.message
+      : "Failed to create manual inventory adjustment";
 
     return {
       success: false,

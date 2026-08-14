@@ -14,6 +14,7 @@ import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
 import { round } from "../shared/precision.ts";
+import { resolveAdjustmentPlan } from "./resolve-adjustment-plan.ts";
 import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost.ts";
 
 const pool = getConnectionPool(1);
@@ -794,232 +795,139 @@ serve(async (req: Request) => {
         return;
       }
 
-      let entryType: "Positive Adjmt." | "Negative Adjmt." =
-        adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType;
-      let adjustmentQuantity = quantity;
+      // Stock-target resolution (which buckets move, in which direction, by how
+      // much) lives in resolveAdjustmentPlan — pure and unit-tested. It reads
+      // the bin snapshot rather than a single row, so a bin-level Set Quantity
+      // reconciles against the TOTAL on hand and untracked legacy stock is
+      // reachable instead of stranded.
+      const planResult = resolveAdjustmentPlan({
+        adjustmentType,
+        quantity,
+        storageUnitId: storageUnitId ?? null,
+        trackedEntityId: trackedEntityId ?? null,
+        readableId: readableId ?? null,
+        itemTrackingType: item.itemTrackingType,
+        trackingRows,
+        newEntityId: () => nanoid(),
+      });
+      if (!planResult.ok) throw new ValidationError(planResult.error);
 
-      if (adjustmentType === "Set Quantity" && currentQuantity) {
-        const quantityDifference = quantity - currentQuantityOnHand;
-        if (quantityDifference > 0) {
-          entryType = "Positive Adjmt.";
-          adjustmentQuantity = quantityDifference;
-        } else if (quantityDifference < 0) {
-          entryType = "Negative Adjmt.";
-          adjustmentQuantity = Math.abs(quantityDifference);
-        } else {
-          // No quantity change — readableId / expirationDate may still change.
-          if (trackedEntityId && readableId !== undefined && readableId !== null) {
+      // An id the payload carried that actually names existing stock. A
+      // client-minted id for a brand-new adjustment matches nothing, and must
+      // not be written to as though it were a selected row.
+      const selectedEntityId = trackedEntityId
+        ? (trackingRows.find((q) => q.trackedEntityId == trackedEntityId)
+            ?.trackedEntityId ?? null)
+        : null;
+
+      // No movement needed — readableId / expirationDate may still change on
+      // the selected entity.
+      if (planResult.movements.length === 0) {
+        if (selectedEntityId) {
+          if (readableId !== undefined && readableId !== null) {
             await trx
               .updateTable("trackedEntity")
               .set({ readableId })
-              .where("id", "=", trackedEntityId)
+              .where("id", "=", selectedEntityId)
               .where("companyId", "=", companyId)
               .execute();
           }
-          if (trackedEntityId) {
-            await applyExpirationOverride(trx, trackedEntityId);
-          }
-          resultLedgerId = null;
-          return;
+          await applyExpirationOverride(trx, selectedEntityId);
         }
+        resultLedgerId = null;
+        return;
       }
 
-      // Resolve the stock target for a negative adjustment when a serial
-      // number is provided or nothing matched the loose lookup.
-      if (entryType === "Negative Adjmt." && (readableId || !currentQuantity)) {
-        if (readableId) {
-          const resolvedQtyRow = trackingRows.find(
-            (q) =>
-              q.readableId === readableId &&
-              q.trackedEntityId != null &&
-              (q.quantity ?? 0) > 0
-          );
-          if (!resolvedQtyRow) {
-            throw new ValidationError("Serial number not found");
+      // A bin-level reconciliation can span both the untracked bucket and one
+      // or more tracked rows, so every movement books its own ledger entry
+      // inside this one transaction. resultLedgerId reports the last.
+      for (const movement of planResult.movements) {
+        const signedQuantity =
+          movement.entryType === "Negative Adjmt."
+            ? -Math.abs(movement.quantity)
+            : Math.abs(movement.quantity);
+
+        if (movement.kind === "entity") {
+          if (movement.isNew) {
+            const expirationDate = resolveExpirationForNewEntity();
+            // Stamp the trace blob so the popover Source / Override steps can
+            // show the entity originated from a manual inventory adjustment.
+            const adjustmentStamp = {
+              userId,
+              at: nowIso,
+              reason: comment?.trim() || "Created via inventory adjustment",
+            };
+            const attributes: Record<string, unknown> = {
+              "Inventory Adjustment": adjustmentStamp,
+              ...(expirationDate
+                ? {
+                    expiryOverrides: [
+                      {
+                        previous: null,
+                        next: expirationDate,
+                        reason: adjustmentStamp.reason,
+                        source: "Inventory Adjustment",
+                        userId: adjustmentStamp.userId,
+                        at: adjustmentStamp.at,
+                      },
+                    ],
+                  }
+                : {}),
+            };
+            await trx
+              .insertInto("trackedEntity")
+              .values({
+                id: movement.trackedEntityId,
+                sourceDocument: "Item",
+                sourceDocumentId: itemId,
+                sourceDocumentReadableId:
+                  itemResult.data.readableIdWithRevision ?? undefined,
+                readableId: movement.readableId,
+                quantity: signedQuantity,
+                status: "Available",
+                expirationDate,
+                attributes: attributes as unknown as Json,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+          } else {
+            const entityUpdate: Record<string, unknown> = {
+              quantity: movement.entityQuantityBefore + signedQuantity,
+            };
+            // Only the row the user actually selected may be renamed; a row
+            // reached by drawdown keeps its own batch/serial number.
+            if (
+              selectedEntityId === movement.trackedEntityId &&
+              readableId !== undefined &&
+              readableId !== null
+            ) {
+              entityUpdate.readableId = readableId;
+            }
+            await trx
+              .updateTable("trackedEntity")
+              .set(entityUpdate)
+              .where("id", "=", movement.trackedEntityId)
+              .where("companyId", "=", companyId)
+              .execute();
+            await applyExpirationOverride(trx, movement.trackedEntityId);
           }
-          const resolvedId = resolvedQtyRow.trackedEntityId as string;
-          const resolvedQty = resolvedQtyRow.quantity ?? 0;
-          if (adjustmentQuantity > resolvedQty) {
-            throw new ValidationError(
-              "Insufficient quantity for negative adjustment"
-            );
-          }
-          await trx
-            .updateTable("trackedEntity")
-            .set({ quantity: resolvedQty - adjustmentQuantity, readableId })
-            .where("id", "=", resolvedId)
-            .where("companyId", "=", companyId)
-            .execute();
-          const booked = await bookAdjustment(trx, {
-            ledger: {
-              ...ledgerBase,
-              trackedEntityId: resolvedId,
-              entryType,
-              quantity: -Math.abs(adjustmentQuantity),
-            },
-            item,
-            itemCost,
-            accounting,
-          });
-          resultLedgerId = booked.itemLedgerId;
-          return;
         }
 
-        // No serial number provided. Prefer untracked (legacy) stock in this bin.
-        const legacyRow = trackingRows.find(
-          (q) => q.trackedEntityId == null && q.storageUnitId == storageUnitId
-        );
-        if (legacyRow) {
-          const legacyQty = legacyRow.quantity ?? 0;
-          if (adjustmentQuantity > legacyQty) {
-            throw new ValidationError(
-              "Insufficient quantity for negative adjustment"
-            );
-          }
-          const booked = await bookAdjustment(trx, {
-            ledger: {
-              ...ledgerBase,
-              trackedEntityId: null,
-              entryType,
-              quantity: -Math.abs(adjustmentQuantity),
-            },
-            item,
-            itemCost,
-            accounting,
-          });
-          resultLedgerId = booked.itemLedgerId;
-          return;
-        }
-
-        // No untracked stock in the bin — resolve a tracked entity sitting in
-        // the same storage unit. Ambiguous when more than one holds stock.
-        const trackedRowsInUnit = trackingRows.filter(
-          (q) =>
-            q.trackedEntityId != null &&
-            q.storageUnitId == storageUnitId &&
-            (q.quantity ?? 0) > 0
-        );
-        if (trackedRowsInUnit.length === 0) {
-          throw new ValidationError(
-            "Insufficient quantity for negative adjustment"
-          );
-        }
-        if (trackedRowsInUnit.length > 1) {
-          throw new ValidationError(
-            "Multiple tracked entities in this storage unit — select a specific row to adjust"
-          );
-        }
-        const targetRow = trackedRowsInUnit[0];
-        const targetQty = targetRow.quantity ?? 0;
-        if (adjustmentQuantity > targetQty) {
-          throw new ValidationError(
-            "Insufficient quantity for negative adjustment"
-          );
-        }
-        const targetId = targetRow.trackedEntityId as string;
-        await trx
-          .updateTable("trackedEntity")
-          .set({ quantity: targetQty - adjustmentQuantity })
-          .where("id", "=", targetId)
-          .where("companyId", "=", companyId)
-          .execute();
         const booked = await bookAdjustment(trx, {
           ledger: {
             ...ledgerBase,
-            trackedEntityId: targetId,
-            entryType,
-            quantity: -Math.abs(adjustmentQuantity),
+            trackedEntityId:
+              movement.kind === "entity" ? movement.trackedEntityId : null,
+            entryType: movement.entryType,
+            quantity: signedQuantity,
           },
           item,
           itemCost,
           accounting,
         });
         resultLedgerId = booked.itemLedgerId;
-        return;
       }
-
-      let signedQuantity = adjustmentQuantity;
-      if (entryType === "Negative Adjmt.") {
-        if (adjustmentQuantity > currentQuantityOnHand) {
-          throw new ValidationError(
-            "Insufficient quantity for negative adjustment"
-          );
-        }
-        signedQuantity = -Math.abs(adjustmentQuantity);
-      }
-
-      if (trackedEntityId) {
-        if (currentQuantity) {
-          const entityUpdate: Record<string, unknown> = {
-            quantity: signedQuantity + currentQuantityOnHand,
-          };
-          if (readableId !== undefined && readableId !== null) {
-            entityUpdate.readableId = readableId;
-          }
-          await trx
-            .updateTable("trackedEntity")
-            .set(entityUpdate)
-            .where("id", "=", trackedEntityId)
-            .where("companyId", "=", companyId)
-            .execute();
-          await applyExpirationOverride(trx, trackedEntityId);
-        } else {
-          const expirationDate = resolveExpirationForNewEntity();
-          // Stamp the trace blob so the popover Source / Override steps can
-          // show the entity originated from a manual inventory adjustment.
-          const adjustmentStamp = {
-            userId,
-            at: nowIso,
-            reason: comment?.trim() || "Created via inventory adjustment",
-          };
-          const attributes: Record<string, unknown> = {
-            "Inventory Adjustment": adjustmentStamp,
-            ...(expirationDate
-              ? {
-                  expiryOverrides: [
-                    {
-                      previous: null,
-                      next: expirationDate,
-                      reason: adjustmentStamp.reason,
-                      source: "Inventory Adjustment",
-                      userId: adjustmentStamp.userId,
-                      at: adjustmentStamp.at,
-                    },
-                  ],
-                }
-              : {}),
-          };
-          await trx
-            .insertInto("trackedEntity")
-            .values({
-              id: trackedEntityId,
-              sourceDocument: "Item",
-              sourceDocumentId: itemId,
-              sourceDocumentReadableId:
-                itemResult.data.readableIdWithRevision ?? undefined,
-              readableId: readableId ?? null,
-              quantity: signedQuantity,
-              status: "Available",
-              expirationDate,
-              attributes: attributes as unknown as Json,
-              companyId,
-              createdBy: userId,
-            })
-            .execute();
-        }
-      }
-
-      const booked = await bookAdjustment(trx, {
-        ledger: {
-          ...ledgerBase,
-          entryType,
-          quantity: signedQuantity,
-        },
-        item,
-        itemCost,
-        accounting,
-      });
-      resultLedgerId = booked.itemLedgerId;
     });
 
     return jsonResponse({

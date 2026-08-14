@@ -41,7 +41,6 @@ import {
 import { groupBy } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { Fragment, useMemo, useState } from "react";
 import {
   LuCheck,
@@ -496,7 +495,12 @@ const InventoryStorageUnits = ({
                   : undefined,
                 adjustmentType:
                   isSerial && !isEditing ? "Positive Adjmt." : "Set Quantity",
-                trackedEntityId: selectedTrackedEntityId || nanoid(),
+                // Only ever the row the user picked. Minting an id here made
+                // every new adjustment look like a brand-new tracked entity to
+                // the edge function, which then added the quantity instead of
+                // resolving it against what is on hand. Ids for genuinely new
+                // batches/serials are generated server-side.
+                trackedEntityId: selectedTrackedEntityId || undefined,
                 readableId: selectedReadableId || undefined,
                 expirationDate: defaultExpirationDate
               }}
