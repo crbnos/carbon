@@ -101,7 +101,8 @@ export type ReconcileEntityInput = {
 };
 
 export type ReconcileContext = {
-  /** journalEntry entity enabled AND postingSync.enabled. */
+  /** journalEntry posting enabled for this integration (always-on when an
+   *  integration is connected; resolved by isJournalEntryPostingEnabled). */
   journalEntryPushEnabled: boolean;
   /** THIS entity type's resolved config: enabled and not pull-only. */
   entityPushEnabled: boolean;

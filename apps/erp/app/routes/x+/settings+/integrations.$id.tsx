@@ -1311,8 +1311,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // longer written to postingSync (the stored-schema default is true, and
     // the decision core doesn't read it), and there is no
     // syncConfig.entities.journalEntry mirror to maintain — the provider
-    // configs force journalEntry on. Writing the v3 shape also strips any
-    // stale stored `enabled: false` from both places on the next save.
+    // configs force journalEntry on. Writing the v3 shape strips a stale
+    // stored postingSync.enabled on the next save; a stale
+    // syncConfig.entities.journalEntry.enabled === false (if any) is left as-is
+    // and still honored at the isJournalEntryPostingEnabled seam.
     const { enabled: _legacyEnabled, ...postingSyncWithoutEnabled } =
       existingPostingSync;
 
