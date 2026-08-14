@@ -236,13 +236,27 @@ serve(async (req: Request) => {
       // customer memos adjust sales (salesDiscountAccount); supplier memos adjust
       // purchases (supplierPaymentDiscountAccount). Direction only flips the
       // debit/credit side, handled inside buildMemoJournal.
-      const reasonAccountId = isAR
-        ? ad.salesDiscountAccount
-        : ad.supplierPaymentDiscountAccount;
+      // Return-order memos override the offset: a customer-RMA credit books to
+      // the contra-revenue salesReturnsAccount (fallback salesAccount), and a
+      // supplier-return credit nets GRNI against payables (its shipment already
+      // debited GRNI at carried cost).
+      const reasonAccountId = memo.data.salesReturnOrderId
+        ? (ad.salesReturnsAccount ?? ad.salesAccount)
+        : memo.data.purchaseReturnOrderId
+          ? ad.goodsReceivedNotInvoicedAccount
+          : isAR
+            ? ad.salesDiscountAccount
+            : ad.supplierPaymentDiscountAccount;
       if (!reasonAccountId) {
         throw new Error(
           `Missing ${
-            isAR ? "salesDiscountAccount" : "supplierPaymentDiscountAccount"
+            memo.data.salesReturnOrderId
+              ? "salesReturnsAccount/salesAccount"
+              : memo.data.purchaseReturnOrderId
+                ? "goodsReceivedNotInvoicedAccount"
+                : isAR
+                  ? "salesDiscountAccount"
+                  : "supplierPaymentDiscountAccount"
           } account default; cannot post memo to GL`
         );
       }

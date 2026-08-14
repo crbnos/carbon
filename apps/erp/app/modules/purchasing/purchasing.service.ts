@@ -2,7 +2,12 @@ import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { datetime, EPSILON, getPurchaseOrderStatus } from "@carbon/utils";
+import {
+  datetime,
+  EPSILON,
+  getPurchaseOrderStatus,
+  round
+} from "@carbon/utils";
 import type {
   PostgrestError,
   PostgrestResponse,
@@ -3902,4 +3907,354 @@ export async function getCreditableQuantitiesForPurchaseReturn(
     }),
     error: null
   };
+}
+
+/**
+ * Issue supplier credit: one AP memo (direction Credit, linked via
+ * memo.purchaseReturnOrderId) + per-line purchaseReturnOrderCreditLine
+ * breakdown. Cap = shipped − already credited over NON-VOIDED memos,
+ * validated under a row lock. Amount rounded once at the currency's
+ * decimals. Returns the memo id.
+ */
+export async function createPurchaseReturnOrderCredit(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    purchaseReturnOrderId,
+    companyId,
+    companyGroupId,
+    userId,
+    memoDate,
+    lines
+  }: {
+    purchaseReturnOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    memoDate: string;
+    lines: { purchaseReturnOrderLineId: string; quantity: number }[];
+  }
+) {
+  const order = await client
+    .from("purchaseReturnOrder")
+    .select(
+      "id, status, supplierId, currencyCode, exchangeRate, purchaseReturnOrderId"
+    )
+    .eq("id", purchaseReturnOrderId)
+    .eq("companyId", companyId)
+    .single();
+  if (order.error) throw new Error("Return order not found");
+  if (["Draft", "Cancelled"].includes(order.data.status)) {
+    throw new Error(
+      `Cannot issue credit for a return order in ${order.data.status} status`
+    );
+  }
+
+  const currency = await getCurrencyByCode(
+    client,
+    companyGroupId,
+    order.data.currencyCode
+  );
+  const decimalPlaces = currency.data?.decimalPlaces ?? 2;
+
+  const seq = await client.rpc("get_next_sequence", {
+    sequence_name: "creditMemo",
+    company_id: companyId
+  });
+  if (seq.error || !seq.data) {
+    throw new Error("Failed to allocate credit memo number");
+  }
+  const memoId = seq.data;
+
+  const requested = new Map(
+    lines
+      .filter((l) => l.quantity > 0)
+      .map((l) => [l.purchaseReturnOrderLineId, l.quantity])
+  );
+  if (requested.size === 0) {
+    throw new Error("Nothing to credit");
+  }
+
+  return db.transaction().execute(async (trx) => {
+    const orderLines = await trx
+      .selectFrom("purchaseReturnOrderLine")
+      .select([
+        "id",
+        "lineNumber",
+        "quantityShipped",
+        "unitPrice",
+        "restockFeePercent"
+      ])
+      .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
+      .where("companyId", "=", companyId)
+      .where("id", "in", [...requested.keys()])
+      .forUpdate()
+      .execute();
+
+    if (orderLines.length !== requested.size) {
+      throw new Error(
+        "One or more credit lines do not belong to this return order"
+      );
+    }
+
+    const credited = await trx
+      .selectFrom("purchaseReturnOrderCreditLine")
+      .innerJoin("memo", "memo.id", "purchaseReturnOrderCreditLine.memoId")
+      .select(({ fn }) => [
+        "purchaseReturnOrderCreditLine.purchaseReturnOrderLineId",
+        fn
+          .coalesce(
+            fn.sum("purchaseReturnOrderCreditLine.quantity"),
+            sql<number>`0`
+          )
+          .as("credited")
+      ])
+      .where("purchaseReturnOrderCreditLine.purchaseReturnOrderLineId", "in", [
+        ...requested.keys()
+      ])
+      .where("purchaseReturnOrderCreditLine.companyId", "=", companyId)
+      .where("memo.status", "!=", "Voided")
+      .groupBy("purchaseReturnOrderCreditLine.purchaseReturnOrderLineId")
+      .execute();
+    const creditedByLine = new Map(
+      credited.map((row) => [
+        row.purchaseReturnOrderLineId,
+        Number(row.credited)
+      ])
+    );
+
+    let total = 0;
+    const creditLineValues: {
+      memoId: string;
+      purchaseReturnOrderLineId: string;
+      quantity: number;
+      unitPrice: number;
+      restockFee: number;
+      companyId: string;
+      createdBy: string;
+    }[] = [];
+
+    for (const line of orderLines) {
+      const quantity = requested.get(line.id)!;
+      const shipped = Number(line.quantityShipped ?? 0);
+      const alreadyCredited = creditedByLine.get(line.id) ?? 0;
+      const creditable = shipped - alreadyCredited;
+      if (quantity > creditable + EPSILON) {
+        throw new Error(
+          `Line ${line.lineNumber}: cannot credit ${quantity} — only ${Math.max(
+            0,
+            creditable
+          )} of ${shipped} shipped remains creditable`
+        );
+      }
+      const unitPrice = Number(line.unitPrice ?? 0);
+      const feePercent = Number(line.restockFeePercent ?? 0);
+      const gross = quantity * unitPrice;
+      const restockFee = gross * feePercent;
+      total += gross - restockFee;
+      creditLineValues.push({
+        memoId: "",
+        purchaseReturnOrderLineId: line.id,
+        quantity,
+        unitPrice,
+        restockFee,
+        companyId,
+        createdBy: userId
+      });
+    }
+
+    if (total <= 0) {
+      throw new Error("Credit amount must be positive");
+    }
+
+    const memo = await trx
+      .insertInto("memo")
+      .values({
+        memoId,
+        direction: "Credit",
+        status: "Draft",
+        supplierId: order.data.supplierId,
+        memoDate,
+        currencyCode: order.data.currencyCode,
+        exchangeRate: order.data.exchangeRate ?? 1,
+        amount: round(total, decimalPlaces),
+        reference: order.data.purchaseReturnOrderId,
+        purchaseReturnOrderId,
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    await trx
+      .insertInto("purchaseReturnOrderCreditLine")
+      .values(creditLineValues.map((v) => ({ ...v, memoId: memo.id })))
+      .execute();
+
+    return memo.id;
+  });
+}
+
+/**
+ * Create Replacement Purchase Order: a draft PO from the return lines,
+ * priced from the linked PO line (purchase-UOM price + conversion factor
+ * copied) else the supplierPart default. One replacement per return.
+ */
+export async function createReplacementPurchaseOrder(
+  client: SupabaseClient<Database>,
+  {
+    purchaseReturnOrderId,
+    companyId,
+    companyGroupId,
+    userId
+  }: {
+    purchaseReturnOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: PostgrestError | null;
+}> {
+  const order = await client
+    .from("purchaseReturnOrder")
+    .select("*")
+    .eq("id", purchaseReturnOrderId)
+    .eq("companyId", companyId)
+    .single();
+  if (order.error) return { data: null, error: order.error };
+  if (order.data.replacementPurchaseOrderId) {
+    return {
+      data: { id: order.data.replacementPurchaseOrderId },
+      error: null
+    };
+  }
+
+  const lines = await client
+    .from("purchaseReturnOrderLine")
+    .select("*, item(type)")
+    .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+    .eq("companyId", companyId);
+  if (lines.error) return { data: null, error: lines.error };
+  if ((lines.data ?? []).length === 0) {
+    return {
+      data: null,
+      error: { message: "Return order has no lines" } as PostgrestError
+    };
+  }
+
+  const linkedPoLineIds = (lines.data ?? [])
+    .map((l) => l.purchaseOrderLineId)
+    .filter(Boolean) as string[];
+  const poLines =
+    linkedPoLineIds.length > 0
+      ? await client
+          .from("purchaseOrderLine")
+          .select(
+            "id, unitPrice, conversionFactor, purchaseUnitOfMeasureCode, inventoryUnitOfMeasureCode"
+          )
+          .in("id", linkedPoLineIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null };
+  if (poLines.error) return { data: null, error: poLines.error };
+  const poLineById = new Map((poLines.data ?? []).map((l) => [l.id, l]));
+
+  const supplierParts = await client
+    .from("supplierPart")
+    .select("itemId, unitPrice, conversionFactor, supplierUnitOfMeasureCode")
+    .eq("supplierId", order.data.supplierId)
+    .eq("companyId", companyId)
+    .in(
+      "itemId",
+      (lines.data ?? []).map((l) => l.itemId)
+    );
+  const supplierPartByItem = new Map(
+    (supplierParts.data ?? []).map((sp) => [sp.itemId, sp])
+  );
+
+  const purchaseOrder = await insertPurchaseOrder(client, {
+    supplierId: order.data.supplierId,
+    companyId,
+    companyGroupId,
+    createdBy: userId,
+    currencyCode: order.data.currencyCode,
+    locationId: order.data.locationId ?? undefined,
+    supplierContactId: order.data.supplierContactId ?? undefined,
+    supplierLocationId: order.data.supplierLocationId ?? undefined,
+    supplierReference: order.data.purchaseReturnOrderId
+  });
+  if (purchaseOrder.error || !purchaseOrder.data) {
+    return { data: null, error: purchaseOrder.error };
+  }
+  const purchaseOrderId = purchaseOrder.data.id;
+
+  const lineTypeFor = (
+    itemType: string | null | undefined
+  ): Database["public"]["Enums"]["purchaseOrderLineType"] => {
+    switch (itemType) {
+      case "Part":
+      case "Material":
+      case "Tool":
+      case "Consumable":
+      case "Service":
+        return itemType;
+      default:
+        return "Part";
+    }
+  };
+
+  for (const line of lines.data ?? []) {
+    const poLine = line.purchaseOrderLineId
+      ? poLineById.get(line.purchaseOrderLineId)
+      : null;
+    const supplierPart = supplierPartByItem.get(line.itemId);
+    const conversionFactor = Number(
+      poLine?.conversionFactor ?? supplierPart?.conversionFactor ?? 1
+    );
+    const unitPrice = Number(
+      poLine?.unitPrice ??
+        supplierPart?.unitPrice ??
+        Number(line.unitPrice) * conversionFactor
+    );
+    const purchaseQuantity =
+      conversionFactor > 0
+        ? Number(line.quantity) / conversionFactor
+        : Number(line.quantity);
+
+    const insertLine = await client.from("purchaseOrderLine").insert({
+      purchaseOrderId,
+      purchaseOrderLineType: lineTypeFor(line.item?.type),
+      itemId: line.itemId,
+      purchaseQuantity,
+      supplierUnitPrice: unitPrice,
+      conversionFactor,
+      purchaseUnitOfMeasureCode:
+        poLine?.purchaseUnitOfMeasureCode ??
+        supplierPart?.supplierUnitOfMeasureCode ??
+        line.unitOfMeasureCode,
+      inventoryUnitOfMeasureCode:
+        poLine?.inventoryUnitOfMeasureCode ?? line.unitOfMeasureCode,
+      companyId,
+      createdBy: userId
+    });
+
+    if (insertLine.error) {
+      await deletePurchaseOrder(client, purchaseOrderId);
+      return { data: null, error: insertLine.error };
+    }
+  }
+
+  const link = await client
+    .from("purchaseReturnOrder")
+    .update({
+      replacementPurchaseOrderId: purchaseOrderId,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", purchaseReturnOrderId)
+    .eq("companyId", companyId);
+  if (link.error) return { data: null, error: link.error };
+
+  return { data: { id: purchaseOrderId }, error: null };
 }
