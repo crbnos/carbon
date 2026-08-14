@@ -10594,7 +10594,7 @@ msgid "Packing Slip"
 msgstr "पैकिंग स्लिप"
 
 msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
-msgstr ""
+msgstr "राशियों को उनकी मुद्रा के दशमलव स्थानों तक पैड करें, इसलिए 300 को 300.00 के रूप में दिखाया जाता है और आंकड़ों के स्तंभ संरेखित रहते हैं। इसे बंद करें ताकि केवल वे अंक दिखें जिनका मूल्य है। मुद्रित दस्तावेज़ और संग्रहीत राशियां दोनों ही तरीकों से प्रभावित नहीं होती हैं।"
 
 msgid "Page"
 msgstr "पृष्ठ"
@@ -13543,7 +13543,7 @@ msgid "Show sync options"
 msgstr "सिंक विकल्प दिखाएं"
 
 msgid "Show Trailing Zeros"
-msgstr ""
+msgstr "अनुगामी शून्य दिखाएं"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"

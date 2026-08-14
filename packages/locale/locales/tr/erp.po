@@ -10594,7 +10594,7 @@ msgid "Packing Slip"
 msgstr "Paketleme Fişi"
 
 msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
-msgstr ""
+msgstr "Miktarları para biriminin ondalık basamaklarına göre doldur, böylece 300, 300.00 olarak görünür ve sayı sütunları hizalı kalır. Yalnızca değer taşıyan rakamları göstermek için bunu kapatın. Yazdırılan belgeler ve depolanan miktarlar her iki durumda da etkilenmez."
 
 msgid "Page"
 msgstr "Sayfa"
@@ -13543,7 +13543,7 @@ msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
 
 msgid "Show Trailing Zeros"
-msgstr ""
+msgstr "Sondaki Sıfırları Göster"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
