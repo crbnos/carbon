@@ -1799,6 +1799,14 @@ serve(async (req: Request) => {
                 "Cannot ship against a cancelled return order"
               );
 
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
+
             const accountDefaults = accountingEnabled
               ? await getDefaultPostingGroup(client, companyId)
               : null;
@@ -2092,6 +2100,14 @@ serve(async (req: Request) => {
               throw new Error(
                 `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
               );
+
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
 
             const returnLineById = new Map(
               (purchaseReturnOrderLines.data ?? []).map((l) => [l.id, l])
@@ -3448,6 +3464,14 @@ serve(async (req: Request) => {
             if (!shipment.data.sourceDocumentId)
               throw new Error("Shipment has no sourceDocumentId");
 
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
+
             const originalJournalLines = await client
               .from("journalLine")
               .select("*")
@@ -3602,6 +3626,14 @@ serve(async (req: Request) => {
             if (!shipment.data.sourceDocumentId)
               throw new Error("Shipment has no sourceDocumentId");
             const purchaseReturnOrderId = shipment.data.sourceDocumentId;
+
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
 
             const [originalJournalLines, originalItemLedger, returnLinesVoid] =
               await Promise.all([

@@ -85,6 +85,7 @@ export async function action({ request }: ActionFunctionArgs) {
         body: {
           type: "shipmentFromSalesReturnOrder",
           companyId,
+          locationId: defaults.data?.locationId,
           salesReturnOrderId: sourceDocumentId,
           shipmentId: undefined,
           userId: userId
@@ -118,6 +119,7 @@ export async function action({ request }: ActionFunctionArgs) {
         body: {
           type: "shipmentFromPurchaseReturnOrder",
           companyId,
+          locationId: defaults.data?.locationId,
           purchaseReturnOrderId: sourceDocumentId,
           shipmentId: undefined,
           userId: userId
