@@ -79,6 +79,9 @@ skills-lock.json
 # Editor/IDE settings — local, not source
 .vscode/
 
+# Local isolated implementation worktrees
+.worktrees/
+
 # .ai/ scratch — runtime, not source
 .ai/scratch/
 .ai/daily-notes/
