@@ -1,3 +1,4 @@
+import { getQuoteDisplayId } from "../../../utils/quote";
 import { Header } from "../../components";
 import type { QuoteData } from "./types";
 
@@ -6,7 +7,7 @@ export function HeaderBlock({ data }: { data: QuoteData }) {
     <Header
       company={data.company}
       title="Quote"
-      documentId={data.quote?.quoteId}
+      documentId={data.quote ? getQuoteDisplayId(data.quote) : undefined}
       currencyCode={data.quote?.currencyCode}
       locale={data.locale}
       options={data.headerOptions}

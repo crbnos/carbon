@@ -27,6 +27,7 @@ import {
   Hyperlink,
   ItemThumbnail,
   New,
+  RevisionSuffix,
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -78,11 +79,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             <Hyperlink to={path.to.quoteDetails(row.original.id!)}>
               <div className="flex justify-start items-center gap-0">
                 <span>{row.original.quoteId}</span>
-                {(row.original.revisionId ?? 0) > 0 && (
-                  <span className="text-muted-foreground">
-                    -{row.original.revisionId}
-                  </span>
-                )}
+                <RevisionSuffix revisionId={row.original.revisionId} />
               </div>
             </Hyperlink>
           </HStack>

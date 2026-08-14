@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -247,7 +248,9 @@ const Header = ({
       <div>
         <CardTitle className="text-3xl">{company?.name ?? ""}</CardTitle>
         {quote?.quoteId && (
-          <p className="text-lg text-muted-foreground">{quote.quoteId}</p>
+          <p className="text-lg text-muted-foreground">
+            {getQuoteDisplayId(quote)}
+          </p>
         )}
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
@@ -1341,8 +1344,8 @@ const Quote = ({ data }: { data: QuoteData }) => {
                 </ModalTitle>
                 <ModalDescription>
                   <Trans>
-                    Are you sure you want to accept quote {quote.quoteId} for{" "}
-                    {formatter.format(total)}?
+                    Are you sure you want to accept quote{" "}
+                    {getQuoteDisplayId(quote)} for {formatter.format(total)}?
                   </Trans>
                 </ModalDescription>
               </ModalHeader>

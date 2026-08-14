@@ -1,3 +1,4 @@
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import {
   Button,
   cn,
@@ -110,13 +111,7 @@ function getItems(opportunity: Opportunity, state: string) {
     case "Quote":
       return opportunity.quotes.map((quote) => ({
         id: quote.id!,
-        label: quote.quoteId
-          ? `${quote.quoteId}${
-              quote.revisionId && quote.revisionId > 0
-                ? `-${quote.revisionId}`
-                : ""
-            }`
-          : `Quote ${quote.id}`,
+        label: quote.quoteId ? getQuoteDisplayId(quote) : `Quote ${quote.id}`,
         path: path.to.quoteDetails(quote.id!)
       }));
     case "Order":

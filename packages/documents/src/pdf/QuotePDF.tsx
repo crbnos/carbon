@@ -8,6 +8,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
+import { getQuoteDisplayId } from "../utils/quote";
 import { getMoneyFormatter, resolveRegistrationLine } from "../utils/shared";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
 import { buildQuoteVars, quoteBlockRegistry } from "./blocks/quote";
@@ -219,16 +220,18 @@ const QuotePDF = ({
     (block) => block.visible && !(block.type === "header" && !showHeader)
   );
 
+  const displayId = getQuoteDisplayId(quote);
+
   return (
     <Template
       theme={theme}
-      title={title}
+      title={displayId ? `${title}: ${displayId}` : title}
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "quote",
         subject: meta?.subject ?? "Quote"
       }}
-      footerDocumentId={quote?.quoteId}
+      footerDocumentId={displayId || undefined}
       footerLabel={registration.label}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}
