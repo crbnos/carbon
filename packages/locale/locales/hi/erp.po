@@ -1062,6 +1062,9 @@ msgstr "लाइन जोड़ें"
 msgid "Add Line Item"
 msgstr "लाइन आइटम जोड़ें"
 
+msgid "Add Lines"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr ""
 
@@ -1173,6 +1176,10 @@ msgstr "ऐड-ऑन लागत"
 
 msgid "Added"
 msgstr "जोड़ा गया"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr ""
 
 msgid "Added for this customer"
 msgstr "इस ग्राहक के लिए जोड़ा गया"
@@ -6070,6 +6077,9 @@ msgstr "अपेक्षित रसीद"
 msgid "Expected Receipt Date"
 msgstr "अपेक्षित प्राप्ति तारीख"
 
+msgid "Expected serials/batches"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "AR निपटान पर अनिर्धारणीय के रूप में लिखे गए ग्राहक शेष के लिए व्यय खाता"
 
@@ -6201,6 +6211,12 @@ msgstr "विफल"
 
 msgid "Failed features"
 msgstr "विफल विशेषताएँ"
+
+msgid "Failed to add line"
+msgstr ""
+
+msgid "Failed to add lines"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6397,6 +6413,12 @@ msgstr "रसीद लाइनें लोड करने में वि�
 msgid "Failed to load receipts"
 msgstr "रसीदें लोड करने में विफल"
 
+msgid "Failed to load RMA lines"
+msgstr ""
+
+msgid "Failed to load RMAs"
+msgstr ""
+
 msgid "Failed to load sales order lines"
 msgstr "बिक्रय आदेश लाइनें लोड करने में विफल"
 
@@ -6411,6 +6433,12 @@ msgstr "शिपमेंट लोड करने में विफल"
 
 msgid "Failed to load supplier part details"
 msgstr "आपूर्तिकर्ता भाग विवरण लोड करने में विफल"
+
+msgid "Failed to load supplier return lines"
+msgstr ""
+
+msgid "Failed to load supplier returns"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "ट्रैक किए गए इकाइयों को लोड करने में विफल"
@@ -8361,6 +8389,9 @@ msgstr "वर्तमान मात्रा लोड हो रही ह�
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
 
+msgid "Loading returnable lines..."
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carbon के आयात उपकरणों के साथ अपना डेटा लोड करना"
 
@@ -9766,6 +9797,9 @@ msgstr "कोई परिणाम नहीं"
 msgid "No results found"
 msgstr "कोई परिणाम नहीं मिला"
 
+msgid "No returnable lines found for this customer"
+msgstr ""
+
 msgid "No rows here."
 msgstr "यहाँ कोई पंक्तियाँ नहीं हैं।"
 
@@ -10719,6 +10753,9 @@ msgstr "पहले के स्टेप से एक मूल्य चु
 
 msgid "Pick a variable…"
 msgstr "एक वेरिएबल चुनें…"
+
+msgid "Pick expected serials/batches"
+msgstr ""
 
 msgid "Pick List"
 msgstr "पिक लिस्ट"
@@ -12097,6 +12134,9 @@ msgstr "संसाधन"
 msgid "Resources"
 msgstr "संसाधन"
 
+msgid "Restock Fee Percent"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "ट्रैश से पुनः स्थापित करें"
 
@@ -12136,10 +12176,16 @@ msgstr "घर लौटें"
 msgid "Return Location"
 msgstr ""
 
+msgid "Return Quantity"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
 msgid "Return Reasons"
+msgstr ""
+
+msgid "returnable"
 msgstr ""
 
 msgid "Returned"
@@ -12274,6 +12320,12 @@ msgid "RMA"
 msgstr ""
 
 msgid "RMA ID"
+msgstr ""
+
+msgid "RMA Line"
+msgstr ""
+
+msgid "RMA Lines"
 msgstr ""
 
 msgid "RMA Number"
@@ -12872,6 +12924,9 @@ msgstr "ग्राहक प्रकार चुनें"
 msgid "Select customers"
 msgstr "ग्राहकों का चयन करें"
 
+msgid "Select disposition"
+msgstr ""
+
 msgid "Select Employee"
 msgstr "कर्मचारी चुनें"
 
@@ -13034,6 +13089,9 @@ msgstr "सीरीज़/बैच #"
 
 msgid "Serialize & sell your parts"
 msgstr "अपने पार्ट्स को सीरियलाइज़ करें और बेचें"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr ""
 
 msgid "service"
 msgstr "सेवा"
@@ -13236,6 +13294,9 @@ msgstr "शिपमेंट स्थान"
 
 msgid "Shipments"
 msgstr "शिपमेंट"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "भेजी गई मात्रा"
@@ -13971,6 +14032,15 @@ msgstr "आपूर्तिकर्ता संदर्भ"
 
 msgid "Supplier Reference"
 msgstr "आपूर्तिकर्ता संदर्भ"
+
+msgid "Supplier Return"
+msgstr ""
+
+msgid "Supplier Return Line"
+msgstr ""
+
+msgid "Supplier Return Lines"
+msgstr ""
 
 msgid "Supplier Returns"
 msgstr ""

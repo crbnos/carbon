@@ -1062,6 +1062,9 @@ msgstr "行を追加"
 msgid "Add Line Item"
 msgstr "ラインアイテムを追加"
 
+msgid "Add Lines"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr ""
 
@@ -1173,6 +1176,10 @@ msgstr "アドオンコスト"
 
 msgid "Added"
 msgstr "追加済み"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr ""
 
 msgid "Added for this customer"
 msgstr "このカスタマー向けに追加"
@@ -6070,6 +6077,9 @@ msgstr "予想受取日"
 msgid "Expected Receipt Date"
 msgstr "予想受取日"
 
+msgid "Expected serials/batches"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "AR決済時に回収不可能として償却された顧客残高の費用勘定"
 
@@ -6201,6 +6211,12 @@ msgstr "失敗"
 
 msgid "Failed features"
 msgstr "失敗した機能"
+
+msgid "Failed to add line"
+msgstr ""
+
+msgid "Failed to add lines"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6397,6 +6413,12 @@ msgstr "領収書行の読み込みに失敗しました"
 msgid "Failed to load receipts"
 msgstr "領収書の読み込みに失敗しました"
 
+msgid "Failed to load RMA lines"
+msgstr ""
+
+msgid "Failed to load RMAs"
+msgstr ""
+
 msgid "Failed to load sales order lines"
 msgstr "販売注文行の読み込みに失敗しました"
 
@@ -6411,6 +6433,12 @@ msgstr "出荷の読み込みに失敗しました"
 
 msgid "Failed to load supplier part details"
 msgstr "サプライヤー部品の詳細の読み込みに失敗しました"
+
+msgid "Failed to load supplier return lines"
+msgstr ""
+
+msgid "Failed to load supplier returns"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "追跡対象エンティティの読み込みに失敗しました"
@@ -8361,6 +8389,9 @@ msgstr "現在の数量を読み込み中…"
 msgid "Loading item details..."
 msgstr "アイテムの詳細を読み込み中..."
 
+msgid "Loading returnable lines..."
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carbonのインポートツールで独自のデータを読み込む"
 
@@ -9766,6 +9797,9 @@ msgstr "結果がありません"
 msgid "No results found"
 msgstr "検索結果が見つかりません"
 
+msgid "No returnable lines found for this customer"
+msgstr ""
+
 msgid "No rows here."
 msgstr "ここに行はありません。"
 
@@ -10719,6 +10753,9 @@ msgstr "前のステップの値を選択"
 
 msgid "Pick a variable…"
 msgstr "変数を選択..."
+
+msgid "Pick expected serials/batches"
+msgstr ""
 
 msgid "Pick List"
 msgstr "ピッキングリスト"
@@ -12097,6 +12134,9 @@ msgstr "リソース"
 msgid "Resources"
 msgstr "リソース"
 
+msgid "Restock Fee Percent"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "ゴミ箱から復元"
 
@@ -12136,10 +12176,16 @@ msgstr "ホームに戻る"
 msgid "Return Location"
 msgstr ""
 
+msgid "Return Quantity"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
 msgid "Return Reasons"
+msgstr ""
+
+msgid "returnable"
 msgstr ""
 
 msgid "Returned"
@@ -12274,6 +12320,12 @@ msgid "RMA"
 msgstr ""
 
 msgid "RMA ID"
+msgstr ""
+
+msgid "RMA Line"
+msgstr ""
+
+msgid "RMA Lines"
 msgstr ""
 
 msgid "RMA Number"
@@ -12872,6 +12924,9 @@ msgstr "顧客タイプを選択"
 msgid "Select customers"
 msgstr "顧客を選択"
 
+msgid "Select disposition"
+msgstr ""
+
 msgid "Select Employee"
 msgstr "従業員を選択"
 
@@ -13034,6 +13089,9 @@ msgstr "シリアル/バッチ #"
 
 msgid "Serialize & sell your parts"
 msgstr "パーツをシリアル化して販売する"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr ""
 
 msgid "service"
 msgstr "サービス"
@@ -13236,6 +13294,9 @@ msgstr "配送場所"
 
 msgid "Shipments"
 msgstr "出荷"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "出荷数量"
@@ -13971,6 +14032,15 @@ msgstr "サプライヤー参照"
 
 msgid "Supplier Reference"
 msgstr "仕入先参照"
+
+msgid "Supplier Return"
+msgstr ""
+
+msgid "Supplier Return Line"
+msgstr ""
+
+msgid "Supplier Return Lines"
+msgstr ""
 
 msgid "Supplier Returns"
 msgstr ""

@@ -1062,6 +1062,9 @@ msgstr "Dodaj linię"
 msgid "Add Line Item"
 msgstr "Dodaj pozycję"
 
+msgid "Add Lines"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr ""
 
@@ -1173,6 +1176,10 @@ msgstr "Koszt dodatku"
 
 msgid "Added"
 msgstr "Dodane"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr ""
 
 msgid "Added for this customer"
 msgstr "Dodane dla tego klienta"
@@ -6070,6 +6077,9 @@ msgstr "Oczekiwane Potwierdzenie Odbioru"
 msgid "Expected Receipt Date"
 msgstr "Oczekiwana data przyjęcia"
 
+msgid "Expected serials/batches"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Konto wydatków dla sald klientów odpisanych jako nieściągalne w rozliczeniu AR"
 
@@ -6201,6 +6211,12 @@ msgstr "Nieudane"
 
 msgid "Failed features"
 msgstr "Cechy nie powiodły się"
+
+msgid "Failed to add line"
+msgstr ""
+
+msgid "Failed to add lines"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6397,6 +6413,12 @@ msgstr "Nie udało się załadować linii przyjęcia"
 msgid "Failed to load receipts"
 msgstr "Nie udało się załadować paragonów"
 
+msgid "Failed to load RMA lines"
+msgstr ""
+
+msgid "Failed to load RMAs"
+msgstr ""
+
 msgid "Failed to load sales order lines"
 msgstr "Nie udało się załadować linii zamówienia sprzedaży"
 
@@ -6411,6 +6433,12 @@ msgstr "Nie udało się załadować przesyłek"
 
 msgid "Failed to load supplier part details"
 msgstr "Nie udało się załadować szczegółów części dostawcy"
+
+msgid "Failed to load supplier return lines"
+msgstr ""
+
+msgid "Failed to load supplier returns"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "Nie udało się załadować śledzonych jednostek"
@@ -8361,6 +8389,9 @@ msgstr "Ładowanie bieżącej ilości…"
 msgid "Loading item details..."
 msgstr "Ładowanie szczegółów przedmiotu..."
 
+msgid "Loading returnable lines..."
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Ładowanie własnych danych za pomocą narzędzi importu Carbon"
 
@@ -9766,6 +9797,9 @@ msgstr "Brak wyników"
 msgid "No results found"
 msgstr "Nie znaleziono wyników"
 
+msgid "No returnable lines found for this customer"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Brak wierszy tutaj."
 
@@ -10719,6 +10753,9 @@ msgstr "Wybierz wartość z wcześniejszego kroku"
 
 msgid "Pick a variable…"
 msgstr "Wybierz zmienną…"
+
+msgid "Pick expected serials/batches"
+msgstr ""
 
 msgid "Pick List"
 msgstr "Lista pobrania"
@@ -12097,6 +12134,9 @@ msgstr "zasoby"
 msgid "Resources"
 msgstr "Zasoby"
 
+msgid "Restock Fee Percent"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Przywróć z Kosza"
 
@@ -12136,10 +12176,16 @@ msgstr "Wróć do domu"
 msgid "Return Location"
 msgstr ""
 
+msgid "Return Quantity"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
 msgid "Return Reasons"
+msgstr ""
+
+msgid "returnable"
 msgstr ""
 
 msgid "Returned"
@@ -12274,6 +12320,12 @@ msgid "RMA"
 msgstr ""
 
 msgid "RMA ID"
+msgstr ""
+
+msgid "RMA Line"
+msgstr ""
+
+msgid "RMA Lines"
 msgstr ""
 
 msgid "RMA Number"
@@ -12872,6 +12924,9 @@ msgstr "Wybierz typy klientów"
 msgid "Select customers"
 msgstr "Wybierz klientów"
 
+msgid "Select disposition"
+msgstr ""
+
 msgid "Select Employee"
 msgstr "Wybierz pracownika"
 
@@ -13034,6 +13089,9 @@ msgstr "Numer seryjny/partii #"
 
 msgid "Serialize & sell your parts"
 msgstr "Serializuj i sprzedawaj swoje części"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr ""
 
 msgid "service"
 msgstr "usługa"
@@ -13236,6 +13294,9 @@ msgstr "Lokalizacja wysyłki"
 
 msgid "Shipments"
 msgstr "Przesyłki"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "Wysłana Ilość"
@@ -13971,6 +14032,15 @@ msgstr "Odniesienie dostawcy"
 
 msgid "Supplier Reference"
 msgstr "Odniesienie dostawcy"
+
+msgid "Supplier Return"
+msgstr ""
+
+msgid "Supplier Return Line"
+msgstr ""
+
+msgid "Supplier Return Lines"
+msgstr ""
 
 msgid "Supplier Returns"
 msgstr ""

@@ -1062,6 +1062,9 @@ msgstr "라인 추가"
 msgid "Add Line Item"
 msgstr "라인 항목 추가"
 
+msgid "Add Lines"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr ""
 
@@ -1173,6 +1176,10 @@ msgstr "애드온 비용"
 
 msgid "Added"
 msgstr "추가됨"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr ""
 
 msgid "Added for this customer"
 msgstr "이 고객을 위해 추가됨"
@@ -6070,6 +6077,9 @@ msgstr "예상 입고"
 msgid "Expected Receipt Date"
 msgstr "예상 입고일"
 
+msgid "Expected serials/batches"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "매출채권 정산 시 회수 불가로 상각된 고객 잔액에 대한 비용 계정"
 
@@ -6201,6 +6211,12 @@ msgstr "실패"
 
 msgid "Failed features"
 msgstr "부적합 특성"
+
+msgid "Failed to add line"
+msgstr ""
+
+msgid "Failed to add lines"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6397,6 +6413,12 @@ msgstr "입고 라인을 불러오지 못했습니다"
 msgid "Failed to load receipts"
 msgstr "입고를 불러오지 못했습니다"
 
+msgid "Failed to load RMA lines"
+msgstr ""
+
+msgid "Failed to load RMAs"
+msgstr ""
+
 msgid "Failed to load sales order lines"
 msgstr "판매주문 라인을 불러오지 못했습니다"
 
@@ -6411,6 +6433,12 @@ msgstr "출하를 불러오지 못했습니다"
 
 msgid "Failed to load supplier part details"
 msgstr "공급업체 부품 세부정보를 불러오지 못했습니다"
+
+msgid "Failed to load supplier return lines"
+msgstr ""
+
+msgid "Failed to load supplier returns"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "추적 개체를 불러오지 못했습니다"
@@ -8361,6 +8389,9 @@ msgstr "현재 수량 로드 중…"
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
 
+msgid "Loading returnable lines..."
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carbon의 가져오기 도구로 직접 데이터 불러오기"
 
@@ -9766,6 +9797,9 @@ msgstr "결과 없음"
 msgid "No results found"
 msgstr "결과가 없습니다"
 
+msgid "No returnable lines found for this customer"
+msgstr ""
+
 msgid "No rows here."
 msgstr "행이 없습니다."
 
@@ -10719,6 +10753,9 @@ msgstr "이전 단계에서 값 선택"
 
 msgid "Pick a variable…"
 msgstr "변수 선택…"
+
+msgid "Pick expected serials/batches"
+msgstr ""
 
 msgid "Pick List"
 msgstr "피킹 목록"
@@ -12097,6 +12134,9 @@ msgstr "리소스"
 msgid "Resources"
 msgstr "리소스"
 
+msgid "Restock Fee Percent"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "휴지통에서 복원"
 
@@ -12136,10 +12176,16 @@ msgstr "홈으로 돌아가기"
 msgid "Return Location"
 msgstr ""
 
+msgid "Return Quantity"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
 msgid "Return Reasons"
+msgstr ""
+
+msgid "returnable"
 msgstr ""
 
 msgid "Returned"
@@ -12274,6 +12320,12 @@ msgid "RMA"
 msgstr ""
 
 msgid "RMA ID"
+msgstr ""
+
+msgid "RMA Line"
+msgstr ""
+
+msgid "RMA Lines"
 msgstr ""
 
 msgid "RMA Number"
@@ -12872,6 +12924,9 @@ msgstr "고객 유형 선택"
 msgid "Select customers"
 msgstr "고객 선택"
 
+msgid "Select disposition"
+msgstr ""
+
 msgid "Select Employee"
 msgstr "직원 선택"
 
@@ -13034,6 +13089,9 @@ msgstr "일련번호/배치 #"
 
 msgid "Serialize & sell your parts"
 msgstr "품목에 일련번호를 부여하고 판매하세요"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr ""
 
 msgid "service"
 msgstr "서비스"
@@ -13236,6 +13294,9 @@ msgstr "출하 위치"
 
 msgid "Shipments"
 msgstr "출하"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "출하 수량"
@@ -13971,6 +14032,15 @@ msgstr "공급업체 참조"
 
 msgid "Supplier Reference"
 msgstr "공급업체 참조"
+
+msgid "Supplier Return"
+msgstr ""
+
+msgid "Supplier Return Line"
+msgstr ""
+
+msgid "Supplier Return Lines"
+msgstr ""
 
 msgid "Supplier Returns"
 msgstr ""

@@ -1062,6 +1062,9 @@ msgstr "Adicionar Linha"
 msgid "Add Line Item"
 msgstr "Adicionar Item de Linha"
 
+msgid "Add Lines"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr ""
 
@@ -1173,6 +1176,10 @@ msgstr "Custo Adicional"
 
 msgid "Added"
 msgstr "Adicionado"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr ""
 
 msgid "Added for this customer"
 msgstr "Adicionado para este cliente"
@@ -6070,6 +6077,9 @@ msgstr "Recebimento Esperado"
 msgid "Expected Receipt Date"
 msgstr "Data de Recebimento Esperada"
 
+msgid "Expected serials/batches"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Conta de despesa para saldos de clientes baixados como incobrável na liquidação de AR"
 
@@ -6201,6 +6211,12 @@ msgstr "Falhou"
 
 msgid "Failed features"
 msgstr "Recursos com falha"
+
+msgid "Failed to add line"
+msgstr ""
+
+msgid "Failed to add lines"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6397,6 +6413,12 @@ msgstr "Falha ao carregar linhas de recebimento"
 msgid "Failed to load receipts"
 msgstr "Falha ao carregar recebimentos"
 
+msgid "Failed to load RMA lines"
+msgstr ""
+
+msgid "Failed to load RMAs"
+msgstr ""
+
 msgid "Failed to load sales order lines"
 msgstr "Falha ao carregar linhas de pedido de venda"
 
@@ -6411,6 +6433,12 @@ msgstr "Falha ao carregar remessas"
 
 msgid "Failed to load supplier part details"
 msgstr "Falha ao carregar detalhes da peça do fornecedor"
+
+msgid "Failed to load supplier return lines"
+msgstr ""
+
+msgid "Failed to load supplier returns"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "Falha ao carregar entidades rastreadas"
@@ -8361,6 +8389,9 @@ msgstr "Carregando quantidade atual…"
 msgid "Loading item details..."
 msgstr "Carregando detalhes do item..."
 
+msgid "Loading returnable lines..."
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carregando seus próprios dados com as ferramentas de importação do Carbon"
 
@@ -9766,6 +9797,9 @@ msgstr "Sem resultados"
 msgid "No results found"
 msgstr "Nenhum resultado encontrado"
 
+msgid "No returnable lines found for this customer"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Nenhuma linha aqui."
 
@@ -10719,6 +10753,9 @@ msgstr "Escolha um valor de um passo anterior"
 
 msgid "Pick a variable…"
 msgstr "Escolha uma variável…"
+
+msgid "Pick expected serials/batches"
+msgstr ""
 
 msgid "Pick List"
 msgstr "Lista de Coleta"
@@ -12097,6 +12134,9 @@ msgstr "recursos"
 msgid "Resources"
 msgstr "Recursos"
 
+msgid "Restock Fee Percent"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Restaurar da Lixeira"
 
@@ -12136,10 +12176,16 @@ msgstr "Voltar para Início"
 msgid "Return Location"
 msgstr ""
 
+msgid "Return Quantity"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
 msgid "Return Reasons"
+msgstr ""
+
+msgid "returnable"
 msgstr ""
 
 msgid "Returned"
@@ -12274,6 +12320,12 @@ msgid "RMA"
 msgstr ""
 
 msgid "RMA ID"
+msgstr ""
+
+msgid "RMA Line"
+msgstr ""
+
+msgid "RMA Lines"
 msgstr ""
 
 msgid "RMA Number"
@@ -12872,6 +12924,9 @@ msgstr "Selecionar tipos de cliente"
 msgid "Select customers"
 msgstr "Selecionar clientes"
 
+msgid "Select disposition"
+msgstr ""
+
 msgid "Select Employee"
 msgstr "Selecionar Funcionário"
 
@@ -13034,6 +13089,9 @@ msgstr "Série/Lote #"
 
 msgid "Serialize & sell your parts"
 msgstr "Serialize e venda suas peças"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr ""
 
 msgid "service"
 msgstr "serviço"
@@ -13236,6 +13294,9 @@ msgstr "Localização do Envio"
 
 msgid "Shipments"
 msgstr "Remessas"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "Qtd. Enviada"
@@ -13971,6 +14032,15 @@ msgstr "Referência do fornecedor"
 
 msgid "Supplier Reference"
 msgstr "Referência do Fornecedor"
+
+msgid "Supplier Return"
+msgstr ""
+
+msgid "Supplier Return Line"
+msgstr ""
+
+msgid "Supplier Return Lines"
+msgstr ""
 
 msgid "Supplier Returns"
 msgstr ""

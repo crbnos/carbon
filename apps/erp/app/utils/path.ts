@@ -1991,9 +1991,11 @@ export const path = {
       generatePath(`${x}/sales-return-order/${orderId}/${lineId}/receiving`),
     salesReturnOrderReplacement: (id: string) =>
       generatePath(`${x}/sales-return-order/${id}/replacement`),
+    salesReturnOrderReturnableLines: `${x}/sales-return-order/returnable-lines`,
     salesReturnOrderStatus: (id: string) =>
       generatePath(`${x}/sales-return-order/${id}/status`),
     salesReturnOrders: `${x}/sales/rmas`,
+    salesReturnOrderUpdate: `${x}/sales-return-order/update`,
     salesRfq: (id: string) => generatePath(`${x}/sales-rfq/${id}`),
     salesRfqConvert: (id: string) =>
       generatePath(`${x}/sales-rfq/${id}/convert`),

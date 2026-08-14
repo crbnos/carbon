@@ -1062,6 +1062,9 @@ msgstr "Добавить строку"
 msgid "Add Line Item"
 msgstr "Добавить позицию"
 
+msgid "Add Lines"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr ""
 
@@ -1173,6 +1176,10 @@ msgstr "Дополнительная стоимость"
 
 msgid "Added"
 msgstr "Добавлено"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr ""
 
 msgid "Added for this customer"
 msgstr "Добавлено для этого клиента"
@@ -6070,6 +6077,9 @@ msgstr "Ожидаемое получение"
 msgid "Expected Receipt Date"
 msgstr "Ожидаемая дата получения"
 
+msgid "Expected serials/batches"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Счет расходов для остатков клиентов, списанных как невзыскиваемые при расчете по дебиторской задолженности"
 
@@ -6201,6 +6211,12 @@ msgstr "Неудачно"
 
 msgid "Failed features"
 msgstr "Отказавшие элементы"
+
+msgid "Failed to add line"
+msgstr ""
+
+msgid "Failed to add lines"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6397,6 +6413,12 @@ msgstr "Не удалось загрузить строки квитанции"
 msgid "Failed to load receipts"
 msgstr "Не удалось загрузить квитанции"
 
+msgid "Failed to load RMA lines"
+msgstr ""
+
+msgid "Failed to load RMAs"
+msgstr ""
+
 msgid "Failed to load sales order lines"
 msgstr "Не удалось загрузить строки заказа продажи"
 
@@ -6411,6 +6433,12 @@ msgstr "Не удалось загрузить отправки"
 
 msgid "Failed to load supplier part details"
 msgstr "Не удалось загрузить детали поставщика"
+
+msgid "Failed to load supplier return lines"
+msgstr ""
+
+msgid "Failed to load supplier returns"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "Не удалось загрузить отслеживаемые сущности"
@@ -8361,6 +8389,9 @@ msgstr "Загрузка текущего количества…"
 msgid "Loading item details..."
 msgstr "Загрузка деталей товара..."
 
+msgid "Loading returnable lines..."
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Загрузка ваших данных с помощью инструментов импорта Carbon"
 
@@ -9766,6 +9797,9 @@ msgstr "Нет результатов"
 msgid "No results found"
 msgstr "Результатов не найдено"
 
+msgid "No returnable lines found for this customer"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Нет строк здесь."
 
@@ -10719,6 +10753,9 @@ msgstr "Выберите значение из предыдущего шага"
 
 msgid "Pick a variable…"
 msgstr "Выберите переменную…"
+
+msgid "Pick expected serials/batches"
+msgstr ""
 
 msgid "Pick List"
 msgstr "Список подбора"
@@ -12097,6 +12134,9 @@ msgstr "ресурсы"
 msgid "Resources"
 msgstr "Ресурсы"
 
+msgid "Restock Fee Percent"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Восстановить из корзины"
 
@@ -12136,10 +12176,16 @@ msgstr "Вернуться на главную"
 msgid "Return Location"
 msgstr ""
 
+msgid "Return Quantity"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
 msgid "Return Reasons"
+msgstr ""
+
+msgid "returnable"
 msgstr ""
 
 msgid "Returned"
@@ -12274,6 +12320,12 @@ msgid "RMA"
 msgstr ""
 
 msgid "RMA ID"
+msgstr ""
+
+msgid "RMA Line"
+msgstr ""
+
+msgid "RMA Lines"
 msgstr ""
 
 msgid "RMA Number"
@@ -12872,6 +12924,9 @@ msgstr "Выберите типы клиентов"
 msgid "Select customers"
 msgstr "Выберите клиентов"
 
+msgid "Select disposition"
+msgstr ""
+
 msgid "Select Employee"
 msgstr "Выберите сотрудника"
 
@@ -13034,6 +13089,9 @@ msgstr "Серийный номер/Партия №"
 
 msgid "Serialize & sell your parts"
 msgstr "Сериализуйте и продавайте свои детали"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr ""
 
 msgid "service"
 msgstr "услуга"
@@ -13236,6 +13294,9 @@ msgstr "Местоположение отправки"
 
 msgid "Shipments"
 msgstr "Отправки"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "Отправленное кол-во"
@@ -13971,6 +14032,15 @@ msgstr "Ссылка поставщика"
 
 msgid "Supplier Reference"
 msgstr "Ссылка поставщика"
+
+msgid "Supplier Return"
+msgstr ""
+
+msgid "Supplier Return Line"
+msgstr ""
+
+msgid "Supplier Return Lines"
+msgstr ""
 
 msgid "Supplier Returns"
 msgstr ""

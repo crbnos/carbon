@@ -1062,6 +1062,9 @@ msgstr "添加行"
 msgid "Add Line Item"
 msgstr "添加行项目"
 
+msgid "Add Lines"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr ""
 
@@ -1173,6 +1176,10 @@ msgstr "附加成本"
 
 msgid "Added"
 msgstr "已添加"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr ""
 
 msgid "Added for this customer"
 msgstr "为此客户添加"
@@ -6070,6 +6077,9 @@ msgstr "预期收货"
 msgid "Expected Receipt Date"
 msgstr "预期收货日期"
 
+msgid "Expected serials/batches"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "应收账款结算时作为无法收回的客户余额的费用账户"
 
@@ -6201,6 +6211,12 @@ msgstr "失败"
 
 msgid "Failed features"
 msgstr "失效特性"
+
+msgid "Failed to add line"
+msgstr ""
+
+msgid "Failed to add lines"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6397,6 +6413,12 @@ msgstr "加载收据行失败"
 msgid "Failed to load receipts"
 msgstr "加载收据失败"
 
+msgid "Failed to load RMA lines"
+msgstr ""
+
+msgid "Failed to load RMAs"
+msgstr ""
+
 msgid "Failed to load sales order lines"
 msgstr "加载销售订单行失败"
 
@@ -6411,6 +6433,12 @@ msgstr "加载货运失败"
 
 msgid "Failed to load supplier part details"
 msgstr "未能加载供应商零件详情"
+
+msgid "Failed to load supplier return lines"
+msgstr ""
+
+msgid "Failed to load supplier returns"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "加载跟踪实体失败"
@@ -8361,6 +8389,9 @@ msgstr "正在加载当前数量…"
 msgid "Loading item details..."
 msgstr "正在加载项目详情..."
 
+msgid "Loading returnable lines..."
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "使用 Carbon 的导入工具加载您自己的数据"
 
@@ -9766,6 +9797,9 @@ msgstr "无结果"
 msgid "No results found"
 msgstr "未找到结果"
 
+msgid "No returnable lines found for this customer"
+msgstr ""
+
 msgid "No rows here."
 msgstr "这里没有行。"
 
@@ -10719,6 +10753,9 @@ msgstr "从之前的步骤中选择值"
 
 msgid "Pick a variable…"
 msgstr "选择变量…"
+
+msgid "Pick expected serials/batches"
+msgstr ""
 
 msgid "Pick List"
 msgstr "拣货单"
@@ -12097,6 +12134,9 @@ msgstr "资源"
 msgid "Resources"
 msgstr "资源"
 
+msgid "Restock Fee Percent"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "从垃圾箱恢复"
 
@@ -12136,10 +12176,16 @@ msgstr "返回首页"
 msgid "Return Location"
 msgstr ""
 
+msgid "Return Quantity"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
 msgid "Return Reasons"
+msgstr ""
+
+msgid "returnable"
 msgstr ""
 
 msgid "Returned"
@@ -12274,6 +12320,12 @@ msgid "RMA"
 msgstr ""
 
 msgid "RMA ID"
+msgstr ""
+
+msgid "RMA Line"
+msgstr ""
+
+msgid "RMA Lines"
 msgstr ""
 
 msgid "RMA Number"
@@ -12872,6 +12924,9 @@ msgstr "选择客户类型"
 msgid "Select customers"
 msgstr "选择客户"
 
+msgid "Select disposition"
+msgstr ""
+
 msgid "Select Employee"
 msgstr "选择员工"
 
@@ -13034,6 +13089,9 @@ msgstr "序列号/批次 #"
 
 msgid "Serialize & sell your parts"
 msgstr "序列化并销售您的零件"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr ""
 
 msgid "service"
 msgstr "服务"
@@ -13236,6 +13294,9 @@ msgstr "发货地点"
 
 msgid "Shipments"
 msgstr "发货单"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "已发货数量"
@@ -13971,6 +14032,15 @@ msgstr "供应商参考"
 
 msgid "Supplier Reference"
 msgstr "供应商参考"
+
+msgid "Supplier Return"
+msgstr ""
+
+msgid "Supplier Return Line"
+msgstr ""
+
+msgid "Supplier Return Lines"
+msgstr ""
 
 msgid "Supplier Returns"
 msgstr ""

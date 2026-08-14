@@ -1062,6 +1062,9 @@ msgstr "Ajouter une ligne"
 msgid "Add Line Item"
 msgstr "Ajouter un article de ligne"
 
+msgid "Add Lines"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr ""
 
@@ -1173,6 +1176,10 @@ msgstr "Coût supplémentaire"
 
 msgid "Added"
 msgstr "Ajouté"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr ""
 
 msgid "Added for this customer"
 msgstr "Ajouté pour ce client"
@@ -6070,6 +6077,9 @@ msgstr "Réception prévue"
 msgid "Expected Receipt Date"
 msgstr "Date de réception prévue"
 
+msgid "Expected serials/batches"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Compte de dépenses pour les soldes clients radiés comme irrécouvrables lors du règlement des créances clients"
 
@@ -6201,6 +6211,12 @@ msgstr "Échoué"
 
 msgid "Failed features"
 msgstr "Caractéristiques échouées"
+
+msgid "Failed to add line"
+msgstr ""
+
+msgid "Failed to add lines"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6397,6 +6413,12 @@ msgstr "Échec du chargement des lignes de réception"
 msgid "Failed to load receipts"
 msgstr "Impossible de charger les reçus"
 
+msgid "Failed to load RMA lines"
+msgstr ""
+
+msgid "Failed to load RMAs"
+msgstr ""
+
 msgid "Failed to load sales order lines"
 msgstr "Impossible de charger les lignes de commande client"
 
@@ -6411,6 +6433,12 @@ msgstr "Impossible de charger les expéditions"
 
 msgid "Failed to load supplier part details"
 msgstr "Impossible de charger les détails de la pièce fournisseur"
+
+msgid "Failed to load supplier return lines"
+msgstr ""
+
+msgid "Failed to load supplier returns"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "Impossible de charger les entités suivies"
@@ -8361,6 +8389,9 @@ msgstr "Chargement de la quantité actuelle…"
 msgid "Loading item details..."
 msgstr "Chargement des détails de l'article..."
 
+msgid "Loading returnable lines..."
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Chargement de vos propres données avec les outils d'importation de Carbon"
 
@@ -9766,6 +9797,9 @@ msgstr "Aucun résultat"
 msgid "No results found"
 msgstr "Aucun résultat trouvé"
 
+msgid "No returnable lines found for this customer"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Pas de lignes ici."
 
@@ -10719,6 +10753,9 @@ msgstr "Choisir une valeur d'une étape antérieure"
 
 msgid "Pick a variable…"
 msgstr "Choisir une variable…"
+
+msgid "Pick expected serials/batches"
+msgstr ""
 
 msgid "Pick List"
 msgstr "Liste de prélèvement"
@@ -12097,6 +12134,9 @@ msgstr "ressources"
 msgid "Resources"
 msgstr "Ressources"
 
+msgid "Restock Fee Percent"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Restaurer à partir de la corbeille"
 
@@ -12136,10 +12176,16 @@ msgstr "Retour à l'accueil"
 msgid "Return Location"
 msgstr ""
 
+msgid "Return Quantity"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
 msgid "Return Reasons"
+msgstr ""
+
+msgid "returnable"
 msgstr ""
 
 msgid "Returned"
@@ -12274,6 +12320,12 @@ msgid "RMA"
 msgstr ""
 
 msgid "RMA ID"
+msgstr ""
+
+msgid "RMA Line"
+msgstr ""
+
+msgid "RMA Lines"
 msgstr ""
 
 msgid "RMA Number"
@@ -12872,6 +12924,9 @@ msgstr "Sélectionner les types de clients"
 msgid "Select customers"
 msgstr "Sélectionner les clients"
 
+msgid "Select disposition"
+msgstr ""
+
 msgid "Select Employee"
 msgstr "Sélectionner un employé"
 
@@ -13034,6 +13089,9 @@ msgstr "Numéro de série/lot"
 
 msgid "Serialize & sell your parts"
 msgstr "Sérialisez et vendez vos pièces"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr ""
 
 msgid "service"
 msgstr "service"
@@ -13236,6 +13294,9 @@ msgstr "Lieu d'expédition"
 
 msgid "Shipments"
 msgstr "Expéditions"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "Qté Expédiée"
@@ -13971,6 +14032,15 @@ msgstr "Référence fournisseur"
 
 msgid "Supplier Reference"
 msgstr "Référence Fournisseur"
+
+msgid "Supplier Return"
+msgstr ""
+
+msgid "Supplier Return Line"
+msgstr ""
+
+msgid "Supplier Return Lines"
+msgstr ""
 
 msgid "Supplier Returns"
 msgstr ""

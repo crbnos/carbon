@@ -1062,6 +1062,9 @@ msgstr "Satır Ekle"
 msgid "Add Line Item"
 msgstr "Satır Ekle"
 
+msgid "Add Lines"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr ""
 
@@ -1173,6 +1176,10 @@ msgstr "Ek Üst Ek Maliyeti"
 
 msgid "Added"
 msgstr "Eklendi"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr ""
 
 msgid "Added for this customer"
 msgstr "Bu müşteri için eklendi"
@@ -6070,6 +6077,9 @@ msgstr "Beklenen Teslim Alma"
 msgid "Expected Receipt Date"
 msgstr "Beklenen Teslim Alma Tarihi"
 
+msgid "Expected serials/batches"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Müşteri bakiyelerinin AR kapatılması sırasında tahsil edilemez olarak silinen gider hesabı"
 
@@ -6201,6 +6211,12 @@ msgstr "Başarısız"
 
 msgid "Failed features"
 msgstr "Başarısız özellikler"
+
+msgid "Failed to add line"
+msgstr ""
+
+msgid "Failed to add lines"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6397,6 +6413,12 @@ msgstr "Makbuzu satırları yüklenemedi"
 msgid "Failed to load receipts"
 msgstr "Makbuzu yüklenemedi"
 
+msgid "Failed to load RMA lines"
+msgstr ""
+
+msgid "Failed to load RMAs"
+msgstr ""
+
 msgid "Failed to load sales order lines"
 msgstr "Satın alma sipariş satırları yüklenemedi"
 
@@ -6411,6 +6433,12 @@ msgstr "Sevkiyatlar yüklenemedi"
 
 msgid "Failed to load supplier part details"
 msgstr "Tedarikçi parça detayları yüklenemedi"
+
+msgid "Failed to load supplier return lines"
+msgstr ""
+
+msgid "Failed to load supplier returns"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "Takip edilen varlıklar yüklenemedi"
@@ -8361,6 +8389,9 @@ msgstr "Geçerli miktar yükleniyor…"
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
 
+msgid "Loading returnable lines..."
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carbon'ın içe aktarma araçlarıyla kendi verilerinizi yükleme"
 
@@ -9766,6 +9797,9 @@ msgstr "Sonuç bulunamadı"
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
 
+msgid "No returnable lines found for this customer"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Burada satır yok."
 
@@ -10719,6 +10753,9 @@ msgstr "Önceki bir adımdan bir değer seçin"
 
 msgid "Pick a variable…"
 msgstr "Bir değişken seçin…"
+
+msgid "Pick expected serials/batches"
+msgstr ""
 
 msgid "Pick List"
 msgstr "Seçim Listesi"
@@ -12097,6 +12134,9 @@ msgstr "kaynaklar"
 msgid "Resources"
 msgstr "Kaynaklar"
 
+msgid "Restock Fee Percent"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Çöp'ten Geri Yükle"
 
@@ -12136,10 +12176,16 @@ msgstr "Ana Sayfaya Dön"
 msgid "Return Location"
 msgstr ""
 
+msgid "Return Quantity"
+msgstr ""
+
 msgid "Return Reason"
 msgstr ""
 
 msgid "Return Reasons"
+msgstr ""
+
+msgid "returnable"
 msgstr ""
 
 msgid "Returned"
@@ -12274,6 +12320,12 @@ msgid "RMA"
 msgstr ""
 
 msgid "RMA ID"
+msgstr ""
+
+msgid "RMA Line"
+msgstr ""
+
+msgid "RMA Lines"
 msgstr ""
 
 msgid "RMA Number"
@@ -12872,6 +12924,9 @@ msgstr "Müşteri türü seçin"
 msgid "Select customers"
 msgstr "Müşterileri seçin"
 
+msgid "Select disposition"
+msgstr ""
+
 msgid "Select Employee"
 msgstr "Çalışan Seç"
 
@@ -13034,6 +13089,9 @@ msgstr "Seri/Parti No"
 
 msgid "Serialize & sell your parts"
 msgstr "Parçalarınızı seri hale getirin ve satın"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr ""
 
 msgid "service"
 msgstr "hizmet"
@@ -13236,6 +13294,9 @@ msgstr "Gönderim Konumu"
 
 msgid "Shipments"
 msgstr "Sevkiyatlar"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "Sevk Edilen Miktar"
@@ -13971,6 +14032,15 @@ msgstr "Tedarikçi referansı"
 
 msgid "Supplier Reference"
 msgstr "Tedarikçi Referansı"
+
+msgid "Supplier Return"
+msgstr ""
+
+msgid "Supplier Return Line"
+msgstr ""
+
+msgid "Supplier Return Lines"
+msgstr ""
 
 msgid "Supplier Returns"
 msgstr ""
