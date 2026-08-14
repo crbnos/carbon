@@ -36,7 +36,8 @@ export async function action({ request }: ActionFunctionArgs) {
       "Insufficient quantity for negative adjustment",
       "Serial number not found",
       "Batch number not found",
-      "Tracked entity not found"
+      "Tracked entity not found",
+      "Multiple tracked entities in this storage unit — select a specific row to adjust"
     ].includes(itemLedger.error.message)
       ? itemLedger.error.message
       : "Failed to create manual inventory adjustment";

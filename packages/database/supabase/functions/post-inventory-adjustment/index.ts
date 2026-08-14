@@ -892,21 +892,25 @@ serve(async (req: Request) => {
               })
               .execute();
           } else {
-            const entityUpdate: Record<string, unknown> = {
-              quantity: movement.entityQuantityBefore + signedQuantity,
-            };
-            // Only the row the user actually selected may be renamed; a row
-            // reached by drawdown keeps its own batch/serial number.
-            if (
+            // Relative, not absolute. trackedEntity.quantity is the entity's
+            // total across every storage unit, while the snapshot this plan was
+            // built from groups by (storageUnitId, trackedEntityId) — so
+            // `entityQuantityBefore` describes one bin. Writing it back as the
+            // total would erase whatever the same entity holds elsewhere.
+            // Applying the delta keeps the total right and is safe against a
+            // concurrent write. Same idiom as correct-stock-movement.
+            const renames =
               selectedEntityId === movement.trackedEntityId &&
               readableId !== undefined &&
-              readableId !== null
-            ) {
-              entityUpdate.readableId = readableId;
-            }
+              readableId !== null;
             await trx
               .updateTable("trackedEntity")
-              .set(entityUpdate)
+              .set((eb) => ({
+                quantity: eb("quantity", "+", signedQuantity),
+                // Only the row the user actually selected may be renamed; a row
+                // reached by drawdown keeps its own batch/serial number.
+                ...(renames ? { readableId } : {}),
+              }))
               .where("id", "=", movement.trackedEntityId)
               .where("companyId", "=", companyId)
               .execute();

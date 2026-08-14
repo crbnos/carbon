@@ -302,6 +302,189 @@ Deno.test("row-scoped negative adjustment beyond the row is refused", () => {
   });
 });
 
+Deno.test("fractional drawdown is not defeated by floating-point residue", () => {
+  // 0.9 - 0.3 - 0.6 leaves ~1.1e-16, which a strict remaining > 0 check would
+  // report as a shortage on an adjustment that in fact balances exactly.
+  const result = resolveAdjustmentPlan({
+    adjustmentType: "Set Quantity",
+    quantity: 0,
+    storageUnitId: BIN,
+    trackedEntityId: null,
+    readableId: null,
+    itemTrackingType: "Batch",
+    trackingRows: [
+      {
+        trackedEntityId: null,
+        storageUnitId: BIN,
+        quantity: 0.3,
+        readableId: null,
+      },
+      {
+        trackedEntityId: "te_a",
+        storageUnitId: BIN,
+        quantity: 0.6,
+        readableId: "A",
+      },
+    ],
+    newEntityId: () => "new",
+  });
+  assertEquals(result.ok, true);
+});
+
+Deno.test("drawdown order does not depend on snapshot order", () => {
+  const rows: TrackingQuantityRow[] = [
+    { trackedEntityId: "te_c", storageUnitId: BIN, quantity: 1, readableId: "C" },
+    { trackedEntityId: "te_a", storageUnitId: BIN, quantity: 1, readableId: "A" },
+    { trackedEntityId: "te_b", storageUnitId: BIN, quantity: 1, readableId: "B" },
+  ];
+  const batchesConsumed = (
+    trackingRows: TrackingQuantityRow[]
+  ): (string | null)[] => {
+    const result = resolveAdjustmentPlan({
+      adjustmentType: "Set Quantity",
+      quantity: 1,
+      storageUnitId: BIN,
+      trackedEntityId: null,
+      readableId: null,
+      itemTrackingType: "Batch",
+      trackingRows,
+      newEntityId: () => "new",
+    });
+    if (!result.ok) throw new Error("expected a resolvable plan");
+    return result.movements.map((m) =>
+      m.kind === "entity" ? m.readableId : "untracked"
+    );
+  };
+  // Same bin, two different query orders, same lots consumed.
+  assertEquals(batchesConsumed(rows), ["A", "B"]);
+  assertEquals(batchesConsumed([...rows].reverse()), ["A", "B"]);
+});
+
+Deno.test("a batch drawn down to zero is reused, not duplicated", () => {
+  // Minting a second entity with the same readableId would split that batch's
+  // history and break reconciliation by batch number.
+  const result = resolveAdjustmentPlan({
+    adjustmentType: "Positive Adjmt.",
+    quantity: 5,
+    storageUnitId: BIN,
+    trackedEntityId: null,
+    readableId: "55772",
+    itemTrackingType: "Batch",
+    trackingRows: [
+      {
+        trackedEntityId: "te_55772",
+        storageUnitId: BIN,
+        quantity: 0,
+        readableId: "55772",
+      },
+    ],
+    newEntityId: () => "should_not_be_used",
+  });
+  assertEquals(result, {
+    ok: true,
+    movements: [
+      {
+        kind: "entity",
+        entryType: "Positive Adjmt.",
+        quantity: 5,
+        trackedEntityId: "te_55772",
+        readableId: "55772",
+        isNew: false,
+        entityQuantityBefore: 0,
+      },
+    ],
+  });
+});
+
+Deno.test("an existing batch in another bin is reused rather than duplicated", () => {
+  const result = resolveAdjustmentPlan({
+    adjustmentType: "Positive Adjmt.",
+    quantity: 2,
+    storageUnitId: BIN,
+    trackedEntityId: null,
+    readableId: "55772",
+    itemTrackingType: "Batch",
+    trackingRows: [
+      {
+        trackedEntityId: "te_55772",
+        storageUnitId: "bin-other",
+        quantity: 7,
+        readableId: "55772",
+      },
+    ],
+    newEntityId: () => "should_not_be_used",
+  });
+  assertEquals(result.ok, true);
+  if (!result.ok) return;
+  assertEquals(result.movements[0], {
+    kind: "entity",
+    entryType: "Positive Adjmt.",
+    quantity: 2,
+    trackedEntityId: "te_55772",
+    readableId: "55772",
+    isNew: false,
+    entityQuantityBefore: 7,
+  });
+});
+
+Deno.test("a zero-quantity batch still cannot satisfy a negative adjustment", () => {
+  // The positive path reuses a depleted batch; the negative path must not
+  // pretend it has stock.
+  const result = resolveAdjustmentPlan({
+    adjustmentType: "Negative Adjmt.",
+    quantity: 1,
+    storageUnitId: BIN,
+    trackedEntityId: null,
+    readableId: "55772",
+    itemTrackingType: "Batch",
+    trackingRows: [
+      {
+        trackedEntityId: "te_55772",
+        storageUnitId: BIN,
+        quantity: 0,
+        readableId: "55772",
+      },
+    ],
+    newEntityId: () => "new",
+  });
+  assertEquals(result, { ok: false, error: "Batch number not found" });
+});
+
+Deno.test("a selected row resolves against the bin being adjusted", () => {
+  // The snapshot groups by (storageUnitId, trackedEntityId), so one entity can
+  // appear in several bins. entityQuantityBefore must describe this bin — it
+  // drives the sufficiency check.
+  const result = resolveAdjustmentPlan({
+    adjustmentType: "Negative Adjmt.",
+    quantity: 3,
+    storageUnitId: BIN,
+    trackedEntityId: "te_split",
+    readableId: null,
+    itemTrackingType: "Batch",
+    trackingRows: [
+      {
+        trackedEntityId: "te_split",
+        storageUnitId: "bin-other",
+        quantity: 50,
+        readableId: "SPLIT",
+      },
+      {
+        trackedEntityId: "te_split",
+        storageUnitId: BIN,
+        quantity: 2,
+        readableId: "SPLIT",
+      },
+    ],
+    newEntityId: () => "new",
+  });
+  // Only 2 in this bin, so removing 3 is refused even though the entity holds
+  // 52 in total.
+  assertEquals(result, {
+    ok: false,
+    error: "Insufficient quantity for negative adjustment",
+  });
+});
+
 Deno.test("rows in other bins are ignored", () => {
   const result = resolveAdjustmentPlan({
     adjustmentType: "Set Quantity",

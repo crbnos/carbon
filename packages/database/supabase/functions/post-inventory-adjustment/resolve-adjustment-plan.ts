@@ -76,8 +76,42 @@ const INSUFFICIENT = "Insufficient quantity for negative adjustment";
 const AMBIGUOUS =
   "Multiple tracked entities in this storage unit — select a specific row to adjust";
 
+// Quantities are NUMERIC, so a multi-bucket drawdown accumulates binary
+// floating-point residue: 0.9 - 0.3 - 0.6 leaves ~1.1e-16, and a strict
+// `remaining > 0` would reject a reconciliation that in fact balances.
+const EPSILON = 1e-9;
+
+// "a is meaningfully greater than b" — every sufficiency check goes through
+// this so a request for exactly what is on hand is never rejected by residue.
+const exceeds = (a: number, b: number) => a - b > EPSILON;
+
+// Deterministic drawdown order. The snapshot comes from a GROUP BY with no
+// ORDER BY, so query order is not stable and the same adjustment could
+// otherwise deplete different lots run to run. Batch numbers here are commonly
+// date-coded (260112-INC-01), so lexical order approximates oldest-first;
+// trackedEntityId breaks ties. This is reproducibility, NOT true FEFO —
+// expiration dates are not in this snapshot, so a real
+// first-expiry-first-out policy needs them plumbed through separately.
+function inDrawdownOrder(
+  rows: TrackingQuantityRow[]
+): TrackingQuantityRow[] {
+  return [...rows].sort((a, b) => {
+    const aId = a.readableId ?? "";
+    const bId = b.readableId ?? "";
+    // Rows with no batch/serial number sort last.
+    if (aId !== bId) {
+      if (aId === "") return 1;
+      if (bId === "") return -1;
+      return aId < bId ? -1 : 1;
+    }
+    const aKey = a.trackedEntityId ?? "";
+    const bKey = b.trackedEntityId ?? "";
+    return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
+  });
+}
+
 // Reconciling a bin total: draw `amount` out untracked-bucket first, then
-// tracked rows in snapshot order. Multi-source on purpose — a bin holding 101
+// tracked rows in drawdown order. Multi-source on purpose — a bin holding 101
 // untracked + 2 batch-tracked cannot be set to 1 without crossing both
 // buckets, which is exactly the adjustment the old resolver refused. Only
 // `Set Quantity` gets this: the user has stated the resulting total, so
@@ -100,8 +134,8 @@ function drawDownAcrossBin(
     remaining -= take;
   }
 
-  for (const row of trackedRows) {
-    if (remaining <= 0) break;
+  for (const row of inDrawdownOrder(trackedRows)) {
+    if (remaining <= EPSILON) break;
     const available = qty(row);
     if (available <= 0) continue;
     const take = Math.min(remaining, available);
@@ -117,7 +151,7 @@ function drawDownAcrossBin(
     remaining -= take;
   }
 
-  if (remaining > 0) return { ok: false, error: INSUFFICIENT };
+  if (remaining > EPSILON) return { ok: false, error: INSUFFICIENT };
   return { ok: true, movements };
 }
 
@@ -131,7 +165,9 @@ function drawDownSingleSource(
   trackedRows: TrackingQuantityRow[]
 ): AdjustmentPlan {
   if (untrackedOnHand > 0) {
-    if (amount > untrackedOnHand) return { ok: false, error: INSUFFICIENT };
+    if (exceeds(amount, untrackedOnHand)) {
+      return { ok: false, error: INSUFFICIENT };
+    }
     return {
       ok: true,
       movements: [
@@ -146,7 +182,7 @@ function drawDownSingleSource(
 
   const row = withStock[0];
   const available = qty(row);
-  if (amount > available) return { ok: false, error: INSUFFICIENT };
+  if (exceeds(amount, available)) return { ok: false, error: INSUFFICIENT };
   return {
     ok: true,
     movements: [
@@ -187,13 +223,33 @@ export function resolveAdjustmentPlan(
 
   // Row-scoped when the payload's entity actually exists in the snapshot: the
   // user picked a row's "Adjust" action. An unmatched id means "create this".
+  //
+  // Prefer the row in the bin being adjusted. The snapshot groups by
+  // (storageUnitId, trackedEntityId), so an entity holding stock in several
+  // bins has several rows, and `entityQuantityBefore` must describe the bin
+  // this adjustment touches — it drives the sufficiency check. The unscoped
+  // find is only a fallback so a selection is never silently lost.
   const selectedRow = trackedEntityId
-    ? trackingRows.find((r) => r.trackedEntityId == trackedEntityId)
+    ? (trackedBinRows.find((r) => r.trackedEntityId == trackedEntityId) ??
+      trackingRows.find((r) => r.trackedEntityId == trackedEntityId))
     : undefined;
 
-  // A readable id the user typed that already names stock in this bin.
-  const namedRow = readableId
+  // A readable id the user typed that already names stock in this bin. Removing
+  // stock needs a row that actually holds some...
+  const namedRowWithStock = readableId
     ? trackedBinRows.find((r) => r.readableId === readableId && qty(r) > 0)
+    : undefined;
+
+  // ...but ADDING only needs the batch/serial to exist. A batch that has been
+  // drawn down to zero is still that batch: minting a second entity carrying
+  // the same readableId would split its history and break reconciliation by
+  // batch number. Falls back to any bin so one batch number stays one entity.
+  const namedRow = readableId
+    ? (namedRowWithStock ??
+      trackedBinRows.find((r) => r.readableId === readableId) ??
+      trackingRows.find(
+        (r) => r.trackedEntityId != null && r.readableId === readableId
+      ))
     : undefined;
 
   if (adjustmentType === "Set Quantity") {
@@ -201,7 +257,7 @@ export function resolveAdjustmentPlan(
       // Unchanged behavior: setting a specific tracked row's own quantity.
       const before = qty(selectedRow);
       const delta = quantity - before;
-      if (delta === 0) return { ok: true, movements: [] };
+      if (Math.abs(delta) <= EPSILON) return { ok: true, movements: [] };
       return {
         ok: true,
         movements: [
@@ -222,7 +278,7 @@ export function resolveAdjustmentPlan(
     // The target is the bin TOTAL across tracked and untracked stock, which is
     // the number the user is reading off the page.
     const delta = quantity - binOnHand;
-    if (delta === 0) return { ok: true, movements: [] };
+    if (Math.abs(delta) <= EPSILON) return { ok: true, movements: [] };
     if (delta < 0) {
       return drawDownAcrossBin(-delta, untrackedOnHand, trackedBinRows);
     }
@@ -259,7 +315,7 @@ export function resolveAdjustmentPlan(
   // Negative Adjmt.
   if (selectedRow) {
     const before = qty(selectedRow);
-    if (quantity > before) return { ok: false, error: INSUFFICIENT };
+    if (exceeds(quantity, before)) return { ok: false, error: INSUFFICIENT };
     return {
       ok: true,
       movements: [
@@ -282,9 +338,9 @@ export function resolveAdjustmentPlan(
     // was switched on after it had stock, the quantity the user is trying to
     // remove genuinely has no batch number, and refusing the adjustment leaves
     // that stock permanently unadjustable.
-    if (namedRow) {
-      const before = qty(namedRow);
-      if (quantity > before) return { ok: false, error: INSUFFICIENT };
+    if (namedRowWithStock) {
+      const before = qty(namedRowWithStock);
+      if (exceeds(quantity, before)) return { ok: false, error: INSUFFICIENT };
       return {
         ok: true,
         movements: [
@@ -292,8 +348,8 @@ export function resolveAdjustmentPlan(
             kind: "entity",
             entryType: "Negative Adjmt.",
             quantity,
-            trackedEntityId: namedRow.trackedEntityId as string,
-            readableId: namedRow.readableId,
+            trackedEntityId: namedRowWithStock.trackedEntityId as string,
+            readableId: namedRowWithStock.readableId,
             isNew: false,
             entityQuantityBefore: before,
           },
@@ -303,7 +359,9 @@ export function resolveAdjustmentPlan(
     if (untrackedOnHand <= 0) {
       return { ok: false, error: notFoundMessage(itemTrackingType) };
     }
-    if (quantity > untrackedOnHand) return { ok: false, error: INSUFFICIENT };
+    if (exceeds(quantity, untrackedOnHand)) {
+      return { ok: false, error: INSUFFICIENT };
+    }
     return {
       ok: true,
       movements: [
