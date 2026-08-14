@@ -707,6 +707,9 @@ msgstr "Поставщик создан"
 msgid "A supplier is deleted"
 msgstr "Поставщик удален"
 
+msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
+msgstr ""
+
 msgid "A supplier's account manager changes"
 msgstr "Менеджер счета поставщика изменяется"
 
@@ -1648,6 +1651,9 @@ msgstr "Вы уверены, что хотите отменить эту раб�
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr ""
 
+msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
+msgstr ""
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Вы уверены, что хотите изменить свойство {propertyName}? Поскольку вы используете сгенерированные ID материалов, это изменит ID детали этой детали и все связанные редакции."
 
@@ -1657,11 +1663,17 @@ msgstr ""
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "Вы уверены, что хотите завершить этот перевод запасов?"
 
+msgid "Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed."
+msgstr ""
+
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr ""
 
 msgid "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
 msgstr "Вы уверены, что хотите подтвердить этот заказ? Подтверждение заказа повлияет на количества заказов, используемые для расчета предложения и спроса."
+
+msgid "Are you sure you want to confirm this supplier return? Confirming authorizes the goods on the lines to be shipped back to the supplier."
+msgstr ""
 
 msgid "Are you sure you want to convert the RFQ to a quote?"
 msgstr "Вы уверены, что хотите преобразовать RFQ в предложение?"
@@ -2619,6 +2631,7 @@ msgstr "Не удается загрузить этот файл"
 msgid "Cancel"
 msgstr "Отмена"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr ""
@@ -2637,6 +2650,9 @@ msgstr "Отменить заказ"
 
 msgid "Cancel Purchase Order"
 msgstr "Отменить заказ на покупку"
+
+msgid "Cancel Return"
+msgstr ""
 
 msgid "Cancel RMA"
 msgstr ""
@@ -3112,6 +3128,7 @@ msgstr "Сравнить предложения поставщиков"
 msgid "Complete"
 msgstr "Завершить"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Complete {0}"
 msgstr ""
@@ -3242,6 +3259,7 @@ msgstr "Настроено"
 msgid "Confirm"
 msgstr "Подтвердить"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
 #. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
@@ -3529,6 +3547,9 @@ msgstr ""
 msgid "Copy link to service"
 msgstr "Копировать ссылку на услугу"
 
+msgid "Copy link to supplier return"
+msgstr ""
+
 msgid "Copy link to tool"
 msgstr "Скопировать ссылку на инструмент"
 
@@ -3576,6 +3597,9 @@ msgstr "Копировать предложение"
 
 msgid "Copy Quote number"
 msgstr "Копировать номер предложения"
+
+msgid "Copy return number"
+msgstr ""
 
 msgid "Copy RMA number"
 msgstr ""
@@ -4019,6 +4043,9 @@ msgstr "Кредитовые счета, используемые при пог�
 
 msgid "Credit Memo"
 msgstr "Кредит-нота"
+
+msgid "credited"
+msgstr ""
 
 msgid "Credited"
 msgstr ""
@@ -4824,6 +4851,9 @@ msgstr "Удалить поставщика"
 
 msgid "Delete Supplier Quote"
 msgstr "Удалить предложение поставщика"
+
+msgid "Delete Supplier Return"
+msgstr ""
 
 msgid "Delete Supplier Type"
 msgstr "Удалить тип поставщика"
@@ -8298,6 +8328,10 @@ msgstr "Вероятность"
 msgid "Line"
 msgstr ""
 
+#. placeholder {0}: line.lineNumber
+msgid "Line {0}"
+msgstr ""
+
 msgid "Line description (optional)"
 msgstr "Описание строки (необязательно)"
 
@@ -8388,6 +8422,9 @@ msgstr "Загружается в последнюю очередь, прямо 
 
 msgid "Loading associated jobs..."
 msgstr "Загрузка связанных заданий..."
+
+msgid "Loading creditable lines..."
+msgstr ""
 
 msgid "Loading current quantity…"
 msgstr "Загрузка текущего количества…"
@@ -9404,6 +9441,9 @@ msgstr "Новый поставщик"
 msgid "New Supplier Part"
 msgstr "Новая деталь поставщика"
 
+msgid "New Supplier Return"
+msgstr ""
+
 msgid "New Timecard"
 msgstr "Новая табель учета рабочего времени"
 
@@ -9781,6 +9821,9 @@ msgstr ""
 
 msgid "No receivables"
 msgstr "Нет дебиторской задолженности"
+
+msgid "No received quantity remains creditable"
+msgstr ""
 
 msgid "No records found"
 msgstr "Записи не найдены"
@@ -10562,6 +10605,9 @@ msgstr "Частично"
 msgid "Partially Received"
 msgstr ""
 
+msgid "Partially Shipped"
+msgstr ""
+
 msgid "Partner"
 msgstr "Партнер"
 
@@ -10768,6 +10814,9 @@ msgstr "Список подбора"
 
 msgid "Pick Order"
 msgstr "Порядок комплектации"
+
+msgid "Pick serials/batches to return"
+msgstr ""
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Выберите контейнер, который нуждается в запасе, затем выберите контейнеры, из которых его извлечь."
@@ -11726,6 +11775,9 @@ msgstr "Получить платеж · {0} счетов"
 msgid "Receive to Inventory"
 msgstr "Получить в инвентарь"
 
+msgid "received"
+msgstr ""
+
 msgid "Received"
 msgstr "Получено"
 
@@ -11742,6 +11794,9 @@ msgstr "Получено от"
 
 msgid "Received Qty"
 msgstr "Полученное кол-во"
+
+msgid "Received quantity not yet credited. The credit memo is created as a draft."
+msgstr ""
 
 msgid "Receiving Location"
 msgstr "Место получения"
@@ -12143,6 +12198,9 @@ msgstr "Ресурсы"
 msgid "Restock Fee Percent"
 msgstr ""
 
+msgid "Restocking fee"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Восстановить из корзины"
 
@@ -12164,6 +12222,9 @@ msgstr "Результатов на странице"
 msgid "Resume Receiving"
 msgstr "Возобновить получение"
 
+msgid "Resume Shipping"
+msgstr ""
+
 msgid "Retained Earnings"
 msgstr "Нераспределенная прибыль"
 
@@ -12178,6 +12239,9 @@ msgstr "Повторить"
 
 msgid "Return Home"
 msgstr "Вернуться на главную"
+
+msgid "Return ID"
+msgstr ""
 
 msgid "Return Location"
 msgstr ""
@@ -13096,7 +13160,13 @@ msgstr "Серийный номер/Партия №"
 msgid "Serialize & sell your parts"
 msgstr "Сериализуйте и продавайте свои детали"
 
+msgid "Serials and batches on hand that were received from this supplier"
+msgstr ""
+
 msgid "Serials and batches previously shipped to this customer"
+msgstr ""
+
+msgid "Serials/batches to return"
 msgstr ""
 
 msgid "service"
@@ -13300,6 +13370,9 @@ msgstr "Местоположение отправки"
 
 msgid "Shipments"
 msgstr "Отправки"
+
+msgid "Shipped"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr ""
@@ -13563,6 +13636,9 @@ msgstr "Список источников"
 msgid "Source Method"
 msgstr "Исходный метод"
 
+msgid "Source Purchase Order"
+msgstr ""
+
 msgid "Source Sales Order"
 msgstr ""
 
@@ -13774,6 +13850,9 @@ msgstr "Прекратить создание заказов на покупку
 
 msgid "Stop Receiving"
 msgstr "Остановить получение"
+
+msgid "Stop Shipping"
+msgstr ""
 
 msgid "Storage client not available"
 msgstr "Клиент хранилища недоступен"
@@ -14052,6 +14131,9 @@ msgid "Supplier Return Lines"
 msgstr ""
 
 msgid "Supplier Returns"
+msgstr ""
+
+msgid "Supplier RMA #"
 msgstr ""
 
 msgid "Supplier Status"
@@ -14650,6 +14732,9 @@ msgstr "Состояние жизненного цикла этого поста
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Местный часовой пояс, в котором это местоположение сообщает время; расписания, табели учета рабочего времени и часы смены в этом месте интерпретируются в этом часовом поясе независимо от локали браузера пользователя."
 
+msgid "The location the goods will be shipped from"
+msgstr ""
+
 msgid "The location this employee defaults to; drives timezone interpretation on their timecards and the default shift selectors on their job record."
 msgstr "Местоположение, на которое этот сотрудник установлен по умолчанию; определяет интерпретацию часового пояса в его табелях учета рабочего времени и селекторы смены по умолчанию в его записи о работе."
 
@@ -14947,6 +15032,9 @@ msgstr "Собственная ссылка поставщика на этот �
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "Номер упаковочного или отправочного списка поставщика, записанный для аудита; не используется никакой логикой учета."
+
+msgid "The supplier's return authorization number"
+msgstr ""
 
 msgid "The suppliers and vendors you buy from"
 msgstr "Поставщики и продавцы, у которых вы покупаете"
@@ -16260,6 +16348,9 @@ msgstr "Просмотр квитанции"
 msgid "View Receivables"
 msgstr "Просмотр дебиторской задолженности"
 
+msgid "View replacement purchase order"
+msgstr ""
+
 msgid "View replacement sales order"
 msgstr ""
 
@@ -16271,6 +16362,9 @@ msgstr "Просмотреть запланированные"
 
 msgid "View Shipment"
 msgstr "Просмотр отправки"
+
+msgid "View source purchase order"
+msgstr ""
 
 msgid "View source sales order"
 msgstr ""

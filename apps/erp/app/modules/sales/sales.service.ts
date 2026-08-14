@@ -7403,3 +7403,172 @@ export async function createReplacementSalesOrder(
 
   return { data: { id: salesOrderId }, error: null };
 }
+
+/**
+ * Set an RMA line's disposition. "Use As Is" additionally releases the line's
+ * returned (On Hold) tracked entities to Available and records one
+ * `trackedActivity` (+ one input per entity) for the genealogy — the same
+ * shape the NCR disposition writes. Scrap/Rework are set via Issue escalation
+ * (the line's issue route), not through this function's callers' UI, but the
+ * write itself is shared: those dispositions have no entity side effects here.
+ */
+export async function setSalesReturnOrderLineDisposition(
+  client: SupabaseClient<Database>,
+  {
+    lineId,
+    companyId,
+    disposition,
+    userId
+  }: {
+    lineId: string;
+    companyId: string;
+    disposition: Database["public"]["Enums"]["disposition"];
+    userId: string;
+  }
+): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
+  const line = await client
+    .from("salesReturnOrderLine")
+    .select("id, salesReturnOrderId, quantityReceived")
+    .eq("id", lineId)
+    .eq("companyId", companyId)
+    .single();
+  if (line.error) return { data: null, error: line.error };
+
+  if (
+    disposition !== "Pending" &&
+    Number(line.data.quantityReceived ?? 0) <= 0
+  ) {
+    return {
+      data: null,
+      error: {
+        message: "Cannot set a disposition before any quantity is received"
+      } as PostgrestError
+    };
+  }
+
+  const update = await client
+    .from("salesReturnOrderLine")
+    .update({
+      disposition,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", lineId)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+  if (update.error) return { data: null, error: update.error };
+
+  if (disposition !== "Use As Is") {
+    return { data: { id: lineId }, error: null };
+  }
+
+  const order = await client
+    .from("salesReturnOrder")
+    .select("id, salesReturnOrderId")
+    .eq("id", line.data.salesReturnOrderId)
+    .eq("companyId", companyId)
+    .single();
+  if (order.error) return { data: null, error: order.error };
+
+  // The line's returned entities: expected serials/batches linked to the line
+  // that are still On Hold from receipt...
+  const linked = await client
+    .from("salesReturnOrderLineTrackedEntity")
+    .select("trackedEntityId, trackedEntity(status)")
+    .eq("salesReturnOrderLineId", lineId)
+    .eq("companyId", companyId);
+  if (linked.error) return { data: null, error: linked.error };
+
+  const linkedOnHoldIds = (linked.data ?? [])
+    .filter((row) => row.trackedEntity?.status === "On Hold")
+    .map((row) => row.trackedEntityId);
+
+  // ...plus blind returns: On Hold entities created at receipt against this
+  // RMA line's receipt lines, which have no salesReturnOrderLineTrackedEntity
+  // row because the customer never declared them up front.
+  const receipts = await client
+    .from("receipt")
+    .select("id")
+    .eq("sourceDocument", "Sales Return Order")
+    .eq("sourceDocumentId", line.data.salesReturnOrderId)
+    .eq("companyId", companyId);
+  if (receipts.error) return { data: null, error: receipts.error };
+
+  let blindOnHoldIds: string[] = [];
+  const receiptIds = (receipts.data ?? []).map((receipt) => receipt.id);
+  if (receiptIds.length > 0) {
+    const receiptLines = await client
+      .from("receiptLine")
+      .select("id")
+      .in("receiptId", receiptIds)
+      .eq("lineId", lineId)
+      .eq("companyId", companyId);
+    if (receiptLines.error) return { data: null, error: receiptLines.error };
+
+    const receiptLineIds = (receiptLines.data ?? []).map((row) => row.id);
+    if (receiptLineIds.length > 0) {
+      const blind = await client
+        .from("trackedEntity")
+        .select("id")
+        .eq("companyId", companyId)
+        .eq("status", "On Hold")
+        .in("attributes ->> Receipt Line", receiptLineIds);
+      if (blind.error) return { data: null, error: blind.error };
+      blindOnHoldIds = (blind.data ?? []).map((entity) => entity.id);
+    }
+  }
+
+  const entityIds = Array.from(
+    new Set([...linkedOnHoldIds, ...blindOnHoldIds])
+  );
+  if (entityIds.length === 0) {
+    return { data: { id: lineId }, error: null };
+  }
+
+  const entities = await client
+    .from("trackedEntity")
+    .select("id, quantity")
+    .in("id", entityIds)
+    .eq("companyId", companyId);
+  if (entities.error) return { data: null, error: entities.error };
+
+  const flip = await client
+    .from("trackedEntity")
+    .update({ status: "Available" })
+    .in("id", entityIds)
+    .eq("companyId", companyId);
+  if (flip.error) return { data: null, error: flip.error };
+
+  const activity = await client
+    .from("trackedActivity")
+    .insert({
+      type: "Disposition",
+      sourceDocument: "Sales Return Order",
+      sourceDocumentId: order.data.id,
+      sourceDocumentReadableId: order.data.salesReturnOrderId,
+      attributes: {
+        "Sales Return Order": order.data.id,
+        Disposition: disposition,
+        Employee: userId
+      },
+      companyId,
+      createdBy: userId
+    })
+    .select("id")
+    .single();
+  if (activity.error) return { data: null, error: activity.error };
+
+  const inputs = await client.from("trackedActivityInput").insert(
+    (entities.data ?? []).map((entity) => ({
+      trackedActivityId: activity.data.id,
+      trackedEntityId: entity.id,
+      quantity: Number(entity.quantity ?? 1),
+      companyId,
+      createdBy: userId
+    }))
+  );
+  if (inputs.error) return { data: null, error: inputs.error };
+
+  return { data: { id: lineId }, error: null };
+}

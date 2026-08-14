@@ -30,6 +30,7 @@ import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
+import SalesReturnOrderCreditModal from "./SalesReturnOrderCreditModal";
 import SalesReturnOrderStatus from "./SalesReturnOrderStatus";
 import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
 
@@ -58,6 +59,7 @@ const SalesReturnOrderHeader = () => {
   const confirmDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
   const completeDisclosure = useDisclosure();
+  const creditDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
   const canUpdate = permissions.can("update", "sales");
@@ -153,11 +155,11 @@ const SalesReturnOrderHeader = () => {
 
             {!["Draft", "Cancelled"].includes(status ?? "") && (
               <>
-                {/* TODO: credit modal wired in follow-up */}
                 <Button
                   leftIcon={<LuCreditCard />}
                   variant="secondary"
-                  isDisabled
+                  isDisabled={!permissions.can("create", "invoicing")}
+                  onClick={creditDisclosure.onOpen}
                 >
                   <Trans>Issue Credit</Trans>
                 </Button>
@@ -243,6 +245,13 @@ const SalesReturnOrderHeader = () => {
         >
           <input type="hidden" name="status" value="Completed" />
         </Confirm>
+      )}
+
+      {creditDisclosure.isOpen && (
+        <SalesReturnOrderCreditModal
+          currencyCode={salesReturnOrder.currencyCode ?? undefined}
+          onClose={creditDisclosure.onClose}
+        />
       )}
 
       {deleteDisclosure.isOpen && (

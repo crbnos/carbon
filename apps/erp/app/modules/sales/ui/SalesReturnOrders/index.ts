@@ -1,4 +1,5 @@
 import ReturnableLinesModal from "./ReturnableLinesModal";
+import SalesReturnOrderCreditModal from "./SalesReturnOrderCreditModal";
 import SalesReturnOrderExplorer from "./SalesReturnOrderExplorer";
 import SalesReturnOrderForm from "./SalesReturnOrderForm";
 import SalesReturnOrderHeader from "./SalesReturnOrderHeader";
@@ -9,6 +10,7 @@ import SalesReturnOrdersTable from "./SalesReturnOrdersTable";
 
 export {
   ReturnableLinesModal,
+  SalesReturnOrderCreditModal,
   SalesReturnOrderExplorer,
   SalesReturnOrderForm,
   SalesReturnOrderHeader,

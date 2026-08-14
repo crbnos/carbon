@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-14T07:48:57.259Z",
-  "totalTools": 1487,
+  "generated": "2026-08-14T08:00:47.137Z",
+  "totalTools": 1488,
   "modules": 15,
   "tools": [
     {
@@ -42159,6 +42159,34 @@
         },
         "required": [
           "salesReturnOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_setSalesReturnOrderLineDisposition",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "set sales return order line disposition",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "{\n    lineId,\n    companyId,\n    disposition,\n    userId\n  }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "disposition": {}
+        },
+        "required": [
+          "lineId",
+          "disposition"
         ]
       }
     },

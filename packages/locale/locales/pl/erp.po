@@ -707,6 +707,9 @@ msgstr "Dostawca jest tworzony"
 msgid "A supplier is deleted"
 msgstr "Dostawca jest usuwany"
 
+msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
+msgstr ""
+
 msgid "A supplier's account manager changes"
 msgstr "Menedżer konta dostawcy się zmienia"
 
@@ -1648,6 +1651,9 @@ msgstr "Czy na pewno chcesz anulować to zadanie? Nie będzie już dostępne na 
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr ""
 
+msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
+msgstr ""
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Czy na pewno chcesz zmienić właściwość {propertyName}? Ponieważ używasz generowanych identyfikatorów materiałów, zmieni to identyfikator części dla tej części i wszystkich powiązanych wersji."
 
@@ -1657,11 +1663,17 @@ msgstr ""
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "Czy na pewno chcesz ukończyć ten transfer zapasów?"
 
+msgid "Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed."
+msgstr ""
+
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr ""
 
 msgid "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
 msgstr "Czy na pewno chcesz potwierdzić to zamówienie sprzedaży? Potwierdzenie zamówienia wpłynie na ilości zamówienia używane do obliczania podaży i popytu."
+
+msgid "Are you sure you want to confirm this supplier return? Confirming authorizes the goods on the lines to be shipped back to the supplier."
+msgstr ""
 
 msgid "Are you sure you want to convert the RFQ to a quote?"
 msgstr "Czy na pewno chcesz przekonwertować RFQ na ofertę?"
@@ -2619,6 +2631,7 @@ msgstr "Nie można pobrać tego pliku"
 msgid "Cancel"
 msgstr "Anuluj"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr ""
@@ -2637,6 +2650,9 @@ msgstr "Anuluj zamówienie"
 
 msgid "Cancel Purchase Order"
 msgstr "Anuluj zamówienie zakupu"
+
+msgid "Cancel Return"
+msgstr ""
 
 msgid "Cancel RMA"
 msgstr ""
@@ -3112,6 +3128,7 @@ msgstr "Porównaj oferty dostawców"
 msgid "Complete"
 msgstr "Ukończ"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Complete {0}"
 msgstr ""
@@ -3242,6 +3259,7 @@ msgstr "Skonfigurowane"
 msgid "Confirm"
 msgstr "Potwierdź"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
 #. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
@@ -3529,6 +3547,9 @@ msgstr ""
 msgid "Copy link to service"
 msgstr "Skopiuj link do usługi"
 
+msgid "Copy link to supplier return"
+msgstr ""
+
 msgid "Copy link to tool"
 msgstr "Skopiuj link do narzędzia"
 
@@ -3576,6 +3597,9 @@ msgstr "Skopiuj Ofertę"
 
 msgid "Copy Quote number"
 msgstr "Skopiuj numer oferty"
+
+msgid "Copy return number"
+msgstr ""
 
 msgid "Copy RMA number"
 msgstr ""
@@ -4019,6 +4043,9 @@ msgstr "Konta kredytowe używane, gdy koszty produkcji są absorbowane do ZW"
 
 msgid "Credit Memo"
 msgstr "Notatka kredytowa"
+
+msgid "credited"
+msgstr ""
 
 msgid "Credited"
 msgstr ""
@@ -4824,6 +4851,9 @@ msgstr "Usuń dostawcę"
 
 msgid "Delete Supplier Quote"
 msgstr "Usuń Ofertę Dostawcy"
+
+msgid "Delete Supplier Return"
+msgstr ""
 
 msgid "Delete Supplier Type"
 msgstr "Usuń typ dostawcy"
@@ -8298,6 +8328,10 @@ msgstr "Prawdopodobieństwo"
 msgid "Line"
 msgstr ""
 
+#. placeholder {0}: line.lineNumber
+msgid "Line {0}"
+msgstr ""
+
 msgid "Line description (optional)"
 msgstr "Opis linii (opcjonalnie)"
 
@@ -8388,6 +8422,9 @@ msgstr "Załadowane ostatnie, tuż przy przejściu, aby salda były aktualne."
 
 msgid "Loading associated jobs..."
 msgstr "Ładowanie powiązanych zadań..."
+
+msgid "Loading creditable lines..."
+msgstr ""
 
 msgid "Loading current quantity…"
 msgstr "Ładowanie bieżącej ilości…"
@@ -9404,6 +9441,9 @@ msgstr "Nowy Dostawca"
 msgid "New Supplier Part"
 msgstr "Nowa część dostawcy"
 
+msgid "New Supplier Return"
+msgstr ""
+
 msgid "New Timecard"
 msgstr "Nowy Timecard"
 
@@ -9781,6 +9821,9 @@ msgstr ""
 
 msgid "No receivables"
 msgstr "Brak należności"
+
+msgid "No received quantity remains creditable"
+msgstr ""
 
 msgid "No records found"
 msgstr "Nie znaleziono rekordów"
@@ -10562,6 +10605,9 @@ msgstr "Częściowa"
 msgid "Partially Received"
 msgstr ""
 
+msgid "Partially Shipped"
+msgstr ""
+
 msgid "Partner"
 msgstr "Partner"
 
@@ -10768,6 +10814,9 @@ msgstr "Lista pobrania"
 
 msgid "Pick Order"
 msgstr "Kolejność pobrania"
+
+msgid "Pick serials/batches to return"
+msgstr ""
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Wybierz pojemnik, który potrzebuje zapasów, a następnie wybierz pojemniki, z których je pobrać."
@@ -11726,6 +11775,9 @@ msgstr "Otrzymaj płatność · {0} faktury"
 msgid "Receive to Inventory"
 msgstr "Odbierz do Magazynu"
 
+msgid "received"
+msgstr ""
+
 msgid "Received"
 msgstr "Otrzymane"
 
@@ -11742,6 +11794,9 @@ msgstr "Otrzymane od"
 
 msgid "Received Qty"
 msgstr "Otrzymana Ilość"
+
+msgid "Received quantity not yet credited. The credit memo is created as a draft."
+msgstr ""
 
 msgid "Receiving Location"
 msgstr "Lokalizacja odbioru"
@@ -12143,6 +12198,9 @@ msgstr "Zasoby"
 msgid "Restock Fee Percent"
 msgstr ""
 
+msgid "Restocking fee"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Przywróć z Kosza"
 
@@ -12164,6 +12222,9 @@ msgstr "Wyniki na stronę"
 msgid "Resume Receiving"
 msgstr "Wznów Odbieranie"
 
+msgid "Resume Shipping"
+msgstr ""
+
 msgid "Retained Earnings"
 msgstr "Zyski zatrzymane"
 
@@ -12178,6 +12239,9 @@ msgstr "Ponów"
 
 msgid "Return Home"
 msgstr "Wróć do domu"
+
+msgid "Return ID"
+msgstr ""
 
 msgid "Return Location"
 msgstr ""
@@ -13096,7 +13160,13 @@ msgstr "Numer seryjny/partii #"
 msgid "Serialize & sell your parts"
 msgstr "Serializuj i sprzedawaj swoje części"
 
+msgid "Serials and batches on hand that were received from this supplier"
+msgstr ""
+
 msgid "Serials and batches previously shipped to this customer"
+msgstr ""
+
+msgid "Serials/batches to return"
 msgstr ""
 
 msgid "service"
@@ -13300,6 +13370,9 @@ msgstr "Lokalizacja wysyłki"
 
 msgid "Shipments"
 msgstr "Przesyłki"
+
+msgid "Shipped"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr ""
@@ -13563,6 +13636,9 @@ msgstr "Lista źródłowa"
 msgid "Source Method"
 msgstr "Metoda źródłowa"
 
+msgid "Source Purchase Order"
+msgstr ""
+
 msgid "Source Sales Order"
 msgstr ""
 
@@ -13774,6 +13850,9 @@ msgstr "Przestań wystawiać zamówienia zakupu po tej dacie"
 
 msgid "Stop Receiving"
 msgstr "Zatrzymaj Odbieranie"
+
+msgid "Stop Shipping"
+msgstr ""
 
 msgid "Storage client not available"
 msgstr "Klient magazynu niedostępny"
@@ -14052,6 +14131,9 @@ msgid "Supplier Return Lines"
 msgstr ""
 
 msgid "Supplier Returns"
+msgstr ""
+
+msgid "Supplier RMA #"
 msgstr ""
 
 msgid "Supplier Status"
@@ -14650,6 +14732,9 @@ msgstr "Stan cyklu życia tego dostawcy - Aktywny, Nieaktywny, Oczekujące Zatwi
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Lokalna strefa czasowa, w której ta lokalizacja zgłasza czas; harmonogramy, karty pracy i godziny zmian w tej lokalizacji są interpretowane w tej strefie niezależnie od locale przeglądarki użytkownika."
 
+msgid "The location the goods will be shipped from"
+msgstr ""
+
 msgid "The location this employee defaults to; drives timezone interpretation on their timecards and the default shift selectors on their job record."
 msgstr "Lokalizacja, do której ten pracownik domyślnie przypisuje; napędza interpretację strefy czasowej w ich kartach pracy i domyślne selektory zmian w ich rekordzie pracy."
 
@@ -14947,6 +15032,9 @@ msgstr "Własna referencja dostawcy dla tego zamówienia (jego numer SO w jego s
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "Numer karty pakunkowej lub wysyłkowej dostawcy, zarejestrowany dla audytu; nie jest używany przez żadną logikę bookingu."
+
+msgid "The supplier's return authorization number"
+msgstr ""
 
 msgid "The suppliers and vendors you buy from"
 msgstr "Dostawcy i sprzedawcy, od których kupujesz"
@@ -16260,6 +16348,9 @@ msgstr "Wyświetl Paragon"
 msgid "View Receivables"
 msgstr "Wyświetl należności"
 
+msgid "View replacement purchase order"
+msgstr ""
+
 msgid "View replacement sales order"
 msgstr ""
 
@@ -16271,6 +16362,9 @@ msgstr "Wyświetl zaplanowane"
 
 msgid "View Shipment"
 msgstr "Wyświetl Przesyłkę"
+
+msgid "View source purchase order"
+msgstr ""
 
 msgid "View source sales order"
 msgstr ""
