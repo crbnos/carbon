@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-13T15:12:30.047Z",
-  "totalTools": 1436,
+  "generated": "2026-08-14T06:27:33.914Z",
+  "totalTools": 1437,
   "modules": 15,
   "tools": [
     {
@@ -13796,6 +13796,31 @@
         "client",
         "id",
         "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_getUnitOfMeasureUsage",
+      "module": "items",
+      "classification": "READ",
+      "description": "get unit of measure usage",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
       ],
       "injectAuth": [
         "companyId"

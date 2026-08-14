@@ -22,6 +22,7 @@ Master data for all item types (Parts, Materials, Tools, Consumables, Services),
 
 ### Ask First
 - Deleting items that have inventory, open POs, or active jobs — `item` FK has `ON DELETE RESTRICT` from `trackedEntity`.
+- Changing how a unit of measure is deleted — `prevent_unit_of_measure_deletion_when_in_use_trigger` refuses any delete whose code is still referenced, across all 33 UoM columns including the ten that have no foreign key. It reads the referencing columns from `information_schema` at runtime, so a new table is covered without a migration.
 - Changing `itemTrackingType` on items that already have tracked entities — use `cascadeItemTrackingType`.
 - Modifying Active method versions — create a new version instead.
 

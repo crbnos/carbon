@@ -71955,14 +71955,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -77194,6 +77194,13 @@ export type Database = {
           updatedAt: string
           updatedBy: string
           version: number
+        }[]
+      }
+      get_unit_of_measure_usage: {
+        Args: { p_id: string }
+        Returns: {
+          count: number
+          tableName: string
         }[]
       }
       get_unscheduled_jobs: {
