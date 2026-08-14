@@ -63,7 +63,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "dates");
 
 export const handle: Handle = {
-  breadcrumb: msg`Schedule`,
+  breadcrumb: msg`Priority`,
   to: path.to.scheduleDates,
   module: "production"
 };

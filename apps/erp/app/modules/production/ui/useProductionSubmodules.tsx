@@ -48,7 +48,7 @@ export default function useProductionSubmodules() {
           table: "demand-projection"
         },
         {
-          name: t`Schedule`,
+          name: t`Priority`,
           to: path.to.scheduleDates,
           icon: <LuSquareKanban />
         },
