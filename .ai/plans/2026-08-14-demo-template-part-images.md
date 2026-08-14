@@ -96,14 +96,25 @@ rename any SVG.
   `import.meta.glob` usage in this repo
 
 **Steps:**
-1. Create `packages/database/src/datasets/assets.ts`:
+1. Create `packages/database/src/datasets/assets.ts`. AS SHIPPED (the original sample used
+   `/// <reference types="vite/client" />` and `import.meta.glob<string>`; see step 3 for why
+   that was replaced by the inline cast):
    ```typescript
-   /// <reference types="vite/client" />
-
-   // Demo-template part artwork, bundled rather than uploaded: the files are vector,
-   // tiny, and change with the datasets that name them. See
+   // Demo-template part artwork, bundled rather than uploaded. See
    // .ai/plans/2026-08-14-demo-template-part-images.md.
-   const assets = import.meta.glob<string>("./assets/**/*.svg", {
+   //
+   // The cast stands in for `vite/client` types: declaring `ImportMeta.glob` here
+   // collides with the real vite types in the apps, and a `vite` devDependency
+   // resolves a second vite tree against this package's older @types/node. The call
+   // expression stays literal, which is what vite's glob transform matches on.
+   const assets = (
+     import.meta as unknown as {
+       glob(
+         pattern: string,
+         options: { eager: true; query: string; import: string }
+       ): Record<string, string>;
+     }
+   ).glob("./assets/**/*.svg", {
      eager: true,
      query: "?url",
      import: "default"
@@ -142,8 +153,19 @@ pnpm exec turbo run typecheck --filter=@carbon/database
 # Expected: succeeds, no error mentioning assets.ts or vite/client
 ```
 
-**Out of scope:** do not import this module from any server file. `seed-dev.ts`, the tiers,
-and `@carbon/jobs` run under plain Node/tsx where `import.meta.glob` does not exist.
+**SSR safety, verified.** `path.ts` IS a server graph module (loaders and actions import it),
+so this module is evaluated during SSR. That is safe because vite treats linked workspace
+packages as non-external, so it BUNDLES `assets.ts` and transforms the glob at build time:
+the literal asset map is present in both `apps/erp/build/server/index.js` and
+`apps/mes/build/server/index.js`, and neither server bundle contains an unresolved
+`dataset-assets` import or a runtime `import.meta.glob` call. Confirmed by grepping the built
+output, not by reasoning. The fragility to know about: this relies on the package staying
+non-external. Adding `@carbon/database` to `ssr.external` in either app would leave a bare
+runtime import of a `.ts` file and crash the server on boot.
+
+**Out of scope:** do not import this module from `seed-dev.ts`, the tiers, or
+`@carbon/jobs`. Those run under plain Node/tsx with no bundler, so the glob is never
+transformed and `import.meta.glob` is undefined at runtime.
 
 ---
 
@@ -319,13 +341,39 @@ grep -n "assets/" packages/database/src/datasets/AGENTS.md
 ```bash
 cd /Users/aashu/work/carbon/carbon-feat-onboarding-templates
 pnpm exec turbo run typecheck --filter=@carbon/database --filter=@carbon/workflows --filter=@carbon/jobs --filter=erp --filter=mes
-# Expected: all succeed
 pnpm exec biome check
-# Expected: zero errors; roughly 419 pre-existing warnings is normal
 pnpm --filter @carbon/workflows exec vitest run src/seed-workflows.test.ts
-# Expected: Tests  30 passed (30)
 pnpm exec turbo run build --filter=erp
-# Expected: build succeeds and the output contains the emitted svg assets
+pnpm exec turbo run build --filter=mes
 ```
+
+**Evidence, as run:**
+
+- typecheck, all five packages: `Tasks: 5 successful, 5 total`.
+- `pnpm exec biome check`: `Found 399 warnings`, **zero errors**. All 399 are pre-existing
+  (`lint/suspicious/noConsole` in the dev seed CLI and similar). One error DID appear and was
+  fixed: an external formatter had added trailing commas throughout
+  `packages/database/src/datasets/helpers/items.ts`, failing the repo format check;
+  `biome check --write` on that one file restored repo style.
+- `pnpm --filter @carbon/workflows exec vitest run src/seed-workflows.test.ts`:
+  `Tests  30 passed (30)`.
+- ERP build: succeeded, 129 SVGs emitted to `apps/erp/build/client/assets/`.
+- MES build: succeeded, 129 SVGs emitted to `apps/mes/build/client/assets/`.
+- The 132 minus 129 gap is not a failure: `MCH-END-CAP.svg`, `SEAL-ORING-224.svg` and
+  `HW-DOWEL-8.svg` are each under 4 KB, so vite's default `assetsInlineLimit` inlined them
+  into the lookup table as data URIs. All 132 resolve.
+- Client-side cost, measured on `apps/erp/build/client/assets/path-DymyPk0E.js`: the glob map
+  is 23.3 KB raw / ~5.0 KB gzipped, of which 13.1 KB is those 3 inlined SVGs. The other
+  1.8 MB of artwork is fetched per-image on demand, never on page load.
+- SSR: the transformed asset map is present in both apps' `build/server/index.js` (see Task 2).
+
+**There is no `@carbon/database` test suite** — the package has no `test` script and no
+`*.test.ts` files, so "run the database tests" is not a real step. The seed path's coverage is
+`@carbon/workflows`' `seed-workflows.test.ts`, which is what ran above.
+
+**NOT DONE — browser check.** Step 5 was never performed. It needs the user's local stack
+running and a demo company seeded, and the repo rule forbids reseeding without asking. So
+artwork has been proven to build, bundle and resolve, but has NOT been seen rendering in the
+ERP or MES, in either light or dark mode. Treat that as open.
 
 **Out of scope:** do not commit. Report and wait for an explicit instruction.

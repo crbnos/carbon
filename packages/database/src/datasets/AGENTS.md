@@ -31,8 +31,12 @@ Adding an item to a dataset means adding its SVG. A missing one is not fatal:
 `getDatasetAssetUrl` returns `null` and `ItemThumbnail` renders the type icon. A dataset with
 `industryId: null` gets `null` and keeps the icon for every item.
 
-`assets.ts` is browser-only — never import it from a tier, `seed-dev.ts`, or `@carbon/jobs`,
-which run under plain Node where `import.meta.glob` does not exist.
+`assets.ts` needs a bundler — never import it from a tier, `seed-dev.ts`, or `@carbon/jobs`,
+which run under plain Node/tsx where the glob is never transformed and `import.meta.glob` is
+undefined. It IS safe in `path.ts` (a loader/action graph module) because vite treats linked
+workspace packages as non-external and so bundles it, transforming the glob at build time —
+the literal asset map is in both apps' `build/server/index.js`. Adding `@carbon/database` to
+`ssr.external` in either app's `vite.config.ts` would break that and crash the server on boot.
 
 New content goes in `data/`. Touch a tier only to support a new *shape* of data. The one
 standing violation is `tiers/workflow-definitions.ts`, which re-exports satellite's workflows
