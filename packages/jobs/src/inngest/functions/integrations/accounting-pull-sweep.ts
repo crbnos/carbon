@@ -55,6 +55,7 @@ import {
   providerSupportsIncrementalPull,
   type SyncContext
 } from "@carbon/ee/accounting";
+import { chunkArray } from "@carbon/utils";
 import { PostgresDriver } from "kysely";
 import { inngest } from "../../client";
 import {
@@ -66,6 +67,11 @@ import {
   getSyncOperationIdempotencyKey,
   mergePullCursor
 } from "./accounting-sync-operations";
+
+// Supabase caps a select at 1000 rows, and a very long .in() list can exceed
+// the request URL limit — chunk the dependency-mapping lookup so neither
+// truncates (matches the id-chunking in accounting-reconciliation.ts).
+const DEPENDENCY_MAPPING_CHUNK_SIZE = 200;
 
 type SweepSummary = {
   changedSince: string | null;
@@ -133,30 +139,37 @@ export async function filterChangesByDependencyMapping(
 
   const mappedByType = new Map<AccountingEntityType, Set<string>>();
   for (const [entityType, remoteIds] of dependentsByType) {
-    const result = await client
-      .from("externalIntegrationMapping")
-      .select("externalId")
-      .eq("companyId", args.companyId)
-      .eq("integration", args.integration)
-      .eq("entityType", entityType)
-      .in("externalId", [...remoteIds]);
+    const found = new Set<string>();
+    let lookupFailed = false;
 
-    if (result.error) {
-      console.error(
-        `[PULL SWEEP] ${args.companyId}/${args.integration}: dependency mapping lookup failed for ${entityType} (${result.error.message}); keeping ${remoteIds.size} change(s) for the syncer's ownership gate`
-      );
-      mappedByType.set(entityType, remoteIds);
-      continue;
+    for (const idChunk of chunkArray(
+      [...remoteIds],
+      DEPENDENCY_MAPPING_CHUNK_SIZE
+    )) {
+      const result = await client
+        .from("externalIntegrationMapping")
+        .select("externalId")
+        .eq("companyId", args.companyId)
+        .eq("integration", args.integration)
+        .eq("entityType", entityType)
+        .in("externalId", idChunk);
+
+      if (result.error) {
+        console.error(
+          `[PULL SWEEP] ${args.companyId}/${args.integration}: dependency mapping lookup failed for ${entityType} (${result.error.message}); keeping ${remoteIds.size} change(s) for the syncer's ownership gate`
+        );
+        lookupFailed = true;
+        break;
+      }
+
+      for (const row of result.data ?? []) {
+        if (row.externalId) found.add(row.externalId);
+      }
     }
 
-    mappedByType.set(
-      entityType,
-      new Set(
-        (result.data ?? []).flatMap((row) =>
-          row.externalId ? [row.externalId] : []
-        )
-      )
-    );
+    // On any chunk failure, fail safe: keep every dependency as present so the
+    // change survives to the syncer's ownership gate (matches the pre-chunk path).
+    mappedByType.set(entityType, lookupFailed ? remoteIds : found);
   }
 
   const kept: ProviderChange[] = [];
