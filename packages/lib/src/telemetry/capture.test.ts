@@ -24,6 +24,7 @@ function lastRequest() {
 
 describe("captureWorkEvent", () => {
   beforeEach(() => {
+    env.POSTHOG_API_HOST = "https://us.i.posthog.com";
     env.POSTHOG_PROJECT_PUBLIC_KEY = "phc_test";
     env.CONTROLLED_ENVIRONMENT = false;
     vi.stubGlobal(
@@ -45,9 +46,23 @@ describe("captureWorkEvent", () => {
     source: "erp" as const
   };
 
-  it("posts to PostHog's documented capture path", async () => {
+  it("posts to the same path posthog-js ingests through", async () => {
     await captureWorkEvent("job_released", released);
-    expect(lastRequest().url).toBe("https://us.i.posthog.com/i/v0/e/");
+    expect(lastRequest().url).toBe("https://us.i.posthog.com/e/");
+  });
+
+  it("preserves a base path, so a reverse-proxied host still resolves", async () => {
+    // new URL("/e/", "https://proxy/ingest") would silently drop "/ingest" and
+    // send every event to a 404 that capture can never report.
+    env.POSTHOG_API_HOST = "https://proxy.example.com/ingest";
+    await captureWorkEvent("job_released", released);
+    expect(lastRequest().url).toBe("https://proxy.example.com/ingest/e/");
+  });
+
+  it("does not double the separator when the host has a trailing slash", async () => {
+    env.POSTHOG_API_HOST = "https://us.i.posthog.com/";
+    await captureWorkEvent("job_released", released);
+    expect(lastRequest().url).toBe("https://us.i.posthog.com/e/");
   });
 
   it("sends the event name, the project key and the actor as distinct_id", async () => {
@@ -136,6 +151,13 @@ describe("captureWorkEvent", () => {
   });
 
   describe("gating", () => {
+    it("sends nothing when no api host is configured", async () => {
+      env.POSTHOG_API_HOST = "";
+      const result = await captureWorkEvent("job_released", released);
+      expect(result).toEqual({ sent: false, reason: "disabled" });
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+
     it("sends nothing when no project key is configured", async () => {
       env.POSTHOG_PROJECT_PUBLIC_KEY = "";
       const result = await captureWorkEvent("job_released", released);

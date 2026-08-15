@@ -218,6 +218,30 @@ export async function finishJobOperation(
         jobOperationId: args.jobOperationId,
         jobId
       });
+
+      // The only way to observe the automatic completion. When this was the
+      // last operation, sync_finish_job_operation has already flipped the job
+      // to Completed inside the same transaction as the status write above —
+      // in Postgres, with no application call site in any runtime. Reading the
+      // row back here is what closes the last link of the benchmark chain
+      // (created → released → started → reported → finished → completed).
+      // Keyed on jobId, so it collapses with the manual complete route rather
+      // than counting a second completion.
+      const completed = await client
+        .from("job")
+        .select("status")
+        .eq("id", jobId)
+        .eq("companyId", args.companyId)
+        .maybeSingle();
+
+      if (completed.data?.status === "Completed") {
+        trackWorkEvent("job_completed", {
+          companyId: args.companyId,
+          userId: args.userId,
+          jobId,
+          path: "auto"
+        });
+      }
     }
   }
 

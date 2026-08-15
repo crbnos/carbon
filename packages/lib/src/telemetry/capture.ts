@@ -51,8 +51,29 @@ const log = getLogger("lib", "telemetry");
  *   U.S.-Persons-only environment to a third-party vendor.
  */
 
-/** PostHog's documented single-event capture path. */
-const CAPTURE_PATH = "/i/v0/e/";
+/**
+ * The capture endpoint.
+ *
+ * `/e/` rather than the documented `/i/v0/e/`, and string concatenation rather
+ * than `new URL`, for the same reason: this is the exact host and path
+ * `posthog-js` already ingests through, so it is the one combination proven
+ * against whatever `POSTHOG_API_HOST` is actually set to in production. Two
+ * traps this avoids —
+ *
+ * - `new URL("/i/v0/e/", host)` silently discards any base path, so a host of
+ *   `https://proxy.example.com/ingest` would resolve to
+ *   `https://proxy.example.com/i/v0/e/` and 404.
+ * - `/i/v0/e/` is documented against the ingestion host (`us.i.posthog.com`),
+ *   while `.env.example:23` carries the app host (`us.posthog.com`).
+ *
+ * Either mistake loses every event silently: capture never throws, so the only
+ * trace would be a log line. Getting this wrong is the single largest risk in
+ * the whole path, which is why it copies a proven value instead of a documented
+ * one.
+ */
+function captureUrl(): string {
+  return `${(POSTHOG_API_HOST ?? "").replace(/\/+$/, "")}/e/`;
+}
 
 /** Abandon a capture rather than hold a request open behind it. */
 const TIMEOUT_MS = 3_000;
@@ -62,7 +83,11 @@ export type CaptureResult =
   | { sent: false; reason: "disabled" | "controlled_environment" | "failed" };
 
 function isEnabled(): CaptureResult | null {
-  if (!POSTHOG_PROJECT_PUBLIC_KEY) return { sent: false, reason: "disabled" };
+  // The host is as load-bearing as the key: without it the URL below would be
+  // a bare "/e/", which fetch rejects. Treat it as not configured rather than
+  // as an error on every write.
+  if (!POSTHOG_PROJECT_PUBLIC_KEY || !POSTHOG_API_HOST)
+    return { sent: false, reason: "disabled" };
   if (CONTROLLED_ENVIRONMENT)
     return { sent: false, reason: "controlled_environment" };
   return null;
@@ -134,15 +159,12 @@ export async function captureWorkEvent<E extends WorkEventName>(
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
     try {
-      const res = await fetch(
-        new URL(CAPTURE_PATH, POSTHOG_API_HOST).toString(),
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-          signal: controller.signal
-        }
-      );
+      const res = await fetch(captureUrl(), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");

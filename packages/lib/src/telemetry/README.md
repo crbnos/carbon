@@ -36,7 +36,7 @@ Deliberate gaps, so nobody reads a zero as "no work happened":
 |---|---|---|
 | `scrap_reported` from the MES floor (`apps/mes/app/routes/x+/scrap.tsx:37`) | The `productionQuantity` row is created inside the `issue` Deno function and its id is never returned to the route, so there is no key that makes one posting distinct. Keying on the operation would under-count a shift's repeat postings. | Return the inserted id from the `issue` function. |
 | `production_quantity_reported` serial and batch branches | Same function, same reason (`functions/issue/index.ts:1117`, `:1266`). The untracked branch goes through `insertProductionQuantity` and *is* covered. | As above. |
-| `job_completed` via the automatic path | `sync_finish_job_operation` completes the job inside Postgres with no application call site. Only the manual complete route emits, tagged `path: "manual"`. | A queue handler on the `job` status diff. |
+| ~~`job_completed` via the automatic path~~ | Covered. `sync_finish_job_operation` runs inside the same transaction as the operation status flip, so `finishJobOperation` reads the job back and emits `path: "auto"` when it flipped. Keyed on `jobId`, so it collapses with the manual route. | — |
 | `quote_accepted` from the customer portal | Covered, but anonymous — `actorId` is deliberately null for a customer's own acceptance. | Nothing; this is correct. |
 
 Everything above is the honest ceiling of the app-layer approach. Closing it

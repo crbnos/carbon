@@ -14,11 +14,13 @@ Run the queries in PostHog against project **CarbonOS** (id 80891, US cloud).
 
 ## Before merging
 
-- [ ] Confirm `POSTHOG_API_HOST` in the deployed ERP env. The emitter POSTs to
-      `${POSTHOG_API_HOST}/i/v0/e/`. `posthog-js` posts to `${POSTHOG_API_HOST}/e/`
-      and only remaps `app.posthog.com`, so whatever value makes the browser work
-      is not automatically a value that makes `/i/v0/e/` work. **This is the most
-      likely single point of failure and the cheapest thing to check first.**
+- [ ] Read `POSTHOG_API_HOST` from the deployed ERP env and confirm the browser
+      is currently ingesting through it. The emitter POSTs to
+      `${POSTHOG_API_HOST}/e/` — deliberately the same host and path `posthog-js`
+      uses, because that is the one combination proven against the deployed
+      value rather than against the docs. If the browser's events are arriving,
+      the server's will too. **This is the most likely single point of failure
+      and the cheapest thing to check.**
 - [ ] Confirm the ERP and MES deployments share that project key. If they differ,
       MES-sourced events land in a different project and the MES-vs-ERP ratio is
       silently wrong rather than absent.
