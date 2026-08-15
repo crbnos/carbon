@@ -16,7 +16,45 @@ export type ProductionOrderConfidence =
   | "PARTIAL"
   | "REQUIRES_DOMAIN_CONFIRMATION";
 
-export type ProductionOrderAuthority = "planning" | "execution" | "experience";
+export type ProductionOrderAuthority =
+  | "planning"
+  | "execution"
+  | "quality"
+  | "unknown";
+
+export type ProductionOrderRelation =
+  | "released-to"
+  | "derived-from"
+  | "executes"
+  | "contains";
+
+export interface QuantityValue {
+  value: number;
+  unit?: string;
+}
+
+export interface ProductionReleaseOperation {
+  sourceId: string;
+  sequence?: number;
+  plannedQuantity?: QuantityValue;
+  operationQuantity?: QuantityValue;
+}
+
+export interface ProductionRelease {
+  id: string;
+  factoryObjectId: string;
+  source: SourceReference;
+  productionOrder: {
+    sourceId: string;
+    itemRef?: string;
+    plannedQuantity?: QuantityValue;
+  };
+  operations?: readonly ProductionReleaseOperation[];
+  plannedStart?: string;
+  plannedFinish?: string;
+  issuedAt?: string;
+  version: "1.0" | "1";
+}
 
 export type ProductionOrderMappingStatus =
   | "active"
@@ -126,10 +164,8 @@ export interface ProductionOrderProjection {
     productionAggregate?: ProductionOrderMetric;
     jobQuantityComplete?: ProductionOrderMetric;
     scrapQuantity?: ProductionOrderMetric;
-    canonicalCompletedQuantity?: ProductionOrderMetric;
   };
   operations: readonly ProductionOrderOperationProjection[];
-  canonicalProgress?: number;
 }
 
 export interface ProductionOrderLineage {
@@ -137,6 +173,10 @@ export interface ProductionOrderLineage {
   erpSourceId?: string;
   mesSourceId?: string;
   evidenceRefs?: readonly string[];
+  relation?: ProductionOrderRelation;
+  establishedBy?: string;
+  establishedAt?: string;
+  version?: string;
 }
 
 export interface FactoryProductionOrder {
@@ -156,7 +196,6 @@ export interface FactoryProductionOrder {
   lineage: ProductionOrderLineage;
   evidenceRefs: readonly string[];
   canonicalStatus?: CanonicalStatusState;
-  canonicalProgress?: number;
   dates: ProductionOrderProjection["dates"];
   metrics: ProductionOrderProjection["metrics"];
   operations: readonly ProductionOrderOperationProjection[];
@@ -174,6 +213,21 @@ export type ProductionOrderMergeResult =
       mes: ProductionOrderProjection;
       lineage: ProductionOrderLineage;
     };
+
+export interface ProductionReleaseValidation {
+  isValid: boolean;
+  errors: readonly string[];
+}
+
+export interface SourceLineageValidation {
+  isValid: boolean;
+  errors: readonly string[];
+}
+
+export interface ProductionOrderContractValidation {
+  productionRelease: ProductionReleaseValidation;
+  sourceLineage: SourceLineageValidation;
+}
 
 const ERP_SOURCE = "erpnext" as const;
 const MES_SOURCE = "carbon-mes" as const;
@@ -193,6 +247,110 @@ function sourceRef(
   field?: string
 ): SourceReference {
   return { system, objectType, recordId, ...(field ? { field } : {}) };
+}
+
+function isFiniteNonNegative(value?: number) {
+  return value === undefined || (Number.isFinite(value) && value >= 0);
+}
+
+export function validateProductionRelease(
+  release: ProductionRelease
+): ProductionReleaseValidation {
+  const errors: string[] = [];
+  const supportedVersions = ["1", "1.0"] as const;
+
+  if (!release.id) {
+    errors.push("release id is required");
+  }
+  if (!release.factoryObjectId) {
+    errors.push("factoryObjectId is required");
+  }
+  if (!release.source.recordId) {
+    errors.push("release source recordId is required");
+  }
+  if (!release.productionOrder.sourceId) {
+    errors.push("productionOrder sourceId is required");
+  }
+  if (
+    release.productionOrder.plannedQuantity &&
+    !isFiniteNonNegative(release.productionOrder.plannedQuantity.value)
+  ) {
+    errors.push(
+      "productionOrder plannedQuantity must be finite and non-negative"
+    );
+  }
+  if (release.operations) {
+    for (const operation of release.operations) {
+      if (!operation.sourceId) {
+        errors.push("operation sourceId is required");
+      }
+      if (
+        operation.plannedQuantity &&
+        !isFiniteNonNegative(operation.plannedQuantity.value)
+      ) {
+        errors.push(
+          `operation plannedQuantity must be finite and non-negative (${operation.sourceId})`
+        );
+      }
+      if (
+        operation.operationQuantity &&
+        !isFiniteNonNegative(operation.operationQuantity.value)
+      ) {
+        errors.push(
+          `operation operationQuantity must be finite and non-negative (${operation.sourceId})`
+        );
+      }
+    }
+  }
+
+  if (!supportedVersions.includes(release.version)) {
+    errors.push("productionRelease version is unsupported");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateProductionOrderSourceLineage(
+  lineage: ProductionOrderLineage
+): SourceLineageValidation {
+  const errors: string[] = [];
+
+  const status = lineage.status;
+  if (
+    status === "confirmed" &&
+    (!lineage.erpSourceId || !lineage.mesSourceId)
+  ) {
+    errors.push("confirmed lineage requires both erpSourceId and mesSourceId");
+  }
+  if (
+    lineage.relation &&
+    !["released-to", "derived-from", "executes", "contains"].includes(
+      lineage.relation
+    )
+  ) {
+    errors.push("lineage relation is invalid");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateProductionOrderContract(
+  release: ProductionRelease,
+  lineage: ProductionOrderLineage
+): ProductionOrderContractValidation {
+  const productionRelease = validateProductionRelease(release);
+  const sourceLineage = validateProductionOrderSourceLineage(lineage);
+
+  return {
+    productionRelease,
+    sourceLineage
+  };
 }
 
 function mapErpStatus(status?: string): CanonicalStatusState {
@@ -435,10 +593,13 @@ export function mergeProductionOrderProjections(
   mes: ProductionOrderProjection,
   lineage?: ProductionOrderLineage
 ): ProductionOrderMergeResult {
-  const resolvedLineage: ProductionOrderLineage = lineage ?? {
-    status: "unlinked",
-    erpSourceId: sourceRecordId(erp),
-    mesSourceId: sourceRecordId(mes)
+  const resolvedLineage: ProductionOrderLineage = {
+    relation: "derived-from",
+    version: "1.0",
+    status: lineage?.status ?? "unlinked",
+    ...lineage,
+    erpSourceId: lineage?.erpSourceId ?? sourceRecordId(erp),
+    mesSourceId: lineage?.mesSourceId ?? sourceRecordId(mes)
   };
   const idsMatch =
     resolvedLineage.erpSourceId === sourceRecordId(erp) &&
@@ -540,7 +701,7 @@ export const productionOrderMappingRegistry: readonly ProductionOrderMappingDefi
     },
     {
       source: { system: MES_SOURCE, entity: "Job", field: "quantityComplete" },
-      target: { entity: "ProductionOrder", field: "completedQuantity" },
+      target: { entity: "ProductionOrder", field: "jobQuantityComplete" },
       authority: "execution",
       transform: "identity",
       confidence: "REQUIRES_DOMAIN_CONFIRMATION",
@@ -608,7 +769,8 @@ export function validateProductionOrderMappings(
   const validAuthorities: readonly ProductionOrderAuthority[] = [
     "planning",
     "execution",
-    "experience"
+    "quality",
+    "unknown"
   ];
   const validTransforms: readonly ProductionOrderTransform[] = [
     "identity",

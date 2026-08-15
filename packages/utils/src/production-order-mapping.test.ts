@@ -4,11 +4,15 @@ import {
   type CarbonMesJobSource,
   type ErpNextWorkOrderSource,
   mergeProductionOrderProjections,
+  type ProductionRelease,
   productionOrderMappingRegistry,
   projectCarbonMesJob,
   projectErpNextWorkOrder,
+  validateProductionOrderContract,
   validateProductionOrderMappings,
-  validateProductionOrderMerge
+  validateProductionOrderMerge,
+  validateProductionOrderSourceLineage,
+  validateProductionRelease
 } from "./production-order-mapping";
 import { productionOrderGoldenPathFixtures } from "./production-order-mapping.fixtures";
 
@@ -70,7 +74,6 @@ describe("Production Order Mapping MVP", () => {
     expect(projection.metrics.plannedQuantity?.value).toBe(10);
     expect(projection.metrics.producedQuantity?.value).toBe(2);
     expect(projection.metrics.executionQuantity).toBeUndefined();
-    expect(projection.metrics.canonicalCompletedQuantity).toBeUndefined();
     expect(input).toEqual(erpWorkOrder);
   });
 
@@ -83,7 +86,6 @@ describe("Production Order Mapping MVP", () => {
       { system: "carbon-mes", objectType: "Job", recordId: "JOB-MVP-001" }
     ]);
     expect(projection.metrics.executionQuantity?.value).toBe(4);
-    expect(projection.metrics.canonicalCompletedQuantity).toBeUndefined();
   });
 
   it("merges only an explicitly confirmed lineage", () => {
@@ -108,7 +110,6 @@ describe("Production Order Mapping MVP", () => {
     expect(result.order.metrics.plannedQuantity?.value).toBe(10);
     expect(result.order.metrics.executionQuantity?.value).toBe(4);
     expect(result.order.itemRef?.recordId).toBe("ITEM-PUMP-001");
-    expect(result.order.metrics.canonicalCompletedQuantity).toBeUndefined();
   });
 
   it("keeps unlinked and conflicting sources separate", () => {
@@ -227,10 +228,146 @@ describe("Production Order Mapping MVP", () => {
     expect(fixture.sources.productionAggregate).toBe(1);
     expect(fixture.sources.operationQuantityComplete).toBe(1);
     expect(fixture.sources.jobQuantityComplete).toBe(0);
+    expect(fixture.projection.metrics.productionAggregate?.value).toBe(1);
     expect(
-      fixture.projection.metrics.canonicalCompletedQuantity
-    ).toBeUndefined();
-    expect(fixture.projection.canonicalProgress).toBeUndefined();
+      fixture.projection.operations.find(
+        (operation) =>
+          operation.sourceRefs[0]?.system === "carbon-mes" &&
+          operation.metrics.operationCompletedQuantity
+      )?.metrics.operationCompletedQuantity?.value
+    ).toBe(1);
+    expect(fixture.projection.metrics.jobQuantityComplete?.value).toBe(0);
+  });
+
+  it("validates a minimal ProductionRelease", () => {
+    const validRelease = {
+      id: "release-001",
+      factoryObjectId: "production-order:golden-001",
+      source: {
+        system: "erpnext",
+        objectType: "WorkOrder",
+        recordId: "WO-GOLDEN-001"
+      },
+      productionOrder: {
+        sourceId: "WO-GOLDEN-001",
+        itemRef: "ITEM-001",
+        plannedQuantity: { value: 10, unit: "EA" }
+      },
+      plannedStart: "2026-08-15T08:00:00Z",
+      plannedFinish: "2026-08-15T16:00:00Z",
+      issuedAt: "2026-08-15T07:59:00Z",
+      version: "1.0"
+    } satisfies ProductionRelease;
+
+    expect(validateProductionRelease(validRelease)).toEqual({
+      isValid: true,
+      errors: []
+    });
+  });
+
+  it("rejects an invalid ProductionRelease", () => {
+    const invalidRelease = {
+      id: "release-002",
+      factoryObjectId: "production-order:golden-002",
+      source: {
+        system: "erpnext",
+        objectType: "WorkOrder",
+        recordId: ""
+      },
+      productionOrder: {
+        sourceId: "WO-GOLDEN-002"
+      },
+      operations: [
+        {
+          sourceId: "MISSING-OP",
+          plannedQuantity: {
+            value: -1,
+            unit: "EA"
+          }
+        }
+      ],
+      version: "2.0"
+    } as unknown as ProductionRelease;
+
+    const result = validateProductionRelease(invalidRelease);
+    expect(result.isValid).toBe(false);
+    expect(result.errors).toEqual([
+      "release source recordId is required",
+      "operation plannedQuantity must be finite and non-negative (MISSING-OP)",
+      "productionRelease version is unsupported"
+    ]);
+  });
+
+  it("validates SourceLineage confirmed linkage and relation safety", () => {
+    expect(
+      validateProductionOrderSourceLineage({
+        status: "confirmed",
+        erpSourceId: "WO-MVP-001",
+        mesSourceId: "JOB-MVP-001",
+        relation: "derived-from"
+      })
+    ).toEqual({
+      isValid: true,
+      errors: []
+    });
+
+    expect(
+      validateProductionOrderSourceLineage({
+        status: "confirmed",
+        relation: "released-to"
+      })
+    ).toEqual({
+      isValid: false,
+      errors: ["confirmed lineage requires both erpSourceId and mesSourceId"]
+    });
+
+    expect(
+      validateProductionOrderSourceLineage({
+        status: "unlinked",
+        relation: "unsupported" as "released-to"
+      })
+    ).toEqual({
+      isValid: false,
+      errors: ["lineage relation is invalid"]
+    });
+  });
+
+  it("validates a complete ProductionOrder contract boundary", () => {
+    const release: ProductionRelease = {
+      id: "release-003",
+      factoryObjectId: "production-order:golden-003",
+      source: {
+        system: "erpnext",
+        objectType: "WorkOrder",
+        recordId: "WO-GOLDEN-003"
+      },
+      productionOrder: {
+        sourceId: "WO-GOLDEN-003",
+        plannedQuantity: { value: 1, unit: "EA" }
+      },
+      version: "1"
+    };
+    const lineage = {
+      status: "confirmed" as const,
+      erpSourceId: "WO-GOLDEN-003",
+      mesSourceId: "JOB-GOLDEN-003",
+      relation: "released-to" as const,
+      evidenceRefs: ["release-lineage-003"]
+    };
+
+    expect(validateProductionOrderContract(release, lineage)).toEqual({
+      productionRelease: { isValid: true, errors: [] },
+      sourceLineage: { isValid: true, errors: [] }
+    });
+
+    const invalid = validateProductionOrderContract(release, {
+      status: "confirmed"
+    } as never);
+    expect(invalid.productionRelease.isValid).toBe(true);
+    expect(invalid.sourceLineage.isValid).toBe(false);
+    expect(invalid.sourceLineage.errors).toContain(
+      "confirmed lineage requires both erpSourceId and mesSourceId"
+    );
   });
 
   it("ships exactly three sanitized golden path fixtures", () => {
