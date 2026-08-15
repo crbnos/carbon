@@ -14,7 +14,7 @@ Platform-wide behavior and edition.
 
 <EnvVars>
 <EnvVar name="CARBON_EDITION" type="enum">One of `community`, `cloud`, `enterprise`, or `test`. Gates edition-specific features.</EnvVar>
-<EnvVar name="CONTROLLED_ENVIRONMENT" type="boolean">Enables ITAR / controlled-environment restrictions.</EnvVar>
+<EnvVar name="CONTROLLED_ENVIRONMENT" type="boolean">Enables ITAR / controlled-environment restrictions: the US-Person certification gate, ITAR hostnames and branding, Slack and analytics disabled, and mandatory [two-factor authentication](/docs/reference/two-factor) that a company admin cannot turn off.</EnvVar>
 <EnvVar name="AUTH_PROVIDERS" type="enum[]">Allowed sign-in methods: `email`, `google`, `azure`, `passkey`.</EnvVar>
 <EnvVar name="DOMAIN" type="string">Base domain the apps are served from.</EnvVar>
 <EnvVar name="ERP_URL" type="url">Public URL of the ERP app.</EnvVar>

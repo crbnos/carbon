@@ -232,11 +232,11 @@
     {
       "slug": "docs/reference/account",
       "title": "Your account",
-      "description": "Personal, self-service settings for profile, passkeys, notification preferences, theme, and language, kept separate from the company-wide settings an admin controls.",
+      "description": "Personal, self-service settings for profile, passkeys and two-factor, notification preferences, theme, and language, kept separate from the company-wide settings an admin controls.",
       "keywords": ["your", "account", "docs", "reference"],
       "headings": [
         "Profile",
-        "Signing in — passkeys",
+        "Signing in — passkeys and two-factor",
         "Notification preferences",
         "Theme and language",
         "Personal attributes",
@@ -1523,6 +1523,34 @@
         "\"Why didn't a reminder send?\"",
         "\"Why can't I mark someone complete / assign a training?\"",
         "\"A completed training re-appeared as Pending\""
+      ]
+    },
+    {
+      "slug": "docs/reference/two-factor",
+      "title": "Two-factor authentication",
+      "description": "How authenticator-app codes work in Carbon, from setting one up to requiring them company-wide, and what happens when someone loses their phone.",
+      "keywords": [
+        "two-factor",
+        "authentication",
+        "docs",
+        "reference",
+        "two",
+        "factor"
+      ],
+      "headings": [
+        "Turning it on for yourself",
+        "Signing in with a code",
+        "Requiring it for everyone",
+        "Seeing who has set it up",
+        "When someone loses their phone",
+        "What two-factor doesn't cover",
+        "Where each piece lives",
+        "Troubleshooting",
+        "\"That code isn't right\" on a code you just read",
+        "Someone is stuck on the setup screen and can't get in",
+        "The Two-Factor column isn't in the employee list",
+        "Turning enforcement on didn't prompt anyone",
+        "An admin can't turn enforcement off"
       ]
     },
     {
