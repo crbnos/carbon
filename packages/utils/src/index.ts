@@ -11,6 +11,7 @@ export * from "./date";
 export * from "./datetime";
 export * from "./duration";
 export * from "./fids";
+export * from "./production-order-mapping";
 export * from "./field-registry";
 export * from "./file";
 export * from "./geo";
