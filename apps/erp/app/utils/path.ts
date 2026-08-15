@@ -1964,6 +1964,7 @@ export const path = {
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),
     scrapReasons: `${x}/production/scrap-reasons`,
+    security: `${x}/settings/security`,
     selectCompany,
     sequences: `${x}/settings/sequences`,
     serialNumber: (id: string) =>

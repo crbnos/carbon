@@ -144,10 +144,12 @@ const MfaEnrollmentRequired = ({
               <VStack spacing={2} className="w-full items-center">
                 <p className="text-sm text-muted-foreground text-center text-pretty">
                   {controlledEnvironment ? (
-                    <Trans>
-                      This is a controlled environment, so an authenticator app
-                      is required.
-                    </Trans>
+                    <span className="text-xs">
+                      <Trans>
+                        This is a controlled environment, so an authenticator
+                        app is required.
+                      </Trans>
+                    </span>
                   ) : (
                     <Trans>
                       Your organization requires an authenticator app.

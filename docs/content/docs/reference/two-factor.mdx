@@ -39,7 +39,7 @@ Sessions that already existed before you enrolled don't get a free pass. Carbon 
 
 ## Requiring it for everyone
 
-Open **Settings → Company** and find the **Two-Factor Authentication Enforcement** card. Turning the switch on means anyone opening that company has to have an authenticator set up. There's no grace period; it takes effect on their next page load.
+Open **Settings → System → Security** and find the **Two-Factor Authentication Enforcement** card. Turning the switch on means anyone opening that company has to have an authenticator set up. There's no grace period; it takes effect on their next page load.
 
 Someone without one sees a full-screen prompt instead of the app, with a **"Set up authenticator app"** button that runs the same QR-and-code flow as the account page. They can complete it right there. The only other thing on that screen is **"Sign out"** — there is no way past it.
 
@@ -85,7 +85,7 @@ If you need to restrict what an authenticated person can reach, that's a differe
 
 <FieldTable>
   <Field name="Account → Security">Set up or remove your own authenticator, alongside your passkeys. See [account settings](/docs/reference/account).</Field>
-  <Field name="Settings → Company">The **Two-Factor Authentication Enforcement** switch for the whole company. See [company settings](/docs/reference/company-settings).</Field>
+  <Field name="Settings → System → Security">The **Two-Factor Authentication Enforcement** switch for the whole company. See [company settings](/docs/reference/company-settings).</Field>
   <Field name="People → Employee accounts">The **Two-Factor** status column and the **"Reset Two-Factor Auth"** row action. See [people](/docs/reference/people).</Field>
 </FieldTable>
 
@@ -101,7 +101,7 @@ That's a company with enforcement on and a person without an authenticator. They
 
 ### The Two-Factor column isn't in the employee list
 
-The column only renders while the company requires two-factor. Turn the setting on in **Settings → Company** and it appears.
+The column only renders while the company requires two-factor. Turn the setting on in **Settings → System → Security** and it appears.
 
 ### Turning enforcement on didn't prompt anyone
 

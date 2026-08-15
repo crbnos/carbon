@@ -99,7 +99,8 @@ Supabase's `auth.mfa_factors` — no app table.
   `adminDeleteTotpFactors` — factors are global to the auth user, so it affects
   every company the user belongs to.
 - **Org enforcement**: `companySettings.requireMfa` (migration
-  `20260816103045`) toggled from Settings → Company; `CONTROLLED_ENVIRONMENT=true`
+  `20260816103045`) toggled from Settings → System → Security
+  (`x+/settings+/security.tsx`); `CONTROLLED_ENVIRONMENT=true`
   forces it on and cannot be overridden (NIST 800-171 3.5.3). Enforced as a
   BLOCKING SCREEN in the ERP/MES shell loaders (`MfaEnrollmentRequired`), never a
   redirect — a redirect would have to allowlist the `api+/mfa.*` routes used to

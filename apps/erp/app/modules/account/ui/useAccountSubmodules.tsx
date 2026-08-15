@@ -11,6 +11,11 @@ export default function useAccountSubmodules() {
       name: t`Account`,
       routes: [
         {
+          name: t`Notifications`,
+          to: path.to.notificationSettings,
+          icon: <LuBell />
+        },
+        {
           name: t`Profile`,
           to: path.to.profile,
           icon: <CgProfile />
@@ -19,11 +24,6 @@ export default function useAccountSubmodules() {
           name: t`Security`,
           to: path.to.accountSecurity,
           icon: <LuShieldCheck />
-        },
-        {
-          name: t`Notifications`,
-          to: path.to.notificationSettings,
-          icon: <LuBell />
         }
       ]
     }

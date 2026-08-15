@@ -168,6 +168,7 @@ export default function AccountSecurity() {
     verifyAction: path.to.mfaVerify,
     onVerified: () => {
       toast.success("Two-factor authentication enabled");
+      resetMfaEnrollment();
       revalidate();
     }
   });

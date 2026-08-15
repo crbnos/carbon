@@ -1,9 +1,4 @@
-import {
-  assertIsPost,
-  CONTROLLED_ENVIRONMENT,
-  error,
-  success
-} from "@carbon/auth";
+import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -17,7 +12,6 @@ import {
   Heading,
   HStack,
   ScrollArea,
-  Switch,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -27,16 +21,14 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuKeySquare, LuRocket } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
-import { data, Link, useFetcher } from "react-router";
-import { usePermissions, useRouteData } from "~/hooks";
+import { data, Link } from "react-router";
+import { useRouteData } from "~/hooks";
 import { useImplementationReopenItem } from "~/hooks/useImplementationNavItem";
-import { useSettings } from "~/hooks/useSettings";
 import type { Company as CompanyType } from "~/modules/settings";
 import {
   CompanyForm,
   companyValidator,
-  updateCompany,
-  updateRequireMfaSetting
+  updateCompany
 } from "~/modules/settings";
 import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
@@ -54,33 +46,6 @@ export async function action({ request }: ActionFunctionArgs) {
     update: "settings"
   });
   const formData = await request.formData();
-
-  // Toggle intents post alongside the company form; branch before validating,
-  // since they carry no company fields.
-  if (formData.get("intent") === "requireMfa") {
-    const requireMfa = formData.get("enabled") === "true";
-    const update = await updateRequireMfaSetting(client, companyId, requireMfa);
-    if (update.error)
-      return data(
-        {},
-        await flash(
-          request,
-          error(update.error, "Failed to update two-factor requirement")
-        )
-      );
-
-    return data(
-      {},
-      await flash(
-        request,
-        success(
-          requireMfa
-            ? "Two-factor authentication is now required"
-            : "Two-factor authentication is no longer required"
-        )
-      )
-    );
-  }
 
   const validation = await validator(companyValidator).validate(formData);
 
@@ -112,12 +77,6 @@ export default function Company() {
 
   const company = routeData?.company;
   if (!company) throw new Error("Company not found");
-
-  const permissions = usePermissions();
-  const canEdit = permissions.can("update", "settings");
-  const mfaFetcher = useFetcher<{}>();
-  const settings = useSettings();
-  const requireMfa = settings.requireMfa === true;
 
   // Buried reopen entry for a finished implementation hub — only present once the
   // company was enrolled and onboarding was wrapped up (status complete/archived).
@@ -203,54 +162,6 @@ export default function Company() {
             {/* @ts-ignore */}
             <CompanyForm company={initialValues} />
           </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Two-Factor Authentication Enforcement</Trans>
-                </CardTitle>
-                <CardDescription>
-                  {CONTROLLED_ENVIRONMENT ? (
-                    <Trans>
-                      This is a controlled environment, so two-factor
-                      authentication is required for everyone and cannot be
-                      turned off.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Require an authenticator app before anyone can open this
-                      company. Their other companies are unaffected. Visit the{" "}
-                      <Link
-                        to={path.to.employeeAccounts}
-                        className="text-primary underline"
-                      >
-                        employee accounts page
-                      </Link>{" "}
-                      to see each person's status.
-                    </Trans>
-                  )}
-                </CardDescription>
-              </div>
-              <Switch
-                checked={CONTROLLED_ENVIRONMENT || requireMfa}
-                onCheckedChange={(checked) =>
-                  mfaFetcher.submit(
-                    { intent: "requireMfa", enabled: String(checked) },
-                    { method: "post" }
-                  )
-                }
-                disabled={
-                  CONTROLLED_ENVIRONMENT ||
-                  mfaFetcher.state !== "idle" ||
-                  !canEdit
-                }
-                aria-label={t`Require two-factor authentication`}
-              />
-            </HStack>
-          </CardHeader>
         </Card>
       </VStack>
     </ScrollArea>
