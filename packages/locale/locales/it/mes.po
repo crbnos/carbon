@@ -422,6 +422,9 @@ msgstr "Termina Operazioni"
 msgid "Enter PIN for {0}"
 msgstr "Inserisci il PIN per {0}"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Inserisci il codice a 6 cifre dalla tua app di autenticazione"
+
 msgid "Error"
 msgstr "Errore"
 
@@ -1224,6 +1227,9 @@ msgstr "Imposta Uscita"
 msgid "Set clock-out time"
 msgstr "Imposta orario di uscita"
 
+msgid "Set up in Carbon"
+msgstr "Configura in Carbon"
+
 msgid "Setup"
 msgstr "Attrezzaggio"
 
@@ -1247,6 +1253,9 @@ msgstr "Accedi con Outlook"
 
 msgid "Sign in with Passkey"
 msgstr "Accedi con Passkey"
+
+msgid "Sign out"
+msgstr "Esci"
 
 msgid "Sign Out"
 msgstr "Esci"
@@ -1375,6 +1384,12 @@ msgstr "Entità Tracciata"
 msgid "Tracking"
 msgstr "Tracciamento"
 
+msgid "Two-factor authentication"
+msgstr "Autenticazione a due fattori"
+
+msgid "Two-factor authentication required"
+msgstr "Autenticazione a due fattori richiesta"
+
 msgid "Type a message..."
 msgstr "Scrivi un messaggio..."
 
@@ -1425,6 +1440,12 @@ msgstr "Caricato: {0}"
 msgid "Uploading {0}"
 msgstr "Caricamento di {0}"
 
+msgid "Use a different account"
+msgstr "Usa un account diverso"
+
+msgid "Verify"
+msgstr "Verifica"
+
 msgid "View maintenance dispatch"
 msgstr "Visualizza intervento di manutenzione"
 
@@ -1451,3 +1472,6 @@ msgstr "Ti sei connesso a <0/>. Puoi modificare l'orario di disconnessione di se
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sei timbrato in ingresso da {hoursElapsed} ore. Hai dimenticato di timbrare l'uscita?"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "La tua organizzazione richiede un'app di autenticazione. Configurala in Carbon, quindi torna qui."

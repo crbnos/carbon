@@ -2261,6 +2261,9 @@ msgstr "監査ログ"
 msgid "Authentication Error"
 msgstr "認証エラー"
 
+msgid "Authenticator QR code"
+msgstr "認証器QRコード"
+
 msgid "Auto apply"
 msgstr "自動適用"
 
@@ -5894,6 +5897,9 @@ msgstr "PO番号を入力"
 msgid "Enter text…"
 msgstr "テキストを入力..."
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "認証アプリから6桁のコードを入力してください"
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
 
@@ -8159,6 +8165,9 @@ msgstr "開いたままにする"
 msgid "Keep picking"
 msgstr "ピッキングを続ける"
 
+msgid "Keeps orders, quotes, and settings behind a second check"
+msgstr "注文、見積、設定を2段階認証で保護します"
+
 msgid "Key"
 msgstr "キー"
 
@@ -10032,6 +10041,9 @@ msgstr "不要"
 msgid "Not set"
 msgstr "未設定"
 
+msgid "Not set up"
+msgstr "未設定"
+
 msgid "Not started"
 msgstr "未開始"
 
@@ -11377,6 +11389,9 @@ msgstr "ゴーライブ日を保護する"
 msgid "Protect training time and attend"
 msgstr "トレーニング時間を確保して参加する"
 
+msgid "Protects your company's data"
+msgstr "会社データを保護します"
+
 msgid "Provide process knowledge and inputs"
 msgstr "プロセスの知識と入力を提供する"
 
@@ -12220,6 +12235,9 @@ msgstr "承認をリクエスト"
 msgid "Requested Date"
 msgstr "リクエスト日"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+msgstr "このコンパニーを開く前に認証アプリが必須になります。他のコンパニーには影響しません。<0>従業員アカウントページ</0>をご覧ください。"
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "サプライヤーをアクティブに設定する前に承認が必要です"
 
@@ -12228,6 +12246,9 @@ msgstr "金額閾値に基づいて購買注文の承認を要求する"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフロー内の品質文書の承認が必要です"
+
+msgid "Require two-factor authentication"
+msgstr "2要素認証が必須"
 
 msgid "Required"
 msgstr "必須"
@@ -12284,6 +12305,14 @@ msgstr "PINをリセット"
 #. placeholder {1}: operator.lastName
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1}のPINをリセット"
+
+msgid "Reset Two-Factor Auth"
+msgstr "2要素認証をリセット"
+
+#. placeholder {0}: user.firstName
+#. placeholder {1}: user.lastName
+msgid "Reset two-factor authentication for {0} {1}"
+msgstr "{0} {1}の2要素認証をリセット"
 
 msgid "Reset view"
 msgstr "ビューをリセット"
@@ -12792,6 +12821,9 @@ msgstr "スキャンまたは検索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象エンティティをスキャンまたは選択してサンプル列として追加し、グリッドにその結果を記録します。"
 
+msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
+msgstr "認証アプリでスキャンして、表示される6桁のコードを入力してください。"
+
 msgid "SCAR"
 msgstr "SCAR"
 
@@ -12953,6 +12985,12 @@ msgstr "秒/個"
 
 msgid "Section"
 msgstr "セクション"
+
+msgid "Secure your account with 2FA"
+msgstr "2FAでアカウントを保護"
+
+msgid "Security"
+msgstr "セキュリティ"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "顧客の価格設定と条件を決定するセグメント"
@@ -13292,6 +13330,9 @@ msgstr "価格設定"
 msgid "Set Quantity"
 msgstr "数量を設定"
 
+msgid "Set up authenticator app"
+msgstr "認証アプリをセットアップ"
+
 msgid "Set up the right way"
 msgstr "正しい方法でセットアップ"
 
@@ -13319,6 +13360,9 @@ msgstr "セットアップ"
 
 msgid "Setup & Controls"
 msgstr "セットアップとコントロール"
+
+msgid "Setup failed"
+msgstr "セットアップに失敗しました"
 
 msgid "Setup instructions"
 msgstr "セットアップ手順"
@@ -13579,6 +13623,9 @@ msgstr "Outlookでサインイン"
 msgid "Sign in with Passkey"
 msgstr "パスキーでサインイン"
 
+msgid "Sign out"
+msgstr "ログアウト"
+
 msgid "Sign Out"
 msgstr "サインアウト"
 
@@ -13593,6 +13640,9 @@ msgstr "{name}としてサインインしています"
 
 msgid "Signed quantity — negative for outbound movements"
 msgstr "署名された数量 — アウトバウンド移動の場合は負数"
+
+msgid "Signing in also requires a one-time code from your authenticator app"
+msgstr "サインインには認証アプリからのワンタイムコードも必要です"
 
 msgid "Sites & locations"
 msgstr "サイトと場所"
@@ -15247,6 +15297,12 @@ msgstr "この検査計画"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
 
+msgid "This is a controlled environment, so an authenticator app is required."
+msgstr "これは管理環境のため、認証アプリが必須です。"
+
+msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
+msgstr "これは管理環境のため、全員に2要素認証が必須で、無効にできません。"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "これは購入アイテムです。BoM/BoP はありません。属性と文書のみ変更できます。"
 
@@ -15316,6 +15372,9 @@ msgstr "この期間には転記された仕訳がなく、永久に削除でき
 msgid "This Quarter"
 msgstr "今四半期"
 
+msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+msgstr "認証アプリを削除するため、次のサインインはマジックリンクのみで必要になります。認証アプリへのアクセスを失った場合に使用してください。所属する全コンパニーのサインインに影響します。"
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "このリビジョンはリリース済み（本番環境）です。変更は通常、変更通知を通じて実施されるべきです。"
 
@@ -15343,6 +15402,9 @@ msgstr "このサプライヤー"
 
 msgid "This updates the theme for all users of the application"
 msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
+
+msgid "This user does not have two-factor authentication enabled."
+msgstr "このユーザーは2要素認証が有効になっていません。"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "このバージョンはオープンな<0>変更通知</0>に属しています。そこで編集してください。"
@@ -15750,6 +15812,15 @@ msgstr "火曜日"
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
 
+msgid "Two-Factor"
+msgstr "2要素認証"
+
+msgid "Two-factor authentication"
+msgstr "2要素認証"
+
+msgid "Two-Factor Authentication Enforcement"
+msgstr "2要素認証の強制実行"
+
 msgid "Type"
 msgstr "種類"
 
@@ -16110,6 +16181,9 @@ msgstr "... を使用して次のサービス ID を取得"
 msgid "Use ... to get the next tool ID"
 msgstr "「...」を使用して次のツールIDを取得します"
 
+msgid "Use a different account"
+msgstr "別のアカウントを使用"
+
 msgid "Use a different email"
 msgstr "別のメールアドレスを使用"
 
@@ -16247,6 +16321,15 @@ msgstr "仕入先償却益"
 
 msgid "Verification Error"
 msgstr "認証エラー"
+
+msgid "Verification failed"
+msgstr "検証に失敗しました"
+
+msgid "Verify"
+msgstr "検証"
+
+msgid "Verify and continue"
+msgstr "検証して続行"
 
 msgid "Verify inventory and financial balances tie out"
 msgstr "在庫と財務残高が一致していることを確認"
@@ -17146,6 +17229,9 @@ msgstr "あなた自身のペースでCarbonをセットアップしています
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "あなたは{hoursElapsed}時間クロックインしています。クロックアウトするのを忘れましたか？"
 
+msgid "Your account stays safe even if your login is stolen"
+msgstr "ログインが盗まれてもアカウントは安全です"
+
 msgid "Your books and how money flows."
 msgstr "あなたの帳簿とお金の流れ。"
 
@@ -17190,6 +17276,9 @@ msgstr "あなたの主な連絡先"
 
 msgid "Your Name"
 msgstr "お名前"
+
+msgid "Your organization requires an authenticator app."
+msgstr "組織が認証アプリを要求しています。"
 
 msgid "Your part numbers"
 msgstr "あなたの部品番号"

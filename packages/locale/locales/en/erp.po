@@ -2261,6 +2261,9 @@ msgstr "Audit Logs"
 msgid "Authentication Error"
 msgstr "Authentication Error"
 
+msgid "Authenticator QR code"
+msgstr "Authenticator QR code"
+
 msgid "Auto apply"
 msgstr "Auto apply"
 
@@ -5894,6 +5897,9 @@ msgstr "Enter PO number"
 msgid "Enter text…"
 msgstr "Enter text…"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Enter the 6-digit code from your authenticator app"
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 
@@ -8159,6 +8165,9 @@ msgstr "Keep Open"
 msgid "Keep picking"
 msgstr "Keep picking"
 
+msgid "Keeps orders, quotes, and settings behind a second check"
+msgstr "Keeps orders, quotes, and settings behind a second check"
+
 msgid "Key"
 msgstr "Key"
 
@@ -10032,6 +10041,9 @@ msgstr "Not Required"
 msgid "Not set"
 msgstr "Not set"
 
+msgid "Not set up"
+msgstr "Not set up"
+
 msgid "Not started"
 msgstr "Not started"
 
@@ -11377,6 +11389,9 @@ msgstr "Protect the go-live date"
 msgid "Protect training time and attend"
 msgstr "Protect training time and attend"
 
+msgid "Protects your company's data"
+msgstr "Protects your company's data"
+
 msgid "Provide process knowledge and inputs"
 msgstr "Provide process knowledge and inputs"
 
@@ -12220,6 +12235,9 @@ msgstr "Request Approval"
 msgid "Requested Date"
 msgstr "Requested Date"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+msgstr "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Require approval before suppliers can be set to Active"
 
@@ -12228,6 +12246,9 @@ msgstr "Require approval for purchase orders based on amount thresholds"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Require approval for quality documents in your workflow"
+
+msgid "Require two-factor authentication"
+msgstr "Require two-factor authentication"
 
 msgid "Required"
 msgstr "Required"
@@ -12284,6 +12305,14 @@ msgstr "Reset PIN"
 #. placeholder {1}: operator.lastName
 msgid "Reset PIN for {0} {1}"
 msgstr "Reset PIN for {0} {1}"
+
+msgid "Reset Two-Factor Auth"
+msgstr "Reset Two-Factor Auth"
+
+#. placeholder {0}: user.firstName
+#. placeholder {1}: user.lastName
+msgid "Reset two-factor authentication for {0} {1}"
+msgstr "Reset two-factor authentication for {0} {1}"
 
 msgid "Reset view"
 msgstr "Reset view"
@@ -12792,6 +12821,9 @@ msgstr "Scan or search..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 
+msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
+msgstr "Scan this with your authenticator app, then enter the 6-digit code it shows."
+
 msgid "SCAR"
 msgstr "SCAR"
 
@@ -12953,6 +12985,12 @@ msgstr "Seconds/Piece"
 
 msgid "Section"
 msgstr "Section"
+
+msgid "Secure your account with 2FA"
+msgstr "Secure your account with 2FA"
+
+msgid "Security"
+msgstr "Security"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segments that drive customer pricing and terms"
@@ -13292,6 +13330,9 @@ msgstr "Set Pricing"
 msgid "Set Quantity"
 msgstr "Set Quantity"
 
+msgid "Set up authenticator app"
+msgstr "Set up authenticator app"
+
 msgid "Set up the right way"
 msgstr "Set up the right way"
 
@@ -13319,6 +13360,9 @@ msgstr "Setup"
 
 msgid "Setup & Controls"
 msgstr "Setup & Controls"
+
+msgid "Setup failed"
+msgstr "Setup failed"
 
 msgid "Setup instructions"
 msgstr "Setup instructions"
@@ -13579,6 +13623,9 @@ msgstr "Sign in with Outlook"
 msgid "Sign in with Passkey"
 msgstr "Sign in with Passkey"
 
+msgid "Sign out"
+msgstr "Sign out"
+
 msgid "Sign Out"
 msgstr "Sign Out"
 
@@ -13593,6 +13640,9 @@ msgstr "Signed in as {name}"
 
 msgid "Signed quantity — negative for outbound movements"
 msgstr "Signed quantity — negative for outbound movements"
+
+msgid "Signing in also requires a one-time code from your authenticator app"
+msgstr "Signing in also requires a one-time code from your authenticator app"
 
 msgid "Sites & locations"
 msgstr "Sites & locations"
@@ -15247,6 +15297,12 @@ msgstr "this inspection plan"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 
+msgid "This is a controlled environment, so an authenticator app is required."
+msgstr "This is a controlled environment, so an authenticator app is required."
+
+msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
+msgstr "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 
@@ -15316,6 +15372,9 @@ msgstr "This period has no journal entries posted to it and can be permanently d
 msgid "This Quarter"
 msgstr "This Quarter"
 
+msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+msgstr "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "This revision is released (Production). Changes should normally flow through a change notice."
 
@@ -15343,6 +15402,9 @@ msgstr "this supplier"
 
 msgid "This updates the theme for all users of the application"
 msgstr "This updates the theme for all users of the application"
+
+msgid "This user does not have two-factor authentication enabled."
+msgstr "This user does not have two-factor authentication enabled."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "This version belongs to an open <0>change notice</0>. Edit it there."
@@ -15750,6 +15812,15 @@ msgstr "Tuesday"
 msgid "Turn on the built-in pieces"
 msgstr "Turn on the built-in pieces"
 
+msgid "Two-Factor"
+msgstr "Two-Factor"
+
+msgid "Two-factor authentication"
+msgstr "Two-factor authentication"
+
+msgid "Two-Factor Authentication Enforcement"
+msgstr "Two-Factor Authentication Enforcement"
+
 msgid "Type"
 msgstr "Type"
 
@@ -16110,6 +16181,9 @@ msgstr "Use ... to get the next service ID"
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
+msgid "Use a different account"
+msgstr "Use a different account"
+
 msgid "Use a different email"
 msgstr "Use a different email"
 
@@ -16247,6 +16321,15 @@ msgstr "Vendor Write-Off Income"
 
 msgid "Verification Error"
 msgstr "Verification Error"
+
+msgid "Verification failed"
+msgstr "Verification failed"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify and continue"
+msgstr "Verify and continue"
 
 msgid "Verify inventory and financial balances tie out"
 msgstr "Verify inventory and financial balances tie out"
@@ -17150,6 +17233,9 @@ msgstr "You're setting Carbon up yourself, at your own pace"
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 
+msgid "Your account stays safe even if your login is stolen"
+msgstr "Your account stays safe even if your login is stolen"
+
 msgid "Your books and how money flows."
 msgstr "Your books and how money flows."
 
@@ -17194,6 +17280,9 @@ msgstr "Your main point of contact"
 
 msgid "Your Name"
 msgstr "Your Name"
+
+msgid "Your organization requires an authenticator app."
+msgstr "Your organization requires an authenticator app."
 
 msgid "Your part numbers"
 msgstr "Your part numbers"

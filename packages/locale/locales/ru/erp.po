@@ -2261,6 +2261,9 @@ msgstr "Журналы аудита"
 msgid "Authentication Error"
 msgstr "Ошибка аутентификации"
 
+msgid "Authenticator QR code"
+msgstr "QR-код аутентификатора"
+
 msgid "Auto apply"
 msgstr "Автоматически применить"
 
@@ -5894,6 +5897,9 @@ msgstr "Введите номер ПО"
 msgid "Enter text…"
 msgstr "Введите текст…"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Введите 6-значный код из приложения аутентификации"
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
 
@@ -8159,6 +8165,9 @@ msgstr "Оставить открытым"
 msgid "Keep picking"
 msgstr "Продолжить комплектацию"
 
+msgid "Keeps orders, quotes, and settings behind a second check"
+msgstr "Защищает заказы, предложения и параметры вторым уровнем проверки"
+
 msgid "Key"
 msgstr "Ключ"
 
@@ -10032,6 +10041,9 @@ msgstr "Не требуется"
 msgid "Not set"
 msgstr "Не установлено"
 
+msgid "Not set up"
+msgstr "Не настроено"
+
 msgid "Not started"
 msgstr "Не начинается"
 
@@ -11377,6 +11389,9 @@ msgstr "Защитите дату запуска"
 msgid "Protect training time and attend"
 msgstr "Защитите время обучения и участвуйте"
 
+msgid "Protects your company's data"
+msgstr "Защищает данные вашей компании"
+
 msgid "Provide process knowledge and inputs"
 msgstr "Предоставить знания о процессе и входные данные"
 
@@ -12220,6 +12235,9 @@ msgstr "Запросить одобрение"
 msgid "Requested Date"
 msgstr "Запрашиваемая дата"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+msgstr "Требуется приложение аутентификации перед доступом к этой компании. Другие компании пользователей не затронуты. Посетите <0>страницу учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Требуется одобрение перед тем, как поставщики смогут быть установлены в статус Активный"
 
@@ -12228,6 +12246,9 @@ msgstr "Требовать утверждение для заказов на п�
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Требуется одобрение для документов качества в вашем рабочем процессе"
+
+msgid "Require two-factor authentication"
+msgstr "Требовать двухфакторную аутентификацию"
 
 msgid "Required"
 msgstr "Обязательно"
@@ -12284,6 +12305,14 @@ msgstr "Сброс PIN"
 #. placeholder {1}: operator.lastName
 msgid "Reset PIN for {0} {1}"
 msgstr "Сброс PIN для {0} {1}"
+
+msgid "Reset Two-Factor Auth"
+msgstr "Сбросить двухфакторную аутентификацию"
+
+#. placeholder {0}: user.firstName
+#. placeholder {1}: user.lastName
+msgid "Reset two-factor authentication for {0} {1}"
+msgstr "Сбросить двухфакторную аутентификацию для {0} {1}"
 
 msgid "Reset view"
 msgstr "Сбросить вид"
@@ -12792,6 +12821,9 @@ msgstr "Сканировать или искать..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Отсканируйте или выберите отслеживаемую сущность из этой партии, чтобы добавить её в качестве столбца образца, затем запишите её результат в сетку."
 
+msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
+msgstr "Отсканируйте это в приложении аутентификации, а затем введите 6-значный код, который оно показывает."
+
 msgid "SCAR"
 msgstr "SCAR"
 
@@ -12953,6 +12985,12 @@ msgstr "Секунды/Деталь"
 
 msgid "Section"
 msgstr "Раздел"
+
+msgid "Secure your account with 2FA"
+msgstr "Защитите свою учетную запись с помощью 2FA"
+
+msgid "Security"
+msgstr "Безопасность"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Сегменты, которые определяют цены и условия для клиентов"
@@ -13292,6 +13330,9 @@ msgstr "Установить цену"
 msgid "Set Quantity"
 msgstr "Установить количество"
 
+msgid "Set up authenticator app"
+msgstr "Установить приложение аутентификации"
+
 msgid "Set up the right way"
 msgstr "Правильная настройка"
 
@@ -13319,6 +13360,9 @@ msgstr "Настройка"
 
 msgid "Setup & Controls"
 msgstr "Настройка и управление"
+
+msgid "Setup failed"
+msgstr "Ошибка установки"
 
 msgid "Setup instructions"
 msgstr "Инструкции по настройке"
@@ -13579,6 +13623,9 @@ msgstr "Войти через Outlook"
 msgid "Sign in with Passkey"
 msgstr "Войти с помощью Passkey"
 
+msgid "Sign out"
+msgstr "Выход"
+
 msgid "Sign Out"
 msgstr "Выход"
 
@@ -13593,6 +13640,9 @@ msgstr "Вы вошли как {name}"
 
 msgid "Signed quantity — negative for outbound movements"
 msgstr "Подписанное количество — отрицательное для исходящих движений"
+
+msgid "Signing in also requires a one-time code from your authenticator app"
+msgstr "При входе также требуется одноразовый код из приложения аутентификации"
 
 msgid "Sites & locations"
 msgstr "Объекты и местоположения"
@@ -15247,6 +15297,12 @@ msgstr "этот план проверки"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "Это приглашение присоединиться к {0} истекло. Вы можете запросить новое приглашение, которое будет отправлено на вашу электронную почту."
 
+msgid "This is a controlled environment, so an authenticator app is required."
+msgstr "Это контролируемая среда, поэтому требуется приложение аутентификации."
+
+msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
+msgstr "Это контролируемая среда, поэтому двухфакторная аутентификация требуется для всех и не может быть отключена."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Это купленный элемент — у него нет BoM/BoP; могут изменяться только его атрибуты и документы."
 
@@ -15316,6 +15372,9 @@ msgstr "В этот период не размещены записи журна
 msgid "This Quarter"
 msgstr "Этот квартал"
 
+msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+msgstr "Это удаляет их приложение аутентификации, поэтому при следующем входе потребуется только магическая ссылка. Используйте это, когда они потеряли доступ к своему аутентификатору. Это влияет на их вход во все компании, к которым они принадлежат."
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "Эта редакция выпущена (Производство). Изменения должны нормально проходить через уведомление об изменении."
 
@@ -15343,6 +15402,9 @@ msgstr "этот поставщик"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"
+
+msgid "This user does not have two-factor authentication enabled."
+msgstr "Этот пользователь не имеет включенную двухфакторную аутентификацию."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Эта версия принадлежит открытому <0>уведомлению об изменении</0>. Отредактируйте его там."
@@ -15750,6 +15812,15 @@ msgstr "Вторник"
 msgid "Turn on the built-in pieces"
 msgstr "Включите встроенные компоненты"
 
+msgid "Two-Factor"
+msgstr "Двухфакторная аутентификация"
+
+msgid "Two-factor authentication"
+msgstr "Двухфакторная аутентификация"
+
+msgid "Two-Factor Authentication Enforcement"
+msgstr "Требование двухфакторной аутентификации"
+
 msgid "Type"
 msgstr "Тип"
 
@@ -16110,6 +16181,9 @@ msgstr "Используйте ... для получения следующег�
 msgid "Use ... to get the next tool ID"
 msgstr "Используйте ... для получения следующего ID инструмента"
 
+msgid "Use a different account"
+msgstr "Использовать другую учетную запись"
+
 msgid "Use a different email"
 msgstr "Использовать другой адрес электронной почты"
 
@@ -16247,6 +16321,15 @@ msgstr "Доход от списания задолженности перед �
 
 msgid "Verification Error"
 msgstr "Ошибка проверки"
+
+msgid "Verification failed"
+msgstr "Ошибка проверки"
+
+msgid "Verify"
+msgstr "Проверить"
+
+msgid "Verify and continue"
+msgstr "Проверить и продолжить"
 
 msgid "Verify inventory and financial balances tie out"
 msgstr "Проверить, что остатки товаров и финансовые балансы совпадают"
@@ -17146,6 +17229,9 @@ msgstr "Вы самостоятельно настраиваете Carbon в у�
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Вы отметились на работу {hoursElapsed} часов назад. Вы забыли отметиться на выход?"
 
+msgid "Your account stays safe even if your login is stolen"
+msgstr "Ваша учетная запись остается в безопасности, даже если ваше имя входа украдено"
+
 msgid "Your books and how money flows."
 msgstr "Ваши книги и движение денежных средств."
 
@@ -17190,6 +17276,9 @@ msgstr "Ваша основная точка контакта"
 
 msgid "Your Name"
 msgstr "Ваше имя"
+
+msgid "Your organization requires an authenticator app."
+msgstr "Ваша организация требует приложения аутентификации."
 
 msgid "Your part numbers"
 msgstr "Ваши номера деталей"

@@ -422,6 +422,9 @@ msgstr "End Operations"
 msgid "Enter PIN for {0}"
 msgstr "Enter PIN for {0}"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Enter the 6-digit code from your authenticator app"
+
 msgid "Error"
 msgstr "Error"
 
@@ -1224,6 +1227,9 @@ msgstr "Set Clock Out"
 msgid "Set clock-out time"
 msgstr "Set clock-out time"
 
+msgid "Set up in Carbon"
+msgstr "Set up in Carbon"
+
 msgid "Setup"
 msgstr "Setup"
 
@@ -1247,6 +1253,9 @@ msgstr "Sign in with Outlook"
 
 msgid "Sign in with Passkey"
 msgstr "Sign in with Passkey"
+
+msgid "Sign out"
+msgstr "Sign out"
 
 msgid "Sign Out"
 msgstr "Sign Out"
@@ -1375,6 +1384,12 @@ msgstr "Tracked Entity"
 msgid "Tracking"
 msgstr "Tracking"
 
+msgid "Two-factor authentication"
+msgstr "Two-factor authentication"
+
+msgid "Two-factor authentication required"
+msgstr "Two-factor authentication required"
+
 msgid "Type a message..."
 msgstr "Type a message..."
 
@@ -1425,6 +1440,12 @@ msgstr "Uploaded: {0}"
 msgid "Uploading {0}"
 msgstr "Uploading {0}"
 
+msgid "Use a different account"
+msgstr "Use a different account"
+
+msgid "Verify"
+msgstr "Verify"
+
 msgid "View maintenance dispatch"
 msgstr "View maintenance dispatch"
 
@@ -1451,3 +1472,6 @@ msgstr "You clocked in at <0/>. You can edit your clock-out time below or acknow
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "Your organization requires an authenticator app. Set it up in Carbon, then come back here."

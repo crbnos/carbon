@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-14T17:02:35.388Z",
-  "totalTools": 1440,
+  "generated": "2026-08-15T21:38:08.771Z",
+  "totalTools": 1442,
   "modules": 15,
   "tools": [
     {
@@ -42933,6 +42933,33 @@
       }
     },
     {
+      "name": "settings_updateRequireMfaSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update require mfa setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "requireMfa"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "requireMfa": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "requireMfa"
+        ]
+      }
+    },
+    {
       "name": "settings_updateShowCurrencyTrailingZerosSetting",
       "module": "settings",
       "classification": "WRITE",
@@ -44752,6 +44779,24 @@
       "module": "users",
       "classification": "READ",
       "description": "get unrevoked invite emails",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "users_getUsersWithVerifiedMfa",
+      "module": "users",
+      "classification": "READ",
+      "description": "get users with verified mfa",
       "paramCount": 0,
       "serviceParams": [
         "client",

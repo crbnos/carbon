@@ -2261,6 +2261,9 @@ msgstr "Registos de Auditoria"
 msgid "Authentication Error"
 msgstr "Erro de Autenticação"
 
+msgid "Authenticator QR code"
+msgstr "Código QR do autenticador"
+
 msgid "Auto apply"
 msgstr "Aplicar automaticamente"
 
@@ -5894,6 +5897,9 @@ msgstr "Insira o número da PO"
 msgid "Enter text…"
 msgstr "Digite o texto…"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Digite o código de 6 dígitos do seu aplicativo autenticador"
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Insira a quantidade que esse movimento deveria ter sido. Um movimento oposto para a diferença é lançado ao lado do original, no período de tempo do original."
 
@@ -8159,6 +8165,9 @@ msgstr "Manter Aberto"
 msgid "Keep picking"
 msgstr "Continuar coletando"
 
+msgid "Keeps orders, quotes, and settings behind a second check"
+msgstr "Mantém pedidos, cotações e configurações atrás de uma segunda verificação"
+
 msgid "Key"
 msgstr "Chave"
 
@@ -10032,6 +10041,9 @@ msgstr "Não Obrigatório"
 msgid "Not set"
 msgstr "Não definido"
 
+msgid "Not set up"
+msgstr "Não configurado"
+
 msgid "Not started"
 msgstr "Não iniciado"
 
@@ -11377,6 +11389,9 @@ msgstr "Proteja a data de ativação"
 msgid "Protect training time and attend"
 msgstr "Proteja o tempo de treinamento e participe"
 
+msgid "Protects your company's data"
+msgstr "Protege os dados da sua empresa"
+
 msgid "Provide process knowledge and inputs"
 msgstr "Forneça conhecimento do processo e entradas"
 
@@ -12220,6 +12235,9 @@ msgstr "Solicitar Aprovação"
 msgid "Requested Date"
 msgstr "Data Solicitada"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+msgstr "Requer um aplicativo autenticador antes de qualquer pessoa poder abrir esta empresa. Suas outras empresas não são afetadas. Visite a <0>página de contas de funcionários</0> para ver o status de cada pessoa."
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Exigir aprovação antes que fornecedores possam ser definidos como Ativos"
 
@@ -12228,6 +12246,9 @@ msgstr "Exigir aprovação para pedidos de compra com base em limites de valor"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Exigir aprovação para documentos de qualidade no seu fluxo de trabalho"
+
+msgid "Require two-factor authentication"
+msgstr "Requerer autenticação de dois fatores"
 
 msgid "Required"
 msgstr "Obrigatório"
@@ -12284,6 +12305,14 @@ msgstr "Redefinir PIN"
 #. placeholder {1}: operator.lastName
 msgid "Reset PIN for {0} {1}"
 msgstr "Redefinir PIN para {0} {1}"
+
+msgid "Reset Two-Factor Auth"
+msgstr "Redefinir Autenticação de Dois Fatores"
+
+#. placeholder {0}: user.firstName
+#. placeholder {1}: user.lastName
+msgid "Reset two-factor authentication for {0} {1}"
+msgstr "Redefinir autenticação de dois fatores para {0} {1}"
 
 msgid "Reset view"
 msgstr "Repor vista"
@@ -12792,6 +12821,9 @@ msgstr "Digitalize ou pesquise..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Digitalize ou selecione uma entidade rastreada deste lote para adicioná-la como coluna de amostra e, em seguida, registre seu resultado na grade."
 
+msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
+msgstr "Digitalize isto com seu aplicativo autenticador, depois digite o código de 6 dígitos que ele exibe."
+
 msgid "SCAR"
 msgstr "SCAR"
 
@@ -12953,6 +12985,12 @@ msgstr "Segundos/Peça"
 
 msgid "Section"
 msgstr "Seção"
+
+msgid "Secure your account with 2FA"
+msgstr "Proteja sua conta com 2FA"
+
+msgid "Security"
+msgstr "Segurança"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segmentos que determinam preços e condições de clientes"
@@ -13292,6 +13330,9 @@ msgstr "Definir Preço"
 msgid "Set Quantity"
 msgstr "Definir Quantidade"
 
+msgid "Set up authenticator app"
+msgstr "Configurar aplicativo autenticador"
+
 msgid "Set up the right way"
 msgstr "Configure da forma correta"
 
@@ -13319,6 +13360,9 @@ msgstr "Configuração"
 
 msgid "Setup & Controls"
 msgstr "Configuração e Controles"
+
+msgid "Setup failed"
+msgstr "Configuração falhou"
 
 msgid "Setup instructions"
 msgstr "Instruções de configuração"
@@ -13579,6 +13623,9 @@ msgstr "Entrar com Outlook"
 msgid "Sign in with Passkey"
 msgstr "Entrar com Passkey"
 
+msgid "Sign out"
+msgstr "Sair"
+
 msgid "Sign Out"
 msgstr "Sair"
 
@@ -13593,6 +13640,9 @@ msgstr "Conectado como {name}"
 
 msgid "Signed quantity — negative for outbound movements"
 msgstr "Quantidade assinada — negativa para movimentos de saída"
+
+msgid "Signing in also requires a one-time code from your authenticator app"
+msgstr "Entrar também requer um código único do seu aplicativo autenticador"
 
 msgid "Sites & locations"
 msgstr "Locais e instalações"
@@ -15247,6 +15297,12 @@ msgstr "este plano de inspeção"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "Este convite para ingressar em {0} expirou. Você pode solicitar um novo convite a ser enviado para seu e-mail."
 
+msgid "This is a controlled environment, so an authenticator app is required."
+msgstr "Este é um ambiente controlado, portanto um aplicativo autenticador é obrigatório."
+
+msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
+msgstr "Este é um ambiente controlado, portanto a autenticação de dois fatores é obrigatória para todos e não pode ser desativada."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Este é um item comprado — não tem BOM/BOP; apenas seus atributos e documentos podem mudar."
 
@@ -15316,6 +15372,9 @@ msgstr "Este período não tem lançamentos de diário nele e pode ser deletado 
 msgid "This Quarter"
 msgstr "Este Trimestre"
 
+msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+msgstr "Isso remove seu aplicativo autenticador, portanto seu próximo login só precisa de um link mágico. Use isso quando eles tiverem perdido acesso ao seu autenticador. Afeta seu login para cada empresa a que pertencem."
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "Esta revisão foi liberada (Produção). As mudanças devem normalmente passar por um aviso de mudança."
 
@@ -15343,6 +15402,9 @@ msgstr "este fornecedor"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Isto atualiza o tema para todos os utilizadores da aplicação"
+
+msgid "This user does not have two-factor authentication enabled."
+msgstr "Este usuário não tem autenticação de dois fatores ativada."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Esta versão pertence a um <0>aviso de alteração</0> aberto. Edite-a lá."
@@ -15750,6 +15812,15 @@ msgstr "Terça-feira"
 msgid "Turn on the built-in pieces"
 msgstr "Ativar os componentes integrados"
 
+msgid "Two-Factor"
+msgstr "Dois Fatores"
+
+msgid "Two-factor authentication"
+msgstr "Autenticação de dois fatores"
+
+msgid "Two-Factor Authentication Enforcement"
+msgstr "Imposição de Autenticação de Dois Fatores"
+
 msgid "Type"
 msgstr "Tipo"
 
@@ -16110,6 +16181,9 @@ msgstr "Use ... para obter o próximo ID do serviço"
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
+msgid "Use a different account"
+msgstr "Use uma conta diferente"
+
 msgid "Use a different email"
 msgstr "Usar um email diferente"
 
@@ -16247,6 +16321,15 @@ msgstr "Rendimento de Cancelamento de Fornecedor"
 
 msgid "Verification Error"
 msgstr "Erro de Verificação"
+
+msgid "Verification failed"
+msgstr "Verificação falhou"
+
+msgid "Verify"
+msgstr "Verificar"
+
+msgid "Verify and continue"
+msgstr "Verificar e continuar"
 
 msgid "Verify inventory and financial balances tie out"
 msgstr "Verificar se os saldos de inventário e financeiros conferem"
@@ -17146,6 +17229,9 @@ msgstr "Você está configurando o Carbon por conta própria, no seu próprio ri
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Você está marcado há {hoursElapsed} horas. Esqueceu de marcar a saída?"
 
+msgid "Your account stays safe even if your login is stolen"
+msgstr "Sua conta permanece segura mesmo se seu login for roubado"
+
 msgid "Your books and how money flows."
 msgstr "Seus livros e como o dinheiro flui."
 
@@ -17190,6 +17276,9 @@ msgstr "Seu principal ponto de contato"
 
 msgid "Your Name"
 msgstr "Seu Nome"
+
+msgid "Your organization requires an authenticator app."
+msgstr "Sua organização requer um aplicativo autenticador."
 
 msgid "Your part numbers"
 msgstr "Os seus números de peça"

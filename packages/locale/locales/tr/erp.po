@@ -2261,6 +2261,9 @@ msgstr "Denetim Kayıtları"
 msgid "Authentication Error"
 msgstr "Kimlik Doğrulama Hatası"
 
+msgid "Authenticator QR code"
+msgstr "Doğrulayıcı QR kodu"
+
 msgid "Auto apply"
 msgstr "Otomatik uygula"
 
@@ -5894,6 +5897,9 @@ msgstr "PO numarasını girin"
 msgid "Enter text…"
 msgstr "Metin girin…"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Doğrulayıcı uygulamanızdaki 6 haneli kodu girin"
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orijinalin zaman döneminde orijinalin yanında deftere kaydedilir."
 
@@ -8159,6 +8165,9 @@ msgstr "Açık Tut"
 msgid "Keep picking"
 msgstr "Seçmeye Devam Et"
 
+msgid "Keeps orders, quotes, and settings behind a second check"
+msgstr "Siparişleri, teklifleri ve ayarları ikinci bir kontrolün arkasında tutar"
+
 msgid "Key"
 msgstr "Anahtar"
 
@@ -10032,6 +10041,9 @@ msgstr "Gerekli Değil"
 msgid "Not set"
 msgstr "Belirtilmemiş"
 
+msgid "Not set up"
+msgstr "Kurulmadı"
+
 msgid "Not started"
 msgstr "Başlanmadı"
 
@@ -11377,6 +11389,9 @@ msgstr "Go-live tarihini koruyun"
 msgid "Protect training time and attend"
 msgstr "Eğitim zamanını koru ve katıl"
 
+msgid "Protects your company's data"
+msgstr "Şirketinizin verilerini korur"
+
 msgid "Provide process knowledge and inputs"
 msgstr "Süreç bilgisi ve girdileri sağlayın"
 
@@ -12220,6 +12235,9 @@ msgstr "Onay Talebi Oluştur"
 msgid "Requested Date"
 msgstr "Talep Edilen Tarih"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Tedarikçilerin Aktif olarak ayarlanabilmesi için onay gerektirir"
 
@@ -12228,6 +12246,9 @@ msgstr "Belirli tutar eşiklerine göre satın alma siparişleri için onay gere
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "İş akışınızdaki kalite belgeleri için onay gerektirir"
+
+msgid "Require two-factor authentication"
+msgstr "İki faktörlü kimlik doğrulamayı gerektir"
 
 msgid "Required"
 msgstr "Gerekli"
@@ -12284,6 +12305,14 @@ msgstr "PIN'i Sıfırla"
 #. placeholder {1}: operator.lastName
 msgid "Reset PIN for {0} {1}"
 msgstr "PIN'i sıfırla {0} {1}"
+
+msgid "Reset Two-Factor Auth"
+msgstr "İki Faktörlü Kimlik Doğrulamayı Sıfırla"
+
+#. placeholder {0}: user.firstName
+#. placeholder {1}: user.lastName
+msgid "Reset two-factor authentication for {0} {1}"
+msgstr "İki faktörlü kimlik doğrulamayı {0} {1} için sıfırla"
 
 msgid "Reset view"
 msgstr "Görünümü sıfırla"
@@ -12792,6 +12821,9 @@ msgstr "Tarama veya arayın..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı taramak veya seçmek için bunu örnek sütun olarak ekleyin, ardından sonucunu ızgarada kaydedin."
 
+msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
+msgstr "Bunu doğrulayıcı uygulamanızla tarayın, ardından gösterdiği 6 haneli kodu girin."
+
 msgid "SCAR"
 msgstr "SCAR"
 
@@ -12953,6 +12985,12 @@ msgstr "Saniye/Parça"
 
 msgid "Section"
 msgstr "Bölüm"
+
+msgid "Secure your account with 2FA"
+msgstr "Hesabınızı 2FA ile güvenli hale getirin"
+
+msgid "Security"
+msgstr "Güvenlik"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Müşteri fiyatlandırması ve koşullarını belirleyen segmentler"
@@ -13292,6 +13330,9 @@ msgstr "Fiyatlandırmayı Ayarla"
 msgid "Set Quantity"
 msgstr "Miktarı Ayarla"
 
+msgid "Set up authenticator app"
+msgstr "Doğrulayıcı uygulamayı ayarla"
+
 msgid "Set up the right way"
 msgstr "Doğru şekilde ayarla"
 
@@ -13319,6 +13360,9 @@ msgstr "Kurulum"
 
 msgid "Setup & Controls"
 msgstr "Kurulum ve Kontroller"
+
+msgid "Setup failed"
+msgstr "Kurulum başarısız"
 
 msgid "Setup instructions"
 msgstr "Kurulum talimatları"
@@ -13579,6 +13623,9 @@ msgstr "Outlook ile giriş yap"
 msgid "Sign in with Passkey"
 msgstr "Passkey ile Giriş Yap"
 
+msgid "Sign out"
+msgstr "Çıkış yap"
+
 msgid "Sign Out"
 msgstr "Oturumu Kapat"
 
@@ -13593,6 +13640,9 @@ msgstr "Oturum açıldı olarak {name}"
 
 msgid "Signed quantity — negative for outbound movements"
 msgstr "İmzalı miktar — giden hareketler için negatif"
+
+msgid "Signing in also requires a one-time code from your authenticator app"
+msgstr "Oturum açma ayrıca doğrulayıcı uygulamanızdan bir kerelik kod gerektirir"
 
 msgid "Sites & locations"
 msgstr "Siteler & konumlar"
@@ -15247,6 +15297,12 @@ msgstr "bu muayene planı"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "{0} kuruluşuna katılmak için gönderilen bu davet süresi dolmuştur. E-postanıza yeni bir davet gönderilmesini isteyebilirsiniz."
 
+msgid "This is a controlled environment, so an authenticator app is required."
+msgstr "Bu kontrollü bir ortamdır, bu nedenle doğrulayıcı uygulaması gereklidir."
+
+msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
+msgstr "Bu kontrollü bir ortamdır, bu nedenle iki faktörlü kimlik doğrulaması herkese gereklidir ve kapatılamaz."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Bu satın alınan bir üründür — BoM/BoP'si yoktur; yalnızca öznitelikleri ve belgeleri değişebilir."
 
@@ -15316,6 +15372,9 @@ msgstr "Bu döneme nakledilen günlük girişi yoktur ve kalıcı olarak silineb
 msgid "This Quarter"
 msgstr "Bu Çeyrek"
 
+msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+msgstr "Bu, onların doğrulayıcı uygulamasını kaldırır, bu nedenle bir sonraki oturum açışında yalnızca sihirli bir bağlantıya ihtiyaç duyar. Doğrulayıcıya erişimini kaybettiklerinde bunu kullanın. Ait oldukları her şirket için oturum açışlarını etkiler."
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "Bu revizyon yayınlanmıştır (Üretim). Değişiklikler normalde bir değişiklik bildirisi yoluyla akmalıdır."
 
@@ -15343,6 +15402,9 @@ msgstr "bu tedarikçi"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Bu, uygulamanın tüm kullanıcıları için temayı günceller"
+
+msgid "This user does not have two-factor authentication enabled."
+msgstr "Bu kullanıcının iki faktörlü kimlik doğrulaması etkin değildir."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Bu sürüm açık bir <0>değişiklik bildirimine</0> aittir. Orada düzenleyin."
@@ -15750,6 +15812,15 @@ msgstr "Salı"
 msgid "Turn on the built-in pieces"
 msgstr "Yerleşik parçaları açın"
 
+msgid "Two-Factor"
+msgstr "İki Faktörlü"
+
+msgid "Two-factor authentication"
+msgstr "İki faktörlü kimlik doğrulaması"
+
+msgid "Two-Factor Authentication Enforcement"
+msgstr "İki Faktörlü Kimlik Doğrulaması Zorunluluğu"
+
 msgid "Type"
 msgstr "Tür"
 
@@ -16110,6 +16181,9 @@ msgstr "Sonraki hizmet kimliğini almak için ... kullan"
 msgid "Use ... to get the next tool ID"
 msgstr "Sonraki araç kimliğini almak için ..."
 
+msgid "Use a different account"
+msgstr "Farklı bir hesap kullan"
+
 msgid "Use a different email"
 msgstr "Farklı bir e-posta kullan"
 
@@ -16247,6 +16321,15 @@ msgstr "Satıcı Silme Geliri"
 
 msgid "Verification Error"
 msgstr "Doğrulama Hatası"
+
+msgid "Verification failed"
+msgstr "Doğrulama başarısız"
+
+msgid "Verify"
+msgstr "Doğrula"
+
+msgid "Verify and continue"
+msgstr "Doğrula ve devam et"
 
 msgid "Verify inventory and financial balances tie out"
 msgstr "Envanter ve finansal bakiyelerin uyumlu olduğunu doğrulayın"
@@ -17146,6 +17229,9 @@ msgstr "Carbon'ı kendiniz kendi hızınızda ayarlıyorsunuz"
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"
 
+msgid "Your account stays safe even if your login is stolen"
+msgstr "Oturum açma bilgileriniz çalınsa bile hesabınız güvenli kalır"
+
 msgid "Your books and how money flows."
 msgstr "Muhasebe defterleriniz ve paranın akışı."
 
@@ -17190,6 +17276,9 @@ msgstr "Ana iletişim noktanız"
 
 msgid "Your Name"
 msgstr "Adınız"
+
+msgid "Your organization requires an authenticator app."
+msgstr "Kuruluşunuz doğrulayıcı uygulamasını gerektiriyor."
 
 msgid "Your part numbers"
 msgstr "Parça numaralarınız"

@@ -882,6 +882,8 @@ export const path = {
       generatePath(`${x}/resources/ability/${abilityId}/employee/${id}`),
     employeeAccount: (id: string) => generatePath(`${x}/users/employees/${id}`),
     employeeAccounts: `${x}/users/employees`,
+    employeeResetMfa: (id: string) =>
+      generatePath(`${x}/users/employees/reset-mfa/${id}`),
     employeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,
@@ -1382,6 +1384,10 @@ export const path = {
     methodOperationsOrder: `${x}/items/methods/operation/order`,
     methodOperationTool: (id: string) =>
       generatePath(`${x}/items/methods/operation/tool/${id}`),
+    mfa: "/mfa",
+    mfaEnroll: "/api/mfa/enroll",
+    mfaUnenroll: "/api/mfa/unenroll",
+    mfaVerify: "/api/mfa/verify",
     moveChartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/move/${id}`),
     newAbility: `${x}/resources/abilities/new`,

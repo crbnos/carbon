@@ -48,13 +48,31 @@ const InputOTP = forwardRef<HTMLInputElement, FormInputOTPProps>(
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
 
     useEffect(() => {
-      if (value?.length === maxLength) {
-        const form = document
-          .querySelector(`input[name="${name}"]`)
-          ?.closest("form");
-        if (form) {
-          form.submit();
-        }
+      if (value?.length !== maxLength) return;
+
+      const form = document
+        .querySelector(`input[name="${name}"]`)
+        ?.closest("form");
+      if (!form) return;
+
+      // Prefer requestSubmit() over submit(): submit() bypasses the submit
+      // event entirely, so React Router never intercepts it and a surrounding
+      // ValidatedForm's fetcher never receives the result — any error the form
+      // renders from `fetcher.data` would be unreachable.
+      //
+      // It must be passed a submitter, though. ValidatedForm's handleSubmit
+      // early-returns unless `nativeEvent.submitter.form === the form`, so a
+      // bare requestSubmit() (submitter === null) silently does nothing at all.
+      const submitter = form.querySelector<HTMLElement>(
+        'button[type="submit"], input[type="submit"]'
+      );
+
+      if (submitter) {
+        form.requestSubmit(submitter as HTMLButtonElement);
+      } else {
+        // No submit button to act as submitter: fall back to the native POST.
+        // Forms that auto-submit without one have always worked this way.
+        form.submit();
       }
     }, [value, maxLength, name]);
 

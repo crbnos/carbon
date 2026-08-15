@@ -2261,6 +2261,9 @@ msgstr "감사 로그"
 msgid "Authentication Error"
 msgstr "인증 오류"
 
+msgid "Authenticator QR code"
+msgstr "인증자 QR 코드"
+
 msgid "Auto apply"
 msgstr "자동 적용"
 
@@ -5894,6 +5897,9 @@ msgstr "구매주문 번호 입력"
 msgid "Enter text…"
 msgstr "텍스트 입력…"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "인증자 앱에서 6자리 코드를 입력하세요"
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
 
@@ -8159,6 +8165,9 @@ msgstr "열린 상태 유지"
 msgid "Keep picking"
 msgstr "계속 선택"
 
+msgid "Keeps orders, quotes, and settings behind a second check"
+msgstr "주문, 견적 및 설정을 이중 확인으로 보호합니다"
+
 msgid "Key"
 msgstr "키"
 
@@ -10032,6 +10041,9 @@ msgstr "필수 아님"
 msgid "Not set"
 msgstr "설정되지 않음"
 
+msgid "Not set up"
+msgstr "설정되지 않음"
+
 msgid "Not started"
 msgstr "시작되지 않음"
 
@@ -11377,6 +11389,9 @@ msgstr "도입일을 사수하세요"
 msgid "Protect training time and attend"
 msgstr "교육 시간을 확보하고 참석하세요"
 
+msgid "Protects your company's data"
+msgstr "회사 데이터 보호"
+
 msgid "Provide process knowledge and inputs"
 msgstr "공정 지식과 의견을 제공하세요"
 
@@ -12220,6 +12235,9 @@ msgstr "승인 요청"
 msgid "Requested Date"
 msgstr "요청일"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+msgstr "이 회사를 열기 전에 인증자 앱을 요구합니다. 다른 회사는 영향을 받지 않습니다. <0>직원 계정 페이지</0>를 방문하여 각 사람의 상태를 확인하세요."
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "공급업체를 활성 상태로 설정하기 전에 승인 필요"
 
@@ -12228,6 +12246,9 @@ msgstr "금액 기준에 따라 구매주문에 승인 필요"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "워크플로 내 품질 문서에 승인 필요"
+
+msgid "Require two-factor authentication"
+msgstr "2단계 인증 필수"
 
 msgid "Required"
 msgstr "필수"
@@ -12284,6 +12305,14 @@ msgstr "PIN 재설정"
 #. placeholder {1}: operator.lastName
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1}의 PIN 재설정"
+
+msgid "Reset Two-Factor Auth"
+msgstr "2단계 인증 재설정"
+
+#. placeholder {0}: user.firstName
+#. placeholder {1}: user.lastName
+msgid "Reset two-factor authentication for {0} {1}"
+msgstr "{0} {1}의 2단계 인증 재설정"
 
 msgid "Reset view"
 msgstr "보기 초기화"
@@ -12792,6 +12821,9 @@ msgstr "스캔 또는 검색..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 엔티티를 스캔하거나 선택하여 샘플 열로 추가한 후 그리드에 결과를 기록하세요."
 
+msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
+msgstr "인증자 앱으로 이것을 스캔한 후 표시된 6자리 코드를 입력하세요."
+
 msgid "SCAR"
 msgstr "SCAR"
 
@@ -12953,6 +12985,12 @@ msgstr "초/개"
 
 msgid "Section"
 msgstr "섹션"
+
+msgid "Secure your account with 2FA"
+msgstr "2FA로 계정 보호"
+
+msgid "Security"
+msgstr "보안"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "고객 가격 및 조건을 결정하는 세그먼트"
@@ -13292,6 +13330,9 @@ msgstr "가격 설정"
 msgid "Set Quantity"
 msgstr "수량 설정"
 
+msgid "Set up authenticator app"
+msgstr "인증자 앱 설정"
+
 msgid "Set up the right way"
 msgstr "올바른 방식으로 설정하기"
 
@@ -13319,6 +13360,9 @@ msgstr "설정"
 
 msgid "Setup & Controls"
 msgstr "설정 및 관리"
+
+msgid "Setup failed"
+msgstr "설정 실패"
 
 msgid "Setup instructions"
 msgstr "설정 안내"
@@ -13579,6 +13623,9 @@ msgstr "Outlook으로 로그인"
 msgid "Sign in with Passkey"
 msgstr "패스키로 로그인"
 
+msgid "Sign out"
+msgstr "로그아웃"
+
 msgid "Sign Out"
 msgstr "로그아웃"
 
@@ -13593,6 +13640,9 @@ msgstr "{name}(으)로 로그인됨"
 
 msgid "Signed quantity — negative for outbound movements"
 msgstr "서명된 수량 — 아웃바운드 이동의 경우 음수"
+
+msgid "Signing in also requires a one-time code from your authenticator app"
+msgstr "로그인에는 인증자 앱의 일회용 코드도 필요합니다"
 
 msgid "Sites & locations"
 msgstr "사이트 및 위치"
@@ -15247,6 +15297,12 @@ msgstr "이 검사 계획"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "{0}에 참여하기 위한 이 초대권은 만료되었습니다. 이메일로 새 초대권을 보내달라고 요청할 수 있습니다."
 
+msgid "This is a controlled environment, so an authenticator app is required."
+msgstr "이것은 제어되는 환경이므로 인증자 앱이 필수입니다."
+
+msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
+msgstr "이것은 제어되는 환경이므로 모든 사람에게 2단계 인증이 필수이며 끌 수 없습니다."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "이것은 구매 항목입니다 — BoM/BoP가 없습니다. 해당 속성과 문서만 변경할 수 있습니다."
 
@@ -15316,6 +15372,9 @@ msgstr "이 기간에는 게시된 분개가 없으며 영구적으로 삭제할
 msgid "This Quarter"
 msgstr "이번 분기"
 
+msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+msgstr "이것은 인증자 앱을 제거하므로 다음 로그인에는 매직 링크만 필요합니다. 인증자에 대한 액세스 권한을 잃어버렸을 때 사용하세요. 이것은 그들이 속한 모든 회사의 로그인에 영향을 줍니다."
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "이 개정본이 릴리스되었습니다(프로덕션). 변경 사항은 일반적으로 변경 공지를 통해 처리되어야 합니다."
 
@@ -15343,6 +15402,9 @@ msgstr "이 공급업체"
 
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
+
+msgid "This user does not have two-factor authentication enabled."
+msgstr "이 사용자는 2단계 인증이 활성화되지 않았습니다."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "이 버전은 열려 있는 <0>변경 공지</0>에 속합니다. 거기서 편집하세요."
@@ -15750,6 +15812,15 @@ msgstr "화요일"
 msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
 
+msgid "Two-Factor"
+msgstr "2단계"
+
+msgid "Two-factor authentication"
+msgstr "2단계 인증"
+
+msgid "Two-Factor Authentication Enforcement"
+msgstr "2단계 인증 적용"
+
 msgid "Type"
 msgstr "유형"
 
@@ -16110,6 +16181,9 @@ msgstr "다음 서비스 ID를 얻으려면 ...을(를) 사용하세요"
 msgid "Use ... to get the next tool ID"
 msgstr "다음 공구 ID를 가져오려면 ...을(를) 사용하세요"
 
+msgid "Use a different account"
+msgstr "다른 계정 사용"
+
 msgid "Use a different email"
 msgstr "다른 이메일 사용"
 
@@ -16247,6 +16321,15 @@ msgstr "공급업체 상각 수익"
 
 msgid "Verification Error"
 msgstr "확인 오류"
+
+msgid "Verification failed"
+msgstr "검증 실패"
+
+msgid "Verify"
+msgstr "검증"
+
+msgid "Verify and continue"
+msgstr "검증 및 계속"
 
 msgid "Verify inventory and financial balances tie out"
 msgstr "재고와 재무 잔액이 일치하는지 확인하세요"
@@ -17146,6 +17229,9 @@ msgstr "귀사가 원하는 속도로 직접 Carbon을 설정합니다"
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊으셨나요?"
 
+msgid "Your account stays safe even if your login is stolen"
+msgstr "로그인이 도난당해도 계정은 안전하게 유지됩니다"
+
 msgid "Your books and how money flows."
 msgstr "귀사의 장부와 자금 흐름."
 
@@ -17190,6 +17276,9 @@ msgstr "주요 담당자"
 
 msgid "Your Name"
 msgstr "이름"
+
+msgid "Your organization requires an authenticator app."
+msgstr "조직에서 인증자 앱을 요구합니다."
 
 msgid "Your part numbers"
 msgstr "품번"

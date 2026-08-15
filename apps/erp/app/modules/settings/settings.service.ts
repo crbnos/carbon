@@ -1475,6 +1475,17 @@ export async function updateDefaultSupplierCc(
     .eq("id", companyId);
 }
 
+export async function updateRequireMfaSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  requireMfa: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ requireMfa }))
+    .eq("id", companyId);
+}
+
 export async function updateShowCurrencyTrailingZerosSetting(
   client: SupabaseClient<Database>,
   companyId: string,

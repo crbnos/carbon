@@ -2261,6 +2261,9 @@ msgstr "ऑडिट लॉग्स"
 msgid "Authentication Error"
 msgstr "प्रमाणीकरण त्रुटि"
 
+msgid "Authenticator QR code"
+msgstr "प्रमाणकर्ता QR कोड"
+
 msgid "Auto apply"
 msgstr "स्वचालित रूप से लागू करें"
 
@@ -5894,6 +5897,9 @@ msgstr "PO नंबर दर्ज करें"
 msgid "Enter text…"
 msgstr "पाठ दर्ज करें…"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "अपने प्रमाणकर्ता ऐप से 6-अंकीय कोड दर्ज करें"
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
 
@@ -8159,6 +8165,9 @@ msgstr "खुला रखें"
 msgid "Keep picking"
 msgstr "चुनते रहें"
 
+msgid "Keeps orders, quotes, and settings behind a second check"
+msgstr "ऑर्डर, कोट्स और सेटिंग्स को एक दूसरी जांच के पीछे रखता है"
+
 msgid "Key"
 msgstr "कुंजी"
 
@@ -10032,6 +10041,9 @@ msgstr "आवश्यक नहीं"
 msgid "Not set"
 msgstr "सेट नहीं है"
 
+msgid "Not set up"
+msgstr "सेटअप नहीं किया गया"
+
 msgid "Not started"
 msgstr "शुरू नहीं किया गया"
 
@@ -11377,6 +11389,9 @@ msgstr "गो-लाइव की तारीख की सुरक्षा 
 msgid "Protect training time and attend"
 msgstr "प्रशिक्षण समय की सुरक्षा करें और भाग लें"
 
+msgid "Protects your company's data"
+msgstr "आपकी कंपनी के डेटा की सुरक्षा करता है"
+
 msgid "Provide process knowledge and inputs"
 msgstr "प्रक्रिया ज्ञान और इनपुट प्रदान करें"
 
@@ -12220,6 +12235,9 @@ msgstr "अनुमोदन का अनुरोध करें"
 msgid "Requested Date"
 msgstr "अनुरोधित तारीख"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "आपूर्तिकर्ताओं को सक्रिय पर सेट करने से पहले अनुमोदन की आवश्यकता है"
 
@@ -12228,6 +12246,9 @@ msgstr "राशि सीमा के आधार पर क्रय आद
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "आपके वर्कफ़्लो में गुणवत्ता दस्तावेज़ों के लिए अनुमोदन की आवश्यकता है"
+
+msgid "Require two-factor authentication"
+msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
 
 msgid "Required"
 msgstr "आवश्यक"
@@ -12284,6 +12305,14 @@ msgstr "PIN रीसेट करें"
 #. placeholder {1}: operator.lastName
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1} के लिए PIN रीसेट करें"
+
+msgid "Reset Two-Factor Auth"
+msgstr "दो-कारक प्रमाणीकरण रीसेट करें"
+
+#. placeholder {0}: user.firstName
+#. placeholder {1}: user.lastName
+msgid "Reset two-factor authentication for {0} {1}"
+msgstr "दो-कारक प्रमाणीकरण को {0} {1} के लिए रीसेट करें"
 
 msgid "Reset view"
 msgstr "दृश्य रीसेट करें"
@@ -12792,6 +12821,9 @@ msgstr "स्कैन या खोजें..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें इसे एक नमूना कॉलम के रूप में जोड़ने के लिए, फिर ग्रिड में इसके परिणाम को रिकॉर्ड करें।"
 
+msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
+msgstr "अपने प्रमाणकर्ता ऐप से इसे स्कैन करें, फिर इसके द्वारा दिखाया गया 6-अंकीय कोड दर्ज करें।"
+
 msgid "SCAR"
 msgstr "SCAR"
 
@@ -12953,6 +12985,12 @@ msgstr "सेकंड/पीस"
 
 msgid "Section"
 msgstr "अनुभाग"
+
+msgid "Secure your account with 2FA"
+msgstr "2FA के साथ अपने खाते को सुरक्षित करें"
+
+msgid "Security"
+msgstr "सुरक्षा"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "ऐसे सेगमेंट जो ग्राहक मूल्य निर्धारण और शर्तों को चलाते हैं"
@@ -13292,6 +13330,9 @@ msgstr "मूल्य निर्धारण सेट करें"
 msgid "Set Quantity"
 msgstr "मात्रा निर्धारित करें"
 
+msgid "Set up authenticator app"
+msgstr "प्रमाणकर्ता ऐप सेटअप करें"
+
 msgid "Set up the right way"
 msgstr "सही तरीके से सेटअप करें"
 
@@ -13319,6 +13360,9 @@ msgstr "सेटअप"
 
 msgid "Setup & Controls"
 msgstr "सेटअप और नियंत्रण"
+
+msgid "Setup failed"
+msgstr "सेटअप विफल रहा"
 
 msgid "Setup instructions"
 msgstr "सेटअप निर्देश"
@@ -13579,6 +13623,9 @@ msgstr "Outlook के साथ साइन इन करें"
 msgid "Sign in with Passkey"
 msgstr "पासकी के साथ साइन इन करें"
 
+msgid "Sign out"
+msgstr "साइन आउट"
+
 msgid "Sign Out"
 msgstr "साइन आउट"
 
@@ -13593,6 +13640,9 @@ msgstr "{name} के रूप में साइन इन किया ग�
 
 msgid "Signed quantity — negative for outbound movements"
 msgstr "हस्ताक्षरित मात्रा — बाहरी आंदोलनों के लिए नकारात्मक"
+
+msgid "Signing in also requires a one-time code from your authenticator app"
+msgstr "साइन इन करने के लिए आपके प्रमाणकर्ता ऐप से एक बार का कोड भी आवश्यक है"
 
 msgid "Sites & locations"
 msgstr "साइटें और स्थान"
@@ -15247,6 +15297,12 @@ msgstr "इस निरीक्षण योजना"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "यह आमंत्रण {0} में शामिल होने के लिए समाप्त हो गया है। आप अपने ईमेल पर भेजने के लिए नया आमंत्रण का अनुरोध कर सकते हैं।"
 
+msgid "This is a controlled environment, so an authenticator app is required."
+msgstr "यह एक नियंत्रित वातावरण है, इसलिए एक प्रमाणकर्ता ऐप की आवश्यकता है।"
+
+msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
+msgstr "यह एक नियंत्रित वातावरण है, इसलिए सभी के लिए दो-कारक प्रमाणीकरण आवश्यक है और इसे बंद नहीं किया जा सकता।"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "यह एक खरीदा गया आइटम है — इसके पास कोई BoM/BoP नहीं है; केवल इसकी विशेषताओं और दस्तावेजों को बदला जा सकता है।"
 
@@ -15316,6 +15372,9 @@ msgstr "इस अवधि में कोई जर्नल प्रवि�
 msgid "This Quarter"
 msgstr "इस त्रैमासिक"
 
+msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+msgstr "यह उनके प्रमाणकर्ता ऐप को हटा देता है, इसलिए उनके अगले साइन-इन के लिए केवल एक जादुई लिंक की आवश्यकता है। इसका उपयोग तब करें जब उन्होंने अपने प्रमाणकर्ता तक पहुंच खो दी हो। यह उनकी प्रत्येक कंपनी के लिए उनके साइन-इन को प्रभावित करता है जिससे वे संबंधित हैं।"
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "यह संशोधन जारी किया गया है (उत्पादन)। परिवर्तन सामान्यतः एक परिवर्तन सूचना के माध्यम से होने चाहिए।"
 
@@ -15343,6 +15402,9 @@ msgstr "यह आपूर्तिकर्ता"
 
 msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम को अपडेट करता है"
+
+msgid "This user does not have two-factor authentication enabled."
+msgstr "इस उपयोगकर्ता के पास दो-कारक प्रमाणीकरण सक्षम नहीं है।"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "यह संस्करण एक खुली <0>परिवर्तन सूचना</0> के अंतर्गत है। इसे वहाँ संपादित करें।"
@@ -15750,6 +15812,15 @@ msgstr "मंगलवार"
 msgid "Turn on the built-in pieces"
 msgstr "बिल्ट-इन पीसेस को चालू करें"
 
+msgid "Two-Factor"
+msgstr "दो-कारक"
+
+msgid "Two-factor authentication"
+msgstr "दो-कारक प्रमाणीकरण"
+
+msgid "Two-Factor Authentication Enforcement"
+msgstr "दो-कारक प्रमाणीकरण प्रवर्तन"
+
 msgid "Type"
 msgstr "प्रकार"
 
@@ -16110,6 +16181,9 @@ msgstr "अगली सेवा ID प्राप्त करने के �
 msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"
 
+msgid "Use a different account"
+msgstr "एक अलग खाता उपयोग करें"
+
 msgid "Use a different email"
 msgstr "एक अलग ईमेल का उपयोग करें"
 
@@ -16247,6 +16321,15 @@ msgstr "विक्रेता राइट-ऑफ आय"
 
 msgid "Verification Error"
 msgstr "सत्यापन त्रुटि"
+
+msgid "Verification failed"
+msgstr "सत्यापन विफल रहा"
+
+msgid "Verify"
+msgstr "सत्यापित करें"
+
+msgid "Verify and continue"
+msgstr "सत्यापित करें और जारी रखें"
 
 msgid "Verify inventory and financial balances tie out"
 msgstr "इन्वेंटरी और वित्तीय शेष राशि सत्यापित करें"
@@ -17146,6 +17229,9 @@ msgstr "आप Carbon को स्वयं सेट अप कर रहे �
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इन हैं। क्या आप क्लॉक आउट करना भूल गए?"
 
+msgid "Your account stays safe even if your login is stolen"
+msgstr "यहां तक कि अगर आपका लॉगिन चोरी हो जाता है तो आपका खाता सुरक्षित रहता है"
+
 msgid "Your books and how money flows."
 msgstr "आपकी किताबें और पैसा कैसे बहता है।"
 
@@ -17190,6 +17276,9 @@ msgstr "आपका मुख्य संपर्क बिंदु"
 
 msgid "Your Name"
 msgstr "आपका नाम"
+
+msgid "Your organization requires an authenticator app."
+msgstr "आपके संगठन को एक प्रमाणकर्ता ऐप की आवश्यकता है।"
 
 msgid "Your part numbers"
 msgstr "आपकी पार्ट संख्याएं"

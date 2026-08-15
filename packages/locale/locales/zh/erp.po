@@ -2261,6 +2261,9 @@ msgstr "审计日志"
 msgid "Authentication Error"
 msgstr "身份验证错误"
 
+msgid "Authenticator QR code"
+msgstr "身份验证器二维码"
+
 msgid "Auto apply"
 msgstr "自动应用"
 
@@ -5894,6 +5897,9 @@ msgstr "输入采购订单号"
 msgid "Enter text…"
 msgstr "输入文本…"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "输入来自您的身份验证器应用的6位数代码"
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "输入此移动应该的数量。差异的相反移动将在原始时期内的原始移动旁发布。"
 
@@ -8159,6 +8165,9 @@ msgstr "保持开放"
 msgid "Keep picking"
 msgstr "继续领取"
 
+msgid "Keeps orders, quotes, and settings behind a second check"
+msgstr "让订单、报价单和设置受到第二道检查的保护"
+
 msgid "Key"
 msgstr "钥匙"
 
@@ -10032,6 +10041,9 @@ msgstr "不需要"
 msgid "Not set"
 msgstr "未设置"
 
+msgid "Not set up"
+msgstr "未设置"
+
 msgid "Not started"
 msgstr "未开始"
 
@@ -11377,6 +11389,9 @@ msgstr "保护上线日期"
 msgid "Protect training time and attend"
 msgstr "保护培训时间并参加"
 
+msgid "Protects your company's data"
+msgstr "保护您公司的数据"
+
 msgid "Provide process knowledge and inputs"
 msgstr "提供流程知识和输入"
 
@@ -12220,6 +12235,9 @@ msgstr "请求批准"
 msgid "Requested Date"
 msgstr "请求日期"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+msgstr "在任何人打开此公司之前需要身份验证器应用。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "在供应商可以设置为活跃之前需要批准"
 
@@ -12228,6 +12246,9 @@ msgstr "根据金额阈值要求采购订单获得批准"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "在您的工作流程中需要质量文件的批准"
+
+msgid "Require two-factor authentication"
+msgstr "需要双因素认证"
 
 msgid "Required"
 msgstr "必需"
@@ -12284,6 +12305,14 @@ msgstr "重置PIN"
 #. placeholder {1}: operator.lastName
 msgid "Reset PIN for {0} {1}"
 msgstr "重置 {0} {1} 的 PIN"
+
+msgid "Reset Two-Factor Auth"
+msgstr "重置双因素认证"
+
+#. placeholder {0}: user.firstName
+#. placeholder {1}: user.lastName
+msgid "Reset two-factor authentication for {0} {1}"
+msgstr "重置{0} {1}的双因素认证"
 
 msgid "Reset view"
 msgstr "重置视图"
@@ -12792,6 +12821,9 @@ msgstr "扫描或搜索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次扫描或选择被追踪的实体以将其作为样本列添加，然后在网格中记录其结果。"
 
+msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
+msgstr "使用您的身份验证器应用扫描此内容，然后输入它显示的6位数代码。"
+
 msgid "SCAR"
 msgstr "SCAR"
 
@@ -12953,6 +12985,12 @@ msgstr "秒/件"
 
 msgid "Section"
 msgstr "部分"
+
+msgid "Secure your account with 2FA"
+msgstr "使用2FA保护您的账户"
+
+msgid "Security"
+msgstr "安全"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "驱动客户定价和条款的细分市场"
@@ -13292,6 +13330,9 @@ msgstr "设置定价"
 msgid "Set Quantity"
 msgstr "设置数量"
 
+msgid "Set up authenticator app"
+msgstr "设置身份验证器应用"
+
 msgid "Set up the right way"
 msgstr "以正确的方式设置"
 
@@ -13319,6 +13360,9 @@ msgstr "设置"
 
 msgid "Setup & Controls"
 msgstr "设置和控制"
+
+msgid "Setup failed"
+msgstr "设置失败"
 
 msgid "Setup instructions"
 msgstr "设置说明"
@@ -13579,6 +13623,9 @@ msgstr "使用 Outlook 登录"
 msgid "Sign in with Passkey"
 msgstr "使用密钥登录"
 
+msgid "Sign out"
+msgstr "登出"
+
 msgid "Sign Out"
 msgstr "登出"
 
@@ -13593,6 +13640,9 @@ msgstr "以 {name} 身份登录"
 
 msgid "Signed quantity — negative for outbound movements"
 msgstr "有符号数量 — 出站移动为负"
+
+msgid "Signing in also requires a one-time code from your authenticator app"
+msgstr "登录还需要来自您的身份验证器应用的一次性代码"
 
 msgid "Sites & locations"
 msgstr "站点和位置"
@@ -15247,6 +15297,12 @@ msgstr "这个检验计划"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "加入 {0} 的邀请已过期。您可以请求将新邀请发送到您的电子邮件。"
 
+msgid "This is a controlled environment, so an authenticator app is required."
+msgstr "这是受控环境，因此需要身份验证器应用。"
+
+msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
+msgstr "这是受控环境，因此每个人都需要双因素认证，无法关闭。"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "这是一个采购项目 — 它没有BoM/BoP；只有其属性和文档可以更改。"
 
@@ -15316,6 +15372,9 @@ msgstr "此期间未过账任何日记账分录，可以永久删除。此操作
 msgid "This Quarter"
 msgstr "本季度"
 
+msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+msgstr "这将移除他们的身份验证器应用，因此他们的下次登录只需要一个魔法链接。当他们失去对身份验证器的访问权限时，请使用此选项。它会影响他们对所属每个公司的登录。"
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "此修订版已发布（生产版）。更改应该通过更改单进行。"
 
@@ -15343,6 +15402,9 @@ msgstr "此供应商"
 
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"
+
+msgid "This user does not have two-factor authentication enabled."
+msgstr "此用户未启用双因素认证。"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "此版本属于开放的<0>变更通知</0>。请在那里编辑。"
@@ -15750,6 +15812,15 @@ msgstr "星期二"
 msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
 
+msgid "Two-Factor"
+msgstr "双因素"
+
+msgid "Two-factor authentication"
+msgstr "双因素认证"
+
+msgid "Two-Factor Authentication Enforcement"
+msgstr "双因素认证强制执行"
+
 msgid "Type"
 msgstr "类型"
 
@@ -16110,6 +16181,9 @@ msgstr "使用...获取下一个服务ID"
 msgid "Use ... to get the next tool ID"
 msgstr "使用 ... 获取下一个工具 ID"
 
+msgid "Use a different account"
+msgstr "使用不同的账户"
+
 msgid "Use a different email"
 msgstr "使用不同的电子邮件"
 
@@ -16247,6 +16321,15 @@ msgstr "供应商核销收入"
 
 msgid "Verification Error"
 msgstr "验证错误"
+
+msgid "Verification failed"
+msgstr "验证失败"
+
+msgid "Verify"
+msgstr "验证"
+
+msgid "Verify and continue"
+msgstr "验证并继续"
 
 msgid "Verify inventory and financial balances tie out"
 msgstr "验证库存和财务余额相符"
@@ -17146,6 +17229,9 @@ msgstr "您正在按照自己的节奏自行设置 Carbon"
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡 {hoursElapsed} 小时。您忘记打卡下班了吗？"
 
+msgid "Your account stays safe even if your login is stolen"
+msgstr "即使您的登录被盗，您的账户也保持安全"
+
 msgid "Your books and how money flows."
 msgstr "您的账簿和资金流向。"
 
@@ -17190,6 +17276,9 @@ msgstr "您的主要联系人"
 
 msgid "Your Name"
 msgstr "你的名字"
+
+msgid "Your organization requires an authenticator app."
+msgstr "您的组织需要身份验证器应用。"
 
 msgid "Your part numbers"
 msgstr "您的零件编号"
