@@ -72,7 +72,7 @@ export const links: LinksFunction = () => {
 export const meta: MetaFunction = ({ error }) => {
   return [
     {
-      title: error ? "Carbon | Error" : "Carbon"
+      title: error ? "Factory OS | Error" : "Factory OS"
     }
   ];
 };

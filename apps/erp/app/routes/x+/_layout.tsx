@@ -51,7 +51,11 @@ import {
   useNavigate
 } from "react-router";
 import { RealtimeDataProvider } from "~/components";
-import { PrimaryNavigation, Topbar } from "~/components/Layout";
+import {
+  ExperienceShellNavigation,
+  PrimaryNavigation,
+  Topbar
+} from "~/components/Layout";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { usePermissions } from "~/hooks";
@@ -392,9 +396,10 @@ export default function AuthenticatedRoute() {
               <TooltipProvider>
                 <div className="flex flex-col h-screen">
                   <Topbar />
-                  <div className="flex flex-1 h-[calc(100vh-49px)] relative">
+                  <ExperienceShellNavigation />
+                  <div className="flex flex-1 min-h-0 relative">
                     <PrimaryNavigation />
-                    <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-muted sm:rounded-tl-2xl relative z-10">
+                    <main className="flex-1 min-w-0 overflow-y-auto scrollbar-hide border-l border-t bg-muted sm:rounded-tl-2xl relative z-10">
                       <Outlet />
                     </main>
                   </div>

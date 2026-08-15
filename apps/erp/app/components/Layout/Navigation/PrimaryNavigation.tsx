@@ -42,7 +42,9 @@ const PrimaryNavigation = () => {
   const permissions = usePermissions();
   const location = useOptimisticLocation();
   const currentModule = getModule(location.pathname);
-  const links = useModules();
+  const links = useModules().filter(
+    (link) => !CANONICAL_MODULE_KEYS.has(link.key)
+  );
   const settingsModule = useSettingsModule();
   const implementationNav = useImplementationNavItem();
   const matchedModules = useMatches().reduce((acc, match) => {
@@ -149,6 +151,7 @@ const PrimaryNavigation = () => {
 
           <VStack spacing={1}>
             {settingsModule &&
+              !CANONICAL_MODULE_KEYS.has(settingsModule.key) &&
               !editMode.isEditing &&
               (() => {
                 const m = getModule(settingsModule.to);
@@ -207,6 +210,18 @@ const PrimaryNavigation = () => {
     </div>
   );
 };
+
+const CANONICAL_MODULE_KEYS = new Set([
+  "sales",
+  "purchasing",
+  "production",
+  "inventory",
+  "parts",
+  "quality",
+  "resources",
+  "settings",
+  "users"
+]);
 
 const NavigationSearchButton = ({ isOpen = false }: { isOpen?: boolean }) => {
   const { t } = useLingui();

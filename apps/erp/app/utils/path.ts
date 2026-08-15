@@ -483,6 +483,7 @@ export const path = {
     consumableSuppliers: (id: string) =>
       generatePath(`${x}/consumable/${id}/suppliers`),
     consumables: `${x}/items/consumables`,
+    decisions: `${x}/decisions`,
     contact: `${x}/people/contact`,
     contractor: (id: string) =>
       generatePath(`${x}/resources/contractors/${id}`),
@@ -879,6 +880,7 @@ export const path = {
       generatePath(`${x}/resources/ability/${abilityId}/employee/${id}`),
     employeeAccount: (id: string) => generatePath(`${x}/users/employees/${id}`),
     employeeAccounts: `${x}/users/employees`,
+    exceptions: `${x}/exceptions`,
     employeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,

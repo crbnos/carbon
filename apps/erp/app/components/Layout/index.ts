@@ -5,6 +5,7 @@ import {
   ContentSidebar,
   DetailSidebar,
   DetailsTopbar,
+  ExperienceShellNavigation,
   GroupedContentSidebar,
   PrimaryNavigation
 } from "./Navigation";
@@ -18,6 +19,7 @@ export {
   ContentSidebar,
   DetailSidebar,
   DetailsTopbar,
+  ExperienceShellNavigation,
   GroupedContentSidebar,
   PanelProvider,
   PrimaryNavigation,

@@ -30,3 +30,22 @@ Factory OS experiences
 ```
 
 Contracts preserve source references and raw states. They do not replace source models, contain React nodes, perform network calls, or infer unresolved business mappings. Add a new adapter only for a validated source shape and mark unknown values explicitly.
+
+## P1 experience shell
+
+FIDS v1 now sits inside a Factory OS experience shell that is additive to the
+existing Carbon ERP frame. The shell establishes canonical navigation across
+Overview, Orders, Production, Materials, Quality, Equipment, Exceptions,
+Decisions, and Administration while preserving legacy ERP and MES deep links.
+
+P1 deliberately stops at the shell boundary. Exceptions and Decisions are
+honest placeholders, and the global object-context slot remains empty until the
+validated Production Order 360 work begins in P2. See:
+
+- `P1_Experience_Shell_Audit.md`
+- `P1_Information_Architecture.md`
+- `P1_Legacy_Routing_Matrix.md`
+- `P1_Product_Identity.md`
+- `P1_Role_Context.md`
+- `P1_Global_Object_Context.md`
+- `P1_Migration_Notes.md`
