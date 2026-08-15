@@ -10,6 +10,7 @@ export * from "./country";
 export * from "./date";
 export * from "./datetime";
 export * from "./duration";
+export * from "./fids";
 export * from "./field-registry";
 export * from "./file";
 export * from "./geo";

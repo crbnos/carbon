@@ -1,0 +1,32 @@
+{
+  "name": "fids-showcase",
+  "type": "module",
+  "dependencies": {
+    "@carbon/react": "workspace:*",
+    "@carbon/utils": "workspace:*",
+    "@react-router/dev": "catalog:",
+    "@react-router/fs-routes": "7.14.0",
+    "@react-router/node": "7.15.1",
+    "non.geist": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-icons": "catalog:",
+    "react-router": "catalog:",
+    "isbot": "^5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  },
+  "private": true,
+  "scripts": {
+    "build": "react-router build",
+    "start": "react-router dev",
+    "types": "react-router typegen && tsc"
+  },
+  "sideEffects": false
+}

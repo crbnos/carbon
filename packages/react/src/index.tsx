@@ -346,7 +346,12 @@ import { getValidChildren, reactNodeToString } from "./utils/react";
 import { VStack } from "./VStack";
 
 export * from "./Acknowledge";
+export * from "./EvidencePanel";
+export * from "./ExceptionCard";
 export * from "./hooks";
+export * from "./ObjectHeader";
+export * from "./RiskIndicator";
+export * from "./StatusBadge";
 export {
   Accordion,
   AccordionContent,
