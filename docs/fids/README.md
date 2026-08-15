@@ -49,3 +49,24 @@ validated Production Order 360 work begins in P2. See:
 - `P1_Role_Context.md`
 - `P1_Global_Object_Context.md`
 - `P1_Migration_Notes.md`
+
+## P2 production-order domain gate
+
+The P2 gate is a read-only source and relationship audit. It does not implement
+Production Order 360. The gate reports whether an evidence-backed ERPNext →
+Carbon MES chain exists before any P2 experience work begins:
+
+- `P2_Production_Order_Source_Model_Audit.md`
+- `P2_Production_Order_Identity_Mapping.md`
+- `P2_Production_Order_Status_Mapping.md`
+- `P2_Operation_Mapping.md`
+- `P2_Production_Order_Profile.md`
+- `P2_Adapter_Gap_Analysis.md`
+- `P2_Domain_Confirmation_Backlog.md`
+- `P2_UI_Readiness_Contract.md`
+- `P2_Final_Acceptance_Report.md`
+
+The current audit finds a confirmed external ERPNext Work Order schema and a
+confirmed Carbon-internal Job → Job Operation chain, but no runtime
+cross-system correlation key or ingestion path. The resulting gate is
+`P2_BLOCKED`; no P2 UI or adapter implementation is authorized by this audit.
