@@ -1,5 +1,6 @@
 import { redis } from "@carbon/kv";
 import { Edition } from "@carbon/utils";
+import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
 import { createCookieSessionStorage, redirect } from "react-router";
 
 import {
@@ -157,7 +158,7 @@ export async function completeMfaChallenge(
 
   // Nearly always one factor; on the rare multi-factor account, try the code
   // against each until one accepts it.
-  let supabaseSession = null;
+  let supabaseSession: SupabaseAuthSession | null = null;
   for (const factor of verifiedFactors) {
     supabaseSession = await verifyTotpChallenge(
       { accessToken: source.accessToken, refreshToken: source.refreshToken },
