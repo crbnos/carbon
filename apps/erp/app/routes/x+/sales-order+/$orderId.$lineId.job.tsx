@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       createdBy: userId,
       customFields: setCustomFields(formData)
     },
-    { methodSource }
+    { methodSource, source: "salesOrder" }
   );
 
   if (createJob.error || !createJob.data) {

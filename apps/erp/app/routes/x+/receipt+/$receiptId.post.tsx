@@ -8,6 +8,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
@@ -310,6 +311,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     outputs: { receipt: { id: receiptId }, postedBy: { id: userId } },
     companyId,
     actorId: userId
+  });
+
+  trackWorkEvent("receipt_posted", {
+    companyId,
+    userId,
+    receiptId,
+    sourceDocument: receiptForSurface?.sourceDocument ?? null
   });
 
   throw redirect(path.to.receipt(receiptId));

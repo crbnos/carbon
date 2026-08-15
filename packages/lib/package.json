@@ -23,7 +23,8 @@
     "rimraf": "catalog:",
     "tsup": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "exports": {
     "./events": "./src/events.ts",
@@ -31,6 +32,7 @@
     "./resend.server": "./src/resend.server.ts",
     "./shims": "./src/shims.ts",
     "./slack.server": "./src/slack.server.ts",
+    "./telemetry": "./src/telemetry/capture.ts",
     "./trigger": "./src/trigger.ts",
     "./twenty.server": "./src/twenty.server.ts",
     "./workflows": "./src/workflows/raise-moment.ts"
@@ -40,7 +42,8 @@
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup --watch",
     "lint": "biome lint --write ",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest run"
   },
   "sideEffects": [
     "./src/shims.ts"

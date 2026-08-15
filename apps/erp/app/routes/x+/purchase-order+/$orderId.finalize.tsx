@@ -5,6 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
@@ -172,6 +173,16 @@ export async function action(args: ActionFunctionArgs) {
       status: "Needs Approval",
       assignee: undefined,
       updatedBy: userId
+    });
+
+    // Money is not committed yet — the approvalRequired flag is what keeps a
+    // gated PO out of "POs issued this week".
+    trackWorkEvent("purchase_order_finalized", {
+      companyId,
+      userId,
+      purchaseOrderId: orderId,
+      approvalRequired: true,
+      emailed: false
     });
 
     throw redirect(
@@ -432,6 +443,14 @@ export async function action(args: ActionFunctionArgs) {
     default:
       throw new Error("Invalid notification type");
   }
+
+  trackWorkEvent("purchase_order_finalized", {
+    companyId,
+    userId,
+    purchaseOrderId: orderId,
+    approvalRequired: false,
+    emailed: notification === "Email"
+  });
 
   throw redirect(
     requestReferrer(request) ?? path.to.purchaseOrder(orderId),

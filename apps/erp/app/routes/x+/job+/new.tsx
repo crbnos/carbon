@@ -45,14 +45,18 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const result = await insertJob(getCarbonServiceRole(), {
-    ...data,
-    jobId: data.jobId || undefined,
-    configuration,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
+  const result = await insertJob(
+    getCarbonServiceRole(),
+    {
+      ...data,
+      jobId: data.jobId || undefined,
+      configuration,
+      companyId,
+      createdBy: userId,
+      customFields: setCustomFields(formData)
+    },
+    { source: "erp" }
+  );
 
   if (result.error || !result.data) {
     throw redirect(

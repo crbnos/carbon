@@ -110,7 +110,7 @@ export async function action({ request }: ActionFunctionArgs) {
         createdBy: userId,
         customFields: setCustomFields(formData)
       },
-      { skipRecalculate: true }
+      { skipRecalculate: true, source: "bulk" }
     );
 
     if (createJob.error || !createJob.data) {

@@ -8,6 +8,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
@@ -354,6 +355,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     outputs: { shipment: { id: shipmentId }, postedBy: { id: userId } },
     companyId,
     actorId: userId
+  });
+
+  trackWorkEvent("shipment_posted", {
+    companyId,
+    userId,
+    shipmentId,
+    sourceDocument: shipmentForSurface?.sourceDocument ?? null
   });
 
   if (expiredWarning) {

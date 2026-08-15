@@ -2,6 +2,8 @@ import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import type { JobSource } from "@carbon/lib/telemetry";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -2424,6 +2426,14 @@ export async function updateJobStatus(
         companyId,
         actorId: updatedBy
       });
+      // Same guard as the moment above: a real transition, never a re-save.
+      trackWorkEvent("job_released", {
+        companyId,
+        userId: updatedBy,
+        jobId: id,
+        priorStatus: prior.data.status,
+        source: "erp"
+      });
     } else if (status === "Paused") {
       await raiseMoment("production.jobHeld", {
         outputs: { job: { id }, heldBy: { id: updatedBy } },
@@ -2777,6 +2787,12 @@ export async function insertJob(
     skipMethod?: boolean;
     skipRecalculate?: boolean;
     methodSource?: "item" | "quoteLine";
+    /**
+     * Which surface raised the job. Only used for telemetry — five routes,
+     * MRP, the MCP tools and the workflow engine all funnel through here, and
+     * the row itself cannot tell them apart.
+     */
+    source?: JobSource;
   }
 ): Promise<{
   data: { id: string; jobId: string } | null;
@@ -2904,6 +2920,19 @@ export async function insertJob(
   }
 
   const createdJobId = job.data.id;
+
+  trackWorkEvent("job_created", {
+    companyId: input.companyId,
+    userId: input.createdBy,
+    jobId: createdJobId,
+    itemId: input.itemId,
+    quantity: input.quantity,
+    scrapQuantity,
+    locationId: locationId ?? null,
+    salesOrderLineId: input.salesOrderLineId ?? null,
+    deadlineType,
+    source: options?.source ?? "erp"
+  });
 
   if (!options?.skipMethod) {
     const methodSource =

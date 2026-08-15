@@ -1,6 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -114,6 +115,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(update.error, "Failed to update picking list status")
       )
     );
+  }
+
+  if (status === "Completed" || status === "Partial") {
+    // Partial is the interesting one: it means a line could not be filled,
+    // which is the material-availability half of job cycle time.
+    trackWorkEvent("picking_list_completed", {
+      companyId,
+      userId,
+      pickingListId: id,
+      finalStatus: status,
+      source: "erp"
+    });
   }
 
   throw redirect(
