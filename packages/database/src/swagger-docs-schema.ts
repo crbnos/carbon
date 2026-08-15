@@ -1281,65 +1281,68 @@ export default {
         tags: ["salesOrderShipment"]
       }
     },
-    "/storageRule": {
+    "/enforcementRule": {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.storageRule.id"
+            $ref: "#/parameters/rowFilter.enforcementRule.id"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.companyId"
+            $ref: "#/parameters/rowFilter.enforcementRule.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.name"
+            $ref: "#/parameters/rowFilter.enforcementRule.family"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.description"
+            $ref: "#/parameters/rowFilter.enforcementRule.name"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.message"
+            $ref: "#/parameters/rowFilter.enforcementRule.description"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.severity"
+            $ref: "#/parameters/rowFilter.enforcementRule.message"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.conditionAst"
+            $ref: "#/parameters/rowFilter.enforcementRule.severity"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.surfaces"
+            $ref: "#/parameters/rowFilter.enforcementRule.conditionAst"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.active"
+            $ref: "#/parameters/rowFilter.enforcementRule.surfaces"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.createdBy"
+            $ref: "#/parameters/rowFilter.enforcementRule.targetType"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.createdAt"
+            $ref: "#/parameters/rowFilter.enforcementRule.appliesToAll"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.updatedBy"
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemTypes"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.updatedAt"
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemGroupIds"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.customFields"
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemMatchAll"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.targetType"
+            $ref: "#/parameters/rowFilter.enforcementRule.active"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.appliesToAll"
+            $ref: "#/parameters/rowFilter.enforcementRule.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemTypes"
+            $ref: "#/parameters/rowFilter.enforcementRule.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemGroupIds"
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemMatchAll"
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.customFields"
           },
           {
             $ref: "#/parameters/select"
@@ -1368,7 +1371,7 @@ export default {
             description: "OK",
             schema: {
               items: {
-                $ref: "#/definitions/storageRule"
+                $ref: "#/definitions/enforcementRule"
               },
               type: "array"
             }
@@ -1377,12 +1380,12 @@ export default {
             description: "Partial Content"
           }
         },
-        tags: ["storageRule"]
+        tags: ["enforcementRule"]
       },
       post: {
         parameters: [
           {
-            $ref: "#/parameters/body.storageRule"
+            $ref: "#/parameters/body.enforcementRule"
           },
           {
             $ref: "#/parameters/select"
@@ -1396,66 +1399,69 @@ export default {
             description: "Created"
           }
         },
-        tags: ["storageRule"]
+        tags: ["enforcementRule"]
       },
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.storageRule.id"
+            $ref: "#/parameters/rowFilter.enforcementRule.id"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.companyId"
+            $ref: "#/parameters/rowFilter.enforcementRule.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.name"
+            $ref: "#/parameters/rowFilter.enforcementRule.family"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.description"
+            $ref: "#/parameters/rowFilter.enforcementRule.name"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.message"
+            $ref: "#/parameters/rowFilter.enforcementRule.description"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.severity"
+            $ref: "#/parameters/rowFilter.enforcementRule.message"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.conditionAst"
+            $ref: "#/parameters/rowFilter.enforcementRule.severity"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.surfaces"
+            $ref: "#/parameters/rowFilter.enforcementRule.conditionAst"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.active"
+            $ref: "#/parameters/rowFilter.enforcementRule.surfaces"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.createdBy"
+            $ref: "#/parameters/rowFilter.enforcementRule.targetType"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.createdAt"
+            $ref: "#/parameters/rowFilter.enforcementRule.appliesToAll"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.updatedBy"
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemTypes"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.updatedAt"
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemGroupIds"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.customFields"
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemMatchAll"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.targetType"
+            $ref: "#/parameters/rowFilter.enforcementRule.active"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.appliesToAll"
+            $ref: "#/parameters/rowFilter.enforcementRule.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemTypes"
+            $ref: "#/parameters/rowFilter.enforcementRule.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemGroupIds"
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemMatchAll"
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.customFields"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -1466,69 +1472,72 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["storageRule"]
+        tags: ["enforcementRule"]
       },
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.storageRule.id"
+            $ref: "#/parameters/rowFilter.enforcementRule.id"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.companyId"
+            $ref: "#/parameters/rowFilter.enforcementRule.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.name"
+            $ref: "#/parameters/rowFilter.enforcementRule.family"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.description"
+            $ref: "#/parameters/rowFilter.enforcementRule.name"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.message"
+            $ref: "#/parameters/rowFilter.enforcementRule.description"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.severity"
+            $ref: "#/parameters/rowFilter.enforcementRule.message"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.conditionAst"
+            $ref: "#/parameters/rowFilter.enforcementRule.severity"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.surfaces"
+            $ref: "#/parameters/rowFilter.enforcementRule.conditionAst"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.active"
+            $ref: "#/parameters/rowFilter.enforcementRule.surfaces"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.createdBy"
+            $ref: "#/parameters/rowFilter.enforcementRule.targetType"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.createdAt"
+            $ref: "#/parameters/rowFilter.enforcementRule.appliesToAll"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.updatedBy"
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemTypes"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.updatedAt"
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemGroupIds"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.customFields"
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemMatchAll"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.targetType"
+            $ref: "#/parameters/rowFilter.enforcementRule.active"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.appliesToAll"
+            $ref: "#/parameters/rowFilter.enforcementRule.createdBy"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemTypes"
+            $ref: "#/parameters/rowFilter.enforcementRule.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemGroupIds"
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemMatchAll"
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedAt"
           },
           {
-            $ref: "#/parameters/body.storageRule"
+            $ref: "#/parameters/rowFilter.enforcementRule.customFields"
+          },
+          {
+            $ref: "#/parameters/body.enforcementRule"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -1539,7 +1548,511 @@ export default {
             description: "No Content"
           }
         },
-        tags: ["storageRule"]
+        tags: ["enforcementRule"]
+      }
+    },
+    "/enforcementRuleItemAssignment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/enforcementRuleItemAssignment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["enforcementRuleItemAssignment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.enforcementRuleItemAssignment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["enforcementRuleItemAssignment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleItemAssignment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.enforcementRuleItemAssignment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleItemAssignment"]
+      }
+    },
+    "/enforcementRuleWorkCenterAssignment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/enforcementRuleWorkCenterAssignment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["enforcementRuleWorkCenterAssignment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.enforcementRuleWorkCenterAssignment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["enforcementRuleWorkCenterAssignment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleWorkCenterAssignment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.enforcementRuleWorkCenterAssignment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleWorkCenterAssignment"]
+      }
+    },
+    "/enforcementRuleAcknowledgment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/enforcementRuleAcknowledgment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["enforcementRuleAcknowledgment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.enforcementRuleAcknowledgment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["enforcementRuleAcknowledgment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleAcknowledgment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.enforcementRuleAcknowledgment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleAcknowledgment"]
       }
     },
     "/documentLabels": {
@@ -14931,222 +15444,6 @@ export default {
         tags: ["documentExtraction"]
       }
     },
-    "/salesRuleAcknowledgment": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentLineId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.outcome"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.message"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleName"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/salesRuleAcknowledgment"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["salesRuleAcknowledgment"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.salesRuleAcknowledgment"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["salesRuleAcknowledgment"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentLineId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.outcome"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.message"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleName"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["salesRuleAcknowledgment"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.documentLineId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.outcome"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.message"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAcknowledgment.ruleName"
-          },
-          {
-            $ref: "#/parameters/body.salesRuleAcknowledgment"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["salesRuleAcknowledgment"]
-      }
-    },
     "/pickMethod": {
       get: {
         parameters: [
@@ -25285,141 +25582,6 @@ export default {
           }
         },
         tags: ["supplierTax"]
-      }
-    },
-    "/salesRuleAssignment": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/salesRuleAssignment"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["salesRuleAssignment"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.salesRuleAssignment"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["salesRuleAssignment"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["salesRuleAssignment"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRuleAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/body.salesRuleAssignment"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["salesRuleAssignment"]
       }
     },
     "/materialDimensions": {
@@ -39276,249 +39438,6 @@ export default {
         tags: ["document"]
       }
     },
-    "/salesRule": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.salesRule.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.message"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.conditionAst"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.surfaces"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.filteredItemTypes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.filteredItemGroupIds"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.filteredItemMatchAll"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.customFields"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/salesRule"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["salesRule"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.salesRule"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["salesRule"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.salesRule.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.message"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.conditionAst"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.surfaces"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.filteredItemTypes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.filteredItemGroupIds"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.filteredItemMatchAll"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.customFields"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["salesRule"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.salesRule.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.message"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.conditionAst"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.surfaces"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.filteredItemTypes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.filteredItemGroupIds"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.filteredItemMatchAll"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRule.customFields"
-          },
-          {
-            $ref: "#/parameters/body.salesRule"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["salesRule"]
-      }
-    },
     "/supplierQuoteLines": {
       get: {
         parameters: [
@@ -51372,150 +51291,6 @@ export default {
         tags: ["companyIntegration"]
       }
     },
-    "/storageRuleWorkCenterAssignment": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.workCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/storageRuleWorkCenterAssignment"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["storageRuleWorkCenterAssignment"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.storageRuleWorkCenterAssignment"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["storageRuleWorkCenterAssignment"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.workCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["storageRuleWorkCenterAssignment"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.workCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/body.storageRuleWorkCenterAssignment"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["storageRuleWorkCenterAssignment"]
-      }
-    },
     "/salesOrderStatusHistory": {
       get: {
         parameters: [
@@ -53686,150 +53461,6 @@ export default {
           }
         },
         tags: ["activeMaintenanceDispatchesByLocation"]
-      }
-    },
-    "/storageRuleItemAssignment": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/storageRuleItemAssignment"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["storageRuleItemAssignment"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.storageRuleItemAssignment"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["storageRuleItemAssignment"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["storageRuleItemAssignment"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/body.storageRuleItemAssignment"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["storageRuleItemAssignment"]
       }
     },
     "/shipmentFixedAssetLine": {
@@ -98948,35 +98579,41 @@ export default {
       },
       type: "object"
     },
-    storageRule: {
+    enforcementRule: {
       required: [
         "id",
         "companyId",
+        "family",
         "name",
         "message",
         "severity",
         "conditionAst",
         "surfaces",
-        "active",
-        "createdBy",
-        "createdAt",
         "targetType",
         "appliesToAll",
         "filteredItemTypes",
         "filteredItemGroupIds",
-        "filteredItemMatchAll"
+        "filteredItemMatchAll",
+        "active",
+        "createdBy",
+        "createdAt"
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
         },
         companyId: {
           description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        family: {
+          enum: ["storage", "sales"],
+          format: 'public."enforcementRuleFamily"',
           type: "string"
         },
         name: {
@@ -98999,11 +98636,41 @@ export default {
           format: "jsonb"
         },
         surfaces: {
-          format: 'public."transactionSurface"[]',
+          format: 'public."enforcementRuleSurface"[]',
           items: {
             type: "string"
           },
           type: "array"
+        },
+        targetType: {
+          default: "item",
+          enum: ["item", "workCenter"],
+          format: 'public."enforcementRuleTargetType"',
+          type: "string"
+        },
+        appliesToAll: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        filteredItemTypes: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        filteredItemGroupIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        filteredItemMatchAll: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         },
         active: {
           default: true,
@@ -99033,36 +98700,173 @@ export default {
         },
         customFields: {
           format: "jsonb"
-        },
-        targetType: {
-          default: "item",
-          enum: ["item", "workCenter"],
-          format: 'public."storageRuleTargetType"',
+        }
+      },
+      type: "object"
+    },
+    enforcementRuleItemAssignment: {
+      required: ["itemId", "ruleId", "companyId", "createdBy", "createdAt"],
+      properties: {
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
           type: "string"
         },
-        appliesToAll: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
+        ruleId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
         },
-        filteredItemTypes: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
         },
-        filteredItemGroupIds: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
         },
-        filteredItemMatchAll: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    enforcementRuleWorkCenterAssignment: {
+      required: [
+        "workCenterId",
+        "ruleId",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        workCenterId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        ruleId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    enforcementRuleAcknowledgment: {
+      required: [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "severity",
+        "outcome",
+        "message",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        ruleId: {
+          format: "text",
+          type: "string"
+        },
+        ruleName: {
+          format: "text",
+          type: "string"
+        },
+        documentType: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        documentLineId: {
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          format: "text",
+          type: "string"
+        },
+        severity: {
+          format: "text",
+          type: "string"
+        },
+        outcome: {
+          format: "text",
+          type: "string"
+        },
+        message: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -105197,87 +105001,6 @@ export default {
       },
       type: "object"
     },
-    salesRuleAcknowledgment: {
-      required: [
-        "id",
-        "companyId",
-        "documentType",
-        "documentId",
-        "severity",
-        "outcome",
-        "message",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        id: {
-          default: "public.id()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        ruleId: {
-          format: "text",
-          type: "string"
-        },
-        documentType: {
-          format: "text",
-          type: "string"
-        },
-        documentId: {
-          format: "text",
-          type: "string"
-        },
-        documentLineId: {
-          format: "text",
-          type: "string"
-        },
-        itemId: {
-          format: "text",
-          type: "string"
-        },
-        severity: {
-          format: "text",
-          type: "string"
-        },
-        outcome: {
-          format: "text",
-          type: "string"
-        },
-        message: {
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        ruleName: {
-          format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     pickMethod: {
       required: [
         "itemId",
@@ -110397,40 +110120,6 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
-    salesRuleAssignment: {
-      required: ["itemId", "ruleId", "companyId", "createdBy", "createdAt"],
-      properties: {
-        itemId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        ruleId: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -116882,112 +116571,6 @@ export default {
       },
       type: "object"
     },
-    salesRule: {
-      required: [
-        "id",
-        "companyId",
-        "name",
-        "message",
-        "severity",
-        "conditionAst",
-        "surfaces",
-        "filteredItemTypes",
-        "filteredItemGroupIds",
-        "filteredItemMatchAll",
-        "active",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        id: {
-          default: "public.id()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        name: {
-          format: "text",
-          type: "string"
-        },
-        description: {
-          format: "text",
-          type: "string"
-        },
-        message: {
-          format: "text",
-          type: "string"
-        },
-        severity: {
-          format: "text",
-          type: "string"
-        },
-        conditionAst: {
-          format: "jsonb"
-        },
-        surfaces: {
-          format: 'public."salesRuleSurface"[]',
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
-        filteredItemTypes: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
-        filteredItemGroupIds: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
-        filteredItemMatchAll: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        active: {
-          default: true,
-          format: "boolean",
-          type: "boolean"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        customFields: {
-          format: "jsonb"
-        }
-      },
-      type: "object"
-    },
     supplierQuoteLines: {
       properties: {
         id: {
@@ -122400,53 +121983,6 @@ export default {
       },
       type: "object"
     },
-    storageRuleWorkCenterAssignment: {
-      required: [
-        "workCenterId",
-        "ruleId",
-        "companyId",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        workCenterId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        ruleId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `storageRule.id`.<fk table='storageRule' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     salesOrderStatusHistory: {
       required: [
         "id",
@@ -123386,47 +122922,6 @@ export default {
           type: "string"
         },
         actualFailureModeName: {
-          format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
-    storageRuleItemAssignment: {
-      required: ["itemId", "ruleId", "companyId", "createdBy", "createdAt"],
-      properties: {
-        itemId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        ruleId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `storageRule.id`.<fk table='storageRule' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -140308,116 +139803,278 @@ export default {
         $ref: "#/definitions/storageRule"
       }
     },
-    "rowFilter.storageRule.id": {
+    "rowFilter.enforcementRule.id": {
       name: "id",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.companyId": {
+    "rowFilter.enforcementRule.companyId": {
       name: "companyId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.name": {
+    "rowFilter.enforcementRule.family": {
+      name: "family",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.name": {
       name: "name",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.description": {
+    "rowFilter.enforcementRule.description": {
       name: "description",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.message": {
+    "rowFilter.enforcementRule.message": {
       name: "message",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.severity": {
+    "rowFilter.enforcementRule.severity": {
       name: "severity",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.conditionAst": {
+    "rowFilter.enforcementRule.conditionAst": {
       name: "conditionAst",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.surfaces": {
+    "rowFilter.enforcementRule.surfaces": {
       name: "surfaces",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.active": {
-      name: "active",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.customFields": {
-      name: "customFields",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.targetType": {
+    "rowFilter.enforcementRule.targetType": {
       name: "targetType",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.appliesToAll": {
+    "rowFilter.enforcementRule.appliesToAll": {
       name: "appliesToAll",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.filteredItemTypes": {
+    "rowFilter.enforcementRule.filteredItemTypes": {
       name: "filteredItemTypes",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.filteredItemGroupIds": {
+    "rowFilter.enforcementRule.filteredItemGroupIds": {
       name: "filteredItemGroupIds",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.storageRule.filteredItemMatchAll": {
+    "rowFilter.enforcementRule.filteredItemMatchAll": {
       name: "filteredItemMatchAll",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.ruleId": {
+      name: "ruleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.ruleId": {
+      name: "ruleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.ruleId": {
+      name: "ruleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.ruleName": {
+      name: "ruleName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.documentLineId": {
+      name: "documentLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.severity": {
+      name: "severity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.outcome": {
+      name: "outcome",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.message": {
+      name: "message",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
@@ -147352,90 +147009,6 @@ export default {
         $ref: "#/definitions/salesRuleAcknowledgment"
       }
     },
-    "rowFilter.salesRuleAcknowledgment.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.ruleId": {
-      name: "ruleId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.documentType": {
-      name: "documentType",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.documentId": {
-      name: "documentId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.documentLineId": {
-      name: "documentLineId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.severity": {
-      name: "severity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.outcome": {
-      name: "outcome",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.message": {
-      name: "message",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAcknowledgment.ruleName": {
-      name: "ruleName",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.pickMethod": {
       name: "pickMethod",
       description: "pickMethod",
@@ -153231,36 +152804,6 @@ export default {
       schema: {
         $ref: "#/definitions/salesRuleAssignment"
       }
-    },
-    "rowFilter.salesRuleAssignment.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAssignment.ruleId": {
-      name: "ruleId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAssignment.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAssignment.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRuleAssignment.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
     },
     "body.materialDimensions": {
       name: "materialDimensions",
@@ -160365,108 +159908,6 @@ export default {
         $ref: "#/definitions/salesRule"
       }
     },
-    "rowFilter.salesRule.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.name": {
-      name: "name",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.description": {
-      name: "description",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.message": {
-      name: "message",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.severity": {
-      name: "severity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.conditionAst": {
-      name: "conditionAst",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.surfaces": {
-      name: "surfaces",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.filteredItemTypes": {
-      name: "filteredItemTypes",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.filteredItemGroupIds": {
-      name: "filteredItemGroupIds",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.filteredItemMatchAll": {
-      name: "filteredItemMatchAll",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.active": {
-      name: "active",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesRule.customFields": {
-      name: "customFields",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.supplierQuoteLines": {
       name: "supplierQuoteLines",
       description: "supplierQuoteLines",
@@ -166508,42 +165949,6 @@ export default {
         $ref: "#/definitions/storageRuleWorkCenterAssignment"
       }
     },
-    "rowFilter.storageRuleWorkCenterAssignment.workCenterId": {
-      name: "workCenterId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.ruleId": {
-      name: "ruleId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.salesOrderStatusHistory": {
       name: "salesOrderStatusHistory",
       description: "salesOrderStatusHistory",
@@ -167600,42 +167005,6 @@ export default {
       schema: {
         $ref: "#/definitions/storageRuleItemAssignment"
       }
-    },
-    "rowFilter.storageRuleItemAssignment.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleItemAssignment.ruleId": {
-      name: "ruleId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleItemAssignment.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleItemAssignment.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleItemAssignment.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleItemAssignment.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
     },
     "body.shipmentFixedAssetLine": {
       name: "shipmentFixedAssetLine",

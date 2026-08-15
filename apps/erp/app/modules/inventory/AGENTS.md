@@ -85,7 +85,7 @@ Configurable if-condition-then-error/warn rules evaluated on **warehouse/MES tra
 
 Sibling feature to **sales rules** (`~/modules/sales`, sales-document surfaces). Both share the engine in `@carbon/utils` (`rules.ts` + `field-registry.ts` + the zod AST mirror in `rules-schema.ts`) and the evaluator/violation UI in `@carbon/ee/rules(.server)` — the code layer is unified under neutral `rules` naming while the tables stay separate.
 
-- **Rule** — `storageRule` row: `conditionAst` JSONB, `severity` (`error` blocks; `warn` blocks until acknowledged), `targetType` (`item` | `workCenter`, enum `storageRuleTargetType`), `surfaces`, `appliesToAll` (workCenter broadcast gate) and the `filteredItem*` columns (item scoping). Assignments are polymorphic across `storageRuleItemAssignment` / `storageRuleWorkCenterAssignment` — `targetType` picks the table.
+- **Rule** — `enforcementRule` row (`family = 'storage'`; the table is shared with sales rules, so every read/write here MUST filter `family = 'storage'`): `conditionAst` JSONB, `severity` (`error` blocks; `warn` blocks until acknowledged), `targetType` (`item` | `workCenter`, enum `enforcementRuleTargetType`), `surfaces`, `appliesToAll` (workCenter broadcast gate) and the `filteredItem*` columns (item scoping). Assignments are polymorphic across `enforcementRuleItemAssignment` / `enforcementRuleWorkCenterAssignment` — `targetType` picks the table. The item table is shared with the sales family: resolve pinned rules against a family-filtered fetch, never a PostgREST embed.
 - **Evaluator** — `@carbon/ee/rules.server`: `evaluateLinesForSurface`, `isBlocked`, `dedupeViolations`, plan gate `isStorageRulesEnabledForCompany`.
 - **One modal** — posting actions return `{ violations, ruleNames }`; callers submit via `useRuleViolations` and render `RuleViolationModal`. Do not fork a second violation UI.
 
@@ -94,7 +94,7 @@ Sibling feature to **sales rules** (`~/modules/sales`, sales-document surfaces).
 - The `ui/StorageRules/` components are the **shared** rule-builder surface — sales rules imports `RuleBuilder`, `SurfacesField`, `MessageWithTokens`, `SeveritySelect`, and `ItemFilterSelector` from here by deep path. Changes must stay backward-compatible; parameterize additively rather than rewriting.
 - These components must NOT import a module barrel (`~/modules/inventory`, `~/modules/items`, or `~/modules/sales`) — deep file imports only. `inventory` already depends on `items`, and the sales module imports these components for its SalesRules UI, so a barrel import would create a cycle. `StorageRules` is deliberately **not** re-exported from `ui/index.ts` for the same reason.
 - `getRuleAssignmentCounts` spans BOTH assignment tables — a rule lives in exactly one, so the union of single-table counts is correct.
-- Never extend `transactionSurface` with sales-document surfaces — those belong to sales rules' own `salesRuleSurface` enum.
+- Never widen the `enforcementRule_storage_surfaces` CHECK to admit sales-document surfaces — that CHECK is what replaced the old per-family enum typing.
 
 Service functions: `getStorageRules` / `getStorageRule` / `upsertStorageRule` / `deleteStorageRule` / `getRuleAssignmentCounts`; cross-app `getActiveRulesForTargets` / `getRuleAssignmentsForTarget` / `getStorageRulesList` / `assignStorageRule` / `unassignStorageRule` re-exported from `@carbon/ee/rules` through the module barrel. Routes: `x+/inventory+/storage-rules*`, plus assignment routes under `x+/items+/rules.*` (item targets) and `x+/resources+/work-centers.rules.*` (work-center targets).
 

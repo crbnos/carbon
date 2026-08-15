@@ -34,12 +34,12 @@ type ItemFilterColumns = {
 
 const assignmentTableFor = (
   targetType: TargetType
-): "storageRuleItemAssignment" | "storageRuleWorkCenterAssignment" => {
+): "enforcementRuleItemAssignment" | "enforcementRuleWorkCenterAssignment" => {
   switch (targetType) {
     case "item":
-      return "storageRuleItemAssignment";
+      return "enforcementRuleItemAssignment";
     case "workCenter":
-      return "storageRuleWorkCenterAssignment";
+      return "enforcementRuleWorkCenterAssignment";
   }
 };
 
@@ -113,17 +113,18 @@ export async function getActiveRulesForTargets(
   const idCol = targetIdColumnFor(args.targetType);
 
   const broadcastBase = client
-    .from("storageRule")
+    .from("enforcementRule")
     .select(broadcastCols)
     .eq("companyId", args.companyId)
+    .eq("family", "storage")
     .eq("targetType", args.targetType)
     .eq("active", true);
 
-  const [explicit, broadcast] = await Promise.all([
+  const [assignments, broadcast] = await Promise.all([
     args.targetIds.length > 0
       ? (client as SupabaseClient<Database>)
           .from(table)
-          .select(`${idCol}, storageRule:ruleId(${ruleCols})`)
+          .select(`${idCol}, ruleId`)
           .in(idCol, args.targetIds)
           .eq("companyId", args.companyId)
       : Promise.resolve({ data: [], error: null }),
@@ -131,12 +132,12 @@ export async function getActiveRulesForTargets(
     isItem ? broadcastBase : broadcastBase.eq("appliesToAll", true)
   ]);
 
-  if (explicit.error)
+  if (assignments.error)
     return {
       data: out,
       broadcasts: [],
       broadcastFilters,
-      error: explicit.error
+      error: assignments.error
     };
   if (broadcast.error)
     return {
@@ -146,20 +147,48 @@ export async function getActiveRulesForTargets(
       error: broadcast.error
     };
 
-  for (const r of explicit.data ?? []) {
-    const row = r as unknown as {
-      [k: string]: unknown;
-      storageRule: RuleRowSelect | RuleRowSelect[] | null;
-    };
-    const targetId = row[idCol] as string;
-    const node = Array.isArray(row.storageRule)
-      ? row.storageRule[0]
-      : row.storageRule;
-    if (!node || node.active === false) continue;
-    if (node.targetType !== args.targetType) continue;
-    const bucket = out.get(targetId);
-    if (bucket) bucket.push(node as StorageRuleRow);
-    else out.set(targetId, [node as StorageRuleRow]);
+  // The pin table is shared with the sales family, so the rules are fetched in
+  // a second pass filtered to this family rather than embedded — an embed would
+  // happily return a sales rule pinned to the same item.
+  const assignmentRows = (assignments.data ?? []) as unknown as {
+    [k: string]: unknown;
+    ruleId: string;
+  }[];
+  const assignedRuleIds = [...new Set(assignmentRows.map((r) => r.ruleId))];
+
+  if (assignedRuleIds.length > 0) {
+    const explicit = await client
+      .from("enforcementRule")
+      .select(ruleCols)
+      .in("id", assignedRuleIds)
+      .eq("companyId", args.companyId)
+      .eq("family", "storage")
+      .eq("targetType", args.targetType)
+      .eq("active", true);
+
+    if (explicit.error)
+      return {
+        data: out,
+        broadcasts: [],
+        broadcastFilters,
+        error: explicit.error
+      };
+
+    const ruleById = new Map<string, RuleRowSelect>(
+      ((explicit.data ?? []) as unknown as RuleRowSelect[]).map((r) => [
+        r.id,
+        r
+      ])
+    );
+
+    for (const row of assignmentRows) {
+      const node = ruleById.get(row.ruleId);
+      if (!node) continue;
+      const targetId = row[idCol] as string;
+      const bucket = out.get(targetId);
+      if (bucket) bucket.push(node as StorageRuleRow);
+      else out.set(targetId, [node as StorageRuleRow]);
+    }
   }
 
   // `as unknown as` is required: a dynamic select string degrades PostgREST's
@@ -227,17 +256,16 @@ export async function getRuleAssignmentsForTarget(
     ? `${baseBroadcastCols}, ${SALES_RULE_FILTER_COLUMNS}`
     : baseBroadcastCols;
   const broadcastBase = client
-    .from("storageRule")
+    .from("enforcementRule")
     .select(broadcastCols)
     .eq("companyId", args.companyId)
+    .eq("family", "storage")
     .eq("targetType", args.targetType);
 
   const [res, broadcastsRes, itemCtxRes] = await Promise.all([
     (client as SupabaseClient<Database>)
       .from(table)
-      .select(
-        `${idCol}, ruleId, createdAt, storageRule:ruleId(id, name, targetType, severity, message, active, surfaces, appliesToAll)`
-      )
+      .select(`${idCol}, ruleId, createdAt`)
       .in(idCol, lookupIds)
       .eq("companyId", args.companyId),
     isItem ? broadcastBase : broadcastBase.eq("appliesToAll", true),
@@ -273,31 +301,50 @@ export async function getRuleAssignmentsForTarget(
   // Item / workCenter assignments are always direct (no inheritance), so every
   // row's owner is the target itself.
   const byRuleId = new Map<string, RuleAssignmentRow>();
-  for (const r of res.data ?? []) {
-    const row = r as unknown as {
-      [k: string]: unknown;
-      storageRule:
-        | RuleAssignmentRow["storageRule"]
-        | RuleAssignmentRow["storageRule"][]
-        | null;
-    };
-    const ownerId = row[idCol] as string;
-    const node = Array.isArray(row.storageRule)
-      ? row.storageRule[0]
-      : row.storageRule;
-    if (!node) continue;
 
-    const candidate: RuleAssignmentRow = {
-      ownerId,
-      ruleId: row.ruleId as string,
-      createdAt: (row.createdAt as string | null) ?? null,
-      storageRule: node,
-      inheritedFromId: null,
-      inheritedFromName: null
-    };
+  // Second pass rather than an embed: the pin table is shared with the sales
+  // family, so the rules must be filtered to this family explicitly.
+  const assignmentRows = (res.data ?? []) as unknown as {
+    [k: string]: unknown;
+    ruleId: string;
+    createdAt: string | null;
+  }[];
+  const assignedRuleIds = [...new Set(assignmentRows.map((r) => r.ruleId))];
 
-    if (!byRuleId.has(candidate.ruleId)) {
-      byRuleId.set(candidate.ruleId, candidate);
+  if (assignedRuleIds.length > 0) {
+    const rulesRes = await client
+      .from("enforcementRule")
+      .select(
+        "id, name, targetType, severity, message, active, surfaces, appliesToAll"
+      )
+      .in("id", assignedRuleIds)
+      .eq("companyId", args.companyId)
+      .eq("family", "storage");
+
+    if (rulesRes.error) return { data: [], error: rulesRes.error };
+
+    const ruleById = new Map(
+      (
+        (rulesRes.data ?? []) as unknown as RuleAssignmentRow["storageRule"][]
+      ).map((r) => [r.id, r])
+    );
+
+    for (const row of assignmentRows) {
+      const node = ruleById.get(row.ruleId);
+      if (!node) continue;
+
+      const candidate: RuleAssignmentRow = {
+        ownerId: row[idCol] as string,
+        ruleId: row.ruleId,
+        createdAt: row.createdAt ?? null,
+        storageRule: node,
+        inheritedFromId: null,
+        inheritedFromName: null
+      };
+
+      if (!byRuleId.has(candidate.ruleId)) {
+        byRuleId.set(candidate.ruleId, candidate);
+      }
     }
   }
 
@@ -372,10 +419,13 @@ export async function getStorageRulesList(
     surfaces: TransactionSurface[];
   }>(
     client,
-    "storageRule",
+    "enforcementRule",
     "id, name, targetType, severity, active, appliesToAll, surfaces",
     (query) => {
-      let q = query.eq("companyId", companyId).order("name");
+      let q = query
+        .eq("companyId", companyId)
+        .eq("family", "storage")
+        .order("name");
       if (targetType) q = q.eq("targetType", targetType);
       return q;
     }
@@ -395,15 +445,17 @@ export async function assignStorageRule(
   const table = assignmentTableFor(args.targetType);
   const idCol = targetIdColumnFor(args.targetType);
 
-  // Preflight: rule must exist in this company and its targetType must match
-  // the assignment table. Without this, callers could insert a storageUnit-rule
-  // id into storageRuleItemAssignment; the evaluator filters defensively but
-  // the orphan row still inflates getRuleAssignmentCounts.
+  // Preflight: rule must exist in this company, belong to the storage family,
+  // and its targetType must match the assignment table. Without this, callers
+  // could pin a sales rule (or a work-center rule) through the item-assignment
+  // table; the evaluator filters defensively but the orphan row still inflates
+  // getRuleAssignmentCounts.
   const ruleRes = await client
-    .from("storageRule")
+    .from("enforcementRule")
     .select("id, targetType")
     .eq("id", args.ruleId)
     .eq("companyId", args.companyId)
+    .eq("family", "storage")
     .single();
   if (ruleRes.error || !ruleRes.data) {
     return {

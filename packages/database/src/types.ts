@@ -13125,6 +13125,660 @@ export type Database = {
           },
         ]
       }
+      enforcementRule: {
+        Row: {
+          active: boolean
+          appliesToAll: boolean
+          companyId: string
+          conditionAst: Json
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          description: string | null
+          family: Database["public"]["Enums"]["enforcementRuleFamily"]
+          filteredItemGroupIds: string[]
+          filteredItemMatchAll: boolean
+          filteredItemTypes: string[]
+          id: string
+          message: string
+          name: string
+          severity: string
+          surfaces: Database["public"]["Enums"]["enforcementRuleSurface"][]
+          targetType: Database["public"]["Enums"]["enforcementRuleTargetType"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          active?: boolean
+          appliesToAll?: boolean
+          companyId: string
+          conditionAst: Json
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          description?: string | null
+          family: Database["public"]["Enums"]["enforcementRuleFamily"]
+          filteredItemGroupIds?: string[]
+          filteredItemMatchAll?: boolean
+          filteredItemTypes?: string[]
+          id?: string
+          message: string
+          name: string
+          severity: string
+          surfaces: Database["public"]["Enums"]["enforcementRuleSurface"][]
+          targetType?: Database["public"]["Enums"]["enforcementRuleTargetType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          active?: boolean
+          appliesToAll?: boolean
+          companyId?: string
+          conditionAst?: Json
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          description?: string | null
+          family?: Database["public"]["Enums"]["enforcementRuleFamily"]
+          filteredItemGroupIds?: string[]
+          filteredItemMatchAll?: boolean
+          filteredItemTypes?: string[]
+          id?: string
+          message?: string
+          name?: string
+          severity?: string
+          surfaces?: Database["public"]["Enums"]["enforcementRuleSurface"][]
+          targetType?: Database["public"]["Enums"]["enforcementRuleTargetType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enforcementRule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "enforcementRule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "enforcementRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "enforcementRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      enforcementRuleAcknowledgment: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          documentId: string
+          documentLineId: string | null
+          documentType: string
+          id: string
+          itemId: string | null
+          message: string
+          outcome: string
+          ruleId: string | null
+          ruleName: string | null
+          severity: string
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          documentId: string
+          documentLineId?: string | null
+          documentType: string
+          id?: string
+          itemId?: string | null
+          message: string
+          outcome: string
+          ruleId?: string | null
+          ruleName?: string | null
+          severity: string
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          documentId?: string
+          documentLineId?: string | null
+          documentType?: string
+          id?: string
+          itemId?: string | null
+          message?: string
+          outcome?: string
+          ruleId?: string | null
+          ruleName?: string | null
+          severity?: string
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      enforcementRuleItemAssignment: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          itemId: string
+          ruleId: string
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          itemId: string
+          ruleId: string
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          itemId?: string
+          ruleId?: string
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_rule_fkey"
+            columns: ["ruleId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "enforcementRule"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      enforcementRuleWorkCenterAssignment: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          ruleId: string
+          updatedBy: string | null
+          workCenterId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          ruleId: string
+          updatedBy?: string | null
+          workCenterId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          ruleId?: string
+          updatedBy?: string | null
+          workCenterId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_rule_fkey"
+            columns: ["ruleId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "enforcementRule"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "riskRegisters"
+            referencedColumns: ["workCenterId"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCentersWithBlockingStatus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eventSystemSubscription: {
         Row: {
           active: boolean | null
@@ -48151,452 +48805,6 @@ export type Database = {
           },
         ]
       }
-      salesRule: {
-        Row: {
-          active: boolean
-          companyId: string
-          conditionAst: Json
-          createdAt: string
-          createdBy: string
-          customFields: Json | null
-          description: string | null
-          filteredItemGroupIds: string[]
-          filteredItemMatchAll: boolean
-          filteredItemTypes: string[]
-          id: string
-          message: string
-          name: string
-          severity: string
-          surfaces: Database["public"]["Enums"]["salesRuleSurface"][]
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          active?: boolean
-          companyId: string
-          conditionAst: Json
-          createdAt?: string
-          createdBy: string
-          customFields?: Json | null
-          description?: string | null
-          filteredItemGroupIds?: string[]
-          filteredItemMatchAll?: boolean
-          filteredItemTypes?: string[]
-          id?: string
-          message: string
-          name: string
-          severity: string
-          surfaces?: Database["public"]["Enums"]["salesRuleSurface"][]
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          active?: boolean
-          companyId?: string
-          conditionAst?: Json
-          createdAt?: string
-          createdBy?: string
-          customFields?: Json | null
-          description?: string | null
-          filteredItemGroupIds?: string[]
-          filteredItemMatchAll?: boolean
-          filteredItemTypes?: string[]
-          id?: string
-          message?: string
-          name?: string
-          severity?: string
-          surfaces?: Database["public"]["Enums"]["salesRuleSurface"][]
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "salesRule_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRule_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRule_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "salesRule_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "salesRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "salesRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      salesRuleAcknowledgment: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          documentId: string
-          documentLineId: string | null
-          documentType: string
-          id: string
-          itemId: string | null
-          message: string
-          outcome: string
-          ruleId: string | null
-          ruleName: string | null
-          severity: string
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          documentId: string
-          documentLineId?: string | null
-          documentType: string
-          id?: string
-          itemId?: string | null
-          message: string
-          outcome: string
-          ruleId?: string | null
-          ruleName?: string | null
-          severity: string
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          documentId?: string
-          documentLineId?: string | null
-          documentType?: string
-          id?: string
-          itemId?: string | null
-          message?: string
-          outcome?: string
-          ruleId?: string | null
-          ruleName?: string | null
-          severity?: string
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "salesRuleAcknowledgment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAcknowledgment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      salesRuleAssignment: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          itemId: string
-          ruleId: string
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          itemId: string
-          ruleId: string
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          itemId?: string
-          ruleId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "salesRuleAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRuleAssignment_rule_fkey"
-            columns: ["ruleId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "salesRule"
-            referencedColumns: ["id", "companyId"]
-          },
-        ]
-      }
       scrapReason: {
         Row: {
           companyId: string
@@ -50809,507 +51017,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-        ]
-      }
-      storageRule: {
-        Row: {
-          active: boolean
-          appliesToAll: boolean
-          companyId: string
-          conditionAst: Json
-          createdAt: string
-          createdBy: string
-          customFields: Json | null
-          description: string | null
-          filteredItemGroupIds: string[]
-          filteredItemMatchAll: boolean
-          filteredItemTypes: string[]
-          id: string
-          message: string
-          name: string
-          severity: string
-          surfaces: Database["public"]["Enums"]["transactionSurface"][]
-          targetType: Database["public"]["Enums"]["storageRuleTargetType"]
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          active?: boolean
-          appliesToAll?: boolean
-          companyId: string
-          conditionAst: Json
-          createdAt?: string
-          createdBy: string
-          customFields?: Json | null
-          description?: string | null
-          filteredItemGroupIds?: string[]
-          filteredItemMatchAll?: boolean
-          filteredItemTypes?: string[]
-          id?: string
-          message: string
-          name: string
-          severity: string
-          surfaces?: Database["public"]["Enums"]["transactionSurface"][]
-          targetType?: Database["public"]["Enums"]["storageRuleTargetType"]
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          active?: boolean
-          appliesToAll?: boolean
-          companyId?: string
-          conditionAst?: Json
-          createdAt?: string
-          createdBy?: string
-          customFields?: Json | null
-          description?: string | null
-          filteredItemGroupIds?: string[]
-          filteredItemMatchAll?: boolean
-          filteredItemTypes?: string[]
-          id?: string
-          message?: string
-          name?: string
-          severity?: string
-          surfaces?: Database["public"]["Enums"]["transactionSurface"][]
-          targetType?: Database["public"]["Enums"]["storageRuleTargetType"]
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "storageRule_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRule_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRule_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "storageRule_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "storageRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "storageRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      storageRuleItemAssignment: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          itemId: string
-          ruleId: string
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          itemId: string
-          ruleId: string
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          itemId?: string
-          ruleId?: string
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "storageRuleItemAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_ruleId_fkey"
-            columns: ["ruleId"]
-            isOneToOne: false
-            referencedRelation: "storageRule"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleItemAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      storageRuleWorkCenterAssignment: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          ruleId: string
-          updatedBy: string | null
-          workCenterId: string
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          ruleId: string
-          updatedBy?: string | null
-          workCenterId: string
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          ruleId?: string
-          updatedBy?: string | null
-          workCenterId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_ruleId_fkey"
-            columns: ["ruleId"]
-            isOneToOne: false
-            referencedRelation: "storageRule"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "riskRegisters"
-            referencedColumns: ["workCenterId"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCenter"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCenters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storageRuleWorkCenterAssignment_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "workCentersWithBlockingStatus"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -68372,14 +68079,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71765,14 +71472,14 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -72319,14 +72026,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -78457,6 +78164,22 @@ export type Database = {
         | "Other"
         | "Model"
       employeeTypeSystemType: "Admin" | "Console Operator"
+      enforcementRuleFamily: "storage" | "sales"
+      enforcementRuleSurface:
+        | "receipt"
+        | "shipment"
+        | "stockTransfer"
+        | "warehouseTransfer"
+        | "inventoryAdjustment"
+        | "place"
+        | "pick"
+        | "operationStart"
+        | "operationFinish"
+        | "materialIssue"
+        | "materialReceive"
+        | "quoteLine"
+        | "salesOrderLine"
+      enforcementRuleTargetType: "item" | "workCenter"
       externalLinkDocumentType:
         | "Quote"
         | "SupplierQuote"
@@ -78901,7 +78624,6 @@ export type Database = {
         | "Reject"
         | "Request Approval"
       salesRfqStatus: "Draft" | "Ready for Quote" | "Closed" | "Quoted"
-      salesRuleSurface: "quoteLine" | "salesOrderLine"
       samplingPlanType: "All" | "First" | "Percentage" | "AQL"
       samplingStandard: "ANSI_Z1_4" | "ISO_2859_1"
       serviceType: "Internal" | "External"
@@ -78920,7 +78642,6 @@ export type Database = {
       shippingCarrier: "UPS" | "FedEx" | "USPS" | "DHL" | "Other"
       sourcingType: "Specified" | "Drop Ship" | "Ship from Inventory"
       stockTransferStatus: "Draft" | "Released" | "In Progress" | "Completed"
-      storageRuleTargetType: "item" | "workCenter"
       supersessionMode:
         | "Consume First"
         | "Prefer New"
@@ -78972,18 +78693,6 @@ export type Database = {
         | "Numerical"
       trainingStatus: "Draft" | "Active" | "Archived"
       trainingType: "Mandatory" | "Optional"
-      transactionSurface:
-        | "receipt"
-        | "shipment"
-        | "stockTransfer"
-        | "warehouseTransfer"
-        | "inventoryAdjustment"
-        | "place"
-        | "pick"
-        | "operationStart"
-        | "operationFinish"
-        | "materialIssue"
-        | "materialReceive"
       warehouseTransferStatus:
         | "Draft"
         | "To Ship and Receive"
@@ -79831,6 +79540,23 @@ export const Constants = {
         "Model",
       ],
       employeeTypeSystemType: ["Admin", "Console Operator"],
+      enforcementRuleFamily: ["storage", "sales"],
+      enforcementRuleSurface: [
+        "receipt",
+        "shipment",
+        "stockTransfer",
+        "warehouseTransfer",
+        "inventoryAdjustment",
+        "place",
+        "pick",
+        "operationStart",
+        "operationFinish",
+        "materialIssue",
+        "materialReceive",
+        "quoteLine",
+        "salesOrderLine",
+      ],
+      enforcementRuleTargetType: ["item", "workCenter"],
       externalLinkDocumentType: [
         "Quote",
         "SupplierQuote",
@@ -80317,7 +80043,6 @@ export const Constants = {
         "Request Approval",
       ],
       salesRfqStatus: ["Draft", "Ready for Quote", "Closed", "Quoted"],
-      salesRuleSurface: ["quoteLine", "salesOrderLine"],
       samplingPlanType: ["All", "First", "Percentage", "AQL"],
       samplingStandard: ["ANSI_Z1_4", "ISO_2859_1"],
       serviceType: ["Internal", "External"],
@@ -80337,7 +80062,6 @@ export const Constants = {
       shippingCarrier: ["UPS", "FedEx", "USPS", "DHL", "Other"],
       sourcingType: ["Specified", "Drop Ship", "Ship from Inventory"],
       stockTransferStatus: ["Draft", "Released", "In Progress", "Completed"],
-      storageRuleTargetType: ["item", "workCenter"],
       supersessionMode: [
         "Consume First",
         "Prefer New",
@@ -80395,19 +80119,6 @@ export const Constants = {
       ],
       trainingStatus: ["Draft", "Active", "Archived"],
       trainingType: ["Mandatory", "Optional"],
-      transactionSurface: [
-        "receipt",
-        "shipment",
-        "stockTransfer",
-        "warehouseTransfer",
-        "inventoryAdjustment",
-        "place",
-        "pick",
-        "operationStart",
-        "operationFinish",
-        "materialIssue",
-        "materialReceive",
-      ],
       warehouseTransferStatus: [
         "Draft",
         "To Ship and Receive",

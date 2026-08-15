@@ -102,7 +102,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // exists on a blocked create, so documentLineId stays null. Failures
       // must never break the submission.
       const acknowledgmentInsert = await serviceRole
-        .from("salesRuleAcknowledgment")
+        .from("enforcementRuleAcknowledgment")
         .insert(
           deduped.map((v) => ({
             companyId,
@@ -180,7 +180,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // the submission.
   if (deduped.length > 0 && !blocked) {
     const acknowledgmentInsert = await serviceRole
-      .from("salesRuleAcknowledgment")
+      .from("enforcementRuleAcknowledgment")
       .insert(
         deduped.map((v) => ({
           companyId,

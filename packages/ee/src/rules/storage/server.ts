@@ -565,10 +565,11 @@ export async function evaluateLinesForSurface({
   for (let i = 0; i < deduped.length; i++) violatedIds.add(deduped[i]!.ruleId);
 
   const { data: namedRules } = await client
-    .from("storageRule")
+    .from("enforcementRule")
     .select("id, name")
     .in("id", Array.from(violatedIds))
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .eq("family", "storage");
 
   const ruleNames: Record<string, string> = {};
   for (const r of namedRules ?? []) {

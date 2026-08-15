@@ -3992,9 +3992,10 @@ export async function getStorageRules(
   }
 ) {
   let query = client
-    .from("storageRule")
+    .from("enforcementRule")
     .select("*", { count: "exact" })
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .eq("family", "storage");
 
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);
@@ -4013,7 +4014,12 @@ export async function getStorageRule(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("storageRule").select("*").eq("id", id).single();
+  return client
+    .from("enforcementRule")
+    .select("*")
+    .eq("id", id)
+    .eq("family", "storage")
+    .single();
 }
 
 export async function upsertStorageRule(
@@ -4022,19 +4028,24 @@ export async function upsertStorageRule(
 ) {
   if ("createdBy" in rule) {
     return client
-      .from("storageRule")
-      .insert({ ...rule, conditionAst: rule.conditionAst as unknown as Json })
+      .from("enforcementRule")
+      .insert({
+        ...rule,
+        family: "storage",
+        conditionAst: rule.conditionAst as unknown as Json
+      })
       .select("id")
       .single();
   }
   return client
-    .from("storageRule")
+    .from("enforcementRule")
     .update({
       ...sanitize(rule),
       conditionAst: rule.conditionAst as unknown as Json,
       updatedAt: datetime.timestamp()
     })
     .eq("id", rule.id)
+    .eq("family", "storage")
     .select("id")
     .single();
 }
@@ -4043,7 +4054,11 @@ export async function deleteStorageRule(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("storageRule").delete().eq("id", id);
+  return client
+    .from("enforcementRule")
+    .delete()
+    .eq("id", id)
+    .eq("family", "storage");
 }
 
 export async function getRuleAssignmentCounts(
@@ -4056,8 +4071,8 @@ export async function getRuleAssignmentCounts(
 
   const counts: Record<string, number> = {};
   const tables: Array<
-    "storageRuleItemAssignment" | "storageRuleWorkCenterAssignment"
-  > = ["storageRuleItemAssignment", "storageRuleWorkCenterAssignment"];
+    "enforcementRuleItemAssignment" | "enforcementRuleWorkCenterAssignment"
+  > = ["enforcementRuleItemAssignment", "enforcementRuleWorkCenterAssignment"];
 
   const results = await Promise.all(
     tables.map((table) =>

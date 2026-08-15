@@ -6155,9 +6155,10 @@ export async function getSalesRules(
   }
 ) {
   let query = client
-    .from("salesRule")
+    .from("enforcementRule")
     .select("*", { count: "exact" })
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .eq("family", "sales");
 
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);
@@ -6173,7 +6174,12 @@ export async function getSalesRule(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("salesRule").select("*").eq("id", id).single();
+  return client
+    .from("enforcementRule")
+    .select("*")
+    .eq("id", id)
+    .eq("family", "sales")
+    .single();
 }
 
 export async function upsertSalesRule(
@@ -6182,19 +6188,24 @@ export async function upsertSalesRule(
 ) {
   if ("createdBy" in rule) {
     return client
-      .from("salesRule")
-      .insert({ ...rule, conditionAst: rule.conditionAst as unknown as Json })
+      .from("enforcementRule")
+      .insert({
+        ...rule,
+        family: "sales",
+        conditionAst: rule.conditionAst as unknown as Json
+      })
       .select("id")
       .single();
   }
   return client
-    .from("salesRule")
+    .from("enforcementRule")
     .update({
       ...sanitize(rule),
       conditionAst: rule.conditionAst as unknown as Json,
       updatedAt: datetime.timestamp()
     })
     .eq("id", rule.id)
+    .eq("family", "sales")
     .select("id")
     .single();
 }
@@ -6203,7 +6214,11 @@ export async function deleteSalesRule(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("salesRule").delete().eq("id", id);
+  return client
+    .from("enforcementRule")
+    .delete()
+    .eq("id", id)
+    .eq("family", "sales");
 }
 
 export async function getSalesRuleAssignmentCounts(
@@ -6213,7 +6228,7 @@ export async function getSalesRuleAssignmentCounts(
   if (ruleIds.length === 0) return { data: {}, error: null };
 
   const { data, error } = await client
-    .from("salesRuleAssignment")
+    .from("enforcementRuleItemAssignment")
     .select("ruleId")
     .in("ruleId", ruleIds);
 

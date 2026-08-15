@@ -70,13 +70,14 @@ export async function getActiveSalesRulesForItems(
 
   const [rulesRes, assignmentsRes] = await Promise.all([
     client
-      .from("salesRule")
+      .from("enforcementRule")
       .select(SALES_RULE_EVAL_COLUMNS)
       .eq("companyId", companyId)
+      .eq("family", "sales")
       .eq("active", true),
     itemIds.length > 0
       ? client
-          .from("salesRuleAssignment")
+          .from("enforcementRuleItemAssignment")
           .select("itemId, ruleId")
           .in("itemId", itemIds)
           .eq("companyId", companyId)
@@ -88,9 +89,17 @@ export async function getActiveSalesRulesForItems(
   if (assignmentsRes.error)
     return { rules: [], assignmentsByItemId, error: assignmentsRes.error };
 
+  // The pin table is shared with the storage family; a storage rule pinned to
+  // the same item must not enter the sales evaluation set. The fetched rules
+  // are already family-filtered, so they are the authority on what counts.
+  const salesRuleIds = new Set(
+    ((rulesRes.data ?? []) as unknown as SalesRuleDbRow[]).map((r) => r.id)
+  );
+
   for (const row of assignmentsRes.data ?? []) {
     const itemId = row.itemId as string;
     const ruleId = row.ruleId as string;
+    if (!salesRuleIds.has(ruleId)) continue;
     const bucket = assignmentsByItemId.get(itemId);
     if (bucket) bucket.add(ruleId);
     else assignmentsByItemId.set(itemId, new Set([ruleId]));
@@ -138,24 +147,22 @@ export async function getSalesRuleAssignmentsForItem(
   client: SupabaseClient<Database>,
   args: { itemId: string; companyId: string }
 ): Promise<{ data: SalesRuleAssignmentRow[]; error: unknown }> {
-  // Annotated `string` so PostgREST yields generically-typed rows — the typed
-  // select parser blows its instantiation depth on the composite-FK embed
-  // (`salesRule:ruleId` resolves over ("ruleId","companyId")). Rows are cast
-  // explicitly below, mirroring the storage-rules service.
-  const assignmentCols: string =
-    "itemId, ruleId, createdAt, salesRule:ruleId(id, name, severity, message, active, surfaces)";
+  // No embed: the pin table is shared with the storage family, so the pinned
+  // rules are resolved in a second, family-filtered pass below.
+  const assignmentCols: string = "itemId, ruleId, createdAt";
   const [res, broadcastsRes, itemCtxRes] = await Promise.all([
     client
-      .from("salesRuleAssignment")
+      .from("enforcementRuleItemAssignment")
       .select(assignmentCols)
       .eq("itemId", args.itemId)
       .eq("companyId", args.companyId),
     client
-      .from("salesRule")
+      .from("enforcementRule")
       .select(
         `id, name, severity, message, active, surfaces, createdAt, ${SALES_RULE_FILTER_COLUMNS}`
       )
-      .eq("companyId", args.companyId),
+      .eq("companyId", args.companyId)
+      .eq("family", "sales"),
     // Item type/group for this item so we can gate broadcasts the same way
     // the evaluator does.
     client
@@ -184,24 +191,28 @@ export async function getSalesRuleAssignmentsForItem(
   })();
 
   // Item assignments are always direct (no inheritance), so every explicit
-  // row's owner is the item itself.
+  // row's owner is the item itself. Pinned rules are resolved against the
+  // family-filtered fetch above — a pin pointing at a storage rule (same shared
+  // table) simply finds no match and is skipped.
+  const salesRuleById = new Map(
+    (
+      (broadcastsRes.data ??
+        []) as unknown as SalesRuleAssignmentRow["salesRule"][]
+    ).map((r) => [r.id, r])
+  );
+
   const byRuleId = new Map<string, SalesRuleAssignmentRow>();
   for (const r of res.data ?? []) {
     const row = r as unknown as {
       [k: string]: unknown;
-      salesRule:
-        | SalesRuleAssignmentRow["salesRule"]
-        | SalesRuleAssignmentRow["salesRule"][]
-        | null;
+      ruleId: string;
     };
-    const node = Array.isArray(row.salesRule)
-      ? row.salesRule[0]
-      : row.salesRule;
+    const node = salesRuleById.get(row.ruleId);
     if (!node) continue;
 
     const candidate: SalesRuleAssignmentRow = {
       ownerId: row.itemId as string,
-      ruleId: row.ruleId as string,
+      ruleId: row.ruleId,
       createdAt: (row.createdAt as string | null) ?? null,
       salesRule: node,
       inheritedFromId: null,
@@ -269,8 +280,12 @@ export async function getSalesRulesList(
     severity: Severity;
     active: boolean;
     surfaces: SalesRuleSurface[];
-  }>(client, "salesRule", "id, name, severity, active, surfaces", (query) =>
-    query.eq("companyId", companyId).order("name")
+  }>(
+    client,
+    "enforcementRule",
+    "id, name, severity, active, surfaces",
+    (query) =>
+      query.eq("companyId", companyId).eq("family", "sales").order("name")
   );
 }
 
@@ -282,10 +297,11 @@ export async function assignSalesRule(
   // insert a foreign rule id; the evaluator filters defensively but the
   // orphan row still inflates assignment counts.
   const ruleRes = await client
-    .from("salesRule")
+    .from("enforcementRule")
     .select("id")
     .eq("id", args.ruleId)
     .eq("companyId", args.companyId)
+    .eq("family", "sales")
     .single();
   if (ruleRes.error || !ruleRes.data) {
     return {
@@ -295,7 +311,7 @@ export async function assignSalesRule(
   }
 
   return client
-    .from("salesRuleAssignment")
+    .from("enforcementRuleItemAssignment")
     .insert({
       itemId: args.itemId,
       ruleId: args.ruleId,
@@ -311,7 +327,7 @@ export async function unassignSalesRule(
   args: { itemId: string; ruleId: string; companyId: string }
 ) {
   return client
-    .from("salesRuleAssignment")
+    .from("enforcementRuleItemAssignment")
     .delete()
     .eq("itemId", args.itemId)
     .eq("ruleId", args.ruleId)

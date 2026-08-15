@@ -233,7 +233,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // Persist override evidence — one row per deduped violation. Failures
     // must never break the submission.
     const acknowledgmentInsert = await serviceRole
-      .from("salesRuleAcknowledgment")
+      .from("enforcementRuleAcknowledgment")
       .insert(
         deduped.map((v) => ({
           companyId,
