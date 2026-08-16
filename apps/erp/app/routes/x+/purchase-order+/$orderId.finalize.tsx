@@ -123,6 +123,22 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
+  // Emitted here, not at the end of the route: the order is finalized as of
+  // this line, and five things below can redirect out first — a failed PDF
+  // upload, a failed document row, any PDF throw, the form validation (which
+  // runs after this), and a failed email. Every one of them leaves a finalized
+  // order behind, so anything further down under-counts.
+  trackWorkEvent(
+    "purchase_order_finalized",
+    {
+      companyId,
+      userId,
+      purchaseOrderId: orderId,
+      stage: approvalRequired ? "gated" : "committed"
+    },
+    { discriminator: approvalRequired ? "gated" : "committed" }
+  );
+
   // If approval is required, create the request and return early
   // PDF generation, email sending, and price updates happen after approval
   if (approvalRequired) {
@@ -173,16 +189,6 @@ export async function action(args: ActionFunctionArgs) {
       status: "Needs Approval",
       assignee: undefined,
       updatedBy: userId
-    });
-
-    // Money is not committed yet — the approvalRequired flag is what keeps a
-    // gated PO out of "POs issued this week".
-    trackWorkEvent("purchase_order_finalized", {
-      companyId,
-      userId,
-      purchaseOrderId: orderId,
-      approvalRequired: true,
-      emailed: false
     });
 
     throw redirect(
@@ -443,14 +449,6 @@ export async function action(args: ActionFunctionArgs) {
     default:
       throw new Error("Invalid notification type");
   }
-
-  trackWorkEvent("purchase_order_finalized", {
-    companyId,
-    userId,
-    purchaseOrderId: orderId,
-    approvalRequired: false,
-    emailed: notification === "Email"
-  });
 
   throw redirect(
     requestReferrer(request) ?? path.to.purchaseOrder(orderId),

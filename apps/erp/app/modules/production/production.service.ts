@@ -2756,6 +2756,20 @@ export async function upsertProductionQuantity(
   }
 }
 
+/**
+ * `options.source` is telemetry-only: which surface raised the job. Five
+ * routes, MRP, the MCP tools and the workflow engine all funnel through here
+ * and the `job` row cannot tell them apart, so the caller has to say.
+ *
+ * Unset is reported as `unknown`, never as `erp`. The MCP tool and the
+ * workflow engine both reach this through `dispatch(call, context, inputs)`,
+ * which has nowhere to put an option, and an `erp` default would file
+ * automated job creation as human work — the one thing the field separates.
+ *
+ * Kept out of the options type literal on purpose: the MCP metadata generator
+ * parses that object textually and turns a JSDoc block above a property into a
+ * property name of its own, which then ships in the public tool schema.
+ */
 export async function insertJob(
   client: SupabaseClient<Database>,
   input: {
@@ -2787,11 +2801,6 @@ export async function insertJob(
     skipMethod?: boolean;
     skipRecalculate?: boolean;
     methodSource?: "item" | "quoteLine";
-    /**
-     * Which surface raised the job. Only used for telemetry — five routes,
-     * MRP, the MCP tools and the workflow engine all funnel through here, and
-     * the row itself cannot tell them apart.
-     */
     source?: JobSource;
   }
 ): Promise<{
@@ -2931,7 +2940,7 @@ export async function insertJob(
     locationId: locationId ?? null,
     salesOrderLineId: input.salesOrderLineId ?? null,
     deadlineType,
-    source: options?.source ?? "erp"
+    source: options?.source ?? "unknown"
   });
 
   if (!options?.skipMethod) {

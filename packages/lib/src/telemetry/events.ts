@@ -58,7 +58,15 @@ export type JobSource =
   | "salesOrder"
   | "kanban"
   | "api"
-  | "workflow";
+  | "workflow"
+  /**
+   * The caller did not say. Reaching `insertJob` without a source is normal —
+   * the MCP tool and the workflow engine both dispatch `production_insertJob`
+   * by name through a generic (call, context, inputs) signature that has
+   * nowhere to put one. Defaulting those to `erp` would report automation as
+   * human work, which is the single thing this field exists to separate.
+   */
+  | "unknown";
 
 type Base = {
   companyId: string;
@@ -176,11 +184,19 @@ export type WorkEvents = {
   purchase_order_finalized: Base & {
     purchaseOrderId: string;
     /**
-     * True when the finalize stopped at an approval gate. A PO awaiting
-     * approval is not money committed, so it must stay separable.
+     * Where the order got to, and the discriminator — one `gated` and one
+     * `committed` event per order, never two of either.
+     *
+     * `gated`: the finalize stopped at an approval threshold. Nothing is owed
+     * to the supplier yet, so this must never be counted as spend.
+     * `committed`: the order is live. Reached either directly, when no
+     * threshold applied, or later from `approveRequest` when an approver
+     * released a gated one — a different module, which is why a single emit on
+     * the finalize route left approved orders uncounted entirely.
+     *
+     * "POs issued this week" is `stage = committed`.
      */
-    approvalRequired: boolean;
-    emailed: boolean;
+    stage: "gated" | "committed";
   };
 
   // --------------------------------------------------------------- invoicing

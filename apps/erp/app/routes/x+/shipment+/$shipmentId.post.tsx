@@ -192,6 +192,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  /** Set by the catch below when the post was rolled back to Draft. */
+  let reverted = false;
+
   try {
     // Get shipment details to check if it's related to a sales order
     const { data: shipment } = await serviceRole
@@ -341,6 +344,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   } catch (thrown) {
     if (thrown instanceof Response) throw thrown;
+    reverted = true;
     await client
       .from("shipment")
       .update({
@@ -357,12 +361,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     actorId: userId
   });
 
-  trackWorkEvent("shipment_posted", {
-    companyId,
-    userId,
-    shipmentId,
-    sourceDocument: shipmentForSurface?.sourceDocument ?? null
-  });
+  // See the receipt post route: below the catch still runs after a rollback,
+  // so the flag is what makes this "the post stuck", not the position.
+  if (!reverted) {
+    trackWorkEvent("shipment_posted", {
+      companyId,
+      userId,
+      shipmentId,
+      sourceDocument: shipmentForSurface?.sourceDocument ?? null
+    });
+  }
 
   if (expiredWarning) {
     throw redirect(

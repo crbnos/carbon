@@ -114,13 +114,19 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
       };
     }
 
-    trackWorkEvent("picking_list_completed", {
-      companyId,
-      userId: effectiveUserId,
-      pickingListId,
-      finalStatus: finalStatus,
-      source: "mes"
-    });
+    // Discriminated on the status for the same reason as the ERP route: a list
+    // that goes Partial and later Completed must produce two events.
+    trackWorkEvent(
+      "picking_list_completed",
+      {
+        companyId,
+        userId: effectiveUserId,
+        pickingListId,
+        finalStatus: finalStatus,
+        source: "mes"
+      },
+      { discriminator: finalStatus }
+    );
 
     return { success: true };
   }

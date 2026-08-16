@@ -120,13 +120,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (status === "Completed" || status === "Partial") {
     // Partial is the interesting one: it means a line could not be filled,
     // which is the material-availability half of job cycle time.
-    trackWorkEvent("picking_list_completed", {
-      companyId,
-      userId,
-      pickingListId: id,
-      finalStatus: status,
-      source: "erp"
-    });
+    //
+    // The status is the discriminator, not just a property: a list goes
+    // Partial and later Completed, and both are real occurrences. Keyed on the
+    // list alone the second collapses into the first and the completion is
+    // lost, while re-saving the same status still de-duplicates.
+    trackWorkEvent(
+      "picking_list_completed",
+      {
+        companyId,
+        userId,
+        pickingListId: id,
+        finalStatus: status,
+        source: "erp"
+      },
+      { discriminator: status }
+    );
   }
 
   throw redirect(

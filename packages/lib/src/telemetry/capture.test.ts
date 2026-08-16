@@ -103,6 +103,70 @@ describe("captureWorkEvent", () => {
     expect(first).not.toEqual(second);
   });
 
+  // Both of these are regressions. Keyed on the document alone, the second
+  // event of a lifecycle carries the same uuid as the first and is discarded
+  // downstream — so the order that reached an approver was counted and the one
+  // that actually committed money was not.
+  it("separates the two stages of one purchase order", async () => {
+    const base = {
+      companyId: "co_1",
+      userId: "user_1",
+      purchaseOrderId: "po_1"
+    };
+    const gated = await captureWorkEvent(
+      "purchase_order_finalized",
+      { ...base, stage: "gated" },
+      { discriminator: "gated" }
+    );
+    const committed = await captureWorkEvent(
+      "purchase_order_finalized",
+      { ...base, stage: "committed" },
+      { discriminator: "committed" }
+    );
+    expect(gated.sent && committed.sent).toBe(true);
+    expect((gated as { eventId: string }).eventId).not.toEqual(
+      (committed as { eventId: string }).eventId
+    );
+  });
+
+  it("still collapses a repeat of the same stage", async () => {
+    const payload = {
+      companyId: "co_1",
+      userId: "user_1",
+      purchaseOrderId: "po_1",
+      stage: "committed" as const
+    };
+    const first = await captureWorkEvent("purchase_order_finalized", payload, {
+      discriminator: "committed"
+    });
+    const again = await captureWorkEvent("purchase_order_finalized", payload, {
+      discriminator: "committed"
+    });
+    expect(first).toEqual(again);
+  });
+
+  it("separates a picking list that goes Partial and then Completed", async () => {
+    const base = {
+      companyId: "co_1",
+      userId: "user_1",
+      pickingListId: "pl_1",
+      source: "mes" as const
+    };
+    const partial = await captureWorkEvent(
+      "picking_list_completed",
+      { ...base, finalStatus: "Partial" },
+      { discriminator: "Partial" }
+    );
+    const completed = await captureWorkEvent(
+      "picking_list_completed",
+      { ...base, finalStatus: "Completed" },
+      { discriminator: "Completed" }
+    );
+    expect((partial as { eventId: string }).eventId).not.toEqual(
+      (completed as { eventId: string }).eventId
+    );
+  });
+
   it("separates two postings against the same operation", async () => {
     const base = {
       companyId: "co_1",
