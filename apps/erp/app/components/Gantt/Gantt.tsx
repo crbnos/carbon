@@ -70,6 +70,23 @@ type GanttProps = {
   totalDuration: number;
   rootSpanStatus: "inprogress" | "completed" | "todo" | "cancelled";
   rootStartedAt: Date | undefined;
+  /**
+   * Axis mode. "duration" (default) labels ticks with elapsed time ("6h").
+   * "absolute" labels them with a real clock/date via {@link formatAxisTick},
+   * anchored at {@link windowStartMs} — used by the resource-load views that
+   * pin an explicit day/week/shift window.
+   */
+  axis?: "duration" | "absolute";
+  /** Epoch ms of the window start; required when `axis === "absolute"`. */
+  windowStartMs?: number;
+  /** Renders an absolute tick label from an epoch-ms instant. */
+  formatAxisTick?: (absoluteMs: number) => string;
+  /**
+   * Epoch ms of "now". In `axis === "absolute"` mode this draws the green
+   * current-time line, but only while now falls inside the window — otherwise
+   * there is no green line. Ignored in duration mode.
+   */
+  nowMs?: number;
 };
 
 const Gantt = ({
@@ -80,7 +97,11 @@ const Gantt = ({
   onSelectedIdChanged,
   totalDuration,
   rootSpanStatus,
-  rootStartedAt
+  rootStartedAt,
+  axis = "duration",
+  windowStartMs,
+  formatAxisTick,
+  nowMs
 }: GanttProps) => {
   const { t } = useLingui();
   const [filterText, setFilterText] = useState("");
@@ -269,6 +290,10 @@ const Gantt = ({
             events={events}
             rootSpanStatus={rootSpanStatus}
             rootStartedAt={rootStartedAt}
+            axis={axis}
+            windowStartMs={windowStartMs}
+            formatAxisTick={formatAxisTick}
+            nowMs={nowMs}
             parentRef={parentRef}
             timelineScrollRef={timelineScrollRef}
             nodes={nodes}
@@ -334,7 +359,14 @@ export default Gantt;
 
 type GanttTimelineProps = Pick<
   GanttProps,
-  "totalDuration" | "rootSpanStatus" | "events" | "rootStartedAt"
+  | "totalDuration"
+  | "rootSpanStatus"
+  | "events"
+  | "rootStartedAt"
+  | "axis"
+  | "windowStartMs"
+  | "formatAxisTick"
+  | "nowMs"
 > & {
   scale: number;
   parentRef: React.RefObject<HTMLDivElement>;
@@ -355,6 +387,10 @@ const GanttTimeline = ({
   scale,
   rootSpanStatus,
   rootStartedAt,
+  axis = "duration",
+  windowStartMs,
+  formatAxisTick,
+  nowMs,
   parentRef,
   timelineScrollRef,
   virtualizer,
@@ -370,6 +406,29 @@ const GanttTimeline = ({
   const initialTimelineDimensions = useInitialDimensions(timelineContainerRef);
   const minTimelineWidth = initialTimelineDimensions?.width ?? 300;
   const maxTimelineWidth = minTimelineWidth * 10;
+
+  const isAbsolute = axis === "absolute";
+
+  // Absolute mode anchors each tick's elapsed offset to a real instant; the
+  // default duration mode just labels the elapsed time.
+  const renderTickLabel = (ms: number) => {
+    if (isAbsolute && formatAxisTick && windowStartMs !== undefined) {
+      return formatAxisTick(windowStartMs + ms);
+    }
+    return formatDurationMilliseconds(ms, {
+      style: "short",
+      maxDecimalPoints: ms < 1000 ? 0 : 1
+    });
+  };
+
+  // In absolute mode the green line is "now" — and only when now falls inside
+  // the window. The window end is just a boundary, never a completion.
+  const nowOffsetMs =
+    isAbsolute && nowMs !== undefined && windowStartMs !== undefined
+      ? nowMs - windowStartMs
+      : null;
+  const showNow =
+    nowOffsetMs !== null && nowOffsetMs >= 0 && nowOffsetMs <= totalDuration;
 
   //we want to live-update the duration if the root span is still in progress
   const [duration, setDuration] = useState(totalDuration);
@@ -427,10 +486,7 @@ const GanttTimeline = ({
                                 : "-translate-x-1/2"
                           )}
                         >
-                          {formatDurationMilliseconds(ms, {
-                            style: "short",
-                            maxDecimalPoints: ms < 1000 ? 0 : 1
-                          })}
+                          {renderTickLabel(ms)}
                         </div>
                       )}
                     </Timeline.Point>
@@ -442,17 +498,16 @@ const GanttTimeline = ({
                   ms={duration}
                   className={cn(
                     "relative bottom-[2px] text-xxs",
-                    rootSpanStatus === "completed"
-                      ? "text-emerald-500"
-                      : "text-destructive"
+                    isAbsolute
+                      ? "text-muted-foreground"
+                      : rootSpanStatus === "completed"
+                        ? "text-emerald-500"
+                        : "text-destructive"
                   )}
                 >
                   {(ms) => (
                     <div className={cn("-translate-x-1/2 whitespace-nowrap")}>
-                      {formatDurationMilliseconds(ms, {
-                        style: "short",
-                        maxDecimalPoints: ms < 1000 ? 0 : 1
-                      })}
+                      {renderTickLabel(ms)}
                     </div>
                   )}
                 </Timeline.Point>
@@ -474,9 +529,11 @@ const GanttTimeline = ({
                 ms={duration}
                 className={cn(
                   "h-full border-r",
-                  rootSpanStatus === "completed"
-                    ? "border-success/30"
-                    : "border-destructive/30"
+                  isAbsolute
+                    ? "border-muted"
+                    : rootSpanStatus === "completed"
+                      ? "border-success/30"
+                      : "border-destructive/30"
                 )}
               />
             </Timeline.Row>
@@ -495,18 +552,27 @@ const GanttTimeline = ({
                 );
               }}
             </Timeline.EquallyDistribute>
-            {/* The completed line  */}
-            {rootSpanStatus !== "inprogress" && (
-              <Timeline.Point
-                ms={duration}
-                className={cn(
-                  "h-full border-r",
-                  rootSpanStatus === "completed"
-                    ? "border-emerald-500/90"
-                    : "border-destructive/30"
+            {/* Absolute mode: the green line is "now", drawn only while now is
+                inside the window. Duration mode keeps the completed/failed
+                end-of-span line. */}
+            {isAbsolute
+              ? showNow && (
+                  <Timeline.Point
+                    ms={nowOffsetMs as number}
+                    className="h-full border-r border-emerald-500/90"
+                  />
+                )
+              : rootSpanStatus !== "inprogress" && (
+                  <Timeline.Point
+                    ms={duration}
+                    className={cn(
+                      "h-full border-r",
+                      rootSpanStatus === "completed"
+                        ? "border-emerald-500/90"
+                        : "border-destructive/30"
+                    )}
+                  />
                 )}
-              />
-            )}
             <TreeView
               scrollRef={timelineScrollRef}
               virtualizer={virtualizer}

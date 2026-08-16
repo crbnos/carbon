@@ -205,4 +205,44 @@ describe("buildResourceTimeline", () => {
     expect(result.events).toHaveLength(1);
     expect(result.events[0].id).toBe("resources-root");
   });
+
+  it("pins the axis to an explicit window instead of the data extent", () => {
+    const start = Date.parse("2026-07-14T00:00:00.000Z");
+    const end = Date.parse("2026-07-15T00:00:00.000Z");
+    const result = buildResourceTimeline({
+      reservations: [reservation({})], // 08:00–10:00
+      window: { start, end }
+    });
+
+    expect(result.windowStart?.toISOString()).toBe("2026-07-14T00:00:00.000Z");
+    expect(result.totalDuration).toBe(24 * HOUR);
+    const child = result.events.find((e) => e.id === "res-1")!;
+    expect(child.data.offset).toBe(8 * HOUR); // 08:00 measured from midnight
+    expect(child.data.duration).toBe(2 * HOUR);
+  });
+
+  it("clips a reservation that spills past the window edges, keeping real detail times", () => {
+    const start = Date.parse("2026-07-14T06:00:00.000Z");
+    const end = Date.parse("2026-07-14T12:00:00.000Z");
+    const result = buildResourceTimeline({
+      reservations: [
+        reservation({
+          startAt: "2026-07-14T04:00:00.000Z", // before the window
+          endAt: "2026-07-14T14:00:00.000Z" // after the window
+        })
+      ],
+      window: { start, end }
+    });
+
+    // Bar geometry is clamped to the window: [06:00, 12:00) → offset 0, 6h.
+    const child = result.events.find((e) => e.id === "res-1")!;
+    expect(child.data.offset).toBe(0);
+    expect(child.data.duration).toBe(6 * HOUR);
+
+    // The detail panel still reports the true reservation span.
+    const detail = result.detailsById["res-1"];
+    expect(detail.start).toBe("2026-07-14T04:00:00.000Z");
+    expect(detail.end).toBe("2026-07-14T14:00:00.000Z");
+    expect(detail.durationMs).toBe(10 * HOUR);
+  });
 });

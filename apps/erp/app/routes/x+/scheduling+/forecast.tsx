@@ -1,40 +1,109 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
-  Badge,
   ClientOnly,
-  Combobox,
   cn,
-  HStack,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
   useDebounce
 } from "@carbon/react";
+import type { CalendarDate } from "@internationalized/date";
+import {
+  CalendarDateTime,
+  DateFormatter,
+  getDayOfWeek,
+  now,
+  parseDate,
+  startOfWeek,
+  toCalendarDate
+} from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { LuTriangleAlert } from "react-icons/lu";
+import { Trans } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
+import { useMemo } from "react";
 import type { LoaderFunctionArgs, Location } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
-import { DateTime, Empty } from "~/components";
-import { useLocations } from "~/components/Form/Location";
+import { useLoaderData } from "react-router";
+import { Empty } from "~/components";
 import { Gantt } from "~/components/Gantt";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
-import { getDepartmentsList } from "~/modules/people";
+import { getDepartmentsList, getShiftsWithTimes } from "~/modules/people";
 import { getCapacityReservationsForResources } from "~/modules/production";
+import type { ForecastRange } from "~/modules/production/ui/Schedule/ForecastHeader";
+import { ForecastHeader } from "~/modules/production/ui/Schedule/ForecastHeader";
 import { buildResourceTimeline } from "~/modules/production/ui/Schedule/resourceTimeline";
-import {
-  TIMELINE_DATE_OPTIONS,
-  TimelineDetail
-} from "~/modules/production/ui/Schedule/TimelineDetail";
+import { TimelineDetail } from "~/modules/production/ui/Schedule/TimelineDetail";
 import type { TimelineNodeDetail } from "~/modules/production/ui/Schedule/timeline";
 import { getWorkCentersByLocation } from "~/modules/resources";
 import { resolveLocationId } from "~/modules/shared/location.server";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import {
   getResizableGanttSettings,
   setResizableGanttSettings
 } from "~/utils/resizable-panels";
+
+const WEEKDAY_KEYS = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday"
+] as const;
+
+/** Resolve the [start, end) instant window (epoch ms) for a forecast view. */
+function resolveForecastWindow(input: {
+  range: ForecastRange;
+  calendarDate: CalendarDate;
+  timeZone: string;
+  shift: { startTime: string; endTime: string } | null;
+}): { windowStartMs: number; windowEndMs: number } {
+  const { range, calendarDate, timeZone, shift } = input;
+
+  if (range === "week") {
+    const weekStart = startOfWeek(calendarDate, "en-GB");
+    return {
+      windowStartMs: weekStart.toDate(timeZone).getTime(),
+      windowEndMs: weekStart.add({ days: 7 }).toDate(timeZone).getTime()
+    };
+  }
+
+  if (range === "shift" && shift) {
+    const [sh, sm] = shift.startTime.split(":").map(Number);
+    const [eh, em] = shift.endTime.split(":").map(Number);
+    const start = new CalendarDateTime(
+      calendarDate.year,
+      calendarDate.month,
+      calendarDate.day,
+      sh,
+      sm
+    );
+    // An end at or before the start wraps past midnight into the next day.
+    const endDay =
+      eh * 60 + em <= sh * 60 + sm
+        ? calendarDate.add({ days: 1 })
+        : calendarDate;
+    const end = new CalendarDateTime(
+      endDay.year,
+      endDay.month,
+      endDay.day,
+      eh,
+      em
+    );
+    return {
+      windowStartMs: start.toDate(timeZone).getTime(),
+      windowEndMs: end.toDate(timeZone).getTime()
+    };
+  }
+
+  // day (also the shift view when the plant has no shifts defined)
+  return {
+    windowStartMs: calendarDate.toDate(timeZone).getTime(),
+    windowEndMs: calendarDate.add({ days: 1 }).toDate(timeZone).getTime()
+  };
+}
 
 export const handle: Handle = {
   breadcrumb: msg`Forecast`,
@@ -50,22 +119,68 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const resizeSettings = await getResizableGanttSettings(request);
 
   const url = new URL(request.url);
+  const searchParams = url.searchParams;
   const locationId = await resolveLocationId(client, request, {
-    searchParams: url.searchParams,
+    searchParams,
     userId,
     companyId,
     onDefaultsError: path.to.production,
     onNoLocations: path.to.production
   });
 
-  const departmentId = url.searchParams.get("department");
+  const departmentId = searchParams.get("department");
+  const rangeParam = searchParams.get("range");
+  const range: ForecastRange =
+    rangeParam === "week" || rangeParam === "shift" ? rangeParam : "day";
+  const dateParam = searchParams.get("date");
+  const shiftParam = searchParams.get("shift");
 
-  const [reservations, locationWorkCenters, departmentsList] =
+  // Times on the forecast axis belong to the plant we're viewing; the resolver
+  // falls back to the company timezone when the location sets none of its own.
+  const [timeZone, shiftsResult, locationWorkCenters, departmentsList] =
     await Promise.all([
-      getCapacityReservationsForResources(client, companyId, locationId),
+      getLocationTimeZone(client, locationId, companyId),
+      getShiftsWithTimes(client, companyId, locationId),
       getWorkCentersByLocation(client, locationId),
       getDepartmentsList(client, companyId)
     ]);
+
+  const shifts = shiftsResult.data ?? [];
+
+  // "Today" belongs to the plant's calendar, not the server's.
+  const date = (
+    dateParam ? parseDate(dateParam) : toCalendarDate(now(timeZone))
+  ).toString();
+  const calendarDate = parseDate(date);
+
+  // Shift view needs a concrete shift: the URL's when valid, else the first
+  // active shift that runs on the selected weekday, else the first shift.
+  // getDayOfWeek("en-US") is 0 (Sun) … 6 (Sat) — always a valid index.
+  const weekdayKey =
+    WEEKDAY_KEYS[getDayOfWeek(calendarDate, "en-US")] ?? "sunday";
+  const shiftId =
+    range === "shift"
+      ? ((shiftParam && shifts.some((s) => s.id === shiftParam)
+          ? shiftParam
+          : (shifts.find((s) => s[weekdayKey]) ?? shifts[0])?.id) ?? null)
+      : null;
+
+  const { windowStartMs, windowEndMs } = resolveForecastWindow({
+    range,
+    calendarDate,
+    timeZone,
+    shift: shifts.find((s) => s.id === shiftId) ?? null
+  });
+
+  const reservations = await getCapacityReservationsForResources(
+    client,
+    companyId,
+    locationId,
+    {
+      from: new Date(windowStartMs).toISOString(),
+      to: new Date(windowEndMs).toISOString()
+    }
+  );
 
   // Every active work center in the plant — seeded as a lane so a station with
   // no scheduled work still shows up on the board. Narrowed to the selected
@@ -161,7 +276,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       conflictReason: r.jobOperation?.conflictReason ?? null,
       scheduleNote: r.scheduleNote,
       workHours: r.workHours
-    }))
+    })),
+    window: { start: windowStartMs, end: windowEndMs }
   });
 
   const jobCount = new Set(rows.map((r) => r.jobId)).size;
@@ -180,6 +296,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId,
     departmentId,
     departments,
+    range,
+    date,
+    shiftId,
+    timeZone,
+    windowStartMs,
+    shifts: shifts.map((shift) => ({ id: shift.id, name: shift.name })),
     resourceCount: shownWorkCenterIds.size + abilityIds.size + employeeIds.size,
     reservationCount: rows.length,
     jobCount,
@@ -203,15 +325,17 @@ function getSpanId(location: Location<any>): string | undefined {
   return search.get("span") ?? undefined;
 }
 
-function getLocationPath(locationId: string) {
-  return `${path.to.scheduleForecast}?location=${locationId}`;
-}
-
 export default function ResourceGanttView() {
   const {
     locationId,
     departmentId,
     departments,
+    range,
+    date,
+    shiftId,
+    timeZone,
+    windowStartMs,
+    shifts,
     resourceCount,
     reservationCount,
     jobCount,
@@ -221,22 +345,28 @@ export default function ResourceGanttView() {
     resizeSettings
   } = useLoaderData<typeof loader>();
 
-  const { t } = useLingui();
-  const navigate = useNavigate();
-  const locations = useLocations();
+  const { locale } = useLocale();
   const { location, replaceSearchParam } = useReplaceLocation();
   const selectedSpanId = getSpanId(location);
 
-  // Department filters server-side, so it needs a real navigation (loader
-  // re-run) — not replaceSearchParam, which only rewrites the URL client-side.
-  const changeDepartment = (value: string) => {
-    const params = new URLSearchParams(location.search);
-    params.set("location", locationId);
-    if (value && value !== "all") params.set("department", value);
-    else params.delete("department");
-    params.delete("span");
-    navigate(`${path.to.scheduleForecast}?${params.toString()}`);
-  };
+  // Axis labels are 24-hour clock times for a day/shift and dates for a week,
+  // both in the plant's timezone (the company fallback is resolved server-side).
+  const formatAxisTick = useMemo(() => {
+    const formatter =
+      range === "week"
+        ? new DateFormatter(locale, {
+            weekday: "short",
+            day: "numeric",
+            timeZone
+          })
+        : new DateFormatter(locale, {
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23",
+            timeZone
+          });
+    return (absoluteMs: number) => formatter.format(new Date(absoluteMs));
+  }, [range, locale, timeZone]);
 
   const changeToSpan = useDebounce((selectedSpan: string) => {
     replaceSearchParam("span", selectedSpan);
@@ -248,74 +378,19 @@ export default function ResourceGanttView() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full bg-background">
-      <HStack className="justify-between px-4 py-2 border-b border-border bg-card">
-        <HStack spacing={2}>
-          <Combobox
-            asButton
-            size="sm"
-            value={locationId}
-            options={locations}
-            onChange={(selected) => {
-              // hard refresh because the loader's location default won't
-              // otherwise pick up the new selection
-              window.location.href = getLocationPath(selected);
-            }}
-          />
-          {departments.length > 0 && (
-            <Combobox
-              asButton
-              size="sm"
-              value={departmentId ?? "all"}
-              options={[
-                { value: "all", label: t`All departments` },
-                ...departments
-              ]}
-              onChange={changeDepartment}
-            />
-          )}
-          <span className="text-xs text-muted-foreground whitespace-nowrap tabular-nums">
-            <Trans>
-              {resourceCount} resources · {reservationCount} reservations ·{" "}
-              {jobCount} jobs
-            </Trans>
-          </span>
-          {conflictCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="gap-1 whitespace-nowrap tabular-nums"
-            >
-              <LuTriangleAlert className="size-3" />
-              {conflictCount === 1 ? (
-                <Trans>1 conflict</Trans>
-              ) : (
-                <Trans>{conflictCount} conflicts</Trans>
-              )}
-            </Badge>
-          )}
-        </HStack>
-        <HStack spacing={4} className="text-xs text-muted-foreground">
-          <HStack className="gap-x-1">
-            <span className="inline-block h-2 w-4 rounded-sm bg-emerald-500" />
-            <Trans>Scheduled</Trans>
-          </HStack>
-          <HStack className="gap-x-1">
-            <span className="inline-block h-2 w-4 rounded-sm bg-red-500" />
-            <Trans>Conflict</Trans>
-          </HStack>
-          {trace?.rootStartedAt && (
-            <span className="whitespace-nowrap">
-              <Trans>
-                Starts{" "}
-                <DateTime
-                  value={trace.rootStartedAt.toISOString()}
-                  variant="date"
-                  dateOptions={TIMELINE_DATE_OPTIONS}
-                />
-              </Trans>
-            </span>
-          )}
-        </HStack>
-      </HStack>
+      <ForecastHeader
+        range={range}
+        date={date}
+        locationId={locationId}
+        departmentId={departmentId}
+        shiftId={shiftId}
+        departments={departments}
+        shifts={shifts}
+        resourceCount={resourceCount}
+        reservationCount={reservationCount}
+        jobCount={jobCount}
+        conflictCount={conflictCount}
+      />
       {!trace ? (
         <div className="flex flex-1 items-center justify-center">
           <Empty>
@@ -365,6 +440,10 @@ export default function ResourceGanttView() {
                         ? new Date(trace.rootStartedAt)
                         : undefined
                     }
+                    axis="absolute"
+                    windowStartMs={windowStartMs}
+                    formatAxisTick={formatAxisTick}
+                    nowMs={Date.now()}
                   />
                 </ResizablePanel>
                 {selectedSpanId && selectedDetail && (

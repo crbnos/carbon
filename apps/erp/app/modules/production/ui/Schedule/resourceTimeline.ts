@@ -47,6 +47,9 @@ type Lane = {
   reservations: ResourceTimelineReservation[];
 };
 
+const clamp = (value: number, lo: number, hi: number) =>
+  Math.min(Math.max(value, lo), hi);
+
 export function buildResourceTimeline(input: {
   reservations: ResourceTimelineReservation[];
   /**
@@ -55,8 +58,14 @@ export function buildResourceTimeline(input: {
    * Gantt only surfaces resources that already carry a reservation.
    */
   workCenters?: { id: string; name: string }[];
+  /**
+   * Explicit [start, end) window (epoch ms) for the day/week/shift views. When
+   * given, it fixes the axis (instead of deriving it from the reservation
+   * min/max) and bars are clipped to its edges. Omit for the auto-fit window.
+   */
+  window?: { start: number; end: number };
 }): ResourceTimeline {
-  const { reservations, workCenters = [] } = input;
+  const { reservations, workCenters = [], window } = input;
 
   const detailsById: Record<string, TimelineNodeDetail> = {};
 
@@ -82,12 +91,19 @@ export function buildResourceTimeline(input: {
     Date.parse(r.startAt),
     Date.parse(r.endAt)
   ]);
-  // With no reservations there is no real window; fall back to a one-day span
-  // from "now" so the empty work-center lanes still have a time axis to sit on.
-  const windowStart =
-    timestamps.length > 0 ? Math.min(...timestamps) : Date.now();
-  const windowEnd =
-    timestamps.length > 0 ? Math.max(...timestamps) : windowStart + 86_400_000;
+  // An explicit window (day/week/shift) fixes the axis; otherwise auto-fit to
+  // the data. With no reservations and no window there is no real span, so fall
+  // back to a one-day span from "now" so empty lanes still have a time axis.
+  const windowStart = window
+    ? window.start
+    : timestamps.length > 0
+      ? Math.min(...timestamps)
+      : Date.now();
+  const windowEnd = window
+    ? window.end
+    : timestamps.length > 0
+      ? Math.max(...timestamps)
+      : windowStart + 86_400_000;
   const totalDuration = Math.max(windowEnd - windowStart, 1);
 
   // One lane per resource; work centers first, each group alphabetical. Seed a
@@ -145,13 +161,23 @@ export function buildResourceTimeline(input: {
     );
     // An empty lane (station with no scheduled work) collapses to the window
     // start with zero duration — it renders as a labeled row with no bar.
+    // Spans are clipped to the window so a reservation straddling the edge
+    // draws to the boundary instead of overflowing the fixed axis.
     const laneStart =
       sorted.length > 0
-        ? Math.min(...sorted.map((r) => Date.parse(r.startAt)))
+        ? clamp(
+            Math.min(...sorted.map((r) => Date.parse(r.startAt))),
+            windowStart,
+            windowEnd
+          )
         : windowStart;
     const laneEnd =
       sorted.length > 0
-        ? Math.max(...sorted.map((r) => Date.parse(r.endAt)))
+        ? clamp(
+            Math.max(...sorted.map((r) => Date.parse(r.endAt))),
+            windowStart,
+            windowEnd
+          )
         : windowStart;
     const laneConflict = sorted.some((r) => r.hasConflict);
     const laneTitle =
@@ -194,8 +220,12 @@ export function buildResourceTimeline(input: {
     };
 
     for (const r of sorted) {
-      const rStart = Date.parse(r.startAt);
-      const rEnd = Date.parse(r.endAt);
+      const rawStart = Date.parse(r.startAt);
+      const rawEnd = Date.parse(r.endAt);
+      // Bar geometry is clipped to the window; the detail panel keeps the real
+      // reservation times below.
+      const barStart = clamp(rawStart, windowStart, windowEnd);
+      const barEnd = clamp(rawEnd, windowStart, windowEnd);
       const title = r.operationDescription
         ? `${r.jobReadableId} · ${r.operationDescription}`
         : r.jobReadableId;
@@ -208,8 +238,8 @@ export function buildResourceTimeline(input: {
         hasChildren: false,
         level: 2,
         data: {
-          duration: Math.max(rEnd - rStart, 0),
-          offset: rStart - windowStart,
+          duration: Math.max(barEnd - barStart, 0),
+          offset: barStart - windowStart,
           message: title,
           isRoot: false,
           isError,
@@ -227,9 +257,9 @@ export function buildResourceTimeline(input: {
       detailsById[r.id] = {
         kind: "reservation",
         title,
-        start: new Date(rStart).toISOString(),
-        end: new Date(rEnd).toISOString(),
-        durationMs: Math.max(rEnd - rStart, 0),
+        start: new Date(rawStart).toISOString(),
+        end: new Date(rawEnd).toISOString(),
+        durationMs: Math.max(rawEnd - rawStart, 0),
         approximate: false,
         resourceKind: r.resourceKind,
         workCenterName: r.resourceKind === "WorkCenter" ? r.resourceName : null,

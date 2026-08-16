@@ -1067,13 +1067,17 @@ export async function getCapacityReservationsByJob(
 export async function getCapacityReservationsForResources(
   client: SupabaseClient<Database>,
   companyId: string,
-  locationId?: string
+  locationId?: string,
+  /**
+   * Explicit [from, to) instant window (ISO strings) for the resource Gantt's
+   * day/week/shift views — returns reservations that OVERLAP it. Omit to keep
+   * the default forward horizon (everything ending within the last day onward).
+   */
+  window?: { from: string; to: string }
 ) {
   // Live/upcoming reservations across ALL jobs — feeds the resource-lane
-  // Gantt. Rows that ended within the last day stay visible for context.
-  // Cancelled/completed/closed jobs keep their reservation rows until the
-  // next reschedule, so filter them out here — they are no longer real load.
-  const cutoff = new Date(Date.now() - 24 * 3_600_000).toISOString();
+  // Gantt. Cancelled/completed/closed jobs keep their reservation rows until
+  // the next reschedule, so filter them out here — they are no longer real load.
   let query = client
     .from("capacityReservation")
     .select(
@@ -1083,8 +1087,17 @@ export async function getCapacityReservationsForResources(
     )
     .eq("companyId", companyId)
     .is("scenarioId", null)
-    .gte("endAt", cutoff)
     .not("job.status", "in", '("Cancelled","Completed","Closed")');
+
+  if (window) {
+    // A reservation [startAt, endAt) overlaps [from, to) iff it starts before
+    // the window ends and ends after the window starts.
+    query = query.lt("startAt", window.to).gt("endAt", window.from);
+  } else {
+    // Rows that ended within the last day stay visible for context.
+    const cutoff = new Date(Date.now() - 24 * 3_600_000).toISOString();
+    query = query.gte("endAt", cutoff);
+  }
 
   // Scope to a single plant so the resource Gantt matches its work-center list.
   if (locationId) {

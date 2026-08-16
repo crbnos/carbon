@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-16T03:10:51.942Z",
+  "generated": "2026-08-16T04:07:17.791Z",
   "totalTools": 1478,
   "modules": 15,
   "tools": [
@@ -19751,11 +19751,12 @@
       "module": "production",
       "classification": "READ",
       "description": "get capacity reservations for resources",
-      "paramCount": 1,
+      "paramCount": 2,
       "serviceParams": [
         "client",
         "companyId",
-        "locationId"
+        "locationId",
+        "/**\n   * Explicit [from, to"
       ],
       "injectAuth": [
         "companyId"
@@ -19765,8 +19766,12 @@
         "properties": {
           "locationId": {
             "type": "string"
-          }
-        }
+          },
+          "/**\n   * Explicit [from, to": {}
+        },
+        "required": [
+          "/**\n   * Explicit [from, to"
+        ]
       }
     },
     {
