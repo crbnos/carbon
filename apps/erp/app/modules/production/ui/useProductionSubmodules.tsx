@@ -58,14 +58,14 @@ export default function useProductionSubmodules() {
       name: t`Scheduling`,
       routes: [
         {
+          name: t`Forecast`,
+          to: path.to.scheduleForecast,
+          icon: <LuSquareChartGantt />
+        },
+        {
           name: t`Priorities`,
           to: path.to.priorityDates,
           icon: <LuSquareKanban />
-        },
-        {
-          name: t`Simulations`,
-          to: path.to.scheduleGantt,
-          icon: <LuSquareChartGantt />
         }
       ]
     },

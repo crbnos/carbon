@@ -1972,7 +1972,7 @@ export const path = {
     saveViewOrder: `${x}/shared/view/order`,
 
     saveViews: `${x}/shared/views`,
-    scheduleGantt: `${x}/scheduling/gantt`,
+    scheduleForecast: `${x}/scheduling/forecast`,
     scheduleTimeline: (jobId?: string) =>
       jobId
         ? `${x}/scheduling/timeline?jobId=${jobId}`

@@ -7017,6 +7017,9 @@ msgstr "지원이 필요한 성장 중인 기업을 위한"
 msgid "For US companies handling ITAR data"
 msgstr "ITAR 데이터를 다루는 미국 기업을 위한"
 
+msgid "Forecast"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "예측 방법: <0>{0}</0>. 이 행은 진행 중인 작업에서 파생되지 않았으므로 상위 소스를 사용할 수 없습니다."
@@ -14050,9 +14053,6 @@ msgstr "서명된 수량 — 아웃바운드 이동의 경우 음수"
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "로그인에는 인증자 앱의 일회용 코드도 필요합니다"
-
-msgid "Simulations"
-msgstr ""
 
 msgid "Sites & locations"
 msgstr "사이트 및 위치"

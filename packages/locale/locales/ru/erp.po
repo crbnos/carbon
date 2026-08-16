@@ -7017,6 +7017,9 @@ msgstr "Для растущих компаний, нуждающихся в по
 msgid "For US companies handling ITAR data"
 msgstr "Для компаний США, работающих с данными ITAR"
 
+msgid "Forecast"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Метод прогнозирования: <0>{0}</0>. Эта строка не была получена из активных заданий, поэтому родительские источники недоступны."
@@ -14050,9 +14053,6 @@ msgstr "Подписанное количество — отрицательно
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "При входе также требуется одноразовый код из приложения аутентификации"
-
-msgid "Simulations"
-msgstr ""
 
 msgid "Sites & locations"
 msgstr "Объекты и местоположения"

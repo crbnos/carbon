@@ -7017,6 +7017,9 @@ msgstr "成長中のビジネスをサポートするために"
 msgid "For US companies handling ITAR data"
 msgstr "ITAR データを扱う米国企業向け"
 
+msgid "Forecast"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "予測方法: <0>{0}</0>。この行はアクティブなジョブから派生していないため、親ソースは利用できません。"
@@ -14050,9 +14053,6 @@ msgstr "署名された数量 — アウトバウンド移動の場合は負数"
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "サインインには認証アプリからのワンタイムコードも必要です"
-
-msgid "Simulations"
-msgstr ""
 
 msgid "Sites & locations"
 msgstr "サイトと場所"

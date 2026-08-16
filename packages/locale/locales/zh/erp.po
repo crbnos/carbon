@@ -7017,6 +7017,9 @@ msgstr "适合需要支持的成长型企业"
 msgid "For US companies handling ITAR data"
 msgstr "适用于处理ITAR数据的美国公司"
 
+msgid "Forecast"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "预测方法：<0>{0}</0>。此行不是从活跃工作派生的，因此没有可用的父源。"
@@ -14050,9 +14053,6 @@ msgstr "有符号数量 — 出站移动为负"
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "登录还需要来自您的身份验证器应用的一次性代码"
-
-msgid "Simulations"
-msgstr ""
 
 msgid "Sites & locations"
 msgstr "站点和位置"

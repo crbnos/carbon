@@ -7017,6 +7017,9 @@ msgstr "Para empresas en crecimiento que necesitan soporte"
 msgid "For US companies handling ITAR data"
 msgstr "Para empresas estadounidenses que manejan datos ITAR"
 
+msgid "Forecast"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Método de pronóstico: <0>{0}</0>. Esta fila no se derivó de trabajos activos, por lo que no hay fuentes principales disponibles."
@@ -14050,9 +14053,6 @@ msgstr "Cantidad con signo — negativa para movimientos de salida"
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "Iniciar sesión también requiere un código de un solo uso de tu aplicación autenticadora"
-
-msgid "Simulations"
-msgstr ""
 
 msgid "Sites & locations"
 msgstr "Sitios y ubicaciones"

@@ -37,8 +37,8 @@ import {
 } from "~/utils/resizable-panels";
 
 export const handle: Handle = {
-  breadcrumb: msg`Simulations`,
-  to: path.to.scheduleGantt,
+  breadcrumb: msg`Forecast`,
+  to: path.to.scheduleForecast,
   module: "production"
 };
 
@@ -204,7 +204,7 @@ function getSpanId(location: Location<any>): string | undefined {
 }
 
 function getLocationPath(locationId: string) {
-  return `${path.to.scheduleGantt}?location=${locationId}`;
+  return `${path.to.scheduleForecast}?location=${locationId}`;
 }
 
 export default function ResourceGanttView() {
@@ -235,7 +235,7 @@ export default function ResourceGanttView() {
     if (value && value !== "all") params.set("department", value);
     else params.delete("department");
     params.delete("span");
-    navigate(`${path.to.scheduleGantt}?${params.toString()}`);
+    navigate(`${path.to.scheduleForecast}?${params.toString()}`);
   };
 
   const changeToSpan = useDebounce((selectedSpan: string) => {

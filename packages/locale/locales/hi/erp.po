@@ -7017,6 +7017,9 @@ msgstr "बढ़ते हुए व्यवसायों के लिए �
 msgid "For US companies handling ITAR data"
 msgstr "ITAR डेटा संभालने वाली US कंपनियों के लिए"
 
+msgid "Forecast"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "पूर्वानुमान विधि: <0>{0}</0>. यह पंक्ति सक्रिय कार्यों से प्राप्त नहीं की गई थी, इसलिए कोई मूल स्रोत उपलब्ध नहीं हैं।"
@@ -14050,9 +14053,6 @@ msgstr "हस्ताक्षरित मात्रा — बाहरी
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "साइन इन करने के लिए आपके प्रमाणकर्ता ऐप से एक बार का कोड भी आवश्यक है"
-
-msgid "Simulations"
-msgstr ""
 
 msgid "Sites & locations"
 msgstr "साइटें और स्थान"
