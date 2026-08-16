@@ -28,7 +28,7 @@ RETURNS TABLE (
   "id" TEXT,
   "sourceCompanyId" TEXT,
   "targetCompanyId" TEXT,
-  "amount" NUMERIC(19, 4),
+  "amount" NUMERIC,
   "status" TEXT,
   "matchedWithId" TEXT
 )
