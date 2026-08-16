@@ -23,21 +23,23 @@ import { path } from "~/utils/path";
 import type { Column, Item, Progress } from "../types";
 import { ItemCard } from "./ItemCard";
 
-type ColumnCardProps = {
+type CardComponentProps<T extends Item> = {
+  item: T;
+  isOverlay?: boolean;
+  progressByItemId: Record<string, Progress>;
+};
+
+type ColumnCardProps<T extends Item> = {
   column: Column;
-  items: Item[];
+  items: T[];
   isOverlay?: boolean;
   progressByItemId: Record<string, Progress>;
   isDateView?: boolean;
   disableColumnDrag?: boolean;
-  CardComponent?: ComponentType<{
-    item: Item;
-    isOverlay?: boolean;
-    progressByItemId: Record<string, Progress>;
-  }>;
+  CardComponent?: ComponentType<CardComponentProps<T>>;
 };
 
-export function ColumnCard({
+export function ColumnCard<T extends Item = Item>({
   column,
   items,
   isOverlay,
@@ -45,7 +47,7 @@ export function ColumnCard({
   isDateView = false,
   disableColumnDrag = false,
   CardComponent = ItemCard
-}: ColumnCardProps) {
+}: ColumnCardProps<T>) {
   const [params] = useUrlParams();
   const currentFilters = params.getAll("filter").filter(Boolean);
   const itemsIds = useMemo(() => {

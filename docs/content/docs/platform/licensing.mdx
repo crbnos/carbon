@@ -15,15 +15,60 @@ Carbon's source is public, but using it isn't unconditional. Two licenses govern
 
 Self-hosting (the [Docker + Caddy recipe](/docs/platform/self-hosting/docker-caddy) or the [AWS with SST recipe](/docs/platform/self-hosting/aws-sst)) runs the **Community** edition by default. A commercial license turns the same hardware into the **Enterprise** edition.
 
-## Open core vs. Enterprise
+## How to buy
 
-Most of the repository is the **open core**, licensed under AGPLv3. A defined slice is not.
+Every path starts with one question: **who runs Carbon?** If we run it for you, that's [Carbon Cloud](#carbon-cloud--we-run-it). If you run it yourself, that's [self-hosted](#self-hosted--you-run-it), governed by the AGPL until a commercial license changes the terms.
 
-<Callout type="warn" title="Enterprise code requires a commercial license">
-Everything under `packages/ee` and every file whose name contains `.ee` is Enterprise code. From the LICENSE: *"All content that resides under [...]/packages/ee and all files that contains a `.ee` in this repository require the purchase of a commercial license."*
+## Carbon Cloud — we run it
+
+Carbon Cloud is the managed edition, operated for you at [app.carbon.ms](https://app.carbon.ms). There are two ways onto it.
+
+<Diagram name="buy-hosted" caption="The managed path: self-signup for the two clickthrough plans, or a signed Enterprise Subscription with its choice of environment and service level." />
+
+**Self-signup** is the short path. Accept the clickthrough terms of service, put a card on file, and you're running — no signature, no invoice. It comes in two month-to-month plans: **Starter** (a limited feature set) and **Business** (the full application). This is the same billing described in the [Cloud plans](/docs/platform/self-hosting) sense: a subscription you manage yourself.
+
+**Enterprise Subscription** is the signed, invoiced umbrella for larger deployments. It's an annual commitment — billed annually, semi-annually, or quarterly — over a one, three, or five-year term, with uncapped users and no mid-term overage. Every Enterprise Subscription carries Business-tier features in whatever environment it runs. Inside it, you make two independent choices.
+
+**Environment — where it runs.**
+
+- **Commercial Cloud** is the default multi-tenant cloud, hosted in the US or EU.
+- **GovCloud** is a US GovCloud, ITAR-controlled environment.
+- **BYOC** (bring your own cloud) runs in your own AWS account and on your data, operated by Carbon.
+
+**Service level — how much comes with the software.**
+
+- **Standard** is the software, run well: self-guided onboarding through the [docs](/docs), Carbon Academy, and the Self-Serve Onboarding Hub, plus the same technical support as the Business plan. It does not include a dedicated implementation team, custom training, integrations, or custom builds.
+- **Flagship** adds a forward-deployed engineer (FDE) inside the subscription, with no hour counting, along with implementation, guided onboarding, training, hypercare, and a written scope exhibit. The FDE can be fractional (shared), dedicated (full-time and remote, working only for you), or on-site at your facility.
+
+<Callout type="note" title="Add-ons sit on either service level">
+Custom features, integrations, data migrations, additional forward-deployed engineers, and training beyond onboarding are add-ons that layer on top of Standard or Flagship. Anything that doesn't fit the standard shapes becomes a custom agreement.
 </Callout>
 
-That slice is the first-party **integrations** (Slack, Jira, Linear, Xero, OnShape) plus other Enterprise features: API keys, webhooks, item rules, the audit log, customer portals, storage rules, email notifications, and the AI agent. **Email** and **Exchange Rates** are the exceptions: they're available on every edition. See [Integrations](/docs/integrations) for the catalog.
+## Self-hosted — you run it
+
+Clone Carbon from GitHub and run it on your own infrastructure. By default that's the **Community** edition, and how you're licensed depends on what you change and who you run it for.
+
+<Diagram name="buy-selfhosted" caption="The self-hosted path: free under the AGPL for your own unmodified use, or a commercial license that unlocks Enterprise and covers private forks, hosting for others, and reselling." />
+
+**Community Edition** is the open core under AGPLv3 — free, no agreement needed. Running unmodified Community Edition for your own business never requires a license. Two things come with that freedom: any modifications you make available to users over a network must be published under the AGPL, and the Enterprise code is excluded, so community mode ships without EE features, Carbon support, or an SLA.
+
+A **commercial license is required** the moment any one of these is true:
+
+- You keep a private fork or make private changes.
+- You use anything under `packages/ee` or any `.ee` file.
+- You host Carbon for anyone else, including an integrator running it for clients.
+- You resell, white-label, or ship Carbon inside a product you sell.
+
+The **Carbon Commercial License Agreement** covers all of that. It's self-hosted with full codebase access including Enterprise, over a one, three, or five-year term, and it replaces the AGPL copyleft so your modifications stay private. It takes two shapes for a company running Carbon for itself:
+
+- **Subscription** — licensed per user, per year, and renewing.
+- **Perpetual** — a one-time license you own outright, offered on a premium basis. A perpetual license can also be reached through a written rent-to-own path.
+
+For **partners** who sell Carbon, the same commercial license covers three models:
+
+- **Reseller** — you sell Carbon under Carbon's name.
+- **White-label** — you sell it under your own brand and take first-line support, so your customers never see Carbon.
+- **OEM embedded** — Carbon ships inside the machines you sell.
 
 ## The AGPL obligation
 
@@ -39,14 +84,26 @@ From the LICENSE: *"any use of this software for internal production use is stri
 From the LICENSE: *"Any use of this software to sell Carbon source code as a hosted service is strictly prohibited without obtaining a commercial license."*
 </Callout>
 
+## How the agreements fit together
+
+A few rules span both paths, whichever way you buy:
+
+- **Software, not services.** The license covers the software; implementation, data migrations, and custom builds ride inside your agreement or an attached statement of work.
+- **One agreement per side.** You can hold one Cloud subscription and one self-hosted commercial license at once, but they're never blended into a single document.
+- **The bridge.** An Enterprise Subscription can carry a written option to convert to a self-hosted commercial license later, so starting on Cloud doesn't lock you out of running it yourself.
+
+<Callout type="success" title="Portal users are free">
+A commercial agreement covers the signer and its named affiliates. Customer-portal users don't count against it.
+</Callout>
+
 ## When you need a commercial license
 
 [Get a commercial license](mailto:chase@carbon.ms), or just use [Carbon Cloud](https://app.carbon.ms), if you want to:
 
 - **Keep your modifications private** instead of publishing them under AGPLv3.
-- **Use Enterprise features:** the EE integrations and the capabilities listed above.
+- **Use Enterprise features:** the EE integrations and other Enterprise capabilities. See [Integrations](/docs/integrations) for the catalog.
 - **Run Carbon in production** without open-sourcing your changes.
-- **Offer Carbon to others** as a hosted service.
+- **Offer Carbon to others** as a hosted service, a white-label product, or embedded in what you sell.
 
 Cloud is the managed path; an Enterprise (commercial) license is the self-hosted path. Either one lifts the copyleft obligation and unlocks the full feature set.
 

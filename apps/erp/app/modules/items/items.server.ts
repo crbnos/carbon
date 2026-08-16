@@ -323,18 +323,18 @@ export async function requireEditableChangeNoticeRoute(
   );
 }
 
-// Maps a broadcast stage to its notification event. Only Start / Implementation
-// / Done broadcast (PRD §3.1); Draft / Engineering Complete are silent, so
-// callers simply don't invoke this for those stages.
+// Maps a notifying stage to its notification event. Only Start / Implementation
+// / Done notify; Draft / Engineering Complete are silent, so callers simply
+// don't invoke this for those stages.
 export const changeNoticeStageEvent: Record<string, NotificationEvent> = {
   Start: NotificationEvent.ChangeNoticeStarted,
   Implementation: NotificationEvent.ChangeNoticeImplementation,
   Done: NotificationEvent.ChangeNoticeDone
 };
 
-// Broadcasts a CO stage to the whole team (best-effort). Recipient is the seeded
-// "All Employees" group — NOT companyGroupId, which is the currency/subsidiary
-// grouping and has no user members.
+// Notifies the people involved in the CO — its assignee plus every action-task
+// assignee — on a stage entry (best-effort). Deliberately NOT a company-wide
+// broadcast; the notify function dedupes and drops the acting user itself.
 export async function notifyChangeNoticeTransition(args: {
   client: SupabaseClient<Database>;
   event: NotificationEvent;
@@ -343,30 +343,54 @@ export async function notifyChangeNoticeTransition(args: {
   userId: string;
 }): Promise<void> {
   try {
-    const employeeGroup = await args.client
-      .from("group")
-      .select("id")
-      .eq("companyId", args.companyId)
-      .eq("isEmployeeTypeGroup", true)
-      .eq("name", "All Employees")
-      .single();
+    const [changeNotice, actionTasks] = await Promise.all([
+      args.client
+        .from("changeOrder")
+        .select("assignee")
+        .eq("id", args.changeNoticeId)
+        .eq("companyId", args.companyId)
+        .single(),
+      args.client
+        .from("changeOrderActionTask")
+        .select("assignee")
+        .eq("changeOrderId", args.changeNoticeId)
+        .eq("companyId", args.companyId)
+        .not("assignee", "is", null)
+    ]);
 
-    if (employeeGroup.error || !employeeGroup.data) {
-      logger.error(
-        "Failed to resolve All Employees group for CO notification",
-        {
-          error: employeeGroup.error,
-          companyId: args.companyId
-        }
-      );
+    if (changeNotice.error) {
+      logger.error("Failed to resolve change notice for CO notification", {
+        error: changeNotice.error,
+        changeNoticeId: args.changeNoticeId,
+        companyId: args.companyId
+      });
       return;
     }
+
+    if (actionTasks.error) {
+      logger.error("Failed to resolve CO action-task assignees", {
+        error: actionTasks.error,
+        changeNoticeId: args.changeNoticeId,
+        companyId: args.companyId
+      });
+    }
+
+    const userIds = [
+      ...new Set(
+        [
+          changeNotice.data?.assignee,
+          ...(actionTasks.data ?? []).map((task) => task.assignee)
+        ].filter((id): id is string => !!id)
+      )
+    ];
+
+    if (userIds.length === 0) return;
 
     await trigger("notify", {
       event: args.event,
       companyId: args.companyId,
       documentId: args.changeNoticeId,
-      recipient: { type: "group", groupIds: [employeeGroup.data.id] },
+      recipient: { type: "users", userIds },
       from: args.userId
     });
   } catch (e) {

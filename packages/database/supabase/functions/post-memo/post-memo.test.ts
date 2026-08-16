@@ -72,9 +72,10 @@ Deno.test("supplier Debit memo: DR AP (liability), CR reason; balances", () => {
   assert(Math.abs(r.signedDebitTotal) < 0.01);
 });
 
-Deno.test("rounds to 4dp and stays balanced on fractional amounts", () => {
+Deno.test("rounds to internal scale and stays balanced on fractional amounts", () => {
   const r = buildMemoJournal(base({ amountBase: 123.456789 }));
-  assertEquals(line(r, "acct_ar").amount, -123.4568);
+  // SCALE = 5: GL lines carry internal precision, not the old 4dp column clamp.
+  assertEquals(line(r, "acct_ar").amount, -123.45679);
   assert(Math.abs(r.signedDebitTotal) < 0.01);
 });
 

@@ -35,6 +35,7 @@ import {
   LuMailCheck,
   LuMessageSquare,
   LuPackageSearch,
+  LuRefreshCw,
   LuShieldAlert,
   LuShieldX,
   LuShoppingCart,
@@ -234,6 +235,16 @@ function GenericNotification({
         <Notification
           icon={<LuCircleGauge />}
           to={path.to.gauge(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.IntegrationSync:
+      // id is the provider id ("rillet", "xero", ...) — link to that
+      // integration's settings page, where the Sync Activity tab lives.
+      return (
+        <Notification
+          icon={<LuRefreshCw />}
+          to={path.to.integration(id)}
           {...props}
         />
       );

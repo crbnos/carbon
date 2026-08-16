@@ -302,6 +302,7 @@ async function handleKanban({
         supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
       supplierShippingCost: 0,
       supplierTaxAmount: 0,
+      taxPercent: 0,
       exchangeRate: 1,
       purchaseUnitOfMeasureCode: kanban.data.purchaseUnitOfMeasureCode!,
       inventoryUnitOfMeasureCode:

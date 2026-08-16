@@ -1,3 +1,4 @@
+import { EPSILON } from "@carbon/utils";
 import type { Edge, Node } from "@xyflow/react";
 import type {
   Activity,
@@ -157,8 +158,6 @@ type LotTimeline = {
   wiring: LotEventWiring[];
 };
 
-const QTY_EPSILON = 1e-6;
-
 /**
  * Replay an entity's visible events backward from its current quantity to
  * recover the quantity at every point in time, then wire each event to
@@ -188,14 +187,14 @@ function buildLotTimeline(
   for (let i = events.length - 1; i >= 0; i--) {
     const ev = events[i];
     if (ev.inQty !== null && ev.outQty !== null) {
-      if (Math.abs(cur - ev.outQty) > QTY_EPSILON) return null;
+      if (Math.abs(cur - ev.outQty) > EPSILON) return null;
       after[i] = ev.outQty;
       before[i] = ev.inQty;
       cur = ev.inQty;
     } else if (ev.outQty !== null) {
       if (i === 0) {
         // Creation: the produced quantity must be what flowed forward.
-        if (Math.abs(cur - ev.outQty) > QTY_EPSILON) return null;
+        if (Math.abs(cur - ev.outQty) > EPSILON) return null;
         after[i] = ev.outQty;
         before[i] = null;
       } else {
@@ -224,7 +223,7 @@ function buildLotTimeline(
     }
     if (
       before[i] !== null &&
-      (before[i]! < -QTY_EPSILON || !Number.isFinite(before[i]!))
+      (before[i]! < -EPSILON || !Number.isFinite(before[i]!))
     ) {
       return null;
     }
@@ -240,7 +239,7 @@ function buildLotTimeline(
         stateQuantities.push(before[i]!);
       } else if (
         Math.abs(stateQuantities[stateQuantities.length - 1] - before[i]!) >
-        QTY_EPSILON
+        EPSILON
       ) {
         return null;
       }

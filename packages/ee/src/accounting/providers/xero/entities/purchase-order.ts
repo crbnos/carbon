@@ -86,6 +86,10 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
   Xero.PurchaseOrder,
   "UpdatedDateUTC"
 > {
+  private get xeroProvider(): XeroProvider {
+    return this.provider as XeroProvider;
+  }
+
   // =================================================================
   // 1. ID MAPPING - Uses default implementation from BaseEntitySyncer
   // The entityType "purchaseOrder" maps to the purchaseOrder table
@@ -253,7 +257,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
   // =================================================================
 
   async fetchRemote(id: string): Promise<Xero.PurchaseOrder | null> {
-    const result = await this.provider.request<{
+    const result = await this.xeroProvider.request<{
       PurchaseOrders: Xero.PurchaseOrder[];
     }>("GET", `/PurchaseOrders/${id}`);
 
@@ -271,7 +275,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
     const result = new Map<string, Xero.PurchaseOrder>();
     if (ids.length === 0) return result;
 
-    const response = await this.provider.request<{
+    const response = await this.xeroProvider.request<{
       PurchaseOrders: Xero.PurchaseOrder[];
     }>("GET", `/PurchaseOrders?IDs=${ids.join(",")}`);
 
@@ -310,11 +314,6 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       );
     }
 
-    // Get default account code from provider settings
-    const xeroProvider = this.provider as XeroProvider;
-    const defaultAccountCode =
-      xeroProvider.settings?.defaultPurchaseAccountCode;
-
     // Map line items
     const lineItems: Xero.PurchaseOrderLineItem[] = await Promise.all(
       local.lines.map(async (line) => {
@@ -344,8 +343,10 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           Quantity: line.quantity,
           UnitAmount: line.unitPrice,
           ItemCode: itemCode?.slice(0, 30) ?? undefined,
-          // Use line's account number if specified, otherwise use default from settings
-          AccountCode: line.accountNumber ?? defaultAccountCode,
+          // PO is non-posting — Xero accepts PO lines without AccountCode, so
+          // only send one when the line actually carries an account number
+          // (no blunt default-account-code fallback).
+          AccountCode: line.accountNumber ?? undefined,
           TaxAmount: line.taxAmount ?? undefined,
           LineAmount: line.totalAmount,
           // TaxType is required by Xero: INPUT for purchase tax, NONE for zero tax
@@ -586,7 +587,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       ? [{ ...data, PurchaseOrderID: existingRemoteId }]
       : [data];
 
-    const result = await this.provider.request<{
+    const result = await this.xeroProvider.request<{
       PurchaseOrders: Xero.PurchaseOrder[];
     }>("POST", "/PurchaseOrders", {
       body: JSON.stringify({ PurchaseOrders: purchaseOrders })
@@ -638,7 +639,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       localIdOrder.push(localId);
     }
 
-    const response = await this.provider.request<{
+    const response = await this.xeroProvider.request<{
       PurchaseOrders: Xero.PurchaseOrder[];
     }>("POST", "/PurchaseOrders", {
       body: JSON.stringify({ PurchaseOrders: purchaseOrders })

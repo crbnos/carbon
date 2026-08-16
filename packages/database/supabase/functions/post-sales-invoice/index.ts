@@ -15,6 +15,7 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
+import { round } from "../shared/precision.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
 
 const pool = getConnectionPool(1);
@@ -396,7 +397,7 @@ serve(async (req: Request) => {
                     itemLedgerInserts.push({
                       postingDate: today,
                       itemId: invoiceLine.itemId!,
-                      quantity: -invoiceLineQuantityInInventoryUnit,
+                      quantity: round(-invoiceLineQuantityInInventoryUnit),
                       locationId: invoiceLine.locationId,
                       storageUnitId: invoiceLine.storageUnitId,
                       entryType: "Negative Adjmt.",
@@ -423,11 +424,10 @@ serve(async (req: Request) => {
                     journalLineInserts.push({
                       accountId: accountDefaults.data.salesAccount,
                       description: "Sales Account",
-                      amount: credit(
-                        "revenue",
-                        totalLineCostWithWeightedShipping
+                      amount: round(
+                        credit("revenue", totalLineCostWithWeightedShipping)
                       ),
-                      quantity: invoiceLineQuantityInInventoryUnit,
+                      quantity: round(invoiceLineQuantityInInventoryUnit),
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id,
                       externalDocumentId: salesInvoice.data?.customerReference,
@@ -444,8 +444,8 @@ serve(async (req: Request) => {
                       description: isIntercompany
                         ? "IC Receivables"
                         : "Accounts Receivable",
-                      amount: debit("asset", totalLineCostWithWeightedShipping),
-                      quantity: invoiceLineQuantityInInventoryUnit,
+                      amount: round(debit("asset", totalLineCostWithWeightedShipping)),
+                      quantity: round(invoiceLineQuantityInInventoryUnit),
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id,
                       externalDocumentId: salesInvoice.data?.customerReference,
@@ -475,7 +475,7 @@ serve(async (req: Request) => {
                         accountId: accountDefaults.data.costOfGoodsSoldAccount,
                         description: "Cost of Goods Sold",
                         amount: 0,
-                        quantity: invoiceLineQuantityInInventoryUnit,
+                        quantity: round(invoiceLineQuantityInInventoryUnit),
                         documentType: "Invoice",
                         documentId: salesInvoice.data?.id,
                         externalDocumentId: salesInvoice.data?.customerReference,
@@ -491,7 +491,7 @@ serve(async (req: Request) => {
                         accountId: inventoryAccount.account,
                         description: inventoryAccount.description,
                         amount: 0,
-                        quantity: invoiceLineQuantityInInventoryUnit,
+                        quantity: round(invoiceLineQuantityInInventoryUnit),
                         documentType: "Invoice",
                         documentId: salesInvoice.data?.id,
                         externalDocumentId: salesInvoice.data?.customerReference,
@@ -521,11 +521,10 @@ serve(async (req: Request) => {
                     journalLineInserts.push({
                       accountId: accountDefaults.data.salesAccount,
                       description: "Sales Account",
-                      amount: credit(
-                        "revenue",
-                        totalLineCostWithWeightedShipping
+                      amount: round(
+                        credit("revenue", totalLineCostWithWeightedShipping)
                       ),
-                      quantity: invoiceLineQuantityInInventoryUnit,
+                      quantity: round(invoiceLineQuantityInInventoryUnit),
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id,
                       externalDocumentId: salesInvoice.data?.customerReference,
@@ -544,8 +543,8 @@ serve(async (req: Request) => {
                       description: isIntercompany
                         ? "IC Receivables"
                         : "Accounts Receivable",
-                      amount: debit("asset", totalLineCostWithWeightedShipping),
-                      quantity: invoiceLineQuantityInInventoryUnit,
+                      amount: round(debit("asset", totalLineCostWithWeightedShipping)),
+                      quantity: round(invoiceLineQuantityInInventoryUnit),
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id,
                       externalDocumentId: salesInvoice.data?.customerReference,
@@ -644,8 +643,8 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: receivablesAccountId,
                     description: "Accounts Receivable",
-                    amount: debit("asset", saleProceeds),
-                    quantity: invoiceLineQuantityInInventoryUnit,
+                    amount: round(debit("asset", saleProceeds)),
+                    quantity: round(invoiceLineQuantityInInventoryUnit),
                     documentType: "Invoice",
                     documentId: salesInvoice.data?.id ?? undefined,
                     externalDocumentId:
@@ -663,8 +662,8 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: writeOffAccountId,
                     description: "Clear disposal clearing",
-                    amount: credit("expense", nbv),
-                    quantity: invoiceLineQuantityInInventoryUnit,
+                    amount: round(credit("expense", nbv)),
+                    quantity: round(invoiceLineQuantityInInventoryUnit),
                     documentType: "Invoice",
                     documentId: salesInvoice.data?.id ?? undefined,
                     externalDocumentId:
@@ -700,9 +699,9 @@ serve(async (req: Request) => {
                         gainLoss > 0 ? "Gain on disposal" : "Loss on disposal",
                       amount:
                         gainLoss > 0
-                          ? credit("revenue", gainLoss)
-                          : debit("expense", -gainLoss),
-                      quantity: invoiceLineQuantityInInventoryUnit,
+                          ? round(credit("revenue", gainLoss))
+                          : round(debit("expense", -gainLoss)),
+                      quantity: round(invoiceLineQuantityInInventoryUnit),
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id ?? undefined,
                       externalDocumentId:
@@ -786,7 +785,7 @@ serve(async (req: Request) => {
                       accountId:
                         assetClass.accumulatedDepreciationAccountId,
                       description: "Clear accumulated depreciation",
-                      amount: debit("asset", accumulatedDepreciation),
+                      amount: round(debit("asset", accumulatedDepreciation)),
                       quantity: 1,
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id ?? undefined,
@@ -804,7 +803,7 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: assetClass.assetAccountId,
                     description: "Remove asset at cost",
-                    amount: credit("asset", acquisitionCost),
+                    amount: round(credit("asset", acquisitionCost)),
                     quantity: 1,
                     documentType: "Invoice",
                     documentId: salesInvoice.data?.id ?? undefined,
@@ -821,8 +820,8 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: receivablesAccountId,
                     description: "Accounts Receivable",
-                    amount: debit("asset", saleProceeds),
-                    quantity: invoiceLineQuantityInInventoryUnit,
+                    amount: round(debit("asset", saleProceeds)),
+                    quantity: round(invoiceLineQuantityInInventoryUnit),
                     documentType: "Invoice",
                     documentId: salesInvoice.data?.id ?? undefined,
                     externalDocumentId:
@@ -848,8 +847,8 @@ serve(async (req: Request) => {
                         gainLoss > 0 ? "Gain on disposal" : "Loss on disposal",
                       amount:
                         gainLoss > 0
-                          ? credit("revenue", gainLoss)
-                          : debit("expense", -gainLoss),
+                          ? round(credit("revenue", gainLoss))
+                          : round(debit("expense", -gainLoss)),
                       quantity: 1,
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id ?? undefined,
@@ -1056,11 +1055,15 @@ serve(async (req: Request) => {
               if (
                 jl.description === "Cost of Goods Sold" &&
                 jl.amount === 0 &&
-                jl.quantity === directLine.quantity
+                jl.quantity === round(directLine.quantity)
               ) {
-                journalLineInserts[i].amount = debit("expense", cogsResult.totalCost);
+                journalLineInserts[i].amount = round(
+                  debit("expense", cogsResult.totalCost)
+                );
                 if (i + 1 < journalLineInserts.length) {
-                  journalLineInserts[i + 1].amount = credit("asset", cogsResult.totalCost);
+                  journalLineInserts[i + 1].amount = round(
+                    credit("asset", cogsResult.totalCost)
+                  );
                 }
 
                 await trx
@@ -1072,8 +1075,8 @@ serve(async (req: Request) => {
                     documentType: "Sales Shipment",
                     documentId: salesInvoice.data?.id ?? "",
                     itemId: directLine.itemId,
-                    quantity: -directLine.quantity,
-                    cost: -cogsResult.totalCost,
+                    quantity: round(-directLine.quantity),
+                    cost: round(-cogsResult.totalCost),
                     remainingQuantity: 0,
                     companyId,
                     postingDate: today,
@@ -1233,7 +1236,7 @@ serve(async (req: Request) => {
                 sourceCompanyId: companyId,
                 targetCompanyId: intercompanyPartnerId,
                 sourceJournalLineId: icJournalLineId,
-                amount: totalLinesCost,
+                amount: round(totalLinesCost),
                 currencyCode: salesInvoice.data?.currencyCode ?? "USD",
                 description: `Sales Invoice ${salesInvoice.data?.invoiceId}`,
                 documentType: "Invoice",
@@ -1368,7 +1371,9 @@ serve(async (req: Request) => {
           ? journalEntries.map((entry) => ({
               accountId: entry.accountId,
               description: `VOID: ${entry.description}`,
-              amount: -entry.amount, // Reverse the amount
+              // A reversal is a sign flip of an already-posted value, which is
+              // exact — no rounding to do.
+              amount: -entry.amount,
               quantity: -entry.quantity,
               documentType: "Invoice" as const,
               documentId: salesInvoice.data?.id,
@@ -1394,7 +1399,7 @@ serve(async (req: Request) => {
             reversingItemLedgerEntries.push({
               postingDate: today,
               itemId: entry.itemId,
-              quantity: -entry.quantity, // Reverse the quantity
+              quantity: -entry.quantity,
               locationId: entry.locationId,
               storageUnitId: entry.storageUnitId,
               entryType:

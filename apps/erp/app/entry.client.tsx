@@ -4,7 +4,11 @@ import { pdfjs } from "react-pdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
-import { POSTHOG_API_HOST, POSTHOG_PROJECT_PUBLIC_KEY } from "@carbon/auth";
+import {
+  CONTROLLED_ENVIRONMENT,
+  POSTHOG_API_HOST,
+  POSTHOG_PROJECT_PUBLIC_KEY
+} from "@carbon/auth";
 import { ensureLoggingConfigured } from "@carbon/logger/config.client";
 import posthog from "posthog-js";
 import { hydrateRoot } from "react-dom/client";
@@ -21,7 +25,10 @@ ensureLoggingConfigured();
 // The project key is what enables analytics: it is unset in local development
 // and set by the deployment. A hostname check can't stand in for that, since
 // `crbn up` serves the app from *.dev rather than localhost.
-if (POSTHOG_PROJECT_PUBLIC_KEY) {
+//
+// Controlled (ITAR) environments never initialize analytics — no data about a
+// U.S.-Persons-only environment leaves it, even if the key is set.
+if (POSTHOG_PROJECT_PUBLIC_KEY && !CONTROLLED_ENVIRONMENT) {
   posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
     api_host: POSTHOG_API_HOST
   });

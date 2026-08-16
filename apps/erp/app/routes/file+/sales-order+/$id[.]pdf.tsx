@@ -11,7 +11,7 @@ import type { JSONContent } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
 import {
   getSalesOrder,
@@ -31,9 +31,12 @@ import { getBase64ImageFromSupabase } from "~/modules/shared";
 const logger = getLogger("erp", "sales-order", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      view: "sales"
+    }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -146,11 +149,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
   await ensureFont(resolved.settings.fontFamily);
 
+  // Settlement decimals from the document currency's row (authoritative over
+  // CLDR); null keeps the PDF's historical 2dp fallback.
+  const currencyRow = salesOrder.data?.currencyCode
+    ? await getCurrencyByCode(
+        client,
+        companyGroupId,
+        salesOrder.data.currencyCode
+      )
+    : null;
+  const currencyDecimals = currencyRow?.data?.decimalPlaces ?? null;
+
   const stream = await renderToStream(
     <SalesOrderPDF
       company={company.data as any}
       companySettings={companySettings.data}
       locale={locale}
+      currencyDecimals={currencyDecimals}
       meta={{
         author: "Carbon",
         keywords: "sales order",

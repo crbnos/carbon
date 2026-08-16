@@ -7,7 +7,7 @@ import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import {
   getCustomerContact,
   getSalesOrder,
@@ -224,6 +224,7 @@ export async function generateAndAttachSalesOrderPdf(args: {
 export async function sendSalesOrderEmail(args: {
   salesOrderId: string;
   companyId: string;
+  companyGroupId: string;
   userId: string;
   customerContactId: string;
   cc?: string[];
@@ -235,6 +236,7 @@ export async function sendSalesOrderEmail(args: {
   const {
     salesOrderId,
     companyId,
+    companyGroupId,
     userId,
     customerContactId,
     cc: ccSelections,
@@ -281,7 +283,18 @@ export async function sendSalesOrderEmail(args: {
     return { success: false, message: "Failed to get payment terms" };
   }
 
+  // Amounts render at the ORDER currency's decimals, same as the PDF of the
+  // same order — otherwise the two disagree about the width of a total.
+  const currencyRow = salesOrder.data.currencyCode
+    ? await getCurrencyByCode(
+        serviceRole,
+        companyGroupId,
+        salesOrder.data.currencyCode
+      )
+    : null;
+
   const emailTemplate = SalesOrderEmail({
+    currencyDecimals: currencyRow?.data?.decimalPlaces ?? null,
     company: company.data as any,
     locale: locales?.[0] ?? "en-US",
     salesOrder: salesOrder.data,

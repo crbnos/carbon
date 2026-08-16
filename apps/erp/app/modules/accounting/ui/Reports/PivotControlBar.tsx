@@ -32,13 +32,13 @@ import { DimensionEntityTypeIcon } from "~/components/Icons";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
+import type { getActiveDimensionsWithValues } from "../../accounting.ee.service";
 import type {
   AnalyticsReportKey,
   PivotMeasure,
   PivotState
 } from "../../accounting.models";
 import { financialReportColumns, pivotMeasures } from "../../accounting.models";
-import type { getActiveDimensionsWithValues } from "../../accounting.service";
 import type { ReportView } from "../../types";
 import SaveViewModal from "./SaveViewModal";
 

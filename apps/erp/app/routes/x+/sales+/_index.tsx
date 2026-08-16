@@ -206,10 +206,7 @@ export default function SalesDashboard() {
     day: "numeric"
   });
 
-  const currencyCompactFormatter = useCurrencyFormatter({
-    notation: "compact",
-    compactDisplay: "short"
-  });
+  const currencyCompactFormatter = useCurrencyFormatter({ compact: true });
   const currencyFormatter = useCurrencyFormatter();
   const numberFormatter = useNumberFormatter({
     maximumFractionDigits: 0,

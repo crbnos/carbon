@@ -34,7 +34,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { getItemReadableId, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -61,6 +61,7 @@ import {
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
+  useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
@@ -112,6 +113,7 @@ const SalesOrderLineForm = ({
   const isEditable = !isLocked;
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
   const [items] = useItems();
 
   const [lineType, setLineType] = useState(initialValues.salesOrderLineType);
@@ -657,10 +659,10 @@ const SalesOrderLineForm = ({
                               <NumberControlled
                                 name="unitPrice"
                                 value={itemData.unitPrice}
-                                formatOptions={{
-                                  style: "currency",
-                                  currency: baseCurrency
-                                }}
+                                formatOptions={INPUT_FORMAT.rate(
+                                  baseCurrency,
+                                  currencyDecimals
+                                )}
                                 onChange={(value) =>
                                   setItemData((d) => ({
                                     ...d,
@@ -797,39 +799,35 @@ const SalesOrderLineForm = ({
                                 label={t`Tax Percent`}
                                 minValue={0}
                                 maxValue={1}
-                                step={0.0001}
-                                formatOptions={{
-                                  style: "percent",
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 2
-                                }}
+                                step={INPUT_STEP.percent}
+                                formatOptions={INPUT_FORMAT.percent}
                               />
                               <Number
                                 name="shippingCost"
                                 label={t`Shipping Cost`}
                                 minValue={0}
-                                formatOptions={{
-                                  style: "currency",
-                                  currency: baseCurrency
-                                }}
+                                formatOptions={INPUT_FORMAT.money(
+                                  baseCurrency,
+                                  currencyDecimals
+                                )}
                                 termId="sales-order-line-shipping"
                               />
                               <Number
                                 name="addOnCost"
                                 label={t`Add-On Cost`}
-                                formatOptions={{
-                                  style: "currency",
-                                  currency: baseCurrency
-                                }}
+                                formatOptions={INPUT_FORMAT.money(
+                                  baseCurrency,
+                                  currencyDecimals
+                                )}
                                 termId="sales-order-line-add-on-cost"
                               />
                               <Number
                                 name="nonTaxableAddOnCost"
                                 label={t`Non-Taxable Add-On Cost`}
-                                formatOptions={{
-                                  style: "currency",
-                                  currency: baseCurrency
-                                }}
+                                formatOptions={INPUT_FORMAT.money(
+                                  baseCurrency,
+                                  currencyDecimals
+                                )}
                                 termId="sales-order-line-non-taxable-add-on-cost"
                               />
                             </div>
@@ -897,10 +895,10 @@ const SalesOrderLineForm = ({
                             label={t`Unit Price`}
                             isOptional={false}
                             value={assetData.unitPrice}
-                            formatOptions={{
-                              style: "currency",
-                              currency: baseCurrency
-                            }}
+                            formatOptions={INPUT_FORMAT.rate(
+                              baseCurrency,
+                              currencyDecimals
+                            )}
                             onChange={(value) =>
                               setAssetData((d) => ({
                                 ...d,
@@ -972,12 +970,8 @@ const SalesOrderLineForm = ({
                               value={assetData.taxPercent}
                               minValue={0}
                               maxValue={1}
-                              step={0.0001}
-                              formatOptions={{
-                                style: "percent",
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 2
-                              }}
+                              step={INPUT_STEP.percent}
+                              formatOptions={INPUT_FORMAT.percent}
                               onChange={(value) =>
                                 setAssetData((d) => ({
                                   ...d,
@@ -990,10 +984,10 @@ const SalesOrderLineForm = ({
                               label={t`Shipping Cost`}
                               value={assetData.shippingCost}
                               minValue={0}
-                              formatOptions={{
-                                style: "currency",
-                                currency: baseCurrency
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                baseCurrency,
+                                currencyDecimals
+                              )}
                               onChange={(value) =>
                                 setAssetData((d) => ({
                                   ...d,
@@ -1006,10 +1000,10 @@ const SalesOrderLineForm = ({
                               name="addOnCost"
                               label={t`Add-On Cost`}
                               value={assetData.addOnCost}
-                              formatOptions={{
-                                style: "currency",
-                                currency: baseCurrency
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                baseCurrency,
+                                currencyDecimals
+                              )}
                               onChange={(value) =>
                                 setAssetData((d) => ({
                                   ...d,
@@ -1022,10 +1016,10 @@ const SalesOrderLineForm = ({
                               name="nonTaxableAddOnCost"
                               label={t`Non-Taxable Add-On Cost`}
                               value={assetData.nonTaxableAddOnCost}
-                              formatOptions={{
-                                style: "currency",
-                                currency: baseCurrency
-                              }}
+                              formatOptions={INPUT_FORMAT.money(
+                                baseCurrency,
+                                currencyDecimals
+                              )}
                               onChange={(value) =>
                                 setAssetData((d) => ({
                                   ...d,

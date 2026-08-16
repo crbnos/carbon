@@ -108,6 +108,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Architecture** | |
 | General coding conventions | `.claude/rules/coding-conventions.md` |
 | Date & time handling (no JS `Date`) | `.claude/rules/date-handling.md` |
+| Numeric precision & formatting (two scales, named kinds, tax pair) | `.claude/rules/numeric-precision.md` |
 | Project overview | `.claude/rules/project-overview.md` |
 | Customer/supplier DB schema | `.claude/rules/customer-supplier-database-schema.md` |
 | User/employee/job relationships | `.claude/rules/user-employee-job-relationships.md` |
@@ -178,6 +179,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages
+- **Precision**: `packages/utils/src/math.ts` re-exports `functions/shared/precision.ts` by design (the edge runtime only mounts `supabase/functions/`) — not an import to "fix"
 
 ## ERP Module Layout
 

@@ -1,3 +1,24 @@
+/**
+ * SYNC event handler — v5 reconciler shape
+ * (.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md, D3).
+ *
+ * Events are HINTS, not decisions: a DB write on a subscribed table means
+ * "reconcile this entity now". The handler maps table → entity type,
+ * dedupes the batch into refs, and hands them to the SAME
+ * `reconcileEntities` executor the outbound sweep uses — the decision of
+ * whether anything should happen lives in ONE place
+ * (computeReconcileDecision), derived from current state, never from the
+ * event's old/new delta.
+ *
+ * Deleted with v5 (their failure classes are unrepresentable now):
+ * - the completed-row cooldown on this path (an unchanged entity reconciles
+ *   to nothing by state; a changed one enqueues immediately);
+ * - `isStatusTransitionEvent` routing (no cooldown to bypass);
+ * - the per-table journal/payment decision branches (state-shaped in D1).
+ *
+ * DELETEs remain logged-and-skipped (DELETE sync is unimplemented; a
+ * deleted row also reconciles to nothing by construction).
+ */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   getPostgresClient,
@@ -5,18 +26,25 @@ import {
 } from "@carbon/database/client";
 import { EventSchema } from "@carbon/database/event";
 import {
-  type AccountingEntityType,
-  type BatchSyncResult,
   getAccountingIntegration,
   getProviderIntegration,
-  ProviderID,
-  RatelimitError,
-  SyncFactory
+  ProviderID
 } from "@carbon/ee/accounting";
-import { groupBy, pluckUnique } from "@carbon/utils";
+import { groupBy } from "@carbon/utils";
 import { PostgresDriver } from "kysely";
 import { z } from "zod";
 import { inngest } from "../../client";
+import {
+  type DrainSummary,
+  drainSyncOperations,
+  getSyncOperationActor
+} from "../integrations/accounting-sync-operations";
+import type { ReconcileRef } from "../integrations/reconcile";
+import {
+  type ReconcileSummary,
+  reconcileEntities
+} from "../integrations/reconcile-executor";
+import { getEntityTypeFromTable } from "./sync-tables";
 
 const SyncRecordSchema = z.object({
   event: EventSchema,
@@ -32,33 +60,30 @@ const SyncPayloadSchema = z.object({
 
 export type SyncPayload = z.infer<typeof SyncPayloadSchema>;
 
-// Map database table names to accounting entity types
-const TABLE_TO_ENTITY_MAP: Partial<Record<string, AccountingEntityType>> = {
-  customer: "customer",
-  supplier: "vendor",
-  item: "item",
-  purchaseOrder: "purchaseOrder",
-  purchaseInvoice: "bill",
-  salesInvoice: "invoice"
-};
-
-function getEntityTypeFromTable(table: string): AccountingEntityType | null {
-  return TABLE_TO_ENTITY_MAP[table] ?? null;
-}
-
 export const syncFunction = inngest.createFunction(
   {
     id: "event-handler-sync",
     retries: 3
   },
   { event: "carbon/event-sync" },
-  async ({ event, step, logger }) => {
+  async ({ event, step, runId, logger }) => {
     const payload = SyncPayloadSchema.parse(event.data);
 
     logger.info(`Processing ${payload.records.length} sync events`);
 
+    // Scopes the ledger idempotency keys to this delivery: Inngest retries
+    // reuse the same event id (absorbed), later deliveries get fresh keys
+    const reconcileScope = event.id ?? runId;
+
     const results = {
-      success: [] as BatchSyncResult[],
+      reconciled: [] as Array<
+        { companyId: string; provider: string } & ReconcileSummary
+      >,
+      drains: [] as Array<{
+        companyId: string;
+        provider: string;
+        drain: DrainSummary["groups"];
+      }>,
       failed: [] as { recordId: string; error: string }[],
       skipped: [] as { recordId: string; reason: string }[]
     };
@@ -74,6 +99,8 @@ export const syncFunction = inngest.createFunction(
     const kysely = getPostgresClient(pool, PostgresDriver);
     const client = getCarbonServiceRole();
 
+    // NOTE: the pool from getPostgresConnectionPool is a process-lifetime
+    // singleton (see lib/postgres) — do NOT end it per invocation.
     for (const [key, records] of Object.entries(byCompanyProvider)) {
       const [companyId, provider] = key.split(":");
 
@@ -87,135 +114,156 @@ export const syncFunction = inngest.createFunction(
         continue;
       }
 
-      // Process each company-provider group as a step for checkpointing
-      type GroupResults = {
-        success: BatchSyncResult[];
+      // Step 1: reconcile the hinted entities (checkpointed so a retry
+      // replays the outcome; enqueue/terminal writes are idempotent by
+      // ledger key, so re-runs cannot duplicate work)
+      type ReconcileStepSummary = {
+        aborted: boolean;
+        summary: ReconcileSummary | null;
         failed: { recordId: string; error: string }[];
         skipped: { recordId: string; reason: string }[];
       };
 
-      const groupResult = (await step.run(
-        `sync-${companyId}-${provider}`,
+      const reconcileSummary = (await step.run(
+        `reconcile-${companyId}-${provider}`,
         async () => {
-          const groupResults: GroupResults = {
-            success: [],
+          const stepSummary: ReconcileStepSummary = {
+            aborted: false,
+            summary: null,
             failed: [],
             skipped: []
           };
 
           try {
-            // Get integration and provider instance
             const integration = await getAccountingIntegration(
               client,
               companyId,
               provider as ProviderID
             );
 
-            const providerInstance = getProviderIntegration(
-              client,
-              companyId,
-              provider as ProviderID,
-              integration.metadata
-            );
-
-            // Group by entity type
-            const byEntityType = groupBy(records, (r) => {
+            const seen = new Set<string>();
+            const refs: ReconcileRef[] = [];
+            for (const r of records) {
               const entityType = getEntityTypeFromTable(r.event.table);
-              return entityType ?? "unknown";
-            });
-
-            for (const [entityType, entityRecords] of Object.entries(
-              byEntityType
-            )) {
-              if (entityType === "unknown") {
-                for (const r of entityRecords) {
-                  groupResults.skipped.push({
-                    recordId: r.event.recordId,
-                    reason: `Table '${r.event.table}' has no entity mapping`
-                  });
-                }
+              if (!entityType) {
+                stepSummary.skipped.push({
+                  recordId: r.event.recordId,
+                  reason: `Table '${r.event.table}' has no entity mapping`
+                });
                 continue;
               }
-
-              // Separate by operation
-              const inserts = entityRecords.filter(
-                (r) => r.event.operation === "INSERT"
-              );
-              const updates = entityRecords.filter(
-                (r) => r.event.operation === "UPDATE"
-              );
-              const deletes = entityRecords.filter(
-                (r) => r.event.operation === "DELETE"
-              );
-
-              const syncer = SyncFactory.getSyncer({
-                database: kysely,
-                companyId,
-                provider: providerInstance,
-                config: providerInstance.getSyncConfig(
-                  entityType as AccountingEntityType
-                ),
-                entityType: entityType as AccountingEntityType
-              });
-
-              // Process INSERTs and UPDATEs (push to accounting)
-              const toSync = [...inserts, ...updates];
-              if (toSync.length > 0) {
-                const entityIds = pluckUnique(toSync, (r) => r.event.recordId);
-
-                logger.info(
-                  `Pushing ${entityIds.length} ${entityType} entities to accounting`
-                );
-
-                // Handle rate limiting with retry
-                let result: BatchSyncResult;
-                try {
-                  result = await syncer.pushBatchToAccounting(entityIds);
-                } catch (error) {
-                  if (error instanceof RatelimitError) {
-                    const { retryAfterSeconds } = error.rateLimitInfo;
-                    logger.warn(
-                      `Hit rate limit, will retry after ${retryAfterSeconds}s`
-                    );
-                    // Let inngest handle the retry by throwing
-                    throw error;
-                  }
-                  throw error;
-                }
-
-                logger.info("Sync result", { entityType, result });
-                groupResults.success.push(result);
-              }
-
-              // Handle DELETEs (log for now, not yet implemented in syncers)
-              for (const del of deletes) {
-                groupResults.skipped.push({
-                  recordId: del.event.recordId,
+              if (r.event.operation === "DELETE") {
+                stepSummary.skipped.push({
+                  recordId: r.event.recordId,
                   reason: "DELETE operations not yet implemented"
                 });
+                continue;
               }
+              if (
+                r.event.operation !== "INSERT" &&
+                r.event.operation !== "UPDATE"
+              ) {
+                continue;
+              }
+              const refKey = `${entityType}:${r.event.recordId}`;
+              if (seen.has(refKey)) continue;
+              seen.add(refKey);
+              refs.push({
+                entityType: entityType as ReconcileRef["entityType"],
+                entityId: r.event.recordId
+              });
             }
+
+            stepSummary.summary = await reconcileEntities({
+              client,
+              database: kysely,
+              companyId,
+              providerId: provider,
+              integrationMetadata: integration.metadata,
+              createdBy: getSyncOperationActor(integration),
+              scope: reconcileScope,
+              refs
+            });
           } catch (error) {
-            logger.error(`Failed to process sync for ${key}`, { error });
+            logger.error(`Failed to reconcile sync events for ${key}`, {
+              error
+            });
+            stepSummary.aborted = true;
             for (const r of records) {
-              groupResults.failed.push({
+              stepSummary.failed.push({
                 recordId: r.event.recordId,
                 error: error instanceof Error ? error.message : "Unknown error"
               });
             }
           }
 
-          return groupResults;
+          return stepSummary;
         }
-      )) as GroupResults;
+      )) as ReconcileStepSummary;
 
-      results.success.push(...groupResult.success);
-      results.failed.push(...groupResult.failed);
-      results.skipped.push(...groupResult.skipped);
+      results.failed.push(...reconcileSummary.failed);
+      results.skipped.push(...reconcileSummary.skipped);
+      if (reconcileSummary.summary) {
+        results.reconciled.push({
+          companyId,
+          provider,
+          ...reconcileSummary.summary
+        });
+      }
+
+      // The integration could not be resolved — there is nothing to drain
+      // for this group (matches the pre-ledger behavior of recording the
+      // failure without failing the run)
+      if (reconcileSummary.aborted) continue;
+
+      // Step 2: drain — claim Pending operations (including UI retries and
+      // stale In Flight rows) and run the entity syncers. A throw re-runs
+      // the step; claim/complete are idempotent so retries cannot
+      // duplicate work.
+      const drainSummary = (await step.run(
+        `drain-${companyId}-${provider}`,
+        async () => {
+          const integration = await getAccountingIntegration(
+            client,
+            companyId,
+            provider as ProviderID
+          );
+
+          const providerInstance = getProviderIntegration(
+            client,
+            companyId,
+            provider as ProviderID,
+            integration.metadata
+          );
+
+          return drainSyncOperations({
+            client,
+            database: kysely,
+            companyId,
+            integration: provider,
+            provider: providerInstance,
+            integrationMetadata: integration.metadata
+          });
+        }
+      )) as DrainSummary;
+
+      for (const group of drainSummary.groups) {
+        logger.info("Sync result", {
+          entityType: group.entityType,
+          direction: group.direction,
+          result: group.result
+        });
+      }
+
+      results.drains.push({
+        companyId,
+        provider,
+        drain: drainSummary.groups
+      });
     }
 
     logger.info("Sync function completed", {
-      successCount: results.success.reduce((acc, r) => acc + r.successCount, 0),
+      reconciled: results.reconciled.length,
       failedCount: results.failed.length,
       skippedCount: results.skipped.length
     });

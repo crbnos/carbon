@@ -259,7 +259,7 @@ function Card({
 }) {
   return (
     <UICard>
-      <CardContent className="p-5 border-0">
+      <CardContent className="p-5">
         <h2 className="text-sm font-semibold">{title}</h2>
         {subtitle ? (
           <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-xl">

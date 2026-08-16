@@ -26,9 +26,9 @@ not the base column). Verify against the newest migration before relying on a de
 
 | Table | Column | Type / default | Migration |
 |---|---|---|---|
-| `purchaseOrderLine` | `conversionFactor` | `NUMERIC(10,2) DEFAULT 1` | `20240402052512_purchasing-conversion-factors.sql` |
-| `purchaseInvoiceLine` | `conversionFactor` | `NUMERIC(10,2) DEFAULT 1` | `20240402052512_purchasing-conversion-factors.sql` |
-| `receiptLine` | `conversionFactor` | `NUMERIC(10,2) DEFAULT 1` | `20240402052512_purchasing-conversion-factors.sql` |
+| `purchaseOrderLine` | `conversionFactor` | bare `NUMERIC DEFAULT 1` | widened by `20260811123616_widen-purchasing-scale.sql` (was `NUMERIC(10,2)`) |
+| `purchaseInvoiceLine` | `conversionFactor` | bare `NUMERIC DEFAULT 1` | widened by `20260811123616_widen-purchasing-scale.sql` (was `NUMERIC(10,2)`) |
+| `receiptLine` | `conversionFactor` | bare `NUMERIC DEFAULT 1` | widened by `20260811123616_widen-purchasing-scale.sql` (was `NUMERIC(10,2)`) |
 | `supplierQuoteLine` | `conversionFactor` | `NUMERIC(10,5) DEFAULT 1`, NOT NULL | `20241202192419_supplier-quotes.sql` |
 | `supplierPart` (was `buyMethod`) | `conversionFactor` | `NUMERIC(15,5) DEFAULT 1`, NOT NULL | `20230330024716_parts.sql` |
 
@@ -91,8 +91,11 @@ divide price by it for inventory unit price (`SupplierQuoteLinePricing.tsx`).
   division is applied in **app/edge-function code**, not in those DB columns.
 - Exchange-rate direction: `supplierUnitPrice / exchangeRate` (supplier→base
   currency), guarded against divide-by-zero.
-- Precision differs by table (`supplierPart` 15,5 vs line tables 10,2) — a
-  factor like `10.764` is rounded to 2 dp once it lands on a PO/invoice/receipt line.
+- The line tables used to clamp the factor to 2 dp, so `10.764` silently became
+  `10.76` once it landed on a PO/invoice/receipt line. `20260811123616_widen-purchasing-scale.sql`
+  retyped them to bare `NUMERIC` (along with `supplierPart.unitPrice`, which was
+  clamped to 2 dp and rounded distributor prices like `0.164` on entry), so the
+  factor is now stored exactly as entered. See `.claude/rules/numeric-precision.md`.
 
 ## UI component
 

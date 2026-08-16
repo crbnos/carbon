@@ -36,7 +36,8 @@ import { getDefaultAccounts } from "~/modules/accounting";
 import {
   getCompanySettings,
   updateAccountingEnabledSetting,
-  updateAssetTaxDepreciationSettings
+  updateAssetTaxDepreciationSettings,
+  updateShowCurrencyTrailingZerosSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -101,6 +102,17 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Accounting settings updated" };
   }
 
+  if (intent === "showCurrencyTrailingZeros") {
+    const enabled = formData.get("enabled") === "true";
+    const update = await updateShowCurrencyTrailingZerosSetting(
+      client,
+      companyId,
+      enabled
+    );
+    if (update.error) return { success: false, message: update.error.message };
+    return { success: true, message: "Currency display updated" };
+  }
+
   if (intent === "assetTaxDepreciationEnabled") {
     const enabled = formData.get("enabled") === "true";
     const update = await updateAssetTaxDepreciationSettings(client, companyId, {
@@ -159,8 +171,7 @@ export default function AccountingSettingsRoute() {
   const taxFetcher = useFetcher<typeof action>();
   const { isInternal } = useFlags();
 
-  const taxEnabled =
-    (companySettings as any).assetTaxDepreciationEnabled ?? false;
+  const taxEnabled = companySettings.assetTaxDepreciationEnabled ?? false;
 
   useEffect(() => {
     if (fetcher.data && "success" in fetcher.data) {
@@ -188,6 +199,19 @@ export default function AccountingSettingsRoute() {
     (checked: boolean) => {
       fetcher.submit(
         { intent: "accountingEnabled", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleTrailingZerosToggle = useCallback(
+    (showTrailingZeros: boolean) => {
+      fetcher.submit(
+        {
+          intent: "showCurrencyTrailingZeros",
+          enabled: String(showTrailingZeros)
+        },
         { method: "POST" }
       );
     },
@@ -235,7 +259,7 @@ export default function AccountingSettingsRoute() {
               <VStack className="items-start" spacing={1}>
                 <HStack className="items-center gap-2">
                   <span className="font-medium">
-                    {(companySettings as any).accountingEnabled ? (
+                    {companySettings.accountingEnabled ? (
                       <Trans>Accounting is enabled</Trans>
                     ) : (
                       <Trans>Accounting is disabled</Trans>
@@ -246,7 +270,7 @@ export default function AccountingSettingsRoute() {
                   </Badge>
                 </HStack>
                 <span className="text-sm text-muted-foreground">
-                  {(companySettings as any).accountingEnabled ? (
+                  {companySettings.accountingEnabled ? (
                     <Trans>
                       Transactions will create journal entries and update the
                       general ledger.
@@ -260,12 +284,41 @@ export default function AccountingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
-                checked={(companySettings as any).accountingEnabled ?? false}
+                checked={companySettings.accountingEnabled ?? false}
                 onCheckedChange={handleAccountingToggle}
                 disabled={!isInternal}
               />
             </HStack>
           </CardContent>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Currency</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between items-center">
+              <div>
+                <CardTitle>
+                  <Trans>Show Trailing Zeros</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    Pad amounts to their currency's decimal places, so 300
+                    appears as 300.00 and columns of figures stay aligned. Turn
+                    this off to show only the digits that carry value. Printed
+                    documents and stored amounts are unaffected either way.
+                  </Trans>
+                </CardDescription>
+              </div>
+              <Switch
+                checked={companySettings.showCurrencyTrailingZeros}
+                onCheckedChange={handleTrailingZerosToggle}
+                disabled={fetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardHeader>
         </Card>
 
         <SettingsSectionHeader>
@@ -279,9 +332,9 @@ export default function AccountingSettingsRoute() {
           fetcher={taxFetcher}
           defaultValues={{
             intent: "assetTaxDepreciation",
-            assetTaxRate: parseFloat(
-              (companySettings as any).assetTaxRate ?? "0"
-            ),
+            // Already a NUMERIC column; the parseFloat this replaced only
+            // worked because JS coerced the number back to a string first.
+            assetTaxRate: companySettings.assetTaxRate ?? 0,
             deferredTaxLiabilityAccountId:
               (accountDefaults as any)?.deferredTaxLiabilityAccountId ?? "",
             deferredTaxExpenseAccountId:

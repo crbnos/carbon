@@ -4,7 +4,7 @@ import { useCarbon } from "@carbon/auth";
 import { type Database, fetchAllFromTable } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { useInterval, useRealtimeChannel } from "@carbon/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useUser } from "~/hooks";
 import {
   upsertIntoListStore,
@@ -51,6 +51,10 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchQuantities = async () => {
     if (!carbon || !companyId) return;
+    // A company switch (including A -> B -> A) bumps this. Comparing ids alone
+    // would let a request from the FIRST visit to A land after returning to A
+    // and overwrite newer quantities.
+    const requestedGeneration = quantitiesGeneration.current;
 
     const { data, error } = await fetchAllFromTable<{
       itemId: string;
@@ -58,13 +62,17 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       quantityOnHand: number;
     }>(
       carbon,
-      // @ts-ignore -- itemStockQuantities is a materialized view
       "itemStockQuantities",
       "itemId, locationId, quantityOnHand",
-      (query) => query.eq("companyId", companyId)
+      // Ordered by the rest of the table's key: fetchAllFromTable pages, and
+      // without a stable sort a concurrent write can shift rows across a page
+      // boundary, dropping or duplicating one in `totalMap`.
+      (query) =>
+        query.eq("companyId", companyId).order("itemId").order("locationId")
     );
 
     if (error || !data) return;
+    if (quantitiesGeneration.current !== requestedGeneration) return;
 
     const totalMap = new Map<string, number>();
     const locationMap = new Map<string, Record<string, number>>();
@@ -88,6 +96,38 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       }))
     );
   };
+
+  // A posting writes one itemStockQuantities row per (item, location) it
+  // touched, so a single receipt can emit a burst. Coalesce them into one
+  // refetch — the same 1.5s quiet window `useDebouncedRealtime` uses.
+  const quantitiesRefresh = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const quantitiesGeneration = useRef(0);
+
+  // Bumped on every company change so in-flight reads and pending timers from
+  // the previous company are discarded rather than applied to the new one.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on companyId by design
+  useEffect(() => {
+    quantitiesGeneration.current += 1;
+    if (quantitiesRefresh.current) {
+      clearTimeout(quantitiesRefresh.current);
+      quantitiesRefresh.current = null;
+    }
+  }, [companyId]);
+
+  const scheduleQuantitiesRefresh = () => {
+    if (quantitiesRefresh.current) clearTimeout(quantitiesRefresh.current);
+    quantitiesRefresh.current = setTimeout(() => {
+      quantitiesRefresh.current = null;
+      fetchQuantities();
+    }, 1500);
+  };
+
+  useEffect(
+    () => () => {
+      if (quantitiesRefresh.current) clearTimeout(quantitiesRefresh.current);
+    },
+    []
+  );
 
   const hydrate = async () => {
     const idb = (await import("localforage")).default;
@@ -317,6 +357,29 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
               default:
                 break;
             }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            // Quantities are maintained incrementally by triggers on itemLedger,
+            // so this fires on the posting itself rather than up to 40 min later
+            // (the old 30 min matview refresh + the 10 min poll below).
+            // Server-side filter: with ~1600 tenants an unfiltered subscription
+            // would fan every company's postings out to every client.
+            table: "itemStockQuantities",
+            filter: `companyId=eq.${companyId}`
+          },
+          (payload) => {
+            // companyId is part of the primary key, so it is present even on a
+            // DELETE payload (which otherwise carries only key columns).
+            const row =
+              payload.eventType === "DELETE" ? payload.old : payload.new;
+            if (row && "companyId" in row && row.companyId !== companyId)
+              return;
+            scheduleQuantitiesRefresh();
           }
         )
         .on(

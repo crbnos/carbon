@@ -1,3 +1,4 @@
+import { Card } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CADENCE, ESCALATION } from "../content/howwework";
 import { EditableField } from "./EditableField";
@@ -58,7 +59,7 @@ export function HowWeWorkView() {
         </ol>
       </Panel>
 
-      <div className="rounded-lg border-l-2 border-l-primary bg-muted/30 px-5 py-4">
+      <Card className="p-5 border border-primary/30 bg-primary/5 dark:bg-primary/5">
         <p className="text-sm text-muted-foreground">
           <span className="font-medium text-foreground">
             <Trans>The principle:</Trans>
@@ -68,7 +69,7 @@ export function HowWeWorkView() {
             small fix; the same problem at go-live is a delay.
           </Trans>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

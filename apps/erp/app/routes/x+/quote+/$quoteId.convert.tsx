@@ -27,9 +27,12 @@ const logger = getLogger("erp", "quoteid-convert");
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "sales"
-  });
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
+      create: "sales"
+    }
+  );
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -115,6 +118,7 @@ export async function action(args: ActionFunctionArgs) {
         await sendSalesOrderEmail({
           salesOrderId,
           companyId,
+          companyGroupId,
           userId,
           customerContactId: customerContact,
           cc,

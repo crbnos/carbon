@@ -36,6 +36,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -99,7 +100,12 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import type {
   OperationParameter,
   OperationStep,
@@ -1738,6 +1744,7 @@ function OperationForm({
   const { carbon } = useCarbon();
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   useEffect(() => {
     if (fetcher.data && fetcher.data.id) {
@@ -2004,10 +2011,7 @@ function OperationForm({
               label={t`Minimum Cost`}
               minValue={0}
               value={processData.operationMinimumCost}
-              formatOptions={{
-                style: "currency",
-                currency: baseCurrency
-              }}
+              formatOptions={INPUT_FORMAT.rate(baseCurrency, currencyDecimals)}
               onChange={(newValue) =>
                 setProcessData((d) => ({
                   ...d,
@@ -2020,10 +2024,7 @@ function OperationForm({
               label={t`Unit Cost`}
               minValue={0}
               value={processData.operationUnitCost}
-              formatOptions={{
-                style: "currency",
-                currency: baseCurrency
-              }}
+              formatOptions={INPUT_FORMAT.rate(baseCurrency, currencyDecimals)}
               onChange={(newValue) =>
                 setProcessData((d) => ({
                   ...d,
@@ -2368,10 +2369,10 @@ function OperationForm({
                 label={t`Labor Rate`}
                 minValue={0}
                 value={processData.laborRate}
-                formatOptions={{
-                  style: "currency",
-                  currency: baseCurrency
-                }}
+                formatOptions={INPUT_FORMAT.rate(
+                  baseCurrency,
+                  currencyDecimals
+                )}
                 onChange={(newValue) =>
                   setProcessData((d) => ({
                     ...d,
@@ -2385,10 +2386,10 @@ function OperationForm({
                   label={t`Machine Rate`}
                   minValue={0}
                   value={processData.machineRate}
-                  formatOptions={{
-                    style: "currency",
-                    currency: baseCurrency
-                  }}
+                  formatOptions={INPUT_FORMAT.rate(
+                    baseCurrency,
+                    currencyDecimals
+                  )}
                   onChange={(newValue) =>
                     setProcessData((d) => ({
                       ...d,
@@ -2402,10 +2403,10 @@ function OperationForm({
                 label={t`Overhead Rate`}
                 minValue={0}
                 value={processData.overheadRate}
-                formatOptions={{
-                  style: "currency",
-                  currency: baseCurrency
-                }}
+                formatOptions={INPUT_FORMAT.rate(
+                  baseCurrency,
+                  currencyDecimals
+                )}
                 onChange={(newValue) =>
                   setProcessData((d) => ({
                     ...d,

@@ -6,6 +6,7 @@ import {
 } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
+import type { XeroProvider } from "../provider";
 
 // Note: This is a push-only syncer (Carbon -> Xero).
 // Carbon sales orders are pushed as Xero Quotes since Xero
@@ -84,6 +85,10 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
   Xero.Quote,
   "UpdatedDateUTC"
 > {
+  private get xeroProvider(): XeroProvider {
+    return this.provider as XeroProvider;
+  }
+
   // =================================================================
   // 1. ID MAPPING - Uses default implementation from BaseEntitySyncer
   // =================================================================
@@ -216,7 +221,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
   // =================================================================
 
   async fetchRemote(id: string): Promise<Xero.Quote | null> {
-    const result = await this.provider.request<{ Quotes: Xero.Quote[] }>(
+    const result = await this.xeroProvider.request<{ Quotes: Xero.Quote[] }>(
       "GET",
       `/Quotes/${id}`
     );
@@ -229,7 +234,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
     const result = new Map<string, Xero.Quote>();
     if (ids.length === 0) return result;
 
-    const response = await this.provider.request<{ Quotes: Xero.Quote[] }>(
+    const response = await this.xeroProvider.request<{ Quotes: Xero.Quote[] }>(
       "GET",
       `/Quotes?IDs=${ids.join(",")}`
     );
@@ -348,7 +353,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
       ? [{ ...data, QuoteID: existingRemoteId }]
       : [data];
 
-    const result = await this.provider.request<{ Quotes: Xero.Quote[] }>(
+    const result = await this.xeroProvider.request<{ Quotes: Xero.Quote[] }>(
       method,
       "/Quotes",
       { body: JSON.stringify({ Quotes: quotes }) }
@@ -392,7 +397,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
       localIdOrder.push(localId);
     }
 
-    const response = await this.provider.request<{ Quotes: Xero.Quote[] }>(
+    const response = await this.xeroProvider.request<{ Quotes: Xero.Quote[] }>(
       "POST",
       "/Quotes",
       { body: JSON.stringify({ Quotes: quotes }) }

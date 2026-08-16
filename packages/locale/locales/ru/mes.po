@@ -425,6 +425,9 @@ msgstr "Завершить операции"
 msgid "Enter PIN for {0}"
 msgstr "Введите PIN для {0}"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Введите 6-значный код из приложения аутентификатора"
+
 msgid "Error"
 msgstr "Ошибка"
 
@@ -1230,6 +1233,9 @@ msgstr "Установить время ухода"
 msgid "Set clock-out time"
 msgstr "Установить время ухода"
 
+msgid "Set up in Carbon"
+msgstr "Настроить в Carbon"
+
 msgid "Setup"
 msgstr "Наладка"
 
@@ -1253,6 +1259,9 @@ msgstr "Войти через Outlook"
 
 msgid "Sign in with Passkey"
 msgstr "Войти с помощью Passkey"
+
+msgid "Sign out"
+msgstr "Выход"
 
 msgid "Sign Out"
 msgstr "Выйти"
@@ -1381,6 +1390,12 @@ msgstr "Отслеживаемый объект"
 msgid "Tracking"
 msgstr "Отслеживание"
 
+msgid "Two-factor authentication"
+msgstr "Двухфакторная аутентификация"
+
+msgid "Two-factor authentication required"
+msgstr "Требуется двухфакторная аутентификация"
+
 msgid "Type a message..."
 msgstr "Введите сообщение..."
 
@@ -1431,6 +1446,12 @@ msgstr "Загружено: {0}"
 msgid "Uploading {0}"
 msgstr "Загрузка {0}"
 
+msgid "Use a different account"
+msgstr "Использовать другой аккаунт"
+
+msgid "Verify"
+msgstr "Подтвердить"
+
 msgid "View maintenance dispatch"
 msgstr "Просмотреть наряд на обслуживание"
 
@@ -1457,6 +1478,9 @@ msgstr "Вы отметились в системе в <0/>. Вы можете �
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Вы на смене уже {hoursElapsed} часов. Вы забыли отметить уход?"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "Ваша организация требует приложения аутентификатора. Настройте его в Carbon, а затем вернитесь сюда."
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

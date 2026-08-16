@@ -14,7 +14,7 @@ export function GuidedUpsellCard({
   const { i18n } = useLingui();
   return (
     <Card>
-      <CardContent className="flex-row items-start gap-4 p-6 border-0">
+      <CardContent className="flex-row items-start gap-4 p-6">
         <div className="shrink-0 size-11 rounded-lg bg-primary/15 flex items-center justify-center text-primary">
           <LuSparkles className="text-xl" />
         </div>

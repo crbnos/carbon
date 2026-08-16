@@ -2,6 +2,7 @@ import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
@@ -70,6 +71,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 export default function MaintenanceDisplayRoute() {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const {
     workCenter,
     dispatches,
@@ -156,7 +158,11 @@ export default function MaintenanceDisplayRoute() {
               days
             </Trans>
           }
-          answer={formatCurrency(board.unplannedCost.total, currencyCode)}
+          answer={formatCurrency(
+            board.unplannedCost.total,
+            currencyCode,
+            locale
+          )}
           tone={board.unplannedCost.total > 0 ? "warn" : "neutral"}
         />
         <ScoreboardRow
@@ -170,8 +176,8 @@ export default function MaintenanceDisplayRoute() {
   );
 }
 
-function formatCurrency(value: number, currency: string) {
-  return new Intl.NumberFormat(undefined, {
+function formatCurrency(value: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0

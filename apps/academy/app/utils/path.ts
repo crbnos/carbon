@@ -26,6 +26,7 @@ export const path = {
     health: "/health",
     login: "/login",
     logout: "/logout",
+    mfa: "/mfa",
     refreshSession: "/refresh-session",
     root: "/",
     lesson: (id: string) => generatePath(`${lesson}/${id}`)

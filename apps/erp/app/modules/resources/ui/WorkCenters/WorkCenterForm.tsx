@@ -28,6 +28,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
@@ -39,7 +40,7 @@ import Location from "~/components/Form/Location";
 import Processes from "~/components/Form/Processes";
 import Shifts from "~/components/Form/Shifts";
 import StandardFactor from "~/components/Form/StandardFactor";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import { workCenterValidator } from "~/modules/resources";
 import { path } from "~/utils/path";
 
@@ -66,6 +67,7 @@ const WorkCenterForm = ({
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const [selectedLocationId, setSelectedLocationId] = useState<
     string | undefined
@@ -168,28 +170,28 @@ const WorkCenterForm = ({
                     name="laborRate"
                     label={t`Labor Rate (Hourly)`}
                     termId="work-center-labor-rate"
-                    formatOptions={{
-                      style: "currency",
-                      currency: baseCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.rate(
+                      baseCurrency,
+                      currencyDecimals
+                    )}
                   />
                   <Number
                     name="machineRate"
                     label={t`Machine Rate (Hourly)`}
                     termId="work-center-machine-rate"
-                    formatOptions={{
-                      style: "currency",
-                      currency: baseCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.rate(
+                      baseCurrency,
+                      currencyDecimals
+                    )}
                   />
                   <Number
                     name="overheadRate"
                     label={t`Overhead Rate (Hourly)`}
                     termId="work-center-overhead-rate"
-                    formatOptions={{
-                      style: "currency",
-                      currency: baseCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.rate(
+                      baseCurrency,
+                      currencyDecimals
+                    )}
                   />
                 </div>
 

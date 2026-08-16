@@ -9,21 +9,10 @@ const coerceBoolean = z.preprocess(
   z.boolean()
 );
 
-const SystemOfRecordSchema = z.enum(["carbon", "accounting"]);
-
 const XeroSettingsSchema = z.object({
   backfillCustomers: coerceBoolean.optional().default(true),
   backfillVendors: coerceBoolean.optional().default(true),
-  backfillItems: coerceBoolean.optional().default(true),
-  // Per-entity system of record settings
-  customerOwner: SystemOfRecordSchema.optional().default("accounting"),
-  vendorOwner: SystemOfRecordSchema.optional().default("accounting"),
-  itemOwner: SystemOfRecordSchema.optional().default("carbon"),
-  invoiceOwner: SystemOfRecordSchema.optional().default("accounting"),
-  billOwner: SystemOfRecordSchema.optional().default("accounting"),
-  // Default account codes for line items
-  defaultSalesAccountCode: z.string().optional(),
-  defaultPurchaseAccountCode: z.string().optional()
+  backfillItems: coerceBoolean.optional().default(true)
 });
 
 export const Xero = defineIntegration({
@@ -37,16 +26,6 @@ export const Xero = defineIntegration({
   shortDescription:
     "Automatically post transactions from sales and purchase invoices.",
   images: [],
-  settingGroups: [
-    {
-      name: "Source of Truth",
-      description: "Which system's data takes priority when there are conflicts"
-    },
-    {
-      name: "Account Mapping",
-      description: "Default accounts for syncing transactions to Xero"
-    }
-  ],
   settings: [
     {
       name: "backfillCustomers",
@@ -74,126 +53,6 @@ export const Xero = defineIntegration({
       type: "switch" as const,
       required: false,
       value: true
-    },
-    {
-      name: "customerOwner",
-      label: "Customers",
-      group: "Source of Truth",
-      type: "options" as const,
-      listOptions: [
-        {
-          value: "accounting",
-          label: "Xero",
-          description: "Xero data overwrites Carbon data"
-        },
-        {
-          value: "carbon",
-          label: "Carbon",
-          description: "Carbon data overwrites Xero data"
-        }
-      ],
-      required: false,
-      value: "accounting"
-    },
-    {
-      name: "vendorOwner",
-      label: "Vendors",
-      group: "Source of Truth",
-      type: "options" as const,
-      listOptions: [
-        {
-          value: "accounting",
-          label: "Xero",
-          description: "Xero data overwrites Carbon data"
-        },
-        {
-          value: "carbon",
-          label: "Carbon",
-          description: "Carbon data overwrites Xero data"
-        }
-      ],
-      required: false,
-      value: "accounting"
-    },
-    {
-      name: "itemOwner",
-      label: "Items",
-      group: "Source of Truth",
-      type: "options" as const,
-      listOptions: [
-        {
-          value: "carbon",
-          label: "Carbon",
-          description: "Carbon data overwrites Xero data"
-        },
-        {
-          value: "accounting",
-          label: "Xero",
-          description: "Xero data overwrites Carbon data"
-        }
-      ],
-      required: false,
-      value: "carbon"
-    },
-    {
-      name: "invoiceOwner",
-      label: "Invoices",
-      group: "Source of Truth",
-      type: "options" as const,
-      listOptions: [
-        {
-          value: "accounting",
-          label: "Xero",
-          description: "Xero data overwrites Carbon data"
-        },
-        {
-          value: "carbon",
-          label: "Carbon",
-          description: "Carbon data overwrites Xero data"
-        }
-      ],
-      required: false,
-      value: "accounting"
-    },
-    {
-      name: "billOwner",
-      label: "Bills",
-      group: "Source of Truth",
-      type: "options" as const,
-      listOptions: [
-        {
-          value: "accounting",
-          label: "Xero",
-          description: "Xero data overwrites Carbon data"
-        },
-        {
-          value: "carbon",
-          label: "Carbon",
-          description: "Carbon data overwrites Xero data"
-        }
-      ],
-      required: false,
-      value: "accounting"
-    },
-    {
-      name: "defaultSalesAccountCode",
-      label: "Default Sales Account",
-      description: "Account code to use for sales invoice line items",
-      group: "Account Mapping",
-      type: "options" as const,
-      listOptions: [], // Populated dynamically from Xero
-      required: true,
-      value: ""
-    },
-    {
-      name: "defaultPurchaseAccountCode",
-      label: "Default Purchase Account",
-      description: "Account code to use for purchase order and bill line items",
-      group: "Account Mapping",
-      type: "options" as const,
-      listOptions: [], // Populated dynamically from Xero
-      required: true,
-      value: ""
     }
   ],
   schema: XeroSettingsSchema,
@@ -201,11 +60,19 @@ export const Xero = defineIntegration({
     authUrl: "https://login.xero.com/identity/connect/authorize",
     clientId: XERO_CLIENT_ID!,
     redirectUri: "/api/integrations/xero/oauth",
+    // Granular scopes (Xero retired the broad `accounting.transactions` scope for
+    // apps created after 2026-03-02; the granular set also works on older apps).
+    // Overshoot the accounting-transaction family so no synced entity 403s:
+    // invoices+bills → invoices, payments → payments, journal entries →
+    // manualjournals, POs/quotes → invoices, chart/tax/items → settings.
     scopes: [
       "offline_access",
       "accounting.contacts",
-      "accounting.transactions",
-      "accounting.settings"
+      "accounting.settings",
+      "accounting.invoices",
+      "accounting.payments",
+      "accounting.banktransactions",
+      "accounting.manualjournals"
     ],
     tokenUrl: "https://login.xero.com/identity/connect/token"
   },

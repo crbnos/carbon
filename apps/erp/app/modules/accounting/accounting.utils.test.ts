@@ -336,7 +336,8 @@ describe("calculateMacrsDepreciation", () => {
         periodEnd: "2025-12-31",
         lastPostedPeriodEnd: null,
         accumulatedTaxDepreciation: 0,
-        bonusAmount: 0
+        bonusAmount: 0,
+        decimalPlaces: 2
       })
     ).toBe(0);
   });
@@ -350,7 +351,8 @@ describe("calculateMacrsDepreciation", () => {
       periodEnd: "2025-12-31",
       lastPostedPeriodEnd: null,
       accumulatedTaxDepreciation: 0,
-      bonusAmount: 0
+      bonusAmount: 0,
+      decimalPlaces: 2
     });
     // Year 1 at 20% of $100k = $20,000
     expect(result).toBe(20000);
@@ -365,7 +367,8 @@ describe("calculateMacrsDepreciation", () => {
       periodEnd: "2025-12-31",
       lastPostedPeriodEnd: null,
       accumulatedTaxDepreciation: 0,
-      bonusAmount: 0
+      bonusAmount: 0,
+      decimalPlaces: 2
     });
     // $468,000 / (39*12) = $1,000/month; 11.5 months for first period
     expect(result).toBeCloseTo(11500, -1);
@@ -380,7 +383,8 @@ describe("calculateMacrsDepreciation", () => {
       periodEnd: "2025-12-31",
       lastPostedPeriodEnd: null,
       accumulatedTaxDepreciation: 9500,
-      bonusAmount: 0
+      bonusAmount: 0,
+      decimalPlaces: 2
     });
     expect(result).toBeLessThanOrEqual(500);
   });
@@ -406,29 +410,29 @@ describe("calculateDepreciation", () => {
     it("calculates monthly depreciation correctly", () => {
       // Cost 120k, residual 10% = 12k, depreciable = 108k, monthly = 1800
       // Jan 1 to Jan 31 = 1 month
-      const result = calculateDepreciation(baseAsset, "2025-01-31", null);
+      const result = calculateDepreciation(baseAsset, "2025-01-31", null, 2);
       expect(result).toBe(1800);
     });
 
     it("calculates multi-month period", () => {
       // 6 months: 1800 * 6 = 10800
-      const result = calculateDepreciation(baseAsset, "2025-06-30", null);
+      const result = calculateDepreciation(baseAsset, "2025-06-30", null, 2);
       expect(result).toBeCloseTo(10800, 0);
     });
 
     it("returns 0 when fully depreciated", () => {
       const fullyDepr = { ...baseAsset, accumulatedDepreciation: 108000 };
-      expect(calculateDepreciation(fullyDepr, "2025-06-30", null)).toBe(0);
+      expect(calculateDepreciation(fullyDepr, "2025-06-30", null, 2)).toBe(0);
     });
 
     it("returns 0 when start date is after period end", () => {
       const futureStart = { ...baseAsset, depreciationStartDate: "2026-01-01" };
-      expect(calculateDepreciation(futureStart, "2025-06-30", null)).toBe(0);
+      expect(calculateDepreciation(futureStart, "2025-06-30", null, 2)).toBe(0);
     });
 
     it("caps at remaining depreciable amount", () => {
       const nearlyDone = { ...baseAsset, accumulatedDepreciation: 107500 };
-      const result = calculateDepreciation(nearlyDone, "2025-06-30", null);
+      const result = calculateDepreciation(nearlyDone, "2025-06-30", null, 2);
       expect(result).toBe(500);
     });
 
@@ -437,7 +441,8 @@ describe("calculateDepreciation", () => {
       const result = calculateDepreciation(
         baseAsset,
         "2025-03-31",
-        "2025-01-31"
+        "2025-01-31",
+        2
       );
       expect(result).toBeCloseTo(1800, 0);
     });
@@ -447,14 +452,14 @@ describe("calculateDepreciation", () => {
     const dbAsset = { ...baseAsset, depreciationMethod: "Declining Balance" };
 
     it("first month produces higher amount than straight line", () => {
-      const slResult = calculateDepreciation(baseAsset, "2025-01-31", null);
-      const dbResult = calculateDepreciation(dbAsset, "2025-01-31", null);
+      const slResult = calculateDepreciation(baseAsset, "2025-01-31", null, 2);
+      const dbResult = calculateDepreciation(dbAsset, "2025-01-31", null, 2);
       expect(dbResult).toBeGreaterThanOrEqual(slResult);
     });
 
     it("returns 0 when fully depreciated", () => {
       const fullyDepr = { ...dbAsset, accumulatedDepreciation: 108000 };
-      expect(calculateDepreciation(fullyDepr, "2025-06-30", null)).toBe(0);
+      expect(calculateDepreciation(fullyDepr, "2025-06-30", null, 2)).toBe(0);
     });
   });
 
@@ -467,20 +472,20 @@ describe("calculateDepreciation", () => {
 
     it("calculates based on units produced", () => {
       // depreciable 108k / 10k units = $10.80/unit, 100 units = $1080
-      const result = calculateDepreciation(uopAsset, "2025-06-30", null, {
+      const result = calculateDepreciation(uopAsset, "2025-06-30", null, 2, {
         unitsProduced: 100
       });
       expect(result).toBe(1080);
     });
 
     it("returns 0 without usage log", () => {
-      expect(calculateDepreciation(uopAsset, "2025-06-30", null)).toBe(0);
+      expect(calculateDepreciation(uopAsset, "2025-06-30", null, 2)).toBe(0);
     });
 
     it("returns 0 with zero lifetime usage", () => {
       const zeroLifetime = { ...uopAsset, assetLifetimeUsage: 0 };
       expect(
-        calculateDepreciation(zeroLifetime, "2025-06-30", null, {
+        calculateDepreciation(zeroLifetime, "2025-06-30", null, 2, {
           unitsProduced: 100
         })
       ).toBe(0);
@@ -489,7 +494,7 @@ describe("calculateDepreciation", () => {
 
   it("returns 0 for unknown method", () => {
     const unknown = { ...baseAsset, depreciationMethod: "SomethingElse" };
-    expect(calculateDepreciation(unknown, "2025-06-30", null)).toBe(0);
+    expect(calculateDepreciation(unknown, "2025-06-30", null, 2)).toBe(0);
   });
 });
 
@@ -513,7 +518,8 @@ describe("calculateTaxDepreciation", () => {
         bonusDepreciationPercent: null
       },
       "2025-12-31",
-      null
+      null,
+      2
     );
     expect(result).toBeNull();
   });
@@ -533,13 +539,23 @@ describe("calculateTaxDepreciation", () => {
     };
 
     it("calculates year-1 MACRS without bonus", () => {
-      const result = calculateTaxDepreciation(macrsAsset, "2025-12-31", null);
+      const result = calculateTaxDepreciation(
+        macrsAsset,
+        "2025-12-31",
+        null,
+        2
+      );
       // 5-year half-year year 1: 20% of $100k = $20,000
       expect(result).toBe(20000);
     });
 
     it("calculates MACRS for a single-month period (how depreciation runs work)", () => {
-      const result = calculateTaxDepreciation(macrsAsset, "2025-05-31", null);
+      const result = calculateTaxDepreciation(
+        macrsAsset,
+        "2025-05-31",
+        null,
+        2
+      );
       expect(result).not.toBeNull();
       expect(result!).toBeGreaterThan(0);
     });
@@ -554,7 +570,8 @@ describe("calculateTaxDepreciation", () => {
           acquisitionDate: "2026-05-24"
         },
         "2026-06-30",
-        "2026-05-31"
+        "2026-05-31",
+        2
       );
       expect(result).not.toBeNull();
       expect(result!).toBeGreaterThan(0);
@@ -565,7 +582,7 @@ describe("calculateTaxDepreciation", () => {
         ...macrsAsset,
         bonusDepreciationPercent: null
       };
-      const result = calculateTaxDepreciation(nullBonus, "2025-12-31", null);
+      const result = calculateTaxDepreciation(nullBonus, "2025-12-31", null, 2);
       expect(result).toBe(20000);
     });
 
@@ -574,7 +591,7 @@ describe("calculateTaxDepreciation", () => {
         ...macrsAsset,
         bonusDepreciationPercent: 60
       };
-      const result = calculateTaxDepreciation(withBonus, "2025-12-31", null);
+      const result = calculateTaxDepreciation(withBonus, "2025-12-31", null, 2);
       // Bonus: 100k * 60% = 60k
       // Adjusted basis: 40k, MACRS year 1: 40k * 20% = 8k
       // Total: 60k + 8k = 68k
@@ -590,7 +607,8 @@ describe("calculateTaxDepreciation", () => {
       const result = calculateTaxDepreciation(
         withBonus,
         "2026-12-31",
-        "2025-12-31"
+        "2025-12-31",
+        2
       );
       // Bonus should NOT be applied again (accumulatedTax > 0)
       // Only MACRS on the $40k adjusted basis
@@ -604,7 +622,7 @@ describe("calculateTaxDepreciation", () => {
         ...macrsAsset,
         bonusDepreciationPercent: 100
       };
-      const result = calculateTaxDepreciation(fullBonus, "2025-12-31", null);
+      const result = calculateTaxDepreciation(fullBonus, "2025-12-31", null, 2);
       // Bonus = 100k, adjusted basis = 0, MACRS on 0 = 0
       // Total = 100k
       expect(result).toBe(100000);
@@ -615,7 +633,7 @@ describe("calculateTaxDepreciation", () => {
         ...macrsAsset,
         macrsPropertyClass: "7"
       };
-      const result = calculateTaxDepreciation(sevenYear, "2025-12-31", null);
+      const result = calculateTaxDepreciation(sevenYear, "2025-12-31", null, 2);
       // 7-year half-year year 1: 14.29% of $100k = $14,290
       expect(result).toBe(14290);
     });
@@ -637,13 +655,18 @@ describe("calculateTaxDepreciation", () => {
 
     it("calculates tax straight-line depreciation", () => {
       // $120k / 120 months = $1k/month; Jan to Dec = 12 months = $12k
-      const result = calculateTaxDepreciation(slTaxAsset, "2025-12-31", null);
+      const result = calculateTaxDepreciation(
+        slTaxAsset,
+        "2025-12-31",
+        null,
+        2
+      );
       expect(result).toBeCloseTo(12000, 0);
     });
 
     it("returns 0 when fully depreciated", () => {
       const fullyDepr = { ...slTaxAsset, accumulatedTaxDepreciation: 120000 };
-      const result = calculateTaxDepreciation(fullyDepr, "2025-12-31", null);
+      const result = calculateTaxDepreciation(fullyDepr, "2025-12-31", null, 2);
       expect(result).toBe(0);
     });
   });
@@ -663,14 +686,19 @@ describe("calculateTaxDepreciation", () => {
     };
 
     it("produces a positive result", () => {
-      const result = calculateTaxDepreciation(dbTaxAsset, "2025-12-31", null);
+      const result = calculateTaxDepreciation(
+        dbTaxAsset,
+        "2025-12-31",
+        null,
+        2
+      );
       expect(result).not.toBeNull();
       expect(result!).toBeGreaterThan(0);
     });
 
     it("returns 0 when fully depreciated", () => {
       const fullyDepr = { ...dbTaxAsset, accumulatedTaxDepreciation: 90000 };
-      const result = calculateTaxDepreciation(fullyDepr, "2025-12-31", null);
+      const result = calculateTaxDepreciation(fullyDepr, "2025-12-31", null, 2);
       expect(result).toBe(0);
     });
   });
@@ -706,7 +734,8 @@ describe("buildDepreciationLines", () => {
       "2025-12-31",
       null,
       true,
-      new Map()
+      new Map(),
+      2
     );
     expect(lines).toHaveLength(1);
     expect(lines[0].amount).toBeGreaterThan(0);
@@ -720,7 +749,8 @@ describe("buildDepreciationLines", () => {
       "2025-12-31",
       null,
       false,
-      new Map()
+      new Map(),
+      2
     );
     expect(lines).toHaveLength(1);
     expect(lines[0].amount).toBeGreaterThan(0);
@@ -738,7 +768,8 @@ describe("buildDepreciationLines", () => {
       "2025-12-31",
       null,
       true,
-      new Map()
+      new Map(),
+      2
     );
     expect(lines).toHaveLength(0);
   });
@@ -754,7 +785,8 @@ describe("buildDepreciationLines", () => {
       "2025-12-31",
       null,
       true,
-      new Map()
+      new Map(),
+      2
     );
     expect(lines).toHaveLength(1);
     expect(lines[0].amount).toBe(0);
@@ -768,7 +800,8 @@ describe("buildDepreciationLines", () => {
       "2025-12-31",
       null,
       true,
-      new Map()
+      new Map(),
+      2
     );
     expect(lines).toHaveLength(2);
   });
@@ -779,7 +812,8 @@ describe("buildDepreciationLines", () => {
       "2025-12-31",
       null,
       true,
-      new Map()
+      new Map(),
+      2
     );
     // Book SL: 108k/60mo * 12mo = $21,600
     // Tax MACRS 5-yr HY: 120k * 20% = $24,000

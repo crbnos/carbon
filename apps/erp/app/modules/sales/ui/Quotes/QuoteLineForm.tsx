@@ -23,7 +23,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { getItemReadableId, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -496,12 +496,8 @@ const QuoteLineForm = ({
                         label={t`Tax Percent`}
                         minValue={0}
                         maxValue={1}
-                        step={0.0001}
-                        formatOptions={{
-                          style: "percent",
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 2
-                        }}
+                        step={INPUT_STEP.percent}
+                        formatOptions={INPUT_FORMAT.percent}
                       />
 
                       <CustomFormFields table="quoteLine" />

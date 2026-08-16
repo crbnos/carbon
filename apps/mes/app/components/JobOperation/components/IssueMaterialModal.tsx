@@ -37,7 +37,7 @@ import {
   TabsTrigger,
   toast
 } from "@carbon/react";
-import { formatDate, getItemReadableId } from "@carbon/utils";
+import { formatDate, getItemReadableId, SCALE_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -130,7 +130,7 @@ export function IssueMaterialModal({
   const { carbon } = useCarbon();
   const { t } = useLingui();
   const [items] = useItems();
-  const numberFormatter = useNumberFormatter({ maximumFractionDigits: 4 });
+  const numberFormatter = useNumberFormatter(SCALE_FORMAT);
 
   // Item selection state
   const [selectedItemId, setSelectedItemId] = useState<string>(
@@ -342,7 +342,9 @@ export function IssueMaterialModal({
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<
     Array<{ index: number; id: string }>
   >(
-    Array(Math.max(1, initialQuantity))
+    // A batch material's quantity can be fractional (4.5 plate x 3 units), and
+    // Array() throws "Invalid array length" on a non-integer.
+    Array(Math.max(1, Math.ceil(initialQuantity)))
       .fill("")
       .map((_, index) => ({ index, id: "" }))
   );

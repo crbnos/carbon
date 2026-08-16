@@ -2,6 +2,7 @@ import type { KyselyTx } from "@carbon/database/client";
 import { type Accounting, BaseEntitySyncer } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
+import type { XeroProvider } from "../provider";
 
 // Type for rows returned from item queries with cost/price joins
 type ItemRow = {
@@ -25,6 +26,10 @@ export class ItemSyncer extends BaseEntitySyncer<
   Xero.Item,
   "UpdatedDateUTC"
 > {
+  private get xeroProvider(): XeroProvider {
+    return this.provider as XeroProvider;
+  }
+
   // =================================================================
   // 1. ID MAPPING - Uses default implementation from BaseEntitySyncer
   // =================================================================
@@ -120,7 +125,7 @@ export class ItemSyncer extends BaseEntitySyncer<
   // =================================================================
 
   async fetchRemote(id: string): Promise<Xero.Item | null> {
-    const result = await this.provider.request<{ Items: Xero.Item[] }>(
+    const result = await this.xeroProvider.request<{ Items: Xero.Item[] }>(
       "GET",
       `/Items/${id}`
     );
@@ -133,7 +138,7 @@ export class ItemSyncer extends BaseEntitySyncer<
     const result = new Map<string, Xero.Item>();
     if (ids.length === 0) return result;
 
-    const response = await this.provider.request<{ Items: Xero.Item[] }>(
+    const response = await this.xeroProvider.request<{ Items: Xero.Item[] }>(
       "GET",
       `/Items?IDs=${ids.join(",")}`
     );
@@ -160,14 +165,16 @@ export class ItemSyncer extends BaseEntitySyncer<
   ): Promise<Omit<Xero.Item, "UpdatedDateUTC">> {
     const existingRemoteId = await this.getRemoteId(local.id);
 
-    return {
+    // Provider items are pushed NON-TRACKED so Xero never books inventory
+    // (on bills) or COGS (on invoices) — per-SKU valuation stays in Carbon
+    // (representation model, spec invariant 4).
+    const base: Omit<Xero.Item, "UpdatedDateUTC" | "IsTrackedAsInventory"> = {
       ItemID: existingRemoteId!,
       Code: local.code.slice(0, 30),
       Name: local.name.slice(0, 50),
       Description: local.description?.slice(0, 4000) ?? undefined,
       IsPurchased: local.isPurchased,
       IsSold: local.isSold,
-      IsTrackedAsInventory: local.isTrackedAsInventory,
       PurchaseDetails: local.isPurchased
         ? { UnitPrice: local.unitCost }
         : undefined,
@@ -175,6 +182,25 @@ export class ItemSyncer extends BaseEntitySyncer<
         ? { UnitPrice: local.unitSalePrice }
         : undefined
     };
+
+    // CREATE: force non-tracked.
+    if (!existingRemoteId) {
+      return { ...base, IsTrackedAsInventory: false };
+    }
+
+    // UPDATE: Xero rejects flipping a tracked item to non-tracked once it has
+    // stock/transactions, so OMIT the field. If the remote item is still
+    // tracked, record a Warning telling the operator to untrack it manually
+    // (zero the stock, untrack in Xero, retry) — the update still proceeds
+    // (name/price sync) so item sync is never blocked.
+    const remote = await this.fetchRemote(existingRemoteId);
+    if (remote?.IsTrackedAsInventory) {
+      console.warn(
+        `[XeroItemSyncer] Xero item ${local.code} (${existingRemoteId}) is still tracked as inventory. Bills/invoices referencing it will post inventory/COGS in Xero, double-counting Carbon's valuation. Zero its stock and untrack it in Xero (Products & Services → the item → untick "I track this item"), then retry.`
+      );
+    }
+
+    return base;
   }
 
   // =================================================================
@@ -284,7 +310,7 @@ export class ItemSyncer extends BaseEntitySyncer<
    */
   private async findRemoteItemByCode(code: string): Promise<string | null> {
     const escapedCode = code.replace(/"/g, '\\"');
-    const result = await this.provider.request<{ Items: Xero.Item[] }>(
+    const result = await this.xeroProvider.request<{ Items: Xero.Item[] }>(
       "GET",
       `/Items?where=Code=="${escapedCode}"`
     );
@@ -316,7 +342,7 @@ export class ItemSyncer extends BaseEntitySyncer<
       ? [{ ...data, ItemID: existingRemoteId }]
       : [data];
 
-    const result = await this.provider.request<{ Items: Xero.Item[] }>(
+    const result = await this.xeroProvider.request<{ Items: Xero.Item[] }>(
       "POST",
       "/Items",
       { body: JSON.stringify({ Items: items }) }
@@ -358,7 +384,7 @@ export class ItemSyncer extends BaseEntitySyncer<
       localIdOrder.push(localId);
     }
 
-    const response = await this.provider.request<{ Items: Xero.Item[] }>(
+    const response = await this.xeroProvider.request<{ Items: Xero.Item[] }>(
       "POST",
       "/Items",
       { body: JSON.stringify({ Items: items }) }

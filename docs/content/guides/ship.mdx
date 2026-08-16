@@ -5,15 +5,15 @@ label: "(V)"
 index: 4
 ---
 
-Building the robot is most of the work, but it isn't the whole job. You still have to prove it was built right, and close the loop with the customer and your books.
+Building the satellite is most of the work, but it isn't the whole job. You still have to prove it was built right, and close the loop with the customer and your books.
 
 ## Raise an issue
 
-Say an operator flags a defect on an arm. You open an Issue, Carbon's name for a <Term id="nonconformance">non-conformance</Term>. It moves through a clear lifecycle, from Registered to In Progress to Closed, and it links to the part itself, so the arm now carries that open issue everywhere it appears in the system.
+Say an operator flags a short in the EPS wiring harness. You open an Issue, Carbon's name for a <Term id="nonconformance">non-conformance</Term>. It moves through a clear lifecycle, from Registered to In Progress to Closed, and it links to the part and the job operation it was found on, so the bus now carries that open issue everywhere it appears in the system.
 
 <Figure illustration="eight-d" caption="An issue moves through its workflow (contain, correct, verify) until the fix is proven." />
 
-<Screenshot label="Quality issue" caption="An issue opened against the arm assembly operation." ratio="wide" />
+<Screenshot src="/screens/ship-quality-issue.png" label="Quality issue" caption="NCR000001, 'EPS wiring harness short detected', opened against J000001's clean room assembly operation." ratio="wide" />
 
 ## Workflows & actions
 
@@ -28,37 +28,37 @@ An issue doesn't just sit there — it runs a workflow you define. A classic <Te
 - Communication: keep the customer in the loop.
 
 <Callout tone="amber" badge="DISPOSITION" title="Held material doesn't move until someone signs off.">
-A review step gates what happens to the non-conforming arms: use as is, <Term>rework</Term>, <Term>scrap</Term>, or return to the supplier. Nothing is dispositioned on a hunch; the decision is recorded against the issue alongside its actions.
+A review step gates what happens to the non-conforming assemblies: use as is, <Term>rework</Term>, <Term>scrap</Term>, or return to the supplier. Nothing is dispositioned on a hunch; the decision is recorded against the issue alongside its actions.
 </Callout>
 
 ## Versioned procedures
 
-Those work instructions the operator followed didn't appear from nowhere. They're generated from versioned procedures, the same Draft / Active / Archived discipline you saw on <Term id="method">methods</Term>. When a corrective action changes how the arm is assembled, you publish a new revision; every future job picks it up, and every job already running keeps the revision it started on.
+Those work instructions the operator followed didn't appear from nowhere. They're generated from versioned procedures, the same Draft / Active / Archived discipline you saw on <Term id="method">methods</Term>. When a corrective action changes how the structural frame is assembled, you publish a new revision; every future job picks it up, and every job already running keeps the revision it started on.
 
 <Callout tone="green" badge="REVISIONS" title="Change the procedure once; the floor follows everywhere.">
-New jobs pick up the latest published version; in-flight jobs never shift mid-build. And every robot's record pins the exact procedure revision it was actually built to.
+New jobs pick up the latest published version; in-flight jobs never shift mid-build. And every satellite's record pins the exact procedure revision it was actually built to.
 </Callout>
 
-<Screenshot label="Procedure version history" caption="A new revision of the arm-assembly procedure, published from the issue's corrective action." ratio="wide" />
+<Screenshot src="/screens/ship-procedure-versions.png" label="Procedure version history" caption="V2 of the Structural Frame Assembly procedure, active, with V1 archived behind it." ratio="wide" />
 
 ## Traceability
 
-Because everything was captured at build time, the <Term>genealogy</Term> of a finished robot is complete. Carbon stores it as a graph of <Term id="tracked-entity">tracked entities</Term> and the activities that link them, so from one serial you can walk backward to every ancestor (which arm, which motor lot, which raw material) or forward to every place a lot was used.
+Because everything was captured at build time, the <Term>genealogy</Term> of a finished satellite is complete. Carbon stores it as a graph of <Term id="tracked-entity">tracked entities</Term> and the activities that link them, so from one serial you can walk backward to every ancestor (which frame, which battery lot, which plate of aluminium) or forward to every place a lot was used.
 
 <Figure illustration="traceability-graph" caption="The genealogy of one finished robot, from serial number down to material lots." />
 
-One click, or one scan of the robot's QR label, answers the question every auditor and every recall asks: what exactly went into this unit, and where else did that lot go?
+One click, or one scan of the satellite's QR label, answers the question every auditor and every recall asks: what exactly went into this unit, and where else did that lot go?
 
-<Screenshot label="Traceability graph" caption="The full as-built genealogy for robot serial #0001." ratio="wide" />
+<Screenshot src="/screens/ship-traceability-graph.png" label="Traceability graph" caption="The full as-built genealogy for SAT-1000 serial SAT1000-SN-0001, down to the aluminium plate and reaction wheels it consumed." ratio="wide" />
 
 ## Ship & invoice
 
-Week one's 30 robots are done. You create a [shipment](/guides/order-to-cash) against the <Term id="sales-order">sales order</Term>. It drafts its lines from what's outstanding, you pick and post it, then <Term id="invoice">invoice</Term> that same 30. Because the order still has units to ship, it stays at "To Ship and Invoice" and simply carries the remaining 60 forward; the line's completed count rolls up as each batch ships.
+The first finished units are ready. You create a [shipment](/guides/order-to-cash) against the <Term id="sales-order">sales order</Term>. It drafts its lines from what's outstanding, and you ship only what's actually built: on SHP000001 the line reads 2 shipped against 3 ordered, so 1 stays outstanding. Post it, then <Term id="invoice">invoice</Term> that same 2. Because the order still has a unit to ship, it stays at "To Ship and Invoice" and simply carries the remainder forward; the line's shipped count rolls up as each batch goes.
 
 Carbon ties the invoice straight into your accounting system, so the build that started at the [sales desk](/guides/quote-to-cash) closes on the books — partial quantity and all.
 
-<Screenshot label="Shipment & invoice" caption="Shipping the first 30 units and invoicing the partial quantity." ratio="wide" />
+<Screenshot src="/screens/ship-partial-shipment.png" label="Partial shipment" caption="Shipping part of the order — SHP000001 sends 2 of the 3 ordered, leaving 1 outstanding, so the order stays open." ratio="wide" />
 
 <Divider />
 
-That's the whole loop: a 90-unit promise became three jobs, a tree of made and bought parts, a forecast-aware plan, traceable work on the floor, a quality save, and a shipped, invoiced, fully-traceable robot. Every entity you saw (methods, kits, policies, operations, issues) has its own page in the Reference when you're ready for the detail.
+That's the whole loop: a 90-unit promise became three jobs, a tree of made and bought parts, a forecast-aware plan, traceable work on the floor, a quality save, and a shipped, invoiced, fully-traceable satellite. Every entity you saw (methods, kits, policies, operations, issues) has its own page in the Reference when you're ready for the detail.
