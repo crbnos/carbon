@@ -361,7 +361,7 @@ function TrainingQuestionItem({
   return (
     <HStack
       className={cn(
-        "group w-full p-2 items-center hover:bg-accent/30 relative border-b bg-card"
+        "group w-full p-2 items-center hover:bg-accent/30 relative border-b bg-background"
       )}
     >
       {!isDisabled && (

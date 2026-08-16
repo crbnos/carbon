@@ -104,7 +104,7 @@ export function ResizablePanels({
         ref={panelRef}
         order={1}
         minSize={10}
-        className="bg-card shadow-lg"
+        className="bg-background shadow-lg"
         collapsible
         defaultSize={isExplorerCollapsed ? 0 : 20}
         collapsedSize={0}
