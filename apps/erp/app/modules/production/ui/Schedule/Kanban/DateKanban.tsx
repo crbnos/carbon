@@ -36,7 +36,7 @@ function usePendingItems() {
   };
   return useFetchers()
     .filter((fetcher): fetcher is PendingItem => {
-      return fetcher.formAction === path.to.scheduleDatesUpdate;
+      return fetcher.formAction === path.to.priorityDatesUpdate;
     })
     .map((fetcher) => {
       const optimisticColumnId = fetcher.formData.get("optimisticColumnId");
@@ -66,7 +66,7 @@ function useDateUpdateFailureToast() {
 
   useEffect(() => {
     for (const fetcher of fetchers) {
-      if (fetcher.formAction !== path.to.scheduleDatesUpdate) continue;
+      if (fetcher.formAction !== path.to.priorityDatesUpdate) continue;
       const key = fetcher.key;
 
       if (fetcher.state === "submitting") {
@@ -218,7 +218,7 @@ const DateKanban = ({
           },
           {
             method: "post",
-            action: path.to.scheduleDatesUpdate,
+            action: path.to.priorityDatesUpdate,
             navigate: false,
             fetcherKey: `job:${activeItem.id}`
           }
@@ -236,7 +236,7 @@ const DateKanban = ({
           },
           {
             method: "post",
-            action: path.to.scheduleDatesUpdate,
+            action: path.to.priorityDatesUpdate,
             navigate: false,
             fetcherKey: `job:${activeItem.id}`
           }
@@ -259,7 +259,7 @@ const DateKanban = ({
           },
           {
             method: "post",
-            action: path.to.scheduleDatesUpdate,
+            action: path.to.priorityDatesUpdate,
             navigate: false,
             fetcherKey: `job:${activeItem.id}`
           }

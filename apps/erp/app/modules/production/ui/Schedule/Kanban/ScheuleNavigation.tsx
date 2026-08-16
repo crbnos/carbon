@@ -29,9 +29,9 @@ export function ScheduleNavigation() {
   const getCurrentView = () => {
     if (location.pathname.includes(path.to.scheduleTimeline()))
       return "timeline";
-    if (location.pathname.includes(path.to.scheduleOperation))
+    if (location.pathname.includes(path.to.priorityOperation))
       return "operations";
-    if (location.pathname.includes(path.to.scheduleDates)) {
+    if (location.pathname.includes(path.to.priorityDates)) {
       if (location.search.includes("view=month")) {
         return "month";
       }
@@ -78,15 +78,15 @@ export function ScheduleNavigation() {
 
     switch (view) {
       case "operations":
-        navigate(path.to.scheduleOperation + "?" + searchParams.toString());
+        navigate(path.to.priorityOperation + "?" + searchParams.toString());
         break;
       case "week":
         searchParams.set("view", "week");
-        navigate(path.to.scheduleDates + "?" + searchParams.toString());
+        navigate(path.to.priorityDates + "?" + searchParams.toString());
         break;
       case "month":
         searchParams.set("view", "month");
-        navigate(path.to.scheduleDates + "?" + searchParams.toString());
+        navigate(path.to.priorityDates + "?" + searchParams.toString());
         break;
       case "timeline":
         navigate(path.to.scheduleTimeline());

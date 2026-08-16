@@ -319,7 +319,7 @@ const PeopleWeekBoard = ({
   const submitIntent = (payload: Record<string, string>) => {
     submit(payload, {
       method: "post",
-      action: path.to.schedulePeopleUpdate,
+      action: path.to.priorityPeopleUpdate,
       navigate: false,
       fetcherKey: `people-week:${payload.employeeId ?? "board"}`
     });

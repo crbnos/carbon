@@ -7,7 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { getProductionProjections } from "~/modules/production";
-import DemandProjectionsTable from "~/modules/production/ui/Projection/DemandProjectionTable";
+import DemandProjectionsTable from "~/modules/production/ui/DemandProjection/DemandProjectionTable";
 import { resolveLocationId } from "~/modules/shared/location.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
@@ -16,7 +16,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: msg`Projections`,
+  breadcrumb: msg`Demand Forecasts`,
   to: path.to.demandProjections
 };
 

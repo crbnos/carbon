@@ -1121,9 +1121,6 @@ msgstr "일치 추가"
 msgid "Add Note"
 msgstr "메모 추가"
 
-msgid "Add notes and documentation for this maintenance dispatch"
-msgstr "이 유지보수 작업지시에 대한 메모와 문서를 추가하세요"
-
 msgid "Add Operation"
 msgstr "공정작업 추가"
 
@@ -1334,6 +1331,9 @@ msgstr "모든 행을 가져왔습니다 — {inserted}개 추가, {updated}개 
 
 msgid "All shifts"
 msgstr "모든 교대"
+
+msgid "All Shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "모든 공급업체"
@@ -2978,9 +2978,6 @@ msgstr "일련번호를 선택하세요"
 
 msgid "Choose another file"
 msgstr "다른 파일을 선택하세요"
-
-msgid "Choose your preferred language for the interface."
-msgstr "인터페이스에 사용할 언어를 선택하세요."
 
 msgid "Choose your style"
 msgstr "스타일을 선택하세요"
@@ -4961,6 +4958,9 @@ msgstr "수요예측 — 기준"
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "수요예측 = 미완료 판매주문, 진행 중인 작업, 생산 예측치를 BOM 전개하여 산출한 수요."
 
+msgid "Demand Forecasts"
+msgstr ""
+
 msgid "Demand projection"
 msgstr "수요 예측"
 
@@ -5795,9 +5795,6 @@ msgstr "직원"
 
 msgid "Empty"
 msgstr "비어있음"
-
-msgid "Empty = all shifts at the location"
-msgstr "비어있음 = 해당 위치의 모든 교대근무"
 
 msgid "Empty = match every item"
 msgstr "비어 있으면 모든 품목과 일치"
@@ -6939,9 +6936,6 @@ msgstr "처분 이익 계정"
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 이익"
 
-msgid "Gantt"
-msgstr "Gantt"
-
 msgid "gauge"
 msgstr "측정기"
 
@@ -7509,9 +7503,6 @@ msgstr "일정에서 벗어난 경우"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "품목 번호를 변경하려면 취소를 클릭하고, 전환하기 전에 각 라인 항목에 대해 품목을 수동으로 지정하세요."
-
-msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr "교대근무 캘린더 무시 — 이 기계는 24시간 무인으로 운영될 수 있습니다."
 
 msgid "II (normal default)"
 msgstr "II(일반 기본값)"
@@ -8401,6 +8392,9 @@ msgstr "라이트"
 msgid "Light Mode"
 msgstr "라이트 모드"
 
+msgid "Lights Out (24×7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "가능성"
 
@@ -8901,6 +8895,9 @@ msgstr "자재 ID"
 
 msgid "Material IDs"
 msgstr "자재 ID"
+
+msgid "Material Planning"
+msgstr ""
 
 msgid "Material Properties"
 msgstr "자재 속성"
@@ -10406,11 +10403,11 @@ msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상�
 msgid "Operating Expenses"
 msgstr "영업비용"
 
+msgid "Operating hours"
+msgstr ""
+
 msgid "Operating Income"
 msgstr "영업이익"
-
-msgid "Operating shifts"
-msgstr "운영 교대근무"
 
 msgid "Operation"
 msgstr "공정작업"
@@ -12343,6 +12340,9 @@ msgstr "NCR을 완료하기 전에 다음을 해결하세요: 모든 행에 대�
 msgid "Resolved Price"
 msgstr "확정 가격"
 
+msgid "Resource Planning"
+msgstr ""
+
 msgid "resources"
 msgstr "리소스"
 
@@ -12617,8 +12617,14 @@ msgstr "실행 중…"
 msgid "Runs"
 msgstr "실행"
 
-msgid "Runs 24×7 (lights-out)"
-msgstr "24×7 실행 (무인 운영)"
+msgid "Runs during every shift at the location."
+msgstr ""
+
+msgid "Runs only during the shifts you select."
+msgstr ""
+
+msgid "Runs unattended around the clock, ignoring shift calendars."
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1(가장 완화된 특별수준)"
@@ -12848,6 +12854,9 @@ msgstr "예정된 유지보수"
 
 msgid "Schedules"
 msgstr "일정"
+
+msgid "Scheduling"
+msgstr ""
 
 msgid "Scheduling conflict"
 msgstr "스케줄링 충돌"
@@ -13621,6 +13630,9 @@ msgstr "{name}(으)로 로그인됨"
 msgid "Signed quantity — negative for outbound movements"
 msgstr "서명된 수량 — 아웃바운드 이동의 경우 음수"
 
+msgid "Simulations"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "사이트 및 위치"
 
@@ -13677,6 +13689,9 @@ msgstr "솔루션 엔지니어"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF에서 추출된 일부 라인을 재고 품목에 자동으로 매핑할 수 없습니다. 아래에서 각 라인을 검토하고 매핑하세요."
+
+msgid "Some Shifts"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "문제가 발생했습니다. 다시 시도해 주세요."
@@ -15260,9 +15275,6 @@ msgstr "이번 회계연도"
 
 msgid "This information will be used on document headers"
 msgstr "이 정보는 문서 헤더에 사용됩니다"
-
-msgid "This information will be visible to all users, so be careful what you share."
-msgstr "이 정보는 모든 사용자에게 표시되므로 공유하는 내용에 유의하세요."
 
 msgid "this inspection plan"
 msgstr "이 검사 계획"

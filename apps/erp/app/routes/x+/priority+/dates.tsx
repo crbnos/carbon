@@ -63,8 +63,8 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "dates");
 
 export const handle: Handle = {
-  breadcrumb: msg`Priority`,
-  to: path.to.scheduleDates,
+  breadcrumb: msg`Priorities`,
+  to: path.to.priorityDates,
   module: "production"
 };
 
@@ -163,7 +163,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (jobs.error) {
     logger.error(jobs.error);
     throw redirect(
-      path.to.scheduleOperation,
+      path.to.priorityOperation,
       await flash(request, error(jobs.error, "Failed to fetch jobs"))
     );
   }
@@ -171,7 +171,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (unscheduledJobs.error) {
     logger.error(unscheduledJobs.error);
     throw redirect(
-      path.to.scheduleOperation,
+      path.to.priorityOperation,
       await flash(
         request,
         error(unscheduledJobs.error, "Failed to fetch unscheduled jobs")
@@ -811,7 +811,7 @@ function DateKanbanSchedule() {
                       const newParams = new URLSearchParams(searchParams);
                       newParams.set("location", selected);
                       window.location.href = `${
-                        path.to.scheduleDates
+                        path.to.priorityDates
                       }?${newParams.toString()}`;
                     }}
                   />

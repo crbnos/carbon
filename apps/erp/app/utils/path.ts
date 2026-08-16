@@ -623,7 +623,7 @@ export const path = {
       generatePath(`${x}/settings/custom-fields/${tableId}/delete/${id}`),
     deleteDemandProjections: (itemId: string, locationId: string) =>
       generatePath(
-        `${x}/production/projections/delete/${itemId}/${locationId}`
+        `${x}/production/demand-forecasts/delete/${itemId}/${locationId}`
       ),
     deleteDepartment: (id: string) =>
       generatePath(`${x}/people/departments/delete/${id}`),
@@ -850,8 +850,8 @@ export const path = {
     deleteWorkCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/delete/${id}`),
     demandProjection: (itemId: string, locationId: string) =>
-      generatePath(`${x}/production/projections/${itemId}/${locationId}`),
-    demandProjections: `${x}/production/projections`,
+      generatePath(`${x}/production/demand-forecasts/${itemId}/${locationId}`),
+    demandProjections: `${x}/production/demand-forecasts`,
     department: (id: string) => generatePath(`${x}/people/departments/${id}`),
     departments: `${x}/people/departments`,
     depreciationRun: (id: string) =>
@@ -1443,7 +1443,7 @@ export const path = {
     newCustomerType: `${x}/sales/customer-types/new`,
     newCustomField: (tableId: string) =>
       generatePath(`${x}/settings/custom-fields/${tableId}/new`),
-    newDemandProjection: `${x}/production/projections/new`,
+    newDemandProjection: `${x}/production/demand-forecasts/new`,
     newDepartment: `${x}/people/departments/new`,
     newDepreciationRun: `${x}/accounting/depreciation-runs/new`,
     newDimension: `${x}/accounting/dimensions/new`,
@@ -1693,6 +1693,12 @@ export const path = {
     pricingRule: (id: string) => generatePath(`${x}/sales/pricing-rules/${id}`),
     printingSettings: `${x}/settings/printing`,
     printingSettingsJobs: `${x}/settings/printing/jobs`,
+    priorityDates: `${x}/priority/dates`,
+    priorityDatesUpdate: `${x}/priority/dates/update`,
+    priorityOperation: `${x}/priority/operations`,
+    priorityOperationUpdate: `${x}/priority/operations/update`,
+    priorityPeople: `${x}/priority/people`,
+    priorityPeopleUpdate: `${x}/priority/people/update`,
     procedure: (id: string) => generatePath(`${x}/procedure/${id}`),
     procedureParameter: (id: string, parameterId: string) =>
       generatePath(`${x}/procedure/${id}/parameters/${parameterId}`),
@@ -1956,13 +1962,7 @@ export const path = {
     saveViewOrder: `${x}/shared/view/order`,
 
     saveViews: `${x}/shared/views`,
-    scheduleDates: `${x}/schedule/dates`,
-    scheduleDatesUpdate: `${x}/schedule/dates/update`,
     scheduleGantt: `${x}/scheduling/gantt`,
-    scheduleOperation: `${x}/schedule/operations`,
-    scheduleOperationUpdate: `${x}/schedule/operations/update`,
-    schedulePeople: `${x}/schedule/people`,
-    schedulePeopleUpdate: `${x}/schedule/people/update`,
     scheduleTimeline: (jobId?: string) =>
       jobId
         ? `${x}/scheduling/timeline?jobId=${jobId}`

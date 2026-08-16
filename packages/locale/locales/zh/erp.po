@@ -1121,9 +1121,6 @@ msgstr "添加匹配"
 msgid "Add Note"
 msgstr "添加备注"
 
-msgid "Add notes and documentation for this maintenance dispatch"
-msgstr "为此维护调度添加备注和文档"
-
 msgid "Add Operation"
 msgstr "添加操作"
 
@@ -1334,6 +1331,9 @@ msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
 
 msgid "All shifts"
 msgstr "所有班次"
+
+msgid "All Shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "所有供应商"
@@ -2978,9 +2978,6 @@ msgstr "选择序列号"
 
 msgid "Choose another file"
 msgstr "选择另一个文件"
-
-msgid "Choose your preferred language for the interface."
-msgstr "选择您偏好的界面语言。"
 
 msgid "Choose your style"
 msgstr "选择您的风格"
@@ -4961,6 +4958,9 @@ msgstr "需求预测 — 驱动因素"
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "需求预测 = 来自未结销售订单、活跃工作和生产预测的物料清单展开需求。"
 
+msgid "Demand Forecasts"
+msgstr ""
+
 msgid "Demand projection"
 msgstr "需求预测"
 
@@ -5795,9 +5795,6 @@ msgstr "员工"
 
 msgid "Empty"
 msgstr "空"
-
-msgid "Empty = all shifts at the location"
-msgstr "空 = 该位置的所有班次"
 
 msgid "Empty = match every item"
 msgstr "空 = 匹配每个项目"
@@ -6939,9 +6936,6 @@ msgstr "处置获利账户"
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的获利"
 
-msgid "Gantt"
-msgstr "甘特"
-
 msgid "gauge"
 msgstr "规格"
 
@@ -7509,9 +7503,6 @@ msgstr "如果有什么偏离轨道"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "如果您希望更改零件号，请点击\"取消\"并在转换前为每个行项目手动分配零件。"
-
-msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr "忽略班次日历——此机器可全天无人值守运行。"
 
 msgid "II (normal default)"
 msgstr "II（正常默认值）"
@@ -8401,6 +8392,9 @@ msgstr "浅色"
 msgid "Light Mode"
 msgstr "浅色模式"
 
+msgid "Lights Out (24×7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "可能性"
 
@@ -8901,6 +8895,9 @@ msgstr "物料ID"
 
 msgid "Material IDs"
 msgstr "物料ID"
+
+msgid "Material Planning"
+msgstr ""
 
 msgid "Material Properties"
 msgstr "材料属性"
@@ -10406,11 +10403,11 @@ msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（
 msgid "Operating Expenses"
 msgstr "运营费用"
 
+msgid "Operating hours"
+msgstr ""
+
 msgid "Operating Income"
 msgstr "营业收入"
-
-msgid "Operating shifts"
-msgstr "运营班次"
 
 msgid "Operation"
 msgstr "操作"
@@ -12343,6 +12340,9 @@ msgstr "在完成NCR之前解决这些问题：每一行必须有一个非待处
 msgid "Resolved Price"
 msgstr "已解决价格"
 
+msgid "Resource Planning"
+msgstr ""
+
 msgid "resources"
 msgstr "资源"
 
@@ -12617,8 +12617,14 @@ msgstr "运行中…"
 msgid "Runs"
 msgstr "运行"
 
-msgid "Runs 24×7 (lights-out)"
-msgstr "24×7 运行（无人值守）"
+msgid "Runs during every shift at the location."
+msgstr ""
+
+msgid "Runs only during the shifts you select."
+msgstr ""
+
+msgid "Runs unattended around the clock, ignoring shift calendars."
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最粗特殊）"
@@ -12848,6 +12854,9 @@ msgstr "定时维护"
 
 msgid "Schedules"
 msgstr "日程"
+
+msgid "Scheduling"
+msgstr ""
 
 msgid "Scheduling conflict"
 msgstr "计划冲突"
@@ -13621,6 +13630,9 @@ msgstr "以 {name} 身份登录"
 msgid "Signed quantity — negative for outbound movements"
 msgstr "有符号数量 — 出站移动为负"
 
+msgid "Simulations"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "站点和位置"
 
@@ -13677,6 +13689,9 @@ msgstr "解决方案工程师"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "从PDF提取的某些行无法自动映射到您的库存项目。请查看并映射下面的每一行。"
+
+msgid "Some Shifts"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "出现问题。请重试。"
@@ -15260,9 +15275,6 @@ msgstr "本财政年度"
 
 msgid "This information will be used on document headers"
 msgstr "此信息将用于文档标题"
-
-msgid "This information will be visible to all users, so be careful what you share."
-msgstr "此信息将对所有用户可见，请谨慎分享。"
 
 msgid "this inspection plan"
 msgstr "这个检验计划"

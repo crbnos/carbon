@@ -10,7 +10,7 @@ import {
   getDemandProjections,
   upsertDemandProjections
 } from "~/modules/production/production.service";
-import DemandProjectionsForm from "~/modules/production/ui/Projection/DemandProjectionForm";
+import DemandProjectionsForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";

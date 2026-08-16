@@ -224,7 +224,7 @@ export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
       },
       {
         method: "post",
-        action: path.to.scheduleDatesUpdate,
+        action: path.to.priorityDatesUpdate,
         navigate: false,
         fetcherKey: `job:${item.id}`
       }

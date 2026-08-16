@@ -1121,9 +1121,6 @@ msgstr "Eşleştirme ekle"
 msgid "Add Note"
 msgstr "Not Ekle"
 
-msgid "Add notes and documentation for this maintenance dispatch"
-msgstr "Bu bakım sevkiyatı için notlar ve dokümantasyon ekleyin"
-
 msgid "Add Operation"
 msgstr "İşlem Ekle"
 
@@ -1334,6 +1331,9 @@ msgstr "{inserted} eklendi, {updated} güncellendi — tüm satırlar içe aktar
 
 msgid "All shifts"
 msgstr "Tüm vardiyalar"
+
+msgid "All Shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Tüm Tedarikçiler"
@@ -2978,9 +2978,6 @@ msgstr "Bir seri numarası seçin"
 
 msgid "Choose another file"
 msgstr "Başka bir dosya seç"
-
-msgid "Choose your preferred language for the interface."
-msgstr "Arayüz için tercih ettiğiniz dili seçin."
 
 msgid "Choose your style"
 msgstr "Stilini seçin"
@@ -4961,6 +4958,9 @@ msgstr "Talep Tahmini — Kaynaklanan"
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "Talep tahmini = Açık satış siparişlerinden, aktif işlerden ve üretim projeksiyonlarından BOM'u açılmış talep."
 
+msgid "Demand Forecasts"
+msgstr ""
+
 msgid "Demand projection"
 msgstr "Talep Tahmini"
 
@@ -5795,9 +5795,6 @@ msgstr "Çalışanlar"
 
 msgid "Empty"
 msgstr "Boş"
-
-msgid "Empty = all shifts at the location"
-msgstr "Boş = konumdaki tüm vardiyalar"
 
 msgid "Empty = match every item"
 msgstr "Boş = tüm öğeleri eşleştir"
@@ -6939,9 +6936,6 @@ msgstr "Elden Çıkarmada Kar Hesabı"
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Sabit varlıkların elden çıkarılmasında muhasebeleştirilen karlar"
 
-msgid "Gantt"
-msgstr "Gantt"
-
 msgid "gauge"
 msgstr "Ölçüler"
 
@@ -7509,9 +7503,6 @@ msgstr "Bir şey yolunda değilse"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Parça numaralarını değiştirmek isterseniz, lütfen iptal'e tıklayın ve dönüştürmeden önce her bir satır öğesi için parçaları manuel olarak atayın."
-
-msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr "Vardiya takvimlerini yoksay — bu makine 24/7 gözetimsiz çalışabilir."
 
 msgid "II (normal default)"
 msgstr "II (normal varsayılan)"
@@ -8401,6 +8392,9 @@ msgstr "Aydınlık"
 msgid "Light Mode"
 msgstr "Aydınlık Mod"
 
+msgid "Lights Out (24×7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "Olasılık"
 
@@ -8901,6 +8895,9 @@ msgstr "Malzeme Kimliği"
 
 msgid "Material IDs"
 msgstr "Malzeme Kimlikleri"
+
+msgid "Material Planning"
+msgstr ""
 
 msgid "Material Properties"
 msgstr "Malzeme Özellikleri"
@@ -10406,11 +10403,11 @@ msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortism
 msgid "Operating Expenses"
 msgstr "İşletme Giderleri"
 
+msgid "Operating hours"
+msgstr ""
+
 msgid "Operating Income"
 msgstr "İşletme Geliri"
-
-msgid "Operating shifts"
-msgstr "Çalışma vardiyaları"
 
 msgid "Operation"
 msgstr "Operasyon"
@@ -12343,6 +12340,9 @@ msgstr "Bu NC'yi tamamlamadan önce bunları çözün: her satırın Geçici Olm
 msgid "Resolved Price"
 msgstr "Belirlenmiş Fiyat"
 
+msgid "Resource Planning"
+msgstr ""
+
 msgid "resources"
 msgstr "kaynaklar"
 
@@ -12617,8 +12617,14 @@ msgstr "Çalışıyor…"
 msgid "Runs"
 msgstr "Çalışmalar"
 
-msgid "Runs 24×7 (lights-out)"
-msgstr "24×7 çalışır (ışıksız)"
+msgid "Runs during every shift at the location."
+msgstr ""
+
+msgid "Runs only during the shifts you select."
+msgstr ""
+
+msgid "Runs unattended around the clock, ignoring shift calendars."
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (en kalın özel)"
@@ -12848,6 +12854,9 @@ msgstr "Planlanmış Bakımlar"
 
 msgid "Schedules"
 msgstr "Programlar"
+
+msgid "Scheduling"
+msgstr ""
 
 msgid "Scheduling conflict"
 msgstr "Zamanlama Çakışması"
@@ -13621,6 +13630,9 @@ msgstr "Oturum açıldı olarak {name}"
 msgid "Signed quantity — negative for outbound movements"
 msgstr "İmzalı miktar — giden hareketler için negatif"
 
+msgid "Simulations"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "Siteler & konumlar"
 
@@ -13677,6 +13689,9 @@ msgstr "Çözüm Mühendisi"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF'den çıkarılan bazı satırlar envanter öğelerinize otomatik olarak eşleştirilemedi. Aşağıdaki her satırı gözden geçirin ve eşleştirin."
+
+msgid "Some Shifts"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Bir şeyler ters gitti. Lütfen tekrar deneyin."
@@ -15260,9 +15275,6 @@ msgstr "Bu Mali Yıl"
 
 msgid "This information will be used on document headers"
 msgstr "Bu bilgiler belge başlıklarında kullanılacaktır"
-
-msgid "This information will be visible to all users, so be careful what you share."
-msgstr "Bu bilgiler tüm kullanıcılar tarafından görülecektir, bu yüzden ne paylaştığınıza dikkat edin."
 
 msgid "this inspection plan"
 msgstr "bu muayene planı"

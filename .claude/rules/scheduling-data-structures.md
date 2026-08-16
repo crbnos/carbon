@@ -1,7 +1,7 @@
 ---
 paths:
   - "packages/database/supabase/functions/lib/scheduling/**"
-  - "apps/erp/app/routes/x+/schedule+/**"
+  - "apps/erp/app/routes/x+/priority+/**"
   - "apps/mes/app/routes/x+/operations.tsx"
   - "packages/database/supabase/migrations/*schedul*.sql"
 ---
@@ -37,7 +37,7 @@ first match.
   determinism + envelope suites. `date-utils.toIsoDate`
   normalizes pg DATE columns (JS Date at local midnight) to "YYYY-MM-DD" —
   required before any lexicographic date comparison (operator expiry).
-- **ERP authoring boards** (`apps/erp/app/routes/x+/schedule+/`): `operations.tsx`
+- **ERP authoring boards** (`apps/erp/app/routes/x+/priority+/`): `operations.tsx`
   (ops Kanban; drag → `operations.update.tsx` writes `jobOperation.workCenterId` +
   `priority`, no reschedule — the board header carries a tooltip: *"Reorders dispatch
   sequence and work center only — does not reschedule. Change dates on the Dates board."*)
@@ -264,7 +264,7 @@ the ERP card).
 Newest: `20260720121629_capacity-planning.sql` (PL/pgSQL `RETURNS TABLE`,
 **not a view**). TS wrapper `getJobsByDateRange` in
 `apps/erp/app/modules/production/production.service.ts`, consumed by
-`apps/erp/app/routes/x+/schedule+/dates.tsx` loader. Filters jobs with non-null `dueDate`
+`apps/erp/app/routes/x+/priority+/dates.tsx` loader. Filters jobs with non-null `dueDate`
 in range and `status != 'Cancelled'`, ordered by `dueDate`. Returns **27 cols**:
 `id, jobId, status, dueDate, completedDate, deadlineType, customerId, customerName,
 salesOrderReadableId, salesOrderId, salesOrderLineId, itemId, itemReadableId,

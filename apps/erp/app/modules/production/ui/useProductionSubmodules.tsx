@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { IoBalloonOutline } from "react-icons/io5";
 import {
+  LuChartBarBig,
   LuChartLine,
   LuCirclePlay,
   LuListChecks,
@@ -8,8 +9,7 @@ import {
   LuSquareChartGantt,
   LuSquareKanban,
   LuStepForward,
-  LuTrash,
-  LuUsers
+  LuTrash
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
@@ -33,34 +33,39 @@ export default function useProductionSubmodules() {
       ]
     },
     {
-      name: t`Plan`,
+      name: t`Planning`,
       routes: [
         {
-          name: t`Planning`,
-          to: path.to.productionPlanning,
-          icon: <LuListTodo />,
-          table: "production-planning"
-        },
-        {
-          name: t`Projections`,
+          name: t`Demand Forecasts`,
           to: path.to.demandProjections,
           icon: <LuChartLine />,
           table: "demand-projection"
         },
         {
-          name: t`Priority`,
-          to: path.to.scheduleDates,
+          name: t`Material Planning`,
+          to: path.to.productionPlanning,
+          icon: <LuListTodo />,
+          table: "production-planning"
+        },
+        {
+          name: t`Resource Planning`,
+          to: path.to.priorityPeople,
+          icon: <LuChartBarBig />
+        }
+      ]
+    },
+    {
+      name: t`Scheduling`,
+      routes: [
+        {
+          name: t`Priorities`,
+          to: path.to.priorityDates,
           icon: <LuSquareKanban />
         },
         {
-          name: t`Gantt`,
+          name: t`Simulations`,
           to: path.to.scheduleGantt,
           icon: <LuSquareChartGantt />
-        },
-        {
-          name: t`People`,
-          to: path.to.schedulePeople,
-          icon: <LuUsers />
         }
       ]
     },

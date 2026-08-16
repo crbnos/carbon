@@ -1121,9 +1121,6 @@ msgstr "マッチを追加"
 msgid "Add Note"
 msgstr "ノートを追加"
 
-msgid "Add notes and documentation for this maintenance dispatch"
-msgstr "このメンテナンスディスパッチのメモとドキュメントを追加"
-
 msgid "Add Operation"
 msgstr "操作を追加"
 
@@ -1334,6 +1331,9 @@ msgstr "すべての行をインポート—{inserted}行挿入、{updated}行�
 
 msgid "All shifts"
 msgstr "すべてのシフト"
+
+msgid "All Shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "すべてのサプライヤー"
@@ -2978,9 +2978,6 @@ msgstr "シリアル番号を選択"
 
 msgid "Choose another file"
 msgstr "別のファイルを選択"
-
-msgid "Choose your preferred language for the interface."
-msgstr "インターフェースの言語を選択してください。"
 
 msgid "Choose your style"
 msgstr "あなたのスタイルを選択"
@@ -4961,6 +4958,9 @@ msgstr "需要予測 — 駆動元"
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "需要予測 = BOM展開需要（オープン販売注文、アクティブなジョブ、および生産予測から）"
 
+msgid "Demand Forecasts"
+msgstr ""
+
 msgid "Demand projection"
 msgstr "需要予測"
 
@@ -5795,9 +5795,6 @@ msgstr "従業員"
 
 msgid "Empty"
 msgstr "空"
-
-msgid "Empty = all shifts at the location"
-msgstr "空 = その場所のすべてのシフト"
 
 msgid "Empty = match every item"
 msgstr "空 = すべてのアイテムに一致"
@@ -6939,9 +6936,6 @@ msgstr "処分益勘定科目"
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定資産の処分により認識された利益"
 
-msgid "Gantt"
-msgstr "ガント"
-
 msgid "gauge"
 msgstr "ゲージ"
 
@@ -7509,9 +7503,6 @@ msgstr "何か問題が生じた場合"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "部品番号を変更したい場合は、[キャンセル]をクリックして、変換する前に各行アイテムの部品を手動で割り当ててください。"
-
-msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr "シフトカレンダーを無視 — このマシンは24時間無人で稼働できます。"
 
 msgid "II (normal default)"
 msgstr "II（通常デフォルト）"
@@ -8401,6 +8392,9 @@ msgstr "ライト"
 msgid "Light Mode"
 msgstr "ライトモード"
 
+msgid "Lights Out (24×7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "可能性"
 
@@ -8901,6 +8895,9 @@ msgstr "材料ID"
 
 msgid "Material IDs"
 msgstr "材料ID"
+
+msgid "Material Planning"
+msgstr ""
 
 msgid "Material Properties"
 msgstr "材料特性"
@@ -10406,11 +10403,11 @@ msgstr "このアセットがCarbonに追加される前に既に予約されて
 msgid "Operating Expenses"
 msgstr "営業費"
 
+msgid "Operating hours"
+msgstr ""
+
 msgid "Operating Income"
 msgstr "営業利益"
-
-msgid "Operating shifts"
-msgstr "稼働シフト"
 
 msgid "Operation"
 msgstr "操作"
@@ -12343,6 +12340,9 @@ msgstr "NCRを完了する前にこれらを解決してください。すべて
 msgid "Resolved Price"
 msgstr "解決済み価格"
 
+msgid "Resource Planning"
+msgstr ""
+
 msgid "resources"
 msgstr "リソース"
 
@@ -12617,8 +12617,14 @@ msgstr "実行中…"
 msgid "Runs"
 msgstr "実行"
 
-msgid "Runs 24×7 (lights-out)"
-msgstr "24×7稼働（無人）"
+msgid "Runs during every shift at the location."
+msgstr ""
+
+msgid "Runs only during the shifts you select."
+msgstr ""
+
+msgid "Runs unattended around the clock, ignoring shift calendars."
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最も粗い特殊）"
@@ -12848,6 +12854,9 @@ msgstr "定期メンテナンス"
 
 msgid "Schedules"
 msgstr "スケジュール"
+
+msgid "Scheduling"
+msgstr ""
 
 msgid "Scheduling conflict"
 msgstr "スケジュール競合"
@@ -13621,6 +13630,9 @@ msgstr "{name}としてサインインしています"
 msgid "Signed quantity — negative for outbound movements"
 msgstr "署名された数量 — アウトバウンド移動の場合は負数"
 
+msgid "Simulations"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "サイトと場所"
 
@@ -13677,6 +13689,9 @@ msgstr "ソリューションズエンジニア"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDFから抽出された一部の行は、在庫アイテムに自動的にマップできませんでした。以下の各行を確認してマップしてください。"
+
+msgid "Some Shifts"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度お試しください。"
@@ -15260,9 +15275,6 @@ msgstr "この会計年度"
 
 msgid "This information will be used on document headers"
 msgstr "この情報はドキュメントヘッダーで使用されます"
-
-msgid "This information will be visible to all users, so be careful what you share."
-msgstr "この情報はすべてのユーザーに表示されるため、共有する内容に注意してください。"
 
 msgid "this inspection plan"
 msgstr "この検査計画"

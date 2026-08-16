@@ -4,7 +4,6 @@ import type { JSONContent } from "@carbon/react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   DropdownMenu,
@@ -102,11 +101,6 @@ export function MaintenanceDispatchNotes({
         <CardTitle>
           <Trans>Notes</Trans>
         </CardTitle>
-        <CardDescription>
-          <Trans>
-            Add notes and documentation for this maintenance dispatch
-          </Trans>
-        </CardDescription>
       </CardHeader>
 
       <CardContent>

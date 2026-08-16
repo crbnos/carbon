@@ -653,7 +653,7 @@ const PlanningTable = memo(
             </div>
           }
           renderActions={renderActions}
-          title={t`Planning`}
+          title={t`Material Planning`}
           table="planning"
           withSavedView
           withSelectableRows

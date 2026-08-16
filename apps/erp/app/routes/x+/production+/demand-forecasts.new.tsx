@@ -8,7 +8,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
 import { upsertDemandProjections } from "~/modules/production/production.service";
-import DemandProjectionForm from "~/modules/production/ui/Projection/DemandProjectionForm";
+import DemandProjectionForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";

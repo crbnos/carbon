@@ -57,7 +57,7 @@ export function TimeOffDialog({
         <ValidatedForm
           validator={peopleAbsenceRangeValidator}
           method="post"
-          action={path.to.schedulePeopleUpdate}
+          action={path.to.priorityPeopleUpdate}
           fetcher={fetcher}
           defaultValues={{
             employeeId: "",

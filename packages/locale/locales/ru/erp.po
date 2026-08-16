@@ -1121,9 +1121,6 @@ msgstr "Добавить совпадение"
 msgid "Add Note"
 msgstr "Добавить примечание"
 
-msgid "Add notes and documentation for this maintenance dispatch"
-msgstr "Добавьте заметки и документацию для этого наряда на техническое обслуживание"
-
 msgid "Add Operation"
 msgstr "Добавить операцию"
 
@@ -1334,6 +1331,9 @@ msgstr "Все строки импортированы — {inserted} встав
 
 msgid "All shifts"
 msgstr "Все смены"
+
+msgid "All Shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Все поставщики"
@@ -2978,9 +2978,6 @@ msgstr "Выберите серийный номер"
 
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
-
-msgid "Choose your preferred language for the interface."
-msgstr "Выберите предпочитаемый язык для интерфейса."
 
 msgid "Choose your style"
 msgstr "Выберите свой стиль"
@@ -4961,6 +4958,9 @@ msgstr "Прогноз спроса — Обусловлено"
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "Прогноз спроса = спрос, разложенный по BOM, из открытых заказов на продажу, активных работ и прогнозов производства."
 
+msgid "Demand Forecasts"
+msgstr ""
+
 msgid "Demand projection"
 msgstr "Прогноз спроса"
 
@@ -5795,9 +5795,6 @@ msgstr "Сотрудники"
 
 msgid "Empty"
 msgstr "Пусто"
-
-msgid "Empty = all shifts at the location"
-msgstr "Пусто = все смены в этом месте"
 
 msgid "Empty = match every item"
 msgstr "Пусто = соответствует каждому товару"
@@ -6939,9 +6936,6 @@ msgstr "Счёт прибыли от выбытия"
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Прибыль, признаваемая при выбытии основных средств"
 
-msgid "Gantt"
-msgstr "Gantt"
-
 msgid "gauge"
 msgstr "Калибры"
 
@@ -7509,9 +7503,6 @@ msgstr "Если что-то идет не по плану"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Если вы хотите изменить номера деталей, нажмите Отмена и вручную назначьте детали для каждого элемента строки перед преобразованием."
-
-msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr "Игнорировать календари смен — эта машина может работать без присмотра круглосуточно."
 
 msgid "II (normal default)"
 msgstr "II (обычно по умолчанию)"
@@ -8401,6 +8392,9 @@ msgstr "Светлая"
 msgid "Light Mode"
 msgstr "Светлый режим"
 
+msgid "Lights Out (24×7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "Вероятность"
 
@@ -8901,6 +8895,9 @@ msgstr "ID материала"
 
 msgid "Material IDs"
 msgstr "Идентификаторы материалов"
+
+msgid "Material Planning"
+msgstr ""
 
 msgid "Material Properties"
 msgstr "Свойства материалов"
@@ -10406,11 +10403,11 @@ msgstr "Начальный баланс амортизации, уже учте�
 msgid "Operating Expenses"
 msgstr "Операционные расходы"
 
+msgid "Operating hours"
+msgstr ""
+
 msgid "Operating Income"
 msgstr "Операционный доход"
-
-msgid "Operating shifts"
-msgstr "Рабочие смены"
 
 msgid "Operation"
 msgstr "Операция"
@@ -12343,6 +12340,9 @@ msgstr "Разрешите эти проблемы перед завершени
 msgid "Resolved Price"
 msgstr "Разрешённая цена"
 
+msgid "Resource Planning"
+msgstr ""
+
 msgid "resources"
 msgstr "ресурсы"
 
@@ -12617,8 +12617,14 @@ msgstr "Выполняется…"
 msgid "Runs"
 msgstr "Запуски"
 
-msgid "Runs 24×7 (lights-out)"
-msgstr "Работает 24×7 (без присмотра)"
+msgid "Runs during every shift at the location."
+msgstr ""
+
+msgid "Runs only during the shifts you select."
+msgstr ""
+
+msgid "Runs unattended around the clock, ignoring shift calendars."
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (самый грубый специальный)"
@@ -12848,6 +12854,9 @@ msgstr "Запланированное техническое обслужива
 
 msgid "Schedules"
 msgstr "Расписания"
+
+msgid "Scheduling"
+msgstr ""
 
 msgid "Scheduling conflict"
 msgstr "Конфликт расписания"
@@ -13621,6 +13630,9 @@ msgstr "Вы вошли как {name}"
 msgid "Signed quantity — negative for outbound movements"
 msgstr "Подписанное количество — отрицательное для исходящих движений"
 
+msgid "Simulations"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "Объекты и местоположения"
 
@@ -13677,6 +13689,9 @@ msgstr "Инженер решений"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Некоторые строки, извлеченные из PDF, не удалось автоматически сопоставить с элементами вашего инвентаря. Проверьте и сопоставьте каждую строку ниже."
+
+msgid "Some Shifts"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."
@@ -15260,9 +15275,6 @@ msgstr "Этот финансовый год"
 
 msgid "This information will be used on document headers"
 msgstr "Эта информация будет использована в заголовках документов"
-
-msgid "This information will be visible to all users, so be careful what you share."
-msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
 
 msgid "this inspection plan"
 msgstr "этот план проверки"

@@ -37,7 +37,7 @@ import {
 } from "~/utils/resizable-panels";
 
 export const handle: Handle = {
-  breadcrumb: msg`Gantt`,
+  breadcrumb: msg`Simulations`,
   to: path.to.scheduleGantt,
   module: "production"
 };

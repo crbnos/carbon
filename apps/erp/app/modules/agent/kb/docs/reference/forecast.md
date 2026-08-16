@@ -10,17 +10,17 @@ You enter projections under **Production → Projections**, one part at a time, 
 
 A projection lives on the `demandProjection` table, keyed by item, location, and a weekly `period` — one row per part / location / week with a `forecastQuantity` (`packages/database/supabase/migrations/20251020183630_mrp-projections.sql:3-25`). The `period` table is a shared, company-agnostic set of dated week buckets (`startDate`, `endDate`, `periodType`); Carbon creates them on demand as `getOrCreatePeriods` walks forward from today (`packages/database/supabase/migrations/20250610000433_demand-planning.sql:26-34`).
 
-Only **make parts** carry projections. The item picker on the form is fixed to `type="Part"` with `replenishmentSystem="Make"` (`apps/erp/app/modules/production/ui/Projection/DemandProjectionForm.tsx:195-202`), so you project the things you build. Their purchased components inherit demand through the BOM explosion, not through their own projection.
+Only **make parts** carry projections. The item picker on the form is fixed to `type="Part"` with `replenishmentSystem="Make"` (`apps/erp/app/modules/production/ui/DemandProjection/DemandProjectionForm.tsx:195-202`), so you project the things you build. Their purchased components inherit demand through the BOM explosion, not through their own projection.
 
 Two tables look alike. `demandProjection` is your input — the numbers you type. `demandForecast` is planning's output — the exploded, per-component demand the MRP run writes back (`forecastMethod` = `"mrp"`). You never edit `demandForecast` by hand; it's rebuilt on every run (`packages/database/supabase/functions/mrp/index.ts:781-819`). The Projections screen only ever touches `demandProjection`.
 
 ## How you enter one
 
-The form is a drawer with a part, a location, and 52 numeric week cells grouped into four quarter tabs, plus a live bar-and-line chart of weekly and cumulative demand (`apps/erp/app/modules/production/ui/Projection/DemandProjectionForm.tsx:264-304`). Week 1 starts at the current week; each cell is labelled with its calendar date.
+The form is a drawer with a part, a location, and 52 numeric week cells grouped into four quarter tabs, plus a live bar-and-line chart of weekly and cumulative demand (`apps/erp/app/modules/production/ui/DemandProjection/DemandProjectionForm.tsx:264-304`). Week 1 starts at the current week; each cell is labelled with its calendar date.
 
-On save, the action pairs each `week{i}` value with the matching `period` id and upserts the rows (`apps/erp/app/routes/x+/production+/projections.new.tsx:50-78`). A cell you set to zero is deleted rather than stored, so the grid stays sparse (`apps/erp/app/modules/production/production.service.ts:3780-3829`). Editing a part reloads its existing rows back into the grid; deleting a part's projections clears every future week for that item and location (`apps/erp/app/routes/x+/production+/projections.delete.$itemId.$locationId.tsx:30-40`).
+On save, the action pairs each `week{i}` value with the matching `period` id and upserts the rows (`apps/erp/app/routes/x+/production+/demand-forecasts.new.tsx:50-78`). A cell you set to zero is deleted rather than stored, so the grid stays sparse (`apps/erp/app/modules/production/production.service.ts:3780-3829`). Editing a part reloads its existing rows back into the grid; deleting a part's projections clears every future week for that item and location (`apps/erp/app/routes/x+/production+/demand-forecasts.delete.$itemId.$locationId.tsx:30-40`).
 
-The grid spans 52 weeks (`WEEKS_TO_PROJECT = 12 * 4`, `apps/erp/app/routes/x+/production+/projections.tsx:23`). The list view pivots the per-period rows back into week columns for scanning, labelling the first as "Present Week" (`apps/erp/app/modules/production/ui/Projection/DemandProjectionTable.tsx:60-103`). Creating, editing, and deleting projections all require the `production` permission.
+The grid spans 52 weeks (`WEEKS_TO_PROJECT = 12 * 4`, `apps/erp/app/routes/x+/production+/demand-forecasts.tsx:23`). The list view pivots the per-period rows back into week columns for scanning, labelling the first as "Present Week" (`apps/erp/app/modules/production/ui/DemandProjection/DemandProjectionTable.tsx:60-103`). Creating, editing, and deleting projections all require the `production` permission.
 
 ## How planning consumes it
 

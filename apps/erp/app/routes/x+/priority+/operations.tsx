@@ -68,7 +68,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Schedule`,
-  to: path.to.scheduleOperation,
+  to: path.to.priorityOperation,
   module: "schedule"
 };
 
@@ -824,5 +824,5 @@ function useProgressByOperation(
 }
 
 function getLocationPath(locationId: string) {
-  return `${path.to.scheduleOperation}?location=${locationId}`;
+  return `${path.to.priorityOperation}?location=${locationId}`;
 }

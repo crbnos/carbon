@@ -1121,9 +1121,6 @@ msgstr "मिलान जोड़ें"
 msgid "Add Note"
 msgstr "नोट जोड़ें"
 
-msgid "Add notes and documentation for this maintenance dispatch"
-msgstr "इस रखरखाव डिस्पैच के लिए नोट्स और दस्तावेज़ जोड़ें"
-
 msgid "Add Operation"
 msgstr "ऑपरेशन जोड़ें"
 
@@ -1334,6 +1331,9 @@ msgstr "सभी पंक्तियाँ आयात की गईं — 
 
 msgid "All shifts"
 msgstr "सभी शिफ्ट"
+
+msgid "All Shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "सभी आपूर्तिकर्ता"
@@ -2978,9 +2978,6 @@ msgstr "एक सीरियल नंबर चुनें"
 
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
-
-msgid "Choose your preferred language for the interface."
-msgstr "अपनी पसंद की भाषा इंटरफेस के लिए चुनें।"
 
 msgid "Choose your style"
 msgstr "अपनी शैली चुनें"
@@ -4961,6 +4958,9 @@ msgstr "मांग पूर्वानुमान — द्वारा �
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "मांग पूर्वानुमान = खुले बिक्रय आदेशों, सक्रिय कार्यों और उत्पादन प्रक्षेपणों से BOM-विस्फोटित मांग।"
 
+msgid "Demand Forecasts"
+msgstr ""
+
 msgid "Demand projection"
 msgstr "मांग प्रक्षेपण"
 
@@ -5795,9 +5795,6 @@ msgstr "कर्मचारी"
 
 msgid "Empty"
 msgstr "खाली"
-
-msgid "Empty = all shifts at the location"
-msgstr "खाली = स्थान पर सभी पारियाँ"
 
 msgid "Empty = match every item"
 msgstr "खाली = हर आइटम से मेल खाएं"
@@ -6939,9 +6936,6 @@ msgstr "निपटान पर लाभ खाता"
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "स्थिर संपत्तियों के निपटान पर मान्यता प्राप्त लाभ"
 
-msgid "Gantt"
-msgstr "Gantt"
-
 msgid "gauge"
 msgstr "गेज"
 
@@ -7509,9 +7503,6 @@ msgstr "अगर कुछ गलत रास्ते पर है"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "यदि आप भाग संख्याओं को बदलना चाहते हैं, तो कृपया Cancel पर क्लिक करें और रूपांतरण से पहले प्रत्येक लाइन आइटम के लिए भागों को मैन्युअल रूप से असाइन करें।"
-
-msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr "शिफ्ट कैलेंडर को अनदेखा करें — यह मशीन दिन रात बिना निगरानी के चल सकती है।"
 
 msgid "II (normal default)"
 msgstr "II (सामान्य डिफ़ॉल्ट)"
@@ -8401,6 +8392,9 @@ msgstr "हल्का"
 msgid "Light Mode"
 msgstr "लाइट मोड"
 
+msgid "Lights Out (24×7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "संभावना"
 
@@ -8901,6 +8895,9 @@ msgstr "सामग्री ID"
 
 msgid "Material IDs"
 msgstr "सामग्री आईडी"
+
+msgid "Material Planning"
+msgstr ""
 
 msgid "Material Properties"
 msgstr "सामग्री गुण"
@@ -10406,11 +10403,11 @@ msgstr "अवक्षयण का खाता खोलने के सं�
 msgid "Operating Expenses"
 msgstr "परिचालन व्यय"
 
+msgid "Operating hours"
+msgstr ""
+
 msgid "Operating Income"
 msgstr "परिचालन आय"
-
-msgid "Operating shifts"
-msgstr "कार्य पारियाँ"
 
 msgid "Operation"
 msgstr "ऑपरेशन"
@@ -12343,6 +12340,9 @@ msgstr "इसे NCR पूरा करने से पहले हल क�
 msgid "Resolved Price"
 msgstr "समाधान की गई कीमत"
 
+msgid "Resource Planning"
+msgstr ""
+
 msgid "resources"
 msgstr "संसाधन"
 
@@ -12617,8 +12617,14 @@ msgstr "चल रहा है…"
 msgid "Runs"
 msgstr "रन"
 
-msgid "Runs 24×7 (lights-out)"
-msgstr "24×7 चलता है (रोशनी बंद)"
+msgid "Runs during every shift at the location."
+msgstr ""
+
+msgid "Runs only during the shifts you select."
+msgstr ""
+
+msgid "Runs unattended around the clock, ignoring shift calendars."
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (सबसे मोटे विशेष)"
@@ -12848,6 +12854,9 @@ msgstr "अनुसूचित रखरखाव"
 
 msgid "Schedules"
 msgstr "शेड्यूल"
+
+msgid "Scheduling"
+msgstr ""
 
 msgid "Scheduling conflict"
 msgstr "शेड्यूलिंग संघर्ष"
@@ -13621,6 +13630,9 @@ msgstr "{name} के रूप में साइन इन किया ग�
 msgid "Signed quantity — negative for outbound movements"
 msgstr "हस्ताक्षरित मात्रा — बाहरी आंदोलनों के लिए नकारात्मक"
 
+msgid "Simulations"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "साइटें और स्थान"
 
@@ -13677,6 +13689,9 @@ msgstr "समाधान इंजीनियर"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF से निकाली गई कुछ पंक्तियों को आपकी इन्वेंटरी आइटम्स से स्वचालित रूप से मैप नहीं किया जा सका। नीचे प्रत्येक पंक्ति की समीक्षा करें और मैप करें।"
+
+msgid "Some Shifts"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"
@@ -15260,9 +15275,6 @@ msgstr "यह वित्तीय वर्ष"
 
 msgid "This information will be used on document headers"
 msgstr "यह जानकारी दस्तावेज़ शीर्षलेख पर उपयोग की जाएगी"
-
-msgid "This information will be visible to all users, so be careful what you share."
-msgstr "यह जानकारी सभी उपयोगकर्ताओं को दिखाई देगी, इसलिए सावधान रहें कि आप क्या साझा करते हैं।"
 
 msgid "this inspection plan"
 msgstr "इस निरीक्षण योजना"

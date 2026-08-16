@@ -1121,9 +1121,6 @@ msgstr "Aggiungi corrispondenza"
 msgid "Add Note"
 msgstr "Aggiungi Nota"
 
-msgid "Add notes and documentation for this maintenance dispatch"
-msgstr "Aggiungi note e documentazione per questo ordine di manutenzione"
-
 msgid "Add Operation"
 msgstr "Aggiungi Operazione"
 
@@ -1334,6 +1331,9 @@ msgstr "Tutte le righe importate — {inserted} inserite, {updated} aggiornate."
 
 msgid "All shifts"
 msgstr "Tutti i turni"
+
+msgid "All Shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Tutti i fornitori"
@@ -2978,9 +2978,6 @@ msgstr "Scegli un numero di serie"
 
 msgid "Choose another file"
 msgstr "Scegli un altro file"
-
-msgid "Choose your preferred language for the interface."
-msgstr "Scegli la tua lingua preferita per l'interfaccia."
 
 msgid "Choose your style"
 msgstr "Scegli il tuo stile"
@@ -4961,6 +4958,9 @@ msgstr "Previsione della domanda — Guidata da"
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "Previsione della domanda = domanda esplosa da BOM da ordini di vendita aperti, lavori attivi e proiezioni di produzione."
 
+msgid "Demand Forecasts"
+msgstr ""
+
 msgid "Demand projection"
 msgstr "Proiezione della domanda"
 
@@ -5795,9 +5795,6 @@ msgstr "Dipendenti"
 
 msgid "Empty"
 msgstr "Vuoto"
-
-msgid "Empty = all shifts at the location"
-msgstr "Vuoto = tutti i turni nella posizione"
 
 msgid "Empty = match every item"
 msgstr "Vuoto = corrisponde a ogni articolo"
@@ -6939,9 +6936,6 @@ msgstr "Conto Guadagno sulla Dismissione"
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Guadagni riconosciuti sulla dismissione dei cespiti"
 
-msgid "Gantt"
-msgstr "Gantt"
-
 msgid "gauge"
 msgstr "Calibri"
 
@@ -7509,9 +7503,6 @@ msgstr "Se qualcosa non è in linea"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Se desideri modificare i numeri di parte, fai clic su Annulla e assegna manualmente le parti per ogni elemento di riga prima della conversione."
-
-msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr "Ignora i calendari dei turni — questa macchina può funzionare incustodita 24 ore su 24."
 
 msgid "II (normal default)"
 msgstr "II (normale predefinito)"
@@ -8401,6 +8392,9 @@ msgstr "Chiaro"
 msgid "Light Mode"
 msgstr "Modalità Chiara"
 
+msgid "Lights Out (24×7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "Probabilità"
 
@@ -8901,6 +8895,9 @@ msgstr "ID Materiale"
 
 msgid "Material IDs"
 msgstr "ID Materiali"
+
+msgid "Material Planning"
+msgstr ""
 
 msgid "Material Properties"
 msgstr "Proprietà dei Materiali"
@@ -10406,11 +10403,11 @@ msgstr "Saldo di apertura dell'ammortamento già contabilizzato prima dell'aggiu
 msgid "Operating Expenses"
 msgstr "Spese Operative"
 
+msgid "Operating hours"
+msgstr ""
+
 msgid "Operating Income"
 msgstr "Utile operativo"
-
-msgid "Operating shifts"
-msgstr "Turni operativi"
 
 msgid "Operation"
 msgstr "Operazione"
@@ -12343,6 +12340,9 @@ msgstr "Risolvi questi prima di completare l'NCR: ogni riga deve avere una dispo
 msgid "Resolved Price"
 msgstr "Prezzo Risolto"
 
+msgid "Resource Planning"
+msgstr ""
+
 msgid "resources"
 msgstr "risorse"
 
@@ -12617,8 +12617,14 @@ msgstr "In esecuzione..."
 msgid "Runs"
 msgstr "Esecuzioni"
 
-msgid "Runs 24×7 (lights-out)"
-msgstr "Funziona 24×7 (luci spente)"
+msgid "Runs during every shift at the location."
+msgstr ""
+
+msgid "Runs only during the shifts you select."
+msgstr ""
+
+msgid "Runs unattended around the clock, ignoring shift calendars."
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (speciale più grossolano)"
@@ -12848,6 +12854,9 @@ msgstr "Manutenzioni Programmate"
 
 msgid "Schedules"
 msgstr "Pianificazioni"
+
+msgid "Scheduling"
+msgstr ""
 
 msgid "Scheduling conflict"
 msgstr "Conflitto di programmazione"
@@ -13621,6 +13630,9 @@ msgstr "Accesso effettuato come {name}"
 msgid "Signed quantity — negative for outbound movements"
 msgstr "Quantità firmata — negativa per i movimenti in uscita"
 
+msgid "Simulations"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "Siti e ubicazioni"
 
@@ -13677,6 +13689,9 @@ msgstr "Solutions Engineer"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Alcune righe estratte dal PDF non potevano essere mappate automaticamente ai tuoi articoli di inventario. Rivedi e mappa ogni riga di seguito."
+
+msgid "Some Shifts"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Qualcosa è andato storto. Riprova."
@@ -15260,9 +15275,6 @@ msgstr "Questo Anno Fiscale"
 
 msgid "This information will be used on document headers"
 msgstr "Queste informazioni verranno utilizzate nelle intestazioni dei documenti"
-
-msgid "This information will be visible to all users, so be careful what you share."
-msgstr "Queste informazioni saranno visibili a tutti gli utenti, quindi fai attenzione a ciò che condividi."
 
 msgid "this inspection plan"
 msgstr "questo piano di ispezione"

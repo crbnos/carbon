@@ -114,7 +114,7 @@ export function OvertimeDialog({
       },
       {
         method: "post",
-        action: path.to.schedulePeopleUpdate,
+        action: path.to.priorityPeopleUpdate,
         navigate: false,
         fetcherKey: "people:overtime-bulk"
       }

@@ -139,7 +139,7 @@ export function PeopleHeader({
   const submitIntent = (payload: Record<string, string>, fetcherKey: string) =>
     submit(payload, {
       method: "post",
-      action: path.to.schedulePeopleUpdate,
+      action: path.to.priorityPeopleUpdate,
       navigate: false,
       fetcherKey
     });
@@ -197,7 +197,7 @@ export function PeopleHeader({
               if (!selected) return;
               const newParams = new URLSearchParams(searchParams);
               newParams.set("location", selected);
-              window.location.href = `${path.to.schedulePeople}?${newParams.toString()}`;
+              window.location.href = `${path.to.priorityPeople}?${newParams.toString()}`;
             }}
           />
           {departments.length > 0 && (

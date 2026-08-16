@@ -1121,9 +1121,6 @@ msgstr "Übereinstimmung hinzufügen"
 msgid "Add Note"
 msgstr "Notiz hinzufügen"
 
-msgid "Add notes and documentation for this maintenance dispatch"
-msgstr "Notizen und Dokumentation für diesen Wartungseinsatz hinzufügen"
-
 msgid "Add Operation"
 msgstr "Operation hinzufügen"
 
@@ -1334,6 +1331,9 @@ msgstr "Alle Zeilen importiert — {inserted} eingefügt, {updated} aktualisiert
 
 msgid "All shifts"
 msgstr "Alle Schichten"
+
+msgid "All Shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Alle Lieferanten"
@@ -2978,9 +2978,6 @@ msgstr "Wählen Sie eine Seriennummer"
 
 msgid "Choose another file"
 msgstr "Wählen Sie eine andere Datei"
-
-msgid "Choose your preferred language for the interface."
-msgstr "Wählen Sie Ihre bevorzugte Sprache für die Benutzeroberfläche."
 
 msgid "Choose your style"
 msgstr "Wählen Sie Ihren Stil"
@@ -4961,6 +4958,9 @@ msgstr "Nachfragevorhersage — Angetrieben durch"
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "Bedarfsprognose = BOM-explodierter Bedarf aus offenen Verkaufsaufträgen, aktiven Aufträgen und Produktionsprognosen."
 
+msgid "Demand Forecasts"
+msgstr ""
+
 msgid "Demand projection"
 msgstr "Bedarfsprognose"
 
@@ -5795,9 +5795,6 @@ msgstr "Mitarbeiter"
 
 msgid "Empty"
 msgstr "Leer"
-
-msgid "Empty = all shifts at the location"
-msgstr "Leer = alle Schichten am Standort"
 
 msgid "Empty = match every item"
 msgstr "Leer = alle Artikel abgleichen"
@@ -6939,9 +6936,6 @@ msgstr "Konto für Gewinn aus Veräußerung"
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Bei der Veräußerung von Anlagevermögen erfasste Gewinne"
 
-msgid "Gantt"
-msgstr "Gantt"
-
 msgid "gauge"
 msgstr "Spurweiten"
 
@@ -7509,9 +7503,6 @@ msgstr "Wenn etwas aus dem Ruder läuft"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Wenn Sie die Teilenummern ändern möchten, klicken Sie bitte auf Abbrechen und weisen Sie die Teile für jedes Zeilenelement manuell zu, bevor Sie konvertieren."
-
-msgid "Ignore shift calendars — this machine can run unattended around the clock."
-msgstr "Schichtkalender ignorieren — diese Maschine kann rund um die Uhr unbeaufsichtigt laufen."
 
 msgid "II (normal default)"
 msgstr "II (normalstandard)"
@@ -8401,6 +8392,9 @@ msgstr "Hell"
 msgid "Light Mode"
 msgstr "Hellmodus"
 
+msgid "Lights Out (24×7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "Wahrscheinlichkeit"
 
@@ -8901,6 +8895,9 @@ msgstr "Material-ID"
 
 msgid "Material IDs"
 msgstr "Material-IDs"
+
+msgid "Material Planning"
+msgstr ""
 
 msgid "Material Properties"
 msgstr "Materialeigenschaften"
@@ -10406,11 +10403,11 @@ msgstr "Eröffnungssaldo der bereits vor dem Hinzufügen dieses Vermögenswerts 
 msgid "Operating Expenses"
 msgstr "Betriebsausgaben"
 
+msgid "Operating hours"
+msgstr ""
+
 msgid "Operating Income"
 msgstr "Betriebseinkommen"
-
-msgid "Operating shifts"
-msgstr "Betriebsschichten"
 
 msgid "Operation"
 msgstr "Betrieb"
@@ -12343,6 +12340,9 @@ msgstr "Beheben Sie diese vor Abschluss des NCR: Jede Zeile muss eine nicht auss
 msgid "Resolved Price"
 msgstr "Aufgelöster Preis"
 
+msgid "Resource Planning"
+msgstr ""
+
 msgid "resources"
 msgstr "Ressourcen"
 
@@ -12617,8 +12617,14 @@ msgstr "Wird ausgeführt…"
 msgid "Runs"
 msgstr "Ausführungen"
 
-msgid "Runs 24×7 (lights-out)"
-msgstr "Läuft 24×7 (unbeaufsichtigt)"
+msgid "Runs during every shift at the location."
+msgstr ""
+
+msgid "Runs only during the shifts you select."
+msgstr ""
+
+msgid "Runs unattended around the clock, ignoring shift calendars."
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (gröbstes Spezial)"
@@ -12848,6 +12854,9 @@ msgstr "Geplante Wartungen"
 
 msgid "Schedules"
 msgstr "Zeitpläne"
+
+msgid "Scheduling"
+msgstr ""
 
 msgid "Scheduling conflict"
 msgstr "Planungskonflikt"
@@ -13621,6 +13630,9 @@ msgstr "Angemeldet als {name}"
 msgid "Signed quantity — negative for outbound movements"
 msgstr "Signierte Menge – negativ für ausgehende Bewegungen"
 
+msgid "Simulations"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "Standorte & Lagerorte"
 
@@ -13677,6 +13689,9 @@ msgstr "Lösungsingenieur"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Einige aus dem PDF extrahierte Zeilen konnten nicht automatisch Ihren Bestandsartikeln zugeordnet werden. Überprüfen und ordnen Sie jede Zeile unten zu."
+
+msgid "Some Shifts"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut."
@@ -15260,9 +15275,6 @@ msgstr "Dieses Geschäftsjahr"
 
 msgid "This information will be used on document headers"
 msgstr "Diese Informationen werden in Dokumentkopfzeilen verwendet"
-
-msgid "This information will be visible to all users, so be careful what you share."
-msgstr "Diese Informationen sind für alle Benutzer sichtbar, daher seien Sie vorsichtig, was Sie teilen."
 
 msgid "this inspection plan"
 msgstr "dieser Inspektionsplan"

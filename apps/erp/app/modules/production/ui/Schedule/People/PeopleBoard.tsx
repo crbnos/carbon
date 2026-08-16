@@ -84,7 +84,7 @@ function usePendingMoves() {
   return useFetchers()
     .filter((fetcher): fetcher is PendingFetcher => {
       return (
-        fetcher.formAction === path.to.schedulePeopleUpdate &&
+        fetcher.formAction === path.to.priorityPeopleUpdate &&
         fetcher.formData != null &&
         ["assign", "unassign"].includes(String(fetcher.formData.get("intent")))
       );
@@ -358,7 +358,7 @@ const PeopleBoard = ({
   const submitIntent = (payload: Record<string, string>) => {
     submit(payload, {
       method: "post",
-      action: path.to.schedulePeopleUpdate,
+      action: path.to.priorityPeopleUpdate,
       navigate: false,
       fetcherKey: `people:${payload.employeeId ?? payload.id ?? "board"}`
     });
