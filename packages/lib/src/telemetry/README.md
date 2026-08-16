@@ -51,10 +51,10 @@ states are real occurrences, pass the state as the `discriminator` —
 `purchase_order_finalized` (`gated` / `committed`) and `picking_list_completed`
 (`Partial` / `Completed`) both do.
 
-Still collapsing by design, and worth labelling that way on a dashboard: a quote
-revised and re-sent, a receipt voided and re-posted, an order reopened and
-re-confirmed. Each counts once. Read these tiles as "documents that ever reached
-this state", never as "times someone did this".
+Three sequences still collapse by design, and their tiles should be labelled
+accordingly: a quote revised and re-sent, a receipt voided and re-posted, an
+order reopened and re-confirmed. Each counts once. Read those tiles as
+"documents that ever reached this state", never as "times someone did this".
 
 ## What it does not cover
 

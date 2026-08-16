@@ -208,5 +208,10 @@ export type {
   WorkModule,
   WorkSource
 } from "./events";
-export { WORK_EVENT_MODULE, WORK_EVENT_NAMES } from "./events";
+export {
+  asJobSource,
+  JOB_SOURCES,
+  WORK_EVENT_MODULE,
+  WORK_EVENT_NAMES
+} from "./events";
 export { workEventId } from "./idempotency";

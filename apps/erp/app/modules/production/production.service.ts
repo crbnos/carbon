@@ -3,7 +3,7 @@ import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import type { JobSource } from "@carbon/lib/telemetry";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
+import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -2958,7 +2958,9 @@ export async function insertJob(
     locationId: locationId ?? null,
     salesOrderLineId: input.salesOrderLineId ?? null,
     deadlineType,
-    source: options?.source ?? "unknown"
+    // Narrowed, not trusted: this arrives from an MCP caller as an untyped
+    // schema field, so TypeScript is not a guard on it.
+    source: asJobSource(options?.source)
   });
 
   if (!options?.skipMethod) {

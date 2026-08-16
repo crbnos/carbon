@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { asJobSource, JOB_SOURCES } from "./events";
 import { __testing, workEventId } from "./idempotency";
 
 describe("workEventId", () => {
@@ -77,5 +78,36 @@ describe("workEventId", () => {
         "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
       )
     ).toBe("74738ff5-5367-5958-9aee-98fffdcd1876");
+  });
+});
+
+describe("asJobSource", () => {
+  it("passes a real source through", () => {
+    expect(asJobSource("kanban")).toBe("kanban");
+  });
+
+  // insertJob is an MCP tool and the generated schema types this field as {},
+  // so an agent can send anything. Without narrowing it lands in the analytics
+  // enum permanently.
+  it("narrows anything else to unknown", () => {
+    for (const bad of ["banana", "", null, undefined, 7, {}, ["erp"]]) {
+      expect(asJobSource(bad)).toBe("unknown");
+    }
+  });
+
+  it("keeps the runtime list and the type in step", () => {
+    // A source added to the union but not the array would silently narrow to
+    // "unknown" at runtime; deriving the type from the array makes that
+    // impossible, and this pins the array itself.
+    expect([...JOB_SOURCES]).toEqual([
+      "erp",
+      "bulk",
+      "mrp",
+      "salesOrder",
+      "kanban",
+      "api",
+      "workflow",
+      "unknown"
+    ]);
   });
 });

@@ -51,14 +51,14 @@ export type WorkSource = "erp" | "mes" | "mes_qr" | "api" | "portal";
  * caller has to say. The distinction is the difference between a shop planning
  * its work and a shop reacting to one.
  */
-export type JobSource =
-  | "erp"
-  | "bulk"
-  | "mrp"
-  | "salesOrder"
-  | "kanban"
-  | "api"
-  | "workflow"
+export const JOB_SOURCES = [
+  "erp",
+  "bulk",
+  "mrp",
+  "salesOrder",
+  "kanban",
+  "api",
+  "workflow",
   /**
    * The caller did not say. Reaching `insertJob` without a source is normal —
    * the MCP tool and the workflow engine both dispatch `production_insertJob`
@@ -66,7 +66,25 @@ export type JobSource =
    * nowhere to put one. Defaulting those to `erp` would report automation as
    * human work, which is the single thing this field exists to separate.
    */
-  | "unknown";
+  "unknown"
+] as const;
+
+export type JobSource = (typeof JOB_SOURCES)[number];
+
+/**
+ * Narrow an untrusted value to a `JobSource`, falling back to `unknown`.
+ *
+ * `insertJob` is reachable as an MCP tool, and the generated tool schema types
+ * this parameter as `{}` — the generator resolves inline unions but not an
+ * imported alias — so nothing between a caller and the event enforces the set.
+ * TypeScript is not a runtime guard here: without this, an agent passing
+ * `source: "banana"` would put "banana" in the analytics enum permanently.
+ */
+export function asJobSource(value: unknown): JobSource {
+  return JOB_SOURCES.includes(value as JobSource)
+    ? (value as JobSource)
+    : "unknown";
+}
 
 type Base = {
   companyId: string;
