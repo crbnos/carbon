@@ -1225,9 +1225,17 @@ serve(async (req: Request) => {
 
           // Create intercompany transaction record if IC
           if (accountingEnabled && isIntercompany && intercompanyPartnerId) {
-            const icJournalLineId = journalLineResults.length > 0
-              ? journalLineResults[0].id
-              : null;
+            // Reference the IC receivable line (not [0], which is the revenue line)
+            // so generateEliminationEntries reverses the Inter-Company Receivables
+            // control account and clears it against the buyer's IC Payables.
+            // journalLineInserts is inserted 1:1 into journalLineResults.
+            const icReceivableIdx = journalLineInserts.findIndex(
+              (line) => line.accountId === receivablesAccountId
+            );
+            const icJournalLineId =
+              (icReceivableIdx >= 0
+                ? journalLineResults[icReceivableIdx]?.id
+                : journalLineResults[0]?.id) ?? null;
 
             await trx
               .insertInto("intercompanyTransaction")
