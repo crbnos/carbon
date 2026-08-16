@@ -168,7 +168,7 @@ const WorkCenterForm = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
                   <Number
                     name="laborRate"
-                    label={t`Labor Rate (Hourly)`}
+                    label={t`Labor Rate`}
                     termId="work-center-labor-rate"
                     formatOptions={INPUT_FORMAT.rate(
                       baseCurrency,
@@ -177,7 +177,7 @@ const WorkCenterForm = ({
                   />
                   <Number
                     name="machineRate"
-                    label={t`Machine Rate (Hourly)`}
+                    label={t`Machine Rate`}
                     termId="work-center-machine-rate"
                     formatOptions={INPUT_FORMAT.rate(
                       baseCurrency,
@@ -186,7 +186,7 @@ const WorkCenterForm = ({
                   />
                   <Number
                     name="overheadRate"
-                    label={t`Overhead Rate (Hourly)`}
+                    label={t`Overhead Rate`}
                     termId="work-center-overhead-rate"
                     formatOptions={INPUT_FORMAT.rate(
                       baseCurrency,
