@@ -2065,10 +2065,11 @@ serve(async (req: Request) => {
         const icPayableIdx = journalLineInserts.findIndex(
           (line) => line.accountId === payablesAccountId
         );
+        // If no payable line was posted, leave this null so the guard below skips
+        // the insert: referencing another line (asset/expense) would make
+        // elimination reverse the wrong account and leave the control balance.
         const icJournalLineId =
-          (icPayableIdx >= 0
-            ? journalLineResults[icPayableIdx]?.id
-            : journalLineResults[0]?.id) ?? null;
+          icPayableIdx >= 0 ? journalLineResults[icPayableIdx]?.id ?? null : null;
         if (
           isIntercompany &&
           intercompanyPartnerId &&

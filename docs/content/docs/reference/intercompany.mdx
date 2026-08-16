@@ -14,9 +14,9 @@ An intercompany transaction records that one company in the group owes or is owe
 A customer or supplier counts as a sibling when it is linked to another company in the group. Carbon creates those links the moment a company joins the group, so a normal invoice between two group members is intercompany without any extra flagging.
 
 - Posting an **intercompany sales invoice** books the receivable to the group's **Inter-Company Receivables** control account instead of regular AR, and records a transaction from the seller to the buyer for the invoice's pre-tax total.
-- Posting an **intercompany purchase invoice** books the payable to the **Inter-Company Payables** control account instead of regular AP, and records the mirror transaction from the buyer to the seller.
+- Posting an **intercompany purchase invoice** books the payable to the **Inter-Company Payables** control account instead of regular AP, and records the mirror transaction from the buyer to the seller for the invoice's pre-tax total.
 
-Both control accounts come from the group's accounting defaults, so every company posts against the same two accounts. A company that hasn't configured them falls back to its regular receivables or payables account.
+Both control accounts come from the group's accounting defaults, so members that have them configured post against the same two accounts. A company that hasn't configured them falls back to its regular receivables or payables account.
 
 <Callout type="note" title="The invoice posting is the source of truth">
 The transaction is a byproduct of posting the invoice, not a separate step. The receivable or payable is already on the ledger the moment the invoice posts. The transaction record just remembers which sibling it was with, so matching and elimination can find the pair later.
@@ -58,7 +58,7 @@ Matching pairs the two sides. It does **not** post anything new or touch either 
 
 Matching sets the stage. **Elimination** is what actually removes the double-count for consolidated reporting. It, too, is a manual sweep: **Generate Eliminations** processes every **Matched** pair in the group.
 
-For each matched pair, Carbon posts a single **elimination journal** that reverses the intercompany control-account entries on both sides. It sweeps every line the seller's invoice posted to **Inter-Company Receivables** and every line the buyer's invoice posted to **Inter-Company Payables**, then books the sign-reversed amounts. Because it reverses the actual ledger lines for the whole document, a multi-line invoice is cleared in full, not just its first line, and both control accounts clear to their exact balance with no rounding residual. The seller's receivable and the buyer's payable are equal and opposite, so the elimination journal balances. Each reciprocal pair is processed once.
+For each matched pair, Carbon posts a single **elimination journal** that reverses the intercompany control-account entries on both sides. Each transaction points at one control line; from it, Carbon takes that line's account and document and reverses every line the same invoice posted to that account — the seller's **Inter-Company Receivables** and the buyer's **Inter-Company Payables** — booking the sign-reversed amounts. Because it reverses the actual ledger lines for the whole document, a multi-line invoice is cleared in full, not just its first line, and both control accounts clear to their exact balance with no rounding residual. The seller's receivable and the buyer's payable are equal and opposite, so the elimination journal balances. Each reciprocal pair is processed once.
 
 That journal is booked not on either operating company but on a dedicated **elimination entity** — a special company in the group flagged for this purpose. Carbon routes the entry to the elimination entity belonging to the **lowest common parent** of the two transacting companies, which is what makes multi-tier hierarchies (parent-child, sibling, cousin) consolidate correctly; if there isn't one at that level it falls back to any elimination entity in the group, and if the group has none the run fails.
 
