@@ -98,11 +98,6 @@ msgstr "{0}개의 {1} 게시 계정 매핑됨"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}개 중 {maxSlots}개 제공자 슬롯 사용됨"
 
-#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
-#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
-msgid "{0} of work across {1}"
-msgstr "{1}에 걸친 {0}의 작업"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "주문 {0}건"
@@ -6188,6 +6183,9 @@ msgstr "에스컬레이션"
 msgid "Est. Duration"
 msgstr "예상 소요시간"
 
+msgid "Estimated"
+msgstr ""
+
 msgid "Estimated — no capacity reservation"
 msgstr "예상 — 용량 예약 없음"
 
@@ -10607,8 +10605,8 @@ msgstr "MES에서 열기"
 msgid "Open Issues"
 msgstr "미결 이슈"
 
-msgid "Open Job"
-msgstr "오픈 작업"
+msgid "Open job"
+msgstr ""
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "미결 작업 수요에 이 보관함에서 미완료된 이전을 더합니다"
@@ -12711,6 +12709,9 @@ msgstr "NCR을 완료하기 전에 다음을 해결하세요: 모든 행에 대�
 msgid "Resolved Price"
 msgstr "확정 가격"
 
+msgid "Resource"
+msgstr ""
+
 msgid "Resource Planning"
 msgstr ""
 
@@ -14178,6 +14179,9 @@ msgstr "소싱 유형"
 
 msgid "Sourcing Type"
 msgstr "소싱 유형"
+
+msgid "Span"
+msgstr ""
 
 msgid "Spare Part Consumption"
 msgstr "예비 부품 소모"
@@ -16446,6 +16450,9 @@ msgstr "미입고 구매주문"
 msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
 
+msgid "Unscheduled"
+msgstr ""
+
 msgid "Unscrap"
 msgstr "폐기 취소"
 
@@ -17530,6 +17537,9 @@ msgstr "워드마크 다크 모드"
 
 msgid "Wordmark Light Mode"
 msgstr "워드마크 라이트 모드"
+
+msgid "Work"
+msgstr ""
 
 msgid "work center"
 msgstr "작업장"

@@ -26,6 +26,7 @@ function reservation(
 describe("buildResourceTimeline", () => {
   it("groups reservations into one lane per resource with per-job child rows", () => {
     const result = buildResourceTimeline({
+      locationName: "Austin Plant",
       reservations: [
         reservation({}),
         reservation({
@@ -38,6 +39,11 @@ describe("buildResourceTimeline", () => {
       ]
     });
 
+    // Root row is titled by the location and carries the location icon
+    const root = result.events.find((e) => e.id === "resources-root")!;
+    expect(root.data.message).toBe("Austin Plant");
+    expect(root.data.style?.icon).toBe("location");
+
     const lane = result.events.find((e) => e.id === "lane:WorkCenter:wc-1")!;
     expect(lane.parentId).toBe("resources-root");
     expect(lane.children).toEqual(["res-1", "res-2"]);
@@ -48,7 +54,8 @@ describe("buildResourceTimeline", () => {
 
     const child = result.events.find((e) => e.id === "res-2")!;
     expect(child.parentId).toBe(lane.id);
-    expect(child.data.message).toBe("J000009 · CNC Route");
+    // Row is titled by the job id alone — the lane already names the process
+    expect(child.data.message).toBe("J000009");
     expect(child.data.offset).toBe(2 * HOUR);
     expect(child.data.duration).toBe(2 * HOUR);
   });

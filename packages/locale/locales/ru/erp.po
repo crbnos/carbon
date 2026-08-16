@@ -98,11 +98,6 @@ msgstr "{0} из {1} счетов сопоставлено"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} из {maxSlots} слотов провайдера используется"
 
-#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
-#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
-msgid "{0} of work across {1}"
-msgstr "{0} работы за {1}"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} заказов"
@@ -6188,6 +6183,9 @@ msgstr "Эскалация"
 msgid "Est. Duration"
 msgstr "Прибл. Длительность"
 
+msgid "Estimated"
+msgstr ""
+
 msgid "Estimated — no capacity reservation"
 msgstr "Приблизительно — нет резервирования мощности"
 
@@ -10607,8 +10605,8 @@ msgstr "Открыть в MES"
 msgid "Open Issues"
 msgstr "Открытые проблемы"
 
-msgid "Open Job"
-msgstr "Открытое задание"
+msgid "Open job"
+msgstr ""
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Открытый спрос на работы плюс незавершенные передачи из этого контейнера"
@@ -12711,6 +12709,9 @@ msgstr "Разрешите эти проблемы перед завершени
 msgid "Resolved Price"
 msgstr "Разрешённая цена"
 
+msgid "Resource"
+msgstr ""
+
 msgid "Resource Planning"
 msgstr ""
 
@@ -14178,6 +14179,9 @@ msgstr "Тип источника"
 
 msgid "Sourcing Type"
 msgstr "Тип источника"
+
+msgid "Span"
+msgstr ""
 
 msgid "Spare Part Consumption"
 msgstr "Потребление запасных частей"
@@ -16446,6 +16450,9 @@ msgstr "Неполученные ПО"
 msgid "Unsaved changes"
 msgstr "Несохранённые изменения"
 
+msgid "Unscheduled"
+msgstr ""
+
 msgid "Unscrap"
 msgstr "Восстановить из списания"
 
@@ -17530,6 +17537,9 @@ msgstr "Логотип в тёмном режиме"
 
 msgid "Wordmark Light Mode"
 msgstr "Логотип светлого режима"
+
+msgid "Work"
+msgstr ""
 
 msgid "work center"
 msgstr "рабочий центр"

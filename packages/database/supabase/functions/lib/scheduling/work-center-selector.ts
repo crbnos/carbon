@@ -435,15 +435,32 @@ export class WorkCenterSelector {
         continue;
       }
 
-      // Sticky work centers: an already-assigned operation stays on its machine
-      // (setups/fixtures/operators live there). Falls back to full process
-      // candidates when it has no work center yet, or its assigned work center
-      // has no capacity data (e.g. it was deactivated since assignment) — this
-      // is how new/unassigned ops get selection.
-      const candidates =
+      // Sticky work centers: an op that has already STARTED stays on its machine
+      // — setups/fixtures/operators physically live there, so a replan must not
+      // bounce it. A not-yet-started op balances across the whole process pool
+      // even if it carries a make-method's default work center, so the
+      // earliest-finish selection below can spread two identical jobs across
+      // equivalent machines instead of stacking them on one center. If the
+      // process has no mapped centers, fall back to the op's assigned center so
+      // a misconfigured pool (or one deactivated since assignment) never strands
+      // the op.
+      const started =
+        op.status === "In Progress" ||
+        op.status === "Paused" ||
+        (op.quantityComplete ?? 0) > 0;
+      const assignedWorkCenter =
         op.workCenterId && ctx.capacityByWorkCenter.has(op.workCenterId)
-          ? [op.workCenterId]
-          : this.getWorkCentersForProcess(op.processId);
+          ? op.workCenterId
+          : null;
+      const pool = this.getWorkCentersForProcess(op.processId);
+      const candidates =
+        started && assignedWorkCenter
+          ? [assignedWorkCenter]
+          : pool.length > 0
+            ? pool
+            : assignedWorkCenter
+              ? [assignedWorkCenter]
+              : [];
       if (candidates.length === 0) {
         selections.set(op.id, {
           workCenterId: null,
@@ -672,12 +689,24 @@ export class WorkCenterSelector {
             0
           );
 
-          if (
-            !best ||
-            slot.end.getTime() < best.slot.end.getTime() ||
-            (slot.end.getTime() === best.slot.end.getTime() &&
-              reservedMs < best.reservedMs)
-          ) {
+          // Earliest finish wins (a busy machine finishes later, so this
+          // load-balances across equivalent centers). On a finish tie, prefer
+          // the op's CURRENT work center — a method default or a manual move
+          // stays put when it is no worse — then the least-reserved center.
+          let better: boolean;
+          if (!best) {
+            better = true;
+          } else if (slot.end.getTime() !== best.slot.end.getTime()) {
+            better = slot.end.getTime() < best.slot.end.getTime();
+          } else {
+            const isCurrent = wcId === op.workCenterId;
+            const bestIsCurrent = best.wcId === op.workCenterId;
+            better =
+              isCurrent !== bestIsCurrent
+                ? isCurrent
+                : reservedMs < best.reservedMs;
+          }
+          if (better) {
             best = { wcId, slot, reservedMs, capacity, staffed };
           }
         }

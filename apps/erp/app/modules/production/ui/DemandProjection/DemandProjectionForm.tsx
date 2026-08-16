@@ -172,12 +172,10 @@ const DemandProjectionsForm = ({
         >
           <DrawerHeader>
             <CardTitle>
-              {isEditing
-                ? t`Edit Production Projection`
-                : t`New Production Projection`}
+              {isEditing ? t`Edit Demand Forecast` : t`New Demand Forecast`}
             </CardTitle>
             <CardDescription>
-              {t`Set demand projection values for each week`}
+              {t`Set demand forecast values for each week`}
             </CardDescription>
           </DrawerHeader>
           <DrawerBody>
@@ -311,7 +309,7 @@ const DemandProjectionsForm = ({
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={fetcher.state !== "idle" || isDisabled}
               >
-                {isEditing ? t`Update Projection` : t`Create Projection`}
+                {isEditing ? t`Update Forecast` : t`Create Forecast`}
               </Submit>
             </HStack>
           </DrawerFooter>

@@ -168,7 +168,7 @@ projected finish IS the overdue forecast (slack is real).
   `getWorkCenterAvailability` does the reads and `buildFiniteContext` sets each WC's
   `windows`: (1) `workCenter.alwaysOn` = one continuous 24×7 window (lights-out);
   (2) explicit `workCenterShift` rows; (3) the union of the work center's LOCATION's
-  `shift` rows; (4) the stock Mon–Fri 08:00–17:00 week in the location tz
+  `shift` rows; (4) the stock Mon–Fri 08:00–16:00 (8h) week in the location tz
   (`STOCK_WEEK_SHIFTS` in `calendar-utils.ts`). **Machine downtime is subtracted**
   (`calendar-utils.subtractIntervals`) from those windows, derived from open maintenance
   dispatches flagged `maintenanceDispatch.takesWorkCenterOffline` (status not

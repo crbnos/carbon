@@ -189,7 +189,7 @@ const DemandProjectionsTable = memo(
           columns={columns}
           count={count}
           defaultColumnPinning={defaultColumnPinning}
-          title={t`Demand Projections`}
+          title={t`Demand Forecasts`}
           table="production-planning"
           withSavedView
           withSelectableRows
@@ -219,8 +219,8 @@ const DemandProjectionsTable = memo(
               selectedItem.id!,
               locationId
             )}
-            name={`${selectedItem.readableIdWithRevision} projections`}
-            text={`Are you sure you want to delete all projections for ${selectedItem.readableIdWithRevision}? This action cannot be undone.`}
+            name={`${selectedItem.readableIdWithRevision} forecasts`}
+            text={`Are you sure you want to delete all forecasts for ${selectedItem.readableIdWithRevision}? This action cannot be undone.`}
             onCancel={() => setSelectedItem(null)}
             onSubmit={() => setSelectedItem(null)}
           />

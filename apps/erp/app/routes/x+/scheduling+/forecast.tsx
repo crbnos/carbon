@@ -13,6 +13,7 @@ import {
   DateFormatter,
   getDayOfWeek,
   now,
+  parseAbsolute,
   parseDate,
   startOfWeek,
   toCalendarDate
@@ -28,6 +29,7 @@ import { Gantt } from "~/components/Gantt";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
 import { getDepartmentsList, getShiftsWithTimes } from "~/modules/people";
 import { getCapacityReservationsForResources } from "~/modules/production";
+import { getForecastNonWorkingIntervals } from "~/modules/production/forecastCalendar.server";
 import type { ForecastRange } from "~/modules/production/ui/Schedule/ForecastHeader";
 import { ForecastHeader } from "~/modules/production/ui/Schedule/ForecastHeader";
 import { buildResourceTimeline } from "~/modules/production/ui/Schedule/resourceTimeline";
@@ -137,13 +139,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Times on the forecast axis belong to the plant we're viewing; the resolver
   // falls back to the company timezone when the location sets none of its own.
-  const [timeZone, shiftsResult, locationWorkCenters, departmentsList] =
-    await Promise.all([
-      getLocationTimeZone(client, locationId, companyId),
-      getShiftsWithTimes(client, companyId, locationId),
-      getWorkCentersByLocation(client, locationId),
-      getDepartmentsList(client, companyId)
-    ]);
+  const [
+    timeZone,
+    shiftsResult,
+    locationWorkCenters,
+    departmentsList,
+    locationResult
+  ] = await Promise.all([
+    getLocationTimeZone(client, locationId, companyId),
+    getShiftsWithTimes(client, companyId, locationId),
+    getWorkCentersByLocation(client, locationId),
+    getDepartmentsList(client, companyId),
+    client
+      .from("location")
+      .select("name")
+      .eq("id", locationId)
+      .eq("companyId", companyId)
+      .single()
+  ]);
+
+  const locationName = locationResult.data?.name ?? undefined;
 
   const shifts = shiftsResult.data ?? [];
 
@@ -170,6 +185,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     calendarDate,
     timeZone,
     shift: shifts.find((s) => s.id === shiftId) ?? null
+  });
+
+  // The plant's non-working intervals (nights/weekends) over the visible window,
+  // from the SAME availability ladder the scheduler uses — so the shaded
+  // background can't disagree with the bars. Shades the axis so a reservation
+  // spanning several days no longer reads as 24h/day.
+  const nonWorkingIntervals = getForecastNonWorkingIntervals({
+    timeZone,
+    shifts,
+    windowStartMs,
+    windowEndMs
   });
 
   const reservations = await getCapacityReservationsForResources(
@@ -257,6 +283,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const timeline = buildResourceTimeline({
     workCenters: plantWorkCenters,
+    locationName,
     reservations: rows.map((r) => ({
       id: r.id,
       resourceKind: r.resourceKind,
@@ -301,6 +328,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     shiftId,
     timeZone,
     windowStartMs,
+    nonWorkingIntervals,
     shifts: shifts.map((shift) => ({ id: shift.id, name: shift.name })),
     resourceCount: shownWorkCenterIds.size + abilityIds.size + employeeIds.size,
     reservationCount: rows.length,
@@ -335,6 +363,7 @@ export default function ResourceGanttView() {
     shiftId,
     timeZone,
     windowStartMs,
+    nonWorkingIntervals,
     shifts,
     resourceCount,
     reservationCount,
@@ -352,21 +381,53 @@ export default function ResourceGanttView() {
   // Axis labels are 24-hour clock times for a day/shift and dates for a week,
   // both in the plant's timezone (the company fallback is resolved server-side).
   const formatAxisTick = useMemo(() => {
-    const formatter =
-      range === "week"
-        ? new DateFormatter(locale, {
-            weekday: "short",
-            day: "numeric",
-            timeZone
-          })
-        : new DateFormatter(locale, {
-            hour: "2-digit",
-            minute: "2-digit",
-            hourCycle: "h23",
-            timeZone
-          });
-    return (absoluteMs: number) => formatter.format(new Date(absoluteMs));
+    const timeFormatter = new DateFormatter(locale, {
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+      timeZone
+    });
+    if (range !== "week") {
+      return (absoluteMs: number) => timeFormatter.format(new Date(absoluteMs));
+    }
+    // Week view: one tick per day (see axisTickMs), each at local midnight, so
+    // it reads as the day name ("Mon 17"). The time formatter is only a
+    // fallback should a tick ever land off-midnight.
+    const dayFormatter = new DateFormatter(locale, {
+      weekday: "short",
+      day: "numeric",
+      timeZone
+    });
+    return (absoluteMs: number) => {
+      const instant = new Date(absoluteMs);
+      const local = parseAbsolute(instant.toISOString(), timeZone);
+      return local.hour === 0 && local.minute === 0
+        ? dayFormatter.format(instant)
+        : timeFormatter.format(instant);
+    };
   }, [range, locale, timeZone]);
+
+  // Clean, clock-aligned axis divisions: 1h on a shift, 4h on a day. The week
+  // view uses explicit per-day ticks instead (axisTickMs).
+  const tickIntervalMs =
+    range === "shift"
+      ? 60 * 60 * 1000
+      : range === "week"
+        ? undefined
+        : 4 * 60 * 60 * 1000;
+
+  // Week view: exactly one tick per day, placed at each day's REAL local
+  // midnight (not a fixed 24h interval, which would drift an hour across a DST
+  // change) so the axis reads as seven days spread across the full width.
+  const axisTickMs = useMemo(() => {
+    if (range !== "week") return undefined;
+    const weekStart = startOfWeek(parseDate(date), "en-GB");
+    return Array.from(
+      { length: 7 },
+      (_, i) =>
+        weekStart.add({ days: i }).toDate(timeZone).getTime() - windowStartMs
+    );
+  }, [range, date, timeZone, windowStartMs]);
 
   const changeToSpan = useDebounce((selectedSpan: string) => {
     replaceSearchParam("span", selectedSpan);
@@ -442,6 +503,9 @@ export default function ResourceGanttView() {
                     }
                     axis="absolute"
                     windowStartMs={windowStartMs}
+                    nonWorkingIntervals={nonWorkingIntervals}
+                    tickIntervalMs={tickIntervalMs}
+                    axisTickMs={axisTickMs}
                     formatAxisTick={formatAxisTick}
                     nowMs={Date.now()}
                   />
@@ -456,6 +520,7 @@ export default function ResourceGanttView() {
                     >
                       <TimelineDetail
                         detail={selectedDetail}
+                        timeZone={timeZone}
                         onClose={() => replaceSearchParam("span")}
                       />
                     </ResizablePanel>

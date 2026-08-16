@@ -9,7 +9,7 @@
  *   2. Explicit `workCenterShift` rows → the union of those shifts' windows.
  *   3. No WC rows but the location has shifts → the union of the location's
  *      shifts' windows.
- *   4. No shifts anywhere → the stock Mon–Fri 08:00–17:00 week in the
+ *   4. No shifts anywhere → the stock Mon–Fri 08:00–16:00 (8h) week in the
  *      location's timezone.
  *
  * Downtime (open maintenance dispatches flagged `takesWorkCenterOffline`) is
@@ -84,7 +84,7 @@ function resolveOne(
   if (locationShifts.length > 0) {
     return expandLadderShifts(locationShifts, rangeStart, rangeEnd);
   }
-  // rung 3 — stock Mon–Fri 08:00–17:00 in the location timezone
+  // rung 3 — stock Mon–Fri 08:00–16:00 (8h) in the location timezone
   return expandCalendar(
     STOCK_WEEK_SHIFTS,
     rangeStart,

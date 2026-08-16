@@ -10,14 +10,18 @@ vi.mock("@carbon/glossary", () => ({
   glossaryEntries: () => []
 }));
 
-import { recalculateJobRequirements } from "~/modules/production/production.service";
+import {
+  notifyScheduleInputsChanged,
+  recalculateJobRequirements
+} from "~/modules/production/production.service";
 import { action } from "./operations.update";
 
 vi.mock("@carbon/auth/auth.server", () => ({
   requirePermissions: vi.fn()
 }));
 vi.mock("~/modules/production/production.service", () => ({
-  recalculateJobRequirements: vi.fn()
+  recalculateJobRequirements: vi.fn(),
+  notifyScheduleInputsChanged: vi.fn()
 }));
 
 type DatabaseError = { message: string } | null;
@@ -32,6 +36,7 @@ type SourceOperation = {
   processId: string;
   status: string;
   companyId: string;
+  workCenterId: string | null;
 };
 
 type ParentJob = {
@@ -94,7 +99,8 @@ function createActionMocks() {
         jobId: "job-1",
         processId: "process-1",
         status: "Ready",
-        companyId: "company-1"
+        companyId: "company-1",
+        workCenterId: "work-center-1"
       },
       error: null
     } as QueryResult<SourceOperation>,
@@ -207,7 +213,7 @@ describe("Operations schedule update action", () => {
 
     expect(mocks.events).toEqual([
       "from:jobOperation",
-      "source:select:id, jobId, processId, status, companyId",
+      "source:select:id, jobId, processId, status, companyId, workCenterId",
       "source:eq:id:operation-1",
       "source:eq:companyId:company-1",
       "source:maybeSingle",
@@ -248,6 +254,27 @@ describe("Operations schedule update action", () => {
     );
     expect(recalculateJobRequirements).not.toHaveBeenCalled();
     expect(result).toEqual({ success: true });
+    // A work-center change reschedules the op's location so the forecast updates.
+    expect(notifyScheduleInputsChanged).toHaveBeenCalledWith(
+      "company-1",
+      "work-center",
+      expect.any(String),
+      "work-center-2"
+    );
+  });
+
+  it("does not reschedule a same-work-center reorder", async () => {
+    // The op already lives on work-center-2; a priority-only reorder must not
+    // trigger a location regen (the board preserves manual dispatch order).
+    if (mocks.results.source.data) {
+      mocks.results.source.data.workCenterId = "work-center-2";
+    }
+
+    const result = await runAction(baseFields);
+
+    expect(result).toEqual({ success: true });
+    expect(mocks.chains.mutation.update).toHaveBeenCalledOnce();
+    expect(notifyScheduleInputsChanged).not.toHaveBeenCalled();
   });
 
   it("accepts finite negative priorities", async () => {

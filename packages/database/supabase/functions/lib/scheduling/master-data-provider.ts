@@ -171,7 +171,7 @@ export interface MasterDataProvider {
   ): Promise<EmployeeShiftRow[]>;
   /**
    * Machine-availability ladder per work center: explicit workCenterShift rows
-   * → the location's shifts → a stock Mon–Fri 08:00–17:00 week; or one open
+   * → the location's shifts → a stock Mon–Fri 08:00–16:00 week; or one open
    * window for an `alwaysOn` machine. Returns id → open windows.
    */
   getWorkCenterAvailability(

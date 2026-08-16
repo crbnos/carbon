@@ -98,11 +98,6 @@ msgstr "{0} / {1} deftere nakil hesapları eşlendi"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}/{maxSlots} sağlayıcı yuvası kullanıldı"
 
-#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
-#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
-msgid "{0} of work across {1}"
-msgstr "{0} iş süresi {1} aralığında"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} sipariş"
@@ -6188,6 +6183,9 @@ msgstr "Yükseltme"
 msgid "Est. Duration"
 msgstr "Tahmini Süre"
 
+msgid "Estimated"
+msgstr ""
+
 msgid "Estimated — no capacity reservation"
 msgstr "Tahmini — kapasite rezervasyonu yok"
 
@@ -10607,8 +10605,8 @@ msgstr "MES'te Aç"
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
 
-msgid "Open Job"
-msgstr "Açık İş"
+msgid "Open job"
+msgstr ""
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Açık iş talebi artı bu depodan giden bekleyen transferler"
@@ -12711,6 +12709,9 @@ msgstr "Bu NC'yi tamamlamadan önce bunları çözün: her satırın Geçici Olm
 msgid "Resolved Price"
 msgstr "Belirlenmiş Fiyat"
 
+msgid "Resource"
+msgstr ""
+
 msgid "Resource Planning"
 msgstr ""
 
@@ -14178,6 +14179,9 @@ msgstr "Tedarik türü"
 
 msgid "Sourcing Type"
 msgstr "Kaynak Türü"
+
+msgid "Span"
+msgstr ""
 
 msgid "Spare Part Consumption"
 msgstr "Yedek Parça Tüketimi"
@@ -16446,6 +16450,9 @@ msgstr "Alınmamış PO'lar"
 msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
 
+msgid "Unscheduled"
+msgstr ""
+
 msgid "Unscrap"
 msgstr "Çıkartmayı Geri Al"
 
@@ -17530,6 +17537,9 @@ msgstr "Sözlük Karanlık Mod"
 
 msgid "Wordmark Light Mode"
 msgstr "Marka Açık Mod"
+
+msgid "Work"
+msgstr ""
 
 msgid "work center"
 msgstr "çalışma merkezi"

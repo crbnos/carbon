@@ -5,6 +5,7 @@ import {
   isJobLocked,
   scheduleOperationUpdateValidator
 } from "~/modules/production/production.models";
+import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 
 const invalidSchedulingRequest = () => ({
   success: false,
@@ -28,7 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const sourceOperation = await client
     .from("jobOperation")
-    .select("id, jobId, processId, status, companyId")
+    .select("id, jobId, processId, status, companyId, workCenterId")
     .eq("id", validation.data.id)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -117,6 +118,20 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (data === null) {
     return { success: false, message: "Operation unavailable" };
+  }
+
+  // A work-center change (not a pure priority reorder) moves the op to a
+  // different machine, so the forecast must be regenerated — otherwise the
+  // reservation stays on the old center and the board and forecast disagree.
+  // Reschedule the op's location; a same-center reorder deliberately does not
+  // reschedule (it only reorders the manual dispatch sequence).
+  if (destinationWorkCenter.data.id !== sourceOperation.data.workCenterId) {
+    await notifyScheduleInputsChanged(
+      companyId,
+      "work-center",
+      "Operation reassigned to a different work center",
+      destinationWorkCenter.data.id
+    );
   }
 
   return { success: true };

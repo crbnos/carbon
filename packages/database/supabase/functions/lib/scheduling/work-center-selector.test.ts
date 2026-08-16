@@ -170,3 +170,121 @@ Deno.test("an untouched op books the full standard hours", async () => {
     new Date(selection.placedStart).getTime();
   assertEquals(spanMs, 4 * 60 * 60 * 1000); // full 4h
 });
+
+// --- load balancing across equivalent work centers --------------------------
+
+Deno.test("two identical not-started ops spread across equivalent work centers", async () => {
+  const now = new Date("2026-01-05T00:00:00.000Z"); // Monday
+  const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
+
+  // proc-1 runs on wc1 AND wc2 (interchangeable); both active at the location.
+  const provider = {
+    getProcessesWithWorkCenters: async () => [
+      { id: "proc-1", workCenters: ["wc1", "wc2"] },
+    ],
+    getActiveWorkCenters: async () => [{ id: "wc1" }, { id: "wc2" }],
+  } as unknown as MasterDataProvider;
+
+  const selector = new WorkCenterSelector(provider, "loc1");
+  await selector.initialize();
+  selector.setFiniteContext(
+    makeContext({
+      capacityByWorkCenter: new Map([
+        [
+          "wc1",
+          {
+            workCenter: { id: "wc1" },
+            windows: [{ start: now, end: windowsEnd }],
+            reservations: [],
+          },
+        ],
+        [
+          "wc2",
+          {
+            workCenter: { id: "wc2" },
+            windows: [{ start: now, end: windowsEnd }],
+            reservations: [],
+          },
+        ],
+      ]),
+    })
+  );
+
+  // Both ops inherit wc1 from the SAME make method (the reported bug: two
+  // identical jobs would previously stack on wc1). Neither has started; each
+  // is 4h of labor.
+  const opFields = {
+    workCenterId: "wc1",
+    setupTime: 0,
+    laborTime: 4,
+    laborUnit: "Total Hours" as const,
+    machineTime: 0,
+    operationQuantity: 1,
+    quantityComplete: 0,
+  };
+  const ops = [
+    makeOp({ id: "op-a", order: 1, ...opFields }),
+    makeOp({ id: "op-b", order: 2, ...opFields }),
+  ];
+
+  const selections = await selector.selectWorkCentersForOperations(ops, {
+    jobDueDate: null,
+  });
+
+  const a = selections.get("op-a")?.workCenterId;
+  const b = selections.get("op-b")?.workCenterId;
+  assert(a && b, "both ops were placed on a work center");
+  assert(a !== b, `expected the two ops to spread across centers; both got ${a}`);
+  assertEquals(new Set([a, b]), new Set(["wc1", "wc2"]));
+});
+
+Deno.test("a started op stays pinned to its work center (no rebalancing)", async () => {
+  const now = new Date("2026-01-05T00:00:00.000Z");
+  const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
+  const provider = {
+    getProcessesWithWorkCenters: async () => [
+      { id: "proc-1", workCenters: ["wc1", "wc2"] },
+    ],
+    getActiveWorkCenters: async () => [{ id: "wc1" }, { id: "wc2" }],
+  } as unknown as MasterDataProvider;
+
+  const selector = new WorkCenterSelector(provider, "loc1");
+  await selector.initialize();
+  selector.setFiniteContext(
+    makeContext({
+      capacityByWorkCenter: new Map([
+        [
+          "wc1",
+          {
+            workCenter: { id: "wc1" },
+            // wc1 is heavily loaded so an idle wc2 would finish sooner...
+            windows: [{ start: now, end: windowsEnd }],
+            reservations: [
+              { startAt: now, endAt: new Date("2026-01-10T00:00:00.000Z") },
+            ],
+          },
+        ],
+        [
+          "wc2",
+          {
+            workCenter: { id: "wc2" },
+            windows: [{ start: now, end: windowsEnd }],
+            reservations: [],
+          },
+        ],
+      ]),
+    })
+  );
+
+  // ...but this op is already In Progress on wc1, so it must NOT move to wc2.
+  const op = makeOp({
+    id: "op-1",
+    workCenterId: "wc1",
+    status: "In Progress",
+  });
+
+  const selections = await selector.selectWorkCentersForOperations([op], {
+    jobDueDate: null,
+  });
+  assertEquals(selections.get("op-1")?.workCenterId, "wc1");
+});

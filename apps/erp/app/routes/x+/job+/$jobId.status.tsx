@@ -70,6 +70,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
+  // Commit the new status BEFORE invoking the scheduler. The `schedule` edge
+  // function only batches jobs whose status is already Ready/In Progress/Paused,
+  // so a job released here must be persisted as Ready first — otherwise it is
+  // filtered out of its own scheduling run and never lands in the forecast.
+  //
+  // A direct POST of status=Completed here bypasses complete_job_to_inventory
+  // (no inventory receipt, no backflush) and therefore also skips the
+  // picked-material return sweep. The UI never sends Completed to this route —
+  // the Complete button uses $jobId.complete.tsx, which runs both.
+  const update = await updateJobStatus(client, {
+    id,
+    companyId,
+    status,
+    assignee: ["Cancelled"].includes(status) ? null : undefined,
+    updatedBy: userId
+  });
+  if (update.error) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.job(id),
+      await flash(request, error(update.error, "Failed to update job status"))
+    );
+  }
+
   if (["Ready", "Planned"].includes(status) && shouldSchedule) {
     try {
       const purchaseOrdersBySupplierId = JSON.parse(
@@ -124,24 +147,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         await flash(request, error(err, "Failed to schedule job"))
       );
     }
-  }
-
-  // A direct POST of status=Completed here bypasses complete_job_to_inventory
-  // (no inventory receipt, no backflush) and therefore also skips the
-  // picked-material return sweep. The UI never sends Completed to this route —
-  // the Complete button uses $jobId.complete.tsx, which runs both.
-  const update = await updateJobStatus(client, {
-    id,
-    companyId,
-    status,
-    assignee: ["Cancelled"].includes(status) ? null : undefined,
-    updatedBy: userId
-  });
-  if (update.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.job(id),
-      await flash(request, error(update.error, "Failed to update job status"))
-    );
   }
 
   if (status === "Closed") {

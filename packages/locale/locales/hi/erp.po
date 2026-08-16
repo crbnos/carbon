@@ -98,11 +98,6 @@ msgstr "{0} में से {1} पोस्टिंग खातों को
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} में से {maxSlots} प्रदाता स्लॉट उपयोग किए गए"
 
-#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
-#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
-msgid "{0} of work across {1}"
-msgstr "{0} का कार्य {1} में"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
@@ -6188,6 +6183,9 @@ msgstr "संवर्धन"
 msgid "Est. Duration"
 msgstr "अनुमानित अवधि"
 
+msgid "Estimated"
+msgstr ""
+
 msgid "Estimated — no capacity reservation"
 msgstr "अनुमानित — कोई क्षमता आरक्षण नहीं"
 
@@ -10607,8 +10605,8 @@ msgstr "MES में खोलें"
 msgid "Open Issues"
 msgstr "खुले मुद्दे"
 
-msgid "Open Job"
-msgstr "खुली नौकरी"
+msgid "Open job"
+msgstr ""
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "खुली नौकरी की मांग प्लस इस बिन से बकाया ट्रांसफर"
@@ -12711,6 +12709,9 @@ msgstr "इसे NCR पूरा करने से पहले हल क�
 msgid "Resolved Price"
 msgstr "समाधान की गई कीमत"
 
+msgid "Resource"
+msgstr ""
+
 msgid "Resource Planning"
 msgstr ""
 
@@ -14178,6 +14179,9 @@ msgstr "सोर्सिंग प्रकार"
 
 msgid "Sourcing Type"
 msgstr "सोर्सिंग प्रकार"
+
+msgid "Span"
+msgstr ""
 
 msgid "Spare Part Consumption"
 msgstr "स्पेयर पार्ट खपत"
@@ -16446,6 +16450,9 @@ msgstr "अप्राप्त POs"
 msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
 
+msgid "Unscheduled"
+msgstr ""
+
 msgid "Unscrap"
 msgstr "अनस्क्रैप करें"
 
@@ -17530,6 +17537,9 @@ msgstr "वर्डमार्क डार्क मोड"
 
 msgid "Wordmark Light Mode"
 msgstr "वर्डमार्क लाइट मोड"
+
+msgid "Work"
+msgstr ""
 
 msgid "work center"
 msgstr "कार्य केंद्र"

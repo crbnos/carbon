@@ -1,8 +1,21 @@
-import { Badge, Heading, HStack, IconButton, VStack } from "@carbon/react";
-import { DAY_MS, formatDurationMilliseconds } from "@carbon/utils";
+import { Button, cn, Heading, IconButton } from "@carbon/react";
+import {
+  DAY_MS,
+  formatDateTimeInZone,
+  formatDurationMilliseconds,
+  formatRelativeTime
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
-import { LuClock, LuTriangleAlert, LuX } from "react-icons/lu";
+import {
+  LuArrowRight,
+  LuClock,
+  LuHourglass,
+  LuTimer,
+  LuTriangleAlert,
+  LuX
+} from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime } from "~/components";
 import { path } from "~/utils/path";
@@ -16,20 +29,52 @@ export const TIMELINE_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
 };
 
 /**
+ * Date + time in an explicit zone (the plant's) — the reservation window.
+ * `dateStyle`/`timeStyle` are cleared: `formatDateTimeInZone` defaults them to
+ * "medium", and Intl throws (→ raw ISO) if they coexist with the component
+ * options below.
+ */
+const TIMELINE_DATETIME_OPTIONS: Intl.DateTimeFormatOptions = {
+  dateStyle: undefined,
+  timeStyle: undefined,
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit"
+};
+
+type StatusTone = "conflict" | "estimated" | "scheduled" | "neutral";
+
+const STATUS_DOT: Record<StatusTone, string> = {
+  conflict: "bg-red-500",
+  estimated: "bg-blue-500",
+  scheduled: "bg-emerald-500",
+  neutral: "bg-muted-foreground"
+};
+
+/**
  * Detail side panel for a selected Gantt row. Shared by the single-job
  * timeline (which passes the route's jobId) and the cross-job resource view
  * (where each detail carries its own owning jobId).
+ *
+ * `timeZone` is the plant's IANA zone — the forecast board is location-scoped,
+ * so real reservation instants are shown on the plant's clock (and every
+ * timestamp popover gains a Location row).
  */
 export function TimelineDetail({
   detail,
   jobId,
+  timeZone,
   onClose
 }: {
   detail: TimelineNodeDetail;
   jobId?: string;
+  timeZone?: string;
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  const { locale } = useLocale();
 
   // Approximate rows carry date-only values stored as UTC midnight; slice to
   // the bare date so no invented clock time (e.g. "05:30" in IST) leaks into
@@ -72,163 +117,239 @@ export function TimelineDetail({
         ? t`Operator`
         : detail.resourceKind === "OperatorPool"
           ? t`Operator Pool`
-          : t`Work Center`
+          : detail.resourceKind === "WorkCenter"
+            ? t`Work Center`
+            : t`Resource`
   };
 
   const linkedJobId = detail.jobId ?? jobId;
 
+  // Real (booked) reservations get plant-clock times; approximate/placeholder
+  // rows stay date-only.
+  const showTimes = !detail.approximate && !isUnscheduled && !!timeZone;
+
+  const renderInstant = (iso: string, isApproximate: boolean) => {
+    if (showTimes && !isApproximate) {
+      return (
+        <DateTime value={iso} locationTimeZone={timeZone} side="left">
+          <span className="tabular-nums">
+            {formatDateTimeInZone(
+              iso,
+              timeZone as string,
+              locale,
+              TIMELINE_DATETIME_OPTIONS
+            )}
+          </span>
+        </DateTime>
+      );
+    }
+    return (
+      <DateTime
+        value={isApproximate ? dateOnly(iso) : iso}
+        locationTimeZone={timeZone}
+        variant="date"
+        dateOptions={TIMELINE_DATE_OPTIONS}
+      />
+    );
+  };
+
+  // Header status chip — mirrors the board legend so the panel reads at a glance.
+  const status: { tone: StatusTone; label: string } = detail.conflictReason
+    ? { tone: "conflict", label: t`Conflict` }
+    : isUnscheduled
+      ? { tone: "conflict", label: t`Unscheduled` }
+      : detail.approximate
+        ? { tone: "estimated", label: t`Estimated` }
+        : { tone: "scheduled", label: t`Scheduled` };
+
+  // A zone-agnostic "starts in 3 days / 2 days ago" for booked rows.
+  const relative =
+    !detail.approximate && !isUnscheduled && detail.start
+      ? formatRelativeTime(detail.start, locale)
+      : null;
+
+  const hasWork =
+    !!detail.workMs &&
+    detail.durationMs > 0 &&
+    detail.durationMs - detail.workMs > 60_000; // >1 min gap — avoid noise
+
+  const stats: { icon: ReactNode; label: string; value: string }[] = [];
+  if (detail.durationMs > 0 && !isUnscheduled) {
+    stats.push({
+      icon: <LuClock className="size-3.5 shrink-0" />,
+      label: hasWork ? t`Span` : t`Duration`,
+      value: formatDurationMilliseconds(detail.durationMs, { style: "short" })
+    });
+  }
+  if (hasWork) {
+    stats.push({
+      icon: <LuTimer className="size-3.5 shrink-0" />,
+      label: t`Work`,
+      value: formatDurationMilliseconds(detail.workMs as number, {
+        style: "short"
+      })
+    });
+  }
+  if (detail.waitMs && detail.waitMs > 0) {
+    stats.push({
+      icon: <LuHourglass className="size-3.5 shrink-0" />,
+      label: t`Waited`,
+      value: formatDurationMilliseconds(detail.waitMs, { style: "short" })
+    });
+  }
+
   return (
-    <VStack
-      spacing={4}
-      className="h-full overflow-y-auto border-l border-border bg-card p-4"
-    >
-      <HStack className="w-full justify-between">
-        <VStack spacing={1}>
-          <Badge variant="secondary">{kindLabel[detail.kind]}</Badge>
-          <Heading size="h3">{detail.title}</Heading>
-        </VStack>
+    <div className="flex h-full flex-col border-l border-border bg-card">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 border-b border-border p-4">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground">
+            {kindLabel[detail.kind]}
+          </span>
+          <Heading size="h3" className="truncate">
+            {detail.title}
+          </Heading>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+              <span
+                className={cn("size-1.5 rounded-full", STATUS_DOT[status.tone])}
+              />
+              {status.label}
+            </span>
+            {relative && (
+              <>
+                <span className="text-border">·</span>
+                <span className="tabular-nums">{relative}</span>
+              </>
+            )}
+          </div>
+        </div>
         <IconButton
           aria-label={t`Close`}
           variant="ghost"
           icon={<LuX />}
           onClick={onClose}
         />
-      </HStack>
+      </div>
 
-      {detail.conflictReason && (
-        <div className="flex w-full items-start gap-2 rounded-md border border-red-500 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
-          <LuTriangleAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
-          <span>{detail.conflictReason}</span>
-        </div>
-      )}
+      {/* Body */}
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        {detail.conflictReason && (
+          <div className="flex w-full items-start gap-2.5 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
+            <LuTriangleAlert className="mt-0.5 size-4 shrink-0" />
+            <span className="text-pretty">{detail.conflictReason}</span>
+          </div>
+        )}
 
-      {/* Why the row starts when it does — hidden when a conflict is shown,
-          the conflict message already names the same cause */}
-      {detail.scheduleNote && !detail.conflictReason && (
-        <div className="flex w-full items-start gap-2 rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
-          <LuClock className="mt-0.5 h-4 w-4 flex-shrink-0" />
-          <span>{detail.scheduleNote}</span>
-        </div>
-      )}
+        {/* Why the row starts when it does — hidden when a conflict is shown,
+            the conflict message already names the same cause */}
+        {detail.scheduleNote && !detail.conflictReason && (
+          <div className="flex w-full items-start gap-2.5 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+            <LuClock className="mt-0.5 size-4 shrink-0" />
+            <span className="text-pretty">{detail.scheduleNote}</span>
+          </div>
+        )}
 
-      <VStack spacing={2} className="w-full text-sm">
-        {detail.status && <DetailRow label={t`Status`} value={detail.status} />}
-        {detail.jobReadableId && (
-          <DetailRow label={t`Job`} value={detail.jobReadableId} />
+        {/* Metrics — glanceable stat tiles, hairline-divided */}
+        {stats.length > 0 && (
+          <div className="flex divide-x divide-border overflow-hidden rounded-lg border border-border bg-background">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className="flex flex-1 flex-col gap-1 px-3 py-2.5"
+              >
+                <span className="flex items-center gap-1 font-mono text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
+                  {stat.icon}
+                  {stat.label}
+                </span>
+                <span className="text-lg font-semibold tabular-nums leading-none text-foreground">
+                  {stat.value}
+                </span>
+              </div>
+            ))}
+          </div>
         )}
-        {detail.workCenterName && (
-          <DetailRow label={t`Work Center`} value={detail.workCenterName} />
-        )}
-        {detail.assigneeName && (
-          <DetailRow label={t`Assignee`} value={detail.assigneeName} />
-        )}
-        {detail.employeeName && (
-          <DetailRow label={t`Employee`} value={detail.employeeName} />
-        )}
+
         {isUnscheduled ? (
-          <p className="text-xs italic text-muted-foreground">
+          <p className="text-sm italic text-muted-foreground text-pretty">
             <Trans>
               Not scheduled — no feasible slot. The stored dates are
               backward-planning placeholders, not a real booking.
             </Trans>
           </p>
         ) : (
-          <>
+          <dl className="w-full">
+            {detail.status && (
+              <DetailRow label={t`Status`} value={detail.status} />
+            )}
+            {detail.jobReadableId && (
+              <DetailRow label={t`Job`} value={detail.jobReadableId} />
+            )}
+            {detail.workCenterName && (
+              <DetailRow label={t`Work Center`} value={detail.workCenterName} />
+            )}
+            {detail.assigneeName && (
+              <DetailRow label={t`Assignee`} value={detail.assigneeName} />
+            )}
+            {detail.employeeName && (
+              <DetailRow label={t`Employee`} value={detail.employeeName} />
+            )}
             {detail.start && (
               <DetailRow
                 label={t`Starts`}
-                value={
-                  <DateTime
-                    value={
-                      detail.approximate ? dateOnly(detail.start) : detail.start
-                    }
-                    variant="date"
-                    dateOptions={TIMELINE_DATE_OPTIONS}
-                  />
-                }
+                value={renderInstant(detail.start, detail.approximate)}
               />
             )}
             {detail.end && approximateEndDate ? (
               <DetailRow
                 label={t`Ends`}
-                value={
-                  <DateTime
-                    value={detail.approximate ? approximateEndDate : detail.end}
-                    variant="date"
-                    dateOptions={TIMELINE_DATE_OPTIONS}
-                  />
-                }
+                value={renderInstant(
+                  detail.approximate ? approximateEndDate : detail.end,
+                  detail.approximate
+                )}
               />
             ) : (
               detail.start && (
                 <DetailRow label={t`Ends`} value={t`In progress`} />
               )
             )}
-            {/* A gated op's span includes off-shift pauses: show the actual
-                work content alongside the wall-clock span so "22h" reads as
-                "6h of work across 22h", not 22 hours of soldering */}
-            {detail.workMs &&
-            detail.durationMs > 0 &&
-            // >1 min gap — avoid noise from rounding
-            detail.durationMs - detail.workMs > 60_000 ? (
-              <DetailRow
-                label={t`Duration`}
-                value={t`${formatDurationMilliseconds(detail.workMs, {
-                  style: "short"
-                })} of work across ${formatDurationMilliseconds(
-                  detail.durationMs,
-                  { style: "short" }
-                )}`}
-              />
-            ) : (
-              <DetailRow
-                label={t`Duration`}
-                value={
-                  detail.durationMs > 0
-                    ? formatDurationMilliseconds(detail.durationMs, {
-                        style: "short"
-                      })
-                    : "—"
-                }
-              />
-            )}
-            {!!detail.waitMs && detail.waitMs > 0 && (
-              <DetailRow
-                label={t`Waited`}
-                value={formatDurationMilliseconds(detail.waitMs, {
-                  style: "short"
-                })}
-              />
-            )}
-            {detail.approximate && (
-              <p className="text-xs text-muted-foreground">
-                <Trans>
-                  Approximate — derived from scheduled dates; no capacity
-                  reservation exists for this row.
-                </Trans>
-              </p>
-            )}
-          </>
+          </dl>
         )}
-      </VStack>
 
+        {detail.approximate && !isUnscheduled && (
+          <p className="text-xs text-muted-foreground text-pretty">
+            <Trans>
+              Approximate — derived from scheduled dates; no capacity
+              reservation exists for this row.
+            </Trans>
+          </p>
+        )}
+      </div>
+
+      {/* Footer action */}
       {linkedJobId && (
-        <Link
-          to={path.to.job(linkedJobId)}
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          <Trans>Open Job</Trans>
-        </Link>
+        <div className="border-t border-border p-4">
+          <Button
+            asChild
+            variant="primary"
+            className="w-full justify-between"
+            rightIcon={<LuArrowRight />}
+          >
+            <Link to={path.to.job(linkedJobId)}>
+              <Trans>Open job</Trans>
+            </Link>
+          </Button>
+        </div>
       )}
-    </VStack>
+    </div>
   );
 }
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <HStack className="w-full justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-right">{value}</span>
-    </HStack>
+    <div className="flex items-center justify-between gap-4 border-t border-border py-2.5 text-sm first:border-t-0">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right font-medium text-foreground">{value}</dd>
+    </div>
   );
 }

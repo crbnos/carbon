@@ -72,7 +72,7 @@ Deno.test("ladder rung 2: no WC shifts falls through to the location's shifts", 
   assertEquals(windows[0].end.toISOString(), "2026-01-05T17:00:00.000Z");
 });
 
-Deno.test("ladder rung 3: no shifts anywhere → stock Mon–Fri 08:00–17:00, none on the weekend", () => {
+Deno.test("ladder rung 3: no shifts anywhere → stock Mon–Fri 08:00–16:00, none on the weekend", () => {
   const map = resolveWorkCenterWindows({
     workCenters: [wc("w1")],
     workCenterShiftRows: [],
@@ -83,7 +83,7 @@ Deno.test("ladder rung 3: no shifts anywhere → stock Mon–Fri 08:00–17:00, 
   const windows = map.get("w1")!;
   assertEquals(windows.length, 5); // Mon–Fri only
   assertEquals(windows[0].start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(windows[0].end.toISOString(), "2026-01-05T17:00:00.000Z");
+  assertEquals(windows[0].end.toISOString(), "2026-01-05T16:00:00.000Z");
   // Saturday 2026-01-10 / Sunday 2026-01-11 produce no windows
   for (const w of windows) {
     const day = w.start.getUTCDay();
@@ -100,9 +100,10 @@ Deno.test("ladder rung 3 honors the location timezone", () => {
     rangeEnd: RANGE_END,
   });
   const windows = map.get("w1")!;
-  // 08:00 America/New_York on 2026-01-05 = 13:00 UTC (EST, UTC-5)
+  // 08:00 America/New_York on 2026-01-05 = 13:00 UTC (EST, UTC-5);
+  // 16:00 local = 21:00 UTC.
   assertEquals(windows[0].start.toISOString(), "2026-01-05T13:00:00.000Z");
-  assertEquals(windows[0].end.toISOString(), "2026-01-05T22:00:00.000Z");
+  assertEquals(windows[0].end.toISOString(), "2026-01-05T21:00:00.000Z");
 });
 
 Deno.test("ladder: alwaysOn machine is one continuous window across the range", () => {
@@ -150,7 +151,7 @@ Deno.test("resolveLocationWindows: shifts if present, else the stock week", () =
   });
   assertEquals(stock.length, 5);
   assertEquals(stock[0].start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(stock[0].end.toISOString(), "2026-01-05T17:00:00.000Z");
+  assertEquals(stock[0].end.toISOString(), "2026-01-05T16:00:00.000Z");
 });
 
 Deno.test("intersectWindows: overlap keeps the shared span", () => {

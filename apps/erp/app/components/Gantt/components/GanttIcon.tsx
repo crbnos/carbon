@@ -3,11 +3,12 @@ import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuCalendarClock,
   LuClock,
-  LuFactory,
   LuFlaskConical,
   LuHand,
   LuInfo,
-  LuSquare
+  LuMapPin,
+  LuSquare,
+  LuWrench
 } from "react-icons/lu";
 import { AttemptIcon } from "~/assets/icons/AttemptIcon";
 import { TaskIcon } from "~/assets/icons/TaskIcon";
@@ -30,8 +31,10 @@ export function GanttIcon({ name, className }: TaskIconProps) {
       );
     case "operation":
       return <LuClock className={cn(className, "text-blue-500")} />;
+    case "location":
+      return <LuMapPin className={cn(className, "text-blue-500")} />;
     case "workCenter":
-      return <LuFactory className={cn(className, "text-blue-500")} />;
+      return <LuWrench className={cn(className, "text-blue-500")} />;
     case "timecard":
       return <TaskIcon className={cn(className, "text-yellow-500")} />;
     case "inspection":

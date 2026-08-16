@@ -51,7 +51,7 @@ const WINDOWS_END_ISO = "2026-08-01T00:00:00.000Z";
 const WORK_CENTERS = [
   "wc-always-1", // rung 1: alwaysOn (one continuous lights-out window)
   "wc-always-2", // rung 1: alwaysOn
-  "wc-rung3-a", // rung 3: stock Mon-Fri 08:00-17:00
+  "wc-rung3-a", // rung 3: stock Mon-Fri 08:00-16:00
   "wc-rung3-b", // rung 3
   "wc-rung2-a", // rung 2: location shifts 06:00-14:00 + 14:00-22:00 weekdays
   "wc-rung2-b", // rung 2

@@ -98,11 +98,6 @@ msgstr "{0} of {1} posting accounts mapped"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} of {maxSlots} provider slots used"
 
-#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
-#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
-msgid "{0} of work across {1}"
-msgstr "{0} of work across {1}"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} orders"
@@ -6188,6 +6183,9 @@ msgstr "Escalation"
 msgid "Est. Duration"
 msgstr "Est. Duration"
 
+msgid "Estimated"
+msgstr "Estimated"
+
 msgid "Estimated — no capacity reservation"
 msgstr "Estimated — no capacity reservation"
 
@@ -10607,8 +10605,8 @@ msgstr "Open in MES"
 msgid "Open Issues"
 msgstr "Open Issues"
 
-msgid "Open Job"
-msgstr "Open Job"
+msgid "Open job"
+msgstr "Open job"
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Open job demand plus outstanding transfers out of this bin"
@@ -12711,6 +12709,9 @@ msgstr "Resolve these before completing the NCR: every row must have a non-Pendi
 msgid "Resolved Price"
 msgstr "Resolved Price"
 
+msgid "Resource"
+msgstr "Resource"
+
 msgid "Resource Planning"
 msgstr "Resource Planning"
 
@@ -14178,6 +14179,9 @@ msgstr "Sourcing type"
 
 msgid "Sourcing Type"
 msgstr "Sourcing Type"
+
+msgid "Span"
+msgstr "Span"
 
 msgid "Spare Part Consumption"
 msgstr "Spare Part Consumption"
@@ -16446,6 +16450,9 @@ msgstr "Unreceived POs"
 msgid "Unsaved changes"
 msgstr "Unsaved changes"
 
+msgid "Unscheduled"
+msgstr "Unscheduled"
+
 msgid "Unscrap"
 msgstr "Unscrap"
 
@@ -17530,6 +17537,9 @@ msgstr "Wordmark Dark Mode"
 
 msgid "Wordmark Light Mode"
 msgstr "Wordmark Light Mode"
+
+msgid "Work"
+msgstr "Work"
 
 msgid "work center"
 msgstr "work center"

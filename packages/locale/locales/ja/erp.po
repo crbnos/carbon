@@ -98,11 +98,6 @@ msgstr "{0} 件 / {1} 件の仕訳勘定がマップされています"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}個の{maxSlots}プロバイダースロットが使用されています"
 
-#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
-#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
-msgid "{0} of work across {1}"
-msgstr "{0}の作業が{1}にわたって"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
@@ -6188,6 +6183,9 @@ msgstr "エスカレーション"
 msgid "Est. Duration"
 msgstr "推定期間"
 
+msgid "Estimated"
+msgstr ""
+
 msgid "Estimated — no capacity reservation"
 msgstr "推定 — 容量予約なし"
 
@@ -10607,8 +10605,8 @@ msgstr "MESで開く"
 msgid "Open Issues"
 msgstr "未解決の問題"
 
-msgid "Open Job"
-msgstr "オープンジョブ"
+msgid "Open job"
+msgstr ""
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "オープンジョブの需要とこのビンからの未決済移動"
@@ -12711,6 +12709,9 @@ msgstr "NCRを完了する前にこれらを解決してください。すべて
 msgid "Resolved Price"
 msgstr "解決済み価格"
 
+msgid "Resource"
+msgstr ""
+
 msgid "Resource Planning"
 msgstr ""
 
@@ -14178,6 +14179,9 @@ msgstr "調達タイプ"
 
 msgid "Sourcing Type"
 msgstr "調達タイプ"
+
+msgid "Span"
+msgstr ""
 
 msgid "Spare Part Consumption"
 msgstr "予備部品消費"
@@ -16446,6 +16450,9 @@ msgstr "未受領PO"
 msgid "Unsaved changes"
 msgstr "未保存の変更"
 
+msgid "Unscheduled"
+msgstr ""
+
 msgid "Unscrap"
 msgstr "スクラップ解除"
 
@@ -17530,6 +17537,9 @@ msgstr "ワードマーク ダークモード"
 
 msgid "Wordmark Light Mode"
 msgstr "ワードマーク ライトモード"
+
+msgid "Work"
+msgstr ""
 
 msgid "work center"
 msgstr "ワークセンター"

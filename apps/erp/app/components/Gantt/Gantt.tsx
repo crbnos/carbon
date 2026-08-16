@@ -22,7 +22,6 @@ import {
   TooltipContent,
   TooltipTrigger,
   useDebounce,
-  useInitialDimensions,
   useShortcutKeys
 } from "@carbon/react";
 import { formatDurationMilliseconds, lerp } from "@carbon/utils";
@@ -59,6 +58,30 @@ import {
 } from "./components/GanttTaskStatus";
 import { eventBackgroundClassName, SpanTitle } from "./components/SpanTitle";
 
+/** The tree list's default width, in px — the timeline takes the remainder. */
+const TREE_DEFAULT_WIDTH = 360;
+/** Floor the tree can be dragged to, in px (kept below the default width). */
+const TREE_MIN_WIDTH = 240;
+
+/**
+ * Live element width via ResizeObserver. Unlike a measure-once hook, it updates
+ * when the panel is dragged, so the timeline can reflow to fill its space
+ * instead of freezing at its mount-time width.
+ */
+function useElementWidth(ref: React.RefObject<HTMLElement>) {
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setWidth(el.getBoundingClientRect().width);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return width;
+}
+
 type GanttProps = {
   events: GanttEvent[];
   selectedId?: string;
@@ -87,6 +110,28 @@ type GanttProps = {
    * there is no green line. Ignored in duration mode.
    */
   nowMs?: number;
+  /**
+   * Absolute [start, end) epoch-ms intervals of NON-working time (nights,
+   * weekends, plant-closed hours) to shade behind every row, so a bar spanning
+   * several days does not read as 24h/day. Anchored at {@link windowStartMs};
+   * only used in `axis === "absolute"` mode.
+   */
+  nonWorkingIntervals?: { start: number; end: number }[];
+  /**
+   * Spacing between axis ticks, in ms, anchored at {@link windowStartMs}. Gives
+   * clean clock-aligned gridlines (e.g. every 4h on a day view) instead of the
+   * default five equal fractions of the padded axis. `axis === "absolute"` only;
+   * omit to keep the equal-fraction ticks.
+   */
+  tickIntervalMs?: number;
+  /**
+   * Explicit axis tick offsets (ms from {@link windowStartMs}), one label+line
+   * each. Use when the ticks are not evenly spaced in ms — e.g. one per day on a
+   * week view, placed at real LOCAL midnights so they stay day-aligned across a
+   * DST transition (a fixed 24h interval would drift). Takes precedence over
+   * {@link tickIntervalMs}. `axis === "absolute"` only.
+   */
+  axisTickMs?: number[];
 };
 
 const Gantt = ({
@@ -101,7 +146,10 @@ const Gantt = ({
   axis = "duration",
   windowStartMs,
   formatAxisTick,
-  nowMs
+  nowMs,
+  nonWorkingIntervals,
+  tickIntervalMs,
+  axisTickMs
 }: GanttProps) => {
   const { t } = useLingui();
   const [filterText, setFilterText] = useState("");
@@ -111,6 +159,22 @@ const Gantt = ({
   const parentRef = useRef<HTMLDivElement>(null);
   const treeScrollRef = useRef<HTMLDivElement>(null);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
+  const panelGroupRef = useRef<HTMLDivElement>(null);
+
+  // The tree defaults to a fixed pixel width; react-resizable-panels only takes
+  // percentages, so convert once the group's width is known (and gate the group
+  // on it, since defaultSize is read only at mount). The timeline gets the rest.
+  // The min is px-derived too, so it stays below the default on wide monitors
+  // (a fixed 20% floor would otherwise clamp the 360px default up).
+  const panelGroupWidth = useElementWidth(panelGroupRef);
+  const treeDefaultSize =
+    panelGroupWidth > 0
+      ? Math.min(90, Math.max(10, (TREE_DEFAULT_WIDTH / panelGroupWidth) * 100))
+      : undefined;
+  const treeMinSize =
+    panelGroupWidth > 0
+      ? Math.min(80, Math.max(5, (TREE_MIN_WIDTH / panelGroupWidth) * 100))
+      : 20;
 
   const {
     nodes,
@@ -168,144 +232,157 @@ const Gantt = ({
           />
         </div>
       </div>
-      <ResizablePanelGroup
-        direction="horizontal"
-        onLayout={(layout) => {
-          if (layout.length !== 2) return;
-          setResizableGanttSettings(document, layout);
-        }}
-      >
-        {/* Tree list */}
-        <ResizablePanel
-          order={1}
-          minSize={20}
-          defaultSize={50}
-          className="pl-3"
-        >
-          <div className="grid h-full grid-rows-[2rem_1fr] overflow-hidden">
-            <div className="flex items-center pr-2">
-              {parentReadableId && (
-                <ShowParentLink ganttReadableId={parentReadableId} />
-              )}
-              <LiveReloadingStatus
-                rootSpanCompleted={rootSpanStatus !== "inprogress"}
-              />
-            </div>
-            <TreeView
-              parentRef={parentRef}
-              scrollRef={treeScrollRef}
-              virtualizer={virtualizer}
-              autoFocus
-              tree={events}
-              nodes={nodes}
-              getNodeProps={getNodeProps}
-              getTreeProps={getTreeProps}
-              renderNode={({ node, state }) => (
-                <>
-                  <div
-                    className={cn(
-                      "flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
-                      state.selected
-                        ? "bg-muted"
-                        : "bg-transparent hover:bg-muted/60"
-                    )}
-                    onClick={() => {
-                      selectNode(node.id);
-                    }}
-                  >
-                    <div className="flex h-8 items-center">
-                      {Array.from({ length: node.level }).map((_, index) => (
-                        <LevelLine
-                          key={index}
-                          isError={node.data.isError}
-                          isSelected={state.selected}
-                        />
-                      ))}
+      <div ref={panelGroupRef} className="h-full w-full min-h-0">
+        {treeDefaultSize !== undefined && (
+          <ResizablePanelGroup
+            direction="horizontal"
+            onLayout={(layout) => {
+              if (layout.length !== 2) return;
+              setResizableGanttSettings(document, layout);
+            }}
+          >
+            {/* Tree list */}
+            <ResizablePanel
+              order={1}
+              minSize={treeMinSize}
+              defaultSize={treeDefaultSize}
+              className="pl-3"
+            >
+              <div className="grid h-full grid-rows-[2rem_1fr] overflow-hidden">
+                <div className="flex items-center pr-2">
+                  {parentReadableId && (
+                    <ShowParentLink ganttReadableId={parentReadableId} />
+                  )}
+                  <LiveReloadingStatus
+                    rootSpanCompleted={rootSpanStatus !== "inprogress"}
+                  />
+                </div>
+                <TreeView
+                  parentRef={parentRef}
+                  scrollRef={treeScrollRef}
+                  virtualizer={virtualizer}
+                  autoFocus
+                  tree={events}
+                  nodes={nodes}
+                  getNodeProps={getNodeProps}
+                  getTreeProps={getTreeProps}
+                  renderNode={({ node, state }) => (
+                    <>
                       <div
                         className={cn(
-                          "flex h-8 w-4 items-center",
-                          node.hasChildren && "hover:bg-muted"
+                          "flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
+                          state.selected
+                            ? "bg-muted"
+                            : "bg-transparent hover:bg-muted/60"
                         )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (e.altKey) {
-                            if (state.expanded) {
-                              collapseAllBelowDepth(node.level);
-                            } else {
-                              expandAllBelowDepth(node.level);
-                            }
-                          } else {
-                            toggleExpandNode(node.id);
-                          }
-                          scrollToNode(node.id);
+                        onClick={() => {
+                          selectNode(node.id);
                         }}
                       >
-                        {node.hasChildren ? (
-                          state.expanded ? (
-                            <LuChevronDown className="size-4 text-muted-foreground" />
-                          ) : (
-                            <LuChevronRight className="size-4 text-muted-foreground" />
-                          )
-                        ) : (
-                          <div className="h-8 w-4" />
-                        )}
-                      </div>
-                    </div>
+                        <div className="flex h-8 items-center">
+                          {Array.from({ length: node.level }).map(
+                            (_, index) => (
+                              <LevelLine
+                                key={index}
+                                isError={node.data.isError}
+                                isSelected={state.selected}
+                              />
+                            )
+                          )}
+                          <div
+                            className={cn(
+                              "flex h-8 w-4 items-center",
+                              node.hasChildren && "hover:bg-muted"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (e.altKey) {
+                                if (state.expanded) {
+                                  collapseAllBelowDepth(node.level);
+                                } else {
+                                  expandAllBelowDepth(node.level);
+                                }
+                              } else {
+                                toggleExpandNode(node.id);
+                              }
+                              scrollToNode(node.id);
+                            }}
+                          >
+                            {node.hasChildren ? (
+                              state.expanded ? (
+                                <LuChevronDown className="size-4 text-muted-foreground" />
+                              ) : (
+                                <LuChevronRight className="size-4 text-muted-foreground" />
+                              )
+                            ) : (
+                              <div className="h-8 w-4" />
+                            )}
+                          </div>
+                        </div>
 
-                    <div className="flex w-full items-center justify-between gap-2 pl-1">
-                      <div className="flex items-center gap-2 overflow-x-hidden">
-                        <GanttIcon
-                          name={node.data.style?.icon}
-                          className="size-4 min-h-4 min-w-4"
-                        />
-                        <NodeText node={node} />
-                        {node.data.isRoot && (
-                          <Badge variant="outline" className="text-xs">
-                            <Trans>Job</Trans>
-                          </Badge>
-                        )}
+                        <div className="flex w-full items-center justify-between gap-2 pl-1">
+                          <div className="flex items-center gap-2 overflow-x-hidden">
+                            <GanttIcon
+                              name={node.data.style?.icon}
+                              className="size-4 min-h-4 min-w-4"
+                            />
+                            <NodeText node={node} />
+                            {node.data.isRoot && (
+                              <Badge variant="outline" className="text-xs">
+                                <Trans>Job</Trans>
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <NodeStatusIcon node={node} />
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <NodeStatusIcon node={node} />
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-              onScroll={(scrollTop) => {
-                //sync the scroll to the tree
-                if (timelineScrollRef.current) {
-                  timelineScrollRef.current.scrollTop = scrollTop;
-                }
-              }}
-            />
-          </div>
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        {/* Timeline */}
-        <ResizablePanel order={2} minSize={20} defaultSize={50}>
-          <GanttTimeline
-            totalDuration={totalDuration}
-            scale={scale}
-            events={events}
-            rootSpanStatus={rootSpanStatus}
-            rootStartedAt={rootStartedAt}
-            axis={axis}
-            windowStartMs={windowStartMs}
-            formatAxisTick={formatAxisTick}
-            nowMs={nowMs}
-            parentRef={parentRef}
-            timelineScrollRef={timelineScrollRef}
-            nodes={nodes}
-            getNodeProps={getNodeProps}
-            getTreeProps={getTreeProps}
-            showDurations={showDurations}
-            treeScrollRef={treeScrollRef}
-            virtualizer={virtualizer}
-            toggleNodeSelection={toggleNodeSelection}
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+                    </>
+                  )}
+                  onScroll={(scrollTop) => {
+                    //sync the scroll to the tree
+                    if (timelineScrollRef.current) {
+                      timelineScrollRef.current.scrollTop = scrollTop;
+                    }
+                  }}
+                />
+              </div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            {/* Timeline — takes whatever the tree leaves */}
+            <ResizablePanel
+              order={2}
+              minSize={20}
+              defaultSize={100 - treeDefaultSize}
+            >
+              <GanttTimeline
+                totalDuration={totalDuration}
+                scale={scale}
+                events={events}
+                rootSpanStatus={rootSpanStatus}
+                rootStartedAt={rootStartedAt}
+                axis={axis}
+                windowStartMs={windowStartMs}
+                formatAxisTick={formatAxisTick}
+                nowMs={nowMs}
+                nonWorkingIntervals={nonWorkingIntervals}
+                tickIntervalMs={tickIntervalMs}
+                axisTickMs={axisTickMs}
+                parentRef={parentRef}
+                timelineScrollRef={timelineScrollRef}
+                nodes={nodes}
+                getNodeProps={getNodeProps}
+                getTreeProps={getTreeProps}
+                showDurations={showDurations}
+                treeScrollRef={treeScrollRef}
+                virtualizer={virtualizer}
+                toggleNodeSelection={toggleNodeSelection}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        )}
+      </div>
       <div className="flex items-center justify-between gap-2 border-t border-border px-2">
         <div className="grow @container">
           <div className="hidden items-center gap-4 @[42rem]:flex">
@@ -367,6 +444,9 @@ type GanttTimelineProps = Pick<
   | "windowStartMs"
   | "formatAxisTick"
   | "nowMs"
+  | "nonWorkingIntervals"
+  | "tickIntervalMs"
+  | "axisTickMs"
 > & {
   scale: number;
   parentRef: React.RefObject<HTMLDivElement>;
@@ -382,6 +462,35 @@ type GanttTimelineProps = Pick<
 
 const TICK_COUNT = 5;
 
+/**
+ * Split a bar's [offset, offset+duration] into its WORKING pieces by removing
+ * the (offset-space) non-working intervals — so a reservation spanning several
+ * days renders as separate bars with gaps at night/weekends, not one solid
+ * block that reads as round-the-clock work. Pure interval subtraction.
+ */
+function splitWorkingSegments(
+  offset: number,
+  duration: number,
+  nonWorking: { start: number; end: number }[]
+): { startMs: number; durationMs: number }[] {
+  let pieces = [{ start: offset, end: offset + duration }];
+  for (const nw of nonWorking) {
+    const next: { start: number; end: number }[] = [];
+    for (const seg of pieces) {
+      if (nw.end <= seg.start || nw.start >= seg.end) {
+        next.push(seg);
+        continue;
+      }
+      if (nw.start > seg.start) next.push({ start: seg.start, end: nw.start });
+      if (nw.end < seg.end) next.push({ start: nw.end, end: seg.end });
+    }
+    pieces = next;
+  }
+  return pieces
+    .filter((s) => s.end > s.start)
+    .map((s) => ({ startMs: s.start, durationMs: s.end - s.start }));
+}
+
 const GanttTimeline = ({
   totalDuration,
   scale,
@@ -391,6 +500,9 @@ const GanttTimeline = ({
   windowStartMs,
   formatAxisTick,
   nowMs,
+  nonWorkingIntervals,
+  tickIntervalMs,
+  axisTickMs,
   parentRef,
   timelineScrollRef,
   virtualizer,
@@ -403,8 +515,10 @@ const GanttTimeline = ({
   treeScrollRef
 }: GanttTimelineProps) => {
   const timelineContainerRef = useRef<HTMLDivElement>(null);
-  const initialTimelineDimensions = useInitialDimensions(timelineContainerRef);
-  const minTimelineWidth = initialTimelineDimensions?.width ?? 300;
+  // Live width (ResizeObserver) so the timeline reflows to fill the panel when
+  // the tree/timeline divider is dragged, instead of freezing at mount width.
+  const timelineWidth = useElementWidth(timelineContainerRef);
+  const minTimelineWidth = timelineWidth || 300;
   const maxTimelineWidth = minTimelineWidth * 10;
 
   const isAbsolute = axis === "absolute";
@@ -446,6 +560,37 @@ const GanttTimeline = ({
     return () => clearInterval(interval);
   }, [totalDuration, rootSpanStatus]);
 
+  // Absolute-mode axis ticks. Explicit offsets win (e.g. one per day on a week
+  // view, placed at real local midnights so they don't drift over a DST change);
+  // otherwise a fixed interval from the window start (a clean local boundary:
+  // midnight for day, the shift start for shift), so labels land on clock-aligned
+  // marks (e.g. every 4h) instead of five equal fractions of the padded axis.
+  // Null → keep the default equal-fraction ticks. Capped so a too-dense set
+  // can't explode the DOM.
+  const absoluteTicks =
+    isAbsolute && axisTickMs && axisTickMs.length > 0
+      ? axisTickMs.filter((ms) => ms >= 0 && ms <= duration).slice(0, 400)
+      : isAbsolute &&
+          tickIntervalMs &&
+          tickIntervalMs > 0 &&
+          duration / tickIntervalMs <= 400
+        ? (() => {
+            const out: number[] = [];
+            for (let ms = 0; ms <= duration; ms += tickIntervalMs) out.push(ms);
+            return out;
+          })()
+        : null;
+
+  // Non-working intervals in offset-space (ms from the window start), used to
+  // split each bar into its working pieces so nights/weekends read as gaps.
+  const nonWorkingOffsets =
+    isAbsolute && windowStartMs !== undefined && nonWorkingIntervals
+      ? nonWorkingIntervals.map((interval) => ({
+          start: interval.start - windowStartMs,
+          end: interval.end - windowStartMs
+        }))
+      : null;
+
   return (
     <div
       className="h-full overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
@@ -465,58 +610,161 @@ const GanttTimeline = ({
           {/* The duration labels */}
           <Timeline.Row>
             <Timeline.Row className="h-6">
-              <Timeline.EquallyDistribute count={TICK_COUNT}>
-                {(ms: number, index: number) => {
-                  if (index === TICK_COUNT - 1) return null;
-                  return (
+              {absoluteTicks ? (
+                absoluteTicks.map((tickMs) => (
+                  <Timeline.Point
+                    key={tickMs}
+                    ms={tickMs}
+                    className="relative bottom-[2px] text-xxs text-muted-foreground"
+                  >
+                    {(ms) => (
+                      <div
+                        className={cn(
+                          "whitespace-nowrap",
+                          // Align by POSITION, not index: a tick at the very
+                          // start hugs the left, one at the very end hugs the
+                          // right, everything between (e.g. a week's mid-week
+                          // day ticks, which don't reach the edge) is centered.
+                          tickMs <= 0
+                            ? "ml-1"
+                            : tickMs >= duration * 0.98
+                              ? "-ml-1 -translate-x-full"
+                              : "-translate-x-1/2"
+                        )}
+                      >
+                        {renderTickLabel(ms)}
+                      </div>
+                    )}
+                  </Timeline.Point>
+                ))
+              ) : (
+                <>
+                  <Timeline.EquallyDistribute count={TICK_COUNT}>
+                    {(ms: number, index: number) => {
+                      if (index === TICK_COUNT - 1) return null;
+                      return (
+                        <Timeline.Point
+                          ms={ms}
+                          className={
+                            "relative bottom-[2px] text-xxs text-muted-foreground"
+                          }
+                        >
+                          {(ms) => (
+                            <div
+                              className={cn(
+                                "whitespace-nowrap",
+                                index === 0
+                                  ? "ml-1"
+                                  : index === TICK_COUNT - 1
+                                    ? "-ml-1 -translate-x-full"
+                                    : "-translate-x-1/2"
+                              )}
+                            >
+                              {renderTickLabel(ms)}
+                            </div>
+                          )}
+                        </Timeline.Point>
+                      );
+                    }}
+                  </Timeline.EquallyDistribute>
+                  {rootSpanStatus !== "inprogress" && (
                     <Timeline.Point
-                      ms={ms}
-                      className={
-                        "relative bottom-[2px] text-xxs text-muted-foreground"
-                      }
+                      ms={duration}
+                      className={cn(
+                        "relative bottom-[2px] text-xxs",
+                        isAbsolute
+                          ? "text-muted-foreground"
+                          : rootSpanStatus === "completed"
+                            ? "text-emerald-500"
+                            : "text-destructive"
+                      )}
                     >
                       {(ms) => (
                         <div
-                          className={cn(
-                            "whitespace-nowrap",
-                            index === 0
-                              ? "ml-1"
-                              : index === TICK_COUNT - 1
-                                ? "-ml-1 -translate-x-full"
-                                : "-translate-x-1/2"
-                          )}
+                          className={cn("-translate-x-1/2 whitespace-nowrap")}
                         >
                           {renderTickLabel(ms)}
                         </div>
                       )}
                     </Timeline.Point>
-                  );
-                }}
-              </Timeline.EquallyDistribute>
-              {rootSpanStatus !== "inprogress" && (
-                <Timeline.Point
-                  ms={duration}
-                  className={cn(
-                    "relative bottom-[2px] text-xxs",
-                    isAbsolute
-                      ? "text-muted-foreground"
-                      : rootSpanStatus === "completed"
-                        ? "text-emerald-500"
-                        : "text-destructive"
                   )}
-                >
-                  {(ms) => (
-                    <div className={cn("-translate-x-1/2 whitespace-nowrap")}>
-                      {renderTickLabel(ms)}
-                    </div>
-                  )}
-                </Timeline.Point>
+                </>
               )}
             </Timeline.Row>
             <Timeline.Row className="h-2">
+              {absoluteTicks ? (
+                absoluteTicks.map((tickMs, index) =>
+                  index === 0 ? null : (
+                    <Timeline.Point
+                      key={tickMs}
+                      ms={tickMs}
+                      className="h-full border-r border-muted"
+                    />
+                  )
+                )
+              ) : (
+                <>
+                  <Timeline.EquallyDistribute count={TICK_COUNT}>
+                    {(ms: number, index: number) => {
+                      if (index === 0 || index === TICK_COUNT - 1) return null;
+                      return (
+                        <Timeline.Point
+                          ms={ms}
+                          className={"h-full border-r border-muted"}
+                        />
+                      );
+                    }}
+                  </Timeline.EquallyDistribute>
+                  <Timeline.Point
+                    ms={duration}
+                    className={cn(
+                      "h-full border-r",
+                      isAbsolute
+                        ? "border-muted"
+                        : rootSpanStatus === "completed"
+                          ? "border-success/30"
+                          : "border-destructive/30"
+                    )}
+                  />
+                </>
+              )}
+            </Timeline.Row>
+          </Timeline.Row>
+          {/* Main timeline body */}
+          <Timeline.Row className="overflow-hidden">
+            {/* Non-working time (nights / weekends / plant-closed hours) shaded
+                behind every lane, so a bar spanning several days no longer reads
+                as 24h/day. Absolute mode only; clamped to the visible window. */}
+            {isAbsolute &&
+              windowStartMs !== undefined &&
+              nonWorkingIntervals?.map((interval) => {
+                const startMs = Math.max(0, interval.start - windowStartMs);
+                const endMs = Math.min(duration, interval.end - windowStartMs);
+                if (endMs <= startMs) return null;
+                return (
+                  <Timeline.Span
+                    key={`nonworking-${interval.start}`}
+                    startMs={startMs}
+                    durationMs={endMs - startMs}
+                    className="pointer-events-none h-full bg-muted/50"
+                  />
+                );
+              })}
+            {/* The vertical tick lines */}
+            {absoluteTicks ? (
+              absoluteTicks.map((tickMs, index) =>
+                index === 0 ? null : (
+                  <Timeline.Point
+                    key={tickMs}
+                    ms={tickMs}
+                    className="h-full border-r border-muted"
+                  />
+                )
+              )
+            ) : (
               <Timeline.EquallyDistribute count={TICK_COUNT}>
                 {(ms: number, index: number) => {
-                  if (index === 0 || index === TICK_COUNT - 1) return null;
+                  if (index === 0) return null;
                   return (
                     <Timeline.Point
                       ms={ms}
@@ -525,33 +773,7 @@ const GanttTimeline = ({
                   );
                 }}
               </Timeline.EquallyDistribute>
-              <Timeline.Point
-                ms={duration}
-                className={cn(
-                  "h-full border-r",
-                  isAbsolute
-                    ? "border-muted"
-                    : rootSpanStatus === "completed"
-                      ? "border-success/30"
-                      : "border-destructive/30"
-                )}
-              />
-            </Timeline.Row>
-          </Timeline.Row>
-          {/* Main timeline body */}
-          <Timeline.Row className="overflow-hidden">
-            {/* The vertical tick lines */}
-            <Timeline.EquallyDistribute count={TICK_COUNT}>
-              {(ms: number, index: number) => {
-                if (index === 0) return null;
-                return (
-                  <Timeline.Point
-                    ms={ms}
-                    className={"h-full border-r border-muted"}
-                  />
-                );
-              }}
-            </Timeline.EquallyDistribute>
+            )}
             {/* Absolute mode: the green line is "now", drawn only while now is
                 inside the window. Duration mode keeps the completed/failed
                 end-of-span line. */}
@@ -618,6 +840,15 @@ const GanttTimeline = ({
                             startMs={node.data.offset}
                             durationMs={node.data.duration}
                             node={node}
+                            segments={
+                              nonWorkingOffsets
+                                ? splitWorkingSegments(
+                                    node.data.offset,
+                                    node.data.duration,
+                                    nonWorkingOffsets
+                                  )
+                                : undefined
+                            }
                           />
                         )}
                       </>
@@ -820,45 +1051,79 @@ function WaitSpan({ wait }: { wait: NonNullable<GanttEvent["data"]["wait"]> }) {
 function SpanWithDuration({
   showDuration,
   node,
+  segments,
   ...props
-}: Timeline.SpanProps & { node: GanttEvent; showDuration: boolean }) {
+}: Timeline.SpanProps & {
+  node: GanttEvent;
+  showDuration: boolean;
+  /**
+   * Working-time pieces the bar is split into (non-working masked out) — a
+   * multi-day reservation draws as separate bars with gaps at night. Omit for a
+   * single continuous bar spanning props.startMs..+durationMs.
+   */
+  segments?: { startMs: number; durationMs: number }[];
+}) {
+  const pieces =
+    segments && segments.length > 0
+      ? segments
+      : [{ startMs: props.startMs, durationMs: props.durationMs }];
+
+  // The duration label (TOTAL work, from props.durationMs) rides the widest
+  // piece so it stays readable when the bar is split into thin segments.
+  let labelIndex = 0;
+  for (let i = 1; i < pieces.length; i++) {
+    if ((pieces[i]?.durationMs ?? 0) > (pieces[labelIndex]?.durationMs ?? 0)) {
+      labelIndex = i;
+    }
+  }
+
   return (
-    <Timeline.Span {...props}>
-      <motion.div
-        className={cn(
-          "relative flex h-4 w-full min-w-[2px] items-center rounded-sm",
-          eventBackgroundClassName(node.data)
-        )}
-        layoutId={node.id}
-      >
-        {(node.data.isPartial || node.data.isEstimated) && (
-          <div
-            className={cn(
-              "absolute left-0 top-0 h-full w-full rounded-sm opacity-30",
-              // estimated placements are static; only live work animates
-              node.data.isPartial && "animate-tile-scroll"
-            )}
-            style={{
-              backgroundImage: `url(${tileBgPath})`,
-              backgroundSize: "8px 8px"
-            }}
-          />
-        )}
-        <div
-          className={cn(
-            "sticky left-0 z-10 transition group-hover:opacity-100",
-            !showDuration && "opacity-0"
-          )}
+    <>
+      {pieces.map((piece, i) => (
+        <Timeline.Span
+          key={`${piece.startMs}:${piece.durationMs}`}
+          startMs={piece.startMs}
+          durationMs={piece.durationMs}
         >
-          <div className="rounded-sm bg-black/40 px-1 py-0.5 text-xxs font-medium text-white tabular-nums">
-            {formatDurationMilliseconds(props.durationMs, {
-              style: "short",
-              maxDecimalPoints: props.durationMs < 1000 ? 0 : 1
-            })}
-          </div>
-        </div>
-      </motion.div>
-    </Timeline.Span>
+          <motion.div
+            className={cn(
+              "relative flex h-4 w-full min-w-[2px] items-center rounded-sm",
+              eventBackgroundClassName(node.data)
+            )}
+            layoutId={pieces.length === 1 ? node.id : `${node.id}:${i}`}
+          >
+            {(node.data.isPartial || node.data.isEstimated) && (
+              <div
+                className={cn(
+                  "absolute left-0 top-0 h-full w-full rounded-sm opacity-30",
+                  // estimated placements are static; only live work animates
+                  node.data.isPartial && "animate-tile-scroll"
+                )}
+                style={{
+                  backgroundImage: `url(${tileBgPath})`,
+                  backgroundSize: "8px 8px"
+                }}
+              />
+            )}
+            {i === labelIndex && (
+              <div
+                className={cn(
+                  "sticky left-0 z-10 transition group-hover:opacity-100",
+                  !showDuration && "opacity-0"
+                )}
+              >
+                <div className="rounded-sm bg-black/40 px-1 py-0.5 text-xxs font-medium text-white tabular-nums">
+                  {formatDurationMilliseconds(props.durationMs, {
+                    style: "short",
+                    maxDecimalPoints: props.durationMs < 1000 ? 0 : 1
+                  })}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </Timeline.Span>
+      ))}
+    </>
   );
 }
 

@@ -4,7 +4,7 @@
  *
  * Work centers are no longer "always open": machine availability comes from the
  * machine-availability ladder (explicit `workCenterShift` rows → the location's
- * shifts → a stock Mon–Fri 08:00–17:00 week), or one continuous window for an
+ * shifts → a stock Mon–Fri 08:00–16:00 week), or one continuous window for an
  * `alwaysOn` (lights-out) machine. People windows (`employeeShift` ⋈ `shift`)
  * refine the machine calendar for attended operations — a person can't run a
  * closed machine, so member windows are intersected with the machine's.
@@ -31,12 +31,13 @@ export type CalendarWindow = {
 
 /**
  * Stock default operating week (availability-ladder rung 3): Mon–Fri
- * 08:00–17:00 in the location's timezone, used when a work center has no
- * explicit shifts and its location has none either. The 9-hour wall span
- * matches the UI's 8h-work + 1h-break convention (FALLBACK_SHIFT_HOURS = 8).
+ * 08:00–16:00 in the location's timezone, used when a work center has no
+ * explicit shifts and its location has none either. An 8-hour working day
+ * (no break carve-out), matching the people views' FALLBACK_SHIFT_HOURS = 8 so
+ * machine and people capacity assume the same default day.
  */
 export const STOCK_WEEK_SHIFTS: CalendarShiftRow[] = [1, 2, 3, 4, 5].map(
-  (dayOfWeek) => ({ dayOfWeek, startTime: "08:00", endTime: "17:00" })
+  (dayOfWeek) => ({ dayOfWeek, startTime: "08:00", endTime: "16:00" })
 );
 
 
@@ -201,13 +202,15 @@ export function intersectWindows(
   let i = 0;
   let j = 0;
   while (i < a.length && j < b.length) {
-    const start = Math.max(a[i].start.getTime(), b[j].start.getTime());
-    const end = Math.min(a[i].end.getTime(), b[j].end.getTime());
+    const ai = a[i]!;
+    const bj = b[j]!;
+    const start = Math.max(ai.start.getTime(), bj.start.getTime());
+    const end = Math.min(ai.end.getTime(), bj.end.getTime());
     if (end > start) {
       result.push({ start: new Date(start), end: new Date(end) });
     }
     // advance whichever window ends first — the other may still overlap the next
-    if (a[i].end.getTime() < b[j].end.getTime()) {
+    if (ai.end.getTime() < bj.end.getTime()) {
       i++;
     } else {
       j++;
@@ -344,7 +347,7 @@ export function findSlot(args: {
     if (windowIndex === -1) {
       return null; // horizon exhausted
     }
-    const startMs = Math.max(candidate, windows[windowIndex].start.getTime());
+    const startMs = Math.max(candidate, windows[windowIndex]!.start.getTime());
 
     // accumulate working time across windows from startMs
     let remaining = durationMs;
@@ -354,8 +357,9 @@ export function findSlot(args: {
       if (i >= windows.length) {
         return null; // cannot fit before the end of the horizon
       }
-      const from = i === windowIndex ? startMs : windows[i].start.getTime();
-      const available = windows[i].end.getTime() - from;
+      const wi = windows[i]!;
+      const from = i === windowIndex ? startMs : wi.start.getTime();
+      const available = wi.end.getTime() - from;
       if (available >= remaining) {
         endMs = from + remaining;
         remaining = 0;

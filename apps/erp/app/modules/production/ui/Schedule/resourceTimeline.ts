@@ -59,21 +59,27 @@ export function buildResourceTimeline(input: {
    */
   workCenters?: { id: string; name: string }[];
   /**
+   * The location being viewed — its name titles the root row (with a location
+   * icon) so the board reads as a plant, not a generic "Resources" bucket.
+   */
+  locationName?: string;
+  /**
    * Explicit [start, end) window (epoch ms) for the day/week/shift views. When
    * given, it fixes the axis (instead of deriving it from the reservation
    * min/max) and bars are clipped to its edges. Omit for the auto-fit window.
    */
   window?: { start: number; end: number };
 }): ResourceTimeline {
-  const { reservations, workCenters = [], window } = input;
+  const { reservations, workCenters = [], locationName, window } = input;
+  const rootTitle = locationName ?? "Resources";
 
   const detailsById: Record<string, TimelineNodeDetail> = {};
 
   if (reservations.length === 0 && workCenters.length === 0) {
-    const root = makeRootEvent(0, false);
+    const root = makeRootEvent(0, false, rootTitle);
     detailsById[ROOT_ID] = {
       kind: "resource",
-      title: "Resources",
+      title: rootTitle,
       start: null,
       end: null,
       durationMs: 0,
@@ -142,11 +148,11 @@ export function buildResourceTimeline(input: {
   });
 
   const anyConflict = reservations.some((r) => r.hasConflict);
-  const root = makeRootEvent(totalDuration, anyConflict);
+  const root = makeRootEvent(totalDuration, anyConflict, rootTitle);
   const events: GanttEvent[] = [root];
   detailsById[ROOT_ID] = {
     kind: "resource",
-    title: "Resources",
+    title: rootTitle,
     start: new Date(windowStart).toISOString(),
     end: new Date(windowEnd).toISOString(),
     durationMs: totalDuration,
@@ -226,6 +232,9 @@ export function buildResourceTimeline(input: {
       // reservation times below.
       const barStart = clamp(rawStart, windowStart, windowEnd);
       const barEnd = clamp(rawEnd, windowStart, windowEnd);
+      // The row is titled by the job id alone — the parent lane already names
+      // the work center / process, so repeating it here is noise. The detail
+      // panel keeps the full "job · operation" label.
       const title = r.operationDescription
         ? `${r.jobReadableId} · ${r.operationDescription}`
         : r.jobReadableId;
@@ -240,7 +249,7 @@ export function buildResourceTimeline(input: {
         data: {
           duration: Math.max(barEnd - barStart, 0),
           offset: barStart - windowStart,
-          message: title,
+          message: r.jobReadableId,
           isRoot: false,
           isError,
           isPartial: false,
@@ -280,7 +289,11 @@ export function buildResourceTimeline(input: {
   };
 }
 
-function makeRootEvent(totalDuration: number, isError: boolean): GanttEvent {
+function makeRootEvent(
+  totalDuration: number,
+  isError: boolean,
+  title: string
+): GanttEvent {
   return {
     id: ROOT_ID,
     parentId: undefined,
@@ -290,13 +303,13 @@ function makeRootEvent(totalDuration: number, isError: boolean): GanttEvent {
     data: {
       duration: totalDuration,
       offset: 0,
-      message: "Resources",
+      message: title,
       isRoot: false, // the Gantt's isRoot badge is job-specific
       isError,
       isPartial: false,
       isCancelled: false,
       level: "TRACE" as GanttEvent["data"]["level"],
-      style: { icon: "workCenter" }
+      style: { icon: "location" }
     }
   };
 }

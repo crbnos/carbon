@@ -98,11 +98,6 @@ msgstr "{0} z {1} kont księgowych zmapowanych"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} z {maxSlots} slotów dostawcy jest w użyciu"
 
-#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
-#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
-msgid "{0} of work across {1}"
-msgstr "{0} pracy w {1}"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} zamówień"
@@ -6188,6 +6183,9 @@ msgstr "Eskalacja"
 msgid "Est. Duration"
 msgstr "Szac. Czas trwania"
 
+msgid "Estimated"
+msgstr ""
+
 msgid "Estimated — no capacity reservation"
 msgstr "Szacunkowe — brak rezerwacji pojemności"
 
@@ -10607,8 +10605,8 @@ msgstr "Otwórz w MES"
 msgid "Open Issues"
 msgstr "Otwarte problemy"
 
-msgid "Open Job"
-msgstr "Otwarta Praca"
+msgid "Open job"
+msgstr ""
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Otwarte żądanie zadania plus zaległe transfery z tego pojemnika"
@@ -12711,6 +12709,9 @@ msgstr "Rozwiąż to przed ukończeniem NCR: każdy wiersz musi mieć dyspozycj�
 msgid "Resolved Price"
 msgstr "Cena rozliczona"
 
+msgid "Resource"
+msgstr ""
+
 msgid "Resource Planning"
 msgstr ""
 
@@ -14178,6 +14179,9 @@ msgstr "Typ pozyskania"
 
 msgid "Sourcing Type"
 msgstr "Typ pozyskiwania"
+
+msgid "Span"
+msgstr ""
 
 msgid "Spare Part Consumption"
 msgstr "Zużycie części zamiennych"
@@ -16446,6 +16450,9 @@ msgstr "Nieprzyjęte zamówienia"
 msgid "Unsaved changes"
 msgstr "Niezapisane zmiany"
 
+msgid "Unscheduled"
+msgstr ""
+
 msgid "Unscrap"
 msgstr "Przywrócić"
 
@@ -17530,6 +17537,9 @@ msgstr "Logotyp Tryb Ciemny"
 
 msgid "Wordmark Light Mode"
 msgstr "Logotyp Tryb Jasny"
+
+msgid "Work"
+msgstr ""
 
 msgid "work center"
 msgstr "centrum pracy"

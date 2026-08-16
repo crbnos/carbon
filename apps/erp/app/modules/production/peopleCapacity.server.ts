@@ -31,9 +31,8 @@ type CapacityShift = {
 };
 
 // Rung 3 of the ladder: no shifts anywhere → stock Mon–Fri, 8h/day. Mirrors the
-// people views' FALLBACK_SHIFT_HOURS. (Wall-clock the engine's stock week is
-// 08:00–17:00 = 9h, but the display convention here has always been 8h — match
-// it, don't invent a new one.)
+// engine's stock week (08:00–16:00 = 8h) so machine and people capacity assume
+// the same default day.
 const FALLBACK_SHIFT_HOURS = 8;
 
 /**

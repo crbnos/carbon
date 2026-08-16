@@ -98,11 +98,6 @@ msgstr "{0} / {1} 个过账科目已映射"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} / {maxSlots} 个提供商插槽已使用"
 
-#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
-#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
-msgid "{0} of work across {1}"
-msgstr "{0} 的工作跨越 {1}"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} 个订单"
@@ -6188,6 +6183,9 @@ msgstr "升级"
 msgid "Est. Duration"
 msgstr "预计时长"
 
+msgid "Estimated"
+msgstr ""
+
 msgid "Estimated — no capacity reservation"
 msgstr "估计 — 无产能预留"
 
@@ -10607,8 +10605,8 @@ msgstr "在MES中打开"
 msgid "Open Issues"
 msgstr "未解决的问题"
 
-msgid "Open Job"
-msgstr "开放任务"
+msgid "Open job"
+msgstr ""
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "未完成工作需求加上此地点的未完成转移"
@@ -12711,6 +12709,9 @@ msgstr "在完成NCR之前解决这些问题：每一行必须有一个非待处
 msgid "Resolved Price"
 msgstr "已解决价格"
 
+msgid "Resource"
+msgstr ""
+
 msgid "Resource Planning"
 msgstr ""
 
@@ -14178,6 +14179,9 @@ msgstr "采购类型"
 
 msgid "Sourcing Type"
 msgstr "采购类型"
+
+msgid "Span"
+msgstr ""
 
 msgid "Spare Part Consumption"
 msgstr "备件消耗"
@@ -16446,6 +16450,9 @@ msgstr "未收到的采购订单"
 msgid "Unsaved changes"
 msgstr "未保存的更改"
 
+msgid "Unscheduled"
+msgstr ""
+
 msgid "Unscrap"
 msgstr "取消报废"
 
@@ -17530,6 +17537,9 @@ msgstr "字标深色模式"
 
 msgid "Wordmark Light Mode"
 msgstr "字标浅色模式"
+
+msgid "Work"
+msgstr ""
 
 msgid "work center"
 msgstr "工作中心"
