@@ -1,7 +1,7 @@
-# Forecast-First Finite Scheduling — implementation plan
+# Forecast-First Finite Scheduling — implementation plan (complete)
 
-**Spec:** .ai/specs/2026-08-12-forecast-first-finite-scheduling.md
-**Research:** .ai/research/labor-machine-capacity-scheduling.md
+**Status:** complete — all tasks landed 2026-08-13.
+**Spec:** .ai/specs/implemented/2026-08-12-forecast-first-finite-scheduling.md (the single as-built spec for the whole capacity-planning feature)
 **Branch:** naveen/capacity-planning
 
 Read the spec first. Core invariants that every task must respect (spec §2, §7):

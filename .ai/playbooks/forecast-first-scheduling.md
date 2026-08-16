@@ -1,7 +1,7 @@
 # Forecast-First Finite Scheduling
 
 Last tested: 2026-08-13
-Routes: /x/resources/work-centers/:id, /x/job/:id, /x/schedule/people?view=capacity
+Routes: /x/resources/work-centers/:id, /x/job/:id, /x/priority/people?view=capacity
 
 ## Prerequisites
 - At least one work center, one job, and location shifts seeded (dev seed has these).
@@ -27,7 +27,7 @@ Routes: /x/resources/work-centers/:id, /x/job/:id, /x/schedule/people?view=capac
    nothing). A non-released job shows "Not scheduled" gracefully.
 
 ### (c) Capacity view — Scheduled vs Available on one basis
-1. Navigate — `/x/schedule/people?view=capacity`.
+1. Navigate — `/x/priority/people?view=capacity`.
 2. Verify — SCHEDULED and AVAILABLE series; a station with no assignments shows its
    calendar hours (e.g. "9h free"), NOT 0 (the fallback-cliff fix). Sub-tabs "Load" and
    "Due (by due date)". An assumption banner ("Hours assumed from location shifts" for

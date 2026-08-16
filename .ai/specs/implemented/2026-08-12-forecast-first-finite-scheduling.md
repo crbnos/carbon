@@ -1,10 +1,17 @@
-# Forecast-First Finite Scheduling — deterministic forward simulation with machine calendars
+# Capacity Planning — Forecast-First Finite Scheduling
 
-> Status: draft (design final — ready for /plan)
+> Status: implemented
 > Author: Brad Barbin + Claude
-> Date: 2026-08-12
-> Research: [.ai/research/labor-machine-capacity-scheduling.md](../research/labor-machine-capacity-scheduling.md) (14-system survey), plus the competitive references in the superseded [2026-07-05-finite-capacity-scheduling.md](implemented/2026-07-05-finite-capacity-scheduling.md)
-> Supersedes (going forward): [2026-07-05-finite-capacity-scheduling.md](implemented/2026-07-05-finite-capacity-scheduling.md), [2026-07-17-attended-window-labor-scheduling.md](implemented/2026-07-17-attended-window-labor-scheduling.md); as-built record: [.ai/plans/implemented/capacity-planning-consolidated.md](../plans/implemented/capacity-planning-consolidated.md)
+> Date: 2026-08-12 (implementation landed 2026-08-13)
+> Plan: [../../plans/implemented/2026-08-12-forecast-first-finite-scheduling.md](../../plans/implemented/2026-08-12-forecast-first-finite-scheduling.md)
+> Playbook: [../../playbooks/forecast-first-scheduling.md](../../playbooks/forecast-first-scheduling.md)
+
+This is the single, as-built specification for the capacity-planning feature. It absorbs the
+earlier iteration specs (finite dual-resource scheduling, attended-window labor, the daily
+people/manning board) and the employee-ability and Gantt work into one finished artifact —
+scheduling engine plus its labor, manning, qualification, and visualization layers. The core
+of the system is a **deterministic, whole-location forward simulation**; the sections after
+the engine describe the labor and supporting layers that refine its accuracy.
 
 ## TLDR
 
@@ -187,24 +194,114 @@ No changes to `capacityReservation`, `peopleAssignment`, `peopleAbsence`, `emplo
 - **Dates board / Job header**: projected completion + slack badge (e.g. "3d early" / "2d late"), with the schedule note as tooltip; "Best case" action opening the expedite what-if result.
 - **No changes** to the People board/matrix, MES boards (they keep reading `priority`), or the Gantt (bars already come from reservations).
 
-## Acceptance Criteria
+## Attended-Window Labor
 
-- [ ] A work center with no `workCenterShift` rows at a location with two shifts (06:00–14:00, 14:00–22:00 M–F): a 24h ungated operation spans three working days inside 06:00–22:00 windows and never occupies a weekend.
-- [ ] The same operation on an `alwaysOn` work center runs as one continuous 24h span.
-- [ ] A company with zero shifts schedules within Mon–Fri 08:00–17:00 (location tz), and the schedule/capacity views show the stock-week assumption badge.
-- [ ] A job whose simulated finish (business day, location tz) is after `dueDate` is flagged with a cause naming the binding resource; a job finishing earlier shows positive slack days — verified with two jobs competing for one work center where EDD order makes the later-due job late.
-- [ ] "Best case" on a late job returns a projected date ≤ the current projection, names the binding resource, and persists nothing (reservations unchanged after the call).
-- [ ] Two consecutive regens with identical inputs and the same `now` produce identical placements (same `startAt`/`endAt`/`resourceId` multiset).
-- [ ] An In-Progress operation with `quantityComplete = 75%` of `operationQuantity` and a prior production event books 25% of its labor/machine hours from `now` (no setup).
-- [ ] Per work center, `jobOperation.priority` ascending equals reservation `startAt` ascending after a regen.
-- [ ] With a blank People board and no gated processes, the schedule is bounded by machine calendars only (previously 24×7).
-- [ ] Editing a shift, an employee shift, a work-center shift set, `alwaysOn`, a qualification, the manning board, or a due date stamps affected jobs and a single location regen within ~30s clears every stamp it covers.
-- [ ] Envelope: regen of a location with 2,000 open operations completes in ≤ 10s locally (Deno test or timed invoke).
-- [ ] §7 invariants hold: the engine builds one snapshot before placement and issues no DB reads during the walk; the expedite path exercises simulate-without-persist; promise-date/slack UI components accept an optional confidence input (unused in v1).
-- [ ] An open dispatch with `takesWorkCenterOffline` and a `plannedEndTime` removes exactly that window from its work center's capacity: an op that would have run inside it schedules after (or on a sibling WC), and completing the dispatch restores the hours at the next regen with no other data change.
-- [ ] A job with `deadlineType = 'ASAP'` and no due date schedules ahead of a job with a due date next week; the displaced job's forecast updates in the same regen.
-- [ ] A regen that flips a previously on-time job to projected-late produces exactly one in-app notification to that job's assignee, listing every newly-late job for that assignee in one digest; a second identical regen produces none.
-- [ ] Docs sync: `.claude/rules/scheduling-data-structures.md`, production + resources `AGENTS.md` updated in the implementing PR.
+For a gated operation (a process with `requiresAbility = true`), Carbon reserves the **machine** for the operation's entire elapsed span but reserves a **named person** only for the *attended window* — the setup plus labor time at the start of the op. After the attended window, the machine runs unattended (lights-out) through nights and weekends.
+
+The model, per operation with times `setup`, `labor`, and `machine`:
+
+| Quantity | Formula | Semantics |
+|---|---|---|
+| Total work | `total = setup + max(labor, machine)` | unchanged duration |
+| Attended window | `attended = setup + labor` | person hands-on, at the start of the op |
+| Unattended remainder | `max(0, machine − labor)` | machine runs, nobody present |
+
+- The **machine** is reserved for the whole span (it holds the workpiece even while paced by shifts).
+- The **person** is reserved only for the attended window, which accumulates only during the chosen person's shift windows (it can span a shift break — the machine sits loaded-idle overnight mid-setup).
+- The **unattended remainder** accumulates on calendar time, bounded by the machine's operating-hours calendars (the availability ladder above constrains lights-out running to the machine's own calendar rather than pure 24/7 wall-clock).
+- `labor ≥ machine` ⇒ remainder is 0 ⇒ the person is held throughout (this degenerates to fully-supervised behavior; shops needing supervision set `labor = machine`).
+- A gated process with `setup = 0` and `labor = 0` produces a zero attended window and therefore **no person reservation** (an unattended operation).
+- Ungated ops reserve the machine only.
+
+Named-people booking replaces anonymous operator-pool counts. At placement the engine accumulates the attended window over time and books whoever is actually doing each contiguous stretch:
+
+1. The machine must be free for the whole op span.
+2. Attended time accumulates at any instant where at least one eligible person (qualified for the process's ability, on shift, and with no overlapping `Employee` reservation across any ability or work center) is available. Booking a specific person per stretch kills cross-ability double-booking.
+3. Each contiguous stretch is booked to a specific person via a `capacityReservation` row with `resourceKind = 'Employee'` and `resourceId = employeeId`. At shift boundaries the op **hands off** (relay) to the next available qualified person. The continuity heuristic keeps the incumbent while on shift and free; at a boundary it prefers the person yielding the earliest continuation, tie-broken by fewest reserved hours.
+4. When nobody eligible is available, the op **pauses** — the machine stays loaded and reserved so nothing else can take it — and resumes at the next instant a qualified person is free, surfaced in the schedule note ("Waited Nh for a qualified operator"). Zero eligible people at all is a placement conflict.
+
+The booked names are a plan, not a lock; the floor can still swap people at execution, and MES qualification gating at op start is unchanged. The reservation kind is stored via the enum value `capacityReservation.capacityResourceKind = 'Employee'` (`resourceId` = the employee/user id). The legacy `OperatorPool` enum value remains readable but the engine no longer writes it.
+
+## People / Manning Board
+
+The **People** view lives in the Schedule area (`apps/erp/app/routes/x+/schedule+/people.tsx`, action at `people.update.tsx`, added to `ScheduleNavigation` as "People" with `LuUsers`). It is the digital manning board: a manager assigns each worker to a work center for a date (optionally per shift) before the day starts. It requires `production_update` to edit and is employee-role readable.
+
+**Data model.** Two tables (migrations `20260723212028_people-assignments.sql`, then `20260731192616_people-split-hours.sql`):
+
+- `peopleAssignment` — the planned person→station row. Columns: `id` (`id('people')`), `companyId`, `locationId`, `workCenterId`, `employeeId` (→ `user`), `date` (DATE), `shiftId` (nullable; null = whole day), `hours` (NUMERIC, nullable; null = whole shift), `overtimeHours`, `note`, audit columns. Composite PK `("id","companyId")`. Uniqueness is one row per (`companyId`, `employeeId`, `date`, `COALESCE(shiftId,'')`, `workCenterId`) — a split person can appear in more than one station column the same day.
+- `peopleAbsence` — a person is out for a date (person-level, not station-bound). Columns: `id` (`id('crab')`), `companyId`, `employeeId`, `date`, `shiftId` (nullable), `note`, audit columns; unique per person/day/shift.
+
+Both tables carry the four standard RLS policies (SELECT via employee role; INSERT/UPDATE/DELETE via `production_{create|update|delete}`). Assigned-station bookings reuse the existing `capacityReservation` with `resourceKind = 'Employee'`; no new reservation storage.
+
+**Consumption.** Assignments are consumed three ways: (1) the board replaces the whiteboard/huddle artifact; (2) MES defaults each operator's operations screen to their assigned work center — a dismissible chip ("Your station: …"), a default not a lock, backed by a `mes-people-override` session cookie, with the Start qualification gate unchanged; (3) the scheduling engine consumes assignments.
+
+Engine semantics (soft-prefer, plus manned stations, plus absence):
+- An assigned station works one op at a time, and its whole present crew works that op **together** — labor is parallelized across the present people (n× wall-clock), while setup and machine time are never compressed (`simulateAttendedTeam` / `allocateAttendedOperation` `team` option in `functions/lib/scheduling/`).
+- Gated ops team-book people ∩ qualified on their assigned dates (pass 1); if no feasible slot, fall back to the classic any-qualified single-person relay (pass 2). Unqualified people never speed up gated work.
+- Ungated ops at an assigned work center are treated as attended (crew = that day's people; attended hours = `calculateAttendedHours` = setup + labor; machine holds the full span). If the crew can't cover it, the op falls back to machine-only placement, keeping the schedule complete. Ungated ops at an unassigned work center are byte-identical to prior machine-only behavior — a blank board changes nothing.
+- Absences subtract the absent person's availability windows on that date everywhere (both people-preferred and qualified-fallback paths).
+- People-sourced bookings persist as ordinary `Employee` reservations; the placement note variant "Waited … for the assigned people" (`people-wait`) attributes waits.
+
+Overtime and split hours are consumed as pure window edits (no allocator change): overtime extends the date's last availability window; split hours clip a person's attended time per station, dealt out sequentially in row order (`people-utils.ts`).
+
+**Replan wiring.** People and absence mutations fire `carbon/schedule.inputs.changed` with `kind: "people"` (entityId = `workCenterId`, scoped like `work-center`; absences with no assignment scope like the gated kinds). Handled by `notifyScheduleInputsChanged` in `production.service.ts`, the `"people"` union member in `packages/lib/src/events.ts`, and the mark step in `schedule-inputs-changed.ts`.
+
+**Surfaces.** The People page has a per-view period switcher:
+- **Board** — Day and Week (both editable). The Day board is a Kanban grid: a sticky **Unassigned** first column (employees at the location not yet placed, plus a free-hours pool showing "Xh free" chips for partially-allocated people, absent people grayed at the bottom) then one column per active work center with a headcount. Cards carry an amber qualification badge (with tooltip) when the station has gated processes the person lacks (advisory only). Dragging a card always **moves** it (instant, with a success toast). Splitting is done on the artifact: a blue hours chip on each assigned card opens an anchored popover with a ±0.5h stepper (capped at shift minus the person's other rows); lowering hours releases the remainder to the Unassigned pool, and dragging the "Xh free" card to further stations completes an N-way split. A **working-hours editor popover** (Set-as-OFF-day toggle, one row per station with hours + OT inputs, "+ Add station", derived clock-time echo from shift start, live total with an amber over-capacity warning) saves atomically via the `day-hours` intent → `setPeopleDay` (one Kysely transaction). The Week board (`PeopleWeekBoard`) assigns a person to a station for the whole week (one row per working day via `assign-week`/`unassign-week`/`move-week`), with day-level detail edited on the Day board.
+- **Matrix** — week only; an employee×day grid with Assignments and Coverage sub-tabs, sticky header + first column, department/shift filters, and an assigned-vs-needed coverage block. Cells are click targets that open the same working-hours editor.
+- **Capacity** — week only; a work-center week grid (SAP CM01-shaped) with Demand (open released `jobOperation` hours bucketed by due date, including a Past-due column; Draft/Planned excluded), Scheduled (`capacityReservation.workHours` distributed across each reservation span), Available (people × real shift hours, with a per-weekday shift-calendar fallback for unassigned capacity), and Load rendered as hours over/free with green ≤100% / amber ≤120% / red >120% bands.
+
+Header controls: a date picker (real `Calendar` popover) with prev/next arrows that step day/week per the active view; a shift-filter clock-icon popover ("All shifts"); location in the settings menu; **Copy previous day** and **Copy previous week** buttons (`copyPeopleBoard` / `copyPeopleWeek`, per-day skip rules, overtime never copied); and a **Time off** button opening a range dialog (`setPeopleAbsenceRange`, up to 62 days).
+
+Hour resolution everywhere uses the real shift ladder: assignment `shiftId` → the person's `employeeShift` → the location's most-common shift duration → 8h fallback.
+
+## Employee Ability & Qualification
+
+Qualification is **presence-based**: an `employeeAbility` row means the person is qualified, subject only to optional expiry. The rule, defined once per build context, is:
+
+```
+qualified = row exists AND (expiresAt IS NULL OR expiresAt >= today)
+```
+
+The former `active`, `trainingCompleted`, and `trainingDays` columns and the "In Training" state are gone. Migration `20260812153418` deletes soft-deleted rows (`DELETE WHERE active = false`), drops those three columns, and redefines `grant_ability_on_training_completion()` to insert the row without the two booleans. `lastTrainingDate` and `expiresAt` are kept; `ability.active` (ability-level soft-delete) is unchanged. Training remains a path to qualification (the `grantsAbilityId` trigger inserts the row) rather than a requirement baked into the model.
+
+The presence-based gate is applied uniformly:
+- Scheduler edge function `operator-eligibility.ts` gates on expiry only; `active`/`trainingCompleted` are dropped from the `master-data-provider.ts` load, the `scheduling-engine.ts` PoolEmployee, and `QualifiedEmployeeRow`.
+- MES `getOperationEligibility` drops the `!active`/`!trainingCompleted` checks and keeps expiry.
+- ERP `getActiveEmployeeAbilities` and the People board qualification badge gate on expiry only.
+- ERP resources: `deleteEmployeeAbility` is a hard delete; boolean reads/writes are removed from `getAbilities`, `getAbility`, `getEmployeeAbilities`, and `upsertEmployeeAbilityCell`.
+- Validators drop `active`/`trainingCompleted`; `EmployeeAbilityForm` drops the two toggles; `EmployeeAbilityStatus` has three states; the abilities table drops its "Active" column.
+
+Existing rows with `trainingCompleted = false` become qualified (intended); soft-deleted rows are purged so they cannot resurrect.
+
+## Gantt (Real Schedule Data)
+
+`/x/scheduling/gantt` (`apps/erp/app/routes/x+/scheduling+/gantt.tsx`) renders the real schedule for a selected job. The page is a job-timeline lens: it shows when each operation starts and ends (clock-precise from `capacityReservation`), how long it runs, conflicts (red bars with a reason), machine and operator-pool reservations, and actual timecards from production events.
+
+**Data.** Three service functions in `production.service.ts`: `getJobOperationsForTimeline(client, jobId)` (jobOperation + `workCenter(name)` + jobMakeMethod parent/item embeds, including `hasConflict`/`conflictReason`), `getCapacityReservationsByJob(client, jobId)` (scenarioId null), and `getProductionEventsByJobId(client, jobId)`.
+
+**Mapper.** The pure `buildJobTimeline(input)` in `apps/erp/app/modules/production/ui/Schedule/timeline.ts` (unit-tested in `timeline.test.ts`) returns `{ events, totalDuration, windowStart }`. The window spans the min/max over reservations, events, and op dates (a date-only dueDate is inclusive, so +1 day). The root node is the job; assembly nodes appear when there is more than one make method; each operation row takes its offset/duration from the WorkCenter reservation (falling back to op dates as `isPartial`), and sets `isError` from `hasConflict`. Each op's children are a machine-reservation row, an operator-pool row (labeled by ability name), and timecard rows (person accessory; an open event renders `isPartial`).
+
+**Rendering.** The page uses the vendored Trigger.dev trace viewer at `apps/erp/app/components/Gantt/` (`GanttEvent` with `data.offset`, `data.duration` in ms, `message`, `isError`, `isPartial`, and `style.icon`/`accessory`; icons for job, assembly, operation, timecard, inspection, wait). The axis stays relative-duration (vendored code untouched); wall-clock times appear in the selected-span detail panel. The loader defaults `?jobId=` to the latest Ready/In Progress/Paused job for the company and resolves user names (assignees, timecards) and ability names (pool reservations). A job Combobox picker drives selection; the right-hand detail panel shows local start/end datetimes, elapsed duration, work center, status, the conflict reason in red, and a link to the job. Entry points wire in via `path.to.scheduleGantt(jobId?)`, a "Timeline" option in `ScheduleNavigation`, an `ItemCard` "View Timeline" action, and a `JobHeader` "Timeline" action.
+
+## Behavior (the contract this system holds)
+
+- A work center with no `workCenterShift` rows at a location with two shifts (06:00–14:00, 14:00–22:00 M–F): a 24h ungated operation spans three working days inside 06:00–22:00 windows and never occupies a weekend.
+- The same operation on an `alwaysOn` work center runs as one continuous 24h span.
+- A company with zero shifts schedules within Mon–Fri 08:00–17:00 (location tz), and the schedule/capacity views show the stock-week assumption badge.
+- A job whose simulated finish (business day, location tz) is after `dueDate` is flagged with a cause naming the binding resource; a job finishing earlier shows positive slack days — including two jobs competing for one work center where EDD order makes the later-due job late.
+- "Best case" on a late job returns a projected date ≤ the current projection, names the binding resource, and persists nothing (reservations unchanged after the call).
+- Two consecutive regens with identical inputs and the same `now` produce identical placements (same `startAt`/`endAt`/`resourceId` multiset).
+- An In-Progress operation with `quantityComplete = 75%` of `operationQuantity` and a prior production event books 25% of its labor/machine hours from `now` (no setup).
+- Per work center, `jobOperation.priority` ascending equals reservation `startAt` ascending after a regen.
+- With a blank People board and no gated processes, the schedule is bounded by machine calendars only (previously 24×7).
+- Editing a shift, an employee shift, a work-center shift set, `alwaysOn`, a qualification, the manning board, or a due date stamps affected jobs and a single location regen within ~30s clears every stamp it covers.
+- Envelope: regen of a location with 2,000 open operations completes in ≤ 10s locally.
+- §7 invariants hold: the engine builds one snapshot before placement and issues no DB reads during the walk; the expedite path exercises simulate-without-persist; promise-date/slack UI components accept an optional confidence input (unused in v1).
+- An open dispatch with `takesWorkCenterOffline` and a `plannedEndTime` removes exactly that window from its work center's capacity: an op that would have run inside it schedules after (or on a sibling WC), and completing the dispatch restores the hours at the next regen with no other data change.
+- A job with `deadlineType = 'ASAP'` and no due date schedules ahead of a job with a due date next week; the displaced job's forecast updates in the same regen.
+- A regen that flips a previously on-time job to projected-late produces exactly one in-app notification to that job's assignee, listing every newly-late job for that assignee in one digest; a second identical regen produces none.
+- Docs kept in sync: `.claude/rules/scheduling-data-structures.md`, production + resources `AGENTS.md`.
 
 ## Risks
 
@@ -216,29 +313,3 @@ No changes to `capacityReservation`, `peopleAssignment`, `peopleAbsence`, `emplo
 | Forward-ASAP pulls work early (WIP, early material issue) | Low/Med | The sim is a forecast; execution follows the dispatch queue; optional release damping ("start no earlier than X days before need") is a clean later add |
 | 30s debounce too slow for interactive due-date drags | Low | Stamps give immediate UI feedback ("recalculating…"); tune debounce after measuring regen cost |
 | Deleting `schedulingPolicy` forecloses per-WC dispatch rules | Low | No UI ever shipped; re-add later only as a placement-order input, which the sim structure now makes possible |
-
-## Open Questions
-
-> All resolved 2026-08-12 — via the design conversation with Brad, or autonomously per the pre-delegated spec+plan convention (marked **Autonomous**, surfaced for veto in the PR/summary).
-
-- [x] Should work-center hours drive the schedule (vs 24×7 machines + people-only constraints)? — **Answer (Brad):** yes — this was the founding observation; machine hours become a first-class scheduling input via the ladder.
-- [x] Default availability when a work center has none set? — **Answer (Brad):** location shifts; if no shifts exist at all, a stock Mon–Fri 8h week in the location's timezone — never silently 24×7 ("perfect", 2026-08-12).
-- [x] What is the product's primary output? — **Answer (Brad):** knowing when we're going to be overdue, and the best we can do — the forecast, not the dispatch optimizer.
-- [x] Forward-ASAP replacing the backward JIT floor, whole-shop deterministic regeneration, expedite what-if, capacity view on one basis? — **Answer (Brad):** proposed and accepted in conversation ("perfect. let's write the spec").
-- [x] Simulation unit: company or location? — **Autonomous:** location. Jobs, work centers, shifts, and people are location-scoped; the timezone is unambiguous; sims stay small. Cross-location resource sharing is out of scope (none is modeled today).
-- [x] Shape of work-center hours: new calendar tables vs reuse `shift`? — **Autonomous:** `workCenterShift` join + `alwaysOn` flag. Reuses the primitive shops already maintain and the existing `expandCalendar` code; avoids resurrecting the `resourceCalendar` apparatus the 07-13 decision deleted.
-- [x] Fate of `schedulingPolicy` dispatch rules? — **Autonomous:** delete. They never influenced placement (display-numbering only), no app UI references them, and keeping them preserves a two-sources-of-truth defect. Scope reduction of an unmerged branch feature — flagged for veto.
-- [x] Remaining-work formula for started ops? — **Autonomous:** quantity-proportional labor/machine, setup done after first production event. Simplest formula over data that exists; refine later against actuals.
-- [x] Debounce for the regen wave? — **Autonomous:** 30s (from 3m), concurrency 1 per location. Regen is idempotent and whole-location, so aggressive coalescing is no longer needed for correctness.
-- [x] Manual pins under full regen? — **Autonomous:** unchanged — pinned ops reserve their window; the sim places around them (current `manuallyScheduled` semantics).
-- [x] Migration approach? — **Autonomous:** revise the unmerged branch migration in place, per the 07-13 precedent. Nothing touched is on main.
-- [x] How does the schedule respond automatically to disruptions (call-off, machine down, ASAP order)? — **Answer (Brad, 2026-08-12):** all three ride the existing input-event → stamp → 30s location-regen loop. Call-offs were already wired (People board absence emitters). Machine downtime folded into v1 via maintenance dispatches (this question's decision): derive outage windows from open dispatches flagged `takesWorkCenterOffline` — no separate downtime table (autonomous sub-decision: derived, not stored). ASAP orders: job ordering leads with deadline class so a no-due-date ASAP job claims capacity first. Work-center deactivation also emits the `work-center` event.
-- [x] Should the system push newly-late information instead of waiting to be checked? — **Answer (Brad, 2026-08-12):** yes — add the newly-late notification: wave computes the before/after projected-late delta per regen and sends one digest notification per assignee via the existing `carbon/notify` pipeline (autonomous sub-decisions: assignee-digest recipients, unassigned jobs skipped in v1, planner group as follow-up).
-- [x] How does uncertain demand (quotes that may or may not be ordered) fit without a later refactor? — **Answer (Brad, 2026-08-12):** design for it now, build it later (Monte Carlo is enterprise-tier). §7: uncertainty is a property of the input snapshot, never the engine; hold the four invariants (seeded determinism, serializable snapshot, simulate/persist separation with row-decoupled inputs, date-as-degenerate-distribution outputs); model demand as layers with provisional demand carrying probability + expected timing; deterministic CTP/bracket/weighted-load features are v1.x candidates.
-
-## Changelog
-
-- 2026-08-13: Implementation landed via .ai/plans/2026-08-12-forecast-first-finite-scheduling.md (Tasks 1–14, 17, 18). Migration revised in place; engine, edge function, jobs wave, notifications, resources form, capacity view, and forecast surfaces implemented; Task 13 tested the placement engine at the WorkCenterSelector level.
-- 2026-08-12: Disruption-response additions (Brad): machine downtime derived from maintenance dispatches (`takesWorkCenterOffline` + existing timing columns, windows subtracted in the ladder — no new table); job ordering leads with deadline class so ASAP orders claim capacity first; work-center deactivation + dispatch writes emit the `work-center` event (ERP + MES); newly-late digest notification per assignee via `carbon/notify` after each regen. New acceptance criteria for all four.
-- 2026-08-12: Added §7 Uncertainty & scenario forward-compatibility (Brad): four v1 invariants (seeded determinism, serializable input snapshot, simulate/persist separation, distribution-ready outputs), demand-layer vocabulary with provisional quote demand, deterministic CTP/bracket/weighted-load as v1.x candidates, Monte Carlo deferred to enterprise tier. Design constraints only — no new v1 build scope beyond the §7 acceptance criterion.
-- 2026-08-12: Created. Distilled from the capacity-planning branch audit + design conversation (Brad): forecast-first objective, machine-hours ladder, deterministic whole-location forward simulation, expedite what-if, dispatch-rule and mark/wave-complexity deletions. Supersedes the go-forward direction of 2026-07-05-finite-capacity-scheduling.md and 2026-07-17-attended-window-labor-scheduling.md (both moved to implemented/ as as-built records).
