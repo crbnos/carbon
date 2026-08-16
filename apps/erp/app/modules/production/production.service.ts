@@ -289,6 +289,24 @@ export async function convertSalesOrderLinesToJobs(
           continue;
         }
 
+        // This function inserts into `job` itself rather than going through
+        // insertJob, so it inherits none of its instrumentation. Without this,
+        // "Create Jobs" on a sales order — the make-to-order path, and for some
+        // shops the only way jobs are ever raised — produced no job_created at
+        // all, and the account would read as not running production.
+        trackWorkEvent("job_created", {
+          companyId,
+          userId,
+          jobId: createJob.data.id,
+          itemId: data.itemId,
+          quantity: data.quantity,
+          scrapQuantity: data.scrapQuantity ?? 0,
+          locationId: locationId ?? null,
+          salesOrderLineId: line.id,
+          deadlineType: data.deadlineType ?? null,
+          source: "salesOrder"
+        });
+
         if (quoteId) {
           const upsertMethod = await client.functions.invoke("get-method", {
             body: {
