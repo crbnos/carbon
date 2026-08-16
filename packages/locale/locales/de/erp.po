@@ -4003,6 +4003,9 @@ msgstr "Audit-Trail-Einträge erstellen"
 msgid "Create Change Notice"
 msgstr "Änderungsmitteilung erstellen"
 
+msgid "Create Forecast"
+msgstr ""
+
 msgid "Create Issue"
 msgstr "Problem erstellen"
 
@@ -4020,9 +4023,6 @@ msgstr "Produktionsereignis erstellen"
 
 msgid "Create Production Quantity"
 msgstr "Produktionsmenge erstellen"
-
-msgid "Create Projection"
-msgstr "Projektion erstellen"
 
 msgid "Create Quote Revision"
 msgstr "Angebotrevision erstellen"
@@ -5094,9 +5094,6 @@ msgstr ""
 msgid "Demand projection"
 msgstr "Bedarfsprognose"
 
-msgid "Demand Projections"
-msgstr "Nachfrageprojektionen"
-
 msgid "Demand-Based"
 msgstr "Nachfragebasiert"
 
@@ -5638,6 +5635,9 @@ msgstr "Kundenstatus bearbeiten"
 msgid "Edit Customer Type"
 msgstr "Kundentyp bearbeiten"
 
+msgid "Edit Demand Forecast"
+msgstr ""
+
 msgid "Edit Department"
 msgstr "Abteilung bearbeiten"
 
@@ -5766,9 +5766,6 @@ msgstr "Prozess bearbeiten"
 
 msgid "Edit Production Event"
 msgstr "Produktionsereignis bearbeiten"
-
-msgid "Edit Production Projection"
-msgstr "Produktionsprojektion bearbeiten"
 
 msgid "Edit Production Quantity"
 msgstr "Produktionsmenge bearbeiten"
@@ -9567,6 +9564,9 @@ msgstr "Neuer Kunde"
 msgid "New Customer Part"
 msgstr "Neuer Kundenteil"
 
+msgid "New Demand Forecast"
+msgstr ""
+
 msgid "New Department"
 msgstr "Neue Abteilung"
 
@@ -9696,9 +9696,6 @@ msgstr "Neues Verfahren"
 msgid "New Process"
 msgstr "Neuer Prozess"
 
-msgid "New Production Projection"
-msgstr "Neue Produktionsprognose"
-
 msgid "New Quality Document"
 msgstr "Neues Qualitätsdokument"
 
@@ -9819,6 +9816,9 @@ msgstr "Nächstes Kalibrierungsdatum"
 msgid "Next Date"
 msgstr "Nächstes Datum"
 
+msgid "Next day"
+msgstr ""
+
 msgid "Next Day"
 msgstr "Nächster Tag"
 
@@ -9836,6 +9836,9 @@ msgstr "Nächste Sequenz"
 
 msgid "Next step"
 msgstr "Nächster Schritt"
+
+msgid "Next week"
+msgstr ""
 
 msgid "Next Week"
 msgstr "Nächste Woche"
@@ -11494,6 +11497,9 @@ msgstr "Zurück"
 msgid "Previous Date"
 msgstr "Vorheriges Datum"
 
+msgid "Previous day"
+msgstr ""
+
 msgid "Previous Day"
 msgstr "Vorheriger Tag"
 
@@ -11506,6 +11512,9 @@ msgstr "Vorheriger Schritt"
 #. placeholder {0}: humanizeField(watchedField)
 msgid "Previous value of {0}"
 msgstr "Vorheriger Wert von {0}"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Previous Week"
 msgstr "Vorherige Woche"
@@ -13728,8 +13737,8 @@ msgstr "Console-PIN festlegen"
 msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "Legen Sie standardmäßige Aufschlagsprozentsätze für jede Kostenkategorie auf neuen Angebotszeilen fest"
 
-msgid "Set demand projection values for each week"
-msgstr "Legen Sie Nachfrageprognosen für jede Woche fest"
+msgid "Set demand forecast values for each week"
+msgstr ""
 
 msgid "Set due date"
 msgstr "Fälligkeitsdatum festlegen"
@@ -16513,6 +16522,9 @@ msgstr "Einen Artikel aktualisieren"
 msgid "Update costs on"
 msgstr "Kosten aktualisieren am"
 
+msgid "Update Forecast"
+msgstr ""
+
 msgid "Update Inventory"
 msgstr "Bestand aktualisieren"
 
@@ -16533,9 +16545,6 @@ msgstr "Passwort aktualisieren"
 
 msgid "Update Permissions"
 msgstr "Berechtigungen aktualisieren"
-
-msgid "Update Projection"
-msgstr "Projektion aktualisieren"
 
 msgid "Update Quantity"
 msgstr "Menge aktualisieren"

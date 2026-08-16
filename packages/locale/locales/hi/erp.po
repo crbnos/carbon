@@ -4003,6 +4003,9 @@ msgstr "ऑडिट ट्रेल प्रविष्टियां बन
 msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
 
+msgid "Create Forecast"
+msgstr ""
+
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
 
@@ -4020,9 +4023,6 @@ msgstr "उत्पादन घटना बनाएं"
 
 msgid "Create Production Quantity"
 msgstr "उत्पादन मात्रा बनाएं"
-
-msgid "Create Projection"
-msgstr "प्रक्षेपण बनाएं"
 
 msgid "Create Quote Revision"
 msgstr "उद्धरण संशोधन बनाएं"
@@ -5094,9 +5094,6 @@ msgstr ""
 msgid "Demand projection"
 msgstr "मांग प्रक्षेपण"
 
-msgid "Demand Projections"
-msgstr "मांग प्रक्षेपण"
-
 msgid "Demand-Based"
 msgstr "मांग-आधारित"
 
@@ -5638,6 +5635,9 @@ msgstr "ग्राहक स्थिति संपादित करें
 msgid "Edit Customer Type"
 msgstr "ग्राहक प्रकार संपादित करें"
 
+msgid "Edit Demand Forecast"
+msgstr ""
+
 msgid "Edit Department"
 msgstr "विभाग संपादित करें"
 
@@ -5766,9 +5766,6 @@ msgstr "प्रक्रिया संपादित करें"
 
 msgid "Edit Production Event"
 msgstr "उत्पादन घटना संपादित करें"
-
-msgid "Edit Production Projection"
-msgstr "उत्पादन प्रक्षेपण संपादित करें"
 
 msgid "Edit Production Quantity"
 msgstr "उत्पादन मात्रा संपादित करें"
@@ -9567,6 +9564,9 @@ msgstr "नया ग्राहक"
 msgid "New Customer Part"
 msgstr "नया ग्राहक भाग"
 
+msgid "New Demand Forecast"
+msgstr ""
+
 msgid "New Department"
 msgstr "नया विभाग"
 
@@ -9696,9 +9696,6 @@ msgstr "नई प्रक्रिया"
 msgid "New Process"
 msgstr "नई प्रक्रिया"
 
-msgid "New Production Projection"
-msgstr "नया उत्पादन प्रक्षेपण"
-
 msgid "New Quality Document"
 msgstr "नया गुणवत्ता दस्तावेज़"
 
@@ -9819,6 +9816,9 @@ msgstr "अगली अंशांकन तारीख"
 msgid "Next Date"
 msgstr "अगली तारीख"
 
+msgid "Next day"
+msgstr ""
+
 msgid "Next Day"
 msgstr "अगला दिन"
 
@@ -9836,6 +9836,9 @@ msgstr "अगला क्रम"
 
 msgid "Next step"
 msgstr "अगला कदम"
+
+msgid "Next week"
+msgstr ""
 
 msgid "Next Week"
 msgstr "अगला सप्ताह"
@@ -11494,6 +11497,9 @@ msgstr "पिछला"
 msgid "Previous Date"
 msgstr "पिछली तारीख"
 
+msgid "Previous day"
+msgstr ""
+
 msgid "Previous Day"
 msgstr "पिछला दिन"
 
@@ -11506,6 +11512,9 @@ msgstr "पिछला कदम"
 #. placeholder {0}: humanizeField(watchedField)
 msgid "Previous value of {0}"
 msgstr "{0} का पिछला मूल्य"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Previous Week"
 msgstr "पिछला सप्ताह"
@@ -13728,8 +13737,8 @@ msgstr "कंसोल पिन सेट करें"
 msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "प्रत्येक लागत श्रेणी के लिए नई उद्धरण पंक्तियों पर डिफ़ॉल्ट मार्कअप प्रतिशत सेट करें"
 
-msgid "Set demand projection values for each week"
-msgstr "प्रत्येक सप्ताह के लिए मांग प्रक्षेपण मान निर्धारित करें"
+msgid "Set demand forecast values for each week"
+msgstr ""
 
 msgid "Set due date"
 msgstr "देय तारीख सेट करें"
@@ -16513,6 +16522,9 @@ msgstr "एक item को अपडेट करें"
 msgid "Update costs on"
 msgstr "लागत अपडेट करें"
 
+msgid "Update Forecast"
+msgstr ""
+
 msgid "Update Inventory"
 msgstr "इन्वेंटरी अपडेट करें"
 
@@ -16533,9 +16545,6 @@ msgstr "पासवर्ड अपडेट करें"
 
 msgid "Update Permissions"
 msgstr "अनुमतियों को अपडेट करें"
-
-msgid "Update Projection"
-msgstr "प्रक्षेपण अद्यतन करें"
 
 msgid "Update Quantity"
 msgstr "मात्रा अपडेट करें"

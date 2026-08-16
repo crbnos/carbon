@@ -4003,6 +4003,9 @@ msgstr "创建审计跟踪条目"
 msgid "Create Change Notice"
 msgstr "创建更改单"
 
+msgid "Create Forecast"
+msgstr ""
+
 msgid "Create Issue"
 msgstr "创建问题"
 
@@ -4020,9 +4023,6 @@ msgstr "创建生产事件"
 
 msgid "Create Production Quantity"
 msgstr "创建生产数量"
-
-msgid "Create Projection"
-msgstr "创建预测"
 
 msgid "Create Quote Revision"
 msgstr "创建报价修订"
@@ -5094,9 +5094,6 @@ msgstr ""
 msgid "Demand projection"
 msgstr "需求预测"
 
-msgid "Demand Projections"
-msgstr "需求预测"
-
 msgid "Demand-Based"
 msgstr "基于需求"
 
@@ -5638,6 +5635,9 @@ msgstr "编辑客户状态"
 msgid "Edit Customer Type"
 msgstr "编辑客户类型"
 
+msgid "Edit Demand Forecast"
+msgstr ""
+
 msgid "Edit Department"
 msgstr "编辑部门"
 
@@ -5766,9 +5766,6 @@ msgstr "编辑流程"
 
 msgid "Edit Production Event"
 msgstr "编辑生产事件"
-
-msgid "Edit Production Projection"
-msgstr "编辑生产预测"
 
 msgid "Edit Production Quantity"
 msgstr "编辑生产数量"
@@ -9567,6 +9564,9 @@ msgstr "新客户"
 msgid "New Customer Part"
 msgstr "新客户零件"
 
+msgid "New Demand Forecast"
+msgstr ""
+
 msgid "New Department"
 msgstr "新部门"
 
@@ -9696,9 +9696,6 @@ msgstr "新程序"
 msgid "New Process"
 msgstr "新流程"
 
-msgid "New Production Projection"
-msgstr "新生产预测"
-
 msgid "New Quality Document"
 msgstr "新质量文件"
 
@@ -9819,6 +9816,9 @@ msgstr "下次校准日期"
 msgid "Next Date"
 msgstr "下一个日期"
 
+msgid "Next day"
+msgstr ""
+
 msgid "Next Day"
 msgstr "下一天"
 
@@ -9836,6 +9836,9 @@ msgstr "下一个序列"
 
 msgid "Next step"
 msgstr "下一步"
+
+msgid "Next week"
+msgstr ""
 
 msgid "Next Week"
 msgstr "下一周"
@@ -11494,6 +11497,9 @@ msgstr "上一步"
 msgid "Previous Date"
 msgstr "上一个日期"
 
+msgid "Previous day"
+msgstr ""
+
 msgid "Previous Day"
 msgstr "前一天"
 
@@ -11506,6 +11512,9 @@ msgstr "上一步"
 #. placeholder {0}: humanizeField(watchedField)
 msgid "Previous value of {0}"
 msgstr "之前的{0}值"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Previous Week"
 msgstr "前一周"
@@ -13728,8 +13737,8 @@ msgstr "设置控制台PIN"
 msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "为新报价行中的每个成本类别设置默认加价百分比"
 
-msgid "Set demand projection values for each week"
-msgstr "为每周设置需求预测值"
+msgid "Set demand forecast values for each week"
+msgstr ""
 
 msgid "Set due date"
 msgstr "设置截止日期"
@@ -16513,6 +16522,9 @@ msgstr "更新项目"
 msgid "Update costs on"
 msgstr "更新成本于"
 
+msgid "Update Forecast"
+msgstr ""
+
 msgid "Update Inventory"
 msgstr "更新库存"
 
@@ -16533,9 +16545,6 @@ msgstr "更新密码"
 
 msgid "Update Permissions"
 msgstr "更新权限"
-
-msgid "Update Projection"
-msgstr "更新预测"
 
 msgid "Update Quantity"
 msgstr "更新数量"

@@ -4003,6 +4003,9 @@ msgstr "監査証跡エントリを作成"
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
 
+msgid "Create Forecast"
+msgstr ""
+
 msgid "Create Issue"
 msgstr "問題を作成"
 
@@ -4020,9 +4023,6 @@ msgstr "生産イベントを作成"
 
 msgid "Create Production Quantity"
 msgstr "生産数量を作成"
-
-msgid "Create Projection"
-msgstr "予測を作成"
 
 msgid "Create Quote Revision"
 msgstr "見積書リビジョンを作成"
@@ -5094,9 +5094,6 @@ msgstr ""
 msgid "Demand projection"
 msgstr "需要予測"
 
-msgid "Demand Projections"
-msgstr "需要予測"
-
 msgid "Demand-Based"
 msgstr "需要ベース"
 
@@ -5638,6 +5635,9 @@ msgstr "顧客ステータスを編集"
 msgid "Edit Customer Type"
 msgstr "顧客タイプを編集"
 
+msgid "Edit Demand Forecast"
+msgstr ""
+
 msgid "Edit Department"
 msgstr "部門を編集"
 
@@ -5766,9 +5766,6 @@ msgstr "プロセスを編集"
 
 msgid "Edit Production Event"
 msgstr "生産イベントを編集"
-
-msgid "Edit Production Projection"
-msgstr "生産予測を編集"
 
 msgid "Edit Production Quantity"
 msgstr "生産数量を編集"
@@ -9567,6 +9564,9 @@ msgstr "新規顧客"
 msgid "New Customer Part"
 msgstr "新しい顧客部品"
 
+msgid "New Demand Forecast"
+msgstr ""
+
 msgid "New Department"
 msgstr "新しい部門"
 
@@ -9696,9 +9696,6 @@ msgstr "新しい手順"
 msgid "New Process"
 msgstr "新しいプロセス"
 
-msgid "New Production Projection"
-msgstr "新しい生産予測"
-
 msgid "New Quality Document"
 msgstr "新しい品質ドキュメント"
 
@@ -9819,6 +9816,9 @@ msgstr "次の校正日"
 msgid "Next Date"
 msgstr "次の日付"
 
+msgid "Next day"
+msgstr ""
+
 msgid "Next Day"
 msgstr "次の日"
 
@@ -9836,6 +9836,9 @@ msgstr "次のシーケンス"
 
 msgid "Next step"
 msgstr "次のステップ"
+
+msgid "Next week"
+msgstr ""
 
 msgid "Next Week"
 msgstr "次週"
@@ -11494,6 +11497,9 @@ msgstr "前へ"
 msgid "Previous Date"
 msgstr "前の日付"
 
+msgid "Previous day"
+msgstr ""
+
 msgid "Previous Day"
 msgstr "前の日"
 
@@ -11506,6 +11512,9 @@ msgstr "前のステップ"
 #. placeholder {0}: humanizeField(watchedField)
 msgid "Previous value of {0}"
 msgstr "以前の{0}の値"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Previous Week"
 msgstr "前週"
@@ -13728,8 +13737,8 @@ msgstr "コンソールPINを設定"
 msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "各コスト カテゴリの新しい見積行のデフォルト マークアップ パーセンテージを設定します"
 
-msgid "Set demand projection values for each week"
-msgstr "毎週の需要予測値を設定してください"
+msgid "Set demand forecast values for each week"
+msgstr ""
 
 msgid "Set due date"
 msgstr "期限を設定"
@@ -16513,6 +16522,9 @@ msgstr "アイテムを更新"
 msgid "Update costs on"
 msgstr "コストを更新"
 
+msgid "Update Forecast"
+msgstr ""
+
 msgid "Update Inventory"
 msgstr "在庫を更新"
 
@@ -16533,9 +16545,6 @@ msgstr "パスワードを更新"
 
 msgid "Update Permissions"
 msgstr "権限を更新"
-
-msgid "Update Projection"
-msgstr "プロジェクションを更新"
 
 msgid "Update Quantity"
 msgstr "数量を更新"

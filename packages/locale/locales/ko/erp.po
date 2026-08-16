@@ -4003,6 +4003,9 @@ msgstr "감사 추적 항목 생성"
 msgid "Create Change Notice"
 msgstr "변경 공지 만들기"
 
+msgid "Create Forecast"
+msgstr ""
+
 msgid "Create Issue"
 msgstr "이슈 생성"
 
@@ -4020,9 +4023,6 @@ msgstr "생산 이벤트 생성"
 
 msgid "Create Production Quantity"
 msgstr "생산 수량 생성"
-
-msgid "Create Projection"
-msgstr "예측 생성"
 
 msgid "Create Quote Revision"
 msgstr "견적 리비전 생성"
@@ -5094,9 +5094,6 @@ msgstr ""
 msgid "Demand projection"
 msgstr "수요 예측"
 
-msgid "Demand Projections"
-msgstr "수요 예측치"
-
 msgid "Demand-Based"
 msgstr "수요 기반"
 
@@ -5638,6 +5635,9 @@ msgstr "고객 상태 수정"
 msgid "Edit Customer Type"
 msgstr "고객 유형 수정"
 
+msgid "Edit Demand Forecast"
+msgstr ""
+
 msgid "Edit Department"
 msgstr "부서 수정"
 
@@ -5766,9 +5766,6 @@ msgstr "공정 수정"
 
 msgid "Edit Production Event"
 msgstr "생산 이벤트 수정"
-
-msgid "Edit Production Projection"
-msgstr "생산 예측 수정"
 
 msgid "Edit Production Quantity"
 msgstr "생산 수량 수정"
@@ -9567,6 +9564,9 @@ msgstr "신규 고객"
 msgid "New Customer Part"
 msgstr "신규 고객 부품"
 
+msgid "New Demand Forecast"
+msgstr ""
+
 msgid "New Department"
 msgstr "신규 부서"
 
@@ -9696,9 +9696,6 @@ msgstr "새 절차"
 msgid "New Process"
 msgstr "새 공정"
 
-msgid "New Production Projection"
-msgstr "새 생산 예측"
-
 msgid "New Quality Document"
 msgstr "새 품질 문서"
 
@@ -9819,6 +9816,9 @@ msgstr "다음 교정일"
 msgid "Next Date"
 msgstr "다음 날짜"
 
+msgid "Next day"
+msgstr ""
+
 msgid "Next Day"
 msgstr "다음 날"
 
@@ -9836,6 +9836,9 @@ msgstr "다음 순번"
 
 msgid "Next step"
 msgstr "다음 단계"
+
+msgid "Next week"
+msgstr ""
 
 msgid "Next Week"
 msgstr "다음 주"
@@ -11494,6 +11497,9 @@ msgstr "이전"
 msgid "Previous Date"
 msgstr "이전 날짜"
 
+msgid "Previous day"
+msgstr ""
+
 msgid "Previous Day"
 msgstr "이전 날"
 
@@ -11506,6 +11512,9 @@ msgstr "이전 단계"
 #. placeholder {0}: humanizeField(watchedField)
 msgid "Previous value of {0}"
 msgstr "{0}의 이전 값"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Previous Week"
 msgstr "이전 주"
@@ -13728,8 +13737,8 @@ msgstr "콘솔 PIN 설정"
 msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "새 견적 라인의 각 원가 카테고리에 대한 기본 마진율을 설정하세요"
 
-msgid "Set demand projection values for each week"
-msgstr "주별 수요 예측치를 설정하세요"
+msgid "Set demand forecast values for each week"
+msgstr ""
 
 msgid "Set due date"
 msgstr "기한 설정"
@@ -16513,6 +16522,9 @@ msgstr "항목 업데이트"
 msgid "Update costs on"
 msgstr "원가 업데이트 기준일"
 
+msgid "Update Forecast"
+msgstr ""
+
 msgid "Update Inventory"
 msgstr "재고 업데이트"
 
@@ -16533,9 +16545,6 @@ msgstr "비밀번호 업데이트"
 
 msgid "Update Permissions"
 msgstr "권한 업데이트"
-
-msgid "Update Projection"
-msgstr "예측 업데이트"
 
 msgid "Update Quantity"
 msgstr "수량 업데이트"

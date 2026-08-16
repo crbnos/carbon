@@ -4003,6 +4003,9 @@ msgstr "Создать записи в журнале аудита"
 msgid "Create Change Notice"
 msgstr "Создать уведомление об изменении"
 
+msgid "Create Forecast"
+msgstr ""
+
 msgid "Create Issue"
 msgstr "Создать проблему"
 
@@ -4020,9 +4023,6 @@ msgstr "Создать производственное событие"
 
 msgid "Create Production Quantity"
 msgstr "Создать производственное количество"
-
-msgid "Create Projection"
-msgstr "Создать проекцию"
 
 msgid "Create Quote Revision"
 msgstr "Создать редакцию предложения"
@@ -5094,9 +5094,6 @@ msgstr ""
 msgid "Demand projection"
 msgstr "Прогноз спроса"
 
-msgid "Demand Projections"
-msgstr "Прогнозы спроса"
-
 msgid "Demand-Based"
 msgstr "На основе спроса"
 
@@ -5638,6 +5635,9 @@ msgstr "Редактировать статус клиента"
 msgid "Edit Customer Type"
 msgstr "Редактировать тип клиента"
 
+msgid "Edit Demand Forecast"
+msgstr ""
+
 msgid "Edit Department"
 msgstr "Редактировать отдел"
 
@@ -5766,9 +5766,6 @@ msgstr "Редактировать процесс"
 
 msgid "Edit Production Event"
 msgstr "Редактировать производственное событие"
-
-msgid "Edit Production Projection"
-msgstr "Редактировать производственную проекцию"
 
 msgid "Edit Production Quantity"
 msgstr "Редактировать производственное количество"
@@ -9567,6 +9564,9 @@ msgstr "Новый клиент"
 msgid "New Customer Part"
 msgstr "Новая деталь клиента"
 
+msgid "New Demand Forecast"
+msgstr ""
+
 msgid "New Department"
 msgstr "Новый отдел"
 
@@ -9696,9 +9696,6 @@ msgstr "Новая процедура"
 msgid "New Process"
 msgstr "Новый процесс"
 
-msgid "New Production Projection"
-msgstr "Новый прогноз производства"
-
 msgid "New Quality Document"
 msgstr "Новый документ качества"
 
@@ -9819,6 +9816,9 @@ msgstr "Дата следующей калибровки"
 msgid "Next Date"
 msgstr "Следующая дата"
 
+msgid "Next day"
+msgstr ""
+
 msgid "Next Day"
 msgstr "Следующий день"
 
@@ -9836,6 +9836,9 @@ msgstr "Следующая последовательность"
 
 msgid "Next step"
 msgstr "Следующий шаг"
+
+msgid "Next week"
+msgstr ""
 
 msgid "Next Week"
 msgstr "Следующая неделя"
@@ -11494,6 +11497,9 @@ msgstr "Назад"
 msgid "Previous Date"
 msgstr "Предыдущая дата"
 
+msgid "Previous day"
+msgstr ""
+
 msgid "Previous Day"
 msgstr "Предыдущий день"
 
@@ -11506,6 +11512,9 @@ msgstr "Предыдущий шаг"
 #. placeholder {0}: humanizeField(watchedField)
 msgid "Previous value of {0}"
 msgstr "Предыдущее значение {0}"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Previous Week"
 msgstr "Предыдущая неделя"
@@ -13728,8 +13737,8 @@ msgstr "Установить PIN консоли"
 msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "Установите процентные надбавки по умолчанию для каждой категории затрат в новых строках предложения"
 
-msgid "Set demand projection values for each week"
-msgstr "Установите значения прогноза спроса для каждой недели"
+msgid "Set demand forecast values for each week"
+msgstr ""
 
 msgid "Set due date"
 msgstr "Установить срок"
@@ -16513,6 +16522,9 @@ msgstr "Обновить товар"
 msgid "Update costs on"
 msgstr "Обновлять стоимость на"
 
+msgid "Update Forecast"
+msgstr ""
+
 msgid "Update Inventory"
 msgstr "Обновить инвентарь"
 
@@ -16533,9 +16545,6 @@ msgstr "Обновить пароль"
 
 msgid "Update Permissions"
 msgstr "Обновить разрешения"
-
-msgid "Update Projection"
-msgstr "Обновить прогноз"
 
 msgid "Update Quantity"
 msgstr "Обновить количество"

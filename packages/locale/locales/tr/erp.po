@@ -4003,6 +4003,9 @@ msgstr "Denetim izi girdileri oluştur"
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
 
+msgid "Create Forecast"
+msgstr ""
+
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
 
@@ -4020,9 +4023,6 @@ msgstr "Üretim Etkinliği Oluştur"
 
 msgid "Create Production Quantity"
 msgstr "Üretim Miktarı Oluştur"
-
-msgid "Create Projection"
-msgstr "Projeksiyon Oluştur"
 
 msgid "Create Quote Revision"
 msgstr "Teklif Revizyonu Oluştur"
@@ -5094,9 +5094,6 @@ msgstr ""
 msgid "Demand projection"
 msgstr "Talep Tahmini"
 
-msgid "Demand Projections"
-msgstr "Talep Tahminleri"
-
 msgid "Demand-Based"
 msgstr "Talep Tabanlı"
 
@@ -5638,6 +5635,9 @@ msgstr "Müşteri Durumunu Düzenle"
 msgid "Edit Customer Type"
 msgstr "Müşteri Tipini Düzenle"
 
+msgid "Edit Demand Forecast"
+msgstr ""
+
 msgid "Edit Department"
 msgstr "Departmanı Düzenle"
 
@@ -5766,9 +5766,6 @@ msgstr "İşlemi Düzenle"
 
 msgid "Edit Production Event"
 msgstr "Üretim Etkinliğini Düzenle"
-
-msgid "Edit Production Projection"
-msgstr "Üretim Projeksiyonunu Düzenle"
 
 msgid "Edit Production Quantity"
 msgstr "Üretim Miktarını Düzenle"
@@ -9567,6 +9564,9 @@ msgstr "Yeni Müşteri"
 msgid "New Customer Part"
 msgstr "Yeni Müşteri Parçası"
 
+msgid "New Demand Forecast"
+msgstr ""
+
 msgid "New Department"
 msgstr "Yeni Departman"
 
@@ -9696,9 +9696,6 @@ msgstr "Yeni Prosedür"
 msgid "New Process"
 msgstr "Yeni Süreç"
 
-msgid "New Production Projection"
-msgstr "Yeni Üretim Projeksiyonu"
-
 msgid "New Quality Document"
 msgstr "Yeni Kalite Belgesi"
 
@@ -9819,6 +9816,9 @@ msgstr "Sonraki Kalibrasyon Tarihi"
 msgid "Next Date"
 msgstr "Sonraki Tarih"
 
+msgid "Next day"
+msgstr ""
+
 msgid "Next Day"
 msgstr "Sonraki Gün"
 
@@ -9836,6 +9836,9 @@ msgstr "Sonraki Sıra"
 
 msgid "Next step"
 msgstr "Sonraki adım"
+
+msgid "Next week"
+msgstr ""
 
 msgid "Next Week"
 msgstr "Sonraki Hafta"
@@ -11494,6 +11497,9 @@ msgstr "Önceki"
 msgid "Previous Date"
 msgstr "Önceki Tarih"
 
+msgid "Previous day"
+msgstr ""
+
 msgid "Previous Day"
 msgstr "Önceki Gün"
 
@@ -11506,6 +11512,9 @@ msgstr "Önceki adım"
 #. placeholder {0}: humanizeField(watchedField)
 msgid "Previous value of {0}"
 msgstr "Önceki değeri {0}"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Previous Week"
 msgstr "Önceki Hafta"
@@ -13728,8 +13737,8 @@ msgstr "Konsol PIN Ayarla"
 msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "Yeni teklif satırları için her maliyet kategorisi için varsayılan artırım yüzdelerini belirleyin"
 
-msgid "Set demand projection values for each week"
-msgstr "Her hafta için talep projeksiyon değerleri ayarlayın"
+msgid "Set demand forecast values for each week"
+msgstr ""
 
 msgid "Set due date"
 msgstr "Son son tarihi belirle"
@@ -16513,6 +16522,9 @@ msgstr "Öğeyi güncelle"
 msgid "Update costs on"
 msgstr "Maliyetleri şu konularda güncelle"
 
+msgid "Update Forecast"
+msgstr ""
+
 msgid "Update Inventory"
 msgstr "Stok Güncelle"
 
@@ -16533,9 +16545,6 @@ msgstr "Şifreyi Güncelle"
 
 msgid "Update Permissions"
 msgstr "İzinleri Güncelle"
-
-msgid "Update Projection"
-msgstr "Projeksiyon Güncelle"
 
 msgid "Update Quantity"
 msgstr "Miktarı Güncelle"

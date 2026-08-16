@@ -103,7 +103,6 @@ beforeEach(() => {
   } as any);
   vi.mocked(notifyScheduleInputsChanged).mockImplementation(async () => {
     mocks.events.push("scheduler");
-    return { success: true };
   });
 });
 
