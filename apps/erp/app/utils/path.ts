@@ -1973,10 +1973,6 @@ export const path = {
 
     saveViews: `${x}/shared/views`,
     scheduleForecast: `${x}/scheduling/forecast`,
-    scheduleTimeline: (jobId?: string) =>
-      jobId
-        ? `${x}/scheduling/timeline?jobId=${jobId}`
-        : `${x}/scheduling/timeline`,
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),
     scrapReasons: `${x}/production/scrap-reasons`,

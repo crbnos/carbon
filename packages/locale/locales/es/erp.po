@@ -5426,7 +5426,6 @@ msgstr "Vencimiento"
 msgid "Due (by due date)"
 msgstr "Vence (por fecha de vencimiento)"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Vencimiento {0}"
@@ -6188,9 +6187,6 @@ msgstr "Escalada"
 
 msgid "Est. Duration"
 msgstr "Duración Est."
-
-msgid "Estimated"
-msgstr "Estimado"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Estimado — sin reserva de capacidad"
@@ -10186,9 +10182,6 @@ msgstr "No se encontraron registros"
 msgid "No reference image"
 msgstr "Sin imagen de referencia"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "No hay trabajos liberados para visualizar. Libera un trabajo para ver su cronograma."
-
 msgid "No remaining entities to inspect."
 msgstr "No hay entidades restantes para inspeccionar."
 
@@ -13420,9 +13413,6 @@ msgstr "Seleccione un destino"
 msgid "Select a document"
 msgstr "Selecciona un documento"
 
-msgid "Select a job"
-msgstr "Seleccionar un trabajo"
-
 msgid "Select a new owner"
 msgstr "Selecciona un nuevo propietario"
 
@@ -14297,9 +14287,6 @@ msgstr "Comenzó"
 
 msgid "Starts"
 msgstr "Comienza"
-
-msgid "Starts <0/>"
-msgstr "Comienza <0/>"
 
 msgid "State / Province"
 msgstr "Estado / Provincia"
@@ -15975,9 +15962,6 @@ msgstr "Las tarjetas de tiempo están deshabilitadas"
 
 msgid "Timecards are enabled"
 msgstr "Las tarjetas de tiempo están habilitadas"
-
-msgid "Timeline"
-msgstr "Cronograma"
 
 msgid "Timezone"
 msgstr "Zona horaria"

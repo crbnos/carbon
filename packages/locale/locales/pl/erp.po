@@ -5426,7 +5426,6 @@ msgstr "Termin"
 msgid "Due (by due date)"
 msgstr "Należne (do terminu)"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Termin {0}"
@@ -6188,9 +6187,6 @@ msgstr "Eskalacja"
 
 msgid "Est. Duration"
 msgstr "Szac. Czas trwania"
-
-msgid "Estimated"
-msgstr "Szacunkowe"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Szacunkowe — brak rezerwacji pojemności"
@@ -10186,9 +10182,6 @@ msgstr "Nie znaleziono rekordów"
 msgid "No reference image"
 msgstr "Brak obrazu referencyjnego"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "Brak uwolnionych prac do wizualizacji. Uwolnij pracę, aby zobaczyć jej harmonogram."
-
 msgid "No remaining entities to inspect."
 msgstr "Brak pozostałych jednostek do sprawdzenia."
 
@@ -13420,9 +13413,6 @@ msgstr "Wybierz miejsce docelowe"
 msgid "Select a document"
 msgstr "Wybierz dokument"
 
-msgid "Select a job"
-msgstr "Wybierz pracę"
-
 msgid "Select a new owner"
 msgstr "Wybierz nowego właściciela"
 
@@ -14297,9 +14287,6 @@ msgstr "Rozpoczęto"
 
 msgid "Starts"
 msgstr "Rozpoczyna się"
-
-msgid "Starts <0/>"
-msgstr "Zaczyna <0/>"
 
 msgid "State / Province"
 msgstr "Stan / Prowincja"
@@ -15975,9 +15962,6 @@ msgstr "Karty czasu pracy są wyłączone"
 
 msgid "Timecards are enabled"
 msgstr "Karty czasu pracy są włączone"
-
-msgid "Timeline"
-msgstr "Oś czasu"
 
 msgid "Timezone"
 msgstr "Strefa czasowa"

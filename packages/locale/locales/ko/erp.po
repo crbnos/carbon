@@ -5426,7 +5426,6 @@ msgstr "기한"
 msgid "Due (by due date)"
 msgstr "기한 (기한일 기준)"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "기한 {0}"
@@ -6188,9 +6187,6 @@ msgstr "에스컬레이션"
 
 msgid "Est. Duration"
 msgstr "예상 소요시간"
-
-msgid "Estimated"
-msgstr "예상"
 
 msgid "Estimated — no capacity reservation"
 msgstr "예상 — 용량 예약 없음"
@@ -10186,9 +10182,6 @@ msgstr "기록을 찾을 수 없습니다"
 msgid "No reference image"
 msgstr "참조 이미지 없음"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "시각화할 릴리스된 작업이 없습니다. 작업을 릴리스하여 일정을 확인하세요."
-
 msgid "No remaining entities to inspect."
 msgstr "검사할 개체가 남아 있지 않습니다."
 
@@ -13420,9 +13413,6 @@ msgstr "목적지 선택"
 msgid "Select a document"
 msgstr "문서 선택"
 
-msgid "Select a job"
-msgstr "작업 선택"
-
 msgid "Select a new owner"
 msgstr "새 소유자 선택"
 
@@ -14297,9 +14287,6 @@ msgstr "시작됨"
 
 msgid "Starts"
 msgstr "시작"
-
-msgid "Starts <0/>"
-msgstr "시작 <0/>"
 
 msgid "State / Province"
 msgstr "주/도"
@@ -15975,9 +15962,6 @@ msgstr "근무기록이 비활성화됨"
 
 msgid "Timecards are enabled"
 msgstr "근무기록이 활성화됨"
-
-msgid "Timeline"
-msgstr "타임라인"
 
 msgid "Timezone"
 msgstr "시간대"

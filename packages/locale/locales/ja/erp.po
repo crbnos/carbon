@@ -5426,7 +5426,6 @@ msgstr "期限"
 msgid "Due (by due date)"
 msgstr "期限（期限日による）"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "期限 {0}"
@@ -6188,9 +6187,6 @@ msgstr "エスカレーション"
 
 msgid "Est. Duration"
 msgstr "推定期間"
-
-msgid "Estimated"
-msgstr "推定"
 
 msgid "Estimated — no capacity reservation"
 msgstr "推定 — 容量予約なし"
@@ -10186,9 +10182,6 @@ msgstr "レコードが見つかりません"
 msgid "No reference image"
 msgstr "参照画像がありません"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "表示するリリース済みジョブはありません。ジョブをリリースしてそのスケジュールを表示してください。"
-
 msgid "No remaining entities to inspect."
 msgstr "検査する残りのエンティティはありません。"
 
@@ -13420,9 +13413,6 @@ msgstr "宛先を選択"
 msgid "Select a document"
 msgstr "ドキュメントを選択"
 
-msgid "Select a job"
-msgstr "ジョブを選択"
-
 msgid "Select a new owner"
 msgstr "新しい所有者を選択"
 
@@ -14297,9 +14287,6 @@ msgstr "開始"
 
 msgid "Starts"
 msgstr "開始"
-
-msgid "Starts <0/>"
-msgstr "開始 <0/>"
 
 msgid "State / Province"
 msgstr "都道府県"
@@ -15975,9 +15962,6 @@ msgstr "タイムカードは無効です"
 
 msgid "Timecards are enabled"
 msgstr "タイムカードが有効です"
-
-msgid "Timeline"
-msgstr "タイムライン"
 
 msgid "Timezone"
 msgstr "タイムゾーン"

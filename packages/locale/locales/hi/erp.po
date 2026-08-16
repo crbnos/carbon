@@ -5426,7 +5426,6 @@ msgstr "देय"
 msgid "Due (by due date)"
 msgstr "देय (देय तारीख तक)"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
@@ -6188,9 +6187,6 @@ msgstr "संवर्धन"
 
 msgid "Est. Duration"
 msgstr "अनुमानित अवधि"
-
-msgid "Estimated"
-msgstr "अनुमानित"
 
 msgid "Estimated — no capacity reservation"
 msgstr "अनुमानित — कोई क्षमता आरक्षण नहीं"
@@ -10186,9 +10182,6 @@ msgstr "कोई रिकॉर्ड नहीं मिला"
 msgid "No reference image"
 msgstr "कोई संदर्भ छवि नहीं"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "कोई जारी की गई नौकरी नहीं है जो देखी जा सके। इसके शेड्यूल को देखने के लिए एक नौकरी जारी करें।"
-
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण के लिए कोई शेष इकाई नहीं है।"
 
@@ -13420,9 +13413,6 @@ msgstr "गंतव्य चुनें"
 msgid "Select a document"
 msgstr "एक दस्तावेज़ चुनें"
 
-msgid "Select a job"
-msgstr "एक नौकरी चुनें"
-
 msgid "Select a new owner"
 msgstr "एक नया मालिक चुनें"
 
@@ -14297,9 +14287,6 @@ msgstr "शुरू किया गया"
 
 msgid "Starts"
 msgstr "शुरू होता है"
-
-msgid "Starts <0/>"
-msgstr "शुरुआत <0/>"
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
@@ -15975,9 +15962,6 @@ msgstr "टाइमकार्ड अक्षम हैं"
 
 msgid "Timecards are enabled"
 msgstr "टाइमकार्ड सक्षम हैं"
-
-msgid "Timeline"
-msgstr "समय रेखा"
 
 msgid "Timezone"
 msgstr "समय क्षेत्र"

@@ -28,7 +28,6 @@ import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import {
   LuCalendarDays,
-  LuChartNoAxesGantt,
   LuCircleCheck,
   LuCirclePlay,
   LuClipboardCheck,
@@ -235,12 +234,6 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
                     <DropdownMenuIcon icon={<LuPlay />} />
                     Open in MES
                   </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to={path.to.scheduleTimeline(item.jobId)}>
-                    <DropdownMenuIcon icon={<LuChartNoAxesGantt />} />
-                    View Timeline
-                  </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

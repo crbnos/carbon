@@ -5426,7 +5426,6 @@ msgstr "Scadenza"
 msgid "Due (by due date)"
 msgstr "Scadenza (per data di scadenza)"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Scadenza {0}"
@@ -6188,9 +6187,6 @@ msgstr "Escalation"
 
 msgid "Est. Duration"
 msgstr "Durata stimata"
-
-msgid "Estimated"
-msgstr "Stimato"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Stimato — nessuna prenotazione di capacità"
@@ -10186,9 +10182,6 @@ msgstr "Nessun record trovato"
 msgid "No reference image"
 msgstr "Nessuna immagine di riferimento"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "Nessun lavoro rilasciato da visualizzare. Rilascia un lavoro per vederne la pianificazione."
-
 msgid "No remaining entities to inspect."
 msgstr "Nessuna entità rimanente da ispezionare."
 
@@ -13420,9 +13413,6 @@ msgstr "Seleziona una destinazione"
 msgid "Select a document"
 msgstr "Seleziona un documento"
 
-msgid "Select a job"
-msgstr "Seleziona un lavoro"
-
 msgid "Select a new owner"
 msgstr "Seleziona un nuovo proprietario"
 
@@ -14297,9 +14287,6 @@ msgstr "Iniziato"
 
 msgid "Starts"
 msgstr "Inizia"
-
-msgid "Starts <0/>"
-msgstr "Inizia <0/>"
 
 msgid "State / Province"
 msgstr "Stato / Provincia"
@@ -15975,9 +15962,6 @@ msgstr "I fogli di presenze sono disabilitati"
 
 msgid "Timecards are enabled"
 msgstr "I fogli di presenze sono abilitati"
-
-msgid "Timeline"
-msgstr "Cronologia"
 
 msgid "Timezone"
 msgstr "Fuso orario"

@@ -5426,7 +5426,6 @@ msgstr "Due"
 msgid "Due (by due date)"
 msgstr "Due (by due date)"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
@@ -6188,9 +6187,6 @@ msgstr "Escalation"
 
 msgid "Est. Duration"
 msgstr "Est. Duration"
-
-msgid "Estimated"
-msgstr "Estimated"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Estimated — no capacity reservation"
@@ -10186,9 +10182,6 @@ msgstr "No records found"
 msgid "No reference image"
 msgstr "No reference image"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "No released jobs to visualize. Release a job to see its schedule."
-
 msgid "No remaining entities to inspect."
 msgstr "No remaining entities to inspect."
 
@@ -13420,9 +13413,6 @@ msgstr "Select a destination"
 msgid "Select a document"
 msgstr "Select a document"
 
-msgid "Select a job"
-msgstr "Select a job"
-
 msgid "Select a new owner"
 msgstr "Select a new owner"
 
@@ -14297,9 +14287,6 @@ msgstr "Started"
 
 msgid "Starts"
 msgstr "Starts"
-
-msgid "Starts <0/>"
-msgstr "Starts <0/>"
 
 msgid "State / Province"
 msgstr "State / Province"
@@ -15975,9 +15962,6 @@ msgstr "Timecards are disabled"
 
 msgid "Timecards are enabled"
 msgstr "Timecards are enabled"
-
-msgid "Timeline"
-msgstr "Timeline"
 
 msgid "Timezone"
 msgstr "Timezone"

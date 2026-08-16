@@ -5426,7 +5426,6 @@ msgstr "Срок"
 msgid "Due (by due date)"
 msgstr "Срок (по дате срока)"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Срок {0}"
@@ -6188,9 +6187,6 @@ msgstr "Эскалация"
 
 msgid "Est. Duration"
 msgstr "Прибл. Длительность"
-
-msgid "Estimated"
-msgstr "Приблизительно"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Приблизительно — нет резервирования мощности"
@@ -10186,9 +10182,6 @@ msgstr "Записи не найдены"
 msgid "No reference image"
 msgstr "Нет эталонного изображения"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "Нет выпущенных заданий для визуализации. Выпустите задание, чтобы увидеть его расписание."
-
 msgid "No remaining entities to inspect."
 msgstr "Нет оставшихся объектов для проверки."
 
@@ -13420,9 +13413,6 @@ msgstr "Выберите пункт назначения"
 msgid "Select a document"
 msgstr "Выберите документ"
 
-msgid "Select a job"
-msgstr "Выберите работу"
-
 msgid "Select a new owner"
 msgstr "Выберите нового владельца"
 
@@ -14297,9 +14287,6 @@ msgstr "Начал"
 
 msgid "Starts"
 msgstr "Начинается"
-
-msgid "Starts <0/>"
-msgstr "Начинается <0/>"
 
 msgid "State / Province"
 msgstr "Штат / Провинция"
@@ -15975,9 +15962,6 @@ msgstr "Табели учета отключены"
 
 msgid "Timecards are enabled"
 msgstr "Табели учета рабочего времени включены"
-
-msgid "Timeline"
-msgstr "Временная шкала"
 
 msgid "Timezone"
 msgstr "Часовой пояс"

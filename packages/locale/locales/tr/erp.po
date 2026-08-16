@@ -5426,7 +5426,6 @@ msgstr "Vade"
 msgid "Due (by due date)"
 msgstr "Vadesi (vade tarihine göre)"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Vadesi {0}"
@@ -6188,9 +6187,6 @@ msgstr "Yükseltme"
 
 msgid "Est. Duration"
 msgstr "Tahmini Süre"
-
-msgid "Estimated"
-msgstr "Tahmini"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Tahmini — kapasite rezervasyonu yok"
@@ -10186,9 +10182,6 @@ msgstr "Kayıt bulunamadı"
 msgid "No reference image"
 msgstr "Referans resim yok"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "Görselleştirilecek serbest bırakılmış iş yok. Planlamasını görmek için bir işi serbest bırakın."
-
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
 
@@ -13420,9 +13413,6 @@ msgstr "Hedefi seçin"
 msgid "Select a document"
 msgstr "Belge seçin"
 
-msgid "Select a job"
-msgstr "İş Seç"
-
 msgid "Select a new owner"
 msgstr "Yeni bir sahip seç"
 
@@ -14297,9 +14287,6 @@ msgstr "Başlangıç"
 
 msgid "Starts"
 msgstr "Başlar"
-
-msgid "Starts <0/>"
-msgstr "Başlar <0/>"
 
 msgid "State / Province"
 msgstr "Eyalet / İl"
@@ -15975,9 +15962,6 @@ msgstr "Zaman kartları devre dışı"
 
 msgid "Timecards are enabled"
 msgstr "Zaman kartları etkinleştirilmiş"
-
-msgid "Timeline"
-msgstr "Zaman Çizelgesi"
 
 msgid "Timezone"
 msgstr "Saat Dilim"

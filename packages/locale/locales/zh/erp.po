@@ -5426,7 +5426,6 @@ msgstr "到期"
 msgid "Due (by due date)"
 msgstr "截止期限（按截止日期）"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "截止日期 {0}"
@@ -6188,9 +6187,6 @@ msgstr "升级"
 
 msgid "Est. Duration"
 msgstr "预计时长"
-
-msgid "Estimated"
-msgstr "估计"
 
 msgid "Estimated — no capacity reservation"
 msgstr "估计 — 无产能预留"
@@ -10186,9 +10182,6 @@ msgstr "未找到记录"
 msgid "No reference image"
 msgstr "没有参考图像"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "没有已发布的任务可显示。发布一项任务以查看其计划。"
-
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
 
@@ -13420,9 +13413,6 @@ msgstr "选择目标位置"
 msgid "Select a document"
 msgstr "选择文件"
 
-msgid "Select a job"
-msgstr "选择工作"
-
 msgid "Select a new owner"
 msgstr "选择新的所有者"
 
@@ -14297,9 +14287,6 @@ msgstr "开始于"
 
 msgid "Starts"
 msgstr "开始"
-
-msgid "Starts <0/>"
-msgstr "开始 <0/>"
 
 msgid "State / Province"
 msgstr "州/省"
@@ -15975,9 +15962,6 @@ msgstr "时间卡已禁用"
 
 msgid "Timecards are enabled"
 msgstr "时间卡已启用"
-
-msgid "Timeline"
-msgstr "时间线"
 
 msgid "Timezone"
 msgstr "时区"

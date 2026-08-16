@@ -5426,7 +5426,6 @@ msgstr "Échéance"
 msgid "Due (by due date)"
 msgstr "À échéance (selon la date d'échéance)"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Échéance {0}"
@@ -6188,9 +6187,6 @@ msgstr "Escalade"
 
 msgid "Est. Duration"
 msgstr "Durée est."
-
-msgid "Estimated"
-msgstr "Estimé"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Estimé — aucune réservation de capacité"
@@ -10186,9 +10182,6 @@ msgstr "Aucun enregistrement trouvé"
 msgid "No reference image"
 msgstr "Pas d'image de référence"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "Aucune tâche lancée à visualiser. Lancez une tâche pour voir son calendrier."
-
 msgid "No remaining entities to inspect."
 msgstr "Aucune entité restante à inspecter."
 
@@ -13420,9 +13413,6 @@ msgstr "Sélectionnez une destination"
 msgid "Select a document"
 msgstr "Sélectionner un document"
 
-msgid "Select a job"
-msgstr "Sélectionner un travail"
-
 msgid "Select a new owner"
 msgstr "Sélectionner un nouveau propriétaire"
 
@@ -14297,9 +14287,6 @@ msgstr "Commencé"
 
 msgid "Starts"
 msgstr "Commence"
-
-msgid "Starts <0/>"
-msgstr "Commence <0/>"
 
 msgid "State / Province"
 msgstr "État / Province"
@@ -15975,9 +15962,6 @@ msgstr "Les feuilles de temps sont désactivées"
 
 msgid "Timecards are enabled"
 msgstr "Les feuilles de temps sont activées"
-
-msgid "Timeline"
-msgstr "Chronologie"
 
 msgid "Timezone"
 msgstr "Fuseau horaire"

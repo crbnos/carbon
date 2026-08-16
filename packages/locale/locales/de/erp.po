@@ -5426,7 +5426,6 @@ msgstr "Fällig"
 msgid "Due (by due date)"
 msgstr "Fällig (zum Fälligkeitsdatum)"
 
-#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Fällig {0}"
@@ -6188,9 +6187,6 @@ msgstr "Eskalation"
 
 msgid "Est. Duration"
 msgstr "Geschätzte Dauer"
-
-msgid "Estimated"
-msgstr "Geschätzt"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Geschätzt — keine Kapazitätsreservierung"
@@ -10186,9 +10182,6 @@ msgstr "Keine Datensätze gefunden"
 msgid "No reference image"
 msgstr "Kein Referenzbild"
 
-msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr "Keine freigegebenen Aufträge zum Visualisieren. Geben Sie einen Auftrag frei, um seinen Zeitplan zu sehen."
-
 msgid "No remaining entities to inspect."
 msgstr "Keine verbleibenden Entitäten zur Überprüfung."
 
@@ -13420,9 +13413,6 @@ msgstr "Wählen Sie ein Ziel aus"
 msgid "Select a document"
 msgstr "Dokument auswählen"
 
-msgid "Select a job"
-msgstr "Auftrag wählen"
-
 msgid "Select a new owner"
 msgstr "Wählen Sie einen neuen Eigentümer"
 
@@ -14297,9 +14287,6 @@ msgstr "Gestartet"
 
 msgid "Starts"
 msgstr "Startet"
-
-msgid "Starts <0/>"
-msgstr "Beginnt <0/>"
 
 msgid "State / Province"
 msgstr "Bundesland / Provinz"
@@ -15975,9 +15962,6 @@ msgstr "Zeiterfassungen sind deaktiviert"
 
 msgid "Timecards are enabled"
 msgstr "Zeitkarten sind aktiviert"
-
-msgid "Timeline"
-msgstr "Zeitstrahl"
 
 msgid "Timezone"
 msgstr "Zeitzone"
