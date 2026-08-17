@@ -1,6 +1,6 @@
 # Your account
 
-> Personal, self-service settings for profile, passkeys, notification preferences, theme, and language, kept separate from the company-wide settings an admin controls.
+> Personal, self-service settings for profile, passkeys and two-factor, notification preferences, theme, and language, kept separate from the company-wide settings an admin controls.
 
 Everything on the **Account** screen is yours alone. Your name and photo, the passkeys you sign in with,
 which topics reach you by email, the theme you look at all day: these are personal preferences, scoped to
@@ -29,7 +29,7 @@ edit is always self-scoped.
 Your email is how you sign in and how Carbon addresses notifications to you, so it isn't editable as a
 casual profile field. Changing it is an identity change handled outside these self-service settings.
 
-## Signing in — passkeys
+## Signing in — passkeys and two-factor
 
 Carbon supports several sign-in methods, and which ones are available is a deployment-wide choice, not a
 per-user one. The `AUTH_PROVIDERS` environment variable turns them on and off; the default set is
@@ -37,16 +37,20 @@ per-user one. The `AUTH_PROVIDERS` environment variable turns them on and off; t
 **Google** and **Microsoft (Azure)** OAuth. There's no password field on this screen — Carbon signs you in
 by magic link or OAuth, not by a stored password you type each time.
 
+The same screen is where you add an authenticator app for two-factor codes — see
+`docs/reference/two-factor` for setup, company-wide enforcement, and recovery.
+
 The codebase carries a password-change form, but it isn't wired into any account route today — the Account
-sidebar only exposes Profile and Notifications. Password management isn't a live self-service control here.
+sidebar exposes Profile, Security, and Notifications. Password management isn't a live self-service control here.
 Sign-in is magic link, OAuth, or a passkey.
 
-The one sign-in control you manage yourself is **passkeys**, and its card only appears when the `passkey`
-provider is enabled (`isAuthProviderEnabled("passkey")`, `.../account+/profile.tsx:214`). A passkey lets you
+The sign-in controls you manage yourself live on **Account → Security**, not on Profile. The passkey card
+only appears when the `passkey` provider is enabled (`isAuthProviderEnabled("passkey")`,
+`.../account+/security.tsx`). A passkey lets you
 sign in with biometrics — Face ID, Touch ID, or your device PIN — instead of waiting on a magic-link email.
 From the Profile page you can:
 
-  - **Add a passkey**: Registers a new credential through your browser's WebAuthn prompt (`onAddPasskey`, `profile.tsx:220`). You can hold more than one — a laptop and a phone, say.
+  - **Add a passkey**: Registers a new credential through your browser's WebAuthn prompt (`onAddPasskey`, `security.tsx`). You can hold more than one — a laptop and a phone, say.
   - **Rename a passkey**: Give a credential a recognizable name (up to 100 characters) so you can tell your devices apart.
   - **Remove a passkey**: Deletes it; that device can no longer sign you in. Each row shows when it was added, when it was last used, and whether it's synced across your devices.
 

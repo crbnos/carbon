@@ -2040,6 +2040,12 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 2.2.3
+      '@logtape/testing':
+        specifier: 'catalog:'
+        version: 2.2.3(@logtape/logtape@2.2.3)
       '@types/nodemailer':
         specifier: 6.4.21
         version: 6.4.21

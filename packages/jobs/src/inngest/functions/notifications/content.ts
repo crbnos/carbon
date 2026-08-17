@@ -1184,11 +1184,20 @@ async function buildEventContent(
       };
     }
 
-    // The only kind whose text comes from the payload — it reads nothing.
+    // The only kinds whose text comes from the payload — they read nothing.
     case NotificationEvent.Workflow: {
       return {
         description: opts?.title ?? "A workflow ran",
         details: opts?.body ? [{ label: "Message", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried like Workflow: documentId is a provider id (e.g.
+    // "rillet"), not a readable document, so there is nothing to look up.
+    case NotificationEvent.IntegrationSync: {
+      return {
+        description: opts?.title ?? "Accounting sync needs attention",
+        details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
       };
     }
 

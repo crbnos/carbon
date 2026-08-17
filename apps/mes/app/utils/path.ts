@@ -161,6 +161,7 @@ export const path = {
     maintenanceEvent: `${x}/maintenance-event`,
     manualPrint: `${x}/print`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
+    mfa: "/mfa",
     newMaintenanceDispatch: `${x}/dispatch/new`,
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),

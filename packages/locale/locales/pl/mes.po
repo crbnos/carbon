@@ -422,6 +422,9 @@ msgstr "Zakończ operacje"
 msgid "Enter PIN for {0}"
 msgstr "Wprowadź PIN dla {0}"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Wprowadź 6-cyfrowy kod z aplikacji uwierzytelniającej"
+
 msgid "Error"
 msgstr "Błąd"
 
@@ -1224,6 +1227,9 @@ msgstr "Ustaw zakończenie zmiany"
 msgid "Set clock-out time"
 msgstr "Ustaw czas zakończenia zmiany"
 
+msgid "Set up in Carbon"
+msgstr "Skonfiguruj w aplikacji Carbon"
+
 msgid "Setup"
 msgstr "Ustawienie"
 
@@ -1247,6 +1253,9 @@ msgstr "Zaloguj się przez Outlook"
 
 msgid "Sign in with Passkey"
 msgstr "Zaloguj się za pomocą klucza dostępu"
+
+msgid "Sign out"
+msgstr "Wyloguj się"
 
 msgid "Sign Out"
 msgstr "Wyloguj się"
@@ -1375,6 +1384,12 @@ msgstr "Śledzony element"
 msgid "Tracking"
 msgstr "Śledzenie"
 
+msgid "Two-factor authentication"
+msgstr "Uwierzytelnianie dwuskładnikowe"
+
+msgid "Two-factor authentication required"
+msgstr "Wymagane uwierzytelnianie dwuskładnikowe"
+
 msgid "Type a message..."
 msgstr "Wpisz wiadomość..."
 
@@ -1425,6 +1440,12 @@ msgstr "Przesłano: {0}"
 msgid "Uploading {0}"
 msgstr "Przesyłanie {0}"
 
+msgid "Use a different account"
+msgstr "Użyj innego konta"
+
+msgid "Verify"
+msgstr "Zweryfikuj"
+
 msgid "View maintenance dispatch"
 msgstr "Wyświetl zlecenie utrzymania ruchu"
 
@@ -1451,3 +1472,6 @@ msgstr "Zalogowałeś się o <0/>. Możesz edytować czas wylogowania poniżej l
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Jesteś zalogowany od {hoursElapsed} godzin. Czy zapomniałeś zakończyć zmianę?"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "Twoja organizacja wymaga aplikacji uwierzytelniającej. Skonfiguruj ją w aplikacji Carbon, a następnie wróć tutaj."

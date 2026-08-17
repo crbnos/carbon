@@ -75,6 +75,7 @@ catalog:
   cookie: 1.1.1
   cross-env: 7.0.3
   dompurify: 3.4.0
+  fast-xml-parser: 5.3.1
   framer-motion: 11.18.2
   intl-parse-accept-language: 1.0.0
   isbot: '5'

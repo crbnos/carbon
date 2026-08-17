@@ -24,7 +24,16 @@ import {
   Store,
 } from "./architecture-kit";
 
-export type ArchitectureDiagramKey = "map" | "click" | "doors" | "paths" | "events" | "runs" | "triage";
+export type ArchitectureDiagramKey =
+  | "map"
+  | "click"
+  | "doors"
+  | "paths"
+  | "events"
+  | "runs"
+  | "triage"
+  | "buy-hosted"
+  | "buy-selfhosted";
 
 /* Part 1. The spine only: people, the two apps, Supabase over Postgres, and the event
  * loop back into the ERP. Redis and the Assembler are deliberately absent — they are
@@ -416,6 +425,68 @@ function Triage() {
   );
 }
 
+/* The two ways to buy when Carbon runs it. Self-signup is the short path (two plans,
+ * no signature); the Enterprise Subscription is the umbrella, and its two independent
+ * choices — where it runs and how much of Carbon comes with it — are the band inside. */
+function BuyHosted() {
+  return (
+    <svg viewBox="0 0 740 392" className="w-full h-auto" role="img" aria-label="How to buy Carbon Cloud">
+      <ArrowDefs />
+
+      <Node x={40} y={16} w={290} h={54} label="Self-signup" sub="clickthrough · card on file" tone="app" />
+      <Node x={410} y={16} w={290} h={54} label="Enterprise Subscription" sub="signed · invoiced · annual" tone="app" />
+
+      <Edge pts={[[185, 70], [185, 86], [110, 86], [110, 98]]} />
+      <Edge pts={[[185, 70], [185, 86], [260, 86], [260, 98]]} />
+      <Node x={45} y={98} w={130} h={46} label="Starter" sub="month-to-month" />
+      <Node x={195} y={98} w={130} h={46} label="Business" sub="full features" />
+
+      <Edge pts={[[555, 70], [555, 176]]} />
+
+      <Boundary x={16} y={176} w={708} h={200} label="Inside the Enterprise Subscription">
+        <Eyebrow x={40} y={206} label="Environment" />
+        <Node x={40} y={216} w={206} h={54} label="Commercial Cloud" sub="US or EU" />
+        <Node x={270} y={216} w={196} h={54} label="GovCloud" sub="ITAR-controlled" />
+        <Node x={490} y={216} w={206} h={54} label="BYOC" sub="your AWS · we operate" />
+
+        <Eyebrow x={40} y={302} label="Service level" />
+        <Node x={40} y={312} w={326} h={54} label="Standard" sub="self-guided onboarding" />
+        <Node x={390} y={312} w={306} h={54} label="Flagship" sub="FDE, implementation, hypercare" />
+      </Boundary>
+    </svg>
+  );
+}
+
+/* The mirror image: when the customer runs it. Community is free under the AGPL; the
+ * commercial license is what lifts the copyleft and unlocks Enterprise, and it splits
+ * into a path for a company running Carbon and a path for a partner selling it. */
+function BuySelfHosted() {
+  return (
+    <svg viewBox="0 0 740 428" className="w-full h-auto" role="img" aria-label="How to buy a self-hosted Carbon license">
+      <ArrowDefs />
+
+      <Node x={40} y={16} w={290} h={54} label="Community Edition" sub="AGPLv3 · free" tone="svc" />
+      <Node x={410} y={16} w={290} h={54} label="Commercial License" sub="unlocks Enterprise" tone="svc" />
+
+      <Edge pts={[[185, 70], [185, 100]]} />
+      <Node x={45} y={100} w={280} h={48} label="Unmodified, your own use" sub="no license needed" />
+
+      <Edge pts={[[555, 70], [555, 180]]} />
+
+      <Boundary x={16} y={180} w={708} h={232} label="Inside the Commercial License">
+        <Eyebrow x={40} y={210} label="For businesses" />
+        <Node x={40} y={220} w={326} h={54} label="Subscription (SCLA)" sub="per user, per year" />
+        <Node x={390} y={220} w={306} h={54} label="Perpetual (PCLA)" sub="one-time · own it" />
+
+        <Eyebrow x={40} y={306} label="For partners" />
+        <Node x={40} y={316} w={206} h={54} label="Reseller" sub="under Carbon's name" />
+        <Node x={270} y={316} w={196} h={54} label="White label" sub="their brand" />
+        <Node x={490} y={316} w={206} h={54} label="OEM embedded" sub="ships in their machines" />
+      </Boundary>
+    </svg>
+  );
+}
+
 export const architectureDiagrams: Record<ArchitectureDiagramKey, () => ReactElement> = {
   map: Map,
   click: Click,
@@ -424,4 +495,6 @@ export const architectureDiagrams: Record<ArchitectureDiagramKey, () => ReactEle
   events: Events,
   runs: Runs,
   triage: Triage,
+  "buy-hosted": BuyHosted,
+  "buy-selfhosted": BuySelfHosted,
 };

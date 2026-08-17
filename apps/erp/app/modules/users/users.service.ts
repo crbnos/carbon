@@ -237,6 +237,20 @@ export async function getUnrevokedInviteEmails(
     .is("revokedAt", null);
 }
 
+/**
+ * User ids in this company with a verified authenticator.
+ *
+ * One RPC rather than a per-row lookup: TOTP factors live in Supabase's
+ * `auth.mfa_factors`, so the alternative is an admin-API call per employee —
+ * an N+1 that degrades with headcount.
+ */
+export async function getUsersWithVerifiedMfa(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.rpc("users_with_verified_mfa", { company_id: companyId });
+}
+
 export async function getEmployees(
   client: SupabaseClient<Database>,
   companyId: string,

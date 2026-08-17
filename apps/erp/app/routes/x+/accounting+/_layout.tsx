@@ -35,12 +35,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   );
 
-  const [accounts, baseCurrency, companies] = await Promise.all([
+  const [accounts, baseCurrency, companies, integrations] = await Promise.all([
     getAccountsList(client, companyGroupId, {
       isGroup: false
     }),
     getBaseCurrency(client, companyId),
-    getCompaniesInGroup(client, companyGroupId)
+    getCompaniesInGroup(client, companyGroupId),
+    // Active accounting integrations gate integration-dependent nav items
+    // (Sync Tie-Out) and feed the tie-out table's integration filter
+    client
+      .from("companyIntegration")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .in("id", ["xero", "quickbooks", "rillet"])
   ]);
 
   if (accounts.error) {
@@ -56,7 +64,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       accounts.data.filter((a) => a.incomeBalance === "Balance Sheet") ?? [],
     incomeStatementAccounts:
       accounts.data.filter((a) => a.incomeBalance === "Income Statement") ?? [],
-    hasMultipleCompanies: (companies.data?.length ?? 0) > 1
+    hasMultipleCompanies: (companies.data?.length ?? 0) > 1,
+    accountingIntegrations: (integrations.data ?? []).map((row) => row.id)
   };
 }
 

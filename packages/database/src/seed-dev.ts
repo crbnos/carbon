@@ -52,6 +52,15 @@ async function main() {
       // Must run before resetSequences, and before any nextSequence() call.
       await ensureSequences(client, companyId);
 
+      // Dev/test convenience: enable accounting so posting flows create GL
+      // journals out of the box. Runs for pre-existing companies too (the
+      // bootstrap path also sets it for brand-new ones). Production keeps
+      // the column default (false) — this script is dev-seed only.
+      await client.query(
+        `UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = $1`,
+        [companyId]
+      );
+
       if (skipWipe) {
         console.log("Skipping wipe (--skip-wipe).");
       } else {

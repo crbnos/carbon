@@ -422,6 +422,9 @@ msgstr "공정작업 종료"
 msgid "Enter PIN for {0}"
 msgstr "{0}의 PIN 입력"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "인증 앱의 6자리 코드를 입력하세요"
+
 msgid "Error"
 msgstr "오류"
 
@@ -1224,6 +1227,9 @@ msgstr "퇴근 처리"
 msgid "Set clock-out time"
 msgstr "퇴근 시간 설정"
 
+msgid "Set up in Carbon"
+msgstr "Carbon에서 설정하기"
+
 msgid "Setup"
 msgstr "설정"
 
@@ -1247,6 +1253,9 @@ msgstr "Outlook으로 로그인"
 
 msgid "Sign in with Passkey"
 msgstr "패스키로 로그인"
+
+msgid "Sign out"
+msgstr "로그아웃"
 
 msgid "Sign Out"
 msgstr "로그아웃"
@@ -1375,6 +1384,12 @@ msgstr "추적된 엔터티"
 msgid "Tracking"
 msgstr "추적"
 
+msgid "Two-factor authentication"
+msgstr "2단계 인증"
+
+msgid "Two-factor authentication required"
+msgstr "2단계 인증 필수"
+
 msgid "Type a message..."
 msgstr "메시지를 입력하세요..."
 
@@ -1425,6 +1440,12 @@ msgstr "업로드됨: {0}"
 msgid "Uploading {0}"
 msgstr "{0} 업로드 중"
 
+msgid "Use a different account"
+msgstr "다른 계정 사용"
+
+msgid "Verify"
+msgstr "확인"
+
 msgid "View maintenance dispatch"
 msgstr "유지보수 작업지시 보기"
 
@@ -1451,3 +1472,6 @@ msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편�
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊으셨나요?"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."

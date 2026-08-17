@@ -19,6 +19,7 @@ import {
   LuPrinter,
   LuScanBarcode,
   LuSheet,
+  LuShieldCheck,
   LuShoppingCart,
   LuUsers,
   LuWebhook,
@@ -195,6 +196,12 @@ export default function useSettingsSubmodules() {
             role: "employee",
             icon: <LuClipboardCheck />,
             requiresControlledEnvironment: true
+          },
+          {
+            name: t`Security`,
+            to: path.to.security,
+            role: "employee",
+            icon: <LuShieldCheck />
           },
           {
             name: t`Sequences`,

@@ -50,6 +50,7 @@ declare global {
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
       QUICKBOOKS_CLIENT_SECRET: string;
+      QUICKBOOKS_ENVIRONMENT: string;
       QUICKBOOKS_WEBHOOK_SECRET: string;
       RESEND_API_KEY: string;
       RESEND_DOMAIN: string;
@@ -274,6 +275,13 @@ export const QUICKBOOKS_CLIENT_SECRET = getEnv("QUICKBOOKS_CLIENT_SECRET", {
   isRequired: false,
   isSecret: true
 });
+
+/** Intuit environment: "sandbox" or "production" (default). */
+export const QUICKBOOKS_ENVIRONMENT =
+  getEnv("QUICKBOOKS_ENVIRONMENT", {
+    isRequired: false,
+    isSecret: false
+  }) ?? "production";
 
 export const QUICKBOOKS_WEBHOOK_SECRET = getEnv("QUICKBOOKS_WEBHOOK_SECRET", {
   isRequired: false,

@@ -799,6 +799,7 @@ export const accountDefaults = {
   prepaymentAccount: "2110",
   supplierPrepaymentAccount: "1150",
   payablesAccount: "2010",
+  intercompanyPayablesAccount: "2020",
   goodsReceivedNotInvoicedAccount: "2125",
   salesTaxPayableAccount: "2210",
   purchaseTaxPayableAccount: "2220",
@@ -865,7 +866,7 @@ export const fiscalYearSettings = {
  * Default period-close checklist (NetSuite-style). Seeded per company as system
  * task definitions; getPeriodCloseChecklist instantiates a periodCloseTask per
  * period from the active definitions. `autoCheckKey` binds Auto tasks to a
- * readiness evaluator in accounting.service.ts (computePeriodReadiness).
+ * readiness evaluator in accounting.ee.service.ts (computePeriodReadiness).
  */
 export const periodCloseTaskDefinitions = [
   {
@@ -945,6 +946,16 @@ export const periodCloseTaskDefinitions = [
     sortOrder: 8,
     required: true,
     severity: null,
+    active: true,
+    isSystem: true
+  },
+  {
+    name: "External GL sync complete",
+    taskType: "Auto",
+    autoCheckKey: "external-gl-sync",
+    sortOrder: 9,
+    required: true,
+    severity: "Blocker",
     active: true,
     isSystem: true
   }

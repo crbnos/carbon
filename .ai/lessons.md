@@ -356,7 +356,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** When hand-seeding `journalLine` rows, set the sign to move the account toward its natural balance: `+` increases an Asset/Expense (debit) and increases a Liability/Equity/Revenue (credit). Verify against the `journalEntries` view (`totalDebits == totalCredits` per `journalEntryId`) before relying on the data — an unbalanced entry silently blocks period close. Posted `journal`/`journalLine` rows are immutable (`journal_posted_immutable` / `journalLine_posted_immutable`); to correct seeded mistakes you must disable those triggers on the local DB (superuser), never in a migration.
 
-**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.service.ts`).
+**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.ee.service.ts`).
 
 ## A period snapshot written at close races Locked-period postings unless the posting guard locks the period row
 
@@ -834,6 +834,28 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/functions/post-shipment/index.ts` (PO vs SO split blocks); any refactor threading a shared record-builder through multiple writers (`post-*`, `issue`, sync handlers).
 
+## Carbon journal amounts are natural-balance-signed, not debit-signed
+
+- **Context:** Wiring Rillet journal posting sync; first live push of a real
+  `Purchase Receipt` journal failed UNBALANCED_JOURNAL (+300/+300).
+- **Problem:** The accounting sync engine (preflight balance check, netting,
+  consolidation, all provider journal mappers) assumed `journalLine.amount`
+  is debit-signed (positive = debit, negative = credit, sum = 0). Carbon's
+  post-* edge functions actually sign by the account's NATURAL balance
+  (`credit("liability", x)` stores +x — functions/lib/utils.ts), so real
+  journals balance as debits == credits, not signed-sum-zero. Also:
+  Kysely/pg returns DATE columns as JS Date objects — `postingDate.slice`
+  crashes; and disabled-config skip results without `localId` make the
+  drain report the misleading "No sync result returned for entity".
+- **Rule:** Convert to debit-signed at the fetch edge with
+  `toDebitSignedAmount(account.class, amount)` (join account.class in the
+  journal-line query), normalize dates with `toPostingDateString`, and
+  always set `localId`/`remoteId` on every SyncResult, including early
+  skips. Never trust the debit-signed assumption against live journal data
+  without checking the edge functions' credit()/debit() helpers.
+- **Applies to:** packages/ee/src/accounting (journal syncers, posting
+  preflight, consolidation), any new accounting provider's journal mapper.
+
 ## A conformance check is only as good as its source glob — route modules are server AND client in one file
 
 **Context:** The timezone audit (branch `sid/timezone-tz-audit`, PR #1339) added the `no-local-timezone` conformance check to ban process-timezone day derivation in server code. Self-review then found 26 surviving violations in route files, plus more in files the check DID scan using idioms it didn't match.
@@ -924,6 +946,15 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**` or `packages/database/supabase/functions/**`, and the `getPostgresClient` pool in `packages/database/supabase/functions/lib/postgres/index.ts`.
 
+## A VERIFY-flagged provider endpoint in a cron loop is an outage, not a TODO
+
+**Context:** The Rillet AP payment pull assumed an org-wide `GET /bill-payments` feed mirroring `/invoice-payments`. The method carried a VERIFY comment ("assumed to mirror… not confirmed") and even named its own fallback, but shipped unguarded inside `listChanges`. The endpoint does not exist (404).
+
+**Problem:** Every `accounting-pull-sweep` run threw at the AP step, killing the whole Rillet pull — including the AR invoice-payment changes collected earlier in the same call — every 30 minutes, silently. Payments recorded in Rillet never flowed back to Carbon, so a bill paid remotely stayed open locally, got paid a second time in Carbon, and the outbound push then failed forever on Rillet's over-pay guard. One unverified assumption at the bottom of a sweep became a permanent, compounding data gap that surfaced two layers away from its cause.
+
+**Rule:** An API call that only runs inside a cron/sweep is exercised for the first time in production — verify VERIFY-flagged endpoints against the live sandbox *before* wiring them into a loop (one curl answers it), and never let one entity family's listing failure discard another family's already-collected changes. When an assumed endpoint is missing, compose from verified ones instead: Rillet AP payments = `GET /bills?updated.gt` (payment activity bumps the bill's `updated_at`) + `GET /bills/{id}/payments` per changed bill.
+
+**Applies to:** `packages/ee/src/accounting/providers/rillet/provider.ts` (`listChanges`, `listBillPaymentsUpdatedSince`), any `SupportsIncrementalPull.listChanges` implementation, VERIFY-flagged calls anywhere under `packages/ee/src/accounting/providers/**`.
 ## react-aria's blur commit makes the input formatter part of arithmetic
 
 **Context:** The numeric-precision standard's motivating bug — a user typed 6.25% tax, saved, reopened, and read 6.22%.
@@ -973,6 +1004,25 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/migrations/` views aggregating over joins (`salesOrders`, `purchaseOrders`, quotes/invoices list views); any SQL review touching `sum(DISTINCT`.
 
+## Appending SQL to an already-applied migration silently does nothing
+
+**Context:** A migration adding `companySettings.requireMfa` was written and applied. Later, a `users_with_verified_mfa` RPC was appended to that SAME file and `pnpm db:migrate` was re-run. The function was never created. The employees page then showed "Not set up" for every user — including one with a verified factor — because the missing RPC returned an error that the loader discarded as an empty result.
+
+**Problem:** Supabase tracks applied migrations by FILENAME. Once a file has run it is never re-read, so statements appended to it are invisible on every existing database while still applying to a fresh one. The two diverge silently, and there is no error at migrate time to notice.
+
+**Rule:** Never append to a migration file that may already have been applied — a file is immutable the moment it runs anywhere. New statements go in a NEW timestamped file, even a one-line `CREATE OR REPLACE`. Corollary: a migration that adds an RPC also needs a PostgREST schema reload (`NOTIFY pgrst, 'reload schema'`) or the function stays invisible to the app; and a service call whose failure is indistinguishable from an empty result must check `error` explicitly rather than `data ?? []`.
+
+**Applies to:** `packages/database/supabase/migrations/**`, any `client.rpc(...)` call site.
+
+## `form.submit()` bypasses React Router; `ValidatedForm` needs a real submitter
+
+**Context:** `@carbon/form`'s `InputOTP` auto-submits when the last digit is typed, using `form.submit()`. On the `/mfa` and `/verify` screens the error `<Alert>` reading `fetcher.data` could therefore never render — wrong codes produced no feedback at all. Switching to a bare `form.requestSubmit()` then made the form do nothing whatsoever.
+
+**Problem:** Two separate traps. `HTMLFormElement.submit()` does not fire the submit event, so React Router never intercepts it and `fetcher.data` stays permanently undefined — the request goes out as a raw document POST. But `requestSubmit()` with NO argument leaves `nativeEvent.submitter` null, and `ValidatedForm.handleSubmit` early-returns unless `submitter?.form === target` — so it silently does nothing.
+
+**Rule:** Programmatic submits inside a `ValidatedForm` must pass a submitter: `form.requestSubmit(form.querySelector('button[type="submit"]'))`, which means the form needs a real submit button (good for accessibility anyway). Never use `form.submit()` in a React Router app. When a form renders errors from `fetcher.data`, verify the submit path actually reaches the fetcher — an unreachable error branch looks identical to "no errors happen".
+
+**Applies to:** `packages/form/src/components/InputOTP.tsx`, `packages/form/src/ValidatedForm.tsx`, any auto-submitting form field.
 ## Browser code must import `@carbon/documents/utils`, never `@carbon/documents/pdf`
 
 **Context:** Adding a shared `getQuoteDisplayId` / `getPurchaseOrderDisplayId` helper for showing the revision suffix on documents. The natural home looked like the `./pdf` barrel, which already re-exported it for the server-side PDF routes.

@@ -149,8 +149,8 @@ export default function AppIndexRoute() {
             action={path.to.getStartedEnroll}
             className="mb-6"
           >
-            <div className="rounded-lg ring-2 ring-transparent bg-gradient-to-bl from-card/70 from-50% to-background/70 backdrop-blur-md shadow-button-base p-6 flex items-start gap-4">
-              <div className="shrink-0 size-11 rounded-lg bg-accent flex items-center justify-center text-primary">
+            <div className="rounded-lg ring-2 ring-transparent bg-gradient-to-bl from-card/70 from-50% to-background/70 backdrop-blur-md shadow-button-base p-4 flex items-start gap-4">
+              <div className="shrink-0 p-2.5 rounded-lg border border-border">
                 <LuRocket className="text-xl" />
               </div>
               <div className="flex-1 min-w-0">
@@ -207,7 +207,7 @@ const ModuleCard = ({ module }: { module: Authenticated<NavItem> }) => (
     {...(module.external
       ? { target: "_blank", rel: "noopener noreferrer" }
       : {})}
-    className="flex items-center gap-4 p-4 bg-card/70 backdrop-blur-md rounded-lg border border-border group hover:bg-accent/40 hover:border-foreground/20 cursor-pointer transition-colors duration-200"
+    className="flex items-center gap-4 p-4 bg-card/70 backdrop-blur-md rounded-lg border border-border group hover:bg-card/60 hover:border-foreground/20 cursor-pointer transition-colors duration-200"
   >
     <div className="shrink-0 p-2.5 rounded-lg border border-border group-hover:border-foreground/20 transition-colors">
       <module.icon className="text-xl" />

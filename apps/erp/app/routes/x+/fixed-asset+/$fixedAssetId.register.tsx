@@ -10,7 +10,7 @@ import {
   getFixedAsset,
   getOrCreateAccountingPeriod
 } from "~/modules/accounting";
-import { postAssetRegistration } from "~/modules/accounting/accounting.server";
+import { postAssetRegistration } from "~/modules/accounting/accounting.ee.server";
 import { FixedAssetRegisterForm } from "~/modules/accounting/ui/FixedAssets";
 import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";

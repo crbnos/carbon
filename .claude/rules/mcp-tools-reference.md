@@ -77,6 +77,7 @@ registered individually:
 
 `tool-metadata.json` is **generated**, never hand-edited. Run
 `npx tsx scripts/generate-mcp.ts`; it parses every `apps/erp/app/modules/*/*.service.ts`
+(falling back to the `.ee`-licensed `<module>.ee.service.ts` — e.g. `accounting`)
 and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
 `{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
@@ -104,7 +105,8 @@ and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 `account` · `accounting` · `documents` · `inventory` · `invoicing` · `items` ·
 `people` · `production` · `purchasing` · `quality` · `resources` · `sales` ·
 `settings` · `shared` · `users`. Each maps 1:1 to a
-`apps/erp/app/modules/<module>/<module>.service.ts` namespace.
+`apps/erp/app/modules/<module>/<module>.service.ts` namespace (accounting is the
+`.ee`-licensed `accounting.ee.service.ts`; the registry key stays `accounting`).
 
 <!-- UNVERIFIED: exact per-module/total tool counts (~1200) drift on every regen — read tool-metadata.json for the live number, don't trust a hardcoded count. -->
 
