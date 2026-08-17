@@ -389,7 +389,7 @@ serve(async (req: Request) => {
             const {
               id,
               readableId,
-              revision,
+              revision: rawRevision,
               name,
               quantity,
               replenishmentSystem,
@@ -399,16 +399,32 @@ serve(async (req: Request) => {
             const partId = readableId || name;
             if (!partId) return;
 
+            // Onshape sends "" (not undefined) for rows without a released
+            // revision — normalize to the canonical initial revision so
+            // item.revision is never stored as "".
+            const revision = rawRevision?.trim() ? rawRevision.trim() : "0";
+            const onshapeDescription =
+              typeof data.data?.Description === "string" &&
+              data.data.Description.trim().length > 0
+                ? (data.data.Description as string).trim()
+                : undefined;
+
             const externalPartId = getReadableIdWithRevision(partId, revision);
 
             const isMade = children.length > 0;
             let itemId = id;
 
             if (itemId) {
-              // Update existing item
+              // Update existing item with the Onshape-owned fields. Carbon-owned
+              // fields (tracking type, replenishment, UoM) are deliberately left
+              // alone — the user may have changed them after the first import.
               await trx
                 .updateTable("item")
                 .set({
+                  ...(name ? { name } : {}),
+                  ...(onshapeDescription
+                    ? { description: onshapeDescription }
+                    : {}),
                   updatedBy: userId,
                   updatedAt: new Date().toISOString(),
                 })
@@ -454,18 +470,80 @@ serve(async (req: Request) => {
               itemId = newlyCreatedItemsByPartId.get(partId);
 
               if (!itemId) {
-                // Create new item and part
+                // If other revisions of this readableId exist, the new item is
+                // a REVISION of that family — start it as a faithful copy of
+                // the latest sibling (same field set as items.service.ts
+                // createRevision) so the only differences are the ones Onshape
+                // actually sent. Prefer named revisions over the initial one,
+                // then newest.
+                const siblings = await trx
+                  .selectFrom("item")
+                  .select([
+                    "id",
+                    "name",
+                    "description",
+                    "type",
+                    "replenishmentSystem",
+                    "defaultMethodType",
+                    "itemTrackingType",
+                    "unitOfMeasureCode",
+                    "sourcingType",
+                    "thumbnailPath",
+                    "mpn",
+                    "modelUploadId",
+                    "revision",
+                    "createdAt",
+                  ])
+                  .where("companyId", "=", companyId)
+                  .where("readableId", "=", partId)
+                  .execute();
+
+                const isInitialRevision = (r: string | null) =>
+                  !r || r === "0";
+                const sourceRevision = [...siblings].sort((a, b) => {
+                  const aInitial = isInitialRevision(a.revision) ? 1 : 0;
+                  const bInitial = isInitialRevision(b.revision) ? 1 : 0;
+                  if (aInitial !== bInitial) return aInitial - bInitial;
+                  return String(b.createdAt).localeCompare(String(a.createdAt));
+                })[0];
+
+                const itemType = sourceRevision?.type ?? "Part";
+                const unitOfMeasureCode =
+                  sourceRevision?.unitOfMeasureCode ?? "EA";
+
                 const item = await trx
                   .insertInto("item")
                   .values({
                     readableId: partId,
-                    revision: revision ?? "0",
-                    name,
-                    type: "Part",
-                    unitOfMeasureCode: "EA",
-                    itemTrackingType: "Inventory",
-                    replenishmentSystem,
-                    defaultMethodType,
+                    revision,
+                    name: name || sourceRevision?.name || partId,
+                    type: itemType,
+                    unitOfMeasureCode,
+                    itemTrackingType:
+                      sourceRevision?.itemTrackingType ?? "Inventory",
+                    replenishmentSystem:
+                      sourceRevision?.replenishmentSystem ??
+                      replenishmentSystem,
+                    defaultMethodType:
+                      sourceRevision?.defaultMethodType ?? defaultMethodType,
+                    ...(onshapeDescription ?? sourceRevision?.description
+                      ? {
+                          description:
+                            onshapeDescription ?? sourceRevision?.description,
+                        }
+                      : {}),
+                    ...(sourceRevision?.sourcingType
+                      ? { sourcingType: sourceRevision.sourcingType }
+                      : {}),
+                    ...(sourceRevision?.thumbnailPath
+                      ? { thumbnailPath: sourceRevision.thumbnailPath }
+                      : {}),
+                    ...(sourceRevision?.mpn
+                      ? { mpn: sourceRevision.mpn }
+                      : {}),
+                    ...(sourceRevision?.modelUploadId
+                      ? { modelUploadId: sourceRevision.modelUploadId }
+                      : {}),
                     companyId,
                     createdBy: userId,
                   })
@@ -473,6 +551,45 @@ serve(async (req: Request) => {
                   .executeTakeFirst();
 
                 itemId = item?.id;
+
+                // A new revision keeps the family's bill of process: copy the
+                // sibling's operations onto the make method the item-insert
+                // trigger just created (the sync only rebuilds materials).
+                if (itemId && sourceRevision) {
+                  const targetMakeMethod = await trx
+                    .selectFrom("makeMethod")
+                    .select(["id"])
+                    .where("itemId", "=", itemId)
+                    .where("companyId", "=", companyId)
+                    .orderBy("version", "desc")
+                    .executeTakeFirst();
+
+                  const sourceMakeMethods = await trx
+                    .selectFrom("makeMethod")
+                    .select(["id", "status", "version"])
+                    .where("itemId", "=", sourceRevision.id)
+                    .where("companyId", "=", companyId)
+                    .where("status", "!=", "Archived")
+                    .execute();
+                  const sourceMakeMethod = [...sourceMakeMethods].sort(
+                    (a, b) => {
+                      const aActive = a.status === "Active" ? 0 : 1;
+                      const bActive = b.status === "Active" ? 0 : 1;
+                      if (aActive !== bActive) return aActive - bActive;
+                      return Number(b.version) - Number(a.version);
+                    }
+                  )[0];
+
+                  if (targetMakeMethod && sourceMakeMethod) {
+                    await copyMakeMethodOperations(
+                      trx,
+                      sourceMakeMethod.id,
+                      targetMakeMethod.id,
+                      companyId,
+                      userId
+                    );
+                  }
+                }
 
                 // Create OnShape mapping for the new item
                 if (itemId) {
@@ -505,20 +622,25 @@ serve(async (req: Request) => {
                     .execute();
                 }
 
-                await trx
-                  .insertInto("part")
-                  .values({
-                    id: partId,
-                    companyId,
-                    createdBy: userId,
-                  })
-                  .onConflict((oc) =>
-                    oc.columns(["id", "companyId"]).doUpdateSet({
-                      updatedBy: userId,
-                      updatedAt: new Date().toISOString(),
+                // The type-table row (part/tool/...) is shared by the whole
+                // revision family — only Parts are created here, and a family
+                // copied from a non-Part sibling already has its type row.
+                if (itemType === "Part") {
+                  await trx
+                    .insertInto("part")
+                    .values({
+                      id: partId,
+                      companyId,
+                      createdBy: userId,
                     })
-                  )
-                  .execute();
+                    .onConflict((oc) =>
+                      oc.columns(["id", "companyId"]).doUpdateSet({
+                        updatedBy: userId,
+                        updatedAt: new Date().toISOString(),
+                      })
+                    )
+                    .execute();
+                }
 
                 // Store the newly created item to avoid duplicate inserts
                 if (itemId) {
@@ -531,9 +653,9 @@ serve(async (req: Request) => {
                       partId,
                       revision
                     ),
-                    revision: revision ?? "0",
-                    unitOfMeasureCode: "EA",
-                    type: "Part",
+                    revision,
+                    unitOfMeasureCode,
+                    type: itemType,
                   });
                 }
               }
