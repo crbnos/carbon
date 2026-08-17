@@ -4400,8 +4400,7 @@ export async function createIntercompanyTransaction(
         amount: input.amount,
         journalLineReference: journalLineRef,
         intercompanyPartnerId: input.targetCompanyId,
-        companyId: input.sourceCompanyId,
-        companyGroupId: input.companyGroupId
+        companyId: input.sourceCompanyId
       },
       {
         journalId,
@@ -4410,8 +4409,7 @@ export async function createIntercompanyTransaction(
         amount: -input.amount,
         journalLineReference: journalLineRef,
         intercompanyPartnerId: input.targetCompanyId,
-        companyId: input.sourceCompanyId,
-        companyGroupId: input.companyGroupId
+        companyId: input.sourceCompanyId
       }
     ])
     .select("id");

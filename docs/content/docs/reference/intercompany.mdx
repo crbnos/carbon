@@ -9,9 +9,22 @@ The whole feature is scoped to a **<Term>company group</Term>**, and it only app
 
 ## What a transaction is
 
-An intercompany transaction records that one company in the group owes or is owed by another. You create one from the accounting **Intercompany** screen with **New IC Transaction**, choosing a **source company** and a **target company** (they must be different), an amount, a description, and the two accounts to hit.
+An intercompany transaction records that one company in the group owes or is owed by another. Most are created for you: when you post a sales or purchase invoice whose customer or supplier is a **sibling company in the group**, Carbon writes the matching intercompany transaction as part of posting the invoice.
 
-Creating it does real bookkeeping on the source company. Carbon writes a balanced <Term>journal</Term> on the source: a **debit** line to the account you pick and a matching **credit** line, both tagged with the target company as the **intercompany partner**. The currency defaults to the source company's base currency. So an intercompany transaction is not a note. It is a posted journal on one company, plus a tracking record that remembers which sibling it was with.
+A customer or supplier counts as a sibling when it is linked to another company in the group. Carbon creates those links the moment a company joins the group, so a normal invoice between two group members is intercompany without any extra flagging.
+
+- Posting an **intercompany sales invoice** books the receivable to the group's **Inter-Company Receivables** control account instead of regular AR, and records a transaction from the seller to the buyer for the invoice's pre-tax total.
+- Posting an **intercompany purchase invoice** books the payable to the **Inter-Company Payables** control account instead of regular AP, and records the mirror transaction from the buyer to the seller for the invoice's pre-tax total.
+
+Both control accounts come from the group's accounting defaults, so members that have them configured post against the same two accounts. A company that hasn't configured them falls back to its regular receivables or payables account.
+
+<Callout type="note" title="The invoice posting is the source of truth">
+The transaction is a byproduct of posting the invoice, not a separate step. The receivable or payable is already on the ledger the moment the invoice posts. The transaction record just remembers which sibling it was with, so matching and elimination can find the pair later.
+</Callout>
+
+### Recording one by hand
+
+You can also create a transaction directly from the accounting **Intercompany** screen with **New IC Transaction**, choosing a **source company** and a **target company** (they must be different), an amount, a description, and the two accounts to hit. This posts a balanced <Term>journal</Term> on the source company — a debit line to one account and a matching credit to the other, both tagged with the target as the **intercompany partner** — plus the tracking record. Use it for an adjustment, or for a position no invoice created.
 
 <Callout type="note">
 The source and target are picked from the group's active companies, and **elimination entities are excluded** from that list. You transact between real operating companies. The <Term id="elimination-entity">elimination entity</Term> is where the cancelling entries land later, not a party to the trade.
@@ -35,7 +48,7 @@ Matching is a manual, run-on-demand step, not something that happens as you post
 
 The rule is deliberately strict. Two **Unmatched** transactions match only when they are true mirror images: company A → B pairs with company B → A, for the **exact same amount**, within the same group. When Carbon finds such a pair it sets both to **"Matched"** in one step and links each to the other's journal line. The result toast tells you how many matched and how many are still unmatched.
 
-If a transaction stays **Unmatched** after a run, its mirror does not exist yet. The usual cause is that the sibling company has not booked its side, or booked it for a different amount. Create or correct the counterpart, then run matching again.
+If a transaction stays **Unmatched** after a run, its mirror does not exist yet. The usual cause is that the sibling company has not posted its invoice yet, or the two invoices are for different amounts. Post or correct the counterpart, then run matching again.
 
 <Callout type="note">
 Matching pairs the two sides. It does **not** post anything new or touch either company's ledger. The journals were written when you created each transaction; matching only records that they belong together and advances their status.
@@ -45,7 +58,9 @@ Matching pairs the two sides. It does **not** post anything new or touch either 
 
 Matching sets the stage. **Elimination** is what actually removes the double-count for consolidated reporting. It, too, is a manual sweep: **Generate Eliminations** processes every **Matched** pair in the group.
 
-For each matched pair, Carbon posts a single **elimination journal** whose lines are the sign-reversed copies of both sides' original journal lines. That journal is booked not on either operating company but on a dedicated **elimination entity** — a special company in the group flagged for this purpose. Carbon routes the entry to the elimination entity belonging to the **lowest common parent** of the two transacting companies, which is what makes multi-tier hierarchies (parent-child, sibling, cousin) consolidate correctly; if there isn't one at that level it falls back to any elimination entity in the group, and if the group has none the run fails.
+For each matched pair, Carbon posts a single **elimination journal** that reverses the intercompany control-account entries on both sides. Each transaction points at one control line; from it, Carbon takes that line's account and document and reverses every line the same invoice posted to that account — the seller's **Inter-Company Receivables** and the buyer's **Inter-Company Payables** — booking the sign-reversed amounts. Because it reverses the actual ledger lines for the whole document, a multi-line invoice is cleared in full, not just its first line, and both control accounts clear to their exact balance with no rounding residual. The seller's receivable and the buyer's payable are equal and opposite, so the elimination journal balances. Each reciprocal pair is processed once.
+
+That journal is booked not on either operating company but on a dedicated **elimination entity** — a special company in the group flagged for this purpose. Carbon routes the entry to the elimination entity belonging to the **lowest common parent** of the two transacting companies, which is what makes multi-tier hierarchies (parent-child, sibling, cousin) consolidate correctly; if there isn't one at that level it falls back to any elimination entity in the group, and if the group has none the run fails.
 
 Once the reversing journal is posted, the pair flips to **"Eliminated"** and the elimination journal is recorded on each transaction. The run returns a count of the journals it created.
 
@@ -95,5 +110,5 @@ An intercompany transaction is between two companies. Pick a target company othe
 Running matching or elimination requires being an employee of a company in the group with accounting-create permission. Both actions sweep the entire group, so the check is against group membership, not just the active company.
 
 ### A transaction stays "Unmatched" after Run Matching
-No mirror-image transaction exists. Matching only pairs an A → B transaction with a B → A transaction for the **exact same amount** in the same group. Confirm the sibling company has booked its side for the identical amount, then run matching again.
+No mirror-image transaction exists. Matching only pairs an A → B transaction with a B → A transaction for the **exact same amount** in the same group. Confirm the sibling company has posted its invoice for the identical amount (or booked a manual counterpart), then run matching again.
 </AgentContext>
