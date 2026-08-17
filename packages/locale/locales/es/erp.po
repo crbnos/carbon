@@ -3087,6 +3087,9 @@ msgstr "Elija una fila a la izquierda para ver de dónde puede provenir su stock
 msgid "Choose a serial number"
 msgstr "Elige un número de serie"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "Elegir otro archivo"
 
@@ -6850,6 +6853,9 @@ msgstr "Acabado"
 msgid "Fetch"
 msgstr "Obtener"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "Campo"
 
@@ -10063,6 +10069,9 @@ msgstr "Sin notificaciones nuevas"
 msgid "No notes"
 msgstr "Sin notas"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "Sin facturas abiertas"
 
@@ -10523,6 +10532,9 @@ msgstr "Solo se pueden eliminar los períodos vacíos y abiertos."
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape autorizó la conexión, pero no se pudo guardar. Vuelve a intentar la conexión."
 
@@ -10609,6 +10621,9 @@ msgstr "Trabajos abiertos"
 
 msgid "Open menu"
 msgstr "Abrir menú"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Cuentas por pagar abiertas por proveedor y antigüedad"
@@ -14343,6 +14358,7 @@ msgstr "Estado / Provincia"
 
 msgid "State province"
 msgstr "Estado/Provincia"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "El registro de solo adición de cada movimiento de inventario; la cantid
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "La autorización se rechazó en Onshape. Vuelve a intentar la conexión."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "El libro de todas las líneas de diario registradas, sumadas por cuenta – se escribe solo cuando la empresa tiene la contabilidad habilitada."

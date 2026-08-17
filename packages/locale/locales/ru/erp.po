@@ -3087,6 +3087,9 @@ msgstr "Выберите строку слева, чтобы увидеть, о�
 msgid "Choose a serial number"
 msgstr "Выберите серийный номер"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
 
@@ -6850,6 +6853,9 @@ msgstr "Отделка"
 msgid "Fetch"
 msgstr "Получить"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "Поле"
 
@@ -10063,6 +10069,9 @@ msgstr "Нет новых уведомлений"
 msgid "No notes"
 msgstr "Нет заметок"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "Нет открытых счетов"
 
@@ -10523,6 +10532,9 @@ msgstr "Удалять можно только пустые открытые п�
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape авторизовал подключение, но сохранить его не удалось. Повторите попытку подключения."
 
@@ -10609,6 +10621,9 @@ msgstr "Открытые заказы"
 
 msgid "Open menu"
 msgstr "Открыть меню"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Открытые счета к оплате по поставщикам и срокам"
@@ -14343,6 +14358,7 @@ msgstr "Штат / Провинция"
 
 msgid "State province"
 msgstr "Штат/провинция"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "Журнал доступного только для добавлени
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Авторизация была отклонена в Onshape. Повторите попытку подключения."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Книга всех проведенных строк журнала, суммированные по счетам — записывается только при включенной учетной политике компании."

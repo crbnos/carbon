@@ -25,6 +25,7 @@ import {
   isOnshapeSyncInFlight,
   isOnshapeSyncStalled,
   OnshapeSyncStatusChip,
+  OnshapeSyncUnavailableTooltip,
   onshapeDocumentUrl,
   useOnshapeSyncLabels
 } from "./OnshapeSyncPresentation";
@@ -81,6 +82,10 @@ function OnshapeBlockBody({
     isOnshapeSyncInFlight(model) || isOnshapeSyncInFlight(drawing);
   const isStalled =
     isOnshapeSyncStalled(model) || isOnshapeSyncStalled(drawing);
+  // Only a definite `false` blocks the pull. A viewer who cannot read the
+  // integration config gets `null` and keeps today's behaviour — a tooltip built
+  // on a guess would be worse than no tooltip.
+  const isAssetSyncOff = currentState?.assetSyncEnabled === false;
 
   const loadStateRef = useRef(stateFetcher.load);
   loadStateRef.current = stateFetcher.load;
@@ -164,24 +169,38 @@ function OnshapeBlockBody({
       <OnshapeAttributionLine asset={model ?? drawing} />
 
       <HStack className="w-full">
-        <Button
-          variant="secondary"
-          size="sm"
-          leftIcon={<LuRefreshCw />}
-          isDisabled={isPulling || pullFetcher.state !== "idle"}
-          isLoading={pullFetcher.state !== "idle"}
-          // The sidebar's compact buttons stay `sm`; the invisible inset keeps
-          // the pull target at 44px for touch.
-          className="before:absolute before:-inset-y-[10px] before:inset-x-0 before:content-['']"
-          onClick={() =>
-            pullFetcher.submit(new FormData(), {
-              method: "post",
-              action: path.to.api.onShapeItemSync(itemId)
-            })
+        {/* An in-flight pull needs no explanation — the chips above already say
+            so. Released-asset sync being off is a setting, so that one gets the
+            reason and the way to change it. */}
+        <OnshapeSyncUnavailableTooltip
+          reason={
+            isAssetSyncOff
+              ? t`Onshape asset sync is turned off for this company`
+              : null
           }
+          withSettingsLink={isAssetSyncOff}
         >
-          <Trans>Pull from Onshape</Trans>
-        </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<LuRefreshCw />}
+            isDisabled={
+              isAssetSyncOff || isPulling || pullFetcher.state !== "idle"
+            }
+            isLoading={pullFetcher.state !== "idle"}
+            // The sidebar's compact buttons stay `sm`; the invisible inset keeps
+            // the pull target at 44px for touch.
+            className="before:absolute before:-inset-y-[10px] before:inset-x-0 before:content-['']"
+            onClick={() =>
+              pullFetcher.submit(new FormData(), {
+                method: "post",
+                action: path.to.api.onShapeItemSync(itemId)
+              })
+            }
+          >
+            <Trans>Pull from Onshape</Trans>
+          </Button>
+        </OnshapeSyncUnavailableTooltip>
         <Button variant="link" size="sm" asChild>
           <Link to={path.to.integrationOnshapeSync(itemId)}>
             <Trans>Sync details</Trans>

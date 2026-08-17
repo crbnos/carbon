@@ -3087,6 +3087,9 @@ msgstr "Escolha uma linha à esquerda para ver de onde seu estoque pode vir."
 msgid "Choose a serial number"
 msgstr "Escolha um número de série"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "Escolher outro arquivo"
 
@@ -6850,6 +6853,9 @@ msgstr "Acabamento"
 msgid "Fetch"
 msgstr "Buscar"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "Campo"
 
@@ -10063,6 +10069,9 @@ msgstr "Sem notificações novas"
 msgid "No notes"
 msgstr "Sem notas"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "Nenhuma fatura aberta"
 
@@ -10523,6 +10532,9 @@ msgstr "Apenas períodos vazios e abertos podem ser deletados."
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "O Onshape autorizou a conexão, mas não foi possível salvá-la. Tente conectar novamente."
 
@@ -10609,6 +10621,9 @@ msgstr "Trabalhos abertos"
 
 msgid "Open menu"
 msgstr "Abrir menu"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Contas a pagar em aberto por fornecedor e idade"
@@ -14343,6 +14358,7 @@ msgstr "Estado / Província"
 
 msgid "State province"
 msgstr "Estado/Província"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "O registro de adição ao final de cada movimento de estoque; a quantida
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "A autorização foi recusada no Onshape. Tente conectar novamente."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "O livro de todas as linhas de diário registradas, somadas por conta – escrito apenas quando a contabilidade está habilitada para a empresa."

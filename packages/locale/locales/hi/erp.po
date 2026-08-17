@@ -3087,6 +3087,9 @@ msgstr "यह देखने के लिए बाईं ओर की प�
 msgid "Choose a serial number"
 msgstr "एक सीरियल नंबर चुनें"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
 
@@ -6850,6 +6853,9 @@ msgstr "फिनिश"
 msgid "Fetch"
 msgstr "लाएं"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "क्षेत्र"
 
@@ -10063,6 +10069,9 @@ msgstr "कोई नई सूचनाएं नहीं"
 msgid "No notes"
 msgstr "कोई नोट नहीं"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
 
@@ -10523,6 +10532,9 @@ msgstr "केवल खाली, खुली अवधियों को ह
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape ने कनेक्शन को अधिकृत किया, लेकिन उसे सहेजना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
 
@@ -10609,6 +10621,9 @@ msgstr "खुली नौकरियां"
 
 msgid "Open menu"
 msgstr "मेनू खोलें"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "आपूर्तिकर्ता और आयु द्वारा खुले देनदारी"
@@ -14343,6 +14358,7 @@ msgstr "राज्य / प्रांत"
 
 msgid "State province"
 msgstr "राज्य प्रांत"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "प्रत्येक स्टॉक आंदोलन का क�
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "सभी पोस्ट की गई जर्नल पंक्तियों की पुस्तक, खाते द्वारा योग किया गया - केवल तभी लिखा जाता है जब कंपनी के लिए लेखांकन सक्षम हो।"

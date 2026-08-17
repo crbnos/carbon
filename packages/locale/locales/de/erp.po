@@ -3087,6 +3087,9 @@ msgstr "Wählen Sie eine Zeile auf der linken Seite, um zu sehen, woher der Best
 msgid "Choose a serial number"
 msgstr "Wählen Sie eine Seriennummer"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "Wählen Sie eine andere Datei"
 
@@ -6850,6 +6853,9 @@ msgstr "Oberfläche"
 msgid "Fetch"
 msgstr "Abrufen"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "Feld"
 
@@ -10063,6 +10069,9 @@ msgstr "Keine neuen Benachrichtigungen"
 msgid "No notes"
 msgstr "Keine Notizen"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "Keine offenen Rechnungen"
 
@@ -10523,6 +10532,9 @@ msgstr "Nur leere, offene Perioden können gelöscht werden."
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape hat die Verbindung autorisiert, das Speichern ist jedoch fehlgeschlagen. Versuchen Sie die Verbindung erneut."
 
@@ -10609,6 +10621,9 @@ msgstr "Offene Aufträge"
 
 msgid "Open menu"
 msgstr "Menü öffnen"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Offene Verbindlichkeiten nach Lieferant und Fälligkeitsdauer"
@@ -14343,6 +14358,7 @@ msgstr "Bundesland / Provinz"
 
 msgid "State province"
 msgstr "Staat/Provinz"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "Der unveränderliche Datensatz jeder Bestandsbewegung; der verfügbare B
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Die Autorisierung wurde in Onshape abgelehnt. Versuchen Sie die Verbindung erneut."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Das Buch aller gebuchten Journalzeilen, summiert nach Konto – wird nur geschrieben, wenn die Buchhaltung für das Unternehmen aktiviert ist."

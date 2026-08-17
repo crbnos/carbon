@@ -3087,6 +3087,9 @@ msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı 
 msgid "Choose a serial number"
 msgstr "Bir seri numarası seçin"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "Başka bir dosya seç"
 
@@ -6850,6 +6853,9 @@ msgstr "Tamamlama"
 msgid "Fetch"
 msgstr "Al\\\\'ındır"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "Alan"
 
@@ -10063,6 +10069,9 @@ msgstr "Yeni bildirim yok"
 msgid "No notes"
 msgstr "Notlar yok"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "Açık fatura yok"
 
@@ -10523,6 +10532,9 @@ msgstr "Yalnızca boş, açık dönemler silinebilir."
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydetme başarısız oldu. Yeniden bağlanmayı deneyin."
 
@@ -10609,6 +10621,9 @@ msgstr "Açık işler"
 
 msgid "Open menu"
 msgstr "Menüyü aç"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Tedarikçi ve yaşa göre açık borçlar"
@@ -14343,6 +14358,7 @@ msgstr "Eyalet / İl"
 
 msgid "State province"
 msgstr "İl/Bölge"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı gird
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Tüm kaydedilen günlük satırlarının defteri, hesaba göre özetlenmiş — yalnızca şirket muhasebesi etkinleştirildiğinde yazılır."

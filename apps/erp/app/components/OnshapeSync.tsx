@@ -26,6 +26,7 @@ import { LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { MethodIcon } from "~/components";
 import { OnshapeStatus } from "~/components/Icons";
+import { OnshapeSyncUnavailableTooltip } from "~/modules/items/ui/Item/OnshapeSyncPresentation";
 import { methodType } from "~/modules/shared";
 import type { action as onShapeSyncAction } from "~/routes/api+/integrations.onshape.sync";
 import { path } from "~/utils/path";
@@ -180,6 +181,25 @@ export const OnshapeSync = ({
     documentOptions.some((c) => c.value === documentId) &&
     versionOptions.some((c) => c.value === versionId) &&
     elementOptions.some((c) => c.value === elementId);
+
+  // Nothing to fetch from Onshape once the method is out of Draft — the BOM it
+  // would write into is frozen.
+  const notDraftReason = isDisabled
+    ? t`The bill of materials can only be synced into a draft method`
+    : null;
+  // An empty document list after fetching is a connection problem, not a choice
+  // the user made here — the only disabled state worth linking to settings for.
+  const noDocumentsReached =
+    initialized && !isDataLoading && documentOptions.length === 0;
+  const syncUnavailableReason =
+    notDraftReason ??
+    (!initialized
+      ? t`Fetch this company's Onshape documents first`
+      : noDocumentsReached
+        ? t`No Onshape documents could be loaded for this company`
+        : !isReadyForSync
+          ? t`Choose an Onshape document, version and assembly first`
+          : null);
 
   const bomFetcher = useFetcher<
     | { data: null; error: string }
@@ -363,33 +383,40 @@ export const OnshapeSync = ({
           ) : (
             <div className="flex gap-2">
               {!initialized && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setInitialized(true)}
-                  isDisabled={isDisabled}
-                >
-                  <Trans>Fetch</Trans>
-                </Button>
+                <OnshapeSyncUnavailableTooltip reason={notDraftReason}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setInitialized(true)}
+                    isDisabled={isDisabled}
+                  >
+                    <Trans>Fetch</Trans>
+                  </Button>
+                </OnshapeSyncUnavailableTooltip>
               )}
-              <Button
-                variant={bomRows.length > 0 ? "secondary" : "primary"}
-                isLoading={bomFetcher.state !== "idle"}
-                isDisabled={
-                  isDisabled ||
-                  !isReadyForSync ||
-                  bomFetcher.state !== "idle" ||
-                  !initialized
-                }
-                size="sm"
-                onClick={loadBom}
+              <OnshapeSyncUnavailableTooltip
+                reason={syncUnavailableReason}
+                withSettingsLink={noDocumentsReached}
               >
-                {bomRows.length > 0 ? (
-                  <Trans>Refresh</Trans>
-                ) : (
-                  <Trans>Sync</Trans>
-                )}
-              </Button>
+                <Button
+                  variant={bomRows.length > 0 ? "secondary" : "primary"}
+                  isLoading={bomFetcher.state !== "idle"}
+                  isDisabled={
+                    isDisabled ||
+                    !isReadyForSync ||
+                    bomFetcher.state !== "idle" ||
+                    !initialized
+                  }
+                  size="sm"
+                  onClick={loadBom}
+                >
+                  {bomRows.length > 0 ? (
+                    <Trans>Refresh</Trans>
+                  ) : (
+                    <Trans>Sync</Trans>
+                  )}
+                </Button>
+              </OnshapeSyncUnavailableTooltip>
             </div>
           )}
         </div>

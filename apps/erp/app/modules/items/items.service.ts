@@ -8032,9 +8032,11 @@ export async function getOnshapeItemState(
     // Enterprise Onshape accounts live on custom domains; the integration's
     // stored baseUrl is the authority for outbound document links. Reading it
     // needs settings_view, so a null here just means "use the default host".
+    // The same row says whether released-asset sync is turned on, which is what
+    // decides whether a re-pull can do anything.
     client
       .from("companyIntegration")
-      .select("metadata")
+      .select("active, metadata")
       .eq("companyId", companyId)
       .eq("id", "onshape")
       .maybeSingle()
@@ -8052,6 +8054,7 @@ export async function getOnshapeItemState(
 
   const integrationMetadata = integration.data?.metadata as {
     baseUrl?: unknown;
+    assetSyncEnabled?: unknown;
   } | null;
   const onshapeBaseUrl =
     typeof integrationMetadata?.baseUrl === "string" &&
@@ -8063,6 +8066,14 @@ export async function getOnshapeItemState(
     linked: stateRows.length > 0 || mappingRows.length > 0,
     model,
     drawing,
+    // Whether a re-pull of released CAD can run at all: the integration active
+    // AND released-asset sync turned on, the same pair the jobs and the re-pull
+    // route gate on. `null` means the caller cannot read the integration config
+    // (it needs settings_view) — unknown, not off.
+    assetSyncEnabled: integration.data
+      ? Boolean(integration.data.active) &&
+        integrationMetadata?.assetSyncEnabled === true
+      : null,
     // The document mapping is the authority on where this part lives in
     // Onshape; the model row's own identifiers cover a part that only ever
     // arrived through a released-asset sync.

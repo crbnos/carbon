@@ -3087,6 +3087,9 @@ msgstr "Choisissez une ligne à gauche pour voir d'où son stock peut provenir."
 msgid "Choose a serial number"
 msgstr "Choisir un numéro de série"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "Choisir un autre fichier"
 
@@ -6850,6 +6853,9 @@ msgstr "Finition"
 msgid "Fetch"
 msgstr "Récupérer"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "Champ"
 
@@ -10063,6 +10069,9 @@ msgstr "Aucune nouvelle notification"
 msgid "No notes"
 msgstr "Aucune note"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "Aucune facture ouverte"
 
@@ -10523,6 +10532,9 @@ msgstr "Seules les périodes vides et ouvertes peuvent être supprimées."
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape a autorisé la connexion, mais son enregistrement a échoué. Réessayez de vous connecter."
 
@@ -10609,6 +10621,9 @@ msgstr "Travaux en cours"
 
 msgid "Open menu"
 msgstr "Ouvrir le menu"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Comptes créditeurs ouverts par fournisseur et ancienneté"
@@ -14343,6 +14358,7 @@ msgstr "État / Province"
 
 msgid "State province"
 msgstr "État/Province"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "L'enregistrement d'ajout seul de tout mouvement de stock; le stock dispo
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "L'autorisation a été refusée dans Onshape. Réessayez de vous connecter."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Le livre de toutes les lignes de journal enregistrées, sommées par compte – écrit seulement si la comptabilité est activée pour l'entreprise."

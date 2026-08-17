@@ -1,6 +1,15 @@
-import { Status } from "@carbon/react";
+import {
+  Status,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  VStack
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { Link } from "react-router";
+import { path } from "~/utils/path";
 
 // One source for how an Onshape sync reads on screen: the status → chip
 // mapping, the copy for every skip reason and trigger, and the read-side stall
@@ -253,6 +262,50 @@ export function useOnshapeSyncLabels() {
       runStalledLabel: t`No progress for 30 minutes`
     }),
     [t]
+  );
+}
+
+/**
+ * Says why a sync button is unavailable, and — when the answer is a setting
+ * rather than the state of this part — links to where that setting lives. Pass
+ * a null `reason` for a button that is available (or whose disabled state speaks
+ * for itself, like a sync already in flight) and the children render bare.
+ */
+export function OnshapeSyncUnavailableTooltip({
+  reason,
+  withSettingsLink = false,
+  children
+}: {
+  reason: string | null;
+  /** Show the way into the Onshape integration settings. */
+  withSettingsLink?: boolean;
+  children: ReactNode;
+}) {
+  const { t } = useLingui();
+
+  if (!reason) return <>{children}</>;
+
+  return (
+    <Tooltip>
+      {/* A disabled button emits no pointer events, so the span is the hover
+          target that opens the tooltip. */}
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{children}</span>
+      </TooltipTrigger>
+      <TooltipContent>
+        <VStack spacing={1}>
+          <span>{reason}</span>
+          {withSettingsLink && (
+            <Link
+              className="underline underline-offset-2"
+              to={path.to.integration("onshape")}
+            >
+              {t`Open Onshape settings`}
+            </Link>
+          )}
+        </VStack>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

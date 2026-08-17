@@ -3087,6 +3087,9 @@ msgstr "Choose a row on the left to see where its stock can come from."
 msgid "Choose a serial number"
 msgstr "Choose a serial number"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr "Choose an Onshape document, version and assembly first"
+
 msgid "Choose another file"
 msgstr "Choose another file"
 
@@ -6850,6 +6853,9 @@ msgstr "FEFO (first-expiry-first-out)"
 msgid "Fetch"
 msgstr "Fetch"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr "Fetch this company's Onshape documents first"
+
 msgid "Field"
 msgstr "Field"
 
@@ -10063,6 +10069,9 @@ msgstr "No new notifications"
 msgid "No notes"
 msgstr "No notes"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr "No Onshape documents could be loaded for this company"
+
 msgid "No open invoices"
 msgstr "No open invoices"
 
@@ -10523,6 +10532,9 @@ msgstr "Only empty, open periods can be deleted."
 msgid "Onshape"
 msgstr "Onshape"
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr "Onshape asset sync is turned off for this company"
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape authorized the connection but saving it failed. Try connecting again."
 
@@ -10609,6 +10621,9 @@ msgstr "Open jobs"
 
 msgid "Open menu"
 msgstr "Open menu"
+
+msgid "Open Onshape settings"
+msgstr "Open Onshape settings"
 
 msgid "Open payables by supplier and age"
 msgstr "Open payables by supplier and age"
@@ -14343,6 +14358,7 @@ msgstr "State / Province"
 
 msgid "State province"
 msgstr "State province"
+
 msgid "State synced"
 msgstr "State synced"
 
@@ -15060,6 +15076,9 @@ msgstr "The append-only record of every stock movement; on-hand is the sum of it
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "The authorization was refused in Onshape. Try connecting again."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr "The bill of materials can only be synced into a draft method"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."

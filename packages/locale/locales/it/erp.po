@@ -3087,6 +3087,9 @@ msgstr "Scegli una riga a sinistra per vedere da dove può provenire il suo stoc
 msgid "Choose a serial number"
 msgstr "Scegli un numero di serie"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "Scegli un altro file"
 
@@ -6850,6 +6853,9 @@ msgstr "Finitura"
 msgid "Fetch"
 msgstr "Recupera"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "Campo"
 
@@ -10063,6 +10069,9 @@ msgstr "Nessuna nuova notifica"
 msgid "No notes"
 msgstr "Nessuna nota"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "Nessuna fattura aperta"
 
@@ -10523,6 +10532,9 @@ msgstr "Solo i periodi aperti e vuoti possono essere eliminati."
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape ha autorizzato la connessione, ma il salvataggio non è riuscito. Riprova a connetterti."
 
@@ -10609,6 +10621,9 @@ msgstr "Lavori aperti"
 
 msgid "Open menu"
 msgstr "Apri menu"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Debiti aperti per fornitore e anzianità"
@@ -14343,6 +14358,7 @@ msgstr "Stato / Provincia"
 
 msgid "State province"
 msgstr "Stato/Provincia"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "Il record di sola aggiunta di ogni movimento di inventario; la giacenza 
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "L'autorizzazione è stata rifiutata in Onshape. Riprova a connetterti."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Il libro di tutte le righe di giornale registrate, sommate per conto – scritto solo quando la contabilità è abilitata per l'azienda."

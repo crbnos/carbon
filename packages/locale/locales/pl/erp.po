@@ -3087,6 +3087,9 @@ msgstr "Wybierz wiersz po lewej, aby zobaczyć, skąd może pochodzić jego zapa
 msgid "Choose a serial number"
 msgstr "Wybierz numer seryjny"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "Wybierz inny plik"
 
@@ -6850,6 +6853,9 @@ msgstr "Wykończenie"
 msgid "Fetch"
 msgstr "Pobierz"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "Pole"
 
@@ -10063,6 +10069,9 @@ msgstr "Brak nowych powiadomień"
 msgid "No notes"
 msgstr "Brak notek"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "Brak otwartych faktur"
 
@@ -10523,6 +10532,9 @@ msgstr "Usunięte mogą być tylko puste, otwarte okresy."
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape autoryzował połączenie, ale jego zapisanie nie udało się. Spróbuj połączyć się ponownie."
 
@@ -10609,6 +10621,9 @@ msgstr "Otwarte zadania"
 
 msgid "Open menu"
 msgstr "Otwórz menu"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Otwarte zobowiązania wg dostawcy i wieku"
@@ -14343,6 +14358,7 @@ msgstr "Stan / Prowincja"
 
 msgid "State province"
 msgstr "Stan/Województwo"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "Rejestr tylko dołączania każdego ruchu magazynowego; dostępna iloś�
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Autoryzacja została odrzucona w Onshape. Spróbuj połączyć się ponownie."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Księga wszystkich zaksięgowanych wierszy pamiętnika, zsumowanych według konta – zapisywana tylko wtedy, gdy dla firmy jest włączona rachunkowość."

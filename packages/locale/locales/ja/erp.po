@@ -3087,6 +3087,9 @@ msgstr "左側の行を選択して、在庫がどこから来るかを確認し
 msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "別のファイルを選択"
 
@@ -6850,6 +6853,9 @@ msgstr "フィニッシュ"
 msgid "Fetch"
 msgstr "取得"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "フィールド"
 
@@ -10063,6 +10069,9 @@ msgstr "新しい通知はありません"
 msgid "No notes"
 msgstr "ノートなし"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
 
@@ -10523,6 +10532,9 @@ msgstr "空のオープン期間のみ削除できます。"
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
 
@@ -10609,6 +10621,9 @@ msgstr "未処理ジョブ"
 
 msgid "Open menu"
 msgstr "メニューを開く"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "仕入先および期間別未払い債務"
@@ -14343,6 +14358,7 @@ msgstr "都道府県"
 
 msgid "State province"
 msgstr "都道府県"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "すべての在庫移動の追加専用レコード。手持在庫はそ
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "投稿されたすべての仕訳行のブック（勘定ごとに合計）。会社で会計が有効な場合にのみ記入されます。"

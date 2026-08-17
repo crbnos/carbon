@@ -3087,6 +3087,9 @@ msgstr "选择左侧的行以查看其库存可能来自何处。"
 msgid "Choose a serial number"
 msgstr "选择序列号"
 
+msgid "Choose an Onshape document, version and assembly first"
+msgstr ""
+
 msgid "Choose another file"
 msgstr "选择另一个文件"
 
@@ -6850,6 +6853,9 @@ msgstr "表面处理"
 msgid "Fetch"
 msgstr "获取"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr ""
+
 msgid "Field"
 msgstr "字段"
 
@@ -10063,6 +10069,9 @@ msgstr "没有新通知"
 msgid "No notes"
 msgstr "没有备注"
 
+msgid "No Onshape documents could be loaded for this company"
+msgstr ""
+
 msgid "No open invoices"
 msgstr "没有未结发票"
 
@@ -10523,6 +10532,9 @@ msgstr "仅可删除空白的开放期间。"
 msgid "Onshape"
 msgstr ""
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape 已授权此连接，但保存失败。请重新连接。"
 
@@ -10609,6 +10621,9 @@ msgstr "未结工单"
 
 msgid "Open menu"
 msgstr "打开菜单"
+
+msgid "Open Onshape settings"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "按供应商和账龄统计的未清应付账款"
@@ -14343,6 +14358,7 @@ msgstr "州/省"
 
 msgid "State province"
 msgstr "州/省"
+
 msgid "State synced"
 msgstr ""
 
@@ -15060,6 +15076,9 @@ msgstr "每个库存变动的追加专用记录；在手数量是其带符号条
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "授权在 Onshape 中被拒绝。请重新连接。"
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "所有已记账的日记账行书，按账户汇总 - 仅在公司启用会计时编写。"
