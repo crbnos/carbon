@@ -41,6 +41,13 @@ WITH "cells" AS (
     ) AS "vendor"
   FROM "cells"
   GROUP BY "mappingId"
+  -- A row whose BOM carries none of the four facts must stay untouched. Writing
+  -- an all-null object would satisfy the `engineering IS NULL` guard above
+  -- forever, so a later backfill that teaches the lookup a new header alias
+  -- would skip exactly the rows it exists to fix.
+  HAVING count("cellText") FILTER (
+    WHERE "header" IN ('state', 'mass', 'material', 'vendor', 'supplier')
+  ) > 0
 )
 UPDATE "externalIntegrationMapping" "eim"
 SET "metadata" = "eim"."metadata" || jsonb_build_object(
@@ -84,4 +91,8 @@ LEFT JOIN "onshapeItemSyncState" "s"
   ON "s"."itemId" = "i"."id"
   AND "s"."companyId" = "eim"."companyId"
   AND "s"."assetKind" = 'model'
-WHERE "eim"."integration" = 'onshapeData';
+-- `entityType` is part of the mapping's identity, so it belongs in the filter:
+-- without it a future non-item 'onshapeData' mapping would join to any item that
+-- happened to share its entityId and duplicate the row.
+WHERE "eim"."integration" = 'onshapeData'
+  AND "eim"."entityType" = 'item';

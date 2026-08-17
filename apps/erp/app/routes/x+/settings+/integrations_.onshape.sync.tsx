@@ -180,7 +180,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     releaseExceptions: readReleaseExceptions(latestRun),
     unmatchedOverflow: latestRun?.unmatchedOverflow ?? 0,
     ambiguousOverflow: latestRun?.ambiguousOverflow ?? 0,
-    coverage: coverage.data
+    // Coverage is a summary of the page, not the page — a failed count says so
+    // in its own strip rather than redirecting the run history off screen.
+    coverage: coverage.error ? ("unavailable" as const) : coverage.data
   };
 }
 
@@ -233,15 +235,17 @@ export default function OnshapeSyncRoute() {
 
   // If a poll stops coming back, say so and keep the last data on screen rather
   // than emptying the page. Every completed revalidation marks the page current.
+  // Both readings come off the monotonic clock: a wall-clock adjustment mid-sync
+  // would otherwise either raise the warning at once or suppress it for hours.
   const [lastPollCompletedAt, setLastPollCompletedAt] = useState(() =>
-    Date.now()
+    performance.now()
   );
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => performance.now());
   useEffect(() => {
-    if (revalidator.state === "idle") setLastPollCompletedAt(Date.now());
+    if (revalidator.state === "idle") setLastPollCompletedAt(performance.now());
   }, [revalidator.state]);
   useInterval(
-    () => setNow(Date.now()),
+    () => setNow(performance.now()),
     isRunLive ? LIVE_POLL_INTERVAL_MS : null
   );
   const isPollingSilent =

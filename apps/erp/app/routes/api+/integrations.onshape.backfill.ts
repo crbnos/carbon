@@ -14,6 +14,12 @@ const logger = getLogger("erp", "integrations-onshape-backfill");
 // Newest runs kept per company; older rows are pruned as each new run starts.
 const RUN_RETENTION_COUNT = 50;
 
+// Postgres unique_violation, raised by "onshapeSyncRun_oneLivePerCompany_idx".
+const UNIQUE_VIOLATION = "23505";
+
+const SYNC_ALREADY_LIVE =
+  "A sync is already queued or running — cancel it before starting a new one.";
+
 // POST: kick off the Onshape released-asset backfill for the current company.
 // Admin-only. Gated on the SAME configurable flag the job checks
 // (companyIntegration.metadata.assetSyncEnabled) so it can't be run unless the
@@ -77,13 +83,7 @@ export async function action({ request }: ActionFunctionArgs) {
     latestRun.data?.status === "queued" ||
     latestRun.data?.status === "running"
   ) {
-    return data(
-      {
-        error:
-          "A sync is already queued or running — cancel it before starting a new one."
-      },
-      { status: 409 }
-    );
+    return data({ error: SYNC_ALREADY_LIVE }, { status: 409 });
   }
 
   const insertedRun = await serviceRole
@@ -91,6 +91,13 @@ export async function action({ request }: ActionFunctionArgs) {
     .insert({ companyId, status: "queued", createdBy: userId })
     .select("id")
     .single();
+
+  // The read above cannot rule out a start that lands between it and this
+  // insert, so the one-live-run rule is enforced by a partial unique index and
+  // the loser of the race reads as what it is: a sync is already live.
+  if (insertedRun.error?.code === UNIQUE_VIOLATION) {
+    return data({ error: SYNC_ALREADY_LIVE }, { status: 409 });
+  }
 
   if (insertedRun.error || !insertedRun.data) {
     logger.error("Failed to create Onshape sync run", {

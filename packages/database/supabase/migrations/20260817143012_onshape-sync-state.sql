@@ -84,6 +84,13 @@ CREATE TABLE "onshapeSyncRun" (
 CREATE INDEX "onshapeSyncRun_companyId_createdAt_idx" ON "onshapeSyncRun" ("companyId", "createdAt" DESC);
 CREATE INDEX "onshapeSyncRun_createdBy_idx" ON "onshapeSyncRun" ("createdBy");
 
+-- One live run per company, enforced here rather than only by the start route's
+-- read-then-insert: two starts racing that check would both pass it and spend
+-- Onshape quota twice on the same releases. Only a terminal status leaves the
+-- index, which is the same rule the route documents.
+CREATE UNIQUE INDEX "onshapeSyncRun_oneLivePerCompany_idx" ON "onshapeSyncRun" ("companyId")
+  WHERE "status" IN ('queued', 'running');
+
 ALTER TABLE "public"."onshapeSyncRun" ENABLE ROW LEVEL SECURITY;
 
 -- SELECT only, for the same reason as "onshapeItemSyncState" above.

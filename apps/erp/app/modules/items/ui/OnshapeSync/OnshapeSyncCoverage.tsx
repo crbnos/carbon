@@ -1,4 +1,5 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 
 export type OnshapeSyncCoverageData = {
@@ -15,13 +16,25 @@ export type OnshapeSyncCoverageData = {
  * denominators, so the tooltip names both: the ratios count the parts this sync
  * has tried, the percentage counts the whole parts catalog (and therefore
  * includes models a person uploaded by hand).
+ *
+ * `"unavailable"` is its own state rather than a null: a count that failed to
+ * read must not render as a figure of zero, and vanishing silently would read
+ * as "this company has no CAD".
  */
 export function OnshapeSyncCoverage({
   coverage
 }: {
-  coverage: OnshapeSyncCoverageData | null;
+  coverage: OnshapeSyncCoverageData | "unavailable" | null;
 }) {
   const { t } = useLingui();
+
+  if (coverage === "unavailable") {
+    return (
+      <span className="text-xs text-muted-foreground">
+        <Trans>Coverage unavailable</Trans>
+      </span>
+    );
+  }
 
   if (!coverage) return null;
 
@@ -38,7 +51,7 @@ export function OnshapeSyncCoverage({
   }
 
   const catalogPercent =
-    partsTotal > 0 ? Math.round((partsWithModel / partsTotal) * 100) : null;
+    partsTotal > 0 ? round((partsWithModel / partsTotal) * 100, 0) : null;
 
   return (
     <Tooltip>
