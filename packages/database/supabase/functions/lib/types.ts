@@ -6948,6 +6948,7 @@ export type Database = {
           companyId: string
           id: string
           metadata: Json
+          secretRef: string | null
           updatedAt: string
           updatedBy: string | null
         }
@@ -6956,6 +6957,7 @@ export type Database = {
           companyId: string
           id: string
           metadata?: Json
+          secretRef?: string | null
           updatedAt?: string
           updatedBy?: string | null
         }
@@ -6964,6 +6966,7 @@ export type Database = {
           companyId?: string
           id?: string
           metadata?: Json
+          secretRef?: string | null
           updatedAt?: string
           updatedBy?: string | null
         }
@@ -75846,6 +75849,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      delete_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string }
+        Returns: undefined
+      }
       delete_old_audit_logs: {
         Args: { p_company_id: string; p_cutoff_date: string }
         Returns: number
@@ -76363,6 +76370,10 @@ export type Database = {
           targetHasCompanyId: boolean
           targetTable: string
         }[]
+      }
+      get_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string }
+        Returns: Json
       }
       get_inventory_quantities: {
         Args: { company_id: string; item_id?: string; location_id: string }
@@ -78291,6 +78302,10 @@ export type Database = {
           p_tracked_entity_id?: string
         }
         Returns: undefined
+      }
+      upsert_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string; p_secret: Json }
+        Returns: string
       }
       upsert_to_search_index: {
         Args: {

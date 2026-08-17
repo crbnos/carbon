@@ -50956,6 +50956,9 @@ export default {
             $ref: "#/parameters/rowFilter.companyIntegration.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.companyIntegration.secretRef"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -51033,6 +51036,9 @@ export default {
             $ref: "#/parameters/rowFilter.companyIntegration.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.companyIntegration.secretRef"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -51062,6 +51068,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companyIntegration.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companyIntegration.secretRef"
           },
           {
             $ref: "#/parameters/body.companyIntegration"
@@ -122364,6 +122373,10 @@ export default {
         updatedBy: {
           format: "text",
           type: "string"
+        },
+        secretRef: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -166540,6 +166553,12 @@ export default {
     },
     "rowFilter.companyIntegration.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companyIntegration.secretRef": {
+      name: "secretRef",
       required: false,
       in: "query",
       type: "string"
