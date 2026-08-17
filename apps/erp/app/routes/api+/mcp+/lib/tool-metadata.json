@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-12T05:30:07.628Z",
-  "totalTools": 1431,
+  "generated": "2026-08-17T13:01:56.889Z",
+  "totalTools": 1442,
   "modules": 15,
   "tools": [
     {
@@ -1292,6 +1292,25 @@
       }
     },
     {
+      "name": "accounting_getBaseCurrencyDecimalPlaces",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get base currency decimal places",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "companyGroupId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
       "name": "accounting_getCurrencyByCode",
       "module": "accounting",
       "classification": "READ",
@@ -1363,7 +1382,8 @@
       "description": "get currencies list",
       "paramCount": 0,
       "serviceParams": [
-        "client"
+        "client",
+        "companyGroupId"
       ],
       "injectAuth": [
         "companyId"
@@ -1668,6 +1688,37 @@
         },
         "required": [
           "fiscalYear"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getPeriodExternalGlSyncReadiness",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get period external gl sync readiness",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "startDate",
+        "endDate"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "endDate"
         ]
       }
     },
@@ -4121,6 +4172,104 @@
         },
         "required": [
           "data"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getJournalSyncCompleteness",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get journal sync completeness",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "/** companyIntegration id, e.g. \"xero\" | \"quickbooks\" | \"rillet\". */\n    integrationId": {
+            "type": "string"
+          },
+          "journals dated before this are out of scope. */\n    syncFromDate": {
+            "type": "string"
+          },
+          "/** Restrict to one accounting period (the close auto-check). */\n    accountingPeriodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "/** companyIntegration id, e.g. \"xero\" | \"quickbooks\" | \"rillet\". */\n    integrationId",
+          "journals dated before this are out of scope. */\n    syncFromDate"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getAccountingSyncTieOut",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get accounting sync tie out",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "integration": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {}
+          },
+          "accountingPeriodId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "accountId": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_getAccountingSyncTieOutCell",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get accounting sync tie out cell",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "cellId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "cellId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cellId"
         ]
       }
     },
@@ -42784,6 +42933,60 @@
       }
     },
     {
+      "name": "settings_updateRequireMfaSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update require mfa setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "requireMfa"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "requireMfa": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "requireMfa"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateShowCurrencyTrailingZerosSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update show currency trailing zeros setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "showCurrencyTrailingZeros"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "showCurrencyTrailingZeros": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "showCurrencyTrailingZeros"
+        ]
+      }
+    },
+    {
       "name": "settings_updateShowSupplierReadableIdSetting",
       "module": "settings",
       "classification": "WRITE",
@@ -44384,6 +44587,61 @@
       }
     },
     {
+      "name": "users_getItarCertificationStatus",
+      "module": "users",
+      "classification": "READ",
+      "description": "get itar certification status",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "users_getItarEntityCertification",
+      "module": "users",
+      "classification": "READ",
+      "description": "get itar entity certification",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "users_getItarCertificationReport",
+      "module": "users",
+      "classification": "READ",
+      "description": "get itar certification report",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
       "name": "users_deleteEmployeeType",
       "module": "users",
       "classification": "DESTRUCTIVE",
@@ -44521,6 +44779,24 @@
       "module": "users",
       "classification": "READ",
       "description": "get unrevoked invite emails",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "users_getUsersWithVerifiedMfa",
+      "module": "users",
+      "classification": "READ",
+      "description": "get users with verified mfa",
       "paramCount": 0,
       "serviceParams": [
         "client",

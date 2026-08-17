@@ -1,5 +1,26 @@
-import { insertId, insertRow, one, rows } from "../sql.ts";
+import { insertId, insertRow, one, RICH, rows } from "../sql.ts";
 import type { Ctx } from "../types.ts";
+
+type ProcedureStepSpec = {
+  name: string;
+  type: "Task" | "Checkbox" | "Measurement" | "Value" | "List" | "Person";
+  instruction: string;
+  required?: boolean;
+  unitOfMeasureCode?: string;
+  minValue?: number;
+  maxValue?: number;
+};
+
+type ProcedureSpec = {
+  name: string;
+  process: string;
+  description: string;
+  versions: Array<{
+    version: number;
+    status: "Draft" | "Active" | "Archived";
+    steps: ProcedureStepSpec[];
+  }>;
+};
 
 // ---------------------------------------------------------------------------
 // Satellites / spacecraft theme — Orbital Systems Inc.
@@ -231,7 +252,168 @@ const SUPPLIER_CONTACTS = [
 // Supplier processes for the contract manufacturer
 const SUPPLIER_PROCESSES = [
   { supplier: "AstroMill Machining", process: "Machining" },
-  { supplier: "AstroMill Machining", process: "Welding" }
+  { supplier: "AstroMill Machining", process: "Welding" },
+  // Backs the outside-processing (anodize) step on the structural frame.
+  { supplier: "AstroMill Machining", process: "Outside Processing" }
+];
+
+const STRUCTURAL_STEPS_V2: ProcedureStepSpec[] = [
+  {
+    name: "Verify panel kit against the pick list",
+    type: "Checkbox",
+    instruction:
+      "Confirm all six machined panels and both bracket sets are present and match the drawing revision on the traveler."
+  },
+  {
+    name: "Torque corner fasteners",
+    type: "Measurement",
+    instruction:
+      "Torque the M6 corner fasteners in a star pattern. Record the final torque wrench reading.",
+    unitOfMeasureCode: "EA",
+    minValue: 8,
+    maxValue: 10
+  },
+  {
+    name: "Measure diagonal squareness",
+    type: "Measurement",
+    instruction:
+      "Measure both diagonals across the frame. The difference must stay inside 0.5 mm.",
+    unitOfMeasureCode: "EA",
+    minValue: 0,
+    maxValue: 0.5
+  },
+  {
+    name: "Record assembler",
+    type: "Person",
+    instruction: "Sign off as the assembler responsible for this frame."
+  },
+  {
+    name: "Bag and label for clean room transfer",
+    type: "Task",
+    instruction:
+      "Bag the frame in ESD-safe film, apply the job label, and stage it on the clean room transfer cart.",
+    required: false
+  }
+];
+
+const PROCEDURES: ProcedureSpec[] = [
+  {
+    name: "Structural Frame Assembly",
+    process: "Clean Room Assembly",
+    description:
+      "Assembly and torque procedure for the ESPA-class structural frame.",
+    versions: [
+      {
+        version: 1,
+        status: "Archived",
+        steps: [
+          {
+            name: "Verify panel kit against the pick list",
+            type: "Checkbox",
+            instruction: "Confirm all machined panels are present."
+          },
+          {
+            name: "Torque corner fasteners",
+            type: "Measurement",
+            instruction:
+              "Torque the M6 corner fasteners in a star pattern to 9 Nm.",
+            unitOfMeasureCode: "EA",
+            minValue: 8.5,
+            maxValue: 9.5
+          }
+        ]
+      },
+      { version: 2, status: "Active", steps: STRUCTURAL_STEPS_V2 }
+    ]
+  },
+  {
+    name: "Satellite Systems Integration",
+    process: "Clean Room Assembly",
+    description:
+      "Clean room integration of the bus subsystems into the SAT-1000 airframe.",
+    versions: [
+      {
+        version: 1,
+        status: "Active",
+        steps: [
+          {
+            name: "Stage subsystems in the clean room",
+            type: "Checkbox",
+            instruction:
+              "Move the structural frame, power subsystem, avionics stack, comms payload and propulsion module into Bay A and confirm each serial against the traveler."
+          },
+          {
+            name: "Mate avionics stack to the frame",
+            type: "Task",
+            instruction:
+              "Seat the avionics stack on its rails, engage the captive fasteners and confirm the ground strap is bonded."
+          },
+          {
+            name: "Route and dress the harness",
+            type: "Checkbox",
+            instruction:
+              "Route HARNESS-001 through the frame raceways, tie at every bracket and confirm no connector is under strain."
+          },
+          {
+            name: "Measure stowed mass",
+            type: "Measurement",
+            instruction:
+              "Weigh the integrated bus with the wings stowed and record the mass in pounds.",
+            unitOfMeasureCode: "LB",
+            minValue: 305,
+            maxValue: 335
+          },
+          {
+            name: "Record integration lead",
+            type: "Person",
+            instruction:
+              "Sign off as the integration lead responsible for this bus."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    name: "TVAC Qualification Test",
+    process: "Thermal Vacuum Test",
+    description:
+      "Thermal vacuum qualification cycle for an integrated satellite bus.",
+    versions: [
+      {
+        version: 1,
+        status: "Active",
+        steps: [
+          {
+            name: "Install harness and thermocouples",
+            type: "Task",
+            instruction:
+              "Route the test harness through the chamber feedthrough and bond thermocouples to the four survey points."
+          },
+          {
+            name: "Pump down to test pressure",
+            type: "Measurement",
+            instruction:
+              "Pump the chamber down and record the pressure once it stabilises.",
+            unitOfMeasureCode: "EA",
+            minValue: 0,
+            maxValue: 0.00001
+          },
+          {
+            name: "Run eight thermal cycles",
+            type: "Checkbox",
+            instruction:
+              "Cycle between -20 C and +60 C, dwelling one hour at each extreme. Tick once all eight cycles complete."
+          },
+          {
+            name: "Functional check at hot soak",
+            type: "Checkbox",
+            instruction:
+              "Command the bus through the functional script during the final hot dwell and confirm all telemetry is nominal."
+          }
+        ]
+      }
+    ]
+  }
 ];
 
 const SHIPPING_METHODS = [
@@ -328,6 +510,15 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   });
   ctx.refs.locations.Plant = plantId;
   ctx.refs.locations.HQ = locationId;
+
+  // Every job and work center lives at the plant, and both the MES board and
+  // the ERP's location-scoped pages read the signed-in user's default location.
+  // Leave that at HQ and the shop floor renders empty.
+  await ctx.client.query(
+    `UPDATE "employeeJob" SET "locationId" = $2 WHERE "companyId" = $1`,
+    [ctx.companyId, plantId]
+  );
+  // (`userDefaults` is a view over employeeJob — the UPDATE above is what moves it.)
 
   // ── Warehouses ────────────────────────────────────────────────────────────
   ctx.log("warehouses");
@@ -611,11 +802,12 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     const supplierId = ctx.refs.suppliers[sp.supplier];
     const processId = ctx.refs.processes[sp.process];
     if (supplierId && processId) {
-      await insertId(ctx, "supplierProcess", {
+      const spId = await insertId(ctx, "supplierProcess", {
         supplierId,
         processId,
         leadTime: 5
       });
+      ctx.refs.misc[`sp:${sp.supplier}:${sp.process}`] = spId;
     }
   }
 
@@ -677,6 +869,40 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     printerUrl: "http://192.168.1.50:9100",
     companyId
   });
+
+  // ── Procedures (shop-floor work instructions) ─────────────────────────────
+  // Two versions of the same name: the version menu groups on `name`, so V1
+  // Archived + V2 Active is what gives a procedure a readable history.
+  ctx.log("procedures");
+  for (const spec of PROCEDURES) {
+    const processId = ctx.refs.processes[spec.process];
+    if (!processId) continue;
+    for (const version of spec.versions) {
+      const procedureId = await insertId(ctx, "procedure", {
+        name: spec.name,
+        processId,
+        version: version.version,
+        status: version.status,
+        content: RICH(spec.description)
+      });
+      if (version.status === "Active") {
+        ctx.refs.misc[`procedure:${spec.name}`] = procedureId;
+      }
+      for (const [index, step] of version.steps.entries()) {
+        await insertId(ctx, "procedureStep", {
+          procedureId,
+          name: step.name,
+          type: step.type,
+          sortOrder: index + 1,
+          required: step.required ?? true,
+          unitOfMeasureCode: step.unitOfMeasureCode ?? null,
+          minValue: step.minValue ?? null,
+          maxValue: step.maxValue ?? null,
+          description: RICH(step.instruction)
+        });
+      }
+    }
+  }
 
   // ── Cost centers ───────────────────────────────────────────────────────────
   ctx.log("cost centers");

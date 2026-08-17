@@ -12,6 +12,7 @@ import {
   ModalDrawerTitle,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import {
@@ -36,7 +37,7 @@ import {
   Select,
   Submit
 } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   pricingRuleAmountTypes,
   pricingRuleTypes,
@@ -55,6 +56,9 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(
+    company?.baseCurrencyCode ?? "USD"
+  );
 
   const [amountType, setAmountType] = useState<
     (typeof pricingRuleAmountTypes)[number]
@@ -135,22 +139,18 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
                     label={t`Amount`}
                     minValue={0}
                     maxValue={1}
-                    step={0.01}
-                    formatOptions={{
-                      style: "percent",
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 2
-                    }}
+                    step={INPUT_STEP.percent}
+                    formatOptions={INPUT_FORMAT.percent}
                   />
                 ) : (
                   <Number
                     name="amount"
                     label={t`Amount`}
                     minValue={0}
-                    formatOptions={{
-                      style: "currency",
-                      currency: company?.baseCurrencyCode ?? "USD"
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      company?.baseCurrencyCode ?? "USD",
+                      currencyDecimals
+                    )}
                   />
                 )}
 

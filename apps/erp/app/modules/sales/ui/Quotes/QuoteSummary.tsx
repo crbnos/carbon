@@ -20,13 +20,18 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
-import MotionNumber from "motion-number";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { CustomerAvatar, DateTime } from "~/components";
-import { usePercentFormatter, useRouteData, useUser } from "~/hooks";
+import { CustomerAvatar, DateTime, MotionMoney } from "~/components";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePercentFormatter,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
 import type {
@@ -84,6 +89,8 @@ const LineItems = ({
   selectedLines: Record<string, SelectedLine>;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
 }) => {
+  // Settlement money at the document currency's configured decimals.
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { company } = useUser();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quote id");
@@ -192,8 +199,7 @@ const LineItems = ({
                       </Button>
                     </HStack>
                     <HStack spacing={4}>
-                      <MotionNumber
-                        className="font-bold text-xl"
+                      <MotionMoney
                         value={
                           (selectedLine.convertedNetUnitPrice ?? 0) *
                             (selectedLine.quantity ?? 0) +
@@ -205,11 +211,8 @@ const LineItems = ({
                             (selectedLine.convertedShippingCost ?? 0)) *
                             (selectedLine.taxPercent ?? 0)
                         }
-                        format={{
-                          style: "currency",
-                          currency: currencyCode
-                        }}
-                        locales={locale}
+                        currency={currencyCode}
+                        decimalPlaces={currencyDecimals}
                       />
                       <motion.div
                         animate={{
@@ -280,6 +283,8 @@ const LinePricingOptions = ({
   selectedLine,
   setSelectedLines
 }: LinePricingOptionsProps) => {
+  // Settlement money at the document currency's configured decimals.
+  const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const percentFormatter = usePercentFormatter();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quote id");
@@ -538,13 +543,13 @@ const LinePricingOptions = ({
                   <Trans>Extended Price</Trans>
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       (selectedLine.convertedUnitPrice ?? 0) *
                       selectedLine.quantity
                     }
-                    format={{ style: "currency", currency: quoteCurrency }}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -557,14 +562,14 @@ const LinePricingOptions = ({
                   </Td>
                   <Td className="text-right">
                     -
-                    <MotionNumber
+                    <MotionMoney
                       value={
                         (selectedLine.convertedUnitPrice ?? 0) *
                         selectedLine.quantity *
                         selectedLine.discountPercent
                       }
-                      format={{ style: "currency", currency: quoteCurrency }}
-                      locales={locale}
+                      currency={quoteCurrency}
+                      decimalPlaces={currencyDecimals}
                     />
                   </Td>
                 </Tr>
@@ -582,10 +587,10 @@ const LinePricingOptions = ({
                   >
                     <Td>{charge.name}</Td>
                     <Td className="text-right">
-                      <MotionNumber
+                      <MotionMoney
                         value={charge.amount}
-                        format={{ style: "currency", currency: quoteCurrency }}
-                        locales={locale}
+                        currency={quoteCurrency}
+                        decimalPlaces={currencyDecimals}
                       />
                     </Td>
                   </Tr>
@@ -596,18 +601,15 @@ const LinePricingOptions = ({
                   <Trans>Subtotal</Trans>
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       (selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
                       (selectedLine.convertedAddOn ?? 0) +
                       (selectedLine.convertedShippingCost ?? 0)
                     }
-                    format={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -617,7 +619,7 @@ const LinePricingOptions = ({
                   Tax ({percentFormatter.format(selectedLine.taxPercent)})
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       ((selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
@@ -625,11 +627,8 @@ const LinePricingOptions = ({
                         (selectedLine.convertedShippingCost ?? 0)) *
                       (selectedLine.taxPercent ?? 0)
                     }
-                    format={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -639,7 +638,7 @@ const LinePricingOptions = ({
                   <Trans>Total</Trans>
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       (selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
@@ -651,11 +650,8 @@ const LinePricingOptions = ({
                         (selectedLine.convertedShippingCost ?? 0)) *
                         (selectedLine.taxPercent ?? 0)
                     }
-                    format={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -685,13 +681,12 @@ const QuoteSummary = ({
   const isEditable = !isQuoteLocked(routeData?.quote?.status);
 
   const { locale } = useLocale();
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: routeData?.quote.currencyCode ?? "USD"
-      }),
-    [locale, routeData?.quote.currencyCode]
+  const formatter = useCurrencyFormatter({
+    currency: routeData?.quote.currencyCode ?? "USD"
+  });
+  // Settlement money at the document currency's configured decimals.
+  const currencyDecimals = useCurrencyDecimals(
+    routeData?.quote?.currencyCode ?? "USD"
   );
 
   const [selectedLines, setSelectedLines] = useState<
@@ -884,13 +879,10 @@ const QuoteSummary = ({
         <VStack spacing={2} className="mt-8">
           <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Subtotal:</span>
-            <MotionNumber
+            <MotionMoney
               value={subtotal + totalDiscount}
-              format={{
-                style: "currency",
-                currency: routeData?.quote?.currencyCode ?? "USD"
-              }}
-              locales={locale}
+              currency={routeData?.quote?.currencyCode ?? "USD"}
+              decimalPlaces={currencyDecimals}
             />
           </HStack>
           {totalDiscount > 0 && (
@@ -898,26 +890,20 @@ const QuoteSummary = ({
               <span>Discount:</span>
               <span className="text-muted-foreground">
                 -
-                <MotionNumber
+                <MotionMoney
                   value={totalDiscount}
-                  format={{
-                    style: "currency",
-                    currency: routeData?.quote?.currencyCode ?? "USD"
-                  }}
-                  locales={locale}
+                  currency={routeData?.quote?.currencyCode ?? "USD"}
+                  decimalPlaces={currencyDecimals}
                 />
               </span>
             </HStack>
           )}
           <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Tax:</span>
-            <MotionNumber
+            <MotionMoney
               value={tax}
-              format={{
-                style: "currency",
-                currency: routeData?.quote?.currencyCode ?? "USD"
-              }}
-              locales={locale}
+              currency={routeData?.quote?.currencyCode ?? "USD"}
+              decimalPlaces={currencyDecimals}
             />
           </HStack>
           <HStack className="justify-between text-sm text-muted-foreground w-full">
@@ -934,13 +920,10 @@ const QuoteSummary = ({
                     <Trans>Edit Shipping</Trans>
                   </Button>
                 </VStack>
-                <MotionNumber
+                <MotionMoney
                   value={convertedShippingCost}
-                  format={{
-                    style: "currency",
-                    currency: routeData?.quote.currencyCode ?? "USD"
-                  }}
-                  locales={locale}
+                  currency={routeData?.quote?.currencyCode ?? "USD"}
+                  decimalPlaces={currencyDecimals}
                 />
               </>
             ) : isEditable ? (
@@ -956,13 +939,10 @@ const QuoteSummary = ({
           </HStack>
           <HStack className="justify-between text-xl font-semibold w-full">
             <span>Total:</span>
-            <MotionNumber
+            <MotionMoney
               value={total}
-              format={{
-                style: "currency",
-                currency: routeData?.quote.currencyCode ?? "USD"
-              }}
-              locales={locale}
+              currency={routeData?.quote?.currencyCode ?? "USD"}
+              decimalPlaces={currencyDecimals}
             />
           </HStack>
         </VStack>

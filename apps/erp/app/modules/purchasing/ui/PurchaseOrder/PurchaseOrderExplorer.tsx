@@ -75,6 +75,7 @@ export default function PurchaseOrderExplorer() {
     locationId:
       purchaseOrderData?.purchaseOrder?.locationId ?? defaults.locationId ?? "",
     supplierTaxAmount: 0,
+    taxPercent: 0,
     supplierShippingCost: 0,
     exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1
   };

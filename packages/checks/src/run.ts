@@ -2,26 +2,27 @@ import { keyOf, loadBaseline } from "./baseline";
 import type {
   ConformanceCheck,
   ModuleDir,
+  SourceFile,
   StructureCheck,
   Violation
 } from "./check";
 import { moduleShape } from "./conformance/module-shape";
+import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
+import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
-import {
-  loadSqlFiles,
-  migrationsDir,
-  repoRoot,
-  type SqlFile
-} from "./sources/migrations";
+import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
+import { loadTypescriptFiles } from "./sources/typescript";
 
 export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noNumericPrecision,
-  noLegacyRls
+  noLegacyRls,
+  noDerivedPercentColumn
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */
@@ -30,12 +31,18 @@ export const SERVER_CHECKS: ConformanceCheck[] = [
   noZeroConcurrency
 ];
 
+/** Numeric-precision checks that run over ALL app TS (client and server). */
+export const TS_CHECKS: ConformanceCheck[] = [
+  noRawRounding,
+  noInlineFractionDigits
+];
+
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
 
 export type Finding = { checkId: string; violation: Violation };
 
 export function scanAll(
-  files: SqlFile[],
+  files: SourceFile[],
   checks: ConformanceCheck[] = CONFORMANCE_CHECKS
 ): Finding[] {
   const out: Finding[] = [];
@@ -64,12 +71,13 @@ export function scanModules(
   return out;
 }
 
-/** Every finding across the real migrations (text) + modules (structure) + server TS under `root`. */
+/** Every finding across the real migrations (text) + modules (structure) + server TS + app TS under `root`. */
 export function collectFindings(root: string = repoRoot()): Finding[] {
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root))),
     ...scanModules(loadModules(modulesDir(root))),
-    ...scanAll(loadServerFiles(root), SERVER_CHECKS)
+    ...scanAll(loadServerFiles(root), SERVER_CHECKS),
+    ...scanAll(loadTypescriptFiles(root), TS_CHECKS)
   ];
 }
 

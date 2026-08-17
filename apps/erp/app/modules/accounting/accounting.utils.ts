@@ -1,4 +1,4 @@
-import { credit, debit, toStoredAmount } from "@carbon/utils";
+import { credit, debit, round, toStoredAmount } from "@carbon/utils";
 
 /**
  * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
@@ -248,6 +248,8 @@ export function calculateMacrsDepreciation(args: {
   lastPostedPeriodEnd: string | null;
   accumulatedTaxDepreciation: number;
   bonusAmount: number;
+  /** Settlement decimals from currency.decimalPlaces — data, never a literal. */
+  decimalPlaces: number;
 }): number {
   const {
     adjustedBasis,
@@ -256,6 +258,7 @@ export function calculateMacrsDepreciation(args: {
     depreciationStartDate,
     periodEnd,
     lastPostedPeriodEnd,
+    decimalPlaces,
     accumulatedTaxDepreciation,
     bonusAmount
   } = args;
@@ -279,7 +282,7 @@ export function calculateMacrsDepreciation(args: {
     const amount = monthlyAmount * Math.max(0, months);
     const remaining =
       adjustedBasis - (accumulatedTaxDepreciation - bonusAmount);
-    return Math.min(Math.round(amount * 100) / 100, Math.max(0, remaining));
+    return Math.min(round(amount, decimalPlaces), Math.max(0, remaining));
   }
 
   // Table-based MACRS: compute cumulative depreciation through periodEnd,
@@ -330,7 +333,7 @@ export function calculateMacrsDepreciation(args: {
   const periodAmount = cumulativeThrough - Math.max(0, alreadyTaken);
   const remaining = adjustedBasis - Math.max(0, alreadyTaken);
   return Math.min(
-    Math.round(Math.max(0, periodAmount) * 100) / 100,
+    round(Math.max(0, periodAmount), decimalPlaces),
     Math.max(0, remaining)
   );
 }
@@ -393,6 +396,8 @@ export function calculateDepreciation(
   },
   periodEnd: string,
   lastPostedPeriodEnd: string | null,
+  /** Settlement decimals from currency.decimalPlaces — data, never a literal. */
+  decimalPlaces: number,
   usageLog?: { unitsProduced: number }
 ): number {
   const cost = Number(asset.acquisitionCost);
@@ -418,7 +423,7 @@ export function calculateDepreciation(
         : startDate;
       const monthsToDepreciate = getMonthsBetween(from, periodEndDate);
       const amount = monthlyAmount * monthsToDepreciate;
-      return Math.min(Math.round(amount * 100) / 100, remainingDepreciable);
+      return Math.min(round(amount, decimalPlaces), remainingDepreciable);
     }
     case "Declining Balance": {
       const annualRate = (1 / (asset.usefulLifeMonths / 12)) * 2;
@@ -445,7 +450,7 @@ export function calculateDepreciation(
         totalDepr += capped;
         nbv -= capped;
       }
-      return Math.min(Math.round(totalDepr * 100) / 100, remainingDepreciable);
+      return Math.min(round(totalDepr, decimalPlaces), remainingDepreciable);
     }
     case "Units of Production": {
       if (
@@ -456,7 +461,7 @@ export function calculateDepreciation(
         return 0;
       const ratePerUnit = depreciableBase / Number(asset.assetLifetimeUsage);
       const amount = ratePerUnit * usageLog.unitsProduced;
-      return Math.min(Math.round(amount * 100) / 100, remainingDepreciable);
+      return Math.min(round(amount, decimalPlaces), remainingDepreciable);
     }
     default:
       return 0;
@@ -477,7 +482,9 @@ export function calculateTaxDepreciation(
     bonusDepreciationPercent: number | null;
   },
   periodEnd: string,
-  lastPostedPeriodEnd: string | null
+  lastPostedPeriodEnd: string | null,
+  /** Settlement decimals from currency.decimalPlaces — data, never a literal. */
+  decimalPlaces: number
 ): number | null {
   const taxMethod = asset.taxDepreciationMethod;
   if (!taxMethod) return null;
@@ -507,10 +514,11 @@ export function calculateTaxDepreciation(
       periodEnd,
       lastPostedPeriodEnd,
       accumulatedTaxDepreciation: accumulatedTax,
-      bonusAmount
+      bonusAmount,
+      decimalPlaces
     });
 
-    return Math.round((bonus + macrsAmount) * 100) / 100;
+    return round(bonus + macrsAmount, decimalPlaces);
   }
 
   const taxLife = asset.taxUsefulLifeMonths!;
@@ -534,7 +542,7 @@ export function calculateTaxDepreciation(
   if (taxMethod === "Straight Line") {
     const monthlyAmount = depreciableBase / taxLife;
     const amount = monthlyAmount * monthsToDepreciate;
-    return Math.min(Math.round(amount * 100) / 100, remainingDepreciable);
+    return Math.min(round(amount, decimalPlaces), remainingDepreciable);
   }
 
   if (taxMethod === "Declining Balance") {
@@ -558,7 +566,7 @@ export function calculateTaxDepreciation(
       totalDepr += capped;
       nbv -= capped;
     }
-    return Math.min(Math.round(totalDepr * 100) / 100, remainingDepreciable);
+    return Math.min(round(totalDepr, decimalPlaces), remainingDepreciable);
   }
 
   return null;
@@ -586,7 +594,9 @@ export function buildDepreciationLines(
   periodEnd: string,
   lastPostedPeriodEnd: string | null,
   taxEnabled: boolean,
-  usageMap: Map<string, { unitsProduced: number }>
+  usageMap: Map<string, { unitsProduced: number }>,
+  /** Settlement decimals from currency.decimalPlaces — data, never a literal. */
+  decimalPlaces: number
 ): DepreciationLine[] {
   const lines: DepreciationLine[] = [];
 
@@ -607,6 +617,7 @@ export function buildDepreciationLines(
       },
       periodEnd,
       lastPostedPeriodEnd,
+      decimalPlaces,
       usageLog
     );
 
@@ -628,7 +639,8 @@ export function buildDepreciationLines(
           bonusDepreciationPercent: asset.bonusDepreciationPercent
         },
         periodEnd,
-        lastPostedPeriodEnd
+        lastPostedPeriodEnd,
+        decimalPlaces
       );
       if (taxAmount === null) {
         taxAmount = amount;

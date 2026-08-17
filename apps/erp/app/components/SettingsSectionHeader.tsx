@@ -15,7 +15,7 @@ export default function SettingsSectionHeader({ children, className }: Props) {
   return (
     <p
       className={cn(
-        "mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide",
+        "mt-4 text-foreground/70 uppercase font-light tracking-wide font-mono text-xs",
         className
       )}
     >

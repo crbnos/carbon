@@ -26,6 +26,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
@@ -714,11 +715,7 @@ function CategoryMarkupsCard({
                   <Number
                     name={key}
                     label=""
-                    formatOptions={{
-                      style: "percent",
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 2
-                    }}
+                    formatOptions={INPUT_FORMAT.percent}
                     minValue={0}
                   />
                 </div>

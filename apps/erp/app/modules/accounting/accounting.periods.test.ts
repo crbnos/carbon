@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 // The settings barrel re-exports its UI, which transitively pulls Lingui `msg`
-// macros that vitest does not transform. accounting.service only needs
+// macros that vitest does not transform. accounting.ee.service only needs
 // getNextSequence from it, which these tests never exercise — stub it to keep
 // the import graph light and macro-free.
 vi.mock("~/modules/settings", () => ({
@@ -26,7 +26,7 @@ vi.mock("@carbon/glossary", () => ({
 import type {
   PeriodCloseTaskRow,
   PeriodReadinessCheck
-} from "./accounting.service";
+} from "./accounting.ee.service";
 import {
   checklistTasksToCreate,
   closeAccountingPeriod,
@@ -40,7 +40,7 @@ import {
   postJournalEntry,
   reopenAccountingPeriod,
   skipCloseTask
-} from "./accounting.service";
+} from "./accounting.ee.service";
 
 // ---------------------------------------------------------------------------
 // Sequential close / reverse-sequential reopen gates (acceptance criteria 4/5)

@@ -356,7 +356,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** When hand-seeding `journalLine` rows, set the sign to move the account toward its natural balance: `+` increases an Asset/Expense (debit) and increases a Liability/Equity/Revenue (credit). Verify against the `journalEntries` view (`totalDebits == totalCredits` per `journalEntryId`) before relying on the data — an unbalanced entry silently blocks period close. Posted `journal`/`journalLine` rows are immutable (`journal_posted_immutable` / `journalLine_posted_immutable`); to correct seeded mistakes you must disable those triggers on the local DB (superuser), never in a migration.
 
-**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.service.ts`).
+**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.ee.service.ts`).
 
 ## A period snapshot written at close races Locked-period postings unless the posting guard locks the period row
 
@@ -834,6 +834,28 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/functions/post-shipment/index.ts` (PO vs SO split blocks); any refactor threading a shared record-builder through multiple writers (`post-*`, `issue`, sync handlers).
 
+## Carbon journal amounts are natural-balance-signed, not debit-signed
+
+- **Context:** Wiring Rillet journal posting sync; first live push of a real
+  `Purchase Receipt` journal failed UNBALANCED_JOURNAL (+300/+300).
+- **Problem:** The accounting sync engine (preflight balance check, netting,
+  consolidation, all provider journal mappers) assumed `journalLine.amount`
+  is debit-signed (positive = debit, negative = credit, sum = 0). Carbon's
+  post-* edge functions actually sign by the account's NATURAL balance
+  (`credit("liability", x)` stores +x — functions/lib/utils.ts), so real
+  journals balance as debits == credits, not signed-sum-zero. Also:
+  Kysely/pg returns DATE columns as JS Date objects — `postingDate.slice`
+  crashes; and disabled-config skip results without `localId` make the
+  drain report the misleading "No sync result returned for entity".
+- **Rule:** Convert to debit-signed at the fetch edge with
+  `toDebitSignedAmount(account.class, amount)` (join account.class in the
+  journal-line query), normalize dates with `toPostingDateString`, and
+  always set `localId`/`remoteId` on every SyncResult, including early
+  skips. Never trust the debit-signed assumption against live journal data
+  without checking the edge functions' credit()/debit() helpers.
+- **Applies to:** packages/ee/src/accounting (journal syncers, posting
+  preflight, consolidation), any new accounting provider's journal mapper.
+
 ## A conformance check is only as good as its source glob — route modules are server AND client in one file
 
 **Context:** The timezone audit (branch `sid/timezone-tz-audit`, PR #1339) added the `no-local-timezone` conformance check to ban process-timezone day derivation in server code. Self-review then found 26 surviving violations in route files, plus more in files the check DID scan using idioms it didn't match.
@@ -920,10 +942,28 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsgo` cannot see it — the mismatch exists only at runtime.
 
-**Rule:** When porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
+**Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number in BOTH runtimes — node-postgres via `setTypeParser` and deno-postgres via `controls.decoders`, registered once in `lib/postgres/index.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
 
 **Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**` or `packages/database/supabase/functions/**`, and the `getPostgresClient` pool in `packages/database/supabase/functions/lib/postgres/index.ts`.
 
+## A VERIFY-flagged provider endpoint in a cron loop is an outage, not a TODO
+
+**Context:** The Rillet AP payment pull assumed an org-wide `GET /bill-payments` feed mirroring `/invoice-payments`. The method carried a VERIFY comment ("assumed to mirror… not confirmed") and even named its own fallback, but shipped unguarded inside `listChanges`. The endpoint does not exist (404).
+
+**Problem:** Every `accounting-pull-sweep` run threw at the AP step, killing the whole Rillet pull — including the AR invoice-payment changes collected earlier in the same call — every 30 minutes, silently. Payments recorded in Rillet never flowed back to Carbon, so a bill paid remotely stayed open locally, got paid a second time in Carbon, and the outbound push then failed forever on Rillet's over-pay guard. One unverified assumption at the bottom of a sweep became a permanent, compounding data gap that surfaced two layers away from its cause.
+
+**Rule:** An API call that only runs inside a cron/sweep is exercised for the first time in production — verify VERIFY-flagged endpoints against the live sandbox *before* wiring them into a loop (one curl answers it), and never let one entity family's listing failure discard another family's already-collected changes. When an assumed endpoint is missing, compose from verified ones instead: Rillet AP payments = `GET /bills?updated.gt` (payment activity bumps the bill's `updated_at`) + `GET /bills/{id}/payments` per changed bill.
+
+**Applies to:** `packages/ee/src/accounting/providers/rillet/provider.ts` (`listChanges`, `listBillPaymentsUpdatedSince`), any `SupportsIncrementalPull.listChanges` implementation, VERIFY-flagged calls anywhere under `packages/ee/src/accounting/providers/**`.
+## react-aria's blur commit makes the input formatter part of arithmetic
+
+**Context:** The numeric-precision standard's motivating bug — a user typed 6.25% tax, saved, reopened, and read 6.22%.
+
+**Problem:** react-aria NumberField commits on blur by running `parse(format(value))` — whatever `formatOptions` the input carries re-rounds the committed number. A currency-formatted amount input rounds to cents on blur; the old bidirectional tax pair (amount edit → percent = amount/subtotal, percent edit → amount = subtotal×percent) then overwrote the typed 6.25% with 0.56/9.00 = 6.22%. Nothing in zod, the column type, or the service was wrong — the INPUT FORMATTER did the rounding, and the coupling propagated it.
+
+**Rule:** Editable numeric inputs must use the named `INPUT_FORMAT.*` kinds from `@carbon/utils` (rate max 3 percent-digits, quantity max 5, money/price at the currency's decimals) so the blur round-trip preserves the stored scale. **Round a derived value to the scale of the field that will hold it BEFORE putting it there** — that is the actual fix. An unrounded 0.5625 in a cents-formatted input is re-committed as 0.56 on blur, which registers as a genuine change and feeds back through any coupling; a value derived through `applyRate` at the currency's decimals commits identically and triggers nothing. With that in place a value pair can safely stay coupled in both directions (`TaxFields` does, so the stored pair is always consistent), accepting that a rate derived back from an amount is limited by the amount's scale. When an input's digits look like a display preference, remember they are arithmetic on the persisted value.
+
+**Applies to:** every `formatOptions` on an editable `NumberField`/`NumberControlled`/`EditableNumberCell`; `apps/erp/app/components/Form/TaxFields.tsx`; `.claude/rules/numeric-precision.md`; the `no-inline-fraction-digits` conformance check.
 ## Postgres transition tables are visible ONLY to the function the trigger invokes directly
 
 **Context:** The `itemStockQuantities` aggregate needed a statement-level handler on `itemLedger` so a bulk posting is one upsert instead of N. The event system already builds statement-level triggers (`trg_event_async_*` with `REFERENCING NEW TABLE AS batched_new`), so the obvious move was to have `dispatch_event_batch()` forward to a custom function.
@@ -953,3 +993,33 @@ canvas hosting Radix popovers/selects.
 **Rule:** Any PostgREST read that can exceed 1000 rows must paginate — `fetchAllFromTable`/`fetchAllRecords` from `@carbon/database` in app code, `fetchAll` from `supabase/functions/lib/fetch-all.ts` in edge functions — and must carry a stable `.order()` so pages don't shift between requests. Do not conclude "it returns everything" from a local run; check the row count against `max_rows` in `config.toml` instead.
 
 **Applies to:** `packages/database/supabase/functions/mrp/index.ts`, `packages/database/supabase/functions/lib/fetch-all.ts`, `packages/database/supabase/config.toml`, any `.select()` in `packages/database/supabase/functions/**` or `apps/erp/app/modules/**`.
+
+## `sum(DISTINCT expr)` is not a fan-out dedup — it collapses equal values from different rows
+
+**Context:** The `salesOrders` view aggregated line totals in a lateral that also LEFT JOINs `job` (one line → many jobs), and used `sum(DISTINCT <line total>)` to cancel the join fan-out. An order with two different lines that compute to the same amount (e.g. two items at 10 × $50 each) counted that amount once, understating the total on the list page, the dashboard KPI chart, and the sales funnel — while the detail page and PDF (app-side plain sums) were correct. Dozens of real orders were affected.
+
+**Problem:** `DISTINCT` inside an aggregate dedupes by VALUE, not by source row. It cancels duplication from a join fan-out only as long as no two *distinct* rows produce the same value — for money amounts (repeated items, same qty × price) that collision is routine. The failure is silent and data-dependent: the view verifies "byte-identical" against its predecessor because the predecessor had the same bug.
+
+**Rule:** Never use `sum(DISTINCT ...)`/`count(DISTINCT ...)`-style aggregates to undo join fan-out. Compute the aggregate in its own lateral/subquery over just the table being summed (no fan-out ⇒ plain `sum()`), and keep the fanned join in a separate lateral for the aggregates that need it. When reviewing a view, treat any `agg(DISTINCT ...)` over a joined row set as a probable value-collapse bug. Fixed in `20260812211507_fix-sales-order-total-duplicate-line-amounts.sql`.
+
+**Applies to:** `packages/database/supabase/migrations/` views aggregating over joins (`salesOrders`, `purchaseOrders`, quotes/invoices list views); any SQL review touching `sum(DISTINCT`.
+
+## Appending SQL to an already-applied migration silently does nothing
+
+**Context:** A migration adding `companySettings.requireMfa` was written and applied. Later, a `users_with_verified_mfa` RPC was appended to that SAME file and `pnpm db:migrate` was re-run. The function was never created. The employees page then showed "Not set up" for every user — including one with a verified factor — because the missing RPC returned an error that the loader discarded as an empty result.
+
+**Problem:** Supabase tracks applied migrations by FILENAME. Once a file has run it is never re-read, so statements appended to it are invisible on every existing database while still applying to a fresh one. The two diverge silently, and there is no error at migrate time to notice.
+
+**Rule:** Never append to a migration file that may already have been applied — a file is immutable the moment it runs anywhere. New statements go in a NEW timestamped file, even a one-line `CREATE OR REPLACE`. Corollary: a migration that adds an RPC also needs a PostgREST schema reload (`NOTIFY pgrst, 'reload schema'`) or the function stays invisible to the app; and a service call whose failure is indistinguishable from an empty result must check `error` explicitly rather than `data ?? []`.
+
+**Applies to:** `packages/database/supabase/migrations/**`, any `client.rpc(...)` call site.
+
+## `form.submit()` bypasses React Router; `ValidatedForm` needs a real submitter
+
+**Context:** `@carbon/form`'s `InputOTP` auto-submits when the last digit is typed, using `form.submit()`. On the `/mfa` and `/verify` screens the error `<Alert>` reading `fetcher.data` could therefore never render — wrong codes produced no feedback at all. Switching to a bare `form.requestSubmit()` then made the form do nothing whatsoever.
+
+**Problem:** Two separate traps. `HTMLFormElement.submit()` does not fire the submit event, so React Router never intercepts it and `fetcher.data` stays permanently undefined — the request goes out as a raw document POST. But `requestSubmit()` with NO argument leaves `nativeEvent.submitter` null, and `ValidatedForm.handleSubmit` early-returns unless `submitter?.form === target` — so it silently does nothing.
+
+**Rule:** Programmatic submits inside a `ValidatedForm` must pass a submitter: `form.requestSubmit(form.querySelector('button[type="submit"]'))`, which means the form needs a real submit button (good for accessibility anyway). Never use `form.submit()` in a React Router app. When a form renders errors from `fetcher.data`, verify the submit path actually reaches the fetcher — an unreachable error branch looks identical to "no errors happen".
+
+**Applies to:** `packages/form/src/components/InputOTP.tsx`, `packages/form/src/ValidatedForm.tsx`, any auto-submitting form field.

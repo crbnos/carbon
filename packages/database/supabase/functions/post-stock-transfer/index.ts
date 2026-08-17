@@ -8,6 +8,7 @@ import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
 import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -167,7 +168,7 @@ serve(async (req: Request) => {
           itemLedgerInserts.push({
             postingDate: today,
             itemId: stockTransferLine.itemId,
-            quantity: -quantity,
+            quantity: round(-quantity),
             locationId: locationId,
             storageUnitId: stockTransferLine.fromStorageUnitId,
             entryType: "Transfer",
@@ -180,7 +181,7 @@ serve(async (req: Request) => {
           itemLedgerInserts.push({
             postingDate: today,
             itemId: stockTransferLine.itemId,
-            quantity: quantity,
+            quantity: round(quantity),
             locationId: locationId,
             storageUnitId: stockTransferLine.toStorageUnitId,
             entryType: "Transfer",
@@ -243,7 +244,7 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: stockTransferLine.itemId,
-              quantity: currentPickedQuantity, // Positive to restore inventory at from shelf
+              quantity: round(currentPickedQuantity), // Positive to restore inventory at from shelf
               locationId: locationId,
               storageUnitId: stockTransferLine.fromStorageUnitId,
               entryType: "Transfer",
@@ -256,7 +257,7 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: stockTransferLine.itemId,
-              quantity: -currentPickedQuantity, // Negative to remove inventory from to shelf
+              quantity: round(-currentPickedQuantity), // Negative to remove inventory from to shelf
               locationId: locationId,
               storageUnitId: stockTransferLine.toStorageUnitId,
               entryType: "Transfer",
@@ -519,7 +520,12 @@ serve(async (req: Request) => {
               .where("id", "=", trackedEntityId)
               .execute();
 
-            itemLedgerInserts.push(...split.ledgerInserts);
+            itemLedgerInserts.push(
+              ...split.ledgerInserts.map((ledgerRow) => ({
+                ...ledgerRow,
+                quantity: round(ledgerRow.quantity),
+              }))
+            );
           }
 
           // Create transfer activity
@@ -567,7 +573,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: stockTransferLine.itemId,
-              quantity: -transferQuantity,
+              quantity: round(-transferQuantity),
               locationId: locationId,
               storageUnitId: fromStorageUnitId,
               entryType: "Transfer",
@@ -580,7 +586,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: stockTransferLine.itemId,
-              quantity: transferQuantity,
+              quantity: round(transferQuantity),
               locationId: locationId,
               storageUnitId: stockTransferLine.toStorageUnitId,
               entryType: "Transfer",
@@ -842,7 +848,7 @@ serve(async (req: Request) => {
               {
                 postingDate: today,
                 itemId: stockTransferLine.itemId,
-                quantity: -transferQuantity, // drain the child at the destination
+                quantity: round(-transferQuantity), // drain the child at the destination
                 locationId: locationId,
                 storageUnitId: stockTransferLine.toStorageUnitId,
                 entryType: "Negative Adjmt.",
@@ -855,7 +861,7 @@ serve(async (req: Request) => {
               {
                 postingDate: today,
                 itemId: stockTransferLine.itemId,
-                quantity: transferQuantity, // restore the parent at the source
+                quantity: round(transferQuantity), // restore the parent at the source
                 locationId: locationId,
                 storageUnitId: stockTransferLine.fromStorageUnitId,
                 entryType: "Positive Adjmt.",
@@ -950,7 +956,7 @@ serve(async (req: Request) => {
               {
                 postingDate: today,
                 itemId: stockTransferLine.itemId,
-                quantity: originalQuantity, // zero out the split entity
+                quantity: round(originalQuantity), // zero out the split entity
                 locationId: locationId,
                 storageUnitId: stockTransferLine.fromStorageUnitId,
                 entryType: "Positive Adjmt.",
@@ -963,7 +969,7 @@ serve(async (req: Request) => {
               {
                 postingDate: today,
                 itemId: stockTransferLine.itemId,
-                quantity: -transferQuantity, // Positive to restore to original entity
+                quantity: round(-transferQuantity), // Positive to restore to original entity
                 locationId: locationId,
                 storageUnitId: stockTransferLine.toStorageUnitId, // Both entities are on the source shelf
                 entryType: "Negative Adjmt.",
@@ -976,7 +982,7 @@ serve(async (req: Request) => {
               {
                 postingDate: today,
                 itemId: stockTransferLine.itemId,
-                quantity: -(originalQuantity - transferQuantity), // Positive to restore to original entity
+                quantity: round(-(originalQuantity - transferQuantity)), // Positive to restore to original entity
                 locationId: locationId,
                 storageUnitId: stockTransferLine.fromStorageUnitId, // Both entities are on the source shelf
                 entryType: "Negative Adjmt.",
@@ -1021,7 +1027,7 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: stockTransferLine.itemId,
-              quantity: transferQuantity, // Positive to restore inventory at from shelf
+              quantity: round(transferQuantity), // Positive to restore inventory at from shelf
               locationId: locationId,
               storageUnitId: stockTransferLine.fromStorageUnitId,
               entryType: "Transfer",
@@ -1035,7 +1041,7 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: stockTransferLine.itemId,
-              quantity: -transferQuantity, // Negative to remove inventory from to shelf
+              quantity: round(-transferQuantity), // Negative to remove inventory from to shelf
               locationId: locationId,
               storageUnitId: stockTransferLine.toStorageUnitId,
               entryType: "Transfer",

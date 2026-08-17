@@ -13,13 +13,18 @@ import {
   NumberInput,
   NumberInputGroup
 } from "@carbon/react";
+import { EPSILON, INPUT_FORMAT, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { CSSProperties } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { LuListChecks, LuRotateCcw, LuSave } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePermissions
+} from "~/hooks";
 import { path } from "~/utils/path";
 
 // One row in the apply table — an open invoice for the payment's
@@ -75,10 +80,6 @@ type PaymentApplyTableProps = {
   existingApplications: ExistingApplication[];
 };
 
-function round4(n: number): number {
-  return Math.round(n * 10000) / 10000;
-}
-
 // Shared grid template so the header labels stay aligned with the rows. Wide
 // enough to scroll horizontally on small screens rather than cramp the inputs.
 const GRID = "grid grid-cols-[2rem_minmax(9rem,1fr)_7rem_8rem_8rem_8rem] gap-3";
@@ -88,12 +89,16 @@ const AmountInput = ({
   value,
   onChange,
   isDisabled,
-  label
+  label,
+  currency,
+  currencyDecimals
 }: {
   value: number;
   onChange: (value: number) => void;
   isDisabled: boolean;
   label: string;
+  currency: string;
+  currencyDecimals: number;
 }) => (
   <NumberField
     aria-label={label}
@@ -101,7 +106,7 @@ const AmountInput = ({
     onChange={(v) => onChange(Number.isNaN(v) ? 0 : v)}
     minValue={0}
     isDisabled={isDisabled}
-    formatOptions={{ minimumFractionDigits: 2, maximumFractionDigits: 4 }}
+    formatOptions={INPUT_FORMAT.money(currency, currencyDecimals)}
   >
     <NumberInputGroup>
       <NumberInput className="text-right tabular-nums" />
@@ -123,6 +128,7 @@ const PaymentApplyTable = ({
   const permissions = usePermissions();
   const fetcher = useFetcher();
   const currencyFormatter = useCurrencyFormatter({ currency: paymentCurrency });
+  const currencyDecimals = useCurrencyDecimals(paymentCurrency);
   const today = new Date().toISOString().slice(0, 10);
   const isReceipt = paymentType === "Receipt";
   const canEdit = permissions.can("update", "invoicing");
@@ -166,7 +172,11 @@ const PaymentApplyTable = ({
     0,
     Math.min(availableCredit, totalCash - paymentTotal)
   );
-  const overApplied = totalCash > maxApplicable + 0.0001;
+  // EPSILON, not a hand-picked 1e-4: every amount here is already rounded to
+  // internal scale, so the only slack needed is float noise. A 1e-4 band is
+  // coarser than the 1e-5 the values carry, and let a real over-application of
+  // 0.0001 through.
+  const overApplied = totalCash > maxApplicable + EPSILON;
   const appliedPct =
     paymentTotal > 0
       ? Math.min(100, Math.max(0, (totalCash / paymentTotal) * 100))
@@ -185,7 +195,7 @@ const PaymentApplyTable = ({
               checked: true,
               appliedAmount:
                 r.appliedAmount === 0
-                  ? round4(Math.min(r.balance, maxApplicable))
+                  ? round(Math.min(r.balance, maxApplicable))
                   : r.appliedAmount
             };
           }
@@ -208,7 +218,7 @@ const PaymentApplyTable = ({
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== id) return r;
-          const next = { ...r, [field]: round4(Math.max(0, value)) };
+          const next = { ...r, [field]: round(Math.max(0, value)) };
           next.checked =
             next.appliedAmount + next.discountAmount + next.writeOffAmount > 0;
           return next;
@@ -227,8 +237,8 @@ const PaymentApplyTable = ({
           return { ...r, checked: false, appliedAmount: 0 };
         }
         const take = Math.min(remaining, r.balance);
-        remaining = round4(remaining - take);
-        return { ...r, checked: true, appliedAmount: round4(take) };
+        remaining = round(remaining - take);
+        return { ...r, checked: true, appliedAmount: round(take) };
       })
     );
   }, [paymentTotal]);
@@ -387,18 +397,24 @@ const PaymentApplyTable = ({
                       label={t`Applied amount for ${r.invoiceId}`}
                       value={r.appliedAmount}
                       isDisabled={!canEdit}
+                      currency={paymentCurrency}
+                      currencyDecimals={currencyDecimals}
                       onChange={(v) => updateAmount(r.id, "appliedAmount", v)}
                     />
                     <AmountInput
                       label={t`Discount for ${r.invoiceId}`}
                       value={r.discountAmount}
                       isDisabled={!canEdit}
+                      currency={paymentCurrency}
+                      currencyDecimals={currencyDecimals}
                       onChange={(v) => updateAmount(r.id, "discountAmount", v)}
                     />
                     <AmountInput
                       label={t`Write-off for ${r.invoiceId}`}
                       value={r.writeOffAmount}
                       isDisabled={!canEdit}
+                      currency={paymentCurrency}
+                      currencyDecimals={currencyDecimals}
                       onChange={(v) => updateAmount(r.id, "writeOffAmount", v)}
                     />
                   </div>

@@ -10,6 +10,7 @@ import {
 import type { KyselifyDatabase } from "./kysely-supabase.types.ts";
 // Aliased it as pg so can be imported as-is in Node environment
 import { Pool } from "pg";
+import * as pg from "pg";
 import type { Database as SupabaseDatabase } from "../../../../src/types.ts";
 
 export type KyselyDatabase = KyselifyDatabase<SupabaseDatabase>;
@@ -39,6 +40,45 @@ export function getRuntime() {
 // no-op for them).
 const poolCache = new Map<number, Pool>();
 
+/** NUMERIC. Both drivers hand it over as text by default, so a scale-5 price
+ *  would arrive as a string where the generated types promise a number. */
+const NUMERIC_OID = 1700;
+
+/** The deno-postgres constructor shape. "pg" resolves to node-postgres types in
+ *  the Node build, so the Deno branch has to describe its own driver — but it
+ *  describes it PROPERLY: the TLS block below is the one place a typo silently
+ *  turns encryption off, which is not something to hand to `unknown`. */
+type DenoTlsOptions = { enabled: boolean; enforce: boolean };
+type DenoClientOptions = {
+  user: string;
+  password: string;
+  hostname: string;
+  port: string | number;
+  database?: string;
+  tls?: DenoTlsOptions;
+  controls?: { decoders?: Record<number, (value: string) => unknown> };
+};
+type DenoPoolConstructor = new (
+  options: DenoClientOptions,
+  size: number
+) => Pool;
+
+/** node-postgres keeps type parsers in a PROCESS-GLOBAL registry, so this is
+ *  registered once at module load rather than as a side effect of constructing a
+ *  pool — a factory that reconfigures global state on every call is a trap for
+ *  whoever calls it next. No-ops on Deno, whose driver takes per-pool decoders
+ *  (see `controls` below) and exposes no `types` namespace. */
+function registerNodeNumericParser(): void {
+  (
+    pg as unknown as {
+      types?: {
+        setTypeParser: (oid: number, fn: (v: string) => unknown) => void;
+      };
+    }
+  ).types?.setTypeParser(NUMERIC_OID, Number);
+}
+registerNodeNumericParser();
+
 export function getPostgresConnectionPool(connections: number): Pool {
   const cached = poolCache.get(connections);
   // An ended pool can never serve connections again ("Cannot use a pool after
@@ -62,8 +102,33 @@ function createPostgresConnectionPool(connections: number): Pool {
       const connectionPoolerUrl = url.includes("supabase.co")
         ? url.replace("5432", "6543")
         : url;
-      // @ts-ignore Compat
-      return new Pool(connectionPoolerUrl, connections);
+      // deno-postgres accepts EITHER a URI string OR a ClientOptions object —
+      // the NUMERIC decoder (`controls`) only fits on the object form, so
+      // parse the URL ourselves. sslmode mapping mirrors the driver's own:
+      // disable -> off; require/verify-* -> enforce; otherwise attempt TLS
+      // and fall back (its default).
+      const u = new URL(connectionPoolerUrl);
+      const sslmode = u.searchParams.get("sslmode");
+      const DenoPool = Pool as unknown as DenoPoolConstructor;
+      const options: DenoClientOptions = {
+        user: decodeURIComponent(u.username),
+        password: decodeURIComponent(u.password),
+        hostname: u.hostname,
+        port: u.port || 5432,
+        database: u.pathname.replace(/^\//, "") || undefined,
+        controls: {
+          // The driver applies this element-wise to numeric[] via the base-type
+          // fallback, so arrays decode too.
+          decoders: { [NUMERIC_OID]: Number },
+        },
+      };
+      if (sslmode) {
+        options.tls = {
+          enabled: sslmode !== "disable",
+          enforce: ["require", "verify-ca", "verify-full"].includes(sslmode),
+        };
+      }
+      return new DenoPool(options, connections);
     }
     case "node": {
       const url = process.env.SUPABASE_DB_URL!;

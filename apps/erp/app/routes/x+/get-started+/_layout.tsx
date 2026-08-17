@@ -251,7 +251,7 @@ export default function GetStartedLayout() {
     <CollapsibleSidebarProvider>
       <div className="bg-card grid grid-cols-[auto_1fr] grid-rows-[minmax(0,1fr)] w-full h-full overflow-hidden">
         <GroupedContentSidebar groups={groups} exactMatch />
-        <div className="relative min-w-0 overflow-hidden">
+        <div className="relative min-w-0 overflow-hidden bg-card">
           <div ref={scrollRef} className="relative z-10 h-full overflow-y-auto">
             {isInternal ? (
               <PreviewBar previewing={previewingAsCustomer} />

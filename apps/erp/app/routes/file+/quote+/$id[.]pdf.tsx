@@ -142,6 +142,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let exchangeRate = 1;
+  let currencyDecimals: number | null = null;
   if (quote.data?.currencyCode) {
     const currency = await getCurrencyByCode(
       client,
@@ -151,6 +152,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     if (currency.data?.exchangeRate) {
       exchangeRate = currency.data.exchangeRate;
     }
+    currencyDecimals = currency.data?.decimalPlaces ?? null;
   }
 
   const resolved = resolveTemplate("quote", templateConfig);
@@ -166,6 +168,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       company={company.data as any}
       companySettings={companySettings.data}
       locale={locale}
+      currencyDecimals={currencyDecimals}
       exchangeRate={exchangeRate}
       quote={quote.data}
       quoteLines={quoteLines.data ?? []}

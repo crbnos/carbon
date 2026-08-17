@@ -8,8 +8,15 @@ import { getParams, path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
+  // generateEliminationEntries writes to the elimination entity's ledger — a
+  // synthetic company the user is not an employee of — so it must run with a
+  // service-role client that bypasses RLS. Access is verified here first
+  // (create: "accounting"); the RPC re-checks group membership from userId. The
+  // RPC stays SECURITY INVOKER so a direct client.rpc call from a normal user
+  // runs under their own RLS and cannot post eliminations for a foreign group.
   const { client, companyGroupId, userId } = await requirePermissions(request, {
-    create: "accounting"
+    create: "accounting",
+    bypassRls: true
   });
 
   const result = await generateEliminations(client, companyGroupId, userId);

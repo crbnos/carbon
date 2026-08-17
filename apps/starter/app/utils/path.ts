@@ -17,6 +17,7 @@ export const path = {
     health: "/health",
     login: "/login",
     logout: "/logout",
+    mfa: "/mfa",
     onboarding: `${ERP_URL}/onboarding`,
     refreshSession: "/refresh-session",
     requestAccess: "/request-access",

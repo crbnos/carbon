@@ -8,6 +8,11 @@
  *
  * This prevents unnecessary syncing (e.g., items configured as push-only
  * won't be pulled from Xero, and POs configured as push-only won't try to pull).
+ *
+ * Each page/batch routes through the "accountingSyncOperation" ledger with
+ * trigger "backfill": operations are enqueued with keys scoped to this run
+ * (retried steps are absorbed; completed rows from earlier runs never block
+ * a new backfill) and drained in the same step.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -20,14 +25,24 @@ import {
   getProviderIntegration,
   ProviderID,
   RatelimitError,
+  resolvePostingSyncSettings,
   type SyncDirection,
-  SyncFactory,
   type XeroProvider
 } from "@carbon/ee/accounting";
 import { getLogger } from "@carbon/logger";
 import { PostgresDriver } from "kysely";
 import z from "zod";
 import { inngest } from "../../client";
+import {
+  drainSyncOperations,
+  enqueueSyncOperations,
+  getSyncOperationActor,
+  insertTerminalSyncOperations,
+  isJournalEntryPostingEnabled,
+  planJournalPostingOperation,
+  type SyncOperationRequest,
+  type TerminalSyncOperationRequest
+} from "./accounting-sync-operations";
 
 const log = getLogger("jobs", "accounting-backfill");
 
@@ -51,7 +66,7 @@ async function withRateLimitRetry<T>(
   } catch (error) {
     if (error instanceof RatelimitError) {
       const { retryAfterSeconds, limitType, details } = error.rateLimitInfo;
-      log.warning(`${operationName} hit rate limit`, {
+      log.warning(`[RATE LIMIT] ${operationName} hit rate limit`, {
         limitType,
         retryAfterSeconds,
         ...details
@@ -60,7 +75,9 @@ async function withRateLimitRetry<T>(
         `rate-limit-wait-${operationName}`,
         `${retryAfterSeconds}s`
       );
-      log.info(`Retrying ${operationName} after ${retryAfterSeconds}s wait`);
+      log.info(
+        `[RATE LIMIT] Retrying ${operationName} after ${retryAfterSeconds}s wait`
+      );
       return await operation();
     }
     throw error;
@@ -104,11 +121,16 @@ type ParsedBackfillPayload = z.output<typeof BackfillPayloadSchema>;
 export const accountingBackfillFunction = inngest.createFunction(
   { id: "accounting-backfill", retries: 3 },
   { event: "carbon/accounting-backfill" },
-  async ({ event, step, logger }) => {
+  async ({ event, step, runId }) => {
     const payload: ParsedBackfillPayload = BackfillPayloadSchema.parse(
       event.data
     );
     const client = getCarbonServiceRole();
+
+    // Scopes the ledger idempotency keys to this backfill run: retried steps
+    // re-enqueue with the same keys (absorbed), a fresh backfill run gets new
+    // keys so previously Completed rows never block it
+    const backfillRunId = event.id ?? runId;
 
     const integration = await getAccountingIntegration(
       client,
@@ -137,7 +159,7 @@ export const accountingBackfillFunction = inngest.createFunction(
     };
 
     // Log the sync directions for visibility
-    logger.info("Starting with entity sync directions", {
+    log.info("[BACKFILL] Starting with entity sync directions:", {
       customer: {
         enabled: customerConfig?.enabled,
         direction: customerConfig?.direction,
@@ -161,6 +183,187 @@ export const accountingBackfillFunction = inngest.createFunction(
     });
 
     // ============================================================
+    // PHASE 0: Journal posting dispositions (spec I1 missed-event repair)
+    //
+    // Every posted journal since postingSync.syncFromDate must have an
+    // operation row — pushable journals whose event was missed enqueue,
+    // policy-excluded ones get their terminal disposition recorded. Runs
+    // only when posting sync is enabled AND an explicit syncFromDate is
+    // set (no silent mass-push of a company's whole history).
+    // ============================================================
+
+    await step.run("backfill-journal-dispositions", async () => {
+      const phaseClient = getCarbonServiceRole();
+      const phaseIntegration = await getAccountingIntegration(
+        phaseClient,
+        payload.companyId,
+        payload.provider
+      );
+
+      const summary = {
+        enqueued: 0,
+        recorded: 0,
+        alreadyCovered: 0,
+        pages: 0,
+        truncated: false,
+        skippedReason: null as string | null
+      };
+
+      if (!isJournalEntryPostingEnabled(phaseIntegration.metadata)) {
+        summary.skippedReason = "posting sync (journalEntry) disabled";
+        return summary;
+      }
+
+      const settings = resolvePostingSyncSettings(phaseIntegration.metadata);
+      const syncFromDate = settings.syncFromDate?.slice(0, 10);
+      if (!syncFromDate) {
+        summary.skippedReason =
+          "postingSync.syncFromDate is not set — journal backfill requires an explicit start date";
+        return summary;
+      }
+
+      const createdBy = getSyncOperationActor(phaseIntegration);
+      const pageSize = 200;
+      const maxPages = 50; // bound the step; re-run the backfill for more
+      let offset = 0;
+
+      for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
+        const journals = await phaseClient
+          .from("journal")
+          .select("id, sourceType, status, reversalOfId")
+          .eq("companyId", payload.companyId)
+          .in("status", ["Posted", "Reversed"])
+          .is("reversalOfId", null)
+          .gte("postingDate", syncFromDate)
+          .order("id", { ascending: true })
+          .range(offset, offset + pageSize - 1);
+
+        if (journals.error) {
+          throw new Error(
+            `Failed to page journals for disposition backfill: ${journals.error.message}`
+          );
+        }
+
+        const rows = journals.data ?? [];
+        if (rows.length === 0) break;
+        summary.pages++;
+
+        const candidateEntityIds = rows.flatMap((row) =>
+          row.status === "Reversed" ? [row.id, `${row.id}:reversal`] : [row.id]
+        );
+
+        const existing = await phaseClient
+          .from("accountingSyncOperation")
+          .select("entityId")
+          .eq("companyId", payload.companyId)
+          .eq("integration", payload.provider)
+          .eq("entityType", "journalEntry")
+          .in("entityId", candidateEntityIds);
+
+        if (existing.error) {
+          throw new Error(
+            `Failed to load existing journal operations: ${existing.error.message}`
+          );
+        }
+
+        const covered = new Set(
+          (existing.data ?? []).map((row) => row.entityId)
+        );
+
+        const pushRequests: SyncOperationRequest[] = [];
+        const terminalRequests: TerminalSyncOperationRequest[] = [];
+
+        for (const row of rows) {
+          if (covered.has(row.id)) {
+            summary.alreadyCovered++;
+          } else {
+            const plan = await planJournalPostingOperation({
+              client: phaseClient,
+              companyId: payload.companyId,
+              event: {
+                operation: "INSERT",
+                recordId: row.id,
+                new: {
+                  status: "Posted",
+                  reversalOfId: null,
+                  sourceType: row.sourceType
+                },
+                old: null
+              },
+              integrationMetadata: phaseIntegration.metadata
+            });
+
+            if (plan.action === "push") {
+              pushRequests.push(plan.request);
+            } else if (plan.action === "terminal") {
+              terminalRequests.push(plan.request);
+            }
+          }
+
+          // A Reversed journal's reversal push rides the original's policy
+          // decision (same source type); record it when missing too
+          if (row.status === "Reversed" && !covered.has(`${row.id}:reversal`)) {
+            const reversalPlan = await planJournalPostingOperation({
+              client: phaseClient,
+              companyId: payload.companyId,
+              event: {
+                operation: "UPDATE",
+                recordId: row.id,
+                new: {
+                  status: "Reversed",
+                  reversalOfId: null,
+                  sourceType: row.sourceType
+                },
+                old: { status: "Posted" }
+              },
+              integrationMetadata: phaseIntegration.metadata
+            });
+
+            if (reversalPlan.action === "push") {
+              pushRequests.push(reversalPlan.request);
+            } else if (reversalPlan.action === "terminal") {
+              terminalRequests.push(reversalPlan.request);
+            }
+          }
+        }
+
+        const enqueueOutcomes = await enqueueSyncOperations(phaseClient, {
+          companyId: payload.companyId,
+          integration: payload.provider,
+          trigger: "backfill",
+          createdBy,
+          scope: backfillRunId,
+          requests: pushRequests
+        });
+        summary.enqueued += enqueueOutcomes.filter(
+          (outcome) => outcome.outcome === "enqueued"
+        ).length;
+
+        const terminalOutcomes = await insertTerminalSyncOperations(
+          phaseClient,
+          {
+            companyId: payload.companyId,
+            integration: payload.provider,
+            trigger: "backfill",
+            createdBy,
+            scope: backfillRunId,
+            requests: terminalRequests
+          }
+        );
+        summary.recorded += terminalOutcomes.filter(
+          (outcome) => outcome.outcome === "enqueued"
+        ).length;
+
+        if (rows.length < pageSize) break;
+        offset += pageSize;
+        if (pageIndex === maxPages - 1) summary.truncated = true;
+      }
+
+      log.info("[BACKFILL] Journal disposition phase complete", summary);
+      return summary;
+    });
+
+    // ============================================================
     // PHASE 1: Pull contacts from accounting (respecting direction config)
     // ============================================================
 
@@ -178,7 +381,7 @@ export const accountingBackfillFunction = inngest.createFunction(
       let page = 1;
       let hasMore = true;
 
-      logger.info("Starting contact pull phase", {
+      log.info("[PULL] Starting contact pull phase", {
         pullCustomers,
         pullVendors
       });
@@ -204,7 +407,7 @@ export const accountingBackfillFunction = inngest.createFunction(
             const pool = getPostgresConnectionPool(5);
             const kysely = getPostgresClient(pool, PostgresDriver);
 
-            logger.info(`Fetching contacts page ${currentPage}`);
+            log.info(`[PULL] Fetching contacts page ${currentPage}`);
             const response = await withRateLimitRetry(
               () =>
                 pullProvider.listContacts({
@@ -215,7 +418,7 @@ export const accountingBackfillFunction = inngest.createFunction(
               step
             );
 
-            logger.info(`Contacts page ${currentPage} response`, {
+            log.info(`[PULL] Contacts page ${currentPage} response`, {
               count: response.contacts.length,
               hasMore: response.hasMore,
               contacts: response.contacts.map((c) => ({
@@ -236,70 +439,89 @@ export const accountingBackfillFunction = inngest.createFunction(
             let customersPulled = 0;
             let vendorsPulled = 0;
 
-            // Pull customers
+            const requests: SyncOperationRequest[] = [];
+
             if (pullCustomers) {
-              const customers = response.contacts.filter((c) => c.IsCustomer);
-              if (customers.length > 0) {
-                const syncer = SyncFactory.getSyncer({
-                  database: kysely,
-                  companyId: payload.companyId,
-                  provider: pullProvider,
-                  config: pullProvider.getSyncConfig("customer"),
-                  entityType: "customer"
+              for (const contact of response.contacts.filter(
+                (c) => c.IsCustomer
+              )) {
+                requests.push({
+                  entityType: "customer",
+                  entityId: contact.ContactID,
+                  direction: "pull-from-accounting"
                 });
-                const ids = customers.map((c) => c.ContactID);
-                const syncResult = await withRateLimitRetry(
-                  () => syncer.pullBatchFromAccounting(ids),
-                  `pullBatchFromAccounting customers page ${currentPage}`,
-                  step
-                );
-                customersPulled = syncResult.successCount;
-                logger.info(
-                  `Page ${currentPage}: pulled ${customersPulled} customers`,
-                  {
-                    results: syncResult.results.map((r) => ({
-                      status: r.status,
-                      action: r.action,
-                      localId: r.localId,
-                      remoteId: r.remoteId,
-                      error: r.error
-                    }))
-                  }
-                );
               }
             }
 
-            // Pull vendors
             if (pullVendors) {
-              const vendors = response.contacts.filter((c) => c.IsSupplier);
-              if (vendors.length > 0) {
-                const syncer = SyncFactory.getSyncer({
-                  database: kysely,
-                  companyId: payload.companyId,
-                  provider: pullProvider,
-                  config: pullProvider.getSyncConfig("vendor"),
-                  entityType: "vendor"
+              for (const contact of response.contacts.filter(
+                (c) => c.IsSupplier
+              )) {
+                requests.push({
+                  entityType: "vendor",
+                  entityId: contact.ContactID,
+                  direction: "pull-from-accounting"
                 });
-                const ids = vendors.map((c) => c.ContactID);
-                const syncResult = await withRateLimitRetry(
-                  () => syncer.pullBatchFromAccounting(ids),
-                  `pullBatchFromAccounting vendors page ${currentPage}`,
-                  step
+              }
+            }
+
+            if (requests.length > 0) {
+              const outcomes = await enqueueSyncOperations(pullClient, {
+                companyId: payload.companyId,
+                integration: payload.provider,
+                trigger: "backfill",
+                createdBy: getSyncOperationActor(pullIntegration),
+                scope: backfillRunId,
+                requests
+              });
+
+              const enqueueErrors = outcomes.filter(
+                (o) => o.outcome === "error"
+              );
+              if (enqueueErrors.length > 0) {
+                log.error(
+                  `[PULL] Failed to enqueue ${enqueueErrors.length} contact operations`
                 );
-                vendorsPulled = syncResult.successCount;
-                logger.info(
-                  `Page ${currentPage}: pulled ${vendorsPulled} vendors`,
-                  {
-                    results: syncResult.results.map((r) => ({
+              }
+
+              const drained = await withRateLimitRetry(
+                () =>
+                  drainSyncOperations({
+                    client: pullClient,
+                    database: kysely,
+                    companyId: payload.companyId,
+                    integration: payload.provider,
+                    provider: pullProvider,
+                    integrationMetadata: pullIntegration.metadata
+                  }),
+                `drain contacts page ${currentPage}`,
+                step
+              );
+
+              for (const group of drained.groups) {
+                if (group.direction !== "pull-from-accounting") continue;
+                if (group.entityType === "customer") {
+                  customersPulled += group.result.successCount;
+                }
+                if (group.entityType === "vendor") {
+                  vendorsPulled += group.result.successCount;
+                }
+              }
+
+              log.info(
+                `[PULL] Page ${currentPage}: pulled ${customersPulled} customers, ${vendorsPulled} vendors`,
+                {
+                  results: drained.groups.flatMap((g) =>
+                    g.result.results.map((r) => ({
                       status: r.status,
                       action: r.action,
                       localId: r.localId,
                       remoteId: r.remoteId,
                       error: r.error
                     }))
-                  }
-                );
-              }
+                  )
+                }
+              );
             }
 
             return {
@@ -324,8 +546,8 @@ export const accountingBackfillFunction = inngest.createFunction(
         }
       }
     } else {
-      logger.info(
-        "Skipping contact pull - not enabled or direction is push-only"
+      log.info(
+        "[PULL] Skipping contact pull - not enabled or direction is push-only"
       );
     }
 
@@ -342,7 +564,7 @@ export const accountingBackfillFunction = inngest.createFunction(
       let page = 1;
       let hasMore = true;
 
-      logger.info("Starting items pull phase");
+      log.info("[PULL] Starting items pull phase");
 
       while (hasMore) {
         const currentPage = page;
@@ -365,14 +587,14 @@ export const accountingBackfillFunction = inngest.createFunction(
             const pool = getPostgresConnectionPool(5);
             const kysely = getPostgresClient(pool, PostgresDriver);
 
-            logger.info(`Fetching items page ${currentPage}`);
+            log.info(`[PULL] Fetching items page ${currentPage}`);
             const response = await withRateLimitRetry(
               () => pullProvider.listItems({ page: currentPage }),
               `listItems page ${currentPage}`,
               step
             );
 
-            logger.info(`Items page ${currentPage} response`, {
+            log.info(`[PULL] Items page ${currentPage} response`, {
               count: response.items.length,
               hasMore: response.hasMore,
               items: response.items.map((i) => ({
@@ -386,36 +608,70 @@ export const accountingBackfillFunction = inngest.createFunction(
               return { hasMore: false, pulled: { items: 0 } };
             }
 
-            const syncer = SyncFactory.getSyncer({
-              database: kysely,
+            const requests: SyncOperationRequest[] = response.items.map(
+              (item) => ({
+                entityType: "item",
+                entityId: item.ItemID,
+                direction: "pull-from-accounting"
+              })
+            );
+
+            const outcomes = await enqueueSyncOperations(pullClient, {
               companyId: payload.companyId,
-              provider: pullProvider,
-              config: pullProvider.getSyncConfig("item"),
-              entityType: "item"
+              integration: payload.provider,
+              trigger: "backfill",
+              createdBy: getSyncOperationActor(pullIntegration),
+              scope: backfillRunId,
+              requests
             });
-            const ids = response.items.map((item) => item.ItemID);
-            const syncResult = await withRateLimitRetry(
-              () => syncer.pullBatchFromAccounting(ids),
-              `pullBatchFromAccounting items page ${currentPage}`,
+
+            const enqueueErrors = outcomes.filter((o) => o.outcome === "error");
+            if (enqueueErrors.length > 0) {
+              log.error(
+                `[PULL] Failed to enqueue ${enqueueErrors.length} item operations`
+              );
+            }
+
+            const drained = await withRateLimitRetry(
+              () =>
+                drainSyncOperations({
+                  client: pullClient,
+                  database: kysely,
+                  companyId: payload.companyId,
+                  integration: payload.provider,
+                  provider: pullProvider,
+                  integrationMetadata: pullIntegration.metadata
+                }),
+              `drain items page ${currentPage}`,
               step
             );
 
-            logger.info(
-              `Page ${currentPage}: pulled ${syncResult.successCount} items`,
+            const itemsPulled = drained.groups
+              .filter(
+                (g) =>
+                  g.entityType === "item" &&
+                  g.direction === "pull-from-accounting"
+              )
+              .reduce((acc, g) => acc + g.result.successCount, 0);
+
+            log.info(
+              `[PULL] Page ${currentPage}: pulled ${itemsPulled} items`,
               {
-                results: syncResult.results.map((r) => ({
-                  status: r.status,
-                  action: r.action,
-                  localId: r.localId,
-                  remoteId: r.remoteId,
-                  error: r.error
-                }))
+                results: drained.groups.flatMap((g) =>
+                  g.result.results.map((r) => ({
+                    status: r.status,
+                    action: r.action,
+                    localId: r.localId,
+                    remoteId: r.remoteId,
+                    error: r.error
+                  }))
+                )
               }
             );
 
             return {
               hasMore: response.hasMore,
-              pulled: { items: syncResult.successCount }
+              pulled: { items: itemsPulled }
             };
           }
         );
@@ -430,8 +686,8 @@ export const accountingBackfillFunction = inngest.createFunction(
         }
       }
     } else {
-      logger.info(
-        "Skipping items pull - not enabled or direction is push-only"
+      log.info(
+        "[PULL] Skipping items pull - not enabled or direction is push-only"
       );
     }
 
@@ -449,7 +705,7 @@ export const accountingBackfillFunction = inngest.createFunction(
       let hasMore = true;
       let batchIndex = 0;
 
-      logger.info("Starting customers push phase");
+      log.info("[PUSH] Starting customers push phase");
 
       while (hasMore) {
         const currentBatchIndex = batchIndex;
@@ -491,37 +747,72 @@ export const accountingBackfillFunction = inngest.createFunction(
               };
             }
 
-            const syncer = SyncFactory.getSyncer({
-              database: kysely,
+            const outcomes = await enqueueSyncOperations(pushClient, {
               companyId: payload.companyId,
-              provider: pushProvider,
-              config: pushProvider.getSyncConfig("customer"),
-              entityType: "customer"
+              integration: payload.provider,
+              trigger: "backfill",
+              createdBy: getSyncOperationActor(pushIntegration),
+              scope: backfillRunId,
+              requests: unsyncedIds.map((id) => ({
+                entityType: "customer",
+                entityId: id,
+                direction: "push-to-accounting"
+              }))
             });
 
-            const syncResult = await withRateLimitRetry(
-              () => syncer.pushBatchToAccounting(unsyncedIds),
-              `pushBatchToAccounting customers`,
+            const enqueueErrors = outcomes.filter((o) => o.outcome === "error");
+            if (enqueueErrors.length > 0) {
+              log.error(
+                `[PUSH] Failed to enqueue ${enqueueErrors.length} customer operations`
+              );
+            }
+
+            const drained = await withRateLimitRetry(
+              () =>
+                drainSyncOperations({
+                  client: pushClient,
+                  database: kysely,
+                  companyId: payload.companyId,
+                  integration: payload.provider,
+                  provider: pushProvider,
+                  integrationMetadata: pushIntegration.metadata
+                }),
+              `drain customers push batch ${currentBatchIndex}`,
               step
             );
 
-            logger.info(
-              `Pushed ${syncResult.successCount}/${unsyncedIds.length} customer entities`,
+            const successCount = drained.groups
+              .filter(
+                (g) =>
+                  g.entityType === "customer" &&
+                  g.direction === "push-to-accounting"
+              )
+              .reduce((acc, g) => acc + g.result.successCount, 0);
+
+            log.info(
+              `[PUSH] Pushed ${successCount}/${unsyncedIds.length} customer entities`,
               {
                 entityIds: unsyncedIds,
-                results: syncResult.results.map((r) => ({
-                  status: r.status,
-                  action: r.action,
-                  localId: r.localId,
-                  remoteId: r.remoteId,
-                  error: r.error
-                }))
+                results: drained.groups.flatMap((g) =>
+                  g.result.results.map((r) => ({
+                    status: r.status,
+                    action: r.action,
+                    localId: r.localId,
+                    remoteId: r.remoteId,
+                    error: r.error
+                  }))
+                )
               }
             );
 
             return {
-              successCount: syncResult.successCount,
-              hasMore: unsyncedIds.length >= payload.batchSize
+              successCount,
+              // Failed pushes stay unmapped and come straight back from
+              // getUnsyncedEntityIds, but their idempotency key (same
+              // backfill run) absorbs the re-enqueue — stop when the drain
+              // claimed nothing so the loop cannot spin without progress
+              hasMore:
+                unsyncedIds.length >= payload.batchSize && drained.claimed > 0
             };
           }
         );
@@ -536,8 +827,8 @@ export const accountingBackfillFunction = inngest.createFunction(
         }
       }
     } else {
-      logger.info(
-        "Skipping customers push - not enabled or direction is pull-only"
+      log.info(
+        "[PUSH] Skipping customers push - not enabled or direction is pull-only"
       );
     }
 
@@ -551,7 +842,7 @@ export const accountingBackfillFunction = inngest.createFunction(
       let hasMore = true;
       let batchIndex = 0;
 
-      logger.info("Starting vendors push phase");
+      log.info("[PUSH] Starting vendors push phase");
 
       while (hasMore) {
         const currentBatchIndex = batchIndex;
@@ -593,37 +884,69 @@ export const accountingBackfillFunction = inngest.createFunction(
               };
             }
 
-            const syncer = SyncFactory.getSyncer({
-              database: kysely,
+            const outcomes = await enqueueSyncOperations(pushClient, {
               companyId: payload.companyId,
-              provider: pushProvider,
-              config: pushProvider.getSyncConfig("vendor"),
-              entityType: "vendor"
+              integration: payload.provider,
+              trigger: "backfill",
+              createdBy: getSyncOperationActor(pushIntegration),
+              scope: backfillRunId,
+              requests: unsyncedIds.map((id) => ({
+                entityType: "vendor",
+                entityId: id,
+                direction: "push-to-accounting"
+              }))
             });
 
-            const syncResult = await withRateLimitRetry(
-              () => syncer.pushBatchToAccounting(unsyncedIds),
-              `pushBatchToAccounting vendors`,
+            const enqueueErrors = outcomes.filter((o) => o.outcome === "error");
+            if (enqueueErrors.length > 0) {
+              log.error(
+                `[PUSH] Failed to enqueue ${enqueueErrors.length} vendor operations`
+              );
+            }
+
+            const drained = await withRateLimitRetry(
+              () =>
+                drainSyncOperations({
+                  client: pushClient,
+                  database: kysely,
+                  companyId: payload.companyId,
+                  integration: payload.provider,
+                  provider: pushProvider,
+                  integrationMetadata: pushIntegration.metadata
+                }),
+              `drain vendors push batch ${currentBatchIndex}`,
               step
             );
 
-            logger.info(
-              `Pushed ${syncResult.successCount}/${unsyncedIds.length} vendor entities`,
+            const successCount = drained.groups
+              .filter(
+                (g) =>
+                  g.entityType === "vendor" &&
+                  g.direction === "push-to-accounting"
+              )
+              .reduce((acc, g) => acc + g.result.successCount, 0);
+
+            log.info(
+              `[PUSH] Pushed ${successCount}/${unsyncedIds.length} vendor entities`,
               {
                 entityIds: unsyncedIds,
-                results: syncResult.results.map((r) => ({
-                  status: r.status,
-                  action: r.action,
-                  localId: r.localId,
-                  remoteId: r.remoteId,
-                  error: r.error
-                }))
+                results: drained.groups.flatMap((g) =>
+                  g.result.results.map((r) => ({
+                    status: r.status,
+                    action: r.action,
+                    localId: r.localId,
+                    remoteId: r.remoteId,
+                    error: r.error
+                  }))
+                )
               }
             );
 
             return {
-              successCount: syncResult.successCount,
-              hasMore: unsyncedIds.length >= payload.batchSize
+              successCount,
+              // Same progress guard as the customer push loop
+              hasMore:
+                unsyncedIds.length >= payload.batchSize && drained.claimed > 0
             };
           }
         );
@@ -637,8 +960,8 @@ export const accountingBackfillFunction = inngest.createFunction(
         }
       }
     } else {
-      logger.info(
-        "Skipping vendors push - not enabled or direction is pull-only"
+      log.info(
+        "[PUSH] Skipping vendors push - not enabled or direction is pull-only"
       );
     }
 
@@ -652,7 +975,7 @@ export const accountingBackfillFunction = inngest.createFunction(
       let hasMore = true;
       let batchIndex = 0;
 
-      logger.info("Starting items push phase");
+      log.info("[PUSH] Starting items push phase");
 
       while (hasMore) {
         const currentBatchIndex = batchIndex;
@@ -694,37 +1017,69 @@ export const accountingBackfillFunction = inngest.createFunction(
               };
             }
 
-            const syncer = SyncFactory.getSyncer({
-              database: kysely,
+            const outcomes = await enqueueSyncOperations(pushClient, {
               companyId: payload.companyId,
-              provider: pushProvider,
-              config: pushProvider.getSyncConfig("item"),
-              entityType: "item"
+              integration: payload.provider,
+              trigger: "backfill",
+              createdBy: getSyncOperationActor(pushIntegration),
+              scope: backfillRunId,
+              requests: unsyncedIds.map((id) => ({
+                entityType: "item",
+                entityId: id,
+                direction: "push-to-accounting"
+              }))
             });
 
-            const syncResult = await withRateLimitRetry(
-              () => syncer.pushBatchToAccounting(unsyncedIds),
-              `pushBatchToAccounting items`,
+            const enqueueErrors = outcomes.filter((o) => o.outcome === "error");
+            if (enqueueErrors.length > 0) {
+              log.error(
+                `[PUSH] Failed to enqueue ${enqueueErrors.length} item operations`
+              );
+            }
+
+            const drained = await withRateLimitRetry(
+              () =>
+                drainSyncOperations({
+                  client: pushClient,
+                  database: kysely,
+                  companyId: payload.companyId,
+                  integration: payload.provider,
+                  provider: pushProvider,
+                  integrationMetadata: pushIntegration.metadata
+                }),
+              `drain items push batch ${currentBatchIndex}`,
               step
             );
 
-            logger.info(
-              `Pushed ${syncResult.successCount}/${unsyncedIds.length} item entities`,
+            const successCount = drained.groups
+              .filter(
+                (g) =>
+                  g.entityType === "item" &&
+                  g.direction === "push-to-accounting"
+              )
+              .reduce((acc, g) => acc + g.result.successCount, 0);
+
+            log.info(
+              `[PUSH] Pushed ${successCount}/${unsyncedIds.length} item entities`,
               {
                 entityIds: unsyncedIds,
-                results: syncResult.results.map((r) => ({
-                  status: r.status,
-                  action: r.action,
-                  localId: r.localId,
-                  remoteId: r.remoteId,
-                  error: r.error
-                }))
+                results: drained.groups.flatMap((g) =>
+                  g.result.results.map((r) => ({
+                    status: r.status,
+                    action: r.action,
+                    localId: r.localId,
+                    remoteId: r.remoteId,
+                    error: r.error
+                  }))
+                )
               }
             );
 
             return {
-              successCount: syncResult.successCount,
-              hasMore: unsyncedIds.length >= payload.batchSize
+              successCount,
+              // Same progress guard as the customer push loop
+              hasMore:
+                unsyncedIds.length >= payload.batchSize && drained.claimed > 0
             };
           }
         );
@@ -738,8 +1093,8 @@ export const accountingBackfillFunction = inngest.createFunction(
         }
       }
     } else {
-      logger.info(
-        "Skipping items push - not enabled or direction is pull-only"
+      log.info(
+        "[PUSH] Skipping items push - not enabled or direction is pull-only"
       );
     }
 
@@ -749,8 +1104,8 @@ export const accountingBackfillFunction = inngest.createFunction(
     result.totalPushed =
       result.customers.pushed + result.vendors.pushed + result.items.pushed;
 
-    logger.info(
-      `Backfill finished. Pulled: ${result.totalPulled}, Pushed: ${result.totalPushed}`
+    log.info(
+      `[COMPLETE] Backfill finished. Pulled: ${result.totalPulled}, Pushed: ${result.totalPushed}`
     );
 
     return result;

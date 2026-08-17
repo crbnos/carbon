@@ -10,8 +10,8 @@ export const Linear = defineIntegration({
   category: "Project Management",
   logo: Logo,
   description:
-    "Linear is a project management software that allows you to create issues and track project progress seamlessly. With this integration, you can link issues from Carbon to Linear.",
-  shortDescription: "Sync issues from Carbon to Linear.",
+    "Linear is a project management software that allows you to create issues and track project progress seamlessly. With this integration, you can link issues and change notices from Carbon to Linear.",
+  shortDescription: "Sync issues and change notices from Carbon to Linear.",
   setupInstructions: SetupInstructions,
   images: [],
   settings: [

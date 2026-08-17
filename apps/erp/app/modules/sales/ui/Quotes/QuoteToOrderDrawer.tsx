@@ -29,7 +29,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { pluralize } from "@carbon/utils";
+import { INPUT_FORMAT, pluralize } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -53,7 +53,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { CustomerContact, EmailRecipients } from "~/components/Form";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
-import { useRouteData, useUser } from "~/hooks";
+import { useCurrencyDecimals, useRouteData, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { getDocumentType } from "~/modules/shared";
@@ -484,6 +484,7 @@ const LinePricingOptions = ({
   setSelectedLines
 }: LinePricingOptionsProps) => {
   const [selectedValue, setSelectedValue] = useState("");
+  const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const [showOverride, setShowOverride] = useState(false);
   const [overridePricing, setOverridePricing] = useState<SelectedLine>({
     quantity: 1,
@@ -721,10 +722,10 @@ const LinePricingOptions = ({
                         ? overridePricing.convertedNetUnitPrice
                         : overridePricing.netUnitPrice
                     }
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.rate(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(netUnitPrice) =>
                       setOverridePricing((v) => ({
                         ...v,
@@ -751,10 +752,10 @@ const LinePricingOptions = ({
                         ? overridePricing.convertedShippingCost
                         : overridePricing.shippingCost
                     }
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(shippingCost) =>
                       setOverridePricing((v) => ({
                         ...v,
@@ -781,10 +782,10 @@ const LinePricingOptions = ({
                         ? overridePricing.convertedAddOn
                         : overridePricing.addOn
                     }
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(addOn) =>
                       setOverridePricing((v) => ({
                         ...v,

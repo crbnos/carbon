@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import type { SqlFile } from "./migrations";
+import type { SourceFile } from "../check";
 
 /**
  * Server-side TypeScript that must derive calendar days through the `datetime`
@@ -111,7 +111,7 @@ export function maskClientCode(contents: string): string {
 }
 
 /** Every server-side TS file, as repo-relative { file, contents }. */
-export function loadServerFiles(root: string): SqlFile[] {
+export function loadServerFiles(root: string): SourceFile[] {
   const paths: string[] = [];
 
   for (const rel of SERVER_ROOTS) {

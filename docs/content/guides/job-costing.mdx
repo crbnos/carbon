@@ -8,7 +8,7 @@ flowName: Manufacturing accounting
 flowIndex: 3
 ---
 
-The [make-to-order tour](/guides/order) built robots. This flow follows the money those jobs spend. As a job is worked, Carbon accumulates its cost (materials consumed, plus labor, machine, and overhead time) into <Term id="wip">work-in-process</Term>, then releases that cost into finished-goods inventory when the job completes. Every figure here is grounded in real ledger postings, so it's worth being precise about what posts, when, and to which account.
+The [make-to-order tour](/guides/order) built satellites. This flow follows the money those jobs spend. As a job is worked, Carbon accumulates its cost (materials consumed, plus labor, machine, and overhead time) into <Term id="wip">work-in-process</Term>, then releases that cost into finished-goods inventory when the job completes. Every figure here is grounded in real ledger postings, so it's worth being precise about what posts, when, and to which account.
 
 ## Accounting is a switch
 
@@ -32,7 +32,7 @@ As the job runs, cost flows **into** its work-in-process. Two streams feed it.
 WIP is the sum of consumed material and the priced production events. Each event posts labor and machine at the work center's rates, and when the work center has an overhead rate, that too is absorbed into WIP alongside the time, gated on the overhead-absorption account being configured. WIP is real material plus real time, not a standard estimate.
 </Callout>
 
-<Screenshot label="Job — production events" caption="Production events on a job; each posts labor, machine, and overhead to WIP at the work center's rates as it's logged." ratio="wide" />
+<Screenshot src="/screens/job-production-events.png" label="Job — production events" caption="Production events on J000001 — setup, labor, and machine time logged against each work center — priced into WIP at that work center's rates." ratio="wide" />
 
 ## Issued or backflushed
 

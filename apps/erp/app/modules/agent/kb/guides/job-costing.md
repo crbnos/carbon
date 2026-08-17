@@ -2,7 +2,7 @@
 
 > Where a job's cost comes from, and how it piles up in work-in-process.
 
-The `guides/order` built robots. This flow follows the money those jobs spend. As a job is worked, Carbon accumulates its cost (materials consumed, plus labor, machine, and overhead time) into work-in-process, then releases that cost into finished-goods inventory when the job completes. Every figure here is grounded in real ledger postings, so it's worth being precise about what posts, when, and to which account.
+The `guides/order` built satellites. This flow follows the money those jobs spend. As a job is worked, Carbon accumulates its cost (materials consumed, plus labor, machine, and overhead time) into work-in-process, then releases that cost into finished-goods inventory when the job completes. Every figure here is grounded in real ledger postings, so it's worth being precise about what posts, when, and to which account.
 
 ## Accounting is a switch
 

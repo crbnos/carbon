@@ -188,7 +188,10 @@ const defaultDestinations: Partial<
   [NotificationEvent.Workflow]: [
     NotificationDestination.InApp,
     NotificationDestination.Email
-  ]
+  ],
+  // In-app only: the outbound sweep re-fires while failures persist, and an
+  // email per sweep cycle would be noise.
+  [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp]
 };
 
 export const notifyFunction = inngest.createFunction(

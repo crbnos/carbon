@@ -33,7 +33,7 @@ export function TeamView() {
       <div className="flex flex-col gap-3">
         {TEAM_ROLES.map((member, i) => (
           <Card key={i}>
-            <CardContent className="flex-row items-start gap-4 p-5 border-0">
+            <CardContent className="flex-row items-start gap-4 p-5">
               <span className="shrink-0 size-10 rounded-full border bg-background flex items-center justify-center">
                 <LuUser className="text-muted-foreground" />
               </span>

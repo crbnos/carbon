@@ -45,6 +45,7 @@ The flags below are the real column names from the `companySettings` row (`packa
   - **accountingEnabled**: Master switch for the ledger. When off, operations complete without posting journal entries. This is the gate the accounting flow checks before it posts anything.
   - **timeCardEnabled**: Turns on shop-floor time cards. Edited via `timeCardSettingsValidator`.
   - **consoleEnabled**: Enables the support/impersonation console. Edited via `consoleSettingsValidator`.
+  - **requireMfa**: Requires everyone to have an authenticator app before they can open this company. Edited from the **Two-Factor Authentication Enforcement** card on **Settings → System → Security**. Locked on and uneditable in controlled (ITAR) deployments. See `docs/reference/two-factor`.
   - **useMetric**: Whether material units default to metric. Edited via `materialUnitsValidator`.
   - **materialGeneratedIds**: Whether new materials get an auto-generated readable id. Edited via `materialIdsValidator`.
   - **plmReleaseControl**: The release-control policy for item revisions.

@@ -31,6 +31,9 @@ export const path = {
     accountingPeriodsGenerate: `${x}/accounting/periods/generate`,
     accountingRoot: `${x}/accounting`,
     accountingSettings: `${x}/settings/accounting`,
+    accountingSyncTieOut: `${x}/accounting/sync-tieout`,
+    accountingSyncTieOutCell: (id: string) =>
+      generatePath(`${x}/accounting/sync-tieout/${id}`),
     accountPassword: `${x}/account/password`,
     accountPersonal: `${x}/account/personal`,
     accountSecurity: `${x}/account/security`,
@@ -890,6 +893,8 @@ export const path = {
       generatePath(`${x}/resources/ability/${abilityId}/employee/${id}`),
     employeeAccount: (id: string) => generatePath(`${x}/users/employees/${id}`),
     employeeAccounts: `${x}/users/employees`,
+    employeeResetMfa: (id: string) =>
+      generatePath(`${x}/users/employees/reset-mfa/${id}`),
     employeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,
@@ -1230,6 +1235,7 @@ export const path = {
     issueTypes: `${x}/quality/issue-types`,
     issueWorkflow: (id: string) => generatePath(`${x}/issue-workflow/${id}`),
     issueWorkflows: `${x}/quality/issue-workflows`,
+    itarCertifications: `${x}/settings/itar-certifications`,
     itemCostUpdate: (id: string) => generatePath(`${x}/items/cost/${id}`),
     itemPostingGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
     itemPostingGroups: `${x}/items/groups`,
@@ -1389,6 +1395,10 @@ export const path = {
     methodOperationsOrder: `${x}/items/methods/operation/order`,
     methodOperationTool: (id: string) =>
       generatePath(`${x}/items/methods/operation/tool/${id}`),
+    mfa: "/mfa",
+    mfaEnroll: "/api/mfa/enroll",
+    mfaUnenroll: "/api/mfa/unenroll",
+    mfaVerify: "/api/mfa/verify",
     moveChartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/move/${id}`),
     newAbility: `${x}/resources/abilities/new`,
@@ -1965,6 +1975,7 @@ export const path = {
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),
     scrapReasons: `${x}/production/scrap-reasons`,
+    security: `${x}/settings/security`,
     selectCompany,
     sequences: `${x}/settings/sequences`,
     serialNumber: (id: string) =>

@@ -1,9 +1,11 @@
-import { ClientOnly } from "@carbon/react";
+import { ClientOnly, cn } from "@carbon/react";
 import type {
+  Active,
   Announcements,
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
+  Over,
   UniqueIdentifier
 } from "@dnd-kit/core";
 import {
@@ -16,15 +18,30 @@ import {
   useSensors
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext } from "@dnd-kit/sortable";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
 import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { ItemCard } from "./components/ItemCard";
 import { KanbanProvider } from "./context/KanbanContext";
+import {
+  comparePriorityThenId,
+  createDragOrigin,
+  type DragOrigin,
+  type DragPreview,
+  getColumnPlacement,
+  getItemPlacement,
+  isSamePlacement,
+  isSamePreview,
+  resolveInsertionMarker
+} from "./placement";
 import type { Column, DisplaySettings, Item, Progress } from "./types";
-import { coordinateGetter, hasDraggableData } from "./utils";
+import {
+  coordinateGetter,
+  hasDraggableData,
+  kanbanCollisionDetection
+} from "./utils";
 
 type KanbanProps = {
   columns: Column[];
@@ -34,6 +51,129 @@ type KanbanProps = {
 } & DisplaySettings;
 
 const COLUMN_ORDER_KEY = "kanban-column-order";
+
+type OperationDragOrigin = DragOrigin<Item>;
+
+type KanbanDragState = {
+  origin: OperationDragOrigin;
+  preview: DragPreview | null;
+};
+
+const KanbanDragPreviewContext = createContext<KanbanDragState | null>(null);
+
+function PreviewItemCard({
+  item,
+  isOverlay,
+  progressByItemId
+}: {
+  item: Item;
+  isOverlay?: boolean;
+  progressByItemId: Record<string, Progress>;
+}) {
+  const dragState = useContext(KanbanDragPreviewContext);
+  const preview = dragState?.preview;
+  const marker =
+    preview?.targetType === "item" && preview.columnId === item.columnId
+      ? resolveInsertionMarker(preview.slot)
+      : null;
+  const showBefore = marker?.itemId === item.id && marker.position === "before";
+  const showAfter = marker?.itemId === item.id && marker.position === "after";
+
+  return (
+    <div className="relative max-w-[330px]">
+      {(showBefore || showAfter) && (
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-2 z-20 h-0.5 rounded-full bg-primary",
+            showBefore ? "-top-1" : "-bottom-1"
+          )}
+        />
+      )}
+      <ItemCard
+        item={item}
+        isOverlay={isOverlay}
+        progressByItemId={progressByItemId}
+      />
+    </div>
+  );
+}
+
+function isOriginItemDrag(active: Active, origin: OperationDragOrigin) {
+  return (
+    hasDraggableData(active) &&
+    active.data.current?.type === "item" &&
+    String(active.id) === origin.item.id
+  );
+}
+
+function resolveDragPlacement(
+  origin: OperationDragOrigin,
+  over: Over | null,
+  items: readonly Item[],
+  itemsById: ReadonlyMap<string, Item>,
+  columnsById: ReadonlyMap<string, Column>
+): DragPreview | null {
+  if (
+    !over ||
+    over.disabled ||
+    !hasDraggableData(over) ||
+    !itemsById.has(origin.item.id)
+  ) {
+    return null;
+  }
+
+  const overId = String(over.id);
+  if (overId === origin.item.id) {
+    return { ...origin.placement, targetType: "item" };
+  }
+
+  const overData = over.data.current;
+  if (overData?.type === "item") {
+    const overItem = itemsById.get(overId);
+    if (
+      !overItem ||
+      overData.item.id !== overId ||
+      overData.item.columnId !== overItem.columnId ||
+      !columnsById.has(overItem.columnId)
+    ) {
+      return null;
+    }
+
+    const destinationColumn = columnsById.get(overItem.columnId);
+    if (!destinationColumn?.type.includes(origin.item.columnType)) {
+      return null;
+    }
+
+    const placement = getItemPlacement(
+      origin,
+      items,
+      overItem.columnId,
+      overItem.id
+    );
+    return placement ? { ...placement, targetType: "item" } : null;
+  }
+
+  if (overData?.type === "column") {
+    if (
+      overData.column.id !== overId ||
+      !columnsById.has(overId) ||
+      overId === origin.placement.columnId
+    ) {
+      return null;
+    }
+
+    const destinationColumn = columnsById.get(overId);
+    if (!destinationColumn?.type.includes(origin.item.columnType)) {
+      return null;
+    }
+
+    const placement = getColumnPlacement(origin, items, overId);
+    return placement ? { ...placement, targetType: "column" } : null;
+  }
+
+  return null;
+}
 
 const Kanban = ({
   columns,
@@ -72,18 +212,20 @@ const Kanban = ({
   const pendingItems = usePendingItems();
 
   // merge pending items and existing items
-  for (let pendingItem of pendingItems) {
-    let item = itemsById.get(pendingItem.id);
+  for (const pendingItem of pendingItems) {
+    const item = itemsById.get(pendingItem.id);
     if (item) {
       itemsById.set(pendingItem.id, { ...item, ...pendingItem });
     }
   }
 
-  const items = Array.from(itemsById.values()).sort(
-    (a, b) => a.priority - b.priority
-  );
+  const items = Array.from(itemsById.values()).sort(comparePriorityThenId);
+  const columnsById = new Map(columns.map((column) => [column.id, column]));
 
   const pickedUpItemColumn = useRef<string | null>(null);
+  const dragOriginRef = useRef<OperationDragOrigin | null>(null);
+  const dragTypeRef = useRef<"item" | "column" | null>(null);
+  const [dragState, setDragState] = useState<KanbanDragState | null>(null);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeItem, setActiveItem] = useState<Item | null>(null);
 
@@ -208,242 +350,217 @@ const Kanban = ({
       setSelectedGroup={setSelectedGroup}
       tags={tags}
     >
-      <DndContext
-        accessibility={{
-          announcements
-        }}
-        sensors={sensors}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onDragOver={onDragOver}
-      >
-        <BoardContainer>
-          <SortableContext items={columnOrder}>
-            {columnOrder.map((colId) => {
-              const col = columns.find((c) => c.id === colId);
-              if (!col) return null;
-              return (
-                <ColumnCard
-                  key={col.id}
-                  column={col}
-                  items={items.filter((item) => item.columnId === col.id)}
-                  progressByItemId={progressByItemId}
-                />
-              );
-            })}
-          </SortableContext>
-        </BoardContainer>
-
-        <ClientOnly fallback={null}>
-          {() =>
-            createPortal(
-              <DragOverlay>
-                {activeColumn && (
+      <KanbanDragPreviewContext.Provider value={dragState}>
+        <DndContext
+          accessibility={{
+            announcements
+          }}
+          sensors={sensors}
+          collisionDetection={kanbanCollisionDetection}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          onDragOver={onDragOver}
+          onDragCancel={onDragCancel}
+        >
+          <BoardContainer>
+            <SortableContext items={columnOrder}>
+              {columnOrder.map((colId) => {
+                const col = columns.find((c) => c.id === colId);
+                if (!col) return null;
+                return (
                   <ColumnCard
-                    isOverlay
-                    column={activeColumn}
-                    items={items.filter(
-                      (item) => item.columnId === activeColumn.id
-                    )}
+                    key={col.id}
+                    column={col}
+                    items={items.filter((item) => item.columnId === col.id)}
                     progressByItemId={progressByItemId}
+                    CardComponent={PreviewItemCard}
                   />
-                )}
-                {activeItem && (
-                  <ItemCard
-                    // @ts-expect-error TS2322 - TODO: fix type
-                    item={{
-                      ...activeItem,
-                      status: progressByItemId[activeItem.id]?.active
-                        ? "In Progress"
-                        : activeItem.status,
-                      employeeIds: progressByItemId[activeItem.id]?.employees
-                        ? Array.from(progressByItemId[activeItem.id].employees!)
-                        : undefined,
-                      progress: progressByItemId[activeItem.id]?.progress ?? 0
-                    }}
-                    isOverlay
-                    progressByItemId={progressByItemId}
-                  />
-                )}
-              </DragOverlay>,
-              document.body
-            )
-          }
-        </ClientOnly>
-      </DndContext>
+                );
+              })}
+            </SortableContext>
+          </BoardContainer>
+
+          <ClientOnly fallback={null}>
+            {() =>
+              createPortal(
+                <DragOverlay>
+                  {activeColumn && (
+                    <ColumnCard
+                      isOverlay
+                      column={activeColumn}
+                      items={items.filter(
+                        (item) => item.columnId === activeColumn.id
+                      )}
+                      progressByItemId={progressByItemId}
+                    />
+                  )}
+                  {activeItem && (
+                    <ItemCard
+                      // @ts-expect-error TS2322 - TODO: fix type
+                      item={{
+                        ...activeItem,
+                        status: progressByItemId[activeItem.id]?.active
+                          ? "In Progress"
+                          : activeItem.status,
+                        employeeIds: progressByItemId[activeItem.id]?.employees
+                          ? Array.from(
+                              progressByItemId[activeItem.id].employees!
+                            )
+                          : undefined,
+                        progress: progressByItemId[activeItem.id]?.progress ?? 0
+                      }}
+                      isOverlay
+                      progressByItemId={progressByItemId}
+                    />
+                  )}
+                </DragOverlay>,
+                document.body
+              )
+            }
+          </ClientOnly>
+        </DndContext>
+      </KanbanDragPreviewContext.Provider>
     </KanbanProvider>
   );
 
+  function clearDragState() {
+    pickedUpItemColumn.current = null;
+    dragOriginRef.current = null;
+    dragTypeRef.current = null;
+    setDragState(null);
+    setActiveItem(null);
+    setActiveColumn(null);
+  }
+
   function onDragStart(event: DragStartEvent) {
-    if (!hasDraggableData(event.active)) return;
+    if (!hasDraggableData(event.active)) {
+      clearDragState();
+      return;
+    }
+
     const data = event.active.data.current;
     if (data?.type === "column") {
+      clearDragState();
+      dragTypeRef.current = "column";
       setActiveColumn(data.column);
       return;
     }
 
     if (data?.type === "item") {
+      clearDragState();
+      const activeItem = itemsById.get(String(event.active.id));
+      const origin = activeItem ? createDragOrigin(items, activeItem) : null;
+
+      if (!origin) return;
+
+      dragOriginRef.current = origin;
+      dragTypeRef.current = "item";
+      pickedUpItemColumn.current = data.item.columnId;
+      setDragState({ origin, preview: null });
       setActiveItem(data.item);
-      return;
     }
   }
 
   function onDragEnd(event: DragEndEvent) {
-    setActiveColumn(null);
-    setActiveItem(null);
-
+    const origin = dragOriginRef.current;
     const { active, over } = event;
+    const activeData = hasDraggableData(active)
+      ? active.data.current
+      : undefined;
 
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (!hasDraggableData(active)) return;
-
-    const activeData = active.data.current;
-
-    if (activeId === overId) return;
-
-    const isActiveAColumn = activeData?.type === "column";
-    if (!isActiveAColumn) return;
-
-    setColumnOrder((prevOrder) => {
-      const activeColumnIndex = prevOrder.findIndex((id) => id === activeId);
-      const overColumnIndex = prevOrder.findIndex((id) => id === overId);
-
-      return arrayMove(prevOrder, activeColumnIndex, overColumnIndex);
-    });
-  }
-
-  function onDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
-
-    if (!hasDraggableData(active) || !hasDraggableData(over)) return;
-
-    const activeData = active.data.current;
-    const overData = over.data.current;
-    const overColumn =
-      overData?.type === "item"
-        ? columns.find((col) => col.id === overData.item.columnId)
-        : overData?.column;
-
-    const isActiveAnItem = activeData?.type === "item";
-    const isOverAnItem = overData?.type === "item";
-
-    const activeItem = itemsById.get(activeId.toString());
-    const overItem = itemsById.get(overId.toString());
-
-    if (!isActiveAnItem) return;
-
-    // only allow drop if column type array includes item's column type
-    if (!overColumn?.type.includes(activeData?.item.columnType)) return;
-
-    // Im dropping a Item over another Item
-    if (isActiveAnItem && isOverAnItem && activeItem && overItem) {
-      let priorityBefore = 0;
-      let priorityAfter = 0;
-      if (
-        activeItem.priority > overItem.priority ||
-        activeItem.columnId !== overItem.columnId
-      ) {
-        priorityAfter = overItem.priority;
-
-        for (let i = items.length - 1; i >= 0; i--) {
-          const item = items[i];
-          if (
-            item.columnId === overItem.columnId &&
-            item.priority < priorityAfter
-          ) {
-            priorityBefore = item.priority ?? 0;
-            break;
-          }
-        }
-      } else {
-        priorityBefore = overItem.priority;
-        priorityAfter =
-          items.find(
-            (item) =>
-              item.columnId === overItem.columnId &&
-              item.priority > priorityBefore
-          )?.priority ?? priorityBefore + 1;
-      }
-
-      const newPriority = (priorityBefore + priorityAfter) / 2;
-
-      if (activeItem.columnId !== overItem.columnId) {
-        submit(
-          {
-            id: activeItem.id,
-            columnId: overItem.columnId,
-            priority: newPriority
-          },
-          {
-            method: "post",
-            action: path.to.scheduleOperationUpdate,
-            navigate: false,
-            fetcherKey: `item:${activeItem.id}`
-          }
-        );
-        return;
-      }
-
-      if (activeItem && overItem) {
-        submit(
-          {
-            id: activeItem.id,
-            columnId: activeItem.columnId,
-            priority: newPriority
-          },
-          {
-            method: "post",
-            action: path.to.scheduleOperationUpdate,
-            navigate: false,
-            fetcherKey: `item:${activeItem.id}`
-          }
-        );
-      }
+    if (
+      !dragTypeRef.current ||
+      !hasDraggableData(active) ||
+      !over ||
+      !hasDraggableData(over)
+    ) {
+      clearDragState();
       return;
     }
 
-    const isOverAColumn = overData?.type === "column";
-
-    // Im dropping a Item over a column
-    if (isActiveAnItem && isOverAColumn) {
-      const activeItem = itemsById.get(activeId.toString());
-      const columnId = overId as string;
-
-      if (activeItem) {
-        const firstItemInColumn = items.find(
-          (item) => item.columnId === columnId
+    if (
+      dragTypeRef.current === "column" &&
+      activeData?.type === "column" &&
+      over.data.current?.type === "column"
+    ) {
+      const activeId = active.id;
+      const overId = over.id;
+      if (activeId !== overId) {
+        const activeColumnIndex = columnOrder.findIndex(
+          (id) => id === activeId
         );
-        const priorityBefore = 0;
-        const priorityAfter = firstItemInColumn?.priority ?? 1;
+        const overColumnIndex = columnOrder.findIndex((id) => id === overId);
 
-        const newPriority = (priorityBefore + priorityAfter) / 2;
+        if (activeColumnIndex >= 0 && overColumnIndex >= 0) {
+          setColumnOrder(
+            arrayMove(columnOrder, activeColumnIndex, overColumnIndex)
+          );
+        }
+      }
+      clearDragState();
+      return;
+    }
 
+    if (
+      dragTypeRef.current === "item" &&
+      activeData?.type === "item" &&
+      origin &&
+      isOriginItemDrag(active, origin)
+    ) {
+      const placement = resolveDragPlacement(
+        origin,
+        over,
+        items,
+        itemsById,
+        columnsById
+      );
+
+      if (placement && !isSamePlacement(origin.placement, placement)) {
         submit(
           {
-            id: activeItem.id,
-            columnId,
-            priority: newPriority
+            id: origin.item.id,
+            columnId: placement.columnId,
+            priority: placement.priority
           },
           {
             method: "post",
             action: path.to.scheduleOperationUpdate,
             navigate: false,
-            fetcherKey: `item:${activeItem.id}`
+            flushSync: true,
+            fetcherKey: `item:${origin.item.id}`
           }
         );
       }
     }
+
+    clearDragState();
+  }
+
+  function onDragOver(event: DragOverEvent) {
+    const origin = dragOriginRef.current;
+    if (!origin || !isOriginItemDrag(event.active, origin)) return;
+
+    const placement = resolveDragPlacement(
+      origin,
+      event.over,
+      items,
+      itemsById,
+      columnsById
+    );
+    const preview =
+      placement && !isSamePlacement(origin.placement, placement)
+        ? placement
+        : null;
+
+    setDragState((current) =>
+      current?.origin === origin && isSamePreview(current.preview, preview)
+        ? current
+        : { origin, preview }
+    );
+  }
+
+  function onDragCancel() {
+    clearDragState();
   }
 };
 

@@ -1,4 +1,8 @@
-import { insertId, maybeOne, need, nextSequence } from "../sql.ts";
+import {
+  copyMethodToJob,
+  type JobOperationStatus
+} from "../helpers/job-method.ts";
+import { insertId, insertRow, need, nextSequence, rows } from "../sql.ts";
 import type { Ctx } from "../types.ts";
 
 // Every non-deprecated jobStatus, each one hanging off a real salesOrderLine, so
@@ -114,14 +118,28 @@ const JOBS: JobSpec[] = [
   }
 ];
 
-export async function runTier6(ctx: Ctx): Promise<void> {
-  const { client, locationId } = ctx;
-  const plantId = ctx.refs.locations.Plant ?? locationId;
+// A job's operations open in the state its own status implies — a Draft job's
+// work has not been handed to the floor, a released one's has.
+function operationStatusFor(jobStatus: string): JobOperationStatus {
+  switch (jobStatus) {
+    case "Draft":
+    case "Planned":
+      return "Todo";
+    case "Completed":
+    case "Closed":
+      return "Done";
+    case "Cancelled":
+      return "Canceled";
+    case "Paused":
+      return "Paused";
+    default:
+      return "Ready";
+  }
+}
 
-  const procAssembly = ctx.refs.processes["Mechanical Assembly"];
-  const procTest = ctx.refs.processes["System Test"];
-  const wcFab = ctx.refs.workCenters["Fabrication Bay"];
-  const wcClean = ctx.refs.workCenters["Clean Room"];
+export async function runTier6(ctx: Ctx): Promise<void> {
+  const { locationId } = ctx;
+  const plantId = ctx.refs.locations.Plant ?? locationId;
 
   for (const spec of JOBS) {
     ctx.log(`job ${spec.item} — ${spec.status}`);
@@ -145,37 +163,238 @@ export async function runTier6(ctx: Ctx): Promise<void> {
       completedDate: spec.completedDate ?? null
     });
     ctx.refs.documents[`job:${spec.key}`] = id;
+
+    // The interceptor gives the job a bare root jobMakeMethod; this is what
+    // fills it in, and it is the whole reason the job pages, the method
+    // explorer and the MES board have anything to show.
+    const copied = await copyMethodToJob(
+      ctx,
+      id,
+      spec.quantity,
+      operationStatusFor(spec.status)
+    );
+    ctx.log(
+      `  method: ${copied.operations} operations, ${copied.materials} materials, ${copied.levels} levels`
+    );
+
+    // The interceptor's reserved entity for the unit being built has no
+    // readableId, so the MES assembly view labels the first serial with a raw
+    // id. Name it after the job.
+    await ctx.client.query(
+      `UPDATE "trackedEntity" te SET "readableId" = $3
+       FROM "jobMakeMethod" jmm
+       WHERE jmm.id = te.attributes->>'Job Make Method'
+         AND jmm."jobId" = $1 AND jmm."parentMaterialId" IS NULL
+         AND te."companyId" = $2 AND te."readableId" IS NULL`,
+      [id, ctx.companyId, `${jobId}-01`]
+    );
   }
 
-  // Operations on the in-progress job, adopting its auto-created jobMakeMethod.
-  const inProgressJob = need(ctx.refs.documents, "job:in-progress");
-  const jmm1 = await maybeOne<{ id: string }>(
-    client,
-    `SELECT id FROM "jobMakeMethod" WHERE "jobId" = $1 AND "parentMaterialId" IS NULL LIMIT 1`,
-    [inProgressJob]
+  await seedProductionEvents(ctx);
+  await seedGenealogy(ctx);
+}
+
+/**
+ * Logged time on the in-progress job. Without these the job's Events tab and
+ * every WIP cost the docs describe are empty, because cost is posted per
+ * production event at the work center's rates.
+ */
+async function seedProductionEvents(ctx: Ctx): Promise<void> {
+  const jobId = need(ctx.refs.documents, "job:in-progress");
+
+  const operations = await rows<{
+    id: string;
+    workCenterId: string | null;
+    order: number;
+  }>(
+    ctx.client,
+    `SELECT jo.id, jo."workCenterId", jo."order"
+     FROM "jobOperation" jo
+     JOIN "jobMakeMethod" jmm ON jmm.id = jo."jobMakeMethodId"
+     WHERE jo."jobId" = $1 AND jmm."parentMaterialId" IS NULL
+       AND jo."companyId" = $2
+     ORDER BY jo."order"
+     LIMIT 2`,
+    [jobId, ctx.companyId]
   );
-  if (jmm1 && procAssembly && wcFab) {
-    await insertId(ctx, "jobOperation", {
-      jobId: inProgressJob,
-      jobMakeMethodId: jmm1.id,
-      order: 1,
-      processId: procAssembly,
-      workCenterId: wcFab,
-      description: "Structural Integration",
-      setupTime: 2,
-      laborTime: 16,
-      status: "In Progress"
+  if (operations.length === 0) return;
+
+  // Literal start/end pairs — the seed must produce identical rows on every run,
+  // and this repo does not use JS Date for time arithmetic.
+  const shifts: Array<Array<{ type: string; start: string; end: string }>> = [
+    [
+      {
+        type: "Setup",
+        start: "2026-08-04T13:00:00Z",
+        end: "2026-08-04T13:45:00Z"
+      },
+      {
+        type: "Labor",
+        start: "2026-08-04T13:45:00Z",
+        end: "2026-08-04T17:45:00Z"
+      },
+      {
+        type: "Machine",
+        start: "2026-08-04T13:45:00Z",
+        end: "2026-08-04T17:45:00Z"
+      }
+    ],
+    [
+      {
+        type: "Setup",
+        start: "2026-08-05T13:00:00Z",
+        end: "2026-08-05T13:20:00Z"
+      },
+      {
+        type: "Labor",
+        start: "2026-08-05T13:20:00Z",
+        end: "2026-08-05T16:20:00Z"
+      },
+      {
+        type: "Machine",
+        start: "2026-08-05T13:20:00Z",
+        end: "2026-08-05T16:20:00Z"
+      }
+    ]
+  ];
+
+  ctx.log("production events");
+  for (const [index, operation] of operations.entries()) {
+    const events = shifts[index] ?? shifts[0]!;
+
+    for (const event of events) {
+      await insertRow(ctx, "productionEvent", {
+        jobOperationId: operation.id,
+        type: event.type,
+        startTime: event.start,
+        // `duration` is a generated column — Postgres derives it from the range.
+        endTime: event.end,
+        employeeId: ctx.userId,
+        workCenterId: operation.workCenterId,
+        postedToGL: false
+      });
+    }
+
+    await insertId(ctx, "productionQuantity", {
+      jobOperationId: operation.id,
+      type: "Production",
+      quantity: 1
     });
-    await insertId(ctx, "jobOperation", {
-      jobId: inProgressJob,
-      jobMakeMethodId: jmm1.id,
-      order: 2,
-      processId: procTest,
-      workCenterId: wcClean ?? wcFab,
-      description: "Functional Test",
-      setupTime: 1,
-      laborTime: 8,
-      status: "Todo"
+  }
+}
+
+// Tracked components consumed into the first satellite. Item, lot/serial id,
+// and how many of that lot went in.
+const GENEALOGY_INPUTS: Array<{
+  item: string;
+  readableId: string;
+  quantity: number;
+}> = [
+  { item: "MAT-AL7075-PLT", readableId: "LOT-AL7075-2607", quantity: 4.5 },
+  { item: "BAT-LIION-48V", readableId: "LOT-BAT-2606", quantity: 1 },
+  { item: "RW-010", readableId: "RW010-SN-0041", quantity: 1 },
+  { item: "RW-010", readableId: "RW010-SN-0042", quantity: 1 },
+  { item: "RW-010", readableId: "RW010-SN-0043", quantity: 1 },
+  { item: "RW-010", readableId: "RW010-SN-0044", quantity: 1 }
+];
+
+/**
+ * As-built genealogy for the first satellite off the in-progress job.
+ *
+ * The traceability graph is drawn from activities, not from entities: each
+ * consumed component is the INPUT of a Consume activity whose OUTPUT is the
+ * parent being built. Seeding entities alone leaves the graph empty, which is
+ * what it was.
+ */
+async function seedGenealogy(ctx: Ctx): Promise<void> {
+  const jobId = need(ctx.refs.documents, "job:in-progress");
+  const satellite = ctx.refs.items["SAT-1000"];
+  if (!satellite) return;
+
+  const assemblyOperation = await rows<{ id: string }>(
+    ctx.client,
+    `SELECT jo.id
+     FROM "jobOperation" jo
+     JOIN "jobMakeMethod" jmm ON jmm.id = jo."jobMakeMethodId"
+     WHERE jo."jobId" = $1 AND jmm."parentMaterialId" IS NULL
+       AND jo."companyId" = $2
+     ORDER BY jo."order"
+     LIMIT 1`,
+    [jobId, ctx.companyId]
+  );
+  const operationId = assemblyOperation[0]?.id;
+  if (!operationId) return;
+
+  ctx.log("as-built genealogy");
+
+  const serialId = await insertId(ctx, "trackedEntity", {
+    quantity: 1,
+    status: "Available",
+    sourceDocument: "Job",
+    sourceDocumentId: jobId,
+    sourceDocumentReadableId: "SAT-1000",
+    readableId: "SAT1000-SN-0001",
+    itemId: satellite.id,
+    attributes: JSON.stringify({ Job: jobId }),
+    updatedBy: ctx.userId
+  });
+  ctx.refs.documents["trackedEntity:sat-0001"] = serialId;
+
+  // The unit exists because the operation produced it.
+  const produceId = await insertId(ctx, "trackedActivity", {
+    type: "Produce",
+    sourceDocument: "Job Operation",
+    sourceDocumentId: operationId,
+    sourceDocumentReadableId: "SAT-1000",
+    attributes: JSON.stringify({
+      "Job Operation": operationId,
+      Employee: ctx.userId,
+      Quantity: 1
+    }),
+    updatedBy: ctx.userId
+  });
+  await insertRow(ctx, "trackedActivityOutput", {
+    trackedActivityId: produceId,
+    trackedEntityId: serialId,
+    quantity: 1,
+    updatedBy: ctx.userId
+  });
+
+  for (const input of GENEALOGY_INPUTS) {
+    const item = ctx.refs.items[input.item];
+    if (!item) continue;
+
+    const childId = await insertId(ctx, "trackedEntity", {
+      quantity: input.quantity,
+      status: "Consumed",
+      sourceDocument: "Item",
+      sourceDocumentId: item.id,
+      sourceDocumentReadableId: item.readableId,
+      readableId: input.readableId,
+      itemId: item.id,
+      attributes: JSON.stringify({ Job: jobId }),
+      updatedBy: ctx.userId
+    });
+
+    const consumeId = await insertId(ctx, "trackedActivity", {
+      type: "Consume",
+      sourceDocument: "Job Material",
+      sourceDocumentId: jobId,
+      sourceDocumentReadableId: item.readableId,
+      attributes: JSON.stringify({ Job: jobId, Employee: ctx.userId }),
+      updatedBy: ctx.userId
+    });
+    await insertRow(ctx, "trackedActivityInput", {
+      trackedActivityId: consumeId,
+      trackedEntityId: childId,
+      quantity: input.quantity,
+      updatedBy: ctx.userId
+    });
+    await insertRow(ctx, "trackedActivityOutput", {
+      trackedActivityId: consumeId,
+      trackedEntityId: serialId,
+      quantity: 1,
+      updatedBy: ctx.userId
     });
   }
 }

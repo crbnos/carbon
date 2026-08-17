@@ -1013,7 +1013,7 @@ export const changeNoticeType = [
   "Documentation"
 ] as const;
 
-// V1 stage flow (forward, one step at a time). Broadcast on Start /
+// V1 stage flow (forward, one step at a time). Notifies on Start /
 // Implementation / Done; silent on Draft / Engineering Complete. "Cancelled" is
 // the off-ramp: a CO can be closed from any open stage and reopened to Draft.
 export const changeNoticeStatus = [
@@ -1099,9 +1099,12 @@ export function isAllowedChangeNoticeTransition(
   return (allowed as readonly string[]).includes(to);
 }
 
-// The stages that broadcast a team notification on entry.
-export const changeNoticeBroadcastStages: (typeof changeNoticeStatus)[number][] =
-  ["Start", "Implementation", "Done"];
+// The stages that notify the CO assignee + action-task assignees on entry.
+export const changeNoticeNotifyStages: (typeof changeNoticeStatus)[number][] = [
+  "Start",
+  "Implementation",
+  "Done"
+];
 
 // "Open" = every stage before the record is closed at Done. Used by the item
 // open-CO alert and the single-open-CO guard.

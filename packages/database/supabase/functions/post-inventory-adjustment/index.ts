@@ -13,6 +13,7 @@ import type { Json } from "../lib/types.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
+import { round } from "../shared/precision.ts";
 import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost.ts";
 
 const pool = getConnectionPool(1);
@@ -480,6 +481,7 @@ serve(async (req: Request) => {
                 split.ledgerInserts.map((ledgerRow) => ({
                   ...ledgerRow,
                   itemId: ledgerRow.itemId ?? itemId,
+                  quantity: round(ledgerRow.quantity),
                 }))
               )
               .execute();

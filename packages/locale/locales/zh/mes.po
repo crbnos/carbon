@@ -422,6 +422,9 @@ msgstr "结束工序"
 msgid "Enter PIN for {0}"
 msgstr "输入 {0} 的 PIN 码"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "输入您的身份验证器应用中的6位代码"
+
 msgid "Error"
 msgstr "错误"
 
@@ -1224,6 +1227,9 @@ msgstr "设置下班时间"
 msgid "Set clock-out time"
 msgstr "设置下班打卡时间"
 
+msgid "Set up in Carbon"
+msgstr "在 Carbon 中设置"
+
 msgid "Setup"
 msgstr "设置"
 
@@ -1247,6 +1253,9 @@ msgstr "使用 Outlook 登录"
 
 msgid "Sign in with Passkey"
 msgstr "使用密钥登录"
+
+msgid "Sign out"
+msgstr "登出"
 
 msgid "Sign Out"
 msgstr "退出登录"
@@ -1375,6 +1384,12 @@ msgstr "跟踪实体"
 msgid "Tracking"
 msgstr "追踪"
 
+msgid "Two-factor authentication"
+msgstr "双因素认证"
+
+msgid "Two-factor authentication required"
+msgstr "需要双因素认证"
+
 msgid "Type a message..."
 msgstr "输入消息..."
 
@@ -1425,6 +1440,12 @@ msgstr "已上传：{0}"
 msgid "Uploading {0}"
 msgstr "正在上传 {0}"
 
+msgid "Use a different account"
+msgstr "使用不同的帐户"
+
+msgid "Verify"
+msgstr "验证"
+
 msgid "View maintenance dispatch"
 msgstr "查看维护工单"
 
@@ -1451,3 +1472,6 @@ msgstr "您在 <0/> 打卡。您可以编辑下方的下班时间，或确认您
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班了？"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"

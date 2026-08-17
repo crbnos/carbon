@@ -15,6 +15,10 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr " A supplier is a business or person who sells you parts or services."
 
+#. placeholder {0}: formatDateTime(lastReconciliation.runAt)
+msgid "— last checked {0}"
+msgstr "— last checked {0}"
+
 msgid ", {residual}% residual"
 msgstr ", {residual}% residual"
 
@@ -56,6 +60,10 @@ msgstr "{0} accounts"
 msgid "{0} ago"
 msgstr "{0} ago"
 
+#. placeholder {0}: tieOut.deltaCellCount
+msgid "{0} cells with deltas"
+msgstr "{0} cells with deltas"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} customers with a balance"
@@ -81,6 +89,15 @@ msgstr "{0} jobs created"
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
 
+#. placeholder {0}: mappingReadiness.mapped
+#. placeholder {1}: mappingReadiness.required
+msgid "{0} of {1} posting accounts mapped"
+msgstr "{0} of {1} posting accounts mapped"
+
+#. placeholder {0}: rows.length
+msgid "{0} of {maxSlots} provider slots used"
+msgstr "{0} of {maxSlots} provider slots used"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} orders"
@@ -101,6 +118,11 @@ msgstr "{0} suppliers with a balance"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 
+#. placeholder {0}: unmapped.length
+#. placeholder {1}: chart.length
+msgid "{0} unmapped accounts will be matched against {1} provider accounts."
+msgstr "{0} unmapped accounts will be matched against {1} provider accounts."
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} unposted documents"
 msgstr "{0} unposted documents"
@@ -108,6 +130,11 @@ msgstr "{0} unposted documents"
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} uploaded successfully"
+
+#. placeholder {0}: dimension.valueCount
+#. placeholder {0}: selectedDimension?.valueCount
+msgid "{0} values"
+msgstr "{0} values"
 
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
@@ -134,6 +161,9 @@ msgstr "{done} of {total} phases complete"
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} of {count}"
 
+msgid "{from}–{to} of {count} operations"
+msgstr "{from}–{to} of {count} operations"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -144,6 +174,15 @@ msgstr "{linesCount, plural, one {# line} other {# lines}}"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
+
+msgid "{mismatchCount} months with mismatched totals"
+msgstr "{mismatchCount} months with mismatched totals"
+
+msgid "{missingCount} journals missing in the provider"
+msgstr "{missingCount} journals missing in the provider"
+
+msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
+msgstr "{missingCount} missing journals and {mismatchCount} mismatched months"
 
 msgid "{name} deleted"
 msgstr "{name} deleted"
@@ -197,6 +236,9 @@ msgstr "↩ {0} redirected from superseded {1}"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Add a supplier part</0> for this item to set a preferred supplier."
+
+msgid "0 operations"
+msgstr "0 operations"
 
 msgid "0-4 weeks"
 msgstr "0-4 weeks"
@@ -782,6 +824,10 @@ msgstr "Acceptance"
 msgid "Acceptance passed"
 msgstr "Acceptance passed"
 
+#. placeholder {0}: formatDate(certification.certifiedAt)
+msgid "Accepted {0}"
+msgstr "Accepted {0}"
+
 msgid "Account"
 msgstr "Account"
 
@@ -811,6 +857,9 @@ msgstr "Account manager"
 
 msgid "Account Manager"
 msgstr "Account Manager"
+
+msgid "Account Mapping"
+msgstr "Account Mapping"
 
 msgid "Account Number"
 msgstr "Account Number"
@@ -868,6 +917,9 @@ msgstr "Accounts Receivable"
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Accounts receivable for amounts owed by customers"
+
+msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
+msgstr "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
 
 msgid "Accumulated Depreciation"
 msgstr "Accumulated Depreciation"
@@ -1127,6 +1179,9 @@ msgstr "Add Shipment"
 msgid "Add Shipping"
 msgstr "Add Shipping"
 
+msgid "Add slot"
+msgstr "Add slot"
+
 msgid "Add Spare Part"
 msgstr "Add Spare Part"
 
@@ -1218,6 +1273,9 @@ msgstr "Agree on the scope"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Agree who owns what and set a working rhythm"
 
+msgid "AI couldn't confidently match any accounts"
+msgstr "AI couldn't confidently match any accounts"
+
 msgid "AI Tokens"
 msgstr "AI Tokens"
 
@@ -1226,6 +1284,10 @@ msgstr "Align on scope"
 
 msgid "All"
 msgstr "All"
+
+#. placeholder {0}: tieOut.cellCount
+msgid "All {0} cells tie out"
+msgstr "All {0} cells tie out"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "All {total} phases are done. Nice work — your team is up and running."
@@ -1263,8 +1325,14 @@ msgstr "All Locations"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "All members of selected groups and selected individuals will be able to approve requests"
 
+msgid "All posting accounts are mapped"
+msgstr "All posting accounts are mapped"
+
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "All rows imported — {inserted} inserted, {updated} updated."
+
+msgid "All slotted dimension values are mapped"
+msgstr "All slotted dimension values are mapped"
 
 msgid "All Suppliers"
 msgstr "All Suppliers"
@@ -1463,6 +1531,9 @@ msgstr "Any item type"
 msgid "Anything not explicitly listed in scope above"
 msgstr "Anything not explicitly listed in scope above"
 
+msgid "AP"
+msgstr "AP"
+
 msgid "AP Aging"
 msgstr "AP Aging"
 
@@ -1539,6 +1610,9 @@ msgstr "Apply pricing rules"
 msgid "Apply Rules On Top"
 msgstr "Apply Rules On Top"
 
+msgid "Apply suggestions"
+msgstr "Apply suggestions"
+
 msgid "Apply To"
 msgstr "Apply To"
 
@@ -1581,6 +1655,12 @@ msgstr "AQL"
 msgid "AQL (Z1.4 / ISO 2859-1)"
 msgstr "AQL (Z1.4 / ISO 2859-1)"
 
+msgid "AR"
+msgstr "AR"
+
+msgid "AR / AP representation"
+msgstr "AR / AP representation"
+
 msgid "AR Aging"
 msgstr "AR Aging"
 
@@ -1592,6 +1672,9 @@ msgstr "AR Outstanding"
 
 msgid "AR Overdue"
 msgstr "AR Overdue"
+
+msgid "AR/AP"
+msgstr "AR/AP"
 
 msgid "Archive"
 msgstr "Archive"
@@ -2145,6 +2228,9 @@ msgstr "Attachment"
 msgid "Attachments"
 msgstr "Attachments"
 
+msgid "Attempts"
+msgstr "Attempts"
+
 msgid "Attribute"
 msgstr "Attribute"
 
@@ -2178,6 +2264,9 @@ msgstr "Audit Logs"
 msgid "Authentication Error"
 msgstr "Authentication Error"
 
+msgid "Authenticator QR code"
+msgstr "Authenticator QR code"
+
 msgid "Auto apply"
 msgstr "Auto apply"
 
@@ -2192,6 +2281,9 @@ msgstr "Auto release must be enabled to start a job automatically"
 
 msgid "Auto Start Job"
 msgstr "Auto Start Job"
+
+msgid "Auto-create"
+msgstr "Auto-create"
 
 msgid "Auto-generated QR Code"
 msgstr "Auto-generated QR Code"
@@ -2439,6 +2531,9 @@ msgstr "Book a call with Carbon"
 msgid "Book Depreciation"
 msgstr "Book Depreciation"
 
+msgid "Books lock date (manual)"
+msgstr "Books lock date (manual)"
+
 msgid "Both"
 msgstr "Both"
 
@@ -2673,6 +2768,9 @@ msgstr "Carbon"
 msgid "Carbon + you"
 msgstr "Carbon + you"
 
+msgid "Carbon account"
+msgstr "Carbon account"
+
 msgid "Carbon client is not available"
 msgstr "Carbon client is not available"
 
@@ -2697,8 +2795,18 @@ msgstr "Carbon Logo"
 msgid "Carbon only"
 msgstr "Carbon only"
 
+msgid "Carbon Posted"
+msgstr "Carbon Posted"
+
+msgid "Carbon value"
+msgstr "Carbon value"
+
 msgid "Carbon Value"
 msgstr "Carbon Value"
+
+#. placeholder {0}: unmapped.length
+msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
+msgstr "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
 
 msgid "Carbon-only"
 msgstr "Carbon-only"
@@ -2754,11 +2862,17 @@ msgstr "CC"
 msgid "Centralized Billing Address"
 msgstr "Centralized Billing Address"
 
+msgid "Cert Version"
+msgstr "Cert Version"
+
 msgid "Certificate Number"
 msgstr "Certificate Number"
 
 msgid "Certificate uploaded"
 msgstr "Certificate uploaded"
+
+msgid "Certified"
+msgstr "Certified"
 
 msgid "Chain"
 msgstr "Chain"
@@ -3111,6 +3225,13 @@ msgstr "Completion Barcode"
 msgid "Completion Time"
 msgstr "Completion Time"
 
+#. placeholder {0}: formatRelativeTime(tieOut.computedAt)
+msgid "computed {0}"
+msgstr "computed {0}"
+
+msgid "Computed At"
+msgstr "Computed At"
+
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Condensed P&L with margins and key subtotals"
 
@@ -3207,6 +3328,9 @@ msgstr "Confirm {0}"
 
 msgid "Confirm & release"
 msgstr "Confirm & release"
+
+msgid "Confirm all"
+msgstr "Confirm all"
 
 msgid "Confirm and sign the scope"
 msgstr "Confirm and sign the scope"
@@ -3659,6 +3783,9 @@ msgstr "Couldn't load documents"
 
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
+
+msgid "Couldn't load the provider's dimension targets — check the connection and reload."
+msgstr "Couldn't load the provider's dimension targets — check the connection and reload."
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Couldn't reschedule the job. Please try again."
@@ -4211,6 +4338,9 @@ msgstr "Daily"
 
 msgid "Daily check-ins while your team finds its feet on the live system"
 msgstr "Daily check-ins while your team finds its feet on the live system"
+
+msgid "Daily summary"
+msgstr "Daily summary"
 
 msgid "Daily Usage"
 msgstr "Daily Usage"
@@ -4928,6 +5058,12 @@ msgstr "dimension"
 msgid "Dimension"
 msgstr "Dimension"
 
+msgid "Dimension slots"
+msgstr "Dimension slots"
+
+msgid "Dimension values on posted journals that have no provider mapping yet."
+msgstr "Dimension values on posted journals that have no provider mapping yet."
+
 msgid "dimensions"
 msgstr "dimensions"
 
@@ -5028,6 +5164,9 @@ msgstr "Dispositions"
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 
+msgid "Doc-Backed"
+msgstr "Doc-Backed"
+
 msgid "Docs"
 msgstr "Docs"
 
@@ -5051,6 +5190,9 @@ msgstr "Document:"
 
 msgid "Documents"
 msgstr "Documents"
+
+msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
+msgstr "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 
 msgid "Don't Cancel"
 msgstr "Don't Cancel"
@@ -5767,6 +5909,9 @@ msgstr "Enter PO number"
 msgid "Enter text…"
 msgstr "Enter text…"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Enter the 6-digit code from your authenticator app"
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 
@@ -5787,6 +5932,15 @@ msgstr "Entities to split off"
 
 msgid "Entity"
 msgstr "Entity"
+
+msgid "Entity certification: Accepted"
+msgstr "Entity certification: Accepted"
+
+msgid "Entity certification: Expired"
+msgstr "Entity certification: Expired"
+
+msgid "Entity certification: Pending"
+msgstr "Entity certification: Pending"
 
 msgid "Entity Type"
 msgstr "Entity Type"
@@ -5968,6 +6122,12 @@ msgstr "Exemption Certificate"
 msgid "Exemption Reason"
 msgstr "Exemption Reason"
 
+msgid "Existing mappings. Pick a different provider account to re-map."
+msgstr "Existing mappings. Pick a different provider account to re-map."
+
+msgid "Existing mappings. Pick a different provider option to re-map."
+msgstr "Existing mappings. Pick a different provider option to re-map."
+
 msgid "Existing Stripe customer"
 msgstr "Existing Stripe customer"
 
@@ -6054,6 +6214,7 @@ msgid "Expired"
 msgstr "Expired"
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(expiresAt)
 msgid "Expired {0}"
 msgstr "Expired {0}"
 
@@ -6065,6 +6226,10 @@ msgstr "Expired Batches"
 
 msgid "Expires"
 msgstr "Expires"
+
+#. placeholder {0}: formatDate(expiresAt)
+msgid "Expires {0}"
+msgstr "Expires {0}"
 
 msgid "Expires <0/>"
 msgstr "Expires <0/>"
@@ -6102,8 +6267,14 @@ msgstr "Extended Price"
 msgid "External"
 msgstr "External"
 
+msgid "External Delta"
+msgstr "External Delta"
+
 msgid "External document"
 msgstr "External document"
+
+msgid "External ID"
+msgstr "External ID"
 
 msgid "External link"
 msgstr "External link"
@@ -6821,6 +6992,9 @@ msgstr "Generated IDs are disabled"
 msgid "Generated IDs are enabled"
 msgstr "Generated IDs are enabled"
 
+msgid "Generating suggestions…"
+msgstr "Generating suggestions…"
+
 msgid "Get live on Carbon: one system running quoting, purchasing, the shop floor, inventory, and finance, replacing the current tools."
 msgstr "Get live on Carbon: one system running quoting, purchasing, the shop floor, inventory, and finance, replacing the current tools."
 
@@ -7104,6 +7278,9 @@ msgstr "Historical Rate (Equity)"
 msgid "History"
 msgstr "History"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "Hold the journal as a warning to fix."
+
 msgid "Holiday"
 msgstr "Holiday"
 
@@ -7257,6 +7434,9 @@ msgstr "Hypercare: intense support for the first weeks"
 msgid "I (reduced)"
 msgstr "I (reduced)"
 
+msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+msgstr "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
+
 msgid "I'm Still Working"
 msgstr "I'm Still Working"
 
@@ -7268,6 +7448,9 @@ msgstr "ID"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideas, suggestions or problems?"
+
+msgid "Idempotency key"
+msgstr "Idempotency key"
 
 msgid "Identifiers"
 msgstr "Identifiers"
@@ -7537,6 +7720,9 @@ msgstr "Instructions"
 msgid "Instructions are inherited from the procedure."
 msgstr "Instructions are inherited from the procedure."
 
+msgid "Integration"
+msgstr "Integration"
+
 msgid "Integration not found"
 msgstr "Integration not found"
 
@@ -7572,6 +7758,9 @@ msgstr "Interest income or expense from banking activities"
 
 msgid "Internal"
 msgstr "Internal"
+
+msgid "Internal Delta"
+msgstr "Internal Delta"
 
 msgid "Internal notes"
 msgstr "Internal notes"
@@ -7644,6 +7833,9 @@ msgstr "Inventory Valuation"
 
 msgid "Invite"
 msgstr "Invite"
+
+msgid "Invite Expired"
+msgstr "Invite Expired"
 
 msgid "Invited"
 msgstr "Invited"
@@ -7804,6 +7996,9 @@ msgstr "Issued Date"
 msgid "Issues"
 msgstr "Issues"
 
+msgid "ITAR Certifications"
+msgstr "ITAR Certifications"
+
 msgid "item"
 msgstr "item"
 
@@ -7949,6 +8144,9 @@ msgstr "Journal entries dated in this period that are still Draft must be posted
 msgid "Journal Entry"
 msgstr "Journal Entry"
 
+msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
+msgstr "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
+
 msgid "Just one"
 msgstr "Just one"
 
@@ -7981,6 +8179,9 @@ msgstr "Keep Open"
 
 msgid "Keep picking"
 msgstr "Keep picking"
+
+msgid "Keeps orders, quotes, and settings behind a second check"
+msgstr "Keeps orders, quotes, and settings behind a second check"
 
 msgid "Key"
 msgstr "Key"
@@ -8049,6 +8250,12 @@ msgstr "Language"
 msgid "Last 6 Months"
 msgstr "Last 6 Months"
 
+msgid "Last attempt"
+msgstr "Last attempt"
+
+msgid "Last Attempt"
+msgstr "Last Attempt"
+
 msgid "Last Calibration"
 msgstr "Last Calibration"
 
@@ -8060,6 +8267,9 @@ msgstr "Last day"
 
 msgid "Last Fiscal Year"
 msgstr "Last Fiscal Year"
+
+msgid "Last Login"
+msgstr "Last Login"
 
 msgid "Last Month"
 msgstr "Last Month"
@@ -8540,6 +8750,12 @@ msgstr "Manufacturer Part Number"
 msgid "Manufacturing"
 msgstr "Manufacturing"
 
+msgid "Map accounts"
+msgstr "Map accounts"
+
+msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
+msgstr "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
+
 msgid "Map Extracted Invoice Lines"
 msgstr "Map Extracted Invoice Lines"
 
@@ -8551,6 +8767,12 @@ msgstr "Map Lines Now"
 
 msgid "Map your current process, systems, and data"
 msgstr "Map your current process, systems, and data"
+
+msgid "Mapped accounts"
+msgstr "Mapped accounts"
+
+msgid "Mapped values"
+msgstr "Mapped values"
 
 #. placeholder {0}: i18n._(step.gate)
 msgid "Mark \"{0}\" as passed?"
@@ -8621,6 +8843,12 @@ msgstr "Match any"
 
 msgid "Match any (OR)"
 msgstr "Match any (OR)"
+
+msgid "Match by code"
+msgstr "Match by code"
+
+msgid "Match by name"
+msgstr "Match by name"
 
 msgid "Match none"
 msgstr "Match none"
@@ -8772,6 +9000,9 @@ msgstr "MES"
 msgid "Message"
 msgstr "Message"
 
+msgid "Metadata"
+msgstr "Metadata"
+
 msgid "Method"
 msgstr "Method"
 
@@ -8837,6 +9068,12 @@ msgstr "Minutes/1000 Pieces"
 
 msgid "Minutes/Piece"
 msgstr "Minutes/Piece"
+
+msgid "Mismatch"
+msgstr "Mismatch"
+
+msgid "Missing"
+msgstr "Missing"
 
 msgid "Missing Information"
 msgstr "Missing Information"
@@ -9354,6 +9591,10 @@ msgstr "No"
 msgid "No {0} found"
 msgstr "No {0} found"
 
+#. placeholder {0}: status.toLowerCase()
+msgid "No {0} sync operations"
+msgstr "No {0} sync operations"
+
 #. placeholder {0}: copy.pluralNoun
 msgid "No {0} yet"
 msgstr "No {0} yet"
@@ -9363,6 +9604,9 @@ msgstr "No abilities added"
 
 msgid "No Access"
 msgstr "No Access"
+
+msgid "No accounts mapped yet"
+msgstr "No accounts mapped yet"
 
 msgid "No action needed"
 msgstr "No action needed"
@@ -9451,6 +9695,12 @@ msgstr "No days off scheduled"
 
 msgid "No default attachments yet."
 msgstr "No default attachments yet."
+
+msgid "No dimension slots configured"
+msgstr "No dimension slots configured"
+
+msgid "No dimension values mapped yet"
+msgstr "No dimension values mapped yet"
 
 msgid "No draft make method for this item yet."
 msgstr "No draft make method for this item yet."
@@ -9617,6 +9867,9 @@ msgstr "No payments yet."
 msgid "No planning data"
 msgstr "No planning data"
 
+msgid "No posted journals in this period for this account"
+msgstr "No posted journals in this period for this account"
+
 msgid "No pricing for selected quantity"
 msgstr "No pricing for selected quantity"
 
@@ -9662,6 +9915,9 @@ msgstr "No remaining entities to inspect."
 msgid "No reports match your search."
 msgstr "No reports match your search."
 
+msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+msgstr "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+
 msgid "No results"
 msgstr "No results"
 
@@ -9695,6 +9951,9 @@ msgstr "No storage unit"
 msgid "No suppliers yet"
 msgstr "No suppliers yet"
 
+msgid "No sync operations yet"
+msgstr "No sync operations yet"
+
 msgid "No time entries for this week"
 msgstr "No time entries for this week"
 
@@ -9706,6 +9965,12 @@ msgstr "No tools for this step"
 
 msgid "No transactions in this period"
 msgstr "No transactions in this period"
+
+msgid "No unmapped accounts match a provider code"
+msgstr "No unmapped accounts match a provider code"
+
+msgid "No unmapped values match a provider option name"
+msgstr "No unmapped values match a provider option name"
 
 msgid "No value needed"
 msgstr "No value needed"
@@ -9773,11 +10038,17 @@ msgstr "Normal"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 
+msgid "Not certified"
+msgstr "Not certified"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
 msgid "Not reached"
 msgstr "Not reached"
+
+msgid "Not recorded"
+msgstr "Not recorded"
 
 msgid "Not referenced anywhere yet."
 msgstr "Not referenced anywhere yet."
@@ -9787,6 +10058,9 @@ msgstr "Not Required"
 
 msgid "Not set"
 msgstr "Not set"
+
+msgid "Not set up"
+msgstr "Not set up"
 
 msgid "Not started"
 msgstr "Not started"
@@ -9866,6 +10140,9 @@ msgstr "OEM (original equipment manufacturer)"
 
 msgid "of"
 msgstr "of"
+
+msgid "Off — handled outside the sync"
+msgstr "Off — handled outside the sync"
 
 msgid "Off — released revisions stay editable"
 msgstr "Off — released revisions stay editable"
@@ -10346,6 +10623,9 @@ msgstr "Owns: {0}"
 msgid "Packing Slip"
 msgstr "Packing Slip"
 
+msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+msgstr "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
+
 msgid "Page"
 msgstr "Page"
 
@@ -10390,6 +10670,12 @@ msgstr "Parent Storage Unit"
 
 msgid "Pareto by Type"
 msgstr "Pareto by Type"
+
+msgid "Park as error"
+msgstr "Park as error"
+
+msgid "Park the journal with a warning until the value is mapped"
+msgstr "Park the journal with a warning until the value is mapped"
 
 msgid "part"
 msgstr "part"
@@ -10450,6 +10736,9 @@ msgstr "Pay Rate"
 
 msgid "Payables"
 msgstr "Payables"
+
+msgid "Payables (AP)"
+msgstr "Payables (AP)"
 
 msgid "Payables (default)"
 msgstr "Payables (default)"
@@ -10547,6 +10836,9 @@ msgstr "Period close"
 msgid "Period End"
 msgstr "Period End"
 
+msgid "Period lock policy"
+msgstr "Period lock policy"
+
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Periodic depreciation expense for fixed assets"
 
@@ -10585,6 +10877,9 @@ msgstr "Physical printers available for assignment."
 
 msgid "Pick"
 msgstr "Pick"
+
+msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
+msgstr "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 
 msgid "Pick a column to sort by"
 msgstr "Pick a column to sort by"
@@ -10806,6 +11101,9 @@ msgstr "Posted by"
 
 msgid "Posted By"
 msgstr "Posted By"
+
+msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
+msgstr "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "Posted once, corrected {corrections} times."
@@ -11097,14 +11395,32 @@ msgstr "Properties"
 msgid "Property"
 msgstr "Property"
 
+msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
+msgstr "Proposed matches where the Carbon account number equals the provider account code exactly."
+
+msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
+msgstr "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
+
 msgid "Protect the go-live date"
 msgstr "Protect the go-live date"
 
 msgid "Protect training time and attend"
 msgstr "Protect training time and attend"
 
+msgid "Protects your company's data"
+msgstr "Protects your company's data"
+
 msgid "Provide process knowledge and inputs"
 msgstr "Provide process knowledge and inputs"
+
+msgid "Provider"
+msgstr "Provider"
+
+msgid "Provider account"
+msgstr "Provider account"
+
+msgid "Provider option"
+msgstr "Provider option"
 
 msgid "Public"
 msgstr "Public"
@@ -11119,8 +11435,14 @@ msgstr "Publish Version {0}?"
 msgid "Published by Carbon"
 msgstr "Published by Carbon"
 
+msgid "Pull"
+msgstr "Pull"
+
 msgid "Pull From"
 msgstr "Pull From"
+
+msgid "Pull from accounting"
+msgstr "Pull from accounting"
 
 msgid "Pull from Inventory"
 msgstr "Pull from Inventory"
@@ -11245,8 +11567,20 @@ msgstr "Purchasing Invoices"
 msgid "Purchasing Unit of Measure"
 msgstr "Purchasing Unit of Measure"
 
+msgid "Push"
+msgstr "Push"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "Push it re-dated to the first open day, keeping the original date in the narration."
+
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Push record changes to external systems the moment they happen."
+
+msgid "Push the journal without the dimension"
+msgstr "Push the journal without the dimension"
+
+msgid "Push to accounting"
+msgstr "Push to accounting"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -11454,8 +11788,14 @@ msgstr "Raw Materials"
 msgid "Raw Materials (default)"
 msgstr "Raw Materials (default)"
 
+msgid "Re-date to first open day"
+msgstr "Re-date to first open day"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Re-keying between quoting, the floor, and finance"
+
+msgid "Re-send"
+msgstr "Re-send"
 
 msgid "Reactivate"
 msgstr "Reactivate"
@@ -11477,6 +11817,9 @@ msgstr "Readable id with revision"
 
 msgid "Reading the document..."
 msgstr "Reading the document..."
+
+msgid "Ready"
+msgstr "Ready"
 
 msgid "Ready for Quote"
 msgstr "Ready for Quote"
@@ -11550,6 +11893,9 @@ msgstr "Receipts, shipments, sales invoices, purchase invoices, payments, and cr
 msgid "Receivables"
 msgstr "Receivables"
 
+msgid "Receivables (AR)"
+msgstr "Receivables (AR)"
+
 msgid "Receivables (default)"
 msgstr "Receivables (default)"
 
@@ -11607,6 +11953,9 @@ msgstr "Recently Created"
 
 msgid "Reconcile"
 msgstr "Reconcile"
+
+msgid "Reconciliation found discrepancies with the provider"
+msgstr "Reconciliation found discrepancies with the provider"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
@@ -11786,6 +12135,9 @@ msgstr "Remove row"
 msgid "Remove slide"
 msgstr "Remove slide"
 
+msgid "Remove slot"
+msgstr "Remove slot"
+
 msgid "Remove sort by column"
 msgstr "Remove sort by column"
 
@@ -11889,6 +12241,9 @@ msgstr "Reports"
 msgid "Reprint"
 msgstr "Reprint"
 
+msgid "Request a new invite"
+msgstr "Request a new invite"
+
 msgid "Request access"
 msgstr "Request access"
 
@@ -11898,6 +12253,9 @@ msgstr "Request Approval"
 msgid "Requested Date"
 msgstr "Requested Date"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+msgstr "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Require approval before suppliers can be set to Active"
 
@@ -11906,6 +12264,9 @@ msgstr "Require approval for purchase orders based on amount thresholds"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Require approval for quality documents in your workflow"
+
+msgid "Require two-factor authentication"
+msgstr "Require two-factor authentication"
 
 msgid "Required"
 msgstr "Required"
@@ -11963,6 +12324,14 @@ msgstr "Reset PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Reset PIN for {0} {1}"
 
+msgid "Reset Two-Factor Auth"
+msgstr "Reset Two-Factor Auth"
+
+#. placeholder {0}: user.firstName
+#. placeholder {1}: user.lastName
+msgid "Reset two-factor authentication for {0} {1}"
+msgstr "Reset two-factor authentication for {0} {1}"
+
 msgid "Reset view"
 msgstr "Reset view"
 
@@ -12016,6 +12385,9 @@ msgstr "Retiring an asset from service by scrapping or sale, booking any gain or
 
 msgid "Retry"
 msgstr "Retry"
+
+msgid "Retry all"
+msgstr "Retry all"
 
 msgid "Return Home"
 msgstr "Return Home"
@@ -12071,6 +12443,9 @@ msgstr "Review each item's changes, then confirm — releasing can't be undone."
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 
+msgid "Review the suggested matches before applying. These are a best guess — confirm each is correct."
+msgstr "Review the suggested matches before applying. These are a best guess — confirm each is correct."
+
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Review the warnings below, then post the count to apply the adjustments."
 
@@ -12125,6 +12500,13 @@ msgstr "RFQ Number"
 
 msgid "RFQs"
 msgstr "RFQs"
+
+msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
+msgstr "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
+
+#. placeholder {0}: certification.docVersion
+msgid "Rider v{0}"
+msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Right item"
@@ -12412,6 +12794,9 @@ msgstr "Save applications"
 msgid "Save contacts"
 msgstr "Save contacts"
 
+msgid "Save dimension settings"
+msgstr "Save dimension settings"
+
 msgid "Save Method"
 msgstr "Save Method"
 
@@ -12456,6 +12841,9 @@ msgstr "Scan or search..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+
+msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
+msgstr "Scan this with your authenticator app, then enter the 6-digit code it shows."
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -12619,6 +13007,12 @@ msgstr "Seconds/Piece"
 msgid "Section"
 msgstr "Section"
 
+msgid "Secure your account with 2FA"
+msgstr "Secure your account with 2FA"
+
+msgid "Security"
+msgstr "Security"
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segments that drive customer pricing and terms"
 
@@ -12728,6 +13122,9 @@ msgstr "Select customer types"
 msgid "Select customers"
 msgstr "Select customers"
 
+msgid "Select dimension"
+msgstr "Select dimension"
+
 msgid "Select Employee"
 msgstr "Select Employee"
 
@@ -12763,6 +13160,15 @@ msgstr "Select method..."
 
 msgid "Select Printer"
 msgstr "Select Printer"
+
+msgid "Select provider account"
+msgstr "Select provider account"
+
+msgid "Select provider target"
+msgstr "Select provider target"
+
+msgid "Select provider value"
+msgstr "Select provider value"
 
 msgid "Select Quantities"
 msgstr "Select Quantities"
@@ -12945,6 +13351,9 @@ msgstr "Set Pricing"
 msgid "Set Quantity"
 msgstr "Set Quantity"
 
+msgid "Set up authenticator app"
+msgstr "Set up authenticator app"
+
 msgid "Set up the right way"
 msgstr "Set up the right way"
 
@@ -12972,6 +13381,9 @@ msgstr "Setup"
 
 msgid "Setup & Controls"
 msgstr "Setup & Controls"
+
+msgid "Setup failed"
+msgstr "Setup failed"
 
 msgid "Setup instructions"
 msgstr "Setup instructions"
@@ -13195,6 +13607,9 @@ msgstr "Show Supplier IDs"
 msgid "Show sync options"
 msgstr "Show sync options"
 
+msgid "Show Trailing Zeros"
+msgstr "Show Trailing Zeros"
+
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "Showing {0} of {totalCount} — refine your search"
@@ -13204,6 +13619,9 @@ msgstr "Showing in {parentCurrency}"
 
 msgid "Showing the first 500 lines"
 msgstr "Showing the first 500 lines"
+
+msgid "Showing the newest 200 journals"
+msgstr "Showing the newest 200 journals"
 
 msgid "Showing the top 1,000 groups by amount"
 msgstr "Showing the top 1,000 groups by amount"
@@ -13226,6 +13644,9 @@ msgstr "Sign in with Outlook"
 msgid "Sign in with Passkey"
 msgstr "Sign in with Passkey"
 
+msgid "Sign out"
+msgstr "Sign out"
+
 msgid "Sign Out"
 msgstr "Sign Out"
 
@@ -13240,6 +13661,9 @@ msgstr "Signed in as {name}"
 
 msgid "Signed quantity — negative for outbound movements"
 msgstr "Signed quantity — negative for outbound movements"
+
+msgid "Signing in also requires a one-time code from your authenticator app"
+msgstr "Signing in also requires a one-time code from your authenticator app"
 
 msgid "Sites & locations"
 msgstr "Sites & locations"
@@ -13348,6 +13772,9 @@ msgstr "Source list"
 
 msgid "Source Method"
 msgstr "Source Method"
+
+msgid "Source types"
+msgstr "Source types"
 
 msgid "Source Version"
 msgstr "Source Version"
@@ -13696,6 +14123,15 @@ msgstr "Successor Part"
 msgid "Suffix"
 msgstr "Suffix"
 
+msgid "Suggest mappings"
+msgstr "Suggest mappings"
+
+msgid "Suggest mappings with AI"
+msgstr "Suggest mappings with AI"
+
+msgid "Suggest with AI"
+msgstr "Suggest with AI"
+
 msgid "Suggested orders you haven't placed yet."
 msgstr "Suggested orders you haven't placed yet."
 
@@ -13900,6 +14336,18 @@ msgstr "Switching the employee's type here doesn't change their existing permiss
 
 msgid "Sync"
 msgstr "Sync"
+
+msgid "Sync Activity"
+msgstr "Sync Activity"
+
+msgid "Sync operation"
+msgstr "Sync operation"
+
+msgid "Sync Tie-Out"
+msgstr "Sync Tie-Out"
+
+msgid "Synced"
+msgstr "Synced"
 
 msgid "System"
 msgstr "System"
@@ -14577,6 +15025,9 @@ msgstr "The procedure technicians follow when this maintenance is performed; rep
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 
+msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
+msgstr "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 
@@ -14878,14 +15329,27 @@ msgstr "This information will be visible to all users, so be careful what you sh
 msgid "this inspection plan"
 msgstr "this inspection plan"
 
+#. placeholder {0}: company?.name ?? "Carbon"
+msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+msgstr "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+
+msgid "This is a controlled environment, so an authenticator app is required."
+msgstr "This is a controlled environment, so an authenticator app is required."
+
+msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
+msgstr "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "This is a unique identifier for the webhook"
+
+msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
+msgstr "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 
 msgid "This is the month your fiscal year starts."
 msgstr "This is the month your fiscal year starts."
@@ -14947,6 +15411,9 @@ msgstr "This period has no journal entries posted to it and can be permanently d
 msgid "This Quarter"
 msgstr "This Quarter"
 
+msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+msgstr "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "This revision is released (Production). Changes should normally flow through a change notice."
 
@@ -14974,6 +15441,9 @@ msgstr "this supplier"
 
 msgid "This updates the theme for all users of the application"
 msgstr "This updates the theme for all users of the application"
+
+msgid "This user does not have two-factor authentication enabled."
+msgstr "This user does not have two-factor authentication enabled."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "This version belongs to an open <0>change notice</0>. Edit it there."
@@ -15053,6 +15523,9 @@ msgstr "Thursday"
 
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Tie shipments through to an invoice with no re-keying"
+
+msgid "Tie-out"
+msgstr "Tie-out"
 
 msgid "Tie-Out"
 msgstr "Tie-Out"
@@ -15378,6 +15851,15 @@ msgstr "Tuesday"
 msgid "Turn on the built-in pieces"
 msgstr "Turn on the built-in pieces"
 
+msgid "Two-Factor"
+msgstr "Two-Factor"
+
+msgid "Two-factor authentication"
+msgstr "Two-factor authentication"
+
+msgid "Two-Factor Authentication Enforcement"
+msgstr "Two-Factor Authentication Enforcement"
+
 msgid "Type"
 msgstr "Type"
 
@@ -15404,6 +15886,9 @@ msgstr "Type:"
 
 msgid "Types"
 msgstr "Types"
+
+msgid "U.S. Person Attestation"
+msgstr "U.S. Person Attestation"
 
 msgid "Unapplied"
 msgstr "Unapplied"
@@ -15507,8 +15992,17 @@ msgstr "Unlink job from sales order?"
 msgid "Unlock"
 msgstr "Unlock"
 
+msgid "Unmapped accounts"
+msgstr "Unmapped accounts"
+
+msgid "Unmapped dimension values"
+msgstr "Unmapped dimension values"
+
 msgid "Unmapped Extracted Lines"
 msgstr "Unmapped Extracted Lines"
+
+msgid "Unmapped values"
+msgstr "Unmapped values"
 
 msgid "Unmatched"
 msgstr "Unmatched"
@@ -15726,6 +16220,9 @@ msgstr "Use ... to get the next service ID"
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
+msgid "Use a different account"
+msgstr "Use a different account"
+
 msgid "Use a different email"
 msgstr "Use a different email"
 
@@ -15863,6 +16360,15 @@ msgstr "Vendor Write-Off Income"
 
 msgid "Verification Error"
 msgstr "Verification Error"
+
+msgid "Verification failed"
+msgstr "Verification failed"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify and continue"
+msgstr "Verify and continue"
 
 msgid "Verify inventory and financial balances tie out"
 msgstr "Verify inventory and financial balances tie out"
@@ -16050,6 +16556,9 @@ msgstr "View Suggestion"
 
 msgid "View Suppliers"
 msgstr "View Suppliers"
+
+msgid "View tie-out"
+msgstr "View tie-out"
 
 msgid "View Traceability Graph"
 msgstr "View Traceability Graph"
@@ -16256,6 +16765,9 @@ msgstr "What data"
 
 msgid "What drove inventory up or down, by any dimension"
 msgstr "What drove inventory up or down, by any dimension"
+
+msgid "What happens when a journal is dated in a locked period."
+msgstr "What happens when a journal is dated in a locked period."
 
 msgid "What is {translatedTerm}?"
 msgstr "What is {translatedTerm}?"
@@ -16760,6 +17272,9 @@ msgstr "You're setting Carbon up yourself, at your own pace"
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 
+msgid "Your account stays safe even if your login is stolen"
+msgstr "Your account stays safe even if your login is stolen"
+
 msgid "Your books and how money flows."
 msgstr "Your books and how money flows."
 
@@ -16804,6 +17319,9 @@ msgstr "Your main point of contact"
 
 msgid "Your Name"
 msgstr "Your Name"
+
+msgid "Your organization requires an authenticator app."
+msgstr "Your organization requires an authenticator app."
 
 msgid "Your part numbers"
 msgstr "Your part numbers"
