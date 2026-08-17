@@ -8925,6 +8925,9 @@ msgstr "अधिक"
 msgid "More actions"
 msgstr "अधिक क्रियाएं"
 
+msgid "More information"
+msgstr ""
+
 msgid "More options"
 msgstr "अधिक विकल्प"
 

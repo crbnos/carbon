@@ -58,9 +58,9 @@ export {
 } from "./definition/schedule";
 export type {
   ActionNode,
+  ComputeNode,
   ConditionNode,
   ConditionPath,
-  EntityNode,
   FilterNode,
   LookupNode,
   Origin,
@@ -161,8 +161,8 @@ export type {
 export {
   actionExecutor,
   compare,
+  computeExecutor,
   conditionExecutor,
-  entityExecutor,
   entityValue,
   evaluateClauses,
   executorFor,

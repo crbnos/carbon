@@ -1,7 +1,7 @@
 import {
+  type ComputeNode,
   DEFAULT_HANDLE,
-  DEFAULT_OUTPUT,
-  type EntityNode
+  DEFAULT_OUTPUT
 } from "../definition/schema";
 import type { ScalarType } from "../definition/types";
 import { resolveValue } from "./resolve";
@@ -10,7 +10,7 @@ import { listValue } from "./values";
 
 const GONE = "This calculation is no longer available.";
 
-export const entityExecutor: NodeExecutor<EntityNode> = {
+export const computeExecutor: NodeExecutor<ComputeNode> = {
   permission: (node, catalog) =>
     catalog.getOperation(node.data.operation)?.permission,
 

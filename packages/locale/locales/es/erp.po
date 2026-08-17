@@ -8925,6 +8925,9 @@ msgstr "Más"
 msgid "More actions"
 msgstr "Más acciones"
 
+msgid "More information"
+msgstr ""
+
 msgid "More options"
 msgstr "Más opciones"
 

@@ -2,7 +2,7 @@ import type { WorkflowDefinition } from "@carbon/workflows";
 import type { WorkflowRunDetail } from "../../workflows.service";
 import type { LabelFor } from "../Builder/labelKeys";
 import { nodeTitle } from "../Builder/labelKeys";
-import { NODE_KIND_META } from "../Builder/nodes/meta";
+import { metaForNodeType, NODE_KIND_META } from "../Builder/nodes/meta";
 import type { RunStepView } from "./WorkflowRunSteps";
 
 export type RunOutcome = {
@@ -22,10 +22,7 @@ function stepTitle(
 ): string {
   const node = definition?.nodes.find((n) => n.id === step.nodeId);
   if (!node) {
-    return (
-      NODE_KIND_META[step.nodeType as keyof typeof NODE_KIND_META]
-        ?.defaultTitle ?? step.nodeType
-    );
+    return metaForNodeType(step.nodeType)?.defaultTitle ?? step.nodeType;
   }
   const meta = NODE_KIND_META[node.type];
   const catalogId = meta.catalogId?.(node);
