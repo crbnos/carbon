@@ -694,6 +694,7 @@
       "keywords": ["intercompany", "accounting", "docs", "reference"],
       "headings": [
         "What a transaction is",
+        "Recording one by hand",
         "The matching lifecycle",
         "How a pair gets matched",
         "Elimination",

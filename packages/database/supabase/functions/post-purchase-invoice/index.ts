@@ -632,6 +632,32 @@ serve(async (req: Request) => {
       throw new Error("Failed to fetch purchase order lines");
     if (supplier.error) throw new Error("Failed to fetch supplier");
 
+    // Detect the buyer side of an intercompany transaction. The sister supplier
+    // row carries intercompanyCompanyId when both companies belong to a group.
+    // post-sales-invoice records the seller side; this records the buyer side,
+    // so runIntercompanyMatching can pair them for consolidation.
+    const isIntercompany = supplier.data.intercompanyCompanyId != null;
+    const intercompanyPartnerId = isIntercompany
+      ? supplier.data.intercompanyCompanyId
+      : null;
+
+    // Pre-tax value of the intercompany document. Mirrors the sales side's basis
+    // (quantity * unitPrice + line shippingCost over non-comment lines) so the two
+    // rows match on amount. Tax is excluded — the sales side excludes it too — and
+    // purchaseInvoiceLine has no addOnCost column. This is NOT totalLinesCost above,
+    // which folds in taxAmount for the shipping allocation and would never match.
+    const intercompanyAmount = purchaseInvoiceLines.data.reduce(
+      (acc, invoiceLine) => {
+        if (invoiceLine.invoiceLineType === "Comment") return acc;
+        return (
+          acc +
+          (invoiceLine.quantity ?? 0) * (invoiceLine.unitPrice ?? 0) +
+          (invoiceLine.shippingCost ?? 0)
+        );
+      },
+      0
+    );
+
     const purchaseOrders = await client
       .from("purchaseOrder")
       .select("*")
@@ -790,6 +816,22 @@ serve(async (req: Request) => {
     if (accountingEnabled && (accountDefaults?.error || !accountDefaults?.data)) {
       throw new Error("Error getting account defaults");
     }
+
+    // For IC transactions, book the payable to Inter-Company Payables instead of
+    // regular AP — the mirror of post-sales-invoice's IC Receivables swap. Resolve
+    // it from accountDefault (stable id), not by account number, and fall back to
+    // regular payables if the IC default isn't configured. Cast because the deno
+    // types may lag the accountDefault column added by the payables-default
+    // migration (same reason the sales side casts intercompanyReceivablesAccount).
+    const icPayablesAccount = (
+      accountDefaults?.data as unknown as {
+        intercompanyPayablesAccount?: string | null;
+      }
+    )?.intercompanyPayablesAccount;
+    const payablesAccountId: string | undefined =
+      isIntercompany && icPayablesAccount
+        ? icPayablesAccount
+        : accountDefaults?.data?.payablesAccount;
 
     // Invoice exchange rate (defaults to 1 for base-currency invoices).
     // The payment chain (post-payment/build-payment-journal) relieves AP at
@@ -955,7 +997,7 @@ serve(async (req: Request) => {
                 });
 
                 journalLineInserts.push({
-                  accountId: accountDefaults.data.payablesAccount,
+                  accountId: payablesAccountId,
                   description: "Accounts Payable",
                   amount: round(credit("liability", totalLineCostWithWeightedShipping)),
                   quantity: round(invoiceLineQuantityInInventoryUnit),
@@ -1325,7 +1367,7 @@ serve(async (req: Request) => {
 
                 // CR Accounts Payable at invoice cost
                 journalLineInserts.push({
-                  accountId: accountDefaults.data.payablesAccount,
+                  accountId: payablesAccountId,
                   description: "Accounts Payable",
                   amount: round(credit("liability", invoiceCostForReversedQty)),
                   quantity: round(quantityToReverse),
@@ -1416,7 +1458,7 @@ serve(async (req: Request) => {
 
                 // CR Accounts Payable
                 journalLineInserts.push({
-                  accountId: accountDefaults.data.payablesAccount,
+                  accountId: payablesAccountId,
                   description: "Accounts Payable",
                   accrual: isService ? undefined : true,
                   amount: round(credit("liability", accrualCost)),
@@ -1551,7 +1593,7 @@ serve(async (req: Request) => {
 
               // CR Payables at invoice cost
               journalLineInserts.push({
-                accountId: accountDefaults.data.payablesAccount,
+                accountId: payablesAccountId,
                 description: "Accounts Payable",
                 amount: round(credit("liability", invoiceCost)),
                 quantity: round(invoiceLineQuantityInInventoryUnit),
@@ -1620,7 +1662,7 @@ serve(async (req: Request) => {
               });
 
               journalLineInserts.push({
-                accountId: accountDefaults.data.payablesAccount,
+                accountId: payablesAccountId,
                 description: "Accounts Payable",
                 amount: round(credit("liability", totalLineCostWithWeightedShipping)),
                 quantity: round(invoiceLineQuantityInInventoryUnit),
@@ -1713,7 +1755,7 @@ serve(async (req: Request) => {
             });
 
             journalLineInserts.push({
-              accountId: accountDefaults.data.payablesAccount,
+              accountId: payablesAccountId,
               description: "Accounts Payable",
               amount: round(credit("liability", totalLineCostWithWeightedShipping)),
               quantity: round(invoiceLineQuantityInInventoryUnit),
@@ -2009,6 +2051,46 @@ serve(async (req: Request) => {
               .values(journalLineDimensionInserts)
               .execute();
           }
+        }
+
+        // Record the buyer side of an intercompany transaction (mirrors the
+        // seller-side insert in post-sales-invoice) so runIntercompanyMatching can
+        // pair the two and generateEliminationEntries can eliminate them for
+        // consolidated reporting. Uses the first journal line as the reference,
+        // exactly as the sales side does.
+        // Reference the IC payable line (not [0], which is the asset/expense line)
+        // so generateEliminationEntries reverses the Inter-Company Payables control
+        // account and clears it against the seller's IC Receivables. journalLineInserts
+        // is inserted 1:1 into journalLineResults, so the index aligns.
+        const icPayableIdx = journalLineInserts.findIndex(
+          (line) => line.accountId === payablesAccountId
+        );
+        // If no payable line was posted, leave this null so the guard below skips
+        // the insert: referencing another line (asset/expense) would make
+        // elimination reverse the wrong account and leave the control balance.
+        const icJournalLineId =
+          icPayableIdx >= 0 ? journalLineResults[icPayableIdx]?.id ?? null : null;
+        if (
+          isIntercompany &&
+          intercompanyPartnerId &&
+          companyGroupId &&
+          icJournalLineId
+        ) {
+          await trx
+            .insertInto("intercompanyTransaction")
+            .values({
+              companyGroupId,
+              sourceCompanyId: companyId,
+              targetCompanyId: intercompanyPartnerId,
+              sourceJournalLineId: icJournalLineId,
+              amount: round(intercompanyAmount),
+              currencyCode: purchaseInvoice.data?.currencyCode ?? "USD",
+              description: `Purchase Invoice ${purchaseInvoice.data?.invoiceId}`,
+              documentType: "Invoice",
+              documentId: purchaseInvoice.data?.id,
+              status: "Unmatched",
+            })
+            .execute();
         }
       }
 

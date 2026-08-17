@@ -349,6 +349,7 @@ export type Database = {
           finishedGoodsAccount: string
           goodsReceivedNotInvoicedAccount: string
           indirectCostAccount: string
+          intercompanyPayablesAccount: string | null
           intercompanyReceivablesAccount: string | null
           interestAccount: string
           inventoryAdjustmentVarianceAccount: string
@@ -403,6 +404,7 @@ export type Database = {
           finishedGoodsAccount: string
           goodsReceivedNotInvoicedAccount: string
           indirectCostAccount: string
+          intercompanyPayablesAccount?: string | null
           intercompanyReceivablesAccount?: string | null
           interestAccount: string
           inventoryAdjustmentVarianceAccount: string
@@ -457,6 +459,7 @@ export type Database = {
           finishedGoodsAccount?: string
           goodsReceivedNotInvoicedAccount?: string
           indirectCostAccount?: string
+          intercompanyPayablesAccount?: string | null
           intercompanyReceivablesAccount?: string | null
           interestAccount?: string
           inventoryAdjustmentVarianceAccount?: string
@@ -781,6 +784,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_indirectCostAccount_fkey"
             columns: ["indirectCostAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_intercompanyPayablesAccount_fkey"
+            columns: ["intercompanyPayablesAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_intercompanyPayablesAccount_fkey"
+            columns: ["intercompanyPayablesAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -72312,14 +72329,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

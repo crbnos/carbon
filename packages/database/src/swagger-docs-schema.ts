@@ -37477,6 +37477,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -37692,6 +37695,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -37859,6 +37865,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -116330,6 +116339,12 @@ export default {
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
+        },
+        intercompanyPayablesAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -159836,6 +159851,12 @@ export default {
     },
     "rowFilter.accountDefault.scrapAccount": {
       name: "scrapAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.intercompanyPayablesAccount": {
+      name: "intercompanyPayablesAccount",
       required: false,
       in: "query",
       type: "string"

@@ -799,6 +799,7 @@ export const accountDefaults = {
   prepaymentAccount: "2110",
   supplierPrepaymentAccount: "1150",
   payablesAccount: "2010",
+  intercompanyPayablesAccount: "2020",
   goodsReceivedNotInvoicedAccount: "2125",
   salesTaxPayableAccount: "2210",
   purchaseTaxPayableAccount: "2220",

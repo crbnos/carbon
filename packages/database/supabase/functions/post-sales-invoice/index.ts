@@ -1225,25 +1225,53 @@ serve(async (req: Request) => {
 
           // Create intercompany transaction record if IC
           if (accountingEnabled && isIntercompany && intercompanyPartnerId) {
-            const icJournalLineId = journalLineResults.length > 0
-              ? journalLineResults[0].id
-              : null;
+            // Reference the IC receivable line (not [0], which is the revenue line)
+            // so generateEliminationEntries reverses the Inter-Company Receivables
+            // control account and clears it against the buyer's IC Payables.
+            // journalLineInserts is inserted 1:1 into journalLineResults. If no
+            // receivable line was posted, skip: referencing another line would make
+            // elimination reverse the wrong account and leave the control balance.
+            const icReceivableIdx = journalLineInserts.findIndex(
+              (line) => line.accountId === receivablesAccountId
+            );
+            const icJournalLineId =
+              icReceivableIdx >= 0
+                ? journalLineResults[icReceivableIdx]?.id ?? null
+                : null;
 
-            await trx
-              .insertInto("intercompanyTransaction")
-              .values({
-                companyGroupId: companyGroupId!,
-                sourceCompanyId: companyId,
-                targetCompanyId: intercompanyPartnerId,
-                sourceJournalLineId: icJournalLineId,
-                amount: round(totalLinesCost),
-                currencyCode: salesInvoice.data?.currencyCode ?? "USD",
-                description: `Sales Invoice ${salesInvoice.data?.invoiceId}`,
-                documentType: "Invoice",
-                documentId: salesInvoice.data?.id,
-                status: "Unmatched",
-              })
-              .execute();
+            // Match on the same pre-tax basis the buyer computes
+            // (quantity * unitPrice + shippingCost over non-comment lines).
+            // addOnCost is excluded because purchaseInvoiceLine has no such column,
+            // so including it here would break matching on lines that carry one.
+            const intercompanyAmount = salesInvoiceLines.data.reduce(
+              (acc, invoiceLine) => {
+                if (invoiceLine.invoiceLineType === "Comment") return acc;
+                return (
+                  acc +
+                  (invoiceLine.quantity ?? 0) * (invoiceLine.unitPrice ?? 0) +
+                  (invoiceLine.shippingCost ?? 0)
+                );
+              },
+              0
+            );
+
+            if (icJournalLineId) {
+              await trx
+                .insertInto("intercompanyTransaction")
+                .values({
+                  companyGroupId: companyGroupId!,
+                  sourceCompanyId: companyId,
+                  targetCompanyId: intercompanyPartnerId,
+                  sourceJournalLineId: icJournalLineId,
+                  amount: round(intercompanyAmount),
+                  currencyCode: salesInvoice.data?.currencyCode ?? "USD",
+                  description: `Sales Invoice ${salesInvoice.data?.invoiceId}`,
+                  documentType: "Invoice",
+                  documentId: salesInvoice.data?.id,
+                  status: "Unmatched",
+                })
+                .execute();
+            }
           }
 
           // Apply deferred fixed-asset disposal writes inside the transaction so
