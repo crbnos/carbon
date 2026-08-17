@@ -484,6 +484,89 @@ serve(async (req: Request) => {
         const methodTree = methodTrees.data?.[0] as MethodTreeItem;
         if (!methodTree) throw new Error("Method tree not found");
 
+        // The traversal below runs on a single transaction connection, so any
+        // per-node or per-material query is O(tree) sequential roundtrips — on
+        // a large BOM that exceeds the caller's invoke timeout. Prefetch each
+        // lookup table once for the whole tree instead.
+        const treeNodes: MethodTreeItem[] = [];
+        const seenTreeNodes = new Set<MethodTreeItem>();
+        const collectTreeNodes = (n: MethodTreeItem) => {
+          // Corrupt/cyclic tree data must not loop the prefetch walk
+          if (seenTreeNodes.has(n)) return;
+          seenTreeNodes.add(n);
+          treeNodes.push(n);
+          n.children.forEach(collectTreeNodes);
+        };
+        collectTreeNodes(methodTree);
+
+        const treeItemIds = [
+          ...new Set([
+            ...treeNodes.map((n) => n.data.itemId),
+            // Buy/Pick lines can be swapped to their successor item below
+            ...[...supersessionRedirect.values()].map((r) => r.to),
+          ]),
+        ];
+        const treeMakeMethodIds = [
+          ...new Set(treeNodes.map((n) => n.data.materialMakeMethodId)),
+        ];
+
+        const chunk = <T>(arr: T[], size: number): T[][] => {
+          const out: T[][] = [];
+          for (let i = 0; i < arr.length; i += size) {
+            out.push(arr.slice(i, i + size));
+          }
+          return out;
+        };
+
+        // itemReplenishment needs no embeds, so read it over the direct
+        // Postgres connection — bind parameters, no PostgREST URL-length cap.
+        const [replenishmentRows, operationChunks] = await Promise.all([
+          db
+            .selectFrom("itemReplenishment")
+            .select(["itemId", "scrapPercentage"])
+            .where("itemId", "in", treeItemIds)
+            .where("companyId", "=", companyId)
+            .execute(),
+          Promise.all(
+            chunk(treeMakeMethodIds, 50).map((ids) =>
+              client
+                .from("methodOperation")
+                .select(
+                  "*, methodOperationTool(*, methodOperationToolStep(*)), methodOperationParameter(*), methodOperationStep(*)"
+                )
+                .in("makeMethodId", ids)
+            )
+          ),
+        ]);
+
+        const scrapPercentageByItemId = new Map<string, number>();
+        for (const row of replenishmentRows) {
+          scrapPercentageByItemId.set(
+            row.itemId,
+            Number(row.scrapPercentage ?? 0)
+          );
+        }
+
+        const operationsByMakeMethodId = new Map<
+          string,
+          NonNullable<(typeof operationChunks)[number]["data"]>
+        >();
+        for (const res of operationChunks) {
+          if (res.error) {
+            throw new Error(
+              `Failed to get method operations: ${res.error.message}`
+            );
+          }
+          for (const op of res.data ?? []) {
+            const list = operationsByMakeMethodId.get(op.makeMethodId);
+            if (list) {
+              list.push(op);
+            } else {
+              operationsByMakeMethodId.set(op.makeMethodId, [op]);
+            }
+          }
+        }
+
         const getLaborAndOverheadRates = getRatesFromWorkCenters(
           workCenters?.data
         );
@@ -544,6 +627,57 @@ serve(async (req: Request) => {
               .execute(),
           ]);
 
+          // Default storage units for every material at the job's location —
+          // two set-based queries instead of up to two per material
+          // (getStorageUnitId): pickMethod default wins, else the bin with
+          // the highest on-hand quantity.
+          const defaultStorageUnitByItemId = new Map<string, string>();
+          const jobLocationId = job.data?.locationId;
+          if (jobLocationId) {
+            const ledgerTotals = await trx
+              .selectFrom("itemLedger")
+              .where("locationId", "=", jobLocationId)
+              .where("itemId", "in", treeItemIds)
+              .where("storageUnitId", "is not", null)
+              .groupBy(["itemId", "storageUnitId"])
+              .select([
+                "itemId",
+                "storageUnitId",
+                (eb) => eb.fn.sum("quantity").as("totalQuantity"),
+              ])
+              .having((eb) => eb.fn.sum("quantity"), ">", 0)
+              .execute();
+
+            const bestQuantityByItemId = new Map<string, number>();
+            for (const row of ledgerTotals) {
+              const quantity = Number(row.totalQuantity);
+              if (
+                row.storageUnitId &&
+                quantity > (bestQuantityByItemId.get(row.itemId) ?? 0)
+              ) {
+                bestQuantityByItemId.set(row.itemId, quantity);
+                defaultStorageUnitByItemId.set(row.itemId, row.storageUnitId);
+              }
+            }
+
+            const pickMethods = await trx
+              .selectFrom("pickMethod")
+              .select(["itemId", "defaultStorageUnitId"])
+              .where("locationId", "=", jobLocationId)
+              .where("itemId", "in", treeItemIds)
+              .where("defaultStorageUnitId", "is not", null)
+              .execute();
+
+            for (const pickMethod of pickMethods) {
+              if (pickMethod.defaultStorageUnitId) {
+                defaultStorageUnitByItemId.set(
+                  pickMethod.itemId,
+                  pickMethod.defaultStorageUnitId
+                );
+              }
+            }
+          }
+
           async function getConfiguredValue<T>({
             id,
             field,
@@ -581,19 +715,6 @@ serve(async (req: Request) => {
             parentJobMakeMethodId: string | null,
             parentEstimatedQuantity: number
           ) {
-            console.log("[traverseMethod]", {
-              isRoot: node.data.isRoot,
-              itemId: node.data.itemId,
-              methodType: node.data.methodType,
-              materialMakeMethodId: node.data.materialMakeMethodId,
-              childCount: node.children.length,
-              childMethodTypes: node.children.map(c => ({
-                itemId: c.data.itemId,
-                methodType: c.data.methodType,
-              })),
-              parentJobMakeMethodId,
-            });
-
             // For root node, targetQuantity equals the job quantity (parentEstimatedQuantity passed in)
             // For children, targetQuantity = parentEstimatedQuantity * quantityPerParent
             const targetQuantity = node.data.isRoot
@@ -601,14 +722,8 @@ serve(async (req: Request) => {
               : parentEstimatedQuantity * (node.data.quantity ?? 1);
 
             // Get scrap percentage for this node's item
-            const nodeItemReplenishment = await trx
-              .selectFrom("itemReplenishment")
-              .select("scrapPercentage")
-              .where("itemId", "=", node.data.itemId)
-              .executeTakeFirst();
-            const nodeScrapPercentage = Number(
-              nodeItemReplenishment?.scrapPercentage ?? 0
-            );
+            const nodeScrapPercentage =
+              scrapPercentageByItemId.get(node.data.itemId) ?? 0;
 
             // Calculate quantities:
             // - For Make parts: estimatedQuantity = targetQuantity (good quantity, NOT including scrap)
@@ -641,12 +756,12 @@ serve(async (req: Request) => {
 
             // For child nodes, always include operations regardless of parts flags
             if (!node.data.isRoot || parts.billOfProcess) {
-            const relatedOperations = await client
-              .from("methodOperation")
-              .select(
-                "*, methodOperationTool(*, methodOperationToolStep(*)), methodOperationParameter(*), methodOperationStep(*)"
-              )
-              .eq("makeMethodId", node.data.materialMakeMethodId);
+            const relatedOperations = {
+              data:
+                operationsByMakeMethodId.get(
+                  node.data.materialMakeMethodId
+                ) ?? [],
+            };
 
             let jobOperationsInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
               [];
@@ -1083,14 +1198,8 @@ serve(async (req: Request) => {
               }
 
               // Get scrap percentage for this item
-              const itemReplenishment = await trx
-                .selectFrom("itemReplenishment")
-                .select("scrapPercentage")
-                .where("itemId", "=", itemId)
-                .executeTakeFirst();
-              const itemScrapPercentage = Number(
-                itemReplenishment?.scrapPercentage ?? 0
-              );
+              const itemScrapPercentage =
+                scrapPercentageByItemId.get(itemId) ?? 0;
 
               // Calculate scrap quantities for this material
               // targetQuantity for this child = parent's total (including scrap) * quantity per parent
@@ -1129,13 +1238,9 @@ serve(async (req: Request) => {
                 scrapQuantity: childScrapQuantity,
                 estimatedQuantity: childEstimatedQuantity,
                 storageUnitId: locationId
-                  ? await getStorageUnitId(
-                      trx,
-                      child.data.itemId,
-                      locationId,
-                      // @ts-ignore
-                      child.data.storageUnitIds?.[locationId] as string
-                    )
+                  ? // @ts-ignore
+                    (child.data.storageUnitIds?.[locationId] as string) ||
+                    defaultStorageUnitByItemId.get(child.data.itemId)
                   : undefined,
                 requiresSerialTracking,
                 requiresBatchTracking,
@@ -1202,13 +1307,6 @@ serve(async (req: Request) => {
               (child) => child.data.methodType === "Make to Order"
             );
 
-            console.log("[traverseMethod] materials", {
-              totalChildren: materialsWithConfiguredFields.length,
-              madeMaterialsCount: madeMaterials.length,
-              madeChildrenCount: madeChildren.length,
-              pickedOrBoughtCount: pickedOrBoughtMaterials.length,
-            });
-
             if (madeMaterials.length > 0) {
               const madeMaterialsWithIds = madeMaterials.map((m) => ({
                 ...m,
@@ -1249,21 +1347,11 @@ serve(async (req: Request) => {
                 const materialId = madeMaterialsWithIds[index].id;
                 const newMakeMethodId = nanoid();
 
-                const updateResult = await trx
+                await trx
                   .updateTable("jobMakeMethod")
                   .set({ id: newMakeMethodId })
                   .where("parentMaterialId", "=", materialId)
                   .execute();
-
-                console.log("[traverseMethod] processing made child", {
-                  index,
-                  materialId,
-                  newMakeMethodId,
-                  childItemId: child.data.itemId,
-                  parentItemId: itemId,
-                  willRecurse: child.data.itemId !== itemId,
-                  updateResult,
-                });
 
                 // Get the total quantity (estimated + scrap) for this child material
                 // This is what we pass to children for the cascade
@@ -1338,13 +1426,6 @@ serve(async (req: Request) => {
             } // end if (parts.billOfMaterial)
           }
 
-          function logTree(node: MethodTreeItem, depth = 0) {
-            console.log("  ".repeat(depth) + `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`);
-            for (const child of node.children) {
-              logTree(child, depth + 1);
-            }
-          }
-          logTree(methodTree);
 
           // Start traversal with job quantity as the root's target/parent estimated quantity
           await traverseMethod(
