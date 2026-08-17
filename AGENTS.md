@@ -103,6 +103,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Integrations** | |
 | Jira integration | `.claude/rules/jira-integration.md` |
 | Linear integration | `.claude/rules/linear-integration.md` |
+| Onshape integration (assets, release import, BOM) | `.claude/rules/onshape-integration.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
 | **Architecture** | |

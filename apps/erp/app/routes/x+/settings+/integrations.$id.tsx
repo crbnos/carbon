@@ -1397,17 +1397,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     metadata = foldRilletCredentials(metadata);
   }
 
-  // Onshape asset sync needs the OAuth2Write scope (export jobs + webhook). A
-  // connection authorized read-only can't run it, and a refresh can't widen the
-  // scope — only a reconnect can. If a read-only user is turning the feature ON,
-  // don't persist an on-but-non-functional toggle: force it back off here and
-  // tell them to reconnect first (below). Leaving it off imposes nothing.
+  // Onshape asset sync and release import both need the OAuth2Write scope (the
+  // webhook registration itself is a write, and asset sync also runs export
+  // jobs). A connection authorized read-only can't run either, and a refresh
+  // can't widen the scope — only a reconnect can. If a read-only user is turning
+  // one of them ON, don't persist an on-but-non-functional toggle: force it back
+  // off here and tell them to reconnect first (below). Leaving them off imposes
+  // nothing.
   const onshapeActivatingWithoutWrite =
     integrationId === "onshape" &&
-    (metadata as Record<string, unknown>).assetSyncEnabled === true &&
+    ((metadata as Record<string, unknown>).assetSyncEnabled === true ||
+      (metadata as Record<string, unknown>).releaseImportEnabled === true) &&
     !onshapeConnectionHasWriteScope(existingMetadata);
   if (onshapeActivatingWithoutWrite) {
     (metadata as Record<string, unknown>).assetSyncEnabled = false;
+    (metadata as Record<string, unknown>).releaseImportEnabled = false;
   }
 
   const wasInstalled = existing.data?.active === true;
@@ -1484,9 +1488,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // success while the sync silently never fires. The settings themselves are
   // already saved either way.
   if (integrationId === "onshape") {
-    // Read-only connection trying to turn asset sync on: we already forced the
-    // toggle back off above, so just tell them exactly what to do. Explicit and
-    // scope-accurate — not inferred from a downstream webhook failure.
+    // Read-only connection trying to turn asset sync or release import on: we
+    // already forced the toggles back off above, so just tell them exactly what
+    // to do. Explicit and scope-accurate — not inferred from a downstream
+    // webhook failure.
     if (onshapeActivatingWithoutWrite) {
       await invalidateIntegrationHealthCache(integrationId, companyId);
       throw redirect(
@@ -1495,19 +1500,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
           request,
           error(
             "onshape connection is read-only",
-            "Onshape is connected with read-only access. Reconnect Onshape to grant write access, then enable asset sync."
+            "Onshape is connected with read-only access. Reconnect Onshape to grant write access, then enable asset sync or release import."
           )
         )
       );
     }
 
-    const assetSyncEnabled =
-      (metadata as Record<string, unknown>).assetSyncEnabled === true;
+    // The subscription is shared: one Onshape webhook feeds both asset sync and
+    // release import, so it must be registered while EITHER is on and only
+    // deregistered when both are off.
+    const webhookWanted =
+      (metadata as Record<string, unknown>).assetSyncEnabled === true ||
+      (metadata as Record<string, unknown>).releaseImportEnabled === true;
     const webhookResult = await ensureOnshapeReleaseWebhook(
       companyId,
-      assetSyncEnabled
+      webhookWanted
     );
-    if (assetSyncEnabled && !webhookResult.ok) {
+    if (webhookWanted && !webhookResult.ok) {
       await invalidateIntegrationHealthCache(integrationId, companyId);
       throw redirect(
         path.to.integrations,

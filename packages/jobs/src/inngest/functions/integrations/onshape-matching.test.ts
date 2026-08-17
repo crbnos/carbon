@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   escapeLikePattern,
+  isInitialRevision,
   releaseKey,
+  selectReleaseTarget,
   sharedNumberSuffix
 } from "./onshape-matching";
 
@@ -73,5 +75,86 @@ describe("escapeLikePattern", () => {
 
   it("escapes every occurrence, not just the first", () => {
     expect(escapeLikePattern("_a_%b%")).toBe("\\_a\\_\\%b\\%");
+  });
+});
+
+describe("isInitialRevision", () => {
+  it("treats '0', '' , null and undefined as the initial revision", () => {
+    expect(isInitialRevision("0")).toBe(true);
+    expect(isInitialRevision("")).toBe(true);
+    expect(isInitialRevision(null)).toBe(true);
+    expect(isInitialRevision(undefined)).toBe(true);
+  });
+
+  it("treats a named revision as not initial", () => {
+    expect(isInitialRevision("A")).toBe(false);
+    expect(isInitialRevision("A2")).toBe(false);
+  });
+});
+
+describe("selectReleaseTarget", () => {
+  const row = (
+    revision: string | null,
+    active: boolean,
+    createdAt = "2026-01-01T00:00:00Z"
+  ) => ({ revision, active, createdAt });
+
+  it("reports not-found when the part number is unknown to Carbon", () => {
+    expect(selectReleaseTarget([], "B")).toEqual({ kind: "not-found" });
+  });
+
+  it("reports already-imported when an ACTIVE sibling holds that revision", () => {
+    const rows = [row("A", true), row("B", true)];
+    expect(selectReleaseTarget(rows, "B")).toEqual({
+      kind: "already-imported"
+    });
+  });
+
+  it("reports already-imported when an INACTIVE draft holds that revision", () => {
+    // The draft still occupies item_unique, so re-importing would 23505 and
+    // leave an empty change notice behind a marker claiming success.
+    const rows = [row("A", true), row("B", false)];
+    expect(selectReleaseTarget(rows, "B")).toEqual({
+      kind: "already-imported"
+    });
+  });
+
+  it("never sources from an inactive draft revision", () => {
+    // A human cannot pick one: the affected-item picker filters inactive items.
+    const rows = [row("A", true), row("B", false)];
+    const result = selectReleaseTarget(rows, "C");
+    expect(result).toEqual({ kind: "revision", item: rows[0] });
+  });
+
+  it("reports not-found when every sibling is inactive", () => {
+    expect(selectReleaseTarget([row("A", false)], "B")).toEqual({
+      kind: "not-found"
+    });
+  });
+
+  it("prefers a named revision over the initial one", () => {
+    const rows = [row("0", true), row("A", true)];
+    expect(selectReleaseTarget(rows, "B")).toEqual({
+      kind: "revision",
+      item: rows[1]
+    });
+  });
+
+  it("breaks ties on the newest createdAt", () => {
+    const older = row("A", true, "2026-01-01T00:00:00Z");
+    const newer = row("B", true, "2026-06-01T00:00:00Z");
+    expect(selectReleaseTarget([older, newer], "C")).toEqual({
+      kind: "revision",
+      item: newer
+    });
+  });
+
+  it("distinguishes revision '0' from the empty initial revision", () => {
+    // Matching the RAW revision column is what makes a numeric Onshape scheme
+    // representable — readableIdWithRevision collapses both to no revision.
+    expect(selectReleaseTarget([row("", true)], "0")).toEqual({
+      kind: "revision",
+      item: { revision: "", active: true, createdAt: "2026-01-01T00:00:00Z" }
+    });
   });
 });

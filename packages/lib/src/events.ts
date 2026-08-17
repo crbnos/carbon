@@ -543,6 +543,33 @@ export type Events = {
       elementId: string;
       elementType: number; // 0 = part studio, 1 = assembly, 2 = drawing
       revisionId?: string;
+      // Release-package identity. Onshape sends one event per released element
+      // with no release-level event, so this is the only thing that groups the
+      // siblings of a single release. Optional: older deliveries and manual
+      // replays may not carry it.
+      releaseId?: string;
+      revision?: string; // the revision LETTER (e.g. "A"), not revisionId
+    };
+  };
+
+  // Onshape release import: one released element -> a pre-populated Draft
+  // change notice, one notice per release package. Dispatched only when
+  // releaseImportEnabled is on, so a company that has not opted in produces
+  // no runs at all.
+  "carbon/onshape-release-import": {
+    data: {
+      companyId: string;
+      userId: string;
+      messageId: string; // Onshape webhook messageId — idempotency key
+      releaseId: string; // claim key: one change notice per releaseId
+      partNumber: string;
+      documentId: string;
+      versionId: string;
+      elementId: string;
+      elementType: number; // 0 = part studio, 1 = assembly, 2 = drawing
+      revisionId?: string;
+      revision?: string; // the revision LETTER (e.g. "A"), not revisionId
+      releaseName?: string;
     };
   };
 

@@ -1,7 +1,7 @@
 ---
 title: CAD
 plan: Business
-description: Sync CAD data from Onshape into Carbon.
+description: Attach released Onshape models and drawings to items, and bring released revisions into Carbon's engineering data.
 ---
 
 ## Onshape
@@ -15,9 +15,9 @@ Connect to **Onshape** over **OAuth** to bring CAD data into Carbon. No keys to 
   Start the connection and Carbon opens an Onshape popup.
   </Step>
   <Step>
-  ### Approve read access
+  ### Approve read and write access
 
-  Approve read access to your Onshape documents in the popup.
+  Carbon asks for read access to your Onshape documents and write access. Write is what lets Carbon register the release webhook it listens on, so both features below depend on it.
   </Step>
   <Step>
   ### Tokens stored
@@ -26,13 +26,84 @@ Connect to **Onshape** over **OAuth** to bring CAD data into Carbon. No keys to 
   </Step>
 </Steps>
 
-| Setting | What it controls |
-| --- | --- |
-| Connection | Established by OAuth — no keys to paste. Carbon stores the access and refresh tokens for you. |
-
 <Callout type="warn">
 Onshape only appears when its OAuth client is configured server-side (`ONSHAPE_CLIENT_ID`) — see
 [Environment variables](/docs/platform/self-hosting/environment-variables).
+</Callout>
+
+## Settings
+
+Onshape has two features, and they are independent. Asset sync attaches files to items. Release import
+changes engineering data. You can run either, both, or neither.
+
+<FieldTable>
+  <Field name="Connection">Established by OAuth — no keys to paste. Carbon stores the access and refresh tokens for you.</Field>
+  <Field name="Sync released assets">Off by default. When a part or assembly is released in Onshape, Carbon attaches its CAD model to the matching Carbon [item](/docs/reference/items), and a released drawing's PDF to the item it documents. Items are matched by part number. Asset sync never creates an item.</Field>
+  <Field name="Import released revisions">Off by default. Brings an Onshape release into Carbon's engineering data rather than only its files. Turning it on reveals the mode below.</Field>
+  <Field name="How a release lands">Either **Create a change notice** (the default) or **Create the revision directly**. See [Release import](#release-import).</Field>
+  <Field name="Webhook signing secret">Optional, under **Security**. Your Onshape company's webhook signing key. Set it and Carbon rejects any inbound webhook that does not verify against it.</Field>
+</FieldTable>
+
+Carbon registers one Onshape webhook, and that single subscription feeds both features. Either one being on
+is enough to receive release webhooks; the subscription is removed only when both are off.
+
+<Callout type="warn" title="A read-only connection can't run either feature.">
+Registering the webhook is itself a write, so a connection authorized before Carbon asked for write access
+can't run asset sync or release import. Refreshing a token can't widen its scope. If you enable either
+setting on such a connection, Carbon turns it back off and tells you to reconnect Onshape first, rather than
+saving a switch that is on but does nothing.
+</Callout>
+
+<Callout type="note" title="Leaving the signing secret blank accepts unsigned webhooks.">
+This is the default and matches how the integration has always behaved: the callback URL plus the
+active-integration check are what protect the endpoint. Set the secret and every delivery must carry a valid
+signature. Carbon accepts either of your Onshape company's signing keys, so rotating one is not a cutover, and
+rejects a delivery whose timestamp is more than five minutes old. The keys are company-level in Onshape, so
+rotating one affects everything else consuming that Onshape company's webhooks.
+</Callout>
+
+## Release import
+
+Release import decides what a release means in Carbon. Pick the mode on **How a release lands**.
+
+| Mode | What Carbon does | Review step |
+| --- | --- | --- |
+| **Create a change notice** (default) | Opens one **"Draft"** [change notice](/docs/reference/change-orders) per Onshape release, pre-populated with the released parts | Yes. Nothing changes on the live item until someone releases the notice |
+| **Create the revision directly** | Creates the new item revision immediately and active, copying the previous revision's attributes and bill of materials | No. There is no notice and nothing to approve |
+
+### What a release produces
+
+An Onshape release arrives as one event per released element, and Carbon groups them back together, so a
+release of nine parts becomes **one** change notice with nine affected items, not nine notices. Each affected
+item carries change type **Revision** at the revision letter Onshape assigned, so `A` in Onshape is revision
+`A` in Carbon rather than whatever Carbon's own numbering would have picked next. See
+[Change types](/docs/reference/change-orders/change-types) for what a Revision creates on release.
+
+The notice opens in **"Draft"**, named after the release, assigned to the user who last saved the Onshape
+integration so it lands in a real person's queue, and carries the Onshape document, version, and element in
+**Reason for Change**. From
+there it is an ordinary change notice: a human walks it through **"Start"**, **"Engineering Complete"**,
+**"Implementation"**, and releases it. Read
+[Lifecycle & release](/docs/reference/change-orders/lifecycle) for what release applies.
+
+Re-releasing a revision Carbon already holds is skipped, so a redelivered webhook or a repeated release can't
+duplicate a revision. If someone already has an open change notice on the same part, the import adds its own
+alongside it. Carbon allows parallel notices on one part, so review both before releasing either.
+
+## What release import skips
+
+<Callout type="warn" title="A released drawing never appears on the change notice.">
+Onshape releases a drawing as its own element, and that element resolves to the same Carbon part as the model
+it documents, so importing it would put the same part on the notice twice. Carbon skips it. The drawing PDF
+still reaches the item through asset sync. Read the notice as the release's engineering changes, not as a
+complete manifest of what was released.
+</Callout>
+
+<Callout type="warn" title="A part number Carbon has never seen is skipped, not created.">
+Release import revises parts that already exist. A released part with no matching Carbon part number is
+skipped rather than minted, because a part created from a webhook would land on Carbon's defaults for tracking
+and replenishment and mislead planning. Bring the part in first through the Onshape **BOM** sync on the parent
+part's **Bill of Materials**, then release it again.
 </Callout>
 
 ## Related
@@ -40,6 +111,9 @@ Onshape only appears when its OAuth client is configured server-side (`ONSHAPE_C
 <Cards>
   <Card title="Items" href="/docs/reference/items">
     The part records CAD data attaches to.
+  </Card>
+  <Card title="Change notices" href="/docs/reference/change-orders">
+    What an imported release becomes, and how a human releases it.
   </Card>
   <Card title="Methods & sourcing" href="/docs/reference/methods">
     How a part's bill of materials is built up.

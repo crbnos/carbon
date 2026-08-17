@@ -13,6 +13,18 @@ export const Onshape = defineIntegration({
     "Onshape is a browser-based CAD/PLM software for modern engineering teams. This integration will sync data from Onshape to Carbon.",
   shortDescription: "Sync data from Onshape to Carbon.",
   images: [],
+  settingGroups: [
+    {
+      name: "Release import",
+      description:
+        "What Carbon does with the engineering data in an Onshape release. Independent of asset sync — either one on is enough to receive release webhooks."
+    },
+    {
+      name: "Security",
+      description:
+        "Optional. Onshape signs each webhook with your Onshape company's signing key; set it here and Carbon rejects anything that does not verify."
+    }
+  ],
   settings: [
     {
       name: "assetSyncEnabled",
@@ -22,6 +34,61 @@ export const Onshape = defineIntegration({
       type: "switch",
       required: false,
       value: false
+    },
+    {
+      name: "releaseImportEnabled",
+      label: "Import released revisions",
+      description:
+        "Automatically bring an Onshape release into Carbon's engineering data, not just its files. Off by default.",
+      type: "switch",
+      required: false,
+      value: false,
+      group: "Release import"
+    },
+    {
+      name: "releaseImportMode",
+      label: "How a release lands",
+      description:
+        "Change notice is the reviewable path: nothing changes on the live item until someone releases the notice. Direct revision skips review and creates the revision immediately.",
+      type: "options",
+      listOptions: [
+        {
+          value: "changeNotice",
+          label: "Create a change notice",
+          description:
+            "One Draft change notice per Onshape release, pre-populated with an affected item per released part, for a human to review and release."
+        },
+        {
+          value: "revision",
+          label: "Create the revision directly",
+          description:
+            "Create the new revision immediately, copying the previous revision's attributes and BOM. No review step."
+        }
+      ],
+      required: false,
+      value: "changeNotice",
+      group: "Release import",
+      // ConditionalSettingField compares String(controlValue) — a switch's
+      // control value is a boolean, so the literal string "true" is correct.
+      visibleWhen: { field: "releaseImportEnabled", equals: "true" }
+    },
+    {
+      name: "webhookSigningSecret",
+      label: "Webhook signing secret",
+      description:
+        "Leave blank to accept unsigned webhooks (current behaviour). Onshape's signing keys are company-level, not per-webhook, so rotating one affects every consumer of that Onshape company. Stored as plaintext in the integration record, like the OAuth tokens.",
+      // Deliberately "text", not "password"/"secret", matching the
+      // paperless-parts "Webhook Signing Secret" precedent. Both masked types
+      // render a <Password> input and nothing in IntegrationForm sets
+      // autoComplete, so a browser password manager will silently autofill them
+      // — observed filling a saved password into this field on save, which would
+      // then make the receiver reject every genuine Onshape delivery. Masking
+      // buys little here (the value is plaintext JSON in the row either way);
+      // a silently wrong value costs webhook ingestion.
+      type: "text",
+      required: false,
+      value: "",
+      group: "Security"
     }
   ],
   schema: z.object({
@@ -34,7 +101,21 @@ export const Onshape = defineIntegration({
         if (value === "false") return false;
         return value;
       }, z.boolean())
-      .default(false)
+      .default(false),
+    releaseImportEnabled: z
+      .preprocess((value) => {
+        if (typeof value === "boolean") return value;
+        if (value === "true") return true;
+        if (value === "false") return false;
+        return value;
+      }, z.boolean())
+      .default(false),
+    // A visibleWhen-hidden field is unmounted and posts NOTHING, so absence has
+    // to be tolerated — hence the default rather than a bare enum.
+    releaseImportMode: z
+      .enum(["changeNotice", "revision"])
+      .default("changeNotice"),
+    webhookSigningSecret: z.string().optional()
   }),
   actions: [
     {

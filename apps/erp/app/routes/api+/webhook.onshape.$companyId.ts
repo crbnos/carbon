@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
+import crypto from "crypto";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -10,15 +11,22 @@ import { getIntegration } from "../../modules/settings";
 //
 //   Onshape ──POST──▶ /api/webhook/onshape/:companyId
 //                        │  resolve companyId + active onshape integration
+//                        │  drop unless asset sync OR release import is on
+//                        │  verify HMAC when a signing secret is configured
 //                        │  validate minimal envelope, log the event
 //                        ▼
-//     onshape.revision.created ──▶ trigger("onshape-revision-sync")
+//     onshape.revision.created ──▶ trigger("onshape-revision-sync")   [assetSyncEnabled]
+//                              ──▶ trigger("onshape-release-import")  [releaseImportEnabled]
 //     everything else          ──▶ ack 200 (logged, no dispatch)
 //
-// AUTH: like the jira/linear receivers, no signature verification — the endpoint
-// relies on the callback URL + the active-integration check. A forged event can't
-// inject content: the sync job re-resolves the released revision against the
-// Onshape API, so at worst it triggers a sync of a genuinely released revision.
+// AUTH: signature verification is OPT-IN per company. With no
+// metadata.webhookSigningSecret configured the endpoint behaves exactly as it
+// always has — it relies on the callback URL + the active-integration check, and
+// a forged event can't inject content because the sync job re-resolves the
+// released revision against the Onshape API. Release import raises the stakes
+// (a forged event creates Draft change notices, and the endpoint is enumerable),
+// so a company can set a secret and have everything else rejected. Fail-open
+// when absent is what keeps an existing customer's behaviour byte-identical.
 
 // Minimal envelope — only fields confirmed against Onshape's webhook docs. Kept
 // permissive (passthrough) on purpose so real events aren't rejected if Onshape
@@ -36,9 +44,70 @@ const onshapeWebhookEnvelope = z
     // onshape.revision.created carries the released element identity directly.
     partNumber: z.string().optional(),
     elementType: z.number().optional(), // 0 = part studio, 1 = assembly, 2 = drawing
-    revisionId: z.string().optional()
+    revisionId: z.string().optional(),
+    // Release-package identity + the revision LETTER. Both already arrive and
+    // already survive .passthrough(); they were simply never destructured.
+    // releaseId is what groups the per-element events of one release — there is
+    // no release-level Onshape event to key on.
+    releaseId: z.string().optional(),
+    releaseName: z.string().optional(),
+    revision: z.string().optional()
   })
   .passthrough();
+
+// Onshape signs each delivery as Base64(HMAC-SHA256(key, "<timestamp>.<body>")),
+// sending it in BOTH a -primary and a -secondary header so a key rotation is
+// zero-downtime. Accept either. Reject a timestamp older than this window so a
+// captured delivery cannot be replayed indefinitely.
+const SIGNATURE_MAX_AGE_MS = 5 * 60 * 1000;
+
+function signaturesMatch(expected: string, provided: string | null): boolean {
+  if (!provided) return false;
+  const expectedBuffer = Buffer.from(expected);
+  const providedBuffer = Buffer.from(provided);
+  // timingSafeEqual THROWS on a length mismatch, so length has to be checked
+  // first — and an unequal length is already a mismatch.
+  if (expectedBuffer.length !== providedBuffer.length) return false;
+  return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+}
+
+function verifyOnshapeSignature(
+  request: Request,
+  rawBody: string,
+  secret: string
+): { ok: true } | { ok: false; reason: string } {
+  const timestamp = request.headers.get("x-onshape-webhook-timestamp");
+  if (!timestamp) {
+    return { ok: false, reason: "missing timestamp header" };
+  }
+
+  const timestampMs = Number(timestamp);
+  if (!Number.isFinite(timestampMs)) {
+    return { ok: false, reason: "unparseable timestamp header" };
+  }
+  // Absolute-instant comparison only — never rendered, never stored. This is the
+  // narrow case the date-handling rule allows a raw epoch for.
+  if (Math.abs(Date.now() - timestampMs) > SIGNATURE_MAX_AGE_MS) {
+    return { ok: false, reason: "timestamp outside the accepted window" };
+  }
+
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(`${timestamp}.${rawBody}`, "utf8")
+    .digest("base64");
+
+  const matched =
+    signaturesMatch(
+      expected,
+      request.headers.get("x-onshape-webhook-signature-primary")
+    ) ||
+    signaturesMatch(
+      expected,
+      request.headers.get("x-onshape-webhook-signature-secondary")
+    );
+
+  return matched ? { ok: true } : { ok: false, reason: "signature mismatch" };
+}
 
 export async function loader({ params }: LoaderFunctionArgs) {
   // Onshape (and manual health checks) may GET this endpoint to validate it.
@@ -85,23 +154,60 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Defense-in-depth: only process events while asset sync is enabled. If a
-  // deregister failed when the toggle was turned off, the subscription can
-  // linger — drop (ack 200 so Onshape doesn't retry) rather than dispatch.
+  // Defense-in-depth: only process events while at least one consumer is
+  // enabled. If a deregister failed when the toggles were turned off, the
+  // subscription can linger — drop (ack 200 so Onshape doesn't retry) rather
+  // than dispatch. Both reads stay strict `!== true`, and this gate stays
+  // BEFORE the body is read, so a company that has opted into neither takes a
+  // byte-identical path to before release import existed.
   const integrationMetadata = (integration.data.metadata ?? {}) as Record<
     string,
     unknown
   >;
-  if (integrationMetadata.assetSyncEnabled !== true) {
-    console.log("Onshape webhook: asset sync disabled; ignoring event", {
+  const assetSyncEnabled = integrationMetadata.assetSyncEnabled === true;
+  const releaseImportEnabled =
+    integrationMetadata.releaseImportEnabled === true;
+  if (!assetSyncEnabled && !releaseImportEnabled) {
+    console.log("Onshape webhook: no consumer enabled; ignoring event", {
       companyId
     });
     return { success: true };
   }
 
+  // Read the body as TEXT once: HMAC verification needs the exact bytes Onshape
+  // signed, so re-serialising a parsed object would not reproduce them.
+  let rawBody: string;
+  try {
+    rawBody = await request.text();
+  } catch (readError) {
+    console.error("Onshape webhook: could not read body", readError);
+    return data({ success: false, error: "Unreadable body" }, { status: 400 });
+  }
+
+  // Opt-in signature verification. An empty string counts as absent: the
+  // declared-settings merge is shallow, so clearing the field on a later save
+  // writes "" rather than removing the key.
+  const signingSecret =
+    typeof integrationMetadata.webhookSigningSecret === "string"
+      ? integrationMetadata.webhookSigningSecret.trim()
+      : "";
+  if (signingSecret) {
+    const verified = verifyOnshapeSignature(request, rawBody, signingSecret);
+    if (!verified.ok) {
+      console.warn("Onshape webhook: signature verification failed", {
+        companyId,
+        reason: verified.reason
+      });
+      return data(
+        { success: false, error: "Invalid signature" },
+        { status: 401 }
+      );
+    }
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody);
   } catch (parseError) {
     console.error("Onshape webhook: body is not valid JSON", parseError);
     return data(
@@ -127,7 +233,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     versionId,
     partNumber,
     elementType,
-    revisionId
+    revisionId,
+    releaseId,
+    releaseName,
+    revision
   } = parsed.data;
 
   console.log("Onshape webhook received", {
@@ -138,7 +247,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     documentId,
     versionId,
     elementId,
-    elementType
+    elementType,
+    releaseId,
+    revision
   });
 
   switch (event) {
@@ -165,17 +276,60 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
         break;
       }
-      await trigger("onshape-revision-sync", {
-        companyId,
-        userId: installerUserId,
-        messageId,
-        partNumber,
-        documentId,
-        versionId,
-        elementId,
-        elementType,
-        revisionId
-      });
+      if (assetSyncEnabled) {
+        await trigger("onshape-revision-sync", {
+          companyId,
+          userId: installerUserId,
+          messageId,
+          partNumber,
+          documentId,
+          versionId,
+          elementId,
+          elementType,
+          revisionId,
+          releaseId,
+          revision
+        });
+      }
+
+      if (releaseImportEnabled) {
+        // releaseId is the claim key — one change notice per release package.
+        // Without it the siblings of a release cannot be grouped, so importing
+        // would produce one notice per element. Skip loudly rather than that.
+        if (!releaseId) {
+          console.warn(
+            "Onshape webhook: revision.created without releaseId; skipping release import",
+            { companyId, messageId, partNumber }
+          );
+        } else if (elementType === 2) {
+          // A released DRAWING is its own DRW-xxxx element that resolves to the
+          // SAME Carbon item as the model it documents (see the elementType-2
+          // branch of onshape-revision-sync). Importing it as a second affected
+          // item violates UNIQUE(changeOrderId, itemId) on the FIRST import of a
+          // normal release; deriving its change type from readableId instead
+          // mints a junk DRW-xxxx part. The drawing PDF still reaches the item
+          // through asset sync.
+          console.log(
+            "Onshape webhook: drawing element; skipping release import",
+            { companyId, messageId, partNumber }
+          );
+        } else {
+          await trigger("onshape-release-import", {
+            companyId,
+            userId: installerUserId,
+            messageId,
+            releaseId,
+            partNumber,
+            documentId,
+            versionId,
+            elementId,
+            elementType,
+            revisionId,
+            revision,
+            releaseName
+          });
+        }
+      }
       break;
     }
     case "onshape.workflow.transition":
