@@ -32,8 +32,10 @@ Purchase orders, supplier management, supplier quotes/interactions, RFQs, and pr
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/erp typecheck
-pnpm --filter @carbon/erp test
+# The app's package name is "erp" — there is no "@carbon/erp" workspace.
+pnpm exec turbo run typecheck --filter=erp
+# apps/erp has no `test` script; run vitest from the app directory.
+cd apps/erp && pnpm exec vitest run app/modules/purchasing
 ```
 
 ## Key Data Model
