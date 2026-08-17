@@ -837,6 +837,9 @@ msgstr "能力"
 msgid "Ability"
 msgstr "能力"
 
+msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
 msgid "About"
 msgstr "について"
 
@@ -2424,12 +2427,18 @@ msgstr "利用可能"
 msgid "Available"
 msgstr "利用可能"
 
+msgid "Available 24 hours a day, 7 days a week."
+msgstr ""
+
 msgid "Available Actions (click to add)"
 msgstr "利用可能なアクション（クリックして追加）"
 
 #. placeholder {0}: port.label
 msgid "Available after {0}"
 msgstr "{0}の後に利用可能"
+
+msgid "Available hours"
+msgstr ""
 
 msgid "Avatar url"
 msgstr "アバターURL"
@@ -4711,6 +4720,9 @@ msgstr "売上請求書が転記されるときにクレジットされるデフ
 
 msgid "Default Sampling"
 msgstr "デフォルトサンプリング"
+
+msgid "Default schedule"
+msgstr ""
 
 msgid "Default shelf-life duration (days)"
 msgstr "デフォルト保管期間（日数）"
@@ -7516,6 +7528,9 @@ msgstr "メソッドまたはBOMラインに追加されるときにアイテム
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "アイテムの単価コストがどのように評価されるか：標準、平均、FIFO、またはLIFO。アイテムごとに設定。"
 
+msgid "How are these hours calculated?"
+msgstr ""
+
 msgid "How coverage is worked out"
 msgstr "カバレッジの計算方法"
 
@@ -7753,6 +7768,9 @@ msgstr "在庫のみ"
 
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"
+
+msgid "In use"
+msgstr ""
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "アプリ内通知は常に配信されます。どのトピックがメールまたはSlackでも届くかを選択してください。"
@@ -8596,6 +8614,9 @@ msgstr "ライトモード"
 msgid "Lights Out (24×7)"
 msgstr ""
 
+msgid "Lights-out (24/7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "可能性"
 
@@ -8722,6 +8743,9 @@ msgstr "場所 / 品目"
 
 msgid "Location Name"
 msgstr "ロケーション名"
+
+msgid "Location shifts"
+msgstr ""
 
 msgid "locations"
 msgstr "場所"
@@ -8873,6 +8897,9 @@ msgstr "保守経費 (デフォルト)"
 
 msgid "Maintenance Schedules"
 msgstr "メンテナンススケジュール"
+
+msgid "Maintenance that takes the station offline is removed."
+msgstr ""
 
 msgid "Maintenance Type"
 msgstr "メンテナンスタイプ"
@@ -9349,8 +9376,14 @@ msgstr "モジュール"
 msgid "Modules in scope"
 msgstr "スコープ内のモジュール"
 
+msgid "Mon–Fri, 8 hours a day"
+msgstr ""
+
 msgid "Monday"
 msgstr "月曜日"
+
+msgid "Monday–Friday, 08:00–16:00"
+msgstr ""
 
 msgid "Money owed to you"
 msgstr "あなたに支払われるべき金額"
@@ -13002,6 +13035,9 @@ msgstr "実行中…"
 msgid "Runs"
 msgstr "実行"
 
+msgid "Runs around the clock"
+msgstr ""
+
 msgid "Runs during every shift at the location."
 msgstr ""
 
@@ -13860,6 +13896,9 @@ msgstr "シフト"
 
 msgid "Shifts"
 msgstr "シフト"
+
+msgid "Shifts assigned to this station"
+msgstr ""
 
 msgid "Ship"
 msgstr "出荷"
@@ -15493,6 +15532,9 @@ msgstr "この仕事が供給するために作成された販売注文ライン
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "このアセットの費用を耐用年数にわたって分散するために使用される償却方法（定額法、減額法、生産単位）。"
 
+msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
+msgstr ""
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "在物理上存放库存的货架和箱子"
 
@@ -15501,6 +15543,9 @@ msgstr "手元に保管する店舗用品と消耗品"
 
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "このワークフローを使用するすべてのイシューが閉じられる前に必要な署名。"
+
+msgid "The site's shifts"
+msgstr ""
 
 msgid "The size of the part"
 msgstr "部品のサイズ"
@@ -15660,6 +15705,9 @@ msgstr "テーマ"
 
 msgid "Theme Color"
 msgstr "テーマカラー"
+
+msgid "Then adjusted for"
+msgstr ""
 
 msgid "Then by"
 msgstr "次に"
@@ -17552,6 +17600,9 @@ msgstr "ワークセンター"
 
 msgid "Work Center Reservation"
 msgstr "作業センター予約"
+
+msgid "Work center shifts"
+msgstr ""
 
 msgid "Work Center Utilization"
 msgstr "ワークセンター稼働率"

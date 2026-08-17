@@ -174,6 +174,10 @@ function backgroundClassNameForVariant(
       }
       return "bg-emerald-500";
     }
+    // Machine downtime (maintenance outages) — amber, distinct from job bars.
+    case "maintenance": {
+      return "bg-amber-500";
+    }
     default: {
       return "bg-gray-500";
     }

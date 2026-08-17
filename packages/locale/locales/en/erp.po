@@ -837,6 +837,9 @@ msgstr "ability"
 msgid "Ability"
 msgstr "Ability"
 
+msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+
 msgid "About"
 msgstr "About"
 
@@ -2424,12 +2427,18 @@ msgstr "available"
 msgid "Available"
 msgstr "Available"
 
+msgid "Available 24 hours a day, 7 days a week."
+msgstr "Available 24 hours a day, 7 days a week."
+
 msgid "Available Actions (click to add)"
 msgstr "Available Actions (click to add)"
 
 #. placeholder {0}: port.label
 msgid "Available after {0}"
 msgstr "Available after {0}"
+
+msgid "Available hours"
+msgstr "Available hours"
 
 msgid "Avatar url"
 msgstr "Avatar url"
@@ -4711,6 +4720,9 @@ msgstr "Default revenue GL account credited when a sales invoice posts."
 
 msgid "Default Sampling"
 msgstr "Default Sampling"
+
+msgid "Default schedule"
+msgstr "Default schedule"
 
 msgid "Default shelf-life duration (days)"
 msgstr "Default shelf-life duration (days)"
@@ -7516,6 +7528,9 @@ msgstr "How an item is sourced when added to a method or BOM line."
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 
+msgid "How are these hours calculated?"
+msgstr "How are these hours calculated?"
+
 msgid "How coverage is worked out"
 msgstr "How coverage is worked out"
 
@@ -7753,6 +7768,9 @@ msgstr "In stock only"
 
 msgid "In the loop together"
 msgstr "In the loop together"
+
+msgid "In use"
+msgstr "In use"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
@@ -8596,6 +8614,9 @@ msgstr "Light Mode"
 msgid "Lights Out (24×7)"
 msgstr "Lights Out (24×7)"
 
+msgid "Lights-out (24/7)"
+msgstr "Lights-out (24/7)"
+
 msgid "Likelihood"
 msgstr "Likelihood"
 
@@ -8722,6 +8743,9 @@ msgstr "Location / Item"
 
 msgid "Location Name"
 msgstr "Location Name"
+
+msgid "Location shifts"
+msgstr "Location shifts"
 
 msgid "locations"
 msgstr "locations"
@@ -8873,6 +8897,9 @@ msgstr "Maintenance Expense (default)"
 
 msgid "Maintenance Schedules"
 msgstr "Maintenance Schedules"
+
+msgid "Maintenance that takes the station offline is removed."
+msgstr "Maintenance that takes the station offline is removed."
 
 msgid "Maintenance Type"
 msgstr "Maintenance Type"
@@ -9349,8 +9376,14 @@ msgstr "Modules"
 msgid "Modules in scope"
 msgstr "Modules in scope"
 
+msgid "Mon–Fri, 8 hours a day"
+msgstr "Mon–Fri, 8 hours a day"
+
 msgid "Monday"
 msgstr "Monday"
+
+msgid "Monday–Friday, 08:00–16:00"
+msgstr "Monday–Friday, 08:00–16:00"
 
 msgid "Money owed to you"
 msgstr "Money owed to you"
@@ -13002,6 +13035,9 @@ msgstr "Running…"
 msgid "Runs"
 msgstr "Runs"
 
+msgid "Runs around the clock"
+msgstr "Runs around the clock"
+
 msgid "Runs during every shift at the location."
 msgstr "Runs during every shift at the location."
 
@@ -13860,6 +13896,9 @@ msgstr "shifts"
 
 msgid "Shifts"
 msgstr "Shifts"
+
+msgid "Shifts assigned to this station"
+msgstr "Shifts assigned to this station"
 
 msgid "Ship"
 msgstr "Ship"
@@ -15493,6 +15532,9 @@ msgstr "The sales order line this job was created to supply, tying the job to th
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 
+msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
+msgstr "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "The shelves and bins where stock physically sits"
 
@@ -15501,6 +15543,9 @@ msgstr "The shop supplies and consumables you keep on hand"
 
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "The sign-offs every issue using this workflow needs before it can be closed."
+
+msgid "The site's shifts"
+msgstr "The site's shifts"
 
 msgid "The size of the part"
 msgstr "The size of the part"
@@ -15660,6 +15705,9 @@ msgstr "Theme"
 
 msgid "Theme Color"
 msgstr "Theme Color"
+
+msgid "Then adjusted for"
+msgstr "Then adjusted for"
 
 msgid "Then by"
 msgstr "Then by"
@@ -17552,6 +17600,9 @@ msgstr "Work Center"
 
 msgid "Work Center Reservation"
 msgstr "Work Center Reservation"
+
+msgid "Work center shifts"
+msgstr "Work center shifts"
 
 msgid "Work Center Utilization"
 msgstr "Work Center Utilization"

@@ -837,6 +837,9 @@ msgstr "możliwość"
 msgid "Ability"
 msgstr "Umiejętność"
 
+msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
 msgid "About"
 msgstr "O mnie"
 
@@ -2424,12 +2427,18 @@ msgstr "dostępne"
 msgid "Available"
 msgstr "Dostępne"
 
+msgid "Available 24 hours a day, 7 days a week."
+msgstr ""
+
 msgid "Available Actions (click to add)"
 msgstr "Dostępne akcje (kliknij, aby dodać)"
 
 #. placeholder {0}: port.label
 msgid "Available after {0}"
 msgstr "Dostępne po {0}"
+
+msgid "Available hours"
+msgstr ""
 
 msgid "Avatar url"
 msgstr "URL avatara"
@@ -4711,6 +4720,9 @@ msgstr "Domyślne konto GL przychodu kredytowane po zaksięgowaniu faktury sprze
 
 msgid "Default Sampling"
 msgstr "Domyślne pobieranie próbek"
+
+msgid "Default schedule"
+msgstr ""
 
 msgid "Default shelf-life duration (days)"
 msgstr "Domyślny czas trwania przydatności (dni)"
@@ -7516,6 +7528,9 @@ msgstr "Jak artykuł jest pozyskiwany, gdy jest dodawany do wiersza metody lub B
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "Jak koszt jednostkowy artykułu jest wyceniany: Standard, Średnia, FIFO lub LIFO. Ustawienie na artykuł."
 
+msgid "How are these hours calculated?"
+msgstr ""
+
 msgid "How coverage is worked out"
 msgstr "Jak ustalić pokrycie"
 
@@ -7753,6 +7768,9 @@ msgstr "Tylko w magazynie"
 
 msgid "In the loop together"
 msgstr "W pętli razem"
+
+msgid "In use"
+msgstr ""
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Powiadomienia w aplikacji są zawsze dostarczane. Wybierz, które tematy mają do Ciebie dotrzeć również pocztą e-mail lub Slack."
@@ -8596,6 +8614,9 @@ msgstr "Tryb jasny"
 msgid "Lights Out (24×7)"
 msgstr ""
 
+msgid "Lights-out (24/7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "Prawdopodobieństwo"
 
@@ -8722,6 +8743,9 @@ msgstr "Lokalizacja / Pozycja"
 
 msgid "Location Name"
 msgstr "Nazwa lokalizacji"
+
+msgid "Location shifts"
+msgstr ""
 
 msgid "locations"
 msgstr "lokalizacje"
@@ -8873,6 +8897,9 @@ msgstr "Wydatek na Konserwację (domyślne)"
 
 msgid "Maintenance Schedules"
 msgstr "Harmonogramy konserwacji"
+
+msgid "Maintenance that takes the station offline is removed."
+msgstr ""
 
 msgid "Maintenance Type"
 msgstr "Typ konserwacji"
@@ -9349,8 +9376,14 @@ msgstr "Moduły"
 msgid "Modules in scope"
 msgstr "Moduły w zakresie"
 
+msgid "Mon–Fri, 8 hours a day"
+msgstr ""
+
 msgid "Monday"
 msgstr "Poniedziałek"
+
+msgid "Monday–Friday, 08:00–16:00"
+msgstr ""
 
 msgid "Money owed to you"
 msgstr "Pieniądze należne Tobie"
@@ -13002,6 +13035,9 @@ msgstr "Uruchamianie…"
 msgid "Runs"
 msgstr "Uruchomienia"
 
+msgid "Runs around the clock"
+msgstr ""
+
 msgid "Runs during every shift at the location."
 msgstr ""
 
@@ -13860,6 +13896,9 @@ msgstr "zmiany"
 
 msgid "Shifts"
 msgstr "Zmiany"
+
+msgid "Shifts assigned to this station"
+msgstr ""
 
 msgid "Ship"
 msgstr "Wysyłka"
@@ -15493,6 +15532,9 @@ msgstr "Linia zamówienia sprzedaży, dla której to zadanie zostało utworzone,
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Harmonogram używany do rozłożenia kosztu tego zasobu na jego okres użytkowania (linia prosta, malejący bilans, jednostki produkcji)."
 
+msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
+msgstr ""
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "Półki i pojemniki, gdzie fizycznie znajduje się zapas"
 
@@ -15501,6 +15543,9 @@ msgstr "Materiały eksploatacyjne i zużywalne, które masz pod ręką"
 
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "Zatwierdzenia, które każdy problem korzystający z tego przepływu pracy musi mieć, zanim będzie można go zamknąć."
+
+msgid "The site's shifts"
+msgstr ""
 
 msgid "The size of the part"
 msgstr "Rozmiar części"
@@ -15660,6 +15705,9 @@ msgstr "Motyw"
 
 msgid "Theme Color"
 msgstr "Kolor motywu"
+
+msgid "Then adjusted for"
+msgstr ""
 
 msgid "Then by"
 msgstr "Następnie wg"
@@ -17552,6 +17600,9 @@ msgstr "Centrum Pracy"
 
 msgid "Work Center Reservation"
 msgstr "Rezerwacja centrum pracy"
+
+msgid "Work center shifts"
+msgstr ""
 
 msgid "Work Center Utilization"
 msgstr "Wykorzystanie Centrum Pracy"

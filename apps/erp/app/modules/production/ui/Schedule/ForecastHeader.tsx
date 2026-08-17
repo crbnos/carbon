@@ -1,17 +1,18 @@
 import {
-  Badge,
   Button,
   Calendar,
   Combobox,
   cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   Popover,
   PopoverContent,
-  PopoverTrigger,
-  Tabs,
-  TabsList,
-  TabsTrigger
+  PopoverTrigger
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import {
@@ -25,9 +26,10 @@ import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import {
   LuCalendarDays,
+  LuCalendarRange,
+  LuChevronDown,
   LuChevronLeft,
-  LuChevronRight,
-  LuTriangleAlert
+  LuChevronRight
 } from "react-icons/lu";
 import { useNavigate, useSearchParams } from "react-router";
 import { useLocations } from "~/components/Form/Location";
@@ -43,10 +45,6 @@ type ForecastHeaderProps = {
   shiftId: string | null;
   departments: { value: string; label: string }[];
   shifts: { id: string; name: string }[];
-  resourceCount: number;
-  reservationCount: number;
-  jobCount: number;
-  conflictCount: number;
 };
 
 /**
@@ -61,11 +59,7 @@ export function ForecastHeader({
   departmentId,
   shiftId,
   departments,
-  shifts,
-  resourceCount,
-  reservationCount,
-  jobCount,
-  conflictCount
+  shifts
 }: ForecastHeaderProps) {
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -154,7 +148,7 @@ export function ForecastHeader({
   }, [weekStart, locale]);
 
   return (
-    <HStack className="px-4 py-2 flex flex-wrap gap-y-2 justify-between bg-card border-b border-border">
+    <HStack className="px-4 py-2 flex flex-wrap gap-y-2 justify-between bg-background border-b border-border">
       <HStack className="flex-wrap gap-y-2">
         <HStack spacing={2} className="flex-wrap gap-y-2">
           <Combobox
@@ -194,38 +188,35 @@ export function ForecastHeader({
             />
           )}
         </HStack>
-        <Tabs value={range} onValueChange={setRange}>
-          <TabsList>
-            <TabsTrigger value="day">
-              <Trans>Day</Trans>
-            </TabsTrigger>
-            <TabsTrigger value="week">
-              <Trans>Week</Trans>
-            </TabsTrigger>
-            <TabsTrigger value="shift">
-              <Trans>Shift</Trans>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <span className="text-xs text-muted-foreground whitespace-nowrap tabular-nums">
-          <Trans>
-            {resourceCount} resources · {reservationCount} reservations ·{" "}
-            {jobCount} jobs
-          </Trans>
-        </span>
-        {conflictCount > 0 && (
-          <Badge
-            variant="destructive"
-            className="gap-1 whitespace-nowrap tabular-nums"
-          >
-            <LuTriangleAlert className="size-3" />
-            {conflictCount === 1 ? (
-              <Trans>1 conflict</Trans>
-            ) : (
-              <Trans>{conflictCount} conflicts</Trans>
-            )}
-          </Badge>
-        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="secondary"
+              size="md"
+              leftIcon={<LuCalendarRange />}
+              rightIcon={<LuChevronDown />}
+            >
+              {range === "week"
+                ? t`Week`
+                : range === "shift"
+                  ? t`Shift`
+                  : t`Day`}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuRadioGroup value={range} onValueChange={setRange}>
+              <DropdownMenuRadioItem value="day">
+                {t`Day`}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="week">
+                {t`Week`}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="shift">
+                {t`Shift`}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </HStack>
 
       <HStack className="flex-wrap gap-y-2">

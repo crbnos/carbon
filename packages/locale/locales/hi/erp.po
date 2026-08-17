@@ -837,6 +837,9 @@ msgstr "क्षमता"
 msgid "Ability"
 msgstr "क्षमता"
 
+msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
 msgid "About"
 msgstr "के बारे में"
 
@@ -2424,12 +2427,18 @@ msgstr "उपलब्ध"
 msgid "Available"
 msgstr "उपलब्ध"
 
+msgid "Available 24 hours a day, 7 days a week."
+msgstr ""
+
 msgid "Available Actions (click to add)"
 msgstr "उपलब्ध कार्य (जोड़ने के लिए क्लिक करें)"
 
 #. placeholder {0}: port.label
 msgid "Available after {0}"
 msgstr "{0} के बाद उपलब्ध"
+
+msgid "Available hours"
+msgstr ""
 
 msgid "Avatar url"
 msgstr "अवतार url"
@@ -4711,6 +4720,9 @@ msgstr "डिफ़ॉल्ट राजस्व GL खाता जब ब�
 
 msgid "Default Sampling"
 msgstr "डिफ़ॉल्ट नमूनाकरण"
+
+msgid "Default schedule"
+msgstr ""
 
 msgid "Default shelf-life duration (days)"
 msgstr "डिफ़ॉल्ट शेल्फ-लाइफ अवधि (दिन)"
@@ -7516,6 +7528,9 @@ msgstr "जब किसी विधि या BOM लाइन में ज�
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "किसी वस्तु की इकाई लागत का मूल्यांकन कैसे किया जाता है: मानक, औसत, FIFO, या LIFO। प्रति आइटम सेट।"
 
+msgid "How are these hours calculated?"
+msgstr ""
+
 msgid "How coverage is worked out"
 msgstr "कवरेज कैसे काम किया जाता है"
 
@@ -7753,6 +7768,9 @@ msgstr "केवल स्टॉक में"
 
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
+
+msgid "In use"
+msgstr ""
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "इन-ऐप नोटिफिकेशन हमेशा डिलीवर किए जाते हैं। चुनें कि कौन से विषय आपको ईमेल या Slack के माध्यम से भी पहुंचते हैं।"
@@ -8596,6 +8614,9 @@ msgstr "लाइट मोड"
 msgid "Lights Out (24×7)"
 msgstr ""
 
+msgid "Lights-out (24/7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "संभावना"
 
@@ -8722,6 +8743,9 @@ msgstr "स्थान / आइटम"
 
 msgid "Location Name"
 msgstr "स्थान का नाम"
+
+msgid "Location shifts"
+msgstr ""
 
 msgid "locations"
 msgstr "स्थान"
@@ -8873,6 +8897,9 @@ msgstr "रखरखाव व्यय (डिफ़ॉल्ट)"
 
 msgid "Maintenance Schedules"
 msgstr "रखरखाव शेड्यूल"
+
+msgid "Maintenance that takes the station offline is removed."
+msgstr ""
 
 msgid "Maintenance Type"
 msgstr "रखरखाव प्रकार"
@@ -9349,8 +9376,14 @@ msgstr "मॉड्यूल"
 msgid "Modules in scope"
 msgstr "स्कोप में मॉड्यूल"
 
+msgid "Mon–Fri, 8 hours a day"
+msgstr ""
+
 msgid "Monday"
 msgstr "सोमवार"
+
+msgid "Monday–Friday, 08:00–16:00"
+msgstr ""
 
 msgid "Money owed to you"
 msgstr "आपको देय धन"
@@ -13002,6 +13035,9 @@ msgstr "चल रहा है…"
 msgid "Runs"
 msgstr "रन"
 
+msgid "Runs around the clock"
+msgstr ""
+
 msgid "Runs during every shift at the location."
 msgstr ""
 
@@ -13860,6 +13896,9 @@ msgstr "पालियां"
 
 msgid "Shifts"
 msgstr "शिफ्ट"
+
+msgid "Shifts assigned to this station"
+msgstr ""
 
 msgid "Ship"
 msgstr "भेजें"
@@ -15493,6 +15532,9 @@ msgstr "वह sales order line जिसे पूरा करने के �
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "अनुसूची का उपयोग इस संपत्ति की लागत को इसके उपयोगी जीवन पर फैलाने के लिए (सीधी पंक्ति, घटता शेष, उत्पादन की इकाइयां)।"
 
+msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
+msgstr ""
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "वह शेल्फ और बिन जहां स्टॉक भौतिक रूप से रखा जाता है"
 
@@ -15501,6 +15543,9 @@ msgstr "दुकान की आपूर्ति और उपभोग्�
 
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "साइन-ऑफ जो इस वर्कफ़्लो का उपयोग करने वाली प्रत्येक समस्या को बंद करने से पहले चाहिए।"
+
+msgid "The site's shifts"
+msgstr ""
 
 msgid "The size of the part"
 msgstr "भाग का आकार"
@@ -15660,6 +15705,9 @@ msgstr "थीम"
 
 msgid "Theme Color"
 msgstr "थीम रंग"
+
+msgid "Then adjusted for"
+msgstr ""
 
 msgid "Then by"
 msgstr "फिर द्वारा"
@@ -17552,6 +17600,9 @@ msgstr "कार्य केंद्र"
 
 msgid "Work Center Reservation"
 msgstr "कार्य केंद्र आरक्षण"
+
+msgid "Work center shifts"
+msgstr ""
 
 msgid "Work Center Utilization"
 msgstr "कार्य केंद्र उपयोग"

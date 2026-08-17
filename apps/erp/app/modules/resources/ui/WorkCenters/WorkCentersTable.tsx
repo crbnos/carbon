@@ -30,11 +30,11 @@ import {
   LuCheck,
   LuCog,
   LuDollarSign,
+  LuLocateFixed,
   LuPencil,
   LuTrash,
   LuTriangleAlert,
-  LuUser,
-  LuWrench
+  LuUser
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
@@ -128,7 +128,7 @@ const WorkCentersTable = memo(
             </HStack>
           ),
           meta: {
-            icon: <LuWrench />
+            icon: <LuLocateFixed />
           }
         },
         {

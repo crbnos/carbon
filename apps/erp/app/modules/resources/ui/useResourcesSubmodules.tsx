@@ -6,6 +6,7 @@ import {
   LuClipboardCheck,
   LuCog,
   LuGraduationCap,
+  LuLocateFixed,
   LuMailbox,
   LuMapPin,
   LuWrench
@@ -59,7 +60,7 @@ export default function useResourcesSubmodules() {
         {
           name: t`Work Centers`,
           to: path.to.workCenters,
-          icon: <LuWrench />,
+          icon: <LuLocateFixed />,
           table: "workCenter"
         }
       ]

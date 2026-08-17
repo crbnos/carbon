@@ -1107,6 +1107,32 @@ export async function getCapacityReservationsForResources(
   return query.order("startAt");
 }
 
+export async function getMaintenanceDowntimeForResources(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId?: string
+) {
+  // Open maintenance dispatches that take a work center OFFLINE — the same rows
+  // the scheduler subtracts from a machine's availability. Surfaced on the
+  // resource Gantt so downtime is drawn, not just implied by the gap it leaves.
+  // Few per plant, so no window filter here; the timeline clips to the view.
+  let query = client
+    .from("maintenanceDispatch")
+    .select(
+      "id, maintenanceDispatchId, workCenterId, plannedStartTime, plannedEndTime, actualStartTime, actualEndTime"
+    )
+    .eq("companyId", companyId)
+    .eq("takesWorkCenterOffline", true)
+    .not("status", "in", '("Completed","Cancelled")')
+    .not("workCenterId", "is", null);
+
+  if (locationId) {
+    query = query.eq("locationId", locationId);
+  }
+
+  return query.order("plannedStartTime");
+}
+
 export async function getProductionEventsByJob(
   client: SupabaseClient<Database>,
   jobId: string

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-16T04:07:17.791Z",
-  "totalTools": 1478,
+  "generated": "2026-08-17T04:03:33.975Z",
+  "totalTools": 1479,
   "modules": 15,
   "tools": [
     {
@@ -19772,6 +19772,29 @@
         "required": [
           "/**\n   * Explicit [from, to"
         ]
+      }
+    },
+    {
+      "name": "production_getMaintenanceDowntimeForResources",
+      "module": "production",
+      "classification": "READ",
+      "description": "get maintenance downtime for resources",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          }
+        }
       }
     },
     {

@@ -1,10 +1,10 @@
 import { Button, cn, Heading, IconButton } from "@carbon/react";
 import {
-  DAY_MS,
   formatDateTimeInZone,
   formatDurationMilliseconds,
   formatRelativeTime
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
@@ -81,17 +81,15 @@ export function TimelineDetail({
   // the panel — DateTime then renders it as a calendar date.
   const dateOnly = (iso: string) => iso.slice(0, 10);
 
-  // stored end is EXCLUSIVE (due date + 1 day); show the inclusive due date,
-  // never earlier than the start
+  // stored end is EXCLUSIVE (due date + 1 day); show the inclusive due date —
+  // one CALENDAR day earlier (via @internationalized/date, never JS Date ms
+  // math), clamped so it never falls before the start.
   const approximateEndDate = detail.end
-    ? dateOnly(
-        new Date(
-          Math.max(
-            Date.parse(detail.end) - DAY_MS,
-            detail.start ? Date.parse(detail.start) : 0
-          )
-        ).toISOString()
-      )
+    ? (() => {
+        const end = parseDate(dateOnly(detail.end)).subtract({ days: 1 });
+        const start = detail.start ? parseDate(dateOnly(detail.start)) : null;
+        return (start && end.compare(start) < 0 ? start : end).toString();
+      })()
     : null;
 
   // A date-only operation that ALSO has a conflict was never placed at all —
@@ -237,7 +235,12 @@ export function TimelineDetail({
         {detail.conflictReason && (
           <div className="flex w-full items-start gap-2.5 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
             <LuTriangleAlert className="mt-0.5 size-4 shrink-0" />
-            <span className="text-pretty">{detail.conflictReason}</span>
+            <span className="text-pretty">
+              <MessageWithDates
+                text={detail.conflictReason}
+                timeZone={timeZone}
+              />
+            </span>
           </div>
         )}
 
@@ -246,7 +249,12 @@ export function TimelineDetail({
         {detail.scheduleNote && !detail.conflictReason && (
           <div className="flex w-full items-start gap-2.5 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
             <LuClock className="mt-0.5 size-4 shrink-0" />
-            <span className="text-pretty">{detail.scheduleNote}</span>
+            <span className="text-pretty">
+              <MessageWithDates
+                text={detail.scheduleNote}
+                timeZone={timeZone}
+              />
+            </span>
           </div>
         )}
 
@@ -352,4 +360,38 @@ function DetailRow({ label, value }: { label: string; value: ReactNode }) {
       <dd className="text-right font-medium text-foreground">{value}</dd>
     </div>
   );
+}
+
+// The scheduler's conflict / schedule-note sentences embed bare YYYY-MM-DD dates
+// (e.g. "Finishes 2026-08-19 but the job is due 2026-08-18 …"). Match those and
+// render each as a normalized DateTime so they read like the Starts/Ends rows and
+// carry the same time-zone popover; all other text passes through verbatim.
+const DATE_PATTERN = /\d{4}-\d{2}-\d{2}/g;
+
+function MessageWithDates({
+  text,
+  timeZone
+}: {
+  text: string;
+  timeZone?: string;
+}) {
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+  for (const match of text.matchAll(DATE_PATTERN)) {
+    const start = match.index ?? 0;
+    if (start > lastIndex) nodes.push(text.slice(lastIndex, start));
+    nodes.push(
+      <DateTime
+        key={key++}
+        value={match[0]}
+        locationTimeZone={timeZone}
+        variant="date"
+        dateOptions={TIMELINE_DATE_OPTIONS}
+      />
+    );
+    lastIndex = start + match[0].length;
+  }
+  if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
+  return <>{nodes}</>;
 }

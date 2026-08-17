@@ -1,12 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import {
-  ClientOnly,
-  cn,
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-  useDebounce
-} from "@carbon/react";
+import { Badge, ClientOnly, cn, useDebounce } from "@carbon/react";
 import type { CalendarDate } from "@internationalized/date";
 import {
   CalendarDateTime,
@@ -22,28 +15,36 @@ import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
+import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs, Location } from "react-router";
 import { useLoaderData } from "react-router";
 import { Empty } from "~/components";
 import { Gantt } from "~/components/Gantt";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
 import { getDepartmentsList, getShiftsWithTimes } from "~/modules/people";
-import { getCapacityReservationsForResources } from "~/modules/production";
+import {
+  getCapacityReservationsForResources,
+  getMaintenanceDowntimeForResources
+} from "~/modules/production";
 import { getForecastNonWorkingIntervals } from "~/modules/production/forecastCalendar.server";
 import type { ForecastRange } from "~/modules/production/ui/Schedule/ForecastHeader";
 import { ForecastHeader } from "~/modules/production/ui/Schedule/ForecastHeader";
-import { buildResourceTimeline } from "~/modules/production/ui/Schedule/resourceTimeline";
+import {
+  buildResourceTimeline,
+  workCenterIdFromLaneId
+} from "~/modules/production/ui/Schedule/resourceTimeline";
 import { TimelineDetail } from "~/modules/production/ui/Schedule/TimelineDetail";
 import type { TimelineNodeDetail } from "~/modules/production/ui/Schedule/timeline";
+import type {
+  AvailabilityShift,
+  WorkCenterAvailability
+} from "~/modules/production/ui/Schedule/WorkCenterAvailabilityPopover";
+import { WorkCenterAvailabilityPopover } from "~/modules/production/ui/Schedule/WorkCenterAvailabilityPopover";
 import { getWorkCentersByLocation } from "~/modules/resources";
 import { resolveLocationId } from "~/modules/shared/location.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import {
-  getResizableGanttSettings,
-  setResizableGanttSettings
-} from "~/utils/resizable-panels";
 
 const WEEKDAY_KEYS = [
   "sunday",
@@ -117,8 +118,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     view: "production"
   });
-
-  const resizeSettings = await getResizableGanttSettings(request);
 
   const url = new URL(request.url);
   const searchParams = url.searchParams;
@@ -198,28 +197,107 @@ export async function loader({ request }: LoaderFunctionArgs) {
     windowEndMs
   });
 
-  const reservations = await getCapacityReservationsForResources(
-    client,
-    companyId,
-    locationId,
-    {
+  const [reservations, maintenanceResult] = await Promise.all([
+    getCapacityReservationsForResources(client, companyId, locationId, {
       from: new Date(windowStartMs).toISOString(),
       to: new Date(windowEndMs).toISOString()
-    }
-  );
+    }),
+    getMaintenanceDowntimeForResources(client, companyId, locationId)
+  ]);
+
+  // Open outages that take a work center offline, as [start, end) windows for
+  // the resource lanes. Prefer actual times once work has started; fall back to
+  // planned. Drop any without both bounds — there's nothing to draw.
+  const maintenance = (maintenanceResult.data ?? [])
+    .map((d) => {
+      const startAt = d.actualStartTime ?? d.plannedStartTime;
+      const endAt = d.actualEndTime ?? d.plannedEndTime;
+      if (!d.workCenterId || !startAt || !endAt) return null;
+      return {
+        id: d.id,
+        workCenterId: d.workCenterId,
+        name: d.maintenanceDispatchId ?? "Maintenance",
+        startAt,
+        endAt
+      };
+    })
+    .filter((m): m is NonNullable<typeof m> => m !== null);
 
   // Every active work center in the plant — seeded as a lane so a station with
   // no scheduled work still shows up on the board. Narrowed to the selected
   // department when one is chosen.
-  const plantWorkCenters = (locationWorkCenters.data ?? [])
-    .filter(
-      (workCenter) => !departmentId || workCenter.departmentId === departmentId
-    )
-    .map((workCenter) => ({
-      id: workCenter.id as string,
-      name: (workCenter.name ?? "Work Center") as string
-    }));
+  const filteredWorkCenters = (locationWorkCenters.data ?? []).filter(
+    (workCenter) => !departmentId || workCenter.departmentId === departmentId
+  );
+  const plantWorkCenters = filteredWorkCenters.map((workCenter) => ({
+    id: workCenter.id as string,
+    name: (workCenter.name ?? "Work Center") as string
+  }));
   const departmentWorkCenterIds = new Set(plantWorkCenters.map((wc) => wc.id));
+
+  // Per-work-center availability tier for the tree's info popover — which rung
+  // of the scheduler's ladder (lights-out → work-center shifts → location shifts
+  // → default Mon–Fri 8h) actually sets this station's hours. Mirrors the
+  // resolveOne cascade in the scheduling engine; classification only, no window
+  // math. `shifts` (getShiftsWithTimes) already holds the location's shifts.
+  const workCenterShiftRows =
+    plantWorkCenters.length > 0
+      ? await client
+          .from("workCenterShift")
+          .select("workCenterId, shiftId")
+          .eq("companyId", companyId)
+          .in(
+            "workCenterId",
+            plantWorkCenters.map((wc) => wc.id)
+          )
+      : { data: [] as { workCenterId: string; shiftId: string }[] };
+
+  const toShiftInfo = (shift: (typeof shifts)[number]): AvailabilityShift => ({
+    name: shift.name,
+    startTime: shift.startTime,
+    endTime: shift.endTime,
+    days: [
+      shift.monday,
+      shift.tuesday,
+      shift.wednesday,
+      shift.thursday,
+      shift.friday,
+      shift.saturday,
+      shift.sunday
+    ].map(Boolean)
+  });
+
+  const shiftInfoById = new Map(
+    shifts.map((shift) => [shift.id, toShiftInfo(shift)])
+  );
+  const locationShiftInfos = shifts.map(toShiftInfo);
+  const shiftIdsByWorkCenter = new Map<string, string[]>();
+  for (const row of workCenterShiftRows.data ?? []) {
+    const existing = shiftIdsByWorkCenter.get(row.workCenterId) ?? [];
+    existing.push(row.shiftId);
+    shiftIdsByWorkCenter.set(row.workCenterId, existing);
+  }
+
+  const workCenterAvailability: Record<string, WorkCenterAvailability> = {};
+  for (const workCenter of filteredWorkCenters) {
+    const workCenterId = workCenter.id;
+    if (!workCenterId) continue;
+    const workCenterShiftInfos = (shiftIdsByWorkCenter.get(workCenterId) ?? [])
+      .map((shiftId) => shiftInfoById.get(shiftId))
+      .filter((info): info is AvailabilityShift => info !== undefined);
+    const tier: WorkCenterAvailability["tier"] = workCenter.alwaysOn
+      ? "alwaysOn"
+      : workCenterShiftInfos.length > 0
+        ? "workCenterShift"
+        : locationShiftInfos.length > 0
+          ? "locationShift"
+          : "default";
+    workCenterAvailability[workCenterId] = {
+      tier,
+      workCenterShifts: workCenterShiftInfos,
+      locationShifts: locationShiftInfos
+    };
+  }
 
   // A department scopes the board to its work centers and their reservations —
   // employee/operator-pool lanes are not department-scoped, so they drop out
@@ -304,6 +382,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       scheduleNote: r.scheduleNote,
       workHours: r.workHours
     })),
+    // Only outages on the work centers actually shown (respects the department
+    // filter, and avoids conjuring a lane for a hidden station).
+    maintenance: maintenance.filter((m) =>
+      departmentWorkCenterIds.has(m.workCenterId)
+    ),
     window: { start: windowStartMs, end: windowEndMs }
   });
 
@@ -344,7 +427,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           }
         : null,
     detailsById: timeline.detailsById as Record<string, TimelineNodeDetail>,
-    resizeSettings
+    workCenterAvailability
   };
 }
 
@@ -371,7 +454,7 @@ export default function ResourceGanttView() {
     conflictCount,
     trace,
     detailsById,
-    resizeSettings
+    workCenterAvailability
   } = useLoaderData<typeof loader>();
 
   const { locale } = useLocale();
@@ -447,10 +530,6 @@ export default function ResourceGanttView() {
         shiftId={shiftId}
         departments={departments}
         shifts={shifts}
-        resourceCount={resourceCount}
-        reservationCount={reservationCount}
-        jobCount={jobCount}
-        conflictCount={conflictCount}
       />
       {!trace ? (
         <div className="flex flex-1 items-center justify-center">
@@ -469,20 +548,8 @@ export default function ResourceGanttView() {
         >
           <ClientOnly fallback={null}>
             {() => (
-              <ResizablePanelGroup
-                direction="horizontal"
-                className="h-full max-h-full"
-                onLayout={(layout) => {
-                  if (layout.length !== 2) return;
-                  if (!selectedSpanId) return;
-                  setResizableGanttSettings(document, layout);
-                }}
-              >
-                <ResizablePanel
-                  order={1}
-                  minSize={30}
-                  defaultSize={resizeSettings.layout?.[0]}
-                >
+              <div className="flex h-full min-h-0">
+                <div className="min-w-0 flex-1">
                   <Gantt
                     selectedId={selectedSpanId}
                     key={trace.events[0]?.id ?? "-"}
@@ -493,6 +560,40 @@ export default function ResourceGanttView() {
                         return;
                       }
                       changeToSpan(selectedSpan);
+                    }}
+                    toolbarAccessory={
+                      <div className="flex items-center gap-2">
+                        <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+                          <Trans>
+                            {resourceCount} resources · {reservationCount}{" "}
+                            reservations · {jobCount} jobs
+                          </Trans>
+                        </span>
+                        {conflictCount > 0 && (
+                          <Badge
+                            variant="red"
+                            className="gap-1 whitespace-nowrap tabular-nums"
+                          >
+                            <LuTriangleAlert className="size-3" />
+                            {conflictCount === 1 ? (
+                              <Trans>1 conflict</Trans>
+                            ) : (
+                              <Trans>{conflictCount} conflicts</Trans>
+                            )}
+                          </Badge>
+                        )}
+                      </div>
+                    }
+                    renderNodeAside={(node) => {
+                      const workCenterId = workCenterIdFromLaneId(node.id);
+                      const availability = workCenterId
+                        ? workCenterAvailability[workCenterId]
+                        : undefined;
+                      return availability ? (
+                        <WorkCenterAvailabilityPopover
+                          availability={availability}
+                        />
+                      ) : null;
                     }}
                     totalDuration={trace.duration}
                     rootSpanStatus={trace.rootSpanStatus}
@@ -509,24 +610,17 @@ export default function ResourceGanttView() {
                     formatAxisTick={formatAxisTick}
                     nowMs={Date.now()}
                   />
-                </ResizablePanel>
+                </div>
                 {selectedSpanId && selectedDetail && (
-                  <>
-                    <ResizableHandle withHandle />
-                    <ResizablePanel
-                      order={2}
-                      minSize={25}
-                      defaultSize={resizeSettings.layout?.[1]}
-                    >
-                      <TimelineDetail
-                        detail={selectedDetail}
-                        timeZone={timeZone}
-                        onClose={() => replaceSearchParam("span")}
-                      />
-                    </ResizablePanel>
-                  </>
+                  <div className="h-full w-[360px] max-w-[360px] shrink-0">
+                    <TimelineDetail
+                      detail={selectedDetail}
+                      timeZone={timeZone}
+                      onClose={() => replaceSearchParam("span")}
+                    />
+                  </div>
                 )}
-              </ResizablePanelGroup>
+              </div>
             )}
           </ClientOnly>
         </div>

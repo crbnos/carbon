@@ -40,11 +40,37 @@ export type ResourceTimeline = {
 
 const ROOT_ID = "resources-root";
 
+/** The lane-id prefix for a work-center row: `lane:WorkCenter:<workCenterId>`. */
+const WORK_CENTER_LANE_PREFIX = "lane:WorkCenter:";
+
+/**
+ * Recover a work center's id from its lane node id (built as
+ * `lane:WorkCenter:<id>` below), or null for any other row. Lets the tree
+ * renderer attach per-work-center UI (e.g. the availability popover) keyed off
+ * the node it already has.
+ */
+export function workCenterIdFromLaneId(laneId: string): string | null {
+  return laneId.startsWith(WORK_CENTER_LANE_PREFIX)
+    ? laneId.slice(WORK_CENTER_LANE_PREFIX.length)
+    : null;
+}
+
+/** An open maintenance outage that takes a work center offline for a window. */
+export type ResourceMaintenanceWindow = {
+  id: string;
+  workCenterId: string;
+  /** Human-readable dispatch id (e.g. MAIN000001) — titles the row. */
+  name: string;
+  startAt: string;
+  endAt: string;
+};
+
 type Lane = {
   id: string;
   resourceKind: "WorkCenter" | "OperatorPool" | "Employee";
   resourceName: string;
   reservations: ResourceTimelineReservation[];
+  maintenance: ResourceMaintenanceWindow[];
 };
 
 const clamp = (value: number, lo: number, hi: number) =>
@@ -69,13 +95,29 @@ export function buildResourceTimeline(input: {
    * min/max) and bars are clipped to its edges. Omit for the auto-fit window.
    */
   window?: { start: number; end: number };
+  /**
+   * Open maintenance outages (work centers taken offline). Drawn as amber bars
+   * on the affected work-center lane so downtime is visible, not just implied by
+   * the gap it leaves in the job schedule.
+   */
+  maintenance?: ResourceMaintenanceWindow[];
 }): ResourceTimeline {
-  const { reservations, workCenters = [], locationName, window } = input;
+  const {
+    reservations,
+    workCenters = [],
+    locationName,
+    window,
+    maintenance = []
+  } = input;
   const rootTitle = locationName ?? "Resources";
 
   const detailsById: Record<string, TimelineNodeDetail> = {};
 
-  if (reservations.length === 0 && workCenters.length === 0) {
+  if (
+    reservations.length === 0 &&
+    workCenters.length === 0 &&
+    maintenance.length === 0
+  ) {
     const root = makeRootEvent(0, false, rootTitle);
     detailsById[ROOT_ID] = {
       kind: "resource",
@@ -93,10 +135,13 @@ export function buildResourceTimeline(input: {
     };
   }
 
-  const timestamps = reservations.flatMap((r) => [
-    Date.parse(r.startAt),
-    Date.parse(r.endAt)
-  ]);
+  const timestamps = [
+    ...reservations.flatMap((r) => [
+      Date.parse(r.startAt),
+      Date.parse(r.endAt)
+    ]),
+    ...maintenance.flatMap((m) => [Date.parse(m.startAt), Date.parse(m.endAt)])
+  ];
   // An explicit window (day/week/shift) fixes the axis; otherwise auto-fit to
   // the data. With no reservations and no window there is no real span, so fall
   // back to a one-day span from "now" so empty lanes still have a time axis.
@@ -122,7 +167,8 @@ export function buildResourceTimeline(input: {
       id: `lane:${key}`,
       resourceKind: "WorkCenter",
       resourceName: workCenter.name,
-      reservations: []
+      reservations: [],
+      maintenance: []
     });
   }
   for (const r of reservations) {
@@ -133,11 +179,29 @@ export function buildResourceTimeline(input: {
         id: `lane:${key}`,
         resourceKind: r.resourceKind,
         resourceName: r.resourceName,
-        reservations: []
+        reservations: [],
+        maintenance: []
       };
       laneByKey.set(key, lane);
     }
     lane.reservations.push(r);
+  }
+  // Attach each outage to its work-center lane (seeding the lane if the plant
+  // list somehow missed it), so downtime draws on the machine it takes offline.
+  for (const m of maintenance) {
+    const key = `WorkCenter:${m.workCenterId}`;
+    let lane = laneByKey.get(key);
+    if (!lane) {
+      lane = {
+        id: `lane:${key}`,
+        resourceKind: "WorkCenter",
+        resourceName: "Work Center",
+        reservations: [],
+        maintenance: []
+      };
+      laneByKey.set(key, lane);
+    }
+    lane.maintenance.push(m);
   }
   const kindRank = { WorkCenter: 0, Employee: 1, OperatorPool: 2 } as const;
   const lanes = Array.from(laneByKey.values()).sort((a, b) => {
@@ -148,7 +212,26 @@ export function buildResourceTimeline(input: {
   });
 
   const anyConflict = reservations.some((r) => r.hasConflict);
-  const root = makeRootEvent(totalDuration, anyConflict, rootTitle);
+  // The root reads gray across the whole span and turns red ONLY over the
+  // windows a conflicted reservation actually occupies (clipped to the view) —
+  // so one late op no longer paints the entire location rollup red.
+  const conflictSegments = reservations
+    .filter((r) => r.hasConflict)
+    .map((r) => {
+      const start = clamp(Date.parse(r.startAt), windowStart, windowEnd);
+      const end = clamp(Date.parse(r.endAt), windowStart, windowEnd);
+      return {
+        offset: start - windowStart,
+        duration: Math.max(end - start, 0)
+      };
+    })
+    .filter((segment) => segment.duration > 0);
+  const root = makeRootEvent(
+    totalDuration,
+    anyConflict,
+    rootTitle,
+    conflictSegments
+  );
   const events: GanttEvent[] = [root];
   detailsById[ROOT_ID] = {
     kind: "resource",
@@ -165,27 +248,33 @@ export function buildResourceTimeline(input: {
     const sorted = [...lane.reservations].sort(
       (a, b) => Date.parse(a.startAt) - Date.parse(b.startAt)
     );
-    // An empty lane (station with no scheduled work) collapses to the window
-    // start with zero duration — it renders as a labeled row with no bar.
-    // Spans are clipped to the window so a reservation straddling the edge
-    // draws to the boundary instead of overflowing the fixed axis.
+    const sortedMaintenance = [...lane.maintenance].sort(
+      (a, b) => Date.parse(a.startAt) - Date.parse(b.startAt)
+    );
+    // Lane span covers both reservations AND maintenance outages. An empty lane
+    // (no work, no downtime) collapses to the window start with zero duration —
+    // a labeled row with no bar. Spans are clipped to the window so an item
+    // straddling the edge draws to the boundary instead of overflowing the axis.
+    const laneStartCandidates = [
+      ...sorted.map((r) => Date.parse(r.startAt)),
+      ...sortedMaintenance.map((m) => Date.parse(m.startAt))
+    ];
+    const laneEndCandidates = [
+      ...sorted.map((r) => Date.parse(r.endAt)),
+      ...sortedMaintenance.map((m) => Date.parse(m.endAt))
+    ];
     const laneStart =
-      sorted.length > 0
-        ? clamp(
-            Math.min(...sorted.map((r) => Date.parse(r.startAt))),
-            windowStart,
-            windowEnd
-          )
+      laneStartCandidates.length > 0
+        ? clamp(Math.min(...laneStartCandidates), windowStart, windowEnd)
         : windowStart;
     const laneEnd =
-      sorted.length > 0
-        ? clamp(
-            Math.max(...sorted.map((r) => Date.parse(r.endAt))),
-            windowStart,
-            windowEnd
-          )
+      laneEndCandidates.length > 0
+        ? clamp(Math.max(...laneEndCandidates), windowStart, windowEnd)
         : windowStart;
     const laneConflict = sorted.some((r) => r.hasConflict);
+    // Child rows (reservations + maintenance) are collected here, then sorted by
+    // start time so the lane reads top-to-bottom, first to last.
+    const laneChildEvents: GanttEvent[] = [];
     const laneTitle =
       lane.resourceKind === "OperatorPool"
         ? `${lane.resourceName} operators` // legacy ability-pool rows
@@ -194,8 +283,8 @@ export function buildResourceTimeline(input: {
     const laneEvent: GanttEvent = {
       id: lane.id,
       parentId: ROOT_ID,
-      children: sorted.map((r) => r.id),
-      hasChildren: sorted.length > 0,
+      children: [],
+      hasChildren: false,
       level: 1,
       data: {
         duration: Math.max(laneEnd - laneStart, 0),
@@ -240,7 +329,7 @@ export function buildResourceTimeline(input: {
         : r.jobReadableId;
       const isError = r.hasConflict;
 
-      events.push({
+      laneChildEvents.push({
         id: r.id,
         parentId: lane.id,
         children: [],
@@ -279,6 +368,52 @@ export function buildResourceTimeline(input: {
         jobReadableId: r.jobReadableId
       };
     }
+
+    // Maintenance outages — amber "downtime" bars on the same lane. The
+    // scheduler already keeps jobs out of these windows, so they slot into the
+    // gap; drawing them makes the machine's downtime explicit.
+    for (const m of sortedMaintenance) {
+      const rawStart = Date.parse(m.startAt);
+      const rawEnd = Date.parse(m.endAt);
+      const barStart = clamp(rawStart, windowStart, windowEnd);
+      const barEnd = clamp(rawEnd, windowStart, windowEnd);
+      if (barEnd <= barStart) continue; // outage falls entirely outside the view
+
+      laneChildEvents.push({
+        id: m.id,
+        parentId: lane.id,
+        children: [],
+        hasChildren: false,
+        level: 2,
+        data: {
+          duration: barEnd - barStart,
+          offset: barStart - windowStart,
+          message: m.name,
+          isRoot: false,
+          isError: false,
+          isPartial: false,
+          isCancelled: false,
+          level: "TRACE" as GanttEvent["data"]["level"],
+          style: { icon: "maintenance", variant: "maintenance" }
+        }
+      });
+      detailsById[m.id] = {
+        kind: "resource",
+        title: `Maintenance · ${m.name}`,
+        start: new Date(rawStart).toISOString(),
+        end: new Date(rawEnd).toISOString(),
+        durationMs: Math.max(rawEnd - rawStart, 0),
+        approximate: false,
+        resourceKind: "WorkCenter"
+      };
+    }
+
+    // Interleave reservations and maintenance by start (offset) so the lane
+    // reads first-to-last, top-to-bottom; emit the children in that order.
+    laneChildEvents.sort((a, b) => a.data.offset - b.data.offset);
+    laneEvent.children = laneChildEvents.map((event) => event.id);
+    laneEvent.hasChildren = laneChildEvents.length > 0;
+    events.push(...laneChildEvents);
   }
 
   return {
@@ -292,7 +427,8 @@ export function buildResourceTimeline(input: {
 function makeRootEvent(
   totalDuration: number,
   isError: boolean,
-  title: string
+  title: string,
+  conflictSegments: { offset: number; duration: number }[] = []
 ): GanttEvent {
   return {
     id: ROOT_ID,
@@ -309,7 +445,9 @@ function makeRootEvent(
       isPartial: false,
       isCancelled: false,
       level: "TRACE" as GanttEvent["data"]["level"],
-      style: { icon: "location" }
+      style: { icon: "location" },
+      conflictSegments:
+        conflictSegments.length > 0 ? conflictSegments : undefined
     }
   };
 }

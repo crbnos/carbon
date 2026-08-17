@@ -837,6 +837,9 @@ msgstr "возможность"
 msgid "Ability"
 msgstr "Способность"
 
+msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
 msgid "About"
 msgstr "О программе"
 
@@ -2424,12 +2427,18 @@ msgstr "доступно"
 msgid "Available"
 msgstr "Доступно"
 
+msgid "Available 24 hours a day, 7 days a week."
+msgstr ""
+
 msgid "Available Actions (click to add)"
 msgstr "Доступные действия (нажмите, чтобы добавить)"
 
 #. placeholder {0}: port.label
 msgid "Available after {0}"
 msgstr "Доступно после {0}"
+
+msgid "Available hours"
+msgstr ""
 
 msgid "Avatar url"
 msgstr "URL аватара"
@@ -4711,6 +4720,9 @@ msgstr "Счет GL по умолчанию, который кредитуетс
 
 msgid "Default Sampling"
 msgstr "Выборка по умолчанию"
+
+msgid "Default schedule"
+msgstr ""
 
 msgid "Default shelf-life duration (days)"
 msgstr "Продолжительность срока годности по умолчанию (дни)"
@@ -7516,6 +7528,9 @@ msgstr "Как товар поступает при добавлении в ст
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "Как оценивается стоимость товара за единицу: Стандартная, Средняя, FIFO или LIFO. Установка по товарам."
 
+msgid "How are these hours calculated?"
+msgstr ""
+
 msgid "How coverage is worked out"
 msgstr "Как рассчитывается покрытие"
 
@@ -7753,6 +7768,9 @@ msgstr "Только в наличии"
 
 msgid "In the loop together"
 msgstr "В курсе дела вместе"
+
+msgid "In use"
+msgstr ""
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также будут доходить до вас по электронной почте или Slack."
@@ -8596,6 +8614,9 @@ msgstr "Светлый режим"
 msgid "Lights Out (24×7)"
 msgstr ""
 
+msgid "Lights-out (24/7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "Вероятность"
 
@@ -8722,6 +8743,9 @@ msgstr "Местоположение / Товар"
 
 msgid "Location Name"
 msgstr "Название местоположения"
+
+msgid "Location shifts"
+msgstr ""
 
 msgid "locations"
 msgstr "расположения"
@@ -8873,6 +8897,9 @@ msgstr "Расходы на техническое обслуживание (п�
 
 msgid "Maintenance Schedules"
 msgstr "Графики обслуживания"
+
+msgid "Maintenance that takes the station offline is removed."
+msgstr ""
 
 msgid "Maintenance Type"
 msgstr "Тип обслуживания"
@@ -9349,8 +9376,14 @@ msgstr "Модули"
 msgid "Modules in scope"
 msgstr "Модули в области действия"
 
+msgid "Mon–Fri, 8 hours a day"
+msgstr ""
+
 msgid "Monday"
 msgstr "Понедельник"
+
+msgid "Monday–Friday, 08:00–16:00"
+msgstr ""
 
 msgid "Money owed to you"
 msgstr "Деньги, которые вам должны"
@@ -13002,6 +13035,9 @@ msgstr "Выполняется…"
 msgid "Runs"
 msgstr "Запуски"
 
+msgid "Runs around the clock"
+msgstr ""
+
 msgid "Runs during every shift at the location."
 msgstr ""
 
@@ -13860,6 +13896,9 @@ msgstr "смены"
 
 msgid "Shifts"
 msgstr "Смены"
+
+msgid "Shifts assigned to this station"
+msgstr ""
 
 msgid "Ship"
 msgstr "Отправить"
@@ -15493,6 +15532,9 @@ msgstr "Строка заказа на продажу, для которой б�
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Метод амортизации, используемый для распределения стоимости этого актива в течение его полезного срока действия (прямолинейный, убывающий баланс, единицы производства)."
 
+msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
+msgstr ""
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "Полки и контейнеры, где физически находится запас"
 
@@ -15501,6 +15543,9 @@ msgstr "Расходные материалы и товары, которые в
 
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "Утверждения, которые каждая проблема, использующая этот рабочий процесс, должна иметь перед закрытием."
+
+msgid "The site's shifts"
+msgstr ""
 
 msgid "The size of the part"
 msgstr "Размер детали"
@@ -15660,6 +15705,9 @@ msgstr "Тема"
 
 msgid "Theme Color"
 msgstr "Цвет темы"
+
+msgid "Then adjusted for"
+msgstr ""
 
 msgid "Then by"
 msgstr "Затем по"
@@ -17552,6 +17600,9 @@ msgstr "Рабочий центр"
 
 msgid "Work Center Reservation"
 msgstr "Резервирование рабочего центра"
+
+msgid "Work center shifts"
+msgstr ""
 
 msgid "Work Center Utilization"
 msgstr "Использование рабочего центра"

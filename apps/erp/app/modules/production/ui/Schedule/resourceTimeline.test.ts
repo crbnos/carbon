@@ -60,6 +60,44 @@ describe("buildResourceTimeline", () => {
     expect(child.data.duration).toBe(2 * HOUR);
   });
 
+  it("interleaves reservations and maintenance by start within a lane", () => {
+    const result = buildResourceTimeline({
+      reservations: [
+        // Inserted first, but starts LAST (14:00).
+        reservation({
+          id: "res-late",
+          startAt: "2026-07-14T14:00:00.000Z",
+          endAt: "2026-07-14T16:00:00.000Z"
+        }),
+        // Starts FIRST (08:00).
+        reservation({
+          id: "res-early",
+          startAt: "2026-07-14T08:00:00.000Z",
+          endAt: "2026-07-14T09:00:00.000Z"
+        })
+      ],
+      // Starts in the MIDDLE (10:00) — must sort between the two reservations.
+      maintenance: [
+        {
+          id: "maint-mid",
+          workCenterId: "wc-1",
+          name: "MAIN000001",
+          startAt: "2026-07-14T10:00:00.000Z",
+          endAt: "2026-07-14T11:00:00.000Z"
+        }
+      ]
+    });
+
+    const lane = result.events.find((e) => e.id === "lane:WorkCenter:wc-1")!;
+    // Top-to-bottom reads first-to-last by start time, jobs and downtime mixed.
+    expect(lane.children).toEqual(["res-early", "maint-mid", "res-late"]);
+
+    // The maintenance child is an amber downtime bar on the same lane.
+    const maint = result.events.find((e) => e.id === "maint-mid")!;
+    expect(maint.parentId).toBe(lane.id);
+    expect(maint.data.style?.variant).toBe("maintenance");
+  });
+
   it("orders work-center lanes alphabetically before operator-pool lanes", () => {
     const result = buildResourceTimeline({
       reservations: [

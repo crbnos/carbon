@@ -90,6 +90,19 @@ type GanttProps = {
   collapsedIds?: string[];
   parentReadableId?: string;
   onSelectedIdChanged: (selectedId: string | undefined) => void;
+  /**
+   * Optional trailing element rendered at the end of each tree row (before the
+   * status icon). Receives the node so the caller can decide per-row — e.g. an
+   * info popover only on work-center lanes. Kept generic so the Gantt stays
+   * decoupled from any one view's domain.
+   */
+  renderNodeAside?: (node: GanttEvent) => React.ReactNode;
+  /**
+   * Optional content for the toolbar, rendered just before the In Process /
+   * Show Durations switches — e.g. the forecast board's resource/reservation
+   * counts and conflict badge.
+   */
+  toolbarAccessory?: React.ReactNode;
   totalDuration: number;
   rootSpanStatus: "inprogress" | "completed" | "todo" | "cancelled";
   rootStartedAt: Date | undefined;
@@ -140,6 +153,8 @@ const Gantt = ({
   collapsedIds,
   parentReadableId,
   onSelectedIdChanged,
+  renderNodeAside,
+  toolbarAccessory,
   totalDuration,
   rootSpanStatus,
   rootStartedAt,
@@ -217,7 +232,8 @@ const Gantt = ({
     <div className="grid h-full grid-rows-[2.5rem_1fr_3.25rem] overflow-hidden">
       <div className="flex items-center justify-between gap-2 border-b border-border">
         <SearchField onChange={setFilterText} />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 pr-2">
+          {toolbarAccessory}
           <Switch
             variant="small"
             label={t`In Process Only`}
@@ -270,7 +286,7 @@ const Gantt = ({
                     <>
                       <div
                         className={cn(
-                          "flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
+                          "group flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
                           state.selected
                             ? "bg-muted"
                             : "bg-transparent hover:bg-muted/60"
@@ -334,6 +350,7 @@ const Gantt = ({
                             )}
                           </div>
                           <div className="flex items-center gap-1">
+                            {renderNodeAside?.(node)}
                             <NodeStatusIcon node={node} />
                           </div>
                         </div>
@@ -851,6 +868,32 @@ const GanttTimeline = ({
                             }
                           />
                         )}
+                        {/* Red conflict windows painted over the neutral rollup
+                            base — split on working time so they line up with the
+                            chopped bar. */}
+                        {node.data.conflictSegments?.flatMap((segment, si) => {
+                          const pieces = nonWorkingOffsets
+                            ? splitWorkingSegments(
+                                segment.offset,
+                                segment.duration,
+                                nonWorkingOffsets
+                              )
+                            : [
+                                {
+                                  startMs: segment.offset,
+                                  durationMs: segment.duration
+                                }
+                              ];
+                          return pieces.map((piece) => (
+                            <Timeline.Span
+                              key={`conflict:${si}:${piece.startMs}:${piece.durationMs}`}
+                              startMs={piece.startMs}
+                              durationMs={piece.durationMs}
+                            >
+                              <div className="h-4 w-full min-w-[2px] rounded-sm bg-red-500" />
+                            </Timeline.Span>
+                          ));
+                        })}
                       </>
                     ) : (
                       <Timeline.Point ms={node.data.offset}>
@@ -1088,7 +1131,12 @@ function SpanWithDuration({
           <motion.div
             className={cn(
               "relative flex h-4 w-full min-w-[2px] items-center rounded-sm",
-              eventBackgroundClassName(node.data)
+              // Aggregate/rollup rows draw a neutral base; their conflict windows
+              // are painted red on top (see the overlay in the tree render), so a
+              // single late child never reddens the whole span.
+              node.data.conflictSegments
+                ? "bg-gray-500"
+                : eventBackgroundClassName(node.data)
             )}
             layoutId={pieces.length === 1 ? node.id : `${node.id}:${i}`}
           >

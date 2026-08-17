@@ -72832,13 +72832,6 @@ export type Database = {
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
         ]
       }
       salesInvoices: {

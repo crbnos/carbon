@@ -48,6 +48,7 @@ import {
   LuLandmark,
   LuList,
   LuListChecks,
+  LuLocateFixed,
   LuMapPin,
   LuPizza,
   LuQrCode,
@@ -62,8 +63,7 @@ import {
   LuTriangleAlert,
   LuTruck,
   LuUser,
-  LuUsers,
-  LuWrench
+  LuUsers
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetOff } from "react-icons/tb";
@@ -677,7 +677,7 @@ export const DimensionEntityTypeIcon = ({
     case "CostCenter":
       return <LuCircleDollarSign className={className} />;
     case "WorkCenter":
-      return <LuWrench className={className} />;
+      return <LuLocateFixed className={className} />;
     case "Process":
       return <LuCog className={className} />;
     case "ScrapReason":

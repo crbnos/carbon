@@ -38,10 +38,18 @@ export type GanttEvent = {
      * Offset/duration in ms relative to the timeline window, like the bar's.
      */
     wait?: { offset: number; duration: number; reason?: string | null };
+    /**
+     * Aggregate/rollup rows (e.g. the location root) render a NEUTRAL bar with
+     * red segments drawn only over these intervals — so the row reads gray for
+     * its whole span and turns red only where a conflict actually falls, instead
+     * of the whole rollup going red from a single late child. Offset/duration in
+     * ms relative to the timeline window, like the bar's.
+     */
+    conflictSegments?: { offset: number; duration: number }[];
   };
 };
 
-const variant = z.enum(["primary"]);
+const variant = z.enum(["primary", "maintenance"]);
 
 const accessoryItem = z.object({
   text: z.string(),

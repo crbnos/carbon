@@ -837,6 +837,9 @@ msgstr "역량"
 msgid "Ability"
 msgstr "능력"
 
+msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
 msgid "About"
 msgstr "정보"
 
@@ -2424,12 +2427,18 @@ msgstr "사용 가능"
 msgid "Available"
 msgstr "사용 가능"
 
+msgid "Available 24 hours a day, 7 days a week."
+msgstr ""
+
 msgid "Available Actions (click to add)"
 msgstr "사용 가능한 조치(클릭하여 추가)"
 
 #. placeholder {0}: port.label
 msgid "Available after {0}"
 msgstr "{0} 후에 사용 가능"
+
+msgid "Available hours"
+msgstr ""
 
 msgid "Avatar url"
 msgstr "아바타 URL"
@@ -4711,6 +4720,9 @@ msgstr "판매 인보이스가 전기될 때 대변에 기록되는 기본 수�
 
 msgid "Default Sampling"
 msgstr "기본 샘플링"
+
+msgid "Default schedule"
+msgstr ""
 
 msgid "Default shelf-life duration (days)"
 msgstr "기본 유통기한(일)"
@@ -7516,6 +7528,9 @@ msgstr "품목이 공정(BOP) 또는 BOM 라인에 추가될 때 조달되는 �
 msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set per item."
 msgstr "품목의 단가가 평가되는 방식: 표준, 평균, FIFO, 또는 LIFO. 품목별로 설정됩니다."
 
+msgid "How are these hours calculated?"
+msgstr ""
+
 msgid "How coverage is worked out"
 msgstr "배치가 어떻게 계산되는지"
 
@@ -7753,6 +7768,9 @@ msgstr "재고만"
 
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
+
+msgid "In use"
+msgstr ""
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "인앱 알림은 항상 전달됩니다. 이메일 또는 Slack으로도 전달받을 주제를 선택하세요."
@@ -8596,6 +8614,9 @@ msgstr "라이트 모드"
 msgid "Lights Out (24×7)"
 msgstr ""
 
+msgid "Lights-out (24/7)"
+msgstr ""
+
 msgid "Likelihood"
 msgstr "가능성"
 
@@ -8722,6 +8743,9 @@ msgstr "위치 / 항목"
 
 msgid "Location Name"
 msgstr "위치 이름"
+
+msgid "Location shifts"
+msgstr ""
 
 msgid "locations"
 msgstr "위치"
@@ -8873,6 +8897,9 @@ msgstr "유지보수 비용(기본값)"
 
 msgid "Maintenance Schedules"
 msgstr "유지보수 일정"
+
+msgid "Maintenance that takes the station offline is removed."
+msgstr ""
 
 msgid "Maintenance Type"
 msgstr "유지보수 유형"
@@ -9349,8 +9376,14 @@ msgstr "모듈"
 msgid "Modules in scope"
 msgstr "범위에 포함된 모듈"
 
+msgid "Mon–Fri, 8 hours a day"
+msgstr ""
+
 msgid "Monday"
 msgstr "월요일"
+
+msgid "Monday–Friday, 08:00–16:00"
+msgstr ""
 
 msgid "Money owed to you"
 msgstr "귀사가 받아야 할 금액"
@@ -13002,6 +13035,9 @@ msgstr "실행 중…"
 msgid "Runs"
 msgstr "실행"
 
+msgid "Runs around the clock"
+msgstr ""
+
 msgid "Runs during every shift at the location."
 msgstr ""
 
@@ -13860,6 +13896,9 @@ msgstr "교대"
 
 msgid "Shifts"
 msgstr "교대"
+
+msgid "Shifts assigned to this station"
+msgstr ""
 
 msgid "Ship"
 msgstr "출하"
@@ -15493,6 +15532,9 @@ msgstr "이 작업이 공급하기 위해 생성된 판매 주문 라인이며, 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "이 자산의 원가를 내용연수에 걸쳐 배분하는 데 사용되는 상각 스케줄입니다(정액법, 정률법, 생산량비례법)."
 
+msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
+msgstr ""
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
 
@@ -15501,6 +15543,9 @@ msgstr "보유하고 있는 공장 소모품 및 소모재"
 
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "이 워크플로를 사용하는 모든 이슈가 종료되기 전에 필요한 서명 승인입니다."
+
+msgid "The site's shifts"
+msgstr ""
 
 msgid "The size of the part"
 msgstr "품목의 크기"
@@ -15660,6 +15705,9 @@ msgstr "테마"
 
 msgid "Theme Color"
 msgstr "테마 색상"
+
+msgid "Then adjusted for"
+msgstr ""
 
 msgid "Then by"
 msgstr "그 다음"
@@ -17552,6 +17600,9 @@ msgstr "작업장"
 
 msgid "Work Center Reservation"
 msgstr "작업 센터 예약"
+
+msgid "Work center shifts"
+msgstr ""
 
 msgid "Work Center Utilization"
 msgstr "작업장 가동률"

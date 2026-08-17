@@ -185,7 +185,7 @@ export function PeopleHeader({
   };
 
   return (
-    <HStack className="px-4 py-2 flex flex-wrap gap-y-2 justify-between bg-card border-b border-border">
+    <HStack className="px-4 py-2 flex flex-wrap gap-y-2 justify-between bg-background border-b border-border">
       <HStack className="flex-wrap gap-y-2">
         <HStack spacing={2} className="flex-wrap gap-y-2">
           <Combobox
