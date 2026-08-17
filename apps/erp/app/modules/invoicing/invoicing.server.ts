@@ -6,7 +6,7 @@ import {
   fromStripeAmount,
   getConnectInvoicePaymentDetails
 } from "@carbon/stripe/connect.server";
-import { datetime } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import { fromAbsolute, toCalendarDate } from "@internationalized/date";
 import {
   createJournalEntry,
@@ -377,9 +377,9 @@ async function bookStripeFee({
       return;
     }
 
-    // Journal lines are stored in base currency, same as the payment journal.
-    const feeInBaseCurrency =
-      Math.round(feeDetails.feeAmount * exchangeRate * 10000) / 10000;
+    // Journal lines are stored in base currency at internal scale, same as the
+    // payment journal.
+    const feeInBaseCurrency = round(feeDetails.feeAmount * exchangeRate);
 
     const nextSequence = await getNextSequence(
       serviceRole,

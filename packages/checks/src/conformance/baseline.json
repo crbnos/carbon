@@ -426,6 +426,7 @@
   "no-raw-rounding::apps/erp/app/routes/x+/resources+/_index.tsx::{percentageChange.toFixed(0)}%",
   "no-raw-rounding::apps/erp/app/routes/x+/sales+/_index.tsx::<Badge variant=\"green\">+{percentageChange.toFixed(0)}%</Badge>",
   "no-raw-rounding::apps/erp/app/routes/x+/sales+/_index.tsx::<Badge variant=\"red\">{percentageChange.toFixed(0)}%</Badge>",
+  "no-raw-rounding::apps/erp/app/routes/x+/sales-invoice+/$invoiceId.post.tsx::return Math.floor(",
   "no-raw-rounding::apps/erp/app/routes/x+/sales-invoice+/$invoiceId.post.tsx::size: Math.round(file.byteLength / 1024),",
   "no-raw-rounding::apps/erp/app/routes/x+/settings+/backups.tsx::{convertKbToString(Math.round(file.sizeBytes / 1024))}",
   "no-raw-rounding::apps/erp/app/routes/x+/settings+/printing.tsx::const heightDots = Math.round(height * dpi);",
