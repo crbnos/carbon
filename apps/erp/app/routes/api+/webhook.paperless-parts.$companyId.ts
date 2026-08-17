@@ -103,7 +103,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       timestamp
     );
 
-    if (signature !== expectedSignature) {
+    // Constant-time comparison (SC-13): a plain `!==` leaks, via timing, how many
+    // leading bytes of a forged signature are correct. Guard length first —
+    // timingSafeEqual throws on unequal-length buffers.
+    const signatureBuffer = Buffer.from(signature);
+    const expectedBuffer = Buffer.from(expectedSignature);
+    if (
+      signatureBuffer.length !== expectedBuffer.length ||
+      !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+    ) {
       return data({ success: false }, { status: 401 });
     }
 

@@ -92,7 +92,12 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
     };
   }
 
-  // 2. Real Error instances thrown during render / loaders / actions
+  // 2. Real Error instances thrown during render / loaders / actions.
+  // SI-11: never reveal internal error detail (message / source location) to end
+  // users in production — it aids reconnaissance. Show it only in development.
+  // Vite replaces `import.meta.env.DEV` at build; this shared package has no Vite
+  // client types, so read it through a narrow cast.
+  const isDev = (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true;
   const message = error instanceof Error ? error.message : "unknown error";
   const stack =
     error instanceof Error && error.stack
@@ -109,9 +114,9 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
     logLines: [
       "> executing render pipeline ...",
       "> exception thrown mid-stream",
-      `> message: ${message}`,
+      isDev ? `> message: ${message}` : "> message: [redacted]",
       "> status_code: 500 / INTERNAL_ERROR",
-      stack ? `> at: ${stack}` : "> stack: unavailable",
+      isDev && stack ? `> at: ${stack}` : "> stack: unavailable",
       "> stack unwound to nearest boundary",
       "> recommendation: retry or return home"
     ],
