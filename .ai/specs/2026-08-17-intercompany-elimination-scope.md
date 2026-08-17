@@ -376,6 +376,17 @@ the seller's standalone P&L clean and avoids a posting-path change.
 
 ## Changelog
 
+- 2026-08-17: **Phase 1 implemented** (`20260817122328_intercompany-revenue-cogs-elimination.sql`).
+  `journal.eliminationKind` enum (`'IC Balance' | 'IC Revenue'`) added; `intercompanyTransaction.amount`
+  widened to bare NUMERIC; `generateEliminationEntries` extended to emit an `'IC Revenue'` journal per
+  intragroup **sales invoice that posted a COGS line** — `Dr Sales R / Cr COGS C / Cr Inventory M`
+  (margin `M = R − C`). **Implementation deviation from §3:** the unrealized-profit-in-inventory
+  write-down is folded into the auto `IC Revenue` journal (not a separate guided `unrealizedProfitElimination`
+  table) so consolidated books stay consistent atomically; it assumes goods still held (full deferral,
+  conservative on income). **Deferred to a follow-up:** fractional on-hand realization as the buyer resells
+  externally, the guided workbench UI, sales-order-based COGS (posted at shipment, not on the invoice), and
+  fixed-asset/investment/NCI (still out of scope). Verified: a faithful inventory intragroup sale nets to
+  **0 across every consolidated account** after elimination (rolled-back RPC test); `erp` typecheck green.
 - 2026-08-17: Created — resolutions from the pre-writing interview baked in
   (scope = revenue↔COGS auto + unrealized inventory guided; infer lines from
   document; seller-costLedger margin; period-recompute item-level on-hand;

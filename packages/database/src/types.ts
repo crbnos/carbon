@@ -24488,6 +24488,7 @@ export type Database = {
           createdBy: string | null
           customFields: Json | null
           description: string | null
+          eliminationKind: Database["public"]["Enums"]["eliminationKind"] | null
           id: string
           journalEntryId: string
           postedAt: string | null
@@ -24510,6 +24511,9 @@ export type Database = {
           createdBy?: string | null
           customFields?: Json | null
           description?: string | null
+          eliminationKind?:
+            | Database["public"]["Enums"]["eliminationKind"]
+            | null
           id?: string
           journalEntryId: string
           postedAt?: string | null
@@ -24532,6 +24536,9 @@ export type Database = {
           createdBy?: string | null
           customFields?: Json | null
           description?: string | null
+          eliminationKind?:
+            | Database["public"]["Enums"]["eliminationKind"]
+            | null
           id?: string
           journalEntryId?: string
           postedAt?: string | null
@@ -78473,6 +78480,7 @@ export type Database = {
         | "Audio"
         | "Other"
         | "Model"
+      eliminationKind: "IC Balance" | "IC Revenue"
       employeeTypeSystemType: "Admin" | "Console Operator"
       externalLinkDocumentType:
         | "Quote"
@@ -79854,6 +79862,7 @@ export const Constants = {
         "Other",
         "Model",
       ],
+      eliminationKind: ["IC Balance", "IC Revenue"],
       employeeTypeSystemType: ["Admin", "Console Operator"],
       externalLinkDocumentType: [
         "Quote",

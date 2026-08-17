@@ -8767,6 +8767,9 @@ export default {
             $ref: "#/parameters/rowFilter.journal.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.journal.eliminationKind"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -8880,6 +8883,9 @@ export default {
             $ref: "#/parameters/rowFilter.journal.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.journal.eliminationKind"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -8945,6 +8951,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.journal.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.journal.eliminationKind"
           },
           {
             $ref: "#/parameters/body.journal"
@@ -102599,6 +102608,13 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        eliminationKind: {
+          description:
+            "Classifies an elimination journal by the intercompany layer it removes (SAP posting-level analog); NULL for ordinary journals",
+          enum: ["IC Balance", "IC Revenue"],
+          format: 'public."eliminationKind"',
+          type: "string"
         }
       },
       type: "object"
@@ -144522,6 +144538,14 @@ export default {
     },
     "rowFilter.journal.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.journal.eliminationKind": {
+      name: "eliminationKind",
+      description:
+        "Classifies an elimination journal by the intercompany layer it removes (SAP posting-level analog); NULL for ordinary journals",
       required: false,
       in: "query",
       type: "string"
