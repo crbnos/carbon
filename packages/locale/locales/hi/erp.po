@@ -3949,6 +3949,9 @@ msgstr "देश"
 msgid "Country code"
 msgstr "देश कोड"
 
+msgid "Coverage unavailable"
+msgstr ""
+
 msgid "Create"
 msgstr "बनाएं"
 
@@ -6484,7 +6487,7 @@ msgid "Fail"
 msgstr "विफल"
 
 msgid "Failed"
-msgstr ""
+msgstr "विफल"
 
 #. placeholder {0}: run.failed
 msgid "Failed {0}"
@@ -12060,7 +12063,7 @@ msgid "Question"
 msgstr "प्रश्न"
 
 msgid "Queued"
-msgstr ""
+msgstr "कतार में"
 
 msgid "Quote"
 msgstr "उद्धरण"
@@ -13020,7 +13023,7 @@ msgid "Run this workflow now?"
 msgstr "अभी यह वर्कफ़्लो चलाएं?"
 
 msgid "Running"
-msgstr ""
+msgstr "चल रहा है"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "प्रत्येक सप्ताह की आपूर्ति और मांग के बाद चलाई जाने वाली इन्वेंटरी — पंक्ति।"
@@ -13032,7 +13035,7 @@ msgid "Running…"
 msgstr "चल रहा है…"
 
 msgid "Runs"
-msgstr ""
+msgstr "रन"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (सबसे मोटे विशेष)"
@@ -14830,7 +14833,7 @@ msgid "Sync Tie-Out"
 msgstr "सिंक समंजन"
 
 msgid "Synced"
-msgstr ""
+msgstr "सिंक किया गया"
 
 #. placeholder {0}: run.synced
 msgid "Synced {0}"

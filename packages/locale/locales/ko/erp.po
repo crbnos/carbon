@@ -3949,6 +3949,9 @@ msgstr "국가"
 msgid "Country code"
 msgstr "국가 코드"
 
+msgid "Coverage unavailable"
+msgstr ""
+
 msgid "Create"
 msgstr "생성"
 
@@ -6484,7 +6487,7 @@ msgid "Fail"
 msgstr "실패"
 
 msgid "Failed"
-msgstr ""
+msgstr "실패"
 
 #. placeholder {0}: run.failed
 msgid "Failed {0}"
@@ -12060,7 +12063,7 @@ msgid "Question"
 msgstr "질문"
 
 msgid "Queued"
-msgstr ""
+msgstr "대기 중"
 
 msgid "Quote"
 msgstr "견적"
@@ -13020,7 +13023,7 @@ msgid "Run this workflow now?"
 msgstr "이 워크플로우를 지금 실행하시겠습니까?"
 
 msgid "Running"
-msgstr ""
+msgstr "실행 중"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "매주 공급과 수요를 반영해 갱신되는 재고 — 그 라인입니다."
@@ -13032,7 +13035,7 @@ msgid "Running…"
 msgstr "실행 중…"
 
 msgid "Runs"
-msgstr ""
+msgstr "실행"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1(가장 완화된 특별수준)"
@@ -14830,7 +14833,7 @@ msgid "Sync Tie-Out"
 msgstr "동기화 일치"
 
 msgid "Synced"
-msgstr ""
+msgstr "동기화됨"
 
 #. placeholder {0}: run.synced
 msgid "Synced {0}"

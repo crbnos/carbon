@@ -3949,6 +3949,9 @@ msgstr "Ülke"
 msgid "Country code"
 msgstr "Ülke kodu"
 
+msgid "Coverage unavailable"
+msgstr ""
+
 msgid "Create"
 msgstr "Oluştur"
 
@@ -6484,7 +6487,7 @@ msgid "Fail"
 msgstr "Başarısız"
 
 msgid "Failed"
-msgstr ""
+msgstr "Başarısız"
 
 #. placeholder {0}: run.failed
 msgid "Failed {0}"
@@ -12060,7 +12063,7 @@ msgid "Question"
 msgstr "Soru"
 
 msgid "Queued"
-msgstr ""
+msgstr "Sırada"
 
 msgid "Quote"
 msgstr "Teklif"
@@ -13020,7 +13023,7 @@ msgid "Run this workflow now?"
 msgstr "Bu iş akışı şimdi çalıştırılsın mı?"
 
 msgid "Running"
-msgstr ""
+msgstr "Çalışıyor"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Her haftalık arz ve talep sonrası çalışan envanter — satır."
@@ -13032,7 +13035,7 @@ msgid "Running…"
 msgstr "Çalışıyor…"
 
 msgid "Runs"
-msgstr ""
+msgstr "Çalışmalar"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (en kalın özel)"
@@ -14830,7 +14833,7 @@ msgid "Sync Tie-Out"
 msgstr "Senkronizasyon Uyumu"
 
 msgid "Synced"
-msgstr ""
+msgstr "Eşitlendi"
 
 #. placeholder {0}: run.synced
 msgid "Synced {0}"

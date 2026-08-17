@@ -3949,6 +3949,9 @@ msgstr "国家"
 msgid "Country code"
 msgstr "国家代码"
 
+msgid "Coverage unavailable"
+msgstr ""
+
 msgid "Create"
 msgstr "创建"
 
@@ -6484,7 +6487,7 @@ msgid "Fail"
 msgstr "失败"
 
 msgid "Failed"
-msgstr ""
+msgstr "失败"
 
 #. placeholder {0}: run.failed
 msgid "Failed {0}"
@@ -12060,7 +12063,7 @@ msgid "Question"
 msgstr "问题"
 
 msgid "Queued"
-msgstr ""
+msgstr "已排队"
 
 msgid "Quote"
 msgstr "报价"
@@ -13020,7 +13023,7 @@ msgid "Run this workflow now?"
 msgstr "立即运行此工作流？"
 
 msgid "Running"
-msgstr ""
+msgstr "运行中"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "每周供应和需求后运行的库存 — 该行。"
@@ -13032,7 +13035,7 @@ msgid "Running…"
 msgstr "运行中…"
 
 msgid "Runs"
-msgstr ""
+msgstr "运行"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最粗特殊）"
@@ -14830,7 +14833,7 @@ msgid "Sync Tie-Out"
 msgstr "同步对账"
 
 msgid "Synced"
-msgstr ""
+msgstr "已同步"
 
 #. placeholder {0}: run.synced
 msgid "Synced {0}"

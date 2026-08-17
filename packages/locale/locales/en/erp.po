@@ -3949,6 +3949,9 @@ msgstr "Country"
 msgid "Country code"
 msgstr "Country code"
 
+msgid "Coverage unavailable"
+msgstr "Coverage unavailable"
+
 msgid "Create"
 msgstr "Create"
 

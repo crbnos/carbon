@@ -3949,6 +3949,9 @@ msgstr "Paese"
 msgid "Country code"
 msgstr "Codice paese"
 
+msgid "Coverage unavailable"
+msgstr ""
+
 msgid "Create"
 msgstr "Crea"
 
@@ -6484,7 +6487,7 @@ msgid "Fail"
 msgstr "Non superato"
 
 msgid "Failed"
-msgstr ""
+msgstr "Non riuscito"
 
 #. placeholder {0}: run.failed
 msgid "Failed {0}"
@@ -12060,7 +12063,7 @@ msgid "Question"
 msgstr "Domanda"
 
 msgid "Queued"
-msgstr ""
+msgstr "In coda"
 
 msgid "Quote"
 msgstr "Preventivo"
@@ -13020,7 +13023,7 @@ msgid "Run this workflow now?"
 msgstr "Eseguire questo workflow ora?"
 
 msgid "Running"
-msgstr ""
+msgstr "In esecuzione"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Inventario aggiornato dopo la domanda e l'offerta di ogni settimana — la linea."
@@ -13032,7 +13035,7 @@ msgid "Running…"
 msgstr "In esecuzione..."
 
 msgid "Runs"
-msgstr ""
+msgstr "Esecuzioni"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (speciale più grossolano)"
@@ -14830,7 +14833,7 @@ msgid "Sync Tie-Out"
 msgstr "Riconciliazione Sincronizzazione"
 
 msgid "Synced"
-msgstr ""
+msgstr "Sincronizzato"
 
 #. placeholder {0}: run.synced
 msgid "Synced {0}"

@@ -3949,6 +3949,9 @@ msgstr "国"
 msgid "Country code"
 msgstr "国コード"
 
+msgid "Coverage unavailable"
+msgstr ""
+
 msgid "Create"
 msgstr "作成"
 
@@ -6484,7 +6487,7 @@ msgid "Fail"
 msgstr "不合格"
 
 msgid "Failed"
-msgstr ""
+msgstr "失敗"
 
 #. placeholder {0}: run.failed
 msgid "Failed {0}"
@@ -12060,7 +12063,7 @@ msgid "Question"
 msgstr "質問"
 
 msgid "Queued"
-msgstr ""
+msgstr "待機中"
 
 msgid "Quote"
 msgstr "見積"
@@ -13020,7 +13023,7 @@ msgid "Run this workflow now?"
 msgstr "このワークフローを今すぐ実行しますか？"
 
 msgid "Running"
-msgstr ""
+msgstr "実行中"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "毎週の需給の後に実行されるインベントリ — ラインです。"
@@ -13032,7 +13035,7 @@ msgid "Running…"
 msgstr "実行中…"
 
 msgid "Runs"
-msgstr ""
+msgstr "実行"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最も粗い特殊）"
@@ -14830,7 +14833,7 @@ msgid "Sync Tie-Out"
 msgstr "同期一致"
 
 msgid "Synced"
-msgstr ""
+msgstr "同期済み"
 
 #. placeholder {0}: run.synced
 msgid "Synced {0}"
