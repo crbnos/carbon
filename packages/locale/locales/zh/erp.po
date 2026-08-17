@@ -838,7 +838,7 @@ msgid "Ability"
 msgstr "能力"
 
 msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr ""
+msgstr "仅当合格的操作员值班时，能力受限的工作才会运行；在人员配置板上分配的操作员进一步塑造可用劳动力。"
 
 msgid "About"
 msgstr "关于"
@@ -1396,7 +1396,7 @@ msgid "All shifts"
 msgstr "所有班次"
 
 msgid "All Shifts"
-msgstr ""
+msgstr "所有班次"
 
 msgid "All slotted dimension values are mapped"
 msgstr "所有分配维度的值都已映射"
@@ -2428,7 +2428,7 @@ msgid "Available"
 msgstr "可用"
 
 msgid "Available 24 hours a day, 7 days a week."
-msgstr ""
+msgstr "每天 24 小时，每周 7 天可用。"
 
 msgid "Available Actions (click to add)"
 msgstr "可用的操作（点击添加）"
@@ -2438,7 +2438,7 @@ msgid "Available after {0}"
 msgstr "在{0}之后可用"
 
 msgid "Available hours"
-msgstr ""
+msgstr "可用小时数"
 
 msgid "Avatar url"
 msgstr "头像网址"
@@ -2614,7 +2614,7 @@ msgid "Blocked by {0}"
 msgstr "被 {0} 阻止"
 
 msgid "Blocks Machine"
-msgstr ""
+msgstr "阻止机器"
 
 msgid "Blocks save until resolved"
 msgstr "阻止保存直到解决"
@@ -4011,7 +4011,7 @@ msgid "Create Change Notice"
 msgstr "创建更改单"
 
 msgid "Create Forecast"
-msgstr ""
+msgstr "创建预测"
 
 msgid "Create Issue"
 msgstr "创建问题"
@@ -4725,7 +4725,7 @@ msgid "Default Sampling"
 msgstr "默认抽样"
 
 msgid "Default schedule"
-msgstr ""
+msgstr "默认时间表"
 
 msgid "Default shelf-life duration (days)"
 msgstr "默认保质期时长（天）"
@@ -5099,7 +5099,7 @@ msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs
 msgstr "需求预测 = 来自未结销售订单、活跃工作和生产预测的物料清单展开需求。"
 
 msgid "Demand Forecasts"
-msgstr ""
+msgstr "需求预测"
 
 msgid "Demand projection"
 msgstr "需求预测"
@@ -5645,7 +5645,7 @@ msgid "Edit Customer Type"
 msgstr "编辑客户类型"
 
 msgid "Edit Demand Forecast"
-msgstr ""
+msgstr "编辑需求预测"
 
 msgid "Edit Department"
 msgstr "编辑部门"
@@ -6199,7 +6199,7 @@ msgid "Est. Duration"
 msgstr "预计时长"
 
 msgid "Estimated"
-msgstr ""
+msgstr "估计的"
 
 msgid "Estimated — no capacity reservation"
 msgstr "估计 — 无产能预留"
@@ -7024,7 +7024,7 @@ msgid "For US companies handling ITAR data"
 msgstr "适用于处理ITAR数据的美国公司"
 
 msgid "Forecast"
-msgstr ""
+msgstr "预测"
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -7532,7 +7532,7 @@ msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set 
 msgstr "物品单位成本的估值方式：标准、平均、FIFO或LIFO。按物品设置。"
 
 msgid "How are these hours calculated?"
-msgstr ""
+msgstr "这些小时数是如何计算的？"
 
 msgid "How coverage is worked out"
 msgstr "如何计算覆盖范围"
@@ -7773,7 +7773,7 @@ msgid "In the loop together"
 msgstr "一起保持沟通"
 
 msgid "In use"
-msgstr ""
+msgstr "使用中"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件或 Slack 发送给您。"
@@ -8615,10 +8615,10 @@ msgid "Light Mode"
 msgstr "浅色模式"
 
 msgid "Lights Out (24×7)"
-msgstr ""
+msgstr "熄灯（24×7）"
 
 msgid "Lights-out (24/7)"
-msgstr ""
+msgstr "熄灯（24/7）"
 
 msgid "Likelihood"
 msgstr "可能性"
@@ -8748,7 +8748,7 @@ msgid "Location Name"
 msgstr "位置名称"
 
 msgid "Location shifts"
-msgstr ""
+msgstr "位置班次"
 
 msgid "locations"
 msgstr "位置"
@@ -8902,7 +8902,7 @@ msgid "Maintenance Schedules"
 msgstr "维护计划"
 
 msgid "Maintenance that takes the station offline is removed."
-msgstr ""
+msgstr "使工作站离线的维护被移除。"
 
 msgid "Maintenance Type"
 msgstr "维护类型"
@@ -9146,7 +9146,7 @@ msgid "Material IDs"
 msgstr "物料ID"
 
 msgid "Material Planning"
-msgstr ""
+msgstr "物料规划"
 
 msgid "Material Properties"
 msgstr "材料属性"
@@ -9380,13 +9380,13 @@ msgid "Modules in scope"
 msgstr "范围内的模块"
 
 msgid "Mon–Fri, 8 hours a day"
-msgstr ""
+msgstr "周一至周五，每天 8 小时"
 
 msgid "Monday"
 msgstr "星期一"
 
 msgid "Monday–Friday, 08:00–16:00"
-msgstr ""
+msgstr "周一至周五，08:00–16:00"
 
 msgid "Money owed to you"
 msgstr "你欠的钱"
@@ -9595,7 +9595,7 @@ msgid "New Customer Part"
 msgstr "新客户零件"
 
 msgid "New Demand Forecast"
-msgstr ""
+msgstr "新需求预测"
 
 msgid "New Department"
 msgstr "新部门"
@@ -9847,7 +9847,7 @@ msgid "Next Date"
 msgstr "下一个日期"
 
 msgid "Next day"
-msgstr ""
+msgstr "下一天"
 
 msgid "Next Day"
 msgstr "下一天"
@@ -9868,7 +9868,7 @@ msgid "Next step"
 msgstr "下一步"
 
 msgid "Next week"
-msgstr ""
+msgstr "下一周"
 
 msgid "Next Week"
 msgstr "下一周"
@@ -10642,7 +10642,7 @@ msgid "Open Issues"
 msgstr "未解决的问题"
 
 msgid "Open job"
-msgstr ""
+msgstr "未完成的工作"
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "未完成工作需求加上此地点的未完成转移"
@@ -10711,7 +10711,7 @@ msgid "Operating Expenses"
 msgstr "运营费用"
 
 msgid "Operating hours"
-msgstr ""
+msgstr "运营时间"
 
 msgid "Operating Income"
 msgstr "营业收入"
@@ -11525,7 +11525,7 @@ msgid "Previous Date"
 msgstr "上一个日期"
 
 msgid "Previous day"
-msgstr ""
+msgstr "前一天"
 
 msgid "Previous Day"
 msgstr "前一天"
@@ -11541,7 +11541,7 @@ msgid "Previous value of {0}"
 msgstr "之前的{0}值"
 
 msgid "Previous week"
-msgstr ""
+msgstr "前一周"
 
 msgid "Previous Week"
 msgstr "前一周"
@@ -12709,7 +12709,7 @@ msgid "Reserve floor"
 msgstr "储备下限"
 
 msgid "Reserve the work center's capacity for this PM. Requires an estimated duration."
-msgstr ""
+msgstr "为此预防性维护保留工作中心的产能。需要估计的持续时间。"
 
 msgid "Reserved"
 msgstr "已预留"
@@ -12749,10 +12749,10 @@ msgid "Resolved Price"
 msgstr "已解决价格"
 
 msgid "Resource"
-msgstr ""
+msgstr "资源"
 
 msgid "Resource Planning"
-msgstr ""
+msgstr "资源规划"
 
 msgid "resources"
 msgstr "资源"
@@ -13042,16 +13042,16 @@ msgid "Runs"
 msgstr "运行"
 
 msgid "Runs around the clock"
-msgstr ""
+msgstr "全天候运行"
 
 msgid "Runs during every shift at the location."
-msgstr ""
+msgstr "在该位置的每个班次期间运行。"
 
 msgid "Runs only during the shifts you select."
-msgstr ""
+msgstr "仅在您选择的班次期间运行。"
 
 msgid "Runs unattended around the clock, ignoring shift calendars."
-msgstr ""
+msgstr "无人值守全天候运行，忽略班次日历。"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最粗特殊）"
@@ -13289,7 +13289,7 @@ msgid "Schedules"
 msgstr "日程"
 
 msgid "Scheduling"
-msgstr ""
+msgstr "调度"
 
 msgid "Scheduling conflict"
 msgstr "计划冲突"
@@ -13771,7 +13771,7 @@ msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "为新报价行中的每个成本类别设置默认加价百分比"
 
 msgid "Set demand forecast values for each week"
-msgstr ""
+msgstr "为每周设置需求预测值"
 
 msgid "Set due date"
 msgstr "设置截止日期"
@@ -13904,7 +13904,7 @@ msgid "Shifts"
 msgstr "班次"
 
 msgid "Shifts assigned to this station"
-msgstr ""
+msgstr "分配给此工作站的班次"
 
 msgid "Ship"
 msgstr "发货"
@@ -14157,7 +14157,7 @@ msgid "Some lines extracted from the PDF could not be automatically mapped to yo
 msgstr "从PDF提取的某些行无法自动映射到您的库存项目。请查看并映射下面的每一行。"
 
 msgid "Some Shifts"
-msgstr ""
+msgstr "某些班次"
 
 msgid "Something went wrong. Please try again."
 msgstr "出现问题。请重试。"
@@ -14226,7 +14226,7 @@ msgid "Sourcing Type"
 msgstr "采购类型"
 
 msgid "Span"
-msgstr ""
+msgstr "跨度"
 
 msgid "Spare Part Consumption"
 msgstr "备件消耗"
@@ -14817,7 +14817,7 @@ msgid "Takes work center offline"
 msgstr "使工作中心离线"
 
 msgid "Takes Work Center Offline"
-msgstr ""
+msgstr "使工作中心离线"
 
 msgid "Talk to Sales"
 msgstr "与销售团队联系"
@@ -15542,7 +15542,7 @@ msgid "The schedule used to spread this asset's cost over its useful life (strai
 msgstr "用于在资产的使用寿命内分配该资产成本的折旧方法（直线法、递减余额法、生产单位法）。"
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
-msgstr ""
+msgstr "调度程序应用以下适用的第一条规则，然后减去停机时间和人员配置。"
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "库存物理上存放的货架和箱子"
@@ -15554,7 +15554,7 @@ msgid "The sign-offs every issue using this workflow needs before it can be clos
 msgstr "使用此工作流的每个问题在关闭前需要的签署。"
 
 msgid "The site's shifts"
-msgstr ""
+msgstr "站点的班次"
 
 msgid "The size of the part"
 msgstr "零件的尺寸"
@@ -15716,7 +15716,7 @@ msgid "Theme Color"
 msgstr "主题颜色"
 
 msgid "Then adjusted for"
-msgstr ""
+msgstr "然后调整为"
 
 msgid "Then by"
 msgstr "然后按"
@@ -16508,7 +16508,7 @@ msgid "Unsaved changes"
 msgstr "未保存的更改"
 
 msgid "Unscheduled"
-msgstr ""
+msgstr "未计划"
 
 msgid "Unscrap"
 msgstr "取消报废"
@@ -16571,7 +16571,7 @@ msgid "Update costs on"
 msgstr "更新成本于"
 
 msgid "Update Forecast"
-msgstr ""
+msgstr "更新预测"
 
 msgid "Update Inventory"
 msgstr "更新库存"
@@ -17596,7 +17596,7 @@ msgid "Wordmark Light Mode"
 msgstr "字标浅色模式"
 
 msgid "Work"
-msgstr ""
+msgstr "工作"
 
 msgid "work center"
 msgstr "工作中心"
@@ -17611,7 +17611,7 @@ msgid "Work Center Reservation"
 msgstr "工作中心预留"
 
 msgid "Work center shifts"
-msgstr ""
+msgstr "工作中心班次"
 
 msgid "Work Center Utilization"
 msgstr "工作中心利用率"

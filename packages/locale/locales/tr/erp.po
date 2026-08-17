@@ -838,7 +838,7 @@ msgid "Ability"
 msgstr "Yetenek"
 
 msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr ""
+msgstr "Yetenek tabanlı çalışmalar yalnızca nitelikli bir operatör vardiyadayken çalışır; manning tahtasına atanan operatörler kullanılabilir işgücünü daha da şekillendirir."
 
 msgid "About"
 msgstr "Hakkında"
@@ -1396,7 +1396,7 @@ msgid "All shifts"
 msgstr "Tüm vardiyalar"
 
 msgid "All Shifts"
-msgstr ""
+msgstr "Tüm Vardiyalar"
 
 msgid "All slotted dimension values are mapped"
 msgstr "Tüm boyut değerleri eşlendi"
@@ -2428,7 +2428,7 @@ msgid "Available"
 msgstr "Mevcut"
 
 msgid "Available 24 hours a day, 7 days a week."
-msgstr ""
+msgstr "Günde 24 saat, haftada 7 gün kullanılabilir."
 
 msgid "Available Actions (click to add)"
 msgstr "Mevcut işlemler (eklemek için tıklayın)"
@@ -2438,7 +2438,7 @@ msgid "Available after {0}"
 msgstr "{0}'den sonra kullanılabilir"
 
 msgid "Available hours"
-msgstr ""
+msgstr "Kullanılabilir saatler"
 
 msgid "Avatar url"
 msgstr "Avatar URL'si"
@@ -2614,7 +2614,7 @@ msgid "Blocked by {0}"
 msgstr "Bloklandı: {0}"
 
 msgid "Blocks Machine"
-msgstr ""
+msgstr "Makineyi Engeller"
 
 msgid "Blocks save until resolved"
 msgstr "Çözülene kadar kaydetmeyi engeller"
@@ -4011,7 +4011,7 @@ msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
 
 msgid "Create Forecast"
-msgstr ""
+msgstr "Tahmin Oluştur"
 
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
@@ -4725,7 +4725,7 @@ msgid "Default Sampling"
 msgstr "Varsayılan Örnekleme"
 
 msgid "Default schedule"
-msgstr ""
+msgstr "Varsayılan program"
 
 msgid "Default shelf-life duration (days)"
 msgstr "Varsayılan raf ömrü süresi (gün)"
@@ -5099,7 +5099,7 @@ msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs
 msgstr "Talep tahmini = Açık satış siparişlerinden, aktif işlerden ve üretim projeksiyonlarından BOM'u açılmış talep."
 
 msgid "Demand Forecasts"
-msgstr ""
+msgstr "Talep Tahminleri"
 
 msgid "Demand projection"
 msgstr "Talep Tahmini"
@@ -5645,7 +5645,7 @@ msgid "Edit Customer Type"
 msgstr "Müşteri Tipini Düzenle"
 
 msgid "Edit Demand Forecast"
-msgstr ""
+msgstr "Talep Tahminini Düzenle"
 
 msgid "Edit Department"
 msgstr "Departmanı Düzenle"
@@ -6199,7 +6199,7 @@ msgid "Est. Duration"
 msgstr "Tahmini Süre"
 
 msgid "Estimated"
-msgstr ""
+msgstr "Tahmini"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Tahmini — kapasite rezervasyonu yok"
@@ -7024,7 +7024,7 @@ msgid "For US companies handling ITAR data"
 msgstr "ITAR verilerini işleyen ABD şirketleri için"
 
 msgid "Forecast"
-msgstr ""
+msgstr "Tahmin"
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -7532,7 +7532,7 @@ msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set 
 msgstr "Bir öğenin birim maliyeti nasıl değerlendirilir: Standart, Ortalama, FIFO veya LIFO. Madde başına ayarlanır."
 
 msgid "How are these hours calculated?"
-msgstr ""
+msgstr "Bu saatler nasıl hesaplanır?"
 
 msgid "How coverage is worked out"
 msgstr "Kapasite nasıl hesaplanır"
@@ -7773,7 +7773,7 @@ msgid "In the loop together"
 msgstr "Birlikte döngüde"
 
 msgid "In use"
-msgstr ""
+msgstr "Kullanımda"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta veya Slack aracılığıyla sizi ulaştıracağını seçin."
@@ -8615,10 +8615,10 @@ msgid "Light Mode"
 msgstr "Aydınlık Mod"
 
 msgid "Lights Out (24×7)"
-msgstr ""
+msgstr "Işıklar Kapalı (24×7)"
 
 msgid "Lights-out (24/7)"
-msgstr ""
+msgstr "Işıklar kapalı (24/7)"
 
 msgid "Likelihood"
 msgstr "Olasılık"
@@ -8748,7 +8748,7 @@ msgid "Location Name"
 msgstr "Konum Adı"
 
 msgid "Location shifts"
-msgstr ""
+msgstr "Konum vardiyaları"
 
 msgid "locations"
 msgstr "konumlar"
@@ -8902,7 +8902,7 @@ msgid "Maintenance Schedules"
 msgstr "Bakım Programları"
 
 msgid "Maintenance that takes the station offline is removed."
-msgstr ""
+msgstr "İstasyonu çevrimdışı alan bakım kaldırılır."
 
 msgid "Maintenance Type"
 msgstr "Bakım Türü"
@@ -9146,7 +9146,7 @@ msgid "Material IDs"
 msgstr "Malzeme Kimlikleri"
 
 msgid "Material Planning"
-msgstr ""
+msgstr "Malzeme Planlama"
 
 msgid "Material Properties"
 msgstr "Malzeme Özellikleri"
@@ -9380,13 +9380,13 @@ msgid "Modules in scope"
 msgstr "Kapsamdaki Modüller"
 
 msgid "Mon–Fri, 8 hours a day"
-msgstr ""
+msgstr "Pzt–Cum, günde 8 saat"
 
 msgid "Monday"
 msgstr "Pazartesi"
 
 msgid "Monday–Friday, 08:00–16:00"
-msgstr ""
+msgstr "Pazartesi–Cuma, 08:00–16:00"
 
 msgid "Money owed to you"
 msgstr "Size borçlu"
@@ -9595,7 +9595,7 @@ msgid "New Customer Part"
 msgstr "Yeni Müşteri Parçası"
 
 msgid "New Demand Forecast"
-msgstr ""
+msgstr "Yeni Talep Tahmini"
 
 msgid "New Department"
 msgstr "Yeni Departman"
@@ -9847,7 +9847,7 @@ msgid "Next Date"
 msgstr "Sonraki Tarih"
 
 msgid "Next day"
-msgstr ""
+msgstr "Sonraki gün"
 
 msgid "Next Day"
 msgstr "Sonraki Gün"
@@ -9868,7 +9868,7 @@ msgid "Next step"
 msgstr "Sonraki adım"
 
 msgid "Next week"
-msgstr ""
+msgstr "Sonraki hafta"
 
 msgid "Next Week"
 msgstr "Sonraki Hafta"
@@ -10642,7 +10642,7 @@ msgid "Open Issues"
 msgstr "Açık Sorunlar"
 
 msgid "Open job"
-msgstr ""
+msgstr "Açık iş"
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Açık iş talebi artı bu depodan giden bekleyen transferler"
@@ -10711,7 +10711,7 @@ msgid "Operating Expenses"
 msgstr "İşletme Giderleri"
 
 msgid "Operating hours"
-msgstr ""
+msgstr "İşletme saatleri"
 
 msgid "Operating Income"
 msgstr "İşletme Geliri"
@@ -11525,7 +11525,7 @@ msgid "Previous Date"
 msgstr "Önceki Tarih"
 
 msgid "Previous day"
-msgstr ""
+msgstr "Önceki gün"
 
 msgid "Previous Day"
 msgstr "Önceki Gün"
@@ -11541,7 +11541,7 @@ msgid "Previous value of {0}"
 msgstr "Önceki değeri {0}"
 
 msgid "Previous week"
-msgstr ""
+msgstr "Önceki hafta"
 
 msgid "Previous Week"
 msgstr "Önceki Hafta"
@@ -12709,7 +12709,7 @@ msgid "Reserve floor"
 msgstr "Rezerv tabanı"
 
 msgid "Reserve the work center's capacity for this PM. Requires an estimated duration."
-msgstr ""
+msgstr "Bu PM için iş merkezi kapasitesini ayırın. Tahmini bir süre gereklidir."
 
 msgid "Reserved"
 msgstr "Ayrılmış"
@@ -12749,10 +12749,10 @@ msgid "Resolved Price"
 msgstr "Belirlenmiş Fiyat"
 
 msgid "Resource"
-msgstr ""
+msgstr "Kaynak"
 
 msgid "Resource Planning"
-msgstr ""
+msgstr "Kaynak Planlama"
 
 msgid "resources"
 msgstr "kaynaklar"
@@ -13042,16 +13042,16 @@ msgid "Runs"
 msgstr "Çalışmalar"
 
 msgid "Runs around the clock"
-msgstr ""
+msgstr "Günün her saati çalışır"
 
 msgid "Runs during every shift at the location."
-msgstr ""
+msgstr "Konumdaki her vardiya sırasında çalışır."
 
 msgid "Runs only during the shifts you select."
-msgstr ""
+msgstr "Yalnızca seçtiğiniz vardiyalar sırasında çalışır."
 
 msgid "Runs unattended around the clock, ignoring shift calendars."
-msgstr ""
+msgstr "Vardiya takvimlerini görmezden gelerek, gözetimsiz olarak günün her saati çalışır."
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (en kalın özel)"
@@ -13289,7 +13289,7 @@ msgid "Schedules"
 msgstr "Programlar"
 
 msgid "Scheduling"
-msgstr ""
+msgstr "Planlama"
 
 msgid "Scheduling conflict"
 msgstr "Zamanlama Çakışması"
@@ -13771,7 +13771,7 @@ msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "Yeni teklif satırları için her maliyet kategorisi için varsayılan artırım yüzdelerini belirleyin"
 
 msgid "Set demand forecast values for each week"
-msgstr ""
+msgstr "Her hafta için talep tahmin değerlerini ayarlayın"
 
 msgid "Set due date"
 msgstr "Son son tarihi belirle"
@@ -13904,7 +13904,7 @@ msgid "Shifts"
 msgstr "Vardiyalar"
 
 msgid "Shifts assigned to this station"
-msgstr ""
+msgstr "Bu istasyona atanan vardiyalar"
 
 msgid "Ship"
 msgstr "Sevk Et"
@@ -14157,7 +14157,7 @@ msgid "Some lines extracted from the PDF could not be automatically mapped to yo
 msgstr "PDF'den çıkarılan bazı satırlar envanter öğelerinize otomatik olarak eşleştirilemedi. Aşağıdaki her satırı gözden geçirin ve eşleştirin."
 
 msgid "Some Shifts"
-msgstr ""
+msgstr "Bazı Vardiyalar"
 
 msgid "Something went wrong. Please try again."
 msgstr "Bir şeyler ters gitti. Lütfen tekrar deneyin."
@@ -14226,7 +14226,7 @@ msgid "Sourcing Type"
 msgstr "Kaynak Türü"
 
 msgid "Span"
-msgstr ""
+msgstr "Zaman Aralığı"
 
 msgid "Spare Part Consumption"
 msgstr "Yedek Parça Tüketimi"
@@ -14817,7 +14817,7 @@ msgid "Takes work center offline"
 msgstr "İş merkezini çevrimdışı alır"
 
 msgid "Takes Work Center Offline"
-msgstr ""
+msgstr "İş Merkezini Çevrimdışı Alır"
 
 msgid "Talk to Sales"
 msgstr "Satın Alma Ekibi ile Görüşün"
@@ -15542,7 +15542,7 @@ msgid "The schedule used to spread this asset's cost over its useful life (strai
 msgstr "Bu varlığın maliyetini faydalı ömrü boyunca yaymak için kullanılan amortisman yöntemi (doğrusal, azalan bakiye, üretim birimleri)."
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
-msgstr ""
+msgstr "Planlayıcı, aşağıdaki geçerli olan ilk kuralı kullanır, ardından kapalı kalma süresini ve personel sayısını çıkarır."
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "Stokun fiziksel olarak bulunduğu raflar ve kutular"
@@ -15554,7 +15554,7 @@ msgid "The sign-offs every issue using this workflow needs before it can be clos
 msgstr "Bu iş akışını kullanan her sorunun kapatılmadan önce ihtiyacı olan imzalar."
 
 msgid "The site's shifts"
-msgstr ""
+msgstr "Sitenin vardiyaları"
 
 msgid "The size of the part"
 msgstr "Parçanın boyutu"
@@ -15716,7 +15716,7 @@ msgid "Theme Color"
 msgstr "Tema Rengi"
 
 msgid "Then adjusted for"
-msgstr ""
+msgstr "Ardından ayarlandı"
 
 msgid "Then by"
 msgstr "Sonra"
@@ -16508,7 +16508,7 @@ msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
 
 msgid "Unscheduled"
-msgstr ""
+msgstr "Planlanmamış"
 
 msgid "Unscrap"
 msgstr "Çıkartmayı Geri Al"
@@ -16571,7 +16571,7 @@ msgid "Update costs on"
 msgstr "Maliyetleri şu konularda güncelle"
 
 msgid "Update Forecast"
-msgstr ""
+msgstr "Tahmini Güncelle"
 
 msgid "Update Inventory"
 msgstr "Stok Güncelle"
@@ -17596,7 +17596,7 @@ msgid "Wordmark Light Mode"
 msgstr "Marka Açık Mod"
 
 msgid "Work"
-msgstr ""
+msgstr "İş"
 
 msgid "work center"
 msgstr "çalışma merkezi"
@@ -17611,7 +17611,7 @@ msgid "Work Center Reservation"
 msgstr "İş Merkezi Rezervasyonu"
 
 msgid "Work center shifts"
-msgstr ""
+msgstr "İş merkezi vardiyaları"
 
 msgid "Work Center Utilization"
 msgstr "İş Merkezi Kullanımı"

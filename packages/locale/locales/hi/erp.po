@@ -838,7 +838,7 @@ msgid "Ability"
 msgstr "क्षमता"
 
 msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr ""
+msgstr "योग्यता-गेटेड कार्य केवल तभी चलता है जब एक योग्य ऑपरेटर शिफ्ट में हो; मैनिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आगे आकार देते हैं।"
 
 msgid "About"
 msgstr "के बारे में"
@@ -1396,7 +1396,7 @@ msgid "All shifts"
 msgstr "सभी शिफ्ट"
 
 msgid "All Shifts"
-msgstr ""
+msgstr "सभी शिफ्ट"
 
 msgid "All slotted dimension values are mapped"
 msgstr "सभी स्लॉटेड आयाम मान मैप किए गए हैं"
@@ -2428,7 +2428,7 @@ msgid "Available"
 msgstr "उपलब्ध"
 
 msgid "Available 24 hours a day, 7 days a week."
-msgstr ""
+msgstr "दिन में 24 घंटे, सप्ताह में 7 दिन उपलब्ध।"
 
 msgid "Available Actions (click to add)"
 msgstr "उपलब्ध कार्य (जोड़ने के लिए क्लिक करें)"
@@ -2438,7 +2438,7 @@ msgid "Available after {0}"
 msgstr "{0} के बाद उपलब्ध"
 
 msgid "Available hours"
-msgstr ""
+msgstr "उपलब्ध घंटे"
 
 msgid "Avatar url"
 msgstr "अवतार url"
@@ -2614,7 +2614,7 @@ msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
 
 msgid "Blocks Machine"
-msgstr ""
+msgstr "मशीन को ब्लॉक करता है"
 
 msgid "Blocks save until resolved"
 msgstr "सहेजने को तब तक ब्लॉक करता है जब तक समाधान न हो जाए"
@@ -4011,7 +4011,7 @@ msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
 
 msgid "Create Forecast"
-msgstr ""
+msgstr "पूर्वानुमान बनाएं"
 
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
@@ -4725,7 +4725,7 @@ msgid "Default Sampling"
 msgstr "डिफ़ॉल्ट नमूनाकरण"
 
 msgid "Default schedule"
-msgstr ""
+msgstr "डिफ़ॉल्ट शेड्यूल"
 
 msgid "Default shelf-life duration (days)"
 msgstr "डिफ़ॉल्ट शेल्फ-लाइफ अवधि (दिन)"
@@ -5099,7 +5099,7 @@ msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs
 msgstr "मांग पूर्वानुमान = खुले बिक्रय आदेशों, सक्रिय कार्यों और उत्पादन प्रक्षेपणों से BOM-विस्फोटित मांग।"
 
 msgid "Demand Forecasts"
-msgstr ""
+msgstr "मांग पूर्वानुमान"
 
 msgid "Demand projection"
 msgstr "मांग प्रक्षेपण"
@@ -5645,7 +5645,7 @@ msgid "Edit Customer Type"
 msgstr "ग्राहक प्रकार संपादित करें"
 
 msgid "Edit Demand Forecast"
-msgstr ""
+msgstr "मांग पूर्वानुमान संपादित करें"
 
 msgid "Edit Department"
 msgstr "विभाग संपादित करें"
@@ -6199,7 +6199,7 @@ msgid "Est. Duration"
 msgstr "अनुमानित अवधि"
 
 msgid "Estimated"
-msgstr ""
+msgstr "अनुमानित"
 
 msgid "Estimated — no capacity reservation"
 msgstr "अनुमानित — कोई क्षमता आरक्षण नहीं"
@@ -7024,7 +7024,7 @@ msgid "For US companies handling ITAR data"
 msgstr "ITAR डेटा संभालने वाली US कंपनियों के लिए"
 
 msgid "Forecast"
-msgstr ""
+msgstr "पूर्वानुमान"
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -7532,7 +7532,7 @@ msgid "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set 
 msgstr "किसी वस्तु की इकाई लागत का मूल्यांकन कैसे किया जाता है: मानक, औसत, FIFO, या LIFO। प्रति आइटम सेट।"
 
 msgid "How are these hours calculated?"
-msgstr ""
+msgstr "इन घंटों की गणना कैसे की जाती है?"
 
 msgid "How coverage is worked out"
 msgstr "कवरेज कैसे काम किया जाता है"
@@ -7773,7 +7773,7 @@ msgid "In the loop together"
 msgstr "एक साथ लूप में"
 
 msgid "In use"
-msgstr ""
+msgstr "उपयोग में"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "इन-ऐप नोटिफिकेशन हमेशा डिलीवर किए जाते हैं। चुनें कि कौन से विषय आपको ईमेल या Slack के माध्यम से भी पहुंचते हैं।"
@@ -8615,10 +8615,10 @@ msgid "Light Mode"
 msgstr "लाइट मोड"
 
 msgid "Lights Out (24×7)"
-msgstr ""
+msgstr "लाइट्स आउट (24×7)"
 
 msgid "Lights-out (24/7)"
-msgstr ""
+msgstr "लाइट्स आउट (24/7)"
 
 msgid "Likelihood"
 msgstr "संभावना"
@@ -8748,7 +8748,7 @@ msgid "Location Name"
 msgstr "स्थान का नाम"
 
 msgid "Location shifts"
-msgstr ""
+msgstr "स्थान शिफ्ट"
 
 msgid "locations"
 msgstr "स्थान"
@@ -8902,7 +8902,7 @@ msgid "Maintenance Schedules"
 msgstr "रखरखाव शेड्यूल"
 
 msgid "Maintenance that takes the station offline is removed."
-msgstr ""
+msgstr "रखरखाव जो स्टेशन को ऑफलाइन ले जाता है, हटा दिया जाता है।"
 
 msgid "Maintenance Type"
 msgstr "रखरखाव प्रकार"
@@ -9146,7 +9146,7 @@ msgid "Material IDs"
 msgstr "सामग्री आईडी"
 
 msgid "Material Planning"
-msgstr ""
+msgstr "सामग्री योजना"
 
 msgid "Material Properties"
 msgstr "सामग्री गुण"
@@ -9380,13 +9380,13 @@ msgid "Modules in scope"
 msgstr "स्कोप में मॉड्यूल"
 
 msgid "Mon–Fri, 8 hours a day"
-msgstr ""
+msgstr "सोम–शुक्र, दिन में 8 घंटे"
 
 msgid "Monday"
 msgstr "सोमवार"
 
 msgid "Monday–Friday, 08:00–16:00"
-msgstr ""
+msgstr "सोमवार–शुक्रवार, 08:00–16:00"
 
 msgid "Money owed to you"
 msgstr "आपको देय धन"
@@ -9595,7 +9595,7 @@ msgid "New Customer Part"
 msgstr "नया ग्राहक भाग"
 
 msgid "New Demand Forecast"
-msgstr ""
+msgstr "नया मांग पूर्वानुमान"
 
 msgid "New Department"
 msgstr "नया विभाग"
@@ -9847,7 +9847,7 @@ msgid "Next Date"
 msgstr "अगली तारीख"
 
 msgid "Next day"
-msgstr ""
+msgstr "अगला दिन"
 
 msgid "Next Day"
 msgstr "अगला दिन"
@@ -9868,7 +9868,7 @@ msgid "Next step"
 msgstr "अगला कदम"
 
 msgid "Next week"
-msgstr ""
+msgstr "अगला सप्ताह"
 
 msgid "Next Week"
 msgstr "अगला सप्ताह"
@@ -10642,7 +10642,7 @@ msgid "Open Issues"
 msgstr "खुले मुद्दे"
 
 msgid "Open job"
-msgstr ""
+msgstr "खुला कार्य"
 
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "खुली नौकरी की मांग प्लस इस बिन से बकाया ट्रांसफर"
@@ -10711,7 +10711,7 @@ msgid "Operating Expenses"
 msgstr "परिचालन व्यय"
 
 msgid "Operating hours"
-msgstr ""
+msgstr "परिचालन घंटे"
 
 msgid "Operating Income"
 msgstr "परिचालन आय"
@@ -11525,7 +11525,7 @@ msgid "Previous Date"
 msgstr "पिछली तारीख"
 
 msgid "Previous day"
-msgstr ""
+msgstr "पिछला दिन"
 
 msgid "Previous Day"
 msgstr "पिछला दिन"
@@ -11541,7 +11541,7 @@ msgid "Previous value of {0}"
 msgstr "{0} का पिछला मूल्य"
 
 msgid "Previous week"
-msgstr ""
+msgstr "पिछला सप्ताह"
 
 msgid "Previous Week"
 msgstr "पिछला सप्ताह"
@@ -12709,7 +12709,7 @@ msgid "Reserve floor"
 msgstr "रिज़र्व फ़्लोर"
 
 msgid "Reserve the work center's capacity for this PM. Requires an estimated duration."
-msgstr ""
+msgstr "इस PM के लिए वर्क सेंटर की क्षमता रिजर्व करें। अनुमानित अवधि की आवश्यकता है।"
 
 msgid "Reserved"
 msgstr "आरक्षित"
@@ -12749,10 +12749,10 @@ msgid "Resolved Price"
 msgstr "समाधान की गई कीमत"
 
 msgid "Resource"
-msgstr ""
+msgstr "संसाधन"
 
 msgid "Resource Planning"
-msgstr ""
+msgstr "संसाधन योजना"
 
 msgid "resources"
 msgstr "संसाधन"
@@ -13042,16 +13042,16 @@ msgid "Runs"
 msgstr "रन"
 
 msgid "Runs around the clock"
-msgstr ""
+msgstr "24 घंटे चलता है"
 
 msgid "Runs during every shift at the location."
-msgstr ""
+msgstr "स्थान पर हर शिफ्ट के दौरान चलता है।"
 
 msgid "Runs only during the shifts you select."
-msgstr ""
+msgstr "केवल आपके द्वारा चुनी गई शिफ्टों के दौरान चलता है।"
 
 msgid "Runs unattended around the clock, ignoring shift calendars."
-msgstr ""
+msgstr "शिफ्ट कैलेंडर को अनदेखा करते हुए, 24 घंटे बिना निगरानी के चलता है।"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (सबसे मोटे विशेष)"
@@ -13289,7 +13289,7 @@ msgid "Schedules"
 msgstr "शेड्यूल"
 
 msgid "Scheduling"
-msgstr ""
+msgstr "शेड्यूलिंग"
 
 msgid "Scheduling conflict"
 msgstr "शेड्यूलिंग संघर्ष"
@@ -13771,7 +13771,7 @@ msgid "Set default markup percentages for each cost category on new quote lines"
 msgstr "प्रत्येक लागत श्रेणी के लिए नई उद्धरण पंक्तियों पर डिफ़ॉल्ट मार्कअप प्रतिशत सेट करें"
 
 msgid "Set demand forecast values for each week"
-msgstr ""
+msgstr "प्रत्येक सप्ताह के लिए मांग पूर्वानुमान मान सेट करें"
 
 msgid "Set due date"
 msgstr "देय तारीख सेट करें"
@@ -13904,7 +13904,7 @@ msgid "Shifts"
 msgstr "शिफ्ट"
 
 msgid "Shifts assigned to this station"
-msgstr ""
+msgstr "इस स्टेशन को सौंपी गई शिफ्ट"
 
 msgid "Ship"
 msgstr "भेजें"
@@ -14157,7 +14157,7 @@ msgid "Some lines extracted from the PDF could not be automatically mapped to yo
 msgstr "PDF से निकाली गई कुछ पंक्तियों को आपकी इन्वेंटरी आइटम्स से स्वचालित रूप से मैप नहीं किया जा सका। नीचे प्रत्येक पंक्ति की समीक्षा करें और मैप करें।"
 
 msgid "Some Shifts"
-msgstr ""
+msgstr "कुछ शिफ्ट"
 
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"
@@ -14226,7 +14226,7 @@ msgid "Sourcing Type"
 msgstr "सोर्सिंग प्रकार"
 
 msgid "Span"
-msgstr ""
+msgstr "अवधि"
 
 msgid "Spare Part Consumption"
 msgstr "स्पेयर पार्ट खपत"
@@ -14817,7 +14817,7 @@ msgid "Takes work center offline"
 msgstr "कार्य केंद्र को ऑफलाइन ले जाता है"
 
 msgid "Takes Work Center Offline"
-msgstr ""
+msgstr "वर्क सेंटर को ऑफलाइन ले जाता है"
 
 msgid "Talk to Sales"
 msgstr "बिक्रय टीम से बात करें"
@@ -15542,7 +15542,7 @@ msgid "The schedule used to spread this asset's cost over its useful life (strai
 msgstr "अनुसूची का उपयोग इस संपत्ति की लागत को इसके उपयोगी जीवन पर फैलाने के लिए (सीधी पंक्ति, घटता शेष, उत्पादन की इकाइयां)।"
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
-msgstr ""
+msgstr "शेड्यूलर नीचे दिए गए पहले नियम का उपयोग करता है जो लागू होता है, फिर डाउनटाइम और स्टाफिंग को घटाता है।"
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "वह शेल्फ और बिन जहां स्टॉक भौतिक रूप से रखा जाता है"
@@ -15554,7 +15554,7 @@ msgid "The sign-offs every issue using this workflow needs before it can be clos
 msgstr "साइन-ऑफ जो इस वर्कफ़्लो का उपयोग करने वाली प्रत्येक समस्या को बंद करने से पहले चाहिए।"
 
 msgid "The site's shifts"
-msgstr ""
+msgstr "साइट की शिफ्ट"
 
 msgid "The size of the part"
 msgstr "भाग का आकार"
@@ -15716,7 +15716,7 @@ msgid "Theme Color"
 msgstr "थीम रंग"
 
 msgid "Then adjusted for"
-msgstr ""
+msgstr "फिर इसके लिए समायोजित"
 
 msgid "Then by"
 msgstr "फिर द्वारा"
@@ -16508,7 +16508,7 @@ msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
 
 msgid "Unscheduled"
-msgstr ""
+msgstr "अनुसूचित नहीं"
 
 msgid "Unscrap"
 msgstr "अनस्क्रैप करें"
@@ -16571,7 +16571,7 @@ msgid "Update costs on"
 msgstr "लागत अपडेट करें"
 
 msgid "Update Forecast"
-msgstr ""
+msgstr "पूर्वानुमान अपडेट करें"
 
 msgid "Update Inventory"
 msgstr "इन्वेंटरी अपडेट करें"
@@ -17596,7 +17596,7 @@ msgid "Wordmark Light Mode"
 msgstr "वर्डमार्क लाइट मोड"
 
 msgid "Work"
-msgstr ""
+msgstr "काम"
 
 msgid "work center"
 msgstr "कार्य केंद्र"
@@ -17611,7 +17611,7 @@ msgid "Work Center Reservation"
 msgstr "कार्य केंद्र आरक्षण"
 
 msgid "Work center shifts"
-msgstr ""
+msgstr "वर्क सेंटर शिफ्ट"
 
 msgid "Work Center Utilization"
 msgstr "कार्य केंद्र उपयोग"
