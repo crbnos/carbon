@@ -1,4 +1,7 @@
-import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
+import {
+  getPurchaseOrderDisplayId,
+  withRevisionSuffix
+} from "@carbon/documents/utils";
 import {
   Button,
   cn,
@@ -47,6 +50,23 @@ type SupplierInteractionStateProps = {
   // For use from quote view: sibling quotes (other quotes from same RFQ)
   siblingQuotes?: LinkedSupplierQuote[];
 };
+
+/**
+ * "Acme Tooling (SQ000012-1)" when both are known, otherwise whichever half we
+ * have, falling back to the row id so an option is never blank.
+ */
+function buildSupplierQuoteLabel(
+  supplierName: string | undefined,
+  quoteDisplayId: string,
+  quoteId: string
+) {
+  if (supplierName) {
+    return quoteDisplayId
+      ? `${supplierName} (${quoteDisplayId})`
+      : supplierName;
+  }
+  return quoteDisplayId || `Quote ${quoteId}`;
+}
 
 function getSupplierInteractionIcon(state: string) {
   switch (state) {
@@ -196,23 +216,11 @@ const SupplierInteractionState = ({
 
                 return {
                   id: quote.id!,
-                  label: supplierName
-                    ? `${supplierName}${
-                        quote.supplierQuoteId
-                          ? ` (${quote.supplierQuoteId}${
-                              quote.revisionId && quote.revisionId > 0
-                                ? `-${quote.revisionId}`
-                                : ""
-                            })`
-                          : ""
-                      }`
-                    : quote.supplierQuoteId
-                      ? `${quote.supplierQuoteId}${
-                          quote.revisionId && quote.revisionId > 0
-                            ? `-${quote.revisionId}`
-                            : ""
-                        }`
-                      : `Quote ${quote.id}`,
+                  label: buildSupplierQuoteLabel(
+                    supplierName,
+                    withRevisionSuffix(quote.supplierQuoteId, quote.revisionId),
+                    quote.id!
+                  ),
                   path: path.to.supplierQuoteDetails(quote.id!)
                 };
               })
