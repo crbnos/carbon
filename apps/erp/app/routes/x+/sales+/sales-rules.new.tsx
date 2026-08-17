@@ -9,8 +9,9 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useNavigate } from "react-router";
-import { salesRuleValidator, upsertSalesRule } from "~/modules/sales";
+import { salesRuleValidator } from "~/modules/sales";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
+import { upsertEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, salesRulesQuery } from "~/utils/react-query";
 
@@ -37,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const validation = await validator(salesRuleValidator).validate(formData);
   if (validation.error) return validation.error;
 
-  const insert = await upsertSalesRule(client, {
+  const insert = await upsertEnforcementRule(client, "sales", {
     ...validation.data,
     description: validation.data.description ?? null,
     companyId,

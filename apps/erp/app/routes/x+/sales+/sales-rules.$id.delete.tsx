@@ -9,7 +9,7 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteSalesRule, getSalesRule } from "~/modules/sales";
+import { deleteEnforcementRule, getEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, salesRulesQuery } from "~/utils/react-query";
 
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, { delete: "sales" });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getSalesRule(client, id);
+  const rule = await getEnforcementRule(client, "sales", id);
   if (rule.error || !rule.data) {
     throw redirect(
       path.to.salesRules,
@@ -44,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("id required");
 
-  const result = await deleteSalesRule(client, id);
+  const result = await deleteEnforcementRule(client, "sales", id);
   if (result.error) {
     throw redirect(
       `${path.to.salesRules}?${getParams(request)}`,

@@ -1,13 +1,6 @@
-// Sales Rules cross-app queries live in the `@carbon/ee/rules` package
-// (shared with MES); the ERP-only admin CRUD + validators live in
-// `sales.service.ts` / `sales.models.ts`.
-export {
-  assignSalesRule,
-  getActiveSalesRulesForItems,
-  getSalesRuleAssignmentsForItem,
-  getSalesRulesList,
-  unassignSalesRule
-} from "@carbon/ee/rules";
+// Rule queries shared with MES are NOT re-exported here — import them from
+// `@carbon/ee/rules` directly so the package boundary stays visible at the
+// call site (this module owns only the ERP-side admin CRUD + validators).
 export * from "./sales.models";
 export * from "./sales.service";
 export * from "./sales.utils";

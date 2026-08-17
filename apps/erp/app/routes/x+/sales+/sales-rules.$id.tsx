@@ -10,12 +10,9 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
-import {
-  getSalesRule,
-  salesRuleValidator,
-  upsertSalesRule
-} from "~/modules/sales";
+import { salesRuleValidator } from "~/modules/sales";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
+import { getEnforcementRule, upsertEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, salesRulesQuery } from "~/utils/react-query";
 
@@ -23,7 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, { view: "sales" });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getSalesRule(client, id);
+  const rule = await getEnforcementRule(client, "sales", id);
   if (rule.error || !rule.data) throw notFound("Rule not found");
   return { rule: rule.data };
 }
@@ -49,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const validation = await validator(salesRuleValidator).validate(formData);
   if (validation.error) return validation.error;
 
-  const update = await upsertSalesRule(client, {
+  const update = await upsertEnforcementRule(client, "sales", {
     ...validation.data,
     id,
     description: validation.data.description ?? null,

@@ -178,7 +178,7 @@ export default function StorageRuleForm({
                   conditions={liveConditions}
                   targetType={targetType}
                 />
-                <CustomFormFields table="storageRule" />
+                <CustomFormFields table="enforcementRule" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

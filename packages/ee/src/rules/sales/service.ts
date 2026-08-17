@@ -10,24 +10,24 @@ import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import {
   type ConditionAst,
+  type ItemFilter,
   ruleAppliesToItem,
-  type SalesRuleFilter,
   type SalesRuleSurface,
   type Severity,
-  toSalesRuleFilter
+  toItemFilter
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { itemPostingGroupIdFromEmbed } from "../storage/context";
 
-// Filter columns carried on every salesRule row (NOT NULL with defaults in the
-// DB, unlike storageRule's nullable trio).
-const SALES_RULE_FILTER_COLUMNS =
+// Item-scoping filter columns on every sales-family row. NOT NULL with DB
+// defaults, unlike the storage family's nullable trio.
+const ITEM_FILTER_COLUMNS =
   "filteredItemTypes, filteredItemGroupIds, filteredItemMatchAll";
 
-const SALES_RULE_EVAL_COLUMNS = `id, name, severity, message, conditionAst, surfaces, updatedAt, active, ${SALES_RULE_FILTER_COLUMNS}`;
+const SALES_RULE_EVAL_COLUMNS = `id, name, severity, message, conditionAst, surfaces, updatedAt, active, ${ITEM_FILTER_COLUMNS}`;
 
 /**
- * Raw `salesRule` row shape the evaluator consumes. `conditionAst` arrives as
+ * Raw sales-family `enforcementRule` row shape the evaluator consumes. `conditionAst` arrives as
  * generic Json from PostgREST; rows are cast once at the query boundary.
  */
 export type SalesRuleDbRow = {
@@ -51,7 +51,7 @@ export type SalesRuleDbRow = {
  *     `filteredItem*` filters match the item (`ruleAppliesToItem`; empty
  *     filters = every item). Filter matching happens in `server.ts` where the
  *     item rows exist.
- *   - `assignmentsByItemId` — explicit `salesRuleAssignment` rows for
+ *   - `assignmentsByItemId` — explicit `enforcementRuleItemAssignment` rows for
  *     `itemIds`, as itemId → Set<ruleId>.
  *
  * Two round-trips. The rules fetch always runs, even when `itemIds` is empty,
@@ -159,7 +159,7 @@ export async function getSalesRuleAssignmentsForItem(
     client
       .from("enforcementRule")
       .select(
-        `id, name, severity, message, active, surfaces, createdAt, ${SALES_RULE_FILTER_COLUMNS}`
+        `id, name, severity, message, active, surfaces, createdAt, ${ITEM_FILTER_COLUMNS}`
       )
       .eq("companyId", args.companyId)
       .eq("family", "sales"),
@@ -244,7 +244,7 @@ export async function getSalesRuleAssignmentsForItem(
 
     // Only surface rules whose filter matches this item. Label by reach so
     // the drawer reads "All items" vs a filtered match.
-    const filter: SalesRuleFilter = toSalesRuleFilter(b);
+    const filter: ItemFilter = toItemFilter(b);
     if (itemCtx && !ruleAppliesToItem(itemCtx, filter)) continue;
     const filterless =
       (filter.filteredItemTypes?.length ?? 0) === 0 &&

@@ -10,8 +10,9 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
-import { storageRuleValidator, upsertStorageRule } from "~/modules/inventory";
+import { storageRuleValidator } from "~/modules/inventory";
 import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
+import { upsertEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 
@@ -43,7 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const validation = await validator(storageRuleValidator).validate(formData);
   if (validation.error) return validation.error;
 
-  const insert = await upsertStorageRule(client, {
+  const insert = await upsertEnforcementRule(client, "storage", {
     ...validation.data,
     description: validation.data.description ?? null,
     companyId,

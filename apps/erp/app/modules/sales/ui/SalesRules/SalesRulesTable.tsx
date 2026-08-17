@@ -44,7 +44,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const customColumns = useCustomColumns<SalesRuleRowView>("salesRule");
+  const customColumns = useCustomColumns<SalesRuleRowView>("enforcementRule");
 
   const rows = useMemo(() => data, [data]);
 

@@ -1,6 +1,10 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  getSalesRuleAssignmentsForItem,
+  getSalesRulesList
+} from "@carbon/ee/rules";
 import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
@@ -28,10 +32,6 @@ import {
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
-import {
-  getSalesRuleAssignmentsForItem,
-  getSalesRulesList
-} from "~/modules/sales";
 import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";

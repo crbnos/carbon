@@ -2,9 +2,9 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
+import { assignSalesRule } from "@carbon/ee/rules";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { assignSalesRule } from "~/modules/sales";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

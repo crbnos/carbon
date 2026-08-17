@@ -43,7 +43,7 @@ const StorageRulesTable = memo(({ data, count }: StorageRulesTableProps) => {
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const customColumns = useCustomColumns<StorageRuleRowView>("storageRule");
+  const customColumns = useCustomColumns<StorageRuleRowView>("enforcementRule");
 
   const rows = useMemo(() => data, [data]);
 

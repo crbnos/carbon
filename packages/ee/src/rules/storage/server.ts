@@ -12,8 +12,8 @@ import {
   compileWithCache,
   evaluateRules,
   getFieldDef,
+  type ItemFilter,
   ruleAppliesToItem,
-  type SalesRuleFilter,
   type Severity,
   type TargetType,
   type TransactionSurface,
@@ -118,7 +118,7 @@ async function loadCompiledRulesForTargets(
 ): Promise<{
   byTarget: Map<string, CompiledRule[]>;
   broadcasts: CompiledRule[];
-  broadcastFilters: Map<string, SalesRuleFilter>;
+  broadcastFilters: Map<string, ItemFilter>;
 }> {
   const byTarget = new Map<string, CompiledRule[]>();
 
@@ -525,7 +525,7 @@ export async function evaluateLinesForSurface({
       if (seen.has(r.id)) continue;
       if (targetType === "item") {
         if (!itemForLine) continue;
-        const filter: SalesRuleFilter = broadcastFilters.get(r.id) ?? {};
+        const filter: ItemFilter = broadcastFilters.get(r.id) ?? {};
         if (!ruleAppliesToItem(itemForLine, filter)) continue;
       }
       seen.add(r.id);

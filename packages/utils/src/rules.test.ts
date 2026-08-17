@@ -4,6 +4,7 @@ import {
   getFieldDef,
   getFieldsForTargetType
 } from "./field-registry";
+import { ruleAppliesToItem } from "./rule-filters";
 import {
   __resetStorageRulesCache,
   __storageRulesCacheSize,
@@ -14,7 +15,6 @@ import {
   interpolateMessage,
   isFieldAvailableOnSurfaces,
   type RuleContext,
-  ruleAppliesToItem,
   type StorageRuleRow,
   SURFACE_CONTEXT_AVAILABILITY,
   TRANSACTION_SURFACES

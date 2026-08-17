@@ -187,7 +187,7 @@ export default function SalesRuleForm({
                   conditions={liveConditions}
                   fields={salesRuleFields}
                 />
-                <CustomFormFields table="salesRule" />
+                <CustomFormFields table="enforcementRule" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

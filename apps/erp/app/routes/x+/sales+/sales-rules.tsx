@@ -5,11 +5,14 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getSalesRuleAssignmentCounts, getSalesRules } from "~/modules/sales";
 import {
   SalesRulesTable,
   SalesRulesUpgradeOverlay
 } from "~/modules/sales/ui/SalesRules";
+import {
+  getEnforcementRuleAssignmentCounts,
+  getEnforcementRules
+} from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -24,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  const rules = await getSalesRules(client, companyId, {
+  const rules = await getEnforcementRules(client, "sales", companyId, {
     search: null,
     limit: 1000,
     offset: 0,
@@ -39,7 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const ids = (rules.data ?? []).map((r) => r.id);
-  const counts = await getSalesRuleAssignmentCounts(client, ids);
+  const counts = await getEnforcementRuleAssignmentCounts(client, ids);
 
   const countsData = (counts.data ?? {}) as Record<string, number>;
   const rows = (rules.data ?? []).map((r) => ({

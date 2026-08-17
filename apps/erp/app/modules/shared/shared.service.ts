@@ -1,8 +1,14 @@
-import type { Database, Tables } from "@carbon/database";
+import type { Database, Json, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { getPurchaseOrderStatus, supportedModelTypes } from "@carbon/utils";
+import type { ConditionAst, Severity } from "@carbon/utils";
+import {
+  datetime,
+  getPurchaseOrderStatus,
+  supportedModelTypes
+} from "@carbon/utils";
 import type {
+  PostgrestResponse,
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
@@ -1394,4 +1400,190 @@ export function resolveSupplierPrice(
       fallbackUnitPrice * exchangeRate
     ) / exchangeRate
   );
+}
+
+// -----------------------------------------------------------------------------
+// Enforcement Rules (storage + sales families)
+// -----------------------------------------------------------------------------
+// Both rule families live in ONE `enforcementRule` table discriminated by
+// `family`, so the admin CRUD is written once here rather than duplicated in
+// `inventory.service.ts` and `sales.service.ts`. Callers pass their family
+// explicitly — there is no per-family wrapper to keep in sync, and adding a
+// third family costs nothing here.
+//
+// Cross-app queries (assignment loaders, evaluator fetches) live in
+// `@carbon/ee/rules`; this file is the ERP-only admin surface, because it
+// depends on ERP request-utils (GenericQueryFilters, sanitize).
+
+export type EnforcementRuleFamily =
+  Database["public"]["Enums"]["enforcementRuleFamily"];
+
+export type EnforcementRuleRow =
+  Database["public"]["Tables"]["enforcementRule"]["Row"];
+
+/** Item-scoping columns shared by both families (empty arrays = every item). */
+type RuleItemFilterFields = {
+  filteredItemTypes?: string[];
+  filteredItemGroupIds?: string[];
+  filteredItemMatchAll?: boolean;
+};
+
+/**
+ * Storage-family-only shape. The DB pins sales rows to `targetType: 'item'` /
+ * `appliesToAll: false` via the `enforcementRule_sales_shape` CHECK, so these
+ * stay optional here and simply go unset for sales.
+ */
+type RuleTargetFields = {
+  targetType?: Database["public"]["Enums"]["enforcementRuleTargetType"];
+  appliesToAll?: boolean;
+};
+
+type RuleSurfaces = Database["public"]["Enums"]["enforcementRuleSurface"][];
+
+export type EnforcementRuleInsert = RuleItemFilterFields &
+  RuleTargetFields & {
+    name: string;
+    description?: string | null;
+    message: string;
+    severity: Severity;
+    conditionAst: ConditionAst;
+    surfaces: RuleSurfaces;
+    active: boolean;
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
+  };
+
+export type EnforcementRuleUpdate = RuleItemFilterFields &
+  RuleTargetFields & {
+    id: string;
+    name: string;
+    description?: string | null;
+    message: string;
+    severity: Severity;
+    conditionAst: ConditionAst;
+    surfaces: RuleSurfaces;
+    active: boolean;
+    updatedBy: string;
+    customFields?: Json;
+  };
+
+export async function getEnforcementRules(
+  client: SupabaseClient<Database>,
+  family: EnforcementRuleFamily,
+  companyId: string,
+  args?: GenericQueryFilters & {
+    search: string | null;
+    targetType?:
+      | Database["public"]["Enums"]["enforcementRuleTargetType"]
+      | null;
+  }
+): Promise<PostgrestResponse<EnforcementRuleRow>> {
+  let query = client
+    .from("enforcementRule")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId)
+    .eq("family", family);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+  if (args?.targetType) {
+    query = query.eq("targetType", args.targetType);
+  }
+
+  // The `family` argument is a union rather than a literal, which is enough to
+  // drop PostgREST's inferred row type to `any`; state it once here so every
+  // caller gets a real row instead of re-annotating at each call site.
+  return setGenericQueryFilters(query, args ?? {}, [
+    { column: "name", ascending: true }
+  ]) as unknown as Promise<PostgrestResponse<EnforcementRuleRow>>;
+}
+
+export async function getEnforcementRule(
+  client: SupabaseClient<Database>,
+  family: EnforcementRuleFamily,
+  id: string
+) {
+  return client
+    .from("enforcementRule")
+    .select("*")
+    .eq("id", id)
+    .eq("family", family)
+    .single();
+}
+
+export async function upsertEnforcementRule(
+  client: SupabaseClient<Database>,
+  family: EnforcementRuleFamily,
+  rule: EnforcementRuleInsert | EnforcementRuleUpdate
+) {
+  if ("createdBy" in rule) {
+    return client
+      .from("enforcementRule")
+      .insert({
+        ...rule,
+        family,
+        conditionAst: rule.conditionAst as unknown as Json
+      })
+      .select("id")
+      .single();
+  }
+  return client
+    .from("enforcementRule")
+    .update({
+      ...sanitize(rule),
+      conditionAst: rule.conditionAst as unknown as Json,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", rule.id)
+    .eq("family", family)
+    .select("id")
+    .single();
+}
+
+export async function deleteEnforcementRule(
+  client: SupabaseClient<Database>,
+  family: EnforcementRuleFamily,
+  id: string
+) {
+  return client
+    .from("enforcementRule")
+    .delete()
+    .eq("id", id)
+    .eq("family", family);
+}
+
+/**
+ * Pin counts per rule id. Rule ids are globally unique, so counting by id needs
+ * no family predicate even though the item table is shared between families.
+ * Work-center pins only exist for the storage family; passing sales ids simply
+ * matches nothing there.
+ */
+export async function getEnforcementRuleAssignmentCounts(
+  client: SupabaseClient<Database>,
+  ruleIds: string[]
+) {
+  if (ruleIds.length === 0) return { data: {}, error: null };
+
+  const tables = [
+    "enforcementRuleItemAssignment",
+    "enforcementRuleWorkCenterAssignment"
+  ] as const;
+
+  const results = await Promise.all(
+    tables.map((table) =>
+      client.from(table).select("ruleId").in("ruleId", ruleIds)
+    )
+  );
+
+  const counts: Record<string, number> = {};
+  for (const { data, error } of results) {
+    if (error) return { data: {}, error };
+    for (const row of (data ?? []) as Array<{ ruleId: string }>) {
+      counts[row.ruleId] = (counts[row.ruleId] ?? 0) + 1;
+    }
+  }
+
+  return { data: counts, error: null };
 }

@@ -25,6 +25,7 @@ export * from "./object";
 export * from "./precision";
 export * from "./receiving";
 export * from "./revalidate";
+export * from "./rule-filters";
 export * from "./rules";
 export * from "./rules-schema";
 export * from "./ssr";

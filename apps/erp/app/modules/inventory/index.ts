@@ -1,13 +1,6 @@
-// Storage Rules cross-app queries live in the `@carbon/ee/rules` package
-// (shared with MES); the ERP-only admin CRUD + validators live in
-// `inventory.service.ts` / `inventory.models.ts`.
-export {
-  assignStorageRule,
-  getActiveRulesForTargets,
-  getRuleAssignmentsForTarget,
-  getStorageRulesList,
-  unassignStorageRule
-} from "@carbon/ee/rules";
+// Rule queries shared with MES are NOT re-exported here — import them from
+// `@carbon/ee/rules` directly so the package boundary stays visible at the
+// call site (this module owns only the ERP-side admin CRUD + validators).
 export * from "./inventory.models";
 export * from "./inventory.service";
 export * from "./types";

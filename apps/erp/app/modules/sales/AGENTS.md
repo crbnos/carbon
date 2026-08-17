@@ -99,7 +99,7 @@ Distinct from **storage rules** (`~/modules/inventory`, warehouse/MES surfaces) 
 | `enforcementRuleItemAssignment` | Explicit per-item pins, PK `(itemId, ruleId)` — SHARED with storage rules |
 | `enforcementRuleAcknowledgment` | Append-only override/block evidence (INSERT via `sales_create`) |
 
-Service functions: `getSalesRules` / `getSalesRule` / `upsertSalesRule` / `deleteSalesRule` / `getSalesRuleAssignmentCounts` (in `sales.service.ts`); cross-app `getActiveSalesRulesForItems` / `getSalesRuleAssignmentsForItem` / `getSalesRulesList` / `assignSalesRule` / `unassignSalesRule` re-exported from `@carbon/ee/rules` through the module barrel. Routes: `x+/sales+/sales-rules*` (list/new/edit/delete/assign/unassign), sidebar entry in `useSalesSubmodules`, per-item "Sales rules" card on `x+/part+/$itemId.inventory.tsx`. Enforcement: the quote and sales-order line create + edit actions.
+Service functions: the admin CRUD is NOT in `sales.service.ts` — both families share one parametrized implementation in `~/modules/shared` (`getEnforcementRules` / `getEnforcementRule` / `upsertEnforcementRule` / `deleteEnforcementRule` / `getEnforcementRuleAssignmentCounts`), called with `"sales"` as the family. Cross-app `getActiveSalesRulesForItems` / `getSalesRuleAssignmentsForItem` / `getSalesRulesList` / `assignSalesRule` / `unassignSalesRule` are imported from `@carbon/ee/rules` DIRECTLY at the call site — this module's barrel deliberately does not re-export them. Routes: `x+/sales+/sales-rules*` (list/new/edit/delete/assign/unassign), sidebar entry in `useSalesSubmodules`, per-item "Sales rules" card on `x+/part+/$itemId.inventory.tsx`. Enforcement: the quote and sales-order line create + edit actions.
 
 ## Related Modules
 

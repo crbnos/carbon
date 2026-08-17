@@ -9,7 +9,7 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteStorageRule, getStorageRule } from "~/modules/inventory";
+import { deleteEnforcementRule, getEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, { delete: "inventory" });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getStorageRule(client, id);
+  const rule = await getEnforcementRule(client, "storage", id);
   if (rule.error || !rule.data) {
     throw redirect(
       path.to.storageRules,
@@ -44,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("id required");
 
-  const result = await deleteStorageRule(client, id);
+  const result = await deleteEnforcementRule(client, "storage", id);
   if (result.error) {
     throw redirect(
       `${path.to.storageRules}?${getParams(request)}`,

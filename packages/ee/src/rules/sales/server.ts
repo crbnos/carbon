@@ -9,10 +9,10 @@ import {
   type CompiledRule,
   compileSalesRuleWithCache,
   evaluateRules,
+  type ItemFilter,
   ruleAppliesToItem,
-  type SalesRuleFilter,
   type SalesRuleSurface,
-  toSalesRuleFilter,
+  toItemFilter,
   type Violation
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -193,11 +193,11 @@ export async function evaluateSalesRuleLines({
   }
 
   const compiledById = new Map<string, CompiledRule>();
-  const filtersById = new Map<string, SalesRuleFilter>();
+  const filtersById = new Map<string, ItemFilter>();
   const ruleNamesById = new Map<string, string>();
   for (const rule of rules) {
     compiledById.set(rule.id, compileSalesRuleWithCache(rule));
-    filtersById.set(rule.id, toSalesRuleFilter(rule));
+    filtersById.set(rule.id, toItemFilter(rule));
     ruleNamesById.set(rule.id, rule.name);
   }
 

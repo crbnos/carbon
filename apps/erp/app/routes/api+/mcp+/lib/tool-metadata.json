@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-17T11:46:46.996Z",
-  "totalTools": 1452,
+  "generated": "2026-08-17T12:49:23.710Z",
+  "totalTools": 1447,
   "modules": 15,
   "tools": [
     {
@@ -8906,158 +8906,6 @@
         },
         "required": [
           "id"
-        ]
-      }
-    },
-    {
-      "name": "inventory_getStorageRules",
-      "module": "inventory",
-      "classification": "READ",
-      "description": "get storage rules",
-      "paramCount": 4,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "args": {
-            "type": "object",
-            "properties": {
-              "limit": {
-                "type": "integer",
-                "default": 100
-              },
-              "offset": {
-                "type": "integer",
-                "default": 0
-              },
-              "search": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "targetType": {}
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "inventory_getStorageRule",
-      "module": "inventory",
-      "classification": "READ",
-      "description": "get storage rule",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "inventory_upsertStorageRule",
-      "module": "inventory",
-      "classification": "WRITE",
-      "description": "upsert storage rule",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "rule"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "rule": {},
-          "_operation": {
-            "type": "string",
-            "enum": [
-              "create",
-              "update"
-            ],
-            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
-          }
-        },
-        "required": [
-          "rule",
-          "_operation"
-        ]
-      }
-    },
-    {
-      "name": "inventory_deleteStorageRule",
-      "module": "inventory",
-      "classification": "DESTRUCTIVE",
-      "description": "delete storage rule",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "inventory_getRuleAssignmentCounts",
-      "module": "inventory",
-      "classification": "READ",
-      "description": "get rule assignment counts",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "ruleIds"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "ruleIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "ruleIds"
         ]
       }
     },
@@ -40672,157 +40520,6 @@
       }
     },
     {
-      "name": "sales_getSalesRules",
-      "module": "sales",
-      "classification": "READ",
-      "description": "get sales rules",
-      "paramCount": 3,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "args": {
-            "type": "object",
-            "properties": {
-              "limit": {
-                "type": "integer",
-                "default": 100
-              },
-              "offset": {
-                "type": "integer",
-                "default": 0
-              },
-              "search": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "sales_getSalesRule",
-      "module": "sales",
-      "classification": "READ",
-      "description": "get sales rule",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "sales_upsertSalesRule",
-      "module": "sales",
-      "classification": "WRITE",
-      "description": "upsert sales rule",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "rule"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "rule": {},
-          "_operation": {
-            "type": "string",
-            "enum": [
-              "create",
-              "update"
-            ],
-            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
-          }
-        },
-        "required": [
-          "rule",
-          "_operation"
-        ]
-      }
-    },
-    {
-      "name": "sales_deleteSalesRule",
-      "module": "sales",
-      "classification": "DESTRUCTIVE",
-      "description": "delete sales rule",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "sales_getSalesRuleAssignmentCounts",
-      "module": "sales",
-      "classification": "READ",
-      "description": "get sales rule assignment counts",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "ruleIds"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "ruleIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "ruleIds"
-        ]
-      }
-    },
-    {
       "name": "settings_getAccountsPayableBillingAddress",
       "module": "settings",
       "classification": "READ",
@@ -44888,6 +44585,172 @@
           "quantity",
           "fallbackUnitPrice",
           "exchangeRate"
+        ]
+      }
+    },
+    {
+      "name": "shared_getEnforcementRules",
+      "module": "shared",
+      "classification": "READ",
+      "description": "get enforcement rules",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "family",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "family": {},
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "targetType": {}
+            }
+          }
+        },
+        "required": [
+          "family"
+        ]
+      }
+    },
+    {
+      "name": "shared_getEnforcementRule",
+      "module": "shared",
+      "classification": "READ",
+      "description": "get enforcement rule",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "family",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "family": {},
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "family",
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "shared_upsertEnforcementRule",
+      "module": "shared",
+      "classification": "WRITE",
+      "description": "upsert enforcement rule",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "family",
+        "rule"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "family": {},
+          "rule": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
+        },
+        "required": [
+          "family",
+          "rule",
+          "_operation"
+        ]
+      }
+    },
+    {
+      "name": "shared_deleteEnforcementRule",
+      "module": "shared",
+      "classification": "DESTRUCTIVE",
+      "description": "delete enforcement rule",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "family",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "family": {},
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "family",
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "shared_getEnforcementRuleAssignmentCounts",
+      "module": "shared",
+      "classification": "READ",
+      "description": "get enforcement rule assignment counts",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "ruleIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ruleIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ruleIds"
         ]
       }
     },

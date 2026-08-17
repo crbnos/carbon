@@ -10,12 +10,9 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
-import {
-  getStorageRule,
-  storageRuleValidator,
-  upsertStorageRule
-} from "~/modules/inventory";
+import { storageRuleValidator } from "~/modules/inventory";
 import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
+import { getEnforcementRule, upsertEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 
@@ -23,7 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, { view: "inventory" });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getStorageRule(client, id);
+  const rule = await getEnforcementRule(client, "storage", id);
   if (rule.error || !rule.data) throw notFound("Rule not found");
   return { rule: rule.data };
 }
@@ -49,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const validation = await validator(storageRuleValidator).validate(formData);
   if (validation.error) return validation.error;
 
-  const update = await upsertStorageRule(client, {
+  const update = await upsertEnforcementRule(client, "storage", {
     ...validation.data,
     id,
     description: validation.data.description ?? null,

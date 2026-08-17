@@ -1,16 +1,5 @@
 import { Trans } from "@lingui/react/macro";
-import { LuShieldCheck } from "react-icons/lu";
-import {
-  UpgradeOverlay,
-  UpgradeOverlayActions,
-  UpgradeOverlayCard,
-  UpgradeOverlayContent,
-  UpgradeOverlayDescription,
-  UpgradeOverlayIcon,
-  UpgradeOverlayPreview,
-  UpgradeOverlayTitle,
-  UpgradeOverlayUpgradeButton
-} from "~/components/UpgradeOverlay";
+import RulesUpgradeOverlay from "~/components/RulesUpgradeOverlay";
 import StorageRulesTable from "./StorageRulesTable";
 
 const mockRules = [
@@ -74,29 +63,17 @@ const mockRules = [
 
 export default function StorageRulesUpgradeOverlay() {
   return (
-    <UpgradeOverlay>
-      <UpgradeOverlayPreview>
+    <RulesUpgradeOverlay
+      preview={
         <StorageRulesTable data={mockRules as never} count={mockRules.length} />
-      </UpgradeOverlayPreview>
-      <UpgradeOverlayCard>
-        <UpgradeOverlayIcon>
-          <LuShieldCheck className="size-6 text-muted-foreground" />
-        </UpgradeOverlayIcon>
-        <UpgradeOverlayContent>
-          <UpgradeOverlayTitle>
-            <Trans>Storage Rules</Trans>
-          </UpgradeOverlayTitle>
-          <UpgradeOverlayDescription>
-            <Trans>
-              Enforce per-item validation and guidelines across receipts,
-              shipments, transfers, and adjustments.
-            </Trans>
-          </UpgradeOverlayDescription>
-        </UpgradeOverlayContent>
-        <UpgradeOverlayActions>
-          <UpgradeOverlayUpgradeButton />
-        </UpgradeOverlayActions>
-      </UpgradeOverlayCard>
-    </UpgradeOverlay>
+      }
+      title={<Trans>Storage Rules</Trans>}
+      description={
+        <Trans>
+          Enforce per-item validation and guidelines across receipts, shipments,
+          transfers, and adjustments.
+        </Trans>
+      }
+    />
   );
 }

@@ -1,19 +1,9 @@
-// Plan-gate overlay for Items → Sales Rules. Mirrors
-// `~/modules/inventory/ui/StorageRules/StorageRulesUpgradeOverlay`.
+// Plan-gate overlay for Sales → Sales Rules. Shares the overlay chrome with
+// the storage family via `~/components/RulesUpgradeOverlay`; only the preview
+// table, the mock fixtures, and the copy are family-specific.
 
 import { Trans } from "@lingui/react/macro";
-import { LuShieldCheck } from "react-icons/lu";
-import {
-  UpgradeOverlay,
-  UpgradeOverlayActions,
-  UpgradeOverlayCard,
-  UpgradeOverlayContent,
-  UpgradeOverlayDescription,
-  UpgradeOverlayIcon,
-  UpgradeOverlayPreview,
-  UpgradeOverlayTitle,
-  UpgradeOverlayUpgradeButton
-} from "~/components/UpgradeOverlay";
+import RulesUpgradeOverlay from "~/components/RulesUpgradeOverlay";
 import SalesRulesTable from "./SalesRulesTable";
 
 const mockRules = [
@@ -57,29 +47,17 @@ const mockRules = [
 
 export default function SalesRulesUpgradeOverlay() {
   return (
-    <UpgradeOverlay>
-      <UpgradeOverlayPreview>
+    <RulesUpgradeOverlay
+      preview={
         <SalesRulesTable data={mockRules as never} count={mockRules.length} />
-      </UpgradeOverlayPreview>
-      <UpgradeOverlayCard>
-        <UpgradeOverlayIcon>
-          <LuShieldCheck className="size-6 text-muted-foreground" />
-        </UpgradeOverlayIcon>
-        <UpgradeOverlayContent>
-          <UpgradeOverlayTitle>
-            <Trans>Sales Rules</Trans>
-          </UpgradeOverlayTitle>
-          <UpgradeOverlayDescription>
-            <Trans>
-              Enforce customer and item checks when items are added to quotes
-              and sales orders.
-            </Trans>
-          </UpgradeOverlayDescription>
-        </UpgradeOverlayContent>
-        <UpgradeOverlayActions>
-          <UpgradeOverlayUpgradeButton />
-        </UpgradeOverlayActions>
-      </UpgradeOverlayCard>
-    </UpgradeOverlay>
+      }
+      title={<Trans>Sales Rules</Trans>}
+      description={
+        <Trans>
+          Enforce customer and item checks when items are added to quotes and
+          sales orders.
+        </Trans>
+      }
+    />
   );
 }
