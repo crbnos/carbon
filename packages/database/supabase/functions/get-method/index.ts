@@ -9,6 +9,7 @@ import type {
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
+import { fetchAll } from "../lib/fetch-all.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 
@@ -486,29 +487,31 @@ serve(async (req: Request) => {
 
         // The traversal below runs on a single transaction connection, so any
         // per-node or per-material query is O(tree) sequential roundtrips — on
-        // a large BOM that exceeds the caller's invoke timeout. Prefetch each
-        // lookup table once for the whole tree instead.
-        const treeNodes: MethodTreeItem[] = [];
-        const seenTreeNodes = new Set<MethodTreeItem>();
-        const collectTreeNodes = (n: MethodTreeItem) => {
-          // Corrupt/cyclic tree data must not loop the prefetch walk
-          if (seenTreeNodes.has(n)) return;
-          seenTreeNodes.add(n);
-          treeNodes.push(n);
-          n.children.forEach(collectTreeNodes);
-        };
-        collectTreeNodes(methodTree);
-
-        const treeItemIds = [
-          ...new Set([
-            ...treeNodes.map((n) => n.data.itemId),
-            // Buy/Pick lines can be swapped to their successor item below
-            ...[...supersessionRedirect.values()].map((r) => r.to),
-          ]),
-        ];
-        const treeMakeMethodIds = [
-          ...new Set(treeNodes.map((n) => n.data.materialMakeMethodId)),
-        ];
+        // a large BOM that exceeds the caller's invoke timeout. Each lookup
+        // table is prefetched per tree by ensurePrefetched (defined inside the
+        // transaction), which is memoized so it can be re-run for successor
+        // trees that swapMadeSubAssembly explodes mid-traversal.
+        type MethodOperationWithDetails =
+          Database["public"]["Tables"]["methodOperation"]["Row"] & {
+            methodOperationTool: (Database["public"]["Tables"]["methodOperationTool"]["Row"] & {
+              methodOperationToolStep: Database["public"]["Tables"]["methodOperationToolStep"]["Row"][];
+            })[];
+            methodOperationParameter: Database["public"]["Tables"]["methodOperationParameter"]["Row"][];
+            methodOperationStep: Database["public"]["Tables"]["methodOperationStep"]["Row"][];
+          };
+        const scrapPercentageByItemId = new Map<string, number>();
+        const operationsByMakeMethodId = new Map<
+          string,
+          MethodOperationWithDetails[]
+        >();
+        const defaultStorageUnitByItemId = new Map<string, string>();
+        // "fetched, no row" and "never fetched" must stay distinguishable, so
+        // fetched ids are tracked separately from the maps.
+        const prefetchedItemIds = new Set<string>();
+        const prefetchedMakeMethodIds = new Set<string>();
+        const supersessionTargetItemIds = [
+          ...supersessionRedirect.values(),
+        ].map((r) => r.to);
 
         const chunk = <T>(arr: T[], size: number): T[][] => {
           const out: T[][] = [];
@@ -517,55 +520,6 @@ serve(async (req: Request) => {
           }
           return out;
         };
-
-        // itemReplenishment needs no embeds, so read it over the direct
-        // Postgres connection — bind parameters, no PostgREST URL-length cap.
-        const [replenishmentRows, operationChunks] = await Promise.all([
-          db
-            .selectFrom("itemReplenishment")
-            .select(["itemId", "scrapPercentage"])
-            .where("itemId", "in", treeItemIds)
-            .where("companyId", "=", companyId)
-            .execute(),
-          Promise.all(
-            chunk(treeMakeMethodIds, 50).map((ids) =>
-              client
-                .from("methodOperation")
-                .select(
-                  "*, methodOperationTool(*, methodOperationToolStep(*)), methodOperationParameter(*), methodOperationStep(*)"
-                )
-                .in("makeMethodId", ids)
-            )
-          ),
-        ]);
-
-        const scrapPercentageByItemId = new Map<string, number>();
-        for (const row of replenishmentRows) {
-          scrapPercentageByItemId.set(
-            row.itemId,
-            Number(row.scrapPercentage ?? 0)
-          );
-        }
-
-        const operationsByMakeMethodId = new Map<
-          string,
-          NonNullable<(typeof operationChunks)[number]["data"]>
-        >();
-        for (const res of operationChunks) {
-          if (res.error) {
-            throw new Error(
-              `Failed to get method operations: ${res.error.message}`
-            );
-          }
-          for (const op of res.data ?? []) {
-            const list = operationsByMakeMethodId.get(op.makeMethodId);
-            if (list) {
-              list.push(op);
-            } else {
-              operationsByMakeMethodId.set(op.makeMethodId, [op]);
-            }
-          }
-        }
 
         const getLaborAndOverheadRates = getRatesFromWorkCenters(
           workCenters?.data
@@ -627,56 +581,138 @@ serve(async (req: Request) => {
               .execute(),
           ]);
 
-          // Default storage units for every material at the job's location —
-          // two set-based queries instead of up to two per material
-          // (getStorageUnitId): pickMethod default wins, else the bin with
-          // the highest on-hand quantity.
-          const defaultStorageUnitByItemId = new Map<string, string>();
+          // Tree-wide prefetch, memoized: called for the main tree here and
+          // again for any successor tree swapMadeSubAssembly explodes — those
+          // nodes were never part of the original walk, and without this the
+          // traversal's map lookups would silently fall back (zero
+          // operations, scrap 0, no default storage unit).
           const jobLocationId = job.data?.locationId;
-          if (jobLocationId) {
-            const ledgerTotals = await trx
-              .selectFrom("itemLedger")
-              .where("locationId", "=", jobLocationId)
-              .where("itemId", "in", treeItemIds)
-              .where("storageUnitId", "is not", null)
-              .groupBy(["itemId", "storageUnitId"])
-              .select([
-                "itemId",
-                "storageUnitId",
-                (eb) => eb.fn.sum("quantity").as("totalQuantity"),
-              ])
-              .having((eb) => eb.fn.sum("quantity"), ">", 0)
-              .execute();
+          async function ensurePrefetched(root: MethodTreeItem) {
+            const nodes: MethodTreeItem[] = [];
+            const seen = new Set<MethodTreeItem>();
+            const collect = (n: MethodTreeItem) => {
+              // Corrupt/cyclic tree data must not loop the prefetch walk
+              if (seen.has(n)) return;
+              seen.add(n);
+              nodes.push(n);
+              n.children.forEach(collect);
+            };
+            collect(root);
 
-            const bestQuantityByItemId = new Map<string, number>();
-            for (const row of ledgerTotals) {
-              const quantity = Number(row.totalQuantity);
-              if (
-                row.storageUnitId &&
-                quantity > (bestQuantityByItemId.get(row.itemId) ?? 0)
-              ) {
-                bestQuantityByItemId.set(row.itemId, quantity);
-                defaultStorageUnitByItemId.set(row.itemId, row.storageUnitId);
-              }
-            }
+            const newItemIds = [
+              ...new Set([
+                ...nodes.map((n) => n.data.itemId),
+                // Buy/Pick lines can be swapped to their successor item below
+                ...supersessionTargetItemIds,
+              ]),
+            ].filter((id) => !prefetchedItemIds.has(id));
+            const newMakeMethodIds = [
+              ...new Set(nodes.map((n) => n.data.materialMakeMethodId)),
+            ].filter((id) => !prefetchedMakeMethodIds.has(id));
+            for (const id of newItemIds) prefetchedItemIds.add(id);
+            for (const id of newMakeMethodIds) prefetchedMakeMethodIds.add(id);
 
-            const pickMethods = await trx
-              .selectFrom("pickMethod")
-              .select(["itemId", "defaultStorageUnitId"])
-              .where("locationId", "=", jobLocationId)
-              .where("itemId", "in", treeItemIds)
-              .where("defaultStorageUnitId", "is not", null)
-              .execute();
-
-            for (const pickMethod of pickMethods) {
-              if (pickMethod.defaultStorageUnitId) {
-                defaultStorageUnitByItemId.set(
-                  pickMethod.itemId,
-                  pickMethod.defaultStorageUnitId
+            if (newItemIds.length > 0) {
+              // No embeds needed → the direct Postgres connection (bind
+              // parameters, so no PostgREST URL-length or max_rows caps).
+              const replenishmentRows = await trx
+                .selectFrom("itemReplenishment")
+                .select(["itemId", "scrapPercentage"])
+                .where("itemId", "in", newItemIds)
+                .where("companyId", "=", companyId)
+                .execute();
+              for (const row of replenishmentRows) {
+                scrapPercentageByItemId.set(
+                  row.itemId,
+                  Number(row.scrapPercentage ?? 0)
                 );
               }
             }
+
+            if (newMakeMethodIds.length > 0) {
+              // The embeds force PostgREST: chunk ids for URL length, and
+              // paginate every chunk — production max_rows = 1000 truncates
+              // silently past that (the dev stack does not enforce the cap).
+              const operationChunks = await Promise.all(
+                chunk(newMakeMethodIds, 50).map((ids) =>
+                  fetchAll<MethodOperationWithDetails>(() =>
+                    client
+                      .from("methodOperation")
+                      .select(
+                        "*, methodOperationTool(*, methodOperationToolStep(*)), methodOperationParameter(*), methodOperationStep(*)"
+                      )
+                      .in("makeMethodId", ids)
+                      .order("id")
+                  )
+                )
+              );
+              for (const res of operationChunks) {
+                if (res.error) {
+                  throw new Error(
+                    `Failed to get method operations: ${res.error.message}`
+                  );
+                }
+                for (const op of res.data ?? []) {
+                  const list = operationsByMakeMethodId.get(op.makeMethodId);
+                  if (list) {
+                    list.push(op);
+                  } else {
+                    operationsByMakeMethodId.set(op.makeMethodId, [op]);
+                  }
+                }
+              }
+            }
+
+            // Default storage units for every material at the job's location
+            // — set-based instead of up to two queries per material
+            // (getStorageUnitId): pickMethod default wins, else the bin with
+            // the highest on-hand quantity.
+            if (jobLocationId && newItemIds.length > 0) {
+              const ledgerTotals = await trx
+                .selectFrom("itemLedger")
+                .where("locationId", "=", jobLocationId)
+                .where("itemId", "in", newItemIds)
+                .where("storageUnitId", "is not", null)
+                .groupBy(["itemId", "storageUnitId"])
+                .select([
+                  "itemId",
+                  "storageUnitId",
+                  (eb) => eb.fn.sum("quantity").as("totalQuantity"),
+                ])
+                .having((eb) => eb.fn.sum("quantity"), ">", 0)
+                .execute();
+
+              const bestQuantityByItemId = new Map<string, number>();
+              for (const row of ledgerTotals) {
+                const quantity = Number(row.totalQuantity);
+                if (
+                  row.storageUnitId &&
+                  quantity > (bestQuantityByItemId.get(row.itemId) ?? 0)
+                ) {
+                  bestQuantityByItemId.set(row.itemId, quantity);
+                  defaultStorageUnitByItemId.set(row.itemId, row.storageUnitId);
+                }
+              }
+
+              const pickMethods = await trx
+                .selectFrom("pickMethod")
+                .select(["itemId", "defaultStorageUnitId"])
+                .where("locationId", "=", jobLocationId)
+                .where("itemId", "in", newItemIds)
+                .where("defaultStorageUnitId", "is not", null)
+                .execute();
+
+              for (const pickMethod of pickMethods) {
+                if (pickMethod.defaultStorageUnitId) {
+                  defaultStorageUnitByItemId.set(
+                    pickMethod.itemId,
+                    pickMethod.defaultStorageUnitId
+                  );
+                }
+              }
+            }
           }
+          await ensurePrefetched(methodTree);
 
           async function getConfiguredValue<T>({
             id,
@@ -1176,7 +1212,7 @@ serve(async (req: Request) => {
                 const item = await client
                   .from("item")
                   .select(
-                    "readableId, readableIdWithRevision, type, name, itemTrackingType, itemCost(unitCost)"
+                    "readableId, readableIdWithRevision, type, name, itemTrackingType, itemCost(unitCost), itemReplenishment(scrapPercentage)"
                   )
                   .eq("id", itemId)
                   .eq("companyId", companyId)
@@ -1192,6 +1228,17 @@ serve(async (req: Request) => {
                     item.data.itemTrackingType === "Serial";
                   requiresBatchTracking =
                     item.data.itemTrackingType === "Batch";
+                  // A configurator rule can swap the item to one outside the
+                  // prefetched tree — record its scrap so the lookup below
+                  // does not silently fall back to 0.
+                  if (!scrapPercentageByItemId.has(itemId)) {
+                    scrapPercentageByItemId.set(
+                      itemId,
+                      Number(
+                        item.data.itemReplenishment?.scrapPercentage ?? 0
+                      )
+                    );
+                  }
                 } else {
                   itemId = child.data.itemId;
                 }
@@ -1375,7 +1422,20 @@ serve(async (req: Request) => {
                   supersessionRedirect,
                   newMakeMethodId,
                   childTotalForCascade,
-                  traverseMethod,
+                  traverseMethod: async (
+                    successorRoot: MethodTreeItem,
+                    parentJobMakeMethodId: string | null,
+                    parentEstimatedQuantity: number
+                  ) => {
+                    // The successor's method tree was never part of the
+                    // original prefetch walk
+                    await ensurePrefetched(successorRoot);
+                    return traverseMethod(
+                      successorRoot,
+                      parentJobMakeMethodId,
+                      parentEstimatedQuantity
+                    );
+                  },
                 });
 
                 // prevent an infinite loop

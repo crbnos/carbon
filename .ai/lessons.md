@@ -1033,3 +1033,13 @@ canvas hosting Radix popovers/selects.
 **Rule:** In edge functions, batch reads keyed by a large id list go through the Kysely `db` handle (bind parameters, no URL cap) whenever no PostgREST embed is needed. If an embed forces PostgREST, chunk conservatively (≤50 ids) and include `res.error.message` in the thrown error so the failure names its cause. Never swallow a prefetch error into a bare string with no detail.
 
 **Applies to:** `packages/database/supabase/functions/**` batch reads; any `.in(...)` over tree-collected or list-collected ids.
+
+## Prefetched-map refactors: every key-producing path is part of the contract — and never fall back silently
+
+**Context:** Batching the N+1 traversal in `get-method`'s `itemToJob` replaced per-node queries with tree-wide prefetched Maps. Review caught three holes: `swapMadeSubAssembly` fetches a successor method tree mid-traversal and re-enters `traverseMethod` on nodes the prefetch never walked; the configurator can swap a material's `itemId` to one outside the prefetch set; and the chunked PostgREST ops read bounded the URL but not the response (`max_rows = 1000` truncates silently in production only).
+
+**Problem:** Per-row queries are position-independent — they work wherever the traversal stands. Prefetched maps are position-dependent, which silently turns "only this tree" into a correctness invariant. Combined with `?? 0` / `?? []` fallbacks on lookup miss, the violations produced no error: jobs were created successfully with routing-less sub-assemblies and a scrap of 0 that recalculate treats as intentionally stored. Happy-path verification could never catch it (test item had no supersessions/configurator; dev PostgREST doesn't enforce max_rows).
+
+**Rule:** When replacing per-row queries with prefetched lookups: (1) enumerate every path that can produce a lookup key — re-entry callbacks (read the callee's body, not just the call site), substitution/supersession, configuration — and make each one prefetch or populate the map; (2) track fetched-id sets separately from the maps so "fetched, no row" and "never fetched" stay distinguishable; (3) prefer a loud throw over a `?? default` when a miss can only mean the contract was violated; (4) a PostgREST read that can exceed 1000 rows goes through `fetchAll` with a stable `.order()` regardless of how small the id chunks are.
+
+**Applies to:** `packages/database/supabase/functions/**` traversals (get-method's other cases still have the per-node pattern), any N+1→batch refactor per `.claude/rules/database-patterns.md`.
