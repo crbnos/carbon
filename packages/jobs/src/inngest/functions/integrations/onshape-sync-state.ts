@@ -212,18 +212,40 @@ export interface MarkItemSyncFailedByElementInput {
   userId: string;
   /** The released Onshape element the failed run was syncing. */
   elementId: string;
+  /**
+   * The released revision the failed run was syncing. Required to attribute the
+   * failure: one element is released over and over, and each revision is its own
+   * Carbon item row. Absent (the release payload carried no revision id) means
+   * the failure is not attributable and nothing is written.
+   */
+  revisionId?: string | null;
   assetKind: OnshapeSyncAssetKind;
   error: string;
 }
 
 // Failure path for the webhook sync: the run failed before it could return the
-// resolved item, so the row is reached by the released element it was syncing
-// (persisted by every prior sync of that element). A first-ever sync that fails
-// before matching has no row to flip — that is recorded at run level only.
+// resolved item, so the row is reached by the released element + revision it was
+// syncing (both persisted by every prior sync of that release). The revision is
+// part of the key because one Onshape element carries every revision of the part
+// while each Carbon revision is its OWN item row — an element-wide update would
+// rewrite the sibling revisions' recorded outcomes with this revision's error.
+// A first-ever sync that fails before matching has no row to flip — that is
+// recorded at run level only.
 export async function markItemSyncStateFailedByElement(
   carbon: CarbonClient,
   input: MarkItemSyncFailedByElementInput
 ): Promise<StateWriteResult> {
+  if (!input.revisionId) {
+    log.warn(
+      "onshape sync state: failure not attributable to a revision — leaving every row for this element as recorded",
+      {
+        companyId: input.companyId,
+        elementId: input.elementId,
+        assetKind: input.assetKind
+      }
+    );
+    return { applied: false };
+  }
   try {
     const updated = await carbon
       .from("onshapeItemSyncState")
@@ -238,6 +260,7 @@ export async function markItemSyncStateFailedByElement(
       )
       .eq("companyId", input.companyId)
       .eq("elementId", input.elementId)
+      .eq("revisionId", input.revisionId)
       .eq("assetKind", input.assetKind);
     if (updated.error) {
       throw new Error(updated.error.message);
@@ -247,6 +270,7 @@ export async function markItemSyncStateFailedByElement(
     log.error("onshape sync state: item failure write failed", {
       companyId: input.companyId,
       elementId: input.elementId,
+      revisionId: input.revisionId,
       assetKind: input.assetKind,
       error: writeError instanceof Error ? writeError.message : writeError
     });

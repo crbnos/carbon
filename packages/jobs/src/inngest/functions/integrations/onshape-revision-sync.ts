@@ -346,16 +346,19 @@ export const onshapeRevisionSyncFunction = inngest.createFunction(
     // One in-flight sync per released element; different elements run in parallel.
     concurrency: { key: "event.data.elementId", limit: 1 },
     // A run that exhausted its retries records the failure on the item row for
-    // this released element. The row exists once any earlier sync of the same
-    // element wrote one; a first-ever sync that fails before it resolves an item
-    // has nothing to attribute the failure to.
+    // the released element AND revision it was syncing — every revision of a
+    // part is released from the same element but lives on its own Carbon item,
+    // so the failure belongs to this revision's row alone. The row exists once
+    // any earlier sync of the same release wrote one; a first-ever sync that
+    // fails before it resolves an item has nothing to attribute the failure to.
     onFailure: async ({ event }) => {
-      const { companyId, userId, elementId, elementType } = event.data.event
-        .data as OnshapeRevisionSyncPayload;
+      const { companyId, userId, elementId, elementType, revisionId } = event
+        .data.event.data as OnshapeRevisionSyncPayload;
       await markItemSyncStateFailedByElement(getCarbonServiceRole(), {
         companyId,
         userId,
         elementId,
+        revisionId,
         assetKind: assetKindForElementType(elementType),
         error: event.data.error.message
       });

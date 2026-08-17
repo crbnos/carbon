@@ -608,7 +608,7 @@ describe("upsertItemSyncState", () => {
 });
 
 describe("markItemSyncStateFailedByElement", () => {
-  it("flips the row for one released element, scoped by companyId", async () => {
+  it("flips the row for one released revision of the element, scoped by companyId", async () => {
     const client = createFakeCarbonClient({ updateCount: 1 });
     const result = await markItemSyncStateFailedByElement(
       asCarbonClient(client),
@@ -616,6 +616,7 @@ describe("markItemSyncStateFailedByElement", () => {
         companyId: "company_1",
         userId: "user_1",
         elementId: "el_1",
+        revisionId: "rev_c",
         assetKind: "drawing",
         error: "Onshape export failed"
       }
@@ -628,14 +629,57 @@ describe("markItemSyncStateFailedByElement", () => {
       error: "Onshape export failed",
       updatedBy: "user_1"
     });
+    // The revision is part of the key: one element releases every revision of a
+    // part, and each Carbon revision is its own item row.
     expect(update?.filters).toEqual([
       { method: "eq", column: "companyId", value: "company_1" },
       { method: "eq", column: "elementId", value: "el_1" },
+      { method: "eq", column: "revisionId", value: "rev_c" },
       { method: "eq", column: "assetKind", value: "drawing" }
     ]);
   });
 
-  it("reports no write when the element has no state row yet", async () => {
+  it("CRITICAL: never widens the failure to the element's other revisions", async () => {
+    const client = createFakeCarbonClient({ updateCount: 1 });
+    await markItemSyncStateFailedByElement(asCarbonClient(client), {
+      companyId: "company_1",
+      userId: "user_1",
+      elementId: "el_1",
+      revisionId: "rev_c",
+      assetKind: "model",
+      error: "Onshape export failed"
+    });
+
+    // Revisions A and B were synced from this same element and keep their own
+    // recorded outcomes, so the update must be pinned to exactly one revision.
+    const update = client.calls.find((call) => call.operation === "update");
+    const revisionFilters = (update?.filters ?? []).filter(
+      (filter) => filter.column === "revisionId"
+    );
+    expect(revisionFilters).toEqual([
+      { method: "eq", column: "revisionId", value: "rev_c" }
+    ]);
+  });
+
+  it("writes nothing when the release carried no revision to attribute it to", async () => {
+    // An element-wide update would rewrite every revision's row, so an
+    // unattributable failure is logged and left at run level instead.
+    const client = createFakeCarbonClient({ updateCount: 1 });
+
+    await expect(
+      markItemSyncStateFailedByElement(asCarbonClient(client), {
+        companyId: "company_1",
+        userId: "user_1",
+        elementId: "el_1",
+        revisionId: null,
+        assetKind: "model",
+        error: "boom"
+      })
+    ).resolves.toEqual({ applied: false });
+    expect(client.calls).toHaveLength(0);
+  });
+
+  it("reports no write when the release has no state row yet", async () => {
     const client = createFakeCarbonClient({ updateCount: 0 });
 
     await expect(
@@ -643,6 +687,7 @@ describe("markItemSyncStateFailedByElement", () => {
         companyId: "company_1",
         userId: "user_1",
         elementId: "el_unknown",
+        revisionId: "rev_a",
         assetKind: "model",
         error: "boom"
       })
@@ -889,6 +934,7 @@ describe("bookkeeping is never fatal to the sync", () => {
         companyId: "company_1",
         userId: "user_1",
         elementId: "el_1",
+        revisionId: "rev_a",
         assetKind: "model",
         error: "boom"
       })
