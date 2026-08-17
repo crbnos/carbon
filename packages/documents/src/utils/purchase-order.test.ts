@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getPurchaseOrderDisplayId } from "./purchase-order";
 
-// The suffix rules themselves are covered once in revision.test.ts — this only
-// pins that the PO helper reads the right two fields and tolerates a missing
-// order (call sites pass `routeData?.purchaseOrder`).
+// Suffix rules live in revision.test.ts; this pins field mapping only.
 describe("getPurchaseOrderDisplayId", () => {
   it("reads purchaseOrderId and revisionId off the order", () => {
     expect(

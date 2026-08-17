@@ -140,11 +140,6 @@ msgstr "{0} wartości"
 msgid "{0} values missing"
 msgstr "{0} brakujących wartości"
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "This purchase order"
-#. placeholder {1}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
-msgid "{0} will be reopened for editing as revision {1}. The document already sent to the supplier is unchanged until you finalize and resend the order."
-msgstr "{0} będzie ponownie otwarty do edycji jako rewizja {1}. Dokument już wysłany dostawcy pozostaje niezmieniony do momentu sfinalizowania i ponownego wysłania zamówienia."
-
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} części pominięto — mają już otwarte zadania"
 
@@ -194,6 +189,10 @@ msgstr "{name} usunięty"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} części pominięto — nic do zrobienia"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel} będzie ponownie otwarte do edycji jako wersja {0}. Dokument już wysłany do dostawcy nie zmieni się, dopóki nie sfinalizujesz i nie wyślesz ponownie zamówienia."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
@@ -1709,9 +1708,8 @@ msgstr "Czy na pewno chcesz anulować {0}? Będzie zamknięte i tylko do odczytu
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Czy na pewno chcesz anulować {0}? Spowoduje to również anulowanie wszystkich powiązanych ofert dostawców."
 
-#. placeholder {0}: routeData?.purchaseOrder ? getPurchaseOrderDisplayId(routeData.purchaseOrder) : "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "Czy na pewno chcesz anulować {0}? Spowoduje to zamknięcie zamówienia."
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "Czy na pewno chcesz anulować {orderLabel}? Spowoduje to zamknięcie zamówienia."
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Czy na pewno chcesz anulować to zadanie? Nie będzie już dostępne na hali produkcyjnej."
@@ -1768,13 +1766,16 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "Czy na pewno chcesz usunąć {0}?"
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć {0}? Tej operacji nie można cofnąć."
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć {name}? Tej operacji nie można cofnąć."
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "Czy na pewno chcesz usunąć {orderLabel}? Tej operacji nie można cofnąć."
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -15376,6 +15377,9 @@ msgstr "Ta ścieżka decyduje tylko o tym, co uruchomi się dalej"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Ten okres nie ma żadnych wpisów w dzienniku i może być trwale usunięty. Tej operacji nie można cofnąć."
+
+msgid "this purchase order"
+msgstr "to zamówienie zakupu"
 
 msgid "This Quarter"
 msgstr "Ten Kwartał"

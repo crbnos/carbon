@@ -18,10 +18,6 @@ export function getLineDescriptionDetails(
   return line?.description ? `${line.description}` : "";
 }
 
-/**
- * The quote number as the customer should see it: the revision suffix marks a
- * revised quote (Q000001-1). Revision 0 is the original and stays bare.
- */
 export function getQuoteDisplayId(
   quote?: {
     quoteId?: string | null;

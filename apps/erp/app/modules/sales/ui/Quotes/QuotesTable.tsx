@@ -1,3 +1,4 @@
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import {
   BarProgress,
   HStack,
@@ -331,8 +332,10 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         <ConfirmDelete
           action={path.to.deleteQuote(selectedQuotation.id)}
           isOpen={deleteQuotationModal.isOpen}
-          name={selectedQuotation.quoteId!}
-          text={t`Are you sure you want to delete ${selectedQuotation.quoteId!}? This cannot be undone.`}
+          name={getQuoteDisplayId(selectedQuotation)}
+          text={t`Are you sure you want to delete ${getQuoteDisplayId(
+            selectedQuotation
+          )}? This cannot be undone.`}
           onCancel={() => {
             deleteQuotationModal.onClose();
             setSelectedQuotation(null);

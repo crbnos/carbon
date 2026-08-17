@@ -1216,14 +1216,9 @@ export async function updatePurchaseOrderStatus(
 /**
  * Reopens a released purchase order to Draft as its next revision.
  *
- * The increment is `revisionId = revisionId + 1` computed in SQL, not read then
- * written, so two concurrent "Create PO Revision" requests cannot both land on
- * the same revision number. The eligibility conditions are part of the WHERE
- * clause rather than a prior read, making this a compare-and-swap: an order
- * that is not in a released (locked) state, or was never finalized (no
- * `orderDate`), matches no rows and is left untouched.
- *
- * Returns the number of rows updated — 0 means the order was not eligible.
+ * Compare-and-swap: the increment and the eligibility conditions are both in
+ * SQL, so concurrent requests can't share a revision number and an ineligible
+ * order matches no rows. Returns rows updated — 0 means it was not eligible.
  */
 export async function reopenPurchaseOrderAsRevision(
   db: Kysely<KyselyDatabase>,

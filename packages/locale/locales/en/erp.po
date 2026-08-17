@@ -140,11 +140,6 @@ msgstr "{0} values"
 msgid "{0} values missing"
 msgstr "{0} values missing"
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "This purchase order"
-#. placeholder {1}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
-msgid "{0} will be reopened for editing as revision {1}. The document already sent to the supplier is unchanged until you finalize and resend the order."
-msgstr "{0} will be reopened for editing as revision {1}. The document already sent to the supplier is unchanged until you finalize and resend the order."
-
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 
@@ -194,6 +189,10 @@ msgstr "{name} deleted"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} parts skipped — nothing to make"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
@@ -1709,9 +1708,8 @@ msgstr "Are you sure you want to cancel {0}? It will be closed and read-only unt
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 
-#. placeholder {0}: routeData?.purchaseOrder ? getPurchaseOrderDisplayId(routeData.purchaseOrder) : "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "Are you sure you want to cancel {0}? This will close the order."
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "Are you sure you want to cancel {orderLabel}? This will close the order."
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
@@ -1768,13 +1766,16 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "Are you sure you want to delete {0}?"
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Are you sure you want to delete {0}? This cannot be undone."
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "Are you sure you want to delete {name}? This cannot be undone."
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "Are you sure you want to delete {orderLabel}? This cannot be undone."
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -15376,6 +15377,9 @@ msgstr "This path only decides what runs next"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
+
+msgid "this purchase order"
+msgstr "this purchase order"
 
 msgid "This Quarter"
 msgstr "This Quarter"

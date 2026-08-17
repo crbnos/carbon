@@ -140,11 +140,6 @@ msgstr "{0} valores"
 msgid "{0} values missing"
 msgstr "{0} valores faltantes"
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "This purchase order"
-#. placeholder {1}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
-msgid "{0} will be reopened for editing as revision {1}. The document already sent to the supplier is unchanged until you finalize and resend the order."
-msgstr "{0} se reabrirá para editar como revisión {1}. El documento ya enviado al proveedor permanece sin cambios hasta que finalice y reenvíe el pedido."
-
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} piezas omitidas — ya tienen trabajos abiertos"
 
@@ -194,6 +189,10 @@ msgstr "{name} eliminado"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} piezas omitidas — no hay nada que fabricar"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel} se reabrirá para edición como revisión {0}. El documento ya enviado al proveedor permanece sin cambios hasta que finalices y reenvíes la orden."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase restante} other {# fases restantes}}"
@@ -1709,9 +1708,8 @@ msgstr "¿Estás seguro de que deseas cancelar {0}? Se cerrará y será de solo 
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "¿Estás seguro de que deseas cancelar {0}? Esto también cancelará todas las cotizaciones de proveedores relacionadas."
 
-#. placeholder {0}: routeData?.purchaseOrder ? getPurchaseOrderDisplayId(routeData.purchaseOrder) : "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "¿Está seguro de que desea cancelar {0}? Esto cerrará el pedido."
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "¿Estás seguro de que deseas cancelar {orderLabel}? Esto cerrará la orden."
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "¿Estás seguro de que deseas cancelar este trabajo? Ya no estará disponible en el piso de producción."
@@ -1768,13 +1766,16 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "¿Estás seguro de que deseas eliminar {0}?"
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "¿Estás seguro de que deseas eliminar {0}? Esto no se puede deshacer."
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "¿Estás seguro de que deseas eliminar {name}? Esto no se puede deshacer."
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "¿Estás seguro de que deseas eliminar {orderLabel}? Esto no se puede deshacer."
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -3886,7 +3887,7 @@ msgid "Create new rule"
 msgstr "Crear nueva regla"
 
 msgid "Create PO Revision"
-msgstr "Crear Revisión de Pedido"
+msgstr "Crear Revisión de Orden de Compra"
 
 msgid "Create Production Event"
 msgstr "Crear Evento de Producción"
@@ -10614,7 +10615,7 @@ msgid "Packing Slip"
 msgstr "Albarán de Empaque"
 
 msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
-msgstr "Rellenar los montos a las posiciones decimales de su moneda, de modo que 300 aparece como 300.00 y las columnas de cifras permanecen alineadas. Desactive esto para mostrar solo los dígitos que tienen valor. Los documentos impresos y los montos almacenados no se ven afectados de ninguna manera."
+msgstr "Rellenar los montos a las posiciones decimales de su moneda, de modo que 300 aparece como 300,00 y las columnas de cifras permanecen alineadas. Desactive esto para mostrar solo los dígitos que tienen valor. Los documentos impresos y los montos almacenados no se ven afectados de ninguna manera."
 
 msgid "Page"
 msgstr "Página"
@@ -15376,6 +15377,9 @@ msgstr "Esta ruta solo decide qué se ejecuta a continuación"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Este período no tiene asientos de diario registrados en él y puede eliminarse permanentemente. No se puede deshacer."
+
+msgid "this purchase order"
+msgstr "esta orden de compra"
 
 msgid "This Quarter"
 msgstr "Este Trimestre"

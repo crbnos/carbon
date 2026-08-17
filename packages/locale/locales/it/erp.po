@@ -140,11 +140,6 @@ msgstr "{0} valori"
 msgid "{0} values missing"
 msgstr "{0} valori mancanti"
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "This purchase order"
-#. placeholder {1}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
-msgid "{0} will be reopened for editing as revision {1}. The document already sent to the supplier is unchanged until you finalize and resend the order."
-msgstr "{0} sarà riaperto per la modifica come revisione {1}. Il documento già inviato al fornitore rimane invariato fino a quando non finalizzi e reinvii l'ordine."
-
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parti saltate — hanno già processi aperti"
 
@@ -194,6 +189,10 @@ msgstr "{name} eliminato"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} parti saltate — niente da produrre"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel} verrà riaperto per la modifica come revisione {0}. Il documento già inviato al fornitore rimane invariato fino a quando non si finalizza e si rinvia l'ordine."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase rimanente} other {# fasi rimanenti}}"
@@ -1709,9 +1708,8 @@ msgstr "Sei sicuro di voler cancellare {0}? Sarà chiuso e in sola lettura fino 
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Sei sicuro di voler annullare {0}? Questo annullerà anche tutte le quotazioni dei fornitori correlate."
 
-#. placeholder {0}: routeData?.purchaseOrder ? getPurchaseOrderDisplayId(routeData.purchaseOrder) : "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "Sei sicuro di voler annullare {0}? Questo chiuderà l'ordine."
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "Sei sicuro di voler annullare {orderLabel}? Questo chiuderà l'ordine."
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Sei sicuro di voler annullare questo lavoro? Non sarà più disponibile in officina."
@@ -1768,13 +1766,16 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "Sei sicuro di voler eliminare {0}?"
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare {0}? Questa azione non può essere annullata."
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare {name}? Questa azione non può essere annullata."
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "Sei sicuro di voler eliminare {orderLabel}? Questa azione non può essere annullata."
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -10614,7 +10615,7 @@ msgid "Packing Slip"
 msgstr "Documento di trasporto"
 
 msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
-msgstr "Riempi i valori in base alle cifre decimali della valuta, in modo che 300 appaia come 300.00 e le colonne di cifre rimangono allineate. Disattivalo per mostrare solo le cifre che hanno valore. I documenti stampati e gli importi memorizzati non sono interessati in nessun modo."
+msgstr "Riempi i valori in base alle cifre decimali della valuta, in modo che 300 appaia come 300,00 e le colonne di cifre rimangono allineate. Disattivalo per mostrare solo le cifre che hanno valore. I documenti stampati e gli importi memorizzati non sono interessati in nessun modo."
 
 msgid "Page"
 msgstr "Pagina"
@@ -15376,6 +15377,9 @@ msgstr "Questo percorso decide solo cosa viene eseguito dopo"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Questo periodo non ha movimenti di diario registrati e può essere eliminato permanentemente. Questo non può essere annullato."
+
+msgid "this purchase order"
+msgstr "questo ordine di acquisto"
 
 msgid "This Quarter"
 msgstr "Questo Trimestre"

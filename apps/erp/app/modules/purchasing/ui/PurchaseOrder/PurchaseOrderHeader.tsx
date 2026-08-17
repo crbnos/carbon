@@ -168,6 +168,13 @@ const PurchaseOrderHeader = () => {
 
   const relatedDocsErrorMessage = t`Couldn't load related documents. Refresh before creating a new one to avoid duplicates.`;
 
+  // Interpolated into translated confirmations, so the fallback has to be
+  // translated too — a raw English literal would render mid-sentence in every
+  // other locale.
+  const orderLabel =
+    getPurchaseOrderDisplayId(routeData?.purchaseOrder) ||
+    t`this purchase order`;
+
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
   const hasShipments = shipments.length > 0;
@@ -652,16 +659,8 @@ const PurchaseOrderHeader = () => {
         <ConfirmDelete
           action={path.to.deletePurchaseOrder(orderId)}
           isOpen={deleteModal.isOpen}
-          name={
-            routeData?.purchaseOrder
-              ? getPurchaseOrderDisplayId(routeData.purchaseOrder)
-              : "purchase order"
-          }
-          text={t`Are you sure you want to delete ${
-            routeData?.purchaseOrder
-              ? getPurchaseOrderDisplayId(routeData.purchaseOrder)
-              : "this purchase order"
-          }? This cannot be undone.`}
+          name={orderLabel}
+          text={t`Are you sure you want to delete ${orderLabel}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
           }}
@@ -674,11 +673,7 @@ const PurchaseOrderHeader = () => {
         <Confirm
           action={path.to.purchaseOrderStatus(orderId)}
           title={t`Cancel Purchase Order`}
-          text={t`Are you sure you want to cancel ${
-            routeData?.purchaseOrder
-              ? getPurchaseOrderDisplayId(routeData.purchaseOrder)
-              : "this purchase order"
-          }? This will close the order.`}
+          text={t`Are you sure you want to cancel ${orderLabel}? This will close the order.`}
           confirmText={t`Cancel Order`}
           confirmVariant="destructive"
           cancelText={t`Back`}
@@ -692,7 +687,9 @@ const PurchaseOrderHeader = () => {
         <Confirm
           action={path.to.purchaseOrderStatus(orderId)}
           title={t`Create PO Revision`}
-          text={t`${routeData?.purchaseOrder?.purchaseOrderId ?? "This purchase order"} will be reopened for editing as revision ${(routeData?.purchaseOrder?.revisionId ?? 0) + 1}. The document already sent to the supplier is unchanged until you finalize and resend the order.`}
+          text={t`${orderLabel} will be reopened for editing as revision ${
+            (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+          }. The document already sent to the supplier is unchanged until you finalize and resend the order.`}
           confirmText={t`Create Revision`}
           onCancel={createRevisionModal.onClose}
           onSubmit={createRevisionModal.onClose}

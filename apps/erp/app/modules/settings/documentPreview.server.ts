@@ -102,8 +102,6 @@ export async function listPreviewEntities(
       const readableId = row[cfg.idColumn];
       return {
         id: row.id,
-        // Revisions share their source's readable id, so an unsuffixed label
-        // renders indistinguishable options in the picker.
         label:
           withRevisionSuffix(
             typeof readableId === "string" ? readableId : null,

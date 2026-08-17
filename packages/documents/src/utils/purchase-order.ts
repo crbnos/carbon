@@ -58,10 +58,6 @@ export function getTotal(
   return lines.reduce((total, line) => total + getLineTotal(line), 0);
 }
 
-/**
- * The PO number as the supplier should see it: the revision suffix marks an
- * amended order (PO-001042-1). Revision 0 is the original and stays bare.
- */
 export function getPurchaseOrderDisplayId(
   purchaseOrder?: {
     purchaseOrderId?: string | null;

@@ -140,11 +140,6 @@ msgstr "{0} значений"
 msgid "{0} values missing"
 msgstr "{0} значений отсутствует"
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "This purchase order"
-#. placeholder {1}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
-msgid "{0} will be reopened for editing as revision {1}. The document already sent to the supplier is unchanged until you finalize and resend the order."
-msgstr "{0} будет переоткрыт для редактирования как редакция {1}. Документ, уже отправленный поставщику, останется неизменным до тех пор, пока вы не завершите и не отправите повторно заказ."
-
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} деталей пропущено — у них уже есть открытые задания"
 
@@ -194,6 +189,10 @@ msgstr "{name} удален"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} деталей пропущено — нечего делать"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel} будет переоткрыта для редактирования как редакция {0}. Документ, уже отправленный поставщику, остается без изменений, пока вы не завершите и не отправите заказ заново."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
@@ -1709,9 +1708,8 @@ msgstr "Вы уверены, что хотите отменить {0}? Он бу
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Вы уверены, что хотите отменить {0}? Это также отменит все связанные предложения поставщиков."
 
-#. placeholder {0}: routeData?.purchaseOrder ? getPurchaseOrderDisplayId(routeData.purchaseOrder) : "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "Вы уверены, что хотите отменить {0}? Это закроет заказ."
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "Вы уверены, что хотите отменить {orderLabel}? Это закроет заказ."
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Вы уверены, что хотите отменить эту работу? Она больше не будет доступна на производственном участке."
@@ -1768,13 +1766,16 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "Вы уверены, что хотите удалить {0}?"
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить {0}? Это действие невозможно отменить."
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить {name}? Это действие невозможно отменить."
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить {orderLabel}? Это действие невозможно отменить."
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -3886,7 +3887,7 @@ msgid "Create new rule"
 msgstr "Создать новое правило"
 
 msgid "Create PO Revision"
-msgstr "Создать редакцию ПО"
+msgstr "Создать редакцию заказа на покупку"
 
 msgid "Create Production Event"
 msgstr "Создать производственное событие"
@@ -15376,6 +15377,9 @@ msgstr "Этот путь решает только, что будет запу�
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "В этот период не размещены записи журнала, и он может быть окончательно удален. Это действие нельзя отменить."
+
+msgid "this purchase order"
+msgstr "этот заказ на покупку"
 
 msgid "This Quarter"
 msgstr "Этот квартал"

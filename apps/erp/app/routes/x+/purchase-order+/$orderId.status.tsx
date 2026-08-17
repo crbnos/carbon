@@ -7,6 +7,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { runMRP } from "~/modules/production";
 import {
+  canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
   purchaseOrderStatusType,
   reopenPurchaseOrderAsRevision,
@@ -43,19 +44,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const currentPo = await viewClient
     .from("purchaseOrder")
-    .select("status")
+    .select("status, orderDate")
     .eq("id", id)
     .single();
 
   const currentStatus = currentPo.data?.status;
   const isCurrentlyLocked = isPurchaseOrderLocked(currentStatus);
 
-  // A revision is only created on explicit request (the "Create PO Revision"
-  // header action) — a plain Reopen of a released order does not bump.
-  // Eligibility is re-checked in SQL by reopenPurchaseOrderAsRevision, so this
-  // flag alone can never produce a revision on an ineligible order.
+  // Explicit request only — a plain Reopen never bumps.
   const createRevisionRequested =
     status === "Draft" && formData.get("createRevision") === "true";
+
+  // Reject an ineligible revision BEFORE the Draft branch below cancels pending
+  // approvals: those side effects must not be applied for a request that is
+  // about to fail. reopenPurchaseOrderAsRevision re-checks the same conditions
+  // in SQL, so this is a pre-flight, not the authority.
+  if (
+    createRevisionRequested &&
+    !canCreatePurchaseOrderRevision({
+      newStatus: status,
+      currentStatus,
+      orderDate: currentPo.data?.orderDate
+    })
+  ) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.purchaseOrder(id),
+      await flash(
+        request,
+        error(null, "Only a released purchase order can be revised")
+      )
+    );
+  }
 
   // Determine required permission:
   // - Reopening (Draft) from a locked status requires delete permission
@@ -167,9 +186,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (createRevisionRequested) {
-    // Atomic compare-and-swap: status + revisionId move together, and the
-    // eligibility conditions live in the WHERE clause. 0 rows means the order
-    // was never released, so there is no revision to create.
     let rowsUpdated = 0;
     try {
       rowsUpdated = await reopenPurchaseOrderAsRevision(getDatabaseClient(), {

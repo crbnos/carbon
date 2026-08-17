@@ -51,10 +51,7 @@ type SupplierInteractionStateProps = {
   siblingQuotes?: LinkedSupplierQuote[];
 };
 
-/**
- * "Acme Tooling (SQ000012-1)" when both are known, otherwise whichever half we
- * have, falling back to the row id so an option is never blank.
- */
+/** "Acme Tooling (SQ000012-1)", degrading to whichever half is known. */
 function buildSupplierQuoteLabel(
   supplierName: string | undefined,
   quoteDisplayId: string,
