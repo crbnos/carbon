@@ -3,7 +3,7 @@ import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
-import { Transaction } from "kysely";
+import { sql, Transaction } from "kysely";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getJobMethodTree, JobMethodTreeItem } from "../lib/methods.ts";
 import { requirePermissions } from "../lib/supabase.ts";
@@ -187,102 +187,178 @@ const updateJobQuantities = async (
   tree: JobMethodTreeItem,
   parentEstimatedQuantity: number = 1
 ) => {
-  // Target quantity for this node:
-  // - For root: targetQuantity = parentEstimatedQuantity (which is productionQuantity from job)
-  // - For children: targetQuantity = parentEstimatedQuantity * quantity (quantity per parent)
-  const targetQuantity = tree.data.isRoot
-    ? parentEstimatedQuantity
-    : tree.data.quantity * parentEstimatedQuantity;
+  // The tree is already fully loaded, so compute every node's quantities in
+  // memory and write them set-based. The previous per-node recursion issued
+  // 2–4 statements per node on one transaction connection — O(tree)
+  // sequential roundtrips, which on a large BOM exceeded the caller's
+  // invoke timeout.
+  const nodes: JobMethodTreeItem[] = [];
+  const collectNodes = (n: JobMethodTreeItem) => {
+    nodes.push(n);
+    n.children?.forEach(collectNodes);
+  };
+  collectNodes(tree);
 
-  // Get scrap percentage from jobMaterial (stored at job creation time)
-  // Fall back to itemReplenishment if not stored
-  // Scrap applies to every method type (get-method stamps itemScrapPercentage
-  // on every material row and applies scrap unconditionally at creation)
-  let scrapPercentage = 0;
-  const jobMaterial = await trx
-    .selectFrom("jobMaterial")
-    .select("itemScrapPercentage")
-    .where("id", "=", tree.id)
-    .executeTakeFirst();
-
+  // Scrap percentage source: stored on jobMaterial at job creation time.
   // A stored 0 is intentional (locked at job creation) — only a NULL falls
-  // back to the item's current replenishment scrap percentage.
-  if (jobMaterial?.itemScrapPercentage != null) {
-    scrapPercentage = Number(jobMaterial.itemScrapPercentage);
-  } else {
-    // Fall back to itemReplenishment
-    const itemReplenishment = await trx
-      .selectFrom("itemReplenishment")
-      .select("scrapPercentage")
-      .where("itemId", "=", tree.data.itemId)
-      .executeTakeFirst();
-    scrapPercentage = Number(itemReplenishment?.scrapPercentage ?? 0);
-  }
-
-  // Calculate scrap and estimated quantities
-  // scrapQuantity = portion attributable to scrap
-  // totalWithScrap = target + scrap allowance (what we need to make/procure)
-  // estimatedQuantity: For Make = good quantity (without scrap), For Buy/Pick = total
-  // Whole-unit scrap allowance; the fractional target itself is never rounded
-  const scrapQuantity = scrapAllowance(targetQuantity, scrapPercentage);
-  const totalWithScrap = targetQuantity + scrapQuantity;
-  // For Make: estimatedQuantity is good quantity (without scrap)
-  // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
-  const estimatedQuantity =
-    tree.data.methodType === "Make to Order" ? targetQuantity : totalWithScrap;
-
-  // Update jobMaterial with scrap and estimated quantities
-  await trx
-    .updateTable("jobMaterial")
-    .set({
-      scrapQuantity: scrapQuantity,
-      estimatedQuantity: estimatedQuantity,
-    })
-    .where("id", "=", tree.id)
+  // back to the item's current replenishment scrap percentage. The root node
+  // has no jobMaterial row and always uses the fallback.
+  const jobMaterials = await trx
+    .selectFrom("jobMaterial")
+    .select(["id", "itemScrapPercentage"])
+    .where(
+      "id",
+      "in",
+      nodes.map((n) => n.id)
+    )
     .execute();
+  const storedScrapById = new Map(
+    jobMaterials.map((m) => [m.id, m.itemScrapPercentage])
+  );
 
-  if (tree.data.jobMaterialMakeMethodId) {
-    const [jobMakeMethod] = await Promise.all([
-      trx
-        .selectFrom("jobMakeMethod")
-        .select(["trackedEntityId", "requiresSerialTracking"])
-        .where("id", "=", tree.data.jobMaterialMakeMethodId)
-        .executeTakeFirst(),
-      trx
-        .updateTable("jobMakeMethod")
-        .set({ quantityPerParent: tree.data.quantity })
-        .where("id", "=", tree.data.jobMaterialMakeMethodId)
-        .execute(),
-      trx
-        .updateTable("jobOperation")
-        .set({
-          targetQuantity: targetQuantity,
-          // Fractional targets flow through; the scrap allowance is already whole
-          operationQuantity: totalWithScrap,
-        })
-        .where("jobMakeMethodId", "=", tree.data.jobMaterialMakeMethodId)
-        .where("reworkId", "is", null)
-        .execute(),
-    ]);
-
-    if (jobMakeMethod?.trackedEntityId) {
-      await trx
-        .updateTable("trackedEntity")
-        .set({
-          quantity: jobMakeMethod.requiresSerialTracking
-            ? 1
-            : totalWithScrap,
-        })
-        .where("id", "=", jobMakeMethod.trackedEntityId)
-        .execute();
+  const fallbackItemIds = [
+    ...new Set(
+      nodes
+        .filter((n) => storedScrapById.get(n.id) == null)
+        .map((n) => n.data.itemId)
+    ),
+  ];
+  const replenishmentScrapByItemId = new Map<string, number>();
+  if (fallbackItemIds.length > 0) {
+    const replenishments = await trx
+      .selectFrom("itemReplenishment")
+      .select(["itemId", "scrapPercentage"])
+      .where("itemId", "in", fallbackItemIds)
+      .execute();
+    for (const row of replenishments) {
+      replenishmentScrapByItemId.set(
+        row.itemId,
+        Number(row.scrapPercentage ?? 0)
+      );
     }
   }
 
-  // Recursively update children with this node's total (estimated + scrap)
-  // Children use the total for their target calculation to properly cascade scrap
-  if (tree.children) {
-    for (const child of tree.children) {
-      await updateJobQuantities(trx, child, totalWithScrap);
+  // Same math as the per-node version, walked top-down:
+  // - For root: targetQuantity = parentEstimatedQuantity
+  // - For children: targetQuantity = parent's totalWithScrap * quantity per parent
+  // - scrapQuantity = whole-unit scrap allowance; fractional targets flow through
+  // - estimatedQuantity: For Make = good quantity (without scrap), For Buy/Pick = total
+  type ComputedNode = {
+    id: string;
+    hasJobMaterial: boolean;
+    jobMaterialMakeMethodId: string | null;
+    quantityPerParent: number;
+    targetQuantity: number;
+    scrapQuantity: number;
+    estimatedQuantity: number;
+    totalWithScrap: number;
+  };
+  const computed: ComputedNode[] = [];
+  const walk = (node: JobMethodTreeItem, parentQuantity: number) => {
+    const targetQuantity = node.data.isRoot
+      ? parentQuantity
+      : node.data.quantity * parentQuantity;
+    const stored = storedScrapById.get(node.id);
+    const scrapPercentage =
+      stored != null
+        ? Number(stored)
+        : replenishmentScrapByItemId.get(node.data.itemId) ?? 0;
+    const scrapQuantity = scrapAllowance(targetQuantity, scrapPercentage);
+    const totalWithScrap = targetQuantity + scrapQuantity;
+    const estimatedQuantity =
+      node.data.methodType === "Make to Order"
+        ? targetQuantity
+        : totalWithScrap;
+    computed.push({
+      id: node.id,
+      hasJobMaterial: storedScrapById.has(node.id),
+      jobMaterialMakeMethodId: node.data.jobMaterialMakeMethodId ?? null,
+      quantityPerParent: node.data.quantity,
+      targetQuantity,
+      scrapQuantity,
+      estimatedQuantity,
+      totalWithScrap,
+    });
+    node.children?.forEach((child) => walk(child, totalWithScrap));
+  };
+  walk(tree, parentEstimatedQuantity);
+
+  // jobMaterial scrap/estimated — one VALUES-join update for the whole tree
+  const materialRows = computed.filter((c) => c.hasJobMaterial);
+  if (materialRows.length > 0) {
+    await sql`
+      UPDATE "jobMaterial" AS m
+      SET "scrapQuantity" = v.scrap::numeric,
+          "estimatedQuantity" = v.estimated::numeric
+      FROM (VALUES ${sql.join(
+        materialRows.map(
+          (c) => sql`(${c.id}, ${c.scrapQuantity}, ${c.estimatedQuantity})`
+        )
+      )}) AS v(id, scrap, estimated)
+      WHERE m.id = v.id
+    `.execute(trx);
+  }
+
+  const makeNodes = computed.filter(
+    (c): c is ComputedNode & { jobMaterialMakeMethodId: string } =>
+      c.jobMaterialMakeMethodId !== null
+  );
+  if (makeNodes.length > 0) {
+    await sql`
+      UPDATE "jobMakeMethod" AS jmm
+      SET "quantityPerParent" = v.qpp::numeric
+      FROM (VALUES ${sql.join(
+        makeNodes.map(
+          (c) => sql`(${c.jobMaterialMakeMethodId}, ${c.quantityPerParent})`
+        )
+      )}) AS v(id, qpp)
+      WHERE jmm.id = v.id
+    `.execute(trx);
+
+    await sql`
+      UPDATE "jobOperation" AS op
+      SET "targetQuantity" = v.target::numeric,
+          "operationQuantity" = v.total::numeric
+      FROM (VALUES ${sql.join(
+        makeNodes.map(
+          (c) =>
+            sql`(${c.jobMaterialMakeMethodId}, ${c.targetQuantity}, ${c.totalWithScrap})`
+        )
+      )}) AS v(id, target, total)
+      WHERE op."jobMakeMethodId" = v.id
+        AND op."reworkId" IS NULL
+    `.execute(trx);
+
+    const trackedMakeMethods = await trx
+      .selectFrom("jobMakeMethod")
+      .select(["id", "trackedEntityId", "requiresSerialTracking"])
+      .where(
+        "id",
+        "in",
+        makeNodes.map((c) => c.jobMaterialMakeMethodId)
+      )
+      .where("trackedEntityId", "is not", null)
+      .execute();
+
+    if (trackedMakeMethods.length > 0) {
+      const totalByMakeMethodId = new Map(
+        makeNodes.map((c) => [c.jobMaterialMakeMethodId, c.totalWithScrap])
+      );
+      await sql`
+        UPDATE "trackedEntity" AS te
+        SET "quantity" = v.quantity::numeric
+        FROM (VALUES ${sql.join(
+          trackedMakeMethods.map(
+            (m) =>
+              sql`(${m.trackedEntityId}, ${
+                m.requiresSerialTracking
+                  ? 1
+                  : totalByMakeMethodId.get(m.id) ?? 1
+              })`
+          )
+        )}) AS v(id, quantity)
+        WHERE te.id = v.id
+      `.execute(trx);
     }
   }
 };
