@@ -7,7 +7,7 @@
 - [x] Task 1: Migration — expand residual `"0"` grants, then de-wildcard the 2 functions + re-sign `is_claims_admin` (applied `20260817030612`; all 6 verify checks pass; local seed had 0 residual `"0"`)
 - [x] Task 2: Regenerate DB types (crbn regenerated on migrate; `is_claims_admin: { Args: { company: string } }`)
 - [x] Task 3: Strip the 10 app-layer `"0"` reads + pass `companyId` to `is_claims_admin` + defensive strip on write (grep clean; both rpc calls pass company; typecheck auth/erp/jobs green)
-- [~] Task 4: Verify — scoped typecheck (auth/erp/jobs/react) ✓ + `@carbon/auth` tests (17 passed) ✓; **browser smoke pending** (stack up at 127.0.0.1:53218)
+- [x] Task 4: Verify — scoped typecheck (auth/erp/jobs/react) ✓; `@carbon/auth` tests 17 passed ✓; browser smoke ✓ (login + all modules render = no lockout; permission matrix renders; edited a permission → "Permissions updated" + persisted to DB as `[]`; defensive strip confirmed — no `"0"` reintroduced). Note found (OUT OF SCOPE, pre-existing): `is_claims_admin` checks the reversed key `update_users` instead of `users_update`; behavior-neutral to this change (empty array either way), passes in local dev via the non-authenticator ELSE branch.
 
 ## Dependencies
 - Task 2 needs Task 1 (types regenerate from the new `is_claims_admin(text)` signature).
