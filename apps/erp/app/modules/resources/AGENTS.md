@@ -11,7 +11,7 @@ Locations, work centers, processes, abilities (skills), partners, contractors, e
 - **Partner** — external supplier location with ability mappings for outsourced work.
 - **Contractor** — supplier contact working as contract labor, with hours-per-week and ability assignments via `contractorAbility`.
 - **Maintenance Dispatch** — reactive or scheduled work order for equipment. Statuses: Open → Assigned → In Progress → Completed / Cancelled. Tracks time events, consumed parts, and affected work centers.
-- **Maintenance Schedule** — preventive maintenance plan with frequency, priority, and required spare parts.
+- **Maintenance Schedule** — preventive maintenance plan with frequency, priority, estimated duration, and required spare parts. `takesWorkCenterOffline` marks the PM as blocking the machine; the nightly generator (`packages/jobs/.../scheduled/dispatch.ts`) copies it onto each generated dispatch and sets `plannedEndTime = plannedStartTime + estimatedDuration` (so the offline window is bounded — the validator requires a duration when offline is on).
 - **Failure Mode** — categorized failure type used by maintenance dispatches and quality NCRs.
 - **Training** — training programs with assignments, quiz questions, and frequency-based recertification. Completion tracked via `trainingCompletion`.
 
@@ -55,7 +55,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=resources
 | `maintenanceDispatch` | Equipment work orders: status, priority, severity, OEE impact; `takesWorkCenterOffline` subtracts the work center's scheduling hours while the dispatch is open |
 | `maintenanceDispatchEvent` / `maintenanceDispatchComment` / `maintenanceDispatchItem` | Dispatch time, comments, and consumed parts |
 | `maintenanceDispatchWorkCenter` / `maintenanceDispatchItemTrackedEntity` | Affected work centers and tracked items |
-| `maintenanceSchedule` / `maintenanceScheduleItem` | Preventive maintenance plans with spare parts |
+| `maintenanceSchedule` / `maintenanceScheduleItem` | Preventive maintenance plans with spare parts; `takesWorkCenterOffline` + `estimatedDuration` flow into generated dispatches (offline flag + `plannedEndTime = plannedStartTime + estimatedDuration`) |
 | `maintenanceFailureMode` | Failure categories shared with quality module |
 | `training` / `trainingAssignment` / `trainingQuestion` / `trainingCompletion` | Training programs with quizzes and completion tracking |
 | `suggestion` / `suggestions` (view) | Employee suggestions |
