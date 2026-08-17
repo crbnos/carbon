@@ -1,40 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { getPurchaseOrderDisplayId } from "./purchase-order";
 
+// The suffix rules themselves are covered once in revision.test.ts — this only
+// pins that the PO helper reads the right two fields and tolerates a missing
+// order (call sites pass `routeData?.purchaseOrder`).
 describe("getPurchaseOrderDisplayId", () => {
-  it("returns the bare id for the original order (revision 0)", () => {
+  it("reads purchaseOrderId and revisionId off the order", () => {
     expect(
       getPurchaseOrderDisplayId({ purchaseOrderId: "PO-001042", revisionId: 0 })
     ).toBe("PO-001042");
+    expect(
+      getPurchaseOrderDisplayId({ purchaseOrderId: "PO-001042", revisionId: 2 })
+    ).toBe("PO-001042-2");
   });
 
-  it("treats a null revision as the original", () => {
-    expect(
-      getPurchaseOrderDisplayId({
-        purchaseOrderId: "PO-001042",
-        revisionId: null
-      })
-    ).toBe("PO-001042");
-  });
-
-  it("suffixes the revision for an amended order", () => {
-    expect(
-      getPurchaseOrderDisplayId({ purchaseOrderId: "PO-001042", revisionId: 1 })
-    ).toBe("PO-001042-1");
-    expect(
-      getPurchaseOrderDisplayId({
-        purchaseOrderId: "PO-001042",
-        revisionId: 12
-      })
-    ).toBe("PO-001042-12");
-  });
-
-  it("returns an empty string when the id is missing, even with a revision", () => {
-    expect(
-      getPurchaseOrderDisplayId({ purchaseOrderId: null, revisionId: 0 })
-    ).toBe("");
-    expect(
-      getPurchaseOrderDisplayId({ purchaseOrderId: null, revisionId: 2 })
-    ).toBe("");
+  it("returns an empty string for a missing order", () => {
+    expect(getPurchaseOrderDisplayId(undefined)).toBe("");
+    expect(getPurchaseOrderDisplayId(null)).toBe("");
   });
 });

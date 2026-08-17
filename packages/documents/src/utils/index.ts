@@ -4,3 +4,4 @@
 // `./pdf` pulls in.
 export { getPurchaseOrderDisplayId } from "./purchase-order";
 export { getQuoteDisplayId } from "./quote";
+export { withRevisionSuffix } from "./revision";

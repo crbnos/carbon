@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { withRevisionSuffix } from "./revision";
 
 export function getLineDescription(
   line: Database["public"]["Views"]["purchaseOrderLines"]["Row"]
@@ -67,8 +68,8 @@ export function getPurchaseOrderDisplayId(
     revisionId?: number | null;
   } | null
 ) {
-  const id = purchaseOrder?.purchaseOrderId;
-  if (!id) return "";
-  const revision = purchaseOrder?.revisionId ?? 0;
-  return revision > 0 ? `${id}-${revision}` : id;
+  return withRevisionSuffix(
+    purchaseOrder?.purchaseOrderId,
+    purchaseOrder?.revisionId
+  );
 }

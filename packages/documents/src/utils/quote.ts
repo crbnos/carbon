@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { withRevisionSuffix } from "./revision";
 
 export function getLineDescription(
   line: Database["public"]["Views"]["quoteLines"]["Row"]
@@ -27,8 +28,5 @@ export function getQuoteDisplayId(
     revisionId?: number | null;
   } | null
 ) {
-  const id = quote?.quoteId;
-  if (!id) return "";
-  const revision = quote?.revisionId ?? 0;
-  return revision > 0 ? `${id}-${revision}` : id;
+  return withRevisionSuffix(quote?.quoteId, quote?.revisionId);
 }
