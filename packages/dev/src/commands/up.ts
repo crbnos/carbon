@@ -2,6 +2,7 @@ import { box, intro, log, outro, progress, tasks } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
+import type { AppSelection } from "../app-selection.js";
 import { APP_CHOICES, type AppId } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
@@ -73,9 +74,11 @@ import { down } from "./down.js";
 type UpOpts = {
   migrate?: boolean;
   regen?: boolean;
-  apps?: boolean;
-  /** When true, launch all apps without the interactive picker. */
-  all?: boolean;
+  /**
+   * Which apps to spawn, already resolved from the flags (`--app`, `--all`,
+   * `--no-apps`) by `resolveAppSelection`. Omitted means the picker.
+   */
+  selection?: AppSelection;
   /** When true, always `docker compose pull` even if images exist locally. */
   pull?: boolean;
   /** When true, show a picker to borrow another worktree's running containers. */
@@ -122,10 +125,7 @@ export async function up(opts: UpOpts = {}) {
   const shouldBorrow = opts.borrow === true;
   const minimal = opts.minimal ?? false;
   const thumbnails = opts.thumbnails === true;
-  // Services-only mode: boot compose stack + portless aliases (api/studio/
-  // mail/inngest URLs still useful), skip spawnApps + auto-`down` on Ctrl+C.
-  // Triggered by --no-apps OR by deselecting everything in the picker.
-  const appsRequested = opts.apps ?? true;
+  const selection: AppSelection = opts.selection ?? { kind: "prompt" };
 
   // Load .env early so CARBON_PORTLESS (and other flags) can be set there
   // rather than requiring a shell export. .env.local takes precedence.
@@ -176,24 +176,7 @@ export async function up(opts: UpOpts = {}) {
     );
   }
 
-  const allApps = opts.all === true;
-  const selectedApps = appsRequested
-    ? allApps
-      ? // --all includes the assembler, but only when its one-time native OCCT
-        // build exists — otherwise skip it (with a note) rather than hard-failing
-        // the whole --all on a machine that hasn't built it. An explicit pick of
-        // the assembler still fails fast below.
-        APP_CHOICES.map((c) => c.value).filter((v) => {
-          if (v !== "assembler") return true;
-          if (assemblerDepsBuilt()) return true;
-          log.warn(
-            "assembler skipped from --all: its OCCT build isn't present " +
-              "(apps/assembler/scripts/build-occt.sh)"
-          );
-          return false;
-        })
-      : await pickApps()
-    : [];
+  const selectedApps = await resolveApps(selection);
   // Fail before booting anything heavy (docker, migrations) if the assembler is
   // selected without its one-time OCCT build.
   if (selectedApps.includes("assembler")) assertAssemblerDepsBuilt();
@@ -300,8 +283,11 @@ export async function up(opts: UpOpts = {}) {
   }
 
   if (selectedApps.length === 0) {
-    // Services-only: the stack stays up after crbn exits, so let the stripe
-    // listener outlive us too (apps mode kills it on teardown instead).
+    // Services-only mode: compose stack + portless aliases (api/studio/mail/
+    // inngest URLs still useful), no dev servers and no auto-`down` on Ctrl+C.
+    // Triggered by --no-apps OR by deselecting everything in the picker.
+    // The stack stays up after crbn exits, so let the stripe listener outlive
+    // us too (apps mode kills it on teardown instead).
     stripeChild?.unref();
     outro("services up (run `crbn down` to stop)");
     return;
@@ -326,6 +312,41 @@ function killStripe(child?: ExecaChildProcess) {
       child.kill("SIGTERM");
       // biome-ignore lint/suspicious/noEmptyBlockStatements: best-effort kill
     } catch {}
+  }
+}
+
+// ---------------------------------------------------------------------------
+// App selection
+// ---------------------------------------------------------------------------
+
+/**
+ * Turn a resolved `AppSelection` into the app list to spawn. The only branch
+ * that can prompt is `prompt` — `--app`, `--all` and `--no-apps` all boot
+ * unattended.
+ */
+async function resolveApps(selection: AppSelection): Promise<AppId[]> {
+  switch (selection.kind) {
+    case "none":
+      return [];
+    // --all includes the assembler, but only when its one-time native OCCT
+    // build exists — otherwise skip it (with a note) rather than hard-failing
+    // the whole --all on a machine that hasn't built it. An explicit pick of
+    // the assembler (--app assembler, or the picker) still fails fast below.
+    case "all":
+      return APP_CHOICES.map((c) => c.value).filter((v) => {
+        if (v !== "assembler") return true;
+        if (assemblerDepsBuilt()) return true;
+        log.warn(
+          "assembler skipped from --all: its OCCT build isn't present " +
+            "(apps/assembler/scripts/build-occt.sh)"
+        );
+        return false;
+      });
+    case "explicit":
+      log.info(`apps: ${selection.apps.join(", ")} (--app)`);
+      return selection.apps;
+    case "prompt":
+      return await pickApps();
   }
 }
 
