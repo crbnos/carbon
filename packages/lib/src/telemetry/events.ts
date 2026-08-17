@@ -22,7 +22,7 @@
  * order values are the sensitive part. An id is resolvable against the
  * customer's own database when someone genuinely needs the detail.
  *
- * @see ./capture.server.ts for how these reach PostHog.
+ * @see ./capture.ts for how these reach PostHog.
  */
 
 /** The Carbon module a piece of work belongs to. Used to group adoption by area. */
