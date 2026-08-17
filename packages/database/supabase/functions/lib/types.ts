@@ -27071,6 +27071,7 @@ export type Database = {
           saturday: boolean
           skipHolidays: boolean
           sunday: boolean
+          takesWorkCenterOffline: boolean
           thursday: boolean
           tuesday: boolean
           updatedAt: string | null
@@ -27098,6 +27099,7 @@ export type Database = {
           saturday?: boolean
           skipHolidays?: boolean
           sunday?: boolean
+          takesWorkCenterOffline?: boolean
           thursday?: boolean
           tuesday?: boolean
           updatedAt?: string | null
@@ -27125,6 +27127,7 @@ export type Database = {
           saturday?: boolean
           skipHolidays?: boolean
           sunday?: boolean
+          takesWorkCenterOffline?: boolean
           thursday?: boolean
           tuesday?: boolean
           updatedAt?: string | null
@@ -66589,9 +66592,11 @@ export type Database = {
           priority:
             | Database["public"]["Enums"]["maintenanceDispatchPriority"]
             | null
+          procedureId: string | null
           saturday: boolean | null
           skipHolidays: boolean | null
           sunday: boolean | null
+          takesWorkCenterOffline: boolean | null
           thursday: boolean | null
           tuesday: boolean | null
           updatedAt: string | null
@@ -66665,6 +66670,27 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "maintenanceSchedule_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenanceSchedule_procedureId_fkey"
+            columns: ["procedureId"]
+            isOneToOne: false
+            referencedRelation: "procedure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenanceSchedule_procedureId_fkey"
+            columns: ["procedureId"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "maintenanceSchedule_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -66725,13 +66751,6 @@ export type Database = {
             columns: ["workCenterId"]
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "location"
             referencedColumns: ["id"]
           },
         ]
@@ -69387,14 +69406,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -72813,6 +72832,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipmentCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -72821,13 +72847,6 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -77821,6 +77840,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["maintenanceDispatchPriority"]
           saturday: boolean
           sunday: boolean
+          takesWorkCenterOffline: boolean
           thursday: boolean
           tuesday: boolean
           updatedAt: string
