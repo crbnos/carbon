@@ -489,7 +489,11 @@ serve(async (req: Request) => {
         // a large BOM that exceeds the caller's invoke timeout. Prefetch each
         // lookup table once for the whole tree instead.
         const treeNodes: MethodTreeItem[] = [];
+        const seenTreeNodes = new Set<MethodTreeItem>();
         const collectTreeNodes = (n: MethodTreeItem) => {
+          // Corrupt/cyclic tree data must not loop the prefetch walk
+          if (seenTreeNodes.has(n)) return;
+          seenTreeNodes.add(n);
           treeNodes.push(n);
           n.children.forEach(collectTreeNodes);
         };

@@ -5,9 +5,13 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { sql, Transaction } from "kysely";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
+import {
+  computeJobQuantities,
+  type ComputedJobQuantityNode,
+  flattenJobQuantityTree,
+} from "../lib/job-quantities-engine.ts";
 import { getJobMethodTree, JobMethodTreeItem } from "../lib/methods.ts";
 import { requirePermissions } from "../lib/supabase.ts";
-import { scrapAllowance } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -188,21 +192,12 @@ const updateJobQuantities = async (
   parentEstimatedQuantity: number = 1
 ) => {
   // The tree is already fully loaded, so compute every node's quantities in
-  // memory and write them set-based. The previous per-node recursion issued
-  // 2–4 statements per node on one transaction connection — O(tree)
-  // sequential roundtrips, which on a large BOM exceeded the caller's
-  // invoke timeout.
-  const nodes: JobMethodTreeItem[] = [];
-  const collectNodes = (n: JobMethodTreeItem) => {
-    nodes.push(n);
-    n.children?.forEach(collectNodes);
-  };
-  collectNodes(tree);
+  // memory (lib/job-quantities-engine.ts, mirroring the mrp-engine pattern)
+  // and write them set-based. The previous per-node recursion issued 2–4
+  // statements per node on one transaction connection — O(tree) sequential
+  // roundtrips, which on a large BOM exceeded the caller's invoke timeout.
+  const { nodes, cycleNodeIds: flattenCycles } = flattenJobQuantityTree(tree);
 
-  // Scrap percentage source: stored on jobMaterial at job creation time.
-  // A stored 0 is intentional (locked at job creation) — only a NULL falls
-  // back to the item's current replenishment scrap percentage. The root node
-  // has no jobMaterial row and always uses the fallback.
   const jobMaterials = await trx
     .selectFrom("jobMaterial")
     .select(["id", "itemScrapPercentage"])
@@ -238,50 +233,20 @@ const updateJobQuantities = async (
     }
   }
 
-  // Same math as the per-node version, walked top-down:
-  // - For root: targetQuantity = parentEstimatedQuantity
-  // - For children: targetQuantity = parent's totalWithScrap * quantity per parent
-  // - scrapQuantity = whole-unit scrap allowance; fractional targets flow through
-  // - estimatedQuantity: For Make = good quantity (without scrap), For Buy/Pick = total
-  type ComputedNode = {
-    id: string;
-    hasJobMaterial: boolean;
-    jobMaterialMakeMethodId: string | null;
-    quantityPerParent: number;
-    targetQuantity: number;
-    scrapQuantity: number;
-    estimatedQuantity: number;
-    totalWithScrap: number;
-  };
-  const computed: ComputedNode[] = [];
-  const walk = (node: JobMethodTreeItem, parentQuantity: number) => {
-    const targetQuantity = node.data.isRoot
-      ? parentQuantity
-      : node.data.quantity * parentQuantity;
-    const stored = storedScrapById.get(node.id);
-    const scrapPercentage =
-      stored != null
-        ? Number(stored)
-        : replenishmentScrapByItemId.get(node.data.itemId) ?? 0;
-    const scrapQuantity = scrapAllowance(targetQuantity, scrapPercentage);
-    const totalWithScrap = targetQuantity + scrapQuantity;
-    const estimatedQuantity =
-      node.data.methodType === "Make to Order"
-        ? targetQuantity
-        : totalWithScrap;
-    computed.push({
-      id: node.id,
-      hasJobMaterial: storedScrapById.has(node.id),
-      jobMaterialMakeMethodId: node.data.jobMaterialMakeMethodId ?? null,
-      quantityPerParent: node.data.quantity,
-      targetQuantity,
-      scrapQuantity,
-      estimatedQuantity,
-      totalWithScrap,
-    });
-    node.children?.forEach((child) => walk(child, totalWithScrap));
-  };
-  walk(tree, parentEstimatedQuantity);
+  const { computed, cycleNodeIds } = computeJobQuantities({
+    tree,
+    parentEstimatedQuantity,
+    storedScrapById,
+    replenishmentScrapByItemId,
+  });
+  const allCycleNodeIds = new Set([...flattenCycles, ...cycleNodeIds]);
+  if (allCycleNodeIds.size > 0) {
+    // Corrupt tree data — the nodes were skipped rather than looped on.
+    console.error(
+      "recalculate: cyclic job method tree; skipped node ids:",
+      [...allCycleNodeIds]
+    );
+  }
 
   // jobMaterial scrap/estimated — one VALUES-join update for the whole tree
   const materialRows = computed.filter((c) => c.hasJobMaterial);
@@ -300,7 +265,7 @@ const updateJobQuantities = async (
   }
 
   const makeNodes = computed.filter(
-    (c): c is ComputedNode & { jobMaterialMakeMethodId: string } =>
+    (c): c is ComputedJobQuantityNode & { jobMaterialMakeMethodId: string } =>
       c.jobMaterialMakeMethodId !== null
   );
   if (makeNodes.length > 0) {
