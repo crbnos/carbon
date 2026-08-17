@@ -128,7 +128,7 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 - **`stockTransfer*`** — intra-location moves (separate from warehouse transfers).
 - **`pickMethod`** — default storage unit for picking an item at a location (`defaultStorageUnitId`).
 - **`itemPlanning`** / **`itemReplenishment`** — reorder/planning params and replenishment strategy.
-- **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260815143022`/`20260815143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
+- **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260817143022`/`20260817143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
 
 `get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL)` — the central
 read. Newest definition is `20260713235406_item-ledger-snapshot.sql` (snapshot + delta via
