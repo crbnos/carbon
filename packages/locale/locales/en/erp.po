@@ -2613,6 +2613,9 @@ msgstr "Blocked"
 msgid "Blocked by {0}"
 msgstr "Blocked by {0}"
 
+msgid "Blocks Machine"
+msgstr "Blocks Machine"
+
 msgid "Blocks save until resolved"
 msgstr "Blocks save until resolved"
 
@@ -12705,6 +12708,9 @@ msgstr "Requires Repair"
 msgid "Reserve floor"
 msgstr "Reserve floor"
 
+msgid "Reserve the work center's capacity for this PM. Requires an estimated duration."
+msgstr "Reserve the work center's capacity for this PM. Requires an estimated duration."
+
 msgid "Reserved"
 msgstr "Reserved"
 
@@ -14809,6 +14815,9 @@ msgstr "taken"
 
 msgid "Takes work center offline"
 msgstr "Takes work center offline"
+
+msgid "Takes Work Center Offline"
+msgstr "Takes Work Center Offline"
 
 msgid "Talk to Sales"
 msgstr "Talk to Sales"

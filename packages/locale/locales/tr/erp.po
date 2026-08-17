@@ -2613,6 +2613,9 @@ msgstr "Engellendi"
 msgid "Blocked by {0}"
 msgstr "Bloklandı: {0}"
 
+msgid "Blocks Machine"
+msgstr ""
+
 msgid "Blocks save until resolved"
 msgstr "Çözülene kadar kaydetmeyi engeller"
 
@@ -12705,6 +12708,9 @@ msgstr "Onarım Gerektirir"
 msgid "Reserve floor"
 msgstr "Rezerv tabanı"
 
+msgid "Reserve the work center's capacity for this PM. Requires an estimated duration."
+msgstr ""
+
 msgid "Reserved"
 msgstr "Ayrılmış"
 
@@ -14809,6 +14815,9 @@ msgstr "alındı"
 
 msgid "Takes work center offline"
 msgstr "İş merkezini çevrimdışı alır"
+
+msgid "Takes Work Center Offline"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "Satın Alma Ekibi ile Görüşün"

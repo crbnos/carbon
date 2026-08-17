@@ -2613,6 +2613,9 @@ msgstr "차단됨"
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
 
+msgid "Blocks Machine"
+msgstr ""
+
 msgid "Blocks save until resolved"
 msgstr "해결될 때까지 저장을 차단합니다"
 
@@ -12705,6 +12708,9 @@ msgstr "수리 필요"
 msgid "Reserve floor"
 msgstr "예약 최저 수량"
 
+msgid "Reserve the work center's capacity for this PM. Requires an estimated duration."
+msgstr ""
+
 msgid "Reserved"
 msgstr "예약됨"
 
@@ -14809,6 +14815,9 @@ msgstr "사용됨"
 
 msgid "Takes work center offline"
 msgstr "작업 센터를 오프라인으로 설정"
+
+msgid "Takes Work Center Offline"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "영업팀에 문의"

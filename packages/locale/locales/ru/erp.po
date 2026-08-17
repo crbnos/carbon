@@ -2613,6 +2613,9 @@ msgstr "Заблокировано"
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
 
+msgid "Blocks Machine"
+msgstr ""
+
 msgid "Blocks save until resolved"
 msgstr "Блокирует сохранение до разрешения"
 
@@ -12705,6 +12708,9 @@ msgstr "Требует ремонта"
 msgid "Reserve floor"
 msgstr "Минимальный уровень запаса"
 
+msgid "Reserve the work center's capacity for this PM. Requires an estimated duration."
+msgstr ""
+
 msgid "Reserved"
 msgstr "Зарезервировано"
 
@@ -14809,6 +14815,9 @@ msgstr "взято"
 
 msgid "Takes work center offline"
 msgstr "Отключает рабочий центр"
+
+msgid "Takes Work Center Offline"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "Поговорить с отделом продаж"

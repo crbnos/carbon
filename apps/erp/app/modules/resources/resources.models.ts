@@ -229,30 +229,50 @@ export const maintenanceScheduleItemValidator = z.object({
     .min(1, { message: "Unit of measure is required" })
 });
 
-export const maintenanceScheduleValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  description: zfd.text(z.string().optional()),
-  workCenterId: z.string().min(1, { message: "Work center is required" }),
-  locationId: z.string().min(1, { message: "Location is required" }),
-  frequency: z.enum(maintenanceFrequency),
-  priority: z.enum(maintenanceDispatchPriority),
-  estimatedDuration: zfd.numeric(z.number().optional()),
-  nextDueAt: zfd.text(z.string().optional()),
-  active: zfd.checkbox(),
-  // Day-of-week fields for daily frequency
-  monday: zfd.checkbox(),
-  tuesday: zfd.checkbox(),
-  wednesday: zfd.checkbox(),
-  thursday: zfd.checkbox(),
-  friday: zfd.checkbox(),
-  saturday: zfd.checkbox(),
-  sunday: zfd.checkbox(),
-  // Skip holidays option
-  skipHolidays: zfd.checkbox(),
-  // Procedure
-  procedureId: zfd.text(z.string().optional())
-});
+export const maintenanceScheduleValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    description: zfd.text(z.string().optional()),
+    workCenterId: z.string().min(1, { message: "Work center is required" }),
+    locationId: z.string().min(1, { message: "Location is required" }),
+    frequency: z.enum(maintenanceFrequency),
+    priority: z.enum(maintenanceDispatchPriority),
+    estimatedDuration: zfd.numeric(z.number().optional()),
+    takesWorkCenterOffline: zfd.checkbox(),
+    nextDueAt: zfd.text(z.string().optional()),
+    active: zfd.checkbox(),
+    // Day-of-week fields for daily frequency
+    monday: zfd.checkbox(),
+    tuesday: zfd.checkbox(),
+    wednesday: zfd.checkbox(),
+    thursday: zfd.checkbox(),
+    friday: zfd.checkbox(),
+    saturday: zfd.checkbox(),
+    sunday: zfd.checkbox(),
+    // Skip holidays option
+    skipHolidays: zfd.checkbox(),
+    // Procedure
+    procedureId: zfd.text(z.string().optional())
+  })
+  .superRefine((data, ctx) => {
+    // An offline PM subtracts its plannedStartTime → plannedEndTime window from the
+    // work center's capacity; plannedEndTime is derived from estimatedDuration, so
+    // without a duration the block would be open-ended. Require it when offline.
+    if (
+      data.takesWorkCenterOffline &&
+      (data.estimatedDuration === undefined ||
+        data.estimatedDuration === null ||
+        data.estimatedDuration <= 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["estimatedDuration"],
+        message:
+          "Estimated duration is required when the PM takes the work center offline"
+      });
+    }
+  });
 
 export const maintenanceSeverity = [
   "Preventive",

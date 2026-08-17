@@ -2613,6 +2613,9 @@ msgstr "अवरुद्ध"
 msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
 
+msgid "Blocks Machine"
+msgstr ""
+
 msgid "Blocks save until resolved"
 msgstr "सहेजने को तब तक ब्लॉक करता है जब तक समाधान न हो जाए"
 
@@ -12705,6 +12708,9 @@ msgstr "मरम्मत की आवश्यकता है"
 msgid "Reserve floor"
 msgstr "रिज़र्व फ़्लोर"
 
+msgid "Reserve the work center's capacity for this PM. Requires an estimated duration."
+msgstr ""
+
 msgid "Reserved"
 msgstr "आरक्षित"
 
@@ -14809,6 +14815,9 @@ msgstr "लिया गया"
 
 msgid "Takes work center offline"
 msgstr "कार्य केंद्र को ऑफलाइन ले जाता है"
+
+msgid "Takes Work Center Offline"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "बिक्रय टीम से बात करें"

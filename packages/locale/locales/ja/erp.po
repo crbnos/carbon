@@ -2613,6 +2613,9 @@ msgstr "ブロック中"
 msgid "Blocked by {0}"
 msgstr "{0}によってブロックされています"
 
+msgid "Blocks Machine"
+msgstr ""
+
 msgid "Blocks save until resolved"
 msgstr "解決されるまで保存をブロックします"
 
@@ -12705,6 +12708,9 @@ msgstr "修理が必要"
 msgid "Reserve floor"
 msgstr "予備床"
 
+msgid "Reserve the work center's capacity for this PM. Requires an estimated duration."
+msgstr ""
+
 msgid "Reserved"
 msgstr "予約済み"
 
@@ -14809,6 +14815,9 @@ msgstr "実施"
 
 msgid "Takes work center offline"
 msgstr "ワークセンターをオフラインにする"
+
+msgid "Takes Work Center Offline"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "営業に相談"

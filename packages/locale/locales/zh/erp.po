@@ -2613,6 +2613,9 @@ msgstr "已阻止"
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻止"
 
+msgid "Blocks Machine"
+msgstr ""
+
 msgid "Blocks save until resolved"
 msgstr "阻止保存直到解决"
 
@@ -12705,6 +12708,9 @@ msgstr "需要维修"
 msgid "Reserve floor"
 msgstr "储备下限"
 
+msgid "Reserve the work center's capacity for this PM. Requires an estimated duration."
+msgstr ""
+
 msgid "Reserved"
 msgstr "已预留"
 
@@ -14809,6 +14815,9 @@ msgstr "已采取"
 
 msgid "Takes work center offline"
 msgstr "使工作中心离线"
+
+msgid "Takes Work Center Offline"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "与销售团队联系"
