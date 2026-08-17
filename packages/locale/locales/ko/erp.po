@@ -437,6 +437,9 @@ msgstr "현재 리비전을 복사하여 새 리비전이 생성됩니다"
 msgid "A new size will be created using a copy of the current size"
 msgstr "현재 사이즈를 복사하여 새 사이즈가 생성됩니다"
 
+msgid "A new Stripe customer will be created"
+msgstr ""
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "인보이스를 이유 계정에 대해 정산하는 비현금 문서로서, 신용은 지불액을 낮추고 차변은 올립니다."
 
@@ -2652,6 +2655,9 @@ msgstr "전기할 수 없습니다 — 출하에 유효기한이 만료된 추�
 msgid "Cannot send RFQ"
 msgstr "RFQ를 보낼 수 없습니다"
 
+msgid "Cannot send through Stripe"
+msgstr ""
+
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "업로드할 수 없습니다 — 공급업체 상호작용이 아직 생성되지 않았습니다"
 
@@ -2834,6 +2840,9 @@ msgstr "기간 종료 시점의 음수 수량 보유 항목에 대해 항목 원
 
 msgid "Check your email"
 msgstr "이메일을 확인하세요"
+
+msgid "Checking Stripe for this customer…"
+msgstr ""
 
 msgid "Checkpoint ·"
 msgstr "체크포인트 ·"
@@ -3710,6 +3719,9 @@ msgstr "장비 수리 및 유지보수 활동을 추적할 새 유지보수 작�
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "판매주문을 이행할 새 생산 작업을 생성합니다"
+
+msgid "Create a new Stripe customer instead"
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr "구매 주문 생성"
@@ -5956,6 +5968,9 @@ msgstr "면세 증명서"
 msgid "Exemption Reason"
 msgstr "면세 사유"
 
+msgid "Existing Stripe customer"
+msgstr ""
+
 msgid "Expand"
 msgstr "펼치기"
 
@@ -8201,6 +8216,9 @@ msgstr "Jira 이슈 연결"
 
 msgid "Link Linear Issue"
 msgstr "Linear 이슈 연결"
+
+msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
+msgstr ""
 
 msgid "Link to sales order line"
 msgstr "판매주문 라인에 연결"
@@ -12029,6 +12047,9 @@ msgstr "모든 분개 및 원가 원장 항목 취소"
 msgid "Reverse any item ledger entries from this invoice"
 msgstr "이 인보이스의 모든 품목 원장 항목 취소"
 
+msgid "Reverse charge"
+msgstr ""
+
 msgid "Reverse Charge Sales Tax"
 msgstr "매입자 납부 판매세(Reverse Charge)"
 
@@ -13585,6 +13606,15 @@ msgstr "이 품목에 고정된 일수를 저장합니다. 유효기한 시작�
 msgid "Straight line"
 msgstr "정액법"
 
+msgid "Stripe already has a customer with this email"
+msgstr ""
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr ""
+
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "칸반 테이블에 표시할 칸반 출력 스타일"
 
@@ -13975,6 +14005,9 @@ msgstr "세무 감가상각"
 
 msgid "Tax Depreciation Method"
 msgstr "세무 감가상각 방법"
+
+msgid "Tax exempt"
+msgstr ""
 
 msgid "Tax Exempt"
 msgstr "세금 면제"
@@ -14821,6 +14854,9 @@ msgstr "이 변경 사항은 닫혀 있으므로 변경 사항이 읽기 전용�
 msgid "This completes the Discovery step."
 msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."
 
+msgid "This contact has no email address"
+msgstr ""
+
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "이 거래처에는 미결제 항목이 없습니다 — 결제는 선수금으로 기록됩니다."
 
@@ -14841,6 +14877,9 @@ msgstr "이 정보는 모든 사용자에게 표시되므로 공유하는 내용
 
 msgid "this inspection plan"
 msgstr "이 검사 계획"
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "이것은 구매 항목입니다 — BoM/BoP가 없습니다. 해당 속성과 문서만 변경할 수 있습니다."

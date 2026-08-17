@@ -437,6 +437,9 @@ msgstr "एक नया संशोधन वर्तमान संशो�
 msgid "A new size will be created using a copy of the current size"
 msgstr "एक नया आकार वर्तमान आकार की प्रतिलिपि का उपयोग करके बनाया जाएगा"
 
+msgid "A new Stripe customer will be created"
+msgstr ""
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "एक गैर-नकद दस्तावेज जो एक कारण खाते के विरुद्ध एक चालान को निपटाता है: एक क्रेडिट बकाया राशि को कम करता है, एक डेबिट इसे बढ़ाता है।"
 
@@ -2652,6 +2655,9 @@ msgstr "पोस्ट नहीं कर सकते — शिपमें�
 msgid "Cannot send RFQ"
 msgstr "RFQ नहीं भेज सकते"
 
+msgid "Cannot send through Stripe"
+msgstr ""
+
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "अपलोड नहीं कर सकते — आपूर्तिकर्ता इंटरैक्शन अभी तक बनाया नहीं गया"
 
@@ -2834,6 +2840,9 @@ msgstr "अवधि के अंत तक नकारात्मक मौ�
 
 msgid "Check your email"
 msgstr "अपना ईमेल जांचें"
+
+msgid "Checking Stripe for this customer…"
+msgstr ""
 
 msgid "Checkpoint ·"
 msgstr "चेकपॉइंट ·"
@@ -3710,6 +3719,9 @@ msgstr "उपकरण मरम्मत और रखरखाव गति�
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "बिक्रय आदेश को पूरा करने के लिए एक नई उत्पादन नौकरी बनाएं"
+
+msgid "Create a new Stripe customer instead"
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr "एक खरीद आदेश बनाएँ"
@@ -5956,6 +5968,9 @@ msgstr "छूट प्रमाणपत्र"
 msgid "Exemption Reason"
 msgstr "छूट कारण"
 
+msgid "Existing Stripe customer"
+msgstr ""
+
 msgid "Expand"
 msgstr "विस्तार करें"
 
@@ -8201,6 +8216,9 @@ msgstr "Jira समस्या को लिंक करें"
 
 msgid "Link Linear Issue"
 msgstr "Linear समस्या को लिंक करें"
+
+msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
+msgstr ""
 
 msgid "Link to sales order line"
 msgstr "बिक्रय आदेश पंक्ति से लिंक करें"
@@ -12029,6 +12047,9 @@ msgstr "सभी जर्नल और लागत लेजर प्रव�
 msgid "Reverse any item ledger entries from this invoice"
 msgstr "इस चालान से किसी भी आइटम लेजर प्रविष्टियों को उलट दें"
 
+msgid "Reverse charge"
+msgstr ""
+
 msgid "Reverse Charge Sales Tax"
 msgstr "रिवर्स चार्ज बिक्रय कर"
 
@@ -13585,6 +13606,15 @@ msgstr "इस आइटम पर दिनों की एक निश्च
 msgid "Straight line"
 msgstr "सीधी रेखा"
 
+msgid "Stripe already has a customer with this email"
+msgstr ""
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr ""
+
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban तालिका में दिखाने के लिए kanban आउटपुट की शैली"
 
@@ -13975,6 +14005,9 @@ msgstr "कर मूल्यह्रास"
 
 msgid "Tax Depreciation Method"
 msgstr "कर मूल्यह्रास पद्धति"
+
+msgid "Tax exempt"
+msgstr ""
 
 msgid "Tax Exempt"
 msgstr "कर छूट"
@@ -14821,6 +14854,9 @@ msgstr "यह परिवर्तन सूचना बंद है, इस
 msgid "This completes the Discovery step."
 msgstr "यह Discovery चरण को पूरा करता है।"
 
+msgid "This contact has no email address"
+msgstr ""
+
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "यह प्रतिपक्ष के पास कुछ भी बकाया नहीं है — भुगतान खाते पर दर्ज किया जाएगा।"
 
@@ -14841,6 +14877,9 @@ msgstr "यह जानकारी सभी उपयोगकर्ताओ
 
 msgid "this inspection plan"
 msgstr "इस निरीक्षण योजना"
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "यह एक खरीदा गया आइटम है — इसके पास कोई BoM/BoP नहीं है; केवल इसकी विशेषताओं और दस्तावेजों को बदला जा सकता है।"

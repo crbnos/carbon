@@ -256,6 +256,17 @@ export const path = {
             itemId ? `&itemId=${itemId}` : ""
           }`
         ),
+      stripeConnectCustomer: (
+        invoiceId: string,
+        customerContactId: string,
+        email?: string
+      ) => {
+        const params = new URLSearchParams({ contact: customerContactId });
+        if (email) params.set("email", email);
+        return generatePath(
+          `${api}/stripe-connect/customer/${invoiceId}?${params.toString()}`
+        );
+      },
       supplierContacts: (id: string) =>
         generatePath(`${api}/purchasing/supplier-contacts/${id}`),
       supplierLocations: (id: string) =>

@@ -437,6 +437,9 @@ msgstr "将使用当前版本的副本创建新版本"
 msgid "A new size will be created using a copy of the current size"
 msgstr "将使用当前尺寸的副本创建新尺寸"
 
+msgid "A new Stripe customer will be created"
+msgstr ""
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "一份非现金单据，根据原因账户结算发票：贷方降低应付金额，借方提高它。"
 
@@ -2652,6 +2655,9 @@ msgstr "无法发布 — 货运单包含已过期的追踪实体。"
 msgid "Cannot send RFQ"
 msgstr "无法发送询价单"
 
+msgid "Cannot send through Stripe"
+msgstr ""
+
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "无法上传 — 供应商互动尚未创建"
 
@@ -2834,6 +2840,9 @@ msgstr "检查物料分类账中期末库存数量为负的任何物料——通
 
 msgid "Check your email"
 msgstr "检查您的电子邮件"
+
+msgid "Checking Stripe for this customer…"
+msgstr ""
 
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
@@ -3710,6 +3719,9 @@ msgstr "创建新的维护派工单以跟踪设备维修和维护活动"
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "创建新的生产工作以完成销售订单"
+
+msgid "Create a new Stripe customer instead"
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr "创建采购订单"
@@ -5956,6 +5968,9 @@ msgstr "豁免证书"
 msgid "Exemption Reason"
 msgstr "豁免原因"
 
+msgid "Existing Stripe customer"
+msgstr ""
+
 msgid "Expand"
 msgstr "展开"
 
@@ -8201,6 +8216,9 @@ msgstr "关联 Jira 问题"
 
 msgid "Link Linear Issue"
 msgstr "关联 Linear 问题"
+
+msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
+msgstr ""
 
 msgid "Link to sales order line"
 msgstr "关联销售订单行"
@@ -12029,6 +12047,9 @@ msgstr "反转所有日记账和成本分类账条目"
 msgid "Reverse any item ledger entries from this invoice"
 msgstr "反转此发票中的任何项目分类账条目"
 
+msgid "Reverse charge"
+msgstr ""
+
 msgid "Reverse Charge Sales Tax"
 msgstr "反向收费销售税"
 
@@ -13585,6 +13606,15 @@ msgstr "在此项目上存储固定天数。每个批次或序列号在收到时
 msgid "Straight line"
 msgstr "直线法"
 
+msgid "Stripe already has a customer with this email"
+msgstr ""
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr ""
+
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
 
@@ -13975,6 +14005,9 @@ msgstr "税务折旧"
 
 msgid "Tax Depreciation Method"
 msgstr "税务折旧方法"
+
+msgid "Tax exempt"
+msgstr ""
 
 msgid "Tax Exempt"
 msgstr "免税"
@@ -14821,6 +14854,9 @@ msgstr "此变更通知已关闭，因此其更改为只读。"
 msgid "This completes the Discovery step."
 msgstr "这完成了发现步骤。"
 
+msgid "This contact has no email address"
+msgstr ""
+
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "该交易对手没有未结余额——该付款将记录为应收账款。"
 
@@ -14841,6 +14877,9 @@ msgstr "此信息将对所有用户可见，请谨慎分享。"
 
 msgid "this inspection plan"
 msgstr "这个检验计划"
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "这是一个采购项目 — 它没有BoM/BoP；只有其属性和文档可以更改。"

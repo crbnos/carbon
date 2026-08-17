@@ -58,10 +58,10 @@ function IntegrationActionButton({
 
     try {
       const response = await fetch(action.endpoint, {
-        method: "POST",
-        headers: {
-          Accept: "application/json"
-        }
+        method: "POST"
+        // headers: {
+        //   Accept: "application/json"
+        // }
       });
 
       const data = await response.json();

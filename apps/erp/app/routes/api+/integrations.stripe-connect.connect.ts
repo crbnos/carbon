@@ -34,12 +34,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       refreshUrl
     );
 
-    // Onboarding is considered "started" the moment we've generated a link to
-    // send the user to Stripe with — regardless of whether they actually
-    // click through, same as Email's required fields only prove the values
-    // were submitted, not that they're correct. This is what the generic
-    // settings-form schema requires before it'll let the row be marked
-    // installed (see StripeConnectSettingsSchema.onboardingStarted).
     const existing = await client
       .from("companyIntegration")
       .select("metadata")
@@ -53,7 +47,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       metadata: {
         ...(existing.data?.metadata as Record<string, unknown> | undefined),
         stripeAccountId,
-        onboardingStarted: true
+        onboardingStarted: true // mark started on try
       }
     });
 

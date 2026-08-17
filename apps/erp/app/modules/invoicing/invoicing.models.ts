@@ -199,11 +199,25 @@ export const salesInvoiceValidator = z.object({
   exchangeRateUpdatedAt: zfd.text(z.string().optional())
 });
 
+export const stripeCustomerActions = [
+  "use-linked",
+  "link-existing",
+  "create"
+] as const;
+
 export const salesInvoicePostValidator = z
   .object({
     notification: z.enum(["Email", "Stripe", "None"]).optional(),
     customerContact: zfd.text(z.string().optional()),
-    cc: z.array(z.string()).optional()
+    cc: z.array(z.string()).optional(),
+    // What the user agreed to do with the connected account's customer list.
+    stripeCustomerAction: z.enum(stripeCustomerActions).optional(),
+    // The customer to link to, when the user picked one Stripe already had.
+    stripeCustomerId: zfd.text(z.string().optional()),
+    // Supplied only when the selected contact had no email on file.
+    stripeContactEmail: zfd.text(
+      z.string().email({ message: "Email is invalid" }).optional()
+    )
   })
   .refine(
     (data) =>
@@ -213,6 +227,27 @@ export const salesInvoicePostValidator = z
     {
       message: "Customer contact is required",
       path: ["customerContact"] // path of error
+    }
+  )
+  // The guard that makes the confirmation step structurally mandatory: with no
+  // action there is no code path left that creates a customer on a merchant's
+  // account, so a stale or hand-rolled form body cannot skip the dialog.
+  .refine(
+    (data) =>
+      data.notification === "Stripe" ? data.stripeCustomerAction : true,
+    {
+      message: "Confirm the Stripe customer before posting",
+      path: ["stripeCustomerAction"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.stripeCustomerAction === "link-existing"
+        ? data.stripeCustomerId
+        : true,
+    {
+      message: "Select the Stripe customer to link",
+      path: ["stripeCustomerId"]
     }
   );
 

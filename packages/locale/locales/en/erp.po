@@ -437,6 +437,9 @@ msgstr "A new revision will be created using a copy of the current revision"
 msgid "A new size will be created using a copy of the current size"
 msgstr "A new size will be created using a copy of the current size"
 
+msgid "A new Stripe customer will be created"
+msgstr "A new Stripe customer will be created"
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 
@@ -2652,6 +2655,9 @@ msgstr "Cannot post — shipment contains expired tracked entities."
 msgid "Cannot send RFQ"
 msgstr "Cannot send RFQ"
 
+msgid "Cannot send through Stripe"
+msgstr "Cannot send through Stripe"
+
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Cannot upload — supplier interaction not yet created"
 
@@ -2834,6 +2840,9 @@ msgstr "Check the item ledger for any items with a negative on-hand quantity as 
 
 msgid "Check your email"
 msgstr "Check your email"
+
+msgid "Checking Stripe for this customer…"
+msgstr "Checking Stripe for this customer…"
 
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
@@ -3710,6 +3719,9 @@ msgstr "Create a new maintenance dispatch to track equipment repairs and mainten
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Create a new production job to fulfill the sales order"
+
+msgid "Create a new Stripe customer instead"
+msgstr "Create a new Stripe customer instead"
 
 msgid "Create a purchase order"
 msgstr "Create a purchase order"
@@ -5956,6 +5968,9 @@ msgstr "Exemption Certificate"
 msgid "Exemption Reason"
 msgstr "Exemption Reason"
 
+msgid "Existing Stripe customer"
+msgstr "Existing Stripe customer"
+
 msgid "Expand"
 msgstr "Expand"
 
@@ -8201,6 +8216,9 @@ msgstr "Link Jira Issue"
 
 msgid "Link Linear Issue"
 msgstr "Link Linear Issue"
+
+msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
+msgstr "Link this Carbon customer to one of them, or create a separate Stripe customer."
 
 msgid "Link to sales order line"
 msgstr "Link to sales order line"
@@ -12029,6 +12047,9 @@ msgstr "Reverse all journal and cost ledger entries"
 msgid "Reverse any item ledger entries from this invoice"
 msgstr "Reverse any item ledger entries from this invoice"
 
+msgid "Reverse charge"
+msgstr "Reverse charge"
+
 msgid "Reverse Charge Sales Tax"
 msgstr "Reverse Charge Sales Tax"
 
@@ -13585,6 +13606,15 @@ msgstr "Store a fixed number of days on this item. Expiry start date is set on e
 msgid "Straight line"
 msgstr "Straight line"
 
+msgid "Stripe already has a customer with this email"
+msgstr "Stripe already has a customer with this email"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Style of kanban output to show in the Kanban table"
 
@@ -13975,6 +14005,9 @@ msgstr "Tax Depreciation"
 
 msgid "Tax Depreciation Method"
 msgstr "Tax Depreciation Method"
+
+msgid "Tax exempt"
+msgstr "Tax exempt"
 
 msgid "Tax Exempt"
 msgstr "Tax Exempt"
@@ -14821,6 +14854,9 @@ msgstr "This change notice is closed, so its changes are read-only."
 msgid "This completes the Discovery step."
 msgstr "This completes the Discovery step."
 
+msgid "This contact has no email address"
+msgstr "This contact has no email address"
+
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "This counterparty has nothing outstanding — the payment will be recorded on-account."
 
@@ -14841,6 +14877,9 @@ msgstr "This information will be visible to all users, so be careful what you sh
 
 msgid "this inspection plan"
 msgstr "this inspection plan"
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."

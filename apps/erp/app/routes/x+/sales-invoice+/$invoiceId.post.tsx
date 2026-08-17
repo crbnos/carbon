@@ -8,12 +8,15 @@ import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import type { ConnectInvoiceLineInput } from "@carbon/stripe/connect.server";
 import {
   createAndSendConnectInvoice,
-  createConnectCustomer
+  expectedConnectInvoiceTotal,
+  retrieveConnectCustomer,
+  upsertConnectCustomer
 } from "@carbon/stripe/connect.server";
 import { datetime } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
+import { parseDate, Time, toCalendarDateTime } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
@@ -24,10 +27,16 @@ import {
   getSalesInvoiceCustomerDetails,
   getSalesInvoiceLines,
   getSalesInvoiceShipment,
-  salesInvoicePostValidator
+  salesInvoicePostValidator,
+  type stripeCustomerActions
 } from "~/modules/invoicing";
-import { getCustomer, getCustomerContact } from "~/modules/sales";
+import {
+  resolveStripeCustomer,
+  STRIPE_CONNECT_INTEGRATION
+} from "~/modules/invoicing/stripe-customer.server";
+import { getCustomerContact, updateCustomerContact } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-invoice+/$id[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
@@ -161,84 +170,169 @@ async function appendStripeLinkToNotes({
 
 type StripeSendContext = {
   stripeAccountId: string;
-  billingCustomerId: string;
+  /**
+   * Already resolved and linked by the preflight — by the time the send runs,
+   * the customer exists on the connected account and
+   * `externalIntegrationMapping` points at it.
+   */
+  stripeCustomerId: string;
   customerName: string;
-  contactEmail: string;
 };
 
+type SalesInvoiceLineRow = NonNullable<
+  Awaited<ReturnType<typeof getSalesInvoiceLines>>["data"]
+>[number];
+
+/**
+ * Carbon invoice lines → the Stripe mapping's line input.
+ *
+ * Comment lines carry no money and exist only to annotate the printed invoice,
+ * so they are dropped rather than sent as zero-amount items. Every other field
+ * is passed through untouched — in particular `taxPercent` stays the fraction
+ * the column stores, and the `converted*` mirrors are ignored because Stripe
+ * bills in the invoice's own currency, not the company's base currency.
+ */
+function toStripeInvoiceLines(
+  lines: SalesInvoiceLineRow[]
+): ConnectInvoiceLineInput[] {
+  return lines
+    .filter((line) => line.invoiceLineType !== "Comment")
+    .map((line) => ({
+      description: line.description ?? line.itemReadableId ?? "Item",
+      quantity: line.quantity ?? 0,
+      unitPrice: line.unitPrice ?? 0,
+      addOnCost: line.addOnCost ?? 0,
+      shippingCost: line.shippingCost ?? 0,
+      nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
+      taxPercent: line.taxPercent ?? 0,
+      unitOfMeasureCode: line.unitOfMeasureCode,
+      metadata: {
+        carbonLineId: line.id ?? "",
+        carbonItemId: line.itemId ?? "",
+        carbonLineType: line.invoiceLineType ?? "",
+        carbonSalesOrderId: line.salesOrderId ?? "",
+        carbonSalesOrderLineId: line.salesOrderLineId ?? ""
+      }
+    }));
+}
+
+/**
+ * A Carbon calendar date → the Unix seconds Stripe wants.
+ *
+ * Anchored at midday on the company's business calendar rather than midnight:
+ * Stripe renders the date in the connected account's own timezone, and a
+ * midnight instant lands on the previous day for any account behind it.
+ */
+function toStripeEpochSeconds(
+  date: string | null | undefined,
+  timeZone: string
+): number | undefined {
+  if (!date) return undefined;
+  return Math.floor(
+    toCalendarDateTime(parseDate(date), new Time(12))
+      .toDate(timeZone)
+      .getTime() / 1000
+  );
+}
+
+/**
+ * Resolve the Stripe customer this invoice will be billed to, and link it.
+ *
+ * Runs BEFORE the invoice is posted, so a customer that cannot be resolved
+ * aborts the whole operation rather than leaving a posted invoice that was
+ * never sent.
+ *
+ * The user's choice arrives from the post modal, but is never taken at face
+ * value: `resolveStripeCustomer` is re-run here — the same function the modal
+ * called — and the action is checked against what the connected account
+ * actually looks like now. That closes the gap between the dialog being shown
+ * and the form being submitted (a customer deleted in the Stripe dashboard, a
+ * mapping written by a concurrent post, a hand-rolled form body naming someone
+ * else's customer id).
+ */
 async function preflightStripeSend({
   serviceRole,
   companyId,
+  userId,
   invoiceId,
-  customerContact
+  customerContact,
+  stripeCustomerAction,
+  stripeCustomerId,
+  stripeContactEmail
 }: {
   serviceRole: ServiceRole;
   companyId: string;
+  userId: string;
   invoiceId: string;
   customerContact?: string;
+  stripeCustomerAction?: (typeof stripeCustomerActions)[number];
+  stripeCustomerId?: string;
+  stripeContactEmail?: string;
 }): Promise<
   { ok: true; context: StripeSendContext } | { ok: false; message: string }
 > {
   if (!customerContact) {
     return { ok: false, message: "a customer contact is required" };
   }
+  if (!stripeCustomerAction) {
+    return { ok: false, message: "the Stripe customer was not confirmed" };
+  }
 
-  const integration = await serviceRole
-    .from("companyIntegration")
-    .select("active, metadata")
-    .eq("id", "stripe-connect")
-    .eq("companyId", companyId)
-    .maybeSingle();
+  // Persist a typed-in email before resolving, so the contact is fixed at the
+  // source: the next invoice and the plain Email send both read `contact.email`.
+  if (stripeContactEmail) {
+    const contact = await getCustomerContact(serviceRole, customerContact);
+    if (contact.data && !contact.data.contact?.email) {
+      const update = await updateCustomerContact(serviceRole, {
+        contactId: contact.data.contactId,
+        contact: {
+          firstName: contact.data.contact?.firstName ?? "",
+          lastName: contact.data.contact?.lastName ?? "",
+          email: stripeContactEmail
+        }
+      });
+      if (update.error) {
+        return { ok: false, message: "the contact email could not be saved" };
+      }
+    }
+  }
 
-  const stripeAccountId = (
-    integration.data?.metadata as Record<string, unknown> | undefined
-  )?.stripeAccountId as string | undefined;
+  const resolved = await resolveStripeCustomer({
+    serviceRole,
+    companyId,
+    invoiceId,
+    customerContactId: customerContact,
+    emailOverride: stripeContactEmail
+  });
 
-  if (!integration.data?.active || !stripeAccountId) {
+  if (!resolved.sources) {
     return {
       ok: false,
-      message: "Stripe Connect is not connected for this company"
+      message:
+        resolved.resolution.state === "unavailable"
+          ? resolved.resolution.message
+          : "the Stripe customer could not be resolved"
     };
   }
 
-  const invoice = await serviceRole
-    .from("salesInvoice")
-    .select("customerId, invoiceCustomerId")
-    .eq("id", invoiceId)
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const { stripeAccountId, billingCustomerId, sources, input } = resolved;
 
-  if (!invoice.data) {
-    return { ok: false, message: "the invoice could not be loaded" };
-  }
-
-  const billingCustomerId =
-    invoice.data.invoiceCustomerId ?? invoice.data.customerId;
-
-  if (!billingCustomerId) {
-    return { ok: false, message: "this invoice has no customer to bill" };
-  }
-
-  const [contact, customer, lines] = await Promise.all([
-    getCustomerContact(serviceRole, customerContact),
-    getCustomer(serviceRole, billingCustomerId),
-    getSalesInvoiceLines(serviceRole, invoiceId)
-  ]);
-
-  const contactEmail = contact.data?.contact?.email;
-  if (!contactEmail) {
+  if (!input) {
     return { ok: false, message: "the selected contact has no email address" };
   }
 
-  const customerName = customer.data?.name;
+  const customerName = sources.customer.name;
   if (!customerName) {
     return { ok: false, message: "the customer could not be loaded" };
   }
 
-  const total = (lines.data ?? []).reduce(
-    (sum, line) => sum + (line.unitPrice ?? 0) * (line.quantity ?? 0),
-    0
-  );
+  const lines = await getSalesInvoiceLines(serviceRole, invoiceId);
+
+  // The same arithmetic the send itself reconciles against, so an invoice that
+  // is billable only through its surcharges isn't rejected here as empty.
+  const { total } = expectedConnectInvoiceTotal({
+    lines: toStripeInvoiceLines(lines.data ?? [])
+  });
   if (total <= 0) {
     return {
       ok: false,
@@ -246,13 +340,85 @@ async function preflightStripeSend({
     };
   }
 
+  const mappingService = createMappingService(getDatabaseClient(), companyId);
+
+  let resolvedCustomerId: string;
+
+  switch (stripeCustomerAction) {
+    case "use-linked": {
+      // The dialog showed a linked customer; it must still be linked and live.
+      // Falling through to a create here would put a customer on the merchant's
+      // account that the user never agreed to.
+      if (resolved.resolution.state !== "linked") {
+        return {
+          ok: false,
+          message:
+            "the linked Stripe customer is no longer available — reopen the dialog"
+        };
+      }
+      resolvedCustomerId = resolved.resolution.customer.id;
+      break;
+    }
+    case "link-existing": {
+      if (!stripeCustomerId) {
+        return {
+          ok: false,
+          message: "no Stripe customer was selected to link"
+        };
+      }
+      // Confirm the id exists on THIS connected account before writing it into
+      // the mapping — an id from another account (or an invented one) would
+      // otherwise be linked and every future invoice would fail at send.
+      const existing = await retrieveConnectCustomer(
+        stripeAccountId,
+        stripeCustomerId
+      );
+      if (!existing) {
+        return {
+          ok: false,
+          message: "that Stripe customer no longer exists on this account"
+        };
+      }
+      resolvedCustomerId = existing.id;
+      break;
+    }
+    case "create": {
+      // A concurrent post (or a link made since the dialog opened) means this
+      // Carbon customer now HAS a Stripe customer. Creating a second one is
+      // exactly what this flow exists to prevent, so stop and let the user
+      // confirm the one that now exists.
+      if (resolved.resolution.state === "linked") {
+        return {
+          ok: false,
+          message:
+            "this customer was just linked to a Stripe customer — reopen the dialog to confirm it"
+        };
+      }
+      resolvedCustomerId = await upsertConnectCustomer(
+        stripeAccountId,
+        null,
+        input
+      );
+      break;
+    }
+  }
+
+  // Idempotent upsert on (entityType, entityId, integration, companyId), so
+  // re-linking the already-linked customer is a no-op rather than a conflict.
+  await mappingService.link(
+    "customer",
+    billingCustomerId,
+    STRIPE_CONNECT_INTEGRATION,
+    resolvedCustomerId,
+    { createdBy: userId }
+  );
+
   return {
     ok: true,
     context: {
       stripeAccountId,
-      billingCustomerId,
-      customerName,
-      contactEmail
+      stripeCustomerId: resolvedCustomerId,
+      customerName
     }
   };
 }
@@ -293,15 +459,26 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
-  const { notification, customerContact, cc: ccSelections } = validation.data;
+  const {
+    notification,
+    customerContact,
+    cc: ccSelections,
+    stripeCustomerAction,
+    stripeCustomerId,
+    stripeContactEmail
+  } = validation.data;
 
   let stripeSendContext: StripeSendContext | null = null;
   if (notification === "Stripe") {
     const preflight = await preflightStripeSend({
       serviceRole,
       companyId,
+      userId,
       invoiceId,
-      customerContact
+      customerContact,
+      stripeCustomerAction,
+      stripeCustomerId,
+      stripeContactEmail
     });
 
     if (!preflight.ok) {
@@ -594,70 +771,82 @@ export async function action(args: ActionFunctionArgs) {
           };
         }
 
-        const {
-          stripeAccountId,
-          billingCustomerId,
-          customerName,
-          contactEmail
-        } = stripeSendContext;
+        // Resolved, confirmed by the user, and linked in the preflight — by
+        // here the customer is known to exist on the connected account.
+        const { stripeAccountId, stripeCustomerId, customerName } =
+          stripeSendContext;
 
-        const invoiceLines = await getSalesInvoiceLines(serviceRole, invoiceId);
+        const [invoiceLines, shipment, addresses, timeZone] = await Promise.all(
+          [
+            getSalesInvoiceLines(serviceRole, invoiceId),
+            getSalesInvoiceShipment(serviceRole, invoiceId),
+            getSalesInvoiceCustomerDetails(serviceRole, invoiceId),
+            getCompanyTimeZone(serviceRole, companyId)
+          ]
+        );
+
+        const shippingAddress = addresses.data?.shipmentAddressLine1
+          ? {
+              name:
+                addresses.data.shipmentCustomerName ??
+                addresses.data.customerName ??
+                customerName,
+              address: {
+                line1: addresses.data.shipmentAddressLine1 ?? undefined,
+                line2: addresses.data.shipmentAddressLine2 ?? undefined,
+                city: addresses.data.shipmentCity ?? undefined,
+                state: addresses.data.shipmentStateProvince ?? undefined,
+                postal_code: addresses.data.shipmentPostalCode ?? undefined,
+                country: addresses.data.shipmentCountryCode ?? undefined
+              }
+            }
+          : undefined;
+
+        const stripeInvoice = await createAndSendConnectInvoice(
+          stripeAccountId,
+          stripeCustomerId,
+          {
+            lines: toStripeInvoiceLines(invoiceLines.data ?? []),
+            currencyCode: salesInvoice.data.currencyCode ?? "USD",
+            // Invoice-level freight, which the salesInvoices view adds after
+            // tax — it is not one of the taxable per-line components.
+            shippingCost: shipment.data?.shippingCost ?? 0,
+            invoiceNumber: salesInvoice.data.invoiceId ?? undefined,
+            dueDate: toStripeEpochSeconds(salesInvoice.data.dateDue, timeZone),
+            effectiveAt: toStripeEpochSeconds(
+              salesInvoice.data.dateIssued ?? salesInvoice.data.postingDate,
+              timeZone
+            ),
+            // Only consulted when the invoice has no dateDue at all.
+            daysUntilDue: 30,
+            customFields: salesInvoice.data.customerReference
+              ? [
+                  {
+                    name: "Reference",
+                    value: salesInvoice.data.customerReference
+                  }
+                ]
+              : undefined,
+            shippingDetails: shippingAddress,
+            metadata: {
+              carbonInvoiceId: invoiceId,
+              carbonInvoiceNumber: salesInvoice.data.invoiceId ?? "",
+              companyId,
+              carbonOpportunityId: salesInvoice.data.opportunityId ?? "",
+              carbonShipmentId: salesInvoice.data.shipmentId ?? ""
+            }
+          }
+        );
 
         const mappingService = createMappingService(
           getDatabaseClient(),
           companyId
         );
 
-        let stripeCustomerId = (
-          await mappingService.getByEntity(
-            "customer",
-            billingCustomerId,
-            "stripe-connect"
-          )
-        )?.externalId;
-
-        if (!stripeCustomerId) {
-          stripeCustomerId = await createConnectCustomer(stripeAccountId, {
-            name: customerName,
-            email: contactEmail
-          });
-          await mappingService.link(
-            "customer",
-            billingCustomerId,
-            "stripe-connect",
-            stripeCustomerId
-          );
-        }
-
-        const daysUntilDue =
-          salesInvoice.data.dateIssued && salesInvoice.data.dateDue
-            ? Math.max(
-                1,
-                parseDate(salesInvoice.data.dateDue).compare(
-                  parseDate(salesInvoice.data.dateIssued)
-                )
-              )
-            : 30;
-
-        const stripeInvoice = await createAndSendConnectInvoice(
-          stripeAccountId,
-          stripeCustomerId,
-          {
-            lines: (invoiceLines.data ?? []).map((line) => ({
-              description: line.description ?? "",
-              quantity: line.quantity ?? 0,
-              unitPrice: line.unitPrice ?? 0
-            })),
-            currencyCode: salesInvoice.data.currencyCode ?? "USD",
-            daysUntilDue,
-            metadata: { carbonInvoiceId: invoiceId, companyId }
-          }
-        );
-
         await mappingService.link(
           "salesInvoice",
           invoiceId,
-          "stripe-connect",
+          STRIPE_CONNECT_INTEGRATION,
           stripeInvoice.id,
           {
             metadata: {

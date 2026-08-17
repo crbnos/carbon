@@ -47,7 +47,33 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
   Connected-account events carry `event.account`; verifying one against the wrong
   secret always fails
 - **Money conversion**: `toStripeAmount` / `fromStripeAmount` handle zero- and
-  three-decimal currencies — never hand-roll `* 100`
+  three-decimal currencies — never hand-roll `* 100`. Per-unit prices go through
+  the SDK's branded `Stripe.Decimal` (`unit_amount_decimal` / `quantity_decimal`
+  are `Decimal`, not `string`), never a rounded minor-unit integer
+- **Sales invoice → Stripe invoice**: `createAndSendConnectInvoice` mirrors the
+  `salesInvoices` view's arithmetic, which is the only definition of what a
+  Carbon invoice is worth. One Carbon line becomes up to four Stripe items
+  (`unitPrice × quantity`, `addOnCost`, `shippingCost` — all taxable — plus an
+  untaxed `nonTaxableAddOnCost`), and `salesInvoiceShipment.shippingCost` is a
+  fifth, untaxed, invoice-level item. `setupPrice` is in neither the view's
+  subtotal nor its tax base, so it is **not billed**. `salesInvoiceLine.taxPercent`
+  is a FRACTION in [0,1] (a column CHECK) and must be ×100 for Stripe's
+  `percentage`; rates are looked-up-or-created per connected account by
+  `resolveConnectTaxRateId`. Before finalizing, the draft's Stripe-computed
+  total is reconciled against `expectedConnectInvoiceTotal` and the draft is
+  deleted rather than sent on a mismatch beyond per-item rounding
+- **Connect customers**: `upsertConnectCustomer` (create/update),
+  `retrieveConnectCustomer` (null on missing OR `deleted`, so a stale mapping
+  degrades instead of throwing), `findConnectCustomersByEmail` (`customers.list`,
+  NOT `customers.search` — search lags indexing and would duplicate a
+  just-created customer; `limit: 2` so callers can detect ambiguity). Every call
+  passes `{ stripeAccount }`; a platform-scoped call lands on the wrong account.
+  `invoice_prefix` and `tax_id_data` are create-only (`tax_id_data` is absent
+  from `CustomerUpdateParams` entirely — changing tax ids means
+  `createTaxId`/`deleteTaxId`). `ConnectCustomerInput.taxExempt` is already in
+  Stripe's vocabulary (`none`/`exempt`/`reverse`); interpreting Carbon's
+  `customerTax` pair is the ERP's job, in
+  `apps/erp/app/modules/invoicing/stripe-customer.mapper.ts`
 
 ## Cross-References
 

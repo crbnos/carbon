@@ -437,6 +437,9 @@ msgstr "Eine neue Revision wird erstellt, indem eine Kopie der aktuellen Revisio
 msgid "A new size will be created using a copy of the current size"
 msgstr "Eine neue Größe wird erstellt, indem eine Kopie der aktuellen Größe verwendet wird"
 
+msgid "A new Stripe customer will be created"
+msgstr ""
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Ein nicht-liquiditätswirksames Dokument, das eine Rechnung gegen ein Begründungskonto abrechnet: eine Gutschrift reduziert die Schuld, eine Belastung erhöht sie."
 
@@ -2652,6 +2655,9 @@ msgstr "Kann nicht gebucht werden – Sendung enthält abgelaufene nachverfölgt
 msgid "Cannot send RFQ"
 msgstr "RFQ kann nicht gesendet werden"
 
+msgid "Cannot send through Stripe"
+msgstr ""
+
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Hochladen nicht möglich — Lieferanteninteraktion noch nicht erstellt"
 
@@ -2834,6 +2840,9 @@ msgstr "Überprüfen Sie das Artikelhauptbuch auf Artikel mit negativem Bestand 
 
 msgid "Check your email"
 msgstr "Überprüfen Sie Ihre E-Mail"
+
+msgid "Checking Stripe for this customer…"
+msgstr ""
 
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
@@ -3710,6 +3719,9 @@ msgstr "Erstellen Sie eine neue Wartungsmitteilung, um Gerätereparaturen und Wa
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Erstellen Sie einen neuen Produktionsauftrag, um die Bestellung zu erfüllen"
+
+msgid "Create a new Stripe customer instead"
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr "Bestellung erstellen"
@@ -5956,6 +5968,9 @@ msgstr "Ausnahmezertifikat"
 msgid "Exemption Reason"
 msgstr "Ausnahmegrunde"
 
+msgid "Existing Stripe customer"
+msgstr ""
+
 msgid "Expand"
 msgstr "Erweitern"
 
@@ -8201,6 +8216,9 @@ msgstr "Jira-Problem verknüpfen"
 
 msgid "Link Linear Issue"
 msgstr "Linear-Problem verknüpfen"
+
+msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
+msgstr ""
 
 msgid "Link to sales order line"
 msgstr "Mit Verkaufsauftragszeile verknüpfen"
@@ -12029,6 +12047,9 @@ msgstr "Alle Journal- und Kostenkontoeinträge rückgängig machen"
 msgid "Reverse any item ledger entries from this invoice"
 msgstr "Alle Artikelledgereinträge aus dieser Rechnung stornieren"
 
+msgid "Reverse charge"
+msgstr ""
+
 msgid "Reverse Charge Sales Tax"
 msgstr "Umkehrbuchung Umsatzsteuer"
 
@@ -13585,6 +13606,15 @@ msgstr "Speichern Sie eine feste Anzahl von Tagen für diesen Artikel. Das Ablau
 msgid "Straight line"
 msgstr "Linear"
 
+msgid "Stripe already has a customer with this email"
+msgstr ""
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr ""
+
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Stil der Kanban-Ausgabe, die in der Kanban-Tabelle angezeigt werden soll"
 
@@ -13975,6 +14005,9 @@ msgstr "Steuerabschreibung"
 
 msgid "Tax Depreciation Method"
 msgstr "Steuerabschreibungsmethode"
+
+msgid "Tax exempt"
+msgstr ""
 
 msgid "Tax Exempt"
 msgstr "Steuerbefreit"
@@ -14821,6 +14854,9 @@ msgstr "Diese Änderungsmitteilung ist geschlossen, daher sind ihre Änderungen 
 msgid "This completes the Discovery step."
 msgstr "Dies schließt den Discovery-Schritt ab."
 
+msgid "This contact has no email address"
+msgstr ""
+
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Dieser Geschäftspartner hat keine ausstehenden Forderungen — die Zahlung wird auf Kontokorrent verbucht."
 
@@ -14841,6 +14877,9 @@ msgstr "Diese Informationen sind für alle Benutzer sichtbar, daher seien Sie vo
 
 msgid "this inspection plan"
 msgstr "dieser Inspektionsplan"
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Dies ist ein gekauftes Element – es hat keine Stückliste/Arbeitspläne; nur seine Attribute und Dokumente können sich ändern."

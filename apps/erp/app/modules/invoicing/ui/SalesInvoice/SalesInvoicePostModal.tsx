@@ -21,14 +21,17 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import type { FetcherWithComponents } from "react-router";
+import { useFetcher } from "react-router";
 import {
   CustomerContact,
   EmailRecipients,
   SelectControlled
 } from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
+import type { StripeCustomerResolution } from "~/modules/invoicing/stripe-customer.server";
 import { path } from "~/utils/path";
 import { salesInvoicePostValidator } from "../../invoicing.models";
+import StripeCustomerPanel from "./StripeCustomerPanel";
 
 type SalesInvoicePostModalProps = {
   fetcher: FetcherWithComponents<{ success: boolean; message: string }>;
@@ -66,6 +69,26 @@ const SalesInvoicePostModal = ({
     "Email" | "Stripe" | "None"
   >(canStripe ? "Stripe" : canEmail ? "Email" : "None");
 
+  const [contactId, setContactId] = useState<string | null>(customerContactId);
+  // What the user is typing, vs. the address the resolution has actually been
+  // run against. Split so every keystroke doesn't hit Stripe — the committed
+  // value only moves on blur.
+  const [stripeEmail, setStripeEmail] = useState("");
+  const [committedEmail, setCommittedEmail] = useState<string | undefined>();
+
+  // Resolves the Carbon customer against the connected account so the user can
+  // see — and choose — what posting would do before it happens.
+  const stripeCustomer = useFetcher<StripeCustomerResolution>();
+  const isStripe = notificationType === "Stripe";
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `stripeCustomer` is a fresh object each render, so depending on it would re-run this effect forever.
+  useEffect(() => {
+    if (!isStripe || !contactId) return;
+    stripeCustomer.load(
+      path.to.api.stripeConnectCustomer(invoiceId, contactId, committedEmail)
+    );
+  }, [isStripe, contactId, invoiceId, committedEmail]);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -75,6 +98,19 @@ const SalesInvoicePostModal = ({
       toast.error(fetcher.data.message);
     }
   }, [fetcher.data?.success]);
+
+  const resolution = stripeCustomer.data ?? null;
+  const isResolving = stripeCustomer.state !== "idle";
+
+  // Nothing may be created on a merchant's Stripe account without a decision,
+  // so the submit stays shut until the panel has produced one.
+  const isStripeBlocked =
+    isStripe &&
+    (!contactId ||
+      isResolving ||
+      !resolution ||
+      resolution.state === "unavailable" ||
+      resolution.state === "missing-email");
 
   return (
     <Modal
@@ -185,6 +221,26 @@ const SalesInvoicePostModal = ({
                 <CustomerContact
                   name="customerContact"
                   customer={customerId ?? undefined}
+                  onChange={(contact) => {
+                    setContactId(contact?.id ?? null);
+                    // A different contact may have an email of its own, so
+                    // drop anything typed for the previous one.
+                    setStripeEmail("");
+                    setCommittedEmail(undefined);
+                  }}
+                />
+              )}
+              {isStripe && contactId && (
+                <StripeCustomerPanel
+                  resolution={resolution}
+                  isLoading={isResolving}
+                  email={stripeEmail}
+                  onEmailChange={setStripeEmail}
+                  onEmailCommit={(email) => {
+                    // Re-resolve once an address exists: Stripe may already
+                    // have a customer under it, and linking beats duplicating.
+                    if (email.includes("@")) setCommittedEmail(email);
+                  }}
                 />
               )}
               {notificationType === "Email" && (
@@ -198,7 +254,7 @@ const SalesInvoicePostModal = ({
                 <Trans>Cancel</Trans>
               </Button>
               <Button
-                isDisabled={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle" || isStripeBlocked}
                 isLoading={fetcher.state !== "idle"}
                 type="submit"
               >
