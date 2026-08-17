@@ -3,7 +3,8 @@ import type { Database } from "@carbon/database";
 import {
   getOnshapeClient,
   OnshapeApiError,
-  OnshapeAssetTooLargeError
+  OnshapeAssetTooLargeError,
+  type OnshapeRevision
 } from "@carbon/ee/onshape";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { RetryAfterError } from "inngest";
@@ -22,10 +23,14 @@ import {
   accumulateRunCounters,
   captureAmbiguousReleases,
   captureUnmatchedReleases,
+  classifyOnshapeReleasedAsset,
   createRunProgress,
   finalizeRun,
   markRunRunning,
+  type OnshapeAssetProvenance,
+  type OnshapeItemSyncStatus,
   type OnshapeReleaseReference,
+  type OnshapeSkipReason,
   type OnshapeSyncAssetKind,
   upsertItemSyncState,
   writeRunProgress
@@ -71,6 +76,7 @@ export interface OnshapeBackfillWorkItem {
   itemId: string; // resolved Carbon item
   partNumber: string;
   revision: string;
+  revisionId: string | null; // the release's own id, when Onshape reports one
   releaseState: string;
   documentId: string;
   versionId: string;
@@ -79,28 +85,35 @@ export interface OnshapeBackfillWorkItem {
   assetBaseName?: string;
 }
 
-// A release whose asset the matched item ALREADY has. Recorded as sync state so
-// a pre-v2 fleet reads as synced (by observation) instead of never-synced —
-// without spending an export call re-downloading what is already attached.
+// A release whose matched item ALREADY holds an asset of that kind that this
+// sync cannot prove it fetched — a file uploaded by hand, or a sync from before
+// the state table existed. The export is skipped (never clobber an attached
+// asset, never spend Onshape quota on one) and the row says only what is true:
+// the released revision we matched, and that an asset was already there.
 export interface OnshapeBackfillObservedMatch {
   assetKind: OnshapeSyncAssetKind;
   itemId: string;
+  // Carried on the entry rather than hardcoded at the write site, so the shape
+  // of the row and the reason for it are decided in one place.
+  status: Extract<OnshapeItemSyncStatus, "skipped">;
+  skipReason: Extract<OnshapeSkipReason, "existing-asset">;
+  observedOnly: true;
   partNumber: string;
   revision: string;
+  revisionId: string | null;
   releaseState: string;
   documentId: string;
   versionId: string;
   elementId: string;
-  modelUploadId: string | null;
 }
 
 export interface OnshapeBackfillPageResult {
   revisionsScanned: number;
   skippedNoItem: number; // released in Onshape but no matching Carbon item (link-only)
-  skippedAlreadySynced: number; // item already has this asset — skipped to save API calls
+  skippedAlreadySynced: number; // item already holds this asset (ours or not) — skipped to save API calls
   skippedNonModel: number; // unknown element type (not part studio / assembly / drawing)
   workItems: OnshapeBackfillWorkItem[]; // matched exports for the per-item sync steps
-  observedMatches: OnshapeBackfillObservedMatch[]; // matched, already attached
+  observedMatches: OnshapeBackfillObservedMatch[]; // matched, asset attached from an unproven source
   unmatchedReleases: OnshapeReleaseReference[]; // released with no matching item
   ambiguousReleases: OnshapeReleaseReference[]; // released matching several items
   hasMore: boolean;
@@ -203,8 +216,12 @@ export async function resolveOnshapeCompanyId(
   return onshapeCompanyId;
 }
 
-// Does this item already have a drawing PDF attached? Lets the backfill skip
-// re-exporting a drawing it already has (Onshape API quota is limited).
+// Is SOME PDF attached to this item? Deliberately loose, and used for one
+// question only: may the backfill overwrite what is there / spend an export
+// call? It says nothing about where the file came from — a quality certificate
+// someone uploaded by hand counts, which is exactly why provenance is read from
+// the sync-state table instead (classifyOnshapeReleasedAsset). Do not promote
+// this to a "we synced it" signal.
 async function itemHasPdfDocument(
   carbon: CarbonClient,
   companyId: string,
@@ -218,6 +235,74 @@ async function itemHasPdfDocument(
     .like("path", `${escapeLikePattern(`${companyId}/parts/${itemId}/`)}%`)
     .limit(1);
   return (docs.data?.length ?? 0) > 0;
+}
+
+// One matched release, resolved to exactly one Carbon item — before the decision
+// about whether it needs an export. The whole page is matched first so the
+// sync-state provenance for every matched item is read in ONE query.
+interface OnshapeBackfillMatch {
+  assetKind: OnshapeSyncAssetKind;
+  label: string;
+  itemId: string;
+  partNumber: string;
+  revision: string;
+  revisionId: string | null;
+  releaseState: string;
+  documentId: string;
+  versionId: string;
+  elementId: string;
+  modelElementKind?: "partstudio" | "assembly";
+  assetBaseName?: string;
+  /** What the item row holds for a model match; always null for a drawing. */
+  modelUploadId: string | null;
+}
+
+// The revision's own id, when the revisions list carries one. Not guaranteed, so
+// the provenance check falls back to the released element id without it.
+function releasedRevisionId(revision: OnshapeRevision): string | null {
+  return revision.id ? revision.id : null;
+}
+
+function provenanceKey(itemId: string, assetKind: string): string {
+  return `${itemId}:${assetKind}`;
+}
+
+// The page's provenance read: one query for every matched item, keyed by item x
+// asset kind. A failed read is not evidence of anything, so it throws — the page
+// step replays rather than silently demoting rows that ARE proven.
+async function readMatchedItemProvenance(
+  carbon: CarbonClient,
+  companyId: string,
+  matches: OnshapeBackfillMatch[]
+): Promise<Map<string, OnshapeAssetProvenance>> {
+  const provenanceByItemAsset = new Map<string, OnshapeAssetProvenance>();
+  const matchedItemIds = Array.from(
+    new Set(matches.map((match) => match.itemId))
+  );
+  if (matchedItemIds.length === 0) {
+    return provenanceByItemAsset;
+  }
+  const stateRows = await carbon
+    .from("onshapeItemSyncState")
+    .select("itemId, assetKind, status, revisionId, elementId")
+    .eq("companyId", companyId)
+    .in("itemId", matchedItemIds);
+  if (stateRows.error) {
+    throw new Error(
+      `matchOnshapeBackfillPage: sync state query failed: ${stateRows.error.message}`
+    );
+  }
+  for (const stateRow of stateRows.data ?? []) {
+    provenanceByItemAsset.set(
+      provenanceKey(stateRow.itemId, stateRow.assetKind),
+      {
+        status: stateRow.status,
+        revisionId: stateRow.revisionId,
+        elementId: stateRow.elementId
+      }
+    );
+  }
+  return provenanceByItemAsset;
 }
 
 // One page of the backfill: fetch a page of released revisions and match them to
@@ -314,6 +399,9 @@ export async function matchOnshapeBackfillPage(
     }
   }
 
+  // Phase 1: resolve every release on this page to at most one Carbon item.
+  const matches: OnshapeBackfillMatch[] = [];
+
   for (const revision of revisions) {
     result.revisionsScanned++;
     const releaseReference: OnshapeReleaseReference = {
@@ -356,33 +444,19 @@ export async function matchOnshapeBackfillPage(
         }
         continue;
       }
-      // Already has a drawing PDF => skip the export (save an Onshape call).
-      if (await itemHasPdfDocument(carbon, input.companyId, target.id)) {
-        result.skippedAlreadySynced++;
-        result.observedMatches.push({
-          assetKind: "drawing",
-          itemId: target.id,
-          partNumber: revision.partNumber,
-          revision: revision.revision,
-          releaseState: RELEASED_STATE,
-          documentId: revision.documentId,
-          versionId: revision.versionId,
-          elementId: revision.elementId,
-          modelUploadId: null
-        });
-        continue;
-      }
-      result.workItems.push({
-        kind: "drawing",
+      matches.push({
+        assetKind: "drawing",
         label: `drawing ${revision.partNumber} rev ${revision.revision}`,
         itemId: target.id,
         partNumber: revision.partNumber,
         revision: revision.revision,
+        revisionId: releasedRevisionId(revision),
         releaseState: RELEASED_STATE,
         documentId: revision.documentId,
         versionId: revision.versionId,
         elementId: revision.elementId,
-        assetBaseName: target.readableIdWithRevision ?? undefined
+        assetBaseName: target.readableIdWithRevision ?? undefined,
+        modelUploadId: null
       });
       continue;
     }
@@ -393,42 +467,99 @@ export async function matchOnshapeBackfillPage(
       result.skippedNonModel++;
       continue;
     }
-    const match = itemByKey.get(
+    const matchedItem = itemByKey.get(
       releaseKey(revision.partNumber, revision.revision)
     );
-    if (!match) {
+    if (!matchedItem) {
       result.skippedNoItem++;
       result.unmatchedReleases.push(releaseReference);
       continue;
     }
-    // Already has a model => skip the export (save an Onshape call).
-    if (match.modelUploadId) {
-      result.skippedAlreadySynced++;
-      result.observedMatches.push({
-        assetKind: "model",
-        itemId: match.id,
-        partNumber: revision.partNumber,
-        revision: revision.revision,
-        releaseState: RELEASED_STATE,
-        documentId: revision.documentId,
-        versionId: revision.versionId,
-        elementId: revision.elementId,
-        modelUploadId: match.modelUploadId
-      });
-      continue;
-    }
-    result.workItems.push({
-      kind: "model",
+    matches.push({
+      assetKind: "model",
       label: `model ${revision.partNumber} rev ${revision.revision}`,
-      itemId: match.id,
+      itemId: matchedItem.id,
       partNumber: revision.partNumber,
       revision: revision.revision,
+      revisionId: releasedRevisionId(revision),
       releaseState: RELEASED_STATE,
       documentId: revision.documentId,
       versionId: revision.versionId,
       elementId: revision.elementId,
       modelElementKind: revision.elementType === 1 ? "assembly" : "partstudio",
-      assetBaseName: releaseKey(revision.partNumber, revision.revision)
+      assetBaseName: releaseKey(revision.partNumber, revision.revision),
+      modelUploadId: matchedItem.modelUploadId
+    });
+  }
+
+  // Phase 2: decide what each match needs. Three outcomes, and the sync-state
+  // table is the ONLY evidence that separates the first two (see
+  // classifyOnshapeReleasedAsset): a proven sync of this released revision, an
+  // asset of unknown origin, or nothing attached at all.
+  const provenanceByItemAsset = await readMatchedItemProvenance(
+    carbon,
+    input.companyId,
+    matches
+  );
+
+  for (const match of matches) {
+    const assetAttached =
+      match.assetKind === "model"
+        ? match.modelUploadId !== null
+        : await itemHasPdfDocument(carbon, input.companyId, match.itemId);
+    const disposition = classifyOnshapeReleasedAsset(
+      {
+        assetAttached,
+        revisionId: match.revisionId,
+        elementId: match.elementId
+      },
+      provenanceByItemAsset.get(provenanceKey(match.itemId, match.assetKind))
+    );
+
+    // A proven sync of this exact released revision: skip the export and write
+    // nothing — the row that proved it is already accurate.
+    if (disposition === "already-synced") {
+      result.skippedAlreadySynced++;
+      continue;
+    }
+
+    // An asset is attached that we cannot attribute to ourselves. Still skipped,
+    // but recorded as the observation it is. An item whose only PDF is a quality
+    // certificate lands here rather than reading as a synced drawing — that is
+    // the point, so leave it: skipping keeps a hand-attached file safe, and the
+    // row must not claim a sync that never happened.
+    if (disposition === "existing-asset") {
+      result.skippedAlreadySynced++;
+      result.observedMatches.push({
+        assetKind: match.assetKind,
+        itemId: match.itemId,
+        status: "skipped",
+        skipReason: "existing-asset",
+        observedOnly: true,
+        partNumber: match.partNumber,
+        revision: match.revision,
+        revisionId: match.revisionId,
+        releaseState: match.releaseState,
+        documentId: match.documentId,
+        versionId: match.versionId,
+        elementId: match.elementId
+      });
+      continue;
+    }
+
+    result.workItems.push({
+      kind: match.assetKind,
+      label: match.label,
+      itemId: match.itemId,
+      partNumber: match.partNumber,
+      revision: match.revision,
+      revisionId: match.revisionId,
+      releaseState: match.releaseState,
+      documentId: match.documentId,
+      versionId: match.versionId,
+      elementId: match.elementId,
+      modelElementKind: match.modelElementKind,
+      assetBaseName: match.assetBaseName
     });
   }
 
@@ -516,6 +647,7 @@ function itemStateForWorkItem(
     source: "backfill" as const,
     partNumber: workItem.partNumber,
     revision: workItem.revision,
+    revisionId: workItem.revisionId,
     releaseState: workItem.releaseState,
     documentId: workItem.documentId,
     versionId: workItem.versionId,
@@ -558,8 +690,11 @@ async function syncBackfillWorkItemWithState(
   }
 }
 
-// Already-attached matches: recorded as synced BY OBSERVATION (D10) so a fleet
-// synced before v2 reads truthfully without re-downloading a single asset.
+// Matches whose asset was already attached from somewhere this sync cannot
+// name: recorded as skipped for that reason, by observation. The released
+// revision's identifiers ARE true of the release we matched (and are what makes
+// the sidebar's open-in-Onshape link work), so they are kept; `modelUploadId` is
+// not, because that column means "what this sync attached".
 async function recordObservedMatches(
   carbon: CarbonClient,
   input: OnshapeBackfillInput,
@@ -571,16 +706,17 @@ async function recordObservedMatches(
       userId: input.userId,
       itemId: observed.itemId,
       assetKind: observed.assetKind,
-      status: "synced",
+      status: observed.status,
+      skipReason: observed.skipReason,
       source: "backfill",
-      observedOnly: true,
+      observedOnly: observed.observedOnly,
       partNumber: observed.partNumber,
       revision: observed.revision,
+      revisionId: observed.revisionId,
       releaseState: observed.releaseState,
       documentId: observed.documentId,
       versionId: observed.versionId,
       elementId: observed.elementId,
-      modelUploadId: observed.modelUploadId,
       runId: input.runId ?? null
     });
   }

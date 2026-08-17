@@ -1447,6 +1447,9 @@ msgstr "Una alerta de que algo necesita la atención de una persona, distribuida
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "Un requisito de aprobación en una no conformidad cuyos revisores (Ingeniería y Calidad preestablecidos) deben dar el visto bueno antes de que el problema se pueda cerrar."
 
+msgid "An asset is already attached"
+msgstr ""
+
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "El costo de adquisición de un activo menos la depreciación acumulada — lo que aún vale en los libros y la cantidad en que se dispone."
 

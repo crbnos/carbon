@@ -66,7 +66,8 @@ export type OnshapeSyncRunStatus =
 export type OnshapeSkipReason =
   | "revision-not-found"
   | "asset-too-large"
-  | "ambiguous-item";
+  | "ambiguous-item"
+  | "existing-asset";
 
 // A run row's status is terminal once one of these landed; nothing the job
 // writes afterwards may overwrite it (a recorded cancel outranks the job's own
@@ -333,6 +334,74 @@ export async function markItemSyncStateFailedByItem(
     });
     return { applied: false };
   }
+}
+
+// --- Asset provenance -------------------------------------------------------
+
+/**
+ * What a sync may claim about a matched release whose item already holds an
+ * asset of that kind:
+ *
+ *   - `already-synced` — a state row proves THIS integration attached THIS
+ *     released revision. The export is skipped and nothing is written: the
+ *     existing row already says so, accurately.
+ *   - `existing-asset` — something is attached, but nothing proves we fetched
+ *     it. The export is still skipped (an attached asset is never clobbered and
+ *     Onshape quota is never spent on one), and the row records exactly that
+ *     much: skipped, reason `existing-asset`, observed only.
+ *   - `sync` — nothing is attached, so the release needs an export.
+ */
+export type OnshapeAssetDisposition =
+  | "already-synced"
+  | "existing-asset"
+  | "sync";
+
+/** The provenance columns of one `onshapeItemSyncState` row. */
+export interface OnshapeAssetProvenance {
+  status: string;
+  revisionId: string | null;
+  elementId: string | null;
+}
+
+export interface OnshapeReleasedAsset {
+  /** An asset of this kind hangs off the item — provenance unknown. */
+  assetAttached: boolean;
+  /** The released revision's own id, when the release carries one. */
+  revisionId: string | null;
+  /** The released element the asset would be exported from. */
+  elementId: string;
+}
+
+// Does this row prove we synced this exact released revision? The revision id is
+// the precise key; the element id is enough on its own because a row is already
+// scoped to one item x asset kind and every Carbon revision is its own item.
+function provesOnshapeSync(
+  release: OnshapeReleasedAsset,
+  provenance: OnshapeAssetProvenance | null | undefined
+): boolean {
+  if (provenance?.status !== "synced") {
+    return false;
+  }
+  return release.revisionId
+    ? provenance.revisionId === release.revisionId
+    : provenance.elementId === release.elementId;
+}
+
+// Pure. An attached file proves only that SOMETHING is attached: a quality
+// certificate someone uploaded by hand is a PDF like any other, and a manually
+// uploaded model fills modelUploadId like any other. This table is the only
+// record of what the Onshape sync itself fetched, so it is the only thing that
+// may promote an attachment to "synced".
+export function classifyOnshapeReleasedAsset(
+  release: OnshapeReleasedAsset,
+  provenance: OnshapeAssetProvenance | null | undefined
+): OnshapeAssetDisposition {
+  if (!release.assetAttached) {
+    return "sync";
+  }
+  return provesOnshapeSync(release, provenance)
+    ? "already-synced"
+    : "existing-asset";
 }
 
 // --- Run progress -----------------------------------------------------------

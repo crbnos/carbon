@@ -1447,6 +1447,9 @@ msgstr "एक सतर्कता कि कुछ को एक व्यक
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "एक गैर-अनुरूपता पर एक अनुमोदन आवश्यकता जिसके समीक्षकों (सीडेड इंजीनियरिंग और गुणवत्ता) को समस्या बंद होने से पहले हस्ताक्षर करने चाहिए।"
 
+msgid "An asset is already attached"
+msgstr ""
+
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "एक संपत्ति की अधिग्रहण लागत माइनस संचयी मूल्यह्रास — यह किताबों पर अभी भी क्या मूल्य है और राशि जिस पर इसे निपटाया जाता है।"
 

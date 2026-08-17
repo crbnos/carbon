@@ -1447,6 +1447,9 @@ msgstr "一个警报，表示某些内容需要人员的注意，从 carbon/noti
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "不符合上的批准要求，其审核人（预设为工程和质量）必须签署才能关闭问题。"
 
+msgid "An asset is already attached"
+msgstr ""
+
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "资产的收购成本减去累计折旧—仍在账簿上的价值和处置的金额。"
 

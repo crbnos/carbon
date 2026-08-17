@@ -4,6 +4,7 @@ import {
   buildItemSyncState,
   captureAmbiguousReleases,
   captureUnmatchedReleases,
+  classifyOnshapeReleasedAsset,
   createRunProgress,
   finalizeRun,
   isStalled,
@@ -275,18 +276,127 @@ describe("buildItemSyncState", () => {
     expect(row.observedOnly).toBe(false);
   });
 
-  it("marks an observed-only row (already attached, never re-downloaded)", () => {
+  it("records an already-attached asset of unknown origin as an observed skip", () => {
     const row = buildItemSyncState({
       ...itemStateBase,
       assetKind: "drawing",
       source: "backfill",
-      status: "synced",
-      observedOnly: true
+      status: "skipped",
+      skipReason: "existing-asset",
+      observedOnly: true,
+      partNumber: "DRW-002033",
+      revision: "A",
+      documentId: "doc_1",
+      versionId: "ver_1",
+      elementId: "el_1"
     });
 
+    // The row states what happened — the asset was left alone — and never that
+    // this sync fetched it. The release identifiers are still true of the
+    // release that was matched, so they stay.
+    expect(row.status).toBe("skipped");
+    expect(row.skipReason).toBe("existing-asset");
     expect(row.observedOnly).toBe(true);
-    expect(row.assetKind).toBe("drawing");
+    expect(row.modelUploadId).toBeNull();
+    expect(row.documentId).toBe("doc_1");
+    expect(row.versionId).toBe("ver_1");
+    expect(row.elementId).toBe("el_1");
     expect(row.source).toBe("backfill");
+  });
+});
+
+// The gate in front of every backfill export. Getting it wrong either burns
+// Onshape quota re-downloading what is already there, or — the defect this
+// pins — records "synced" for a file the sync never fetched, stamped with
+// Onshape's document and version ids.
+describe("classifyOnshapeReleasedAsset", () => {
+  const releasedAsset = {
+    assetAttached: true,
+    revisionId: "rev_1",
+    elementId: "el_1"
+  };
+
+  it("queues an export when nothing is attached", () => {
+    expect(
+      classifyOnshapeReleasedAsset(
+        { ...releasedAsset, assetAttached: false },
+        undefined
+      )
+    ).toBe("sync");
+  });
+
+  it("queues an export even when a row claims an earlier sync, if the asset is gone", () => {
+    expect(
+      classifyOnshapeReleasedAsset(
+        { ...releasedAsset, assetAttached: false },
+        { status: "synced", revisionId: "rev_1", elementId: "el_1" }
+      )
+    ).toBe("sync");
+  });
+
+  it("skips silently when a row proves this released revision was synced", () => {
+    expect(
+      classifyOnshapeReleasedAsset(releasedAsset, {
+        status: "synced",
+        revisionId: "rev_1",
+        elementId: "el_1"
+      })
+    ).toBe("already-synced");
+  });
+
+  it("falls back to the released element when the release carries no revision id", () => {
+    expect(
+      classifyOnshapeReleasedAsset(
+        { ...releasedAsset, revisionId: null },
+        { status: "synced", revisionId: null, elementId: "el_1" }
+      )
+    ).toBe("already-synced");
+    expect(
+      classifyOnshapeReleasedAsset(
+        { ...releasedAsset, revisionId: null },
+        { status: "synced", revisionId: null, elementId: "el_other" }
+      )
+    ).toBe("existing-asset");
+  });
+
+  it("treats an attachment with no sync-state row at all as unproven", () => {
+    // The hand-uploaded file: a quality certificate PDF, or a model somebody
+    // dragged onto the part. Nothing in Carbon says Onshape put it there.
+    expect(classifyOnshapeReleasedAsset(releasedAsset, undefined)).toBe(
+      "existing-asset"
+    );
+  });
+
+  it("treats a row for a different released revision as unproven", () => {
+    expect(
+      classifyOnshapeReleasedAsset(releasedAsset, {
+        status: "synced",
+        revisionId: "rev_previous",
+        elementId: "el_1"
+      })
+    ).toBe("existing-asset");
+  });
+
+  it("treats a row that never reached synced as unproven", () => {
+    for (const unprovenStatus of ["queued", "running", "skipped", "failed"]) {
+      expect(
+        classifyOnshapeReleasedAsset(releasedAsset, {
+          status: unprovenStatus,
+          revisionId: "rev_1",
+          elementId: "el_1"
+        })
+      ).toBe("existing-asset");
+    }
+  });
+
+  it("treats a synced row with no identifiers as unproven", () => {
+    expect(
+      classifyOnshapeReleasedAsset(releasedAsset, {
+        status: "synced",
+        revisionId: null,
+        elementId: null
+      })
+    ).toBe("existing-asset");
   });
 });
 

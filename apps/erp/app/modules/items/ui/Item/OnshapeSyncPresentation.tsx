@@ -43,7 +43,8 @@ export type OnshapeAssetKind = (typeof onshapeAssetKinds)[number];
 export const onshapeSyncSkipReasons = [
   "revision-not-found",
   "asset-too-large",
-  "ambiguous-item"
+  "ambiguous-item",
+  "existing-asset"
 ] as const;
 export type OnshapeSyncSkipReason = (typeof onshapeSyncSkipReasons)[number];
 
@@ -241,6 +242,8 @@ export function useOnshapeSyncLabels() {
             return t`File too large to sync`;
           case "ambiguous-item":
             return t`Matches more than one part`;
+          case "existing-asset":
+            return t`An asset is already attached`;
           default:
             return t`Skipped`;
         }

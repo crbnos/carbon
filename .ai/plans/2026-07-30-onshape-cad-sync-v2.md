@@ -97,10 +97,11 @@ itemId        TEXT NOT NULL          -- single-column FK → item(id) (D13B: add
 assetKind     TEXT NOT NULL CHECK IN ('model','drawing')
 status        TEXT NOT NULL CHECK IN ('queued','running','synced','skipped','failed')
 source        TEXT NOT NULL CHECK IN ('webhook','backfill','manual')
-skipReason    TEXT NULL              -- 'revision-not-found'|'asset-too-large'|'ambiguous-item'|...
+skipReason    TEXT NULL              -- 'revision-not-found'|'asset-too-large'|'ambiguous-item'
+                                     -- |'existing-asset'|...
 error         TEXT NULL
-observedOnly  BOOLEAN NOT NULL DEFAULT false  -- D10: backfill saw it already-synced (v1-attached);
-                                              -- lastSyncedAt = when observed, not when attached
+observedOnly  BOOLEAN NOT NULL DEFAULT false  -- D10: the backfill saw an asset already attached and
+                                              -- left it alone; the row is an observation, not a sync
 partNumber, revision, revisionId, documentId, versionId, elementId, releaseState  TEXT NULL
 modelUploadId TEXT NULL              -- what the sync attached (model rows)
 documentPath  TEXT NULL              -- (drawing rows)
@@ -230,8 +231,10 @@ Additive/inert first, behavior and UI later; each PR merges safely alone.
 - [ ] `onshape-revision-sync.ts`: upsert item state rows per asset kind (source
       `'webhook'`); ambiguous drawing matches recorded nowhere item-level.
 - [ ] `onshape-backfill.ts`: accept `runId`; per-page memoized progress step;
-      item state upserts per work item (source `'backfill'`); **already-synced
-      matches get `observedOnly` state rows (D10)**; unmatched + ambiguous release
+      item state upserts per work item (source `'backfill'`); **a match whose
+      asset is already attached but unproven gets a `skipped`/`existing-asset`
+      `observedOnly` row (D10); one this integration provably synced gets no
+      write at all**; unmatched + ambiguous release
       capture (capped 200 + overflow count); `completed` final step; `onFailure` →
       `failed`; `cancelOn: carbon/onshape-backfill.cancel` matched on `runId`.
 - [ ] `packages/lib/src/events.ts` + `trigger.ts`: `onshape-backfill` payload gains
@@ -362,8 +365,10 @@ deep-links there. No details-page card.
 - **Old queued events after deploy** (no `runId`): backfill runs untracked.
 - **Company with zero Onshape-linked items:** run completes with zero counters;
   dashboard shows the honest empty run.
-- **Pre-v2 fleet (D10):** first backfill writes `observedOnly` rows for
-  already-synced items — panel/dashboard truthful without re-downloading.
+- **Pre-v2 fleet (D10):** the first backfill leaves every already-attached asset
+  alone and records it `skipped`/`existing-asset`/`observedOnly` — the panel and
+  dashboard read truthfully (an attachment nobody can attribute to the sync is
+  never counted as synced) without re-downloading anything.
 
 ## Testing
 
@@ -463,7 +468,8 @@ provenance detail live on the dashboard, never in the block.
 
 - Skip reasons: `revision-not-found`→"No released revision found" ·
   `asset-too-large`→"File too large to sync" · `ambiguous-item`→"Matches more
-  than one part" · unknown→"Skipped" (raw detail only in the dashboard row detail)
+  than one part" · `existing-asset`→"An asset is already attached" ·
+  unknown→"Skipped" (raw detail only in the dashboard row detail)
 - Sources: webhook→"Automatic" · backfill→"Bulk sync" · manual→"Manual"
 - Stall warning: "No progress for 30 minutes" (not "possibly stalled")
 - `observedOnly`: "Existing attachment confirmed"

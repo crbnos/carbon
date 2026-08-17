@@ -65,6 +65,13 @@ export interface OnshapeTranslation {
 // 0 = Part Studio, 1 = Assembly, 2 = Drawing. Carries the released version's
 // documentId/versionId/elementId — the join to a Carbon item is by partNumber.
 export interface OnshapeRevision {
+  /**
+   * The revision's own id — the same identifier a release webhook carries, so
+   * it is what ties a stored sync outcome to the exact revision it synced.
+   * Optional: not every revisions response is guaranteed to carry it, and
+   * callers fall back to the element id.
+   */
+  id?: string | null;
   partNumber: string;
   revision: string;
   elementType: number;
