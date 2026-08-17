@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { resolveIntegrationSecrets } from "@carbon/ee";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import crypto from "crypto";
@@ -58,9 +59,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    const { apiKey, secretKey } = integrationValidator.parse(
-      paperlessPartsIntegration.data.metadata
+    // Secret material (apiKey/secretKey) lives in Supabase Vault; merge it back
+    // so we read the same shape as before. serviceRole is required for vault RPCs.
+    const resolvedMetadata = await resolveIntegrationSecrets(
+      serviceRole,
+      companyId,
+      "paperless-parts",
+      paperlessPartsIntegration.data.metadata,
+      paperlessPartsIntegration.data.secretRef
     );
+    const { apiKey, secretKey } = integrationValidator.parse(resolvedMetadata);
 
     // The signature provided by Paperless Parts is computed using the Python json.dumps() function,
     // which formats the JSON string with newlines and whitespace.
