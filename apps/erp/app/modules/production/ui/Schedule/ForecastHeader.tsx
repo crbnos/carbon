@@ -220,16 +220,6 @@ export function ForecastHeader({
       </HStack>
 
       <HStack className="flex-wrap gap-y-2">
-        <HStack spacing={4} className="text-xs text-muted-foreground">
-          <HStack className="gap-x-1">
-            <span className="inline-block h-2 w-4 rounded-sm bg-emerald-500" />
-            <Trans>Scheduled</Trans>
-          </HStack>
-          <HStack className="gap-x-1">
-            <span className="inline-block h-2 w-4 rounded-sm bg-red-500" />
-            <Trans>Conflict</Trans>
-          </HStack>
-        </HStack>
         <HStack>
           <Button variant="secondary" onClick={goToToday}>
             <Trans>Today</Trans>
