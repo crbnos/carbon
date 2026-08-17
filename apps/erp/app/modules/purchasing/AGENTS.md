@@ -67,7 +67,7 @@ pnpm --filter @carbon/erp test
 - `getSupplierQuotesForComparison` — side-by-side quote comparison
 - `getDefaultAttachmentsForPO` — default document attachments for PO creation
 - `getPurchaseReturnOrders` / `insertPurchaseReturnOrder` / `upsertPurchaseReturnOrderLine` — supplier-return CRUD; `confirmPurchaseReturnOrder` (Kysely row-locked caps: receiptLine received → PO line received×factor → invoice line×factor), `cancelPurchaseReturnOrder` / `completePurchaseReturnOrder` / `shortClosePurchaseReturnOrderLine`
-- `getReturnableLinesForSupplier` (posted receipt lines minus already-authorized; invoice-only rows are explicit blind returns) / `getReturnableEntitiesForSupplier` (`attributes ->> Supplier`)
+- `getReturnableLinesForSupplier` (posted receipt lines minus already-authorized; invoice-only rows are explicit blind returns) / `getReturnableEntitiesForSupplier` (Available entities whose `attributes ->> Receipt` resolves to a posted receipt from the supplier)
 - `createPurchaseReturnOrderCredit` (Kysely, shipped-minus-credited cap) / `getCreditableQuantitiesForPurchaseReturn` / `createReplacementPurchaseOrder` (linked-PO-line / supplierPart pricing)
 
 ## Key Exports
