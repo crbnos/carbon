@@ -360,11 +360,7 @@ export async function requirePermissions(
           myClaims.permissions[permission]?.[
             action as "view" | "create" | "update" | "delete"
           ];
-        return (
-          permissionForCompany?.includes("0") || // 0 is the wildcard for all companies
-          permissionForCompany?.includes(companyId) ||
-          false
-        );
+        return permissionForCompany?.includes(companyId) || false;
       } else if (Array.isArray(permission)) {
         return permission.every((p) => {
           const permissionForCompany =

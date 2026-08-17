@@ -1160,23 +1160,19 @@ export function makeCompanyPermissionsFromClaims(
         switch (action) {
           case "view":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["view"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["view"] = value.includes(companyId);
             break;
           case "create":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["create"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["create"] = value.includes(companyId);
             break;
           case "update":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["update"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["update"] = value.includes(companyId);
             break;
           case "delete":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["delete"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["delete"] = value.includes(companyId);
             break;
         }
       }
@@ -1275,18 +1271,10 @@ export function makeCompanyPermissionsFromEmployeeType(
       result[permission.module] = {
         name: permission.module.toLowerCase(),
         permission: {
-          view:
-            permission.view.includes("0") ||
-            permission.view.includes(companyId),
-          create:
-            permission.create.includes("0") ||
-            permission.create.includes(companyId),
-          update:
-            permission.update.includes("0") ||
-            permission.update.includes(companyId),
-          delete:
-            permission.delete.includes("0") ||
-            permission.delete.includes(companyId)
+          view: permission.view.includes(companyId),
+          create: permission.create.includes(companyId),
+          update: permission.update.includes(companyId),
+          delete: permission.delete.includes(companyId)
         }
       };
     }
@@ -1438,7 +1426,7 @@ export async function updatePermissions(
     addOnly?: boolean;
   }
 ): Promise<Result> {
-  if (await client.rpc("is_claims_admin")) {
+  if (await client.rpc("is_claims_admin", { company: companyId })) {
     const claims = await getClaims(client, id);
 
     if (claims.error) return error(claims.error, "Failed to get claims");
@@ -1553,6 +1541,15 @@ export async function updatePermissions(
           ).filter((c: string) => c !== companyId);
         }
       });
+    }
+
+    // The "0" global-company wildcard is retired (NIST 800-171 3.1.5). Strip it
+    // from every array so it can never be persisted to the authoritative table.
+    for (const key of Object.keys(updatedPermissions)) {
+      const value = updatedPermissions[key];
+      if (Array.isArray(value)) {
+        updatedPermissions[key] = value.filter((c: string) => c !== "0");
+      }
     }
 
     const permissionsUpdate = await getCarbonServiceRole()
