@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-17T04:43:54.465Z",
+  "generated": "2026-08-17T15:20:04.689Z",
   "totalTools": 1442,
   "modules": 15,
   "tools": [
@@ -370,7 +370,7 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get account ledger",
-      "paramCount": 5,
+      "paramCount": 6,
       "serviceParams": [
         "client",
         "args"
@@ -383,6 +383,12 @@
         "properties": {
           "accountId": {
             "type": "string"
+          },
+          "companyIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "startDate": {
             "type": [

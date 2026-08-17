@@ -162,6 +162,10 @@ export async function getAccountLedger(
   args: {
     accountId: string;
     companyId: string | null;
+    // Consolidated drill-down: restrict to an explicit set of companies (the
+    // group's operating companies + elimination entities) so a service-role read
+    // doesn't leak across tenants. Ignored when companyId is set.
+    companyIds?: string[];
     startDate: string | null;
     endDate: string | null;
     limit: number;
@@ -185,6 +189,8 @@ export async function getAccountLedger(
 
   if (args.companyId) {
     query = query.eq("companyId", args.companyId);
+  } else if (args.companyIds && args.companyIds.length > 0) {
+    query = query.in("companyId", args.companyIds);
   }
 
   const result = await query

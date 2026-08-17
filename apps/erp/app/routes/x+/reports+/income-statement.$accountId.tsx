@@ -8,6 +8,7 @@ import {
   getAccountLedger,
   getAccountLedgerSummary
 } from "~/modules/accounting";
+import { getConsolidatedAccountLedger } from "~/modules/accounting/accounting.ee.server";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
 
@@ -32,25 +33,42 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const endDate = searchParams.get("endDate") || null;
   const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
 
-  const selectedCompanyId =
-    companiesParam === "all" ? null : (companiesParam ?? companyId);
+  // "All Companies" drills into the consolidated ledger — including the
+  // elimination entities, which the user's RLS session can't see. Reading them
+  // via service role (scoped to this group) makes the elimination journal
+  // entries appear and the drawer summary tie to the consolidated report.
+  const isConsolidated = companiesParam === "all";
+  const selectedCompanyId = isConsolidated
+    ? null
+    : (companiesParam ?? companyId);
 
-  const [account, ledger, summary] = await Promise.all([
+  const [account, drill] = await Promise.all([
     getAccount(client, accountId),
-    getAccountLedger(client, {
-      accountId,
-      companyId: selectedCompanyId,
-      startDate,
-      endDate,
-      limit: LEDGER_PAGE_SIZE,
-      offset
-    }),
-    getAccountLedgerSummary(client, companyGroupId, selectedCompanyId, {
-      accountId,
-      startDate,
-      endDate
-    })
+    isConsolidated
+      ? getConsolidatedAccountLedger(companyGroupId, {
+          accountId,
+          startDate,
+          endDate,
+          limit: LEDGER_PAGE_SIZE,
+          offset
+        })
+      : Promise.all([
+          getAccountLedger(client, {
+            accountId,
+            companyId: selectedCompanyId,
+            startDate,
+            endDate,
+            limit: LEDGER_PAGE_SIZE,
+            offset
+          }),
+          getAccountLedgerSummary(client, companyGroupId, selectedCompanyId, {
+            accountId,
+            startDate,
+            endDate
+          })
+        ]).then(([ledger, summary]) => ({ ledger, summary }))
   ]);
+  const { ledger, summary } = drill;
 
   if (account.error || !account.data) {
     throw redirect(

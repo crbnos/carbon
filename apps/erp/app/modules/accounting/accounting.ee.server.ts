@@ -6,6 +6,8 @@ import type { ReportPeriodBucket } from "@carbon/utils";
 import { toStoredAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  getAccountLedger,
+  getAccountLedgerSummary,
   getConsolidatedBalances,
   getConsolidatedPeriodSeries
 } from "./accounting.ee.service";
@@ -52,6 +54,49 @@ export function getConsolidatedBalancesForReport(
     periodStart,
     getCarbonServiceRole()
   );
+}
+
+// Consolidated account drill-down ("All Companies"). Reads via service role so
+// the synthetic elimination entities' journal lines (invisible to the user's
+// RLS session — no user is a member of them) appear in the ledger and the
+// summary ties to the consolidated report. Scoped to the group's own companies
+// so a service-role read cannot cross tenants.
+export async function getConsolidatedAccountLedger(
+  companyGroupId: string,
+  args: {
+    accountId: string;
+    startDate: string | null;
+    endDate: string | null;
+    limit: number;
+    offset: number;
+  }
+) {
+  const serviceRole = getCarbonServiceRole();
+  const { data: groupCompanies } = await serviceRole
+    .from("company")
+    .select("id")
+    .eq("companyGroupId", companyGroupId)
+    .eq("active", true);
+  const companyIds = (groupCompanies ?? []).map((c) => c.id);
+
+  const [ledger, summary] = await Promise.all([
+    getAccountLedger(serviceRole, {
+      accountId: args.accountId,
+      companyId: null,
+      companyIds,
+      startDate: args.startDate,
+      endDate: args.endDate,
+      limit: args.limit,
+      offset: args.offset
+    }),
+    getAccountLedgerSummary(serviceRole, companyGroupId, null, {
+      accountId: args.accountId,
+      startDate: args.startDate,
+      endDate: args.endDate
+    })
+  ]);
+
+  return { ledger, summary };
 }
 
 export async function postDisposal(
