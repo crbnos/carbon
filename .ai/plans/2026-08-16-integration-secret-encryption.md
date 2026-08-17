@@ -10,17 +10,22 @@ behind shared helpers, but the exit criterion is **zero plaintext secrets across
 every integration** (D6).
 
 ## Progress
-- [ ] Task 1: Migration — enable Vault, add `secretRef`, secret RPC wrappers, delete trigger
-- [ ] Task 2: Regenerate DB types
-- [ ] Task 3: `SECRET_KEYS` map + secret helpers in `@carbon/ee` (+ unit tests)
-- [ ] Task 4: Migration — rewrite integration `jsonschema` rows to drop secret keys
-- [ ] Task 5: Route every provider read + token-refresh write through the helpers
-- [ ] Task 6: Settings service + Redis cache stop handling secret material
-- [ ] Task 7: Reveal endpoint (service-role, gated, audited)
-- [ ] Task 8: Settings UI — masked default + Reveal + anti-overwrite save
-- [ ] Task 9: Backfill script (plaintext → Vault, set `secretRef`, no scrub yet)
-- [ ] Task 10: Scrub plaintext + remove the transitional fallback
-- [ ] Task 11: Verify (typecheck + provider smoke + `/test` reveal + anti-overwrite)
+- [x] Task 1: Vault plumbing — extension, `secretRef`, RPC wrappers, delete trigger (round-trip verified; fixed create→`vault.update_secret` for in-place upsert)
+- [x] Task 2: Regenerate DB types (RPCs + `secretRef` typed)
+- [x] Task 3: `SECRET_KEYS` map + helpers (+ 11 unit tests); added `email` after config cross-check
+- [x] Task 4: jsonschema rows stripped of secret keys (0 remain)
+- [x] Task 5: providers read via resolve / write via persist (incl. slack notify + doc-sync found outside recon)
+- [x] Task 6: settings cache/writes stop handling secret material
+- [x] Task 7: reveal endpoint — VERIFIED end-to-end (authed → value; unknown key rejected; audit row written)
+- [~] Task 8: masked+reveal UI + anti-overwrite (splitSecrets empty-skip) done; **BLOCKED on one design decision** — the EE config zod schemas `.min(1)`-require secret fields, so post-scrub editing an installed integration without re-entering its secret fails validation. Needs: optionalize secret fields in the config schemas + enforce presence at install/activation.
+- [x] Task 9: backfill script — VERIFIED (vaulted a seeded plaintext apiKey, stamped secretRef)
+- [x] Task 10: scrub + fail-closed — VERIFIED (plaintext gone, vault preserved, **0 plaintext remain**)
+- [x] Task 11: verify — vault round-trip, backfill/scrub on real data, reveal e2e, delete-trigger cascade, ee suite 556, typecheck ee/jobs/erp all PASS
+
+## Known follow-ups
+- **Task 8 validation gap** (above) — the one blocker to a fully-usable settings form.
+- Per-reveal TOTP re-challenge under CONTROLLED_ENVIRONMENT (currently relies on session MFA).
+- The "Reveal" UI string needs translations (`/translate`).
 
 ## Dependencies
 - Task 2 needs Task 1. Task 3 needs Task 2 (typed RPCs). Tasks 4 and 5–8 need Task 3.
