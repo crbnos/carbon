@@ -130,19 +130,25 @@ function mockClient(opts: {
 }
 
 describe("resolveIntegrationSecrets", () => {
-  it("returns metadata as-is when secretRef is null (transitional fallback)", async () => {
+  it("returns metadata as-is for an integration with no secret keys", async () => {
     const client = mockClient({});
-    const metadata = { credentials: { accessToken: "plaintext-still-here" } };
+    const metadata = { active: true, someConfig: "x" };
+    // exchange-rates-v1 has no SECRET_KEYS entry — nothing to resolve.
     const merged = await resolveIntegrationSecrets(
       client,
       "co",
-      "xero",
+      "exchange-rates-v1",
       metadata,
       null
     );
-    expect(getPath(merged, "credentials.accessToken")).toBe(
-      "plaintext-still-here"
-    );
+    expect(merged).toEqual(metadata);
+  });
+
+  it("fails closed when a secret-bearing integration has no secretRef", async () => {
+    const client = mockClient({});
+    await expect(
+      resolveIntegrationSecrets(client, "co", "xero", {}, null)
+    ).rejects.toBeInstanceOf(IntegrationSecretUnavailableError);
   });
 
   it("merges the vaulted bag back into metadata when secretRef is set", async () => {

@@ -150,10 +150,13 @@ export async function persistIntegrationSecrets(
  * callers read the same shape as before (e.g. `metadata.credentials.accessToken`).
  * Requires a SERVICE-ROLE client.
  *
+ * - integration has no secret keys          -> return metadata as-is (nothing to do).
  * - `secretRef` set + vault returns the bag  -> merged metadata.
  * - `secretRef` set + vault returns null      -> throw (fail-closed, D8).
- * - `secretRef` null (not yet backfilled)     -> return metadata as-is; the
- *   plaintext is still present at those paths (transitional fallback, D7).
+ * - secret-bearing integration + no `secretRef` -> throw (fail-closed): the
+ *   plaintext has been scrubbed, so a missing vault pointer is a broken state,
+ *   never "return the secret-free metadata as if complete". (The transitional
+ *   plaintext fallback was removed once the scrub migration ran.)
  *
  * Pass `secretRef` from the row when you have it to skip the extra lookup.
  */
@@ -169,6 +172,9 @@ export async function resolveIntegrationSecrets(
       ? (structuredClone(metadata) as Json)
       : {};
 
+  // Integrations that store no secrets have nothing to resolve.
+  if ((SECRET_KEYS[integrationId] ?? []).length === 0) return base;
+
   let ref = secretRef;
   if (ref === undefined) {
     const { data } = await serviceClient
@@ -180,8 +186,10 @@ export async function resolveIntegrationSecrets(
     ref = data?.secretRef ?? null;
   }
 
-  // Not yet backfilled — plaintext still lives in `metadata`.
-  if (!ref) return base;
+  // Fail closed: a secret-bearing integration must carry a vault pointer.
+  if (!ref) {
+    throw new IntegrationSecretUnavailableError(companyId, integrationId);
+  }
 
   const { data: bag, error } = await serviceClient.rpc(
     "get_integration_secret",
