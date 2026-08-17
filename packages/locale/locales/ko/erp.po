@@ -56,6 +56,12 @@ msgstr "{0} 계정"
 msgid "{0} ago"
 msgstr "{0} 전"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "잔액이 있는 고객 {0}명"
@@ -92,6 +98,11 @@ msgstr "{0}개 문제 — 발행되지 않음"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "공정 {0}개"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -4052,12 +4063,6 @@ msgstr "대변전표"
 
 msgid "Credit total"
 msgstr "크레딧 합계"
-
-msgid "creditable"
-msgstr "크레딧 가능"
-
-msgid "credited"
-msgstr "크레딧됨"
 
 msgid "Credited"
 msgstr "크레딧됨"
@@ -11793,9 +11798,6 @@ msgstr "결제 수령 · 인보이스 {0}건"
 msgid "Receive to Inventory"
 msgstr "재고로 입고"
 
-msgid "received"
-msgstr "수령됨"
-
 msgid "Received"
 msgstr "수령됨"
 
@@ -12222,8 +12224,9 @@ msgstr "재입고 수수료"
 msgid "Restock Fee Percent"
 msgstr "재입고 수수료 비율"
 
-msgid "Restocking fee"
-msgstr "재입고 수수료"
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr ""
 
 msgid "Restore from Trash"
 msgstr "휴지통에서 복원"

@@ -14,6 +14,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import { useFetcher, useParams } from "react-router";
@@ -143,21 +144,29 @@ const SalesReturnOrderCreditModal = ({
                             <Trans>Line {line.lineNumber}</Trans>
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {quantityFormatter(line.quantityReceived)}{" "}
-                            <Trans>received</Trans>
-                            {" · "}
-                            {quantityFormatter(line.quantityCredited)}{" "}
-                            <Trans>credited</Trans>
+                            <Trans>
+                              {quantityFormatter(line.quantityReceived)}{" "}
+                              received
+                              {" · "}
+                              {quantityFormatter(line.quantityCredited)}{" "}
+                              credited
+                            </Trans>
                           </span>
                           {line.restockFeePercent > 0 && (
                             <span className="text-xs text-muted-foreground">
-                              <Trans>Restocking fee</Trans>{" "}
-                              {percentFormatter.format(line.restockFeePercent)}
+                              <Trans>
+                                Restocking fee{" "}
+                                {percentFormatter.format(
+                                  line.restockFeePercent
+                                )}
+                              </Trans>
                             </span>
                           )}
                         </VStack>
                         <HStack spacing={4}>
                           <NumberField
+                            formatOptions={INPUT_FORMAT.quantity}
+                            step={INPUT_STEP.quantity}
                             value={quantity}
                             onChange={(value) =>
                               setQuantity(

@@ -29,7 +29,7 @@ company, which now contains `RMA000001` Completed, `RMA000002` Confirmed, and
 > Known local-DB quirk (pre-existing, not from this branch): money values may
 > render without trailing zeros (`$1899` instead of `$1,899.00`) because the
 > local DB is missing `companySettings.showCurrencyTrailingZeros`. The
-> Appendix has a one-shot fix.
+> Appendix explains the fix (rebuild from migrations).
 
 ---
 
@@ -55,7 +55,7 @@ company, which now contains `RMA000001` Completed, `RMA000002` Confirmed, and
 2. **Expected:** six seeded rows: `Defective`, `Wrong Item Shipped`,
    `Damaged in Transit`, `No Longer Needed`, `Warranty`, `Other`. Each row
    has a **Zero Inventory Value** column showing `No`.
-3. Click **New Return Reason** (top right). In the drawer, type
+3. Click **Add Reason** (top right). In the drawer, type
    `Customer Remorse` into **Name**, leave the **Zero inventory value**
    toggle off, click **Save**. **Expected:** the row appears; a success toast
    shows.
@@ -172,7 +172,7 @@ Shop` received 4 × `BIKE-GX` (a serialized bicycle) on shipment `SHP000010`.*
 
 *Uses: the T6 Confirmed RMA.*
 
-1. **Inventory** (left rail) → **Receipts** → **New Receipt**.
+1. **Inventory** (left rail) → **Receipts** → **Add Receipt**.
 2. In the receipt form, set **Source Document** = `Sales Return Order`.
 3. **Expected:** the **Source Document ID** combobox lists open RMAs
    (Confirmed / Partially Received only). Pick your RMA.
@@ -228,7 +228,7 @@ company).*
 
 **B. Return to Customer (claim rejected)**
 1. On a received line, set **Disposition** = `Return to Customer`.
-2. **Inventory → Shipments → New Shipment**, **Source Document** =
+2. **Inventory → Shipments → Add Shipment**, **Source Document** =
    `Sales Return Order`, pick the RMA (listed once Partially
    Received/Received).
 3. **Expected:** a shipment is created with the received-not-yet-shipped-back
@@ -294,7 +294,7 @@ company).*
 
 ## T12 — Replacement order ✅ (link) 
 
-1. On the RMA header, click **Create Replacement Order**.
+1. On the RMA header, click **Create Replacement**.
 2. **Expected:** a new **Draft sales order** opens, pre-filled with the RMA's
    customer and lines, priced by the normal price resolution (edit to `0`
    for a warranty replacement). Its Customer Reference carries the RMA
@@ -342,7 +342,7 @@ company).*
 5. **Confirm**. **Expected:** cap check (received − already returned),
    status **Confirmed**, PDF titled **Return to Supplier** showing
    `Supplier RMA #: SUP-RMA-77`. ✅
-6. **Inventory → Shipments → New Shipment**, **Source** =
+6. **Inventory → Shipments → Add Shipment**, **Source** =
    `Purchase Return Order`, pick the RTS. **Expected:** lines pre-fill with
    the open quantities. **Post** it.
 7. **Expected:** RTS status **Shipped** (or Partially Shipped), line shows
@@ -355,7 +355,7 @@ company).*
    credited → submit → **Draft AP credit memo** (demo: 5 × 12 = `60`).
    **Post** it. **Expected:** reason account **GR/IR Clearing** (netting the
    shipment's GRNI debit), and the RTS **Credited** column shows `5`. ✅
-9. **Create Replacement Order** → a draft **PO** priced from the linked PO
+9. **Create Replacement** → a draft **PO** priced from the linked PO
    line / supplier part, cross-linked.
 10. **Complete** works once every non-short-closed line is fully shipped
     (no disposition step exists on this side — goods just leave).
@@ -434,36 +434,11 @@ with them:
 
 ---
 
-## Appendix — one-shot local dev DB reconcile (optional)
+## Appendix — local dev DB drift (optional)
 
-The local DB predates this branch and carries another branch's schema. To
-align it with main + this branch (fixes the trailing-zeros display and drops
-the foreign cutList scaffolding — verified empty except one throwaway row,
-backed up during the run):
-
-```bash
-docker exec -i carbon-carbon-postgres-1 psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 <<'SQL'
-BEGIN;
-DROP VIEW IF EXISTS "cutLists";
-DROP TABLE IF EXISTS "cutListLine" CASCADE;
-DROP TABLE IF EXISTS "cutList" CASCADE;
-DROP TABLE IF EXISTS "cutPattern" CASCADE;
-DROP TABLE IF EXISTS "itemStockDimension" CASCADE;
-ALTER TABLE "jobOperation" DROP COLUMN IF EXISTS "jobOperationBatchId" CASCADE;
-ALTER TABLE "productionEvent" DROP COLUMN IF EXISTS "jobOperationBatchId" CASCADE;
-DROP TABLE IF EXISTS "jobOperationBatch" CASCADE;
-DROP TYPE IF EXISTS "cutListStatus";
-DROP TYPE IF EXISTS "jobOperationBatchStatus";
-DELETE FROM pg_enum WHERE enumlabel = 'Cut List Consumption'
-  AND enumtypid = '"itemLedgerDocumentType"'::regtype;
-ALTER TABLE "companySettings"
-  ADD COLUMN IF NOT EXISTS "showCurrencyTrailingZeros" BOOLEAN NOT NULL DEFAULT true;
-COMMIT;
-SQL
-docker exec carbon-carbon-postgres-1 psql -U supabase_admin -d postgres -c "NOTIFY pgrst, 'reload schema';"
-```
-
-Then recreate the two `jobOperationsWith*` views from
-`packages/database/supabase/migrations/20260811123619_widen-sales-production-scale.sql`
-(the DROP COLUMN CASCADE removes them), and run `pnpm db:types` — the diff
-should be empty on this branch.
+If your local DB predates this branch and carries another branch's schema
+(e.g. cutList tables, a missing `showCurrencyTrailingZeros` column), don't
+patch the catalog by hand — rebuild the disposable local database from
+migrations (`crbn up` / `pnpm db:migrate` on a fresh volume) and re-run
+`pnpm db:types`. On this branch the generated-types diff should then be
+empty.

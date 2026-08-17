@@ -56,6 +56,12 @@ msgstr "{0} hesaplar"
 msgid "{0} ago"
 msgstr "{0} önce"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} müşteri bakiye ile"
@@ -92,6 +98,11 @@ msgstr "{0} sorun — yayınlanmadı"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Süreçler"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -4052,12 +4063,6 @@ msgstr "Alacak Notu"
 
 msgid "Credit total"
 msgstr "Alacak toplamı"
-
-msgid "creditable"
-msgstr "alacaklandırılabilir"
-
-msgid "credited"
-msgstr "alacaklandırılmış"
 
 msgid "Credited"
 msgstr "Alacaklandırılmış"
@@ -11793,9 +11798,6 @@ msgstr "Ödeme Al · {0} fatura"
 msgid "Receive to Inventory"
 msgstr "Envantere Al"
 
-msgid "received"
-msgstr "alındı"
-
 msgid "Received"
 msgstr "Alındı"
 
@@ -12222,8 +12224,9 @@ msgstr "yeniden stok alma ücreti"
 msgid "Restock Fee Percent"
 msgstr "Yeniden Stok Alma Ücreti Yüzdesi"
 
-msgid "Restocking fee"
-msgstr "Yeniden Stok Alma Ücreti"
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr ""
 
 msgid "Restore from Trash"
 msgstr "Çöp'ten Geri Yükle"

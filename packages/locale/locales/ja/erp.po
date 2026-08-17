@@ -56,6 +56,12 @@ msgstr "{0} 件のアカウント"
 msgid "{0} ago"
 msgstr "{0}前"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0}件の残高のある顧客"
@@ -92,6 +98,11 @@ msgstr "{0}個の問題 — 未発行"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0}個のプロセス"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -4052,12 +4063,6 @@ msgstr "貸方メモ"
 
 msgid "Credit total"
 msgstr "クレジット合計"
-
-msgid "creditable"
-msgstr "クレジット可能"
-
-msgid "credited"
-msgstr "クレジット済み"
 
 msgid "Credited"
 msgstr "クレジット済み"
@@ -11793,9 +11798,6 @@ msgstr "支払いを受け取る · {0} 件の請求書"
 msgid "Receive to Inventory"
 msgstr "在庫に受け取る"
 
-msgid "received"
-msgstr "受領"
-
 msgid "Received"
 msgstr "受信済み"
 
@@ -12222,8 +12224,9 @@ msgstr "再在庫手数料"
 msgid "Restock Fee Percent"
 msgstr "再在庫手数料率"
 
-msgid "Restocking fee"
-msgstr "再在庫手数料"
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr ""
 
 msgid "Restore from Trash"
 msgstr "ゴミ箱から復元"

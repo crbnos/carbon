@@ -6617,6 +6617,7 @@ export async function confirmSalesReturnOrder(
           .selectFrom("shipmentLine")
           .select(["shippedQuantity"])
           .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
           .forUpdate()
           .executeTakeFirst();
         base = Number(src?.shippedQuantity ?? 0);
@@ -6625,6 +6626,7 @@ export async function confirmSalesReturnOrder(
           .selectFrom("salesOrderLine")
           .select(["quantitySent"])
           .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
           .forUpdate()
           .executeTakeFirst();
         base = Number(src?.quantitySent ?? 0);
@@ -6633,6 +6635,7 @@ export async function confirmSalesReturnOrder(
           .selectFrom("salesInvoiceLine")
           .select(["quantity"])
           .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
           .forUpdate()
           .executeTakeFirst();
         base = Number(src?.quantity ?? 0);
@@ -6708,6 +6711,8 @@ export async function cancelSalesReturnOrder(
   ]);
 
   if (order.error) return { data: null, error: order.error };
+  if (receipts.error) return { data: null, error: receipts.error };
+  if (lines.error) return { data: null, error: lines.error };
   if (["Completed", "Cancelled"].includes(order.data.status)) {
     return {
       data: null,
@@ -6773,6 +6778,7 @@ export async function completeSalesReturnOrder(
   ]);
 
   if (order.error) return { data: null, error: order.error };
+  if (lines.error) return { data: null, error: lines.error };
   if (
     !["Confirmed", "Partially Received", "Received"].includes(order.data.status)
   ) {
@@ -6943,23 +6949,26 @@ export async function getReturnableLinesForCustomer(
   }
   const shipmentById = new Map((shipments.data ?? []).map((s) => [s.id, s]));
 
-  const [shipmentLines, authorized] = await Promise.all([
-    client
-      .from("shipmentLine")
-      .select(
-        "id, shipmentId, lineId, itemId, shippedQuantity, unitOfMeasure, item(name, readableIdWithRevision, itemTrackingType)"
-      )
-      .in("shipmentId", shipmentIds)
-      .eq("companyId", companyId),
-    client
-      .from("salesReturnOrderLine")
-      .select("shipmentLineId, quantity, salesReturnOrder!inner(status)")
-      .eq("companyId", companyId)
-      .not("shipmentLineId", "is", null)
-      .neq("salesReturnOrder.status", "Cancelled")
-  ]);
-
+  const shipmentLines = await client
+    .from("shipmentLine")
+    .select(
+      "id, shipmentId, lineId, itemId, shippedQuantity, unitOfMeasure, item(name, readableIdWithRevision, itemTrackingType)"
+    )
+    .in("shipmentId", shipmentIds)
+    .eq("companyId", companyId);
   if (shipmentLines.error) return { data: null, error: shipmentLines.error };
+
+  const shipmentLineIds = (shipmentLines.data ?? []).map((l) => l.id);
+  if (shipmentLineIds.length === 0) {
+    return { data: [], error: null };
+  }
+
+  const authorized = await client
+    .from("salesReturnOrderLine")
+    .select("shipmentLineId, quantity, salesReturnOrder!inner(status)")
+    .in("shipmentLineId", shipmentLineIds)
+    .eq("companyId", companyId)
+    .neq("salesReturnOrder.status", "Cancelled");
   if (authorized.error) return { data: null, error: authorized.error };
 
   const authorizedByShipmentLine = new Map<string, number>();
@@ -7318,6 +7327,14 @@ export async function createReplacementSalesOrder(
     .eq("companyId", companyId)
     .single();
   if (order.error) return { data: null, error: order.error };
+  if (["Draft", "Cancelled"].includes(order.data.status)) {
+    return {
+      data: null,
+      error: {
+        message: `Cannot create a replacement for a ${order.data.status} return order`
+      } as PostgrestError
+    };
+  }
   if (order.data.replacementSalesOrderId) {
     return { data: { id: order.data.replacementSalesOrderId }, error: null };
   }
@@ -7414,6 +7431,7 @@ export async function createReplacementSalesOrder(
  */
 export async function setSalesReturnOrderLineDisposition(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     lineId,
     companyId,
@@ -7428,11 +7446,24 @@ export async function setSalesReturnOrderLineDisposition(
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const line = await client
     .from("salesReturnOrderLine")
-    .select("id, salesReturnOrderId, quantityReceived")
+    .select(
+      "id, salesReturnOrderId, quantityReceived, salesReturnOrder(status)"
+    )
     .eq("id", lineId)
     .eq("companyId", companyId)
     .single();
   if (line.error) return { data: null, error: line.error };
+
+  const orderStatus = (line.data.salesReturnOrder as { status: string } | null)
+    ?.status;
+  if (orderStatus === "Completed" || orderStatus === "Cancelled") {
+    return {
+      data: null,
+      error: {
+        message: `Cannot change disposition on a ${orderStatus} return order`
+      } as PostgrestError
+    };
+  }
 
   if (
     disposition !== "Pending" &&
@@ -7446,20 +7477,19 @@ export async function setSalesReturnOrderLineDisposition(
     };
   }
 
-  const update = await client
-    .from("salesReturnOrderLine")
-    .update({
-      disposition,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", lineId)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
-  if (update.error) return { data: null, error: update.error };
-
   if (disposition !== "Use As Is") {
+    const update = await client
+      .from("salesReturnOrderLine")
+      .update({
+        disposition,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", lineId)
+      .eq("companyId", companyId)
+      .select("id")
+      .single();
+    if (update.error) return { data: null, error: update.error };
     return { data: { id: lineId }, error: null };
   }
 
@@ -7522,53 +7552,78 @@ export async function setSalesReturnOrderLineDisposition(
   const entityIds = Array.from(
     new Set([...linkedOnHoldIds, ...blindOnHoldIds])
   );
-  if (entityIds.length === 0) {
-    return { data: { id: lineId }, error: null };
-  }
 
-  const entities = await client
-    .from("trackedEntity")
-    .select("id, quantity")
-    .in("id", entityIds)
-    .eq("companyId", companyId);
+  const entities =
+    entityIds.length > 0
+      ? await client
+          .from("trackedEntity")
+          .select("id, quantity")
+          .in("id", entityIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null };
   if (entities.error) return { data: null, error: entities.error };
 
-  const flip = await client
-    .from("trackedEntity")
-    .update({ status: "Available" })
-    .in("id", entityIds)
-    .eq("companyId", companyId);
-  if (flip.error) return { data: null, error: flip.error };
+  // One transaction: a partially-applied release (entities Available with no
+  // genealogy record, or a flipped entity on a still-Pending line) is a bug.
+  try {
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .updateTable("salesReturnOrderLine")
+        .set({
+          disposition,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .execute();
 
-  const activity = await client
-    .from("trackedActivity")
-    .insert({
-      type: "Disposition",
-      sourceDocument: "Sales Return Order",
-      sourceDocumentId: order.data.id,
-      sourceDocumentReadableId: order.data.salesReturnOrderId,
-      attributes: {
-        "Sales Return Order": order.data.id,
-        Disposition: disposition,
-        Employee: userId
-      },
-      companyId,
-      createdBy: userId
-    })
-    .select("id")
-    .single();
-  if (activity.error) return { data: null, error: activity.error };
+      if (entityIds.length === 0) return;
 
-  const inputs = await client.from("trackedActivityInput").insert(
-    (entities.data ?? []).map((entity) => ({
-      trackedActivityId: activity.data.id,
-      trackedEntityId: entity.id,
-      quantity: Number(entity.quantity ?? 1),
-      companyId,
-      createdBy: userId
-    }))
-  );
-  if (inputs.error) return { data: null, error: inputs.error };
+      await trx
+        .updateTable("trackedEntity")
+        .set({ status: "Available" })
+        .where("id", "in", entityIds)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      const activity = await trx
+        .insertInto("trackedActivity")
+        .values({
+          type: "Disposition",
+          sourceDocument: "Sales Return Order",
+          sourceDocumentId: order.data.id,
+          sourceDocumentReadableId: order.data.salesReturnOrderId,
+          attributes: JSON.stringify({
+            "Sales Return Order": order.data.id,
+            Disposition: disposition,
+            Employee: userId
+          }),
+          companyId,
+          createdBy: userId
+        })
+        .returning(["id"])
+        .executeTakeFirstOrThrow();
+
+      await trx
+        .insertInto("trackedActivityInput")
+        .values(
+          (entities.data ?? []).map((entity) => ({
+            trackedActivityId: activity.id,
+            trackedEntityId: entity.id,
+            quantity: Number(entity.quantity ?? 1),
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    });
+  } catch (err) {
+    return {
+      data: null,
+      error: { message: (err as Error).message } as PostgrestError
+    };
+  }
 
   return { data: { id: lineId }, error: null };
 }

@@ -59,58 +59,49 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [], error: null })
   ]);
 
-  // Resolve readable ids for the linked source documents (single-row lookups)
+  // Resolve readable ids for the linked source documents — one embedded
+  // select per link, run in parallel.
   let shipmentReadableId: string | null = null;
   let salesOrderReadableId: string | null = null;
   let salesInvoiceReadableId: string | null = null;
-
+  const readableIdLookups: PromiseLike<void>[] = [];
   if (line.data.shipmentLineId) {
-    const shipmentLine = await client
-      .from("shipmentLine")
-      .select("shipmentId")
-      .eq("id", line.data.shipmentLineId)
-      .maybeSingle();
-    if (shipmentLine.data?.shipmentId) {
-      const shipment = await client
-        .from("shipment")
-        .select("shipmentId")
-        .eq("id", shipmentLine.data.shipmentId)
-        .maybeSingle();
-      shipmentReadableId = shipment.data?.shipmentId ?? null;
-    }
+    readableIdLookups.push(
+      client
+        .from("shipmentLine")
+        .select("shipment(shipmentId)")
+        .eq("id", line.data.shipmentLineId)
+        .maybeSingle()
+        .then((result) => {
+          shipmentReadableId = result.data?.shipment?.shipmentId ?? null;
+        })
+    );
   }
-
   if (line.data.salesOrderLineId) {
-    const salesOrderLine = await client
-      .from("salesOrderLine")
-      .select("salesOrderId")
-      .eq("id", line.data.salesOrderLineId)
-      .maybeSingle();
-    if (salesOrderLine.data?.salesOrderId) {
-      const salesOrder = await client
-        .from("salesOrder")
-        .select("salesOrderId")
-        .eq("id", salesOrderLine.data.salesOrderId)
-        .maybeSingle();
-      salesOrderReadableId = salesOrder.data?.salesOrderId ?? null;
-    }
+    readableIdLookups.push(
+      client
+        .from("salesOrderLine")
+        .select("salesOrder(salesOrderId)")
+        .eq("id", line.data.salesOrderLineId)
+        .maybeSingle()
+        .then((result) => {
+          salesOrderReadableId = result.data?.salesOrder?.salesOrderId ?? null;
+        })
+    );
   }
-
   if (line.data.salesInvoiceLineId) {
-    const salesInvoiceLine = await client
-      .from("salesInvoiceLine")
-      .select("invoiceId")
-      .eq("id", line.data.salesInvoiceLineId)
-      .maybeSingle();
-    if (salesInvoiceLine.data?.invoiceId) {
-      const salesInvoice = await client
-        .from("salesInvoice")
-        .select("invoiceId")
-        .eq("id", salesInvoiceLine.data.invoiceId)
-        .maybeSingle();
-      salesInvoiceReadableId = salesInvoice.data?.invoiceId ?? null;
-    }
+    readableIdLookups.push(
+      client
+        .from("salesInvoiceLine")
+        .select("salesInvoice(invoiceId)")
+        .eq("id", line.data.salesInvoiceLineId)
+        .maybeSingle()
+        .then((result) => {
+          salesInvoiceReadableId = result.data?.salesInvoice?.invoiceId ?? null;
+        })
+    );
   }
+  await Promise.all(readableIdLookups);
 
   return {
     line: line.data,
@@ -159,6 +150,40 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, trackedEntityIds, ...d } = validation.data;
+
+  // The lock guard above checked the URL's order — verify the line actually
+  // belongs to it, and never re-parent it to the form's copy of the id.
+  const existingLine = await client
+    .from("salesReturnOrderLine")
+    .select("salesReturnOrderId, quantity")
+    .eq("id", lineId)
+    .eq("companyId", companyId)
+    .single();
+  if (existingLine.error || existingLine.data.salesReturnOrderId !== orderId) {
+    throw redirect(
+      path.to.salesReturnOrderLine(orderId, lineId),
+      await flash(
+        request,
+        error(null, "This line does not belong to this return order")
+      )
+    );
+  }
+  d.salesReturnOrderId = orderId;
+
+  // Quantities are validated against source-line caps at Confirm; once the
+  // order is confirmed a quantity edit would bypass that validation.
+  if (
+    salesReturnOrder.data?.status !== "Draft" &&
+    Number(d.quantity) !== Number(existingLine.data.quantity)
+  ) {
+    throw redirect(
+      path.to.salesReturnOrderLine(orderId, lineId),
+      await flash(
+        request,
+        error(null, "Quantities are locked after confirmation")
+      )
+    );
+  }
 
   const updateLine = await upsertSalesReturnOrderLine(client, {
     ...d,

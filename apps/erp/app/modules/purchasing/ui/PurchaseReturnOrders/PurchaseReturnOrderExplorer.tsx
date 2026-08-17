@@ -234,7 +234,7 @@ function PurchaseReturnOrderLineItem({
               <DropdownMenuItem
                 destructive
                 disabled={
-                  isDisabled || !permissions.can("update", "purchasing")
+                  isDisabled || !permissions.can("delete", "purchasing")
                 }
                 onClick={(e) => {
                   e.stopPropagation();

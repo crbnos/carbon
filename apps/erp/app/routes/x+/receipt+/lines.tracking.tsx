@@ -17,7 +17,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const itemId = formData.get("itemId") as string;
   const receiptLineId = formData.get("receiptLineId") as string;
   const receiptId = formData.get("receiptId") as string;
-  const trackingType = formData.get("trackingType") as "batch" | "serial";
+  const trackingType = formData.get("trackingType") as
+    | "batch"
+    | "serial"
+    | "returnEntity";
 
   if (trackingType === "batch") {
     const batchNumber = formData.get("batchNumber") as string;
@@ -201,6 +204,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
     >;
 
     if (intent === "remove") {
+      // Only clear tracking that points at THIS receipt line — otherwise a
+      // crafted POST could strip tracking off another receipt's entity.
+      if (attributes["Receipt Line"] !== receiptLineId) {
+        return data(
+          { error: "Entity is not assigned to this receipt line" },
+          { status: 400 }
+        );
+      }
       delete attributes["Receipt"];
       delete attributes["Receipt Line"];
       delete attributes["Receipt Line Index"];

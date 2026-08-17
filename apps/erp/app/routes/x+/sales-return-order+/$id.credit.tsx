@@ -25,6 +25,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const creditable = await getCreditableQuantities(client, id, companyId);
+  if (creditable.error) {
+    console.error("Failed to load creditable quantities:", creditable.error);
+  }
 
   return { lines: creditable.data ?? [] };
 }
@@ -33,7 +36,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, {
-      create: "invoicing"
+      create: "invoicing",
+      view: "sales"
     });
 
   const { id } = params;

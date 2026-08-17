@@ -54,6 +54,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(purchaseOrderReceipt.data.id));
     case "Sales Return Order":
+      if (!defaults.data?.locationId) {
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              null,
+              "Set a default location in your settings before creating a receipt"
+            )
+          )
+        );
+      }
       const salesReturnOrderReceipt = await serviceRole.functions.invoke<{
         id: string;
       }>("create", {

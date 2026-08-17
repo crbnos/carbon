@@ -225,6 +225,24 @@ serve(async (req: Request) => {
         // zero this receipt's own cost layers so FIFO can never consume voided
         // return stock.
         const salesReturnOrderId = receipt.data.sourceDocumentId;
+
+        // The PO void path blocks voiding an invoiced receipt; the analogous
+        // hazard here is a credit memo. Voiding after crediting would leave
+        // quantityCredited > quantityReceived with no path to reconcile.
+        const creditMemos = await client
+          .from("memo")
+          .select("id, status")
+          .eq("salesReturnOrderId", salesReturnOrderId)
+          .eq("companyId", companyId)
+          .neq("status", "Voided");
+        if (creditMemos.error)
+          throw new Error("Failed to check for credit memos");
+        if ((creditMemos.data ?? []).length > 0) {
+          throw new Error(
+            "Cannot void: a credit memo exists for this return order. Void it first."
+          );
+        }
+
         const [originalItemLedger, originalJournalLines, returnLinesVoid] =
           await Promise.all([
             client
@@ -2217,11 +2235,13 @@ serve(async (req: Request) => {
               .from("salesReturnOrder")
               .select("*")
               .eq("id", salesReturnOrderId)
+              .eq("companyId", companyId)
               .single(),
             client
               .from("salesReturnOrderLine")
               .select("*, returnReason(inventoryValueZero)")
-              .eq("salesReturnOrderId", salesReturnOrderId),
+              .eq("salesReturnOrderId", salesReturnOrderId)
+              .eq("companyId", companyId),
             client
               .from("itemCost")
               .select("itemId, unitCost")
@@ -2232,8 +2252,12 @@ serve(async (req: Request) => {
           throw new Error("Failed to fetch sales return order");
         if (salesReturnOrderLines.error)
           throw new Error("Failed to fetch sales return order lines");
+        // Allowlist, matching the create-side gate: a Draft RMA has never had
+        // its caps validated, so it must be confirmed before receiving.
         if (
-          ["Cancelled", "Completed"].includes(salesReturnOrder.data.status)
+          !["Confirmed", "Partially Received", "Received"].includes(
+            salesReturnOrder.data.status
+          )
         ) {
           throw new Error(
             `Cannot post a receipt against a return order in ${salesReturnOrder.data.status} status`

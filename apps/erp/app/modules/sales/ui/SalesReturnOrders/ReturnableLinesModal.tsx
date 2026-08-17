@@ -16,14 +16,14 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useFetcher, useParams, useRevalidator } from "react-router";
 import type { loader as returnableLinesLoader } from "~/routes/x+/sales-return-order+/returnable-lines";
 import { path } from "~/utils/path";
 
-// path.ts has no helper for the returnable-lines loader route yet; the static
-// segment outranks the `$id` param, so this resolves to
+// The static segment outranks the `$id` param, so this resolves to
 // routes/x+/sales-return-order+/returnable-lines.tsx.
 const returnableLinesUrl = path.to.salesReturnOrderReturnableLines;
 
@@ -188,6 +188,8 @@ const ReturnableLinesModal = ({
                         </span>
                         {isSelected && (
                           <NumberField
+                            formatOptions={INPUT_FORMAT.quantity}
+                            step={INPUT_STEP.quantity}
                             value={selected[line.shipmentLineId]}
                             onChange={(value) =>
                               setQuantity(

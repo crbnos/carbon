@@ -26,6 +26,7 @@ ALTER TYPE "journalEntrySourceType" ADD VALUE IF NOT EXISTS 'Purchase Return Shi
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS "purchaseReturnOrder" (
+    -- 'pret', not 'pro': id('pro') is already procedure's prefix
     "id" TEXT NOT NULL DEFAULT id('pret'),
     "purchaseReturnOrderId" TEXT NOT NULL,
     "status" "purchaseReturnOrderStatus" NOT NULL DEFAULT 'Draft',
@@ -61,6 +62,9 @@ CREATE INDEX IF NOT EXISTS "purchaseReturnOrder_companyId_idx" ON "purchaseRetur
 CREATE INDEX IF NOT EXISTS "purchaseReturnOrder_supplierId_idx" ON "purchaseReturnOrder" ("supplierId");
 CREATE INDEX IF NOT EXISTS "purchaseReturnOrder_status_idx" ON "purchaseReturnOrder" ("status");
 CREATE INDEX IF NOT EXISTS "purchaseReturnOrder_createdBy_idx" ON "purchaseReturnOrder" ("createdBy");
+CREATE INDEX IF NOT EXISTS "purchaseReturnOrder_purchaseOrderId_idx" ON "purchaseReturnOrder" ("purchaseOrderId");
+CREATE INDEX IF NOT EXISTS "purchaseReturnOrder_replacementPurchaseOrderId_idx" ON "purchaseReturnOrder" ("replacementPurchaseOrderId");
+CREATE INDEX IF NOT EXISTS "purchaseReturnOrder_locationId_idx" ON "purchaseReturnOrder" ("locationId");
 
 -- ============================================================
 -- purchaseReturnOrderLine
@@ -233,13 +237,17 @@ LEFT JOIN LATERAL (
     COALESCE(SUM(l."quantityShipped"), 0) AS "quantityShipped"
   FROM "purchaseReturnOrderLine" l
   WHERE l."purchaseReturnOrderId" = pret."id"
+    AND l."companyId" = pret."companyId"
 ) lines ON TRUE
 LEFT JOIN LATERAL (
   SELECT COALESCE(SUM(cl."quantity"), 0) AS "quantityCredited"
   FROM "purchaseReturnOrderCreditLine" cl
-  INNER JOIN "memo" m ON m."id" = cl."memoId"
+  INNER JOIN "memo" m ON m."id" = cl."memoId" AND m."companyId" = cl."companyId"
   INNER JOIN "purchaseReturnOrderLine" l ON l."id" = cl."purchaseReturnOrderLineId"
-  WHERE l."purchaseReturnOrderId" = pret."id" AND m."status" = 'Posted'
+    AND l."companyId" = cl."companyId"
+  WHERE l."purchaseReturnOrderId" = pret."id"
+    AND cl."companyId" = pret."companyId"
+    AND m."status" = 'Posted'
 ) credits ON TRUE;
 
 -- ============================================================

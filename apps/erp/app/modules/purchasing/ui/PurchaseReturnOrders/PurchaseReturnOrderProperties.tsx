@@ -35,9 +35,8 @@ import { copyToClipboard } from "~/utils/string";
 import { isPurchaseReturnOrderLocked } from "../../purchasing.models";
 import type { PurchaseReturnOrder } from "./types";
 
-// path.ts has no bulkUpdatePurchaseReturnOrder helper yet (path helper added in
-// a follow-up); the static `update` route segment outranks the `$id` param, so
-// this resolves to routes/x+/purchase-return-order+/update.tsx.
+// The static `update` route segment outranks the `$id` param, so this
+// resolves to routes/x+/purchase-return-order+/update.tsx.
 const updateAction = path.to.purchaseReturnOrderUpdate;
 
 const PurchaseReturnOrderProperties = () => {
@@ -216,6 +215,7 @@ const PurchaseReturnOrderProperties = () => {
         <InputControlled
           name="supplierReference"
           label={t`Supplier RMA #`}
+          isReadOnly={isDisabled}
           value={routeData?.purchaseReturnOrder?.supplierReference ?? ""}
           size="sm"
           inline
@@ -285,6 +285,7 @@ const PurchaseReturnOrderProperties = () => {
           name="orderDate"
           label={t`Order Date`}
           inline
+          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("orderDate", date);
           }}
@@ -304,6 +305,7 @@ const PurchaseReturnOrderProperties = () => {
           name="expirationDate"
           label={t`Expiration Date`}
           inline
+          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("expirationDate", date);
           }}

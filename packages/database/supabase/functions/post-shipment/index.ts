@@ -2435,6 +2435,13 @@ serve(async (req: Request) => {
         break;
       }
       case "void": {
+        // A void replays quantity rollbacks — voiding a shipment that is not
+        // Posted (e.g. already Voided) would subtract them a second time.
+        if (shipment.data?.status !== "Posted") {
+          throw new Error(
+            `Cannot void a shipment in ${shipment.data?.status} status`
+          );
+        }
         switch (shipment.data?.sourceDocument) {
           case "Sales Order": {
             if (!shipment.data.sourceDocumentId)

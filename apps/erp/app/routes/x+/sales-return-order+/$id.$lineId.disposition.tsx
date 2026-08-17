@@ -8,6 +8,7 @@ import {
   salesReturnOrderDispositionValidator,
   setSalesReturnOrderLineDisposition
 } from "~/modules/sales";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -57,12 +58,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await setSalesReturnOrderLineDisposition(client, {
-    lineId,
-    companyId,
-    disposition,
-    userId
-  });
+  const result = await setSalesReturnOrderLineDisposition(
+    client,
+    getDatabaseClient(),
+    {
+      lineId,
+      companyId,
+      disposition,
+      userId
+    }
+  );
 
   if (result.error) {
     throw redirect(

@@ -15,6 +15,7 @@ import {
 } from "~/modules/sales";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 // Escalate an RMA line to a quality Issue (NCR). Scrap and Rework are quality
@@ -24,7 +25,8 @@ import { path, requestReferrer } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+    create: "quality",
+    update: "sales"
   });
 
   const { id, lineId } = params;
@@ -190,7 +192,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // insertIssue seeded a nonConformanceItem row with default qty and Pending
   // disposition. Overwrite with the line's received quantity and the requested
   // disposition so MRB starts from the escalation's context.
-  await serviceRole
+  const itemUpdate = await serviceRole
     .from("nonConformanceItem")
     .update({
       quantity: quantityReceived,
@@ -200,6 +202,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
     .eq("nonConformanceId", ncrId)
     .eq("itemId", line.data.itemId);
+  if (itemUpdate.error) {
+    throw await failWith(itemUpdate.error, "Failed to set the Issue's item");
+  }
 
   const itemRow = await serviceRole
     .from("nonConformanceItem")
@@ -211,26 +216,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Link the RMA line so the issue explorer can surface the origin and
   // deep-link back to the return order.
-  await serviceRole.from("nonConformanceSalesReturnOrderLine").insert({
-    nonConformanceId: ncrId,
-    salesReturnOrderLineId: lineId,
-    salesReturnOrderId: id,
-    salesReturnOrderReadableId: rmaReadableId,
-    companyId,
-    createdBy: userId
-  });
+  const lineLink = await serviceRole
+    .from("nonConformanceSalesReturnOrderLine")
+    .insert({
+      nonConformanceId: ncrId,
+      salesReturnOrderLineId: lineId,
+      salesReturnOrderId: id,
+      salesReturnOrderReadableId: rmaReadableId,
+      companyId,
+      createdBy: userId
+    });
+  if (lineLink.error) {
+    throw await failWith(lineLink.error, "Failed to link the Issue to the RMA");
+  }
 
   // Link the line's returned entities to the NCR, and seed the per-row entity
   // links on the item row so MRB can split / reassign specific entities.
   if (entityIds.length > 0) {
-    await serviceRole.from("nonConformanceTrackedEntity").insert(
-      entityIds.map((trackedEntityId) => ({
-        nonConformanceId: ncrId,
-        trackedEntityId,
-        companyId,
-        createdBy: userId
-      }))
-    );
+    const entityLinks = await serviceRole
+      .from("nonConformanceTrackedEntity")
+      .insert(
+        entityIds.map((trackedEntityId) => ({
+          nonConformanceId: ncrId,
+          trackedEntityId,
+          companyId,
+          createdBy: userId
+        }))
+      );
+    if (entityLinks.error) {
+      throw await failWith(
+        entityLinks.error,
+        "Failed to link the returned entities to the Issue"
+      );
+    }
 
     if (nonConformanceItemId) {
       const entityQuantities = await serviceRole
@@ -266,12 +284,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw await failWith(tasks.error, "Failed to create Issue tasks");
   }
 
-  const dispositionResult = await setSalesReturnOrderLineDisposition(client, {
-    lineId,
-    companyId,
-    disposition,
-    userId
-  });
+  const dispositionResult = await setSalesReturnOrderLineDisposition(
+    client,
+    getDatabaseClient(),
+    {
+      lineId,
+      companyId,
+      disposition,
+      userId
+    }
+  );
   if (dispositionResult.error) {
     throw redirect(
       path.to.issue(ncrId),

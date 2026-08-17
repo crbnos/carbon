@@ -213,6 +213,7 @@ const SalesReturnOrderProperties = () => {
         <InputControlled
           name="customerReference"
           label={t`Customer Reference`}
+          isReadOnly={isDisabled}
           value={routeData?.salesReturnOrder?.customerReference ?? ""}
           size="sm"
           inline
@@ -282,6 +283,7 @@ const SalesReturnOrderProperties = () => {
           name="orderDate"
           label={t`Order Date`}
           inline
+          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("orderDate", date);
           }}
@@ -301,6 +303,7 @@ const SalesReturnOrderProperties = () => {
           name="expirationDate"
           label={t`Expiration Date`}
           inline
+          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("expirationDate", date);
           }}

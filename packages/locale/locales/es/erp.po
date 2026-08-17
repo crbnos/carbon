@@ -56,6 +56,12 @@ msgstr "{0} cuentas"
 msgid "{0} ago"
 msgstr "{0} hace"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} clientes con saldo"
@@ -92,6 +98,11 @@ msgstr "{0} problemas — no publicado"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Procesos"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -4052,12 +4063,6 @@ msgstr "Nota de Crédito"
 
 msgid "Credit total"
 msgstr "Total de Crédito"
-
-msgid "creditable"
-msgstr "acreditable"
-
-msgid "credited"
-msgstr "acreditado"
 
 msgid "Credited"
 msgstr "Acreditado"
@@ -11793,9 +11798,6 @@ msgstr "Recibir Pago · {0} facturas"
 msgid "Receive to Inventory"
 msgstr "Recibir al Inventario"
 
-msgid "received"
-msgstr "recibido"
-
 msgid "Received"
 msgstr "Recibido"
 
@@ -12222,8 +12224,9 @@ msgstr "tarifa de reabastecimiento"
 msgid "Restock Fee Percent"
 msgstr "Porcentaje de tarifa de reabastecimiento"
 
-msgid "Restocking fee"
-msgstr "Tarifa de reabastecimiento"
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr ""
 
 msgid "Restore from Trash"
 msgstr "Restaurar desde la papelera"

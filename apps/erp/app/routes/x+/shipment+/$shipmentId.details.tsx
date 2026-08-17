@@ -107,11 +107,20 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         });
         if (!salesReturnShipment.data || salesReturnShipment.error) {
+          logger.error("Failed to create shipment from source document", {
+            error: salesReturnShipment.error
+          });
           throw redirect(
             path.to.shipment(id),
             await flash(
               request,
-              error(salesReturnShipment.error, "Failed to create shipment")
+              error(
+                salesReturnShipment.error,
+                await getEdgeFunctionErrorMessage(
+                  salesReturnShipment.error,
+                  "Failed to create shipment"
+                )
+              )
             )
           );
         }
@@ -131,11 +140,20 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         });
         if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
+          logger.error("Failed to create shipment from source document", {
+            error: purchaseReturnShipment.error
+          });
           throw redirect(
             path.to.shipment(id),
             await flash(
               request,
-              error(purchaseReturnShipment.error, "Failed to create shipment")
+              error(
+                purchaseReturnShipment.error,
+                await getEdgeFunctionErrorMessage(
+                  purchaseReturnShipment.error,
+                  "Failed to create shipment"
+                )
+              )
             )
           );
         }

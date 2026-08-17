@@ -88,6 +88,9 @@ CREATE INDEX IF NOT EXISTS "salesReturnOrder_companyId_idx" ON "salesReturnOrder
 CREATE INDEX IF NOT EXISTS "salesReturnOrder_customerId_idx" ON "salesReturnOrder" ("customerId");
 CREATE INDEX IF NOT EXISTS "salesReturnOrder_status_idx" ON "salesReturnOrder" ("status");
 CREATE INDEX IF NOT EXISTS "salesReturnOrder_createdBy_idx" ON "salesReturnOrder" ("createdBy");
+CREATE INDEX IF NOT EXISTS "salesReturnOrder_salesOrderId_idx" ON "salesReturnOrder" ("salesOrderId");
+CREATE INDEX IF NOT EXISTS "salesReturnOrder_replacementSalesOrderId_idx" ON "salesReturnOrder" ("replacementSalesOrderId");
+CREATE INDEX IF NOT EXISTS "salesReturnOrder_locationId_idx" ON "salesReturnOrder" ("locationId");
 
 -- ============================================================
 -- salesReturnOrderLine
@@ -263,13 +266,15 @@ BEGIN
 
     INSERT INTO "account" (
       number, name, "isGroup", "accountType", "incomeBalance", class,
-      "parentId", "isSystem", "companyGroupId", "createdBy"
+      "consolidatedRate", "parentId", "isSystem", "companyGroupId", "createdBy"
     )
     SELECT
       '4900', 'Sales Returns', FALSE,
       'Income'::"accountType",
       'Income Statement'::"glIncomeBalance",
       'Revenue'::"glAccountClass",
+      -- match seed.data.ts and the sibling revenue accounts (default is 'Current')
+      'Average'::"glConsolidatedRate",
       parent_id, FALSE, cg.id, 'system'
     WHERE NOT EXISTS (
       SELECT 1 FROM "account"
@@ -336,13 +341,17 @@ LEFT JOIN LATERAL (
     COALESCE(SUM(l."quantityReceived"), 0) AS "quantityReceived"
   FROM "salesReturnOrderLine" l
   WHERE l."salesReturnOrderId" = sro."id"
+    AND l."companyId" = sro."companyId"
 ) lines ON TRUE
 LEFT JOIN LATERAL (
   SELECT COALESCE(SUM(cl."quantity"), 0) AS "quantityCredited"
   FROM "salesReturnOrderCreditLine" cl
-  INNER JOIN "memo" m ON m."id" = cl."memoId"
+  INNER JOIN "memo" m ON m."id" = cl."memoId" AND m."companyId" = cl."companyId"
   INNER JOIN "salesReturnOrderLine" l ON l."id" = cl."salesReturnOrderLineId"
-  WHERE l."salesReturnOrderId" = sro."id" AND m."status" = 'Posted'
+    AND l."companyId" = cl."companyId"
+  WHERE l."salesReturnOrderId" = sro."id"
+    AND cl."companyId" = sro."companyId"
+    AND m."status" = 'Posted'
 ) credits ON TRUE;
 
 -- ============================================================

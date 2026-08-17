@@ -16,7 +16,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    create: "invoicing"
+    view: "purchasing"
   });
 
   const { id } = params;
@@ -29,6 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   if (result.error) {
+    console.error("Failed to load creditable quantities:", result.error);
     return { lines: [] };
   }
 
@@ -39,7 +40,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, {
-      create: "invoicing"
+      create: "invoicing",
+      view: "purchasing"
     });
 
   const { id } = params;

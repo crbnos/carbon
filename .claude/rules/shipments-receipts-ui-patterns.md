@@ -31,7 +31,10 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
 - `lines.update.tsx` — Supabase upsert on `shipmentLine`; only `storageUnitId` + `shippedQuantity`
   (receipt: `receivedQuantity`). Item/storage rules are NOT evaluated here, only at post.
 - `lines.tracking.tsx` — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
-  `"Shipment Line Index"`); guards `status === "Available"`; clears stale attrs off prior entities.
+  `"Shipment Line Index"`); guards entity status — `"Available"` normally, `"On Hold"` when the
+  shipment's source is a Sales Return Order (returned stock ships back from hold); clears stale
+  attrs off prior entities. Receipt tracking additionally has a `returnEntity` type for
+  sales-return receipts (same-serial re-entry, guarded to expected entities).
 - `lines.split.tsx` — invokes `create` with `type: "shipmentLineSplit"` / `receiptLineSplit`.
 - `lines.$id.delete.tsx` — `deleteShipmentLine` / `deleteReceiptLine`.
 - `fixed-asset-lines.update.tsx` — upsert `shipmentFixedAssetLine` (`shipped`/`received` bool, `serialNumber`).
@@ -78,13 +81,16 @@ slip PDF; receipt may invoke `update-purchased-prices` when `updateLeadTimesOnRe
 `{ type: "post" | "void", {receipt,shipment}Id, userId, companyId }`, run under
 `getCarbonServiceRole` + Kysely `db.transaction()`, and branch on `sourceDocument`:
 
-- **post-receipt** handles `Purchase Order` and `Inbound Transfer`. PO path: inserts `itemLedger`
+- **post-receipt** handles `Purchase Order`, `Inbound Transfer`, and `Sales Return Order`
+  (customer RMA re-entry at original outbound cost, entities to On Hold). PO path: inserts `itemLedger`
   (entry types `Positive/Negative Adjmt.` by sign), GR/IR + inventory `journalLine`s when
   `accountingEnabled`, advances PO line `quantityReceived`/`receivedComplete` and PO `status`,
   flips tracked entities to `Available` (**`On Hold` if the item has a Receipt-usage inspection
   document assignment**), and
   creates one `inspection` lot per inspected line (see `inspection-system.md`).
-- **post-shipment** handles `Sales Order`, `Purchase Order`, `Outbound Transfer`. SO path: COGS
+- **post-shipment** handles `Sales Order`, `Purchase Order`, `Outbound Transfer`,
+  `Sales Return Order` (return-to-customer), and `Purchase Return Order` (supplier return,
+  Cr Inventory / Dr GR/IR). SO path: COGS
   `journalLine`s via `calculateCOGS` + `costLedger`, negative `itemLedger`, advances SO line
   `quantitySent`/`sentComplete` and SO `status`, updates `job.quantityShipped`/status for Job
   fulfillment, and **splits** batch tracked entities when shipped qty < entity qty.

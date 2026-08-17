@@ -23,6 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   if (result.error) {
+    console.error("Failed to load returnable receipt lines:", result.error);
     return { lines: [] };
   }
 

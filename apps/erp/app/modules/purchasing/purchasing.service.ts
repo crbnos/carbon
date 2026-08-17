@@ -3421,6 +3421,7 @@ export async function confirmPurchaseReturnOrder(
           .selectFrom("receiptLine")
           .select(["receivedQuantity"])
           .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
           .forUpdate()
           .executeTakeFirst();
         base = Number(src?.receivedQuantity ?? 0);
@@ -3429,6 +3430,7 @@ export async function confirmPurchaseReturnOrder(
           .selectFrom("purchaseOrderLine")
           .select(["quantityReceived", "conversionFactor"])
           .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
           .forUpdate()
           .executeTakeFirst();
         base =
@@ -3439,6 +3441,7 @@ export async function confirmPurchaseReturnOrder(
           .selectFrom("purchaseInvoiceLine")
           .select(["quantity", "conversionFactor"])
           .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
           .forUpdate()
           .executeTakeFirst();
         base = Number(src?.quantity ?? 0) * Number(src?.conversionFactor ?? 1);
@@ -3517,6 +3520,8 @@ export async function cancelPurchaseReturnOrder(
   ]);
 
   if (order.error) return { data: null, error: order.error };
+  if (shipments.error) return { data: null, error: shipments.error };
+  if (lines.error) return { data: null, error: lines.error };
   if (["Completed", "Cancelled"].includes(order.data.status)) {
     return {
       data: null,
@@ -3580,6 +3585,7 @@ export async function completePurchaseReturnOrder(
   ]);
 
   if (order.error) return { data: null, error: order.error };
+  if (lines.error) return { data: null, error: lines.error };
   if (
     !["Confirmed", "Partially Shipped", "Shipped"].includes(order.data.status)
   ) {
@@ -3777,7 +3783,7 @@ export async function getReturnableLinesForSupplier(
     purchaseOrderLineIds.length > 0
       ? client
           .from("purchaseOrderLine")
-          .select("id, unitPrice, conversionFactor")
+          .select("id, supplierUnitPrice, conversionFactor")
           .in("id", purchaseOrderLineIds)
           .eq("companyId", companyId)
       : Promise.resolve({ data: [], error: null })
@@ -3822,8 +3828,10 @@ export async function getReturnableLinesForSupplier(
         receivedQuantity: received,
         alreadyReturned,
         returnableQuantity: Math.max(0, received - alreadyReturned),
+        // supplierUnitPrice: the return order + credit memo are in the
+        // supplier's currency; unitPrice is the base-currency generated column
         unitPrice:
-          Number(poLine?.unitPrice ?? 0) /
+          Number(poLine?.supplierUnitPrice ?? 0) /
           Number(poLine?.conversionFactor ?? 1),
         unitOfMeasureCode: line.unitOfMeasure
       };
@@ -3835,9 +3843,9 @@ export async function getReturnableLinesForSupplier(
 
 /**
  * Entity picker source for supplier return lines: serials/batches on hand
- * that were received from this supplier (Available entities tagged with the
- * supplier id — the attributes->>X query pattern from
- * getTrackedEntitiesByMakeMethodId).
+ * that were received from this supplier. Provenance is the Receipt attribute
+ * (written by the receipt tracking route) resolved to the receipt's supplier
+ * — no code writes a Supplier attribute onto tracked entities.
  */
 export async function getReturnableEntitiesForSupplier(
   client: SupabaseClient<Database>,
@@ -3845,13 +3853,26 @@ export async function getReturnableEntitiesForSupplier(
   supplierId: string,
   itemId: string
 ) {
+  const receipts = await client
+    .from("receipt")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("supplierId", supplierId)
+    .eq("status", "Posted");
+  if (receipts.error) {
+    return { data: null, error: receipts.error };
+  }
+  const receiptIds = (receipts.data ?? []).map((r) => r.id);
+  if (receiptIds.length === 0) {
+    return { data: [], error: null };
+  }
   return client
     .from("trackedEntity")
     .select("id, readableId, quantity, status, attributes")
     .eq("companyId", companyId)
     .eq("itemId", itemId)
     .eq("status", "Available")
-    .eq("attributes ->> Supplier", supplierId);
+    .in("attributes ->> Receipt", receiptIds);
 }
 
 /**
@@ -4124,6 +4145,14 @@ export async function createReplacementPurchaseOrder(
     .eq("companyId", companyId)
     .single();
   if (order.error) return { data: null, error: order.error };
+  if (["Draft", "Cancelled"].includes(order.data.status)) {
+    return {
+      data: null,
+      error: {
+        message: `Cannot create a replacement for a ${order.data.status} return order`
+      } as PostgrestError
+    };
+  }
   if (order.data.replacementPurchaseOrderId) {
     return {
       data: { id: order.data.replacementPurchaseOrderId },
@@ -4152,7 +4181,7 @@ export async function createReplacementPurchaseOrder(
       ? await client
           .from("purchaseOrderLine")
           .select(
-            "id, unitPrice, conversionFactor, purchaseUnitOfMeasureCode, inventoryUnitOfMeasureCode"
+            "id, supplierUnitPrice, conversionFactor, purchaseUnitOfMeasureCode, inventoryUnitOfMeasureCode"
           )
           .in("id", linkedPoLineIds)
           .eq("companyId", companyId)
@@ -4169,6 +4198,9 @@ export async function createReplacementPurchaseOrder(
       "itemId",
       (lines.data ?? []).map((l) => l.itemId)
     );
+  if (supplierParts.error) {
+    return { data: null, error: supplierParts.error };
+  }
   const supplierPartByItem = new Map(
     (supplierParts.data ?? []).map((sp) => [sp.itemId, sp])
   );
@@ -4204,7 +4236,7 @@ export async function createReplacementPurchaseOrder(
     }
   };
 
-  for (const line of lines.data ?? []) {
+  const replacementLines = (lines.data ?? []).map((line) => {
     const poLine = line.purchaseOrderLineId
       ? poLineById.get(line.purchaseOrderLineId)
       : null;
@@ -4212,8 +4244,10 @@ export async function createReplacementPurchaseOrder(
     const conversionFactor = Number(
       poLine?.conversionFactor ?? supplierPart?.conversionFactor ?? 1
     );
+    // supplierUnitPrice is the supplier-currency figure; the PO line's
+    // unitPrice generated column is base currency and would double-convert
     const unitPrice = Number(
-      poLine?.unitPrice ??
+      poLine?.supplierUnitPrice ??
         supplierPart?.unitPrice ??
         Number(line.unitPrice) * conversionFactor
     );
@@ -4222,7 +4256,7 @@ export async function createReplacementPurchaseOrder(
         ? Number(line.quantity) / conversionFactor
         : Number(line.quantity);
 
-    const insertLine = await client.from("purchaseOrderLine").insert({
+    return {
       purchaseOrderId,
       purchaseOrderLineType: lineTypeFor(line.item?.type),
       itemId: line.itemId,
@@ -4237,12 +4271,15 @@ export async function createReplacementPurchaseOrder(
         poLine?.inventoryUnitOfMeasureCode ?? line.unitOfMeasureCode,
       companyId,
       createdBy: userId
-    });
+    };
+  });
 
-    if (insertLine.error) {
-      await deletePurchaseOrder(client, purchaseOrderId);
-      return { data: null, error: insertLine.error };
-    }
+  const insertLines = await client
+    .from("purchaseOrderLine")
+    .insert(replacementLines);
+  if (insertLines.error) {
+    await deletePurchaseOrder(client, purchaseOrderId);
+    return { data: null, error: insertLines.error };
   }
 
   const link = await client

@@ -1307,6 +1307,12 @@ serve(async (req: Request) => {
         }
 
         const hasReceipt = !!receipt.data?.id;
+        // Re-targeting deletes and rebuilds the lines — only a Draft may be
+        // rebuilt; a Posted document's lines are referenced by ledger rows.
+        if (hasReceipt && receipt.data!.status !== "Draft")
+          throw new Error(
+            `Cannot re-source a ${receipt.data!.status} receipt`
+          );
 
         const receiptLineItems = salesReturnOrderLines.data.reduce<
           ReceiptLineItem[]
@@ -1947,6 +1953,16 @@ serve(async (req: Request) => {
           throw new Error("Sales return order not found");
         if (salesReturnOrderLines.error)
           throw new Error(salesReturnOrderLines.error.message);
+        // Goods can only go back out once they came in: the sibling return
+        // cases gate on the same received statuses.
+        if (
+          !["Confirmed", "Partially Received", "Received"].includes(
+            salesReturnOrder.data.status
+          )
+        )
+          throw new Error(
+            `Cannot create a shipment for a ${salesReturnOrder.data.status} return order`
+          );
 
         const locationId =
           userLocationId ?? salesReturnOrder.data.locationId ?? null;
@@ -2005,6 +2021,10 @@ serve(async (req: Request) => {
         );
 
         const hasShipment = !!shipment.data?.id;
+        if (hasShipment && shipment.data!.status !== "Draft")
+          throw new Error(
+            `Cannot re-source a ${shipment.data!.status} shipment`
+          );
 
         const shipmentLineItems = returnLines.reduce<ShipmentLineItem[]>(
           (acc, d) => {
@@ -2176,6 +2196,10 @@ serve(async (req: Request) => {
         );
 
         const hasShipment = !!shipment.data?.id;
+        if (hasShipment && shipment.data!.status !== "Draft")
+          throw new Error(
+            `Cannot re-source a ${shipment.data!.status} shipment`
+          );
 
         const shipmentLineItems = purchaseReturnOrderLines.data.reduce<
           ShipmentLineItem[]

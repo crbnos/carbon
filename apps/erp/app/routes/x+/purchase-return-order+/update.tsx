@@ -80,19 +80,22 @@ export async function action({ request }: ActionFunctionArgs) {
           companyGroupId,
           value as string
         );
-        if (currency.data) {
-          return await client
-            .from("purchaseReturnOrder")
-            .update({
-              currencyCode: value as string,
-              exchangeRate: currency.data.exchangeRate ?? 1,
-              updatedBy: userId,
-              updatedAt: datetime.timestamp()
-            })
-            .in("id", ids as string[]);
+        if (!currency.data) {
+          // Falling through here would write the code with a stale
+          // exchangeRate — refuse instead.
+          return { error: { message: "Invalid currency code" }, data: null };
         }
+        return await client
+          .from("purchaseReturnOrder")
+          .update({
+            currencyCode: value as string,
+            exchangeRate: currency.data.exchangeRate ?? 1,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .in("id", ids as string[]);
       }
-    // don't break -- just let it catch the next case
+    // Clearing the currency falls through to the generic null update.
     case "supplierContactId":
     case "supplierLocationId":
     case "supplierReference":

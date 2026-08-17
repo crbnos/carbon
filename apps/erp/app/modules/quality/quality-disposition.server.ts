@@ -683,6 +683,9 @@ export async function closeIssue(
     .eq("nonConformanceId", nonConformanceId)
     .eq("companyId", companyId);
 
+  if (linkedReturnsResult.error) {
+    return errResult("Failed to load linked supplier returns");
+  }
   const linkedReturns = ((linkedReturnsResult.data as any[]) ?? []).filter(
     (row) =>
       row.purchaseReturnOrderLine?.purchaseReturnOrder?.status !== "Cancelled"
@@ -718,6 +721,9 @@ export async function closeIssue(
       .select("trackedEntityId")
       .in("purchaseReturnOrderLineId", linkedReturnLineIds)
       .eq("companyId", companyId);
+    if (picks.error) {
+      return errResult("Failed to load supplier-return tracked entities");
+    }
     returnedEntityIds = new Set(
       ((picks.data as any[]) ?? []).map((p) => p.trackedEntityId)
     );

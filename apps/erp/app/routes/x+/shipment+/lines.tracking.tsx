@@ -46,6 +46,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const trackedEntity = trackedEntityResponse.data;
 
+  // A failed shipment lookup must not silently fall back to "Available" —
+  // that would reject legitimate On Hold sales-return tracking writes.
+  if (shipmentResponse.error) {
+    return data(
+      { success: false, error: shipmentResponse.error.message },
+      await flash(
+        request,
+        error(shipmentResponse.error, "Failed to load shipment")
+      )
+    );
+  }
+
   // Return-to-customer shipments (source "Sales Return Order") ship returned
   // stock, which is deliberately On Hold until dispositioned/shipped back —
   // everything else ships Available stock only.
@@ -146,7 +158,8 @@ export async function action({ request }: ActionFunctionArgs) {
       attributes: newAttributes
     })
     .eq("id", trackedEntityId)
-    .eq("status", allowedStatus);
+    .eq("status", allowedStatus)
+    .select("id");
 
   if (updateResponse.error) {
     return data(
@@ -155,6 +168,16 @@ export async function action({ request }: ActionFunctionArgs) {
         request,
         error(updateResponse.error, updateResponse.error.message)
       )
+    );
+  }
+
+  // The status filter guards against a concurrent flip; zero matched rows is
+  // a conflict, not a success.
+  if (!updateResponse.data || updateResponse.data.length === 0) {
+    const message = `Tracked entity is no longer ${allowedStatus}`;
+    return data(
+      { success: false, error: message },
+      await flash(request, error(message))
     );
   }
 

@@ -32,6 +32,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot add lines to a completed or cancelled return order."
   });
 
+  // Line quantities are validated against source caps at Confirm; adding
+  // lines afterwards would bypass that validation entirely.
+  if (salesReturnOrder.data?.status !== "Draft") {
+    throw redirect(
+      path.to.salesReturnOrderDetails(orderId),
+      await flash(
+        request,
+        error(null, "Lines can only be added while the return order is Draft")
+      )
+    );
+  }
+
   const { client, companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
@@ -46,6 +58,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, trackedEntityIds, ...d } = validation.data;
+
+  // The locked-order guard above checked the URL's order — write to that same
+  // order, never the form's copy of the id.
+  d.salesReturnOrderId = orderId;
 
   const createLine = await upsertSalesReturnOrderLine(client, {
     ...d,

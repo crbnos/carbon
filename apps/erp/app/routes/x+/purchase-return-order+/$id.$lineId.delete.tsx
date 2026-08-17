@@ -34,6 +34,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot delete lines on a completed or cancelled return order."
   });
 
+  // The lock guard checked the URL's order — the line must belong to it,
+  // and a missing line must not fall through to the delete.
+  if (!line.data || line.data.purchaseReturnOrderId !== orderId) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.purchaseReturnOrder(orderId),
+      await flash(
+        request,
+        error(null, "This line does not belong to this return order")
+      )
+    );
+  }
+
   if (Number(line.data?.quantityShipped) > 0) {
     throw redirect(
       requestReferrer(request) ?? path.to.purchaseReturnOrder(orderId),

@@ -1775,8 +1775,6 @@ export const path = {
     purchaseOrders: `${x}/purchasing/orders`,
     purchaseReturnOrder: (id: string) =>
       generatePath(`${x}/purchase-return-order/${id}`),
-    purchaseReturnOrderComplete: (id: string) =>
-      generatePath(`${x}/purchase-return-order/${id}/complete`),
     purchaseReturnOrderConfirm: (id: string) =>
       generatePath(`${x}/purchase-return-order/${id}/confirm`),
     purchaseReturnOrderCredit: (id: string) =>
@@ -1977,8 +1975,6 @@ export const path = {
     salesPricingRules: `${x}/sales/pricing-rules`,
     salesReturnOrder: (id: string) =>
       generatePath(`${x}/sales-return-order/${id}`),
-    salesReturnOrderComplete: (id: string) =>
-      generatePath(`${x}/sales-return-order/${id}/complete`),
     salesReturnOrderConfirm: (id: string) =>
       generatePath(`${x}/sales-return-order/${id}/confirm`),
     salesReturnOrderCredit: (id: string) =>

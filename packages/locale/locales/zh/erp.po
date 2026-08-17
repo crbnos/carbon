@@ -56,6 +56,12 @@ msgstr "{0} 个账户"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0}个有余额的客户"
@@ -92,6 +98,11 @@ msgstr "{0} 个问题 — 未发布"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} 个流程"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -4052,12 +4063,6 @@ msgstr "贷方备忘录"
 
 msgid "Credit total"
 msgstr "贷项总额"
-
-msgid "creditable"
-msgstr "可贷项的"
-
-msgid "credited"
-msgstr "已贷项的"
 
 msgid "Credited"
 msgstr "已贷项"
@@ -11793,9 +11798,6 @@ msgstr "收款 · {0} 张发票"
 msgid "Receive to Inventory"
 msgstr "接收到库存"
 
-msgid "received"
-msgstr "已收到"
-
 msgid "Received"
 msgstr "已接收"
 
@@ -12222,8 +12224,9 @@ msgstr "补货费"
 msgid "Restock Fee Percent"
 msgstr "补货费百分比"
 
-msgid "Restocking fee"
-msgstr "补货费"
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr ""
 
 msgid "Restore from Trash"
 msgstr "从垃圾箱恢复"

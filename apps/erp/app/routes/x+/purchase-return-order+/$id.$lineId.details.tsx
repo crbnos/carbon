@@ -60,58 +60,58 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [], error: null })
   ]);
 
-  // Resolve readable ids for the linked source documents (single-row lookups)
+  // Resolve readable ids for the linked source documents — one embedded
+  // select per link, run in parallel.
   let receiptReadableId: string | null = null;
   let purchaseOrderReadableId: string | null = null;
   let purchaseInvoiceReadableId: string | null = null;
-
+  const readableIdLookups: PromiseLike<void>[] = [];
   if (line.data.receiptLineId) {
-    const receiptLine = await client
-      .from("receiptLine")
-      .select("receiptId")
-      .eq("id", line.data.receiptLineId)
-      .maybeSingle();
-    if (receiptLine.data?.receiptId) {
-      const receipt = await client
-        .from("receipt")
-        .select("receiptId")
-        .eq("id", receiptLine.data.receiptId)
-        .maybeSingle();
-      receiptReadableId = receipt.data?.receiptId ?? null;
-    }
+    readableIdLookups.push(
+      client
+        .from("receiptLine")
+        .select("receipt(receiptId)")
+        .eq("id", line.data.receiptLineId)
+        .maybeSingle()
+        .then((result) => {
+          receiptReadableId = result.data?.receipt?.receiptId ?? null;
+        })
+    );
   }
-
   if (line.data.purchaseOrderLineId) {
-    const purchaseOrderLine = await client
-      .from("purchaseOrderLine")
-      .select("purchaseOrderId")
-      .eq("id", line.data.purchaseOrderLineId)
-      .maybeSingle();
-    if (purchaseOrderLine.data?.purchaseOrderId) {
-      const purchaseOrder = await client
-        .from("purchaseOrder")
-        .select("purchaseOrderId")
-        .eq("id", purchaseOrderLine.data.purchaseOrderId)
-        .maybeSingle();
-      purchaseOrderReadableId = purchaseOrder.data?.purchaseOrderId ?? null;
-    }
+    readableIdLookups.push(
+      client
+        .from("purchaseOrderLine")
+        .select("purchaseOrder(purchaseOrderId)")
+        .eq("id", line.data.purchaseOrderLineId)
+        .maybeSingle()
+        .then((result) => {
+          purchaseOrderReadableId =
+            result.data?.purchaseOrder?.purchaseOrderId ?? null;
+        })
+    );
   }
-
   if (line.data.purchaseInvoiceLineId) {
-    const purchaseInvoiceLine = await client
-      .from("purchaseInvoiceLine")
-      .select("invoiceId")
-      .eq("id", line.data.purchaseInvoiceLineId)
-      .maybeSingle();
-    if (purchaseInvoiceLine.data?.invoiceId) {
-      const purchaseInvoice = await client
-        .from("purchaseInvoice")
+    // The purchaseInvoice embed trips TS2589, so this one stays two-step
+    readableIdLookups.push(
+      client
+        .from("purchaseInvoiceLine")
         .select("invoiceId")
-        .eq("id", purchaseInvoiceLine.data.invoiceId)
-        .maybeSingle();
-      purchaseInvoiceReadableId = purchaseInvoice.data?.invoiceId ?? null;
-    }
+        .eq("id", line.data.purchaseInvoiceLineId)
+        .maybeSingle()
+        .then(async (invoiceLine) => {
+          if (invoiceLine.data?.invoiceId) {
+            const invoice = await client
+              .from("purchaseInvoice")
+              .select("invoiceId")
+              .eq("id", invoiceLine.data.invoiceId)
+              .maybeSingle();
+            purchaseInvoiceReadableId = invoice.data?.invoiceId ?? null;
+          }
+        })
+    );
   }
+  await Promise.all(readableIdLookups);
 
   return {
     line: line.data,
@@ -160,6 +160,43 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, trackedEntityIds, ...d } = validation.data;
+
+  // The lock guard above checked the URL's order — verify the line actually
+  // belongs to it, and never re-parent it to the form's copy of the id.
+  const existingLine = await client
+    .from("purchaseReturnOrderLine")
+    .select("purchaseReturnOrderId, quantity")
+    .eq("id", lineId)
+    .eq("companyId", companyId)
+    .single();
+  if (
+    existingLine.error ||
+    existingLine.data.purchaseReturnOrderId !== orderId
+  ) {
+    throw redirect(
+      path.to.purchaseReturnOrderLine(orderId, lineId),
+      await flash(
+        request,
+        error(null, "This line does not belong to this return order")
+      )
+    );
+  }
+  d.purchaseReturnOrderId = orderId;
+
+  // Quantities are validated against source-line caps at Confirm; once the
+  // order is confirmed a quantity edit would bypass that validation.
+  if (
+    purchaseReturnOrder.data?.status !== "Draft" &&
+    Number(d.quantity) !== Number(existingLine.data.quantity)
+  ) {
+    throw redirect(
+      path.to.purchaseReturnOrderLine(orderId, lineId),
+      await flash(
+        request,
+        error(null, "Quantities are locked after confirmation")
+      )
+    );
+  }
 
   const updateLine = await upsertPurchaseReturnOrderLine(client, {
     ...d,

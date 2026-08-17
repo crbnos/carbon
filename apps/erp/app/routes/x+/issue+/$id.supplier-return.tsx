@@ -99,6 +99,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // ── Supplier resolution: explicit choice → single associated supplier →
   // single supplier derived from the associated receipt lines' receipts.
+  if (explicitSupplierId) {
+    const supplier = await client
+      .from("supplier")
+      .select("id")
+      .eq("id", explicitSupplierId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (!supplier.data) {
+      throw redirect(
+        path.to.issue(id),
+        await flash(request, error(null, "Supplier not found"))
+      );
+    }
+  }
   let supplierId = explicitSupplierId;
   if (!supplierId) {
     const associated = [
@@ -143,25 +157,45 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // ── Validate tracked-entity provenance against the resolved supplier.
-  for (const row of returnRows) {
-    for (const link of row.links ?? []) {
-      const attributes = (link.trackedEntity?.attributes ?? {}) as Record<
-        string,
-        unknown
-      >;
-      const entitySupplier = attributes["Supplier"];
-      if (entitySupplier && entitySupplier !== supplierId) {
-        throw redirect(
-          path.to.issue(id),
-          await flash(
-            request,
-            error(
-              null,
-              `A tracked entity on item ${row.itemId} came from a different supplier`
-            )
+  // Provenance is the Receipt attribute (written by receipt tracking) resolved
+  // to that receipt's supplier — nothing writes a Supplier attribute directly.
+  const provenanceReceiptIds = [
+    ...new Set(
+      returnRows.flatMap((row) =>
+        (row.links ?? [])
+          .map(
+            (link) =>
+              (
+                (link.trackedEntity?.attributes ?? {}) as Record<
+                  string,
+                  unknown
+                >
+              )["Receipt"]
           )
-        );
-      }
+          .filter((value): value is string => typeof value === "string")
+      )
+    )
+  ];
+  if (provenanceReceiptIds.length > 0) {
+    const provenanceReceipts = await client
+      .from("receipt")
+      .select("id, supplierId")
+      .in("id", provenanceReceiptIds)
+      .eq("companyId", companyId);
+    const foreign = (provenanceReceipts.data ?? []).find(
+      (receipt) => receipt.supplierId && receipt.supplierId !== supplierId
+    );
+    if (foreign) {
+      throw redirect(
+        path.to.issue(id),
+        await flash(
+          request,
+          error(
+            null,
+            "A tracked entity on this issue was received from a different supplier"
+          )
+        )
+      );
     }
   }
 
@@ -264,14 +298,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (receiptLineIds.length > 0) {
     const receiptLines = await client
       .from("receiptLine")
-      .select("id, itemId, lineId, receipt!inner(supplierId)")
+      .select("id, itemId, lineId, receivedQuantity, receipt!inner(supplierId)")
       .in("id", receiptLineIds)
       .eq("companyId", companyId)
-      .eq("receipt.supplierId", supplierId);
+      .eq("receipt.supplierId", supplierId)
+      .order("receivedQuantity", { ascending: false });
     for (const line of receiptLines.data ?? []) {
       receiptLinesById.set(line.id, line);
     }
   }
+  // Ordered by receivedQuantity desc, so each item anchors to the receipt line
+  // with the most received quantity — the cap-governing link.
   const receiptLineByItem = new Map<
     string,
     { id: string; lineId: string | null }
@@ -295,12 +332,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (poLineIds.length > 0) {
     const poLines = await client
       .from("purchaseOrderLine")
-      .select("id, unitPrice, conversionFactor")
+      .select("id, supplierUnitPrice, conversionFactor")
       .in("id", poLineIds)
       .eq("companyId", companyId);
     for (const line of poLines.data ?? []) {
       poLineById.set(line.id, {
-        unitPrice: Number(line.unitPrice ?? 0),
+        // supplier currency — the return + credit memo are priced in it
+        unitPrice: Number(line.supplierUnitPrice ?? 0),
         conversionFactor: Number(line.conversionFactor ?? 1)
       });
     }
@@ -352,7 +390,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       createdBy: userId
     });
     if (line.error || !line.data) {
-      await deletePurchaseReturnOrder(client, purchaseReturnOrderId);
+      await deletePurchaseReturnOrder(serviceRole, purchaseReturnOrderId);
       throw redirect(
         path.to.issue(id),
         await flash(request, error(line.error, "Failed to create return line"))
@@ -368,7 +406,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         userId
       );
       if (picks.error) {
-        await deletePurchaseReturnOrder(client, purchaseReturnOrderId);
+        await deletePurchaseReturnOrder(serviceRole, purchaseReturnOrderId);
         throw redirect(
           path.to.issue(id),
           await flash(
@@ -380,7 +418,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     // Per-quantity ownership: this association row covers `quantity` of the
-    // issue's write-off pool (closeIssue subtracts shipped coverage).
+    // issue's write-off pool (closeIssue subtracts shipped coverage). Written
+    // via service role by design — the bridge runs under purchasing_create,
+    // and this quality-side link is a system record of that action.
     const association = await serviceRole
       .from("nonConformancePurchaseReturnOrderLine")
       .insert({
@@ -393,7 +433,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         createdBy: userId
       });
     if (association.error) {
-      await deletePurchaseReturnOrder(client, purchaseReturnOrderId);
+      await deletePurchaseReturnOrder(serviceRole, purchaseReturnOrderId);
       throw redirect(
         path.to.issue(id),
         await flash(

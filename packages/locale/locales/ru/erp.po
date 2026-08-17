@@ -56,6 +56,12 @@ msgstr "{0} счётов"
 msgid "{0} ago"
 msgstr "{0} назад"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} клиентов с остатком"
@@ -92,6 +98,11 @@ msgstr "{0} проблем — не опубликовано"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Процессов"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -4052,12 +4063,6 @@ msgstr "Кредит-нота"
 
 msgid "Credit total"
 msgstr "Сумма кредита"
-
-msgid "creditable"
-msgstr "кредитуемый"
-
-msgid "credited"
-msgstr "скредитован"
 
 msgid "Credited"
 msgstr "Скредитовано"
@@ -11793,9 +11798,6 @@ msgstr "Получить платеж · {0} счетов"
 msgid "Receive to Inventory"
 msgstr "Получить в инвентарь"
 
-msgid "received"
-msgstr "получено"
-
 msgid "Received"
 msgstr "Получено"
 
@@ -12222,8 +12224,9 @@ msgstr "комиссия за пополнение запасов"
 msgid "Restock Fee Percent"
 msgstr "Процент комиссии за пополнение запасов"
 
-msgid "Restocking fee"
-msgstr "Комиссия за пополнение запасов"
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr ""
 
 msgid "Restore from Trash"
 msgstr "Восстановить из корзины"

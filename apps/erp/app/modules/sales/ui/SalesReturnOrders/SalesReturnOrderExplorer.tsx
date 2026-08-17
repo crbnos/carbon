@@ -232,7 +232,7 @@ function SalesReturnOrderLineItem({
             <DropdownMenuContent>
               <DropdownMenuItem
                 destructive
-                disabled={isDisabled || !permissions.can("update", "sales")}
+                disabled={isDisabled || !permissions.can("delete", "sales")}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(line);

@@ -56,6 +56,12 @@ msgstr "{0} खाते"
 msgid "{0} ago"
 msgstr "{0} पहले"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} ग्राहकों के साथ शेष"
@@ -92,6 +98,11 @@ msgstr "{0} समस्याएं — प्रकाशित नहीं"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} प्रक्रियाएं"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -4052,12 +4063,6 @@ msgstr "क्रेडिट मेमो"
 
 msgid "Credit total"
 msgstr "क्रेडिट कुल"
-
-msgid "creditable"
-msgstr "क्रेडिट योग्य"
-
-msgid "credited"
-msgstr "क्रेडिट किया गया"
 
 msgid "Credited"
 msgstr "क्रेडिट किया गया"
@@ -11793,9 +11798,6 @@ msgstr "भुगतान प्राप्त करें · {0} चाल�
 msgid "Receive to Inventory"
 msgstr "इन्वेंटरी में प्राप्त करें"
 
-msgid "received"
-msgstr "प्राप्त"
-
 msgid "Received"
 msgstr "प्राप्त"
 
@@ -12222,8 +12224,9 @@ msgstr "पुनः स्टॉक शुल्क"
 msgid "Restock Fee Percent"
 msgstr "पुनः स्टॉक शुल्क प्रतिशत"
 
-msgid "Restocking fee"
-msgstr "पुनः स्टॉकिंग शुल्क"
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr ""
 
 msgid "Restore from Trash"
 msgstr "ट्रैश से पुनः स्थापित करें"

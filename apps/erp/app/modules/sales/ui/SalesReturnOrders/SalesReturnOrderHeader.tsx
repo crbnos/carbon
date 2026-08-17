@@ -184,7 +184,8 @@ const SalesReturnOrderHeader = () => {
                     variant="secondary"
                     isLoading={replacementFetcher.state !== "idle"}
                     isDisabled={
-                      replacementFetcher.state !== "idle" || !canUpdate
+                      replacementFetcher.state !== "idle" ||
+                      !permissions.can("create", "sales")
                     }
                     onClick={() => {
                       replacementFetcher.submit(null, {

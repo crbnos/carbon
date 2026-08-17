@@ -15,6 +15,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useFetcher, useParams } from "react-router";
@@ -162,7 +163,7 @@ const PurchaseReturnOrderCreditModal = ({
                         />
                         <VStack spacing={0} className="min-w-0 items-start">
                           <span className="text-sm font-medium">
-                            <Trans>Line</Trans> {line.lineNumber}
+                            <Trans>Line {line.lineNumber}</Trans>
                           </span>
                           <span className="text-xs text-muted-foreground tabular-nums">
                             {currencyFormatter.format(line.unitPrice)}
@@ -176,12 +177,16 @@ const PurchaseReturnOrderCreditModal = ({
                       </HStack>
                       <HStack spacing={4}>
                         <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-                          {line.creditableQuantity} <Trans>creditable</Trans> (
-                          {line.quantityCredited} / {line.quantityShipped}{" "}
-                          <Trans>credited</Trans>)
+                          <Trans>
+                            {line.creditableQuantity} creditable (
+                            {line.quantityCredited} / {line.quantityShipped}{" "}
+                            credited)
+                          </Trans>
                         </span>
                         {isSelected && (
                           <NumberField
+                            formatOptions={INPUT_FORMAT.quantity}
+                            step={INPUT_STEP.quantity}
                             value={selected[line.purchaseReturnOrderLineId]}
                             onChange={(value) =>
                               setQuantity(
