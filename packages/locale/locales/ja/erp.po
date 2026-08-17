@@ -8926,7 +8926,7 @@ msgid "More actions"
 msgstr "その他のアクション"
 
 msgid "More information"
-msgstr ""
+msgstr "詳細情報"
 
 msgid "More options"
 msgstr "その他のオプション"
@@ -10374,7 +10374,7 @@ msgid "Packing Slip"
 msgstr "梱包明細書"
 
 msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
-msgstr ""
+msgstr "金額を通貨の小数点以下の桁数に合わせて埋め込みます。例えば、300は300.00と表示され、数字が列で揃います。これをオフにすると、値のある数字だけが表示されます。この設定は、印刷されたドキュメントと保存された金額には影響しません。"
 
 msgid "Page"
 msgstr "ページ"
@@ -13230,7 +13230,7 @@ msgid "Show sync options"
 msgstr "同期オプションを表示"
 
 msgid "Show Trailing Zeros"
-msgstr ""
+msgstr "末尾のゼロを表示"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"

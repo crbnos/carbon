@@ -8926,7 +8926,7 @@ msgid "More actions"
 msgstr "Więcej akcji"
 
 msgid "More information"
-msgstr ""
+msgstr "Więcej informacji"
 
 msgid "More options"
 msgstr "Więcej opcji"
@@ -10374,7 +10374,7 @@ msgid "Packing Slip"
 msgstr "Dokument wysyłki"
 
 msgid "Pad amounts to their currency's decimal places, so 300 appears as 300.00 and columns of figures stay aligned. Turn this off to show only the digits that carry value. Printed documents and stored amounts are unaffected either way."
-msgstr ""
+msgstr "Dostosuj kwoty do miejsc dziesiętnych waluty, aby 300 wyglądało jako 300,00 i kolumny liczb były wyrównane. Wyłącz to, aby wyświetlić tylko cyfry, które mają wartość. Drukowane dokumenty i przechowywane kwoty nie będą zmieniane."
 
 msgid "Page"
 msgstr "Strona"
@@ -13230,7 +13230,7 @@ msgid "Show sync options"
 msgstr "Pokaż opcje synchronizacji"
 
 msgid "Show Trailing Zeros"
-msgstr ""
+msgstr "Pokaż zera końcowe"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
