@@ -18,7 +18,7 @@ export const Linear = defineIntegration({
     {
       name: "apiKey",
       label: "API Key",
-      type: "text",
+      type: "secret",
       required: true,
       value: ""
     }

@@ -60,7 +60,7 @@ export const Email = defineIntegration({
       name: "apiKey",
       label: "API key",
       description: "Create one in the Resend dashboard under API Keys.",
-      type: "password",
+      type: "secret",
       required: true,
       value: "",
       group: "Resend",
@@ -97,7 +97,7 @@ export const Email = defineIntegration({
     {
       name: "password",
       label: "Password",
-      type: "password",
+      type: "secret",
       required: true,
       value: "",
       group: "SMTP",

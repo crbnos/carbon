@@ -12386,6 +12386,9 @@ msgstr "返す:"
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
+msgid "Reveal"
+msgstr ""
+
 msgid "Revenue"
 msgstr "売上"
 

@@ -21,14 +21,14 @@ export const PaperlessParts = defineIntegration({
     {
       name: "apiKey",
       label: "API Key",
-      type: "text",
+      type: "secret",
       required: true,
       value: ""
     },
     {
       name: "secretKey",
       label: "Webhook Signing Secret",
-      type: "text",
+      type: "secret",
       required: true,
       value: ""
     },

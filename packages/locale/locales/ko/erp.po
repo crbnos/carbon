@@ -12386,6 +12386,9 @@ msgstr "반환 값:"
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
+msgid "Reveal"
+msgstr ""
+
 msgid "Revenue"
 msgstr "수익"
 

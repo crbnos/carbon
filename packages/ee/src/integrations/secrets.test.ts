@@ -83,6 +83,16 @@ describe("splitSecrets", () => {
     });
   });
 
+  it("anti-overwrite: an empty secret value is not persisted (D4a)", () => {
+    // An untouched masked field submits "" — it must not clobber the vault.
+    const { config, secrets } = splitSecrets("linear", {
+      apiKey: "",
+      teamId: "team"
+    });
+    expect(secrets).toEqual({}); // nothing to write -> vault unchanged
+    expect(config).toEqual({ teamId: "team" }); // and no empty secret in the column
+  });
+
   it("omits absent secret paths and passes through unknown integrations", () => {
     expect(splitSecrets("linear", { teamId: "team" })).toEqual({
       config: { teamId: "team" },

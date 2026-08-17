@@ -103,10 +103,15 @@ export function splitSecrets(
   const secrets: Record<string, unknown> = {};
   for (const path of SECRET_KEYS[integrationId] ?? []) {
     const value = getPath(config, path);
-    if (value !== undefined) {
+    // Anti-overwrite (D4a): an empty/absent value is "unchanged, don't write" —
+    // never persist it, so saving a form whose masked secret field was left
+    // untouched (submitted as "" or omitted) cannot clobber the vaulted secret.
+    if (value !== undefined && value !== "") {
       secrets[path] = value;
-      deletePath(config, path);
     }
+    // Always strip the path from config so the plaintext column never keeps a
+    // secret, even the empty placeholder.
+    deletePath(config, path);
   }
   return { config, secrets };
 }

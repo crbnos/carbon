@@ -41,7 +41,7 @@ import { SUPPORT_EMAIL } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import { Processes } from "~/components/Form";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
@@ -307,16 +307,38 @@ function SettingFieldInner({ setting }: { setting: IntegrationSetting }) {
 }
 
 /**
- * A masked-but-recoverable credential field. Reuses the `Password` field
- * (form binding + reveal toggle) and adds a copy button that reads the live
- * form value via `useControlField`, so a stored secret prefilled by the
- * loader can be revealed and copied without being re-typed. The value stays
- * editable — pasting a new secret overwrites it. The copy button only shows
- * once the field has a value.
+ * A masked, vault-backed credential field. The secret is NOT sent to the
+ * browser by the loader (it lives in Supabase Vault); the field starts empty.
+ * "Reveal" fetches the plaintext on demand from the gated + audited reveal
+ * route and fills the field so it can be viewed, copied, or edited. Leaving the
+ * field untouched submits an empty value, which the server treats as
+ * "unchanged" (anti-overwrite, D4a) — the vaulted secret is never clobbered.
  */
 function SecretField({ setting }: { setting: IntegrationSetting }) {
-  const [value] = useControlField<string>(setting.name);
+  const { t } = useLingui();
+  const { id: integrationId } = useParams();
+  const [value, setValue] = useControlField<string>(setting.name);
   const current = typeof value === "string" ? value : "";
+  const revealFetcher = useFetcher<{ value?: string; error?: string }>();
+
+  const revealed = revealFetcher.data?.value;
+  useEffect(() => {
+    if (typeof revealed === "string") {
+      setValue(revealed);
+    }
+  }, [revealed, setValue]);
+
+  const reveal = () => {
+    if (!integrationId) return;
+    revealFetcher.submit(
+      { key: setting.name },
+      {
+        method: "post",
+        action: `/x/settings/integrations/${integrationId}/reveal`
+      }
+    );
+  };
+  const isRevealing = revealFetcher.state !== "idle";
 
   return (
     <div className="w-full">
@@ -324,8 +346,22 @@ function SecretField({ setting }: { setting: IntegrationSetting }) {
         <div className="min-w-0 flex-1">
           <Password name={setting.name} label={setting.label} />
         </div>
+        <Button
+          variant="secondary"
+          className="shrink-0"
+          onClick={reveal}
+          isDisabled={isRevealing || !integrationId}
+          isLoading={isRevealing}
+        >
+          {t`Reveal`}
+        </Button>
         {current.length > 0 && <Copy text={current} className="shrink-0" />}
       </div>
+      {revealFetcher.data?.error && (
+        <p className="text-xs text-destructive mt-1.5">
+          {revealFetcher.data.error}
+        </p>
+      )}
       {setting.description && (
         <p className="text-xs text-muted-foreground mt-1.5">
           {setting.description}

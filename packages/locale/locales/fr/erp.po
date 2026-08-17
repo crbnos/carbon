@@ -12386,6 +12386,9 @@ msgstr "Retours :"
 msgid "Rev {revision}"
 msgstr "Rév {revision}"
 
+msgid "Reveal"
+msgstr ""
+
 msgid "Revenue"
 msgstr "Revenu"
 

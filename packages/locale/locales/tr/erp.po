@@ -12386,6 +12386,9 @@ msgstr "Döndürür:"
 msgid "Rev {revision}"
 msgstr "Sürüm {revision}"
 
+msgid "Reveal"
+msgstr ""
+
 msgid "Revenue"
 msgstr "Gelir"
 

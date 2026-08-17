@@ -12386,6 +12386,9 @@ msgstr "Zwraca:"
 msgid "Rev {revision}"
 msgstr "Wer. {revision}"
 
+msgid "Reveal"
+msgstr ""
+
 msgid "Revenue"
 msgstr "Przychody"
 

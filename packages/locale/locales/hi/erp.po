@@ -12386,6 +12386,9 @@ msgstr "रिटर्न:"
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
+msgid "Reveal"
+msgstr ""
+
 msgid "Revenue"
 msgstr "राजस्व"
 

@@ -12386,6 +12386,9 @@ msgstr "Restituisce:"
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
+msgid "Reveal"
+msgstr ""
+
 msgid "Revenue"
 msgstr "Ricavi"
 
