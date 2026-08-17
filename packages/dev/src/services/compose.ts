@@ -2,7 +2,11 @@ import { existsSync } from "node:fs";
 import { log } from "@clack/prompts";
 import { execa } from "execa";
 import { join } from "pathe";
-import { COMPOSE_DEV_FILE, COMPOSE_DEV_FILE_LEGACY } from "../constants.js";
+import {
+  COMPOSE_DEV_FILE,
+  COMPOSE_DEV_FILE_LEGACY,
+  ENV_LOCAL_FILE
+} from "../constants.js";
 import { readLines } from "../helpers.js";
 import { projectName, SHARED_REDIS_PORT } from "../worktree.js";
 
@@ -64,7 +68,7 @@ export function buildUpArgs(
   slug: string,
   opts?: { minimal?: boolean; services?: string[]; chrome?: boolean }
 ): string[] {
-  const args = devArgs(root, slug, "--env-file", ".env.local");
+  const args = devArgs(root, slug, "--env-file", ENV_LOCAL_FILE);
   // When specific services are requested, don't activate profiles — compose
   // starts only the named services (+ dependencies) regardless of profiles.
   if (!opts?.services && !opts?.minimal) args.push("--profile", "full");
@@ -82,7 +86,7 @@ export function buildDownArgs(
   slug: string,
   withVolumes: boolean
 ): string[] {
-  const args = devArgs(root, slug, "--env-file", ".env.local");
+  const args = devArgs(root, slug, "--env-file", ENV_LOCAL_FILE);
   for (const profile of COMPOSE_PROFILES) args.push("--profile", profile);
   args.push("down", "--remove-orphans");
   if (withVolumes) args.push("-v");
@@ -129,7 +133,7 @@ export async function recreateServices(
       root,
       slug,
       "--env-file",
-      ".env.local",
+      ENV_LOCAL_FILE,
       "up",
       "-d",
       "--force-recreate",
@@ -149,7 +153,7 @@ export async function pullStack(
   onLine: (line: string) => void,
   opts?: { minimal?: boolean }
 ) {
-  const args = devArgs(root, slug, "--env-file", ".env.local");
+  const args = devArgs(root, slug, "--env-file", ENV_LOCAL_FILE);
   if (!opts?.minimal) args.push("--profile", "full");
   args.push("--progress", "plain", "pull");
   const proc = execa("docker", args, { cwd: root, reject: false, all: true });
@@ -174,7 +178,7 @@ export async function devComposeImageRefs(
   slug: string,
   opts?: { minimal?: boolean }
 ): Promise<string[] | null> {
-  const args = devArgs(root, slug, "--env-file", ".env.local");
+  const args = devArgs(root, slug, "--env-file", ENV_LOCAL_FILE);
   if (!opts?.minimal) args.push("--profile", "full");
   args.push("config", "--images");
   const r = await execa("docker", args, { cwd: root, reject: false });
@@ -325,7 +329,7 @@ export async function destroyProjectVolumes(cwd: string, project: string) {
       "--project-directory",
       ".",
       "--env-file",
-      ".env.local",
+      ENV_LOCAL_FILE,
       "-p",
       project,
       "down",
@@ -340,16 +344,49 @@ export async function destroyProjectVolumes(cwd: string, project: string) {
 // Inspection
 // ---------------------------------------------------------------------------
 
+/**
+ * `docker compose ps` argv. Exported for tests.
+ *
+ * The env file is what makes this readable at all: the compose file
+ * interpolates `${DOMAIN}` / `${INNGEST_TLS_HOST}` into `extra_hosts`, and with
+ * those unset compose refuses to decode the config ("bad host name ''") and
+ * exits 1 with no output — which `status` used to render as "no containers
+ * running" on top of a perfectly healthy stack. Every other compose call passes
+ * it; this one didn't. Guarded on existence so a never-booted worktree still
+ * gets a plain answer rather than a compose error about a missing file.
+ */
+export function buildPsArgs(root: string, slug: string): string[] {
+  const envFile = existsSync(join(root, ENV_LOCAL_FILE))
+    ? ["--env-file", ENV_LOCAL_FILE]
+    : [];
+  return devArgs(root, slug, ...envFile, "ps", "-a", "--format", "json");
+}
+
+/**
+ * Container state for a project. Distinguishes "compose could not read the
+ * project" from "nothing is running" — collapsing the two is how a broken read
+ * gets reported as an empty stack.
+ */
+export type ContainerListing =
+  | { ok: true; containers: Container[] }
+  | { ok: false; error: string };
+
 export async function listContainers(
   root: string,
   slug: string
-): Promise<Container[]> {
-  const r = await execa(
-    "docker",
-    devArgs(root, slug, "ps", "-a", "--format", "json"),
-    { cwd: root, reject: false }
-  );
-  if (r.exitCode !== 0 || !r.stdout?.trim()) return [];
+): Promise<ContainerListing> {
+  const r = await execa("docker", buildPsArgs(root, slug), {
+    cwd: root,
+    reject: false
+  });
+  if (r.exitCode !== 0) {
+    const detail = (r.stderr?.toString() ?? "").trim().split("\n").slice(-3);
+    return {
+      ok: false,
+      error: `docker compose ps failed (exit ${r.exitCode})${detail.length ? `:\n  ${detail.join("\n  ")}` : ""}`
+    };
+  }
+  if (!r.stdout?.trim()) return { ok: true, containers: [] };
   const out: Container[] = [];
   for (const line of r.stdout.split("\n")) {
     if (!line) continue;
@@ -362,7 +399,7 @@ export async function listContainers(
     const c = parseContainer(raw);
     if (c) out.push(c);
   }
-  return out;
+  return { ok: true, containers: out };
 }
 
 function parseContainer(raw: unknown): Container | null {
@@ -406,7 +443,7 @@ export async function listComposeServices(
   slug: string,
   opts?: { minimal?: boolean }
 ): Promise<string[]> {
-  const args = devArgs(root, slug, "--env-file", ".env.local");
+  const args = devArgs(root, slug, "--env-file", ENV_LOCAL_FILE);
   if (!opts?.minimal) args.push("--profile", "full");
   args.push("config", "--services");
   const r = await execa("docker", args, { cwd: root, reject: false });

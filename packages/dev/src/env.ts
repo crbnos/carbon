@@ -1,7 +1,13 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "pathe";
-import { APP_CHOICES } from "./constants.js";
-import { type JwtCreds, type PortMap, SHARED_REDIS_PORT } from "./worktree.js";
+import { APP_CHOICES, ENV_LOCAL_FILE } from "./constants.js";
+import {
+  type JwtCreds,
+  PORT_NAMES,
+  type PortMap,
+  type PortName,
+  SHARED_REDIS_PORT
+} from "./worktree.js";
 
 export function renderEnv(opts: {
   slug: string;
@@ -185,9 +191,35 @@ export function writeEnv(worktreeRoot: string, content: string) {
   const dotEnvPath = join(worktreeRoot, ".env");
   const dotEnv = existsSync(dotEnvPath) ? readFileSync(dotEnvPath, "utf8") : "";
   writeFileSync(
-    join(worktreeRoot, ".env.local"),
+    join(worktreeRoot, ENV_LOCAL_FILE),
     omitForcedKeys(content, dotEnv)
   );
+}
+
+/**
+ * The `PORT_*` values the running stack was actually booted with.
+ *
+ * `.env.local` is the authority, not the `~/.carbon/dev-ports.json` registry:
+ * `--no-portless` pins API/ERP/MES to 54321/3000/3001 AFTER the registry has
+ * persisted its allocated ports, and never writes the pins back. Reporting the
+ * registry in that mode prints three ports that nothing is listening on.
+ *
+ * Returns null when the file doesn't exist (worktree never booted); an
+ * unparseable or `PORT_`-less file yields an empty map, which callers treat the
+ * same way — fall back to the registry.
+ */
+export function readEnvPorts(worktreeRoot: string): Partial<PortMap> | null {
+  const path = join(worktreeRoot, ENV_LOCAL_FILE);
+  if (!existsSync(path)) return null;
+  const ports: Partial<PortMap> = {};
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    const match = /^\s*(PORT_[A-Z]+)\s*=\s*(\d+)\s*$/.exec(line);
+    if (!match) continue;
+    const [, name, value] = match as unknown as [string, PortName, string];
+    if (!PORT_NAMES.includes(name)) continue;
+    ports[name] = Number(value);
+  }
+  return ports;
 }
 
 export function syncAppPortlessConfigs(worktreeRoot: string) {

@@ -845,10 +845,16 @@ async function runAppsThenCommand(
 // ---------------------------------------------------------------------------
 
 async function dumpStorageDiagnostics(ctx: Ctx) {
-  const containers = await listContainers(ctx.root, ctx.slug);
+  const listing = await listContainers(ctx.root, ctx.slug);
   const out: string[] = ["", "--- container state ---"];
-  for (const name of ["postgres", "storage"]) {
-    out.push(formatContainerLine(name, containers));
+  if (listing.ok) {
+    for (const name of ["postgres", "storage"]) {
+      out.push(formatContainerLine(name, listing.containers));
+    }
+  } else {
+    // Don't print "(not found)" for containers we simply failed to read —
+    // during a boot failure that reads as a second, phantom problem.
+    out.push(listing.error);
   }
   out.push("", "--- storage logs (last 50) ---");
   out.push(await tailServiceLogs(ctx.root, ctx.slug, "storage", 50));

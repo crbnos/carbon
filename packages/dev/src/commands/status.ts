@@ -1,5 +1,6 @@
 import { intro, log, outro } from "@clack/prompts";
 import pc from "picocolors";
+import { readEnvPorts } from "../env.js";
 import { listContainers } from "../services/compose.js";
 import { portsTable, servicesTable } from "../ui.js";
 import {
@@ -23,18 +24,37 @@ export async function status() {
     return;
   }
 
-  log.message("\n" + portsTable(slot.ports, slot.redisDb), {
-    symbol: pc.bold(pc.yellow("Portless"))
+  // Prefer the ports the stack was actually booted with over the registry's
+  // allocation — they differ in localhost mode, where `up` pins API/ERP/MES.
+  const booted = readEnvPorts(root);
+  const ports =
+    booted && Object.keys(booted).length > 0
+      ? { ...slot.ports, ...booted }
+      : slot.ports;
+  log.message("\n" + portsTable(ports, slot.redisDb), {
+    symbol: pc.bold(pc.yellow(booted ? "Ports (.env.local)" : "Ports"))
   });
+  if (!booted) {
+    log.info(
+      "ports are the registry's allocation — this worktree hasn't booted"
+    );
+  }
 
-  const containers = await listContainers(root, slug);
-  if (containers.length === 0) {
+  const listing = await listContainers(root, slug);
+  if (!listing.ok) {
+    // Never report this as an empty stack: the containers may all be up and
+    // healthy, and only the read failed.
+    log.error(`could not read container state — ${listing.error}`);
+    outro("");
+    return;
+  }
+  if (listing.containers.length === 0) {
     log.warn("no containers running");
     outro("");
     return;
   }
 
-  log.message("\n" + servicesTable(containers), {
+  log.message("\n" + servicesTable(listing.containers), {
     symbol: pc.bold(pc.yellow("Docker"))
   });
   outro("");

@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { forcedKeys, omitForcedKeys, renderEnv } from "./env.js";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "pathe";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { forcedKeys, omitForcedKeys, readEnvPorts, renderEnv } from "./env.js";
 import type { JwtCreds, PortMap } from "./worktree.js";
 
 const ports: PortMap = {
@@ -211,5 +214,62 @@ describe("#force escape hatch", () => {
   it("no markers -> content untouched", () => {
     const content = "A=1\nB=2";
     expect(omitForcedKeys(content, "A=1\nB=2")).toBe(content);
+  });
+});
+
+describe("readEnvPorts", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "crbn-env-"));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("returns null when the worktree has never booted", () => {
+    expect(readEnvPorts(dir)).toBeNull();
+  });
+
+  it("reads the ports the stack was actually booted with", () => {
+    // The localhost-mode case that made `status` lie: `up` pins these three
+    // after the registry persisted its allocation, and never writes them back.
+    writeFileSync(
+      join(dir, ".env.local"),
+      renderEnv({
+        slug: "carbon-test",
+        ports: { ...ports, PORT_API: 54321, PORT_ERP: 3000, PORT_MES: 3001 },
+        redisDb: 3,
+        jwt,
+        portless: false
+      })
+    );
+    const read = readEnvPorts(dir);
+    expect(read?.PORT_API).toBe(54321);
+    expect(read?.PORT_ERP).toBe(3000);
+    expect(read?.PORT_MES).toBe(3001);
+    // Untouched ports still come through, so the caller can merge over the slot.
+    expect(read?.PORT_DB).toBe(ports.PORT_DB);
+  });
+
+  it("ignores non-port keys, unknown PORT_ names and malformed values", () => {
+    writeFileSync(
+      join(dir, ".env.local"),
+      [
+        "SUPABASE_URL=http://localhost:54321",
+        "PORT_DB=54000",
+        "PORT_NOTAPORT=1234",
+        "PORT_API=not-a-number",
+        "EMAIL_DEV_PORT=6001"
+      ].join("\n")
+    );
+    expect(readEnvPorts(dir)).toEqual({ PORT_DB: 54000 });
+  });
+
+  it("returns an empty map for a file with no port lines", () => {
+    // Distinct from null: the file exists, so the worktree HAS booted.
+    writeFileSync(join(dir, ".env.local"), "CARBON_WORKTREE=carbon-test\n");
+    expect(readEnvPorts(dir)).toEqual({});
   });
 });
