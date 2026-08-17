@@ -17,12 +17,12 @@
  */
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { recordStripeConnectPayment } from "@carbon/ee/stripe-connect.server";
 import { getLogger } from "@carbon/logger";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import { constructConnectWebhookEvent } from "@carbon/stripe/connect.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { recordStripeConnectPayment } from "~/modules/invoicing/invoicing.server";
 
 export const config = {
   runtime: "nodejs"

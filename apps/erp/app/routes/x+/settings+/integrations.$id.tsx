@@ -731,7 +731,42 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
     }
 
-    // add dynamic options here as needed
+    const accountDefaults = await client
+      .from("accountDefault")
+      .select(
+        `realizedExchangeGainAccount, realizedExchangeLossAccount, serviceChargeAccount`
+      )
+      .eq("companyId", companyId)
+      .single();
+
+    if (accountDefaults.data) {
+      const accountIds = [
+        accountDefaults.data.realizedExchangeGainAccount,
+        accountDefaults.data.realizedExchangeLossAccount,
+        accountDefaults.data.serviceChargeAccount
+      ].filter(Boolean);
+
+      if (accountIds.length > 0) {
+        const { data: accounts } = await client
+          .from("account")
+          .select("id, number, name")
+          .in("id", accountIds);
+
+        const byId = new Map((accounts ?? []).map((a) => [a.id, a]));
+
+        const fmt = (id: string | null) => {
+          if (!id) return null;
+          const a = byId.get(id);
+          return a ? (a.number ? `${a.number} — ${a.name}` : a.name) : null;
+        };
+
+        flattenedMetadata.accountingAccounts = {
+          fxGain: fmt(accountDefaults.data.realizedExchangeGainAccount),
+          fxLoss: fmt(accountDefaults.data.realizedExchangeLossAccount),
+          serviceCharge: fmt(accountDefaults.data.serviceChargeAccount)
+        };
+      }
+    }
   }
 
   if (integrationId === "quickbooks" && integrationData.data.active) {

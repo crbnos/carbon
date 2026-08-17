@@ -107,6 +107,23 @@ function ConnectStripeAccountButton({
   );
 }
 
+function AccountingAccountRow({
+  label,
+  value
+}: {
+  label: string;
+  value: string | null;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 py-1.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs font-medium text-foreground truncate max-w-[60%] text-right">
+        {value ?? "Not configured"}
+      </span>
+    </div>
+  );
+}
+
 function StripeConnectStatus({
   metadata
 }: {
@@ -145,6 +162,14 @@ function StripeConnectStatus({
         : hasIssue
           ? { label: "Needs attention", variant: "red" as const }
           : { label: "Pending onboarding", variant: "yellow" as const };
+
+  const accountingAccounts = metadata?.accountingAccounts as
+    | {
+        fxGain: string | null;
+        fxLoss: string | null;
+        serviceCharge: string | null;
+      }
+    | undefined;
 
   return (
     <div className="flex flex-col gap-4">
@@ -212,6 +237,39 @@ function StripeConnectStatus({
               {displayName && email ? ` (${email})` : ""}.
             </p>
           )}
+        </div>
+      )}
+
+      {accountingAccounts && (
+        <div className="border-t border-border pt-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+              Accounting
+            </span>
+            <a
+              href="/x/accounting/defaults"
+              className="text-[0.6875rem] text-primary hover:underline"
+            >
+              Change in Account Defaults
+            </a>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            GL accounts used when recording Stripe payments and fees.
+          </p>
+          <div className="flex flex-col divide-y divide-border/50">
+            <AccountingAccountRow
+              label="Realized FX Gain"
+              value={accountingAccounts.fxGain}
+            />
+            <AccountingAccountRow
+              label="Realized FX Loss"
+              value={accountingAccounts.fxLoss}
+            />
+            <AccountingAccountRow
+              label="Processing Fees"
+              value={accountingAccounts.serviceCharge}
+            />
+          </div>
         </div>
       )}
     </div>
