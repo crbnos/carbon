@@ -8,6 +8,7 @@ import {
   finalizeRun,
   isStalled,
   markItemSyncStateFailedByElement,
+  markItemSyncStateFailedByItem,
   markRunRunning,
   type OnshapeReleaseReference,
   RELEASE_CAPTURE_LIMIT,
@@ -38,12 +39,32 @@ type FakeClientOptions = {
   existingItemRow?: { id: string } | null;
   /** Rows the guarded update matched. */
   updateCount?: number;
+  /**
+   * The status the single stored row holds. When set, an update carrying a
+   * status filter matches the row only if the filter admits this status — which
+   * is what makes a guarded failure write observable.
+   */
+  storedStatus?: string;
   selectErrorMessage?: string;
   insertErrorMessage?: string;
   updateErrorMessage?: string;
   /** Simulates a client that throws instead of returning `{ error }`. */
   throwOnUse?: boolean;
 };
+
+// Does the update's own status filter admit the stored row's status?
+function statusFilterAdmits(
+  filters: RecordedFilter[],
+  storedStatus: string
+): boolean {
+  return filters
+    .filter((filter) => filter.column === "status")
+    .every((filter) =>
+      filter.method === "in"
+        ? (filter.value as string[]).includes(storedStatus)
+        : filter.value === storedStatus
+    );
+}
 
 type FakeCarbonClient = {
   from: (table: string) => unknown;
@@ -55,7 +76,9 @@ function createFakeCarbonClient(
 ): FakeCarbonClient {
   const calls: RecordedCall[] = [];
 
-  const makeBuilder = (call: RecordedCall, result: unknown) => {
+  // The result resolves lazily (once every filter has been recorded) so a fake
+  // update can answer according to the filters it was actually given.
+  const makeBuilder = (call: RecordedCall, resolveResult: () => unknown) => {
     const builder = {
       eq(column: string, value: unknown) {
         call.filters.push({ method: "eq", column, value });
@@ -66,13 +89,13 @@ function createFakeCarbonClient(
         return builder;
       },
       maybeSingle() {
-        return Promise.resolve(result);
+        return Promise.resolve(resolveResult());
       },
       then(
         onFulfilled?: (value: unknown) => unknown,
         onRejected?: (reason: unknown) => unknown
       ) {
-        return Promise.resolve(result).then(onFulfilled, onRejected);
+        return Promise.resolve(resolveResult()).then(onFulfilled, onRejected);
       }
     };
     return builder;
@@ -92,8 +115,7 @@ function createFakeCarbonClient(
             filters: []
           };
           calls.push(call);
-          return makeBuilder(
-            call,
+          return makeBuilder(call, () =>
             options.selectErrorMessage
               ? { data: null, error: { message: options.selectErrorMessage } }
               : { data: options.existingItemRow ?? null, error: null }
@@ -107,8 +129,7 @@ function createFakeCarbonClient(
             filters: []
           };
           calls.push(call);
-          return makeBuilder(
-            call,
+          return makeBuilder(call, () =>
             options.insertErrorMessage
               ? { data: null, error: { message: options.insertErrorMessage } }
               : { data: null, error: null }
@@ -123,16 +144,23 @@ function createFakeCarbonClient(
             filters: []
           };
           calls.push(call);
-          return makeBuilder(
-            call,
-            options.updateErrorMessage
-              ? {
-                  data: null,
-                  error: { message: options.updateErrorMessage },
-                  count: null
-                }
-              : { data: null, error: null, count: options.updateCount ?? 1 }
-          );
+          return makeBuilder(call, () => {
+            if (options.updateErrorMessage) {
+              return {
+                data: null,
+                error: { message: options.updateErrorMessage },
+                count: null
+              };
+            }
+            const matched =
+              options.storedStatus === undefined ||
+              statusFilterAdmits(call.filters, options.storedStatus);
+            return {
+              data: null,
+              error: null,
+              count: matched ? (options.updateCount ?? 1) : 0
+            };
+          });
         }
       };
     }
@@ -622,6 +650,53 @@ describe("markItemSyncStateFailedByElement", () => {
   });
 });
 
+describe("markItemSyncStateFailedByItem", () => {
+  const failureBase = {
+    companyId: "company_1",
+    userId: "user_1",
+    itemId: "item_1",
+    error: "Onshape export failed"
+  };
+
+  it("flips a queued row for the item and asset kind, scoped by companyId", async () => {
+    const client = createFakeCarbonClient({ storedStatus: "queued" });
+    const result = await markItemSyncStateFailedByItem(asCarbonClient(client), {
+      ...failureBase,
+      assetKind: "drawing",
+      onlyFromStatuses: ["queued", "running"]
+    });
+
+    expect(result).toEqual({ applied: true });
+    const update = client.calls.find((call) => call.operation === "update");
+    expect(update?.values).toMatchObject({
+      status: "failed",
+      error: "Onshape export failed",
+      updatedBy: "user_1"
+    });
+    expect(update?.filters).toEqual([
+      { method: "eq", column: "companyId", value: "company_1" },
+      { method: "eq", column: "itemId", value: "item_1" },
+      { method: "eq", column: "assetKind", value: "drawing" },
+      { method: "in", column: "status", value: ["queued", "running"] }
+    ]);
+  });
+
+  it("CRITICAL: leaves an already-synced model row alone when the drawing arm fails", async () => {
+    // The re-pull's two arms share one Inngest run: the model export finished
+    // and wrote `synced`, then the drawing export exhausted its retries. The
+    // run's failure belongs to the drawing, and the model keeps its outcome.
+    const client = createFakeCarbonClient({ storedStatus: "synced" });
+
+    const model = await markItemSyncStateFailedByItem(asCarbonClient(client), {
+      ...failureBase,
+      assetKind: "model",
+      onlyFromStatuses: ["queued", "running"]
+    });
+
+    expect(model).toEqual({ applied: false });
+  });
+});
+
 describe("run row transitions", () => {
   it("starts a run only while it is still queued", async () => {
     const client = createFakeCarbonClient({ updateCount: 1 });
@@ -816,6 +891,16 @@ describe("bookkeeping is never fatal to the sync", () => {
         elementId: "el_1",
         assetKind: "model",
         error: "boom"
+      })
+    ).resolves.toEqual({ applied: false });
+    await expect(
+      markItemSyncStateFailedByItem(exploding, {
+        companyId: "company_1",
+        userId: "user_1",
+        itemId: "item_1",
+        assetKind: "model",
+        error: "boom",
+        onlyFromStatuses: ["queued", "running"]
       })
     ).resolves.toEqual({ applied: false });
     await expect(markRunRunning(exploding, runWriteBase)).resolves.toEqual({

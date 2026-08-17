@@ -354,16 +354,18 @@ export const onshapeItemSyncFunction = inngest.createFunction(
         .data as OnshapeItemSyncPayload;
       const carbon = getCarbonServiceRole();
       const errorMessage = event.data.error.message;
+      // Both arms only claim a row the route moved to `queued` for THIS re-pull:
+      // one arm can succeed and the other throw, so a row in any other state
+      // belongs to an earlier, completed sync and keeps its own outcome rather
+      // than inheriting the other arm's error.
       await markItemSyncStateFailedByItem(carbon, {
         companyId,
         userId,
         itemId,
         assetKind: "model",
-        error: errorMessage
+        error: errorMessage,
+        onlyFromStatuses: ["queued", "running"]
       });
-      // The drawing arm only runs for an item whose drawing row the route moved
-      // to `queued`; a row in any other state belongs to an earlier sync and
-      // keeps its own outcome.
       await markItemSyncStateFailedByItem(carbon, {
         companyId,
         userId,
