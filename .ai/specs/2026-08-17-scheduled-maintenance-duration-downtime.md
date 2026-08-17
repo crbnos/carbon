@@ -1,6 +1,6 @@
 # Scheduled Maintenance: Expected Duration + Takes-Work-Center-Offline
 
-> Status: draft
+> Status: implemented (verified locally; not yet merged)
 > Author: Brad Barbin (design), agent-assisted
 > Date: 2026-08-17
 
@@ -253,3 +253,15 @@ No MES changes — schedules are ERP-only; the MES dispatch surface already hand
   "future-only propagation", "always set plannedEndTime when duration present",
   and the single `takesWorkCenterOffline` column. Research at
   `.ai/research/scheduled-maintenance-duration-downtime.md`.
+- 2026-08-17: Implemented on `naveen/capacity-planning` and verified locally.
+  Migration `20260817041453_scheduled-maintenance-offline.sql` applied (column +
+  view/RPC recreation; the view recreation also un-froze the schedule's own
+  `locationId`/`procedureId` columns and dropped the now-duplicate `wc.locationId`
+  alias). `erp` + `@carbon/jobs` typecheck pass; 476 jobs tests pass (erp has no
+  unit-test runner). Browser+DB e2e proved: the "Takes Work Center Offline"
+  toggle renders; a schedule saved with offline ON + 90 min persists
+  `takesWorkCenterOffline=true, estimatedDuration=90`; the "Blocks Machine" column
+  shows OFFLINE; offline ON + blank duration surfaces the exact superRefine error;
+  and forcing a due occurrence generated dispatch MAIN000001 with
+  `takesWorkCenterOffline=true` and `plannedEndTime = plannedStartTime + 90 min`.
+  All e2e test data cleaned up. Not yet merged (draft PR).

@@ -15,12 +15,12 @@ estimatedDuration`), and surface the toggle on the schedule form + a badge in th
 schedules table.
 
 ## Progress
-- [ ] Task 1: Migration — add column, recreate view + RPC, regenerate types
-- [ ] Task 2: Validator — add field + duration-required-iff-offline refinement
-- [ ] Task 3: Dispatch generator — copy flag + compute plannedEndTime
-- [ ] Task 4: Schedule form — offline toggle + route initialValues
-- [ ] Task 5: Schedules table — offline indicator column
-- [ ] Task 6: Verification — typecheck, tests, browser e2e
+- [x] Task 1: Migration — add column, recreate view + RPC, regenerate types
+- [x] Task 2: Validator — add field + duration-required-iff-offline refinement
+- [x] Task 3: Dispatch generator — copy flag + compute plannedEndTime
+- [x] Task 4: Schedule form — offline toggle + route initialValues
+- [x] Task 5: Schedules table — offline indicator column
+- [x] Task 6: Verification — typecheck, tests, browser+DB e2e (all criteria proven)
 
 ## Dependencies
 - Task 1 must run first (schema + types). Tasks 2–5 depend on Task 1's regenerated types.
