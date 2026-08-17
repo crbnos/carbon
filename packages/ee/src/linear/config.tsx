@@ -24,10 +24,12 @@ export const Linear = defineIntegration({
     }
   ],
   schema: z.object({
+    // Empty means "keep the existing vaulted secret" (the field loads masked and
+    // is not sent to the browser). Presence is enforced at install-time in the
+    // settings action; a non-empty value must still be a valid Linear key.
     apiKey: z
       .string()
-      .min(1, { message: "API Key is required" })
-      .refine((val) => val.startsWith("lin_api"), {
+      .refine((val) => val === "" || val.startsWith("lin_api"), {
         message: "Linear API Key must start with 'lin_api'"
       })
   })

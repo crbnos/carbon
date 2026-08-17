@@ -64,10 +64,10 @@ export const PaperlessParts = defineIntegration({
     }
   ],
   schema: z.object({
-    apiKey: z.string().min(1, { message: "API Key is required" }),
-    secretKey: z
-      .string()
-      .min(1, { message: "Webhook Signing Secret is required" }),
+    // Empty means "keep the existing vaulted secret"; presence is enforced at
+    // install-time in the settings action.
+    apiKey: z.string(),
+    secretKey: z.string(),
     methodType: z.enum(["Purchase to Order", "Pull from Inventory"]),
     trackingType: z.enum(["Inventory", "Non-Inventory", "Batch"]),
     billOfProcessBlackList: z.array(z.string()).optional(),
