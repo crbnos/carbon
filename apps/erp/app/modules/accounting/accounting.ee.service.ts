@@ -435,6 +435,97 @@ function applyRootSignCorrectionToSeries<
   });
 }
 
+// Roll translated leaf values up onto INTERMEDIATE group rows (subtotals).
+// Per-company translation (translateCompanyBalances) stamps translated values on
+// LEAVES only — it deliberately skips group accounts so the CTA total isn't
+// double-counted — and applyRootSignCorrectionToSeries only recomputes ROOT rows.
+// Without this pass every subtotal (Revenue, Receivables, …) renders "-" in any
+// translated view (all consolidated reports, plus single-company foreign
+// currency), since it carries no translatedBalance/translatedNetChange. Raw
+// netChange/balanceAtDate already roll up in the SQL RPC; this is the translated
+// counterpart. Intermediate groups sum their children WITHOUT a sign flip — a
+// group's children share a class (hence a normal balance), so no correction
+// applies until the class boundary at the root, which the root-sign pass owns.
+function rollUpTranslatedGroups<
+  T extends {
+    id: string;
+    parentId: string | null;
+    isSystem?: boolean | null;
+    periods: Record<string, PeriodCell>;
+  }
+>(accounts: T[], bucketKeys: string[]): T[] {
+  const childrenByParent = new Map<string, T[]>();
+  for (const account of accounts) {
+    if (account.parentId) {
+      const list = childrenByParent.get(account.parentId) ?? [];
+      list.push(account);
+      childrenByParent.set(account.parentId, list);
+    }
+  }
+
+  // Post-order sum of translated leaf values, memoized (each node visited once).
+  const memo = new Map<
+    string,
+    Record<string, { tb: number; tnc: number; has: boolean }>
+  >();
+  const compute = (
+    node: T
+  ): Record<string, { tb: number; tnc: number; has: boolean }> => {
+    const cached = memo.get(node.id);
+    if (cached) return cached;
+    const children = childrenByParent.get(node.id) ?? [];
+    const out: Record<string, { tb: number; tnc: number; has: boolean }> = {};
+    for (const key of bucketKeys) {
+      if (children.length === 0) {
+        const cell = node.periods[key];
+        out[key] = {
+          tb: cell?.translatedBalance ?? 0,
+          tnc: cell?.translatedNetChange ?? 0,
+          has:
+            typeof cell?.translatedBalance === "number" ||
+            typeof cell?.translatedNetChange === "number"
+        };
+      } else {
+        let tb = 0;
+        let tnc = 0;
+        let has = false;
+        for (const child of children) {
+          const childCell = compute(child)[key]!;
+          if (childCell.has) {
+            has = true;
+            tb += childCell.tb;
+            tnc += childCell.tnc;
+          }
+        }
+        out[key] = { tb, tnc, has };
+      }
+    }
+    memo.set(node.id, out);
+    return out;
+  };
+
+  return accounts.map((account) => {
+    const isRoot = account.isSystem ?? account.parentId === null;
+    const hasChildren = (childrenByParent.get(account.id) ?? []).length > 0;
+    // Leaves already carry their own translated values; roots are recomputed
+    // (with sign) by applyRootSignCorrectionToSeries, which runs after this.
+    if (isRoot || !hasChildren) return account;
+    const rolled = compute(account);
+    const periods = { ...account.periods };
+    for (const key of bucketKeys) {
+      const cell = rolled[key]!;
+      if (!cell.has) continue;
+      const existing = periods[key] ?? { netChange: 0, balanceAtDate: 0 };
+      periods[key] = {
+        ...existing,
+        translatedBalance: cell.tb,
+        translatedNetChange: cell.tnc
+      };
+    }
+    return { ...account, periods };
+  });
+}
+
 // Overlay per-bucket translated leaf balances onto the series rows.
 function overlayTranslationOnSeries<
   T extends { id: string; periods: Record<string, PeriodCell> }
@@ -701,7 +792,7 @@ export async function getFinancialStatementPeriodSeries(
 
   return {
     data: applyRootSignCorrectionToSeries(
-      mapped,
+      rollUpTranslatedGroups(mapped, bucketKeys),
       bucketKeys
     ) as unknown as ChartPeriodSeries[],
     ctaByBucket,
@@ -720,22 +811,44 @@ export async function getConsolidatedPeriodSeries(
   companyGroupId: string,
   companyIds: string[],
   targetCurrency: string,
-  args: { buckets: ReportPeriodBucket[] }
+  args: {
+    buckets: ReportPeriodBucket[];
+    // Balance sheet only: append a computed "Net Income" equity line (current
+    // year earnings) so consolidated assets tie to liabilities + equity.
+    includeCurrentYearEarnings?: boolean;
+  },
+  // Privileged (service-role) client used ONLY to read elimination entities.
+  // Those are synthetic consolidation companies that no user is a member of, so
+  // their ledger is invisible to the RLS-scoped `client` and their reversing
+  // entries would silently drop out of the consolidation (intercompany balances
+  // never eliminate). The route already authorized the user for this group, and
+  // reads stay scoped to `companyGroupId`. Operating companies still read via the
+  // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.
+  eliminationClient: SupabaseClient<Database> = client
 ): Promise<{
   data: ChartPeriodSeries[];
   ctaByBucket: Record<string, number>;
 }> {
   const bucketKeys = args.buckets.map((b) => b.key);
   const allIds = await resolveConsolidationCompanyIds(
-    client,
+    eliminationClient,
     companyGroupId,
     companyIds
   );
 
+  // Elimination-entity ids in this group — read privileged, everything else RLS.
+  const { data: elimRows } = await eliminationClient
+    .from("company")
+    .select("id")
+    .eq("companyGroupId", companyGroupId)
+    .eq("isEliminationEntity", true);
+  const elimIds = new Set((elimRows ?? []).map((c) => c.id));
+
   const results = await Promise.all(
     allIds.map(async (id) => {
+      const readClient = elimIds.has(id) ? eliminationClient : client;
       const series = await getFinancialStatementPeriodSeries(
-        client,
+        readClient,
         companyGroupId,
         id,
         { buckets: args.buckets }
@@ -751,7 +864,7 @@ export async function getConsolidatedPeriodSeries(
               error: series.error?.message ?? "Failed to load balances"
             }
           : await translateCompanyPeriodSeries(
-              client,
+              readClient,
               companyGroupId,
               id,
               targetCurrency,
@@ -785,17 +898,41 @@ export async function getConsolidatedPeriodSeries(
     }
   }
 
-  // Sum translated leaf balances per (account, bucket) and CTA per bucket
+  // Sum translated leaf balances per (account, bucket) and CTA per bucket.
+  // translatedNetChange is summed here too: translateCompanyBalances only
+  // returns translatedBalance (derived from balanceAtDate), but the Income
+  // Statement and Executive P&L read the translated period FLOW
+  // (translatedNetChange). Compute it per company as netChange × that account's
+  // rate — the same formula overlayTranslationOnSeries uses on the single-company
+  // path — then sum across companies. Without it the consolidated Income
+  // Statement renders every cell as "-" (translatedNetChange undefined).
   const translatedByAccount = new Map<
     string,
-    Record<string, { translatedBalance: number; exchangeRate: number }>
+    Record<
+      string,
+      {
+        translatedBalance: number;
+        translatedNetChange: number;
+        exchangeRate: number;
+      }
+    >
   >();
   const ctaByBucket: Record<string, number> = Object.fromEntries(
     bucketKeys.map((key) => [key, 0])
   );
 
-  for (const { translation } of results) {
+  for (const { series, translation } of results) {
     if (translation.error) continue;
+    // This company's raw netChange per (account, bucket) — the flow that the
+    // per-account rate below translates.
+    const netChangeByAccount = new Map<string, Record<string, number>>();
+    for (const row of series.data ?? []) {
+      const rec: Record<string, number> = {};
+      for (const key of bucketKeys) {
+        rec[key] = row.periods[key]?.netChange ?? 0;
+      }
+      netChangeByAccount.set(row.id, rec);
+    }
     for (const [key, bucket] of Object.entries(translation.byBucket)) {
       ctaByBucket[key] = (ctaByBucket[key] ?? 0) + bucket.cta;
       for (const row of bucket.balances) {
@@ -804,16 +941,22 @@ export async function getConsolidatedPeriodSeries(
           record = {};
           translatedByAccount.set(row.accountId, record);
         }
+        const rate = Number(row.exchangeRate);
+        const netChange = netChangeByAccount.get(row.accountId)?.[key] ?? 0;
+        const translatedNetChange = round(netChange * rate);
         const existing = record[key];
         record[key] = existing
           ? {
               translatedBalance:
                 existing.translatedBalance + Number(row.translatedBalance),
+              translatedNetChange:
+                existing.translatedNetChange + translatedNetChange,
               exchangeRate: existing.exchangeRate
             }
           : {
               translatedBalance: Number(row.translatedBalance),
-              exchangeRate: Number(row.exchangeRate)
+              translatedNetChange,
+              exchangeRate: rate
             };
       }
     }
@@ -837,8 +980,64 @@ export async function getConsolidatedPeriodSeries(
     return { ...account, periods };
   });
 
+  // Balance sheet: inject the consolidated "Net Income" (current year earnings)
+  // as an equity leaf so the sheet balances. Mirrors the single-company injection
+  // in getFinancialStatementPeriodSeries, but also carries TRANSLATED values
+  // (summed from the already-translated income-statement leaves) so the
+  // translated consolidated view balances too. Pushed as a leaf child of Equity
+  // BEFORE rollUpTranslatedGroups, so it rolls into the Equity subtotal and the
+  // root exactly like a posted account.
+  if (args.includeCurrentYearEarnings) {
+    const balanceSheetRoot = consolidated.find(
+      (a) =>
+        a.incomeBalance === "Balance Sheet" &&
+        (a.isSystem ?? a.parentId === null)
+    );
+    const equityGroup = consolidated.find(
+      (a) =>
+        a.class === "Equity" && a.isGroup && a.parentId === balanceSheetRoot?.id
+    );
+    if (balanceSheetRoot && equityGroup) {
+      const netIncomePeriods: Record<string, PeriodCell> = {};
+      for (const key of bucketKeys) {
+        let netChange = 0;
+        let balanceAtDate = 0;
+        let translatedBalance = 0;
+        let translatedNetChange = 0;
+        for (const a of consolidated) {
+          if (a.incomeBalance !== "Income Statement" || a.isGroup) continue;
+          const sign = rootSignMultiplier(a.class);
+          const cell = a.periods[key];
+          netChange += sign * (cell?.netChange ?? 0);
+          balanceAtDate += sign * (cell?.balanceAtDate ?? 0);
+          translatedBalance += sign * (cell?.translatedBalance ?? 0);
+          translatedNetChange += sign * (cell?.translatedNetChange ?? 0);
+        }
+        netIncomePeriods[key] = {
+          netChange,
+          balanceAtDate,
+          translatedBalance,
+          translatedNetChange,
+          exchangeRate: 1
+        };
+      }
+      consolidated.push({
+        ...equityGroup,
+        id: NET_INCOME_ACCOUNT_ID,
+        name: "Net Income",
+        isGroup: false,
+        isSystem: false,
+        parentId: equityGroup.id,
+        periods: netIncomePeriods
+      });
+    }
+  }
+
   return {
-    data: applyRootSignCorrectionToSeries(consolidated, bucketKeys),
+    data: applyRootSignCorrectionToSeries(
+      rollUpTranslatedGroups(consolidated, bucketKeys),
+      bucketKeys
+    ),
     ctaByBucket
   };
 }
@@ -4198,21 +4397,33 @@ export async function getConsolidatedBalances(
   companyIds: string[],
   targetCurrency: string,
   periodEnd: string,
-  periodStart?: string
+  periodStart?: string,
+  // Privileged (service-role) client used ONLY for elimination entities — see
+  // getConsolidatedPeriodSeries. Without it their reversing entries are hidden by
+  // RLS and intercompany balances never eliminate. Defaults to `client`.
+  eliminationClient: SupabaseClient<Database> = client
 ) {
   // All companies whose balances we need (operating + elimination entities)
   const allIds = await resolveConsolidationCompanyIds(
-    client,
+    eliminationClient,
     companyGroupId,
     companyIds
   );
+
+  const { data: elimRows } = await eliminationClient
+    .from("company")
+    .select("id")
+    .eq("companyGroupId", companyGroupId)
+    .eq("isEliminationEntity", true);
+  const elimIds = new Set((elimRows ?? []).map((c) => c.id));
 
   // Get balances for all companies, then translate the already-computed
   // balances to the target currency (one ledger scan per company, not two).
   const results = await Promise.all(
     allIds.map(async (id) => {
+      const readClient = elimIds.has(id) ? eliminationClient : client;
       const balances = await getFinancialStatementBalances(
-        client,
+        readClient,
         companyGroupId,
         id,
         {
@@ -4229,7 +4440,7 @@ export async function getConsolidatedBalances(
               error: balances.error?.message ?? "Failed to load balances"
             }
           : await translateCompanyBalances(
-              client,
+              readClient,
               companyGroupId,
               id,
               targetCurrency,

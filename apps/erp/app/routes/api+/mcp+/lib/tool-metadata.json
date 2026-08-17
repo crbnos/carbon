@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-16T23:17:39.255Z",
+  "generated": "2026-08-17T04:43:54.465Z",
   "totalTools": 1442,
   "modules": 15,
   "tools": [
@@ -610,13 +610,16 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get consolidated period series",
-      "paramCount": 3,
+      "paramCount": 6,
       "serviceParams": [
         "client",
         "companyGroupId",
         "companyIds",
         "targetCurrency",
-        "args"
+        "args",
+        "// Privileged (service-role) client used ONLY to read elimination entities.\n  // Those are synthetic consolidation companies that no user is a member of",
+        "so\n  // their ledger is invisible to the RLS-scoped `client` and their reversing\n  // entries would silently drop out of the consolidation (intercompany balances\n  // never eliminate). The route already authorized the user for this group",
+        "and\n  // reads stay scoped to `companyGroupId`. Operating companies still read via the\n  // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.\n  eliminationClient"
       ],
       "injectAuth": [
         "companyId"
@@ -639,17 +642,26 @@
               "buckets": {
                 "type": "array",
                 "items": {}
+              },
+              "includeCurrentYearEarnings": {
+                "type": "boolean"
               }
             },
             "required": [
               "buckets"
             ]
-          }
+          },
+          "// Privileged (service-role) client used ONLY to read elimination entities.\n  // Those are synthetic consolidation companies that no user is a member of": {},
+          "so\n  // their ledger is invisible to the RLS-scoped `client` and their reversing\n  // entries would silently drop out of the consolidation (intercompany balances\n  // never eliminate). The route already authorized the user for this group": {},
+          "and\n  // reads stay scoped to `companyGroupId`. Operating companies still read via the\n  // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.\n  eliminationClient": {}
         },
         "required": [
           "companyIds",
           "targetCurrency",
-          "args"
+          "args",
+          "// Privileged (service-role) client used ONLY to read elimination entities.\n  // Those are synthetic consolidation companies that no user is a member of",
+          "so\n  // their ledger is invisible to the RLS-scoped `client` and their reversing\n  // entries would silently drop out of the consolidation (intercompany balances\n  // never eliminate). The route already authorized the user for this group",
+          "and\n  // reads stay scoped to `companyGroupId`. Operating companies still read via the\n  // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.\n  eliminationClient"
         ]
       }
     },
@@ -2942,14 +2954,15 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get consolidated balances",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyGroupId",
         "companyIds",
         "targetCurrency",
         "periodEnd",
-        "periodStart"
+        "periodStart",
+        "// Privileged (service-role) client used ONLY for elimination entities — see\n  // getConsolidatedPeriodSeries. Without it their reversing entries are hidden by\n  // RLS and intercompany balances never eliminate. Defaults to `client`.\n  eliminationClient"
       ],
       "injectAuth": [
         "companyId"
@@ -2971,12 +2984,14 @@
           },
           "periodStart": {
             "type": "string"
-          }
+          },
+          "// Privileged (service-role) client used ONLY for elimination entities — see\n  // getConsolidatedPeriodSeries. Without it their reversing entries are hidden by\n  // RLS and intercompany balances never eliminate. Defaults to `client`.\n  eliminationClient": {}
         },
         "required": [
           "companyIds",
           "targetCurrency",
-          "periodEnd"
+          "periodEnd",
+          "// Privileged (service-role) client used ONLY for elimination entities — see\n  // getConsolidatedPeriodSeries. Without it their reversing entries are hidden by\n  // RLS and intercompany balances never eliminate. Defaults to `client`.\n  eliminationClient"
         ]
       }
     },
