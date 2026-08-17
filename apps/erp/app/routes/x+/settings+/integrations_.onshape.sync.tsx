@@ -104,6 +104,22 @@ function readReleaseExceptions(
   ];
 }
 
+/**
+ * The columns the Items tab may sort on — every one a real column of the
+ * item-state read. A `?sort=` naming anything else (bookmarked from an older
+ * page, hand-typed, or written by another tab's table) is dropped rather than
+ * sent to the database, where an unknown column errors the whole page.
+ */
+const SORTABLE_ITEM_STATE_COLUMNS = new Set([
+  "itemId",
+  "assetKind",
+  "status",
+  "revision",
+  "source",
+  "updatedAt",
+  "updatedBy"
+]);
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "settings"
@@ -117,6 +133,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const status = searchParams.get("status");
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
+  const itemStateSorts = (sorts ?? []).filter((sort) =>
+    SORTABLE_ITEM_STATE_COLUMNS.has(sort.sortBy)
+  );
 
   const [runs, itemStates, coverage] = await Promise.all([
     getOnshapeSyncRuns(client, companyId, { limit: RUN_HISTORY_LIMIT }),
@@ -125,7 +144,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       status,
       limit,
       offset,
-      sorts,
+      sorts: itemStateSorts,
       filters
     }),
     getOnshapeSyncCoverage(client, companyId)

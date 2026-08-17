@@ -180,6 +180,10 @@ const OnshapeSyncRunsTable = memo(({ data }: OnshapeSyncRunsTableProps) => {
       title={t`Runs`}
       withPagination={false}
       withSearch={false}
+      // Column headers must not write `?sort=` into the URL: the run history is
+      // the whole capped set held client-side, and the only server sort the
+      // route runs is the item-state read, whose columns are not these.
+      withSimpleSorting={false}
     />
   );
 });

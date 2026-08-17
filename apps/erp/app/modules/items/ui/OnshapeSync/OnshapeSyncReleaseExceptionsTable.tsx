@@ -107,6 +107,10 @@ const OnshapeSyncReleaseExceptionsTable = memo(
             title={t`Release exceptions`}
             withPagination={false}
             withSearch={false}
+            // Column headers must not write `?sort=` into the URL: these rows are
+            // read out of the latest run's stored lists client-side, and the only
+            // server sort the route runs is the item-state read.
+            withSimpleSorting={false}
           />
         </div>
         {/* The run stores a capped list, so the counts are the honest remainder. */}
