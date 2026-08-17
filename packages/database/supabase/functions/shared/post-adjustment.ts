@@ -10,6 +10,7 @@ import {
   AdjustmentItemCost,
   computeCurrentUnitCost,
 } from "./post-adjustment-cost.ts";
+import { round } from "./precision.ts";
 
 export { computeCurrentUnitCost } from "./post-adjustment-cost.ts";
 export type {
@@ -190,7 +191,7 @@ export async function bookAdjustment(
       locationId: ledger.locationId,
       storageUnitId: ledger.storageUnitId,
       trackedEntityId: ledger.trackedEntityId,
-      quantity: ledger.quantity,
+      quantity: round(ledger.quantity),
       comment: ledger.comment ?? null,
       scrapReasonId: ledger.scrapReasonId ?? null,
       companyId,
@@ -230,8 +231,8 @@ export async function bookAdjustment(
         documentType: ledger.documentType ?? null,
         documentId,
         itemId: ledger.itemId,
-        quantity: -absQuantity,
-        cost: -cogs.totalCost,
+        quantity: round(-absQuantity),
+        cost: round(-cogs.totalCost),
         remainingQuantity: 0,
         postingDate: ledger.postingDate,
         companyId,
@@ -251,9 +252,9 @@ export async function bookAdjustment(
         documentType: ledger.documentType ?? null,
         documentId,
         itemId: ledger.itemId,
-        quantity: absQuantity,
-        cost,
-        remainingQuantity: absQuantity,
+        quantity: round(absQuantity),
+        cost: round(cost),
+        remainingQuantity: round(absQuantity),
         postingDate: ledger.postingDate,
         companyId,
       })
@@ -318,9 +319,9 @@ export async function bookAdjustment(
         documentType: ledger.documentType ?? null,
         documentId,
         itemId: ledger.itemId,
-        quantity: absQuantity,
-        cost,
-        remainingQuantity: absQuantity,
+        quantity: round(absQuantity),
+        cost: round(cost),
+        remainingQuantity: round(absQuantity),
         postingDate: ledger.postingDate,
         companyId,
       })
@@ -364,8 +365,8 @@ export async function bookAdjustment(
         journalId,
         accountId: inventoryAccount.account,
         description: inventoryAccount.description,
-        amount: isGain ? debit("asset", cost) : credit("asset", cost),
-        quantity: absQuantity,
+        amount: round(isGain ? debit("asset", cost) : credit("asset", cost)),
+        quantity: round(absQuantity),
         documentType: journalLineDocumentType,
         documentId,
         journalLineReference,
@@ -377,8 +378,8 @@ export async function bookAdjustment(
           accounting.offsetAccount ??
           accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
         description: accounting.offsetDescription ?? "Inventory Adjustment",
-        amount: isGain ? credit("expense", cost) : debit("expense", cost),
-        quantity: absQuantity,
+        amount: round(isGain ? credit("expense", cost) : debit("expense", cost)),
+        quantity: round(absQuantity),
         documentType: journalLineDocumentType,
         documentId,
         journalLineReference,

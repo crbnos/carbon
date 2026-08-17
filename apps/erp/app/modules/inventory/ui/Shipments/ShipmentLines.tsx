@@ -439,7 +439,7 @@ function ShipmentLineItem({
 
   return (
     <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
-      <div className="absolute top-6 right-6">
+      <div className="absolute top-3 right-6">
         {line.fulfillment?.type === "Job" ? (
           <div className="flex flex-col items-end gap-0">
             <span>Job</span>
@@ -454,7 +454,7 @@ function ShipmentLineItem({
                 aria-label={t`Line options`}
                 variant="secondary"
                 icon={<LuEllipsisVertical />}
-                size="md"
+                size="sm"
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent>

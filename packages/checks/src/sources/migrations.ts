@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type SqlFile = { file: string; contents: string };
+import type { SourceFile } from "../check";
 
 const MIGRATIONS_REL = "packages/database/supabase/migrations";
 
@@ -24,7 +24,7 @@ export function migrationsDir(root: string): string {
   return join(root, MIGRATIONS_REL);
 }
 
-export function loadSqlFiles(dir: string): SqlFile[] {
+export function loadSqlFiles(dir: string): SourceFile[] {
   return readdirSync(dir)
     .filter((f) => f.endsWith(".sql"))
     .sort()

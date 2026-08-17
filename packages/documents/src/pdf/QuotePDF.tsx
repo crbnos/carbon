@@ -8,7 +8,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
-import { resolveRegistrationLine } from "../utils/shared";
+import { getMoneyFormatter, resolveRegistrationLine } from "../utils/shared";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
 import { buildQuoteVars, quoteBlockRegistry } from "./blocks/quote";
 import { Template } from "./components";
@@ -33,6 +33,8 @@ interface QuotePDFProps extends PDF {
   thumbnails: Record<string, string | null>;
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
+  /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
+  currencyDecimals?: number | null;
 }
 
 const QuotePDF = ({
@@ -50,6 +52,7 @@ const QuotePDF = ({
   terms,
   thumbnails,
   locale,
+  currencyDecimals,
   template,
   sections = {},
   title = "Quote"
@@ -57,11 +60,7 @@ const QuotePDF = ({
   const currencyCode = quote.currencyCode ?? company.baseCurrencyCode;
   const shouldConvertCurrency =
     !!currencyCode && currencyCode !== company.baseCurrencyCode;
-  const numberFormatter = new Intl.NumberFormat(locale, {
-    style: "decimal",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
 
   const pricesByLine = quoteLinePrices.reduce<Record<string, QuoteLinePrice[]>>(
     (acc, price) => {

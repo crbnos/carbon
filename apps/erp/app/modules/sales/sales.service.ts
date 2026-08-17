@@ -9,7 +9,7 @@ import type {
   SalesRuleSurface,
   Severity
 } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import type {
   PostgrestError,
   PostgrestSingleResponse,
@@ -4018,7 +4018,7 @@ async function rewriteQuoteLinePrices(
           quoteLineId: lineId,
           companyId,
           quoteId,
-          unitPrice: Number(p.unitPrice.toFixed(quoteLine.unitPricePrecision)),
+          unitPrice: round(p.unitPrice, quoteLine.unitPricePrecision),
           discountPercent: existing?.discountPercent ?? p.discountPercent,
           leadTime: existing?.leadTime ?? p.leadTime,
           shippingCost: existing?.shippingCost ?? 0,
@@ -4428,7 +4428,7 @@ export async function buildMakeToOrderPriceRows(
       quoteLineId,
       companyId,
       quantity: qty,
-      unitPrice: Number(finalPrice.toFixed(precision)),
+      unitPrice: round(finalPrice, precision),
       categoryMarkups: effectiveDefaults,
       priceSource: "system",
       exchangeRate,
@@ -4518,7 +4518,7 @@ export async function buildPullFromInventoryPriceRows(
       quoteLineId,
       companyId,
       quantity: qty,
-      unitPrice: Number(resolved.finalPrice.toFixed(precision)),
+      unitPrice: round(resolved.finalPrice, precision),
       exchangeRate,
       createdBy: userId,
       leadTime: 0,
@@ -4611,7 +4611,7 @@ export async function buildPurchaseToOrderPriceRows(
       quoteLineId,
       companyId,
       quantity: qty,
-      unitPrice: Number(resolved.finalPrice.toFixed(precision)),
+      unitPrice: round(resolved.finalPrice, precision),
       exchangeRate,
       createdBy: userId,
       leadTime: 0,
@@ -4764,7 +4764,7 @@ export async function recalculateQuoteLinePrices(
 
     repricedRows.push({
       quantity: qty,
-      unitPrice: Number(finalPrice.toFixed(precision)),
+      unitPrice: round(finalPrice, precision),
       categoryMarkups: markups
     });
   }

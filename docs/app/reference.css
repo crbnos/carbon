@@ -88,6 +88,15 @@
 .prose :not(pre) > code::after {
   content: none !important;
 }
+/* …but nowrap on a phone means one long inline path (a full `apps/erp/app/modules/…`
+ * reference) widens the whole document and every section scrolls sideways with it.
+ * Below the tablet breakpoint, let those chips wrap; desktop keeps identifiers intact. */
+@media (max-width: 640px) {
+  .prose :not(pre) > code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
 
 /* Fenced code → our dark API-playground panel. The MDX `pre` is overridden by
  * <MdxCodeBlock>, which wraps the shiki output in `pre.mdx-shiki`; the token
@@ -300,3 +309,4 @@ figure.ed-codeblock figcaption {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 24px);
   mask-image: linear-gradient(to bottom, transparent 0, #000 24px);
 }
+

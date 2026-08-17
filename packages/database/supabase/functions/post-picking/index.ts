@@ -11,6 +11,7 @@ import {
   buildBatchSplitRecords,
   buildMergeRecords
 } from "../shared/batch-split.ts";
+import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -147,7 +148,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: -quantity,
+              quantity: round(-quantity),
               locationId,
               storageUnitId: line.storageUnitId,
               entryType: "Transfer",
@@ -159,7 +160,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: quantity,
+              quantity: round(quantity),
               locationId,
               storageUnitId: line.toStorageUnitId,
               entryType: "Transfer",
@@ -212,7 +213,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: -quantity,
+              quantity: round(-quantity),
               locationId,
               storageUnitId: line.toStorageUnitId,
               entryType: "Transfer",
@@ -224,7 +225,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: quantity,
+              quantity: round(quantity),
               locationId,
               storageUnitId: line.storageUnitId,
               entryType: "Transfer",
@@ -468,7 +469,12 @@ serve(async (req: Request) => {
               .where("id", "=", trackedEntityId)
               .execute();
 
-            inserts.push(...split.ledgerInserts);
+            inserts.push(
+              ...split.ledgerInserts.map((ledgerRow) => ({
+                ...ledgerRow,
+                quantity: round(ledgerRow.quantity)
+              }))
+            );
           }
 
           const activityId = nanoid();
@@ -506,7 +512,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: -transferQuantity,
+              quantity: round(-transferQuantity),
               locationId,
               storageUnitId: fromStorageUnitId,
               entryType: "Transfer",
@@ -519,7 +525,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: transferQuantity,
+              quantity: round(transferQuantity),
               locationId,
               storageUnitId: line.toStorageUnitId,
               entryType: "Transfer",
@@ -623,7 +629,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: -qty,
+              quantity: round(-qty),
               locationId,
               storageUnitId: line.toStorageUnitId,
               entryType: "Transfer",
@@ -636,7 +642,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: qty,
+              quantity: round(qty),
               locationId,
               storageUnitId: line.storageUnitId,
               entryType: "Transfer",
@@ -749,7 +755,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: -unpickQuantity,
+              quantity: round(-unpickQuantity),
               locationId,
               storageUnitId: line.toStorageUnitId,
               entryType: "Transfer",
@@ -762,7 +768,7 @@ serve(async (req: Request) => {
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: unpickQuantity,
+              quantity: round(unpickQuantity),
               locationId,
               storageUnitId: line.storageUnitId,
               entryType: "Transfer",
@@ -835,7 +841,7 @@ serve(async (req: Request) => {
                 {
                   postingDate: today,
                   itemId: line.itemId,
-                  quantity: -unpickQuantity,
+                  quantity: round(-unpickQuantity),
                   locationId,
                   storageUnitId: line.storageUnitId,
                   entryType: "Negative Adjmt.",
@@ -848,7 +854,7 @@ serve(async (req: Request) => {
                 {
                   postingDate: today,
                   itemId: line.itemId,
-                  quantity: unpickQuantity,
+                  quantity: round(unpickQuantity),
                   locationId,
                   storageUnitId: line.storageUnitId,
                   entryType: "Positive Adjmt.",
@@ -1047,8 +1053,8 @@ function transferPair(args: {
     companyId: args.companyId
   };
   return [
-    { ...base, quantity: -args.quantity, storageUnitId: args.fromStorageUnitId },
-    { ...base, quantity: args.quantity, storageUnitId: args.toStorageUnitId }
+    { ...base, quantity: round(-args.quantity), storageUnitId: args.fromStorageUnitId },
+    { ...base, quantity: round(args.quantity), storageUnitId: args.toStorageUnitId }
   ];
 }
 
@@ -1266,7 +1272,7 @@ async function returnTrackedAllocationRemainder(
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: -onHand,
+              quantity: round(-onHand),
               locationId,
               storageUnitId: lineside,
               entryType: "Transfer",
@@ -1279,7 +1285,7 @@ async function returnTrackedAllocationRemainder(
             {
               postingDate: today,
               itemId: line.itemId,
-              quantity: onHand,
+              quantity: round(onHand),
               locationId,
               storageUnitId: source,
               entryType: "Transfer",
@@ -1469,8 +1475,8 @@ async function returnUntrackedMaterialRemainder(
       companyId
     };
     inserts.push(
-      { ...base, quantity: -quantity, storageUnitId: line.toStorageUnitId },
-      { ...base, quantity, storageUnitId: target }
+      { ...base, quantity: round(-quantity), storageUnitId: line.toStorageUnitId },
+      { ...base, quantity: round(quantity), storageUnitId: target }
     );
 
     await trx

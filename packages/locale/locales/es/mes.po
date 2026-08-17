@@ -422,6 +422,9 @@ msgstr "Finalizar operaciones"
 msgid "Enter PIN for {0}"
 msgstr "Ingrese el PIN para {0}"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Ingresa el código de 6 dígitos de tu aplicación de autenticación"
+
 msgid "Error"
 msgstr "Error"
 
@@ -1224,6 +1227,9 @@ msgstr "Establecer salida"
 msgid "Set clock-out time"
 msgstr "Establecer hora de salida"
 
+msgid "Set up in Carbon"
+msgstr "Configurar en Carbon"
+
 msgid "Setup"
 msgstr "Preparación"
 
@@ -1247,6 +1253,9 @@ msgstr "Iniciar sesión con Outlook"
 
 msgid "Sign in with Passkey"
 msgstr "Iniciar sesión con Passkey"
+
+msgid "Sign out"
+msgstr "Cerrar sesión"
 
 msgid "Sign Out"
 msgstr "Cerrar sesión"
@@ -1375,6 +1384,12 @@ msgstr "Entidad rastreada"
 msgid "Tracking"
 msgstr "Seguimiento"
 
+msgid "Two-factor authentication"
+msgstr "Autenticación de dos factores"
+
+msgid "Two-factor authentication required"
+msgstr "Se requiere autenticación de dos factores"
+
 msgid "Type a message..."
 msgstr "Escriba un mensaje..."
 
@@ -1425,6 +1440,12 @@ msgstr "Subido: {0}"
 msgid "Uploading {0}"
 msgstr "Subiendo {0}"
 
+msgid "Use a different account"
+msgstr "Usar una cuenta diferente"
+
+msgid "Verify"
+msgstr "Verificar"
+
 msgid "View maintenance dispatch"
 msgstr "Ver despacho de mantenimiento"
 
@@ -1451,3 +1472,6 @@ msgstr "Marcaste entrada a las <0/>. Puedes editar tu hora de salida a continuac
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ha estado registrado durante {hoursElapsed} horas. ¿Olvidó registrar la salida?"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "Tu organización requiere una aplicación de autenticación. Configúrala en Carbon y luego vuelve aquí."

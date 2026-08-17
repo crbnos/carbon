@@ -597,6 +597,276 @@ export default {
         tags: ["noQuoteReason"]
       }
     },
+    "/accountingSyncOperation": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.trigger"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.attemptCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.lastAttemptAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/accountingSyncOperation"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.accountingSyncOperation"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.trigger"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.attemptCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.lastAttemptAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.trigger"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.attemptCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.lastAttemptAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.accountingSyncOperation"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      }
+    },
     "/workflowVersion": {
       get: {
         parameters: [
@@ -6844,6 +7114,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.dependencies"
           },
           {
@@ -7044,6 +7317,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.dependencies"
           },
           {
@@ -7196,6 +7472,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.dependencies"
@@ -13741,6 +14020,12 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemScrapPercentage"
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.substitutedFromItemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.substitutionFactor"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.storageUnitName"
           },
           {
@@ -19228,9 +19513,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.scrapQuantity"
           },
           {
-            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobs.quantityComplete"
           },
           {
@@ -19307,6 +19589,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobs.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.jobs.jobMakeMethodId"
@@ -28099,21 +28384,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.jobOperationId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.unitPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.extendedPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.shippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.taxAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.totalAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.accountId"
           },
           {
@@ -28127,6 +28397,21 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.extendedPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.shippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.totalAmount"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.thumbnailPath"
@@ -30793,6 +31078,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedgers.correctionOfItemLedgerId"
           },
           {
+            $ref: "#/parameters/rowFilter.itemLedgers.scrapReasonId"
+          },
+          {
             $ref: "#/parameters/rowFilter.itemLedgers.isCorrection"
           },
           {
@@ -30890,6 +31178,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierProcesses.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierProcesses.tags"
           },
           {
             $ref: "#/parameters/rowFilter.supplierProcesses.processName"
@@ -31912,9 +32203,6 @@ export default {
             $ref: "#/parameters/rowFilter.job.scrapQuantity"
           },
           {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.job.quantityComplete"
           },
           {
@@ -31991,6 +32279,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/select"
@@ -32085,9 +32376,6 @@ export default {
             $ref: "#/parameters/rowFilter.job.scrapQuantity"
           },
           {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.job.quantityComplete"
           },
           {
@@ -32164,6 +32452,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -32212,9 +32503,6 @@ export default {
             $ref: "#/parameters/rowFilter.job.scrapQuantity"
           },
           {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.job.quantityComplete"
           },
           {
@@ -32291,6 +32579,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/body.job"
@@ -37006,18 +37297,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.promisedDate"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.unitPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.extendedPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.shippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.accountId"
           },
           {
@@ -37037,6 +37316,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.supplierPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.extendedPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.shippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
           },
           {
             $ref: "#/parameters/select"
@@ -37215,18 +37506,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.promisedDate"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.unitPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.extendedPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.shippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.accountId"
           },
           {
@@ -37246,6 +37525,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.supplierPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.extendedPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.shippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -37378,18 +37669,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.promisedDate"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.unitPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.extendedPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.shippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.accountId"
           },
           {
@@ -37409,6 +37688,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.supplierPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.extendedPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.shippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine"
@@ -37699,6 +37990,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -37914,6 +38208,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -38081,6 +38378,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -44803,21 +45103,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.jobOperationId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.extendedPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.shippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.accountId"
           },
           {
@@ -44831,6 +45116,21 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.extendedPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.shippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount"
           },
           {
             $ref: "#/parameters/select"
@@ -44985,21 +45285,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.jobOperationId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.extendedPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.shippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.accountId"
           },
           {
@@ -45013,6 +45298,21 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.extendedPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.shippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -45121,21 +45421,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.jobOperationId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.extendedPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.shippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.accountId"
           },
           {
@@ -45149,6 +45434,21 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.extendedPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.shippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount"
           },
           {
             $ref: "#/parameters/body.purchaseInvoiceLine"
@@ -46990,9 +47290,6 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.quantityPicked"
           },
           {
-            $ref: "#/parameters/rowFilter.pickingListLine.outstandingQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.pickingListLine.storageUnitId"
           },
           {
@@ -47021,6 +47318,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pickingListLine.outstandingQuantity"
           },
           {
             $ref: "#/parameters/select"
@@ -47106,9 +47406,6 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.quantityPicked"
           },
           {
-            $ref: "#/parameters/rowFilter.pickingListLine.outstandingQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.pickingListLine.storageUnitId"
           },
           {
@@ -47137,6 +47434,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pickingListLine.outstandingQuantity"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -47176,9 +47476,6 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.quantityPicked"
           },
           {
-            $ref: "#/parameters/rowFilter.pickingListLine.outstandingQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.pickingListLine.storageUnitId"
           },
           {
@@ -47207,6 +47504,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pickingListLine.outstandingQuantity"
           },
           {
             $ref: "#/parameters/body.pickingListLine"
@@ -55540,15 +55840,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.quantityToInvoice"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.convertedAddOnCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLines.convertedShippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLines.convertedUnitPrice"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLines.sentDate"
           },
           {
@@ -55558,9 +55849,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.nonTaxableAddOnCost"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.convertedNonTaxableAddOnCost"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLines.pricingRuleId"
           },
           {
@@ -55568,6 +55856,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.convertedAddOnCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.convertedShippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.convertedUnitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.convertedNonTaxableAddOnCost"
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId"
@@ -62731,6 +63031,15 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.shippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.categoryMarkups"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceSource"
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedUnitPrice"
           },
           {
@@ -62747,15 +63056,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.categoryMarkups"
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.priceSource"
           },
           {
             $ref: "#/parameters/select"
@@ -62853,6 +63153,15 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.shippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.categoryMarkups"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceSource"
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedUnitPrice"
           },
           {
@@ -62869,15 +63178,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.categoryMarkups"
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.priceSource"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -62929,6 +63229,15 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.shippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.categoryMarkups"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceSource"
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedUnitPrice"
           },
           {
@@ -62945,15 +63254,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.categoryMarkups"
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.priceSource"
           },
           {
             $ref: "#/parameters/body.quoteLinePrice"
@@ -63982,6 +64282,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxPercent"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.companyId"
+          },
+          {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.unitPrice"
           },
           {
@@ -63992,9 +64295,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.companyId"
           },
           {
             $ref: "#/parameters/select"
@@ -64098,6 +64398,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxPercent"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.companyId"
+          },
+          {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.unitPrice"
           },
           {
@@ -64108,9 +64411,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.companyId"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -64168,6 +64468,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxPercent"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.companyId"
+          },
+          {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.unitPrice"
           },
           {
@@ -64178,9 +64481,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.companyId"
           },
           {
             $ref: "#/parameters/body.supplierQuoteLinePrice"
@@ -66418,6 +66718,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.procedureId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -66679,15 +66985,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.quantityToInvoice"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedAddOnCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedShippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.sentDate"
           },
           {
@@ -66697,9 +66994,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.nonTaxableAddOnCost"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.pricingRuleId"
           },
           {
@@ -66707,6 +67001,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedAddOnCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedShippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
           },
           {
             $ref: "#/parameters/select"
@@ -66870,15 +67176,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.quantityToInvoice"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedAddOnCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedShippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.sentDate"
           },
           {
@@ -66888,9 +67185,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.nonTaxableAddOnCost"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.pricingRuleId"
           },
           {
@@ -66898,6 +67192,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedAddOnCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedShippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -67015,15 +67321,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.quantityToInvoice"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedAddOnCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedShippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.sentDate"
           },
           {
@@ -67033,9 +67330,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.nonTaxableAddOnCost"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.pricingRuleId"
           },
           {
@@ -67043,6 +67337,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedAddOnCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedShippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
           },
           {
             $ref: "#/parameters/body.salesOrderLine"
@@ -72925,18 +73231,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.promisedDate"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLines.unitPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLines.extendedPrice"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLines.shippingCost"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLines.taxAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.accountId"
           },
           {
@@ -72956,6 +73250,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.supplierPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.unitPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.extendedPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.shippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.taxAmount"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.supplierPartIdFromSupplier"
@@ -75603,6 +75909,267 @@ export default {
         tags: ["passkeyCredential"]
       }
     },
+    "/accountingSyncTieOut": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.carbonPostedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.syncedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.docBackedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.excludedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.pendingAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.blockedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.providerAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.internalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.externalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.computedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/accountingSyncTieOut"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["accountingSyncTieOut"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.accountingSyncTieOut"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["accountingSyncTieOut"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.carbonPostedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.syncedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.docBackedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.excludedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.pendingAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.blockedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.providerAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.internalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.externalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.computedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingSyncTieOut"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.carbonPostedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.syncedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.docBackedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.excludedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.pendingAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.blockedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.providerAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.internalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.externalDelta"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.computedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncTieOut.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.accountingSyncTieOut"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingSyncTieOut"]
+      }
+    },
     "/fixedAsset": {
       get: {
         parameters: [
@@ -77524,6 +78091,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -78998,6 +79568,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrices.configuration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.pricingRuleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.priceTrace"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.sortOrder"
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrices.itemReadableId"
@@ -85015,7 +85594,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
+            $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireMfa"
           },
           {
             $ref: "#/parameters/select"
@@ -85212,7 +85794,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
+            $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireMfa"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -85363,7 +85948,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
+            $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireMfa"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -88603,6 +89191,63 @@ export default {
           }
         },
         tags: ["(rpc) get_inventory_tie_out"]
+      }
+    },
+    "/rpc/users_with_verified_mfa": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) users_with_verified_mfa"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) users_with_verified_mfa"]
       }
     },
     "/rpc/get_companies_with_employee_role": {
@@ -98306,6 +98951,124 @@ export default {
       },
       type: "object"
     },
+    accountingSyncOperation: {
+      required: [
+        "id",
+        "companyId",
+        "integration",
+        "entityType",
+        "entityId",
+        "direction",
+        "trigger",
+        "status",
+        "idempotencyKey",
+        "attemptCount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('syncop'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        integration: {
+          format: "text",
+          type: "string"
+        },
+        entityType: {
+          format: "text",
+          type: "string"
+        },
+        entityId: {
+          format: "text",
+          type: "string"
+        },
+        direction: {
+          format: "text",
+          type: "string"
+        },
+        trigger: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Pending",
+          enum: [
+            "Pending",
+            "In Flight",
+            "Completed",
+            "Failed",
+            "Warning",
+            "Skipped",
+            "Excluded"
+          ],
+          format: 'public."syncOperationStatus"',
+          type: "string"
+        },
+        idempotencyKey: {
+          format: "text",
+          type: "string"
+        },
+        attemptCount: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        lastAttemptAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        completedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        errorCode: {
+          format: "text",
+          type: "string"
+        },
+        errorMessage: {
+          format: "text",
+          type: "string"
+        },
+        externalId: {
+          format: "text",
+          type: "string"
+        },
+        metadata: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     workflowVersion: {
       required: [
         "id",
@@ -101102,6 +101865,12 @@ export default {
         assemblyInstructionId: {
           description:
             "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionDocumentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -104288,6 +105057,14 @@ export default {
           format: "numeric",
           type: "number"
         },
+        substitutedFromItemId: {
+          format: "text",
+          type: "string"
+        },
+        substitutionFactor: {
+          format: "numeric",
+          type: "number"
+        },
         storageUnitName: {
           format: "text",
           type: "string"
@@ -106955,10 +107732,6 @@ export default {
           format: "numeric",
           type: "number"
         },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
-        },
         quantityComplete: {
           format: "numeric",
           type: "number"
@@ -107077,6 +107850,10 @@ export default {
         },
         priority: {
           format: "double precision",
+          type: "number"
+        },
+        productionQuantity: {
+          format: "numeric",
           type: "number"
         },
         jobMakeMethodId: {
@@ -111344,26 +112121,6 @@ export default {
           format: "text",
           type: "string"
         },
-        unitPrice: {
-          format: "numeric",
-          type: "number"
-        },
-        extendedPrice: {
-          format: "numeric",
-          type: "number"
-        },
-        shippingCost: {
-          format: "numeric",
-          type: "number"
-        },
-        taxAmount: {
-          format: "numeric",
-          type: "number"
-        },
-        totalAmount: {
-          format: "numeric",
-          type: "number"
-        },
         accountId: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
@@ -111388,6 +112145,26 @@ export default {
         },
         sortOrder: {
           format: "double precision",
+          type: "number"
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        extendedPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        shippingCost: {
+          format: "numeric",
+          type: "number"
+        },
+        taxAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        totalAmount: {
+          format: "numeric",
           type: "number"
         },
         thumbnailPath: {
@@ -112557,6 +113334,12 @@ export default {
           format: "text",
           type: "string"
         },
+        scrapReasonId: {
+          description:
+            "Note:\nThis is a Foreign Key to `scrapReason.id`.<fk table='scrapReason' column='id'/>",
+          format: "text",
+          type: "string"
+        },
         isCorrection: {
           format: "boolean",
           type: "boolean"
@@ -112653,6 +113436,13 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         },
         processName: {
           format: "text",
@@ -113143,10 +113933,6 @@ export default {
           format: "numeric",
           type: "number"
         },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
-        },
         quantityComplete: {
           default: 0,
           format: "numeric",
@@ -113270,6 +114056,10 @@ export default {
         priority: {
           default: 1,
           format: "double precision",
+          type: "number"
+        },
+        productionQuantity: {
+          format: "numeric",
           type: "number"
         }
       },
@@ -115404,6 +116194,7 @@ export default {
           type: "number"
         },
         taxPercent: {
+          default: 0,
           format: "numeric",
           type: "number"
         },
@@ -115426,22 +116217,6 @@ export default {
         promisedDate: {
           format: "date",
           type: "string"
-        },
-        unitPrice: {
-          format: "numeric",
-          type: "number"
-        },
-        extendedPrice: {
-          format: "numeric",
-          type: "number"
-        },
-        shippingCost: {
-          format: "numeric",
-          type: "number"
-        },
-        taxAmount: {
-          format: "numeric",
-          type: "number"
         },
         accountId: {
           description:
@@ -115477,6 +116252,22 @@ export default {
         supplierPartId: {
           format: "text",
           type: "string"
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        extendedPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        shippingCost: {
+          format: "numeric",
+          type: "number"
+        },
+        taxAmount: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -115957,6 +116748,12 @@ export default {
           type: "string"
         },
         scrapAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        intercompanyPayablesAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
@@ -119147,6 +119944,7 @@ export default {
           type: "number"
         },
         taxPercent: {
+          default: 0,
           format: "numeric",
           type: "number"
         },
@@ -119155,26 +119953,6 @@ export default {
             "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
           format: "text",
           type: "string"
-        },
-        unitPrice: {
-          format: "numeric",
-          type: "number"
-        },
-        extendedPrice: {
-          format: "numeric",
-          type: "number"
-        },
-        shippingCost: {
-          format: "numeric",
-          type: "number"
-        },
-        taxAmount: {
-          format: "numeric",
-          type: "number"
-        },
-        totalAmount: {
-          format: "numeric",
-          type: "number"
         },
         accountId: {
           description:
@@ -119201,6 +119979,26 @@ export default {
         sortOrder: {
           default: 1,
           format: "double precision",
+          type: "number"
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        extendedPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        shippingCost: {
+          format: "numeric",
+          type: "number"
+        },
+        taxAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        totalAmount: {
+          format: "numeric",
           type: "number"
         }
       },
@@ -120329,10 +121127,6 @@ export default {
           format: "numeric",
           type: "number"
         },
-        outstandingQuantity: {
-          format: "numeric",
-          type: "number"
-        },
         storageUnitId: {
           description:
             "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
@@ -120383,6 +121177,10 @@ export default {
         },
         quantityReturned: {
           default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        outstandingQuantity: {
           format: "numeric",
           type: "number"
         }
@@ -123859,18 +124657,6 @@ export default {
           format: "numeric",
           type: "number"
         },
-        convertedAddOnCost: {
-          format: "numeric",
-          type: "number"
-        },
-        convertedShippingCost: {
-          format: "numeric",
-          type: "number"
-        },
-        convertedUnitPrice: {
-          format: "numeric",
-          type: "number"
-        },
         sentDate: {
           format: "date",
           type: "string"
@@ -123885,10 +124671,6 @@ export default {
           format: "numeric",
           type: "number"
         },
-        convertedNonTaxableAddOnCost: {
-          format: "numeric",
-          type: "number"
-        },
         pricingRuleId: {
           description:
             "Note:\nThis is a Foreign Key to `pricingRule.id`.<fk table='pricingRule' column='id'/>",
@@ -123900,6 +124682,22 @@ export default {
         },
         sortOrder: {
           format: "double precision",
+          type: "number"
+        },
+        convertedAddOnCost: {
+          format: "numeric",
+          type: "number"
+        },
+        convertedShippingCost: {
+          format: "numeric",
+          type: "number"
+        },
+        convertedUnitPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        convertedNonTaxableAddOnCost: {
+          format: "numeric",
           type: "number"
         },
         itemReadableId: {
@@ -127689,6 +128487,18 @@ export default {
           format: "numeric",
           type: "number"
         },
+        categoryMarkups: {
+          format: "jsonb"
+        },
+        companyId: {
+          format: "text",
+          type: "string"
+        },
+        priceSource: {
+          default: "system",
+          format: "text",
+          type: "string"
+        },
         convertedUnitPrice: {
           format: "numeric",
           type: "number"
@@ -127712,18 +128522,6 @@ export default {
         convertedShippingCost: {
           format: "numeric",
           type: "number"
-        },
-        categoryMarkups: {
-          format: "jsonb"
-        },
-        companyId: {
-          format: "text",
-          type: "string"
-        },
-        priceSource: {
-          default: "system",
-          format: "text",
-          type: "string"
         }
       },
       type: "object"
@@ -128324,8 +129122,13 @@ export default {
           type: "number"
         },
         taxPercent: {
+          default: 0,
           format: "numeric",
           type: "number"
+        },
+        companyId: {
+          format: "text",
+          type: "string"
         },
         unitPrice: {
           format: "numeric",
@@ -128342,10 +129145,6 @@ export default {
         taxAmount: {
           format: "numeric",
           type: "number"
-        },
-        companyId: {
-          format: "text",
-          type: "string"
         }
       },
       type: "object"
@@ -129500,6 +130299,18 @@ export default {
             "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
           format: "text",
           type: "string"
+        },
+        assemblyInstructionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionDocumentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -129714,18 +130525,6 @@ export default {
           format: "numeric",
           type: "number"
         },
-        convertedAddOnCost: {
-          format: "numeric",
-          type: "number"
-        },
-        convertedShippingCost: {
-          format: "numeric",
-          type: "number"
-        },
-        convertedUnitPrice: {
-          format: "numeric",
-          type: "number"
-        },
         sentDate: {
           format: "date",
           type: "string"
@@ -129741,10 +130540,6 @@ export default {
           format: "numeric",
           type: "number"
         },
-        convertedNonTaxableAddOnCost: {
-          format: "numeric",
-          type: "number"
-        },
         pricingRuleId: {
           description:
             "Note:\nThis is a Foreign Key to `pricingRule.id`.<fk table='pricingRule' column='id'/>",
@@ -129757,6 +130552,22 @@ export default {
         sortOrder: {
           default: 1,
           format: "double precision",
+          type: "number"
+        },
+        convertedAddOnCost: {
+          format: "numeric",
+          type: "number"
+        },
+        convertedShippingCost: {
+          format: "numeric",
+          type: "number"
+        },
+        convertedUnitPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        convertedNonTaxableAddOnCost: {
+          format: "numeric",
           type: "number"
         }
       },
@@ -132414,22 +133225,6 @@ export default {
           format: "date",
           type: "string"
         },
-        unitPrice: {
-          format: "numeric",
-          type: "number"
-        },
-        extendedPrice: {
-          format: "numeric",
-          type: "number"
-        },
-        shippingCost: {
-          format: "numeric",
-          type: "number"
-        },
-        taxAmount: {
-          format: "numeric",
-          type: "number"
-        },
         accountId: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
@@ -132463,6 +133258,22 @@ export default {
         supplierPartId: {
           format: "text",
           type: "string"
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        extendedPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        shippingCost: {
+          format: "numeric",
+          type: "number"
+        },
+        taxAmount: {
+          format: "numeric",
+          type: "number"
         },
         supplierPartIdFromSupplier: {
           format: "text",
@@ -133618,6 +134429,125 @@ export default {
           type: "string"
         },
         lastUsedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    accountingSyncTieOut: {
+      required: [
+        "id",
+        "companyId",
+        "integration",
+        "accountingPeriodId",
+        "accountId",
+        "carbonPostedAmount",
+        "syncedAmount",
+        "docBackedAmount",
+        "excludedAmount",
+        "pendingAmount",
+        "blockedAmount",
+        "internalDelta",
+        "computedAt",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('tieout'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        integration: {
+          format: "text",
+          type: "string"
+        },
+        accountingPeriodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `accountingPeriod.id`.<fk table='accountingPeriod' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        carbonPostedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        syncedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        docBackedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        excludedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        pendingAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        blockedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        providerAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        internalDelta: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        externalDelta: {
+          format: "numeric",
+          type: "number"
+        },
+        computedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -134867,6 +135797,12 @@ export default {
             "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
           format: "text",
           type: "string"
+        },
+        inspectionDocumentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -135787,6 +136723,19 @@ export default {
         },
         configuration: {
           format: "jsonb"
+        },
+        pricingRuleId: {
+          description:
+            "Note:\nThis is a Foreign Key to `pricingRule.id`.<fk table='pricingRule' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        priceTrace: {
+          format: "jsonb"
+        },
+        sortOrder: {
+          format: "double precision",
+          type: "number"
         },
         itemReadableId: {
           format: "text",
@@ -138313,7 +139262,8 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
-        "salesRuleNotificationGroup"
+        "showCurrencyTrailingZeros",
+        "requireMfa"
       ],
       properties: {
         id: {
@@ -138560,12 +139510,15 @@ export default {
           format: "text",
           type: "string"
         },
-        salesRuleNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
+        showCurrencyTrailingZeros: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        requireMfa: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -139487,6 +140440,135 @@ export default {
     },
     "rowFilter.noQuoteReason.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.accountingSyncOperation": {
+      name: "accountingSyncOperation",
+      description: "accountingSyncOperation",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/accountingSyncOperation"
+      }
+    },
+    "rowFilter.accountingSyncOperation.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.integration": {
+      name: "integration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.entityType": {
+      name: "entityType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.entityId": {
+      name: "entityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.direction": {
+      name: "direction",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.trigger": {
+      name: "trigger",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.idempotencyKey": {
+      name: "idempotencyKey",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.attemptCount": {
+      name: "attemptCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.lastAttemptAt": {
+      name: "lastAttemptAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.completedAt": {
+      name: "completedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.errorCode": {
+      name: "errorCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.errorMessage": {
+      name: "errorMessage",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.metadata": {
+      name: "metadata",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -142664,6 +143746,12 @@ export default {
     },
     "rowFilter.jobOperationsWithDependencies.assemblyInstructionId": {
       name: "assemblyInstructionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationsWithDependencies.inspectionDocumentId": {
+      name: "inspectionDocumentId",
       required: false,
       in: "query",
       type: "string"
@@ -146154,6 +147242,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobMaterialWithMakeMethodId.substitutedFromItemId": {
+      name: "substitutedFromItemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobMaterialWithMakeMethodId.substitutionFactor": {
+      name: "substitutionFactor",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.jobMaterialWithMakeMethodId.storageUnitName": {
       name: "storageUnitName",
       required: false,
@@ -146999,15 +148099,6 @@ export default {
       required: false,
       in: "query",
       type: "string"
-    },
-    "body.salesRuleAcknowledgment": {
-      name: "salesRuleAcknowledgment",
-      description: "salesRuleAcknowledgment",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/salesRuleAcknowledgment"
-      }
     },
     "body.pickMethod": {
       name: "pickMethod",
@@ -149202,12 +150293,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobs.productionQuantity": {
-      name: "productionQuantity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.jobs.quantityComplete": {
       name: "quantityComplete",
       required: false,
@@ -149360,6 +150445,12 @@ export default {
     },
     "rowFilter.jobs.priority": {
       name: "priority",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobs.productionQuantity": {
+      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -152796,15 +153887,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.salesRuleAssignment": {
-      name: "salesRuleAssignment",
-      description: "salesRuleAssignment",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/salesRuleAssignment"
-      }
-    },
     "body.materialDimensions": {
       name: "materialDimensions",
       description: "materialDimensions",
@@ -154151,36 +155233,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseInvoiceLines.unitPrice": {
-      name: "unitPrice",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseInvoiceLines.extendedPrice": {
-      name: "extendedPrice",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseInvoiceLines.shippingCost": {
-      name: "shippingCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseInvoiceLines.taxAmount": {
-      name: "taxAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseInvoiceLines.totalAmount": {
-      name: "totalAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.purchaseInvoiceLines.accountId": {
       name: "accountId",
       required: false,
@@ -154207,6 +155259,36 @@ export default {
     },
     "rowFilter.purchaseInvoiceLines.sortOrder": {
       name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.extendedPrice": {
+      name: "extendedPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.taxAmount": {
+      name: "taxAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.totalAmount": {
+      name: "totalAmount",
       required: false,
       in: "query",
       type: "string"
@@ -155543,6 +156625,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.itemLedgers.scrapReasonId": {
+      name: "scrapReasonId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.itemLedgers.isCorrection": {
       name: "isCorrection",
       required: false,
@@ -155662,6 +156750,12 @@ export default {
     },
     "rowFilter.supplierProcesses.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierProcesses.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string"
@@ -156149,12 +157243,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.job.productionQuantity": {
-      name: "productionQuantity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.job.quantityComplete": {
       name: "quantityComplete",
       required: false,
@@ -156307,6 +157395,12 @@ export default {
     },
     "rowFilter.job.priority": {
       name: "priority",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.job.productionQuantity": {
+      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -158708,30 +159802,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseOrderLine.unitPrice": {
-      name: "unitPrice",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseOrderLine.extendedPrice": {
-      name: "extendedPrice",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseOrderLine.shippingCost": {
-      name: "shippingCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseOrderLine.taxAmount": {
-      name: "taxAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.purchaseOrderLine.accountId": {
       name: "accountId",
       required: false,
@@ -158770,6 +159840,30 @@ export default {
     },
     "rowFilter.purchaseOrderLine.supplierPartId": {
       name: "supplierPartId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLine.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLine.extendedPrice": {
+      name: "extendedPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLine.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLine.taxAmount": {
+      name: "taxAmount",
       required: false,
       in: "query",
       type: "string"
@@ -159244,6 +160338,12 @@ export default {
     },
     "rowFilter.accountDefault.scrapAccount": {
       name: "scrapAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.intercompanyPayablesAccount": {
+      name: "intercompanyPayablesAccount",
       required: false,
       in: "query",
       type: "string"
@@ -159898,15 +160998,6 @@ export default {
       required: false,
       in: "query",
       type: "string"
-    },
-    "body.salesRule": {
-      name: "salesRule",
-      description: "salesRule",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/salesRule"
-      }
     },
     "body.supplierQuoteLines": {
       name: "supplierQuoteLines",
@@ -162691,36 +163782,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseInvoiceLine.unitPrice": {
-      name: "unitPrice",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseInvoiceLine.extendedPrice": {
-      name: "extendedPrice",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseInvoiceLine.shippingCost": {
-      name: "shippingCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseInvoiceLine.taxAmount": {
-      name: "taxAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseInvoiceLine.totalAmount": {
-      name: "totalAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.purchaseInvoiceLine.accountId": {
       name: "accountId",
       required: false,
@@ -162747,6 +163808,36 @@ export default {
     },
     "rowFilter.purchaseInvoiceLine.sortOrder": {
       name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLine.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLine.extendedPrice": {
+      name: "extendedPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLine.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLine.taxAmount": {
+      name: "taxAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLine.totalAmount": {
+      name: "totalAmount",
       required: false,
       in: "query",
       type: "string"
@@ -164098,12 +165189,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.pickingListLine.outstandingQuantity": {
-      name: "outstandingQuantity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.pickingListLine.storageUnitId": {
       name: "storageUnitId",
       required: false,
@@ -164160,6 +165245,12 @@ export default {
     },
     "rowFilter.pickingListLine.quantityReturned": {
       name: "quantityReturned",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pickingListLine.outstandingQuantity": {
+      name: "outstandingQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -168023,24 +169114,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesOrderLines.convertedAddOnCost": {
-      name: "convertedAddOnCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesOrderLines.convertedShippingCost": {
-      name: "convertedShippingCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesOrderLines.convertedUnitPrice": {
-      name: "convertedUnitPrice",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.salesOrderLines.sentDate": {
       name: "sentDate",
       required: false,
@@ -168059,12 +169132,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesOrderLines.convertedNonTaxableAddOnCost": {
-      name: "convertedNonTaxableAddOnCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.salesOrderLines.pricingRuleId": {
       name: "pricingRuleId",
       required: false,
@@ -168079,6 +169146,30 @@ export default {
     },
     "rowFilter.salesOrderLines.sortOrder": {
       name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.convertedAddOnCost": {
+      name: "convertedAddOnCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.convertedShippingCost": {
+      name: "convertedShippingCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.convertedUnitPrice": {
+      name: "convertedUnitPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.convertedNonTaxableAddOnCost": {
+      name: "convertedNonTaxableAddOnCost",
       required: false,
       in: "query",
       type: "string"
@@ -172393,6 +173484,24 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteLinePrice.categoryMarkups": {
+      name: "categoryMarkups",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteLinePrice.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteLinePrice.priceSource": {
+      name: "priceSource",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.quoteLinePrice.convertedUnitPrice": {
       name: "convertedUnitPrice",
       required: false,
@@ -172425,24 +173534,6 @@ export default {
     },
     "rowFilter.quoteLinePrice.convertedShippingCost": {
       name: "convertedShippingCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.quoteLinePrice.categoryMarkups": {
-      name: "categoryMarkups",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.quoteLinePrice.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.quoteLinePrice.priceSource": {
-      name: "priceSource",
       required: false,
       in: "query",
       type: "string"
@@ -173046,6 +174137,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.supplierQuoteLinePrice.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.supplierQuoteLinePrice.unitPrice": {
       name: "unitPrice",
       required: false,
@@ -173066,12 +174163,6 @@ export default {
     },
     "rowFilter.supplierQuoteLinePrice.taxAmount": {
       name: "taxAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.supplierQuoteLinePrice.companyId": {
-      name: "companyId",
       required: false,
       in: "query",
       type: "string"
@@ -174339,6 +175430,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteOperationsWithMakeMethods.assemblyInstructionId": {
+      name: "assemblyInstructionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.inspectionDocumentId": {
+      name: "inspectionDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.config": {
       name: "config",
       description: "config",
@@ -174579,24 +175682,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesOrderLine.convertedAddOnCost": {
-      name: "convertedAddOnCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesOrderLine.convertedShippingCost": {
-      name: "convertedShippingCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesOrderLine.convertedUnitPrice": {
-      name: "convertedUnitPrice",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.salesOrderLine.sentDate": {
       name: "sentDate",
       required: false,
@@ -174615,12 +175700,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesOrderLine.convertedNonTaxableAddOnCost": {
-      name: "convertedNonTaxableAddOnCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.salesOrderLine.pricingRuleId": {
       name: "pricingRuleId",
       required: false,
@@ -174635,6 +175714,30 @@ export default {
     },
     "rowFilter.salesOrderLine.sortOrder": {
       name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.convertedAddOnCost": {
+      name: "convertedAddOnCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.convertedShippingCost": {
+      name: "convertedShippingCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.convertedUnitPrice": {
+      name: "convertedUnitPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.convertedNonTaxableAddOnCost": {
+      name: "convertedNonTaxableAddOnCost",
       required: false,
       in: "query",
       type: "string"
@@ -177612,30 +178715,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseOrderLines.unitPrice": {
-      name: "unitPrice",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseOrderLines.extendedPrice": {
-      name: "extendedPrice",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseOrderLines.shippingCost": {
-      name: "shippingCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseOrderLines.taxAmount": {
-      name: "taxAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.purchaseOrderLines.accountId": {
       name: "accountId",
       required: false,
@@ -177674,6 +178753,30 @@ export default {
     },
     "rowFilter.purchaseOrderLines.supplierPartId": {
       name: "supplierPartId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLines.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLines.extendedPrice": {
+      name: "extendedPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLines.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLines.taxAmount": {
+      name: "taxAmount",
       required: false,
       in: "query",
       type: "string"
@@ -178982,6 +180085,129 @@ export default {
     },
     "rowFilter.passkeyCredential.lastUsedAt": {
       name: "lastUsedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.accountingSyncTieOut": {
+      name: "accountingSyncTieOut",
+      description: "accountingSyncTieOut",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/accountingSyncTieOut"
+      }
+    },
+    "rowFilter.accountingSyncTieOut.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.integration": {
+      name: "integration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.accountingPeriodId": {
+      name: "accountingPeriodId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.carbonPostedAmount": {
+      name: "carbonPostedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.syncedAmount": {
+      name: "syncedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.docBackedAmount": {
+      name: "docBackedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.excludedAmount": {
+      name: "excludedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.pendingAmount": {
+      name: "pendingAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.blockedAmount": {
+      name: "blockedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.providerAmount": {
+      name: "providerAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.internalDelta": {
+      name: "internalDelta",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.externalDelta": {
+      name: "externalDelta",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.computedAt": {
+      name: "computedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncTieOut.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -180381,6 +181607,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobOperationsWithMakeMethods.inspectionDocumentId": {
+      name: "inspectionDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierLedger": {
       name: "supplierLedger",
       description: "supplierLedger",
@@ -181454,6 +182686,24 @@ export default {
     },
     "rowFilter.quoteLinePrices.configuration": {
       name: "configuration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteLinePrices.pricingRuleId": {
+      name: "pricingRuleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteLinePrices.priceTrace": {
+      name: "priceTrace",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteLinePrices.sortOrder": {
+      name: "sortOrder",
       required: false,
       in: "query",
       type: "string"
@@ -184434,8 +185684,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.salesRuleNotificationGroup": {
-      name: "salesRuleNotificationGroup",
+    "rowFilter.companySettings.showCurrencyTrailingZeros": {
+      name: "showCurrencyTrailingZeros",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireMfa": {
+      name: "requireMfa",
       required: false,
       in: "query",
       type: "string"

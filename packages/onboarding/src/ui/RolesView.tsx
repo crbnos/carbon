@@ -1,4 +1,4 @@
-import { cn } from "@carbon/react";
+import { Badge } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { PAGE_COPY } from "../content";
 import { ROLES } from "../content/roles";
@@ -24,15 +24,9 @@ export function RolesView() {
         </p>
         <div className="flex items-center gap-4 mt-1">
           {(Object.keys(OWNER_TOKENS) as Owner[]).map((o) => (
-            <span
-              key={o}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
-            >
-              <span
-                className={cn("size-2 rounded-full", OWNER_TOKENS[o].dot)}
-              />
+            <Badge key={o} variant={OWNER_TOKENS[o].variant}>
               {i18n._(OWNER_TOKENS[o].label)}
-            </span>
+            </Badge>
           ))}
         </div>
       </header>
@@ -68,20 +62,12 @@ export function RolesView() {
               {step.lines.map((line, i) => (
                 <li key={i} className="flex items-center gap-3 px-5 py-3">
                   <span className="flex-1 text-sm">{i18n._(line.label)}</span>
-                  <span
-                    className={cn(
-                      "shrink-0 inline-flex items-center gap-1.5 rounded-full pl-2 pr-2.5 py-0.5 text-xs font-medium",
-                      OWNER_TOKENS[line.owner].cls
-                    )}
+                  <Badge
+                    variant={OWNER_TOKENS[line.owner].variant}
+                    className="shrink-0"
                   >
-                    <span
-                      className={cn(
-                        "size-1.5 rounded-full",
-                        OWNER_TOKENS[line.owner].dot
-                      )}
-                    />
                     {i18n._(OWNER_TOKENS[line.owner].label)}
-                  </span>
+                  </Badge>
                 </li>
               ))}
             </SectionList>

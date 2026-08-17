@@ -6,7 +6,7 @@ Carbon moves data both ways through CSV. Every data table can **export** its cur
 
 ## Exporting a table to CSV
 
-Open any data table (a parts list, a sales order dashboard, an inventory grid) and look for the dashed **Download CSV** button in the header. There is no setting to turn it on: every table built on Carbon's shared data grid gets the button automatically.
+Open any data table (a parts list, a sales order dashboard, an inventory grid) and look for the small download icon in the table header — hover it and its **Download CSV** tooltip appears. There is no setting to turn it on: every table built on Carbon's shared data grid gets the button automatically.
 
 The download reflects **what you are currently looking at**, not a full server dump:
 

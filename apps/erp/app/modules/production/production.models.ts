@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { textToTiptap } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -79,6 +80,57 @@ export function isJobLocked(status: string | null | undefined): boolean {
     status as (typeof JOB_LOCKED_STATUSES)[number]
   );
 }
+
+export const DATE_COLUMN_SENTINELS = [
+  "unscheduled",
+  "next-week",
+  "next-month"
+] as const;
+
+export type DateColumnSentinel = (typeof DATE_COLUMN_SENTINELS)[number];
+
+const DATE_COLUMN_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export function isDateColumnId(value: string): boolean {
+  if (!DATE_COLUMN_PATTERN.test(value)) return false;
+
+  try {
+    parseDate(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function isDateColumnSentinel(
+  value: string
+): value is DateColumnSentinel {
+  return DATE_COLUMN_SENTINELS.includes(value as DateColumnSentinel);
+}
+
+export function isScheduleDateColumnId(value: string): boolean {
+  return isDateColumnSentinel(value) || isDateColumnId(value);
+}
+
+/**
+ * Convert a validated Dates board column to the persisted due date. The
+ * sentinel columns intentionally all persist as null; a value outside the
+ * canonical board vocabulary returns undefined for callers that need to
+ * distinguish invalid input from a valid null due date.
+ */
+export function getDueDateForColumn(
+  columnId: string
+): string | null | undefined {
+  if (isDateColumnId(columnId)) return columnId;
+  if (isDateColumnSentinel(columnId)) return null;
+  return undefined;
+}
+
+export const schedulePriorityValidator = z.preprocess(
+  (value) =>
+    typeof value === "string" && value.trim().length === 0 ? undefined : value,
+  zfd.numeric(z.number().refine(Number.isFinite, "Priority must be finite"))
+);
 
 /**
  * A Queued assemblyPlanJob older than this never got picked up by the worker
@@ -967,13 +1019,17 @@ export const productionQuantityValidator = z
 export const scheduleOperationUpdateValidator = z.object({
   id: z.string().min(1, { message: "ID is required" }),
   columnId: z.string().min(1, { message: "Column is required" }),
-  priority: zfd.numeric(z.number().min(0).optional())
+  priority: schedulePriorityValidator
 });
 
 export const scheduleJobUpdateValidator = z.object({
   id: z.string().min(1, { message: "ID is required" }),
-  columnId: z.string().min(1, { message: "Column is required" }),
-  priority: zfd.numeric(z.number().min(0).optional())
+  locationId: z.string().trim().min(1, { message: "Location is required" }),
+  columnId: z
+    .string()
+    .min(1, { message: "Column is required" })
+    .refine(isScheduleDateColumnId, { message: "Invalid date column" }),
+  priority: schedulePriorityValidator
 });
 
 export const scrapReasonValidator = z.object({

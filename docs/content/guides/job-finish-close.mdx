@@ -14,7 +14,7 @@ A <Term>job</Term> has been collecting cost in <Term id="wip">work-in-process</T
 
 ## Finish into inventory
 
-When the last operation is done, Carbon completes the job. It <Term id="backflush">backflushes</Term> any material still owed, catches up any labor that hasn't posted yet, and then **receives the finished goods into inventory**: a debit to inventory, a credit to work-in-process, tagged *Job Receipt*. The job moves to **"Completed"**.
+When the last operation is done, you complete the job. The **"Complete Job"** dialog confirms the move — it shows the **"Quantity Completed"**, derived from the serials and batches completed in MES rather than typed in, and warns that the job will no longer be available on the shop floor. Carbon then <Term id="backflush">backflushes</Term> any untracked material still owed — serial- and batch-tracked material has to be scanned in on the floor, so it is never backflushed — catches up any labor that hasn't posted yet, and **receives the finished goods into inventory**: a debit to inventory, a credit to work-in-process, tagged *Job Receipt*. The job moves to **"Completed"**.
 
 The receipt is valued at the job's **actual accumulated WIP cost** — whatever really went in. Carbon does not receive finished goods at standard and book a variance; the finished unit's cost is simply the sum of what the job spent.
 
@@ -22,7 +22,7 @@ The receipt is valued at the job's **actual accumulated WIP cost** — whatever 
 Completion moves the whole WIP balance into inventory one-for-one, equal debit and credit, so there's no variance at finish time. The item's costing method only decides how that cost is carried forward onto the part, not the value it's received at.
 </Callout>
 
-<Screenshot label="Job completion" caption="Completing the job: finished goods received into inventory at the job's accumulated cost." ratio="wide" />
+<Screenshot src="/screens/job-completion.png" label="Job completion" caption="The Complete Job dialog: the quantity completed comes from the serials and batches finished in MES and can't be edited here." ratio="wide" />
 
 ## Make-to-order still goes through stock
 

@@ -28,6 +28,8 @@ export interface PurchaseOrderData {
   sections: Record<string, ResolvedSection>;
   currencyCode: string | null;
   numberFormatter: Intl.NumberFormat;
+  /** Unit-price COLUMN only — a rate, not a settlement amount. */
+  rateFormatter: Intl.NumberFormat;
   vars: Record<string, string>;
   headerOptions: HeaderOptions;
 }

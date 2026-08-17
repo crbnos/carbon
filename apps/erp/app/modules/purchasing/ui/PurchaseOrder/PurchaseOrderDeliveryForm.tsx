@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
@@ -24,7 +25,7 @@ import {
   ShippingMethod,
   Submit
 } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import {
   isPurchaseOrderLocked,
@@ -60,6 +61,8 @@ const PurchaseOrderDeliveryForm = forwardRef<
   const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
 
   const { t } = useLingui();
+  // Settlement amount — digits follow the document currency's own decimals.
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
   const permissions = usePermissions();
   const fetcher = useFetcher<typeof action>();
   const [dropShip, setDropShip] = useState<boolean>(
@@ -116,10 +119,7 @@ const PurchaseOrderDeliveryForm = forwardRef<
               name="supplierShippingCost"
               label={t`Shipping Cost`}
               minValue={0}
-              formatOptions={{
-                style: "currency",
-                currency: currencyCode
-              }}
+              formatOptions={INPUT_FORMAT.money(currencyCode, currencyDecimals)}
               ref={shippingCostRef}
             />
             <Location

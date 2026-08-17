@@ -108,6 +108,7 @@ export default function NewPurchaseInvoiceLineRoute() {
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
+    taxPercent: 0,
     exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1
   };
 

@@ -8,7 +8,7 @@ flowName: Engineering change
 flowIndex: 4
 ---
 
-The robot's arm bracket needs a thicker wall and one fewer fastener. In a lot of systems that means editing
+The satellite bus's antenna pointing bracket needs a thicker wall and one fewer fastener. In a lot of systems that means editing
 the live part and hoping nothing in flight notices. Carbon makes you do it deliberately: you open a
 <Term id="change-order">change notice</Term>, edit a hidden draft of the part's method, review exactly what changed, and release
 when it's ready. Until that moment, every job, plan, and cost calculation still sees the old bracket.
@@ -37,7 +37,7 @@ change notice linked, so nobody revises a design that's already mid-change. The 
 blocks: a second change notice on the same part is allowed, and Carbon keeps their draft versions from
 colliding, so a deliberate parallel change is fine.
 
-<Screenshot label="New change notice form" caption="Name, category, reason, owner, and priority. The header before any affected item is added." ratio="wide" />
+<Screenshot src="/screens/co-new-notice.png" label="New change notice form" caption="Name, category, reason, owner, and priority. The header before any affected item is added." ratio="wide" />
 
 <Callout tone="blue" badge="TOP-DOWN, NOT BOTTOM-UP" title="You pick the parts first, then edit them in place.">
 Carbon doesn't ask you to describe a change as a list of add-this, delete-that rows. You select the affected
@@ -57,7 +57,7 @@ change notice, because it decides both what you can touch and what release will 
 later, but not for free: switching discards the draft and mints a fresh one from the live method, so any
 edits you'd made are reset. Decide the type first, then edit.
 
-<Screenshot label="Affected item with change-type selector" caption="The bracket's draft method open for editing, with its change type set on the item card." ratio="wide" />
+<Screenshot src="/screens/co-affected-item.png" label="Affected item with change-type selector" caption="An affected item's draft method open for editing on CN-000001, with the 'Change type' select on the item card." ratio="wide" />
 
 - <Term id="change-order-change-type">Version</Term> revises how the *same* part is made. You edit its BoM and
   BoP; release publishes a new method version and archives the old one. No new part, nothing superseded.
@@ -91,7 +91,8 @@ supplier, part number, price, and order quantities on the line before you releas
 
 Advance the change notice through its stages: **Draft**, then **"Start"**, then **"Engineering Complete"**,
 then **"Implementation"**. It only moves forward, one step at a time, and **"Start"**, **"Implementation"**,
-and **"Done"** each notify the team. There's no separate approval step to configure — the stages are the
+and **"Done"** each notify the assignee and the action-task assignees, so the people working the change hear
+about every stage it enters. There's no separate approval step to configure — the stages are the
 workflow, and the change notice is its own gate. If the change doesn't pan out, you're not trapped in the
 forward march either: a **"Cancel"** action sits in the header at every open stage. Cancelling locks the
 change notice but keeps every draft, and **"Reopen"** takes it back to **Draft** later with your edits
@@ -105,7 +106,7 @@ At **"Implementation"** the **"Release"** action opens. It doesn't just apply th
 affected item's change as a read-only diff first. Materials added and removed, operations and their steps
 changed, attributes that moved — laid out line by line against the method you snapshotted from.
 
-<Screenshot label="Release change notice — diff review" caption="The dropped fastener line and the thicker-wall attribute, shown as a diff before you confirm." ratio="tall" />
+<Screenshot src="/screens/co-release-diff.png" label="Release change notice — diff review" caption="The dropped fastener line and the thicker-wall attribute, shown as a diff before you confirm." ratio="tall" />
 
 <Callout tone="neutral" badge="EXACT BY CONSTRUCTION" title="The diff is real because the draft is real.">
 There's no shadow copy of your edits to drift out of sync. You edited an actual draft method, so the diff is

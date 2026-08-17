@@ -102,7 +102,6 @@ const WorkCentersTable = memo(
     };
 
     const customColumns = useCustomColumns<WorkCenter>("workCenter");
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<WorkCenter>[]>(() => {
       const defaultColumns: ColumnDef<WorkCenter>[] = [
         {
@@ -285,7 +284,19 @@ const WorkCentersTable = memo(
         }
       ];
       return [...defaultColumns, ...customColumns];
-    }, [params, customColumns]);
+      // `processes` arrives from a fetcher AFTER the first render. Without it
+      // here the cell closure keeps the empty first-render array forever, so
+      // every process id fails its label lookup and the column renders blank.
+    }, [
+      processes,
+      locations,
+      departments,
+      people,
+      formatter,
+      customColumns,
+      navigate,
+      t
+    ]);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const renderContextMenu = useCallback<(row: WorkCenter) => JSX.Element>(

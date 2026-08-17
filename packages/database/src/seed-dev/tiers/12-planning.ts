@@ -1,4 +1,10 @@
-import { insertId, insertRow, nextSequence } from "../sql.ts";
+import {
+  insertId,
+  insertMaybe,
+  insertRow,
+  nextSequence,
+  rows
+} from "../sql.ts";
 import type { Ctx } from "../types.ts";
 
 // "Fixed Reorder Quantity" with reorderPoint > 0 is the only policy that makes
@@ -21,6 +27,22 @@ const MAKE_ITEM_IDS = [
   "EPS-001",
   "ADCS-001",
   "COMMS-001"
+];
+
+// Mirrors WEEKS_TO_PROJECT in apps/erp/app/routes/x+/production+/projections.tsx.
+// The whole horizon is seeded (not just the weeks that carry demand) so
+// getOrCreatePeriods finds every period already present and returns them in the
+// order they were inserted — otherwise the loader appends the ones it creates
+// and the Week N column headers stop being consecutive.
+const WEEKS_TO_PROJECT = 12 * 4;
+
+// get_production_projections INNER JOINs demandProjection, so /x/production/
+// projections shows only items that have a forecast. These three are Make,
+// Inventory-tracked, active and already have an itemPlanning row at the Plant.
+const DEMAND_PROJECTIONS: { readableId: string; quantities: number[] }[] = [
+  { readableId: "SAT-1000", quantities: [2, 2, 3, 3, 4, 4, 5, 5] },
+  { readableId: "EPS-001", quantities: [6, 6, 8, 8, 10, 10, 12, 12] },
+  { readableId: "ADCS-001", quantities: [3, 4, 4, 5, 6, 6, 8, 8] }
 ];
 
 export async function runTier12(ctx: Ctx): Promise<void> {
@@ -136,4 +158,74 @@ export async function runTier12(ctx: Ctx): Promise<void> {
     sortOrder: 2
   });
   ctx.refs.documents["so:planning-seed"] = so;
+
+  // ── 4. demandProjection → /x/production/projections ─────────────────────────
+  // getOrCreatePeriods(today, WEEKS_TO_PROJECT) keys periods on startDate +
+  // periodType = 'Week' with a Sunday start (startOfWeek(..., "en-US")), so the
+  // ranges are derived the same way here. `period` has no companyId, so the wipe
+  // leaves it alone — look up first, insert only what is missing, chronologically.
+  ctx.log("period — weekly planning horizon");
+  const weekRanges = await rows<{ startDate: string; endDate: string }>(
+    client,
+    `SELECT to_char(d::date, 'YYYY-MM-DD') AS "startDate",
+            to_char(d::date + 6, 'YYYY-MM-DD') AS "endDate"
+       FROM generate_series(
+         CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int,
+         CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int + ($1::int - 1) * 7,
+         INTERVAL '7 days'
+       ) AS d`,
+    [WEEKS_TO_PROJECT]
+  );
+
+  const existingPeriods = await rows<{ id: string; startDate: string }>(
+    client,
+    `SELECT id, to_char("startDate", 'YYYY-MM-DD') AS "startDate"
+       FROM period
+      WHERE "periodType" = 'Week'
+        AND "startDate" = ANY($1::date[])`,
+    [weekRanges.map((r) => r.startDate)]
+  );
+  const periodIdByStart = new Map(
+    existingPeriods.map((p) => [p.startDate, p.id])
+  );
+
+  const periodIds: string[] = [];
+  for (const range of weekRanges) {
+    let periodId = periodIdByStart.get(range.startDate);
+    if (!periodId) {
+      periodId = await insertId(ctx, "period", {
+        startDate: range.startDate,
+        endDate: range.endDate,
+        periodType: "Week"
+      });
+    }
+    periodIds.push(periodId);
+  }
+
+  ctx.log("demandProjection — weekly forecast for make parts");
+  for (const spec of DEMAND_PROJECTIONS) {
+    const item = refs.items[spec.readableId];
+    if (!item) {
+      ctx.log(`  skip ${spec.readableId} — not in refs`);
+      continue;
+    }
+    for (let week = 0; week < spec.quantities.length; week++) {
+      const periodId = periodIds[week];
+      if (!periodId) break;
+      // updatedBy is NOT NULL with no default, and insertRow only auto-fills
+      // companyId / createdBy.
+      await insertMaybe(ctx, "demandProjection", {
+        itemId: item.id,
+        locationId: plantId,
+        periodId,
+        forecastQuantity: spec.quantities[week],
+        updatedBy: userId
+      });
+    }
+  }
+
+  for (let week = 0; week < 8; week++) {
+    const periodId = periodIds[week];
+    if (periodId) ctx.refs.misc[`period:week${week + 1}`] = periodId;
+  }
 }

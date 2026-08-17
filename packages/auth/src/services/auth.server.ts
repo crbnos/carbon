@@ -126,10 +126,11 @@ function getCompanyIdFromAPIKey(apiKey: string) {
     .single();
 }
 
-function makeAuthSession(
+export function makeAuthSession(
   supabaseSession: SupabaseAuthSession | null,
   companyId: string,
-  companyGroupId: string
+  companyGroupId: string,
+  options?: { mfaVerified?: boolean }
 ): AuthSession | null {
   if (!supabaseSession) return null;
 
@@ -148,7 +149,8 @@ function makeAuthSession(
     email: supabaseSession.user.email,
     expiresIn:
       (supabaseSession.expires_in ?? 3000) - REFRESH_ACCESS_TOKEN_THRESHOLD,
-    expiresAt: supabaseSession.expires_at ?? -1
+    expiresAt: supabaseSession.expires_at ?? -1,
+    ...(options?.mfaVerified ? { mfaVerified: true } : {})
   };
 }
 
@@ -459,10 +461,13 @@ export async function signInWithBypassEmail(
     .eq("id", companies?.[0] ?? "")
     .single();
 
+  // Local-dev shortcut only — never challenged, so mark it verified up front
+  // or the MFA re-check would bounce a bypass user who has a factor enrolled.
   return makeAuthSession(
     sessionData.session,
     companies?.[0] ?? "",
-    companyRecord?.companyGroupId ?? ""
+    companyRecord?.companyGroupId ?? "",
+    { mfaVerified: true }
   );
 }
 

@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
@@ -20,7 +21,7 @@ import {
   ShippingMethod,
   Submit
 } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
 import type { SalesInvoice } from "~/modules/invoicing";
 import { salesInvoiceShipmentValidator } from "~/modules/invoicing";
 import { incoterms } from "~/modules/shared";
@@ -43,6 +44,8 @@ const SalesInvoiceShipmentForm = forwardRef<
   SalesInvoiceShipmentFormProps
 >(({ initialValues, currencyCode, defaultCollapsed = false }, ref) => {
   const { t } = useLingui();
+  // Settlement amount — digits follow the document currency's own decimals.
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { invoiceId } = useParams();
   if (!invoiceId) {
     throw new Error("invoiceId not found");
@@ -105,10 +108,7 @@ const SalesInvoiceShipmentForm = forwardRef<
               name="shippingCost"
               label={t`Shipping Cost`}
               minValue={0}
-              formatOptions={{
-                style: "currency",
-                currency: currencyCode
-              }}
+              formatOptions={INPUT_FORMAT.money(currencyCode, currencyDecimals)}
               ref={shippingCostRef}
             />
             <Location

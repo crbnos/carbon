@@ -44,8 +44,8 @@ pnpm + Turborepo monorepo of `apps/*` and `packages/*`.
 - **config** — Shared build/test config (tsconfig, vitest, tailwind theme).
 - **dev** — Local dev CLI (`crbn`) for environment setup and Docker / Supabase /
   Redis / Inngest orchestration; also exports a Vite plugin.
-- **ee** — Enterprise-edition integrations (Slack, Jira, Linear, Xero, OnShape,
-  Zapier) and accounting/exchange-rate modules.
+- **ee** — Enterprise-edition integrations (Slack, Jira, Linear, Xero, OnShape)
+  and accounting/exchange-rate modules.
 - **stripe** — Billing: plans, checkout, subscriptions, webhooks.
 - **notifications** — Notification infrastructure and types (logic mostly lives in
   auth/lib/ee).

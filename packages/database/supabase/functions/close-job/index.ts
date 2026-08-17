@@ -9,6 +9,7 @@ import { credit, debit, journalReference } from "../lib/utils.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -115,7 +116,7 @@ serve(async (req: Request) => {
           description: "Production Variance",
           // Signed: a positive residual debits variance / credits WIP; a
           // negative (over-credited) residual reverses — always zeroing WIP.
-          amount: debit("expense", remainingWip),
+          amount: round(debit("expense", remainingWip)),
           quantity: 0,
           documentType: "Job Close",
           documentId: jobId,
@@ -126,7 +127,7 @@ serve(async (req: Request) => {
         {
           accountId: accountDefaults.data!.workInProgressAccount,
           description: "WIP Account",
-          amount: credit("asset", remainingWip),
+          amount: round(credit("asset", remainingWip)),
           quantity: 0,
           documentType: "Job Close",
           documentId: jobId,

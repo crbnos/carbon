@@ -163,7 +163,7 @@ export function OnboardingHub({
       ) : null}
 
       <Card className="overflow-hidden">
-        <CardHeader className="flex-row items-end justify-between gap-4 flex-wrap border-b border-border">
+        <CardHeader className="flex-row items-end justify-between gap-4 flex-wrap">
           <CardTitle className="line-clamp-none">
             <Trans>
               {done} of {total} phases complete
@@ -179,7 +179,7 @@ export function OnboardingHub({
             {stateText}
           </span>
         </CardHeader>
-        <CardContent className="p-0 border-0">
+        <CardContent className="p-0">
           <div className="flex gap-1.5 px-6 py-4">
             {spine.map((step) => {
               const st = effectiveGateStatus(
@@ -254,7 +254,7 @@ function NextStepCard({
 
   return (
     <Card className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
-      <CardContent className="flex-row items-start gap-4 p-5 border-0">
+      <CardContent className="flex-row items-start gap-4 p-5">
         <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-medium tabular-nums">
           {action.gateNumber}
         </div>
@@ -370,7 +370,10 @@ function GateRow({
               </span>
             ) : null}
             {tier !== "self_serve" ? (
-              <Badge variant="outline" className="ml-auto">
+              <Badge
+                variant={OWNER_TOKENS[ownerForStep(step, tier)].variant}
+                className="ml-auto"
+              >
                 {i18n._(OWNER_TOKENS[ownerForStep(step, tier)].label)}
               </Badge>
             ) : null}

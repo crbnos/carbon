@@ -197,6 +197,42 @@ export namespace Xero {
   export type InvoiceLineItem = z.infer<typeof InvoiceLineItemSchema>;
   export type InvoiceContact = z.infer<typeof InvoiceContactSchema>;
 
+  // Payment schemas for the Xero Accounting API /Payments endpoint.
+  // A Payment settles exactly ONE invoice — `Invoice.Type` (ACCPAY = bill /
+  // AP, ACCREC = sales invoice / AR) is the family discriminator; the settled
+  // document is `Invoice.InvoiceID`. `PaymentType` is ACCPAYPAYMENT /
+  // ACCRECPAYMENT. `Status` is AUTHORISED (settled) or DELETED (voided).
+  // Kept lenient (passthrough + string enums) — Xero adds fields freely and
+  // the syncer only reads the ids/amount/date/status it needs.
+  export const PaymentInvoiceSchema = z
+    .object({
+      InvoiceID: z.string(),
+      // ACCPAY = Bill (AP), ACCREC = Sales Invoice (AR)
+      Type: z.enum(["ACCPAY", "ACCREC"]).optional(),
+      InvoiceNumber: z.string().optional(),
+      CurrencyCode: z.string().optional()
+    })
+    .passthrough();
+
+  export const PaymentSchema = z
+    .object({
+      PaymentID: z.string(),
+      Date: z.string().optional(), // YYYY-MM-DD (or serialized /Date(...)/)
+      Amount: z.number().optional(),
+      Reference: z.string().optional(),
+      CurrencyRate: z.number().optional(),
+      // ACCRECPAYMENT (AR) | ACCPAYPAYMENT (AP) | ... — lenient
+      PaymentType: z.string().optional(),
+      // AUTHORISED (settled) | DELETED (void) — lenient
+      Status: z.string().optional(),
+      Invoice: PaymentInvoiceSchema.optional(),
+      UpdatedDateUTC: z.string() // serialized /Date(...)/
+    })
+    .passthrough();
+
+  export type PaymentInvoice = z.infer<typeof PaymentInvoiceSchema>;
+  export type Payment = z.infer<typeof PaymentSchema>;
+
   // Purchase Order schemas for Xero Accounting API
   export const PurchaseOrderLineItemSchema = z.object({
     LineItemID: z.string().uuid().optional(),
@@ -245,6 +281,35 @@ export namespace Xero {
   >;
   export type PurchaseOrderContact = z.infer<typeof PurchaseOrderContactSchema>;
 
+  // Tracking category schemas for the Xero TrackingCategories endpoint —
+  // Xero's journal analytics (org-wide limit: 2 active categories)
+  export const TrackingOptionSchema = z.object({
+    TrackingOptionID: z.string().uuid(),
+    Name: z.string(),
+    Status: z.enum(["ACTIVE", "ARCHIVED", "DELETED"]).optional()
+  });
+
+  export type TrackingOption = z.infer<typeof TrackingOptionSchema>;
+
+  export const TrackingCategorySchema = z.object({
+    TrackingCategoryID: z.string().uuid(),
+    Name: z.string(),
+    Status: z.enum(["ACTIVE", "ARCHIVED", "DELETED"]).optional(),
+    Options: z.array(TrackingOptionSchema).optional()
+  });
+
+  export type TrackingCategory = z.infer<typeof TrackingCategorySchema>;
+
+  /** Tracking assignment on a manual-journal line (ids, never names). */
+  export const ManualJournalTrackingSchema = z.object({
+    TrackingCategoryID: z.string(),
+    TrackingOptionID: z.string()
+  });
+
+  export type ManualJournalTracking = z.infer<
+    typeof ManualJournalTrackingSchema
+  >;
+
   // Manual Journal schemas for Xero Accounting API ManualJournals endpoint
   export const ManualJournalLineSchema = z.object({
     LineAmount: z.number(),
@@ -252,6 +317,8 @@ export namespace Xero {
     Description: z.string().optional(),
     TaxType: z.string().optional(),
     TaxAmount: z.number().optional(),
+    /** Max 2 entries (one per active tracking category). */
+    Tracking: z.array(ManualJournalTrackingSchema).optional(),
     IsBlank: z.boolean().optional()
   });
 
@@ -338,6 +405,11 @@ export namespace Xero {
     FinancialYearEndMonth: z.number().optional(),
     DefaultSalesTax: z.string().optional(),
     DefaultPurchasesTax: z.string().optional(),
+    // Lock dates (serialized /Date(...)/): transactions dated on or before
+    // these are locked. PeriodLockDate stops non-advisors; EndOfYearLockDate
+    // stops everyone. Posting sync treats the max of both as THE lock date.
+    PeriodLockDate: z.string().optional(),
+    EndOfYearLockDate: z.string().optional(),
     ShortCode: z.string().optional(),
     Edition: z.string().optional(),
     Class: z.string().optional(),

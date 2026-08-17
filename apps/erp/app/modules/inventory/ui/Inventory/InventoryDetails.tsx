@@ -6,11 +6,11 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import { LuMoveDown, LuMoveUp } from "react-icons/lu";
 import type { z } from "zod";
 import { DateSelect } from "~/components/DateSelect";
+import { useQuantityFormatter } from "~/hooks";
 import type {
   ItemQuantities,
   ItemStorageUnitQuantities,
@@ -43,12 +43,7 @@ const InventoryDetails = ({
   quantities,
   storageUnits
 }: InventoryDetailsProps) => {
-  const { locale } = useLocale();
-  const formatter = Intl.NumberFormat(locale, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-    useGrouping: true
-  });
+  const formatQuantity = useQuantityFormatter();
   const [usageWindow, setUsageWindow] = useState<"30" | "90">("30");
   const dailyUsage =
     usageWindow === "30"
@@ -66,7 +61,7 @@ const InventoryDetails = ({
           </CardHeader>
           <CardContent>
             <h3 className="text-4xl font-medium tracking-tighter">
-              {formatter.format(quantities?.quantityOnHand ?? 0)}
+              {formatQuantity(quantities?.quantityOnHand ?? 0)}
             </h3>
           </CardContent>
         </Card>
@@ -78,7 +73,7 @@ const InventoryDetails = ({
           </CardHeader>
           <CardContent>
             <h3 className="text-4xl font-medium tracking-tighter">
-              {formatter.format(quantities?.daysRemaining ?? 0)}
+              {formatQuantity(quantities?.daysRemaining ?? 0)}
             </h3>
           </CardContent>
         </Card>
@@ -101,7 +96,7 @@ const InventoryDetails = ({
           </CardHeader>
           <CardContent>
             <h3 className="text-4xl font-medium tracking-tighter">
-              {formatter.format(dailyUsage)}
+              {formatQuantity(dailyUsage)}
             </h3>
           </CardContent>
         </Card>
@@ -114,7 +109,7 @@ const InventoryDetails = ({
           <CardContent>
             <div className="flex justify-start items-center gap-1">
               <h3 className="text-4xl font-medium tracking-tighter">
-                {formatter.format(quantities?.quantityOnPurchaseOrder ?? 0)}
+                {formatQuantity(quantities?.quantityOnPurchaseOrder ?? 0)}
               </h3>
               <LuMoveUp className="text-emerald-500 text-lg" />
             </div>
@@ -129,7 +124,7 @@ const InventoryDetails = ({
           <CardContent>
             <div className="flex justify-start items-center gap-1">
               <h3 className="text-4xl font-medium tracking-tighter">
-                {formatter.format(quantities?.quantityOnSalesOrder ?? 0)}
+                {formatQuantity(quantities?.quantityOnSalesOrder ?? 0)}
               </h3>
               <LuMoveDown className="text-red-500 text-lg" />
             </div>
@@ -145,15 +140,13 @@ const InventoryDetails = ({
             <div className="flex items-start justify-start gap-2">
               <div className="flex justify-start items-center gap-1">
                 <h3 className="text-4xl font-medium tracking-tighter">
-                  {formatter.format(quantities?.quantityOnProductionOrder ?? 0)}
+                  {formatQuantity(quantities?.quantityOnProductionOrder ?? 0)}
                 </h3>
                 <LuMoveUp className="text-emerald-500 text-lg" />
               </div>
               <div className="flex justify-start items-center gap-1">
                 <h3 className="text-4xl font-medium tracking-tighter">
-                  {formatter.format(
-                    quantities?.quantityOnProductionDemand ?? 0
-                  )}
+                  {formatQuantity(quantities?.quantityOnProductionDemand ?? 0)}
                 </h3>
                 <LuMoveDown className="text-red-500 text-lg" />
               </div>

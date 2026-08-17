@@ -2,6 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasPlan } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import { Avatar } from "@carbon/react";
+import { SCALE_FORMAT } from "@carbon/utils";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -154,10 +155,7 @@ export default function CustomerPortal() {
   } = useLoaderData<typeof loader>();
 
   const { locale } = useLocale();
-  const formatter = useNumberFormatter({
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  });
+  const formatter = useNumberFormatter(SCALE_FORMAT);
 
   const columns = useMemo<ColumnDef<(typeof salesOrderLines)[number]>[]>(() => {
     return [
