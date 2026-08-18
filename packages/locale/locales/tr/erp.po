@@ -2548,6 +2548,12 @@ msgstr "Lot Takibi"
 msgid "Beginning"
 msgstr "Başlangıç"
 
+msgid "Behind target by {behindDays} day(s)"
+msgstr ""
+
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Aşamalı olarak kaldırılıyor — halef: <0>{0}</0>"
@@ -11710,6 +11716,10 @@ msgstr "Profil"
 msgid "Progress"
 msgstr "İlerleme"
 
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr ""
+
 msgid "Project"
 msgstr "Proje"
 
@@ -11721,6 +11731,10 @@ msgstr "Proje Planı"
 
 msgid "Project start"
 msgstr "Proje başlangıcı"
+
+#. placeholder {0}: formatDate(projectedDate)
+msgid "Projected {0}"
+msgstr ""
 
 msgid "Projected completion"
 msgstr "Öngörülen tamamlanma"
@@ -15149,6 +15163,9 @@ msgstr "Bu girişin muhasebe defterine kaydedildiği tarih; düştüğü muhaseb
 
 msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "Bu şirketlerarası işlemin her iki şirketin muhasebe defterlerine kaydedildiği tarih."
+
+msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
+msgstr ""
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "Bu RFQ'yu müşteriden aldığınız tarih. Varsayılan olarak bugün ayarlanır."

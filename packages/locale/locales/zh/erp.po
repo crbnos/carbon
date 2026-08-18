@@ -2548,6 +2548,12 @@ msgstr "批次追踪"
 msgid "Beginning"
 msgstr "开始"
 
+msgid "Behind target by {behindDays} day(s)"
+msgstr ""
+
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "正在逐步淘汰 — 后继产品：<0>{0}</0>"
@@ -11710,6 +11716,10 @@ msgstr "个人资料"
 msgid "Progress"
 msgstr "进度"
 
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr ""
+
 msgid "Project"
 msgstr "项目"
 
@@ -11721,6 +11731,10 @@ msgstr "项目计划"
 
 msgid "Project start"
 msgstr "项目开始"
+
+#. placeholder {0}: formatDate(projectedDate)
+msgid "Projected {0}"
+msgstr ""
 
 msgid "Projected completion"
 msgstr "预计完成"
@@ -15149,6 +15163,9 @@ msgstr "该条目记入总账的日期；确定它所在的会计期间。"
 
 msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "该公司间交易记入两家公司总账的日期。"
+
+msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
+msgstr ""
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "您收到此询价单（RFQ）的日期。默认为今天。"

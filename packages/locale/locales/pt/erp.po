@@ -2548,6 +2548,12 @@ msgstr "Rastreamento em Lote"
 msgid "Beginning"
 msgstr "Início"
 
+msgid "Behind target by {behindDays} day(s)"
+msgstr ""
+
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Sendo descontinuado — sucessor: <0>{0}</0>"
@@ -11710,6 +11716,10 @@ msgstr "Perfil"
 msgid "Progress"
 msgstr "Progresso"
 
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr ""
+
 msgid "Project"
 msgstr "Projeto"
 
@@ -11721,6 +11731,10 @@ msgstr "Plano do Projeto"
 
 msgid "Project start"
 msgstr "Início do projeto"
+
+#. placeholder {0}: formatDate(projectedDate)
+msgid "Projected {0}"
+msgstr ""
 
 msgid "Projected completion"
 msgstr "Conclusão projetada"
@@ -15149,6 +15163,9 @@ msgstr "A data em que esta entrada é registrada no razão geral; determina o pe
 
 msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "A data em que esta transação entre empresas é registrada nos razões de ambas as empresas."
+
+msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
+msgstr ""
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "A data em que você recebeu esta cotação do cliente. Padrão para hoje."

@@ -2548,6 +2548,12 @@ msgstr "Отслеживание партий"
 msgid "Beginning"
 msgstr "Начало"
 
+msgid "Behind target by {behindDays} day(s)"
+msgstr ""
+
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Снимается с производства — преемник: <0>{0}</0>"
@@ -11710,6 +11716,10 @@ msgstr "Профиль"
 msgid "Progress"
 msgstr "Прогресс"
 
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr ""
+
 msgid "Project"
 msgstr "Проект"
 
@@ -11721,6 +11731,10 @@ msgstr "План проекта"
 
 msgid "Project start"
 msgstr "Начало проекта"
+
+#. placeholder {0}: formatDate(projectedDate)
+msgid "Projected {0}"
+msgstr ""
 
 msgid "Projected completion"
 msgstr "Прогнозное завершение"
@@ -15149,6 +15163,9 @@ msgstr "Дата, когда эта проводка попадает в гла�
 
 msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "Дата, когда эта внутригрупповая операция записывается в главные книги обеих компаний."
+
+msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
+msgstr ""
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "Дата получения этого запроса на коммерческое предложение от клиента. По умолчанию — сегодняшняя дата."

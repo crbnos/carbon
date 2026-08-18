@@ -2548,6 +2548,12 @@ msgstr "Tracciamento Batch"
 msgid "Beginning"
 msgstr "Inizio"
 
+msgid "Behind target by {behindDays} day(s)"
+msgstr ""
+
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "In fase di eliminazione — successore: <0>{0}</0>"
@@ -11710,6 +11716,10 @@ msgstr "Profilo"
 msgid "Progress"
 msgstr "Progresso"
 
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr ""
+
 msgid "Project"
 msgstr "Progetto"
 
@@ -11721,6 +11731,10 @@ msgstr "Piano di Progetto"
 
 msgid "Project start"
 msgstr "Inizio progetto"
+
+#. placeholder {0}: formatDate(projectedDate)
+msgid "Projected {0}"
+msgstr ""
 
 msgid "Projected completion"
 msgstr "Completamento previsto"
@@ -15149,6 +15163,9 @@ msgstr "La data in cui questa voce entra nel libro mastro; determina il periodo 
 
 msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "La data in cui questa transazione interaziendale entra nei libri di entrambe le aziende."
+
+msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
+msgstr ""
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "La data in cui hai ricevuto questa RFQ dal cliente. Per impostazione predefinita è oggi."

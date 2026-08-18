@@ -2548,6 +2548,12 @@ msgstr "バッチ追跡"
 msgid "Beginning"
 msgstr "開始"
 
+msgid "Behind target by {behindDays} day(s)"
+msgstr ""
+
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "段階的に廃止予定 — 後継品: <0>{0}</0>"
@@ -11710,6 +11716,10 @@ msgstr "プロフィール"
 msgid "Progress"
 msgstr "進捗"
 
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr ""
+
 msgid "Project"
 msgstr "プロジェクト"
 
@@ -11721,6 +11731,10 @@ msgstr "プロジェクト計画"
 
 msgid "Project start"
 msgstr "プロジェクト開始"
+
+#. placeholder {0}: formatDate(projectedDate)
+msgid "Projected {0}"
+msgstr ""
 
 msgid "Projected completion"
 msgstr "予測完了"
@@ -15149,6 +15163,9 @@ msgstr "このエントリが総勘定元帳に記入される日付。会計期
 
 msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "この会社間取引が両社の総勘定元帳に記入される日付。"
+
+msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
+msgstr ""
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "このRFQを顧客から受け取った日付。デフォルトは今日の日付です。"

@@ -2548,6 +2548,12 @@ msgstr "बैच ट्रैकिंग"
 msgid "Beginning"
 msgstr "आरंभ"
 
+msgid "Behind target by {behindDays} day(s)"
+msgstr ""
+
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "चरणबद्ध रूप से बंद किया जा रहा है — उत्तराधिकारी: <0>{0}</0>"
@@ -11710,6 +11716,10 @@ msgstr "प्रोफ़ाइल"
 msgid "Progress"
 msgstr "प्रगति"
 
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr ""
+
 msgid "Project"
 msgstr "प्रोजेक्ट"
 
@@ -11721,6 +11731,10 @@ msgstr "प्रोजेक्ट प्लान"
 
 msgid "Project start"
 msgstr "प्रोजेक्ट शुरुआत"
+
+#. placeholder {0}: formatDate(projectedDate)
+msgid "Projected {0}"
+msgstr ""
 
 msgid "Projected completion"
 msgstr "अनुमानित पूर्णता"
@@ -15149,6 +15163,9 @@ msgstr "वह तारीख जब यह प्रविष्टि खा�
 
 msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "वह तारीख जब यह अंतरकंपनी लेनदेन दोनों कंपनियों की खाता बही में दर्ज होता है।"
+
+msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
+msgstr ""
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "वह तारीख जब आपको ग्राहक से यह आरएफक्यू प्राप्त हुआ था। डिफ़ॉल्ट रूप से आज की तारीख होगी।"

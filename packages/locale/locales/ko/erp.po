@@ -2548,6 +2548,12 @@ msgstr "배치 추적"
 msgid "Beginning"
 msgstr "시작"
 
+msgid "Behind target by {behindDays} day(s)"
+msgstr ""
+
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "단계적으로 폐지 중 — 후속: <0>{0}</0>"
@@ -11710,6 +11716,10 @@ msgstr "프로필"
 msgid "Progress"
 msgstr "진행 상황"
 
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr ""
+
 msgid "Project"
 msgstr "프로젝트"
 
@@ -11721,6 +11731,10 @@ msgstr "프로젝트 계획"
 
 msgid "Project start"
 msgstr "프로젝트 시작"
+
+#. placeholder {0}: formatDate(projectedDate)
+msgid "Projected {0}"
+msgstr ""
 
 msgid "Projected completion"
 msgstr "예상 완료"
@@ -15149,6 +15163,9 @@ msgstr "이 항목이 원장에 반영되는 날짜로, 속하는 회계 기간�
 
 msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "이 회사 간 거래가 양사의 원장에 반영되는 날짜입니다."
+
+msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
+msgstr ""
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "고객으로부터 이 RFQ를 받은 날짜입니다. 기본값은 오늘입니다."
