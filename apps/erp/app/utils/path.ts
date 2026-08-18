@@ -186,6 +186,7 @@ export const path = {
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
         ),
       onShapeSync: `${api}/integrations/onshape/sync`,
+      onShapeV2Bom: `${api}/integrations/onshape/v2/bom`,
       onShapeV2Create: `${api}/integrations/onshape/v2/create`,
       onShapeV2Link: `${api}/integrations/onshape/v2/link`,
       onShapeV2Revisions: `${api}/integrations/onshape/v2/revisions`,

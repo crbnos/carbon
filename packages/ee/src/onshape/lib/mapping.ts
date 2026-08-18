@@ -387,3 +387,50 @@ export async function writeRevisionMapping(
 
   return { ok: true };
 }
+
+/**
+ * Resolve many CAD things to their Carbon items in one query.
+ *
+ * The BOM import resolves a whole tree at once; a per-row lookup there is the
+ * N+1 the repo bans outright. Returns externalId -> itemIds, and an entry is
+ * absent rather than empty when nothing is mapped.
+ */
+export async function readItemIdsForElements(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; refs: OnshapeElementRef[] }
+): Promise<Map<string, string[]>> {
+  const byExternalId = new Map<string, string[]>();
+  if (args.refs.length === 0) return byExternalId;
+
+  const externalIds = Array.from(
+    new Set(args.refs.map((ref) => buildElementExternalId(ref)))
+  );
+
+  const CHUNK = 200;
+  for (let index = 0; index < externalIds.length; index += CHUNK) {
+    const chunk = externalIds.slice(index, index + CHUNK);
+
+    const result = await client
+      .from("externalIntegrationMapping")
+      .select("entityId, externalId")
+      .eq("integration", ONSHAPE_ELEMENT_INTEGRATION)
+      .eq("entityType", ONSHAPE_MAPPING_ENTITY_TYPE)
+      .eq("companyId", args.companyId)
+      .in("externalId", chunk);
+
+    if (result.error) {
+      throw new Error(
+        `Failed to resolve Onshape element mappings: ${result.error.message}`
+      );
+    }
+
+    for (const row of result.data ?? []) {
+      if (!row.externalId) continue;
+      const existing = byExternalId.get(row.externalId);
+      if (existing) existing.push(row.entityId);
+      else byExternalId.set(row.externalId, [row.entityId]);
+    }
+  }
+
+  return byExternalId;
+}

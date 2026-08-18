@@ -1,3 +1,4 @@
+export * from "./bom";
 export * from "./client";
 export * from "./data";
 export * from "./document.type";
