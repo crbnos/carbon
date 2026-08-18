@@ -50,7 +50,12 @@ export const meta: MetaFunction = () => {
 
 const unlockValidator = z.object({
   code: z.string().length(6),
-  redirectTo: z.string().optional()
+  redirectTo: z.string().optional(),
+  // "true" when submitted from the in-app SessionLockOverlay: re-auth resumes the
+  // session IN PLACE (rotated cookie returned as data), so the overlay can clear
+  // its lock without a full navigation. A full-page /unlock submit omits it and
+  // gets the redirect back to `redirectTo` instead.
+  inline: z.string().optional()
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -103,7 +108,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid code");
   }
 
-  const { code, redirectTo } = validation.data;
+  const { code, redirectTo, inline } = validation.data;
 
   // Re-auth in place: completeMfaChallenge rotates tokens in the same cookie and
   // (via makeAuthSession) re-stamps createdAt/lastActiveAt = now.
@@ -116,6 +121,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(
       error(null, "Invalid or expired code"),
       await flash(request, error(null, "Invalid or expired code"))
+    );
+  }
+
+  // In-app overlay: return the rotated cookie(s) as data (no navigation) so the
+  // overlay clears its lock in place and React Router revalidates with the fresh
+  // session. Full-page submit: redirect back to where the lock interrupted.
+  if (inline === "true") {
+    return data<UnlockResult>(
+      { success: true },
+      {
+        headers: [
+          ["Set-Cookie", result.sessionCookie],
+          ["Set-Cookie", setCompanyId(result.authSession.companyId)]
+        ]
+      }
     );
   }
 

@@ -298,7 +298,7 @@ export default function AuthenticatedRoute() {
 
   // Session lock (NIST 3.1.10) — client idle UX only; server enforces in
   // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT and non-console.
-  const { isIdle } = useIdle({
+  const { isIdle, resume } = useIdle({
     enabled: sessionTimeout.enabled,
     idleMs: sessionTimeout.idleMs,
     heartbeatMs: sessionTimeout.heartbeatMs,
@@ -429,7 +429,9 @@ export default function AuthenticatedRoute() {
   return (
     <div className="h-screen w-full overflow-y-auto lg:overflow-hidden">
       {/* Idle lock conceals the app (3.1.10). Not over the ITAR/MFA gates. */}
-      {isIdle && !itarScreen && !mfaScreen && <SessionLockOverlay />}
+      {isIdle && !itarScreen && !mfaScreen && (
+        <SessionLockOverlay onUnlocked={resume} />
+      )}
       {(itarScreen ?? mfaScreen) ? (
         (itarScreen ?? mfaScreen)
       ) : (

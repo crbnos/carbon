@@ -1,19 +1,81 @@
-import { Button, Card, CardContent, Heading, VStack } from "@carbon/react";
+import {
+  Hidden,
+  InputOTP,
+  Submit,
+  useControlField,
+  ValidatedForm
+} from "@carbon/form";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  Card,
+  CardContent,
+  Heading,
+  VStack
+} from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
+import { useEffect, useRef } from "react";
 import { LuLock } from "react-icons/lu";
-import { Link, useLocation } from "react-router";
+import { Form, useFetcher, useLocation } from "react-router";
+import { z } from "zod";
+
+import { path } from "~/utils/path";
 
 /**
- * Full-screen pattern-hiding lock overlay (NIST 800-171 3.1.10 / AC-11(1)).
- * Shown by the shell when `useIdle` reports inactivity. It CONCEALS all page
- * content (opaque `bg-background`, top z-index) and funnels to /unlock, where the
- * user re-authenticates (TOTP) to resume the SAME session. The server is the real
- * boundary (requireAuthSession redirects idle requests to /unlock); this overlay
- * is the immediate concealment so CUI never lingers on an unattended screen.
+ * Full-screen pattern-hiding lock overlay + in-place re-auth (NIST 800-171
+ * 3.1.10 / AC-11(1)). Shown by the shell when `useIdle` reports inactivity: it
+ * CONCEALS all page content (opaque `bg-background`, top z-index) AND carries the
+ * TOTP re-auth form itself, so unlocking is a single screen. It posts to the
+ * `/unlock` action with `inline=true`; on success the action rotates the session
+ * cookie and returns data (no navigation), the overlay calls `onUnlocked` to
+ * clear the client lock, and React Router revalidates with the fresh session —
+ * resuming the SAME session exactly where the user left off. The server is still
+ * the real boundary (requireAuthSession redirects idle requests to the full-page
+ * /unlock route); this overlay is the immediate concealment + fast path.
  */
-export default function SessionLockOverlay() {
+type UnlockResult = { success: boolean; message?: string };
+
+const overlayValidator = z.object({
+  code: z.string().length(6),
+  redirectTo: z.string().optional(),
+  inline: z.string().optional()
+});
+
+/**
+ * Lives inside ValidatedForm so it can reach the shared `code` field state. A
+ * rejected code is cleared so the user can retype without stale digits.
+ */
+function UnlockCodeField({ result }: { result?: UnlockResult }) {
+  const [, setCode] = useControlField<string>("code");
+  const lastResult = useRef(result);
+
+  useEffect(() => {
+    if (result === lastResult.current) return;
+    lastResult.current = result;
+    if (result?.success === false) setCode("");
+  }, [result, setCode]);
+
+  return <InputOTP name="code" label="" />;
+}
+
+export default function SessionLockOverlay({
+  onUnlocked
+}: {
+  onUnlocked?: () => void;
+}) {
   const location = useLocation();
   const redirectTo = `${location.pathname}${location.search}`;
+
+  const fetcher = useFetcher<UnlockResult>();
+
+  // A successful in-place unlock rotated the cookie already; clear the client
+  // lock so the overlay unmounts and the app (revalidated with the fresh
+  // session) shows through.
+  useEffect(() => {
+    if (fetcher.data?.success === true) onUnlocked?.();
+  }, [fetcher.data, onUnlocked]);
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background p-6">
@@ -28,16 +90,55 @@ export default function SessionLockOverlay() {
             </Heading>
             <p className="text-sm text-muted-foreground text-pretty">
               <Trans>
-                Your session was locked after a period of inactivity.
-                Re-authenticate to continue where you left off.
+                Your session was locked after inactivity. Enter the 6-digit code
+                from your authenticator app to resume.
               </Trans>
             </p>
           </VStack>
-          <Button asChild size="lg" className="w-full">
-            <Link to={`/unlock?redirectTo=${encodeURIComponent(redirectTo)}`}>
-              <Trans>Unlock</Trans>
-            </Link>
-          </Button>
+
+          <ValidatedForm
+            fetcher={fetcher}
+            validator={overlayValidator}
+            method="post"
+            action="/unlock"
+            className="w-full"
+          >
+            <Hidden name="redirectTo" value={redirectTo} />
+            <Hidden name="inline" value="true" />
+            <VStack spacing={4} className="items-center">
+              {fetcher.data?.success === false && fetcher.data?.message && (
+                <Alert variant="destructive">
+                  <LuLock className="w-4 h-4" />
+                  <AlertTitle>
+                    <Trans>Unable to unlock</Trans>
+                  </AlertTitle>
+                  <AlertDescription>{fetcher.data.message}</AlertDescription>
+                </Alert>
+              )}
+
+              <UnlockCodeField result={fetcher.data} />
+
+              <Submit
+                size="lg"
+                className="w-full"
+                withBlocker={false}
+                isDisabled={fetcher.state !== "idle"}
+              >
+                <Trans>Unlock</Trans>
+              </Submit>
+            </VStack>
+          </ValidatedForm>
+
+          <Form method="post" action={path.to.logout}>
+            <Button
+              type="submit"
+              variant="link"
+              size="sm"
+              className="text-muted-foreground"
+            >
+              <Trans>Sign out instead</Trans>
+            </Button>
+          </Form>
         </CardContent>
       </Card>
     </div>

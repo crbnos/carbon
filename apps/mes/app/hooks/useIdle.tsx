@@ -69,12 +69,31 @@ export function useIdle({
         : null;
     channelRef.current = channel;
 
+    // Throttled activity heartbeat. It fires ONLY in response to real user input
+    // (here), never on the idle countdown itself — otherwise the countdown would
+    // keep re-stamping the server's `lastActiveAt` every heartbeatMs and the
+    // session would never idle-lock server-side, so /unlock's loader would find
+    // the session "not locked" and bounce straight back with no re-auth.
+    const sendHeartbeat = (now: number) => {
+      lastHeartbeatRef.current = now;
+      void fetch(heartbeatUrl, {
+        method: "POST",
+        credentials: "same-origin"
+      }).catch(() => {
+        // Best-effort; a missed heartbeat just brings the lock closer.
+      });
+    };
+
     // Local real activity. Once locked, local activity does NOT clear the lock —
     // 3.1.10 requires re-authentication; only a successful unlock (resume) does.
     const onActivity = () => {
       if (isIdleRef.current) return;
       const now = Date.now();
       lastActivityRef.current = now;
+      // Keep the server's lastActiveAt fresh while genuinely active, throttled.
+      if (now - lastHeartbeatRef.current >= heartbeatMs) {
+        sendHeartbeat(now);
+      }
       if (
         channel &&
         now - lastBroadcastRef.current > ACTIVITY_BROADCAST_THROTTLE_MS
@@ -110,18 +129,6 @@ export function useIdle({
         isIdleRef.current = true;
         setIsIdle(true);
         channel?.postMessage({ type: "lock" } satisfies ChannelMessage);
-        return;
-      }
-
-      // Active → keep the server's lastActiveAt fresh, throttled.
-      if (now - lastHeartbeatRef.current >= heartbeatMs) {
-        lastHeartbeatRef.current = now;
-        void fetch(heartbeatUrl, {
-          method: "POST",
-          credentials: "same-origin"
-        }).catch(() => {
-          // Best-effort; a missed heartbeat just brings the lock closer.
-        });
       }
     }, CHECK_INTERVAL_MS);
 
