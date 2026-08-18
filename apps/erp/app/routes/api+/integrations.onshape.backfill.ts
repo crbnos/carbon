@@ -31,6 +31,21 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const metadata = (integration.data.metadata ?? {}) as Record<string, unknown>;
+
+  // The backfill is a LEGACY mechanism: it matches Onshape revisions to Carbon
+  // items by readableIdWithRevision. Running it on a v2 company reintroduces
+  // exactly the part-number join v2 exists to replace, and would attach
+  // geometry to whichever revision happened to share a string.
+  if (metadata.pipeline === "next") {
+    return data(
+      {
+        error:
+          "This company is on Onshape v2, which links items by id rather than by part number. The backfill matches by part number and is not available here."
+      },
+      { status: 400 }
+    );
+  }
+
   if (metadata.assetSyncEnabled !== true) {
     return data(
       {

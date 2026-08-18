@@ -335,13 +335,43 @@ Resolved during design:
 
 ## Known gaps
 
-- **Translations.** 49 new English strings ship with empty `msgstr` in 12 locales. That matches
+- **Translations.** 52 new English strings ship with empty `msgstr` in 12 locales. That matches
   upstream practice — `pnpm translate` needs an LLM key and is run as its own pass, not per PR.
 - **Drawing attachment.** Still unsolved; see the drawing section. v2 refuses rather than guessing.
+- **Configuration is not part of identity.** `buildElementExternalId` ignores the Onshape
+  configuration, so two configured instances of one element map to the same Carbon family. The
+  ASSET pull now carries the configuration through, so a single-configured-instance BOM exports
+  the right shape; the multi-instance case needs the id to change too.
+- **A successful unreleased import is unverified end to end.** The refusal paths are verified
+  live; a mint could not be, because every part in the test document already exists in Carbon at
+  a named revision. Verify it on a greenfield company, which is the shape the setting is for.
+- **`releaseImportV2` on a brownfield family.** Verified by reading, not by a live release: the
+  test Onshape company's releases all resolve to items Carbon already holds.
+
+## Audits
+
+Two adversarial audit passes were run over the v2 code, both as multi-lens workflows with an
+independent verifier per finding.
+
+- Round 1: 28 confirmed, 3 refuted. Chief finding: a refused row was DELETED rather than left
+  alone, because a refusal is absent from `desired` and reconciliation reads absence as removal.
+- Round 2: 39 confirmed, 1 refuted, across six lenses. Chief findings: v2 release import was
+  gated on the LEGACY `releaseImportEnabled` key so it never ran; the release job never
+  re-resolved its target after the import, so a new revision silently displayed the PREVIOUS
+  revision's geometry (`items_createRevision` copies `modelUploadId`); and a 429 during an asset
+  export was recorded as a permanent skip, making `withRateLimitRetry` unreachable.
+
+One bug class recurred in both rounds and is worth stating for whoever works here next: **the
+element mapping is revision-agnostic.** It narrows to the part FAMILY; the revision picks the
+member. Resolving from the mapping alone silently attaches revision A's data to the item at
+revision C. Its inverse — treating two legitimate revisions of one part as a collision — bit
+twice as well.
 
 ## Changelog
 
 - 2026-08-18: Created.
+- 2026-08-19: Round-2 audit findings fixed; per-item asset pull job added for the create and
+  link flows; legacy backfill refused on a v2 company.
 - 2026-08-19: All six phases done and audited twice. Corrected the settings table to the shipped
   `releaseImportV2` enum. Recorded the unreleased-version browser, the import-outcome
   notification, and the collision criterion as met.
