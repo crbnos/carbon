@@ -62,6 +62,7 @@ const baseItemValidator = z.object({
   link: z.string().optional(),
   priority: z.number(),
   progress: z.number().optional(), // miliseconds
+  projectedCompletionAt: z.string().nullable().optional(), // forecast finish (timestamptz)
   reworkId: z.string().nullable().optional(),
   targetQuantity: z.number().optional(),
   quantity: z.number().optional(),
@@ -93,8 +94,7 @@ const operationItemValidator = baseItemValidator.extend({
 const jobItemValidator = baseItemValidator.extend({
   status: z.enum(jobStatus).optional(),
   completedDate: z.string().optional(),
-  jobMakeMethodId: z.string(),
-  projectedCompletionAt: z.string().nullable().optional() // forecast finish (timestamptz)
+  jobMakeMethodId: z.string()
 });
 
 export type OperationItem = z.infer<typeof operationItemValidator>;

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-17T04:03:33.975Z",
+  "generated": "2026-08-18T04:01:09.020Z",
   "totalTools": 1479,
   "modules": 15,
   "tools": [
@@ -35230,7 +35230,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance schedule",
-      "paramCount": 16,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "schedule"
@@ -35243,54 +35243,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "workCenterId": {
-            "type": "string"
-          },
-          "locationId": {
-            "type": "string"
-          },
-          "frequency": {
-            "type": "string"
-          },
-          "priority": {
-            "type": "string"
-          },
-          "estimatedDuration": {
-            "type": "number"
-          },
-          "nextDueAt": {
-            "type": "string"
-          },
-          "active": {
-            "type": "string"
-          },
-          "tuesday": {
-            "type": "string"
-          },
-          "wednesday": {
-            "type": "string"
-          },
-          "thursday": {
-            "type": "string"
-          },
-          "friday": {
-            "type": "string"
-          },
-          "saturday": {
-            "type": "string"
-          },
-          "sunday": {
-            "type": "string"
-          },
+          "schedule": {},
           "_operation": {
             "type": "string",
             "enum": [
@@ -35301,18 +35254,7 @@
           }
         },
         "required": [
-          "name",
-          "workCenterId",
-          "locationId",
-          "frequency",
-          "priority",
-          "active",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday",
+          "schedule",
           "_operation"
         ]
       }

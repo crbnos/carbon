@@ -1043,7 +1043,7 @@ export async function getJobOperationsForTimeline(
   return client
     .from("jobOperation")
     .select(
-      `id, description, order, status, startDate, dueDate, hasConflict, conflictReason, assignee, workCenterId,
+      `id, description, order, status, startDate, dueDate, projectedCompletionAt, hasConflict, conflictReason, assignee, workCenterId,
        workCenter(name),
        jobMakeMethod(id, parentMaterialId, item(readableId, name))`
     )
@@ -3585,8 +3585,10 @@ export async function upsertJobOperationParameter(
 
 /**
  * Promise date = the job's forward-ASAP forecast finish (`projectedCompletionAt`,
- * stamped by every regen). Falls back to the scheduled finish of the job's last
- * operation only before the first regen has run (projectedCompletionAt is null).
+ * stamped by every regen). No operation-date fallback: `jobOperation.dueDate` is
+ * now the backward need-by target, so max(op.dueDate) ≈ the job due date —
+ * answering "when will it be done?" with the ask, not a forecast. Before the
+ * first regen the promise date is simply null.
  * Implements the §7 `{ date, confidence? }` contract — confidence is a string
  * enum, "low" when the schedule may not hold (a conflicted op or a pending
  * replan) and "scheduled" otherwise.
@@ -3606,7 +3608,7 @@ export async function getJobPromiseDate(
 
   const operations = await client
     .from("jobOperation")
-    .select("id, dueDate, hasConflict")
+    .select("id, hasConflict")
     .eq("jobId", jobId)
     .eq("companyId", companyId)
     .in("status", ["Todo", "Waiting", "Ready", "In Progress", "Paused"]);
@@ -3618,18 +3620,9 @@ export async function getJobPromiseDate(
       ? ("low" as const)
       : ("scheduled" as const);
 
-  // Prefer the forecast finish; fall back to the max op due date pre-first-regen.
-  let promiseDate = job.data.projectedCompletionAt;
-  if (!promiseDate) {
-    const dates = (operations.data ?? [])
-      .map((o) => o.dueDate)
-      .filter(Boolean) as string[];
-    promiseDate = dates.length ? dates.reduce((a, b) => (a > b ? a : b)) : null;
-  }
-
   return {
     data: {
-      promiseDate,
+      promiseDate: job.data.projectedCompletionAt ?? null,
       basis: "schedule" as const,
       confidence
     },

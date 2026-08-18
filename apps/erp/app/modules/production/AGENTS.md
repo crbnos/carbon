@@ -77,7 +77,7 @@ pnpm --filter @carbon/erp test
 - `getJobOrderStatusMap` — procurement status indicators per material
 - `recalculateJobRequirements` / `recalculateJobOperationDependencies` — recalculation after changes (`recalculateJobOperationDependencies` resolves the job's location and invokes the whole-location `schedule` regen)
 - `notifyScheduleInputsChanged(companyId, kind, reason, entityId?)` — thin emitter of `carbon/schedule.inputs.changed` (kinds: `ability`/`shift`/`employee-shift`/`work-center`/`location`/`reorder`/`people`); stamps affected jobs and the debounced replan wave regenerates each stale location
-- `getJobPromiseDate` — promise date = `job.projectedCompletionAt` (forward-ASAP forecast finish), falling back to the max operation due date before the first regen; returns the §7 `{ promiseDate, basis: "schedule", confidence }` contract (`confidence` "low" when the job has a conflicted op or a `scheduleOutdatedReason`, else "scheduled")
+- `getJobPromiseDate` — promise date = `job.projectedCompletionAt` (forward-ASAP forecast finish), null before the first regen (no operation-date fallback — `jobOperation.dueDate` is the backward need-by target, so max(op.dueDate) would just echo the job due date); returns the §7 `{ promiseDate, basis: "schedule", confidence }` contract (`confidence` "low" when the job has a conflicted op or a `scheduleOutdatedReason`, else "scheduled")
 - `runMRP` — triggers Material Requirements Planning via `mrp` edge function
 - `calculateJobPriority` — computes priority from deadline type and due date
 - `getActiveJobOperationsByLocation` — schedule board data (RPC `get_active_job_operations_by_location`)

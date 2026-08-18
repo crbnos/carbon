@@ -238,6 +238,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         tags: op.tags,
         description: op.description,
         dueDate: op.operationDueDate,
+        projectedCompletionAt: op.projectedCompletionAt,
         duration:
           operation.setupDuration +
           operation.laborDuration +
