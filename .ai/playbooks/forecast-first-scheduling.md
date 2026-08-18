@@ -1,7 +1,8 @@
 # Forecast-First Finite Scheduling
 
-Last tested: 2026-08-13
-Routes: /x/resources/work-centers/:id, /x/job/:id, /x/priority/people?view=capacity
+Last tested: 2026-08-18
+Routes: /x/resources/work-centers/:id, /x/job/:id, /x/priority/people?view=capacity,
+/x/priority/dates, /x/priority/operations, MES /x/operations + /x/operation/:opId
 
 ## Prerequisites
 - At least one work center, one job, and location shifts seeded (dev seed has these).
@@ -33,6 +34,44 @@ Routes: /x/resources/work-centers/:id, /x/job/:id, /x/priority/people?view=capac
    "Due (by due date)". An assumption banner ("Hours assumed from location shifts" for
    rung 2, or "No shifts configured — assuming Mon–Fri, 8h days" for rung 3).
 
+### (d) Dual dates — op due (need-by) vs projected completion
+
+Prerequisite: a released multi-op job. Seed item BUS-STR-001 (3-op routing) via
+/x/job/new (item combobox → "BUS-STR-001", deadline "Medium Priority Soft Deadline"
+reveals a month/day/year date field; fill + blur commits hidden `dueDate`), then
+Release → "Release Job" confirm. Release itself triggers a schedule run.
+
+1. **BOP rows** — /x/job/:id/details "Bill of Process" card. Each op row: the due-date
+   picker is `button[aria-label="Calendar"]` whose text is the date; the forecast is a
+   plain span "Projected {date}" — `text-muted-foreground` when on target,
+   `text-amber-500` + tooltip "Behind target by N day(s)" when projected > due. The span
+   is absent when `projectedCompletionAt` is null (e.g. an op with a placement conflict
+   like "No qualified operator" never gets a forecast).
+2. **Regen wiring** — any schedule input change fires `carbon/schedule.inputs.changed`
+   → `mark-schedule-stale` → `schedule-replan-wave` (~30 s debounce). Poll the DB
+   (`jobOperation.dueDate/projectedCompletionAt`) rather than sleeping a fixed 90 s.
+3. **Job due-date change** — /x/priority/dates card's own Calendar button posts the same
+   update as the drag (dnd-kit drag via `agent-browser mouse` does NOT take). Moving the
+   job due earlier tightens op dueDates on the next wave; projections stay byte-identical
+   when placement is unchanged.
+4. **Pin** — picking a date in a BOP op's Calendar writes `dueDate` + `manuallyScheduled`
+   immediately. The pin SURVIVES later waves and upstream ops re-derive from the pinned
+   op's target start. NOTE: the pin route (`/x/job/methods/operation/due-date` →
+   `updateJobOperationDueDate`) does NOT fire `notifyScheduleInputsChanged` — upstream
+   re-derivation only appears after the next wave from some other input. The popover
+   "Clear" button unpins (null due + manuallyScheduled=false).
+5. **Behind-target amber** — a maintenance dispatch with "Takes work center offline"
+   (planned window covering the placement) slips projections past the targets: BOP +
+   /x/priority/operations ItemCards + MES op detail all flip to `text-amber-500`
+   "Proj. {date}" with the "Behind target by N day(s)" tooltip, while op dueDates stay
+   byte-identical. Completing the dispatch reverts projections on the next wave.
+6. **Best case dialog** — "First behind target: {op} (due X, projected Y)" is appended to
+   the bottleneck sentence ONLY when the JOB itself is late (projected day > job due).
+   The expedite call can take ~20 s under the local edge-runtime CPU cap — re-read the
+   dialog until "Calculating best case…" resolves.
+7. **MES** — /x/operations board cards sort by due date/priority (never projection);
+   card link → /x/operation/:opId, whose Due Date card shows the "Proj. {date}" line.
+
 ## Selector Notes
 - The 24×7 field is `switch "Runs 24×7 (lights-out)"`; check state via
   `button[role=switch][aria-checked=true]`.
@@ -44,3 +83,17 @@ Routes: /x/resources/work-centers/:id, /x/job/:id, /x/priority/people?view=capac
 - `/x/jobs` → 404. Use `/x/production/jobs`.
 - Best case shows "Not scheduled" for Draft/Planned jobs — correct (the edge function only
   schedules Ready/In Progress/Paused jobs; expedite returns null for others).
+- Popovers (BOP date picker, dispatch work-center combobox) close between agent-browser
+  CLI invocations (live revalidation re-renders). Do open + option-click in ONE
+  `agent-browser eval` (dispatch pointerdown/mousedown/pointerup/mouseup/click on the
+  option). The "Takes work center offline" Radix switch also needs that full pointer
+  sequence — a bare `.click()` does not toggle it.
+- `agent-browser type` silently drops "." characters (e.g. in emails) — use `fill`.
+- The shared `default` agent-browser session may be owned by another worktree's agent —
+  set `AGENT_BROWSER_SESSION=<name>` for an isolated browser (and close only YOUR session).
+- Dev-only hydration failure marks the tab title "Error" on /x/priority/dates while the
+  board still renders client-side — read `document.body.innerText`, not the title.
+- Seed work centers have zero `workCenterShift` rows: an op whose need-by falls at/before
+  today runs away ~1 year per subtracted working day (MAX_CONSECUTIVE_CLOSED_DAYS cap in
+  need-by-calculator.ts) — e.g. a first op showing "Aug 10, 2024". Known bug surfaced
+  2026-08-18, not a test regression.
