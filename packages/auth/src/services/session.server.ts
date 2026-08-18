@@ -5,6 +5,7 @@ import { createCookieSessionStorage, redirect } from "react-router";
 
 import {
   CarbonEdition,
+  CONTROLLED_ENVIRONMENT,
   DOMAIN,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   SESSION_ABSOLUTE_MAX_MS,
@@ -321,6 +322,21 @@ export async function requireAuthSession(
 
   if (!isValidSession || isExpiringSoon(authSession.expiresAt)) {
     authSession = await refreshAuthSession(request);
+  }
+
+  // NIST 800-171 3.1.10 (session lock) / 3.1.11 (session termination) — enforced
+  // only in a controlled (ITAR/CUI) environment. Console DEVICE sessions are
+  // exempt: their lock is the operator pin-in (see console.server), and a shared
+  // shop-floor kiosk must not be force-logged-out mid-shift (spec D8).
+  if (CONTROLLED_ENVIRONMENT && !authSession.console) {
+    // Absolute cap (3.1.11): terminate — destroy the session, force full re-login.
+    if (isSessionExpiredAbsolute(authSession)) {
+      throw await destroyAuthSession(request);
+    }
+    // Idle lock (3.1.10): the session is PRESERVED; re-auth at /unlock to resume.
+    if (isSessionIdleLocked(authSession)) {
+      throw redirect(`${path.to.unlock}?${makeRedirectToFromHere(request)}`);
+    }
   }
 
   // Active MFA re-check: a session minted before the user enrolled a TOTP

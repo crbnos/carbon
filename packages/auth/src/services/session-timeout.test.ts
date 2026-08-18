@@ -17,6 +17,7 @@ const ABSOLUTE_MS = 12 * 60 * 60 * 1000;
 vi.mock("../config/env", () => ({
   DOMAIN: "localhost",
   CarbonEdition: "Community",
+  CONTROLLED_ENVIRONMENT: false,
   REFRESH_ACCESS_TOKEN_THRESHOLD: 60,
   SESSION_ABSOLUTE_MAX_MS: 12 * 60 * 60 * 1000,
   SESSION_IDLE_LOCK_MS: 15 * 60 * 1000,
