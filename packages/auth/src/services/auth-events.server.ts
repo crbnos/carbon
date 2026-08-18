@@ -22,6 +22,7 @@ export type AuthEvent =
   | "permission_denied"
   | "permission_changed"
   | "role_changed"
+  | "account_auto_deactivated"
   | "logout";
 
 /**
