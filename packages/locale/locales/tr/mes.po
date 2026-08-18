@@ -1221,6 +1221,9 @@ msgstr "Seri numaraları"
 msgid "Serial Numbers"
 msgstr "Seri Numaraları"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "Çıkış Yap"
 
@@ -1259,6 +1262,9 @@ msgstr "Oturumu kapat"
 
 msgid "Sign Out"
 msgstr "Oturumu Kapat"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "Oturum açıldı olarak {stationName}"
@@ -1393,11 +1399,17 @@ msgstr "İki faktörlü kimlik doğrulama gerekli"
 msgid "Type a message..."
 msgstr "Bir mesaj yaz..."
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "Yayımlanmamış seri/parti malzemeleri"
 
 msgid "Unknown"
 msgstr "Bilinmiyor"
+
+msgid "Unlock"
+msgstr ""
 
 msgid "Unpick"
 msgstr "Çıkart"
@@ -1475,3 +1487,6 @@ msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""

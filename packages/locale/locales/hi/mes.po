@@ -1221,6 +1221,9 @@ msgstr "सीरियल नंबर"
 msgid "Serial Numbers"
 msgstr "सीरियल नंबर"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "क्लॉक आउट सेट करें"
 
@@ -1259,6 +1262,9 @@ msgstr "साइन आउट करें"
 
 msgid "Sign Out"
 msgstr "साइन आउट"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "के रूप में साइन इन किया गया {stationName}"
@@ -1393,11 +1399,17 @@ msgstr "दो-फ़ैक्टर प्रमाणीकरण आवश्
 msgid "Type a message..."
 msgstr "एक संदेश लिखें..."
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "अजारी सीरीज़/बैच सामग्री"
 
 msgid "Unknown"
 msgstr "अज्ञात"
+
+msgid "Unlock"
+msgstr ""
 
 msgid "Unpick"
 msgstr "अनपिक करें"
@@ -1475,3 +1487,6 @@ msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इ�
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "आपके संगठन को एक ऑथेंटिकेटर ऐप की आवश्यकता है। इसे Carbon में सेट अप करें, फिर यहाँ वापस आएं।"
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""

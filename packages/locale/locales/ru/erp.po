@@ -13306,6 +13306,9 @@ msgstr "услуги"
 msgid "Services"
 msgstr "Услуги"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set a target"
 msgstr "Установить цель"
 
@@ -13634,6 +13637,9 @@ msgstr "Выход"
 
 msgid "Sign Out"
 msgstr "Выход"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Утверждение перед переходом к следующему этапу"
@@ -15857,6 +15863,9 @@ msgstr "Типы"
 msgid "U.S. Person Attestation"
 msgstr "Удостоверение лица США"
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unapplied"
 msgstr "Неприменённые"
 
@@ -17300,6 +17309,9 @@ msgstr "Ваша команда проекта"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ваши реальные данные загружены, вы проверили образец и одобрили его."
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Ваши исходные данные доступны и находятся в приемлемом состоянии"

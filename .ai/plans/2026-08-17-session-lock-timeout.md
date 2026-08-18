@@ -15,7 +15,7 @@ client idle UX drives concealment + a throttled activity heartbeat.
 - [x] Task 3: Stamp at mint, preserve across refresh; add predicates + `touchAuthSession` (+ unit tests)
 - [x] Task 4: Enforce idle-lock + absolute-termination in `requireAuthSession`
 - [x] Task 5: Heartbeat route (ERP + MES)
-- [ ] Task 6: `/unlock` TOTP route (ERP + MES)
+- [x] Task 6: `/unlock` TOTP route (ERP + MES)
 - [ ] Task 7: `useIdle` client hook (activity + heartbeat + cross-tab)
 - [ ] Task 8: `SessionLockOverlay` + wire into ERP/MES shells
 - [ ] Task 9: MES console idle-lock (tighten pin-in window under CUI)

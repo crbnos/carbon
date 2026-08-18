@@ -13306,6 +13306,9 @@ msgstr "Dienstleistungen"
 msgid "Services"
 msgstr "Dienstleistungen"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set a target"
 msgstr "Ziel festlegen"
 
@@ -13634,6 +13637,9 @@ msgstr "Abmelden"
 
 msgid "Sign Out"
 msgstr "Abmelden"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Abzeichnung vor dem Übergang zum nächsten Schritt"
@@ -15857,6 +15863,9 @@ msgstr "Typen"
 msgid "U.S. Person Attestation"
 msgstr "U.S. Person-Bestätigung"
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unapplied"
 msgstr "Nicht angewendet"
 
@@ -17300,6 +17309,9 @@ msgstr "Ihr Projektteam"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ihre echten Daten sind geladen und Sie haben eine Stichprobe überprüft und genehmigt."
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Ihre Quelldaten sind zugänglich und angemessen bereinigt"

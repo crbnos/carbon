@@ -1221,6 +1221,9 @@ msgstr "シリアル番号"
 msgid "Serial Numbers"
 msgstr "シリアル番号"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "退勤時間を設定"
 
@@ -1259,6 +1262,9 @@ msgstr "サインアウト"
 
 msgid "Sign Out"
 msgstr "サインアウト"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "{stationName} としてサインイン中"
@@ -1393,11 +1399,17 @@ msgstr "二要素認証が必要です"
 msgid "Type a message..."
 msgstr "メッセージを入力..."
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "未払出のシリアル/バッチ材料"
 
 msgid "Unknown"
 msgstr "不明"
+
+msgid "Unlock"
+msgstr ""
 
 msgid "Unpick"
 msgstr "ピッキング解除"
@@ -1475,3 +1487,6 @@ msgstr "{hoursElapsed} 時間出勤中です。退勤打刻を忘れていませ
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""

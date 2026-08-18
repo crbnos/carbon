@@ -13306,6 +13306,9 @@ msgstr "サービス"
 msgid "Services"
 msgstr "サービス"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set a target"
 msgstr "ターゲットを設定"
 
@@ -13634,6 +13637,9 @@ msgstr "ログアウト"
 
 msgid "Sign Out"
 msgstr "サインアウト"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Sign-off review before moving to the next step"
 msgstr "次のステップに進む前のサインオフレビュー"
@@ -15857,6 +15863,9 @@ msgstr "タイプ"
 msgid "U.S. Person Attestation"
 msgstr "米国人証明"
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unapplied"
 msgstr "未適用"
 
@@ -17300,6 +17309,9 @@ msgstr "あなたのプロジェクトチーム"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "あなたのソースデータはアクセス可能で、適切にクリーンです"

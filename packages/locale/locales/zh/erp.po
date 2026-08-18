@@ -13306,6 +13306,9 @@ msgstr "服务"
 msgid "Services"
 msgstr "服务"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set a target"
 msgstr "设置目标"
 
@@ -13634,6 +13637,9 @@ msgstr "登出"
 
 msgid "Sign Out"
 msgstr "登出"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Sign-off review before moving to the next step"
 msgstr "签署审查后再进行下一步"
@@ -15857,6 +15863,9 @@ msgstr "类型"
 msgid "U.S. Person Attestation"
 msgstr "美国人证明"
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unapplied"
 msgstr "未应用"
 
@@ -17300,6 +17309,9 @@ msgstr "您的项目团队"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "您的真实数据已加载，您已检查样本并批准了它。"
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "您的源数据可访问且相对干净"

@@ -1221,6 +1221,9 @@ msgstr "일련번호"
 msgid "Serial Numbers"
 msgstr "일련번호"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "퇴근 처리"
 
@@ -1259,6 +1262,9 @@ msgstr "로그아웃"
 
 msgid "Sign Out"
 msgstr "로그아웃"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "{stationName}(으)로 로그인됨"
@@ -1393,11 +1399,17 @@ msgstr "2단계 인증 필수"
 msgid "Type a message..."
 msgstr "메시지를 입력하세요..."
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "출고되지 않은 일련번호/배치 자재"
 
 msgid "Unknown"
 msgstr "알 수 없음"
+
+msgid "Unlock"
+msgstr ""
 
 msgid "Unpick"
 msgstr "피킹 취소"
@@ -1475,3 +1487,6 @@ msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""

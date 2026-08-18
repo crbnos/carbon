@@ -1221,6 +1221,9 @@ msgstr "序列号"
 msgid "Serial Numbers"
 msgstr "序列号"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "设置下班时间"
 
@@ -1259,6 +1262,9 @@ msgstr "登出"
 
 msgid "Sign Out"
 msgstr "退出登录"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "已登录为 {stationName}"
@@ -1393,11 +1399,17 @@ msgstr "需要双因素认证"
 msgid "Type a message..."
 msgstr "输入消息..."
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "未发放的序列号/批次物料"
 
 msgid "Unknown"
 msgstr "未知"
+
+msgid "Unlock"
+msgstr ""
 
 msgid "Unpick"
 msgstr "取消拣选"
@@ -1475,3 +1487,6 @@ msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班�
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""

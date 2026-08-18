@@ -1221,6 +1221,9 @@ msgstr "Numeri di serie"
 msgid "Serial Numbers"
 msgstr "Numeri di Serie"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "Imposta Uscita"
 
@@ -1259,6 +1262,9 @@ msgstr "Esci"
 
 msgid "Sign Out"
 msgstr "Esci"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "Connesso come {stationName}"
@@ -1393,11 +1399,17 @@ msgstr "Autenticazione a due fattori richiesta"
 msgid "Type a message..."
 msgstr "Scrivi un messaggio..."
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "Materiali seriali/lotto non prelevati"
 
 msgid "Unknown"
 msgstr "Sconosciuto"
+
+msgid "Unlock"
+msgstr ""
 
 msgid "Unpick"
 msgstr "Annulla prelievo"
@@ -1475,3 +1487,6 @@ msgstr "Sei timbrato in ingresso da {hoursElapsed} ore. Hai dimenticato di timbr
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "La tua organizzazione richiede un'app di autenticazione. Configurala in Carbon, quindi torna qui."
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""

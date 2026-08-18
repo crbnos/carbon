@@ -1221,6 +1221,9 @@ msgstr "Números de serie"
 msgid "Serial Numbers"
 msgstr "Números de serie"
 
+msgid "Session locked"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "Establecer salida"
 
@@ -1259,6 +1262,9 @@ msgstr "Cerrar sesión"
 
 msgid "Sign Out"
 msgstr "Cerrar sesión"
+
+msgid "Sign out instead"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "Conectado como {stationName}"
@@ -1393,11 +1399,17 @@ msgstr "Se requiere autenticación de dos factores"
 msgid "Type a message..."
 msgstr "Escriba un mensaje..."
 
+msgid "Unable to unlock"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "Materiales de serie/lote no emitidos"
 
 msgid "Unknown"
 msgstr "Desconocido"
+
+msgid "Unlock"
+msgstr ""
 
 msgid "Unpick"
 msgstr "Descoger"
@@ -1475,3 +1487,6 @@ msgstr "Ha estado registrado durante {hoursElapsed} horas. ¿Olvidó registrar l
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Tu organización requiere una aplicación de autenticación. Configúrala en Carbon y luego vuelve aquí."
+
+msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
+msgstr ""
