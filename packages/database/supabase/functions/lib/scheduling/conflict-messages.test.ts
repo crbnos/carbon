@@ -1,6 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import {
   classifyLatePlacement,
+  composeBehindTarget,
   composeLateConflict,
   composePlacementNote,
   formatWaitDuration,
@@ -254,6 +255,133 @@ Deno.test("people-manned wait classifies and words as the assigned people", () =
   assertEquals(
     composeLateConflict("2026-07-20", "2026-07-17", cause),
     "Finishes 2026-07-20 but the job is due 2026-07-17 — waited for the assigned people to be available"
+  );
+});
+
+Deno.test("behind target: names the FIRST op past its need-by in the given order", () => {
+  assertEquals(
+    composeBehindTarget(
+      [
+        {
+          // On target — projected day equals its need-by.
+          description: "Cut Stock",
+          needBy: "2026-07-15",
+          projectedCompletionAt: "2026-07-15T20:00:00.000Z",
+        },
+        {
+          // First behind target — this one is named.
+          description: "Machining",
+          needBy: "2026-07-16",
+          projectedCompletionAt: "2026-07-18T14:00:00.000Z",
+        },
+        {
+          // Also behind, but later in topological order — never reached.
+          description: "Assembly",
+          needBy: "2026-07-17",
+          projectedCompletionAt: "2026-07-20T14:00:00.000Z",
+        },
+      ],
+      "UTC"
+    ),
+    "First behind target: Machining (due 2026-07-16, projected 2026-07-18)"
+  );
+});
+
+Deno.test("behind target: projected day is the FACTORY day, not UTC's", () => {
+  // 03:30 IST on the 17th is 22:00 UTC on the 16th — on target in UTC,
+  // behind target on the factory calendar.
+  assertEquals(
+    composeBehindTarget(
+      [
+        {
+          description: "Machining",
+          needBy: "2026-07-16",
+          projectedCompletionAt: "2026-07-16T22:00:00.000Z",
+        },
+      ],
+      "Asia/Kolkata"
+    ),
+    "First behind target: Machining (due 2026-07-16, projected 2026-07-17)"
+  );
+});
+
+Deno.test("behind target: null when every op meets its target", () => {
+  assertEquals(
+    composeBehindTarget(
+      [
+        {
+          description: "Cut Stock",
+          needBy: "2026-07-15",
+          projectedCompletionAt: "2026-07-14T20:00:00.000Z",
+        },
+        {
+          description: "Assembly",
+          needBy: "2026-07-17",
+          projectedCompletionAt: "2026-07-17T14:00:00.000Z",
+        },
+      ],
+      "UTC"
+    ),
+    null
+  );
+});
+
+Deno.test("behind target: ops with no need-by (or no placement) are skipped", () => {
+  // No due date on the job → every need-by is null → nothing to attribute.
+  assertEquals(
+    composeBehindTarget(
+      [
+        {
+          description: "Cut Stock",
+          needBy: null,
+          projectedCompletionAt: "2026-07-18T14:00:00.000Z",
+        },
+      ],
+      "UTC"
+    ),
+    null
+  );
+  // A null-needBy op is skipped, not treated as behind; an unplaced op
+  // (null projection) is skipped too — the next behind-target op is named.
+  assertEquals(
+    composeBehindTarget(
+      [
+        {
+          description: "Cut Stock",
+          needBy: null,
+          projectedCompletionAt: "2026-07-18T14:00:00.000Z",
+        },
+        {
+          description: "Deburr",
+          needBy: "2026-07-16",
+          projectedCompletionAt: null,
+        },
+        {
+          description: "Machining",
+          needBy: "2026-07-16",
+          projectedCompletionAt: "2026-07-18T14:00:00.000Z",
+        },
+      ],
+      "UTC"
+    ),
+    "First behind target: Machining (due 2026-07-16, projected 2026-07-18)"
+  );
+  assertEquals(composeBehindTarget([], "UTC"), null);
+});
+
+Deno.test("behind target: a blank description stays readable", () => {
+  assertEquals(
+    composeBehindTarget(
+      [
+        {
+          description: null,
+          needBy: "2026-07-16",
+          projectedCompletionAt: "2026-07-18T14:00:00.000Z",
+        },
+      ],
+      "UTC"
+    ),
+    "First behind target: an operation (due 2026-07-16, projected 2026-07-18)"
   );
 });
 

@@ -23,6 +23,10 @@ import {
   extendWindowsByOvertime,
   subtractAbsences,
 } from "./people-utils.ts";
+import {
+  type BehindTargetOperation,
+  composeBehindTarget,
+} from "./conflict-messages.ts";
 import { buildScheduledOperations } from "./date-calculator.ts";
 import { calculateDurationHours } from "./duration-calculator.ts";
 import {
@@ -116,6 +120,14 @@ export class SchedulingEngine {
    * (spec 2026-08-15 dual dates).
    */
   private needByByOperation: Map<string, string | null> = new Map();
+  /**
+   * Forward topological order of this job's operation ids — the need-by
+   * pass's dependency graph read front-to-back (set by computeNeedBys, the
+   * same DAG placement orders itself by). Reused by the behind-target
+   * attribution so "first behind target" means first in the routing, not
+   * first in map-insertion order.
+   */
+  private topologicalOrder: string[] = [];
   /**
    * The run's one availability-windows fetch, shared by the need-by pass and
    * the finite placement context so targets and forecasts run on the SAME
@@ -553,6 +565,7 @@ export class SchedulingEngine {
    */
   private async computeNeedBys(): Promise<void> {
     this.needByByOperation = new Map();
+    this.topologicalOrder = [];
     const operations = Array.from(this.scheduledOperations.values());
     if (operations.length === 0) {
       return;
@@ -576,6 +589,10 @@ export class SchedulingEngine {
       })),
       this.dependencies
     );
+
+    // Keep the graph's forward order for the behind-target attribution — the
+    // one topological order the engine already owns; never invent a new sort.
+    this.topologicalOrder = graph.topologicalSort("forward");
 
     this.needByByOperation = computeNeedByDates({
       operations,
@@ -1197,18 +1214,59 @@ export class SchedulingEngine {
   }
 
   /**
+   * Job-level behind-target attribution (spec 2026-08-15 dual dates). Only
+   * when the JOB's verdict is late — the same judgment persistChanges uses
+   * for newly-late: projected finish past the due date on the FACTORY
+   * calendar — walk the operations in topological order and name the first
+   * one whose projected finish misses its backward need-by target. Purely
+   * informational: it rides the job-level cause sentence and never sets
+   * per-op conflicts (targets are outputs, not constraints).
+   */
+  private composeBehindTargetSentence(): string | null {
+    const dueDate = this.job?.dueDate ?? null;
+    if (!dueDate || !this.projectedCompletionAt) return null;
+    const tz = this.job?.timezone ?? "UTC";
+    if (businessDay(this.projectedCompletionAt, tz) <= dueDate) return null;
+
+    const operations: BehindTargetOperation[] = [];
+    for (const opId of this.topologicalOrder) {
+      const op = this.scheduledOperations.get(opId);
+      if (!op) continue;
+      operations.push({
+        description: op.description ?? null,
+        needBy: this.needByByOperation.get(opId) ?? null,
+        projectedCompletionAt: op.projectedCompletionAt ?? null,
+      });
+    }
+    return composeBehindTarget(operations, tz);
+  }
+
+  /**
    * The binding-resource explanation for this job's timing — the first
    * conflict reason if any, else the first placement's schedule note. Feeds the
-   * expedite "best case" bottleneck sentence.
+   * expedite "best case" bottleneck sentence. When the job's verdict is late,
+   * the behind-target attribution ("First behind target: …") is appended so
+   * the sentence also names WHERE the plan first falls behind its targets.
    */
   getCause(): string | null {
+    let cause: string | null = null;
     for (const op of this.scheduledOperations.values()) {
-      if (op.hasConflict && op.conflictReason) return op.conflictReason;
+      if (op.hasConflict && op.conflictReason) {
+        cause = op.conflictReason;
+        break;
+      }
     }
-    for (const p of this.workCenterSelector?.getPlannedReservations() ?? []) {
-      if (p.scheduleNote) return p.scheduleNote;
+    if (!cause) {
+      for (const p of this.workCenterSelector?.getPlannedReservations() ?? []) {
+        if (p.scheduleNote) {
+          cause = p.scheduleNote;
+          break;
+        }
+      }
     }
-    return null;
+    const behindTarget = this.composeBehindTargetSentence();
+    if (!behindTarget) return cause;
+    return cause ? `${cause}. ${behindTarget}` : behindTarget;
   }
 
   /**

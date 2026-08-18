@@ -11,6 +11,8 @@
  * English by design, not i18n'd.
  */
 
+import { businessDay } from "./date-utils.ts";
+
 /**
  * Which finite resource pushed an operation's start past its earliest
  * feasible start, and who held it. Built by the slot allocator: `resource`
@@ -149,6 +151,45 @@ export function composePlacementNote(
     case "outside-processing":
       return null;
   }
+}
+
+/**
+ * One operation's dual dates for the behind-target attribution (spec
+ * 2026-08-15 dual dates): the backward need-by TARGET ("YYYY-MM-DD" | null —
+ * null when the job has no due date) and the forward placement's projected
+ * finish (exact instant | null — null when placement failed).
+ */
+export type BehindTargetOperation = {
+  description: string | null;
+  /** Backward need-by target ("YYYY-MM-DD"). */
+  needBy: string | null;
+  /** Forward placement's projected finish (ISO instant). */
+  projectedCompletionAt: string | null;
+};
+
+/**
+ * Job-level lateness attribution: names the FIRST operation whose projected
+ * finish lands on a business day AFTER its need-by target. Callers pass the
+ * operations in topological order (the engine's dependency-graph order), so
+ * "first" means first in the routing — the earliest point the plan falls
+ * behind its targets. Ops missing either date are skipped; returns null when
+ * nothing is behind target. Appended to the JOB's late-conflict sentence
+ * only — targets are informational and never set per-op conflicts.
+ */
+export function composeBehindTarget(
+  operations: BehindTargetOperation[],
+  timeZone: string
+): string | null {
+  for (const op of operations) {
+    if (!op.needBy || !op.projectedCompletionAt) continue;
+    const projectedDay = businessDay(op.projectedCompletionAt, timeZone);
+    if (projectedDay > op.needBy) {
+      return `First behind target: ${
+        op.description ? op.description : "an operation"
+      } (due ${op.needBy}, projected ${projectedDay})`;
+    }
+  }
+  return null;
 }
 
 export function composeLateConflict(
