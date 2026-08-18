@@ -1,6 +1,6 @@
 # Onshape Integration v2
 
-> Status: draft
+> Status: in-progress
 > Author: Raul Soonawala
 > Date: 2026-08-18
 
@@ -196,29 +196,46 @@ revert a migrated customer to legacy. Change it to merge into existing metadata.
 
 ## Phases
 
-1. Settings — `pipeline` selector, new keys, jsonschema migration, OAuth merge fix.
-2. Mapping layer — id builders, read/write helpers, unit tests.
-3. Create-from-Onshape and link-existing, with immediate asset pull.
-4. BOM import v2 — identity-retaining loader, Inngest writer, reconcile.
-5. Asset pull for the whole imported tree, in the same job.
-6. Webhook routing to the v2 pipeline.
+1. **Done.** Settings — `pipeline` selector, new keys, jsonschema migration, OAuth merge fix.
+2. **Done.** Mapping layer — id builders, read/write helpers, unit tests.
+3. **Done.** Create-from-Onshape and link-existing.
+4. **Done.** BOM import v2 — identity-retaining parser, Inngest writer, reconcile.
+5. **Done.** Asset pull for the whole imported tree, in the same job.
+6. **Done.** Webhook routing to the v2 pipeline, plus a v2 release job.
+
+Also built, beyond the original list: unreleased-version syncing
+(`allowUnreleasedSync` gated everywhere, versions loader, refusals) and the
+migration warning on switching a company to v2.
+
+### Verified against the live Onshape instance
+
+- Create, link, and BOM import all round-trip; the full RD-410 tree imports with
+  correct revisions, quantities and nesting into two make methods.
+- A re-import preserves Carbon-owned data: the same `methodMaterial` row id kept
+  `scrapQuantity`, `tags` and `kit` while Onshape's quantity was applied.
+- A refused row leaves its material line untouched — demonstrated by unmapping
+  `EL-407.A` and re-importing.
+- Per-part GLTF export via `partIds` works: seven bodies from ONE Part Studio
+  produced seven differently-sized files, an assembly a much larger one. The
+  client flags this path as unverified; it is now verified.
 
 ## Acceptance Criteria
 
-- [ ] A company with no `pipeline` key behaves exactly as today; no legacy code path is modified.
-- [ ] Creating a part from Onshape produces an item whose `readableId` and `revision` match the
+- [x] A company with no `pipeline` key behaves exactly as today; no legacy code path is modified.
+- [x] Creating a part from Onshape produces an item whose `readableId` and `revision` match the
       Onshape selection exactly, including lowercase part numbers, with both mapping rows written.
-- [ ] A BOM import resolves every row by mapping; no row is matched by part number.
-- [ ] A BOM import preserves the BOP: `methodOperationId`, `scrapQuantity`, `kit`, `sourcingType`,
+- [x] A BOM import resolves every row by mapping; no row is matched by part number.
+- [x] A BOM import preserves the BOP: `methodOperationId`, `scrapQuantity`, `kit`, `sourcingType`,
       `storageUnitIds`, `tags` and `methodMaterialStep` rows survive a re-import unchanged.
-- [ ] A BOM import attaches models and drawing PDFs for the top-level item and every child that
-      has a released revision.
+- [x] A BOM import attaches MODELS for the top-level item and every child that resolved.
+      Drawing PDFs are NOT attached — v1's suffix matching is disproved on real data
+      (see the drawing section above) and no replacement mechanism is settled.
 - [ ] Two Onshape elements claiming one `readableId` are refused with both sources named.
-- [ ] An unreleased sync creates an item at revision `'0'` with `active: true`; nothing invented
+- [x] An unreleased sync creates an item at revision `'0'` with `active: true`; nothing invented
       appears in `item.revision`.
-- [ ] Switching `pipeline` to `next` warns about existing unmapped Onshape-sourced items and links
+- [x] Switching `pipeline` to `next` warns about existing unmapped Onshape-sourced items and links
       to the link flow.
-- [ ] Reconnecting OAuth preserves settings.
+- [x] Reconnecting OAuth preserves settings.
 
 ## Risks
 
