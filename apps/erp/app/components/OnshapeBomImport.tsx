@@ -82,6 +82,11 @@ export const OnshapeBomImport = ({
 
   const rows = preview.data?.data?.rows ?? [];
   const summary = preview.data?.data?.summary;
+  // Rows Onshape sent that Carbon cannot import at all — no part number, no
+  // addressable source, or a parent that was itself dropped. Counting them
+  // silently would present a partial BOM as the whole one.
+  const droppedRows =
+    (preview.data?.data?.skipped ?? 0) + (preview.data?.data?.orphaned ?? 0);
   const previewError = preview.data?.error ?? null;
   const isLoadingPreview = preview.state !== "idle";
   const isImporting = importer.state !== "idle";
@@ -186,6 +191,26 @@ export const OnshapeBomImport = ({
                         </Badge>
                       )}
                     </HStack>
+
+                    {droppedRows > 0 && (
+                      <div className="flex w-full items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+                        <LuTriangleAlert className="mt-0.5 shrink-0 text-destructive" />
+                        <div>
+                          <p className="font-medium">
+                            <Trans>
+                              {droppedRows} Onshape rows cannot be imported
+                            </Trans>
+                          </p>
+                          <p className="text-muted-foreground">
+                            <Trans>
+                              They have no part number, or no addressable
+                              source, or sit under a row that does. Give them a
+                              part number in Onshape to include them.
+                            </Trans>
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {(summary.createRevision > 0 || summary.ambiguous > 0) && (
                       <div className="flex w-full items-start gap-2 rounded-md border border-yellow-500/40 bg-yellow-500/5 p-3 text-sm">

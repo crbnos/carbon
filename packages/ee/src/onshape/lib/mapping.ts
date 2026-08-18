@@ -365,6 +365,26 @@ export async function writeRevisionMapping(
     createdBy: string;
   }
 ): Promise<{ ok: true } | { ok: false; conflict: boolean; error: string }> {
+  // Replace THIS item's own provenance row first. The always-enforced
+  // UNIQUE (entityType, entityId, integration, companyId) means re-linking an
+  // item to a NEWER release would otherwise 23505 against itself — which reads
+  // as "another item claims this release" and is a different problem entirely.
+  const removed = await serviceRole
+    .from("externalIntegrationMapping")
+    .delete()
+    .eq("integration", ONSHAPE_REVISION_INTEGRATION)
+    .eq("entityType", ONSHAPE_MAPPING_ENTITY_TYPE)
+    .eq("entityId", args.itemId)
+    .eq("companyId", args.companyId);
+
+  if (removed.error) {
+    return {
+      ok: false,
+      conflict: false,
+      error: `Failed to clear the previous Onshape revision link: ${removed.error.message}`
+    };
+  }
+
   const inserted = await serviceRole.from("externalIntegrationMapping").insert({
     entityType: ONSHAPE_MAPPING_ENTITY_TYPE,
     entityId: args.itemId,

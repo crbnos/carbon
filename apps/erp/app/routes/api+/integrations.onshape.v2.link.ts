@@ -7,6 +7,7 @@ import {
   getOnshapeV2Settings,
   parseElementExternalId,
   readElementMappingsForItems,
+  readItemIdForRevision,
   readItemIdsForElement,
   resolveOnshapeRevision,
   revisionsMatch,
@@ -65,8 +66,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-
-  const settings = await getOnshapeV2Settings(client, companyId);
+  // The gate is company CONFIGURATION, not user data. Reading it with the
+  // user's client silently requires settings_view on top of the parts
+  // permission this route declares.
+  const settings = await getOnshapeV2Settings(serviceRole, companyId);
   if (!settings.isV2) {
     return {
       success: false,
@@ -138,9 +141,26 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    const sameRevision = (others.data ?? []).find((other) =>
-      revisionsMatch(other.revision, input.revision)
-    );
+    // Prefer the REVISION MAPPING as the authority: item.revision is Carbon's
+    // own label and need not equal Onshape's, so comparing the two only works
+    // while the numbering happens to agree. The mapping is the fact.
+    let claimedByRevisionMapping: string | null = null;
+    if (input.revisionId) {
+      claimedByRevisionMapping = await readItemIdForRevision(client, {
+        companyId,
+        revisionId: input.revisionId
+      });
+    }
+
+    const sameRevision =
+      (claimedByRevisionMapping && claimedByRevisionMapping !== input.itemId
+        ? (others.data ?? []).find(
+            (other) => other.id === claimedByRevisionMapping
+          )
+        : undefined) ??
+      (others.data ?? []).find((other) =>
+        revisionsMatch(other.revision, input.revision)
+      );
 
     if (sameRevision) {
       return {
@@ -291,6 +311,17 @@ export async function action({ request }: ActionFunctionArgs) {
         conflict: recorded.conflict,
         error: recorded.error
       });
+      // A CONFLICT means another Carbon item already owns this Onshape
+      // release. Reporting success would leave the user believing the link is
+      // complete when its provenance half silently belongs elsewhere.
+      if (recorded.conflict) {
+        return {
+          success: false,
+          itemId: input.itemId,
+          message:
+            "Linked the part, but another Carbon item already claims this exact Onshape release. Unlink it there, then link again."
+        };
+      }
     }
   }
 

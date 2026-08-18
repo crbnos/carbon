@@ -1,7 +1,14 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getOnshapeV2Settings, writeElementMapping } from "@carbon/ee/onshape";
+import {
+  buildElementExternalId,
+  getOnshapeClient,
+  getOnshapeV2Settings,
+  readElementMappingsForItems,
+  resolveOnshapeRevision,
+  writeElementMapping
+} from "@carbon/ee/onshape";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -34,8 +41,14 @@ export const onshapeV2ImportValidator = z.object({
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
 
+  // The job MINTS parts for unmapped rows, which every other surface gates
+  // behind `create`, and it DELETES material lines, which the UI gates behind
+  // `delete`. Asking only for `update` let this route do more than the
+  // permission it checked.
   const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+    update: "parts",
+    create: "parts",
+    delete: "parts"
   });
 
   const formData = await request.formData();
@@ -47,7 +60,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const input = validation.data;
 
-  const settings = await getOnshapeV2Settings(client, companyId);
+  const serviceRole = getCarbonServiceRole();
+  // The gate is company CONFIGURATION, not user data. Reading it with the
+  // user's client silently requires settings_view on top of the parts
+  // permission this route declares.
+  const settings = await getOnshapeV2Settings(serviceRole, companyId);
   if (!settings.isV2) {
     return {
       success: false,
@@ -114,8 +131,62 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (input.partNumber) {
+    // Never write a mapping straight from the POST body. Every other v2 write
+    // re-resolves the selection against Onshape first, so a hand-posted form
+    // cannot stamp an item with an element it does not own.
+
+    const existing = await readElementMappingsForItems(client, {
+      companyId,
+      itemIds: [method.data.itemId]
+    });
+    const current = existing.get(method.data.itemId);
+    const incoming = buildElementExternalId({
+      documentId: input.documentId,
+      elementId: input.elementId,
+      partId: null
+    });
+    if (current && buildElementExternalId(current.ref) !== incoming) {
+      return {
+        success: false,
+        message:
+          "This item is already linked to a different Onshape element. Unlink it before importing from another assembly."
+      };
+    }
+
+    if (input.revision) {
+      const onshape = await getOnshapeClient(serviceRole, companyId, userId);
+      if (!onshape.client) {
+        return {
+          success: false,
+          message: onshape.error ?? "Onshape is not connected"
+        };
+      }
+      let onshapeCompanyId = settings.onshapeCompanyId;
+      if (!onshapeCompanyId) {
+        const companies = await onshape.client.getCompanies();
+        onshapeCompanyId = Array.isArray(companies)
+          ? (companies[0]?.id ?? null)
+          : null;
+      }
+      if (onshapeCompanyId) {
+        const resolved = await resolveOnshapeRevision(onshape.client, {
+          onshapeCompanyId,
+          partNumber: input.partNumber,
+          elementType: input.elementType ?? 1,
+          revision: input.revision,
+          documentId: input.documentId,
+          versionId: input.versionId,
+          elementId: input.elementId,
+          partId: null
+        });
+        if (!resolved.ok) {
+          return { success: false, message: resolved.message };
+        }
+      }
+    }
+
     try {
-      await writeElementMapping(getCarbonServiceRole(), {
+      await writeElementMapping(serviceRole, {
         companyId,
         itemId: method.data.itemId,
         ref: {

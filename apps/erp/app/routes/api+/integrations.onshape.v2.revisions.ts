@@ -66,8 +66,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const serviceRole = getCarbonServiceRole();
-
-  const settings = await getOnshapeV2Settings(client, companyId);
+  // The gate is company CONFIGURATION, not user data. Reading it with the
+  // user's client silently requires settings_view on top of the parts
+  // permission this route declares.
+  const settings = await getOnshapeV2Settings(serviceRole, companyId);
   if (!settings.isV2) {
     return {
       data: null,
