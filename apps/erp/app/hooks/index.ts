@@ -21,6 +21,7 @@ import { useDateFormatter } from "./useDateFormatter";
 import { useFlags } from "./useFlags";
 import { useGooglePlaces } from "./useGooglePlaces";
 import { useHighlightFlash } from "./useHighlightFlash";
+import { useIdle } from "./useIdle";
 import { useModelUpload } from "./useModelUpload";
 import { useAllModules, useModules, useSettingsModule } from "./useModules";
 import { useMovingCellRef } from "./useMovingCellRef";
@@ -48,6 +49,7 @@ export {
   useDateFormatter,
   useFlags,
   useGooglePlaces,
+  useIdle,
   useHighlightFlash,
   useAllModules,
   useModules,
