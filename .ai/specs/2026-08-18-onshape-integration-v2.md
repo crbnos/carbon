@@ -139,9 +139,13 @@ equality against the new value so an absent key means legacy **by construction**
 |---|---|---|---|
 | `pipeline` | options: `legacy` \| `next` | `legacy` | Which implementation handles this company. The migration lever. |
 | `attachAssetsOnRelease` | switch | on | v2 webhook-driven asset attach. Nested under `next`. |
-| `importRevisionsOnRelease` | switch | on | v2 webhook-driven revision import. Nested under `next`. |
-| `releaseImportModeV2` | options | `changeNotice` | Same meaning as today. Nested under `importRevisionsOnRelease`. |
+| `releaseImportV2` | options: `off` \| `changeNotice` \| `revision` | `changeNotice` | v2 webhook-driven revision import AND its mode, in one field. Nested under `next`. |
 | `allowUnreleasedSync` | switch | **off** | Whether the version picker offers never-released versions. |
+
+`releaseImportV2` collapses what the draft had as a switch plus a mode. `visibleWhen` resolves
+exactly one field with no transitive nesting, so a mode nested under a switch that is itself
+nested under `pipeline` would render whenever the switch was on — including on a legacy company.
+One enum with an `off` member has no such second level.
 
 **The existing `assetSyncEnabled` / `releaseImportEnabled` / `releaseImportMode` /
 `webhookSigningSecret` settings stay top-level and unconditional.** They must not be nested under
@@ -193,6 +197,14 @@ revert a migrated customer to legacy. Change it to merge into existing metadata.
   diff (create / update / unchanged per row), not just a row list.
 - **Per-item Onshape state** in the BoM explorer, sourced from the mapping rather than
   `onshapeData`.
+- **Unreleased version browser** — a second entry point on the import panel, shown only when
+  `allowUnreleasedSync` is on, listing the document's versions and marking which carry a release.
+  Without it the setting had no path that OFFERED an unreleased version, so its only working
+  effect was to weaken a guard — the opposite of its label.
+- **Import outcome notification** — one in-app notification to whoever started an import, and
+  only when something needs attention. It names the refused parts and why. Nothing else reports
+  back: the panel toasts "Import started", so without it a refused row is indistinguishable from
+  one that imported cleanly.
 
 ## Phases
 
@@ -230,7 +242,10 @@ migration warning on switching a company to v2.
 - [x] A BOM import attaches MODELS for the top-level item and every child that resolved.
       Drawing PDFs are NOT attached — v1's suffix matching is disproved on real data
       (see the drawing section above) and no replacement mechanism is settled.
-- [ ] Two Onshape elements claiming one `readableId` are refused with both sources named.
+- [x] Two Onshape elements claiming one `readableId` are refused with both sources named —
+      verified live: `EL-402.A` was refused while `EL-402.C` held the mapping, and the refusal
+      names both. (The inverse — two legitimate REVISIONS of one part reading as a collision —
+      was the bug that surfaced it.)
 - [x] An unreleased sync creates an item at revision `'0'` with `active: true`; nothing invented
       appears in `item.revision`.
 - [x] Switching `pipeline` to `next` warns about existing unmapped Onshape-sourced items and links
@@ -318,6 +333,15 @@ Resolved during design:
 - Coexistence → one connection, one webhook, pipeline selector.
 - Switch set → five, listed above.
 
+## Known gaps
+
+- **Translations.** 49 new English strings ship with empty `msgstr` in 12 locales. That matches
+  upstream practice — `pnpm translate` needs an LLM key and is run as its own pass, not per PR.
+- **Drawing attachment.** Still unsolved; see the drawing section. v2 refuses rather than guessing.
+
 ## Changelog
 
 - 2026-08-18: Created.
+- 2026-08-19: All six phases done and audited twice. Corrected the settings table to the shipped
+  `releaseImportV2` enum. Recorded the unreleased-version browser, the import-outcome
+  notification, and the collision criterion as met.
