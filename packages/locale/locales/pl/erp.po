@@ -2549,10 +2549,10 @@ msgid "Beginning"
 msgstr "Początek"
 
 msgid "Behind target by {behindDays} day(s)"
-msgstr ""
+msgstr "Opóźnienie o {behindDays} dzień(dni)"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "Opóźnienie o {daysBehindTarget} dzień(dni)"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -11718,7 +11718,7 @@ msgstr "Postęp"
 
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "Proj. {0}"
 
 msgid "Project"
 msgstr "Projekt"
@@ -11734,7 +11734,7 @@ msgstr "Początek projektu"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
-msgstr ""
+msgstr "Prognozowana {0}"
 
 msgid "Projected completion"
 msgstr "Przewidywane zakończenie"
@@ -15165,7 +15165,7 @@ msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "Data, w której ta transakcja międzyspółkowa trafia do ksiąg głównych obu firm."
 
 msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
-msgstr ""
+msgstr "Data, do której operacja musi zostać ukończona, aby utrzymać zadanie zgodnie z harmonogramem. Zablokowanie jej zastępuje obliczony cel."
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "Data, w którym otrzymałeś zapytanie ofertowe (RFQ) od klienta. Domyślnie ustawione na dzisiaj."
@@ -17437,7 +17437,7 @@ msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-
 msgstr "Kiedy ten konkretny lot/numer seryjny wygasa; napędza selekcję FEFO i politykę czasu przechowywania przy zużyciu."
 
 msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
-msgstr ""
+msgstr "W przypadku korzystania z kanban-ów pełny kod kreskowy ukończy wszystkie ilości operacji zamiast tylko jednej"
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Kiedy zobowiązałeś się do dostawy; planowanie traktuje to jako datę wymagalności popytu do spełnienia."

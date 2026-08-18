@@ -2549,10 +2549,10 @@ msgid "Beginning"
 msgstr "开始"
 
 msgid "Behind target by {behindDays} day(s)"
-msgstr ""
+msgstr "落后目标 {behindDays} 天"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "落后目标 {daysBehindTarget} 天"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -11718,7 +11718,7 @@ msgstr "进度"
 
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "预计 {0}"
 
 msgid "Project"
 msgstr "项目"
@@ -11734,7 +11734,7 @@ msgstr "项目开始"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
-msgstr ""
+msgstr "预计 {0}"
 
 msgid "Projected completion"
 msgstr "预计完成"
@@ -15165,7 +15165,7 @@ msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "该公司间交易记入两家公司总账的日期。"
 
 msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
-msgstr ""
+msgstr "此操作必须完成的日期以保持工作按计划进行。固定它将覆盖计算的目标。"
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "您收到此询价单（RFQ）的日期。默认为今天。"
@@ -17437,7 +17437,7 @@ msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-
 msgstr "当此特定批次/序列号过期时;驱动FEFO选择和消费时的保质期政策。"
 
 msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
-msgstr ""
+msgstr "使用看板时，完整条形码将完成操作的所有数量，而不仅仅是一个"
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "当您承诺交货时;计划将其视为履行的需求到期日期。"

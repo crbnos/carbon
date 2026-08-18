@@ -2549,10 +2549,10 @@ msgid "Beginning"
 msgstr "Anfang"
 
 msgid "Behind target by {behindDays} day(s)"
-msgstr ""
+msgstr "Hinter Ziel um {behindDays} Tag(e)"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "Hinter Ziel um {daysBehindTarget} Tag(e)"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -11718,7 +11718,7 @@ msgstr "Fortschritt"
 
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "Proj. {0}"
 
 msgid "Project"
 msgstr "Projekt"
@@ -11734,7 +11734,7 @@ msgstr "Projektstart"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
-msgstr ""
+msgstr "Geplant {0}"
 
 msgid "Projected completion"
 msgstr "Geplante Fertigstellung"
@@ -15165,7 +15165,7 @@ msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "Das Datum, an dem diese konzernübergreifende Transaktion in den Hauptbüchern beider Unternehmen aufgezeichnet wird."
 
 msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
-msgstr ""
+msgstr "Das Datum, bis zu dem dieser Arbeitsgang beendet sein muss, um den Job im Plan zu halten. Das Fixieren setzt das berechnete Ziel außer Kraft."
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "Das Datum, an dem Sie diese Angebotsanfrage (RFQ) vom Kunden erhalten haben. Standardmäßig wird das heutige Datum verwendet."
@@ -17437,7 +17437,7 @@ msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-
 msgstr "Wann diese bestimmte Charge/Seriennummer abläuft; treibt FEFO-Kommissionierung und die Lagerfähigkeit-Richtlinie beim Verbrauch."
 
 msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
-msgstr ""
+msgstr "Bei Verwendung von Kanbans vervollständigt der komplette Barcode alle Mengen eines Arbeitsgangs statt nur einer"
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Wann Sie sich zur Lieferung verpflichtet haben; Planung behandelt dies als das Nachfragefälligkeitsdatum für die Erfüllung."

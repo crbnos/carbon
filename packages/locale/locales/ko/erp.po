@@ -2549,10 +2549,10 @@ msgid "Beginning"
 msgstr "시작"
 
 msgid "Behind target by {behindDays} day(s)"
-msgstr ""
+msgstr "목표 대비 {behindDays}일 뒤떨어짐"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "목표 대비 {daysBehindTarget}일 뒤떨어짐"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -11718,7 +11718,7 @@ msgstr "진행 상황"
 
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "예상. {0}"
 
 msgid "Project"
 msgstr "프로젝트"
@@ -11734,7 +11734,7 @@ msgstr "프로젝트 시작"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
-msgstr ""
+msgstr "예상 {0}"
 
 msgid "Projected completion"
 msgstr "예상 완료"
@@ -15165,7 +15165,7 @@ msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "이 회사 간 거래가 양사의 원장에 반영되는 날짜입니다."
 
 msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
-msgstr ""
+msgstr "작업을 일정에 맞게 유지하기 위해 이 작업이 완료되어야 하는 날짜입니다. 고정하면 계산된 목표가 무시됩니다."
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "고객으로부터 이 RFQ를 받은 날짜입니다. 기본값은 오늘입니다."
@@ -17437,7 +17437,7 @@ msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-
 msgstr "이 특정 로트/일련번호가 만료되는 시점으로, FEFO 피킹과 소비 시 유효기간 정책에 반영됩니다."
 
 msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
-msgstr ""
+msgstr "칸반을 사용할 때 전체 바코드는 하나만이 아닌 작업의 모든 수량을 완료합니다."
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "귀사가 납품하기로 약속한 시점으로, 계획에서는 이를 이행을 위한 수요 마감일로 취급합니다."

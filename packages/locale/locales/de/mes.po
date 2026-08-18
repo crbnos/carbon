@@ -170,7 +170,7 @@ msgid "Batch number is required"
 msgstr "Chargennummer ist erforderlich"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "Hinter dem Ziel um {daysBehindTarget} Tag(e)"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1025,7 +1025,7 @@ msgstr "Fortschritt"
 #. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "Proj. {0}"
 
 msgid "Quality Issue"
 msgstr "Qualitätsproblem"

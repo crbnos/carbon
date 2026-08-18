@@ -2549,10 +2549,10 @@ msgid "Beginning"
 msgstr "Начало"
 
 msgid "Behind target by {behindDays} day(s)"
-msgstr ""
+msgstr "Отстает от целевого показателя на {behindDays} день(дня)"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "Отстает от целевого показателя на {daysBehindTarget} день(дня)"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -11718,7 +11718,7 @@ msgstr "Прогресс"
 
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "Прогн. {0}"
 
 msgid "Project"
 msgstr "Проект"
@@ -11734,7 +11734,7 @@ msgstr "Начало проекта"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
-msgstr ""
+msgstr "Прогнозируемое {0}"
 
 msgid "Projected completion"
 msgstr "Прогнозное завершение"
@@ -15165,7 +15165,7 @@ msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "Дата, когда эта внутригрупповая операция записывается в главные книги обеих компаний."
 
 msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
-msgstr ""
+msgstr "Дата, к которой должна быть завершена операция, чтобы соблюдать график задания. Привязка этой даты переопределит рассчитанное целевое значение."
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "Дата получения этого запроса на коммерческое предложение от клиента. По умолчанию — сегодняшняя дата."
@@ -17437,7 +17437,7 @@ msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-
 msgstr "Когда эти конкретные партия/серийный номер истекает; определяет выбор FEFO и политику срока хранения при потреблении."
 
 msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
-msgstr ""
+msgstr "При использовании канбанов сканирование полного штрих-кода завершит все количества операции вместо одного"
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Когда вы обязались доставить; планирование рассматривает это как дату требования спроса для выполнения."

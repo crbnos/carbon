@@ -170,7 +170,7 @@ msgid "Batch number is required"
 msgstr "बैच नंबर आवश्यक है"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1025,7 +1025,7 @@ msgstr "प्रगति"
 #. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "प्रोज. {0}"
 
 msgid "Quality Issue"
 msgstr "गुणवत्ता समस्या"

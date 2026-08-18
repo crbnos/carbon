@@ -2549,10 +2549,10 @@ msgid "Beginning"
 msgstr "आरंभ"
 
 msgid "Behind target by {behindDays} day(s)"
-msgstr ""
+msgstr "लक्ष्य से {behindDays} दिन पीछे"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "लक्ष्य से {daysBehindTarget} दिन पीछे"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -11718,7 +11718,7 @@ msgstr "प्रगति"
 
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "प्रोज. {0}"
 
 msgid "Project"
 msgstr "प्रोजेक्ट"
@@ -11734,7 +11734,7 @@ msgstr "प्रोजेक्ट शुरुआत"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
-msgstr ""
+msgstr "अनुमानित {0}"
 
 msgid "Projected completion"
 msgstr "अनुमानित पूर्णता"
@@ -15165,7 +15165,7 @@ msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "वह तारीख जब यह अंतरकंपनी लेनदेन दोनों कंपनियों की खाता बही में दर्ज होता है।"
 
 msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
-msgstr ""
+msgstr "वह तारीख़ जब यह ऑपरेशन शेड्यूल में नौकरी बनाए रखने के लिए समाप्त होना चाहिए। इसे पिन करना गणना किए गए लक्ष्य को ओवरराइड करता है।"
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "वह तारीख जब आपको ग्राहक से यह आरएफक्यू प्राप्त हुआ था। डिफ़ॉल्ट रूप से आज की तारीख होगी।"
@@ -17437,7 +17437,7 @@ msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-
 msgstr "जब यह विशिष्ट लॉट/सीरीज समाप्त हो जाता है; एफईएफओ चुनने और खपत पर शेल्फ-जीवन नीति को चलाता है।"
 
 msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
-msgstr ""
+msgstr "कनबन का उपयोग करते समय, पूर्ण बारकोड एक ऑपरेशन की सभी मात्राओं को पूरा करेगा, बजाय केवल एक के"
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "जब आप डिलीवरी के लिए प्रतिबद्ध हुए; योजना इसे पूरा करने के लिए मांग-देय-तारीख के रूप में मानती है।"

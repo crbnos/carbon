@@ -170,7 +170,7 @@ msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1025,7 +1025,7 @@ msgstr "진행 상황"
 #. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "예상. {0}"
 
 msgid "Quality Issue"
 msgstr "품질 이슈"

@@ -2549,10 +2549,10 @@ msgid "Beginning"
 msgstr "Başlangıç"
 
 msgid "Behind target by {behindDays} day(s)"
-msgstr ""
+msgstr "Hedef {behindDays} gün geride"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "Hedef {daysBehindTarget} gün geride"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -11718,7 +11718,7 @@ msgstr "İlerleme"
 
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "Proj. {0}"
 
 msgid "Project"
 msgstr "Proje"
@@ -11734,7 +11734,7 @@ msgstr "Proje başlangıcı"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
-msgstr ""
+msgstr "Planlanan {0}"
 
 msgid "Projected completion"
 msgstr "Öngörülen tamamlanma"
@@ -15165,7 +15165,7 @@ msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "Bu şirketlerarası işlemin her iki şirketin muhasebe defterlerine kaydedildiği tarih."
 
 msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
-msgstr ""
+msgstr "Bu operasyonun işi programa uygun tutmak için bitirmesi gereken tarih. Sabitlemek hesaplanan hedefi geçersiz kılar."
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "Bu RFQ'yu müşteriden aldığınız tarih. Varsayılan olarak bugün ayarlanır."
@@ -17437,7 +17437,7 @@ msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-
 msgstr "Bu spesifik lot/seri numarası ne zaman sona erdiği; FEFO seçimini ve tüketimde raf ömrü politikasını belirler."
 
 msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
-msgstr ""
+msgstr "Kanbanlar kullanıldığında, tam barkod bir operasyonun tüm miktarlarını tamamlayacak, sadece birini değil"
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Teslim etmeyi taahhüt ettiğiniz zaman; planlama bunu karşılama için talep vadesi tarihi olarak değerlendirir."

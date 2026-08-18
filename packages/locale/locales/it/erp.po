@@ -2549,10 +2549,10 @@ msgid "Beginning"
 msgstr "Inizio"
 
 msgid "Behind target by {behindDays} day(s)"
-msgstr ""
+msgstr "In ritardo di {behindDays} giorno/i rispetto al target"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "In ritardo di {daysBehindTarget} giorno/i rispetto al target"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -11718,7 +11718,7 @@ msgstr "Progresso"
 
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "Prev. {0}"
 
 msgid "Project"
 msgstr "Progetto"
@@ -11734,7 +11734,7 @@ msgstr "Inizio progetto"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
-msgstr ""
+msgstr "Previsto {0}"
 
 msgid "Projected completion"
 msgstr "Completamento previsto"
@@ -15165,7 +15165,7 @@ msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "La data in cui questa transazione interaziendale entra nei libri di entrambe le aziende."
 
 msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
-msgstr ""
+msgstr "La data entro cui deve terminare questa operazione per mantenere il lavoro in programma. Fissarla sovrascrive il target calcolato."
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "La data in cui hai ricevuto questa RFQ dal cliente. Per impostazione predefinita è oggi."
@@ -17437,7 +17437,7 @@ msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-
 msgstr "Quando questo lotto/numero di serie specifico scade; determina la selezione FEFO e la politica di vita di magazzino al consumo."
 
 msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
-msgstr ""
+msgstr "Quando si utilizzano kanban, la scansione del codice a barre completo completerà tutte le quantità dell'operazione anziché una sola"
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Quando vi siete impegnati a consegnare; la pianificazione tratta questo come la data di scadenza della domanda per l'adempimento."

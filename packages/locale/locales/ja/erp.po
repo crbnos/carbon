@@ -2549,10 +2549,10 @@ msgid "Beginning"
 msgstr "開始"
 
 msgid "Behind target by {behindDays} day(s)"
-msgstr ""
+msgstr "ターゲットから {behindDays} 日遅れています"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "ターゲットから {daysBehindTarget} 日遅れています"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -11718,7 +11718,7 @@ msgstr "進捗"
 
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "予定. {0}"
 
 msgid "Project"
 msgstr "プロジェクト"
@@ -11734,7 +11734,7 @@ msgstr "プロジェクト開始"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
-msgstr ""
+msgstr "予定: {0}"
 
 msgid "Projected completion"
 msgstr "予測完了"
@@ -15165,7 +15165,7 @@ msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "この会社間取引が両社の総勘定元帳に記入される日付。"
 
 msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
-msgstr ""
+msgstr "このオペレーションをスケジュール通りに完了させるために必要な完了日付です。ピン留めすると、計算されたターゲットをオーバーライドします。"
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "このRFQを顧客から受け取った日付。デフォルトは今日の日付です。"
@@ -17437,7 +17437,7 @@ msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-
 msgstr "この特定のロット/シリアルが期限切れになるとき。FEFO ピッキングと消費時のシェルフライフポリシーを駆動します。"
 
 msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
-msgstr ""
+msgstr "カンバン使用時、完全なバーコードはオペレーションの数量を1つではなくすべて完了させます。"
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "あなたが配送を約束したいつ。計画はこれをフルフィルメントの需要-到期日として扱います。"

@@ -170,7 +170,7 @@ msgid "Batch number is required"
 msgstr "批次号为必填项"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "落后于目标 {daysBehindTarget} 天"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1025,7 +1025,7 @@ msgstr "进度"
 #. placeholder {0}: formatDate( projectedCompletionDate )
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "预计 {0}"
 
 msgid "Quality Issue"
 msgstr "质量问题"

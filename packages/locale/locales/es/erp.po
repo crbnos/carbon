@@ -2549,10 +2549,10 @@ msgid "Beginning"
 msgstr "Inicio"
 
 msgid "Behind target by {behindDays} day(s)"
-msgstr ""
+msgstr "Atrás del objetivo por {behindDays} día(s)"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr ""
+msgstr "Atrás del objetivo por {daysBehindTarget} día(s)"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -11718,7 +11718,7 @@ msgstr "Progreso"
 
 #. placeholder {0}: formatDate(projectedCompletionDate)
 msgid "Proj. {0}"
-msgstr ""
+msgstr "Proy. {0}"
 
 msgid "Project"
 msgstr "Proyecto"
@@ -11734,7 +11734,7 @@ msgstr "Inicio del proyecto"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
-msgstr ""
+msgstr "Proyectado {0}"
 
 msgid "Projected completion"
 msgstr "Finalización proyectada"
@@ -15165,7 +15165,7 @@ msgid "The date this intercompany transaction hits both companies' ledgers."
 msgstr "La fecha en que esta transacción intercompañía se registra en los libros mayores de ambas empresas."
 
 msgid "The date this operation must finish to keep the job on schedule. Pinning it overrides the calculated target."
-msgstr ""
+msgstr "La fecha en que esta operación debe finalizar para mantener el trabajo en horario. Fijarlo anula el objetivo calculado."
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
 msgstr "La fecha en que recibió esta solicitud de cotización (RFQ) del cliente. Por defecto es la fecha actual."
@@ -17437,7 +17437,7 @@ msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-
 msgstr "Cuándo expira este lote/serie específico; impulsa la recogida FEFO y la política de vida útil en el consumo."
 
 msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
-msgstr ""
+msgstr "Al usar kanbans, el código de barras completo completará todas las cantidades de una operación en lugar de solo una"
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Cuándo se comprometió a entregar; la planificación trata esto como la fecha de vencimiento de la demanda para la realización."
