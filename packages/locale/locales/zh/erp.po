@@ -17419,6 +17419,9 @@ msgstr "当该特定行被承诺发货时;订单标题的承诺日期的行级�
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "当此特定批次/序列号过期时;驱动FEFO选择和消费时的保质期政策。"
 
+msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
+msgstr ""
+
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "当您承诺交货时;计划将其视为履行的需求到期日期。"
 

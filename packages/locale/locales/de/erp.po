@@ -17419,6 +17419,9 @@ msgstr "Wann diese bestimmte Linie zum Versand versprochen wird; Pro-Linie-Auße
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "Wann diese bestimmte Charge/Seriennummer abläuft; treibt FEFO-Kommissionierung und die Lagerfähigkeit-Richtlinie beim Verbrauch."
 
+msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
+msgstr ""
+
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Wann Sie sich zur Lieferung verpflichtet haben; Planung behandelt dies als das Nachfragefälligkeitsdatum für die Erfüllung."
 

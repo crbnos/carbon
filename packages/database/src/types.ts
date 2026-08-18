@@ -23159,6 +23159,7 @@ export type Database = {
           priority: number
           procedureId: string | null
           processId: string
+          projectedCompletionAt: string | null
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
@@ -23209,6 +23210,7 @@ export type Database = {
           priority?: number
           procedureId?: string | null
           processId: string
+          projectedCompletionAt?: string | null
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
@@ -23259,6 +23261,7 @@ export type Database = {
           priority?: number
           procedureId?: string | null
           processId?: string
+          projectedCompletionAt?: string | null
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
@@ -77027,6 +77030,7 @@ export type Database = {
           parentMaterialId: string
           priority: number
           processId: string
+          projectedCompletionAt: string
           quantityComplete: number
           quantityReworked: number
           quantityScrapped: number
@@ -77660,6 +77664,7 @@ export type Database = {
           operationType: Database["public"]["Enums"]["operationType"]
           parentMaterialId: string
           processId: string
+          projectedCompletionAt: string
           quantityComplete: number
           quantityReworked: number
           quantityScrapped: number

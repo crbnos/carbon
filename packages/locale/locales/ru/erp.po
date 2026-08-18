@@ -17419,6 +17419,9 @@ msgstr "Когда эта конкретная строка обещана от�
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "Когда эти конкретные партия/серийный номер истекает; определяет выбор FEFO и политику срока хранения при потреблении."
 
+msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
+msgstr ""
+
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Когда вы обязались доставить; планирование рассматривает это как дату требования спроса для выполнения."
 

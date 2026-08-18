@@ -17419,6 +17419,9 @@ msgstr "When this specific line is promised to ship; per-line override of the or
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 
+msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
+msgstr "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
+
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 

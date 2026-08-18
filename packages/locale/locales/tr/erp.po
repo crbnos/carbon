@@ -17419,6 +17419,9 @@ msgstr "Bu spesifik satırın gönderim için promise edildiği zaman; sipariş 
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "Bu spesifik lot/seri numarası ne zaman sona erdiği; FEFO seçimini ve tüketimde raf ömrü politikasını belirler."
 
+msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
+msgstr ""
+
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Teslim etmeyi taahhüt ettiğiniz zaman; planlama bunu karşılama için talep vadesi tarihi olarak değerlendirir."
 

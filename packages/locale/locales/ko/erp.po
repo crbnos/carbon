@@ -17419,6 +17419,9 @@ msgstr "이 특정 라인의 출하가 약속된 시점으로, 분할 출하 시
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "이 특정 로트/일련번호가 만료되는 시점으로, FEFO 피킹과 소비 시 유효기간 정책에 반영됩니다."
 
+msgid "When using kanbans, the complete barcode will complete all quantities of an operation instead of just one"
+msgstr ""
+
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "귀사가 납품하기로 약속한 시점으로, 계획에서는 이를 이행을 위한 수요 마감일로 취급합니다."
 
