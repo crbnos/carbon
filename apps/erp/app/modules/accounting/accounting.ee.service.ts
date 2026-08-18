@@ -4634,7 +4634,7 @@ export async function createIntercompanyTransaction(
   if (journalLines.error) return journalLines;
 
   // Create intercompany transaction record
-  return client
+  const intercompanyTransaction = await client
     .from("intercompanyTransaction")
     .insert({
       companyGroupId: input.companyGroupId,
@@ -4648,6 +4648,36 @@ export async function createIntercompanyTransaction(
     })
     .select("id")
     .single();
+
+  if (intercompanyTransaction.error) return intercompanyTransaction;
+
+  // Capture the control line so generateEliminationEntries reverses it by
+  // reference like an invoice-posted trade. The manual entry posts a single
+  // balanced Dr/Cr on the source company; its debit line is the control account.
+  await client.from("intercompanyEliminationLine").insert({
+    companyId: input.sourceCompanyId,
+    intercompanyTransactionId: intercompanyTransaction.data.id,
+    role: "Control",
+    journalLineId: journalLines.data[0].id,
+    accountId: input.debitAccountId,
+    amount: input.amount,
+    createdBy: input.userId
+  });
+
+  return intercompanyTransaction;
+}
+
+export async function getIntercompanyEliminationLines(
+  client: SupabaseClient<Database>,
+  transactionIds: string[]
+) {
+  if (transactionIds.length === 0) {
+    return { data: [], error: null };
+  }
+  return client
+    .from("intercompanyEliminationLine")
+    .select("*")
+    .in("intercompanyTransactionId", transactionIds);
 }
 
 export async function runIntercompanyMatching(
@@ -4662,11 +4692,13 @@ export async function runIntercompanyMatching(
 export async function generateEliminations(
   client: SupabaseClient<Database>,
   companyGroupId: string,
-  userId: string
+  userId: string,
+  regenerate = false
 ) {
   return client.rpc("generateEliminationEntries", {
     p_company_group_id: companyGroupId,
-    p_user_id: userId
+    p_user_id: userId,
+    p_regenerate: regenerate
   });
 }
 

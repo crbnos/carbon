@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-17T15:20:04.689Z",
-  "totalTools": 1442,
+  "generated": "2026-08-18T02:41:10.704Z",
+  "totalTools": 1443,
   "modules": 15,
   "tools": [
     {
@@ -3066,6 +3066,34 @@
       }
     },
     {
+      "name": "accounting_getIntercompanyEliminationLines",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get intercompany elimination lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "transactionIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "transactionIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "transactionIds"
+        ]
+      }
+    },
+    {
       "name": "accounting_runIntercompanyMatching",
       "module": "accounting",
       "classification": "WRITE",
@@ -3089,11 +3117,12 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "generate eliminations",
-      "paramCount": 0,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "companyGroupId",
-        "userId"
+        "userId",
+        "regenerate = false"
       ],
       "injectAuth": [
         "companyId",
@@ -3102,7 +3131,12 @@
       ],
       "schema": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "regenerate = false": {}
+        },
+        "required": [
+          "regenerate = false"
+        ]
       }
     },
     {

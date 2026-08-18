@@ -1256,7 +1256,7 @@ serve(async (req: Request) => {
             );
 
             if (icJournalLineId) {
-              await trx
+              const icTxn = await trx
                 .insertInto("intercompanyTransaction")
                 .values({
                   companyGroupId: companyGroupId!,
@@ -1270,7 +1270,92 @@ serve(async (req: Request) => {
                   documentId: salesInvoice.data?.id,
                   status: "Unmatched",
                 })
-                .execute();
+                .returning(["id"])
+                .executeTakeFirstOrThrow();
+
+              // Capture the seller side's role-classified elimination lines so
+              // consolidation reverses them by reference instead of reconstructing
+              // the trade from the GL. The edge function knows each line's role
+              // exactly (Control = IC receivable, Revenue = sales account, COGS =
+              // cost-of-goods account), so no account-class guessing is needed.
+              const eliminationLineInserts: Database["public"]["Tables"]["intercompanyEliminationLine"]["Insert"][] =
+                [];
+              const salesAccount = accountDefaults?.data?.salesAccount;
+              const cogsAccount = accountDefaults?.data?.costOfGoodsSoldAccount;
+
+              journalLineInserts.forEach((line, index) => {
+                const jlId = journalLineResults[index]?.id;
+                if (!jlId) return;
+                let role: "Control" | "Revenue" | "COGS" | null = null;
+                if (index === icReceivableIdx) role = "Control";
+                else if (salesAccount && line.accountId === salesAccount)
+                  role = "Revenue";
+                else if (cogsAccount && line.accountId === cogsAccount)
+                  role = "COGS";
+                if (!role) return;
+                eliminationLineInserts.push({
+                  companyId,
+                  intercompanyTransactionId: icTxn.id,
+                  role,
+                  journalLineId: jlId,
+                  accountId: line.accountId!,
+                  amount: line.amount ?? 0,
+                  itemId: journalLineDimensionsMeta[index]?.itemId ?? null,
+                  quantity: line.quantity ?? null,
+                  createdBy: userId,
+                });
+              });
+
+              // Sales-order-based sales post COGS at SHIPMENT (a prior posting),
+              // not on this invoice, so it is not in journalLineInserts. Capture
+              // those shipment COGS lines via the deterministic invoice ->
+              // salesInvoiceLine.salesOrderId -> shipment(sourceDocument = 'Sales
+              // Order') link. Done once, here, and stored — never re-derived per
+              // elimination run.
+              const salesOrderIds = [
+                ...new Set(
+                  salesInvoiceLines.data
+                    .map((line) => line.salesOrderId)
+                    .filter((id): id is string => !!id)
+                ),
+              ];
+              if (cogsAccount && salesOrderIds.length > 0) {
+                const shipmentCogsLines = await trx
+                  .selectFrom("journalLine as jl")
+                  .innerJoin("shipment as s", "s.id", "jl.documentId")
+                  .select([
+                    "jl.id as id",
+                    "jl.accountId as accountId",
+                    "jl.amount as amount",
+                    "jl.quantity as quantity",
+                  ])
+                  .where("jl.companyId", "=", companyId)
+                  .where("jl.accountId", "=", cogsAccount)
+                  .where("s.companyId", "=", companyId)
+                  .where("s.sourceDocument", "=", "Sales Order")
+                  .where("s.sourceDocumentId", "in", salesOrderIds)
+                  .execute();
+                for (const cogs of shipmentCogsLines) {
+                  eliminationLineInserts.push({
+                    companyId,
+                    intercompanyTransactionId: icTxn.id,
+                    role: "COGS",
+                    journalLineId: cogs.id,
+                    accountId: cogs.accountId,
+                    amount: cogs.amount ?? 0,
+                    itemId: null,
+                    quantity: cogs.quantity ?? null,
+                    createdBy: userId,
+                  });
+                }
+              }
+
+              if (eliminationLineInserts.length > 0) {
+                await trx
+                  .insertInto("intercompanyEliminationLine")
+                  .values(eliminationLineInserts)
+                  .execute();
+              }
             }
           }
 
