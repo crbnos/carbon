@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
@@ -229,6 +230,17 @@ export async function convertQuoteToOrder(
       // A digital acceptance is the customer acting; `userId` is only the
       // employee who created the quote.
       actorId: payload.digitalQuoteAcceptedBy ? null : payload.userId
+    });
+
+    trackWorkEvent("quote_accepted", {
+      companyId: payload.companyId,
+      // Same reasoning as the moment above: on a digital acceptance there is
+      // no Carbon user, so the event is anonymous rather than attributed to
+      // whoever happened to write the quote.
+      userId: payload.digitalQuoteAcceptedBy ? null : payload.userId,
+      quoteId: payload.id,
+      salesOrderId: result.data.convertedId,
+      acceptedBy: payload.digitalQuoteAcceptedBy ? "portal" : "internal"
     });
   }
 
@@ -2042,6 +2054,10 @@ export async function finalizeQuote(
     companyId,
     actorId: userId
   });
+
+  // finalizeQuote is the only writer of status 'Sent', and it is also the MCP
+  // write path, so this one capture covers API callers too.
+  trackWorkEvent("quote_sent", { companyId, userId, quoteId });
 
   return lineUpdate;
 }
