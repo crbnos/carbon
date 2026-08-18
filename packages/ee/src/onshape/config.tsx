@@ -132,7 +132,7 @@ export const Onshape = defineIntegration({
       name: "attachAssetsOnRelease",
       label: "Attach assets when a revision is released",
       description:
-        "Pull the 3D model and drawing PDF onto the mapped Carbon item whenever Onshape releases a revision. Assets pulled by a BOM import or by creating an item from Onshape are not gated on this — those are user-initiated and bounded.",
+        "Pull the 3D model and drawing PDF onto the linked Carbon item whenever Onshape releases a revision. This covers releases that happen without anyone in Carbon; importing a BOM or creating an item from Onshape always brings its assets regardless of this setting.",
       type: "switch",
       required: false,
       value: true,
@@ -142,8 +142,13 @@ export const Onshape = defineIntegration({
     {
       name: "releaseImportV2",
       label: "When a revision is released",
+      // One field with an "off" option rather than a switch plus a nested mode:
+      // visibleWhen resolves a single field with no transitive nesting, and a
+      // hidden field still holds a control value, so a nested mode would render
+      // while its parent switch was hidden. Rationale belongs here, not in the
+      // customer-facing description below.
       description:
-        "What Carbon does with the engineering data in an Onshape release. Deliberately one field rather than a switch plus a nested mode — visibleWhen resolves a single field, so a nested mode would render while its parent switch was hidden.",
+        "What Carbon does with the engineering data in an Onshape release, beyond attaching its files.",
       type: "options",
       listOptions: [
         {
