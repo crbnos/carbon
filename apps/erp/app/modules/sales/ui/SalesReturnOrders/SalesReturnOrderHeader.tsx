@@ -20,11 +20,13 @@ import {
   LuEllipsisVertical,
   LuFile,
   LuGitCompare,
+  LuPackageCheck,
   LuPanelLeft,
   LuPanelRight,
-  LuTrash
+  LuTrash,
+  LuTruck
 } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useFetcher, useParams, useSubmit } from "react-router";
 import { usePanels } from "~/components/Layout";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -55,6 +57,26 @@ const SalesReturnOrderHeader = () => {
   const status = salesReturnOrder.status;
 
   const replacementFetcher = useFetcher<{ success: boolean }>();
+  const submit = useSubmit();
+
+  // Same pattern as the PO header's receive/ship: POST the source document to
+  // the create route, which drafts the document and redirects into it.
+  const receive = () => {
+    const formData = new FormData();
+    formData.set("sourceDocument", "Sales Return Order");
+    formData.set("sourceDocumentId", id);
+    submit(formData, { method: "post", action: path.to.newReceipt });
+  };
+  const shipBack = () => {
+    const formData = new FormData();
+    formData.set("sourceDocument", "Sales Return Order");
+    formData.set("sourceDocumentId", id);
+    submit(formData, { method: "post", action: path.to.newShipment });
+  };
+
+  const hasReturnToCustomerLine = routeData.lines.some(
+    (line) => line.disposition === "Return to Customer"
+  );
 
   const confirmDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
@@ -141,6 +163,31 @@ const SalesReturnOrderHeader = () => {
                 <Trans>Cancel</Trans>
               </Button>
             )}
+
+            {["Confirmed", "Partially Received"].includes(status ?? "") && (
+              <Button
+                variant={status === "Confirmed" ? "primary" : "secondary"}
+                leftIcon={<LuPackageCheck />}
+                isDisabled={!permissions.can("create", "inventory")}
+                onClick={receive}
+              >
+                <Trans>Receive</Trans>
+              </Button>
+            )}
+
+            {["Confirmed", "Partially Received", "Received"].includes(
+              status ?? ""
+            ) &&
+              hasReturnToCustomerLine && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuTruck />}
+                  isDisabled={!permissions.can("create", "inventory")}
+                  onClick={shipBack}
+                >
+                  <Trans>Ship</Trans>
+                </Button>
+              )}
 
             {["Partially Received", "Received"].includes(status ?? "") && (
               <Button

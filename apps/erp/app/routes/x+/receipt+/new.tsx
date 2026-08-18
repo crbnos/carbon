@@ -7,6 +7,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import type { ReceiptSourceDocument } from "~/modules/inventory";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -54,18 +55,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(purchaseOrderReceipt.data.id));
     case "Sales Return Order":
-      if (!defaults.data?.locationId) {
-        throw redirect(
-          path.to.salesReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              null,
-              "Set a default location in your settings before creating a receipt"
-            )
-          )
-        );
-      }
+      // No default-location guard: the create edge function falls back to
+      // the return order's own location and errors specifically otherwise.
       const salesReturnOrderReceipt = await serviceRole.functions.invoke<{
         id: string;
       }>("create", {
@@ -83,7 +74,13 @@ export async function action({ request }: ActionFunctionArgs) {
           path.to.salesReturnOrderDetails(sourceDocumentId),
           await flash(
             request,
-            error(salesReturnOrderReceipt.error, "Failed to create receipt")
+            error(
+              salesReturnOrderReceipt.error,
+              await getEdgeFunctionErrorMessage(
+                salesReturnOrderReceipt.error,
+                "Failed to create receipt"
+              )
+            )
           )
         );
       }

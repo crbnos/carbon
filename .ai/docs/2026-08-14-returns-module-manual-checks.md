@@ -172,7 +172,9 @@ Shop` received 4 × `BIKE-GX` (a serialized bicycle) on shipment `SHP000010`.*
 
 *Uses: the T6 Confirmed RMA.*
 
-1. **Inventory** (left rail) → **Receipts** → **Add Receipt**.
+1. Click **Receive** on the RMA header (shortcut — drafts the receipt and
+   opens it; skip to step 3), or **Inventory** (left rail) → **Receipts** →
+   **Add Receipt**.
 2. In the receipt form, set **Source Document** = `Sales Return Order`.
 3. **Expected:** the **Source Document ID** combobox lists open RMAs
    (Confirmed / Partially Received only). Pick your RMA.
@@ -228,7 +230,8 @@ company).*
 
 **B. Return to Customer (claim rejected)**
 1. On a received line, set **Disposition** = `Return to Customer`.
-2. **Inventory → Shipments → Add Shipment**, **Source Document** =
+2. Click **Ship** on the order header (shortcut), or **Inventory →
+   Shipments → Add Shipment**, **Source Document** =
    `Sales Return Order`, pick the RMA (listed once Partially
    Received/Received).
 3. **Expected:** a shipment is created with the received-not-yet-shipped-back
@@ -342,7 +345,8 @@ company).*
 5. **Confirm**. **Expected:** cap check (received − already returned),
    status **Confirmed**, PDF titled **Return to Supplier** showing
    `Supplier RMA #: SUP-RMA-77`. ✅
-6. **Inventory → Shipments → Add Shipment**, **Source** =
+6. Click **Ship** on the RMA header (shown once a line is dispositioned
+   Return to Customer), or **Inventory → Shipments → Add Shipment**, **Source** =
    `Purchase Return Order`, pick the RTS. **Expected:** lines pre-fill with
    the open quantities. **Post** it.
 7. **Expected:** RTS status **Shipped** (or Partially Shipped), line shows

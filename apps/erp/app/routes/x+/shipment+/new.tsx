@@ -79,18 +79,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.shipmentDetails(salesOrderShipment.data.id));
     case "Sales Return Order": {
-      if (!defaults.data?.locationId) {
-        throw redirect(
-          path.to.salesReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              null,
-              "Set a default location in your settings before creating a shipment"
-            )
-          )
-        );
-      }
       const salesReturnShipment = await serviceRole.functions.invoke<{
         id: string;
       }>("create", {
@@ -125,18 +113,6 @@ export async function action({ request }: ActionFunctionArgs) {
       throw redirect(path.to.shipmentDetails(salesReturnShipment.data.id));
     }
     case "Purchase Return Order": {
-      if (!defaults.data?.locationId) {
-        throw redirect(
-          path.to.purchaseReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              null,
-              "Set a default location in your settings before creating a shipment"
-            )
-          )
-        );
-      }
       const purchaseReturnShipment = await serviceRole.functions.invoke<{
         id: string;
       }>("create", {

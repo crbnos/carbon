@@ -22,9 +22,10 @@ import {
   LuGitCompare,
   LuPanelLeft,
   LuPanelRight,
-  LuTrash
+  LuTrash,
+  LuTruck
 } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useFetcher, useParams, useSubmit } from "react-router";
 import { usePanels } from "~/components/Layout";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -55,6 +56,16 @@ const PurchaseReturnOrderHeader = () => {
   const status = purchaseReturnOrder.status;
 
   const replacementFetcher = useFetcher<{ success: boolean }>();
+  const submit = useSubmit();
+
+  // Same pattern as the PO header's ship: POST the source document to the
+  // shipment create route, which drafts the shipment and redirects into it.
+  const ship = () => {
+    const formData = new FormData();
+    formData.set("sourceDocument", "Purchase Return Order");
+    formData.set("sourceDocumentId", id);
+    submit(formData, { method: "post", action: path.to.newShipment });
+  };
 
   const confirmDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
@@ -139,6 +150,17 @@ const PurchaseReturnOrderHeader = () => {
                 onClick={cancelDisclosure.onOpen}
               >
                 <Trans>Cancel</Trans>
+              </Button>
+            )}
+
+            {["Confirmed", "Partially Shipped"].includes(status ?? "") && (
+              <Button
+                variant={status === "Confirmed" ? "primary" : "secondary"}
+                leftIcon={<LuTruck />}
+                isDisabled={!permissions.can("create", "inventory")}
+                onClick={ship}
+              >
+                <Trans>Ship</Trans>
               </Button>
             )}
 
