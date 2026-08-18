@@ -1,6 +1,3 @@
-import redis from "./client";
-
-export { redis };
 export type {
   AccountLockoutOptions,
   LockDurationOptions,
@@ -17,9 +14,3 @@ export {
   lockDurationSeconds,
   normalizeLoginIdentifier
 } from "./lockout";
-export type {
-  Duration,
-  RatelimitConfig,
-  RatelimitResponse
-} from "./ratelimit";
-export { Ratelimit } from "./ratelimit";
