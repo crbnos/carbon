@@ -45,7 +45,14 @@ export type BaseOperation = {
   /** Quantity already produced — remaining-work netting scales by what's left. */
   quantityComplete?: number | null;
   operationType?: OperationType;
-  operationLeadTime?: number;
+  /**
+   * Working days this operation's inputs must be ready BEFORE it starts
+   * (jobOperation."operationLeadTime"). Read by the backward need-by pass
+   * (need-by-calculator.ts): each feeder's target is pulled this many
+   * working days ahead of this operation's need-by start. Loaded with the
+   * operation row; never read by forward placement.
+   */
+  operationLeadTime?: number | null;
   /**
    * Manufacturing lead time (in business days) of the make method's item that
    * this operation belongs to. Applied only at assembly boundaries so a

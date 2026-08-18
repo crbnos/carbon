@@ -79,6 +79,7 @@ export type CrossJobOperation = {
   machineTime: number | null;
   machineUnit: Database["public"]["Enums"]["factor"] | null;
   operationQuantity: number | null;
+  operationLeadTime: number | null;
 };
 
 export type LiveReservation = {
@@ -449,6 +450,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "jo.machineTime",
         "jo.machineUnit",
         "jo.operationQuantity",
+        "jo.operationLeadTime",
       ])
       .where("jo.companyId", "=", this.companyId)
       .where("jo.workCenterId", "in", workCenterIds)
