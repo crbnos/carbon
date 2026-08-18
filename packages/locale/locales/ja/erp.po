@@ -1352,6 +1352,9 @@ msgstr "確認して続行できます"
 msgid "Alpha"
 msgstr "アルファ"
 
+msgid "Already in Carbon"
+msgstr ""
+
 msgid "Always"
 msgstr "常に"
 
@@ -2116,6 +2119,9 @@ msgstr "{0}権限を持つ管理者に最初の{1}を追加するよう依頼し
 
 msgid "Assemblies"
 msgstr "アセンブリ"
+
+msgid "Assembly"
+msgstr ""
 
 msgid "Assembly instruction"
 msgstr "組立指示"
@@ -3455,6 +3461,9 @@ msgstr "コンテンツ"
 msgid "Context"
 msgstr "コンテキスト"
 
+msgid "Continue"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定資産の総減価償却費の逆資産勘定"
 
@@ -3756,6 +3765,9 @@ msgstr "領域を分析できませんでした: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "PDFを作成できませんでした。もう一度お試しください。"
 
+msgid "Could not create the part"
+msgstr ""
+
 msgid "Could not prepare region image for analysis"
 msgstr "分析用の領域画像を準備できませんでした"
 
@@ -3880,6 +3892,9 @@ msgstr "カンバンを作成"
 msgid "Create new rule"
 msgstr "新しいルールを作成"
 
+msgid "Create part"
+msgstr ""
+
 msgid "Create Production Event"
 msgstr "生産イベントを作成"
 
@@ -4003,6 +4018,9 @@ msgstr "不適合タイプを作成しました"
 
 msgid "Created part"
 msgstr "パーツを作成しました"
+
+msgid "Created part from Onshape"
+msgstr ""
 
 msgid "Created payment term"
 msgstr "支払い条件を作成しました"
@@ -6875,6 +6893,9 @@ msgstr "出発地"
 msgid "from on-account credit"
 msgstr "オンアカウントクレジットから"
 
+msgid "From Onshape"
+msgstr ""
+
 msgid "From Storage Unit"
 msgstr "保管場所から"
 
@@ -8470,6 +8491,9 @@ msgstr "現在の数量を読み込み中…"
 msgid "Loading item details..."
 msgstr "アイテムの詳細を読み込み中..."
 
+msgid "Loading released revisions from Onshape…"
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carbonのインポートツールで独自のデータを読み込む"
 
@@ -9395,6 +9419,9 @@ msgstr "新しいオーナー"
 msgid "New Part"
 msgstr "新しい部品"
 
+msgid "New part from Onshape"
+msgstr ""
+
 msgid "New Password"
 msgstr "新しいパスワード"
 
@@ -9891,6 +9918,9 @@ msgstr "レコードが見つかりません"
 msgid "No reference image"
 msgstr "参照画像がありません"
 
+msgid "No released revisions found in Onshape. Only released revisions can be imported — release the part in Onshape first."
+msgstr ""
+
 msgid "No remaining entities to inspect."
 msgstr "検査する残りのエンティティはありません。"
 
@@ -9905,6 +9935,9 @@ msgstr "結果がありません"
 
 msgid "No results found"
 msgstr "検索結果が見つかりません"
+
+msgid "No revisions match that search."
+msgstr ""
 
 msgid "No rows here."
 msgstr "ここに行はありません。"
@@ -10883,6 +10916,9 @@ msgstr "まずプロパティを選択"
 
 msgid "Pick a record type…"
 msgstr "レコード種類を選択..."
+
+msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+msgstr ""
 
 msgid "Pick a value from an earlier step"
 msgstr "前のステップの値を選択"
@@ -12920,6 +12956,9 @@ msgstr "Jiraの課題タイトルで検索..."
 msgid "Search by linear issue title..."
 msgstr "Linear イシュータイトルで検索..."
 
+msgid "Search by part number or name"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "顧客とタイプを検索..."
 
@@ -13598,6 +13637,9 @@ msgstr "{parentCurrency}で表示"
 
 msgid "Showing the first 500 lines"
 msgstr "最初の 500 行を表示中"
+
+msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
+msgstr ""
 
 msgid "Showing the newest 200 journals"
 msgstr "最新の200個のジャーナルを表示しています"
@@ -14508,6 +14550,9 @@ msgstr "テキストサイズ"
 msgid "That name is already used by another step."
 msgstr "その名前は別のステップで既に使用されています。"
 
+msgid "That Onshape part is already linked to a Carbon item."
+msgstr ""
+
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
 msgstr "「{0}」フェーズは、プロジェクトプランのすべてのタスクが完了すると自動的にチェックオフされます。"
@@ -14955,6 +15000,9 @@ msgstr "必要な親が構築される場合、部品は独自のジョブとし
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "親が構築される場合、既存の在庫から部品が取得されます—新しいジョブまたは購入注文はありません。"
+
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Carbonチーム側の実装を担当する人たちと、彼らへの連絡方法です。"

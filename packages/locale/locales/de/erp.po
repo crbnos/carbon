@@ -1352,6 +1352,9 @@ msgstr "Ermöglicht Bestätigung & Fortfahren"
 msgid "Alpha"
 msgstr "Alpha"
 
+msgid "Already in Carbon"
+msgstr ""
+
 msgid "Always"
 msgstr "Immer"
 
@@ -2116,6 +2119,9 @@ msgstr "Bitten Sie einen Admin mit {0}-Berechtigung, das erste {1} hinzuzufügen
 
 msgid "Assemblies"
 msgstr "Montagen"
+
+msgid "Assembly"
+msgstr ""
 
 msgid "Assembly instruction"
 msgstr "Montageanleitung"
@@ -3455,6 +3461,9 @@ msgstr "Inhalt"
 msgid "Context"
 msgstr "Kontext"
 
+msgid "Continue"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Gegenkonto für die gesamte Abschreibung von Anlagevermögen"
 
@@ -3756,6 +3765,9 @@ msgstr "Region konnte nicht analysiert werden: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "PDF konnte nicht erstellt werden. Versuchen Sie es erneut."
 
+msgid "Could not create the part"
+msgstr ""
+
 msgid "Could not prepare region image for analysis"
 msgstr "Konnte Regionsbild nicht für die Analyse vorbereiten"
 
@@ -3880,6 +3892,9 @@ msgstr "Kanban erstellen"
 msgid "Create new rule"
 msgstr "Neue Regel erstellen"
 
+msgid "Create part"
+msgstr ""
+
 msgid "Create Production Event"
 msgstr "Produktionsereignis erstellen"
 
@@ -4003,6 +4018,9 @@ msgstr "Nichtkonformitätstyp erstellt"
 
 msgid "Created part"
 msgstr "Teil erstellt"
+
+msgid "Created part from Onshape"
+msgstr ""
 
 msgid "Created payment term"
 msgstr "Zahlungsbedingung erstellt"
@@ -6875,6 +6893,9 @@ msgstr "Von Standort"
 msgid "from on-account credit"
 msgstr "aus dem Gutschrift-Konto"
 
+msgid "From Onshape"
+msgstr ""
+
 msgid "From Storage Unit"
 msgstr "Von Lagereinheit"
 
@@ -8470,6 +8491,9 @@ msgstr "Aktuelle Menge wird geladen…"
 msgid "Loading item details..."
 msgstr "Artikeldetails werden geladen..."
 
+msgid "Loading released revisions from Onshape…"
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Laden Sie Ihre eigenen Daten mit Carbons Importwerkzeugen"
 
@@ -9395,6 +9419,9 @@ msgstr "Neuer Eigentümer"
 msgid "New Part"
 msgstr "Neuer Teil"
 
+msgid "New part from Onshape"
+msgstr ""
+
 msgid "New Password"
 msgstr "Neues Passwort"
 
@@ -9891,6 +9918,9 @@ msgstr "Keine Datensätze gefunden"
 msgid "No reference image"
 msgstr "Kein Referenzbild"
 
+msgid "No released revisions found in Onshape. Only released revisions can be imported — release the part in Onshape first."
+msgstr ""
+
 msgid "No remaining entities to inspect."
 msgstr "Keine verbleibenden Entitäten zur Überprüfung."
 
@@ -9905,6 +9935,9 @@ msgstr "Keine Ergebnisse"
 
 msgid "No results found"
 msgstr "Keine Ergebnisse gefunden"
+
+msgid "No revisions match that search."
+msgstr ""
 
 msgid "No rows here."
 msgstr "Hier sind keine Zeilen."
@@ -10883,6 +10916,9 @@ msgstr "Wählen Sie zuerst eine Eigenschaft"
 
 msgid "Pick a record type…"
 msgstr "Wählen Sie einen Datensatztyp…"
+
+msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+msgstr ""
 
 msgid "Pick a value from an earlier step"
 msgstr "Wählen Sie einen Wert aus einem früheren Schritt"
@@ -12920,6 +12956,9 @@ msgstr "Nach Jira-Problemtitel suchen..."
 msgid "Search by linear issue title..."
 msgstr "Nach Linear-Issue-Titel suchen..."
 
+msgid "Search by part number or name"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "Kunden und Typen durchsuchen..."
 
@@ -13598,6 +13637,9 @@ msgstr "Anzeige in {parentCurrency}"
 
 msgid "Showing the first 500 lines"
 msgstr "Die ersten 500 Zeilen werden angezeigt"
+
+msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
+msgstr ""
 
 msgid "Showing the newest 200 journals"
 msgstr "Die neuesten 200 Journale werden angezeigt"
@@ -14508,6 +14550,9 @@ msgstr "Textgröße"
 msgid "That name is already used by another step."
 msgstr "Dieser Name wird bereits von einem anderen Schritt verwendet."
 
+msgid "That Onshape part is already linked to a Carbon item."
+msgstr ""
+
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
 msgstr "Die Phase „{0}\" wird automatisch abgeschlossen, sobald alle ihre Aufgaben im Projektplan erledigt sind."
@@ -14955,6 +15000,9 @@ msgstr "Der Teil wird als eigener Auftrag hergestellt, wenn das Elternteil, das 
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Der Teil wird aus bestehendem Bestand genommen, wenn sein Elternteil gebaut wird – kein neuer Auftrag oder Kaufauftrag."
+
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Die Personen auf der Carbon-Seite, die Ihre Implementierung durchführen, und wie Sie sie erreichen."

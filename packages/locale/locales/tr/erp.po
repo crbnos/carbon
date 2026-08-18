@@ -1352,6 +1352,9 @@ msgstr "Onaylayıp devam etmeye izin verir"
 msgid "Alpha"
 msgstr "Alfa"
 
+msgid "Already in Carbon"
+msgstr ""
+
 msgid "Always"
 msgstr "Her zaman"
 
@@ -2116,6 +2119,9 @@ msgstr "{0} izni olan bir yöneticiye ilk {1}i eklemesini isteyin."
 
 msgid "Assemblies"
 msgstr "Montajlar"
+
+msgid "Assembly"
+msgstr ""
 
 msgid "Assembly instruction"
 msgstr "Montaj talimatı"
@@ -3455,6 +3461,9 @@ msgstr "İçerik"
 msgid "Context"
 msgstr "Bağlam"
 
+msgid "Continue"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Sabit kıymetlerin toplam amortismanı için karşı hesap"
 
@@ -3756,6 +3765,9 @@ msgstr "Bölge analiz edilemedi: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "PDF oluşturulamadı. Lütfen tekrar deneyin."
 
+msgid "Could not create the part"
+msgstr ""
+
 msgid "Could not prepare region image for analysis"
 msgstr "Bölge görüntüsü analiz için hazırlanamadı"
 
@@ -3880,6 +3892,9 @@ msgstr "Kanban Oluştur"
 msgid "Create new rule"
 msgstr "Yeni kural oluştur"
 
+msgid "Create part"
+msgstr ""
+
 msgid "Create Production Event"
 msgstr "Üretim Etkinliği Oluştur"
 
@@ -4003,6 +4018,9 @@ msgstr "Uygunsuzluk türü oluşturuldu"
 
 msgid "Created part"
 msgstr "Oluşturulan parça"
+
+msgid "Created part from Onshape"
+msgstr ""
 
 msgid "Created payment term"
 msgstr "Oluşturulan ödeme vadesi"
@@ -6875,6 +6893,9 @@ msgstr "Kaynak Konum"
 msgid "from on-account credit"
 msgstr "hesap kredisinden"
 
+msgid "From Onshape"
+msgstr ""
+
 msgid "From Storage Unit"
 msgstr "Kaynak Depo Birimi"
 
@@ -8470,6 +8491,9 @@ msgstr "Geçerli miktar yükleniyor…"
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
 
+msgid "Loading released revisions from Onshape…"
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carbon'ın içe aktarma araçlarıyla kendi verilerinizi yükleme"
 
@@ -9395,6 +9419,9 @@ msgstr "Yeni Sahip"
 msgid "New Part"
 msgstr "Yeni Ürün"
 
+msgid "New part from Onshape"
+msgstr ""
+
 msgid "New Password"
 msgstr "Yeni Şifre"
 
@@ -9891,6 +9918,9 @@ msgstr "Kayıt bulunamadı"
 msgid "No reference image"
 msgstr "Referans resim yok"
 
+msgid "No released revisions found in Onshape. Only released revisions can be imported — release the part in Onshape first."
+msgstr ""
+
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
 
@@ -9905,6 +9935,9 @@ msgstr "Sonuç bulunamadı"
 
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
+
+msgid "No revisions match that search."
+msgstr ""
 
 msgid "No rows here."
 msgstr "Burada satır yok."
@@ -10883,6 +10916,9 @@ msgstr "Önce bir özellik seçin"
 
 msgid "Pick a record type…"
 msgstr "Bir kayıt türü seçin…"
+
+msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+msgstr ""
 
 msgid "Pick a value from an earlier step"
 msgstr "Önceki bir adımdan bir değer seçin"
@@ -12920,6 +12956,9 @@ msgstr "Jira sorunu başlığı ile ara..."
 msgid "Search by linear issue title..."
 msgstr "Linear sorunu başlığı ile ara..."
 
+msgid "Search by part number or name"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "Müşterileri ve türleri ara..."
 
@@ -13598,6 +13637,9 @@ msgstr "{parentCurrency} cinsinden gösteriliyor"
 
 msgid "Showing the first 500 lines"
 msgstr "İlk 500 satır gösteriliyor"
+
+msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
+msgstr ""
 
 msgid "Showing the newest 200 journals"
 msgstr "En yeni 200 muhasebe kaydı gösteriliyor"
@@ -14508,6 +14550,9 @@ msgstr "Metin boyutu"
 msgid "That name is already used by another step."
 msgstr "Bu ad başka bir adım tarafından zaten kullanılıyor."
 
+msgid "That Onshape part is already linked to a Carbon item."
+msgstr ""
+
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
 msgstr "\"{0}\" aşaması, proje planındaki tüm görevleri tamamlandığında kendini işaretler."
@@ -14955,6 +15000,9 @@ msgstr "Parça, ihtiyacı olan üst öğe inşa edildiğinde kendi işi olarak �
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Parça, ebeveyninin inşa edildiğinde mevcut stoktan alınır - yeni iş veya satın alma siparişi yok."
+
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Carbon tarafındaki uygulamanızı yönetecek ve onlara nasıl ulaşacağınızı gösteren kişiler."

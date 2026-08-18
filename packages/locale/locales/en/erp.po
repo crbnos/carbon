@@ -1352,6 +1352,9 @@ msgstr "Allows acknowledge & continue"
 msgid "Alpha"
 msgstr "Alpha"
 
+msgid "Already in Carbon"
+msgstr "Already in Carbon"
+
 msgid "Always"
 msgstr "Always"
 
@@ -2116,6 +2119,9 @@ msgstr "Ask an admin with {0} permission to add the first {1}."
 
 msgid "Assemblies"
 msgstr "Assemblies"
+
+msgid "Assembly"
+msgstr "Assembly"
 
 msgid "Assembly instruction"
 msgstr "Assembly instruction"
@@ -3455,6 +3461,9 @@ msgstr "Content"
 msgid "Context"
 msgstr "Context"
 
+msgid "Continue"
+msgstr "Continue"
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Contra-asset account for total depreciation of fixed assets"
 
@@ -3756,6 +3765,9 @@ msgstr "Could not analyze region: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "Could not build PDF. Try again."
 
+msgid "Could not create the part"
+msgstr "Could not create the part"
+
 msgid "Could not prepare region image for analysis"
 msgstr "Could not prepare region image for analysis"
 
@@ -3880,6 +3892,9 @@ msgstr "Create Kanban"
 msgid "Create new rule"
 msgstr "Create new rule"
 
+msgid "Create part"
+msgstr "Create part"
+
 msgid "Create Production Event"
 msgstr "Create Production Event"
 
@@ -4003,6 +4018,9 @@ msgstr "Created non conformance type"
 
 msgid "Created part"
 msgstr "Created part"
+
+msgid "Created part from Onshape"
+msgstr "Created part from Onshape"
 
 msgid "Created payment term"
 msgstr "Created payment term"
@@ -6875,6 +6893,9 @@ msgstr "From Location"
 msgid "from on-account credit"
 msgstr "from on-account credit"
 
+msgid "From Onshape"
+msgstr "From Onshape"
+
 msgid "From Storage Unit"
 msgstr "From Storage Unit"
 
@@ -8470,6 +8491,9 @@ msgstr "Loading current quantity…"
 msgid "Loading item details..."
 msgstr "Loading item details..."
 
+msgid "Loading released revisions from Onshape…"
+msgstr "Loading released revisions from Onshape…"
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Loading your own data with Carbon's import tools"
 
@@ -9395,6 +9419,9 @@ msgstr "New Owner"
 msgid "New Part"
 msgstr "New Part"
 
+msgid "New part from Onshape"
+msgstr "New part from Onshape"
+
 msgid "New Password"
 msgstr "New Password"
 
@@ -9891,6 +9918,9 @@ msgstr "No records found"
 msgid "No reference image"
 msgstr "No reference image"
 
+msgid "No released revisions found in Onshape. Only released revisions can be imported — release the part in Onshape first."
+msgstr "No released revisions found in Onshape. Only released revisions can be imported — release the part in Onshape first."
+
 msgid "No remaining entities to inspect."
 msgstr "No remaining entities to inspect."
 
@@ -9905,6 +9935,9 @@ msgstr "No results"
 
 msgid "No results found"
 msgstr "No results found"
+
+msgid "No revisions match that search."
+msgstr "No revisions match that search."
 
 msgid "No rows here."
 msgstr "No rows here."
@@ -10883,6 +10916,9 @@ msgstr "Pick a property first"
 
 msgid "Pick a record type…"
 msgstr "Pick a record type…"
+
+msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+msgstr "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
 
 msgid "Pick a value from an earlier step"
 msgstr "Pick a value from an earlier step"
@@ -12920,6 +12956,9 @@ msgstr "Search by Jira issue title..."
 msgid "Search by linear issue title..."
 msgstr "Search by linear issue title..."
 
+msgid "Search by part number or name"
+msgstr "Search by part number or name"
+
 msgid "Search customers and types..."
 msgstr "Search customers and types..."
 
@@ -13598,6 +13637,9 @@ msgstr "Showing in {parentCurrency}"
 
 msgid "Showing the first 500 lines"
 msgstr "Showing the first 500 lines"
+
+msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
+msgstr "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 
 msgid "Showing the newest 200 journals"
 msgstr "Showing the newest 200 journals"
@@ -14508,6 +14550,9 @@ msgstr "Text size"
 msgid "That name is already used by another step."
 msgstr "That name is already used by another step."
 
+msgid "That Onshape part is already linked to a Carbon item."
+msgstr "That Onshape part is already linked to a Carbon item."
+
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
 msgstr "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14955,6 +15000,9 @@ msgstr "The part is manufactured as its own job when the parent that needs it is
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "The part is taken from existing stock when its parent is built — no new job or purchase order."
+
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgstr "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "The people on the Carbon side who will run your implementation, and how to reach them."

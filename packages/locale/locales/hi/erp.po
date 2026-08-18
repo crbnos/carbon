@@ -1352,6 +1352,9 @@ msgstr "स्वीकार करने और जारी रखने क�
 msgid "Alpha"
 msgstr "अल्फा"
 
+msgid "Already in Carbon"
+msgstr ""
+
 msgid "Always"
 msgstr "हमेशा"
 
@@ -2116,6 +2119,9 @@ msgstr "{0} अनुमति वाले व्यवस्थापक स�
 
 msgid "Assemblies"
 msgstr "असेंबलीज"
+
+msgid "Assembly"
+msgstr ""
 
 msgid "Assembly instruction"
 msgstr "असेंबली निर्देश"
@@ -3455,6 +3461,9 @@ msgstr "सामग्री"
 msgid "Context"
 msgstr "संदर्भ"
 
+msgid "Continue"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "अचल संपत्तियों के कुल मूल्यह्रास के लिए विरोधी संपत्ति खाता"
 
@@ -3756,6 +3765,9 @@ msgstr "क्षेत्र का विश्लेषण नहीं क�
 msgid "Could not build PDF. Try again."
 msgstr "PDF नहीं बना सके। फिर से कोशिश करें।"
 
+msgid "Could not create the part"
+msgstr ""
+
 msgid "Could not prepare region image for analysis"
 msgstr "विश्लेषण के लिए क्षेत्र छवि तैयार नहीं की जा सकी"
 
@@ -3880,6 +3892,9 @@ msgstr "कनबन बनाएं"
 msgid "Create new rule"
 msgstr "नया नियम बनाएं"
 
+msgid "Create part"
+msgstr ""
+
 msgid "Create Production Event"
 msgstr "उत्पादन घटना बनाएं"
 
@@ -4003,6 +4018,9 @@ msgstr "गैर अनुरूपता प्रकार बनाया �
 
 msgid "Created part"
 msgstr "भाग बनाया गया"
+
+msgid "Created part from Onshape"
+msgstr ""
 
 msgid "Created payment term"
 msgstr "भुगतान शर्त बनाई गई"
@@ -6875,6 +6893,9 @@ msgstr "स्थान से"
 msgid "from on-account credit"
 msgstr "खाता-पर क्रेडिट से"
 
+msgid "From Onshape"
+msgstr ""
+
 msgid "From Storage Unit"
 msgstr "स्टोरेज यूनिट से"
 
@@ -8470,6 +8491,9 @@ msgstr "वर्तमान मात्रा लोड हो रही ह�
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
 
+msgid "Loading released revisions from Onshape…"
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carbon के आयात उपकरणों के साथ अपना डेटा लोड करना"
 
@@ -9395,6 +9419,9 @@ msgstr "नया मालिक"
 msgid "New Part"
 msgstr "नया पार्ट"
 
+msgid "New part from Onshape"
+msgstr ""
+
 msgid "New Password"
 msgstr "नया पासवर्ड"
 
@@ -9891,6 +9918,9 @@ msgstr "कोई रिकॉर्ड नहीं मिला"
 msgid "No reference image"
 msgstr "कोई संदर्भ छवि नहीं"
 
+msgid "No released revisions found in Onshape. Only released revisions can be imported — release the part in Onshape first."
+msgstr ""
+
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण के लिए कोई शेष इकाई नहीं है।"
 
@@ -9905,6 +9935,9 @@ msgstr "कोई परिणाम नहीं"
 
 msgid "No results found"
 msgstr "कोई परिणाम नहीं मिला"
+
+msgid "No revisions match that search."
+msgstr ""
 
 msgid "No rows here."
 msgstr "यहाँ कोई पंक्तियाँ नहीं हैं।"
@@ -10883,6 +10916,9 @@ msgstr "पहले एक प्रॉपर्टी चुनें"
 
 msgid "Pick a record type…"
 msgstr "एक रिकॉर्ड प्रकार चुनें…"
+
+msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+msgstr ""
 
 msgid "Pick a value from an earlier step"
 msgstr "पहले के स्टेप से एक मूल्य चुनें"
@@ -12920,6 +12956,9 @@ msgstr "Jira समस्या शीर्षक द्वारा खोज�
 msgid "Search by linear issue title..."
 msgstr "Linear समस्या शीर्षक द्वारा खोजें..."
 
+msgid "Search by part number or name"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "ग्राहकों और प्रकारों को खोजें..."
 
@@ -13598,6 +13637,9 @@ msgstr "में दिखाई दे रहा है {parentCurrency}"
 
 msgid "Showing the first 500 lines"
 msgstr "पहली 500 लाइनें दिखा रहे हैं"
+
+msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
+msgstr ""
 
 msgid "Showing the newest 200 journals"
 msgstr "नवीनतम 200 जर्नल दिखाए जा रहे हैं"
@@ -14508,6 +14550,9 @@ msgstr "पाठ आकार"
 msgid "That name is already used by another step."
 msgstr "वह नाम पहले से ही एक अन्य चरण द्वारा उपयोग किया जा रहा है।"
 
+msgid "That Onshape part is already linked to a Carbon item."
+msgstr ""
+
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
 msgstr "\"{0}\" चरण अपने आप को बंद कर देता है जब इसके सभी कार्य प्रोजेक्ट योजना में पूरे हो जाते हैं।"
@@ -14955,6 +15000,9 @@ msgstr "जब माता-पिता जो इसकी आवश्यक�
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "जब इसके माता-पिता को बनाया जाता है तब भाग मौजूदा स्टॉक से लिया जाता है - कोई नई नौकरी या खरीद आदेश नहीं।"
+
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "कार्बन की ओर से वे लोग जो आपके कार्यान्वयन को चलाएंगे, और उन तक कैसे पहुंचें।"

@@ -1,3 +1,4 @@
+import { OnshapeLogo } from "@carbon/ee";
 import {
   Badge,
   Button,
@@ -22,7 +23,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -59,8 +59,10 @@ import {
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
+import { OnshapeCreatePart } from "~/components/OnshapeCreatePart";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
@@ -81,6 +83,8 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
+  const onshapePipeline = useOnshapePipeline();
+  const onshapeCreate = useDisclosure();
 
   const translateReplenishment = useCallback(
     (v: string) =>
@@ -672,6 +676,15 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
                   <Trans>Item Groups</Trans>
                 </Link>
               </Button>
+              {onshapePipeline.isV2 && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<OnshapeLogo className="h-4 w-auto" />}
+                  onClick={onshapeCreate.onOpen}
+                >
+                  <Trans>From Onshape</Trans>
+                </Button>
+              )}
               <New label={t`Part`} to={path.to.newPart} />
             </div>
           )
@@ -683,6 +696,12 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
         withSavedView
         withSelectableRows
       />
+      {onshapePipeline.isV2 && onshapeCreate.isOpen && (
+        <OnshapeCreatePart
+          isOpen={onshapeCreate.isOpen}
+          onClose={onshapeCreate.onClose}
+        />
+      )}
       {selectedItem && selectedItem.id && (
         <ConfirmDelete
           action={path.to.deleteItem(selectedItem.id!)}

@@ -1352,6 +1352,9 @@ msgstr "확인 후 계속 진행 허용"
 msgid "Alpha"
 msgstr "알파"
 
+msgid "Already in Carbon"
+msgstr ""
+
 msgid "Always"
 msgstr "항상"
 
@@ -2116,6 +2119,9 @@ msgstr "{0} 권한이 있는 관리자에게 첫 {1} 추가를 요청하세요."
 
 msgid "Assemblies"
 msgstr "조립품"
+
+msgid "Assembly"
+msgstr ""
 
 msgid "Assembly instruction"
 msgstr "조립 지시사항"
@@ -3455,6 +3461,9 @@ msgstr "콘텐츠"
 msgid "Context"
 msgstr "컨텍스트"
 
+msgid "Continue"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "고정자산 총 감가상각액에 대한 자산 차감 계정"
 
@@ -3756,6 +3765,9 @@ msgstr "영역을 분석할 수 없습니다: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "PDF를 생성할 수 없습니다. 다시 시도하세요."
 
+msgid "Could not create the part"
+msgstr ""
+
 msgid "Could not prepare region image for analysis"
 msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 
@@ -3880,6 +3892,9 @@ msgstr "칸반 생성"
 msgid "Create new rule"
 msgstr "새 규칙 생성"
 
+msgid "Create part"
+msgstr ""
+
 msgid "Create Production Event"
 msgstr "생산 이벤트 생성"
 
@@ -4003,6 +4018,9 @@ msgstr "부적합 유형 생성됨"
 
 msgid "Created part"
 msgstr "품목 생성됨"
+
+msgid "Created part from Onshape"
+msgstr ""
 
 msgid "Created payment term"
 msgstr "결제조건 생성됨"
@@ -6875,6 +6893,9 @@ msgstr "출발 위치"
 msgid "from on-account credit"
 msgstr "미수금 크레딧에서"
 
+msgid "From Onshape"
+msgstr ""
+
 msgid "From Storage Unit"
 msgstr "출발 저장 단위"
 
@@ -8470,6 +8491,9 @@ msgstr "현재 수량 로드 중…"
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
 
+msgid "Loading released revisions from Onshape…"
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carbon의 가져오기 도구로 직접 데이터 불러오기"
 
@@ -9395,6 +9419,9 @@ msgstr "새 소유자"
 msgid "New Part"
 msgstr "새 품목"
 
+msgid "New part from Onshape"
+msgstr ""
+
 msgid "New Password"
 msgstr "새 비밀번호"
 
@@ -9891,6 +9918,9 @@ msgstr "기록을 찾을 수 없습니다"
 msgid "No reference image"
 msgstr "참조 이미지 없음"
 
+msgid "No released revisions found in Onshape. Only released revisions can be imported — release the part in Onshape first."
+msgstr ""
+
 msgid "No remaining entities to inspect."
 msgstr "검사할 개체가 남아 있지 않습니다."
 
@@ -9905,6 +9935,9 @@ msgstr "결과 없음"
 
 msgid "No results found"
 msgstr "결과가 없습니다"
+
+msgid "No revisions match that search."
+msgstr ""
 
 msgid "No rows here."
 msgstr "행이 없습니다."
@@ -10883,6 +10916,9 @@ msgstr "먼저 속성 선택"
 
 msgid "Pick a record type…"
 msgstr "레코드 유형 선택…"
+
+msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+msgstr ""
 
 msgid "Pick a value from an earlier step"
 msgstr "이전 단계에서 값 선택"
@@ -12920,6 +12956,9 @@ msgstr "Jira 이슈 제목으로 검색..."
 msgid "Search by linear issue title..."
 msgstr "linear 이슈 제목으로 검색..."
 
+msgid "Search by part number or name"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "고객 및 유형 검색..."
 
@@ -13598,6 +13637,9 @@ msgstr "{parentCurrency}로 표시"
 
 msgid "Showing the first 500 lines"
 msgstr "처음 500줄을 표시하고 있습니다"
+
+msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
+msgstr ""
 
 msgid "Showing the newest 200 journals"
 msgstr "최신 200개 저널 표시 중"
@@ -14508,6 +14550,9 @@ msgstr "글자 크기"
 msgid "That name is already used by another step."
 msgstr "해당 이름은 이미 다른 단계에서 사용 중입니다."
 
+msgid "That Onshape part is already linked to a Carbon item."
+msgstr ""
+
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
 msgstr "\"{0}\" 단계는 프로젝트 계획의 모든 작업이 완료되면 자동으로 완료 처리됩니다."
@@ -14955,6 +15000,9 @@ msgstr "상위 품목이 제작될 때 이 품목은 별도의 작업으로 제�
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "상위 품목이 제작될 때 이 품목은 기존 재고에서 가져옵니다 — 새 작업이나 구매주문이 생성되지 않습니다."
+
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "귀사의 도입을 진행할 Carbon 측 담당자와 연락 방법입니다."

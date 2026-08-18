@@ -1352,6 +1352,9 @@ msgstr "允许确认并继续"
 msgid "Alpha"
 msgstr "Alpha"
 
+msgid "Already in Carbon"
+msgstr ""
+
 msgid "Always"
 msgstr "始终"
 
@@ -2116,6 +2119,9 @@ msgstr "请求具有{0}权限的管理员添加第一个{1}。"
 
 msgid "Assemblies"
 msgstr "装配件"
+
+msgid "Assembly"
+msgstr ""
 
 msgid "Assembly instruction"
 msgstr "装配说明"
@@ -3455,6 +3461,9 @@ msgstr "内容"
 msgid "Context"
 msgstr "上下文"
 
+msgid "Continue"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "用于固定资产总折旧的反向资产账户"
 
@@ -3756,6 +3765,9 @@ msgstr "无法分析区域：{0}"
 msgid "Could not build PDF. Try again."
 msgstr "无法生成 PDF。请重试。"
 
+msgid "Could not create the part"
+msgstr ""
+
 msgid "Could not prepare region image for analysis"
 msgstr "无法准备区域图像以进行分析"
 
@@ -3880,6 +3892,9 @@ msgstr "创建看板"
 msgid "Create new rule"
 msgstr "创建新规则"
 
+msgid "Create part"
+msgstr ""
+
 msgid "Create Production Event"
 msgstr "创建生产事件"
 
@@ -4003,6 +4018,9 @@ msgstr "已创建不符合项类型"
 
 msgid "Created part"
 msgstr "已创建零件"
+
+msgid "Created part from Onshape"
+msgstr ""
 
 msgid "Created payment term"
 msgstr "已创建付款条款"
@@ -6875,6 +6893,9 @@ msgstr "从位置"
 msgid "from on-account credit"
 msgstr "从应收账款信用额度"
 
+msgid "From Onshape"
+msgstr ""
+
 msgid "From Storage Unit"
 msgstr "从存储单位"
 
@@ -8470,6 +8491,9 @@ msgstr "正在加载当前数量…"
 msgid "Loading item details..."
 msgstr "正在加载项目详情..."
 
+msgid "Loading released revisions from Onshape…"
+msgstr ""
+
 msgid "Loading your own data with Carbon's import tools"
 msgstr "使用 Carbon 的导入工具加载您自己的数据"
 
@@ -9395,6 +9419,9 @@ msgstr "新所有者"
 msgid "New Part"
 msgstr "新零件"
 
+msgid "New part from Onshape"
+msgstr ""
+
 msgid "New Password"
 msgstr "新密码"
 
@@ -9891,6 +9918,9 @@ msgstr "未找到记录"
 msgid "No reference image"
 msgstr "没有参考图像"
 
+msgid "No released revisions found in Onshape. Only released revisions can be imported — release the part in Onshape first."
+msgstr ""
+
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
 
@@ -9905,6 +9935,9 @@ msgstr "无结果"
 
 msgid "No results found"
 msgstr "未找到结果"
+
+msgid "No revisions match that search."
+msgstr ""
 
 msgid "No rows here."
 msgstr "这里没有行。"
@@ -10883,6 +10916,9 @@ msgstr "先选择属性"
 
 msgid "Pick a record type…"
 msgstr "选择记录类型…"
+
+msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+msgstr ""
 
 msgid "Pick a value from an earlier step"
 msgstr "从之前的步骤中选择值"
@@ -12920,6 +12956,9 @@ msgstr "按 Jira 问题标题搜索..."
 msgid "Search by linear issue title..."
 msgstr "按线性问题标题搜索..."
 
+msgid "Search by part number or name"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "搜索客户和类型..."
 
@@ -13598,6 +13637,9 @@ msgstr "显示货币：{parentCurrency}"
 
 msgid "Showing the first 500 lines"
 msgstr "显示前500行"
+
+msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
+msgstr ""
 
 msgid "Showing the newest 200 journals"
 msgstr "显示最新的 200 条日记账"
@@ -14508,6 +14550,9 @@ msgstr "文本大小"
 msgid "That name is already used by another step."
 msgstr "该名称已被另一个步骤使用。"
 
+msgid "That Onshape part is already linked to a Carbon item."
+msgstr ""
+
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
 msgstr "\"{0}\"阶段在项目计划中的所有任务完成后会自动标记为完成。"
@@ -14955,6 +15000,9 @@ msgstr "当需要该零件的父级被构造时，该零件被制造为其自己
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "构建其父级时，从现有库存中获取该零件 - 无新工作或采购订单。"
+
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Carbon 方面将运行您的实施的人员，以及如何联系他们。"
