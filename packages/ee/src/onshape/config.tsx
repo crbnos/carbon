@@ -15,6 +15,11 @@ export const Onshape = defineIntegration({
   images: [],
   settingGroups: [
     {
+      name: "Onshape v2",
+      description:
+        "Settings for the rebuilt pipeline. Only apply when Pipeline is set to Onshape v2; the settings above are the legacy pipeline's and are ignored while v2 is selected."
+    },
+    {
       name: "Release import",
       description:
         "What Carbon does with the engineering data in an Onshape release. Independent of asset sync — either one on is enough to receive release webhooks."
@@ -26,6 +31,29 @@ export const Onshape = defineIntegration({
     }
   ],
   settings: [
+    {
+      name: "pipeline",
+      label: "Pipeline",
+      description:
+        "Which implementation handles this company. Legacy is the current integration and the default; nothing changes for a company that never touches this. Onshape v2 is the rebuilt pipeline: items are linked to Onshape by a hidden id instead of by part number. Exactly one runs at a time — running both would duplicate change notices and double every export.",
+      type: "options",
+      listOptions: [
+        {
+          value: "legacy",
+          label: "Legacy",
+          description:
+            "The current integration. Matches Carbon items to Onshape by part number and revision."
+        },
+        {
+          value: "next",
+          label: "Onshape v2",
+          description:
+            "The rebuilt integration. Create and link items directly from Onshape, import BOMs with their CAD assets, and match on a stable id rather than a typed part number."
+        }
+      ],
+      required: false,
+      value: "legacy"
+    },
     {
       name: "assetSyncEnabled",
       label: "Sync released assets",
@@ -89,6 +117,69 @@ export const Onshape = defineIntegration({
       required: false,
       value: "",
       group: "Security"
+    },
+    // --- Onshape v2 -------------------------------------------------------
+    // All three are gated on pipeline === "next". ConditionalSettingField
+    // compares String(controlValue) against `equals`, and an options field's
+    // control value IS the string, so no coercion is needed here (unlike the
+    // switch-gated releaseImportMode above).
+    //
+    // Each gates on `pipeline` DIRECTLY rather than on a sibling: visibleWhen
+    // resolves exactly one field with no transitive nesting, and a hidden
+    // field still holds a control value — so gating one v2 field on another
+    // would render it while its parent was hidden.
+    {
+      name: "attachAssetsOnRelease",
+      label: "Attach assets when a revision is released",
+      description:
+        "Pull the 3D model and drawing PDF onto the mapped Carbon item whenever Onshape releases a revision. Assets pulled by a BOM import or by creating an item from Onshape are not gated on this — those are user-initiated and bounded.",
+      type: "switch",
+      required: false,
+      value: true,
+      group: "Onshape v2",
+      visibleWhen: { field: "pipeline", equals: "next" }
+    },
+    {
+      name: "releaseImportV2",
+      label: "When a revision is released",
+      description:
+        "What Carbon does with the engineering data in an Onshape release. Deliberately one field rather than a switch plus a nested mode — visibleWhen resolves a single field, so a nested mode would render while its parent switch was hidden.",
+      type: "options",
+      listOptions: [
+        {
+          value: "off",
+          label: "Do nothing",
+          description:
+            "Ignore the release. Assets are still attached if the setting above is on."
+        },
+        {
+          value: "changeNotice",
+          label: "Create a change notice",
+          description:
+            "One Draft change notice per Onshape release, pre-populated with an affected item per released part, for a human to review and release."
+        },
+        {
+          value: "revision",
+          label: "Create the revision directly",
+          description:
+            "Create the new revision immediately, copying the previous revision's attributes and BOM. No review step."
+        }
+      ],
+      required: false,
+      value: "changeNotice",
+      group: "Onshape v2",
+      visibleWhen: { field: "pipeline", equals: "next" }
+    },
+    {
+      name: "allowUnreleasedSync",
+      label: "Allow syncing unreleased versions",
+      description:
+        "Onshape stamps a revision only on release. An unreleased version therefore lands on Carbon's initial revision and carries no assets. Off by default so the version picker offers only released versions.",
+      type: "switch",
+      required: false,
+      value: false,
+      group: "Onshape v2",
+      visibleWhen: { field: "pipeline", equals: "next" }
     }
   ],
   schema: z.object({
@@ -115,7 +206,34 @@ export const Onshape = defineIntegration({
     releaseImportMode: z
       .enum(["changeNotice", "revision"])
       .default("changeNotice"),
-    webhookSigningSecret: z.string().optional()
+    webhookSigningSecret: z.string().optional(),
+    // --- Onshape v2 -------------------------------------------------------
+    // Every v2 read site tests strict equality against the NEW value
+    // (pipeline === "next"), so an absent key means legacy by construction,
+    // not by falling through to this default. Existing companyIntegration rows
+    // have no `pipeline` key at all and are unaffected.
+    pipeline: z.enum(["legacy", "next"]).default("legacy"),
+    // visibleWhen-hidden fields post NOTHING, so all three carry defaults
+    // rather than being bare/required — the same reason releaseImportMode does.
+    attachAssetsOnRelease: z
+      .preprocess((value) => {
+        if (typeof value === "boolean") return value;
+        if (value === "true") return true;
+        if (value === "false") return false;
+        return value;
+      }, z.boolean())
+      .default(true),
+    releaseImportV2: z
+      .enum(["off", "changeNotice", "revision"])
+      .default("changeNotice"),
+    allowUnreleasedSync: z
+      .preprocess((value) => {
+        if (typeof value === "boolean") return value;
+        if (value === "true") return true;
+        if (value === "false") return false;
+        return value;
+      }, z.boolean())
+      .default(false)
   }),
   actions: [
     {

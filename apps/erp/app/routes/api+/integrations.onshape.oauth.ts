@@ -13,6 +13,7 @@ import { redirect } from "react-router";
 import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
 import { integrationErrorSearch } from "~/modules/settings/integration-errors";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
+import { getIntegration } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
 
@@ -134,10 +135,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     const serviceRole = getCarbonServiceRole();
+
+    // upsertCompanyIntegration REPLACES the whole metadata column with the
+    // object it is handed, so a reconnect used to wipe every setting the
+    // company had saved (both switches, the release-import mode, the webhook
+    // signing secret, the cached onshapeCompanyId). Harmless-looking until the
+    // pipeline selector: a reconnect would silently move a migrated company
+    // back to the legacy pipeline. Read the existing metadata and merge, so a
+    // reconnect only ever refreshes credentials/scope/baseUrl.
+    const existing = await getIntegration(serviceRole, Onshape.id, companyId);
+    const existingMetadata =
+      existing.data?.metadata && typeof existing.data.metadata === "object"
+        ? (existing.data.metadata as Record<string, unknown>)
+        : {};
+
     const createdIntegration = await upsertCompanyIntegration(serviceRole, {
       id: Onshape.id,
       active: true,
       metadata: {
+        ...existingMetadata,
         credentials: {
           type: "oauth2",
           accessToken: tokenData.access_token,
