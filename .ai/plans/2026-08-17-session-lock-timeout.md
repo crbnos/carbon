@@ -10,7 +10,7 @@ fields on `AuthSession`. Server-authoritative enforcement in `requireAuthSession
 client idle UX drives concealment + a throttled activity heartbeat.
 
 ## Progress
-- [ ] Task 1: Add session-timeout constants to `@carbon/env`
+- [x] Task 1: Add session-timeout constants to `@carbon/env`
 - [ ] Task 2: Add `createdAt`/`lastActiveAt` to `AuthSession`
 - [ ] Task 3: Stamp at mint, preserve across refresh; add predicates + `touchAuthSession` (+ unit tests)
 - [ ] Task 4: Enforce idle-lock + absolute-termination in `requireAuthSession`
