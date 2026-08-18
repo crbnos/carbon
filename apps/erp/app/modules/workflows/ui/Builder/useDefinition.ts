@@ -100,9 +100,9 @@ export function useActionBatchPlan(
   }, [actionId, inputs, typeOf]);
 }
 
-/** The name of the entity operation input that is wired to a list, or undefined when
+/** The name of the compute operation input that is wired to a list, or undefined when
  * the node runs once. The form uses this to show the batch note. */
-export function useEntityBatchInput(
+export function useComputeBatchInput(
   nodeId: string,
   operationId: string,
   inputs: Record<string, ValueOrRef>

@@ -2076,7 +2076,7 @@ serve(async (req: Request) => {
           companyGroupId &&
           icJournalLineId
         ) {
-          await trx
+          const icTxn = await trx
             .insertInto("intercompanyTransaction")
             .values({
               companyGroupId,
@@ -2090,7 +2090,136 @@ serve(async (req: Request) => {
               documentId: purchaseInvoice.data?.id,
               status: "Unmatched",
             })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          // Capture the buyer side's role-classified elimination lines. The
+          // profit the consolidation defers is embedded in whatever ASSET the
+          // buyer capitalized the goods into — inventory OR a fixed asset — so
+          // capture the buyer's actual capitalization account (not the seller's
+          // inventory relief, which was the negative-Finished-Goods bug).
+          const eliminationLineInserts: Database["public"]["Tables"]["intercompanyEliminationLine"]["Insert"][] =
+            [];
+
+          // Control: the IC payable line.
+          eliminationLineInserts.push({
+            companyId,
+            intercompanyTransactionId: icTxn.id,
+            role: "Control",
+            journalLineId: icJournalLineId,
+            accountId: payablesAccountId!,
+            amount: journalLineInserts[icPayableIdx]?.amount ?? 0,
+            itemId: null,
+            quantity: null,
+            createdBy: userId,
+          });
+
+          // Capitalization is any Asset-class DEBIT the buyer posted for the
+          // goods — which excludes GR/IR clearing (a liability) and expensed
+          // indirect cost by construction. It lands in two places: on THIS
+          // invoice for not-yet-received / fixed-asset-at-invoice lines, and on
+          // the linked RECEIPT posting for goods already received (the common
+          // path — the invoice only trues up the price variance there).
+          const poLineToItem = new Map<string, string | null>();
+          for (const line of purchaseInvoiceLines.data) {
+            if (line.purchaseOrderLineId)
+              poLineToItem.set(line.purchaseOrderLineId, line.itemId ?? null);
+          }
+          const jlIdToItem = new Map<string, string | null>();
+          journalLineResults.forEach((jl, index) => {
+            jlIdToItem.set(jl.id, journalLineDimensionsMeta[index]?.itemId ?? null);
+          });
+
+          // (i) inline capitalization on this invoice's journal
+          const invoiceCapLines = await trx
+            .selectFrom("journalLine as jl")
+            .innerJoin("account as a", "a.id", "jl.accountId")
+            .select([
+              "jl.id as id",
+              "jl.accountId as accountId",
+              "jl.amount as amount",
+              "jl.quantity as quantity",
+            ])
+            .where("jl.journalId", "=", journalId)
+            .where("a.class", "=", "Asset")
+            .where("jl.amount", ">", 0)
             .execute();
+          for (const cap of invoiceCapLines) {
+            eliminationLineInserts.push({
+              companyId,
+              intercompanyTransactionId: icTxn.id,
+              role: "Capitalization",
+              journalLineId: cap.id,
+              accountId: cap.accountId,
+              amount: cap.amount ?? 0,
+              itemId: jlIdToItem.get(cap.id) ?? null,
+              quantity: cap.quantity ?? null,
+              createdBy: userId,
+            });
+          }
+
+          // (ii) receipt capitalization (goods received before invoicing)
+          const poLineIds = [...poLineToItem.keys()];
+          if (poLineIds.length > 0) {
+            const receiptLineRows = await trx
+              .selectFrom("receiptLine")
+              .select(["receiptId", "lineId"])
+              .where("lineId", "in", poLineIds)
+              .where("companyId", "=", companyId)
+              .execute();
+            const receiptIds = [
+              ...new Set(
+                receiptLineRows
+                  .map((row) => row.receiptId)
+                  .filter((id): id is string => !!id)
+              ),
+            ];
+            if (receiptIds.length > 0) {
+              const receiptCapLines = await trx
+                .selectFrom("journalLine as jl")
+                .innerJoin("account as a", "a.id", "jl.accountId")
+                .select([
+                  "jl.id as id",
+                  "jl.accountId as accountId",
+                  "jl.amount as amount",
+                  "jl.quantity as quantity",
+                  "jl.documentLineReference as documentLineReference",
+                ])
+                .where("jl.companyId", "=", companyId)
+                .where("jl.documentId", "in", receiptIds)
+                .where("a.class", "=", "Asset")
+                .where("jl.amount", ">", 0)
+                .execute();
+              for (const cap of receiptCapLines) {
+                // documentLineReference is `receipt:<purchaseOrderLineId>`; map
+                // it back to the item so on-hand realization can scale the
+                // writedown. Fixed assets carry no item -> full deferral.
+                let itemId: string | null = null;
+                const ref = cap.documentLineReference ?? "";
+                if (ref.startsWith("receipt:")) {
+                  itemId = poLineToItem.get(ref.slice("receipt:".length)) ?? null;
+                }
+                eliminationLineInserts.push({
+                  companyId,
+                  intercompanyTransactionId: icTxn.id,
+                  role: "Capitalization",
+                  journalLineId: cap.id,
+                  accountId: cap.accountId,
+                  amount: cap.amount ?? 0,
+                  itemId,
+                  quantity: cap.quantity ?? null,
+                  createdBy: userId,
+                });
+              }
+            }
+          }
+
+          if (eliminationLineInserts.length > 0) {
+            await trx
+              .insertInto("intercompanyEliminationLine")
+              .values(eliminationLineInserts)
+              .execute();
+          }
         }
       }
 

@@ -136,7 +136,9 @@ function EventPicker({
                 {ids.map((id) => (
                   <CommandItem
                     key={id}
-                    value={id}
+                    // Search runs on `value`, so the visible label has to be in it —
+                    // the id alone is never what someone types, and never translated.
+                    value={`${id} ${label(id)}`}
                     onSelect={() => {
                       onSelect(id);
                       setOpen(false);
@@ -158,7 +160,7 @@ function EventPicker({
                 {momentIds.map((id) => (
                   <CommandItem
                     key={id}
-                    value={id}
+                    value={`${id} ${label(id)}`}
                     onSelect={() => {
                       onSelect(id);
                       setOpen(false);
@@ -473,7 +475,14 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
 
           {/* Origin selector */}
           <div className="space-y-2">
-            <Section>
+            <Section
+              hint={
+                <Trans>
+                  Everything else covers people, imports, integrations and the
+                  API — anything that is not one of your workflows.
+                </Trans>
+              }
+            >
               <Trans>Triggered by</Trans>
             </Section>
             <ToggleGroup
@@ -503,12 +512,6 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
                 <Trans>Both</Trans>
               </ToggleGroupItem>
             </ToggleGroup>
-            <p className="text-xs text-muted-foreground">
-              <Trans>
-                Everything else covers people, imports, integrations and the API
-                — anything that is not one of your workflows.
-              </Trans>
-            </p>
           </div>
         </>
       ) : (

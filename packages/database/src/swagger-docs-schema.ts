@@ -2751,6 +2751,213 @@ export default {
         tags: ["assemblyInstructionStepSlide"]
       }
     },
+    "/intercompanyEliminationLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.intercompanyTransactionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.journalLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/intercompanyEliminationLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["intercompanyEliminationLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.intercompanyEliminationLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["intercompanyEliminationLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.intercompanyTransactionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.journalLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["intercompanyEliminationLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.intercompanyTransactionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.journalLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.intercompanyEliminationLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["intercompanyEliminationLine"]
+      }
+    },
     "/changeOrderType": {
       get: {
         parameters: [
@@ -8767,6 +8974,9 @@ export default {
             $ref: "#/parameters/rowFilter.journal.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.journal.eliminationKind"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -8880,6 +9090,9 @@ export default {
             $ref: "#/parameters/rowFilter.journal.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.journal.eliminationKind"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -8945,6 +9158,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.journal.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.journal.eliminationKind"
           },
           {
             $ref: "#/parameters/body.journal"
@@ -95273,6 +95489,10 @@ export default {
                   format: "text",
                   type: "string"
                 },
+                p_regenerate: {
+                  format: "boolean",
+                  type: "boolean"
+                },
                 p_user_id: {
                   format: "text",
                   type: "string"
@@ -99716,6 +99936,86 @@ export default {
       },
       type: "object"
     },
+    intercompanyEliminationLine: {
+      required: [
+        "id",
+        "companyId",
+        "intercompanyTransactionId",
+        "role",
+        "journalLineId",
+        "accountId",
+        "amount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('icel'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        intercompanyTransactionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `intercompanyTransaction.id`.<fk table='intercompanyTransaction' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        role: {
+          enum: ["Control", "Revenue", "COGS", "Capitalization"],
+          format: 'public."intercompanyEliminationRole"',
+          type: "string"
+        },
+        journalLineId: {
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          format: "text",
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        itemId: {
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     changeOrderType: {
       required: ["id", "name", "companyId", "createdAt", "createdBy"],
       properties: {
@@ -102599,6 +102899,13 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        eliminationKind: {
+          description:
+            "Classifies an elimination journal by the intercompany layer it removes (SAP posting-level analog); NULL for ordinary journals",
+          enum: ["IC Balance", "IC Revenue"],
+          format: 'public."eliminationKind"',
+          type: "string"
         }
       },
       type: "object"
@@ -104338,7 +104645,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -104387,7 +104694,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -141277,6 +141584,93 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.intercompanyEliminationLine": {
+      name: "intercompanyEliminationLine",
+      description: "intercompanyEliminationLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/intercompanyEliminationLine"
+      }
+    },
+    "rowFilter.intercompanyEliminationLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.intercompanyTransactionId": {
+      name: "intercompanyTransactionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.role": {
+      name: "role",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.journalLineId": {
+      name: "journalLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.changeOrderType": {
       name: "changeOrderType",
       description: "changeOrderType",
@@ -144522,6 +144916,14 @@ export default {
     },
     "rowFilter.journal.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.journal.eliminationKind": {
+      name: "eliminationKind",
+      description:
+        "Classifies an elimination journal by the intercompany layer it removes (SAP posting-level analog); NULL for ordinary journals",
       required: false,
       in: "query",
       type: "string"

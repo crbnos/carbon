@@ -2910,6 +2910,9 @@ msgstr "परिवर्तन सूचना प्रकार"
 msgid "Change Notices"
 msgstr "परिवर्तन सूचनाएं"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr "परिवर्तन सूचनाएँ लोड नहीं की जा सकीं, इसलिए नए संस्करण और संशोधन अवरुद्ध हैं। फिर से प्रयास करने के लिए पुनः लोड करें।"
+
 msgid "Change order"
 msgstr "परिवर्तन आदेश"
 
@@ -9134,6 +9137,9 @@ msgstr "अधिक"
 
 msgid "More actions"
 msgstr "अधिक क्रियाएं"
+
+msgid "More information"
+msgstr "अधिक जानकारी"
 
 msgid "More options"
 msgstr "अधिक विकल्प"

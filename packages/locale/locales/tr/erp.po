@@ -2910,6 +2910,9 @@ msgstr "Değişiklik Bildirisi Türleri"
 msgid "Change Notices"
 msgstr "Değişiklik Bildirimleri"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr "Değişiklik Bildirimleri yüklenemedi, bu nedenle yeni sürümler ve revizyonlar engellendi. Tekrar denemek için sayfayı yeniden yükleyin."
+
 msgid "Change order"
 msgstr "Değişim emri"
 
@@ -9134,6 +9137,9 @@ msgstr "Daha fazla"
 
 msgid "More actions"
 msgstr "Daha fazla işlem"
+
+msgid "More information"
+msgstr "Daha fazla bilgi"
 
 msgid "More options"
 msgstr "Daha fazla seçenek"

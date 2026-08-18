@@ -20,6 +20,7 @@ import { NODE_DRAG_TYPE } from "./constants";
 import { useBuilderStore, useBuilderStoreApi } from "./context";
 import { edgeTypes } from "./edges/WorkflowEdge";
 import { canConnect } from "./graph";
+import { stopCanvasKeys } from "./NodeCard";
 import { NodePalette } from "./NodePalette";
 import { nodeTypes } from "./nodes";
 import { TestRunPanel } from "./TestRun/TestRunPanel";
@@ -93,15 +94,16 @@ export function WorkflowBuilder({
   );
 
   // A field with focus owns its keys; the canvas must not steal Delete/arrows.
-  const onKeyDownCapture = useCallback((event: KeyboardEvent) => {
+  // Node cards stop these at their own body — this is the backstop for anything
+  // else in the canvas, and it leaves a bare pane's Delete alone.
+  const onKeyDown = useCallback((event: KeyboardEvent) => {
     const target = event.target as HTMLElement | null;
     if (!target) return;
-    if (target.closest(OVERLAY_SELECTOR)) {
-      event.stopPropagation();
-      return;
-    }
-    if (target.closest("input,textarea,select,[contenteditable=true]")) {
-      event.stopPropagation();
+    if (
+      target.closest(OVERLAY_SELECTOR) ||
+      target.closest("input,textarea,select,[contenteditable=true]")
+    ) {
+      stopCanvasKeys(event);
     }
   }, []);
 
@@ -126,7 +128,7 @@ export function WorkflowBuilder({
       <ResizablePanel id="canvas" order={2} defaultSize={62} minSize={30}>
         <div
           className="relative h-full"
-          onKeyDownCapture={onKeyDownCapture}
+          onKeyDown={onKeyDown}
           onDrop={onDrop}
           onDragOver={(event) => {
             event.preventDefault();

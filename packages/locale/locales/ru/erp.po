@@ -2910,6 +2910,9 @@ msgstr "Типы уведомлений об изменении"
 msgid "Change Notices"
 msgstr "Уведомления об изменении"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr "Уведомления об изменении не удалось загрузить, поэтому новые версии и редакции заблокированы. Перезагрузите страницу, чтобы попробовать еще раз."
+
 msgid "Change order"
 msgstr "Изменение заказа"
 
@@ -9134,6 +9137,9 @@ msgstr "Ещё"
 
 msgid "More actions"
 msgstr "Ещё действия"
+
+msgid "More information"
+msgstr "Дополнительная информация"
 
 msgid "More options"
 msgstr "Ещё опции"

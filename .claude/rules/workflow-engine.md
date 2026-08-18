@@ -21,7 +21,7 @@ packages/workflows/src/runtime/     pure. no I/O, no client, no database.
   values.ts    RuntimeValue + fromColumn coercion
   resolve.ts   {kind:"ref"|"item"|"literal"|"template"} -> a value, or a reason
   compare.ts   operator semantics + evaluateClauses
-  condition.ts filter.ts entity.ts lookup.ts action.ts   the five executors
+  condition.ts filter.ts compute.ts lookup.ts action.ts   the five executors
   executors.ts the node-kind -> executor registry
   batch.ts     planBatch + itemKeyFor
 

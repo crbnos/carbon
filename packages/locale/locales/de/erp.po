@@ -2910,6 +2910,9 @@ msgstr "Änderungsmitteilung-Typen"
 msgid "Change Notices"
 msgstr "Änderungsmitteilungen"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr "Änderungsmitteilungen konnten nicht geladen werden, daher sind neue Versionen und Überarbeitungen blockiert. Laden Sie neu, um es erneut zu versuchen."
+
 msgid "Change order"
 msgstr "Änderungsbestellung"
 
@@ -9134,6 +9137,9 @@ msgstr "Mehr"
 
 msgid "More actions"
 msgstr "Weitere Aktionen"
+
+msgid "More information"
+msgstr "Weitere Informationen"
 
 msgid "More options"
 msgstr "Weitere Optionen"
