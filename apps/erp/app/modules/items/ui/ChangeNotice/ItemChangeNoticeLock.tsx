@@ -4,10 +4,8 @@ import type { ReactNode } from "react";
 import { useRouteData } from "~/hooks";
 import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
-import { changeNoticeOpenStatuses } from "../../items.models";
+import { isChangeNoticeOpen } from "../../items.models";
 import type { ChangeNoticeForItem } from "../../items.service";
-
-const openStatusSet = new Set<string>(changeNoticeOpenStatuses);
 
 // Reads `openChangeNotices` from the part/tool parent route data; other item types return [].
 export function useItemOpenChangeNotices(
@@ -24,7 +22,7 @@ export function useItemOpenChangeNotices(
     routePath
   );
   return (data?.openChangeNotices ?? []).filter((co) =>
-    openStatusSet.has(co.status)
+    isChangeNoticeOpen(co.status)
   );
 }
 

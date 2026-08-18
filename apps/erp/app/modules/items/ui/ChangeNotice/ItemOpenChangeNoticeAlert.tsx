@@ -3,14 +3,12 @@ import { Plural, Trans } from "@lingui/react/macro";
 import { LuGitPullRequestArrow } from "react-icons/lu";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
-import { changeNoticeOpenStatuses } from "../../items.models";
+import { isChangeNoticeOpen } from "../../items.models";
 import type { ChangeNoticeForItem } from "../../items.service";
 
 type ItemOpenChangeNoticeAlertProps = {
   changeNotices: ChangeNoticeForItem[];
 };
-
-const openStatusSet = new Set<string>(changeNoticeOpenStatuses);
 
 // Part → CO traceability (4b): a subtle heads-up when this part is on one or
 // more not-yet-Done change notices. Derived from the same history list. Renders
@@ -18,7 +16,7 @@ const openStatusSet = new Set<string>(changeNoticeOpenStatuses);
 const ItemOpenChangeNoticeAlert = ({
   changeNotices
 }: ItemOpenChangeNoticeAlertProps) => {
-  const open = changeNotices.filter((co) => openStatusSet.has(co.status));
+  const open = changeNotices.filter((co) => isChangeNoticeOpen(co.status));
   if (open.length === 0) return null;
 
   return (
