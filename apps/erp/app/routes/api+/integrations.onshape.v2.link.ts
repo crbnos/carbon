@@ -1,0 +1,286 @@
+import { assertIsPost } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  buildElementExternalId,
+  getOnshapeClient,
+  getOnshapeV2Settings,
+  parseElementExternalId,
+  readElementMappingsForItems,
+  readItemIdsForElement,
+  resolveOnshapeRevision,
+  writeElementMapping,
+  writeRevisionMapping
+} from "@carbon/ee/onshape";
+import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
+import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+
+const logger = getLogger("erp", "integrations-onshape-v2-link");
+
+// Linking an item that already exists is BOTH the adoption path for hand-built
+// items and the migration path off the legacy integration, where items were
+// matched by part number and carry no mapping at all.
+//
+// It is destructive by consent on the fields Onshape owns, so the caller must
+// send `confirmOverwrite` — the UI shows what will be replaced first.
+export const onshapeV2LinkValidator = z.object({
+  itemId: z.string().min(1, { message: "Item is required" }),
+  partNumber: z.string().min(1, { message: "Part number is required" }),
+  revision: z.string().min(1, { message: "Revision is required" }),
+  elementType: zfd.numeric(z.number()),
+  documentId: z.string().min(1),
+  versionId: z.string().min(1),
+  elementId: z.string().min(1),
+  partId: zfd.text(z.string().optional()),
+  revisionId: zfd.text(z.string().optional()),
+  confirmOverwrite: zfd.checkbox()
+});
+
+export async function action({ request }: ActionFunctionArgs) {
+  assertIsPost(request);
+
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "parts"
+  });
+
+  const formData = await request.formData();
+  const validation = await validator(onshapeV2LinkValidator).validate(formData);
+
+  if (validation.error) {
+    return { success: false, message: "Invalid Onshape selection" };
+  }
+
+  const input = validation.data;
+
+  if (!input.confirmOverwrite) {
+    return {
+      success: false,
+      message:
+        "Linking replaces the fields Onshape owns. Confirm the overwrite to continue."
+    };
+  }
+
+  const serviceRole = getCarbonServiceRole();
+
+  const settings = await getOnshapeV2Settings(client, companyId);
+  if (!settings.isV2) {
+    return {
+      success: false,
+      message: "Onshape v2 is not enabled for this company"
+    };
+  }
+
+  // Scope the item to this company explicitly. These routes read with the
+  // user's client so RLS already applies, but the check also produces a clear
+  // message instead of a confusing downstream failure.
+  const item = await client
+    .from("item")
+    .select("id, readableId, revision, name")
+    .eq("id", input.itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (item.error || !item.data) {
+    return { success: false, message: "Item not found" };
+  }
+
+  const ref = {
+    documentId: input.documentId,
+    elementId: input.elementId,
+    partId: input.partId || null
+  };
+  const externalId = buildElementExternalId(ref);
+
+  // Two directions of collision, both of which silently corrupt data if
+  // allowed: another item already owns this CAD thing, or this item already
+  // points at a DIFFERENT one.
+  let claimedBy: string[];
+  let existingForItem: Awaited<ReturnType<typeof readElementMappingsForItems>>;
+  try {
+    [claimedBy, existingForItem] = await Promise.all([
+      readItemIdsForElement(client, { companyId, ref }),
+      readElementMappingsForItems(client, {
+        companyId,
+        itemIds: [input.itemId]
+      })
+    ]);
+  } catch (error) {
+    logger.error("Failed to read existing Onshape mappings", { error });
+    return {
+      success: false,
+      message: "Could not check existing Onshape links"
+    };
+  }
+
+  const otherClaimants = claimedBy.filter((id) => id !== input.itemId);
+  if (otherClaimants.length > 0) {
+    return {
+      success: false,
+      message:
+        "That Onshape part is already linked to a different item in Carbon. Unlink it there first."
+    };
+  }
+
+  const current = existingForItem.get(input.itemId);
+  if (current && buildElementExternalId(current.ref) !== externalId) {
+    const previous = parseElementExternalId(
+      buildElementExternalId(current.ref)
+    );
+    return {
+      success: false,
+      message: `This item is already linked to a different Onshape element (${previous?.elementId}). Unlink it before linking a new one.`
+    };
+  }
+
+  const onshape = await getOnshapeClient(serviceRole, companyId, userId);
+  // Narrow on the client rather than on `error` — "" is a valid falsy error
+  // string in that union, so a truthiness check does not discriminate it.
+  if (!onshape.client) {
+    return {
+      success: false,
+      message: onshape.error ?? "Onshape is not connected"
+    };
+  }
+  const onshapeClient = onshape.client;
+
+  let onshapeCompanyId = settings.onshapeCompanyId;
+  if (!onshapeCompanyId) {
+    const companies = await onshapeClient.getCompanies();
+    onshapeCompanyId = Array.isArray(companies)
+      ? (companies[0]?.id ?? null)
+      : null;
+  }
+  if (!onshapeCompanyId) {
+    return {
+      success: false,
+      message: "No Onshape company found for this connection"
+    };
+  }
+
+  const resolved = await resolveOnshapeRevision(onshapeClient, {
+    onshapeCompanyId,
+    partNumber: input.partNumber,
+    elementType: input.elementType,
+    revision: input.revision,
+    documentId: input.documentId,
+    versionId: input.versionId,
+    elementId: input.elementId,
+    partId: input.partId || null
+  });
+
+  if (!resolved.ok) {
+    return { success: false, message: resolved.message };
+  }
+
+  const onshapeRevision = resolved.revision;
+
+  // Onshape owns the name. Carbon keeps everything Onshape does not have —
+  // the whole BOP, costing, planning, tracking type, unit of measure, supplier
+  // parts, posting groups, shelf life, storage, tags and custom fields.
+  //
+  // Deliberately a narrow two-column update rather than updateItem: that
+  // service runs the payload through sanitize(), which turns a
+  // present-but-undefined key into null, and its schema requires fields this
+  // caller has no business supplying. Same reasoning as applyOnshapeAttributes
+  // in the legacy release import.
+  //
+  // The part NUMBER is not touched. Once the mapping exists the number is a
+  // label rather than a key, and rewriting readableId would break every
+  // document, PO and job that already renders it.
+  if (onshapeRevision.name && onshapeRevision.name !== item.data.name) {
+    const renamed = await client
+      .from("item")
+      .update({
+        name: onshapeRevision.name,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", input.itemId)
+      .eq("companyId", companyId);
+
+    if (renamed.error) {
+      logger.error("Failed to apply Onshape name on link", {
+        error: renamed.error
+      });
+      return {
+        success: false,
+        message: "Could not apply the Onshape name to this item"
+      };
+    }
+  }
+
+  try {
+    await writeElementMapping(serviceRole, {
+      companyId,
+      itemId: input.itemId,
+      ref: {
+        documentId: onshapeRevision.documentId,
+        elementId: onshapeRevision.elementId,
+        partId: onshapeRevision.partId ?? null
+      },
+      metadata: {
+        elementType: onshapeRevision.elementType,
+        versionId: onshapeRevision.versionId,
+        partNumber: onshapeRevision.partNumber,
+        fromUnreleasedVersion: false,
+        lastSyncedAt: new Date().toISOString()
+      },
+      createdBy: userId
+    });
+  } catch (error) {
+    logger.error("Failed to link item to Onshape", {
+      error,
+      itemId: input.itemId
+    });
+    return { success: false, message: "Could not link this item to Onshape" };
+  }
+
+  const resolvedRevisionId =
+    typeof onshapeRevision.id === "string" ? onshapeRevision.id : null;
+  const revisionId = input.revisionId || resolvedRevisionId;
+  if (revisionId) {
+    const recorded = await writeRevisionMapping(serviceRole, {
+      companyId,
+      itemId: input.itemId,
+      revisionId,
+      metadata: {
+        revision: onshapeRevision.revision,
+        releaseId: onshapeRevision.releaseId,
+        releaseName: onshapeRevision.releaseName,
+        documentId: onshapeRevision.documentId,
+        versionId: onshapeRevision.versionId,
+        elementId: onshapeRevision.elementId,
+        importedAt: new Date().toISOString()
+      },
+      createdBy: userId
+    });
+
+    if (!recorded.ok) {
+      logger.warn("Could not record Onshape revision provenance on link", {
+        itemId: input.itemId,
+        revisionId,
+        conflict: recorded.conflict,
+        error: recorded.error
+      });
+    }
+  }
+
+  // A part-number mismatch is legal now — the mapping is the join, the number
+  // is a label — but it is worth telling the user rather than letting them
+  // discover it later.
+  const numberMismatch =
+    item.data.readableId !== onshapeRevision.partNumber ||
+    (item.data.revision ?? "0") !== onshapeRevision.revision;
+
+  return {
+    success: true,
+    itemId: input.itemId,
+    numberMismatch,
+    carbonId: item.data.readableId,
+    onshapePartNumber: onshapeRevision.partNumber,
+    message: `Linked to ${onshapeRevision.partNumber} revision ${onshapeRevision.revision} in Onshape`
+  };
+}
