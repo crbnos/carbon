@@ -444,6 +444,9 @@ msgstr "ジョブの開始日が変更されました"
 msgid "A job's status changes"
 msgstr "ジョブのステータスが変更されました"
 
+msgid "A line whose revision Carbon does not have is skipped rather than created — new revisions arrive through release import. A line two Carbon items both claim is skipped for a person to resolve. Everything else imports."
+msgstr ""
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "リストが{0}に接続されているため、このステップは各項目ごとに1回実行され、結果のリストを返します。"
@@ -1360,6 +1363,9 @@ msgstr "常に"
 
 msgid "Always taken"
 msgstr "常に取得"
+
+msgid "ambiguous"
+msgstr ""
 
 msgid "Amount"
 msgstr "金額"
@@ -2783,6 +2789,10 @@ msgstr "Carbonクライアントが見つかりません"
 msgid "Carbon column"
 msgstr "Carbonカラム"
 
+#. placeholder {0}: row.siblings.join(", ")
+msgid "Carbon has {0}"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbonがあなたの会社の運営方法に合わせて設定され、データが読み込まれ、チームがそれを自信を持って使用できるようになっています。その状態になれば、本番環境への移行準備が整っています。"
 
@@ -3785,6 +3795,9 @@ msgstr "ドキュメントを読み込めませんでした: {0}"
 
 msgid "Could not save"
 msgstr "保存できませんでした"
+
+msgid "Could not start the import"
+msgstr ""
 
 msgid "Couldn't complete the Onshape connection"
 msgstr "Onshape 接続を完了できませんでした"
@@ -6088,6 +6101,9 @@ msgstr "すべての条件が一致する必要があります"
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "スコープ内のすべてのテストが、設定されたシステムで、あなたのデータを使用して合格します。"
 
+msgid "Every line is matched to Carbon by a hidden Onshape id, never by part number. Nothing is written until you confirm."
+msgstr ""
+
 msgid "Every match"
 msgstr "すべてのマッチ"
 
@@ -7517,11 +7533,23 @@ msgstr "実装リード"
 msgid "Implementation Support"
 msgstr "実装サポート"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "{label} CSV をインポート"
 
+msgid "Import a bill of materials"
+msgstr ""
+
+msgid "Import from Onshape"
+msgstr ""
+
 msgid "Import results"
 msgstr "インポート結果"
+
+msgid "Import started"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
@@ -8420,6 +8448,9 @@ msgstr "ラインステータス"
 msgid "Linear Team"
 msgstr "Linear Team"
 
+msgid "lines"
+msgstr ""
+
 msgid "Lines"
 msgstr "行"
 
@@ -9107,6 +9138,9 @@ msgstr "不足している情報"
 msgid "Missing Operations"
 msgstr "操作がありません"
 
+msgid "missing revisions"
+msgstr ""
+
 msgid "Missing Shipping Costs"
 msgstr "配送コストが不足しています"
 
@@ -9440,6 +9474,9 @@ msgid "New Part"
 msgstr "新しい部品"
 
 msgid "New part from Onshape"
+msgstr ""
+
+msgid "new parts"
 msgstr ""
 
 msgid "New Password"
@@ -9956,6 +9993,9 @@ msgstr "結果がありません"
 msgid "No results found"
 msgstr "検索結果が見つかりません"
 
+msgid "no revision"
+msgstr ""
+
 msgid "No revisions match that search."
 msgstr ""
 
@@ -10274,6 +10314,9 @@ msgstr "空のオープン期間のみ削除できます。"
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
+
+msgid "Onshape can only import into a Draft method. This one is {makeMethodStatus} — create a new version to import into."
+msgstr ""
 
 msgid "Onshape denied the connection"
 msgstr "Onshape が接続を拒否しました"
@@ -10959,6 +11002,9 @@ msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "在庫が必要なビンを選択してから、引き出すビンを選択します。"
 
 msgid "Pick the Onshape revision this part corresponds to. Already-linked parts are shown so you can see what is taken."
+msgstr ""
+
+msgid "Pick the released Onshape assembly to import. Only assemblies are listed — a Part Studio body has no bill of materials."
 msgstr ""
 
 msgid "Pick tracked item"
@@ -11858,6 +11904,9 @@ msgstr "判読可能なID"
 
 msgid "Readable id with revision"
 msgstr "リビジョン付き読み取り可能ID"
+
+msgid "Reading the bill of materials…"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "ドキュメントを読み込み中..."
@@ -13769,6 +13818,9 @@ msgstr "ソリューションズエンジニア"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDFから抽出された一部の行は、在庫アイテムに自動的にマップできませんでした。以下の各行を確認してマップしてください。"
 
+msgid "Some lines will be skipped"
+msgstr ""
+
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度お試しください。"
 
@@ -15621,6 +15673,9 @@ msgstr "保管単位へ"
 
 msgid "To supplier"
 msgstr "仕入先へ"
+
+msgid "to update"
+msgstr ""
 
 msgid "Today"
 msgstr "今日"

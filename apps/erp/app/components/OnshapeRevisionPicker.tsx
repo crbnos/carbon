@@ -59,6 +59,12 @@ type Props = {
   hideLinked?: boolean;
   confirmLabel: string;
   isSubmitting?: boolean;
+  /**
+   * Restrict to one numeric Onshape elementType. A BOM import passes 1
+   * (Assembly): a Part Studio body has no bill of materials, so offering one
+   * would be offering a choice that cannot work.
+   */
+  onlyElementType?: number;
 };
 
 /**
@@ -78,7 +84,8 @@ export const OnshapeRevisionPicker = ({
   description,
   hideLinked = false,
   confirmLabel,
-  isSubmitting = false
+  isSubmitting = false,
+  onlyElementType
 }: Props) => {
   const { t } = useLingui();
   const fetcher = useFetcher<typeof revisionsLoader>();
@@ -103,6 +110,12 @@ export const OnshapeRevisionPicker = ({
   const visible = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return revisions.filter((revision) => {
+      if (
+        onlyElementType !== undefined &&
+        revision.elementType !== onlyElementType
+      ) {
+        return false;
+      }
       if (hideLinked && revision.linked) return false;
       if (!needle) return true;
       return (
@@ -110,7 +123,7 @@ export const OnshapeRevisionPicker = ({
         (revision.name ?? "").toLowerCase().includes(needle)
       );
     });
-  }, [revisions, search, hideLinked]);
+  }, [revisions, search, hideLinked, onlyElementType]);
 
   const isLoading = fetcher.state !== "idle";
 

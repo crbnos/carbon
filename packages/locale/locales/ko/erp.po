@@ -444,6 +444,9 @@ msgstr "작업의 시작 날짜가 변경됨"
 msgid "A job's status changes"
 msgstr "작업의 상태가 변경됨"
 
+msgid "A line whose revision Carbon does not have is skipped rather than created — new revisions arrive through release import. A line two Carbon items both claim is skipped for a person to resolve. Everything else imports."
+msgstr ""
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "목록이 {0}에 연결되어 있으므로 이 단계는 각 항목마다 한 번씩 실행되고 결과 목록을 반환합니다."
@@ -1360,6 +1363,9 @@ msgstr "항상"
 
 msgid "Always taken"
 msgstr "항상 사용됨"
+
+msgid "ambiguous"
+msgstr ""
 
 msgid "Amount"
 msgstr "금액"
@@ -2783,6 +2789,10 @@ msgstr "Carbon 클라이언트를 찾을 수 없음"
 msgid "Carbon column"
 msgstr "Carbon 열"
 
+#. placeholder {0}: row.siblings.join(", ")
+msgid "Carbon has {0}"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon이 귀사의 운영 방식에 맞게 설정되었고, 데이터가 적재되었으며, 팀이 자신 있게 사용할 수 있는 상태입니다. 이 조건이 충족되면 실제 운영을 시작할 준비가 된 것입니다."
 
@@ -3785,6 +3795,9 @@ msgstr "문서를 읽을 수 없습니다: {0}"
 
 msgid "Could not save"
 msgstr "저장할 수 없습니다"
+
+msgid "Could not start the import"
+msgstr ""
 
 msgid "Couldn't complete the Onshape connection"
 msgstr "Onshape 연결을 완료할 수 없습니다"
@@ -6088,6 +6101,9 @@ msgstr "모든 조건이 일치해야 함"
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테스트를 통과합니다."
 
+msgid "Every line is matched to Carbon by a hidden Onshape id, never by part number. Nothing is written until you confirm."
+msgstr ""
+
 msgid "Every match"
 msgstr "모든 일치"
 
@@ -7517,11 +7533,23 @@ msgstr "구현 리드"
 msgid "Implementation Support"
 msgstr "구현 지원"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "{label} CSV 가져오기"
 
+msgid "Import a bill of materials"
+msgstr ""
+
+msgid "Import from Onshape"
+msgstr ""
+
 msgid "Import results"
 msgstr "가져오기 결과"
+
+msgid "Import started"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "BOM 가져오기"
@@ -8420,6 +8448,9 @@ msgstr "라인 상태"
 msgid "Linear Team"
 msgstr "Linear 팀"
 
+msgid "lines"
+msgstr ""
+
 msgid "Lines"
 msgstr "라인"
 
@@ -9107,6 +9138,9 @@ msgstr "누락된 정보"
 msgid "Missing Operations"
 msgstr "누락된 공정작업"
 
+msgid "missing revisions"
+msgstr ""
+
 msgid "Missing Shipping Costs"
 msgstr "누락된 배송비"
 
@@ -9440,6 +9474,9 @@ msgid "New Part"
 msgstr "새 품목"
 
 msgid "New part from Onshape"
+msgstr ""
+
+msgid "new parts"
 msgstr ""
 
 msgid "New Password"
@@ -9956,6 +9993,9 @@ msgstr "결과 없음"
 msgid "No results found"
 msgstr "결과가 없습니다"
 
+msgid "no revision"
+msgstr ""
+
 msgid "No revisions match that search."
 msgstr ""
 
@@ -10274,6 +10314,9 @@ msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape가 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
+
+msgid "Onshape can only import into a Draft method. This one is {makeMethodStatus} — create a new version to import into."
+msgstr ""
 
 msgid "Onshape denied the connection"
 msgstr "Onshape가 연결을 거부했습니다"
@@ -10959,6 +11002,9 @@ msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "재고가 필요한 상자를 선택한 후 가져올 상자를 선택하세요."
 
 msgid "Pick the Onshape revision this part corresponds to. Already-linked parts are shown so you can see what is taken."
+msgstr ""
+
+msgid "Pick the released Onshape assembly to import. Only assemblies are listed — a Part Studio body has no bill of materials."
 msgstr ""
 
 msgid "Pick tracked item"
@@ -11858,6 +11904,9 @@ msgstr "읽을 수 있는 ID"
 
 msgid "Readable id with revision"
 msgstr "개정판이 포함된 읽을 수 있는 ID"
+
+msgid "Reading the bill of materials…"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "문서를 읽는 중..."
@@ -13769,6 +13818,9 @@ msgstr "솔루션 엔지니어"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF에서 추출된 일부 라인을 재고 품목에 자동으로 매핑할 수 없습니다. 아래에서 각 라인을 검토하고 매핑하세요."
 
+msgid "Some lines will be skipped"
+msgstr ""
+
 msgid "Something went wrong. Please try again."
 msgstr "문제가 발생했습니다. 다시 시도해 주세요."
 
@@ -15621,6 +15673,9 @@ msgstr "대상 저장 단위"
 
 msgid "To supplier"
 msgstr "공급업체로"
+
+msgid "to update"
+msgstr ""
 
 msgid "Today"
 msgstr "오늘"

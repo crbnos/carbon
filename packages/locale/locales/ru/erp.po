@@ -444,6 +444,9 @@ msgstr "Дата начала работы изменяется"
 msgid "A job's status changes"
 msgstr "Статус работы изменяется"
 
+msgid "A line whose revision Carbon does not have is skipped rather than created — new revisions arrive through release import. A line two Carbon items both claim is skipped for a person to resolve. Everything else imports."
+msgstr ""
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Список подключен к {0}, поэтому этот шаг выполняется один раз для каждого элемента и возвращает список результатов."
@@ -1360,6 +1363,9 @@ msgstr "Всегда"
 
 msgid "Always taken"
 msgstr "Всегда выбирается"
+
+msgid "ambiguous"
+msgstr ""
 
 msgid "Amount"
 msgstr "Сумма"
@@ -2783,6 +2789,10 @@ msgstr "Клиент Carbon не найден"
 msgid "Carbon column"
 msgstr "Столбец Carbon"
 
+#. placeholder {0}: row.siblings.join(", ")
+msgid "Carbon has {0}"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon настроена в соответствии с тем, как работает ваша компания, ваши данные загружены, и ваша команда уверенно её использует. Когда это произойдёт, вы будете готовы к запуску."
 
@@ -3785,6 +3795,9 @@ msgstr "Не удалось прочитать документ: {0}"
 
 msgid "Could not save"
 msgstr "Не удалось сохранить"
+
+msgid "Could not start the import"
+msgstr ""
 
 msgid "Couldn't complete the Onshape connection"
 msgstr "Не удалось завершить подключение к Onshape"
@@ -6088,6 +6101,9 @@ msgstr "Каждое условие должно совпадать"
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
 
+msgid "Every line is matched to Carbon by a hidden Onshape id, never by part number. Nothing is written until you confirm."
+msgstr ""
+
 msgid "Every match"
 msgstr "Каждое совпадение"
 
@@ -7517,11 +7533,23 @@ msgstr "Руководитель внедрения"
 msgid "Implementation Support"
 msgstr "Поддержка внедрения"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "Импорт {label} CSV"
 
+msgid "Import a bill of materials"
+msgstr ""
+
+msgid "Import from Onshape"
+msgstr ""
+
 msgid "Import results"
 msgstr "Результаты импорта"
+
+msgid "Import started"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
@@ -8420,6 +8448,9 @@ msgstr "Статус строки"
 msgid "Linear Team"
 msgstr "Команда Linear"
 
+msgid "lines"
+msgstr ""
+
 msgid "Lines"
 msgstr "Строки"
 
@@ -9107,6 +9138,9 @@ msgstr "Отсутствует информация"
 msgid "Missing Operations"
 msgstr "Отсутствуют операции"
 
+msgid "missing revisions"
+msgstr ""
+
 msgid "Missing Shipping Costs"
 msgstr "Отсутствуют расходы на доставку"
 
@@ -9440,6 +9474,9 @@ msgid "New Part"
 msgstr "Новая деталь"
 
 msgid "New part from Onshape"
+msgstr ""
+
+msgid "new parts"
 msgstr ""
 
 msgid "New Password"
@@ -9956,6 +9993,9 @@ msgstr "Нет результатов"
 msgid "No results found"
 msgstr "Результатов не найдено"
 
+msgid "no revision"
+msgstr ""
+
 msgid "No revisions match that search."
 msgstr ""
 
@@ -10274,6 +10314,9 @@ msgstr "Удалять можно только пустые открытые п�
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape авторизовал подключение, но сохранить его не удалось. Повторите попытку подключения."
+
+msgid "Onshape can only import into a Draft method. This one is {makeMethodStatus} — create a new version to import into."
+msgstr ""
 
 msgid "Onshape denied the connection"
 msgstr "Onshape отклонил подключение"
@@ -10959,6 +11002,9 @@ msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Выберите контейнер, который нуждается в запасе, затем выберите контейнеры, из которых его извлечь."
 
 msgid "Pick the Onshape revision this part corresponds to. Already-linked parts are shown so you can see what is taken."
+msgstr ""
+
+msgid "Pick the released Onshape assembly to import. Only assemblies are listed — a Part Studio body has no bill of materials."
 msgstr ""
 
 msgid "Pick tracked item"
@@ -11858,6 +11904,9 @@ msgstr "Читаемый ID"
 
 msgid "Readable id with revision"
 msgstr "Читаемый идентификатор с редакцией"
+
+msgid "Reading the bill of materials…"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "Чтение документа..."
@@ -13769,6 +13818,9 @@ msgstr "Инженер решений"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Некоторые строки, извлеченные из PDF, не удалось автоматически сопоставить с элементами вашего инвентаря. Проверьте и сопоставьте каждую строку ниже."
 
+msgid "Some lines will be skipped"
+msgstr ""
+
 msgid "Something went wrong. Please try again."
 msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."
 
@@ -15621,6 +15673,9 @@ msgstr "На хранилище"
 
 msgid "To supplier"
 msgstr "Поставщику"
+
+msgid "to update"
+msgstr ""
 
 msgid "Today"
 msgstr "Сегодня"

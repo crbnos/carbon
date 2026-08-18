@@ -22,6 +22,7 @@ import {
   BoMExportMenuItems,
   useBoMExplorer
 } from "~/components/BoMExplorer";
+import { OnshapeBomImport } from "~/components/OnshapeBomImport";
 import { OnshapeSync } from "~/components/OnshapeSync";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { useIntegrations } from "~/hooks/useIntegrations";
@@ -105,6 +106,7 @@ function ItemBoMExplorerContent({
   itemId: string;
   hideSearch?: boolean;
 }) {
+  const { t } = useLingui();
   const integrations = useIntegrations();
   const onshapePipeline = useOnshapePipeline();
   const params = useParams();
@@ -167,6 +169,19 @@ function ItemBoMExplorerContent({
             makeMethodId={makeMethodId}
             itemId={itemId}
             isDisabled={makeMethodStatus !== "Draft"}
+          />
+        </div>
+      )}
+      {integrations.has("onshape") && onshapePipeline.isV2 && (
+        <div className="flex flex-shrink-0 w-full">
+          <OnshapeBomImport
+            makeMethodId={makeMethodId}
+            isDisabled={makeMethodStatus !== "Draft"}
+            disabledReason={
+              makeMethodStatus !== "Draft"
+                ? t`Onshape can only import into a Draft method. This one is ${makeMethodStatus} — create a new version to import into.`
+                : undefined
+            }
           />
         </div>
       )}

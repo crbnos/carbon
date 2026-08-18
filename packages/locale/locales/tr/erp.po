@@ -444,6 +444,9 @@ msgstr "Bir işin başlama tarihi değiştirildi"
 msgid "A job's status changes"
 msgstr "Bir işin durumu değiştirildi"
 
+msgid "A line whose revision Carbon does not have is skipped rather than created — new revisions arrive through release import. A line two Carbon items both claim is skipped for a person to resolve. Everything else imports."
+msgstr ""
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Bir liste {0} öğesine bağlandı, bu nedenle bu adım her öğe için bir kez çalışır ve sonuçların listesini döndürür."
@@ -1360,6 +1363,9 @@ msgstr "Her zaman"
 
 msgid "Always taken"
 msgstr "Her zaman alındı"
+
+msgid "ambiguous"
+msgstr ""
 
 msgid "Amount"
 msgstr "Tutar"
@@ -2783,6 +2789,10 @@ msgstr "Carbon istemcisi bulunamadı"
 msgid "Carbon column"
 msgstr "Carbon sütunu"
 
+#. placeholder {0}: row.siblings.join(", ")
+msgid "Carbon has {0}"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon, şirketinizin çalışma şekline göre yapılandırılmış, verileriniz yüklenmiş ve ekibiniz bunu kullanmakta kendinden emin. Bu doğru olduğunda, canlı yayına geçmeye hazırsınız."
 
@@ -3785,6 +3795,9 @@ msgstr "Belge okunamadı: {0}"
 
 msgid "Could not save"
 msgstr "Kaydedilemedi"
+
+msgid "Could not start the import"
+msgstr ""
 
 msgid "Couldn't complete the Onshape connection"
 msgstr "Onshape bağlantısı tamamlanamadı"
@@ -6088,6 +6101,9 @@ msgstr "Her koşul eşleşmelidir"
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle geçer."
 
+msgid "Every line is matched to Carbon by a hidden Onshape id, never by part number. Nothing is written until you confirm."
+msgstr ""
+
 msgid "Every match"
 msgstr "Her eşleşme"
 
@@ -7517,11 +7533,23 @@ msgstr "Uygulama Müdürü"
 msgid "Implementation Support"
 msgstr "Kurulum Desteği"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "İçe aktarılacak {label} CSV"
 
+msgid "Import a bill of materials"
+msgstr ""
+
+msgid "Import from Onshape"
+msgstr ""
+
 msgid "Import results"
 msgstr "İçe Aktarma Sonuçları"
+
+msgid "Import started"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
@@ -8420,6 +8448,9 @@ msgstr "Satır Durumu"
 msgid "Linear Team"
 msgstr "Lineer Takım"
 
+msgid "lines"
+msgstr ""
+
 msgid "Lines"
 msgstr "Satırlar"
 
@@ -9107,6 +9138,9 @@ msgstr "Eksik Bilgi"
 msgid "Missing Operations"
 msgstr "Eksik İşlemler"
 
+msgid "missing revisions"
+msgstr ""
+
 msgid "Missing Shipping Costs"
 msgstr "Kargo Maliyetleri Eksik"
 
@@ -9440,6 +9474,9 @@ msgid "New Part"
 msgstr "Yeni Ürün"
 
 msgid "New part from Onshape"
+msgstr ""
+
+msgid "new parts"
 msgstr ""
 
 msgid "New Password"
@@ -9956,6 +9993,9 @@ msgstr "Sonuç bulunamadı"
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
 
+msgid "no revision"
+msgstr ""
+
 msgid "No revisions match that search."
 msgstr ""
 
@@ -10274,6 +10314,9 @@ msgstr "Yalnızca boş, açık dönemler silinebilir."
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydetme başarısız oldu. Yeniden bağlanmayı deneyin."
+
+msgid "Onshape can only import into a Draft method. This one is {makeMethodStatus} — create a new version to import into."
+msgstr ""
 
 msgid "Onshape denied the connection"
 msgstr "Onshape bağlantıyı reddetti"
@@ -10959,6 +11002,9 @@ msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Stok gereken kutuyu seçin, ardından çekilecek kutuları seçin."
 
 msgid "Pick the Onshape revision this part corresponds to. Already-linked parts are shown so you can see what is taken."
+msgstr ""
+
+msgid "Pick the released Onshape assembly to import. Only assemblies are listed — a Part Studio body has no bill of materials."
 msgstr ""
 
 msgid "Pick tracked item"
@@ -11858,6 +11904,9 @@ msgstr "Okunabilir ID"
 
 msgid "Readable id with revision"
 msgstr "Revizyon içeren okunabilir kimlik"
+
+msgid "Reading the bill of materials…"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "Belge okunuyor..."
@@ -13769,6 +13818,9 @@ msgstr "Çözüm Mühendisi"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF'den çıkarılan bazı satırlar envanter öğelerinize otomatik olarak eşleştirilemedi. Aşağıdaki her satırı gözden geçirin ve eşleştirin."
 
+msgid "Some lines will be skipped"
+msgstr ""
+
 msgid "Something went wrong. Please try again."
 msgstr "Bir şeyler ters gitti. Lütfen tekrar deneyin."
 
@@ -15621,6 +15673,9 @@ msgstr "Hedef Depo Birimi"
 
 msgid "To supplier"
 msgstr "Tedarikçiye"
+
+msgid "to update"
+msgstr ""
 
 msgid "Today"
 msgstr "Bugün"

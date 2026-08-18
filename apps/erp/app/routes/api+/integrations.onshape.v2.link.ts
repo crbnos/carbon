@@ -9,6 +9,7 @@ import {
   readElementMappingsForItems,
   readItemIdsForElement,
   resolveOnshapeRevision,
+  revisionsMatch,
   writeElementMapping,
   writeRevisionMapping
 } from "@carbon/ee/onshape";
@@ -117,11 +118,36 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const otherClaimants = claimedBy.filter((id) => id !== input.itemId);
   if (otherClaimants.length > 0) {
-    return {
-      success: false,
-      message:
-        "That Onshape part is already linked to a different item in Carbon. Unlink it there first."
-    };
+    // A conflict only exists at the SAME revision. One Onshape part maps to
+    // every Carbon revision of it — which is precisely why the element mapping
+    // allows duplicate externalIds — so EL-402.A and EL-402.C both claiming one
+    // element is correct, not a collision.
+    const others = await client
+      .from("item")
+      .select("id, revision, readableIdWithRevision")
+      .in("id", otherClaimants)
+      .eq("companyId", companyId);
+
+    if (others.error) {
+      logger.error("Failed to read competing Onshape claims", {
+        error: others.error
+      });
+      return {
+        success: false,
+        message: "Could not check which items already claim this Onshape part"
+      };
+    }
+
+    const sameRevision = (others.data ?? []).find((other) =>
+      revisionsMatch(other.revision, input.revision)
+    );
+
+    if (sameRevision) {
+      return {
+        success: false,
+        message: `${sameRevision.readableIdWithRevision} is already linked to this Onshape part at revision ${input.revision}. Unlink it there first.`
+      };
+    }
   }
 
   const current = existingForItem.get(input.itemId);

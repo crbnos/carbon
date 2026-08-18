@@ -444,6 +444,9 @@ msgstr "任务的开始日期已变更"
 msgid "A job's status changes"
 msgstr "任务的状态已变更"
 
+msgid "A line whose revision Carbon does not have is skipped rather than created — new revisions arrive through release import. A line two Carbon items both claim is skipped for a person to resolve. Everything else imports."
+msgstr ""
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "列表被接入到 {0}，所以此步骤为每个项目运行一次并返回结果列表。"
@@ -1360,6 +1363,9 @@ msgstr "始终"
 
 msgid "Always taken"
 msgstr "始终采取"
+
+msgid "ambiguous"
+msgstr ""
 
 msgid "Amount"
 msgstr "金额"
@@ -2783,6 +2789,10 @@ msgstr "找不到 Carbon 客户端"
 msgid "Carbon column"
 msgstr "Carbon 列"
 
+#. placeholder {0}: row.siblings.join(", ")
+msgid "Carbon has {0}"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon已按照您公司的运营方式进行配置，您的数据已加载，您的团队对使用它充满信心。当这一切都实现时，您就可以上线了。"
 
@@ -3785,6 +3795,9 @@ msgstr "无法读取文档：{0}"
 
 msgid "Could not save"
 msgstr "无法保存"
+
+msgid "Could not start the import"
+msgstr ""
 
 msgid "Couldn't complete the Onshape connection"
 msgstr "无法完成 Onshape 连接"
@@ -6088,6 +6101,9 @@ msgstr "每个条件都必须匹配"
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了，使用您的数据。"
 
+msgid "Every line is matched to Carbon by a hidden Onshape id, never by part number. Nothing is written until you confirm."
+msgstr ""
+
 msgid "Every match"
 msgstr "每次匹配"
 
@@ -7517,11 +7533,23 @@ msgstr "实施主管"
 msgid "Implementation Support"
 msgstr "实施支持"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
+msgid "Import a bill of materials"
+msgstr ""
+
+msgid "Import from Onshape"
+msgstr ""
+
 msgid "Import results"
 msgstr "导入结果"
+
+msgid "Import started"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "导入您的物料清单"
@@ -8420,6 +8448,9 @@ msgstr "行状态"
 msgid "Linear Team"
 msgstr "Linear 团队"
 
+msgid "lines"
+msgstr ""
+
 msgid "Lines"
 msgstr "行"
 
@@ -9107,6 +9138,9 @@ msgstr "缺少信息"
 msgid "Missing Operations"
 msgstr "缺少操作"
 
+msgid "missing revisions"
+msgstr ""
+
 msgid "Missing Shipping Costs"
 msgstr "缺少运费"
 
@@ -9440,6 +9474,9 @@ msgid "New Part"
 msgstr "新零件"
 
 msgid "New part from Onshape"
+msgstr ""
+
+msgid "new parts"
 msgstr ""
 
 msgid "New Password"
@@ -9956,6 +9993,9 @@ msgstr "无结果"
 msgid "No results found"
 msgstr "未找到结果"
 
+msgid "no revision"
+msgstr ""
+
 msgid "No revisions match that search."
 msgstr ""
 
@@ -10274,6 +10314,9 @@ msgstr "仅可删除空白的开放期间。"
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape 已授权此连接，但保存失败。请重新连接。"
+
+msgid "Onshape can only import into a Draft method. This one is {makeMethodStatus} — create a new version to import into."
+msgstr ""
 
 msgid "Onshape denied the connection"
 msgstr "Onshape 拒绝了连接"
@@ -10959,6 +11002,9 @@ msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "先选择需要库存的箱，再选择要从中提取库存的箱。"
 
 msgid "Pick the Onshape revision this part corresponds to. Already-linked parts are shown so you can see what is taken."
+msgstr ""
+
+msgid "Pick the released Onshape assembly to import. Only assemblies are listed — a Part Studio body has no bill of materials."
 msgstr ""
 
 msgid "Pick tracked item"
@@ -11858,6 +11904,9 @@ msgstr "可读ID"
 
 msgid "Readable id with revision"
 msgstr "可读 ID（含版本）"
+
+msgid "Reading the bill of materials…"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "正在读取文档..."
@@ -13769,6 +13818,9 @@ msgstr "解决方案工程师"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "从PDF提取的某些行无法自动映射到您的库存项目。请查看并映射下面的每一行。"
 
+msgid "Some lines will be skipped"
+msgstr ""
+
 msgid "Something went wrong. Please try again."
 msgstr "出现问题。请重试。"
 
@@ -15621,6 +15673,9 @@ msgstr "至存储单位"
 
 msgid "To supplier"
 msgstr "给供应商"
+
+msgid "to update"
+msgstr ""
 
 msgid "Today"
 msgstr "今天"
