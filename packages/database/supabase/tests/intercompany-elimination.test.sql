@@ -131,19 +131,47 @@ $fn$ LANGUAGE sql;
 DO $main$
 DECLARE
   v_grp text; v_seller text; v_buyer text; v_user text; v_item text;
+  v_parent text; v_elim text; v_ref text;
   d date := DATE '2026-03-15';   -- distinct from any existing data
   n int;
   -- SQLSTATE 22000 is our sentinel to unwind a scenario's data via the block's
   -- implicit savepoint. A real ASSERT failure raises P0004, which is NOT caught
   -- and therefore propagates and aborts the whole run.
 BEGIN
-  SELECT DISTINCT c."companyGroupId" INTO v_grp FROM "company" c
-    WHERE c."name"='Carbon Manufacturing';
-  SELECT id INTO v_seller FROM "company" WHERE "name"='Carbon Manufacturing' AND "companyGroupId"=v_grp;
-  SELECT id INTO v_buyer  FROM "company" WHERE "name"='Carbon Service' AND "companyGroupId"=v_grp;
-  SELECT utc."userId" INTO v_user FROM "userToCompany" utc JOIN "company" c ON c."id"=utc."companyId"
-    WHERE c."companyGroupId"=v_grp AND utc."role"='employee' LIMIT 1;
-  SELECT id INTO v_item FROM "item" WHERE "companyId"=v_buyer LIMIT 1;
+  -- Self-provision an isolated intercompany group so the harness does not depend
+  -- on any manually-built scenario (a DB reset wipes those). Reuse an existing
+  -- company as the BUYER — it already has the group's shared chart of accounts,
+  -- items, and an employee — and provision parent/seller/elimination siblings by
+  -- copying its row. Everything rolls back with the outer transaction.
+  v_ref := id();
+  SELECT c."id", c."companyGroupId" INTO v_buyer, v_grp
+    FROM "company" c WHERE c."isEliminationEntity" = false
+    ORDER BY c."createdAt" LIMIT 1;
+  SELECT utc."userId" INTO v_user FROM "userToCompany" utc
+    JOIN "company" c ON c."id" = utc."companyId"
+    WHERE c."companyGroupId" = v_grp AND utc."role" = 'employee' LIMIT 1;
+  SELECT i."id" INTO v_item FROM "item" i WHERE i."companyId" = v_buyer LIMIT 1;
+
+  v_parent := id(); v_seller := id(); v_elim := id();
+  CREATE TEMP TABLE _co ON COMMIT DROP AS SELECT * FROM "company" WHERE "id" = v_buyer;
+  UPDATE _co SET "id"=v_parent, "name"='Harness Parent '||v_ref, "parentCompanyId"=NULL, "isEliminationEntity"=false;
+  INSERT INTO "company" SELECT * FROM _co;
+  UPDATE _co SET "id"=v_seller, "name"='Harness Seller '||v_ref, "parentCompanyId"=v_parent;
+  INSERT INTO "company" SELECT * FROM _co;
+  UPDATE _co SET "id"=v_elim, "name"='Harness Elim '||v_ref, "isEliminationEntity"=true;
+  INSERT INTO "company" SELECT * FROM _co;
+  UPDATE "company" SET "parentCompanyId"=v_parent WHERE "id"=v_buyer;   -- buyer under the parent
+
+  -- The elimination entity needs its own journalEntry sequence + fiscal settings
+  -- (the RPC calls get_next_sequence and get-or-creates a period on it).
+  -- sequence.id is a generated column, so copy explicit columns and let it regenerate.
+  INSERT INTO "sequence" ("table","name","prefix","suffix","next","size","step","companyId","updatedBy")
+  SELECT "table","name","prefix","suffix","next","size","step", v_elim, "updatedBy"
+  FROM "sequence" WHERE "table"='journalEntry' AND "companyId"=v_buyer LIMIT 1;
+  CREATE TEMP TABLE _fys ON COMMIT DROP AS
+    SELECT * FROM "fiscalYearSettings" WHERE "companyId"=v_buyer LIMIT 1;
+  UPDATE _fys SET "companyId"=v_elim;
+  INSERT INTO "fiscalYearSettings" SELECT * FROM _fys;
 
   -- Scenario 1: FIXED-ASSET buyer, fully held (the negative-Finished-Goods bug).
   -- revenue 100, cost 60, margin 40; buyer capitalizes a fixed asset (no item).
