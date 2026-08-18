@@ -1,4 +1,5 @@
 import { gzipSync } from "node:zlib";
+import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { auditConfig } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
@@ -7,6 +8,15 @@ import { datetime } from "@carbon/utils";
 import { inngest } from "../../client";
 
 const log = getLogger("jobs", "audit-archive");
+
+// NIST 800-171 3.3.8 / AU-11: controlled environments keep one year of
+// directly-queryable audit history hot before it is archived. Non-controlled
+// deployments keep the shorter default window (`auditConfig.retentionDays`) and
+// rely on the persisted gzip archives (never deleted by the app) for older records.
+const CONTROLLED_RETENTION_DAYS = 365;
+const RETENTION_DAYS = CONTROLLED_ENVIRONMENT
+  ? CONTROLLED_RETENTION_DAYS
+  : auditConfig.retentionDays;
 
 // Type for RPC calls
 type AuditArchiveRpcClient = {
@@ -121,7 +131,7 @@ export const auditArchiveFunction = inngest.createFunction(
 
       // Calculate cutoff date
       const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - auditConfig.retentionDays);
+      cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
 
       logger.info(
         `Archiving audit logs older than ${cutoffDate.toISOString()}`

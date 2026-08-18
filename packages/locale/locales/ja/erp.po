@@ -110,6 +110,10 @@ msgstr "{0}個の問題 — 未発行"
 msgid "{0} Processes"
 msgstr "{0}個のプロセス"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0}登録済み"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0}件の残高のある仕入先"
@@ -1062,6 +1066,9 @@ msgstr "あなたの決定についてのメモを追加してください..."
 msgid "Add Approval Requirement"
 msgstr "承認要件を追加"
 
+msgid "Add Authenticator App"
+msgstr "認証器アプリを追加"
+
 msgid "Add Calibration Record"
 msgstr "キャリブレーション記録を追加"
 
@@ -1136,6 +1143,9 @@ msgstr "パートナーを追加"
 
 msgid "Add parts"
 msgstr "部品を追加"
+
+msgid "Add Passkey"
+msgstr "パスキーを追加"
 
 msgid "Add path"
 msgstr "パスを追加"
@@ -1996,6 +2006,9 @@ msgstr "このカンバンカードを削除してもよろしいですか？こ
 msgid "Are you sure you want to delete this maintenance dispatch? This cannot be undone."
 msgstr "このメンテナンスディスパッチを削除してもよろしいですか？この操作は取り消せません。"
 
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "このパスキーを削除してもよろしいですか？サインインに使用できなくなります。"
+
 msgid "Are you sure you want to delete this quality document?"
 msgstr "このクオリティドキュメントを削除してもよろしいですか？"
 
@@ -2260,6 +2273,9 @@ msgstr "監査ログ"
 
 msgid "Authentication Error"
 msgstr "認証エラー"
+
+msgid "Authenticator app"
+msgstr "認証器アプリ"
 
 msgid "Authenticator QR code"
 msgstr "認証器QRコード"
@@ -4760,6 +4776,12 @@ msgstr "パーツを削除"
 msgid "Delete Partner"
 msgstr "パートナーを削除"
 
+msgid "Delete passkey"
+msgstr "パスキーを削除"
+
+msgid "Delete Passkey"
+msgstr "パスキーを削除"
+
 msgid "Delete Payment"
 msgstr "支払いを削除"
 
@@ -5568,6 +5590,9 @@ msgstr "パーツを編集"
 msgid "Edit Partner"
 msgstr "パートナーを編集"
 
+msgid "Edit Passkey"
+msgstr "パスキーを編集"
+
 msgid "Edit Payment"
 msgstr "支払いを編集"
 
@@ -5899,6 +5924,9 @@ msgstr "テキストを入力..."
 
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "認証アプリから6桁のコードを入力してください"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "認証器アプリから6桁のコードを入力して再開します。"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
@@ -6440,6 +6468,9 @@ msgstr "リスクの取得に失敗しました"
 msgid "Failed to fetch suggestions"
 msgstr "提案の取得に失敗しました"
 
+msgid "Failed to get options"
+msgstr "オプションの取得に失敗しました"
+
 msgid "Failed to initialize Carbon client"
 msgstr "Carbonクライアントの初期化に失敗しました"
 
@@ -6509,6 +6540,9 @@ msgstr "勘定科目の移動に失敗しました: {0}"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "サムネイルの再生成に失敗しました"
+
+msgid "Failed to register passkey"
+msgstr "パスキーの登録に失敗しました"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "画像の削除に失敗しました: {errorMessage}"
@@ -8274,6 +8308,9 @@ msgstr "最終実行"
 msgid "Last synced: <0/>"
 msgstr "最後に同期: <0/>"
 
+msgid "Last used"
+msgstr "最後に使用"
+
 msgid "Latest operation end"
 msgstr "最終操作終了"
 
@@ -9840,6 +9877,9 @@ msgstr "パーツIDなし"
 msgid "No parts"
 msgstr "部品がありません"
 
+msgid "No passkeys registered yet."
+msgstr "まだパスキーは登録されていません。"
+
 msgid "No payables"
 msgstr "支払い義務なし"
 
@@ -10441,8 +10481,14 @@ msgstr "オプションページとセクション"
 msgid "Options"
 msgstr "オプション"
 
+msgid "or"
+msgstr "または"
+
 msgid "OR"
 msgstr "または"
+
+msgid "Or enter this secret manually:"
+msgstr "または、このシークレットを手動で入力します："
 
 msgid "Order"
 msgstr "注文"
@@ -10709,6 +10755,18 @@ msgstr "合格"
 
 msgid "Passed"
 msgstr "完了"
+
+msgid "Passkey name"
+msgstr "パスキー名"
+
+msgid "Passkey unlock failed"
+msgstr "パスキーのロック解除に失敗しました"
+
+msgid "Passkeys"
+msgstr "パスキー"
+
+msgid "Passkeys are disabled"
+msgstr "パスキーは無効です"
 
 msgid "Path"
 msgstr "パス"
@@ -12005,6 +12063,9 @@ msgstr "登録済み"
 msgid "Registered"
 msgstr "再注文点"
 
+msgid "Registration failed"
+msgstr "登録に失敗しました"
+
 msgid "Registration Number"
 msgstr "登録番号"
 
@@ -12081,6 +12142,9 @@ msgstr "{0}を削除"
 msgid "Remove {label}"
 msgstr "{label}を削除"
 
+msgid "Remove authenticator app"
+msgstr "認証器アプリを削除"
+
 msgid "Remove clause"
 msgstr "句を削除"
 
@@ -12128,6 +12192,9 @@ msgstr "このストレージタイプをすべての参照ストレージユニ
 
 msgid "Remove tool"
 msgstr "ツールを削除"
+
+msgid "Remove two-factor authentication"
+msgstr "二要素認証を削除"
 
 msgid "Removed"
 msgstr "削除済み"
@@ -12235,6 +12302,9 @@ msgstr "承認をリクエスト"
 msgid "Requested Date"
 msgstr "リクエスト日"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このコンパニーを開く前に認証アプリが必須になります。他のコンパニーには影響しません。<0>従業員アカウントページ</0>をご覧ください。"
 
@@ -12269,7 +12339,7 @@ msgid "Required Date"
 msgstr "必須日付"
 
 msgid "Required in a controlled environment — audit logging cannot be turned off."
-msgstr ""
+msgstr "管理された環境では必須です。監査ログはオフにできません。"
 
 msgid "Requirement"
 msgstr "要件"
@@ -12824,6 +12894,9 @@ msgstr "スキャンまたは検索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象エンティティをスキャンまたは選択してサンプル列として追加し、グリッドにその結果を記録します。"
 
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "認証器アプリ（Google AuthenticatorまたはOne Passwordなど）でこのQRコードをスキャンしてから、表示される6桁のコードを入力します。"
+
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "認証アプリでスキャンして、表示される6桁のコードを入力してください。"
 
@@ -12985,6 +13058,9 @@ msgstr "完了までの秒数"
 
 msgid "Seconds/Piece"
 msgstr "秒/個"
+
+msgid "Secret copied to clipboard"
+msgstr "シークレットをクリップボードにコピーしました"
 
 msgid "Section"
 msgstr "セクション"
@@ -13304,7 +13380,7 @@ msgid "Services"
 msgstr "サービス"
 
 msgid "Session locked"
-msgstr ""
+msgstr "セッションがロック中"
 
 msgid "Set a target"
 msgstr "ターゲットを設定"
@@ -13341,6 +13417,9 @@ msgstr "認証アプリをセットアップ"
 
 msgid "Set up the right way"
 msgstr "正しい方法でセットアップ"
+
+msgid "Set up two-factor authentication"
+msgstr "二要素認証を設定"
 
 msgid "Set up your company with a step-by-step implementation plan covering setup, data, training, and go-live."
 msgstr "セットアップ、データ、トレーニング、本番稼働をカバーするステップバイステップの実装プランで会社をセットアップします。"
@@ -13617,6 +13696,9 @@ msgstr "生成されたPDFの各ページの背景に薄く表示されます"
 msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "マジックリンクの代わりに生体認証でサインインします。パスキーはFace ID、Touch ID、またはデバイスPINで保護されます。"
+
 msgid "Sign in with Email"
 msgstr "メールでサインイン"
 
@@ -13636,7 +13718,7 @@ msgid "Sign Out"
 msgstr "サインアウト"
 
 msgid "Sign out instead"
-msgstr ""
+msgstr "代わりにサインアウト"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "次のステップに進む前のサインオフレビュー"
@@ -13652,6 +13734,9 @@ msgstr "署名された数量 — アウトバウンド移動の場合は負数"
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "サインインには認証アプリからのワンタイムコードも必要です"
+
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "サインインにはコードが不要になります。確認するために、認証器アプリの現在の6桁のコードを入力します。"
 
 msgid "Sites & locations"
 msgstr "サイトと場所"
@@ -15827,8 +15912,17 @@ msgstr "2要素認証"
 msgid "Two-factor authentication"
 msgstr "2要素認証"
 
+msgid "Two-factor authentication disabled"
+msgstr "二要素認証が無効になりました"
+
+msgid "Two-factor authentication enabled"
+msgstr "二要素認証が有効になりました"
+
 msgid "Two-Factor Authentication Enforcement"
 msgstr "2要素認証の強制実行"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "二要素認証は有効になっていません。"
 
 msgid "Type"
 msgstr "種類"
@@ -15861,7 +15955,7 @@ msgid "U.S. Person Attestation"
 msgstr "米国人証明"
 
 msgid "Unable to unlock"
-msgstr ""
+msgstr "ロック解除できません"
 
 msgid "Unapplied"
 msgstr "未適用"
@@ -15964,6 +16058,9 @@ msgstr "販売注文からジョブのリンクを解除しますか？"
 
 msgid "Unlock"
 msgstr "ロック解除"
+
+msgid "Unlock with passkey"
+msgstr "パスキーでロック解除"
 
 msgid "Unmapped accounts"
 msgstr "マップされていないアカウント"
@@ -17307,8 +17404,8 @@ msgstr "あなたのプロジェクトチーム"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"
 
-msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
-msgstr ""
+msgid "Your session was locked after inactivity."
+msgstr "セッションは非アクティブ後にロックされました。"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "あなたのソースデータはアクセス可能で、適切にクリーンです"

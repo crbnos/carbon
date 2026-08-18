@@ -425,6 +425,9 @@ msgstr "PIN'i {0} için girin"
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "Kimlik doğrulama uygulamanızdan 6 haneli kodu girin"
 
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Devam etmek için kimlik doğrulama uygulamanızdan 6 haneli kodu girin."
+
 msgid "Error"
 msgstr "Hata"
 
@@ -926,6 +929,9 @@ msgstr "Operatör Tarafından Yapıldı"
 msgid "Optional"
 msgstr "İsteğe bağlı"
 
+msgid "or"
+msgstr "veya"
+
 msgid "Overall result"
 msgstr "Genel sonuç"
 
@@ -946,6 +952,9 @@ msgstr "Kısmi Disposition"
 
 msgid "Passed Inspection"
 msgstr "Kontrolden Geçti"
+
+msgid "Passkey unlock failed"
+msgstr "Parola anahtarı kilidini açma başarısız oldu"
 
 msgid "Pause"
 msgstr "Duraklat"
@@ -1222,7 +1231,7 @@ msgid "Serial Numbers"
 msgstr "Seri Numaraları"
 
 msgid "Session locked"
-msgstr ""
+msgstr "Oturum kilitlendi"
 
 msgid "Set Clock Out"
 msgstr "Çıkış Yap"
@@ -1264,7 +1273,7 @@ msgid "Sign Out"
 msgstr "Oturumu Kapat"
 
 msgid "Sign out instead"
-msgstr ""
+msgstr "Bunun yerine oturumu kapat"
 
 msgid "Signed in as {stationName}"
 msgstr "Oturum açıldı olarak {stationName}"
@@ -1400,7 +1409,7 @@ msgid "Type a message..."
 msgstr "Bir mesaj yaz..."
 
 msgid "Unable to unlock"
-msgstr ""
+msgstr "Kilit açılamıyor"
 
 msgid "Unissued serial/batch materials"
 msgstr "Yayımlanmamış seri/parti malzemeleri"
@@ -1409,7 +1418,10 @@ msgid "Unknown"
 msgstr "Bilinmiyor"
 
 msgid "Unlock"
-msgstr ""
+msgstr "Kilit aç"
+
+msgid "Unlock with passkey"
+msgstr "Parola anahtarı ile kilit aç"
 
 msgid "Unpick"
 msgstr "Çıkart"
@@ -1488,5 +1500,5 @@ msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."
 
-msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
-msgstr ""
+msgid "Your session was locked after inactivity."
+msgstr "Oturumunuz hareketsizlik nedeniyle kilitlendi."

@@ -110,6 +110,10 @@ msgstr "{0} проблем — не опубликовано"
 msgid "{0} Processes"
 msgstr "{0} Процессов"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} зарегистрирован"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} поставщиков с остатком"
@@ -1062,6 +1066,9 @@ msgstr "Добавьте любые заметки о вашем решении.
 msgid "Add Approval Requirement"
 msgstr "Добавить требование утверждения"
 
+msgid "Add Authenticator App"
+msgstr "Добавить приложение-аутентификатор"
+
 msgid "Add Calibration Record"
 msgstr "Добавить запись калибровки"
 
@@ -1136,6 +1143,9 @@ msgstr "Добавить партнера"
 
 msgid "Add parts"
 msgstr "Добавить детали"
+
+msgid "Add Passkey"
+msgstr "Добавить Passkey"
 
 msgid "Add path"
 msgstr "Добавить путь"
@@ -1996,6 +2006,9 @@ msgstr "Вы уверены, что хотите удалить эту карт�
 msgid "Are you sure you want to delete this maintenance dispatch? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить эту заявку на техническое обслуживание? Это действие невозможно отменить."
 
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "Вы уверены, что хотите удалить этот Passkey? Вы больше не сможете использовать его для входа."
+
 msgid "Are you sure you want to delete this quality document?"
 msgstr "Вы уверены, что хотите удалить этот документ качества?"
 
@@ -2260,6 +2273,9 @@ msgstr "Журналы аудита"
 
 msgid "Authentication Error"
 msgstr "Ошибка аутентификации"
+
+msgid "Authenticator app"
+msgstr "Приложение-аутентификатор"
 
 msgid "Authenticator QR code"
 msgstr "QR-код аутентификатора"
@@ -4760,6 +4776,12 @@ msgstr "Удалить деталь"
 msgid "Delete Partner"
 msgstr "Удалить партнера"
 
+msgid "Delete passkey"
+msgstr "Удалить Passkey"
+
+msgid "Delete Passkey"
+msgstr "Удалить Passkey"
+
 msgid "Delete Payment"
 msgstr "Удалить платеж"
 
@@ -5568,6 +5590,9 @@ msgstr "Редактировать деталь"
 msgid "Edit Partner"
 msgstr "Редактировать партнера"
 
+msgid "Edit Passkey"
+msgstr "Редактировать Passkey"
+
 msgid "Edit Payment"
 msgstr "Редактировать платеж"
 
@@ -5899,6 +5924,9 @@ msgstr "Введите текст…"
 
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "Введите 6-значный код из приложения аутентификации"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Введите 6-значный код из приложения-аутентификатора, чтобы продолжить."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
@@ -6440,6 +6468,9 @@ msgstr "Ошибка при получении рисков"
 msgid "Failed to fetch suggestions"
 msgstr "Не удалось получить предложения"
 
+msgid "Failed to get options"
+msgstr "Не удалось получить параметры"
+
 msgid "Failed to initialize Carbon client"
 msgstr "Не удалось инициализировать клиент Carbon"
 
@@ -6509,6 +6540,9 @@ msgstr "Не удалось переместить счет: {0}"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "Не удалось повторно создать миниатюру"
+
+msgid "Failed to register passkey"
+msgstr "Не удалось зарегистрировать Passkey"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Не удалось удалить изображение: {errorMessage}"
@@ -8274,6 +8308,9 @@ msgstr "Последний запуск"
 msgid "Last synced: <0/>"
 msgstr "Последняя синхронизация: <0/>"
 
+msgid "Last used"
+msgstr "Последний раз использован"
+
 msgid "Latest operation end"
 msgstr "Конец последней операции"
 
@@ -9840,6 +9877,9 @@ msgstr "Нет ID детали"
 msgid "No parts"
 msgstr "Нет деталей"
 
+msgid "No passkeys registered yet."
+msgstr "Ключи доступа еще не зарегистрированы."
+
 msgid "No payables"
 msgstr "Нет кредиторской задолженности"
 
@@ -10441,8 +10481,14 @@ msgstr "Дополнительные страницы и разделы"
 msgid "Options"
 msgstr "Параметры"
 
+msgid "or"
+msgstr "или"
+
 msgid "OR"
 msgstr "ИЛИ"
+
+msgid "Or enter this secret manually:"
+msgstr "Или введите этот секрет вручную:"
 
 msgid "Order"
 msgstr "Заказ"
@@ -10709,6 +10755,18 @@ msgstr "Пройти"
 
 msgid "Passed"
 msgstr "Пройдено"
+
+msgid "Passkey name"
+msgstr "Имя Passkey"
+
+msgid "Passkey unlock failed"
+msgstr "Не удалось разблокировать Passkey"
+
+msgid "Passkeys"
+msgstr "Ключи доступа"
+
+msgid "Passkeys are disabled"
+msgstr "Ключи доступа отключены"
 
 msgid "Path"
 msgstr "Путь"
@@ -12005,6 +12063,9 @@ msgstr "Зарегистрирован"
 msgid "Registered"
 msgstr "Точка переза́каза"
 
+msgid "Registration failed"
+msgstr "Регистрация не удалась"
+
 msgid "Registration Number"
 msgstr "Регистрационный номер"
 
@@ -12081,6 +12142,9 @@ msgstr "Удалить {0}"
 msgid "Remove {label}"
 msgstr "Удалить {label}"
 
+msgid "Remove authenticator app"
+msgstr "Удалить приложение-аутентификатор"
+
 msgid "Remove clause"
 msgstr "Удалить условие"
 
@@ -12128,6 +12192,9 @@ msgstr "Удалите этот тип хранилища из всех ссыл
 
 msgid "Remove tool"
 msgstr "Удалить инструмент"
+
+msgid "Remove two-factor authentication"
+msgstr "Удалить двухфакторную аутентификацию"
 
 msgid "Removed"
 msgstr "Удалено"
@@ -12235,6 +12302,9 @@ msgstr "Запросить одобрение"
 msgid "Requested Date"
 msgstr "Запрашиваемая дата"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требуется приложение аутентификации перед доступом к этой компании. Другие компании пользователей не затронуты. Посетите <0>страницу учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
 
@@ -12269,7 +12339,7 @@ msgid "Required Date"
 msgstr "Требуемая дата"
 
 msgid "Required in a controlled environment — audit logging cannot be turned off."
-msgstr ""
+msgstr "Требуется в контролируемой среде — ведение журнала аудита невозможно отключить."
 
 msgid "Requirement"
 msgstr "Требование"
@@ -12824,6 +12894,9 @@ msgstr "Сканировать или искать..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Отсканируйте или выберите отслеживаемую сущность из этой партии, чтобы добавить её в качестве столбца образца, затем запишите её результат в сетку."
 
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "Сканируйте этот QR-код с помощью приложения-аутентификатора (например, Google Authenticator или 1Password), а затем введите отображаемый 6-значный код."
+
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "Отсканируйте это в приложении аутентификации, а затем введите 6-значный код, который оно показывает."
 
@@ -12985,6 +13058,9 @@ msgstr "Секунды для завершения"
 
 msgid "Seconds/Piece"
 msgstr "Секунды/Деталь"
+
+msgid "Secret copied to clipboard"
+msgstr "Секрет скопирован в буфер обмена"
 
 msgid "Section"
 msgstr "Раздел"
@@ -13304,7 +13380,7 @@ msgid "Services"
 msgstr "Услуги"
 
 msgid "Session locked"
-msgstr ""
+msgstr "Сеанс заблокирован"
 
 msgid "Set a target"
 msgstr "Установить цель"
@@ -13341,6 +13417,9 @@ msgstr "Установить приложение аутентификации"
 
 msgid "Set up the right way"
 msgstr "Правильная настройка"
+
+msgid "Set up two-factor authentication"
+msgstr "Установить двухфакторную аутентификацию"
 
 msgid "Set up your company with a step-by-step implementation plan covering setup, data, training, and go-live."
 msgstr "Настройте свою компанию с помощью пошагового плана внедрения, охватывающего настройку, данные, обучение и запуск в производство."
@@ -13617,6 +13696,9 @@ msgstr "Отображается как бледный фон на каждой 
 msgid "Shown to the user when this rule fails."
 msgstr "Показывается пользователю при ошибке этого правила."
 
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "Войдите с использованием биометрии вместо волшебной ссылки. Ключи доступа защищены Face ID, Touch ID или PIN-кодом вашего устройства."
+
 msgid "Sign in with Email"
 msgstr "Войти с помощью электронной почты"
 
@@ -13636,7 +13718,7 @@ msgid "Sign Out"
 msgstr "Выход"
 
 msgid "Sign out instead"
-msgstr ""
+msgstr "Вместо этого выйти"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Утверждение перед переходом к следующему этапу"
@@ -13652,6 +13734,9 @@ msgstr "Подписанное количество — отрицательно
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "При входе также требуется одноразовый код из приложения аутентификации"
+
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "Вход больше не будет требовать кода. Введите текущий 6-значный код из приложения-аутентификатора для подтверждения."
 
 msgid "Sites & locations"
 msgstr "Объекты и местоположения"
@@ -15827,8 +15912,17 @@ msgstr "Двухфакторная аутентификация"
 msgid "Two-factor authentication"
 msgstr "Двухфакторная аутентификация"
 
+msgid "Two-factor authentication disabled"
+msgstr "Двухфакторная аутентификация отключена"
+
+msgid "Two-factor authentication enabled"
+msgstr "Двухфакторная аутентификация включена"
+
 msgid "Two-Factor Authentication Enforcement"
 msgstr "Требование двухфакторной аутентификации"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "Двухфакторная аутентификация не включена."
 
 msgid "Type"
 msgstr "Тип"
@@ -15861,7 +15955,7 @@ msgid "U.S. Person Attestation"
 msgstr "Удостоверение лица США"
 
 msgid "Unable to unlock"
-msgstr ""
+msgstr "Не удается разблокировать"
 
 msgid "Unapplied"
 msgstr "Неприменённые"
@@ -15964,6 +16058,9 @@ msgstr "Отменить связь задания с заказом на про
 
 msgid "Unlock"
 msgstr "Разблокировать"
+
+msgid "Unlock with passkey"
+msgstr "Разблокировка с помощью Passkey"
 
 msgid "Unmapped accounts"
 msgstr "Несопоставленные счета"
@@ -17307,8 +17404,8 @@ msgstr "Ваша команда проекта"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ваши реальные данные загружены, вы проверили образец и одобрили его."
 
-msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
-msgstr ""
+msgid "Your session was locked after inactivity."
+msgstr "Ваш сеанс был заблокирован из-за неактивности."
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Ваши исходные данные доступны и находятся в приемлемом состоянии"

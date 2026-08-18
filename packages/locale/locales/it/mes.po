@@ -425,6 +425,9 @@ msgstr "Inserisci il PIN per {0}"
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "Inserisci il codice a 6 cifre dalla tua app di autenticazione"
 
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Inserisci il codice a 6 cifre dalla tua app di autenticazione per riprendere."
+
 msgid "Error"
 msgstr "Errore"
 
@@ -926,6 +929,9 @@ msgstr "Eseguito dall'Operatore"
 msgid "Optional"
 msgstr "Facoltativo"
 
+msgid "or"
+msgstr "o"
+
 msgid "Overall result"
 msgstr "Risultato complessivo"
 
@@ -946,6 +952,9 @@ msgstr "Disposizione Parziale"
 
 msgid "Passed Inspection"
 msgstr "Ispezione Superata"
+
+msgid "Passkey unlock failed"
+msgstr "Sblocco con passkey non riuscito"
 
 msgid "Pause"
 msgstr "Pausa"
@@ -1222,7 +1231,7 @@ msgid "Serial Numbers"
 msgstr "Numeri di Serie"
 
 msgid "Session locked"
-msgstr ""
+msgstr "Sessione bloccata"
 
 msgid "Set Clock Out"
 msgstr "Imposta Uscita"
@@ -1264,7 +1273,7 @@ msgid "Sign Out"
 msgstr "Esci"
 
 msgid "Sign out instead"
-msgstr ""
+msgstr "Esci invece"
 
 msgid "Signed in as {stationName}"
 msgstr "Connesso come {stationName}"
@@ -1400,7 +1409,7 @@ msgid "Type a message..."
 msgstr "Scrivi un messaggio..."
 
 msgid "Unable to unlock"
-msgstr ""
+msgstr "Impossibile sbloccare"
 
 msgid "Unissued serial/batch materials"
 msgstr "Materiali seriali/lotto non prelevati"
@@ -1409,7 +1418,10 @@ msgid "Unknown"
 msgstr "Sconosciuto"
 
 msgid "Unlock"
-msgstr ""
+msgstr "Sblocca"
+
+msgid "Unlock with passkey"
+msgstr "Sblocca con passkey"
 
 msgid "Unpick"
 msgstr "Annulla prelievo"
@@ -1488,5 +1500,5 @@ msgstr "Sei timbrato in ingresso da {hoursElapsed} ore. Hai dimenticato di timbr
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "La tua organizzazione richiede un'app di autenticazione. Configurala in Carbon, quindi torna qui."
 
-msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
-msgstr ""
+msgid "Your session was locked after inactivity."
+msgstr "La tua sessione è stata bloccata a causa dell'inattività."
