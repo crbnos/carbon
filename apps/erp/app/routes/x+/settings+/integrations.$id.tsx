@@ -44,6 +44,7 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
+import { parseOnshapeV2Settings } from "@carbon/ee/onshape";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
@@ -1509,9 +1510,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // The subscription is shared: one Onshape webhook feeds both asset sync and
     // release import, so it must be registered while EITHER is on and only
     // deregistered when both are off.
-    const webhookWanted =
-      (metadata as Record<string, unknown>).assetSyncEnabled === true ||
-      (metadata as Record<string, unknown>).releaseImportEnabled === true;
+    //
+    // The v2 pipeline has its OWN consumers, and a company on v2 has the legacy
+    // toggles off — so reading only those would DEREGISTER the subscription the
+    // moment someone switched to v2, silently, while the save flashed success.
+    const onshapeMetadata = metadata as Record<string, unknown>;
+    const onshapeV2 = parseOnshapeV2Settings(onshapeMetadata, { active: true });
+    const webhookWanted = onshapeV2.isV2
+      ? onshapeV2.attachAssetsOnRelease || onshapeV2.releaseImportV2 !== "off"
+      : onshapeMetadata.assetSyncEnabled === true ||
+        onshapeMetadata.releaseImportEnabled === true;
     const webhookResult = await ensureOnshapeReleaseWebhook(
       companyId,
       webhookWanted

@@ -35,6 +35,11 @@ import {
 } from "@carbon/ee/onshape";
 import { z } from "zod";
 import { inngest } from "../../client";
+import { withRateLimitRetry } from "./onshape-backfill";
+import {
+  groupAssetTargetsByElement,
+  pullOnshapeAssetsForElement
+} from "./onshape-v2-assets";
 
 const PayloadSchema = z.object({
   companyId: z.string(),
@@ -52,6 +57,8 @@ export type OnshapeBomImportOutcome = {
   created: number;
   updated: number;
   removed: number;
+  assetsAttached: number;
+  assetsSkipped: number;
   /** Rows the import refused, each with why. */
   skipped: Array<{ partNumber: string; revision: string; reason: string }>;
 };
@@ -271,7 +278,9 @@ async function reconcileOne(
 export const onshapeBomImportFunction = inngest.createFunction(
   {
     id: "onshape-bom-import",
-    retries: 3,
+    // Every 429 reschedule consumes one retry, and an import can make many
+    // export calls — the backfill sets 10 for exactly this reason.
+    retries: 10,
     // One import at a time per make method: two concurrent runs would each
     // reconcile against a list the other is changing.
     concurrency: { key: "event.data.makeMethodId", limit: 1 }
@@ -324,6 +333,8 @@ export const onshapeBomImportFunction = inngest.createFunction(
         created: 0,
         updated: 0,
         removed: 0,
+        assetsAttached: 0,
+        assetsSkipped: 0,
         skipped: []
       };
 
@@ -367,6 +378,46 @@ export const onshapeBomImportFunction = inngest.createFunction(
       // must survive: "skipped" has to mean untouched, not deleted.
       const protectedItemIds = new Set<string>();
 
+      // Rows whose geometry should be pulled, captured as they RESOLVE. The
+      // itemId comes from resolveBomRow, never from the element mapping alone —
+      // an element-level attach is revision-agnostic and would put revision A's
+      // geometry on the item at revision C.
+      const assetRows: Array<{
+        itemId: string;
+        documentId: string;
+        versionId: string;
+        elementId: string;
+        partId: string | null;
+        assetBaseName: string;
+      }> = [];
+
+      const rememberAssetRow = (
+        row: (typeof parsed.rows)[number],
+        itemId: string
+      ) => {
+        // A row from a LINKED document carries its own version; exporting it at
+        // the parent's version 404s or exports the wrong geometry. Only a
+        // version reference is usable — a workspace or microversion has no
+        // stable snapshot to attach.
+        const wvmType = row.wvmType ?? "v";
+        const versionId =
+          wvmType === "v" ? (row.wvmId ?? payload.versionId) : null;
+        if (!versionId) return;
+
+        assetRows.push({
+          itemId,
+          documentId: row.documentId,
+          versionId,
+          elementId: row.elementId,
+          partId: row.partId,
+          // Stable across runs: the model filename is the attach idempotency
+          // key, so anything varying would mint a new modelUpload every import.
+          assetBaseName: row.revision
+            ? `${row.partNumber}.${row.revision}`
+            : row.partNumber
+        });
+      };
+
       for (const row of parsed.rows) {
         const externalId = buildElementExternalId({
           documentId: row.documentId,
@@ -391,6 +442,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
         if (resolution.kind === "matched") {
           itemIdByRow.set(row.rowId, resolution.itemId);
+          rememberAssetRow(row, resolution.itemId);
           continue;
         }
 
@@ -500,6 +552,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
         });
 
         itemIdByRow.set(row.rowId, created.data.id);
+        rememberAssetRow(row, created.data.id);
 
         // Feed the mint back into the in-memory index. Onshape emits an
         // INDENTED BOM, so a part used under two subassemblies appears twice;
@@ -579,6 +632,49 @@ export const onshapeBomImportFunction = inngest.createFunction(
       };
 
       await reconcileNode(method.id, tree);
+
+      // Assets last: the BOM is the thing the user asked for, and a rate limit
+      // or an oversized export must not cost them the import. Grouped by
+      // element so seven bodies in one Part Studio cost one client and one
+      // thumbnail fetch rather than seven of each.
+      if (settings.attachAssetsOnRelease) {
+        for (const group of groupAssetTargetsByElement(assetRows)) {
+          try {
+            const pulled = await withRateLimitRetry(
+              () =>
+                pullOnshapeAssetsForElement(carbon, connection.client, {
+                  companyId: payload.companyId,
+                  userId: payload.userId,
+                  documentId: group.documentId,
+                  versionId: group.versionId,
+                  elementId: group.elementId,
+                  targets: group.targets
+                }),
+              `assets for element ${group.elementId}`
+            );
+            outcome.assetsAttached += pulled.attached.length;
+            outcome.assetsSkipped += pulled.skipped.length;
+            for (const skip of pulled.skipped) {
+              outcome.skipped.push({
+                partNumber: skip.itemId,
+                revision: "",
+                reason: `Model not attached: ${skip.reason}`
+              });
+            }
+          } catch (error) {
+            // The BOM is already written and correct; report the asset failure
+            // rather than throwing the whole import away over geometry.
+            outcome.assetsSkipped += group.targets.length;
+            outcome.skipped.push({
+              partNumber: group.elementId,
+              revision: "",
+              reason: `Models not attached: ${
+                error instanceof Error ? error.message : "export failed"
+              }`
+            });
+          }
+        }
+      }
 
       return outcome;
     });

@@ -8,6 +8,7 @@ export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
 export { onshapeBackfillFunction } from "./onshape-backfill";
 export { onshapeBomImportFunction } from "./onshape-bom-import";
 export { onshapeReleaseImportFunction } from "./onshape-release-import";
+export { onshapeReleaseV2Function } from "./onshape-release-v2";
 export { onshapeRevisionSyncFunction } from "./onshape-revision-sync";
 export { paperlessPartsFunction } from "./paperless-parts";
 export {

@@ -114,7 +114,7 @@ describe("onshape webhook receiver", () => {
       expect(dispatchedTasks()).toEqual([]);
     });
 
-    it("dispatches NOTHING legacy when the company is on the v2 pipeline", async () => {
+    it("dispatches ONLY the v2 job when the company is on the v2 pipeline", async () => {
       // A company that migrated to v2 with the legacy toggles still on would
       // otherwise have BOTH pipelines act on one release: duplicate change
       // notices, and every export run twice. Exactly one pipeline runs.
@@ -129,7 +129,8 @@ describe("onshape webhook receiver", () => {
       const result = await run(makeRequest(releaseEvent()));
 
       expect(result).toEqual({ success: true });
-      expect(dispatchedTasks()).toEqual([]);
+      // Neither legacy job runs, whatever their stored toggles say.
+      expect(dispatchedTasks()).toEqual(["onshape-release-v2"]);
     });
 
     it("does not drop a v2 company's event for want of the legacy flags", async () => {
@@ -138,15 +139,12 @@ describe("onshape webhook receiver", () => {
       // were discarded at the gate and nothing said so.
       getIntegration.mockResolvedValue(integrationRow({ pipeline: "next" }));
 
-      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
       const result = await run(makeRequest(releaseEvent()));
 
       expect(result).toEqual({ success: true });
-      // v2 handlers are not built yet, so nothing dispatches — but the event
-      // reached the dispatch point and was recorded rather than dropped.
-      expect(dispatchedTasks()).toEqual([]);
-      expect(warn).toHaveBeenCalled();
-      warn.mockRestore();
+      // Reaches the v2 job on the v2 defaults alone (attach on, import
+      // changeNotice) — the legacy toggles are irrelevant to it.
+      expect(dispatchedTasks()).toEqual(["onshape-release-v2"]);
     });
 
     it("treats a v2 company with release import off as having no release consumer", async () => {

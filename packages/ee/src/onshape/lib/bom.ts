@@ -67,6 +67,13 @@ export type OnshapeBomRow = {
   /** null for a subassembly; a Part Studio body id otherwise. */
   partId: string | null;
   configuration: string | null;
+  /**
+   * The version this ROW's geometry lives at. Usually the queried version, but
+   * a component pulled from a LINKED document carries its own — exporting such
+   * a row at the parent's versionId 404s or, worse, exports the wrong geometry.
+   */
+  wvmType: string | null;
+  wvmId: string | null;
   /** Every column, keyed by display name — for custom-field mapping later. */
   columns: Record<string, string>;
 };
@@ -151,6 +158,8 @@ function buildRow(
     // null so the mapping id builder treats it as absent.
     partId: source.partId ? source.partId : null,
     configuration: source.configuration ?? null,
+    wvmType: source.wvmType ?? null,
+    wvmId: source.wvmId ?? null,
     columns
   };
 }

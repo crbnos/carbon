@@ -39,7 +39,9 @@ export interface SyncOnshapeElementInput {
   versionId: string; // the released version
   modelElementId: string; // released Part Studio OR Assembly element to export
   modelElementKind: "partstudio" | "assembly"; // from the revision's elementType (0/1)
-  drawingElementIds?: string[]; // optional PDF drawings (untested path — see client.ts)
+  drawingElementIds?: string[];
+  /** One Part Studio body. Omitted by legacy callers, so their behaviour is unchanged. */
+  partIds?: string; // optional PDF drawings (untested path — see client.ts)
   assetBaseName?: string; // filename base (e.g. item part number); falls back to Onshape name
 }
 
@@ -55,7 +57,7 @@ const POLL_MAX_DELAY_MS = 15000;
 const RAW_MODEL_MAX_BYTES = getFileSizeLimit("CAD_MODEL_UPLOAD").bytes;
 const DOCUMENT_MAX_BYTES = getFileSizeLimit("DOCUMENT_UPLOAD").bytes;
 
-async function waitForTranslation(
+export async function waitForTranslation(
   client: OnshapeClient,
   translationId: string
 ): Promise<OnshapeTranslation> {
@@ -109,24 +111,47 @@ async function downloadTranslationBytes(
 // files, and Onshape stays the CAD system of record. Throws
 // OnshapeAssetTooLargeError (from the download helper) past the raw cap;
 // callers treat that as a permanent skip.
-async function exportRawGltfModel(
+/**
+ * Export one element (or ONE BODY of a Part Studio) to a GLTF on disk.
+ *
+ * `partIds` is what makes a Part Studio usable by v2: a Part Studio holding N
+ * bodies is N Carbon items behind ONE element id, and a whole-element export
+ * returns every body in a single file. Attaching that to each of those items
+ * would give each one a model showing all N — a silent geometry lie, not merely
+ * wasted bytes.
+ *
+ * The file is named after the part so two exports into one scratch dir cannot
+ * clobber each other.
+ */
+export async function exportOnshapeModelToDisk(
   client: OnshapeClient,
-  input: SyncOnshapeElementInput,
+  input: {
+    documentId: string;
+    versionId: string;
+    elementId: string;
+    kind: "partstudio" | "assembly";
+    partIds?: string;
+    assetBaseName?: string;
+  },
   scratchDir: string
 ): Promise<OnshapeModelFile> {
   const gltfTranslation =
-    input.modelElementKind === "assembly"
+    input.kind === "assembly"
       ? await client.createAssemblyTranslation(
           input.documentId,
           input.versionId,
-          input.modelElementId,
+          input.elementId,
           { formatName: "GLTF", storeInDocument: false }
         )
       : await client.createPartStudioTranslation(
           input.documentId,
           input.versionId,
-          input.modelElementId,
-          { formatName: "GLTF", storeInDocument: false }
+          input.elementId,
+          {
+            formatName: "GLTF",
+            storeInDocument: false,
+            ...(input.partIds ? { partIds: input.partIds } : {})
+          }
         );
   const gltfDone = await waitForTranslation(client, gltfTranslation.id);
   const baseName =
@@ -140,7 +165,7 @@ async function exportRawGltfModel(
     );
   }
 
-  const gltfPath = join(scratchDir, "model.gltf");
+  const gltfPath = join(scratchDir, `${input.partIds ?? "element"}.gltf`);
   await client.downloadExternalDataToFile(
     resultDocumentId,
     foreignId,
@@ -148,11 +173,26 @@ async function exportRawGltfModel(
     { maxBytes: RAW_MODEL_MAX_BYTES }
   );
   const { size } = await stat(gltfPath);
-  return {
-    fileName: `${baseName}.gltf`,
-    localPath: gltfPath,
-    size
-  };
+  return { fileName: `${baseName}.gltf`, localPath: gltfPath, size };
+}
+
+async function exportRawGltfModel(
+  client: OnshapeClient,
+  input: SyncOnshapeElementInput,
+  scratchDir: string
+): Promise<OnshapeModelFile> {
+  return exportOnshapeModelToDisk(
+    client,
+    {
+      documentId: input.documentId,
+      versionId: input.versionId,
+      elementId: input.modelElementId,
+      kind: input.modelElementKind,
+      partIds: input.partIds,
+      assetBaseName: input.assetBaseName
+    },
+    scratchDir
+  );
 }
 
 export async function syncOnshapeElementAssetsToItem(

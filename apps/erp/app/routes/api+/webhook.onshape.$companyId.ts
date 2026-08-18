@@ -317,28 +317,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
       }
 
-      if (v2AttachAssets) {
-        // v2 resolves the item through the element mapping, never by part
-        // number, so it cannot reuse onshape-revision-sync. Until that job
-        // exists the event is recorded rather than silently dropped — a
-        // dropped release is indistinguishable from one that worked.
-        console.warn(
-          "Onshape webhook: v2 asset attach is not implemented yet; release not processed",
-          { companyId, messageId, partNumber, revisionId }
-        );
-      }
-
-      if (v2ReleaseImportEnabled) {
-        console.warn(
-          "Onshape webhook: v2 release import is not implemented yet; release not processed",
-          {
+      if (isV2) {
+        // ONE job for the whole event: v2 attaches assets and imports the
+        // release in order, because a separate asset job would race the import
+        // that creates the item it needs to attach to. The job owns the policy
+        // (which consumers are on, what to do with a drawing) so the receiver
+        // stays a router.
+        if (v2AttachAssets || v2ReleaseImportEnabled) {
+          await trigger("onshape-release-v2", {
             companyId,
+            userId: installerUserId,
             messageId,
+            documentId,
+            versionId,
+            elementId,
+            elementType,
             partNumber,
+            revisionId,
             releaseId,
-            mode: v2ReleaseImportMode
-          }
-        );
+            releaseName,
+            revision
+          });
+        }
+        // Exclusive: never fall through to the legacy dispatches.
+        break;
       }
 
       if (releaseImportEnabled) {
