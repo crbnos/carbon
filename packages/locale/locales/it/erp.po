@@ -12268,6 +12268,9 @@ msgstr "Azioni Richieste (in ordine)"
 msgid "Required Date"
 msgstr "Data Richiesta"
 
+msgid "Required in a controlled environment — audit logging cannot be turned off."
+msgstr ""
+
 msgid "Requirement"
 msgstr "Requisito"
 

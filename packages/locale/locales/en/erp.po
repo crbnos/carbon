@@ -12268,6 +12268,9 @@ msgstr "Required Actions (in order)"
 msgid "Required Date"
 msgstr "Required Date"
 
+msgid "Required in a controlled environment — audit logging cannot be turned off."
+msgstr "Required in a controlled environment — audit logging cannot be turned off."
+
 msgid "Requirement"
 msgstr "Requirement"
 

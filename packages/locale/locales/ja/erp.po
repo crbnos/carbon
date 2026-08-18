@@ -12268,6 +12268,9 @@ msgstr "必要なアクション（順番に）"
 msgid "Required Date"
 msgstr "必須日付"
 
+msgid "Required in a controlled environment — audit logging cannot be turned off."
+msgstr ""
+
 msgid "Requirement"
 msgstr "要件"
 

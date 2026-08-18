@@ -12268,6 +12268,9 @@ msgstr "आवश्यक क्रियाएं (क्रम में)"
 msgid "Required Date"
 msgstr "आवश्यक तारीख"
 
+msgid "Required in a controlled environment — audit logging cannot be turned off."
+msgstr ""
+
 msgid "Requirement"
 msgstr "आवश्यकता"
 
