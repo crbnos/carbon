@@ -240,6 +240,10 @@ migration warning on switching a company to v2.
 - [x] A BOM import preserves the BOP: `methodOperationId`, `scrapQuantity`, `kit`, `sourcingType`,
       `storageUnitIds`, `tags` and `methodMaterialStep` rows survive a re-import unchanged.
 - [x] A BOM import attaches MODELS for the top-level item and every child that resolved.
+      The top-level was NOT covered until 2026-08-19: Onshape returns the queried assembly
+      separately from its components, so it is not one of `parsed.rows`, and the one item the
+      user is looking at was the only one in the tree never given geometry. Verified live —
+      `RD-410.A.gltf` at 138667 bytes against the SA-800 subassembly's 78410.
       Drawing PDFs are NOT attached — v1's suffix matching is disproved on real data
       (see the drawing section above) and no replacement mechanism is settled.
 - [x] Two Onshape elements claiming one `readableId` are refused with both sources named —

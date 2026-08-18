@@ -47,8 +47,16 @@ const PayloadSchema = z.object({
   releaseId: z.string().optional(),
   releaseName: z.string().optional(),
   revision: z.string().optional(),
-  /** releaseId when present, else elementId — the concurrency bucket. */
-  groupKey: z.string()
+  /**
+   * releaseId when present, else elementId — the concurrency bucket Inngest
+   * reads off the event.
+   *
+   * OPTIONAL here on purpose. Inngest evaluates the key itself, so the job
+   * never reads this field; making it required would only mean an event queued
+   * before the field existed fails to parse on delivery, which is a worse
+   * outcome than the empty key it would otherwise get.
+   */
+  groupKey: z.string().optional()
 });
 
 const ELEMENT_TYPE_DRAWING = 2;

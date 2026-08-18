@@ -963,6 +963,27 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
       await reconcileNode(method.id, tree);
 
+      // The TOP-LEVEL item's own model. It is not one of `parsed.rows` —
+      // Onshape returns the queried assembly separately from its components,
+      // which is what stops it appearing as its own child — so without this the
+      // one item the user is actually looking at is the only item in the tree
+      // that never gets geometry.
+      if (parsed.topLevel) {
+        rememberAssetRow(
+          {
+            ...parsed.topLevel,
+            // The queried assembly IS this element at this version, whatever
+            // its row says about where it was instanced from.
+            wvmType: "v",
+            wvmId: payload.versionId,
+            documentId: payload.documentId,
+            elementId: payload.elementId,
+            partId: null
+          },
+          method.itemId
+        );
+      }
+
       // Assets last: the BOM is the thing the user asked for, and a rate limit
       // or an oversized export must not cost them the import. Grouped by
       // element so seven bodies in one Part Studio cost one client and one
