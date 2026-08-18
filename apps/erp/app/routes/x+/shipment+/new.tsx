@@ -79,6 +79,24 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.shipmentDetails(salesOrderShipment.data.id));
     case "Sales Return Order": {
+      // One open draft per return order: clicking Ship again goes to the
+      // existing draft instead of stacking up duplicates.
+      const existingDraftsalesReturnShipment = await client
+        .from("shipment")
+        .select("id")
+        .eq("sourceDocument", "Sales Return Order")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingDraftsalesReturnShipment.data) {
+        throw redirect(
+          path.to.shipmentDetails(existingDraftsalesReturnShipment.data.id)
+        );
+      }
+
       const salesReturnShipment = await serviceRole.functions.invoke<{
         id: string;
       }>("create", {
@@ -113,6 +131,24 @@ export async function action({ request }: ActionFunctionArgs) {
       throw redirect(path.to.shipmentDetails(salesReturnShipment.data.id));
     }
     case "Purchase Return Order": {
+      // One open draft per return order: clicking Ship again goes to the
+      // existing draft instead of stacking up duplicates.
+      const existingDraftpurchaseReturnShipment = await client
+        .from("shipment")
+        .select("id")
+        .eq("sourceDocument", "Purchase Return Order")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingDraftpurchaseReturnShipment.data) {
+        throw redirect(
+          path.to.shipmentDetails(existingDraftpurchaseReturnShipment.data.id)
+        );
+      }
+
       const purchaseReturnShipment = await serviceRole.functions.invoke<{
         id: string;
       }>("create", {
