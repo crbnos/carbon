@@ -288,3 +288,58 @@ Deno.test("a started op stays pinned to its work center (no rebalancing)", async
   });
   assertEquals(selections.get("op-1")?.workCenterId, "wc1");
 });
+
+// --- pinned (manually scheduled) ops: no frozen window ----------------------
+
+Deno.test("a pinned op is placed like any other and keeps its due date (no frozen window)", async () => {
+  const selector = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  selector.setFiniteContext(makeContext());
+
+  // Pinned to 2026-08-11 — under dual dates the pin owns the need-by TARGET,
+  // not the placement: forward-ASAP still places the op as early as it can.
+  const op = makeOp({
+    id: "op-pin",
+    workCenterId: "wc1",
+    manuallyScheduled: true,
+    startDate: null,
+    dueDate: "2026-08-11",
+    setupTime: 0,
+    laborTime: 4,
+    laborUnit: "Total Hours",
+    machineTime: 0,
+    operationQuantity: 1,
+    quantityComplete: 0,
+  });
+
+  const selections = await selector.selectWorkCentersForOperations([op], {
+    jobDueDate: null,
+  });
+  const selection = selections.get("op-pin");
+  assert(
+    selection?.placedStart && selection.placedEnd,
+    "pinned op gets a real placement"
+  );
+  // Forward-ASAP from now — NOT the pinned 2026-08-11 window.
+  assertEquals(selection.placedStart, "2026-01-05T00:00:00.000Z");
+  assertEquals(selection.placedEnd, "2026-01-05T04:00:00.000Z");
+
+  // The placement books real capacity; the pinned span reserves nothing.
+  const reservations = selector
+    .getPlannedReservations()
+    .filter((r) => r.operationId === "op-pin");
+  assertEquals(reservations.length, 1);
+  assertEquals(reservations[0].startAt.toISOString(), selection.placedStart);
+  assertEquals(reservations[0].endAt.toISOString(), selection.placedEnd);
+
+  // Applying the selection records the forecast; the pinned dueDate survives.
+  const applied = applyWorkCenterSelections(
+    new Map([["op-pin", op]]),
+    selections
+  ).get("op-pin")!;
+  assertEquals(applied.startDate, "2026-01-05");
+  assertEquals(applied.projectedCompletionAt, "2026-01-05T04:00:00.000Z");
+  assertEquals(applied.dueDate, "2026-08-11");
+});

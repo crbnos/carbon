@@ -8,7 +8,7 @@ import {
   buildMakeMethodDependencies,
 } from "./assembly-handler.ts";
 import { getCompanyTimeZone, getLocationTimeZone } from "../datetime.ts";
-import { businessDay } from "./date-utils.ts";
+import { businessDay, toIsoDate } from "./date-utils.ts";
 import {
   type CalendarShiftRow,
   type CalendarWindow,
@@ -28,7 +28,12 @@ import { calculateDurationHours } from "./duration-calculator.ts";
 import {
   buildOperationDependencies,
   dependenciesToRecords,
+  DependencyGraphImpl,
 } from "./dependency-manager.ts";
+import {
+  calendarAdapters,
+  computeNeedByDates,
+} from "./need-by-calculator.ts";
 import {
   KyselyMasterDataProvider,
   type MasterDataProvider,
@@ -104,6 +109,25 @@ export class SchedulingEngine {
   private projectedCompletionAt: string | null = null;
   /** True when this regen flipped the job from on-time (or unforecast) to late. */
   private newlyLate = false;
+  /**
+   * Backward need-by targets per operation id ("YYYY-MM-DD" | null), computed
+   * by computeNeedBys() BEFORE placement and read by NOTHING in the placement
+   * path — persistChanges diff-writes them to jobOperation.dueDate
+   * (spec 2026-08-15 dual dates).
+   */
+  private needByByOperation: Map<string, string | null> = new Map();
+  /**
+   * The run's one availability-windows fetch, shared by the need-by pass and
+   * the finite placement context so targets and forecasts run on the SAME
+   * calendar physics (and the provider is read once, not twice).
+   */
+  private availabilityWindows: {
+    workCenterIds: Set<string>;
+    workCenterAvailability: Map<string, CalendarWindow[]>;
+    locationDefaultWindows: CalendarWindow[];
+    rangeStart: Date;
+    rangeEnd: Date;
+  } | null = null;
 
   private provider: MasterDataProvider;
 
@@ -441,13 +465,125 @@ export class SchedulingEngine {
   }
 
   /**
-   * Build the working operation map (durations, pins). There is no backward
-   * pass: dates start null and are filled by forward-ASAP placement in
-   * selectWorkCenters(); pinned ops keep their stored dates. Conflicts are
-   * counted after placement, not here.
+   * Build the working operation map (durations, pins). Placement dates start
+   * null and are filled by forward-ASAP placement in selectWorkCenters();
+   * a pinned op keeps only its stored dueDate — the need-by target it owns
+   * (spec 2026-08-15 dual dates). The backward need-by pass (computeNeedBys)
+   * runs separately and never feeds placement. Conflicts are counted after
+   * placement, not here.
    */
   async calculateDates(): Promise<void> {
     this.scheduledOperations = buildScheduledOperations(this.operations);
+  }
+
+  /**
+   * The ONE availability-windows fetch for this run — work-center windows
+   * (selection candidates + current assignments) plus the location's default
+   * calendar — memoized so the backward need-by pass and buildFiniteContext
+   * share the same load instead of reading the provider twice.
+   */
+  private async loadAvailabilityWindows(): Promise<{
+    workCenterIds: Set<string>;
+    workCenterAvailability: Map<string, CalendarWindow[]>;
+    locationDefaultWindows: CalendarWindow[];
+    rangeStart: Date;
+    rangeEnd: Date;
+  }> {
+    if (this.availabilityWindows) {
+      return this.availabilityWindows;
+    }
+
+    const operations = Array.from(this.scheduledOperations.values());
+    const processIds = Array.from(
+      new Set(operations.map((op) => op.processId).filter(Boolean))
+    ) as string[];
+
+    // Candidates for selection + current assignments (assigned work centers
+    // stay in play via the sticky/fallback rules).
+    const workCenterIds = new Set(
+      this.workCenterSelector?.getAllCandidateWorkCenterIds(processIds) ?? []
+    );
+    for (const op of operations) {
+      if (op.workCenterId) {
+        workCenterIds.add(op.workCenterId);
+      }
+    }
+
+    const rangeStart = this.now;
+    const rangeEnd = new Date(
+      this.now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
+    );
+
+    const [workCenterAvailability, locationDefaultWindows] = await Promise.all([
+      this.provider.getWorkCenterAvailability(
+        [...workCenterIds],
+        rangeStart,
+        rangeEnd
+      ),
+      // People with no employeeShift rows default to the job location's calendar
+      // (plant hours), not 24×7 — matching the default machine window so
+      // unconfigured labor is non-constraining within plant hours.
+      this.job?.locationId
+        ? this.provider.getLocationCalendarWindows(
+            this.job.locationId,
+            rangeStart,
+            rangeEnd
+          )
+        : Promise.resolve<CalendarWindow[]>([
+            { start: rangeStart, end: rangeEnd },
+          ]),
+    ]);
+
+    this.availabilityWindows = {
+      workCenterIds,
+      workCenterAvailability,
+      locationDefaultWindows,
+      rangeStart,
+      rangeEnd,
+    };
+    return this.availabilityWindows;
+  }
+
+  /**
+   * Backward need-by pass (spec 2026-08-15 dual dates): demand-anchored
+   * targets walked back from the job's due date on the same calendar physics
+   * as placement (shared windows fetch). The result is persisted to
+   * jobOperation.dueDate by persistChanges and read by NOTHING in the
+   * placement path — targets are outputs, never constraints.
+   */
+  private async computeNeedBys(): Promise<void> {
+    this.needByByOperation = new Map();
+    const operations = Array.from(this.scheduledOperations.values());
+    if (operations.length === 0) {
+      return;
+    }
+
+    const { workCenterAvailability, locationDefaultWindows } =
+      await this.loadAvailabilityWindows();
+    const { calendarHoursPerDay, workingDayTest } = calendarAdapters(
+      workCenterAvailability,
+      locationDefaultWindows,
+      this.job?.timezone ?? "UTC"
+    );
+
+    // The graph only reads operation ids — strip the ScheduledOperation-only
+    // fields (BaseOperation's optional priority vs the scheduled null).
+    const graph = new DependencyGraphImpl(
+      operations.map((op) => ({
+        id: op.id,
+        jobId: op.jobId,
+        processId: op.processId,
+      })),
+      this.dependencies
+    );
+
+    this.needByByOperation = computeNeedByDates({
+      operations,
+      graph,
+      jobDueDate: this.job?.dueDate ?? null,
+      calendarHoursPerDay,
+      workingDayTest,
+    });
   }
 
   /**
@@ -470,21 +606,14 @@ export class SchedulingEngine {
       new Set(operations.map((op) => op.processId).filter(Boolean))
     ) as string[];
 
-    // Candidates for selection + current assignments (manually scheduled ops
-    // reserve on their existing work center)
-    const workCenterIds = new Set(
-      this.workCenterSelector.getAllCandidateWorkCenterIds(processIds)
-    );
-    for (const op of operations) {
-      if (op.workCenterId) {
-        workCenterIds.add(op.workCenterId);
-      }
-    }
-
-    const rangeStart = now;
-    const rangeEnd = new Date(
-      now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
-    );
+    // One shared windows fetch per run (also used by the need-by pass).
+    const {
+      workCenterIds,
+      workCenterAvailability,
+      locationDefaultWindows,
+      rangeStart,
+      rangeEnd,
+    } = await this.loadAvailabilityWindows();
 
     const operationIds = operations
       .map((op) => op.id)
@@ -495,31 +624,12 @@ export class SchedulingEngine {
       processRequirements,
       peopleRows,
       absenceRows,
-      workCenterAvailability,
-      locationDefaultWindows,
       operationsWithEvents,
     ] = await Promise.all([
       this.provider.getLiveReservations(now, this.excludeJobIds),
       this.provider.getProcessRequirements(processIds),
       this.provider.getPeopleAssignments(rangeStart, rangeEnd, this.timezone),
       this.provider.getPeopleAbsences(rangeStart, rangeEnd, this.timezone),
-      this.provider.getWorkCenterAvailability(
-        [...workCenterIds],
-        rangeStart,
-        rangeEnd
-      ),
-      // People with no employeeShift rows default to the job location's calendar
-      // (plant hours), not 24×7 — matching the default machine window so
-      // unconfigured labor is non-constraining within plant hours.
-      this.job?.locationId
-        ? this.provider.getLocationCalendarWindows(
-            this.job.locationId,
-            rangeStart,
-            rangeEnd
-          )
-        : Promise.resolve<CalendarWindow[]>([
-            { start: rangeStart, end: rangeEnd },
-          ]),
       this.provider.getOperationsWithEvents(operationIds),
     ]);
 
@@ -726,8 +836,9 @@ export class SchedulingEngine {
     }
 
     // Projected completion = the latest finish across ALL of this run's
-    // placements: selection.placedEnd covers regular + outside-processing ops;
-    // the planned reservations cover pinned (and regular) ops. Union = every op.
+    // placements: selection.placedEnd covers regular, pinned, and
+    // outside-processing ops (pins place normally now); the planned
+    // reservations are a belt-and-braces union over the same placements.
     let maxEndMs: number | null = null;
     const bump = (ms: number) => {
       if (maxEndMs === null || ms > maxEndMs) maxEndMs = ms;
@@ -974,36 +1085,31 @@ export class SchedulingEngine {
             ? originalWorkCenterId
             : op.workCenterId;
 
-        if (isManuallyScheduled) {
-          await trx
-            .updateTable("jobOperation")
-            .set({
-              startDate: op.startDate,
-              priority: op.priority ?? undefined,
-              workCenterId,
-              hasConflict: op.hasConflict,
-              conflictReason: op.conflictReason,
-              updatedAt: new Date().toISOString(),
-              updatedBy: this.userId,
-            })
-            .where("id", "=", op.id)
-            .execute();
-        } else {
-          await trx
-            .updateTable("jobOperation")
-            .set({
-              startDate: op.startDate,
-              dueDate: op.dueDate,
-              priority: op.priority ?? undefined,
-              workCenterId,
-              hasConflict: op.hasConflict,
-              conflictReason: op.conflictReason,
-              updatedAt: new Date().toISOString(),
-              updatedBy: this.userId,
-            })
-            .where("id", "=", op.id)
-            .execute();
-        }
+        // dueDate is the backward need-by target and is DIFF-written: only
+        // when the computed value differs from the stored one (a quiet regen
+        // touches zero dueDate values), and never for a pinned op —
+        // manuallyScheduled means a human owns that target. The forward
+        // results (startDate day + projectedCompletionAt instant) are written
+        // for every op.
+        const needBy = this.needByByOperation.get(op.id) ?? null;
+        const storedDueDate = toIsoDate(originalOp?.dueDate ?? null);
+        const writeDueDate = !isManuallyScheduled && needBy !== storedDueDate;
+
+        await trx
+          .updateTable("jobOperation")
+          .set({
+            startDate: op.startDate,
+            projectedCompletionAt: op.projectedCompletionAt ?? null,
+            ...(writeDueDate ? { dueDate: needBy } : {}),
+            priority: op.priority ?? undefined,
+            workCenterId,
+            hasConflict: op.hasConflict,
+            conflictReason: op.conflictReason,
+            updatedAt: new Date().toISOString(),
+            updatedBy: this.userId,
+          })
+          .where("id", "=", op.id)
+          .execute();
       }
 
       // Rebuild this job's live capacity reservations from this run's
@@ -1120,6 +1226,9 @@ export class SchedulingEngine {
     await this.createDependencies();
 
     await this.calculateDates();
+    // Backward need-by targets BEFORE placement — shares the placement pass's
+    // availability windows and influences it in no way (targets are outputs).
+    await this.computeNeedBys();
     await this.selectWorkCenters();
     await this.calculatePriorities();
 

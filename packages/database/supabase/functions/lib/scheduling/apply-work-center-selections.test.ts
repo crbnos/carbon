@@ -48,6 +48,9 @@ Deno.test("finite placement sets dates and clears any prior conflict", () => {
   const op = result.get("op-1");
   assert(op);
   assertEquals(op.startDate, "2026-07-14");
+  // The forecast is the EXACT placed-end instant; the stored need-by target
+  // (dueDate) is never touched by the forward pass.
+  assertEquals(op.projectedCompletionAt, "2026-07-14T08:00:00.000Z");
   assertEquals(op.dueDate, "2026-07-14");
   assertEquals(op.hasConflict, false);
   assertEquals(op.conflictReason, null);
@@ -131,7 +134,9 @@ Deno.test("outside placement (no work center) applies dates and clears any prior
   assert(op);
   assertEquals(op.workCenterId, undefined);
   assertEquals(op.startDate, "2026-07-15");
-  assertEquals(op.dueDate, "2026-07-15");
+  assertEquals(op.projectedCompletionAt, "2026-07-15T08:00:00.000Z");
+  // The stored need-by target is untouched by placement.
+  assertEquals(op.dueDate, "2026-06-18");
   assertEquals(op.hasConflict, false);
   assertEquals(op.conflictReason, null);
 });
@@ -150,7 +155,7 @@ Deno.test("operation without a selection passes through unchanged", () => {
   assertEquals(result.get("op-1"), original);
 });
 
-Deno.test("placed dates are recorded as the factory's calendar day", () => {
+Deno.test("placed start is recorded as the factory's calendar day; the projected finish keeps its exact instant", () => {
   const ops = new Map<string, ScheduledOperation>([["op-1", makeOp({})]]);
   const selections = new Map<string, WorkCenterSelection>([
     [
@@ -158,7 +163,7 @@ Deno.test("placed dates are recorded as the factory's calendar day", () => {
       {
         workCenterId: "wc-1",
         priority: 0,
-        // 21:34 UTC on the 20th = 03:04 IST on the 21st
+        // 22:00 UTC on the 19th = 03:30 IST on the 20th
         placedStart: "2026-07-19T22:00:00.000Z",
         placedEnd: "2026-07-20T21:34:00.000Z",
         conflict: null,
@@ -168,11 +173,14 @@ Deno.test("placed dates are recorded as the factory's calendar day", () => {
 
   const utc = applyWorkCenterSelections(ops, selections).get("op-1")!;
   assertEquals(utc.startDate, "2026-07-19");
-  assertEquals(utc.dueDate, "2026-07-20");
+  assertEquals(utc.projectedCompletionAt, "2026-07-20T21:34:00.000Z");
 
   const ist = applyWorkCenterSelections(ops, selections, "Asia/Kolkata").get(
     "op-1"
   )!;
   assertEquals(ist.startDate, "2026-07-20");
-  assertEquals(ist.dueDate, "2026-07-21");
+  // The instant is timezone-independent — no business-day rounding.
+  assertEquals(ist.projectedCompletionAt, "2026-07-20T21:34:00.000Z");
+  // The stored need-by target survives in every zone.
+  assertEquals(ist.dueDate, "2026-07-14");
 });

@@ -7,9 +7,12 @@ import type { ScheduledOperation, WorkCenterSelection } from "./types.ts";
  * Pure module (no provider/database imports) so it stays type-checkable
  * under `deno test lib/scheduling/` alongside the other pure units.
  *
- * `timeZone` is the job location's IANA zone: placed timestamps are recorded
- * onto the date-only operation columns as the FACTORY's calendar day (an op
- * ending 03:04 local on the 21st must not be stored as due the 20th).
+ * `timeZone` is the job location's IANA zone: the placed start is recorded
+ * onto the date-only `startDate` column as the FACTORY's calendar day (an op
+ * starting 03:04 local on the 21st must not be stored as starting the 20th).
+ * The placed end keeps its exact instant on `projectedCompletionAt`;
+ * `dueDate` is the backward need-by target and is NEVER written here
+ * (spec 2026-08-15 dual dates).
  */
 /**
  * True when an operation already has a non-empty work center assignment
@@ -42,12 +45,14 @@ export function applyWorkCenterSelections(
       updated.workCenterId = selection.workCenterId;
     }
 
-    // Forward-ASAP placement fills the (pre-placement null) dates and clears
-    // any prior conflict — the placement is the authoritative timing. Outside
-    // operations have a placement but no work center.
+    // Forward-ASAP placement fills the (pre-placement null) start day and
+    // projected finish instant and clears any prior conflict — the placement
+    // is the authoritative timing. `dueDate` (the backward need-by target) is
+    // deliberately untouched. Outside operations have a placement but no work
+    // center.
     if (selection.placedStart && selection.placedEnd) {
       updated.startDate = businessDay(selection.placedStart, timeZone);
-      updated.dueDate = businessDay(selection.placedEnd, timeZone);
+      updated.projectedCompletionAt = selection.placedEnd;
       updated.hasConflict = false;
       updated.conflictReason = null;
     }

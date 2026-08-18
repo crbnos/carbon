@@ -116,6 +116,14 @@ export type ScheduledOperation = Omit<BaseOperation, "priority"> & {
   id: string;
   startDate: string | null;
   dueDate: string | null;
+  /**
+   * Forward finite placement's projected finish — the EXACT placed-end
+   * instant (ISO timestamp), not a business day. Null pre-placement and when
+   * placement fails. Persisted to jobOperation."projectedCompletionAt";
+   * `dueDate` is the backward need-by TARGET and is never written by the
+   * forward pass (spec 2026-08-15 dual dates).
+   */
+  projectedCompletionAt?: string | null;
   priority: number | null;
   durationHours: number;
   durationDays: number;

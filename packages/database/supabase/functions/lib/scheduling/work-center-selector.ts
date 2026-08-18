@@ -304,9 +304,9 @@ export class WorkCenterSelector {
       /**
        * The JOB's due date ("YYYY-MM-DD") — the real deadline. Placements
        * finishing after it are flagged as late. The backward-computed
-       * per-op due dates are NOT used for lateness: they round every step
-       * up to a whole business day, so they land far earlier than the real
-       * requirement and would flag on-time placements. When null/omitted
+       * per-op need-by dates (`op.dueDate`) are NOT used for lateness:
+       * they are demand-anchored TARGETS — outputs of the need-by pass,
+       * never placement constraints (spec 2026-08-15). When null/omitted
        * (job has no due date), placements are never flagged as late.
        */
       jobDueDate?: string | null;
@@ -398,33 +398,11 @@ export class WorkCenterSelector {
         continue;
       }
 
-      // Manually scheduled operations keep their pinned dates and work
-      // center; reserve their existing window so their capacity still counts
-      if (op.manuallyScheduled) {
-        if (op.workCenterId && op.startDate && op.dueDate) {
-          const startAt = new Date(op.startDate);
-          const endAt = new Date(
-            new Date(op.dueDate).getTime() + 24 * 3_600_000
-          );
-          const capacity = ctx.capacityByWorkCenter.get(op.workCenterId);
-          if (capacity && endAt.getTime() > startAt.getTime()) {
-            capacity.reservations.push({ startAt, endAt });
-            this.plannedReservations.push({
-              resourceKind: "WorkCenter",
-              resourceId: op.workCenterId,
-              operationId: op.id,
-              startAt,
-              endAt,
-            });
-            placedEndByOperation.set(op.id, endAt);
-          }
-        }
-        selections.set(op.id, {
-          workCenterId: op.workCenterId ?? null,
-          priority: 0,
-        });
-        continue;
-      }
+      // Manually scheduled (pinned) ops flow through NORMAL placement: a pin
+      // owns the need-by TARGET (op.dueDate, taken as-is by the backward
+      // pass), not the placement — the schedule is the projection. The old
+      // frozen-window reservation of the pinned span was removed with the
+      // dual-dates split (spec 2026-08-15).
 
       if (!op.processId) {
         selections.set(op.id, {
@@ -472,9 +450,11 @@ export class WorkCenterSelector {
 
       // Earliest feasible start: forward-ASAP from now, never before an in-run
       // predecessor placement. No backward-pass floor — the projected finish
-      // must carry slack to be an overdue early-warning. Track whether a
-      // predecessor's placement is the binding bound — a late placement that
-      // never waited for its own resources inherited the delay from that dep.
+      // must carry slack to be an overdue early-warning. NEVER floor placement
+      // on op.dueDate — targets are outputs, not constraints (spec 2026-08-15).
+      // Track whether a predecessor's placement is the binding bound — a late
+      // placement that never waited for its own resources inherited the delay
+      // from that dep.
       let earliestMs = ctx.now.getTime();
       let dominantDepId: string | null = null;
       for (const depId of depsByOperation.get(op.id) ?? []) {
