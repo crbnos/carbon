@@ -233,6 +233,9 @@ export type Events = {
         { view: boolean; create: boolean; update: boolean; delete: boolean }
       >;
       companyId: string;
+      // The acting admin's userId — recorded as the actor on the audit event
+      // (NIST 800-171 3.3.1/3.3.2). Optional for backward-compatible replays.
+      actorId?: string;
     };
   };
 
@@ -262,6 +265,9 @@ export type Events = {
           id: string;
           type: "deactivate";
           companyId: string;
+          // The acting admin's userId — recorded as the actor on the audit
+          // event (NIST 800-171 3.3.1/3.3.2). Optional for replay safety.
+          actorId?: string;
         }
       | {
           id: string;

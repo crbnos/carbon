@@ -13,7 +13,7 @@ import { getParams, path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "users"
   });
 
@@ -53,7 +53,8 @@ export async function action({ request }: ActionFunctionArgs) {
       id,
       permissions,
       addOnly,
-      companyId
+      companyId,
+      actorId: userId
     }
   }));
 

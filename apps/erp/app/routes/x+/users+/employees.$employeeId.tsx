@@ -99,7 +99,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "users"
   });
 
@@ -132,7 +132,8 @@ export async function action({ request }: ActionFunctionArgs) {
     id,
     employeeType,
     permissions,
-    companyId
+    companyId,
+    actorId: userId
   });
 
   throw redirect(path.to.employeeAccounts, await flash(request, result));

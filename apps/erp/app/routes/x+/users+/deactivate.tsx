@@ -37,7 +37,12 @@ export async function action({ request }: ActionFunctionArgs) {
   if (users.length === 1) {
     const [targetUserId] = users;
     // deactivateUser() handles Stripe subscription quantity update internally
-    const result = await deactivateUser(client, targetUserId, companyId);
+    const result = await deactivateUser(
+      client,
+      targetUserId,
+      companyId,
+      userId
+    );
 
     throw redirect(safeRedirect(redirectTo), await flash(request, result));
   } else {
@@ -45,7 +50,8 @@ export async function action({ request }: ActionFunctionArgs) {
       payload: {
         id,
         type: "deactivate" as const,
-        companyId
+        companyId,
+        actorId: userId
       }
     }));
 

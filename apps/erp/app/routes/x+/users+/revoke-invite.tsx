@@ -51,7 +51,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const deactivate = await deactivateUser(
       serviceRole,
       usersToRevoke.data[0].id,
-      companyId
+      companyId,
+      userId
     );
     if (!deactivate.success) {
       return data(
@@ -69,7 +70,8 @@ export async function action({ request }: ActionFunctionArgs) {
       payload: {
         id,
         type: "deactivate" as const,
-        companyId
+        companyId,
+        actorId: userId
       }
     }));
 
