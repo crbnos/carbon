@@ -5,6 +5,7 @@ import {
   getCarbon,
   getMESUrl,
   ITAR_RIDER_PDF_PATH,
+  isAuthProviderEnabled,
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
@@ -300,7 +301,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     sessionTimeout: {
       enabled: CONTROLLED_ENVIRONMENT,
       idleMs: SESSION_IDLE_LOCK_MS,
-      heartbeatMs: SESSION_HEARTBEAT_MS
+      heartbeatMs: SESSION_HEARTBEAT_MS,
+      // Offer passkey re-auth on the lock overlay when the provider is enabled;
+      // the /unlock action gates the actual credential, TOTP stays available.
+      hasPasskeyAuth: isAuthProviderEnabled("passkey")
     },
     supplierApprovalRequired: isApprovalRequired(client, "supplier", companyId),
     openClockEntry: companySettings.data?.timeCardEnabled
@@ -431,7 +435,10 @@ export default function AuthenticatedRoute() {
       {/* Idle lock conceals the app (3.1.10). Not shown over the ITAR/MFA gates —
           the user has not fully entered the app there. */}
       {isIdle && !itarScreen && !mfaScreen && (
-        <SessionLockOverlay onUnlocked={resume} />
+        <SessionLockOverlay
+          onUnlocked={resume}
+          hasPasskeyAuth={sessionTimeout.hasPasskeyAuth}
+        />
       )}
       {(itarScreen ?? mfaScreen) ? (
         (itarScreen ?? mfaScreen)

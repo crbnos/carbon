@@ -13,11 +13,16 @@ import {
   Card,
   CardContent,
   Heading,
+  toast,
   VStack
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import { useEffect, useRef } from "react";
-import { LuLock } from "react-icons/lu";
+import { Trans, useLingui } from "@lingui/react/macro";
+import {
+  browserSupportsWebAuthn,
+  startAuthentication
+} from "@simplewebauthn/browser";
+import { useEffect, useRef, useState } from "react";
+import { LuFingerprint, LuLock } from "react-icons/lu";
 import { Form, useFetcher, useLocation } from "react-router";
 import { z } from "zod";
 
@@ -28,13 +33,14 @@ import { path } from "~/utils/path";
  * Full-screen pattern-hiding lock overlay + in-place re-auth (NIST 800-171
  * 3.1.10 / AC-11(1)). Shown by the shell when `useIdle` reports inactivity: it
  * CONCEALS all page content (opaque `bg-background`, top z-index) AND carries the
- * TOTP re-auth form itself, so unlocking is a single screen. It posts to the
- * `/unlock` action with `inline=true`; on success the action rotates the session
- * cookie and returns data (no navigation), the overlay calls `onUnlocked` to
- * clear the client lock, and React Router revalidates with the fresh session —
- * resuming the SAME session exactly where the user left off. The server is still
- * the real boundary (requireAuthSession redirects idle requests to the full-page
- * /unlock route); this overlay is the immediate concealment + fast path.
+ * re-auth controls itself, so unlocking is a single screen. TOTP posts a form to
+ * the `/unlock` action; a passkey posts the WebAuthn assertion as JSON. Both use
+ * `inline=true`: on success the action resumes the SAME session in place (rotated
+ * cookie returned as data, no navigation), the overlay calls `onUnlocked` to
+ * clear the client lock, and React Router revalidates with the fresh session.
+ * The server is still the real boundary (requireAuthSession redirects idle
+ * requests to the full-page /unlock route); this overlay is the immediate
+ * concealment + fast path.
  */
 const overlayValidator = z.object({
   code: z.string().length(6),
@@ -60,21 +66,60 @@ function UnlockCodeField({ result }: { result?: Result }) {
 }
 
 export default function SessionLockOverlay({
-  onUnlocked
+  onUnlocked,
+  hasPasskeyAuth = false
 }: {
   onUnlocked?: () => void;
+  hasPasskeyAuth?: boolean;
 }) {
+  const { t } = useLingui();
   const location = useLocation();
   const redirectTo = `${location.pathname}${location.search}`;
 
   const fetcher = useFetcher<Result>();
 
-  // A successful in-place unlock rotated the cookie already; clear the client
-  // lock so the overlay unmounts and the app (revalidated with the fresh
-  // session) shows through.
+  const [passkeySupported, setPasskeySupported] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+
+  useEffect(() => {
+    if (hasPasskeyAuth && browserSupportsWebAuthn()) setPasskeySupported(true);
+  }, [hasPasskeyAuth]);
+
+  // A successful in-place unlock (TOTP or passkey) rotated the cookie already;
+  // clear the client lock so the overlay unmounts and the app (revalidated with
+  // the fresh session) shows through.
   useEffect(() => {
     if (fetcher.data?.success === true) onUnlocked?.();
   }, [fetcher.data, onUnlocked]);
+
+  const onUnlockWithPasskey = async () => {
+    setPasskeyLoading(true);
+    try {
+      const optRes = await fetch("/api/passkey/authenticate/options", {
+        method: "POST"
+      });
+      if (!optRes.ok) throw new Error("Failed to get options");
+      const { challengeId, ...options } = await optRes.json();
+
+      const credential = await startAuthentication({
+        optionsJSON: options
+      } as any);
+
+      // inline=true → the action returns data (no navigation); the fetcher's
+      // success effect above clears the lock in place.
+      fetcher.submit({ credential, challengeId, inline: "true" } as any, {
+        method: "post",
+        action: "/unlock",
+        encType: "application/json"
+      });
+    } catch (e: any) {
+      if (e?.name !== "NotAllowedError" && e?.name !== "AbortError") {
+        toast.error(t`Passkey unlock failed`);
+      }
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background p-6">
@@ -88,45 +133,75 @@ export default function SessionLockOverlay({
               <Trans>Session locked</Trans>
             </Heading>
             <p className="text-sm text-muted-foreground text-pretty">
-              <Trans>
-                Your session was locked after inactivity. Enter the 6-digit code
-                from your authenticator app to resume.
-              </Trans>
+              <Trans>Your session was locked after inactivity.</Trans>
             </p>
           </VStack>
 
-          <ValidatedForm
-            fetcher={fetcher}
-            validator={overlayValidator}
-            method="post"
-            action="/unlock"
-            className="w-full"
-          >
-            <Hidden name="redirectTo" value={redirectTo} />
-            <Hidden name="inline" value="true" />
-            <VStack spacing={4} className="items-center">
-              {fetcher.data?.success === false && fetcher.data?.message && (
-                <Alert variant="destructive">
-                  <LuLock className="w-4 h-4" />
-                  <AlertTitle>
-                    <Trans>Unable to unlock</Trans>
-                  </AlertTitle>
-                  <AlertDescription>{fetcher.data.message}</AlertDescription>
-                </Alert>
-              )}
+          <VStack spacing={4} className="items-center w-full">
+            {fetcher.data?.success === false && fetcher.data?.message && (
+              <Alert variant="destructive">
+                <LuLock className="w-4 h-4" />
+                <AlertTitle>
+                  <Trans>Unable to unlock</Trans>
+                </AlertTitle>
+                <AlertDescription>{fetcher.data.message}</AlertDescription>
+              </Alert>
+            )}
 
-              <UnlockCodeField result={fetcher.data} />
-
-              <Submit
+            {hasPasskeyAuth && passkeySupported && (
+              <Button
+                type="button"
                 size="lg"
+                variant="secondary"
                 className="w-full"
-                withBlocker={false}
-                isDisabled={fetcher.state !== "idle"}
+                leftIcon={<LuFingerprint />}
+                onClick={onUnlockWithPasskey}
+                isDisabled={passkeyLoading || fetcher.state !== "idle"}
+                isLoading={passkeyLoading}
               >
-                <Trans>Unlock</Trans>
-              </Submit>
-            </VStack>
-          </ValidatedForm>
+                <Trans>Unlock with passkey</Trans>
+              </Button>
+            )}
+
+            {hasPasskeyAuth && passkeySupported && (
+              <div className="flex items-center gap-3 w-full">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground uppercase">
+                  <Trans>or</Trans>
+                </span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+            )}
+
+            <ValidatedForm
+              fetcher={fetcher}
+              validator={overlayValidator}
+              method="post"
+              action="/unlock"
+              className="w-full"
+            >
+              <Hidden name="redirectTo" value={redirectTo} />
+              <Hidden name="inline" value="true" />
+              <VStack spacing={4} className="items-center">
+                <p className="text-sm text-muted-foreground text-pretty">
+                  <Trans>
+                    Enter the 6-digit code from your authenticator app to
+                    resume.
+                  </Trans>
+                </p>
+                <UnlockCodeField result={fetcher.data} />
+
+                <Submit
+                  size="lg"
+                  className="w-full"
+                  withBlocker={false}
+                  isDisabled={fetcher.state !== "idle"}
+                >
+                  <Trans>Unlock</Trans>
+                </Submit>
+              </VStack>
+            </ValidatedForm>
+          </VStack>
 
           <Form method="post" action={path.to.logout}>
             <Button
