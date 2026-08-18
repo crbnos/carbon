@@ -2904,6 +2904,9 @@ msgstr "परिवर्तन सूचना प्रकार"
 msgid "Change Notices"
 msgstr "परिवर्तन सूचनाएं"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr ""
+
 msgid "Change order"
 msgstr "परिवर्तन आदेश"
 

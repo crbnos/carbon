@@ -150,7 +150,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree,
     changeNotices,
-    openChangeNotices
+    openChangeNotices,
+    // Fail closed: a lookup we couldn't read can't prove the item is CO-free.
+    changeNoticesUnavailable: allChangeNotices.error !== null
   };
 }
 

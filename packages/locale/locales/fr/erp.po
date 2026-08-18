@@ -2904,6 +2904,9 @@ msgstr "Types d'avis de modification"
 msgid "Change Notices"
 msgstr "Avis de modification"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr ""
+
 msgid "Change order"
 msgstr "Ordre de changement"
 

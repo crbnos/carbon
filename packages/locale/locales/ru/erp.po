@@ -2904,6 +2904,9 @@ msgstr "Типы уведомлений об изменении"
 msgid "Change Notices"
 msgstr "Уведомления об изменении"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr ""
+
 msgid "Change order"
 msgstr "Изменение заказа"
 

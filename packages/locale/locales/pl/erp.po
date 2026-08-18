@@ -2904,6 +2904,9 @@ msgstr "Typy Zgłoszeń Zmian"
 msgid "Change Notices"
 msgstr "Zgłoszenia Zmian"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr ""
+
 msgid "Change order"
 msgstr "Zmiana zamówienia"
 

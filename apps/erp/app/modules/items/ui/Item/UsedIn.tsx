@@ -280,8 +280,8 @@ export function RevisionsItem({
   // Block manual revision creation while an open change notice owns this item —
   // the CO authors revisions. The button stays visible but disabled, with a
   // tooltip pointing at the change notice(s).
-  const openChangeNotices = useItemOpenChangeNotices(node.key, itemId);
-  const isChangeNoticeLocked = openChangeNotices.length > 0;
+  const { changeNotices: openChangeNotices, isLocked: isChangeNoticeLocked } =
+    useItemOpenChangeNotices(node.key, itemId);
 
   const [selectedRevision, setSelectedRevision] = useState<{
     id?: string;
@@ -328,6 +328,7 @@ export function RevisionsItem({
           (isChangeNoticeLocked ? (
             <ItemChangeNoticeLock
               changeNotices={openChangeNotices}
+              isLocked={isChangeNoticeLocked}
               className="absolute right-2 top-1.5"
             >
               <IconButton

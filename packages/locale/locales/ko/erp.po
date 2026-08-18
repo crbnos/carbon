@@ -2904,6 +2904,9 @@ msgstr "변경 공지 유형"
 msgid "Change Notices"
 msgstr "변경 공지"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr ""
+
 msgid "Change order"
 msgstr "변경 주문"
 

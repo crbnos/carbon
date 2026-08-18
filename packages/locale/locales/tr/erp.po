@@ -2904,6 +2904,9 @@ msgstr "Değişiklik Bildirisi Türleri"
 msgid "Change Notices"
 msgstr "Değişiklik Bildirimleri"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr ""
+
 msgid "Change order"
 msgstr "Değişim emri"
 
