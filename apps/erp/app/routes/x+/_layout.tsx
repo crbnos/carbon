@@ -7,6 +7,7 @@ import {
   ITAR_RIDER_PDF_PATH
 } from "@carbon/auth";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
+import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
   destroyAuthSession,
   requireAuthSession,
@@ -52,6 +53,7 @@ import {
 } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
+import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { usePermissions } from "~/hooks";
@@ -244,6 +246,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.onboarding.root);
   }
 
+  // Org-enforced MFA. A controlled deployment forces it regardless of the
+  // company toggle (NIST 800-171 3.5.3 requires MFA for network access to
+  // non-privileged accounts), so a company cannot switch it back off.
+  const mfaRequired =
+    CONTROLLED_ENVIRONMENT || companySettings.data?.requireMfa === true;
+  // Redis-cached + memoized per read; only queried when it could gate.
+  const mfaEnrolled = mfaRequired
+    ? await userHasVerifiedTotpFactor(userId)
+    : true;
+
   return data({
     session: {
       accessToken,
@@ -274,6 +286,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       // by anything the browser can set.
       entityRequired: requiresItarEntityCertification(user.data.email)
     },
+    mfaEnrollment: {
+      // Server-decided, never client-inferred — same reason as the ITAR gate.
+      required: mfaRequired && !mfaEnrolled,
+      controlledEnvironment: CONTROLLED_ENVIRONMENT
+    },
     supplierApprovalRequired: isApprovalRequired(client, "supplier", companyId),
     openClockEntry: companySettings.data?.timeCardEnabled
       ? getOpenClockEntry(client, userId, companyId)
@@ -289,7 +306,8 @@ export default function AuthenticatedRoute() {
     companySettings,
     openClockEntry,
     printerRoutes,
-    itarCertification
+    itarCertification,
+    mfaEnrollment
   } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -372,10 +390,25 @@ export default function AuthenticatedRoute() {
     }
   }
 
+  // Enforced-MFA gate. Rendered in place of the shell rather than redirected
+  // to, so the enrollment API routes it calls are never themselves gated.
+  // Ordered after ITAR: the export-control attestation is the legal gate and
+  // must be answered first.
+  const mfaScreen: ReactNode = mfaEnrollment.required ? (
+    <MfaEnrollmentRequired
+      enrollAction={path.to.mfaEnroll}
+      verifyAction={path.to.mfaVerify}
+      logoutAction={path.to.logout}
+      controlledEnvironment={mfaEnrollment.controlledEnvironment}
+      userName={`${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()}
+      avatarUrl={user.avatarUrl}
+    />
+  ) : null;
+
   return (
     <div className="h-[100dvh] flex flex-col">
-      {itarScreen ? (
-        itarScreen
+      {(itarScreen ?? mfaScreen) ? (
+        (itarScreen ?? mfaScreen)
       ) : (
         <CarbonProvider session={session}>
           <PrintingProvider

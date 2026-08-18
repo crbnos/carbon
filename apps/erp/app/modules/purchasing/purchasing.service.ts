@@ -13,7 +13,7 @@ import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getCurrencyByCode } from "../accounting/accounting.service";
+import { getCurrencyByCode } from "../accounting/accounting.ee.service";
 import type { PurchaseInvoice } from "../invoicing/types";
 import {
   canApproveRequest,
@@ -2487,7 +2487,9 @@ export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
-  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
+  // @ts-ignore TS2589 — supabase select-string instantiation depth sits on
+  // tsgo's limit; the cliff shifts as unrelated modules join the program.
+  // ts-ignore, not ts-expect-error, so it satisfies both tsc and tsgo.
   return client
     .from("purchasingRfqSupplier")
     .select("*, supplier(id, name)")

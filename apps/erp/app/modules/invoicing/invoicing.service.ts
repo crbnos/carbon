@@ -13,7 +13,7 @@ import {
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getCurrencyByCode } from "../accounting/accounting.service";
+import { getCurrencyByCode } from "../accounting/accounting.ee.service";
 import { getEmployeeJob } from "../people/people.service";
 import {
   getCustomerPayment,

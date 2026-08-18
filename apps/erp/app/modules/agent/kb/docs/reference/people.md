@@ -10,6 +10,8 @@ A person in Carbon is one record split across three tables. The `user` is the gl
 
 The **Employees** directory (under **Manage**) lists everyone in the company. Each row shows first and last name, email, employee type, location, and a **Status** of **"Active"**, **"Invited"**, or **"Inactive"** — derived from the employee record and any pending invite, not stored as a field. Open a person to see their **Profile**, **Job**, and **Notes**, plus a tab per attribute category and a **Timecards** tab when time cards are enabled.
 
+When the company requires two-factor authentication, the list also carries a **Two-Factor** column showing whether each person has an authenticator set up, and the row menu offers **"Reset Two-Factor Auth"** for anyone who has lost their device. Both are covered in `docs/reference/two-factor`.
+
 The **Job** section is the employee master data you edit here:
 
   - **Title**: The person's job title within this company. This is *not* their permission role — see the callout below.
@@ -85,6 +87,7 @@ These are the office-side time card records. On the shop floor, operators clock 
 ## Related
 
   - Permissions Employee types, roles, and what a person is allowed to do.
+  - Two-factor authentication Authenticator codes, company-wide enforcement, and resetting a lost device.
   - MES Clocking time against job operations on the floor.
   - Work centers Where operations run, and how they're scheduled and costed.
 

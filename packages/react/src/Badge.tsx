@@ -11,7 +11,7 @@ import { LuX } from "react-icons/lu";
 import { cn } from "./utils/cn";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md px-2 min-h-[1.25rem] font-medium transition-[color,box-shadow] border focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 font-bold text-[11px] uppercase truncate tracking-tight whitespace-nowrap",
+  "inline-flex items-center rounded-md px-2 min-h-[1.5rem] font-medium transition-[color,box-shadow] border focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 font-bold text-[12px] uppercase truncate tracking-tight whitespace-nowrap",
   {
     variants: {
       variant: {

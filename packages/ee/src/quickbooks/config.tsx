@@ -4,15 +4,15 @@ import { z } from "zod";
 import { defineIntegration } from "../fns";
 
 export const QuickBooks = defineIntegration({
-  name: "QuickBooks",
+  name: "QuickBooks Online",
   id: "quickbooks",
   active: false,
   category: "Accounting",
   logo: Logo,
   description:
-    "Integrating Carbon with QuickBooks enables you to post transactions from sales invoices and purchase invoices into your existing accounting software, neatly organizing everything in your bookkeeping software.",
+    "Integrating Carbon with QuickBooks Online keeps your books in sync: customers, vendors, items, invoices and bills flow between both systems, and Carbon's inventory and production postings are pushed as journal entries into your QuickBooks Online ledger.",
   shortDescription:
-    "Automatically post transactions from sales and purchase invoices.",
+    "Sync customers, vendors, items and invoices, and post journal entries.",
   images: [],
   settings: [],
   schema: z.object({}),
@@ -20,15 +20,15 @@ export const QuickBooks = defineIntegration({
     authUrl: "https://appcenter.intuit.com/connect/oauth2",
     clientId: QUICKBOOKS_CLIENT_ID ?? "",
     redirectUri: "/api/integrations/quickbooks/oauth",
-    scopes: [
-      "com.intuit.quickbooks.accounting",
-      "com.intuit.quickbooks.payment"
-    ],
+    scopes: ["com.intuit.quickbooks.accounting"],
     tokenUrl: "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
   }
 });
 
-function Logo(props: ComponentProps<"svg">) {
+/**
+ * QuickBooks logo. Exported like Onshape's Logo.
+ */
+export function Logo(props: ComponentProps<"svg">) {
   return (
     <svg
       {...props}

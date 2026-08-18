@@ -551,11 +551,14 @@ export type Events = {
     data: {
       companyId: string;
       provider: string;
+      syncType?: "webhook" | "scheduled" | "trigger";
       syncDirection: "push-to-accounting" | "pull-from-accounting" | "two-way";
       entities: Array<{
         entityType: string;
         entityId: string;
+        operation?: "create" | "update" | "delete" | "sync";
       }>;
+      metadata?: Record<string, unknown>;
     };
   };
 

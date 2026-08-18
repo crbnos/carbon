@@ -6,7 +6,7 @@ const REQUIRED_ENTRIES = ["types.ts", "ui", "index.ts"];
 export const moduleShape: StructureCheck = {
   id: "module-shape",
   description:
-    "Each ERP module: one <name>.service.ts, one <name>.models.ts, types.ts, ui/, index.ts.",
+    "Each ERP module: one <name>.service.ts (or <name>.ee.service.ts), one <name>.models.ts, types.ts, ui/, index.ts.",
   provenance: {
     deprecates: "scattered service/models files",
     replacedBy: "one <module>.service.ts + one <module>.models.ts"
@@ -23,18 +23,23 @@ export const moduleShape: StructureCheck = {
     }
 
     for (const kind of ["service", "models"] as const) {
-      const expected = `${module.name}.${kind}.ts`;
+      const canonical = `${module.name}.${kind}.ts`;
+      // A `.ee` infix marks a file as commercial-licensed (see root LICENSE);
+      // a module may keep its single service/models file under that name.
+      const eeVariant = `${module.name}.ee.${kind}.ts`;
       const found = module.entries.filter((e) => e.endsWith(`.${kind}.ts`));
-      if (!found.includes(expected)) {
+      if (!found.includes(canonical) && !found.includes(eeVariant)) {
         add(
-          `missing:${expected}`,
-          `Module "${module.name}" must have ${expected}.`
+          `missing:${canonical}`,
+          `Module "${module.name}" must have ${canonical} (or ${eeVariant}).`
         );
       }
-      for (const extra of found.filter((e) => e !== expected)) {
+      for (const extra of found.filter(
+        (e) => e !== canonical && e !== eeVariant
+      )) {
         add(
           `extra-${kind}:${extra}`,
-          `Extra ${kind} file "${extra}" — fold into ${expected}.`
+          `Extra ${kind} file "${extra}" — fold into ${canonical}.`
         );
       }
     }

@@ -422,6 +422,9 @@ msgstr "工程を終了"
 msgid "Enter PIN for {0}"
 msgstr "{0} のPINを入力"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "認証器アプリから6桁のコードを入力してください"
+
 msgid "Error"
 msgstr "エラー"
 
@@ -1224,6 +1227,9 @@ msgstr "退勤時間を設定"
 msgid "Set clock-out time"
 msgstr "退勤時間を設定"
 
+msgid "Set up in Carbon"
+msgstr "Carbonで設定"
+
 msgid "Setup"
 msgstr "段取り"
 
@@ -1247,6 +1253,9 @@ msgstr "Outlookでサインイン"
 
 msgid "Sign in with Passkey"
 msgstr "パスキーでサインイン"
+
+msgid "Sign out"
+msgstr "サインアウト"
 
 msgid "Sign Out"
 msgstr "サインアウト"
@@ -1375,6 +1384,12 @@ msgstr "追跡エンティティ"
 msgid "Tracking"
 msgstr "追跡"
 
+msgid "Two-factor authentication"
+msgstr "二要素認証"
+
+msgid "Two-factor authentication required"
+msgstr "二要素認証が必要です"
+
 msgid "Type a message..."
 msgstr "メッセージを入力..."
 
@@ -1425,6 +1440,12 @@ msgstr "アップロード完了: {0}"
 msgid "Uploading {0}"
 msgstr "{0} をアップロード中"
 
+msgid "Use a different account"
+msgstr "別のアカウントを使用"
+
+msgid "Verify"
+msgstr "確認"
+
 msgid "View maintenance dispatch"
 msgstr "メンテナンスディスパッチを表示"
 
@@ -1451,3 +1472,6 @@ msgstr "あなたは<0/>にクロックインしました。下記でクロッ�
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} 時間出勤中です。退勤打刻を忘れていませんか？"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"

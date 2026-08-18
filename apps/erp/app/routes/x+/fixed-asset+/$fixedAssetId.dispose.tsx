@@ -9,7 +9,7 @@ import {
   getFixedAsset,
   getOrCreateAccountingPeriod
 } from "~/modules/accounting";
-import { postDisposal } from "~/modules/accounting/accounting.server";
+import { postDisposal } from "~/modules/accounting/accounting.ee.server";
 import { FixedAssetDisposalForm } from "~/modules/accounting/ui/FixedAssets";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";

@@ -5,6 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
@@ -121,6 +122,22 @@ export async function action(args: ActionFunctionArgs) {
       )
     );
   }
+
+  // Emitted here, not at the end of the route: the order is finalized as of
+  // this line, and five things below can redirect out first — a failed PDF
+  // upload, a failed document row, any PDF throw, the form validation (which
+  // runs after this), and a failed email. Every one of them leaves a finalized
+  // order behind, so anything further down under-counts.
+  trackWorkEvent(
+    "purchase_order_finalized",
+    {
+      companyId,
+      userId,
+      purchaseOrderId: orderId,
+      stage: approvalRequired ? "gated" : "committed"
+    },
+    { discriminator: approvalRequired ? "gated" : "committed" }
+  );
 
   // If approval is required, create the request and return early
   // PDF generation, email sending, and price updates happen after approval

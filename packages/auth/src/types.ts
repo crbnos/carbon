@@ -10,6 +10,12 @@ export interface AuthSession {
   expiresIn: number;
   expiresAt: number;
   console?: string;
+  /**
+   * True once this session passed a TOTP challenge (or was minted by a flow
+   * that never needs one, e.g. the dev bypass). `requireAuthSession` bounces
+   * sessions where this is unset but the user has a verified factor.
+   */
+  mfaVerified?: boolean;
 }
 
 export type Company = NonNullable<

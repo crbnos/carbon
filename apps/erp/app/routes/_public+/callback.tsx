@@ -8,11 +8,13 @@ import {
 import { refreshAccessToken } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
+import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
   destroyAuthSession,
   flash,
   getAuthSession,
-  setAuthSession
+  setAuthSession,
+  setPendingMfaSession
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
@@ -92,6 +94,18 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(authSession.email);
 
   if (user?.data) {
+    // TOTP gate: park the tokens in the pending-MFA key and challenge before
+    // any full session cookie exists. The /mfa action mints the real session.
+    if (await userHasVerifiedTotpFactor(authSession.userId)) {
+      const pendingCookie = await setPendingMfaSession(request, {
+        authSession,
+        redirectTo
+      });
+      return redirect(path.to.mfa, {
+        headers: [["Set-Cookie", pendingCookie]]
+      });
+    }
+
     const sessionCookie = await setAuthSession(request, {
       authSession
     });

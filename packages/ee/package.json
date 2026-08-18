@@ -21,7 +21,8 @@
     "./slack.server": "./src/slack.server.ts",
     "./slack/messages": "./src/slack/lib/messages.ts",
     "./hooks.server": "./src/hooks.server.ts",
-    "./xero": "./src/accounting/providers/xero.ts",
+    "./quickbooks/hooks.server": "./src/quickbooks/hooks.server.ts",
+    "./rillet/hooks.server": "./src/rillet/hooks.server.ts",
     "./xero/hooks.server": "./src/xero/hooks.server.ts"
   },
   "private": true,
@@ -67,6 +68,8 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@logtape/logtape": "catalog:",
+    "@logtape/testing": "catalog:",
     "@types/nodemailer": "6.4.21",
     "@types/react": "catalog:",
     "typescript": "catalog:",

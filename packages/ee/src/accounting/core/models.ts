@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import z from "zod";
 import type {
   AccountingEntity,
@@ -11,8 +12,9 @@ function withNullable<T extends z.ZodTypeAny>(schema: T) {
 }
 
 export enum ProviderID {
-  XERO = "xero"
-  // QUICKBOOKS = "quickbooks"
+  XERO = "xero",
+  QUICKBOOKS = "quickbooks",
+  RILLET = "rillet"
   // SAGE = "sage",
 }
 
@@ -27,10 +29,76 @@ export const ProviderCredentialsSchema = z.discriminatedUnion("type", [
     refreshToken: z.string().optional(),
     expiresAt: z.string().datetime().optional(),
     scope: z.array(z.string()).optional(),
-    tenantId: z.string().optional(),
-    tenantName: z.string().optional()
+    providerMetadata: z.record(z.string(), z.unknown()).optional() // xero: { tenantId, tenantName }; qbo: { realmId }
+  }),
+  z.object({
+    type: z.literal("apiKey"),
+    apiKey: z.string().min(1),
+    /** Which host the key belongs to — API keys are environment-specific. */
+    environment: z.enum(["production", "sandbox"]).default("production"),
+    // rillet: { subsidiaryId?, webhookToken? }
+    providerMetadata: z.record(z.string(), z.unknown()).optional()
+  }),
+  z.object({
+    type: z.literal("bridge"),
+    vendor: z.string(), // e.g. "conductor"
+    externalConnectionId: z.string() // e.g. Conductor end-user id
   })
 ]);
+
+/**
+ * Legacy stored oauth2 credentials kept provider-specific fields
+ * (`tenantId`/`tenantName`) at the top level. Fold them into
+ * `providerMetadata` before parsing — zod strips unknown keys, so parsing
+ * the flat shape directly against the union would silently drop the tenant.
+ */
+function normalizeStoredCredentials(raw: unknown): unknown {
+  if (
+    typeof raw !== "object" ||
+    raw === null ||
+    (raw as Record<string, unknown>).type !== "oauth2" ||
+    (!("tenantId" in raw) && !("tenantName" in raw))
+  ) {
+    return raw;
+  }
+
+  const { tenantId, tenantName, providerMetadata, ...rest } = raw as Record<
+    string,
+    unknown
+  >;
+
+  return {
+    ...rest,
+    providerMetadata: {
+      ...(tenantId !== undefined ? { tenantId } : {}),
+      ...(tenantName !== undefined ? { tenantName } : {}),
+      ...(typeof providerMetadata === "object" && providerMetadata !== null
+        ? providerMetadata
+        : {})
+    }
+  };
+}
+
+/**
+ * Credentials as they are stored on `companyIntegration.metadata` — reads the
+ * new discriminated union, transparently upgrading the legacy flat oauth2
+ * shape. Writes always use the new shape.
+ */
+export const StoredProviderCredentialsSchema = z.preprocess(
+  normalizeStoredCredentials,
+  ProviderCredentialsSchema
+);
+
+/**
+ * Parse credentials read from storage. Accepts the new union and the legacy
+ * flat oauth2 shape (mapped into `providerMetadata`). Throws if neither
+ * parses.
+ */
+export function parseStoredCredentials(
+  raw: unknown
+): z.output<typeof ProviderCredentialsSchema> {
+  return StoredProviderCredentialsSchema.parse(raw);
+}
 
 /**
  * Direction of data flow.
@@ -110,12 +178,24 @@ export const ENTITY_DEFINITIONS: Record<
     label: "Payments",
     type: "transaction",
     dependsOn: ["invoice", "bill"],
-    supportedDirections: ["pull-from-accounting"]
+    // Two-way: provider-recorded payments pull back (Phase F), and Carbon-born
+    // Posted payments push out as provider payment documents (Phase G). Routing
+    // is per-record by origin (the payment mapping), not a static direction.
+    supportedDirections: [
+      "two-way",
+      "pull-from-accounting",
+      "push-to-accounting"
+    ]
   },
   inventoryAdjustment: {
     label: "Inventory Adjustments",
     type: "transaction",
     dependsOn: ["item"],
+    supportedDirections: ["push-to-accounting"]
+  },
+  journalEntry: {
+    label: "Journal Entries",
+    type: "transaction",
     supportedDirections: ["push-to-accounting"]
   }
 };
@@ -158,9 +238,393 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
       enabled: false,
       direction: "push-to-accounting",
       owner: "carbon"
+    },
+    journalEntry: {
+      // Always-on: automated postings ARE the sync (the always-on model) —
+      // connecting an accounting integration means Carbon's automated GL
+      // postings mirror to it. Manual journals are excluded by POSTING_POLICY
+      // (syncable: false), not by this flag.
+      enabled: true,
+      direction: "push-to-accounting",
+      owner: "carbon"
     }
   }
 };
+
+// /********************************************************\
+// *              Posting Sync (journalEntry)               *
+// \********************************************************/
+
+export type JournalEntrySourceType =
+  Database["public"]["Enums"]["journalEntrySourceType"];
+
+/** How a source type CAN be represented in the provider (structural). */
+export type JournalRepresentation = "journal" | "document";
+
+export type PostingGranularity = "individual" | "daily-summary";
+
+/**
+ * Which per-company family setting decides a document-represented type:
+ * AR (invoice-side), AP (bill-side), or resolved per journal from its
+ * control-account lines (Payment spans both sides).
+ */
+export type PostingSourceFamily = "ar" | "ap" | "per-line";
+
+export type PostingPolicyEntry = {
+  representation: JournalRepresentation;
+  /** Only document-represented types carry a family. */
+  family?: PostingSourceFamily;
+  /**
+   * For document-represented types: the entity whose DOCUMENT sync carries
+   * the journal's amounts into the provider ("invoice" | "bill" | "payment"),
+   * or null when no document representation exists yet (memos/returns) —
+   * those park loudly in documents mode instead of excluding silently.
+   */
+  backingEntityType?: "invoice" | "bill" | "payment" | null;
+  /**
+   * `false` ONLY for `Manual` — manual journals are NEVER synced in any engine.
+   * They can touch arbitrary/unmapped accounts, and the external ledger owns
+   * manual journals (payroll, etc.); Carbon syncs only its automated postings.
+   * Omitted ⇒ syncable (every automated posting type).
+   */
+  syncable?: boolean;
+  defaultEnabled: boolean;
+  defaultGranularity: PostingGranularity;
+};
+
+/**
+ * The total posting policy: EVERY "journalEntrySourceType" enum value has a
+ * row (Record<> makes omission a compile error — adding an enum value
+ * without deciding its policy breaks typecheck, not production).
+ * Spec: .ai/specs/2026-08-02-accounting-sync-engine-v3.md §2.
+ */
+export const POSTING_POLICY: Record<
+  JournalEntrySourceType,
+  PostingPolicyEntry
+> = {
+  Manual: {
+    representation: "journal",
+    syncable: false,
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  "Purchase Receipt": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Transfer Receipt": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Sales Shipment": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Inventory Adjustment": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Production Order": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Production Event": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "daily-summary"
+  },
+  "Job Consumption": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "daily-summary"
+  },
+  "Job Receipt": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Job Close": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Asset Depreciation": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Asset Disposal": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Non-Conformance": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Inbound Inspection": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Sales Invoice": {
+    representation: "document",
+    family: "ar",
+    backingEntityType: "invoice",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  "Credit Memo": {
+    representation: "document",
+    family: "ar",
+    backingEntityType: null,
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  "Sales Return": {
+    representation: "document",
+    family: "ar",
+    backingEntityType: null,
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  "Purchase Invoice": {
+    representation: "document",
+    family: "ap",
+    backingEntityType: "bill",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  "Debit Memo": {
+    representation: "document",
+    family: "ap",
+    backingEntityType: null,
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  "Purchase Return": {
+    representation: "document",
+    family: "ap",
+    backingEntityType: null,
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  Payment: {
+    representation: "document",
+    family: "per-line",
+    backingEntityType: "payment",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  }
+};
+
+export const JOURNAL_ENTRY_SOURCE_TYPES = Object.keys(
+  POSTING_POLICY
+) as JournalEntrySourceType[];
+
+/**
+ * Machine reasons recorded on terminal `Excluded` operations — the policy
+ * decided a posted journal is not pushed as a journal, and why.
+ */
+export const POSTING_DECISION_REASON_CODES = [
+  "DOC_BACKED",
+  "FAMILY_OFF",
+  "SOURCE_TYPE_DISABLED",
+  "MANUAL_DISABLED"
+] as const;
+
+export type PostingDecisionReasonCode =
+  (typeof POSTING_DECISION_REASON_CODES)[number];
+
+/**
+ * @deprecated Derived from POSTING_POLICY (journal-represented types enabled
+ * by default). Read the policy directly for new code.
+ */
+export const POSTING_SYNC_DEFAULT_SOURCE_TYPES =
+  JOURNAL_ENTRY_SOURCE_TYPES.filter(
+    (sourceType) =>
+      POSTING_POLICY[sourceType].representation === "journal" &&
+      POSTING_POLICY[sourceType].defaultEnabled
+  );
+
+/**
+ * @deprecated Derived from POSTING_POLICY (document-represented types).
+ * Whether a document-represented journal is DOC_BACKED, parked, or pushed
+ * now depends on the company's family representation setting — read the
+ * policy + settings through getJournalPostingPolicyDecision instead.
+ */
+export const POSTING_SYNC_EXCLUDED_SOURCE_TYPES =
+  JOURNAL_ENTRY_SOURCE_TYPES.filter(
+    (sourceType) => POSTING_POLICY[sourceType].representation === "document"
+  );
+
+export const PostingSyncFamilyModeSchema = z.enum([
+  "documents",
+  "journals",
+  "none"
+]);
+
+export type PostingSyncFamilyMode = z.infer<typeof PostingSyncFamilyModeSchema>;
+
+export const PostingSyncGranularitySchema = z.enum([
+  "individual",
+  "daily-summary"
+]);
+
+export const PostingSyncDimensionSlotSchema = z.object({
+  dimensionId: z.string(),
+  /** Provider-specific target id (e.g. "class", "tracking:<id>", "field:<id>"). */
+  target: z.string(),
+  /**
+   * Create missing provider options by name at push time. Optional so a
+   * stored slot without the flag resolves to the PROVIDER default at the
+   * point of use (Rillet: on — Field-value upsert is the expected flow;
+   * QBO/Xero: off — opt-in avoids surprise writes to their lists). See
+   * resolveDimensionSlotAutoCreate (core/dimension-mapping.ts).
+   */
+  autoCreate: z.boolean().optional()
+});
+
+export type PostingSyncDimensionSlot = z.infer<
+  typeof PostingSyncDimensionSlotSchema
+>;
+
+const PostingSyncSourceTypeConfigSchema = z.object({
+  enabled: z.boolean(),
+  granularity: PostingSyncGranularitySchema
+});
+
+/**
+ * Upgrade a stored v2 posting-sync fragment (flat `sourceTypes: string[]`,
+ * global `consolidation`, `includeManual`) to the v3 per-source-type shape.
+ * Behavior parity: the v2 enabled set carries over exactly, the global
+ * consolidation becomes every type's granularity, and `includeManual` maps
+ * to `sourceTypes.Manual.enabled`. v3 fragments pass through untouched.
+ * Write-back in the new shape happens on the next settings save.
+ */
+function normalizeStoredPostingSyncSettings(raw: unknown): unknown {
+  if (typeof raw !== "object" || raw === null) return raw;
+  const record = raw as Record<string, unknown>;
+
+  const isV2 =
+    Array.isArray(record.sourceTypes) ||
+    "consolidation" in record ||
+    "includeManual" in record;
+  if (!isV2) return raw;
+
+  const enabledList = Array.isArray(record.sourceTypes)
+    ? record.sourceTypes.filter((v): v is string => typeof v === "string")
+    : (POSTING_SYNC_DEFAULT_SOURCE_TYPES as readonly string[]);
+  const granularity =
+    record.consolidation === "daily" ? "daily-summary" : "individual";
+
+  const sourceTypes: Record<string, { enabled: boolean; granularity: string }> =
+    {};
+  for (const sourceType of JOURNAL_ENTRY_SOURCE_TYPES) {
+    const policy = POSTING_POLICY[sourceType];
+    const enabled =
+      sourceType === "Manual"
+        ? record.includeManual === true
+        : policy.representation === "journal" &&
+          enabledList.includes(sourceType);
+    sourceTypes[sourceType] = { enabled, granularity };
+  }
+
+  const {
+    consolidation: _consolidation,
+    includeManual: _includeManual,
+    sourceTypes: _sourceTypes,
+    ...rest
+  } = record;
+  return { ...rest, sourceTypes };
+}
+
+const PostingSyncStoredSchema = z.object({
+  /**
+   * Kept for backward-compatible parsing of stored fragments ONLY (D2:
+   * keep-but-ignore). The decision core no longer reads it — posting sync is
+   * always-on when an accounting integration is connected.
+   */
+  enabled: z.boolean().default(true),
+  syncFromDate: z.string().optional(),
+  /**
+   * AR/AP family representation (spec §2): documents (default — native
+   * provider documents; journals are DOC_BACKED), journals (documents NOT
+   * pushed; the journals push, forced individual), none (explicit opt-out —
+   * journals record FAMILY_OFF). Explicit, never derived from entity sync
+   * toggles.
+   */
+  families: z
+    .object({
+      ar: PostingSyncFamilyModeSchema.default("documents"),
+      ap: PostingSyncFamilyModeSchema.default("documents")
+    })
+    .default({ ar: "documents", ap: "documents" }),
+  /** Partial per-source-type overrides; missing entries fill from POSTING_POLICY. */
+  sourceTypes: z
+    .record(z.string(), PostingSyncSourceTypeConfigSchema)
+    .default({}),
+  /** Dimension slot config (Phase 2) — empty until dimension sync ships. */
+  dimensionSlots: z.array(PostingSyncDimensionSlotSchema).default([]),
+  onUnmappedDimensionValue: z.enum(["warn", "drop"]).default("warn"),
+  /** park = journals dated in a locked period land Warning; redate = push at lock date + 1 with the original date in the narration. */
+  periodLockPolicy: z.enum(["park", "redate"]).default("park"),
+  /** Manually captured provider lock date (YYYY-MM-DD) — required for providers whose API cannot report it (QBO); merged with the provider-reported lock date when both exist. */
+  lockDate: z.string().optional()
+});
+
+/**
+ * Per-company posting-sync settings fragment stored at
+ * `companyIntegration.metadata.settings.postingSync`. Resolved with
+ * `resolvePostingSyncSettings` (core/posting.ts) — never parsed directly
+ * from storage, and a bad stored fragment must never break sync. Reads the
+ * v3 shape, transparently upgrading stored v2 fragments (see
+ * normalizeStoredPostingSyncSettings). The output's `sourceTypes` is TOTAL
+ * over the enum (missing entries filled from POSTING_POLICY).
+ *
+ * `consolidation` in the output is a transitional derived field for the
+ * drain/cron hold: "daily" only when every enabled journal-represented type
+ * is daily-summary (pure v2-daily shims). Removed once the per-granularity
+ * claim filter lands (plan task 1.5).
+ */
+export const PostingSyncSettingsSchema = z.preprocess(
+  normalizeStoredPostingSyncSettings,
+  PostingSyncStoredSchema.transform((value) => {
+    const sourceTypes = {} as Record<
+      JournalEntrySourceType,
+      z.infer<typeof PostingSyncSourceTypeConfigSchema>
+    >;
+    for (const sourceType of JOURNAL_ENTRY_SOURCE_TYPES) {
+      sourceTypes[sourceType] = value.sourceTypes[sourceType] ?? {
+        enabled: POSTING_POLICY[sourceType].defaultEnabled,
+        granularity: POSTING_POLICY[sourceType].defaultGranularity
+      };
+    }
+
+    // Always-on: the set of syncing journal types is defined by POSTING_POLICY
+    // (journal-represented, non-Manual), never by stored per-type enables.
+    const enabledJournalTypes = JOURNAL_ENTRY_SOURCE_TYPES.filter(
+      (sourceType) =>
+        POSTING_POLICY[sourceType].representation === "journal" &&
+        POSTING_POLICY[sourceType].syncable !== false
+    );
+    const consolidation: "individual" | "daily" =
+      enabledJournalTypes.length > 0 &&
+      enabledJournalTypes.every(
+        (sourceType) => sourceTypes[sourceType].granularity === "daily-summary"
+      )
+        ? "daily"
+        : "individual";
+
+    return { ...value, sourceTypes, consolidation };
+  })
+);
 
 // ============================================================================
 // 4. VALIDATION LOGIC
@@ -226,7 +690,8 @@ export const SyncConfigSchema = z
         salesOrder: createEntityConfigSchema().optional(),
         invoice: createEntityConfigSchema().optional(),
         payment: createEntityConfigSchema().optional(),
-        inventoryAdjustment: createEntityConfigSchema().optional()
+        inventoryAdjustment: createEntityConfigSchema().optional(),
+        journalEntry: createEntityConfigSchema().optional()
       })
       .optional()
   })
@@ -234,11 +699,138 @@ export const SyncConfigSchema = z
 
 export const ProviderIntegrationMetadataSchema = z.object({
   syncConfig: SyncConfigSchema.optional(),
-  credentials: ProviderCredentialsSchema.optional(),
+  credentials: StoredProviderCredentialsSchema.optional(),
+  // Per-company integration settings (e.g. settings.postingSync). Kept as a
+  // permissive record so parsing never strips or rewrites stored keys —
+  // fragments are validated where they are consumed (resolvePostingSyncSettings)
+  settings: z.record(z.string(), z.unknown()).optional(),
   // Integration-specific settings (e.g., default account codes for Xero)
   // These are stored at the top level of metadata and passed through to the provider
   defaultSalesAccountCode: z.string().optional(),
   defaultPurchaseAccountCode: z.string().optional()
+});
+
+// /********************************************************\
+// *              Sync Operation Schemas                    *
+// \********************************************************/
+
+/**
+ * Status lifecycle of a sync operation (matches the "syncOperationStatus"
+ * Postgres enum): Pending → In Flight → Completed | Failed | Warning |
+ * Skipped | Excluded. `Excluded` is a terminal disposition decided by the
+ * posting policy (doc-backed, family off, source type disabled) — recorded
+ * so completeness is a query; `Skipped` remains the human opt-out.
+ */
+export const SyncOperationStatusSchema = z.enum([
+  "Pending",
+  "In Flight",
+  "Completed",
+  "Failed",
+  "Warning",
+  "Skipped",
+  "Excluded"
+]);
+
+export const SyncOperationDirectionSchema = z.enum([
+  "push-to-accounting",
+  "pull-from-accounting"
+]);
+
+export const SyncOperationTriggerSchema = z.enum([
+  "event",
+  "webhook",
+  "backfill",
+  "manual",
+  "posting",
+  "retry",
+  // v5: state-derived reconcile decisions (never cooldown-gated)
+  "reconcile"
+]);
+
+/**
+ * A row of the "accountingSyncOperation" ledger: one attempted sync of one
+ * entity in one direction.
+ */
+export const SyncOperationSchema = z.object({
+  id: z.string(),
+  companyId: z.string(),
+  integration: z.string(),
+  entityType: z.string(),
+  entityId: z.string(),
+  direction: SyncOperationDirectionSchema,
+  trigger: SyncOperationTriggerSchema,
+  status: SyncOperationStatusSchema,
+  idempotencyKey: z.string(),
+  attemptCount: z.number().int(),
+  lastAttemptAt: z.string().nullable(),
+  completedAt: z.string().nullable(),
+  errorCode: z.string().nullable(),
+  errorMessage: z.string().nullable(),
+  externalId: z.string().nullable(),
+  metadata: z.record(z.any()).nullable(),
+  createdBy: z.string(),
+  createdAt: z.string(),
+  updatedBy: z.string().nullable(),
+  updatedAt: z.string().nullable()
+});
+
+/**
+ * UI-driven status transitions: Retry (Failed/Warning/Skipped → Pending
+ * — Skipped covers both a human opt-out and the drain's machine no-op
+ * close, either of which a user may re-drive), Skip (Failed/Warning/
+ * Pending → Skipped), Re-send (Completed/Excluded → Pending — an
+ * Excluded journal re-decides against the current policy config).
+ * Everything else is invalid.
+ */
+export const SYNC_OPERATION_ALLOWED_TRANSITIONS: Record<
+  z.infer<typeof SyncOperationStatusSchema>,
+  ReadonlyArray<z.infer<typeof SyncOperationStatusSchema>>
+> = {
+  Pending: ["Skipped"],
+  "In Flight": [],
+  Completed: ["Pending"],
+  Failed: ["Pending", "Skipped"],
+  Warning: ["Pending", "Skipped"],
+  Skipped: ["Pending"],
+  Excluded: ["Pending"]
+};
+
+export const SyncOperationTransitionSchema = z.object({
+  id: z.string(),
+  companyId: z.string(),
+  to: SyncOperationStatusSchema,
+  userId: z.string()
+});
+
+// /********************************************************\
+// *               Account Mapping Schemas                  *
+// \********************************************************/
+
+/**
+ * An account in the provider's chart of accounts as fetched from the
+ * provider API (e.g. Xero GET /Accounts). `code` is the provider-side
+ * account code that matchAccountsByCode compares against Carbon
+ * `account.number`.
+ */
+export const ProviderChartAccountSchema = z.object({
+  id: z.string(),
+  code: z.string().nullish(),
+  name: z.string().nullish()
+});
+
+/**
+ * Payload for upserting an account mapping (Carbon account.id → provider
+ * account id). externalCode/externalName are stored in the mapping
+ * metadata for display only — the mapping itself is by id on both sides.
+ */
+export const UpsertAccountMappingSchema = z.object({
+  companyId: z.string(),
+  integration: z.string(),
+  accountId: z.string(),
+  externalId: z.string(),
+  externalCode: z.string().optional(),
+  externalName: z.string().optional(),
+  userId: z.string()
 });
 
 // /********************************************************\
@@ -404,6 +996,8 @@ export const BillLineSchema = z.object({
   unitPrice: z.number(),
   itemId: withNullable(z.string()),
   itemCode: withNullable(z.string()),
+  /** Carbon account.id FK — needed by providers that resolve G/L lines through the account-mapping service (QBO AccountRef). */
+  accountId: withNullable(z.string()),
   accountNumber: withNullable(z.string()),
   taxPercent: withNullable(z.number()),
   taxAmount: withNullable(z.number()),
@@ -452,6 +1046,8 @@ export const PurchaseOrderLineSchema = z.object({
   unitPrice: z.number(),
   itemId: withNullable(z.string()),
   itemCode: withNullable(z.string()),
+  /** Carbon account.id FK — needed by providers that resolve G/L lines through the account-mapping service (QBO AccountRef). */
+  accountId: withNullable(z.string()),
   accountNumber: withNullable(z.string()),
   taxPercent: withNullable(z.number()),
   taxAmount: withNullable(z.number()),
@@ -503,13 +1099,16 @@ export const ItemSchema = z.object({
   name: z.string(),
   description: withNullable(z.string()),
   companyId: z.string(),
+  // Mirrors the "itemType" Postgres enum. "Service" distinguishes service
+  // items for providers whose item objects are typed (QBO Service vs
+  // NonInventory).
   type: z.enum([
     "Part",
     "Material",
     "Tool",
+    "Service",
     "Consumable",
-    "Fixture",
-    "Service"
+    "Fixture"
   ]),
   unitOfMeasureCode: withNullable(z.string()),
   unitCost: z.number(),
@@ -538,5 +1137,55 @@ export const InventoryAdjustmentSchema = z.object({
   inventoryAccount: z.string(), // resolved GL account from accountDefault (rawMaterialsAccount for Buy items, finishedGoodsAccount for Make / Buy and Make)
   adjustmentVarianceAccount: z.string(), // GL account code from accountDefault
   updatedAt: z.string().datetime(),
+  raw: z.record(z.any()).optional()
+});
+
+// ============================================================================
+// JOURNAL ENTRY (posting sync — journal + journalLine, push-only)
+// ============================================================================
+
+/**
+ * One analytical dimension stamped on a journal line
+ * (`journalLineDimension` row). `valueId` is Carbon's INTERNAL id and is
+ * polymorphic across entity-typed dimensions (location.id, supplier.id,
+ * item.id, dimensionValue.id, …) — what crosses the wire to a provider is
+ * always the RESOLVED provider option id from the dimension value mapping
+ * (entityType "dimensionValue"), never this id.
+ */
+export const JournalEntryLineDimensionSchema = z.object({
+  dimensionId: z.string(),
+  valueId: z.string()
+});
+
+export const JournalEntryLineSchema = z.object({
+  id: z.string(),
+  accountId: withNullable(z.string()),
+  /** Signed: positive = debit, negative = credit. */
+  amount: z.number(),
+  description: withNullable(z.string()),
+  /** Line dimensions (absent when the line carries none). */
+  dimensions: z.array(JournalEntryLineDimensionSchema).optional()
+});
+
+export const JournalEntrySchema = z.object({
+  /** journal.id (Carbon internal id). */
+  id: z.string(),
+  companyId: z.string(),
+  /** Human-readable journal entry number (journal.journalEntryId). */
+  journalEntryId: z.string(),
+  description: withNullable(z.string()),
+  postingDate: z.string(), // YYYY-MM-DD
+  status: z.enum(["Draft", "Posted", "Reversed"]),
+  sourceType: withNullable(z.string()), // journalEntrySourceType enum value
+  reversalOfId: withNullable(z.string()),
+  reversedById: withNullable(z.string()),
+  /**
+   * True when this fetch is a reversal push (entity id carried the
+   * ":reversal" suffix): the syncer pushes negated line amounts for the
+   * original journal instead of the journal itself.
+   */
+  reversal: z.boolean(),
+  lines: z.array(JournalEntryLineSchema),
+  updatedAt: z.string(),
   raw: z.record(z.any()).optional()
 });

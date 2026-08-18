@@ -356,7 +356,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** When hand-seeding `journalLine` rows, set the sign to move the account toward its natural balance: `+` increases an Asset/Expense (debit) and increases a Liability/Equity/Revenue (credit). Verify against the `journalEntries` view (`totalDebits == totalCredits` per `journalEntryId`) before relying on the data — an unbalanced entry silently blocks period close. Posted `journal`/`journalLine` rows are immutable (`journal_posted_immutable` / `journalLine_posted_immutable`); to correct seeded mistakes you must disable those triggers on the local DB (superuser), never in a migration.
 
-**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.service.ts`).
+**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.ee.service.ts`).
 
 ## A period snapshot written at close races Locked-period postings unless the posting guard locks the period row
 
@@ -834,6 +834,28 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/functions/post-shipment/index.ts` (PO vs SO split blocks); any refactor threading a shared record-builder through multiple writers (`post-*`, `issue`, sync handlers).
 
+## Carbon journal amounts are natural-balance-signed, not debit-signed
+
+- **Context:** Wiring Rillet journal posting sync; first live push of a real
+  `Purchase Receipt` journal failed UNBALANCED_JOURNAL (+300/+300).
+- **Problem:** The accounting sync engine (preflight balance check, netting,
+  consolidation, all provider journal mappers) assumed `journalLine.amount`
+  is debit-signed (positive = debit, negative = credit, sum = 0). Carbon's
+  post-* edge functions actually sign by the account's NATURAL balance
+  (`credit("liability", x)` stores +x — functions/lib/utils.ts), so real
+  journals balance as debits == credits, not signed-sum-zero. Also:
+  Kysely/pg returns DATE columns as JS Date objects — `postingDate.slice`
+  crashes; and disabled-config skip results without `localId` make the
+  drain report the misleading "No sync result returned for entity".
+- **Rule:** Convert to debit-signed at the fetch edge with
+  `toDebitSignedAmount(account.class, amount)` (join account.class in the
+  journal-line query), normalize dates with `toPostingDateString`, and
+  always set `localId`/`remoteId` on every SyncResult, including early
+  skips. Never trust the debit-signed assumption against live journal data
+  without checking the edge functions' credit()/debit() helpers.
+- **Applies to:** packages/ee/src/accounting (journal syncers, posting
+  preflight, consolidation), any new accounting provider's journal mapper.
+
 ## A conformance check is only as good as its source glob — route modules are server AND client in one file
 
 **Context:** The timezone audit (branch `sid/timezone-tz-audit`, PR #1339) added the `no-local-timezone` conformance check to ban process-timezone day derivation in server code. Self-review then found 26 surviving violations in route files, plus more in files the check DID scan using idioms it didn't match.
@@ -924,6 +946,15 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**` or `packages/database/supabase/functions/**`, and the `getPostgresClient` pool in `packages/database/supabase/functions/lib/postgres/index.ts`.
 
+## A VERIFY-flagged provider endpoint in a cron loop is an outage, not a TODO
+
+**Context:** The Rillet AP payment pull assumed an org-wide `GET /bill-payments` feed mirroring `/invoice-payments`. The method carried a VERIFY comment ("assumed to mirror… not confirmed") and even named its own fallback, but shipped unguarded inside `listChanges`. The endpoint does not exist (404).
+
+**Problem:** Every `accounting-pull-sweep` run threw at the AP step, killing the whole Rillet pull — including the AR invoice-payment changes collected earlier in the same call — every 30 minutes, silently. Payments recorded in Rillet never flowed back to Carbon, so a bill paid remotely stayed open locally, got paid a second time in Carbon, and the outbound push then failed forever on Rillet's over-pay guard. One unverified assumption at the bottom of a sweep became a permanent, compounding data gap that surfaced two layers away from its cause.
+
+**Rule:** An API call that only runs inside a cron/sweep is exercised for the first time in production — verify VERIFY-flagged endpoints against the live sandbox *before* wiring them into a loop (one curl answers it), and never let one entity family's listing failure discard another family's already-collected changes. When an assumed endpoint is missing, compose from verified ones instead: Rillet AP payments = `GET /bills?updated.gt` (payment activity bumps the bill's `updated_at`) + `GET /bills/{id}/payments` per changed bill.
+
+**Applies to:** `packages/ee/src/accounting/providers/rillet/provider.ts` (`listChanges`, `listBillPaymentsUpdatedSince`), any `SupportsIncrementalPull.listChanges` implementation, VERIFY-flagged calls anywhere under `packages/ee/src/accounting/providers/**`.
 ## react-aria's blur commit makes the input formatter part of arithmetic
 
 **Context:** The numeric-precision standard's motivating bug — a user typed 6.25% tax, saved, reopened, and read 6.22%.
@@ -972,3 +1003,53 @@ canvas hosting Radix popovers/selects.
 **Rule:** Never use `sum(DISTINCT ...)`/`count(DISTINCT ...)`-style aggregates to undo join fan-out. Compute the aggregate in its own lateral/subquery over just the table being summed (no fan-out ⇒ plain `sum()`), and keep the fanned join in a separate lateral for the aggregates that need it. When reviewing a view, treat any `agg(DISTINCT ...)` over a joined row set as a probable value-collapse bug. Fixed in `20260812211507_fix-sales-order-total-duplicate-line-amounts.sql`.
 
 **Applies to:** `packages/database/supabase/migrations/` views aggregating over joins (`salesOrders`, `purchaseOrders`, quotes/invoices list views); any SQL review touching `sum(DISTINCT`.
+
+## Appending SQL to an already-applied migration silently does nothing
+
+**Context:** A migration adding `companySettings.requireMfa` was written and applied. Later, a `users_with_verified_mfa` RPC was appended to that SAME file and `pnpm db:migrate` was re-run. The function was never created. The employees page then showed "Not set up" for every user — including one with a verified factor — because the missing RPC returned an error that the loader discarded as an empty result.
+
+**Problem:** Supabase tracks applied migrations by FILENAME. Once a file has run it is never re-read, so statements appended to it are invisible on every existing database while still applying to a fresh one. The two diverge silently, and there is no error at migrate time to notice.
+
+**Rule:** Never append to a migration file that may already have been applied — a file is immutable the moment it runs anywhere. New statements go in a NEW timestamped file, even a one-line `CREATE OR REPLACE`. Corollary: a migration that adds an RPC also needs a PostgREST schema reload (`NOTIFY pgrst, 'reload schema'`) or the function stays invisible to the app; and a service call whose failure is indistinguishable from an empty result must check `error` explicitly rather than `data ?? []`.
+
+**Applies to:** `packages/database/supabase/migrations/**`, any `client.rpc(...)` call site.
+
+## `form.submit()` bypasses React Router; `ValidatedForm` needs a real submitter
+
+**Context:** `@carbon/form`'s `InputOTP` auto-submits when the last digit is typed, using `form.submit()`. On the `/mfa` and `/verify` screens the error `<Alert>` reading `fetcher.data` could therefore never render — wrong codes produced no feedback at all. Switching to a bare `form.requestSubmit()` then made the form do nothing whatsoever.
+
+**Problem:** Two separate traps. `HTMLFormElement.submit()` does not fire the submit event, so React Router never intercepts it and `fetcher.data` stays permanently undefined — the request goes out as a raw document POST. But `requestSubmit()` with NO argument leaves `nativeEvent.submitter` null, and `ValidatedForm.handleSubmit` early-returns unless `submitter?.form === target` — so it silently does nothing.
+
+**Rule:** Programmatic submits inside a `ValidatedForm` must pass a submitter: `form.requestSubmit(form.querySelector('button[type="submit"]'))`, which means the form needs a real submit button (good for accessibility anyway). Never use `form.submit()` in a React Router app. When a form renders errors from `fetcher.data`, verify the submit path actually reaches the fetcher — an unreachable error branch looks identical to "no errors happen".
+
+**Applies to:** `packages/form/src/components/InputOTP.tsx`, `packages/form/src/ValidatedForm.tsx`, any auto-submitting form field.
+
+## Dating a synthetic-entity journal with company_today() drops it out of the "as of" report window
+
+**Context:** Intercompany elimination journals post to a synthetic "elimination entity" company (no user membership, no location). `generateEliminationEntries` dated them `company_today(elimination_entity)`. Because the elimination entity has no location, `company_today` fell back to UTC — and on an evening-Pacific boundary UTC had already rolled to the next day. The eliminations posted on Aug 18 while the invoices they eliminate posted Aug 17. The consolidated balance sheet ("Aug 2026 to date", cutoff = today = Aug 17) then showed Inter-Company Payables/Receivables = 100 (un-eliminated), while the account drill-down ("all time") correctly netted to 0 — a confusing split where the row and its own drill-down disagree.
+
+**Problem:** A consolidation adjustment must fall in the SAME reporting period/date window as the transactions it adjusts. Deriving its date from a synthetic entity's own timezone (UTC fallback) is unmoored from the operating companies' business calendar and drifts a day — or a MONTH at a month-end boundary, which would misfile the whole adjustment.
+
+**Rule:** Date a derived/adjusting journal (elimination, allocation, reversal) to the business date of the source transactions it references — e.g. `MAX(sourceJournal.postingDate)` — not to `company_today()` of a synthetic or parent entity that may resolve to a different day. Date a reversal to its original journal's `postingDate` so the two net in one window. When a balance-sheet ROW and its drill-down "Closing" disagree, suspect an out-of-window posting date, not a summing/RLS bug. Fixed in `20260817122328_intercompany-revenue-cogs-elimination.sql`.
+
+**Applies to:** `generateEliminationEntries` and any DB function posting to `isEliminationEntity` companies; any consolidation/allocation/reversal journal; `company_today()` callers where the company may lack a location.
+
+## Consolidation eliminations must allocate per transaction, not per company pair
+
+**Context:** `generateEliminationEntries` looped over company PAIRS (LEAST/GREATEST of the two companies), summed all intragroup revenue/COGS across the pair into one margin, and split the unrealized-profit writedown across the buyer capitalization lines proportional to captured value. A deterministic SQL test harness seeded two trades between the same pair with different margins capitalizing to different accounts (Machinery margin 40, another asset margin 10) and asserted each asset landed at its own group cost — it did not (both drifted to a proportional 75).
+
+**Problem:** Pair-level aggregation preserves the TOTAL (net income and total assets stay correct) but mis-allocates the writedown ACROSS accounts when trades in the pair have different margins. Two companies trade repeatedly in a real ERP, so this is a normal case, not a corner. It was invisible in single-trade tests and only surfaced when regenerate re-matched a second trade into the same pair.
+
+**Rule:** Eliminate/allocate at the grain of the TRANSACTION (the matched seller↔buyer document), not the company pair. Matching links the two sides via `targetJournalLineId` = the other side's `sourceJournalLineId`; use that to pull each trade's own revenue/COGS (seller side) and capitalization (buyer side) and write each asset down by ITS margin. Any consolidation adjustment that aggregates then re-splits proportionally is suspect — prove per-item allocation with a multi-trade, mixed-margin, mixed-account test. The harness (`packages/database/supabase/tests/intercompany-elimination.test.sql`) pins this.
+
+**Applies to:** `generateEliminationEntries`; any margin/cost allocation that groups by counterparty rather than by document.
+
+## Batched PostgREST `.in()` with hundreds of ids blows the gateway URL limit — use Kysely for big id-list reads in edge functions
+
+**Context:** Fixing the N+1 traversal in `get-method`'s `itemToJob` by prefetching `itemReplenishment` for a whole method tree (260 item ids) with `client.from(...).in("itemId", ids)` chunked at 200 ids per request.
+
+**Problem:** PostgREST encodes `.in()` filters in the query string. 200 UUID-length ids ≈ 8KB of URL, which exceeded the local gateway's request-line limit — the request failed outright, the prefetch threw, and every job created for a large-BOM item silently landed with an empty BOM (the caller logs the invoke error and continues). A chunk size that works in tests fails on the tenant with the most data.
+
+**Rule:** In edge functions, batch reads keyed by a large id list go through the Kysely `db` handle (bind parameters, no URL cap) whenever no PostgREST embed is needed. If an embed forces PostgREST, chunk conservatively (≤50 ids) and include `res.error.message` in the thrown error so the failure names its cause. Never swallow a prefetch error into a bare string with no detail.
+
+**Applies to:** `packages/database/supabase/functions/**` batch reads; any `.in(...)` over tree-collected or list-collected ids.

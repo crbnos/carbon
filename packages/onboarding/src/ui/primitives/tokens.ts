@@ -8,27 +8,23 @@ import type { Owner, TaskValue } from "../../types";
 
 export interface OwnerToken {
   label: MessageDescriptor;
-  // pill background + text
-  cls: string;
-  // accompanying dot
-  dot: string;
+  // `Badge` variant used to render the owner pill (single source of truth so
+  // every surface — legend, role rows, gate rows — reads the same).
+  variant: "blue" | "green" | "outline";
 }
 
 export const OWNER_TOKENS: Record<Owner, OwnerToken> = {
   carbon: {
     label: msg`Carbon`,
-    cls: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    dot: "bg-blue-500"
+    variant: "blue"
   },
   you: {
     label: msg`You`,
-    cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    dot: "bg-emerald-500"
+    variant: "green"
   },
   shared: {
     label: msg`Shared`,
-    cls: "border text-muted-foreground",
-    dot: "bg-muted-foreground"
+    variant: "outline"
   }
 };
 
