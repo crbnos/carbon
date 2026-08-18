@@ -11,6 +11,7 @@ import {
   RATE_LIMIT
 } from "@carbon/auth";
 import {
+  logAuthEvent,
   sendMagicLink,
   signInWithBypassEmail,
   verifyAuthSession
@@ -101,6 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { success } = await ratelimit.limit(ip);
 
   if (!success) {
+    logAuthEvent("login_rate_limited", { ip });
     return data(
       error(null, "Rate limit exceeded"),
       await flash(request, error(null, "Rate limit exceeded"))
@@ -158,6 +160,7 @@ export async function action({ request }: ActionFunctionArgs) {
   ) {
     const authSession = await signInWithBypassEmail(email);
     if (authSession) {
+      logAuthEvent("login_success", { actor: email, ip, method: "bypass" });
       const sessionCookie = await setAuthSession(request, { authSession });
       return redirect(path.to.authenticatedRoot, {
         headers: [["Set-Cookie", sessionCookie]]
@@ -169,13 +172,24 @@ export async function action({ request }: ActionFunctionArgs) {
     const magicLink = await sendMagicLink(email);
 
     if (magicLink.error) {
+      logAuthEvent("login_failed", {
+        actor: email,
+        ip,
+        reason: "magic link send failed"
+      });
       return data(
         error(magicLink, "Failed to send magic link"),
         await flash(request, error(magicLink, "Failed to send magic link"))
       );
     }
+    logAuthEvent("magic_link_sent", { actor: email, ip });
     return { success: true, mode: "login" };
   } else if (CarbonEdition === Edition.Enterprise) {
+    logAuthEvent("login_failed", {
+      actor: email,
+      ip,
+      reason: "user record not found"
+    });
     return data(
       { success: false, message: "User record not found" },
       await flash(request, error(null, "Failed to sign in"))

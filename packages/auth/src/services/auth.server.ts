@@ -22,6 +22,7 @@ import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { AuthSession } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
+import { logAuthEvent } from "./auth-events.server";
 import { isCarbonOwnedCompany } from "./company.server";
 import {
   destroyAuthSession,
@@ -32,6 +33,8 @@ import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
 const log = getLogger("auth");
+
+export { logAuthEvent } from "./auth-events.server";
 
 // Each matched loader used to build its own Supabase client for identical
 // credentials; `createClient` is not free and they are interchangeable.
@@ -376,6 +379,13 @@ export async function requirePermissions(
   );
 
   if (!hasRequiredPermissions) {
+    logAuthEvent("permission_denied", {
+      userId,
+      actor: email,
+      companyId,
+      ip: request.headers.get("x-forwarded-for") ?? undefined,
+      reason: JSON.stringify(requiredPermissions)
+    });
     if (myClaims.role === null) {
       throw redirect("/", await destroyAuthSession(request));
     }
