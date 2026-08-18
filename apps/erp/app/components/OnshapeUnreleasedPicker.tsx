@@ -149,9 +149,10 @@ export const OnshapeUnreleasedPicker = ({
           </ModalTitle>
           <ModalDescription>
             <Trans>
-              An unreleased version carries no revision, so its parts land on
-              Carbon's initial revision and no released assets exist to attach.
-              Prefer a released revision where there is one.
+              An unreleased version carries no revision, so its parts can only
+              land on Carbon's initial revision — a part Carbon already holds at
+              a named revision will be skipped. Models are still exported from
+              this version. Prefer a released revision where there is one.
             </Trans>
           </ModalDescription>
         </ModalHeader>

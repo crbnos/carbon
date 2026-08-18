@@ -1491,7 +1491,7 @@ msgstr "작업 센터의 작업 대기열에서 작업의 위치(현장이 작�
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape에 연결하는 중 예기치 않은 오류가 발생했습니다. 다시 연결해 보세요."
 
-msgid "An unreleased version carries no revision, so its parts land on Carbon's initial revision and no released assets exist to attach. Prefer a released revision where there is one."
+msgid "An unreleased version carries no revision, so its parts can only land on Carbon's initial revision — a part Carbon already holds at a named revision will be skipped. Models are still exported from this version. Prefer a released revision where there is one."
 msgstr ""
 
 msgid "Analytics"

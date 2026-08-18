@@ -57,18 +57,26 @@ export function summarizeOutcomeForUser(
     );
   }
 
-  const listed = outcome.skipped
-    .slice(0, MAX_LISTED_SKIPS)
-    .map((skip) => {
-      const name = skip.revision
-        ? `${skip.partNumber}.${skip.revision}`
-        : skip.partNumber;
-      return `${name}: ${skip.reason}`;
-    })
-    .join("; ");
-  if (listed) parts.push(listed);
-  const remaining = outcome.skipped.length - MAX_LISTED_SKIPS;
-  if (remaining > 0) parts.push(`and ${remaining} more`);
+  // GROUPED by reason. One assembly refused for one cause produces the same
+  // sentence per row, and eight copies of it is a wall the reader skims past —
+  // the parts are what differ, so the parts are what should be listed.
+  const byReason = new Map<string, string[]>();
+  for (const skip of outcome.skipped) {
+    const name = skip.revision
+      ? `${skip.partNumber}.${skip.revision}`
+      : skip.partNumber;
+    byReason.set(skip.reason, [...(byReason.get(skip.reason) ?? []), name]);
+  }
+
+  for (const [reason, names] of byReason) {
+    const listed = names.slice(0, MAX_LISTED_SKIPS).join(", ");
+    const remaining = names.length - MAX_LISTED_SKIPS;
+    parts.push(
+      remaining > 0
+        ? `${listed} and ${remaining} more — ${reason}`
+        : `${listed} — ${reason}`
+    );
+  }
 
   return parts.join(". ");
 }

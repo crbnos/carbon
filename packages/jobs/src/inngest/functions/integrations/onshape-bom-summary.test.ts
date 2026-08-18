@@ -46,8 +46,8 @@ describe("summarizeOutcomeForUser", () => {
       })
     );
 
-    expect(text).toContain("SA-800: Ambiguous");
-    expect(text).not.toContain("SA-800.:");
+    expect(text).toContain("SA-800 — Ambiguous");
+    expect(text).not.toContain("SA-800.");
   });
 
   it("caps the list and counts the remainder", () => {
@@ -64,6 +64,24 @@ describe("summarizeOutcomeForUser", () => {
     expect(text).toContain("P-4");
     expect(text).not.toContain("P-5");
     expect(text).toContain("and 3 more");
+  });
+
+  it("states a shared reason once and lists the parts against it", () => {
+    const reason = "Carbon has this part but not at this revision";
+    const text = summarizeOutcomeForUser(
+      outcome({
+        skipped: [
+          { partNumber: "EL-703", revision: "", reason },
+          { partNumber: "PK-410", revision: "", reason },
+          { partNumber: "SA-800", revision: "", reason: "Ambiguous" }
+        ]
+      })
+    );
+
+    // The shared reason appears ONCE, with both parts against it.
+    expect(text.split(reason).length - 1).toBe(1);
+    expect(text).toContain("EL-703, PK-410");
+    expect(text).toContain("SA-800 — Ambiguous");
   });
 
   it("explains a protected line and an unreadable row, which have no skip entry", () => {

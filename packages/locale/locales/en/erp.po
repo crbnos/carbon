@@ -1491,8 +1491,8 @@ msgstr "An operation's position in its work center's queue — the order the flo
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "An unexpected error occurred while connecting to Onshape. Try connecting again."
 
-msgid "An unreleased version carries no revision, so its parts land on Carbon's initial revision and no released assets exist to attach. Prefer a released revision where there is one."
-msgstr "An unreleased version carries no revision, so its parts land on Carbon's initial revision and no released assets exist to attach. Prefer a released revision where there is one."
+msgid "An unreleased version carries no revision, so its parts can only land on Carbon's initial revision — a part Carbon already holds at a named revision will be skipped. Models are still exported from this version. Prefer a released revision where there is one."
+msgstr "An unreleased version carries no revision, so its parts can only land on Carbon's initial revision — a part Carbon already holds at a named revision will be skipped. Models are still exported from this version. Prefer a released revision where there is one."
 
 msgid "Analytics"
 msgstr "Analytics"

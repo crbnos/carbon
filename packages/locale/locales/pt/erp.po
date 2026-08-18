@@ -1491,7 +1491,7 @@ msgstr "A posição de uma operação na fila de seu centro de trabalho — a or
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Ocorreu um erro inesperado ao conectar ao Onshape. Tente conectar novamente."
 
-msgid "An unreleased version carries no revision, so its parts land on Carbon's initial revision and no released assets exist to attach. Prefer a released revision where there is one."
+msgid "An unreleased version carries no revision, so its parts can only land on Carbon's initial revision — a part Carbon already holds at a named revision will be skipped. Models are still exported from this version. Prefer a released revision where there is one."
 msgstr ""
 
 msgid "Analytics"
