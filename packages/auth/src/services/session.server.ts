@@ -16,6 +16,7 @@ import { getCookieDomain } from "../utils/cookie";
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "../utils/http";
 import { path } from "../utils/path";
 import {
+  logAuthEvent,
   makeAuthSession,
   refreshAccessToken,
   verifyAuthSession
@@ -169,6 +170,7 @@ export async function completeMfaChallenge(
   }
 
   if (!supabaseSession) {
+    logAuthEvent("mfa_challenge_failed", { userId: source.userId });
     return { success: false, reason: "invalid-code" };
   }
 
@@ -188,6 +190,8 @@ export async function completeMfaChallenge(
   }
 
   const sessionCookie = await setAuthSession(request, { authSession });
+
+  logAuthEvent("mfa_challenge_success", { userId: authSession.userId });
 
   return {
     success: true,
