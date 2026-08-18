@@ -31,13 +31,22 @@ const VALID_IDS = APP_IDS.join(", ");
 export function parseAppIds(raw: string | string[]): AppId[] {
   const tokens = (Array.isArray(raw) ? raw : [raw])
     .flatMap((value) => String(value).split(","))
-    .map((token) => token.trim().toLowerCase())
-    .filter((token) => token.length > 0);
+    .map((token) => token.trim().toLowerCase());
 
-  if (tokens.length === 0) {
+  if (tokens.length === 0 || tokens.every((t) => t.length === 0)) {
     throw new Error(
       `--app needs at least one app id (${VALID_IDS}).\n` +
         `  for a services-only boot use \`crbn up --no-apps\` instead.`
+    );
+  }
+
+  // `crbn up --app erp --app` parses as ["erp", ""]. Dropping the blank would
+  // accept a flag that named nothing — the same silent drop this parser exists
+  // to prevent. A stray comma (`--app erp,`) lands here for the same reason.
+  if (tokens.some((t) => t.length === 0)) {
+    throw new Error(
+      `--app was given an empty value (a trailing \`--app\` with no id, or a stray comma).\n` +
+        `  valid ids: ${VALID_IDS}`
     );
   }
 

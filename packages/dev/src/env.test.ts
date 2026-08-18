@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "pathe";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -265,6 +265,14 @@ describe("readEnvPorts", () => {
       ].join("\n")
     );
     expect(readEnvPorts(dir)).toEqual({ PORT_DB: 54000 });
+  });
+
+  it("returns an empty map when .env.local exists but can't be read", () => {
+    // A directory at that path reproduces the unreadable case deterministically
+    // (EISDIR) without depending on chmod semantics. `status` must fall back to
+    // the registry rather than crash.
+    mkdirSync(join(dir, ".env.local"));
+    expect(readEnvPorts(dir)).toEqual({});
   });
 
   it("returns an empty map for a file with no port lines", () => {

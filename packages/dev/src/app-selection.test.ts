@@ -43,6 +43,17 @@ describe("parseAppIds", () => {
     expect(() => parseAppIds("")).toThrow(/--app needs at least one app id/);
     expect(() => parseAppIds(" , ")).toThrow(/--no-apps/);
   });
+
+  it("rejects a blank token alongside a real one", () => {
+    // `--app erp --app` — accepting this would silently honour a flag that
+    // named nothing, which is exactly what this parser refuses to do.
+    expect(() => parseAppIds(["erp", ""])).toThrow(/empty value/);
+  });
+
+  it("rejects a stray comma", () => {
+    expect(() => parseAppIds("erp,")).toThrow(/empty value/);
+    expect(() => parseAppIds("erp,,mes")).toThrow(/empty value/);
+  });
 });
 
 describe("resolveAppSelection", () => {
@@ -152,6 +163,11 @@ describe("citty wiring", () => {
 
   it("treats a valueless --app as empty, not as a boolean", () => {
     expect(() => select(["--app"])).toThrow(/at least one app id/);
+  });
+
+  it("rejects a trailing valueless --app after a real one", () => {
+    // citty parses this as ["erp", ""].
+    expect(() => select(["--app", "erp", "--app"])).toThrow(/empty value/);
   });
 
   it("composes with the orthogonal flags without disturbing them", () => {

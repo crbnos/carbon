@@ -26,17 +26,20 @@ export async function status() {
 
   // Prefer the ports the stack was actually booted with over the registry's
   // allocation — they differ in localhost mode, where `up` pins API/ERP/MES.
-  const booted = readEnvPorts(root);
-  const ports =
-    booted && Object.keys(booted).length > 0
-      ? { ...slot.ports, ...booted }
-      : slot.ports;
+  const envPorts = readEnvPorts(root);
+  // One check drives both the merge and the label — a table labelled
+  // ".env.local" while showing registry values is the same class of lie this
+  // command is being fixed for.
+  const booted = envPorts && Object.keys(envPorts).length > 0 ? envPorts : null;
+  const ports = booted ? { ...slot.ports, ...booted } : slot.ports;
   log.message("\n" + portsTable(ports, slot.redisDb), {
     symbol: pc.bold(pc.yellow(booted ? "Ports (.env.local)" : "Ports"))
   });
   if (!booted) {
     log.info(
-      "ports are the registry's allocation — this worktree hasn't booted"
+      envPorts
+        ? "ports are the registry's allocation — .env.local has no PORT_ entries"
+        : "ports are the registry's allocation — this worktree hasn't booted"
     );
   }
 

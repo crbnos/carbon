@@ -211,8 +211,16 @@ export function writeEnv(worktreeRoot: string, content: string) {
 export function readEnvPorts(worktreeRoot: string): Partial<PortMap> | null {
   const path = join(worktreeRoot, ENV_LOCAL_FILE);
   if (!existsSync(path)) return null;
+  let contents: string;
+  try {
+    contents = readFileSync(path, "utf8");
+  } catch {
+    // Unreadable (permissions, or replaced/removed between the check and the
+    // read). Degrade to the registry rather than taking `crbn status` down.
+    return {};
+  }
   const ports: Partial<PortMap> = {};
-  for (const line of readFileSync(path, "utf8").split("\n")) {
+  for (const line of contents.split("\n")) {
     const match = /^\s*(PORT_[A-Z]+)\s*=\s*(\d+)\s*$/.exec(line);
     if (!match) continue;
     const [, name, value] = match as unknown as [string, PortName, string];
