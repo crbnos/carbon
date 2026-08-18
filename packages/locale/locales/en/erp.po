@@ -244,6 +244,9 @@ msgstr "{totalQuantity, plural, one {# unit} other {# units}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 
+msgid "{unschedulableCount} can't be scheduled"
+msgstr "{unschedulableCount} can't be scheduled"
+
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount} jobs updated"
 
@@ -282,6 +285,9 @@ msgstr "0 operations"
 
 msgid "0-4 weeks"
 msgstr "0-4 weeks"
+
+msgid "1 can't be scheduled"
+msgstr "1 can't be scheduled"
 
 msgid "1 conflict"
 msgstr "1 conflict"
@@ -2801,6 +2807,9 @@ msgstr "Call an outside URL"
 
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Called a method in Carbon — the components plus operations that produce a part."
+
+msgid "Can't be scheduled"
+msgstr "Can't be scheduled"
 
 msgid "Can't delete this period"
 msgstr "Can't delete this period"
@@ -7443,6 +7452,9 @@ msgstr "Hard to see true cost or margin on a job"
 
 msgid "Has conflict"
 msgstr "Has conflict"
+
+msgid "Has operations that can't be scheduled"
+msgstr "Has operations that can't be scheduled"
 
 msgid "Headers"
 msgstr "Headers"
@@ -15856,6 +15868,9 @@ msgstr "This method version is read-only. Create a new version from the method m
 msgid "This Month"
 msgstr "This Month"
 
+msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
+msgstr "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
+
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 
@@ -16523,6 +16538,9 @@ msgstr "Unreceived POs"
 
 msgid "Unsaved changes"
 msgstr "Unsaved changes"
+
+msgid "Unschedulable"
+msgstr "Unschedulable"
 
 msgid "Unscheduled"
 msgstr "Unscheduled"

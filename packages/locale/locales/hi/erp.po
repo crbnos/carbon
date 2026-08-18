@@ -244,6 +244,9 @@ msgstr "{totalQuantity, plural, one {# इकाई} other {# इकाइया
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# अनगिनती लाइनें}}"
 
+msgid "{unschedulableCount} can't be scheduled"
+msgstr ""
+
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount} नौकरियाँ अपडेट की गईं"
 
@@ -282,6 +285,9 @@ msgstr "0 परिचालन"
 
 msgid "0-4 weeks"
 msgstr "0-4 सप्ताह"
+
+msgid "1 can't be scheduled"
+msgstr ""
 
 msgid "1 conflict"
 msgstr "1 विरोध"
@@ -2801,6 +2807,9 @@ msgstr "बाहरी URL को कॉल करें"
 
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "कार्बन में एक विधि कहा जाता है — घटक और संचालन जो एक हिस्सा तैयार करते हैं।"
+
+msgid "Can't be scheduled"
+msgstr ""
 
 msgid "Can't delete this period"
 msgstr "इस अवधि को हटाया नहीं जा सकता"
@@ -7443,6 +7452,9 @@ msgstr "किसी काम पर सच्ची लागत या मा
 
 msgid "Has conflict"
 msgstr "संघर्ष है"
+
+msgid "Has operations that can't be scheduled"
+msgstr ""
 
 msgid "Headers"
 msgstr "हेडर"
@@ -15856,6 +15868,9 @@ msgstr "यह विधि संस्करण केवल-पढ़ने �
 msgid "This Month"
 msgstr "इस महीने"
 
+msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
+msgstr ""
+
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "आपके Implementation Hub का यह पृष्ठ बनाया जा रहा है। जब तक हम इसे पूरा करते हैं, command center से शुरू करें।"
 
@@ -16523,6 +16538,9 @@ msgstr "अप्राप्त POs"
 
 msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
+
+msgid "Unschedulable"
+msgstr ""
 
 msgid "Unscheduled"
 msgstr "अनुसूचित नहीं"

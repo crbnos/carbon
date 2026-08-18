@@ -244,6 +244,9 @@ msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
+msgid "{unschedulableCount} can't be scheduled"
+msgstr ""
+
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount} 个作业已更新"
 
@@ -282,6 +285,9 @@ msgstr "0 条操作"
 
 msgid "0-4 weeks"
 msgstr "0-4 周"
+
+msgid "1 can't be scheduled"
+msgstr ""
 
 msgid "1 conflict"
 msgstr "1 个冲突"
@@ -2801,6 +2807,9 @@ msgstr "调用外部 URL"
 
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "在Carbon中称为方法—生成零件的组件和操作。"
+
+msgid "Can't be scheduled"
+msgstr ""
 
 msgid "Can't delete this period"
 msgstr "无法删除此期间"
@@ -7443,6 +7452,9 @@ msgstr "难以看清工作的真实成本或利润"
 
 msgid "Has conflict"
 msgstr "存在冲突"
+
+msgid "Has operations that can't be scheduled"
+msgstr ""
 
 msgid "Headers"
 msgstr "标头"
@@ -15856,6 +15868,9 @@ msgstr "此方法版本为只读。从方法菜单创建新版本以进行更改
 msgid "This Month"
 msgstr "本月"
 
+msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
+msgstr ""
+
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "您的实现中心的此页面正在构建中。请从命令中心开始，我们将继续完成它。"
 
@@ -16523,6 +16538,9 @@ msgstr "未收到的采购订单"
 
 msgid "Unsaved changes"
 msgstr "未保存的更改"
+
+msgid "Unschedulable"
+msgstr ""
 
 msgid "Unscheduled"
 msgstr "未计划"

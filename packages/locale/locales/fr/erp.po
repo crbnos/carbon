@@ -244,6 +244,9 @@ msgstr "{totalQuantity, plural, one {# unité} other {# unités}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# ligne non comptabilisée} other {# lignes non comptabilisées}}"
 
+msgid "{unschedulableCount} can't be scheduled"
+msgstr ""
+
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount} tâches mises à jour"
 
@@ -282,6 +285,9 @@ msgstr "0 opération"
 
 msgid "0-4 weeks"
 msgstr "0-4 semaines"
+
+msgid "1 can't be scheduled"
+msgstr ""
 
 msgid "1 conflict"
 msgstr "1 conflit"
@@ -2801,6 +2807,9 @@ msgstr "Appeler une URL externe"
 
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Appelée une méthode en Carbon — les composants plus les opérations qui produisent une pièce."
+
+msgid "Can't be scheduled"
+msgstr ""
 
 msgid "Can't delete this period"
 msgstr "Impossible de supprimer cette période"
@@ -7443,6 +7452,9 @@ msgstr "Difficile de voir le vrai coût ou la marge sur un travail"
 
 msgid "Has conflict"
 msgstr "Est en conflit"
+
+msgid "Has operations that can't be scheduled"
+msgstr ""
 
 msgid "Headers"
 msgstr "En-têtes"
@@ -15856,6 +15868,9 @@ msgstr "Cette version de méthode est en lecture seule. Créez une nouvelle vers
 msgid "This Month"
 msgstr "Ce mois"
 
+msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
+msgstr ""
+
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Cette page de votre Implementation Hub est en cours de construction. Commencez par le centre de commande pendant que nous la finissons."
 
@@ -16523,6 +16538,9 @@ msgstr "Bons de commande non reçus"
 
 msgid "Unsaved changes"
 msgstr "Modifications non enregistrées"
+
+msgid "Unschedulable"
+msgstr ""
 
 msgid "Unscheduled"
 msgstr "Non planifié"

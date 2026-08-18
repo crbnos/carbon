@@ -244,6 +244,9 @@ msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
 
+msgid "{unschedulableCount} can't be scheduled"
+msgstr ""
+
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount}件のジョブが更新されました"
 
@@ -282,6 +285,9 @@ msgstr "0件の操作"
 
 msgid "0-4 weeks"
 msgstr "0～4週間"
+
+msgid "1 can't be scheduled"
+msgstr ""
 
 msgid "1 conflict"
 msgstr "1 個の競合"
@@ -2801,6 +2807,9 @@ msgstr "外部URLを呼び出す"
 
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Carbonで呼ばれるメソッド—部品を生成するコンポーネントと操作。"
+
+msgid "Can't be scheduled"
+msgstr ""
 
 msgid "Can't delete this period"
 msgstr "この期間は削除できません"
@@ -7443,6 +7452,9 @@ msgstr "ジョブの真の原価またはマージンを確認するのが難し
 
 msgid "Has conflict"
 msgstr "競合がある"
+
+msgid "Has operations that can't be scheduled"
+msgstr ""
 
 msgid "Headers"
 msgstr "ヘッダー"
@@ -15856,6 +15868,9 @@ msgstr "このメソッドバージョンは読み取り専用です。変更を
 msgid "This Month"
 msgstr "今月"
 
+msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
+msgstr ""
+
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "このページのImplementation Hubは現在構築中です。完成するまでコマンドセンターから始めてください。"
 
@@ -16523,6 +16538,9 @@ msgstr "未受領PO"
 
 msgid "Unsaved changes"
 msgstr "未保存の変更"
+
+msgid "Unschedulable"
+msgstr ""
 
 msgid "Unscheduled"
 msgstr "スケジュール未定"

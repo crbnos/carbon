@@ -244,6 +244,9 @@ msgstr "{totalQuantity, plural, one {# birim} other {# birimler}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
 
+msgid "{unschedulableCount} can't be scheduled"
+msgstr ""
+
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount} iş güncellendi"
 
@@ -282,6 +285,9 @@ msgstr "0 işlem"
 
 msgid "0-4 weeks"
 msgstr "0-4 hafta"
+
+msgid "1 can't be scheduled"
+msgstr ""
 
 msgid "1 conflict"
 msgstr "1 çakışma"
@@ -2801,6 +2807,9 @@ msgstr "Harici bir URL çağır"
 
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Carbon'da çağrılan bir yöntem — bir parça üreten bileşenler ve işlemler."
+
+msgid "Can't be scheduled"
+msgstr ""
 
 msgid "Can't delete this period"
 msgstr "Bu dönem silinemez"
@@ -7443,6 +7452,9 @@ msgstr "Bir işte gerçek maliyeti veya marjı görmek zor"
 
 msgid "Has conflict"
 msgstr "Çatışması var"
+
+msgid "Has operations that can't be scheduled"
+msgstr ""
 
 msgid "Headers"
 msgstr "Başlıklar"
@@ -15856,6 +15868,9 @@ msgstr "Bu yöntem sürümü salt okunurdur. Değişiklik yapmak için yöntem m
 msgid "This Month"
 msgstr "Bu Ay"
 
+msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
+msgstr ""
+
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Bu Implementation Hub sayfası şu anda inşa edilmektedir. Biz bitirirken komut merkezinden başlayın."
 
@@ -16523,6 +16538,9 @@ msgstr "Alınmamış PO'lar"
 
 msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
+
+msgid "Unschedulable"
+msgstr ""
 
 msgid "Unscheduled"
 msgstr "Planlanmamış"

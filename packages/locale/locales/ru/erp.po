@@ -244,6 +244,9 @@ msgstr "{totalQuantity, plural, one {# единица} other {# единиц}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
 
+msgid "{unschedulableCount} can't be scheduled"
+msgstr ""
+
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount} заданий обновлено"
 
@@ -282,6 +285,9 @@ msgstr "0 операций"
 
 msgid "0-4 weeks"
 msgstr "0-4 недели"
+
+msgid "1 can't be scheduled"
+msgstr ""
 
 msgid "1 conflict"
 msgstr "1 конфликт"
@@ -2801,6 +2807,9 @@ msgstr "Вызвать внешний URL"
 
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Называется метод в Carbon — компоненты плюс операции, которые создают деталь."
+
+msgid "Can't be scheduled"
+msgstr ""
 
 msgid "Can't delete this period"
 msgstr "Невозможно удалить этот период"
@@ -7443,6 +7452,9 @@ msgstr "Сложно увидеть истинную стоимость или �
 
 msgid "Has conflict"
 msgstr "Имеет конфликт"
+
+msgid "Has operations that can't be scheduled"
+msgstr ""
 
 msgid "Headers"
 msgstr "Заголовки"
@@ -15856,6 +15868,9 @@ msgstr "Эта версия метода доступна только для ч
 msgid "This Month"
 msgstr "Этот месяц"
 
+msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
+msgstr ""
+
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Эта страница вашего Implementation Hub находится в разработке. Начните с командного центра, пока мы её завершаем."
 
@@ -16523,6 +16538,9 @@ msgstr "Неполученные ПО"
 
 msgid "Unsaved changes"
 msgstr "Несохранённые изменения"
+
+msgid "Unschedulable"
+msgstr ""
 
 msgid "Unscheduled"
 msgstr "Незапланировано"

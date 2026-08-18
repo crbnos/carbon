@@ -304,6 +304,19 @@ export function calendarAdapters(
   type CalendarProfile = {
     minutesByDate: Map<string, number>;
     hoursPerDay: number;
+    /**
+     * Which weekdays (0=Sun..6=Sat) this calendar is open on, derived from the
+     * average minutes per weekday across the covered span. The WEEKLY PATTERN
+     * — not literal window presence — is what the working-day walk tests:
+     * windows only cover [now, horizon], but backward targets can land at or
+     * before today, and a literal per-date test reads every past day as
+     * closed, walking the target years into the past (the runaway the
+     * MAX_CONSECUTIVE_CLOSED_DAYS guard then compounds). The pattern extends
+     * infinitely in both directions and also keeps targets invariant to
+     * date-specific capacity loss (downtime), which is the demand-anchored
+     * semantic the spec wants.
+     */
+    openWeekdays: boolean[];
   };
 
   const utcWeekday = (isoDate: string): number =>
@@ -335,6 +348,7 @@ export function calendarAdapters(
     // Average minutes per weekday across the covered span, then the mean of
     // the weekdays that are open at all = this calendar's working-day length.
     let hoursPerDay = MIN_HOURS_PER_DAY;
+    const openWeekdays = new Array<boolean>(7).fill(false);
     const dates = [...minutesByDate.keys()].sort();
     const first = dates[0];
     const last = dates[dates.length - 1];
@@ -357,6 +371,7 @@ export function calendarAdapters(
         const average = weekdayMinutes[weekday]! / weekdayCounts[weekday]!;
         if (average > 0) {
           openWeekdayAverages.push(average);
+          openWeekdays[weekday] = true;
         }
       }
       if (openWeekdayAverages.length > 0) {
@@ -367,7 +382,7 @@ export function calendarAdapters(
       }
     }
 
-    return { minutesByDate, hoursPerDay };
+    return { minutesByDate, hoursPerDay, openWeekdays };
   };
 
   const profiles = new Map<string, CalendarProfile>();
@@ -387,8 +402,10 @@ export function calendarAdapters(
 
   return {
     calendarHoursPerDay: (workCenterId) => profileFor(workCenterId).hoursPerDay,
+    // Weekly-pattern test, NOT literal window presence — see CalendarProfile.
     workingDayTest: (workCenterId, isoDate) =>
-      (profileFor(workCenterId).minutesByDate.get(isoDate.slice(0, 10)) ?? 0) >
-      0,
+      profileFor(workCenterId).openWeekdays[
+        utcWeekday(isoDate.slice(0, 10))
+      ] === true,
   };
 }

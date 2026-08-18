@@ -334,3 +334,29 @@ Deno.test("integration: adapter-derived calendars drive the Friday-closed walk",
   assertEquals(result.get("l"), "2026-01-19");
   assertEquals(result.get("f"), "2026-01-15"); // Thursday: 01-16 is closed for wc-nofri
 });
+
+Deno.test("regression: targets at/before the windows range resolve via the weekly pattern (no year runaway)", () => {
+  // Windows only cover [RANGE_START, RANGE_END] — the live regen's shape
+  // ([now, horizon]). A due date AT the range start forces the backward walk
+  // onto days BEFORE any window exists. The weekly-pattern workingDayTest must
+  // keep resolving working days there; the old literal per-date test read
+  // every pre-range day as closed and walked targets years into the past.
+  const locationWindows = expandCalendar(
+    weekdayShifts("08:00", "16:00", [1, 2, 3, 4, 5]),
+    RANGE_START,
+    RANGE_END
+  );
+  const adapters = calendarAdapters(new Map(), locationWindows, "UTC");
+
+  const ops = [
+    makeOp({ id: "first", order: 1 }),
+    makeOp({ id: "last", order: 2 }),
+  ];
+  // Due on the first covered day (Mon 2026-01-05): "last" needs a start on
+  // Fri 2026-01-02, so "first" is due Fri 2026-01-02 and starts Thu 01-01 —
+  // both BEFORE the windows range, resolvable only via the weekday pattern.
+  const result = needBy(ops, [["last", "first"]], "2026-01-05", adapters);
+
+  assertEquals(result.get("last"), "2026-01-05");
+  assertEquals(result.get("first"), "2026-01-02"); // prior Friday, not 2025/2024
+});
