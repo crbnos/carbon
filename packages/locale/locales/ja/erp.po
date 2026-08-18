@@ -84,7 +84,7 @@ msgstr "{0}件の下書き仕訳"
 #. placeholder {0}: row.original.failed
 #. placeholder {0}: run.failed
 msgid "{0} failed"
-msgstr ""
+msgstr "{0} 件失敗"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -159,7 +159,7 @@ msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}%の売掛金"
 
 msgid "{catalogPercent}% of parts have a model"
-msgstr ""
+msgstr "部品の {catalogPercent}% にモデルあり"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。このパーツを最終的な後継品に直接指定することを検討してください。"
@@ -802,7 +802,7 @@ msgid "A supplier's type changes"
 msgstr "仕入先の種類が変更される"
 
 msgid "A sync is already running — cancel it before starting another"
-msgstr ""
+msgstr "同期がすでに実行中です — 別の同期を開始する前にキャンセルしてください"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "課税対象の追加料金（取扱、セットアップ、燃料）を行に追加し、課税ベースに含めます。"
@@ -1408,7 +1408,7 @@ msgid "Alpha"
 msgstr "アルファ"
 
 msgid "Already synced"
-msgstr ""
+msgstr "すでに同期済み"
 
 msgid "Always"
 msgstr "常に"
@@ -1448,7 +1448,7 @@ msgid "An approval requirement on a non-conformance whose reviewers (seeded Engi
 msgstr "不適合に対する承認要件。レビュアー (エンジニアリングおよび品質部門) は、問題がクローズされる前にサインオフする必要があります。"
 
 msgid "An asset is already attached"
-msgstr ""
+msgstr "すでにファイルが添付されています"
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "資産の取得原価から累計減価償却費を差し引いたもの—帳簿上の現在の価値と処分される金額。"
@@ -1557,7 +1557,7 @@ msgid "And {0} more — resolve these to see the rest."
 msgstr "さらに{0}件あります。これらを解決して残りを表示してください。"
 
 msgid "and {ambiguousOverflow} more matching more than one part"
-msgstr ""
+msgstr "他 {ambiguousOverflow} 件が複数の部品に一致"
 
 msgid "and {hidden} more"
 msgstr "そして{hidden}個以上"
@@ -1566,7 +1566,7 @@ msgid "and {remaining} more"
 msgstr "そして{remaining}件以上"
 
 msgid "and {unmatchedOverflow} more with no matching part"
-msgstr ""
+msgstr "他 {unmatchedOverflow} 件は一致する部品なし"
 
 msgid "Annotation added"
 msgstr "注釈が追加されました"
@@ -2391,7 +2391,7 @@ msgid "Automate your business processes with event-driven workflows that trigger
 msgstr "Carbonで発生するときにアクションをトリガーするイベント駆動型ワークフローでビジネスプロセスを自動化します。"
 
 msgid "Automatic"
-msgstr ""
+msgstr "自動"
 
 msgid "Automatic Cost Updates"
 msgstr "自動コスト更新"
@@ -2679,7 +2679,7 @@ msgid "Bulk Jobs"
 msgstr "一括ジョブ"
 
 msgid "Bulk sync"
-msgstr ""
+msgstr "一括同期"
 
 msgid "Business moment"
 msgstr "ビジネスモーメント"
@@ -2817,10 +2817,10 @@ msgid "Cancel SO only"
 msgstr "SO のみをキャンセル"
 
 msgid "Cancel sync"
-msgstr ""
+msgstr "同期をキャンセル"
 
 msgid "Cancel this sync? Items already synced are kept. This action is recorded."
-msgstr ""
+msgstr "この同期をキャンセルしますか？すでに同期済みの品目は保持されます。この操作は記録されます。"
 
 msgid "Canceled"
 msgstr "キャンセル済み"
@@ -2829,10 +2829,10 @@ msgid "Cancelled"
 msgstr "キャンセル済み"
 
 msgid "Cancelled by"
-msgstr ""
+msgstr "キャンセル者"
 
 msgid "Cancelled by {cancelledByName}"
-msgstr ""
+msgstr "{cancelledByName} がキャンセル"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "保存されていない操作にパラメータを追加できません"
@@ -3091,7 +3091,7 @@ msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
 
 msgid "Choose an Onshape document, version and assembly first"
-msgstr ""
+msgstr "先に Onshape のドキュメント・バージョン・アセンブリを選択してください"
 
 msgid "Choose another file"
 msgstr "別のファイルを選択"
@@ -3950,7 +3950,7 @@ msgid "Country code"
 msgstr "国コード"
 
 msgid "Coverage unavailable"
-msgstr ""
+msgstr "カバレッジを取得できません"
 
 msgid "Create"
 msgstr "作成"
@@ -4517,7 +4517,7 @@ msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "データがスプレッドシートと切り離されたツール全体に散在している"
 
 msgid "Data synced"
-msgstr ""
+msgstr "データ同期"
 
 msgid "Data Type"
 msgstr "データ型"
@@ -5445,7 +5445,7 @@ msgid "Drawing replaced. Balloon placements were removed; feature rows are uncha
 msgstr "図面が置き換わりました。バルーン配置は削除されました。機能行は変更されていません。"
 
 msgid "Drawings {drawingsSynced}/{drawingsTracked}"
-msgstr ""
+msgstr "図面 {drawingsSynced}/{drawingsTracked}"
 
 msgid "Drop Shipment"
 msgstr "ドロップシップメント"
@@ -6065,7 +6065,7 @@ msgid "Engineering Contact"
 msgstr "エンジニアリング担当者"
 
 msgid "Engineering Data"
-msgstr ""
+msgstr "エンジニアリングデータ"
 
 msgid "Enroll"
 msgstr "登録"
@@ -6258,7 +6258,7 @@ msgid "Every match"
 msgstr "すべてのマッチ"
 
 msgid "Every released revision in the latest sync matched exactly one part"
-msgstr ""
+msgstr "直近の同期で、リリース済みリビジョンはすべて 1 つの部品に一致しました"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期間を閉じる前に、すべての必須タスクが完了またはスキップされている必要があります。"
@@ -6303,7 +6303,7 @@ msgid "Exemption Reason"
 msgstr "免除理由"
 
 msgid "Existing attachment confirmed"
-msgstr ""
+msgstr "既存の添付を確認"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "既存のマッピング。再マップするには別のプロバイダー勘定科目を選択してください。"
@@ -6491,7 +6491,7 @@ msgstr "失敗"
 
 #. placeholder {0}: run.failed
 msgid "Failed {0}"
-msgstr ""
+msgstr "失敗 {0}"
 
 msgid "Failed features"
 msgstr "失敗した機能"
@@ -6860,7 +6860,7 @@ msgid "Fetch"
 msgstr "取得"
 
 msgid "Fetch this company's Onshape documents first"
-msgstr ""
+msgstr "先にこの会社の Onshape ドキュメントを取得してください"
 
 msgid "Field"
 msgstr "フィールド"
@@ -6895,10 +6895,10 @@ msgid "File size too big (max. {0})"
 msgstr "ファイルサイズが大きすぎます (最大 {0})"
 
 msgid "File too large"
-msgstr ""
+msgstr "ファイルが大きすぎます"
 
 msgid "File too large to sync"
-msgstr ""
+msgstr "ファイルが大きすぎて同期できません"
 
 msgid "File type not supported"
 msgstr "ファイル形式がサポートされていません"
@@ -6946,7 +6946,7 @@ msgid "Finish with material unpicked?"
 msgstr "ピッキングされていない材料のまま完了しますか？"
 
 msgid "Finished"
-msgstr ""
+msgstr "終了"
 
 msgid "Finished goods"
 msgstr "フィニッシュ"
@@ -8392,7 +8392,7 @@ msgid "Keep picking"
 msgstr "ピッキングを続ける"
 
 msgid "Keep syncing"
-msgstr ""
+msgstr "同期を続ける"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "注文、見積、設定を2段階認証で保護します"
@@ -8501,7 +8501,7 @@ msgid "Last Run"
 msgstr "最終実行"
 
 msgid "Last synced"
-msgstr ""
+msgstr "最終同期"
 
 msgid "Last synced: <0/>"
 msgstr "最後に同期: <0/>"
@@ -8685,7 +8685,7 @@ msgid "Live reloading"
 msgstr "ライブリロード中"
 
 msgid "Live updates paused — retrying"
-msgstr ""
+msgstr "ライブ更新を一時停止 — 再試行中"
 
 msgid "Live Version"
 msgstr "ライブバージョン"
@@ -9044,7 +9044,7 @@ msgid "Mark to delete"
 msgstr "削除対象にマーク"
 
 msgid "Mass"
-msgstr ""
+msgstr "質量"
 
 msgid "Master gauge"
 msgstr "マスター ゲージ"
@@ -9083,7 +9083,7 @@ msgid "matches"
 msgstr "一致する"
 
 msgid "Matches more than one part"
-msgstr ""
+msgstr "複数の部品に一致"
 
 msgid "Matching Pairs"
 msgstr "マッチングペア"
@@ -9326,7 +9326,7 @@ msgid "Mobile Phone"
 msgstr "携帯電話"
 
 msgid "Model"
-msgstr ""
+msgstr "モデル"
 
 msgid "Model Number"
 msgstr "型番"
@@ -9350,10 +9350,10 @@ msgid "Model upload"
 msgstr "モデルアップロード"
 
 msgid "Models {modelsSynced}/{modelsTracked}"
-msgstr ""
+msgstr "モデル {modelsSynced}/{modelsTracked}"
 
 msgid "Models and drawings synced, out of the parts this sync has tried. {partsWithModel} of {partsTotal} parts in the catalog carry a CAD model, including any uploaded by hand."
-msgstr ""
+msgstr "この同期が試行した部品のうち、同期されたモデルと図面の数です。カタログの {partsTotal} 部品のうち {partsWithModel} 部品が CAD モデルを持ちます（手動アップロードを含む）。"
 
 msgid "Modified"
 msgstr "修正済み"
@@ -9908,7 +9908,7 @@ msgid "No CAD model to preview."
 msgstr "プレビューするCADモデルがありません。"
 
 msgid "No CAD synced yet"
-msgstr ""
+msgstr "CAD はまだ同期されていません"
 
 msgid "No calibration records found"
 msgstr "キャリブレーション記録が見つかりません"
@@ -9962,7 +9962,7 @@ msgid "No draft versions available"
 msgstr "ドラフト版は利用できません"
 
 msgid "No drawing synced"
-msgstr ""
+msgstr "図面は同期されていません"
 
 msgid "No due date"
 msgstr "期限なし"
@@ -10031,7 +10031,7 @@ msgid "No items have inventory activity here yet."
 msgstr "ここにはまだアイテムの在庫活動がありません。"
 
 msgid "No items match these filters"
-msgstr ""
+msgstr "これらのフィルターに一致する品目はありません"
 
 msgid "No jobs were created"
 msgstr "ジョブが作成されていません"
@@ -10067,7 +10067,7 @@ msgid "No matching bins"
 msgstr "一致するビンがありません"
 
 msgid "No matching part"
-msgstr ""
+msgstr "一致する部品なし"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -10076,7 +10076,7 @@ msgid "No notes"
 msgstr "ノートなし"
 
 msgid "No Onshape documents could be loaded for this company"
-msgstr ""
+msgstr "この会社の Onshape ドキュメントを読み込めませんでした"
 
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
@@ -10157,7 +10157,7 @@ msgid "No production events recorded for this operation yet"
 msgstr "この操作で記録された生産イベントはまだありません"
 
 msgid "No progress for 30 minutes"
-msgstr ""
+msgstr "30 分間進捗がありません"
 
 msgid "No purchases in this period"
 msgstr "この期間に購入がありません"
@@ -10181,7 +10181,7 @@ msgid "No reference image"
 msgstr "参照画像がありません"
 
 msgid "No released revision found"
-msgstr ""
+msgstr "リリース済みリビジョンが見つかりません"
 
 msgid "No remaining entities to inspect."
 msgstr "検査する残りのエンティティはありません。"
@@ -10229,10 +10229,10 @@ msgid "No sync operations yet"
 msgstr "同期操作がまだありません"
 
 msgid "No synced items yet — run a sync to populate this table"
-msgstr ""
+msgstr "同期済みの品目はまだありません — 同期を実行するとこの表に表示されます"
 
 msgid "No syncs have run yet"
-msgstr ""
+msgstr "同期はまだ実行されていません"
 
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリがありません"
@@ -10316,7 +10316,7 @@ msgid "Normal"
 msgstr "通常"
 
 msgid "Not a model"
-msgstr ""
+msgstr "モデルではありません"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "テーブルではなく、総勘定元帳残高：ジョブ材料が発行されるにつれてコストが蓄積され、ジョブが在庫に受け取られるとクリアになります。"
@@ -10328,7 +10328,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
 
 msgid "Not linked to Onshape"
-msgstr ""
+msgstr "Onshape に未連携"
 
 msgid "Not reached"
 msgstr "未到達"
@@ -10355,7 +10355,7 @@ msgid "Not started training for"
 msgstr "まだトレーニングを開始していません"
 
 msgid "Not synced"
-msgstr ""
+msgstr "未同期"
 
 msgid "Not yet"
 msgstr "まだ"
@@ -10536,10 +10536,10 @@ msgid "Only empty, open periods can be deleted."
 msgstr "空のオープン期間のみ削除できます。"
 
 msgid "Onshape"
-msgstr ""
+msgstr "Onshape"
 
 msgid "Onshape asset sync is turned off for this company"
-msgstr ""
+msgstr "この会社では Onshape のファイル同期が無効です"
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
@@ -10560,10 +10560,10 @@ msgid "Onshape Status"
 msgstr "Onshape ステータス"
 
 msgid "Onshape sync"
-msgstr ""
+msgstr "Onshape 同期"
 
 msgid "Onshape Sync"
-msgstr ""
+msgstr "Onshape 同期"
 
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "申し訳ございません。アクセスしようとしているリンクは期限切れであるか、もう有効ではありません。"
@@ -10614,7 +10614,7 @@ msgid "Open in MES"
 msgstr "MESで開く"
 
 msgid "Open in Onshape"
-msgstr ""
+msgstr "Onshape で開く"
 
 msgid "Open Issues"
 msgstr "未解決の問題"
@@ -10629,7 +10629,7 @@ msgid "Open menu"
 msgstr "メニューを開く"
 
 msgid "Open Onshape settings"
-msgstr ""
+msgstr "Onshape 設定を開く"
 
 msgid "Open payables by supplier and age"
 msgstr "仕入先および期間別未払い債務"
@@ -11018,7 +11018,7 @@ msgid "Part is configured for manufacturing"
 msgstr "部品は製造用に構成されています"
 
 msgid "Part number"
-msgstr ""
+msgstr "部品番号"
 
 msgid "Part Number"
 msgstr "部品番号"
@@ -11791,13 +11791,13 @@ msgid "Pull from Inventory"
 msgstr "在庫から取得"
 
 msgid "Pull from Onshape"
-msgstr ""
+msgstr "Onshape から取得"
 
 msgid "Pull, map, and load your data"
 msgstr "データをプル、マップ、ロードする"
 
 msgid "Pulling the latest released CAD from Onshape"
-msgstr ""
+msgstr "Onshape から最新のリリース済み CAD を取得しています"
 
 msgid "Purchase & manufacture from MRP"
 msgstr "MRPから購入・製造"
@@ -12424,16 +12424,16 @@ msgid "Release Control"
 msgstr "リリース管理"
 
 msgid "Release exceptions"
-msgstr ""
+msgstr "リリース例外"
 
 msgid "Release Job"
 msgstr "ジョブをリリース"
 
 msgid "Release state"
-msgstr ""
+msgstr "リリース状態"
 
 msgid "Release State"
-msgstr ""
+msgstr "リリース状態"
 
 msgid "Released"
 msgstr "リリース済み"
@@ -12854,7 +12854,7 @@ msgid "Revision status"
 msgstr "リビジョンステータス"
 
 msgid "Revision unknown"
-msgstr ""
+msgstr "リビジョン不明"
 
 msgid "Revisions"
 msgstr "リビジョン"
@@ -12978,7 +12978,7 @@ msgid "Rules that decide where each item gets stored"
 msgstr "各アイテムがどこに保存されるかを決定するルール"
 
 msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
-msgstr ""
+msgstr "この表を埋めるには、部品の <0>BoM Explorer</0> から部品表の同期を実行してください"
 
 msgid "Run acceptance testing"
 msgstr "受け入れテストを実行する"
@@ -13252,11 +13252,11 @@ msgid "Scan this with your authenticator app, then enter the 6-digit code it sho
 msgstr "認証アプリでスキャンして、表示される6桁のコードを入力してください。"
 
 msgid "Scanned"
-msgstr ""
+msgstr "スキャン済み"
 
 #. placeholder {0}: run.revisionsScanned
 msgid "Scanned {0}"
-msgstr ""
+msgstr "スキャン済み {0}"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -14037,7 +14037,7 @@ msgstr "同期オプションを表示"
 
 #. placeholder {0}: run.failed
 msgid "Show the {0} parts that failed"
-msgstr ""
+msgstr "失敗した {0} 部品を表示"
 
 msgid "Show Trailing Zeros"
 msgstr "末尾のゼロを表示"
@@ -14144,7 +14144,7 @@ msgstr "スキップ"
 
 #. placeholder {0}: countSkipped(run)
 msgid "Skipped {0}"
-msgstr ""
+msgstr "スキップ {0}"
 
 msgid "Slack"
 msgstr "Slack"
@@ -14304,7 +14304,7 @@ msgid "Start {0} Day Free Trial"
 msgstr "{0}日間の無料トライアルを開始"
 
 msgid "Start a sync to pull released Onshape models and drawings onto matching parts."
-msgstr ""
+msgstr "同期を開始すると、リリース済みの Onshape モデルと図面が一致する部品に取り込まれます。"
 
 msgid "Start counting"
 msgstr "カウントを開始"
@@ -14331,7 +14331,7 @@ msgid "Start Learning"
 msgstr "学習を開始"
 
 msgid "Start new sync"
-msgstr ""
+msgstr "新しい同期を開始"
 
 msgid "Start Now"
 msgstr "今すぐ開始"
@@ -14343,7 +14343,7 @@ msgid "Start of Tax Year"
 msgstr "税年度の開始"
 
 msgid "Start sync"
-msgstr ""
+msgstr "同期を開始"
 
 msgid "Start Time"
 msgstr "開始時刻"
@@ -14357,7 +14357,7 @@ msgstr "開始"
 msgid "Starting…"
 msgstr "開始中…"
 msgid "Started by"
-msgstr ""
+msgstr "開始者"
 
 msgid "State / Province"
 msgstr "都道府県"
@@ -14366,7 +14366,7 @@ msgid "State province"
 msgstr "都道府県"
 
 msgid "State synced"
-msgstr ""
+msgstr "状態を同期"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -14815,19 +14815,19 @@ msgid "Sync Activity"
 msgstr "同期アクティビティ"
 
 msgid "Sync again"
-msgstr ""
+msgstr "再同期"
 
 msgid "Sync details"
-msgstr ""
+msgstr "同期の詳細"
 
 msgid "Sync did not complete — try again"
-msgstr ""
+msgstr "同期が完了しませんでした — 再試行してください"
 
 msgid "Sync operation"
 msgstr "同期操作"
 
 msgid "Sync started"
-msgstr ""
+msgstr "同期を開始しました"
 
 msgid "Sync Tie-Out"
 msgstr "同期一致"
@@ -14837,16 +14837,16 @@ msgstr "同期済み"
 
 #. placeholder {0}: run.synced
 msgid "Synced {0}"
-msgstr ""
+msgstr "同期済み {0}"
 
 msgid "Synced by"
-msgstr ""
+msgstr "同期者"
 
 msgid "Synced by {actorName}"
-msgstr ""
+msgstr "{actorName} が同期"
 
 msgid "Syncing"
-msgstr ""
+msgstr "同期中"
 
 msgid "System"
 msgstr "システム"
@@ -15084,7 +15084,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
 
 msgid "The bill of materials can only be synced into a draft method"
-msgstr ""
+msgstr "部品表は下書きのメソッドにのみ同期できます"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "投稿されたすべての仕訳行のブック（勘定ごとに合計）。会社で会計が有効な場合にのみ記入されます。"
@@ -16921,7 +16921,7 @@ msgid "VAT Number"
 msgstr "VAT番号"
 
 msgid "Vendor"
-msgstr ""
+msgstr "サプライヤー"
 
 msgid "Vendor Write-Off Income"
 msgstr "仕入先償却益"
@@ -17803,7 +17803,7 @@ msgid "You do not have permission to edit workflows"
 msgstr "ワークフローを編集する権限がありません"
 
 msgid "You do not have permission to start a sync"
-msgstr ""
+msgstr "同期を開始する権限がありません"
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "この部品表を編集する権限がありません。"

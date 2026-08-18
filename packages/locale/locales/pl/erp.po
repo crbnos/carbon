@@ -84,7 +84,7 @@ msgstr "{0} wpisów dziennika w wersji roboczej"
 #. placeholder {0}: row.original.failed
 #. placeholder {0}: run.failed
 msgid "{0} failed"
-msgstr ""
+msgstr "{0} nieudanych"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -159,7 +159,7 @@ msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% należności"
 
 msgid "{catalogPercent}% of parts have a model"
-msgstr ""
+msgstr "{catalogPercent}% części ma model"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostatecznego następcę."
@@ -802,7 +802,7 @@ msgid "A supplier's type changes"
 msgstr "Typ dostawcy się zmienia"
 
 msgid "A sync is already running — cancel it before starting another"
-msgstr ""
+msgstr "Synchronizacja już trwa — anuluj ją, aby rozpocząć nową"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Dodatkowa opłata podlegająca opodatkowaniu (obsługa, konfiguracja, paliwo), dodawana do linii i uwzględniana w podstawie opodatkowania."
@@ -1408,7 +1408,7 @@ msgid "Alpha"
 msgstr "Alfa"
 
 msgid "Already synced"
-msgstr ""
+msgstr "Już zsynchronizowano"
 
 msgid "Always"
 msgstr "Zawsze"
@@ -1448,7 +1448,7 @@ msgid "An approval requirement on a non-conformance whose reviewers (seeded Engi
 msgstr "Wymóg zatwierdzenia dla niezgodności, której recenzenci (Engineering i Quality) muszą się zaakceptować przed zamknięciem problemu."
 
 msgid "An asset is already attached"
-msgstr ""
+msgstr "Plik jest już załączony"
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Koszt nabycia zasobu minus skumulowana amortyzacja — ile warte jest wciąż w księgach i kwota, za którą jest zbywany."
@@ -1557,7 +1557,7 @@ msgid "And {0} more — resolve these to see the rest."
 msgstr "I {0} więcej — rozwiąż te, aby zobaczyć resztę."
 
 msgid "and {ambiguousOverflow} more matching more than one part"
-msgstr ""
+msgstr "i {ambiguousOverflow} więcej pasujących do więcej niż jednej części"
 
 msgid "and {hidden} more"
 msgstr "i {hidden} więcej"
@@ -1566,7 +1566,7 @@ msgid "and {remaining} more"
 msgstr "i {remaining} więcej"
 
 msgid "and {unmatchedOverflow} more with no matching part"
-msgstr ""
+msgstr "i {unmatchedOverflow} więcej bez pasującej części"
 
 msgid "Annotation added"
 msgstr "Adnotacja dodana"
@@ -2391,7 +2391,7 @@ msgid "Automate your business processes with event-driven workflows that trigger
 msgstr "Automatyzuj swoje procesy biznesowe za pomocą przepływów pracy opartych na zdarzeniach, które wyzwalają akcje, gdy coś się zdarzy w Carbon."
 
 msgid "Automatic"
-msgstr ""
+msgstr "Automatyczny"
 
 msgid "Automatic Cost Updates"
 msgstr "Automatyczne aktualizacje kosztów"
@@ -2679,7 +2679,7 @@ msgid "Bulk Jobs"
 msgstr "Zadania zbiorcze"
 
 msgid "Bulk sync"
-msgstr ""
+msgstr "Synchronizacja zbiorcza"
 
 msgid "Business moment"
 msgstr "Moment biznesowy"
@@ -2817,10 +2817,10 @@ msgid "Cancel SO only"
 msgstr "Anuluj tylko SO"
 
 msgid "Cancel sync"
-msgstr ""
+msgstr "Anuluj synchronizację"
 
 msgid "Cancel this sync? Items already synced are kept. This action is recorded."
-msgstr ""
+msgstr "Anulować tę synchronizację? Już zsynchronizowane pozycje zostaną zachowane. Ta akcja jest rejestrowana."
 
 msgid "Canceled"
 msgstr "Anulowano"
@@ -2829,10 +2829,10 @@ msgid "Cancelled"
 msgstr "Anulowano"
 
 msgid "Cancelled by"
-msgstr ""
+msgstr "Anulowane przez"
 
 msgid "Cancelled by {cancelledByName}"
-msgstr ""
+msgstr "Anulowane przez {cancelledByName}"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Nie można dodać parametrów do niezapisanej operacji"
@@ -3091,7 +3091,7 @@ msgid "Choose a serial number"
 msgstr "Wybierz numer seryjny"
 
 msgid "Choose an Onshape document, version and assembly first"
-msgstr ""
+msgstr "Najpierw wybierz dokument, wersję i złożenie Onshape"
 
 msgid "Choose another file"
 msgstr "Wybierz inny plik"
@@ -3950,7 +3950,7 @@ msgid "Country code"
 msgstr "Kod kraju"
 
 msgid "Coverage unavailable"
-msgstr ""
+msgstr "Pokrycie niedostępne"
 
 msgid "Create"
 msgstr "Utwórz"
@@ -4517,7 +4517,7 @@ msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "Dane rozproszone w arkuszach kalkulacyjnych i odłączonych narzędziach"
 
 msgid "Data synced"
-msgstr ""
+msgstr "Dane zsynchronizowane"
 
 msgid "Data Type"
 msgstr "Typ danych"
@@ -5445,7 +5445,7 @@ msgid "Drawing replaced. Balloon placements were removed; feature rows are uncha
 msgstr "Rysunek zastąpiony. Umieszczenia balonów zostały usunięte; wiersze funkcji pozostają niezmienione."
 
 msgid "Drawings {drawingsSynced}/{drawingsTracked}"
-msgstr ""
+msgstr "Rysunki {drawingsSynced}/{drawingsTracked}"
 
 msgid "Drop Shipment"
 msgstr "Wysyłka bezpośrednia"
@@ -6065,7 +6065,7 @@ msgid "Engineering Contact"
 msgstr "Kontakt Inżynierski"
 
 msgid "Engineering Data"
-msgstr ""
+msgstr "Dane inżynieryjne"
 
 msgid "Enroll"
 msgstr "Zarejestruj"
@@ -6258,7 +6258,7 @@ msgid "Every match"
 msgstr "Każde dopasowanie"
 
 msgid "Every released revision in the latest sync matched exactly one part"
-msgstr ""
+msgstr "Każda wydana wersja w ostatniej synchronizacji pasowała dokładnie do jednej części"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Każde wymagane zadanie musi być oznaczone jako Wykonane lub Pominięte zanim okres będzie mógł być zamknięty."
@@ -6303,7 +6303,7 @@ msgid "Exemption Reason"
 msgstr "Powód Zwolnienia"
 
 msgid "Existing attachment confirmed"
-msgstr ""
+msgstr "Potwierdzono istniejący załącznik"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "Istniejące mapowania. Wybierz inne konto dostawcy, aby ponownie zmapować."
@@ -6491,7 +6491,7 @@ msgstr "Nieudane"
 
 #. placeholder {0}: run.failed
 msgid "Failed {0}"
-msgstr ""
+msgstr "Nieudane {0}"
 
 msgid "Failed features"
 msgstr "Cechy nie powiodły się"
@@ -6860,7 +6860,7 @@ msgid "Fetch"
 msgstr "Pobierz"
 
 msgid "Fetch this company's Onshape documents first"
-msgstr ""
+msgstr "Najpierw pobierz dokumenty Onshape tej firmy"
 
 msgid "Field"
 msgstr "Pole"
@@ -6895,10 +6895,10 @@ msgid "File size too big (max. {0})"
 msgstr "Rozmiar pliku zbyt duży (maks. {0})"
 
 msgid "File too large"
-msgstr ""
+msgstr "Plik zbyt duży"
 
 msgid "File too large to sync"
-msgstr ""
+msgstr "Plik zbyt duży do synchronizacji"
 
 msgid "File type not supported"
 msgstr "Typ pliku nie jest obsługiwany"
@@ -6946,7 +6946,7 @@ msgid "Finish with material unpicked?"
 msgstr "Zakończyć bez rozliczenia materiału?"
 
 msgid "Finished"
-msgstr ""
+msgstr "Zakończono"
 
 msgid "Finished goods"
 msgstr "Wykończenia"
@@ -8392,7 +8392,7 @@ msgid "Keep picking"
 msgstr "Kontynuuj pobieranie"
 
 msgid "Keep syncing"
-msgstr ""
+msgstr "Kontynuuj synchronizację"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Utrzymuje zamówienia, oferty i ustawienia za drugą weryfikacją"
@@ -8501,7 +8501,7 @@ msgid "Last Run"
 msgstr "Ostatnie uruchomienie"
 
 msgid "Last synced"
-msgstr ""
+msgstr "Ostatnia synchronizacja"
 
 msgid "Last synced: <0/>"
 msgstr "Ostatnia synchronizacja: <0/>"
@@ -8685,7 +8685,7 @@ msgid "Live reloading"
 msgstr "Odświeżanie na żywo"
 
 msgid "Live updates paused — retrying"
-msgstr ""
+msgstr "Aktualizacje na żywo wstrzymane — ponawianie"
 
 msgid "Live Version"
 msgstr "Wersja aktywna"
@@ -9044,7 +9044,7 @@ msgid "Mark to delete"
 msgstr "Oznacz do usunięcia"
 
 msgid "Mass"
-msgstr ""
+msgstr "Masa"
 
 msgid "Master gauge"
 msgstr "Przyrząd standardowy"
@@ -9083,7 +9083,7 @@ msgid "matches"
 msgstr "pasuje do"
 
 msgid "Matches more than one part"
-msgstr ""
+msgstr "Pasuje do więcej niż jednej części"
 
 msgid "Matching Pairs"
 msgstr "Pary dopasowań"
@@ -9326,7 +9326,7 @@ msgid "Mobile Phone"
 msgstr "Telefon komórkowy"
 
 msgid "Model"
-msgstr ""
+msgstr "Model"
 
 msgid "Model Number"
 msgstr "Numer modelu"
@@ -9350,10 +9350,10 @@ msgid "Model upload"
 msgstr "Przesyłanie modelu"
 
 msgid "Models {modelsSynced}/{modelsTracked}"
-msgstr ""
+msgstr "Modele {modelsSynced}/{modelsTracked}"
 
 msgid "Models and drawings synced, out of the parts this sync has tried. {partsWithModel} of {partsTotal} parts in the catalog carry a CAD model, including any uploaded by hand."
-msgstr ""
+msgstr "Zsynchronizowane modele i rysunki w stosunku do części, które ta synchronizacja próbowała pobrać. {partsWithModel} z {partsTotal} części w katalogu ma model CAD, w tym przesłane ręcznie."
 
 msgid "Modified"
 msgstr "Zmodyfikowane"
@@ -9908,7 +9908,7 @@ msgid "No CAD model to preview."
 msgstr "Brak modelu CAD do podglądu."
 
 msgid "No CAD synced yet"
-msgstr ""
+msgstr "Nie zsynchronizowano jeszcze CAD"
 
 msgid "No calibration records found"
 msgstr "Nie znaleziono rekordów kalibracji"
@@ -9962,7 +9962,7 @@ msgid "No draft versions available"
 msgstr "Brak dostępnych wersji roboczych"
 
 msgid "No drawing synced"
-msgstr ""
+msgstr "Nie zsynchronizowano rysunku"
 
 msgid "No due date"
 msgstr "Brak daty terminu"
@@ -10031,7 +10031,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Brak aktywności magazynowej tutaj."
 
 msgid "No items match these filters"
-msgstr ""
+msgstr "Żadna pozycja nie pasuje do tych filtrów"
 
 msgid "No jobs were created"
 msgstr "Nie utworzono żadnych zadań"
@@ -10067,7 +10067,7 @@ msgid "No matching bins"
 msgstr "Brak pasujących pojemników"
 
 msgid "No matching part"
-msgstr ""
+msgstr "Brak pasującej części"
 
 msgid "No new notifications"
 msgstr "Brak nowych powiadomień"
@@ -10076,7 +10076,7 @@ msgid "No notes"
 msgstr "Brak notek"
 
 msgid "No Onshape documents could be loaded for this company"
-msgstr ""
+msgstr "Nie udało się wczytać dokumentów Onshape dla tej firmy"
 
 msgid "No open invoices"
 msgstr "Brak otwartych faktur"
@@ -10157,7 +10157,7 @@ msgid "No production events recorded for this operation yet"
 msgstr "Brak zarejestrowanych zdarzeń produkcyjnych dla tej operacji"
 
 msgid "No progress for 30 minutes"
-msgstr ""
+msgstr "Brak postępu od 30 minut"
 
 msgid "No purchases in this period"
 msgstr "Brak zakupów w tym okresie"
@@ -10181,7 +10181,7 @@ msgid "No reference image"
 msgstr "Brak obrazu referencyjnego"
 
 msgid "No released revision found"
-msgstr ""
+msgstr "Nie znaleziono wydanej wersji"
 
 msgid "No remaining entities to inspect."
 msgstr "Brak pozostałych jednostek do sprawdzenia."
@@ -10229,10 +10229,10 @@ msgid "No sync operations yet"
 msgstr "Brak operacji synchronizacji"
 
 msgid "No synced items yet — run a sync to populate this table"
-msgstr ""
+msgstr "Brak zsynchronizowanych pozycji — uruchom synchronizację, aby wypełnić tę tabelę"
 
 msgid "No syncs have run yet"
-msgstr ""
+msgstr "Nie uruchomiono jeszcze żadnej synchronizacji"
 
 msgid "No time entries for this week"
 msgstr "Brak wpisów czasu pracy w tym tygodniu"
@@ -10316,7 +10316,7 @@ msgid "Normal"
 msgstr "Normalny"
 
 msgid "Not a model"
-msgstr ""
+msgstr "Nie jest modelem"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Nie tabela, ale saldo księgi głównej: koszt gromadzi się w miarę wystawiania materiałów zadania i jest czyszczony po otrzymaniu zadania na magazyn."
@@ -10328,7 +10328,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająca liczba zadań do pokrycia ilości"
 
 msgid "Not linked to Onshape"
-msgstr ""
+msgstr "Niepowiązane z Onshape"
 
 msgid "Not reached"
 msgstr "Nieosiągnięty"
@@ -10355,7 +10355,7 @@ msgid "Not started training for"
 msgstr "Nie rozpoczęto szkolenia dla"
 
 msgid "Not synced"
-msgstr ""
+msgstr "Niezsynchronizowane"
 
 msgid "Not yet"
 msgstr "Jeszcze nie"
@@ -10536,10 +10536,10 @@ msgid "Only empty, open periods can be deleted."
 msgstr "Usunięte mogą być tylko puste, otwarte okresy."
 
 msgid "Onshape"
-msgstr ""
+msgstr "Onshape"
 
 msgid "Onshape asset sync is turned off for this company"
-msgstr ""
+msgstr "Synchronizacja plików Onshape jest wyłączona dla tej firmy"
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape autoryzował połączenie, ale jego zapisanie nie udało się. Spróbuj połączyć się ponownie."
@@ -10560,10 +10560,10 @@ msgid "Onshape Status"
 msgstr "Status Onshape"
 
 msgid "Onshape sync"
-msgstr ""
+msgstr "Synchronizacja Onshape"
 
 msgid "Onshape Sync"
-msgstr ""
+msgstr "Synchronizacja Onshape"
 
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "Ups! Link, do którego próbujesz uzyskać dostęp, wygasł lub nie jest już ważny."
@@ -10614,7 +10614,7 @@ msgid "Open in MES"
 msgstr "Otwórz w MES"
 
 msgid "Open in Onshape"
-msgstr ""
+msgstr "Otwórz w Onshape"
 
 msgid "Open Issues"
 msgstr "Otwarte problemy"
@@ -10629,7 +10629,7 @@ msgid "Open menu"
 msgstr "Otwórz menu"
 
 msgid "Open Onshape settings"
-msgstr ""
+msgstr "Otwórz ustawienia Onshape"
 
 msgid "Open payables by supplier and age"
 msgstr "Otwarte zobowiązania wg dostawcy i wieku"
@@ -11018,7 +11018,7 @@ msgid "Part is configured for manufacturing"
 msgstr "Część jest skonfigurowana do produkcji"
 
 msgid "Part number"
-msgstr ""
+msgstr "Numer części"
 
 msgid "Part Number"
 msgstr "Numer części"
@@ -11791,13 +11791,13 @@ msgid "Pull from Inventory"
 msgstr "Pobierz z magazynu"
 
 msgid "Pull from Onshape"
-msgstr ""
+msgstr "Pobierz z Onshape"
 
 msgid "Pull, map, and load your data"
 msgstr "Pobierz, mapuj i załaduj swoje dane"
 
 msgid "Pulling the latest released CAD from Onshape"
-msgstr ""
+msgstr "Pobieranie najnowszego wydanego CAD z Onshape"
 
 msgid "Purchase & manufacture from MRP"
 msgstr "Zakup i produkcja z MRP"
@@ -12424,16 +12424,16 @@ msgid "Release Control"
 msgstr "Kontrola Wydania"
 
 msgid "Release exceptions"
-msgstr ""
+msgstr "Wyjątki wydania"
 
 msgid "Release Job"
 msgstr "Zwolnij zadanie"
 
 msgid "Release state"
-msgstr ""
+msgstr "Stan wydania"
 
 msgid "Release State"
-msgstr ""
+msgstr "Stan wydania"
 
 msgid "Released"
 msgstr "Wydane"
@@ -12854,7 +12854,7 @@ msgid "Revision status"
 msgstr "Status wersji"
 
 msgid "Revision unknown"
-msgstr ""
+msgstr "Nieznana wersja"
 
 msgid "Revisions"
 msgstr "Wersje"
@@ -12978,7 +12978,7 @@ msgid "Rules that decide where each item gets stored"
 msgstr "Reguły decydujące o tym, gdzie każdy element jest przechowywany"
 
 msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
-msgstr ""
+msgstr "Uruchom synchronizację zestawienia materiałów z <0>BoM Explorer</0> części, aby wypełnić tę tabelę"
 
 msgid "Run acceptance testing"
 msgstr "Przeprowadź testy akceptacyjne"
@@ -13252,11 +13252,11 @@ msgid "Scan this with your authenticator app, then enter the 6-digit code it sho
 msgstr "Zeskanuj to za pomocą aplikacji authenticator, a następnie wprowadź wyświetlany 6-cyfrowy kod."
 
 msgid "Scanned"
-msgstr ""
+msgstr "Przeskanowane"
 
 #. placeholder {0}: run.revisionsScanned
 msgid "Scanned {0}"
-msgstr ""
+msgstr "Przeskanowane {0}"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -14037,7 +14037,7 @@ msgstr "Pokaż opcje synchronizacji"
 
 #. placeholder {0}: run.failed
 msgid "Show the {0} parts that failed"
-msgstr ""
+msgstr "Pokaż {0} nieudanych części"
 
 msgid "Show Trailing Zeros"
 msgstr "Wyświetlaj zera końcowe"
@@ -14144,7 +14144,7 @@ msgstr "Pominięte"
 
 #. placeholder {0}: countSkipped(run)
 msgid "Skipped {0}"
-msgstr ""
+msgstr "Pominięte {0}"
 
 msgid "Slack"
 msgstr "Slack"
@@ -14304,7 +14304,7 @@ msgid "Start {0} Day Free Trial"
 msgstr "Rozpocznij {0}-dniowy bezpłatny okres próbny"
 
 msgid "Start a sync to pull released Onshape models and drawings onto matching parts."
-msgstr ""
+msgstr "Uruchom synchronizację, aby pobrać wydane modele i rysunki Onshape do pasujących części."
 
 msgid "Start counting"
 msgstr "Rozpocznij liczenie"
@@ -14331,7 +14331,7 @@ msgid "Start Learning"
 msgstr "Zacznij się uczyć"
 
 msgid "Start new sync"
-msgstr ""
+msgstr "Rozpocznij nową synchronizację"
 
 msgid "Start Now"
 msgstr "Zacznij teraz"
@@ -14343,7 +14343,7 @@ msgid "Start of Tax Year"
 msgstr "Początek roku podatkowego"
 
 msgid "Start sync"
-msgstr ""
+msgstr "Rozpocznij synchronizację"
 
 msgid "Start Time"
 msgstr "Czas rozpoczęcia"
@@ -14357,7 +14357,7 @@ msgstr "Rozpoczęto"
 msgid "Starting…"
 msgstr "Uruchamianie…"
 msgid "Started by"
-msgstr ""
+msgstr "Rozpoczęte przez"
 
 msgid "State / Province"
 msgstr "Stan / Prowincja"
@@ -14366,7 +14366,7 @@ msgid "State province"
 msgstr "Stan/Województwo"
 
 msgid "State synced"
-msgstr ""
+msgstr "Stan zsynchronizowany"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -14815,19 +14815,19 @@ msgid "Sync Activity"
 msgstr "Działalność synchronizacji"
 
 msgid "Sync again"
-msgstr ""
+msgstr "Synchronizuj ponownie"
 
 msgid "Sync details"
-msgstr ""
+msgstr "Szczegóły synchronizacji"
 
 msgid "Sync did not complete — try again"
-msgstr ""
+msgstr "Synchronizacja nie zakończyła się — ponów próbę"
 
 msgid "Sync operation"
 msgstr "Operacja synchronizacji"
 
 msgid "Sync started"
-msgstr ""
+msgstr "Synchronizacja rozpoczęta"
 
 msgid "Sync Tie-Out"
 msgstr "Wyrównanie synchronizacji"
@@ -14837,16 +14837,16 @@ msgstr "Zsynchronizowano"
 
 #. placeholder {0}: run.synced
 msgid "Synced {0}"
-msgstr ""
+msgstr "Zsynchronizowane {0}"
 
 msgid "Synced by"
-msgstr ""
+msgstr "Zsynchronizowane przez"
 
 msgid "Synced by {actorName}"
-msgstr ""
+msgstr "Zsynchronizowane przez {actorName}"
 
 msgid "Syncing"
-msgstr ""
+msgstr "Synchronizowanie"
 
 msgid "System"
 msgstr "System"
@@ -15084,7 +15084,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Autoryzacja została odrzucona w Onshape. Spróbuj połączyć się ponownie."
 
 msgid "The bill of materials can only be synced into a draft method"
-msgstr ""
+msgstr "Zestawienie materiałów można synchronizować tylko z metodą w wersji roboczej"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Księga wszystkich zaksięgowanych wierszy pamiętnika, zsumowanych według konta – zapisywana tylko wtedy, gdy dla firmy jest włączona rachunkowość."
@@ -16921,7 +16921,7 @@ msgid "VAT Number"
 msgstr "Numer VAT"
 
 msgid "Vendor"
-msgstr ""
+msgstr "Dostawca"
 
 msgid "Vendor Write-Off Income"
 msgstr "Dochód ze sprzedaży zobowiązań dostawcy"
@@ -17803,7 +17803,7 @@ msgid "You do not have permission to edit workflows"
 msgstr "Nie masz uprawnień do edytowania przepływów pracy"
 
 msgid "You do not have permission to start a sync"
-msgstr ""
+msgstr "Nie masz uprawnień do rozpoczęcia synchronizacji"
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "Nie masz uprawnień do edytowania tej listy materiałów."

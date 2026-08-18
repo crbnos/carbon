@@ -84,7 +84,7 @@ msgstr "{0} ड्राफ्ट जर्नल प्रविष्टिय
 #. placeholder {0}: row.original.failed
 #. placeholder {0}: run.failed
 msgid "{0} failed"
-msgstr ""
+msgstr "{0} विफल"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -159,7 +159,7 @@ msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% प्राप्य"
 
 msgid "{catalogPercent}% of parts have a model"
-msgstr ""
+msgstr "{catalogPercent}% पार्ट्स में मॉडल है"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
@@ -802,7 +802,7 @@ msgid "A supplier's type changes"
 msgstr "एक आपूर्तिकर्ता के प्रकार में परिवर्तन"
 
 msgid "A sync is already running — cancel it before starting another"
-msgstr ""
+msgstr "एक सिंक पहले से चल रहा है — दूसरा शुरू करने से पहले उसे रद्द करें"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "एक कर योग्य अधिभार (हैंडलिंग, सेटअप, ईंधन) जो पंक्ति में जोड़ा जाता है और कर आधार में शामिल किया जाता है।"
@@ -1408,7 +1408,7 @@ msgid "Alpha"
 msgstr "अल्फा"
 
 msgid "Already synced"
-msgstr ""
+msgstr "पहले से सिंक किया गया"
 
 msgid "Always"
 msgstr "हमेशा"
@@ -1448,7 +1448,7 @@ msgid "An approval requirement on a non-conformance whose reviewers (seeded Engi
 msgstr "एक गैर-अनुरूपता पर एक अनुमोदन आवश्यकता जिसके समीक्षकों (सीडेड इंजीनियरिंग और गुणवत्ता) को समस्या बंद होने से पहले हस्ताक्षर करने चाहिए।"
 
 msgid "An asset is already attached"
-msgstr ""
+msgstr "एक फ़ाइल पहले से संलग्न है"
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "एक संपत्ति की अधिग्रहण लागत माइनस संचयी मूल्यह्रास — यह किताबों पर अभी भी क्या मूल्य है और राशि जिस पर इसे निपटाया जाता है।"
@@ -1557,7 +1557,7 @@ msgid "And {0} more — resolve these to see the rest."
 msgstr "और {0} अधिक — बाकी देखने के लिए इन्हें हल करें।"
 
 msgid "and {ambiguousOverflow} more matching more than one part"
-msgstr ""
+msgstr "और {ambiguousOverflow} अन्य जो एक से अधिक पार्ट से मेल खाते हैं"
 
 msgid "and {hidden} more"
 msgstr "और {hidden} अधिक"
@@ -1566,7 +1566,7 @@ msgid "and {remaining} more"
 msgstr "और {remaining} अधिक"
 
 msgid "and {unmatchedOverflow} more with no matching part"
-msgstr ""
+msgstr "और {unmatchedOverflow} अन्य जिनका कोई मेल खाता पार्ट नहीं है"
 
 msgid "Annotation added"
 msgstr "एनोटेशन जोड़ा गया"
@@ -2391,7 +2391,7 @@ msgid "Automate your business processes with event-driven workflows that trigger
 msgstr "कार्बन में चीजें होने पर कार्रवाई करने वाले इवेंट-संचालित वर्कफ़्लो के साथ अपनी व्यावसायिक प्रक्रियाओं को स्वचालित करें।"
 
 msgid "Automatic"
-msgstr ""
+msgstr "स्वचालित"
 
 msgid "Automatic Cost Updates"
 msgstr "स्वचालित लागत अपडेट"
@@ -2679,7 +2679,7 @@ msgid "Bulk Jobs"
 msgstr "बल्क जॉब्स"
 
 msgid "Bulk sync"
-msgstr ""
+msgstr "बल्क सिंक"
 
 msgid "Business moment"
 msgstr "व्यावसायिक क्षण"
@@ -2817,10 +2817,10 @@ msgid "Cancel SO only"
 msgstr "केवल SO रद्द करें"
 
 msgid "Cancel sync"
-msgstr ""
+msgstr "सिंक रद्द करें"
 
 msgid "Cancel this sync? Items already synced are kept. This action is recorded."
-msgstr ""
+msgstr "इस सिंक को रद्द करें? पहले से सिंक किए गए आइटम बने रहेंगे। यह कार्रवाई रिकॉर्ड की जाती है।"
 
 msgid "Canceled"
 msgstr "रद्द किया गया"
@@ -2829,10 +2829,10 @@ msgid "Cancelled"
 msgstr "रद्द किया गया"
 
 msgid "Cancelled by"
-msgstr ""
+msgstr "द्वारा रद्द किया गया"
 
 msgid "Cancelled by {cancelledByName}"
-msgstr ""
+msgstr "{cancelledByName} द्वारा रद्द किया गया"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "असहेजे ऑपरेशन में पैरामीटर नहीं जोड़ सकते"
@@ -3091,7 +3091,7 @@ msgid "Choose a serial number"
 msgstr "एक सीरियल नंबर चुनें"
 
 msgid "Choose an Onshape document, version and assembly first"
-msgstr ""
+msgstr "पहले Onshape दस्तावेज़, संस्करण और असेंबली चुनें"
 
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
@@ -3950,7 +3950,7 @@ msgid "Country code"
 msgstr "देश कोड"
 
 msgid "Coverage unavailable"
-msgstr ""
+msgstr "कवरेज उपलब्ध नहीं"
 
 msgid "Create"
 msgstr "बनाएं"
@@ -4517,7 +4517,7 @@ msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "डेटा स्प्रेडशीट और डिस्कनेक्ट किए गए टूल्स में बिखरा हुआ है"
 
 msgid "Data synced"
-msgstr ""
+msgstr "डेटा सिंक किया गया"
 
 msgid "Data Type"
 msgstr "डेटा प्रकार"
@@ -5445,7 +5445,7 @@ msgid "Drawing replaced. Balloon placements were removed; feature rows are uncha
 msgstr "ड्राइंग बदल दी गई। बैलून प्लेसमेंट हटा दिए गए; फीचर पंक्तियां अपरिवर्तित हैं।"
 
 msgid "Drawings {drawingsSynced}/{drawingsTracked}"
-msgstr ""
+msgstr "ड्राइंग {drawingsSynced}/{drawingsTracked}"
 
 msgid "Drop Shipment"
 msgstr "ड्रॉप शिपमेंट"
@@ -6065,7 +6065,7 @@ msgid "Engineering Contact"
 msgstr "इंजीनियरिंग संपर्क"
 
 msgid "Engineering Data"
-msgstr ""
+msgstr "इंजीनियरिंग डेटा"
 
 msgid "Enroll"
 msgstr "नामांकन करें"
@@ -6258,7 +6258,7 @@ msgid "Every match"
 msgstr "हर मेल"
 
 msgid "Every released revision in the latest sync matched exactly one part"
-msgstr ""
+msgstr "पिछले सिंक की प्रत्येक जारी रिवीज़न ठीक एक पार्ट से मेल खाई"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "अवधि बंद करने से पहले प्रत्येक आवश्यक कार्य को पूर्ण या छोड़ा जाना चाहिए।"
@@ -6303,7 +6303,7 @@ msgid "Exemption Reason"
 msgstr "छूट कारण"
 
 msgid "Existing attachment confirmed"
-msgstr ""
+msgstr "मौजूदा अटैचमेंट की पुष्टि हुई"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "मौजूदा मानचित्रण। पुनः मानचित्रण के लिए एक अलग प्रदाता खाता चुनें।"
@@ -6491,7 +6491,7 @@ msgstr "विफल"
 
 #. placeholder {0}: run.failed
 msgid "Failed {0}"
-msgstr ""
+msgstr "विफल {0}"
 
 msgid "Failed features"
 msgstr "विफल विशेषताएँ"
@@ -6860,7 +6860,7 @@ msgid "Fetch"
 msgstr "लाएं"
 
 msgid "Fetch this company's Onshape documents first"
-msgstr ""
+msgstr "पहले इस कंपनी के Onshape दस्तावेज़ लाएं"
 
 msgid "Field"
 msgstr "क्षेत्र"
@@ -6895,10 +6895,10 @@ msgid "File size too big (max. {0})"
 msgstr "फ़ाइल का आकार बहुत बड़ा है (अधिकतम {0})"
 
 msgid "File too large"
-msgstr ""
+msgstr "फ़ाइल बहुत बड़ी है"
 
 msgid "File too large to sync"
-msgstr ""
+msgstr "सिंक करने के लिए फ़ाइल बहुत बड़ी है"
 
 msgid "File type not supported"
 msgstr "फ़ाइल प्रकार समर्थित नहीं है"
@@ -6946,7 +6946,7 @@ msgid "Finish with material unpicked?"
 msgstr "सामग्री अनचुनी के साथ समाप्त करें?"
 
 msgid "Finished"
-msgstr ""
+msgstr "समाप्त"
 
 msgid "Finished goods"
 msgstr "फिनिशें"
@@ -8392,7 +8392,7 @@ msgid "Keep picking"
 msgstr "चुनते रहें"
 
 msgid "Keep syncing"
-msgstr ""
+msgstr "सिंक जारी रखें"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "ऑर्डर, कोट्स और सेटिंग्स को एक दूसरी जांच के पीछे रखता है"
@@ -8501,7 +8501,7 @@ msgid "Last Run"
 msgstr "अंतिम रन"
 
 msgid "Last synced"
-msgstr ""
+msgstr "अंतिम सिंक"
 
 msgid "Last synced: <0/>"
 msgstr "अंतिम सिंक: <0/>"
@@ -8685,7 +8685,7 @@ msgid "Live reloading"
 msgstr "लाइव रीलोडिंग"
 
 msgid "Live updates paused — retrying"
-msgstr ""
+msgstr "लाइव अपडेट रुके — पुनः प्रयास"
 
 msgid "Live Version"
 msgstr "लाइव संस्करण"
@@ -9044,7 +9044,7 @@ msgid "Mark to delete"
 msgstr "हटाने के लिए चिह्नित करें"
 
 msgid "Mass"
-msgstr ""
+msgstr "द्रव्यमान"
 
 msgid "Master gauge"
 msgstr "मास्टर गेज"
@@ -9083,7 +9083,7 @@ msgid "matches"
 msgstr "मेल खाता है"
 
 msgid "Matches more than one part"
-msgstr ""
+msgstr "एक से अधिक पार्ट से मेल खाता है"
 
 msgid "Matching Pairs"
 msgstr "मिलान जोड़े"
@@ -9326,7 +9326,7 @@ msgid "Mobile Phone"
 msgstr "मोबाइल फोन"
 
 msgid "Model"
-msgstr ""
+msgstr "मॉडल"
 
 msgid "Model Number"
 msgstr "मॉडल नंबर"
@@ -9350,10 +9350,10 @@ msgid "Model upload"
 msgstr "मॉडल अपलोड"
 
 msgid "Models {modelsSynced}/{modelsTracked}"
-msgstr ""
+msgstr "मॉडल {modelsSynced}/{modelsTracked}"
 
 msgid "Models and drawings synced, out of the parts this sync has tried. {partsWithModel} of {partsTotal} parts in the catalog carry a CAD model, including any uploaded by hand."
-msgstr ""
+msgstr "सिंक किए गए मॉडल और ड्राइंग, उन पार्ट्स के सापेक्ष जिन्हें इस सिंक ने आज़माया। कैटलॉग के {partsTotal} में से {partsWithModel} पार्ट्स में CAD मॉडल है, जिसमें हाथ से अपलोड किए गए भी शामिल हैं।"
 
 msgid "Modified"
 msgstr "संशोधित"
@@ -9908,7 +9908,7 @@ msgid "No CAD model to preview."
 msgstr "पूर्वावलोकन के लिए कोई CAD मॉडल नहीं है।"
 
 msgid "No CAD synced yet"
-msgstr ""
+msgstr "अभी तक कोई CAD सिंक नहीं"
 
 msgid "No calibration records found"
 msgstr "कोई अंशांकन रिकॉर्ड नहीं मिला"
@@ -9962,7 +9962,7 @@ msgid "No draft versions available"
 msgstr "कोई ड्राफ्ट संस्करण उपलब्ध नहीं है"
 
 msgid "No drawing synced"
-msgstr ""
+msgstr "कोई ड्राइंग सिंक नहीं"
 
 msgid "No due date"
 msgstr "कोई नियत तारीख नहीं"
@@ -10031,7 +10031,7 @@ msgid "No items have inventory activity here yet."
 msgstr "अभी तक यहाँ कोई आइटम इन्वेंटरी गतिविधि नहीं है।"
 
 msgid "No items match these filters"
-msgstr ""
+msgstr "इन फ़िल्टर से कोई आइटम मेल नहीं खाता"
 
 msgid "No jobs were created"
 msgstr "कोई नौकरी नहीं बनाई गई"
@@ -10067,7 +10067,7 @@ msgid "No matching bins"
 msgstr "कोई मिलान बिन नहीं"
 
 msgid "No matching part"
-msgstr ""
+msgstr "कोई मेल खाता पार्ट नहीं"
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
@@ -10076,7 +10076,7 @@ msgid "No notes"
 msgstr "कोई नोट नहीं"
 
 msgid "No Onshape documents could be loaded for this company"
-msgstr ""
+msgstr "इस कंपनी के लिए कोई Onshape दस्तावेज़ लोड नहीं हो सका"
 
 msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
@@ -10157,7 +10157,7 @@ msgid "No production events recorded for this operation yet"
 msgstr "इस ऑपरेशन के लिए अभी तक कोई उत्पादन घटना रिकॉर्ड नहीं की गई है"
 
 msgid "No progress for 30 minutes"
-msgstr ""
+msgstr "30 मिनट से कोई प्रगति नहीं"
 
 msgid "No purchases in this period"
 msgstr "इस अवधि में कोई खरीद नहीं"
@@ -10181,7 +10181,7 @@ msgid "No reference image"
 msgstr "कोई संदर्भ छवि नहीं"
 
 msgid "No released revision found"
-msgstr ""
+msgstr "कोई जारी रिवीज़न नहीं मिला"
 
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण के लिए कोई शेष इकाई नहीं है।"
@@ -10229,10 +10229,10 @@ msgid "No sync operations yet"
 msgstr "अभी तक कोई सिंक परिचालन नहीं है"
 
 msgid "No synced items yet — run a sync to populate this table"
-msgstr ""
+msgstr "अभी तक कोई सिंक किया गया आइटम नहीं — इस तालिका को भरने के लिए सिंक चलाएं"
 
 msgid "No syncs have run yet"
-msgstr ""
+msgstr "अभी तक कोई सिंक नहीं चला"
 
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
@@ -10316,7 +10316,7 @@ msgid "Normal"
 msgstr "सामान्य"
 
 msgid "Not a model"
-msgstr ""
+msgstr "मॉडल नहीं है"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "एक तालिका नहीं बल्कि एक सामान्य-बहीखाता संतुलन: काम की सामग्री जारी होने पर लागत जमा होती है और जब काम स्टॉक में प्राप्त होता है तो स्पष्ट हो जाता है।"
@@ -10328,7 +10328,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
 
 msgid "Not linked to Onshape"
-msgstr ""
+msgstr "Onshape से लिंक नहीं"
 
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
@@ -10355,7 +10355,7 @@ msgid "Not started training for"
 msgstr "प्रशिक्षण शुरू नहीं किया गया"
 
 msgid "Not synced"
-msgstr ""
+msgstr "सिंक नहीं किया गया"
 
 msgid "Not yet"
 msgstr "अभी नहीं"
@@ -10536,10 +10536,10 @@ msgid "Only empty, open periods can be deleted."
 msgstr "केवल खाली, खुली अवधियों को हटाया जा सकता है।"
 
 msgid "Onshape"
-msgstr ""
+msgstr "Onshape"
 
 msgid "Onshape asset sync is turned off for this company"
-msgstr ""
+msgstr "इस कंपनी के लिए Onshape फ़ाइल सिंक बंद है"
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape ने कनेक्शन को अधिकृत किया, लेकिन उसे सहेजना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
@@ -10560,10 +10560,10 @@ msgid "Onshape Status"
 msgstr "Onshape स्थिति"
 
 msgid "Onshape sync"
-msgstr ""
+msgstr "Onshape सिंक"
 
 msgid "Onshape Sync"
-msgstr ""
+msgstr "Onshape सिंक"
 
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "अरे! आप जिस लिंक को एक्सेस करने का प्रयास कर रहे हैं वह समाप्त हो गया है या अब वैध नहीं है।"
@@ -10614,7 +10614,7 @@ msgid "Open in MES"
 msgstr "MES में खोलें"
 
 msgid "Open in Onshape"
-msgstr ""
+msgstr "Onshape में खोलें"
 
 msgid "Open Issues"
 msgstr "खुले मुद्दे"
@@ -10629,7 +10629,7 @@ msgid "Open menu"
 msgstr "मेनू खोलें"
 
 msgid "Open Onshape settings"
-msgstr ""
+msgstr "Onshape सेटिंग्स खोलें"
 
 msgid "Open payables by supplier and age"
 msgstr "आपूर्तिकर्ता और आयु द्वारा खुले देनदारी"
@@ -11018,7 +11018,7 @@ msgid "Part is configured for manufacturing"
 msgstr "भाग विनिर्माण के लिए कॉन्फ़िगर किया गया है"
 
 msgid "Part number"
-msgstr ""
+msgstr "भाग संख्या"
 
 msgid "Part Number"
 msgstr "भाग संख्या"
@@ -11791,13 +11791,13 @@ msgid "Pull from Inventory"
 msgstr "इन्वेंटरी से खींचें"
 
 msgid "Pull from Onshape"
-msgstr ""
+msgstr "Onshape से लाएं"
 
 msgid "Pull, map, and load your data"
 msgstr "अपना डेटा खींचें, मैप करें, और लोड करें"
 
 msgid "Pulling the latest released CAD from Onshape"
-msgstr ""
+msgstr "Onshape से नवीनतम जारी CAD लाया जा रहा है"
 
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP से खरीद और निर्माण करें"
@@ -12424,16 +12424,16 @@ msgid "Release Control"
 msgstr "जारी करने का नियंत्रण"
 
 msgid "Release exceptions"
-msgstr ""
+msgstr "रिलीज़ अपवाद"
 
 msgid "Release Job"
 msgstr "जॉब रिलीज़ करें"
 
 msgid "Release state"
-msgstr ""
+msgstr "रिलीज़ स्थिति"
 
 msgid "Release State"
-msgstr ""
+msgstr "रिलीज़ स्थिति"
 
 msgid "Released"
 msgstr "जारी किया गया"
@@ -12854,7 +12854,7 @@ msgid "Revision status"
 msgstr "संशोधन स्थिति"
 
 msgid "Revision unknown"
-msgstr ""
+msgstr "रिवीज़न अज्ञात"
 
 msgid "Revisions"
 msgstr "संशोधन"
@@ -12978,7 +12978,7 @@ msgid "Rules that decide where each item gets stored"
 msgstr "नियम जो तय करते हैं कि प्रत्येक आइटम कहाँ संग्रहीत होता है"
 
 msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
-msgstr ""
+msgstr "इस तालिका को भरने के लिए किसी पार्ट के <0>BoM Explorer</0> से BOM सिंक चलाएं"
 
 msgid "Run acceptance testing"
 msgstr "स्वीकृति परीक्षण चलाएं"
@@ -13252,11 +13252,11 @@ msgid "Scan this with your authenticator app, then enter the 6-digit code it sho
 msgstr "अपने प्रमाणकर्ता ऐप से इसे स्कैन करें, फिर इसके द्वारा दिखाया गया 6-अंकीय कोड दर्ज करें।"
 
 msgid "Scanned"
-msgstr ""
+msgstr "स्कैन किए गए"
 
 #. placeholder {0}: run.revisionsScanned
 msgid "Scanned {0}"
-msgstr ""
+msgstr "स्कैन किए गए {0}"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -14037,7 +14037,7 @@ msgstr "सिंक विकल्प दिखाएं"
 
 #. placeholder {0}: run.failed
 msgid "Show the {0} parts that failed"
-msgstr ""
+msgstr "विफल {0} पार्ट्स दिखाएं"
 
 msgid "Show Trailing Zeros"
 msgstr "अनुगामी शून्य दिखाएं"
@@ -14144,7 +14144,7 @@ msgstr "छोड़ा गया"
 
 #. placeholder {0}: countSkipped(run)
 msgid "Skipped {0}"
-msgstr ""
+msgstr "छोड़े गए {0}"
 
 msgid "Slack"
 msgstr "Slack"
@@ -14304,7 +14304,7 @@ msgid "Start {0} Day Free Trial"
 msgstr "{0} दिन की निःशुल्क परीक्षण शुरू करें"
 
 msgid "Start a sync to pull released Onshape models and drawings onto matching parts."
-msgstr ""
+msgstr "मेल खाते पार्ट्स पर जारी Onshape मॉडल और ड्राइंग लाने के लिए सिंक शुरू करें।"
 
 msgid "Start counting"
 msgstr "गिनती शुरू करें"
@@ -14331,7 +14331,7 @@ msgid "Start Learning"
 msgstr "सीखना शुरू करें"
 
 msgid "Start new sync"
-msgstr ""
+msgstr "नया सिंक शुरू करें"
 
 msgid "Start Now"
 msgstr "अभी शुरू करें"
@@ -14343,7 +14343,7 @@ msgid "Start of Tax Year"
 msgstr "कर वर्ष की शुरुआत"
 
 msgid "Start sync"
-msgstr ""
+msgstr "सिंक शुरू करें"
 
 msgid "Start Time"
 msgstr "शुरुआत का समय"
@@ -14357,7 +14357,7 @@ msgstr "शुरू किया गया"
 msgid "Starting…"
 msgstr "शुरू हो रहा है…"
 msgid "Started by"
-msgstr ""
+msgstr "द्वारा शुरू किया गया"
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
@@ -14366,7 +14366,7 @@ msgid "State province"
 msgstr "राज्य प्रांत"
 
 msgid "State synced"
-msgstr ""
+msgstr "स्थिति सिंक की गई"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -14815,19 +14815,19 @@ msgid "Sync Activity"
 msgstr "सिंक गतिविधि"
 
 msgid "Sync again"
-msgstr ""
+msgstr "फिर सिंक करें"
 
 msgid "Sync details"
-msgstr ""
+msgstr "सिंक विवरण"
 
 msgid "Sync did not complete — try again"
-msgstr ""
+msgstr "सिंक पूरा नहीं हुआ — पुनः प्रयास करें"
 
 msgid "Sync operation"
 msgstr "सिंक संचालन"
 
 msgid "Sync started"
-msgstr ""
+msgstr "सिंक शुरू हुआ"
 
 msgid "Sync Tie-Out"
 msgstr "सिंक समंजन"
@@ -14837,16 +14837,16 @@ msgstr "सिंक किया गया"
 
 #. placeholder {0}: run.synced
 msgid "Synced {0}"
-msgstr ""
+msgstr "सिंक किए गए {0}"
 
 msgid "Synced by"
-msgstr ""
+msgstr "द्वारा सिंक किया गया"
 
 msgid "Synced by {actorName}"
-msgstr ""
+msgstr "{actorName} द्वारा सिंक किया गया"
 
 msgid "Syncing"
-msgstr ""
+msgstr "सिंक हो रहा है"
 
 msgid "System"
 msgstr "सिस्टम"
@@ -15084,7 +15084,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "The bill of materials can only be synced into a draft method"
-msgstr ""
+msgstr "सामग्री की सूची केवल ड्राफ्ट विधि में सिंक की जा सकती है"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "सभी पोस्ट की गई जर्नल पंक्तियों की पुस्तक, खाते द्वारा योग किया गया - केवल तभी लिखा जाता है जब कंपनी के लिए लेखांकन सक्षम हो।"
@@ -16921,7 +16921,7 @@ msgid "VAT Number"
 msgstr "VAT संख्या"
 
 msgid "Vendor"
-msgstr ""
+msgstr "आपूर्तिकर्ता"
 
 msgid "Vendor Write-Off Income"
 msgstr "विक्रेता राइट-ऑफ आय"
@@ -17803,7 +17803,7 @@ msgid "You do not have permission to edit workflows"
 msgstr "आपके पास वर्कफ़्लो संपादित करने की अनुमति नहीं है"
 
 msgid "You do not have permission to start a sync"
-msgstr ""
+msgstr "आपको सिंक शुरू करने की अनुमति नहीं है"
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "आपको इस सामग्री सूची को संपादित करने की अनुमति नहीं है।"
