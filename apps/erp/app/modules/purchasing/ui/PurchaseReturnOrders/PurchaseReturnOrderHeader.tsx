@@ -58,6 +58,12 @@ const PurchaseReturnOrderHeader = () => {
   const replacementFetcher = useFetcher<{ success: boolean }>();
   const submit = useSubmit();
 
+  // Credit is capped at shipped quantity — the button is useless before
+  // anything has been shipped back.
+  const hasShippedQuantity = routeData.lines.some(
+    (line) => Number(line.quantityShipped) > 0
+  );
+
   // Same pattern as the PO header's ship: POST the source document to the
   // shipment create route, which drafts the shipment and redirects into it.
   const ship = () => {
@@ -177,14 +183,16 @@ const PurchaseReturnOrderHeader = () => {
 
             {!["Draft", "Cancelled"].includes(status ?? "") && (
               <>
-                <Button
-                  leftIcon={<LuCreditCard />}
-                  variant="secondary"
-                  isDisabled={!permissions.can("create", "invoicing")}
-                  onClick={creditDisclosure.onOpen}
-                >
-                  <Trans>Issue Credit</Trans>
-                </Button>
+                {hasShippedQuantity && (
+                  <Button
+                    leftIcon={<LuCreditCard />}
+                    variant="secondary"
+                    isDisabled={!permissions.can("create", "invoicing")}
+                    onClick={creditDisclosure.onOpen}
+                  >
+                    <Trans>Issue Credit</Trans>
+                  </Button>
+                )}
 
                 {purchaseReturnOrder.replacementPurchaseOrderId ? (
                   <Button

@@ -77,6 +77,11 @@ const SalesReturnOrderHeader = () => {
   const hasReturnToCustomerLine = routeData.lines.some(
     (line) => line.disposition === "Return to Customer"
   );
+  // Credit is capped at received quantity — the button is useless before
+  // anything has been received.
+  const hasReceivedQuantity = routeData.lines.some(
+    (line) => Number(line.quantityReceived) > 0
+  );
 
   const confirmDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
@@ -202,14 +207,16 @@ const SalesReturnOrderHeader = () => {
 
             {!["Draft", "Cancelled"].includes(status ?? "") && (
               <>
-                <Button
-                  leftIcon={<LuCreditCard />}
-                  variant="secondary"
-                  isDisabled={!permissions.can("create", "invoicing")}
-                  onClick={creditDisclosure.onOpen}
-                >
-                  <Trans>Issue Credit</Trans>
-                </Button>
+                {hasReceivedQuantity && (
+                  <Button
+                    leftIcon={<LuCreditCard />}
+                    variant="secondary"
+                    isDisabled={!permissions.can("create", "invoicing")}
+                    onClick={creditDisclosure.onOpen}
+                  >
+                    <Trans>Issue Credit</Trans>
+                  </Button>
+                )}
 
                 {salesReturnOrder.replacementSalesOrderId ? (
                   <Button
