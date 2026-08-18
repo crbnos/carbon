@@ -62,9 +62,11 @@ function WorkflowEdgeImpl({
       />
       {!isReadOnly && (
         <EdgeLabelRenderer>
-          {/* The renderer's container is pointer-events:none, so the button opts back in. */}
+          {/* The renderer's container is pointer-events:none, so the button opts back in.
+              z above 1000, the z-index React Flow gives a selected node — otherwise a
+              node's port label paints over this button. */}
           <div
-            className="nodrag nopan pointer-events-auto absolute"
+            className="nodrag nopan pointer-events-auto absolute z-[1001]"
             style={{
               transform: `translate(-50%, -60%) translate(${labelX}px, ${labelY}px)`
             }}
