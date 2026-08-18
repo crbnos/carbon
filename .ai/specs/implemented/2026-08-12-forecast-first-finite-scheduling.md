@@ -58,7 +58,7 @@ Scheduling becomes a single regenerative pass per **location**:
 - **Order:** jobs sorted **deadline class first** (`deadlineType`: ASAP → Hard Deadline → Soft Deadline → No Deadline, the ranking already in `priority-calculator.ts`), then `dueDate ASC NULLS LAST → job.priority ASC → createdAt ASC`; operations within a job in DAG order. Ties deterministic. Leading with deadline class is what makes a new ASAP order (which often has no due date) claim capacity first instead of sorting to the back on a null due date.
 - **Placement:** forward-ASAP — earliest feasible slot from `max(now, material-ready, predecessor finish)`. **The backward-pass floor is removed**; `date-calculator.ts`'s business-day targeting is deleted from the placement path. Sticky work centers are the default for ops that have one; ops without a work center get selection (earliest finish among process candidates) — this replaces the `initial`/`reschedule` mode split with one uniform rule.
 - **Remaining work, not standard work:** for started operations, remaining labor/machine hours = standard × `(1 − quantityComplete/operationQuantity)` (clamped ≥ 0); setup counts as done once any production event exists on the operation. Anchored at `now`.
-- **Outputs, written transactionally per run:** `jobOperation.startDate/dueDate` (placement results), per-op conflict flags + notes (unchanged shape), `capacityReservation` rows (now a **materialized output** — delete-all-for-location + bulk insert, `scenarioId IS NULL`), and `job.projectedCompletionAt` = last operation's placed end.
+- **Outputs, written transactionally per run:** `jobOperation.startDate` + `jobOperation.projectedCompletionAt` (placement results — see the Dual Dates section; `jobOperation.dueDate` is the backward need-by target, diff-written by the need-by pre-pass, never by placement), per-op conflict flags + notes (unchanged shape), `capacityReservation` rows (now a **materialized output** — delete-all-for-location + bulk insert, `scenarioId IS NULL`), and `job.projectedCompletionAt` = last operation's placed end.
 - **Overdue verdict:** a job is flagged late when `businessDay(projectedCompletionAt, locationTz) > job.dueDate`, with the existing wait-attribution machinery naming the binding resource. Slack (days early) is now a real, displayable number because ASAP placement finishes as early as capacity allows.
 
 Determinism is a hard requirement: identical inputs + identical `now` ⇒ identical schedule. That, plus sticky work centers and stable ordering, is the nervousness control that makes full regeneration safe.
@@ -313,3 +313,29 @@ Existing rows with `trainingCompleted = false` become qualified (intended); soft
 | Forward-ASAP pulls work early (WIP, early material issue) | Low/Med | The sim is a forecast; execution follows the dispatch queue; optional release damping ("start no earlier than X days before need") is a clean later add |
 | 30s debounce too slow for interactive due-date drags | Low | Stamps give immediate UI feedback ("recalculating…"); tune debounce after measuring regen cost |
 | Deleting `schedulingPolicy` forecloses per-WC dispatch rules | Low | No UI ever shipped; re-add later only as a placement-order input, which the sim structure now makes possible |
+
+## Dual Dates — need-by targets vs projected completion (implemented 2026-08-18)
+
+> Absorbed from the standalone 2026-08-15 dual-dates spec at consolidation (Brad: one true artifact). Industry precedent: the MRP-II/SAP dual-date model — "basic dates" from backward lead-time scheduling vs "production dates" from capacity scheduling.
+
+Every operation carries two dates with distinct meanings:
+
+| | `jobOperation.dueDate` (need-by) | `jobOperation.projectedCompletionAt` (forecast) |
+|---|---|---|
+| Direction | Backward from `job.dueDate` | Forward from now, finite capacity |
+| Anchored to | Demand (due date + routing + lead times) | Reality (capacity, disruptions, progress) |
+| Changes when | Due date, routing, or lead times change | Any scheduling input changes (every regen) |
+| Type | `DATE` (day-granular target) | `TIMESTAMP WITH TIME ZONE` (exact placed end) |
+| Means | "Finish by this day or the job slips" | "This is when it will actually finish" |
+
+`startDate` keeps its forward-projected-start meaning (board `ORDER BY` and tie-breaks unchanged).
+
+**The backward pass** (`need-by-calculator.ts`, ported from main's `BackwardSchedulingStrategy`): reverse topological walk anchored on `job.dueDate`; each op due at its earliest dependent constraint minus that dependent's `operationLeadTime` (revived columns) minus `assemblyLeadTime` at assembly edges; need-by start = due minus `ceil(durationHours / calendarHoursPerDay(wc))` working days; `With Previous` copies its partner; pins pass through and propagate upstream; no conflict flags. Day-lengths and working days come from the availability ladder via `calendarAdapters` — the working-day test uses the calendar's **weekly openness pattern**, not literal window presence, so targets resolve for dates outside the loaded [now, horizon] windows (regression-tested: no year-runaway) and stay invariant to date-specific capacity loss (downtime moves projections, never targets). **Cadence:** recomputed as a pure pre-step in every regen; `dueDate` is diff-written (zero writes on quiet regens). **Hard rule, test-enforced:** placement reads nothing from `op.dueDate` (one documented exception: a pinned Outside-Processing op's chaining window); the determinism suite asserts placements are byte-identical with and without targets (mutation-tested).
+
+**Pins:** `manuallyScheduled` = a human owns the need-by (`updateJobOperationDueDate` + the BOP picker, which now fires the regen wave). The old frozen-window placement branch is removed — pinned ops place normally; the pin propagates upstream through the backward walk.
+
+**Lateness & urgency:** job verdict unchanged (projected vs `job.dueDate`; newly-late digest unchanged). Per-op behind-target (projected day > need-by) is an **informational amber state** on BOP rows, ops-board cards, and MES operation detail — never `hasConflict`. When the job is late, `composeBehindTarget` appends "First behind target: {op} (due X, projected Y)" to the job's cause sentence (expedite dialog). Consumers that keyed urgency on op `dueDate` (MES queue sort + overdue, ops-board overdue, Capacity Demand buckets, picking schedule) became semantically correct with no code change. `getJobPromiseDate`'s `max(op.dueDate)` fallback was removed (circular under need-by semantics).
+
+**Schema** (`20260818031629_dual-dates.sql`, forward migration — `get_job_operation_by_id`'s newest definition was main-owned, so no in-place edit): `jobOperation.projectedCompletionAt` + column comments pinning both contracts; `get_active_job_operations_by_location` and `get_job_operation_by_id` return the projection. No backfill — the first regen rewrites both date columns.
+
+**Verification:** 155 engine tests green (need-by walk, adapters, placement isolation, target stability); browser-verified live 2026-08-18 — all five scenarios PASS (BOP dual dates; due-date drag tightens targets while projections hold; pin survives regens and re-derives upstream; downtime flips amber behind-target with byte-identical targets and the first-behind-target cause; MES projected line with unchanged queue order). The browser run surfaced and fixed two defects: the weekly-pattern working-day test (year-runaway) and the pin's missing regen emit.

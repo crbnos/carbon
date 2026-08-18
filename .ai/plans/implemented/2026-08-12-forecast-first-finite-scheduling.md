@@ -599,3 +599,27 @@ grep -c 'msgstr ""' packages/locale/locales/es/erp.po
 **Verify:** /test run report with all scenarios passing (or precise failure notes fed back into the relevant task).
 
 **Out of scope:** load/perf testing in the browser; MES flows.
+
+---
+
+## Extension: Dual Dates (2026-08-15 → 2026-08-18, complete)
+
+Absorbed from the standalone `2026-08-15-dual-dates-due-vs-projected` plan at
+consolidation; full task text in git history of that file. All 12 tasks landed,
+one commit per task:
+
+- [x] D1 Migration `20260818031629_dual-dates.sql` (projectedCompletionAt + RPC outputs)
+- [x] D2 Apply + regenerate types
+- [x] D3 `need-by-calculator.ts` (pure backward walk + calendarAdapters, 13 tests)
+- [x] D4 Engine wiring: need-by pre-pass, unified diff-writing persist, pins un-frozen
+- [x] D5 Placement-isolation + target-stability determinism guards (mutation-tested)
+- [x] D6 Services: promise-date fallback removed, projection threaded to boards/MES
+- [x] D7 BOP dual dates + behind-target amber
+- [x] D8 Ops-board ItemCard + MES operation detail projected line
+- [x] D9 `composeBehindTarget` first-behind-target attribution on the job cause
+- [x] D10 Docs sync (rule + AGENTS.md + adoption test plan)
+- [x] D11 i18n (96 strings across 12 locales)
+- [x] D12 Browser verification — 5/5 PASS; found+fixed: weekly-pattern working-day
+      test (year-runaway) and pin's missing `schedule.inputs.changed` emit
+
+Engine suite after extension: 155 passed / 0 failed.
