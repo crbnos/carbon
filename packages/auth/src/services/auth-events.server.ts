@@ -10,6 +10,7 @@ export type AuthEvent =
   | "mfa_challenge_success"
   | "mfa_challenge_failed"
   | "permission_denied"
+  | "account_auto_deactivated"
   | "logout";
 
 /**

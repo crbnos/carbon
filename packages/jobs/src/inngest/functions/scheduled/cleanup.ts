@@ -1,6 +1,16 @@
+import { logAuthEvent } from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { deactivateUser } from "@carbon/auth/users.server";
+import { CONTROLLED_ENVIRONMENT } from "@carbon/env";
 import { NotificationEvent } from "@carbon/notifications";
+import { datetime } from "@carbon/utils";
+import { sql } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import {
+  type InactiveAccountCandidate,
+  selectInactiveAccounts
+} from "./inactive-accounts";
 
 // Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
 // and the compact pipeline COPIES what must survive into `private` (never an
@@ -11,6 +21,149 @@ const STAGED_RAW_TTL_DAYS = 7;
 
 // Agent chat threads are transient — purge after 30 days of inactivity.
 const AGENT_THREAD_TTL_DAYS = 30;
+
+// NIST 800-171 3.5.6 / AC-2(3): auto-disable accounts idle beyond this many
+// days. 35 is the NIST 800-53 AC-2(3) baseline. Only enforced in a controlled
+// (CUI/ITAR) environment — see the `disable-inactive-accounts` step, which is a
+// no-op otherwise, so ordinary deployments are unaffected.
+const INACTIVE_ACCOUNT_DISABLE_DAYS = 35;
+
+// Cap deactivations per daily run so a first enforcement pass over a large
+// backlog cannot stampede (mirrors the agent-thread step's batch limit). The
+// remainder drains over subsequent runs — the candidate query naturally
+// excludes accounts already disabled.
+const MAX_DEACTIVATIONS_PER_RUN = 200;
+
+// `assignee` (single assigned user) columns that reference `user.id` on
+// company-scoped tables. `deactivateEmployee` does NOT clear these (many FKs are
+// NO ACTION / RESTRICT / cascade to a different parent), so a disabled user
+// lingers as the assignee of open work. Derived from the migration audit; the
+// per-table UPDATE is defensively wrapped so a schema drift is logged, not fatal.
+const ASSIGNEE_TARGETS: ReadonlyArray<{ table: string; column: string }> = [
+  { table: "job", column: "assignee" },
+  { table: "jobOperation", column: "assignee" },
+  { table: "quote", column: "assignee" },
+  { table: "salesOrder", column: "assignee" },
+  { table: "salesOrderShipment", column: "assignee" },
+  { table: "salesRfq", column: "assignee" },
+  { table: "purchasingRfq", column: "assignee" },
+  { table: "purchaseOrder", column: "assignee" },
+  { table: "purchaseInvoice", column: "assignee" },
+  { table: "supplierQuote", column: "assignee" },
+  { table: "supplier", column: "assignee" },
+  { table: "customer", column: "assignee" },
+  { table: "item", column: "assignee" },
+  { table: "part", column: "assignee" },
+  { table: "service", column: "assignee" },
+  { table: "procedure", column: "assignee" },
+  { table: "pickingList", column: "assignee" },
+  { table: "shipment", column: "assignee" },
+  { table: "receipt", column: "assignee" },
+  { table: "stockTransfer", column: "assignee" },
+  { table: "maintenanceDispatch", column: "assignee" },
+  { table: "changeOrder", column: "assignee" },
+  { table: "changeOrderActionTask", column: "assignee" },
+  { table: "nonConformance", column: "assignee" },
+  { table: "nonConformanceReviewer", column: "assignee" },
+  { table: "nonConformanceInvestigationTask", column: "assignee" },
+  { table: "nonConformanceActionTask", column: "assignee" },
+  { table: "nonConformanceApprovalTask", column: "assignee" },
+  { table: "qualityDocument", column: "assignee" },
+  { table: "riskRegister", column: "assignee" },
+  { table: "training", column: "assignee" },
+  { table: "periodCloseTask", column: "assigneeId" },
+  { table: "periodCloseTaskDefinition", column: "defaultAssigneeId" }
+];
+
+// Array-of-userId notification-group columns on `companySettings`. A disabled
+// user must fall out of these so they stop being a notification recipient.
+const NOTIFICATION_GROUP_COLUMNS: ReadonlyArray<string> = [
+  "digitalQuoteNotificationGroup",
+  "gaugeCalibrationExpiredNotificationGroup",
+  "inventoryJobCompletedNotificationGroup",
+  "salesJobCompletedNotificationGroup",
+  "rfqReadyNotificationGroup",
+  "supplierQuoteNotificationGroup",
+  "suggestionNotificationGroup",
+  "maintenanceDispatchNotificationGroup",
+  "qualityDispatchNotificationGroup",
+  "operationsDispatchNotificationGroup",
+  "otherDispatchNotificationGroup"
+];
+
+/**
+ * Scrub residual `userId` references left behind by the deactivation flow, per
+ * `.claude/rules/user-employee-job-relationships.md`: assignee columns,
+ * `workCenterEmployee`, and the `companySettings` notification-group arrays.
+ * Each category is wrapped independently so one failure never blocks the others.
+ */
+async function scrubUserReferences(
+  db: ReturnType<typeof getJobDatabaseClient>,
+  userId: string,
+  companyId: string,
+  logger: {
+    info: (msg: string, meta?: unknown) => void;
+    error: (msg: string, meta?: unknown) => void;
+  }
+): Promise<void> {
+  // 1. Assignee columns → NULL (company-scoped).
+  for (const { table, column } of ASSIGNEE_TARGETS) {
+    try {
+      await sql`
+        UPDATE ${sql.table(table)}
+        SET ${sql.ref(column)} = NULL
+        WHERE ${sql.ref(column)} = ${userId} AND "companyId" = ${companyId}
+      `.execute(db);
+    } catch (error) {
+      logger.error("Failed to scrub assignee reference", {
+        table,
+        column,
+        userId,
+        companyId,
+        error
+      });
+    }
+  }
+
+  // 2. Notification-group arrays on companySettings → remove the userId.
+  try {
+    const assignments = NOTIFICATION_GROUP_COLUMNS.map(
+      (col) => sql`${sql.ref(col)} = array_remove(${sql.ref(col)}, ${userId})`
+    );
+    await sql`
+      UPDATE "companySettings"
+      SET ${sql.join(assignments)}
+      WHERE "id" = ${companyId}
+    `.execute(db);
+  } catch (error) {
+    logger.error("Failed to scrub notification-group references", {
+      userId,
+      companyId,
+      error
+    });
+  }
+
+  // 3. workCenterEmployee — an untracked table (no migration / generated type)
+  // that the scheduler reads. Scope the delete to the company's work centers.
+  // If the table is absent this is a harmless skip.
+  try {
+    await sql`
+      DELETE FROM "workCenterEmployee"
+      WHERE "userId" = ${userId}
+        AND "workCenterId" IN (
+          SELECT "id" FROM "workCenter" WHERE "companyId" = ${companyId}
+        )
+    `.execute(db);
+  } catch {
+    logger.info(
+      "Skipped workCenterEmployee scrub (table absent or unavailable)",
+      {
+        userId,
+        companyId
+      }
+    );
+  }
+}
 
 type NotifyEvent = {
   name: "carbon/notify";
@@ -486,6 +639,120 @@ export const cleanupFunction = inngest.createFunction(
         logger.info("Pruned stale staged raws", {
           relocated: relocated.size,
           orphaned: orphans.length
+        });
+      }
+    });
+
+    // NIST 800-171 3.5.6 / AC-2(3): auto-disable employee accounts idle beyond
+    // INACTIVE_ACCOUNT_DISABLE_DAYS. Controlled (CUI/ITAR) environments only —
+    // a no-op elsewhere, so ordinary deployments keep their prior behavior.
+    await step.run("disable-inactive-accounts", async () => {
+      if (!CONTROLLED_ENVIRONMENT) {
+        logger.info(
+          "Not a controlled environment — skipping inactive-account auto-deactivation"
+        );
+        return;
+      }
+
+      const nowIso = datetime.timestamp();
+      const db = getJobDatabaseClient(1);
+
+      // The last-login signal is GoTrue's `auth.audit_log_entries` (action
+      // 'login'), which PostgREST does not expose — hence a raw query on the
+      // jobs Kysely client rather than the service-role REST client. Only active
+      // employee memberships are considered; console/device/admin/developer
+      // accounts are flagged `protected` and never auto-disabled. Timestamps are
+      // formatted to ISO-8601 UTC in SQL so no JS `Date` arithmetic is needed.
+      let candidateRows: InactiveAccountCandidate[];
+      try {
+        const result = await sql<InactiveAccountCandidate>`
+          SELECT
+            utc."userId" AS "userId",
+            utc."companyId" AS "companyId",
+            to_char(
+              u."createdAt" AT TIME ZONE 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+            ) AS "createdAt",
+            to_char(
+              la.last_login AT TIME ZONE 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+            ) AS "lastSignInAt",
+            (
+              u."isConsoleOperator"
+              OR COALESCE(u."admin", false)
+              OR COALESCE(u."developer", false)
+            ) AS "protected"
+          FROM "userToCompany" utc
+          JOIN "user" u ON u."id" = utc."userId"
+          JOIN "employee" e
+            ON e."id" = utc."userId" AND e."companyId" = utc."companyId"
+          LEFT JOIN (
+            SELECT
+              payload->>'actor_id' AS user_id,
+              MAX(created_at) AS last_login
+            FROM auth.audit_log_entries
+            WHERE payload->>'action' = 'login'
+            GROUP BY payload->>'actor_id'
+          ) la ON la.user_id = u."id"
+          WHERE utc."role" = 'employee'
+            AND COALESCE(u."active", true) = true
+            AND e."active" = true
+        `.execute(db);
+        candidateRows = result.rows;
+      } catch (error) {
+        logger.error("Failed to read inactive-account candidates", { error });
+        return;
+      }
+
+      const selected = selectInactiveAccounts(candidateRows, {
+        nowIso,
+        thresholdDays: INACTIVE_ACCOUNT_DISABLE_DAYS
+      });
+      const toDeactivate = selected.slice(0, MAX_DEACTIVATIONS_PER_RUN);
+
+      if (toDeactivate.length === 0) {
+        logger.info("No inactive accounts to disable", {
+          threshold: INACTIVE_ACCOUNT_DISABLE_DAYS,
+          scanned: candidateRows.length
+        });
+        return;
+      }
+
+      logger.info("Disabling inactive accounts", {
+        count: toDeactivate.length,
+        eligible: selected.length,
+        threshold: INACTIVE_ACCOUNT_DISABLE_DAYS
+      });
+
+      for (const account of toDeactivate) {
+        const result = await deactivateUser(
+          serviceRole,
+          account.userId,
+          account.companyId
+        );
+        if (!result.success) {
+          logger.error("Failed to auto-deactivate inactive account", {
+            userId: account.userId,
+            companyId: account.companyId,
+            message: result.message
+          });
+          continue;
+        }
+
+        await scrubUserReferences(
+          db,
+          account.userId,
+          account.companyId,
+          logger
+        );
+
+        // Structured auth event for the security/SIEM trail (3.3.1 / 3.3.2).
+        logAuthEvent("account_auto_deactivated", {
+          actor: "system:cleanup",
+          userId: account.userId,
+          companyId: account.companyId,
+          reason: `inactive > ${INACTIVE_ACCOUNT_DISABLE_DAYS}d`,
+          lastActivityAt: account.lastActivityAt
         });
       }
     });
