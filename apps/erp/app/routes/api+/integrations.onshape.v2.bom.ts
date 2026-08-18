@@ -103,11 +103,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // whole diff. DERIVED from the assembly's own row, never from a query
     // parameter the caller supplies — a caller wanting to bypass a
     // client-asserted flag would simply omit it.
-    if (
-      !settings.allowUnreleasedSync &&
-      parsed.topLevel &&
-      !parsed.topLevel.revision
-    ) {
+    // An unreadable top-level row counts as UNRELEASED, not as absent: a
+    // released assembly always has a part number (Onshape requires one to
+    // release), so refusing on null cannot block a released import — while
+    // an assembly with no part number assigned is exactly the shape this
+    // setting exists for.
+    if (!settings.allowUnreleasedSync && !parsed.topLevel?.revision) {
       return {
         data: null,
         error:

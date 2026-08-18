@@ -586,6 +586,22 @@ export type Events = {
       releaseId?: string;
       releaseName?: string;
       revision?: string;
+      /** releaseId when present, else elementId — the concurrency bucket. */
+      groupKey: string;
+    };
+  };
+  "carbon/onshape-v2-item-assets": {
+    data: {
+      companyId: string;
+      userId: string;
+      itemId: string;
+      documentId: string;
+      versionId: string;
+      elementId: string;
+      partId?: string | null;
+      configuration?: string | null;
+      /** Stable across runs — the model filename is the attach idempotency key. */
+      assetBaseName: string;
     };
   };
   "carbon/onshape-release-import": {

@@ -26,15 +26,19 @@ import {
   buildOnshapeBomTree,
   getOnshapeClient,
   getOnshapeV2Settings,
+  isInitialRevisionLabel,
   type OnshapeBomNode,
   parseOnshapeBom,
+  readElementMappingsForItems,
   readItemIdsForElements,
   reconcileMethodMaterials,
   resolveBomRow,
+  revisionsMatch,
   writeElementMapping
 } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/lib/trigger";
 import { NotificationEvent } from "@carbon/notifications";
+import { RetryAfterError } from "inngest";
 import { z } from "zod";
 import { inngest } from "../../client";
 import { withRateLimitRetry } from "./onshape-backfill";
@@ -42,6 +46,7 @@ import type { OnshapeBomImportOutcome } from "./onshape-bom-outcome";
 import { summarizeOutcomeForUser } from "./onshape-bom-outcome";
 import {
   groupAssetTargetsByElement,
+  isTransientExportError,
   pullOnshapeAssetsForElement
 } from "./onshape-v2-assets";
 
@@ -123,6 +128,107 @@ async function assertWritableMethod(
   }
 
   return method.data;
+}
+
+type AdoptResult =
+  | { kind: "adopted"; itemId: string }
+  | { kind: "refused"; reason: string; protectedItemIds: string[] };
+
+/**
+ * Claim an existing Carbon part for this Onshape element, or refuse to.
+ *
+ * Reached whenever the number is already taken by an item the element mapping
+ * does not know about: a part a human made, or the wreckage of an attempt that
+ * died between the item insert and its mapping write.
+ *
+ * The refusal is the important half. `writeElementMapping` deletes by entityId
+ * alone, so adopting an item that already belongs to a DIFFERENT Onshape
+ * element would destroy that link and silently re-point the item here — a
+ * part-number string match deciding an identity join, which is the one thing
+ * this pipeline does not do. The import route already refuses exactly this for
+ * the target item.
+ */
+async function adoptExistingItem(args: {
+  carbon: Carbon;
+  payload: Payload;
+  row: {
+    partNumber: string;
+    revision: string;
+    documentId: string;
+    elementId: string;
+    partId: string | null;
+  };
+  externalId: string;
+  candidateItemIds: string[];
+}): Promise<AdoptResult> {
+  const { carbon, payload, row, externalId, candidateItemIds } = args;
+
+  if (candidateItemIds.length > 1) {
+    return {
+      kind: "refused",
+      reason:
+        "Several Carbon parts share this number and revision, so which one this Onshape part means is ambiguous.",
+      protectedItemIds: candidateItemIds
+    };
+  }
+
+  const itemId = candidateItemIds[0];
+  if (!itemId) {
+    return {
+      kind: "refused",
+      reason: "No item to adopt",
+      protectedItemIds: []
+    };
+  }
+
+  const existingLinks = await readElementMappingsForItems(carbon, {
+    companyId: payload.companyId,
+    itemIds: [itemId]
+  });
+  const existingRef = existingLinks.get(itemId)?.ref;
+  const existingExternalId = existingRef
+    ? buildElementExternalId(existingRef)
+    : null;
+  if (existingExternalId && existingExternalId !== externalId) {
+    return {
+      kind: "refused",
+      reason:
+        "A Carbon part with this number and revision is already linked to a different Onshape element. Unlink it before importing this one.",
+      protectedItemIds: [itemId]
+    };
+  }
+
+  // An item minted by a half-finished attempt has no `part` row, and the parts
+  // view's inner join hides it — so repair before linking.
+  const partRepair = await carbon.from("part").upsert({
+    id: row.partNumber,
+    companyId: payload.companyId,
+    createdBy: payload.userId
+  });
+  if (partRepair.error) {
+    throw new Error(
+      `Could not repair the part row for ${row.partNumber}: ${partRepair.error.message}`
+    );
+  }
+
+  await writeElementMapping(carbon, {
+    companyId: payload.companyId,
+    itemId,
+    ref: {
+      documentId: row.documentId,
+      elementId: row.elementId,
+      partId: row.partId
+    },
+    metadata: {
+      versionId: payload.versionId,
+      partNumber: row.partNumber,
+      fromUnreleasedVersion: !row.revision,
+      lastSyncedAt: new Date().toISOString()
+    },
+    createdBy: payload.userId
+  });
+
+  return { kind: "adopted", itemId };
 }
 
 /** Reconcile one method's materials against the children Onshape reports. */
@@ -277,9 +383,15 @@ export const onshapeBomImportFunction = inngest.createFunction(
     // Every 429 reschedule consumes one retry, and an import can make many
     // export calls — the backfill sets 10 for exactly this reason.
     retries: 10,
-    // One import at a time per make method: two concurrent runs would each
-    // reconcile against a list the other is changing.
-    concurrency: { key: "event.data.makeMethodId", limit: 1 }
+    // One import at a time per COMPANY. Per-make-method was too narrow: the
+    // walk recurses into child methods, so two imports of different assemblies
+    // that share a subassembly both reconcile that child's material list, each
+    // against a list the other is changing — and `methodMaterial` has no unique
+    // constraint on (makeMethodId, itemId) to catch the duplicate.
+    //
+    // It also serializes `getOnshapeClient`'s read-modify-write token refresh,
+    // which two concurrent imports for one company would otherwise race.
+    concurrency: { key: "event.data.companyId", limit: 1 }
   },
   { event: "carbon/onshape-bom-import" },
   async ({ event, step }) => {
@@ -327,6 +439,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
       const outcome: OnshapeBomImportOutcome = {
         imported: 0,
         created: 0,
+        adopted: 0,
         updated: 0,
         removed: 0,
         assetsAttached: 0,
@@ -353,11 +466,12 @@ export const onshapeBomImportFunction = inngest.createFunction(
       //
       // The queried assembly's own row IS the version's released-ness, which is
       // why includeTopLevelAssemblyRow is requested at all.
-      if (
-        !settings.allowUnreleasedSync &&
-        parsed.topLevel &&
-        !parsed.topLevel.revision
-      ) {
+      // An unreadable top-level row counts as UNRELEASED, not as absent: a
+      // released assembly always has a part number (Onshape requires one to
+      // release), so refusing on null cannot block a released import — while
+      // an assembly with no part number assigned is exactly the shape this
+      // setting exists for.
+      if (!settings.allowUnreleasedSync && !parsed.topLevel?.revision) {
         throw new Error(
           "This Onshape version has never been released and the company only syncs released versions."
         );
@@ -421,6 +535,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
         elementId: string;
         partId: string | null;
         assetBaseName: string;
+        configuration: string | null;
       }> = [];
 
       const rememberAssetRow = (
@@ -434,7 +549,19 @@ export const onshapeBomImportFunction = inngest.createFunction(
         const wvmType = row.wvmType ?? "v";
         const versionId =
           wvmType === "v" ? (row.wvmId ?? payload.versionId) : null;
-        if (!versionId) return;
+        if (!versionId) {
+          // Silently dropping this leaves an item whose model never arrives
+          // and no record of why — the same invisible gap the outcome
+          // notification exists to close.
+          outcome.assetsSkipped++;
+          outcome.skipped.push({
+            partNumber: row.partNumber,
+            revision: row.revision,
+            reason:
+              "This component is referenced from a workspace rather than a version, so there is no fixed snapshot to export its model from."
+          });
+          return;
+        }
 
         assetRows.push({
           itemId,
@@ -442,11 +569,19 @@ export const onshapeBomImportFunction = inngest.createFunction(
           versionId,
           elementId: row.elementId,
           partId: row.partId,
+          // The instance's own configuration. Without it Onshape exports the
+          // element's default, which for a configured part is a different
+          // shape from the one this BOM line names.
+          configuration: row.configuration,
           // Stable across runs: the model filename is the attach idempotency
           // key, so anything varying would mint a new modelUpload every import.
-          assetBaseName: row.revision
-            ? `${row.partNumber}.${row.revision}`
-            : row.partNumber
+          // An Onshape revision of "0" is NOT a named revision — Carbon
+          // collapses '0'/''/NULL into the same initial revision, and
+          // releaseKey does the same, so treating it as named would produce
+          // "PRT-100.0" here and "PRT-100" everywhere else.
+          assetBaseName: isInitialRevisionLabel(row.revision)
+            ? row.partNumber
+            : `${row.partNumber}.${row.revision}`
         });
       };
 
@@ -499,6 +634,84 @@ export const onshapeBomImportFunction = inngest.createFunction(
           continue;
         }
 
+        // Unmapped, but the NUMBER may still be taken. Two cases the
+        // item_unique constraint cannot catch on its own:
+        //
+        //  - An existing item at revision '' or NULL. `item_unique` is on the
+        //    RAW revision column and Postgres treats NULL as distinct, so
+        //    inserting '0' raises no conflict — while readableIdWithRevision
+        //    collapses '0', '' and NULL to the bare number, leaving two rows
+        //    indistinguishable everywhere a human looks.
+        //  - An existing item at a DIFFERENT revision. No conflict either, so a
+        //    second member of the revision family appears with no lineage. The
+        //    spec refuses this case in v1; nothing was refusing it.
+        //
+        // So resolve the family by number here, with the SAME revision
+        // semantics resolveBomRow uses, rather than relying on a constraint.
+        const siblings = await carbon
+          .from("item")
+          .select("id, revision")
+          .eq("readableId", row.partNumber)
+          .eq("type", "Part")
+          .eq("companyId", payload.companyId);
+        if (siblings.error) {
+          throw new Error(
+            `Could not check for existing parts numbered ${row.partNumber}: ${siblings.error.message}`
+          );
+        }
+
+        const siblingRows = siblings.data ?? [];
+        if (siblingRows.length > 0) {
+          const sameRevision = siblingRows.filter(
+            (sibling: { id: string; revision: string | null }) =>
+              revisionsMatch(sibling.revision, row.revision)
+          );
+
+          if (sameRevision.length > 0) {
+            const claimed = await adoptExistingItem({
+              carbon,
+              payload,
+              row,
+              externalId,
+              candidateItemIds: sameRevision.map(
+                (sibling: { id: string }) => sibling.id
+              )
+            });
+            if (claimed.kind === "adopted") {
+              mappings.set(externalId, [
+                ...(mappings.get(externalId) ?? []),
+                claimed.itemId
+              ]);
+              revisionById.set(claimed.itemId, row.revision || "0");
+              itemIdByRow.set(row.rowId, claimed.itemId);
+              rememberAssetRow(row, claimed.itemId);
+              outcome.adopted++;
+              continue;
+            }
+            protectedByRow.set(row.rowId, claimed.protectedItemIds);
+            outcome.skipped.push({
+              partNumber: row.partNumber,
+              revision: row.revision,
+              reason: claimed.reason
+            });
+            continue;
+          }
+
+          // The number exists at other revisions only. Minting here would add
+          // a family member with no revision lineage.
+          protectedByRow.set(
+            row.rowId,
+            siblingRows.map((sibling: { id: string }) => sibling.id)
+          );
+          outcome.skipped.push({
+            partNumber: row.partNumber,
+            revision: row.revision,
+            reason:
+              "Carbon has this part number at other revisions but not this one, and it is not linked to Onshape. Link the right revision first."
+          });
+          continue;
+        }
+
         // Genuinely unknown: mint it, then link it, so the next import
         // resolves it by id rather than rediscovering it.
         const created = await carbon
@@ -525,71 +738,54 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
         if (created.error || !created.data) {
           if (created.error?.code === "23505") {
-            // The number is taken by an item that is not linked to Onshape.
-            // Find it so its existing material line is PROTECTED: the import
-            // is refusing this row, and a refusal must not delete the line it
-            // refused to touch.
-            // Match item_unique exactly: (readableId, revision, companyId,
-            // type). Omitting `type` matches a Material AND a Part sharing the
-            // number — legal in Carbon — and maybeSingle then errors, leaving
-            // NOTHING protected while the user is told the row was skipped.
+            // Lost a race: something inserted this number between the family
+            // probe above and this insert. Same resolution as the probe's, so
+            // a retry after a partial mint is self-healing rather than
+            // permanently poisoned — the half-made item has no `part` row (the
+            // parts view's inner join hides it) and no mapping (so every future
+            // import re-mints and re-fails).
             const conflicting = await carbon
               .from("item")
-              .select("id")
+              .select("id, revision")
               .eq("readableId", row.partNumber)
-              .eq("revision", row.revision || "0")
-              .eq("companyId", payload.companyId)
               .eq("type", "Part")
-              .maybeSingle();
+              .eq("companyId", payload.companyId);
             if (conflicting.error) {
               throw new Error(
                 `Could not identify the item already using ${row.partNumber}: ${conflicting.error.message}`
               );
             }
-            if (conflicting.data?.id) {
-              // ADOPT it rather than refusing forever. This branch is reached
-              // not only when a human made the part, but whenever a previous
-              // attempt died between the item insert and its mapping write:
-              // the retry re-runs from the top, the insert 23505s, and without
-              // adoption that part number is poisoned permanently — the item
-              // has no `part` row (so the parts view's inner join hides it) and
-              // no mapping (so every future import re-mints and re-fails).
-              const partRepair = await carbon.from("part").upsert({
-                id: row.partNumber,
-                companyId: payload.companyId,
-                createdBy: payload.userId
+            const candidates = (conflicting.data ?? []).filter(
+              (candidate: { id: string; revision: string | null }) =>
+                revisionsMatch(candidate.revision, row.revision)
+            );
+            if (candidates.length > 0) {
+              const claimed = await adoptExistingItem({
+                carbon,
+                payload,
+                row,
+                externalId,
+                candidateItemIds: candidates.map(
+                  (candidate: { id: string }) => candidate.id
+                )
               });
-              if (partRepair.error) {
-                throw new Error(
-                  `Could not repair the part row for ${row.partNumber}: ${partRepair.error.message}`
-                );
+              if (claimed.kind === "adopted") {
+                mappings.set(externalId, [
+                  ...(mappings.get(externalId) ?? []),
+                  claimed.itemId
+                ]);
+                revisionById.set(claimed.itemId, row.revision || "0");
+                itemIdByRow.set(row.rowId, claimed.itemId);
+                rememberAssetRow(row, claimed.itemId);
+                outcome.adopted++;
+                continue;
               }
-
-              await writeElementMapping(carbon, {
-                companyId: payload.companyId,
-                itemId: conflicting.data.id,
-                ref: {
-                  documentId: row.documentId,
-                  elementId: row.elementId,
-                  partId: row.partId
-                },
-                metadata: {
-                  versionId: payload.versionId,
-                  partNumber: row.partNumber,
-                  fromUnreleasedVersion: !row.revision,
-                  lastSyncedAt: new Date().toISOString()
-                },
-                createdBy: payload.userId
+              protectedByRow.set(row.rowId, claimed.protectedItemIds);
+              outcome.skipped.push({
+                partNumber: row.partNumber,
+                revision: row.revision,
+                reason: claimed.reason
               });
-
-              mappings.set(externalId, [
-                ...(mappings.get(externalId) ?? []),
-                conflicting.data.id
-              ]);
-              revisionById.set(conflicting.data.id, row.revision || "0");
-              itemIdByRow.set(row.rowId, conflicting.data.id);
-              rememberAssetRow(row, conflicting.data.id);
-              outcome.created++;
               continue;
             }
           }
@@ -788,6 +984,27 @@ export const onshapeBomImportFunction = inngest.createFunction(
             );
             outcome.assetsAttached += pulled.attached.length;
             outcome.assetsSkipped += pulled.skipped.length;
+
+            // The optimise chain is the caller's responsibility — the attach
+            // helper says so, and both legacy callers do it. It relocates the
+            // raw out of ephemeral staging into the durable bucket, and it is
+            // what renders a thumbnail from the GLB, which is the ONLY
+            // thumbnail a per-body item can get.
+            for (const ok of pulled.attached) {
+              try {
+                await trigger("model-optimize", {
+                  companyId: payload.companyId,
+                  modelUploadId: ok.modelUploadId,
+                  userId: payload.userId
+                });
+              } catch (error) {
+                console.error(
+                  `[ONSHAPE BOM IMPORT] could not queue optimisation for ${ok.modelUploadId}`,
+                  error
+                );
+              }
+            }
+
             for (const skip of pulled.skipped) {
               outcome.skipped.push({
                 partNumber: skip.itemId,
@@ -796,8 +1013,16 @@ export const onshapeBomImportFunction = inngest.createFunction(
               });
             }
           } catch (error) {
-            // The BOM is already written and correct; report the asset failure
-            // rather than throwing the whole import away over geometry.
+            // A TRANSIENT failure is not an outcome to report — it is a reason
+            // to run again. withRateLimitRetry has already turned a 429 into a
+            // RetryAfterError by this point; catching it here would spend the
+            // job's ten retries on nothing and leave every remaining row of the
+            // assembly permanently modelless.
+            if (error instanceof RetryAfterError) throw error;
+            if (isTransientExportError(error)) throw error;
+
+            // The BOM is already written and correct; report a PERMANENT asset
+            // failure rather than throwing the whole import away over geometry.
             outcome.assetsSkipped += group.targets.length;
             outcome.skipped.push({
               partNumber: group.elementId,

@@ -1491,7 +1491,7 @@ msgstr "작업 센터의 작업 대기열에서 작업의 위치(현장이 작�
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape에 연결하는 중 예기치 않은 오류가 발생했습니다. 다시 연결해 보세요."
 
-msgid "An unreleased version carries no revision and no released assets, so its parts land on Carbon's initial revision. Pick the released assembly first if there is one."
+msgid "An unreleased version carries no revision, so its parts land on Carbon's initial revision and no released assets exist to attach. Prefer a released revision where there is one."
 msgstr ""
 
 msgid "Analytics"
@@ -2794,6 +2794,9 @@ msgstr "Carbon 클라이언트를 찾을 수 없음"
 
 msgid "Carbon column"
 msgstr "Carbon 열"
+
+msgid "Carbon could not read every release in this Onshape company, so a version marked Unreleased here may in fact be released. Check in Onshape before importing one."
+msgstr ""
 
 #. placeholder {0}: row.siblings.join(", ")
 msgid "Carbon has {0}"
@@ -10180,6 +10183,9 @@ msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
+msgid "Nothing to choose here."
+msgstr ""
+
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니다."
 
@@ -10991,9 +10997,6 @@ msgstr "먼저 속성 선택"
 
 msgid "Pick a record type…"
 msgstr "레코드 유형 선택…"
-
-msgid "Pick a released assembly once first — Carbon needs to know which Onshape document to look in."
-msgstr ""
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
 msgstr ""
@@ -13728,6 +13731,9 @@ msgstr "처음 500줄을 표시하고 있습니다"
 msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 msgstr ""
 
+msgid "Showing the most recent versions only — this document has more than Carbon lists here."
+msgstr ""
+
 msgid "Showing the newest 200 journals"
 msgstr "최신 200개 저널 표시 중"
 
@@ -15559,6 +15565,9 @@ msgstr "이 버전은 변경 공지 <0>{0}</0>에 속합니다. 거기서 편집
 
 msgid "This version cannot be opened"
 msgstr "이 버전을 열 수 없습니다."
+
+msgid "This version has no assemblies."
+msgstr ""
 
 msgid "This version is live. Create a new version to edit."
 msgstr "이 버전은 활성입니다. 편집할 새 버전을 만드십시오."

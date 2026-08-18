@@ -48,21 +48,34 @@ export async function findUnlinkedLegacyOnshapeItems(
   client: SupabaseClient<Database>,
   args: { companyId: string; limit?: number }
 ): Promise<{ count: number; items: UnlinkedLegacyItem[] }> {
-  const legacy = await client
-    .from("externalIntegrationMapping")
-    .select("entityId")
-    .eq("companyId", args.companyId)
-    .eq("entityType", ONSHAPE_MAPPING_ENTITY_TYPE)
-    .in("integration", [...LEGACY_ONSHAPE_ITEM_INTEGRATIONS]);
+  // PAGED. PostgREST caps an unbounded select at 1000 rows and says nothing
+  // about it, so a company with more legacy mappings than that would be told a
+  // migration is smaller than it is — and the warning's whole job is to state
+  // the size of the work.
+  const legacyRows: Array<{ entityId: string }> = [];
+  const PAGE = 1000;
+  for (let offset = 0; ; offset += PAGE) {
+    const page = await client
+      .from("externalIntegrationMapping")
+      .select("entityId")
+      .eq("companyId", args.companyId)
+      .eq("entityType", ONSHAPE_MAPPING_ENTITY_TYPE)
+      .in("integration", [...LEGACY_ONSHAPE_ITEM_INTEGRATIONS])
+      .order("entityId", { ascending: true })
+      .range(offset, offset + PAGE - 1);
 
-  if (legacy.error) {
-    throw new Error(
-      `Failed to read legacy Onshape mappings: ${legacy.error.message}`
-    );
+    if (page.error) {
+      throw new Error(
+        `Failed to read legacy Onshape mappings: ${page.error.message}`
+      );
+    }
+    const rows = page.data ?? [];
+    legacyRows.push(...rows);
+    if (rows.length < PAGE) break;
   }
 
   const legacyItemIds = Array.from(
-    new Set((legacy.data ?? []).map((row) => row.entityId))
+    new Set(legacyRows.map((row) => row.entityId))
   );
   if (legacyItemIds.length === 0) return { count: 0, items: [] };
 

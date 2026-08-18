@@ -7,6 +7,7 @@ const outcome = (
 ): OnshapeBomImportOutcome => ({
   imported: 0,
   created: 0,
+  adopted: 0,
   updated: 0,
   removed: 0,
   assetsAttached: 0,
@@ -78,5 +79,13 @@ describe("summarizeOutcomeForUser", () => {
   it("says nothing about skips when there were none", () => {
     const text = summarizeOutcomeForUser(outcome({ imported: 6 }));
     expect(text).toBe("6 line(s) imported, 0 part(s) created");
+  });
+
+  it("reports an adopted part as linked, not created", () => {
+    const text = summarizeOutcomeForUser(
+      outcome({ imported: 3, created: 1, adopted: 2 })
+    );
+    expect(text).toContain("1 part(s) created");
+    expect(text).toContain("2 existing part(s) linked to Onshape");
   });
 });

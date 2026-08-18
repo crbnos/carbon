@@ -10,6 +10,7 @@ export { onshapeBomImportFunction } from "./onshape-bom-import";
 export { onshapeReleaseImportFunction } from "./onshape-release-import";
 export { onshapeReleaseV2Function } from "./onshape-release-v2";
 export { onshapeRevisionSyncFunction } from "./onshape-revision-sync";
+export { onshapeV2ItemAssetsFunction } from "./onshape-v2-item-assets";
 export { paperlessPartsFunction } from "./paperless-parts";
 export {
   slackDocumentAssignmentUpdateFunction,

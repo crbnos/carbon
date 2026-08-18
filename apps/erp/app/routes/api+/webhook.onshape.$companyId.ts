@@ -336,7 +336,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
             revisionId,
             releaseId,
             releaseName,
-            revision
+            revision,
+            // Serialize the siblings of one release. Falling back to the
+            // element keeps a releaseId-less delivery in its own bucket
+            // instead of sharing one with every other company's.
+            groupKey: releaseId ?? elementId
           });
         }
         // Exclusive: never fall through to the legacy dispatches.

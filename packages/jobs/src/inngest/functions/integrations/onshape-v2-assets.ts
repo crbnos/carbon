@@ -23,7 +23,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Database } from "@carbon/database";
 import type { OnshapeClient } from "@carbon/ee/onshape";
-import { OnshapeAssetTooLargeError } from "@carbon/ee/onshape";
+import { OnshapeApiError, OnshapeAssetTooLargeError } from "@carbon/ee/onshape";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   attachModelThumbnail,
@@ -39,12 +39,39 @@ export type OnshapeAssetTarget = {
   partId: string | null;
   /** Stable across runs — the model filename is the idempotency key. */
   assetBaseName: string;
+  /**
+   * The Onshape configuration string this BOM row was instanced with.
+   *
+   * Omitting it exports the element's DEFAULT configuration, which for a
+   * configured part is a different shape from the one the BOM line names —
+   * the same class of silent geometry lie as exporting a whole Part Studio
+   * for one body.
+   */
+  configuration?: string | null;
 };
 
 export type OnshapeAssetPullResult = {
   attached: Array<{ itemId: string; modelUploadId: string }>;
   skipped: Array<{ itemId: string; reason: string }>;
 };
+
+/**
+ * Worth another attempt, as opposed to permanently unexportable.
+ *
+ * A rate limit and a 5xx are the same failure the whole job is built to
+ * survive. A status-less OnshapeApiError is the client's 60s timeout, which is
+ * also transient. A 4xx that is not 429 is the caller asking for something
+ * Onshape will refuse every time, so it stays a per-target skip.
+ */
+export function isTransientExportError(error: unknown): boolean {
+  if (error instanceof OnshapeAssetTooLargeError) return false;
+  if (error instanceof OnshapeApiError) {
+    if (error.status === 429) return true;
+    if (error.status === undefined || error.status === null) return true;
+    return error.status >= 500;
+  }
+  return false;
+}
 
 /**
  * Pull models for every target that lives in ONE Onshape element.
@@ -98,6 +125,7 @@ export async function pullOnshapeAssetsForElement(
             // the thing being exported, i.e. an assembly.
             kind: target.partId ? "partstudio" : "assembly",
             partIds: target.partId ?? undefined,
+            configuration: target.configuration ?? undefined,
             assetBaseName: target.assetBaseName
           },
           scratchDir
@@ -117,7 +145,13 @@ export async function pullOnshapeAssetsForElement(
             modelUploadId: attached.modelUploadId
           });
 
-          if (thumbnail) {
+          // Only when the ELEMENT is what was exported. getElementThumbnail
+          // takes no partId, so one Part Studio render covers every body in it
+          // — stamping it on a per-body item shows the whole studio as the
+          // picture of one part, which is the same lie `partIds` exists to
+          // stop, reintroduced as the image. A body gets its thumbnail from
+          // its own GLB via the model-thumbnail chain below.
+          if (thumbnail && target.partId === null) {
             try {
               await attachModelThumbnail(carbon, {
                 companyId: args.companyId,
@@ -130,10 +164,18 @@ export async function pullOnshapeAssetsForElement(
           }
         }
       } catch (error) {
+        // A TRANSIENT failure must escape. The callers wrap this whole function
+        // in withRateLimitRetry precisely so a 429 becomes an Inngest
+        // RetryAfterError and the run is rescheduled; swallowing it here as a
+        // per-target skip makes that wrapper unreachable and turns a rate limit
+        // — which the jobs carry ten retries for — into a permanent "no model"
+        // on every remaining row of the assembly.
+        if (isTransientExportError(error)) throw error;
+
         // A too-large export is PERMANENT: retrying cannot shrink it, so it is
         // a skip rather than a failure, matching how the legacy callers treat
-        // it. Anything else is per-target too — one unexportable body must not
-        // cost the other six their models.
+        // it. A permanent per-target failure is per-target too — one
+        // unexportable body must not cost the other six their models.
         result.skipped.push({
           itemId: target.itemId,
           reason:
@@ -167,6 +209,7 @@ export function groupAssetTargetsByElement<
     partId: string | null;
     itemId: string;
     assetBaseName: string;
+    configuration?: string | null;
   }
 >(rows: T[]) {
   const groups = new Map<
@@ -180,7 +223,9 @@ export function groupAssetTargetsByElement<
   >();
 
   for (const row of rows) {
-    const key = `${row.documentId}:${row.versionId}:${row.elementId}`;
+    // The configuration is part of the identity of what gets exported, so two
+    // configurations of one element are two groups, not one.
+    const key = `${row.documentId}:${row.versionId}:${row.elementId}:${row.configuration ?? ""}`;
     const group = groups.get(key) ?? {
       documentId: row.documentId,
       versionId: row.versionId,
@@ -193,7 +238,8 @@ export function groupAssetTargetsByElement<
       group.targets.push({
         itemId: row.itemId,
         partId: row.partId,
-        assetBaseName: row.assetBaseName
+        assetBaseName: row.assetBaseName,
+        configuration: row.configuration ?? null
       });
     }
     groups.set(key, group);

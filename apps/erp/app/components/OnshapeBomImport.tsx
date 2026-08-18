@@ -23,10 +23,10 @@ import { useFetcher } from "react-router";
 import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
 import type { loader as bomLoader } from "~/routes/api+/integrations.onshape.v2.bom";
 import type { action as importAction } from "~/routes/api+/integrations.onshape.v2.import";
-import type { loader as versionsLoader } from "~/routes/api+/integrations.onshape.v2.versions";
 import { path } from "~/utils/path";
 import type { OnshapeSelection } from "./OnshapeRevisionPicker";
 import { OnshapeRevisionPicker } from "./OnshapeRevisionPicker";
+import { OnshapeUnreleasedPicker } from "./OnshapeUnreleasedPicker";
 
 const ELEMENT_TYPE_ASSEMBLY = 1;
 
@@ -60,11 +60,7 @@ export const OnshapeBomImport = ({
   // an unreleased version has no revision to select, so what the user chooses
   // is a document version rather than a released revision.
   const unreleasedPicker = useDisclosure();
-  const versions = useFetcher<typeof versionsLoader>();
   const [selection, setSelection] = useState<OnshapeSelection | null>(null);
-  // Which Onshape document the last released pick came from — the versions
-  // loader needs a document, and only the released picker knows one.
-  const [lastDocumentId, setLastDocumentId] = useState<string | null>(null);
 
   const preview = useFetcher<typeof bomLoader>();
   const importer = useFetcher<typeof importAction>();
@@ -126,89 +122,20 @@ export const OnshapeBomImport = ({
           className="w-full"
           variant="secondary"
           isDisabled={isDisabled}
-          onClick={() => {
-            unreleasedPicker.onOpen();
-            versions.load(
-              `${path.to.api.onShapeV2Versions}?did=${encodeURIComponent(
-                lastDocumentId ?? ""
-              )}`
-            );
-          }}
+          onClick={unreleasedPicker.onOpen}
         >
           <Trans>Import an unreleased version</Trans>
         </Button>
       )}
 
-      {unreleasedPicker.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) unreleasedPicker.onClose();
-          }}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Import an unreleased version</Trans>
-              </ModalTitle>
-              <ModalDescription>
-                <Trans>
-                  An unreleased version carries no revision and no released
-                  assets, so its parts land on Carbon's initial revision. Pick
-                  the released assembly first if there is one.
-                </Trans>
-              </ModalDescription>
-            </ModalHeader>
-            <ModalBody>
-              {versions.state !== "idle" && (
-                <HStack className="w-full justify-center py-6">
-                  <Spinner />
-                </HStack>
-              )}
-              {versions.data?.error && (
-                <div className="flex w-full items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
-                  <LuTriangleAlert className="mt-0.5 shrink-0 text-destructive" />
-                  <span>{versions.data.error}</span>
-                </div>
-              )}
-              {!lastDocumentId && versions.state === "idle" && (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  <Trans>
-                    Pick a released assembly once first — Carbon needs to know
-                    which Onshape document to look in.
-                  </Trans>
-                </p>
-              )}
-              {versions.data?.data && (
-                <div className="max-h-[360px] w-full overflow-y-auto rounded-md border">
-                  {versions.data.data.versions.map((version) => (
-                    <div
-                      key={version.id}
-                      className="flex items-center justify-between gap-3 border-b px-3 py-2 text-sm last:border-b-0"
-                    >
-                      <span className="truncate">{version.name}</span>
-                      {version.released ? (
-                        <Badge variant="green">
-                          <Trans>Released</Trans>
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          <Trans>Unreleased</Trans>
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={unreleasedPicker.onClose}>
-                <Trans>Close</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <OnshapeUnreleasedPicker
+        isOpen={unreleasedPicker.isOpen}
+        onClose={unreleasedPicker.onClose}
+        onSelect={(chosen) => {
+          setSelection(chosen);
+          unreleasedPicker.onClose();
+        }}
+      />
 
       {picker.isOpen && !selection && (
         <OnshapeRevisionPicker
@@ -220,7 +147,6 @@ export const OnshapeBomImport = ({
           confirmLabel={t`Preview`}
           onSelect={(revision) => {
             setSelection(revision);
-            setLastDocumentId(revision.documentId);
             picker.onClose();
           }}
         />

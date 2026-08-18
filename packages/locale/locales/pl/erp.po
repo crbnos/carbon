@@ -1491,7 +1491,7 @@ msgstr "Pozycja operacji w kolejce jej centrum pracy — kolejność, w której 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Podczas łączenia z Onshape wystąpił nieoczekiwany błąd. Spróbuj połączyć się ponownie."
 
-msgid "An unreleased version carries no revision and no released assets, so its parts land on Carbon's initial revision. Pick the released assembly first if there is one."
+msgid "An unreleased version carries no revision, so its parts land on Carbon's initial revision and no released assets exist to attach. Prefer a released revision where there is one."
 msgstr ""
 
 msgid "Analytics"
@@ -2794,6 +2794,9 @@ msgstr "Klient Carbon nie znaleziony"
 
 msgid "Carbon column"
 msgstr "Kolumna Carbon"
+
+msgid "Carbon could not read every release in this Onshape company, so a version marked Unreleased here may in fact be released. Check in Onshape before importing one."
+msgstr ""
 
 #. placeholder {0}: row.siblings.join(", ")
 msgid "Carbon has {0}"
@@ -10180,6 +10183,9 @@ msgstr "W tym miejscu nic innego nie ma zapasów do pobrania."
 msgid "Nothing in the archive"
 msgstr "Nic w archiwum"
 
+msgid "Nothing to choose here."
+msgstr ""
+
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nic jeszcze. Krok oferuje wartości dopiero po skonfigurowaniu."
 
@@ -10991,9 +10997,6 @@ msgstr "Najpierw wybierz właściwość"
 
 msgid "Pick a record type…"
 msgstr "Wybierz typ rekordu…"
-
-msgid "Pick a released assembly once first — Carbon needs to know which Onshape document to look in."
-msgstr ""
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
 msgstr ""
@@ -13728,6 +13731,9 @@ msgstr "Pokazywanie pierwszych 500 linii"
 msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 msgstr ""
 
+msgid "Showing the most recent versions only — this document has more than Carbon lists here."
+msgstr ""
+
 msgid "Showing the newest 200 journals"
 msgstr "Wyświetlanie 200 najnowszych dzienników"
 
@@ -15559,6 +15565,9 @@ msgstr "Ta wersja należy do zmiany powiadomienia <0>{0}</0>. Edytuj tam."
 
 msgid "This version cannot be opened"
 msgstr "Ta wersja nie może być otwarta"
+
+msgid "This version has no assemblies."
+msgstr ""
 
 msgid "This version is live. Create a new version to edit."
 msgstr "Ta wersja jest aktywna. Utwórz nową wersję do edycji."

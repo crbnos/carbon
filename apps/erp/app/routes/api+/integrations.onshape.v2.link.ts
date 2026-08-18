@@ -15,6 +15,7 @@ import {
   writeRevisionMapping
 } from "@carbon/ee/onshape";
 import { validator } from "@carbon/form";
+import { trigger } from "@carbon/lib/trigger";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -320,17 +321,17 @@ export async function action({ request }: ActionFunctionArgs) {
         conflict: recorded.conflict,
         error: recorded.error
       });
-      // A CONFLICT means another Carbon item already owns this Onshape
-      // release. Reporting success would leave the user believing the link is
-      // complete when its provenance half silently belongs elsewhere.
-      if (recorded.conflict) {
-        return {
-          success: false,
-          itemId: input.itemId,
-          message:
-            "Linked the part, but another Carbon item already claims this exact Onshape release. Unlink it there, then link again."
-        };
-      }
+      // ANY failure here leaves the link half-made, not just a conflict:
+      // the element half is written and the provenance half is not, and the
+      // user is told the link is complete. A conflict gets the specific
+      // message because it names something the user can go and fix.
+      return {
+        success: false,
+        itemId: input.itemId,
+        message: recorded.conflict
+          ? "Linked the part, but another Carbon item already claims this exact Onshape release. Unlink it there, then link again."
+          : "Linked the part, but Carbon could not record which Onshape release it came from. Try linking again."
+      };
     }
   }
 
@@ -340,6 +341,33 @@ export async function action({ request }: ActionFunctionArgs) {
   const numberMismatch =
     item.data.readableId !== onshapeRevision.partNumber ||
     (item.data.revision ?? "0") !== onshapeRevision.revision;
+
+  // Pull the geometry, same as create-from-Onshape. Linking is the adoption
+  // path off the legacy integration, and the whole point is that the item ends
+  // up in the state a v2-created one would be in — which includes its model.
+  //
+  // Queued rather than awaited: an export is a translate-poll-download round
+  // trip against Onshape, minutes in the worst case and rate-limitable.
+  try {
+    await trigger("onshape-v2-item-assets", {
+      companyId,
+      userId,
+      itemId: input.itemId,
+      documentId: onshapeRevision.documentId,
+      versionId: onshapeRevision.versionId,
+      elementId: onshapeRevision.elementId,
+      partId: onshapeRevision.partId ?? null,
+      assetBaseName: onshapeRevision.revision
+        ? `${onshapeRevision.partNumber}.${onshapeRevision.revision}`
+        : onshapeRevision.partNumber
+    });
+  } catch (error) {
+    // The link is correct; a queue failure must not report it as broken.
+    logger.error("Could not queue the Onshape asset pull", {
+      error,
+      itemId: input.itemId
+    });
+  }
 
   return {
     success: true,

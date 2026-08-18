@@ -93,11 +93,17 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  // Same three refusals the job makes, checked up front so the user sees them
+  // Same FOUR refusals the job makes, checked up front so the user sees them
   // now. The job re-checks — this is for the message, not for safety.
+  //
+  // Keeping them in step matters more than it looks: the job's refusal throws
+  // inside a step on a function declared `retries: 10`, so a deterministic
+  // refusal the route did not catch is retried eleven times and then dies in
+  // the job log — while the user was already told "Import started" and the
+  // outcome notification only fires on the success path.
   const method = await client
     .from("makeMethod")
-    .select("id, itemId, status, changeOrderId, item(revision)")
+    .select("id, itemId, status, changeOrderId, item(revision, revisionStatus)")
     .eq("id", input.makeMethodId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -125,8 +131,11 @@ export async function action({ request }: ActionFunctionArgs) {
   // Refuse an unreleased import into an item that already carries a NAMED
   // revision. Marking a released item as unreleased-sourced is a lie, and the
   // rows underneath it would all resolve revision-missing anyway.
-  const targetRevision = (method.data.item as { revision?: string } | null)
-    ?.revision;
+  const targetItem = method.data.item as {
+    revision?: string;
+    revisionStatus?: string;
+  } | null;
+  const targetRevision = targetItem?.revision;
   if (
     isUnreleasedSelection &&
     targetRevision &&
@@ -137,6 +146,24 @@ export async function action({ request }: ActionFunctionArgs) {
       success: false,
       message: `This item is at revision ${targetRevision}. An unreleased Onshape version can only be imported into the initial revision — release it in Onshape first.`
     };
+  }
+
+  // The PLM revision lock, mirrored from the job. Under `enforce`, a
+  // Production item's method is frozen: changing it here would alter what the
+  // shop is already building.
+  if (targetItem?.revisionStatus === "Production") {
+    const companySettings = await client
+      .from("companySettings")
+      .select("plmReleaseControl")
+      .eq("id", companyId)
+      .maybeSingle();
+    if ((companySettings.data?.plmReleaseControl ?? "enforce") === "enforce") {
+      return {
+        success: false,
+        message:
+          "This item is in Production and this company enforces PLM release control, so its method cannot be changed. Create a new revision first."
+      };
+    }
   }
 
   if (input.partNumber) {

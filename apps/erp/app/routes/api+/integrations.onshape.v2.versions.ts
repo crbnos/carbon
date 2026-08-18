@@ -21,6 +21,18 @@ export type OnshapeV2Version = {
   released: boolean;
 };
 
+export type OnshapeV2VersionsResult = {
+  versions: OnshapeV2Version[];
+  /** The version list hit the page cap — there are more than are shown. */
+  truncated: boolean;
+  /**
+   * The released-ness sweep hit its cap, so a version shown as unreleased may
+   * in fact be released. Distinct from `truncated`: the list is complete, the
+   * BADGES are not.
+   */
+  releasedUnknown: boolean;
+};
+
 /**
  * A document's versions, each marked released or not.
  *
@@ -81,6 +93,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     const versions: Array<{ id: string; name: string }> = [];
+    let truncated = false;
     for (let page = 0; page < MAX_PAGES; page++) {
       const batch = await onshape.getVersions(
         documentId,
@@ -95,6 +108,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         }))
       );
       if (batch.length < PAGE_SIZE) break;
+      // Ran out of pages rather than out of versions. Saying so beats showing
+      // a short list as if it were the whole document.
+      if (page === MAX_PAGES - 1) truncated = true;
     }
 
     // Which of them are released. One company-wide sweep is cheaper than a
@@ -107,6 +123,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         ? (companies[0]?.id ?? null)
         : null;
     }
+    let releasedUnknown = false;
     if (onshapeCompanyId) {
       let page = await onshape.getCompanyRevisions(onshapeCompanyId, {
         limit: 50
@@ -118,8 +135,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
           }
         }
         if (!page.next) break;
+        // Exhausted the cap with more pages to go: every version not already
+        // seen is now UNKNOWN, not unreleased. Rendering it as unreleased
+        // would send someone down the unreleased path for a version they
+        // could have imported properly.
+        if (index === MAX_PAGES - 1) {
+          releasedUnknown = true;
+          break;
+        }
         page = await onshape.getCompanyRevisionsPage(page.next);
       }
+    } else {
+      // No Onshape company means no revisions endpoint to ask.
+      releasedUnknown = true;
     }
 
     return {
@@ -127,8 +155,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         versions: versions.map((v) => ({
           ...v,
           released: releasedVersionIds.has(v.id)
-        })) satisfies OnshapeV2Version[]
-      },
+        })),
+        truncated,
+        releasedUnknown
+      } satisfies OnshapeV2VersionsResult,
       error: null
     };
   } catch (error) {

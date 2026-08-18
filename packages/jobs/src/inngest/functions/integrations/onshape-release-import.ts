@@ -374,7 +374,14 @@ export interface OnshapeReleaseImportInput {
   userId: string;
   messageId: string;
   releaseId: string;
+  /** ONSHAPE's part number — what the revisions API is asked about. */
   partNumber: string;
+  /**
+   * CARBON's readableId for the family, when the caller already resolved it by
+   * id. Defaults to `partNumber`, which is the legacy behaviour: v1 joins by
+   * number, so the two are the same value there.
+   */
+  carbonReadableId?: string;
   documentId: string;
   versionId: string;
   elementId: string;
@@ -383,6 +390,17 @@ export interface OnshapeReleaseImportInput {
   revision?: string;
   releaseName?: string;
   onshapeCompanyId?: string;
+  /**
+   * The decision already made by a v2 caller, replacing the settings read.
+   *
+   * `getOnshapeReleaseImportSettings` reads the LEGACY `releaseImportEnabled` /
+   * `releaseImportMode` keys, which a v2 company necessarily has off — the v2
+   * setting group tells the user the legacy settings are ignored, and the
+   * webhook kills the legacy consumers outright. Without this the v2 job
+   * delegates here and is refused as "disabled", so `releaseImportV2` never
+   * imports anything.
+   */
+  gate?: { enabled: boolean; mode: "changeNotice" | "revision" };
 }
 
 export async function runOnshapeReleaseImport(
@@ -396,10 +414,9 @@ export async function runOnshapeReleaseImport(
     return { imported: false, skippedReason: "drawing-element" };
   }
 
-  const settings = await getOnshapeReleaseImportSettings(
-    carbon,
-    payload.companyId
-  );
+  const settings =
+    payload.gate ??
+    (await getOnshapeReleaseImportSettings(carbon, payload.companyId));
   if (!settings.enabled) {
     return { imported: false, skippedReason: "disabled" };
   }
@@ -412,7 +429,7 @@ export async function runOnshapeReleaseImport(
 
   const target = await resolveReleaseTarget(carbon, {
     companyId: payload.companyId,
-    partNumber: payload.partNumber,
+    partNumber: payload.carbonReadableId ?? payload.partNumber,
     revision
   });
 

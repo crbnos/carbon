@@ -23,6 +23,7 @@ const taskToEvent = {
   "onshape-backfill": "carbon/onshape-backfill",
   "onshape-bom-import": "carbon/onshape-bom-import",
   "onshape-release-v2": "carbon/onshape-release-v2",
+  "onshape-v2-item-assets": "carbon/onshape-v2-item-assets",
   "onshape-release-import": "carbon/onshape-release-import",
   "onshape-revision-sync": "carbon/onshape-revision-sync",
   "paperless-parts": "carbon/paperless-parts",

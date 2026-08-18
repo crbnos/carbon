@@ -110,6 +110,20 @@ function toNumber(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+/** Named cells for one raw row. Shared so the tracker and buildRow agree. */
+function readColumns(
+  raw: OnshapeBomRawRow,
+  headers: OnshapeBomHeader[]
+): Record<string, string> {
+  const columns: Record<string, string> = {};
+  const values = raw.headerIdToValue ?? {};
+  for (const header of headers) {
+    if (!header?.name) continue;
+    columns[header.name] = toText(values[header.id]);
+  }
+  return columns;
+}
+
 function buildRow(
   raw: OnshapeBomRawRow,
   headers: OnshapeBomHeader[]
@@ -120,12 +134,8 @@ function buildRow(
   // option — importing it would create an item permanently detached from CAD.
   if (!source?.documentId || !source?.elementId) return null;
 
-  const columns: Record<string, string> = {};
+  const columns = readColumns(raw, headers);
   const values = raw.headerIdToValue ?? {};
-  for (const header of headers) {
-    if (!header?.name) continue;
-    columns[header.name] = toText(values[header.id]);
-  }
 
   const partNumber = columns["Part number"] || "";
   if (!partNumber) return null;
@@ -138,12 +148,7 @@ function buildRow(
 
   return {
     item: columns.Item ?? "",
-    // indentLevel is authoritative; fall back to the dotted path only if a
-    // future response omits it.
-    indentLevel:
-      typeof raw.indentLevel === "number"
-        ? raw.indentLevel
-        : Math.max(0, (columns.Item ?? "").split(".").length - 1),
+    indentLevel: deriveIndentLevel(raw, columns.Item),
     partNumber,
     revision: columns.Revision ?? "",
     name: columns.Name || columns.Description || partNumber,
@@ -162,6 +167,24 @@ function buildRow(
     wvmId: source.wvmId ?? null,
     columns
   };
+}
+
+/**
+ * How deep a row sits.
+ *
+ * `indentLevel` is authoritative; the dotted "Item" path is the fallback for a
+ * future response that omits it. ONE definition, because the orphan tracker and
+ * the row must agree: reading `indentLevel` directly in the tracker made every
+ * row level 0 on the fallback path, which reset the tracker on the very next
+ * row and disabled orphan detection entirely in exactly the regime the fallback
+ * exists to support.
+ */
+export function deriveIndentLevel(
+  raw: { indentLevel?: unknown },
+  itemPath: string | undefined
+): number {
+  if (typeof raw.indentLevel === "number") return raw.indentLevel;
+  return Math.max(0, (itemPath ?? "").split(".").length - 1);
 }
 
 /**
@@ -190,7 +213,10 @@ export function parseOnshapeBom(
   let droppedAtLevel: number | null = null;
 
   for (const raw of rawRows) {
-    const level = typeof raw.indentLevel === "number" ? raw.indentLevel : 0;
+    const level = deriveIndentLevel(
+      raw,
+      readColumns(raw, headers).Item ?? undefined
+    );
 
     // We are inside a dropped row's subtree until the depth returns to it.
     if (droppedAtLevel !== null && level <= droppedAtLevel) {

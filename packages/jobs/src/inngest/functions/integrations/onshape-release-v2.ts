@@ -22,8 +22,12 @@ import {
   getOnshapeClient,
   getOnshapeV2Settings,
   readItemIdsForElement,
-  resolveBomRow
+  resolveBomRow,
+  writeElementMapping,
+  writeRevisionMapping
 } from "@carbon/ee/onshape";
+import { trigger } from "@carbon/lib/trigger";
+import { NotificationEvent } from "@carbon/notifications";
 import { z } from "zod";
 import { inngest } from "../../client";
 import { withRateLimitRetry } from "./onshape-backfill";
@@ -42,10 +46,15 @@ const PayloadSchema = z.object({
   revisionId: z.string().optional(),
   releaseId: z.string().optional(),
   releaseName: z.string().optional(),
-  revision: z.string().optional()
+  revision: z.string().optional(),
+  /** releaseId when present, else elementId — the concurrency bucket. */
+  groupKey: z.string()
 });
 
 const ELEMENT_TYPE_DRAWING = 2;
+
+/** How many refusals to name in one notification before it stops reading. */
+const MAX_REPORTED_SKIPS = 5;
 
 export const onshapeReleaseV2Function = inngest.createFunction(
   {
@@ -54,8 +63,15 @@ export const onshapeReleaseV2Function = inngest.createFunction(
     // imports.
     retries: 10,
     idempotency: "event.data.messageId",
-    // One in-flight run per released element; different elements run freely.
-    concurrency: { key: "event.data.elementId", limit: 1 }
+    // One in-flight run per RELEASE. Onshape has no release-level event: a
+    // 9-element release arrives as 9 separate deliveries, and they all compete
+    // to create the SAME change notice — the marker row is the claim, and
+    // serializing on the release is what keeps the losers from racing into
+    // duplicate Draft notices. Keying on the element lets siblings run at once,
+    // which is the exact race the legacy job's releaseId key exists to prevent.
+    // `groupKey` is releaseId when there is one, so a delivery without one
+    // cannot collapse every company's releases into one bucket.
+    concurrency: { key: "event.data.groupKey", limit: 1 }
   },
   { event: "carbon/onshape-release-v2" },
   async ({ event, step }) => {
@@ -84,6 +100,17 @@ export const onshapeReleaseV2Function = inngest.createFunction(
 
     return await step.run("handle-release", async () => {
       const releasedRevision = payload.revision ?? "";
+
+      // A release ALWAYS names a revision. An empty one means the delivery was
+      // malformed or the field moved — and treating it as the initial revision
+      // would resolve the family to its revision-'0' member and stamp the
+      // released geometry onto the item that predates every release.
+      if (!releasedRevision) {
+        return {
+          skipped: true as const,
+          reason: "revision-missing-from-event"
+        };
+      }
 
       const connection = await getOnshapeClient(
         carbon,
@@ -188,14 +215,40 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           // mapping, so the importer is given that family's own readableId
           // rather than Onshape's part number — the join stays id-derived even
           // though the proven import path takes a number.
-          const familyReadableId = live[0]?.readableId;
+          // The family's members are supposed to share a readableId — that is
+          // what makes them a revision family. When they do not, the mapping is
+          // pointing at two different parts, and picking whichever row came
+          // back first silently imports the release against one of them.
+          const readableIds = Array.from(
+            new Set(
+              live
+                .map((i) => i.readableId)
+                .filter((id): id is string => Boolean(id))
+            )
+          );
+          const familyReadableId =
+            readableIds.length === 1 ? readableIds[0] : undefined;
+          if (readableIds.length > 1) {
+            skipped.push({
+              partId,
+              reason: `This Onshape part is linked to Carbon items with different numbers (${readableIds.join(", ")}), so which one the release belongs to is ambiguous. Unlink the wrong one.`
+            });
+          }
           if (familyReadableId && payload.releaseId) {
             const result = await runOnshapeReleaseImport(carbon, {
               companyId: payload.companyId,
               userId: payload.userId,
               messageId: payload.messageId,
               releaseId: payload.releaseId,
-              partNumber: familyReadableId,
+              // ONSHAPE's number, because the importer feeds it to Onshape's
+              // /revisions/companies/{id}/partnumber/{n} lookup. Substituting
+              // Carbon's readableId there asks Onshape about a part number that
+              // may belong to something else — and a mismatch between the two
+              // is legal in v2, where the mapping is the join and the number is
+              // only a label.
+              partNumber: payload.partNumber,
+              // CARBON's number, used only to resolve the revision family.
+              carbonReadableId: familyReadableId,
               documentId: payload.documentId,
               versionId: payload.versionId,
               elementId: payload.elementId,
@@ -203,10 +256,72 @@ export const onshapeReleaseV2Function = inngest.createFunction(
               revisionId: payload.revisionId,
               revision: releasedRevision,
               releaseName: payload.releaseName,
-              onshapeCompanyId: onshapeCompanyId ?? undefined
+              onshapeCompanyId: onshapeCompanyId ?? undefined,
+              // The decision is ALREADY made, by v2's own settings. Letting the
+              // importer re-read them would read the LEGACY keys, which a v2
+              // company necessarily has off — so v2 release import would refuse
+              // itself as "disabled".
+              gate: {
+                enabled: true,
+                mode:
+                  settings.releaseImportV2 === "revision"
+                    ? "revision"
+                    : "changeNotice"
+              }
             });
             if (result.imported) {
               imported.push(familyReadableId);
+
+              // The import CREATED the item this release represents, so the
+              // target has to be re-resolved — it was null a moment ago by
+              // definition. Without this the attach below never runs, and
+              // `items_createRevision` copies the source revision's
+              // modelUploadId and thumbnailPath, so the new revision does not
+              // merely lack geometry: it silently displays the PREVIOUS
+              // revision's, presented as the released one.
+              const createdItemId = result.newItemId ?? result.itemId ?? null;
+              if (createdItemId) {
+                targetItemId = createdItemId;
+
+                // Link what was just created, or v2 stays blind to it: the next
+                // release resolves the family from the element mapping, and an
+                // item that has none is invisible to every v2 path.
+                await writeElementMapping(carbon, {
+                  companyId: payload.companyId,
+                  itemId: createdItemId,
+                  ref,
+                  metadata: {
+                    versionId: payload.versionId,
+                    partNumber: payload.partNumber,
+                    fromUnreleasedVersion: false,
+                    lastSyncedAt: new Date().toISOString()
+                  },
+                  createdBy: payload.userId
+                });
+                if (payload.revisionId) {
+                  await writeRevisionMapping(carbon, {
+                    companyId: payload.companyId,
+                    itemId: createdItemId,
+                    revisionId: payload.revisionId,
+                    metadata: {
+                      documentId: payload.documentId,
+                      versionId: payload.versionId,
+                      elementId: payload.elementId,
+                      revision: releasedRevision,
+                      releaseId: payload.releaseId,
+                      releaseName: payload.releaseName,
+                      importedAt: new Date().toISOString()
+                    },
+                    createdBy: payload.userId
+                  });
+                }
+              } else {
+                skipped.push({
+                  partId,
+                  reason:
+                    "The release was imported but Carbon could not identify the item it created, so no model was attached."
+                });
+              }
             } else if (result.skippedReason) {
               skipped.push({ partId, reason: result.skippedReason });
             }
@@ -250,10 +365,51 @@ export const onshapeReleaseV2Function = inngest.createFunction(
               }),
             `assets for ${payload.partNumber}`
           );
-          for (const ok of pulled.attached) attached.push(ok.itemId);
+          for (const ok of pulled.attached) {
+            attached.push(ok.itemId);
+            // Same chain the legacy sync fires: relocates the raw to durable
+            // storage and renders the thumbnail from the GLB.
+            try {
+              await trigger("model-optimize", {
+                companyId: payload.companyId,
+                modelUploadId: ok.modelUploadId,
+                userId: payload.userId
+              });
+            } catch (error) {
+              console.error(
+                `[ONSHAPE RELEASE V2] could not queue optimisation for ${ok.modelUploadId}`,
+                error
+              );
+            }
+          }
           for (const bad of pulled.skipped) {
             skipped.push({ partId, reason: bad.reason });
           }
+        }
+      }
+
+      // A release is webhook-driven: nobody is watching a screen when it runs,
+      // so a refusal recorded only in the Inngest return value reaches no one.
+      // The user finds out when a revision turns out to have no model, or no
+      // change notice, with nothing anywhere saying why.
+      if (skipped.length > 0 && payload.userId && payload.userId !== "system") {
+        try {
+          await trigger("notify", {
+            event: NotificationEvent.IntegrationSync,
+            companyId: payload.companyId,
+            documentId: "onshape",
+            title: `Onshape release ${payload.partNumber} ${releasedRevision} needs attention`,
+            body: skipped
+              .slice(0, MAX_REPORTED_SKIPS)
+              .map((entry) => entry.reason)
+              .join("; "),
+            recipient: { type: "user", userId: payload.userId }
+          });
+        } catch (error) {
+          console.error(
+            `[ONSHAPE RELEASE V2] ${payload.companyId}: could not notify ${payload.userId}`,
+            error
+          );
         }
       }
 

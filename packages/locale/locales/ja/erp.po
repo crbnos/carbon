@@ -1491,7 +1491,7 @@ msgstr "作業センターのキューの中での操作の位置。フロアが
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape への接続中に予期しないエラーが発生しました。もう一度接続してください。"
 
-msgid "An unreleased version carries no revision and no released assets, so its parts land on Carbon's initial revision. Pick the released assembly first if there is one."
+msgid "An unreleased version carries no revision, so its parts land on Carbon's initial revision and no released assets exist to attach. Prefer a released revision where there is one."
 msgstr ""
 
 msgid "Analytics"
@@ -2794,6 +2794,9 @@ msgstr "Carbonクライアントが見つかりません"
 
 msgid "Carbon column"
 msgstr "Carbonカラム"
+
+msgid "Carbon could not read every release in this Onshape company, so a version marked Unreleased here may in fact be released. Check in Onshape before importing one."
+msgstr ""
 
 #. placeholder {0}: row.siblings.join(", ")
 msgid "Carbon has {0}"
@@ -10180,6 +10183,9 @@ msgstr "この場所には他に引き出す在庫がありません。"
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
+msgid "Nothing to choose here."
+msgstr ""
+
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "まだ何もありません。ステップは構成されると値を提供します。"
 
@@ -10991,9 +10997,6 @@ msgstr "まずプロパティを選択"
 
 msgid "Pick a record type…"
 msgstr "レコード種類を選択..."
-
-msgid "Pick a released assembly once first — Carbon needs to know which Onshape document to look in."
-msgstr ""
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
 msgstr ""
@@ -13728,6 +13731,9 @@ msgstr "最初の 500 行を表示中"
 msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 msgstr ""
 
+msgid "Showing the most recent versions only — this document has more than Carbon lists here."
+msgstr ""
+
 msgid "Showing the newest 200 journals"
 msgstr "最新の200個のジャーナルを表示しています"
 
@@ -15559,6 +15565,9 @@ msgstr "このバージョンは変更通知<0>{0}</0>に属しています。�
 
 msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
+
+msgid "This version has no assemblies."
+msgstr ""
 
 msgid "This version is live. Create a new version to edit."
 msgstr "このバージョンはライブです。編集するには新しいバージョンを作成してください。"

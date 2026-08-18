@@ -1491,8 +1491,8 @@ msgstr "An operation's position in its work center's queue — the order the flo
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "An unexpected error occurred while connecting to Onshape. Try connecting again."
 
-msgid "An unreleased version carries no revision and no released assets, so its parts land on Carbon's initial revision. Pick the released assembly first if there is one."
-msgstr "An unreleased version carries no revision and no released assets, so its parts land on Carbon's initial revision. Pick the released assembly first if there is one."
+msgid "An unreleased version carries no revision, so its parts land on Carbon's initial revision and no released assets exist to attach. Prefer a released revision where there is one."
+msgstr "An unreleased version carries no revision, so its parts land on Carbon's initial revision and no released assets exist to attach. Prefer a released revision where there is one."
 
 msgid "Analytics"
 msgstr "Analytics"
@@ -2794,6 +2794,9 @@ msgstr "Carbon client not found"
 
 msgid "Carbon column"
 msgstr "Carbon column"
+
+msgid "Carbon could not read every release in this Onshape company, so a version marked Unreleased here may in fact be released. Check in Onshape before importing one."
+msgstr "Carbon could not read every release in this Onshape company, so a version marked Unreleased here may in fact be released. Check in Onshape before importing one."
 
 #. placeholder {0}: row.siblings.join(", ")
 msgid "Carbon has {0}"
@@ -10180,6 +10183,9 @@ msgstr "Nothing else at this location has stock to pull from."
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
 
+msgid "Nothing to choose here."
+msgstr "Nothing to choose here."
+
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nothing yet. A step only offers values once it is configured."
 
@@ -10991,9 +10997,6 @@ msgstr "Pick a property first"
 
 msgid "Pick a record type…"
 msgstr "Pick a record type…"
-
-msgid "Pick a released assembly once first — Carbon needs to know which Onshape document to look in."
-msgstr "Pick a released assembly once first — Carbon needs to know which Onshape document to look in."
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
 msgstr "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
@@ -13728,6 +13731,9 @@ msgstr "Showing the first 500 lines"
 msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 msgstr "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 
+msgid "Showing the most recent versions only — this document has more than Carbon lists here."
+msgstr "Showing the most recent versions only — this document has more than Carbon lists here."
+
 msgid "Showing the newest 200 journals"
 msgstr "Showing the newest 200 journals"
 
@@ -15559,6 +15565,9 @@ msgstr "This version belongs to change notice <0>{0}</0>. Edit it there."
 
 msgid "This version cannot be opened"
 msgstr "This version cannot be opened"
+
+msgid "This version has no assemblies."
+msgstr "This version has no assemblies."
 
 msgid "This version is live. Create a new version to edit."
 msgstr "This version is live. Create a new version to edit."

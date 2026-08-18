@@ -365,25 +365,43 @@ export async function writeRevisionMapping(
     createdBy: string;
   }
 ): Promise<{ ok: true } | { ok: false; conflict: boolean; error: string }> {
-  // Replace THIS item's own provenance row first. The always-enforced
-  // UNIQUE (entityType, entityId, integration, companyId) means re-linking an
-  // item to a NEWER release would otherwise 23505 against itself — which reads
-  // as "another item claims this release" and is a different problem entirely.
-  const removed = await serviceRole
+  // UPDATE the item's own provenance row in place, rather than delete-then-
+  // insert. Two constraints have to hold at once:
+  //
+  //  - The always-enforced UNIQUE (entityType, entityId, integration,
+  //    companyId) means an item already linked to an OLDER release cannot take
+  //    a plain insert — it 23505s against itself, which reads as "another item
+  //    claims this release" and is a different problem entirely.
+  //  - A delete first is not safe either: the partial UNIQUE on
+  //    (integration, externalId, entityType, companyId) can reject the insert
+  //    that follows, and the item's provenance is then simply GONE — the row
+  //    that said which release it came from destroyed to record one it could
+  //    not record.
+  //
+  // Updating satisfies both: nothing is destroyed unless the write succeeds.
+  // The service role is required — this table has SELECT and INSERT policies
+  // only, so a user-scoped UPDATE matches zero rows and returns no error.
+  const updated = await serviceRole
     .from("externalIntegrationMapping")
-    .delete()
+    .update({
+      externalId: args.revisionId,
+      metadata: args.metadata,
+      lastSyncedAt: new Date().toISOString()
+    })
     .eq("integration", ONSHAPE_REVISION_INTEGRATION)
     .eq("entityType", ONSHAPE_MAPPING_ENTITY_TYPE)
     .eq("entityId", args.itemId)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .select("id");
 
-  if (removed.error) {
+  if (updated.error) {
     return {
       ok: false,
-      conflict: false,
-      error: `Failed to clear the previous Onshape revision link: ${removed.error.message}`
+      conflict: updated.error.code === "23505",
+      error: updated.error.message
     };
   }
+  if ((updated.data ?? []).length > 0) return { ok: true };
 
   const inserted = await serviceRole.from("externalIntegrationMapping").insert({
     entityType: ONSHAPE_MAPPING_ENTITY_TYPE,

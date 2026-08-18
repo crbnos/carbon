@@ -11,6 +11,7 @@ import {
   writeRevisionMapping
 } from "@carbon/ee/onshape";
 import { validator } from "@carbon/form";
+import { trigger } from "@carbon/lib/trigger";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -293,6 +294,32 @@ export async function action({ request }: ActionFunctionArgs) {
         error: recorded.error
       });
     }
+  }
+
+  // Pull the geometry. The spec has create-from-Onshape doing this immediately,
+  // and without it an item created from a released revision arrives with no
+  // model while the SAME part imported through a BOM arrives with one — the
+  // same pipeline giving two results depending on which button was pressed.
+  //
+  // Queued rather than awaited: an export is a translate-poll-download round
+  // trip against Onshape, which is minutes in the worst case and rate-limitable.
+  try {
+    await trigger("onshape-v2-item-assets", {
+      companyId,
+      userId,
+      itemId,
+      documentId: onshapeRevision.documentId,
+      versionId: onshapeRevision.versionId,
+      elementId: onshapeRevision.elementId,
+      partId: onshapeRevision.partId ?? null,
+      // Stable across runs: the model filename is the attach idempotency key.
+      assetBaseName: onshapeRevision.revision
+        ? `${onshapeRevision.partNumber}.${onshapeRevision.revision}`
+        : onshapeRevision.partNumber
+    });
+  } catch (error) {
+    // The part and its link are correct; a queue failure must not undo them.
+    logger.error("Could not queue the Onshape asset pull", { error, itemId });
   }
 
   return {

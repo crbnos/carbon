@@ -7,6 +7,8 @@
 export type OnshapeBomImportOutcome = {
   imported: number;
   created: number;
+  /** Existing Carbon parts this import LINKED rather than created. */
+  adopted: number;
   updated: number;
   removed: number;
   assetsAttached: number;
@@ -35,6 +37,14 @@ export function summarizeOutcomeForUser(
   const parts: string[] = [
     `${outcome.imported} line(s) imported, ${outcome.created} part(s) created`
   ];
+
+  // Adopted parts were NOT created — reporting them as created tells the user
+  // this import made something it merely linked to.
+  if (outcome.adopted > 0) {
+    parts.push(
+      `${outcome.adopted} existing part(s) linked to Onshape rather than created`
+    );
+  }
 
   if (outcome.protectedLines > 0) {
     parts.push(

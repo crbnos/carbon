@@ -131,6 +131,12 @@ export async function exportOnshapeModelToDisk(
     elementId: string;
     kind: "partstudio" | "assembly";
     partIds?: string;
+    /**
+     * The Onshape configuration this instance was built with. Omitting it
+     * exports the element's DEFAULT configuration, which for a configured part
+     * is a different shape from the one the BOM line names.
+     */
+    configuration?: string;
     assetBaseName?: string;
   },
   scratchDir: string
@@ -141,7 +147,13 @@ export async function exportOnshapeModelToDisk(
           input.documentId,
           input.versionId,
           input.elementId,
-          { formatName: "GLTF", storeInDocument: false }
+          {
+            formatName: "GLTF",
+            storeInDocument: false,
+            ...(input.configuration
+              ? { configuration: input.configuration }
+              : {})
+          }
         )
       : await client.createPartStudioTranslation(
           input.documentId,
@@ -150,7 +162,10 @@ export async function exportOnshapeModelToDisk(
           {
             formatName: "GLTF",
             storeInDocument: false,
-            ...(input.partIds ? { partIds: input.partIds } : {})
+            ...(input.partIds ? { partIds: input.partIds } : {}),
+            ...(input.configuration
+              ? { configuration: input.configuration }
+              : {})
           }
         );
   const gltfDone = await waitForTranslation(client, gltfTranslation.id);
