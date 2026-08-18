@@ -1488,5 +1488,8 @@ msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班�
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"
 
+msgid "Your session was locked after a period of inactivity. Re-authenticate to continue where you left off."
+msgstr ""
+
 msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
 msgstr ""

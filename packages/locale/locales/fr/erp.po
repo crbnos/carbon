@@ -17310,6 +17310,9 @@ msgstr "Votre équipe de projet"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Vos données réelles sont chargées et vous avez vérifié un échantillon et l'avez approuvé."
 
+msgid "Your session was locked after a period of inactivity. Re-authenticate to continue where you left off."
+msgstr ""
+
 msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
 msgstr ""
 

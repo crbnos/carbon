@@ -1488,5 +1488,8 @@ msgstr "Jesteś zalogowany od {hoursElapsed} godzin. Czy zapomniałeś zakończy
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Twoja organizacja wymaga aplikacji uwierzytelniającej. Skonfiguruj ją w aplikacji Carbon, a następnie wróć tutaj."
 
+msgid "Your session was locked after a period of inactivity. Re-authenticate to continue where you left off."
+msgstr ""
+
 msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
 msgstr ""

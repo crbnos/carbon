@@ -6,7 +6,9 @@ import {
   getCarbon,
   getCompanies,
   getUser,
-  ITAR_RIDER_PDF_PATH
+  ITAR_RIDER_PDF_PATH,
+  SESSION_HEARTBEAT_MS,
+  SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
@@ -56,8 +58,10 @@ import { AppSidebar } from "~/components";
 import { ConsolePill } from "~/components/ConsolePill";
 import { PinInOverlay } from "~/components/PinInOverlay";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
+import SessionLockOverlay from "~/components/SessionLockOverlay";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import { userContext } from "~/context";
+import { useIdle } from "~/hooks";
 import { userMiddleware } from "~/middleware/user";
 import { refreshConsolePinIn } from "~/services/console.server";
 import { getItarCertificationStatus } from "~/services/itar.service";
@@ -251,7 +255,16 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       user: user.data,
       itarCertification,
       // Server-decided, never client-inferred — same reason as the ITAR gate.
-      mfaEnrollmentRequired
+      mfaEnrollmentRequired,
+      // Session lock (NIST 3.1.10) — client idle UX config. Console DEVICE
+      // sessions are exempt (their lock is the operator pin-in; a shared kiosk
+      // must not be force-logged-out mid-shift). Server enforcement lives in
+      // requireAuthSession, which also skips console sessions.
+      sessionTimeout: {
+        enabled: CONTROLLED_ENVIRONMENT && !(consoleEnabled && consoleMode),
+        idleMs: SESSION_IDLE_LOCK_MS,
+        heartbeatMs: SESSION_HEARTBEAT_MS
+      }
     },
     headers.has("Set-Cookie") ? { headers } : undefined
   );
@@ -277,10 +290,20 @@ export default function AuthenticatedRoute() {
     useMetric,
     user,
     itarCertification,
-    mfaEnrollmentRequired
+    mfaEnrollmentRequired,
+    sessionTimeout
   } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
+
+  // Session lock (NIST 3.1.10) — client idle UX only; server enforces in
+  // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT and non-console.
+  const { isIdle } = useIdle({
+    enabled: sessionTimeout.enabled,
+    idleMs: sessionTimeout.idleMs,
+    heartbeatMs: sessionTimeout.heartbeatMs,
+    heartbeatUrl: "/api/session/heartbeat"
+  });
 
   useNProgress();
   useKeyboardWedge({
@@ -388,6 +411,8 @@ export default function AuthenticatedRoute() {
 
   return (
     <div className="h-screen w-full overflow-y-auto lg:overflow-hidden">
+      {/* Idle lock conceals the app (3.1.10). Not over the ITAR/MFA gates. */}
+      {isIdle && !itarScreen && !mfaScreen && <SessionLockOverlay />}
       {(itarScreen ?? mfaScreen) ? (
         (itarScreen ?? mfaScreen)
       ) : (

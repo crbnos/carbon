@@ -1488,5 +1488,8 @@ msgstr "{hoursElapsed} 時間出勤中です。退勤打刻を忘れていませ
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"
 
+msgid "Your session was locked after a period of inactivity. Re-authenticate to continue where you left off."
+msgstr ""
+
 msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
 msgstr ""
