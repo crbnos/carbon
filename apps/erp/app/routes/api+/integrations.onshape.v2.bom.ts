@@ -203,6 +203,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         rows,
         tree: buildOnshapeBomTree(parsed.rows).length,
         skipped: parsed.skipped,
+        orphaned: parsed.orphaned,
         summary: {
           total: rows.length,
           create: rows.filter((r) => r.action === "create").length,

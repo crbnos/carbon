@@ -291,3 +291,54 @@ describe("resolveBomRow", () => {
     expect(result).toEqual({ kind: "ambiguous", itemIds: ["x", "y"] });
   });
 });
+
+describe("buildOnshapeBomTree — dropped rows must not re-parent their children", () => {
+  it("discards a subtree whose parent row was dropped, rather than re-parenting it", () => {
+    // PARENT has no part number so parseOnshapeBom drops it; its child would
+    // otherwise attach to the preceding level-0 row and be wired into an
+    // unrelated assembly. Losing a line is recoverable; a component silently
+    // in the wrong assembly is not.
+    const parsed = parseOnshapeBom({
+      headers: RESPONSE.headers,
+      rows: [
+        row("1", 0, "GOOD", 1, SUBASSEMBLY, "", "Good assembly"),
+        {
+          itemSource: { documentId: DOC, elementId: SUBASSEMBLY, partId: "" },
+          indentLevel: 0,
+          rowId: "row-dropped",
+          headerIdToValue: { [H.item]: "2", [H.qty]: 1 } // no Part number
+        },
+        row("2.1", 1, "ORPHAN", 1, PART_STUDIO, "JHD", "Orphaned child")
+      ]
+    });
+
+    expect(parsed.skipped).toBe(1);
+    // ORPHAN was readable; it is discarded because its PARENT was not.
+    expect(parsed.orphaned).toBe(1);
+    expect(parsed.rows.map((r) => r.partNumber)).toEqual(["GOOD"]);
+
+    const tree = buildOnshapeBomTree(parsed.rows);
+    expect(tree.map((n) => n.row.partNumber)).toEqual(["GOOD"]);
+    expect(tree[0]!.children).toEqual([]);
+  });
+
+  it("drops a row with no usable Onshape row id rather than collapsing it onto another", () => {
+    const parsed = parseOnshapeBom({
+      headers: RESPONSE.headers,
+      rows: [
+        {
+          itemSource: {
+            documentId: DOC,
+            elementId: PART_STUDIO,
+            partId: "JHD"
+          },
+          indentLevel: 0,
+          headerIdToValue: { [H.pn]: "NOROWID", [H.qty]: 1 }
+        },
+        RESPONSE.rows![0]!
+      ]
+    });
+    expect(parsed.rows.map((r) => r.partNumber)).toEqual(["EL-703"]);
+    expect(parsed.skipped).toBe(1);
+  });
+});

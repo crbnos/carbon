@@ -139,3 +139,66 @@ describe("reconcileMethodMaterials", () => {
     expect(isNoOpPlan(plan)).toBe(false);
   });
 });
+
+describe("reconcileMethodMaterials — refused rows are protected", () => {
+  // The worst defect found in review, reported independently by three audit
+  // lenses: a row the import REFUSES (revision missing, ambiguous, failed mint)
+  // is absent from `desired`, so without protection reconciliation reads it as
+  // "Onshape dropped this" and DELETES the line — while the user is told the
+  // row was merely skipped. Refusing and deleting are opposite outcomes.
+
+  it("keeps a line whose component the import refused to resolve", () => {
+    const plan = reconcileMethodMaterials(
+      [row("m1", "item_a", 1, 1), row("m2", "item_refused", 3, 2)],
+      [{ itemId: "item_a", quantity: 1, order: 1 }],
+      { protectedItemIds: ["item_refused"] }
+    );
+
+    expect(plan.remove).toEqual([]);
+    expect(plan.protected.map((r) => r.id)).toEqual(["m2"]);
+    // ...and its quantity is untouched, not reset.
+    expect(plan.protected[0]!.quantity).toBe(3);
+  });
+
+  it("still removes a component Onshape genuinely dropped", () => {
+    const plan = reconcileMethodMaterials(
+      [row("m1", "item_a", 1, 1), row("m2", "item_gone", 1, 2)],
+      [{ itemId: "item_a", quantity: 1, order: 1 }],
+      { protectedItemIds: ["item_refused"] }
+    );
+    expect(plan.remove.map((r) => r.id)).toEqual(["m2"]);
+    expect(plan.protected).toEqual([]);
+  });
+
+  it("protects a refused component even when the method would otherwise empty", () => {
+    const plan = reconcileMethodMaterials(
+      [row("m1", "item_refused", 2, 1)],
+      [],
+      { protectedItemIds: ["item_refused"] }
+    );
+    expect(plan.remove).toEqual([]);
+    expect(plan.protected).toHaveLength(1);
+    expect(isNoOpPlan(plan)).toBe(true);
+  });
+
+  it("prefers the desired line when a component is both protected and resolved", () => {
+    // A component can be refused on one row and resolved on another; the
+    // resolution wins, since we now know what it should be.
+    const plan = reconcileMethodMaterials(
+      [row("m1", "item_a", 1, 1)],
+      [{ itemId: "item_a", quantity: 5, order: 1 }],
+      { protectedItemIds: ["item_a"] }
+    );
+    expect(plan.update).toHaveLength(1);
+    expect(plan.protected).toEqual([]);
+  });
+
+  it("behaves exactly as before when nothing is protected", () => {
+    const plan = reconcileMethodMaterials(
+      [row("m1", "item_a", 1, 1), row("m2", "item_gone", 1, 2)],
+      [{ itemId: "item_a", quantity: 1, order: 1 }]
+    );
+    expect(plan.remove.map((r) => r.id)).toEqual(["m2"]);
+    expect(plan.protected).toEqual([]);
+  });
+});

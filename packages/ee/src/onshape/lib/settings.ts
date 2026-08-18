@@ -30,11 +30,18 @@ export interface OnshapeV2Settings {
   allowUnreleasedSync: boolean;
   /** Cached Onshape tenant id, when the connection has resolved one. */
   onshapeCompanyId: string | null;
+  /**
+   * The settings row could not be READ (query error), as opposed to being
+   * absent or set to legacy. Callers that write must treat this as retryable
+   * rather than as "this company is on legacy" — a transient database error
+   * would otherwise turn a real import into a silent no-op run.
+   */
+  readFailed: boolean;
 }
 
 const DEFAULTS: Omit<
   OnshapeV2Settings,
-  "active" | "isV2" | "onshapeCompanyId"
+  "active" | "isV2" | "onshapeCompanyId" | "readFailed"
 > = {
   pipeline: "legacy",
   attachAssetsOnRelease: true,
@@ -62,7 +69,7 @@ function readBoolean(value: unknown, fallback: boolean): boolean {
  */
 export function parseOnshapeV2Settings(
   metadata: unknown,
-  options: { active: boolean }
+  options: { active: boolean; readFailed?: boolean }
 ): OnshapeV2Settings {
   const record =
     metadata && typeof metadata === "object"
@@ -82,6 +89,7 @@ export function parseOnshapeV2Settings(
 
   return {
     active: options.active,
+    readFailed: options.readFailed === true,
     pipeline,
     isV2: options.active && pipeline === "next",
     attachAssetsOnRelease: readBoolean(
@@ -118,7 +126,12 @@ export async function getOnshapeV2Settings(
     .eq("companyId", companyId)
     .maybeSingle();
 
-  if (integration.error || !integration.data) {
+  if (integration.error) {
+    // Distinct from "no row": the gate still fails closed, but a caller that
+    // is about to WRITE can tell a transient failure from a deliberate opt-out.
+    return parseOnshapeV2Settings(null, { active: false, readFailed: true });
+  }
+  if (!integration.data) {
     return parseOnshapeV2Settings(null, { active: false });
   }
 

@@ -73,7 +73,9 @@ async function assertWritableMethod(
 ) {
   const method = await carbon
     .from("makeMethod")
-    .select("id, itemId, status, changeOrderId, companyId")
+    .select(
+      "id, itemId, status, changeOrderId, companyId, item(revisionStatus)"
+    )
     .eq("id", methodId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -91,6 +93,35 @@ async function assertWritableMethod(
       "This method belongs to an open change notice. Import into the item's own draft instead, so a release cannot ship what the import left."
     );
   }
+
+  // The PLM revision lock. Every in-app BOM mutation goes through
+  // checkRevisionLock, which refuses when the owning item is at revisionStatus
+  // 'Production' under the default plmReleaseControl 'enforce'. This job cannot
+  // call it — packages/jobs must not import ~/modules — so the rule is
+  // replicated, deliberately, the same way onshape-release-import duplicates
+  // CHANGE_NOTICE_OPEN_STATUSES.
+  //
+  // Without it there is a real escape hatch: creating a new method version is
+  // NOT lock-gated, so a user refused at the UI can mint a Draft on a
+  // Production item and have Onshape write the BOM the UI would not let them
+  // touch a single line of.
+  const owningItem = method.data.item as { revisionStatus?: string } | null;
+  if (owningItem?.revisionStatus === "Production") {
+    const settings = await carbon
+      .from("companySettings")
+      .select("plmReleaseControl")
+      .eq("id", companyId)
+      .maybeSingle();
+
+    const releaseControl = settings.data?.plmReleaseControl ?? "enforce";
+
+    if (releaseControl === "enforce") {
+      throw new Error(
+        "This item's revision is in Production and the company enforces release control. Raise a change notice instead of importing over a released revision."
+      );
+    }
+  }
+
   return method.data;
 }
 
@@ -102,6 +133,8 @@ async function reconcileOne(
     userId: string;
     makeMethodId: string;
     desired: Array<{ itemId: string; quantity: number; order: number }>;
+    /** Components the import refused; their lines must survive untouched. */
+    protectedItemIds: string[];
   }
 ) {
   const existing = await carbon
@@ -130,7 +163,8 @@ async function reconcileOne(
         order: Number(row.order ?? 0)
       })
     ),
-    args.desired
+    args.desired,
+    { protectedItemIds: args.protectedItemIds }
   );
 
   // Only the two columns Onshape owns are written. Everything else on a
@@ -160,7 +194,7 @@ async function reconcileOne(
     // Carbon's stocking unit, so the item is the authority here.
     const components = await carbon
       .from("item")
-      .select("id, unitOfMeasureCode")
+      .select("id, unitOfMeasureCode, type, defaultMethodType")
       .in(
         "id",
         plan.insert.map((line) => line.itemId)
@@ -173,12 +207,14 @@ async function reconcileOne(
       );
     }
 
-    const uomByItem = new Map(
+    const componentById = new Map(
       (components.data ?? []).map(
-        (item: { id: string; unitOfMeasureCode: string | null }) => [
-          item.id,
-          item.unitOfMeasureCode
-        ]
+        (item: {
+          id: string;
+          unitOfMeasureCode: string | null;
+          type: string | null;
+          defaultMethodType: string | null;
+        }) => [item.id, item]
       )
     );
 
@@ -188,7 +224,19 @@ async function reconcileOne(
         itemId: line.itemId,
         quantity: line.quantity,
         order: line.order,
-        unitOfMeasureCode: uomByItem.get(line.itemId) ?? "EA",
+        unitOfMeasureCode:
+          componentById.get(line.itemId)?.unitOfMeasureCode ?? "EA",
+        // Denormalized from the component so the BOM renders and sources
+        // correctly. Omitting them lets the column defaults ("Part" /
+        // "Make to Order") disagree with the item they describe — a purchased
+        // component would read as something to manufacture.
+        itemType: componentById.get(line.itemId)?.type ?? undefined,
+        methodType:
+          (componentById.get(line.itemId)?.defaultMethodType as
+            | "Make to Order"
+            | "Purchase to Order"
+            | "Pull from Inventory"
+            | undefined) ?? undefined,
         companyId: args.companyId,
         createdBy: args.userId
       }))
@@ -215,7 +263,8 @@ async function reconcileOne(
   return {
     inserted: plan.insert.length,
     updated: plan.update.length,
-    removed: plan.remove.length
+    removed: plan.remove.length,
+    protectedCount: plan.protected.length
   };
 }
 
@@ -235,6 +284,13 @@ export const onshapeBomImportFunction = inngest.createFunction(
     // Re-read the gate every execution, so turning the pipeline back to legacy
     // also kills an in-flight retry.
     const settings = await getOnshapeV2Settings(carbon, payload.companyId);
+    if (settings.readFailed) {
+      // A transient database error must not masquerade as "this company is on
+      // legacy" — that would turn a real import into a silent no-op run.
+      throw new Error(
+        "Could not read the Onshape integration settings; retrying."
+      );
+    }
     if (!settings.isV2) {
       return { pipelineSkipped: true as const, reason: "pipeline-not-v2" };
     }
@@ -307,6 +363,9 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
       // itemId per BOM row, minting only genuinely-unknown parts.
       const itemIdByRow = new Map<string, string>();
+      // Components of rows the import REFUSED. Their existing material lines
+      // must survive: "skipped" has to mean untouched, not deleted.
+      const protectedItemIds = new Set<string>();
 
       for (const row of parsed.rows) {
         const externalId = buildElementExternalId({
@@ -315,9 +374,16 @@ export const onshapeBomImportFunction = inngest.createFunction(
           partId: row.partId
         });
         const claimants = mappings.get(externalId) ?? [];
+        // Drop claimants whose item row did not come back. entityId has no FK
+        // to item, so deleting a Carbon item leaves its mapping behind forever;
+        // `?? null` would then read that dead id as "revision null", which
+        // revisionsMatch treats as the INITIAL revision — so an unreleased row
+        // would match a deleted item and the insert would violate
+        // methodMaterial_itemId_fkey.
+        const liveClaimants = claimants.filter((id) => revisionById.has(id));
         const resolution = resolveBomRow(
           row.revision,
-          claimants.map((id) => ({
+          liveClaimants.map((id) => ({
             itemId: id,
             revision: revisionById.get(id) ?? null
           }))
@@ -329,6 +395,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
         }
 
         if (resolution.kind === "ambiguous") {
+          for (const id of resolution.itemIds) protectedItemIds.add(id);
           outcome.skipped.push({
             partNumber: row.partNumber,
             revision: row.revision,
@@ -338,6 +405,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
         }
 
         if (resolution.kind === "revision-missing") {
+          for (const id of resolution.siblingItemIds) protectedItemIds.add(id);
           outcome.skipped.push({
             partNumber: row.partNumber,
             revision: row.revision,
@@ -383,11 +451,19 @@ export const onshapeBomImportFunction = inngest.createFunction(
           continue;
         }
 
-        await carbon.from("part").upsert({
+        // Unchecked, an item exists with no `part` row: the detail RPCs join
+        // on it, so the item cannot be opened or listed, and no later import
+        // repairs it. The step retry re-runs this upsert harmlessly.
+        const partRow = await carbon.from("part").upsert({
           id: row.partNumber,
           companyId: payload.companyId,
           createdBy: payload.userId
         });
+        if (partRow.error) {
+          throw new Error(
+            `Created item ${row.partNumber} but failed to write its part row: ${partRow.error.message}`
+          );
+        }
 
         await writeElementMapping(carbon, {
           companyId: payload.companyId,
@@ -407,6 +483,18 @@ export const onshapeBomImportFunction = inngest.createFunction(
         });
 
         itemIdByRow.set(row.rowId, created.data.id);
+
+        // Feed the mint back into the in-memory index. Onshape emits an
+        // INDENTED BOM, so a part used under two subassemblies appears twice;
+        // without this the second occurrence still sees no mapping, tries to
+        // mint again, hits item_unique, and is skipped — so the part lands in
+        // one parent's BOM and silently not the other's.
+        mappings.set(externalId, [
+          ...(mappings.get(externalId) ?? []),
+          created.data.id
+        ]);
+        revisionById.set(created.data.id, row.revision || "0");
+
         outcome.created++;
       }
 
@@ -430,7 +518,8 @@ export const onshapeBomImportFunction = inngest.createFunction(
           companyId: payload.companyId,
           userId: payload.userId,
           makeMethodId,
-          desired
+          desired,
+          protectedItemIds: Array.from(protectedItemIds)
         });
 
         outcome.updated += counts.updated;

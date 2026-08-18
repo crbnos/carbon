@@ -25,6 +25,21 @@ export type DesiredMaterial = {
   order: number;
 };
 
+/**
+ * Components the import REFUSED to resolve, which must therefore be left
+ * exactly as they are.
+ *
+ * Without this, a refusal is worse than a no-op: a row the import declined to
+ * touch is simply absent from `desired`, so reconciliation reads it as "Onshape
+ * no longer has this" and DELETES the existing line. Refusing to act on a line
+ * and deleting it are opposite outcomes, and the user was told the row was
+ * "skipped".
+ */
+export type ReconcileOptions = {
+  /** Item ids that must never appear in `remove`, whatever `desired` says. */
+  protectedItemIds?: Iterable<string>;
+};
+
 export type ReconcilePlan = {
   /** Lines Onshape has that Carbon does not. */
   insert: DesiredMaterial[];
@@ -39,6 +54,8 @@ export type ReconcilePlan = {
   remove: ExistingMaterial[];
   /** Lines both have, unchanged — reported so a no-op sync can say so. */
   unchanged: ExistingMaterial[];
+  /** Lines kept only because the import refused to resolve their component. */
+  protected: ExistingMaterial[];
 };
 
 /**
@@ -58,14 +75,18 @@ export type ReconcilePlan = {
  */
 export function reconcileMethodMaterials(
   existing: ExistingMaterial[],
-  desired: DesiredMaterial[]
+  desired: DesiredMaterial[],
+  options: ReconcileOptions = {}
 ): ReconcilePlan {
   const plan: ReconcilePlan = {
     insert: [],
     update: [],
     remove: [],
-    unchanged: []
+    unchanged: [],
+    protected: []
   };
+
+  const protectedItemIds = new Set(options.protectedItemIds ?? []);
 
   const existingByItem = new Map<string, ExistingMaterial>();
   for (const row of existing) {
@@ -100,9 +121,20 @@ export function reconcileMethodMaterials(
 
   for (const row of existing) {
     const kept = existingByItem.get(row.itemId);
+    const wanted = seen.has(row.itemId) && kept === row;
+    if (wanted) continue;
+
+    // A component the import REFUSED to resolve is not "a component Onshape
+    // dropped" — the import simply has nothing to say about it, so the existing
+    // line stands.
+    if (protectedItemIds.has(row.itemId)) {
+      plan.protected.push(row);
+      continue;
+    }
+
     // Remove anything Onshape did not ask for, plus any duplicate rows beyond
     // the first for a component it did.
-    if (!seen.has(row.itemId) || kept !== row) plan.remove.push(row);
+    plan.remove.push(row);
   }
 
   return plan;

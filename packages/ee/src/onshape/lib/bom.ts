@@ -77,6 +77,12 @@ export type ParsedOnshapeBom = {
   rows: OnshapeBomRow[];
   /** Rows dropped because they carried no usable CAD identity. */
   skipped: number;
+  /**
+   * Rows discarded because an ANCESTOR was dropped. Kept separate from
+   * `skipped`: these rows were perfectly readable, and the reason they are not
+   * imported is that we can no longer say what they hang off.
+   */
+  orphaned: number;
 };
 
 // Onshape returns some cells as objects carrying a displayName (Material,
@@ -117,6 +123,12 @@ function buildRow(
   const partNumber = columns["Part number"] || "";
   if (!partNumber) return null;
 
+  // Rows are indexed by this id while resolving. An empty one collapses every
+  // such row onto a single map key, so the last one silently wins and the rest
+  // vanish from the BOM. A row we cannot address is a row we cannot import.
+  const rowId = raw.rowId || raw.indentedRowId || raw.flattenedRowId || "";
+  if (!rowId) return null;
+
   return {
     item: columns.Item ?? "",
     // indentLevel is authoritative; fall back to the dotted path only if a
@@ -132,7 +144,7 @@ function buildRow(
     quantity: toNumber(
       values[headers.find((h) => h.name === "Quantity")?.id ?? ""]
     ),
-    rowId: raw.rowId ?? raw.indentedRowId ?? "",
+    rowId: rowId,
     documentId: source.documentId,
     elementId: source.elementId,
     // "" means "this is an assembly, not a body in a Part Studio". Normalize to
@@ -158,18 +170,47 @@ export function parseOnshapeBom(
 
   const rows: OnshapeBomRow[] = [];
   let skipped = 0;
+  let orphaned = 0;
+
+  // Onshape emits the BOM depth-first, so a row's parent is the nearest
+  // PRECEDING row one level shallower. That makes a dropped row dangerous in a
+  // way indent level alone cannot detect afterwards: once it is gone, its
+  // children look exactly like children of whatever sibling preceded it, and
+  // would be silently wired into an unrelated assembly. So the drop has to be
+  // noticed HERE, while the original ordering is still visible.
+  let droppedAtLevel: number | null = null;
 
   for (const raw of rawRows) {
+    const level = typeof raw.indentLevel === "number" ? raw.indentLevel : 0;
+
+    // We are inside a dropped row's subtree until the depth returns to it.
+    if (droppedAtLevel !== null && level <= droppedAtLevel) {
+      droppedAtLevel = null;
+    }
+
     const row = buildRow(raw, headers);
-    if (row) rows.push(row);
-    else skipped++;
+
+    if (!row) {
+      skipped++;
+      if (droppedAtLevel === null) droppedAtLevel = level;
+      continue;
+    }
+
+    if (droppedAtLevel !== null) {
+      // A descendant of a row we could not address. Discarding it loses a
+      // line; keeping it would attach a component to the wrong assembly.
+      orphaned++;
+      continue;
+    }
+
+    rows.push(row);
   }
 
   const topLevel = response?.topLevelAssemblyRow
     ? buildRow(response.topLevelAssemblyRow, headers)
     : null;
 
-  return { topLevel, rows, skipped };
+  return { topLevel, rows, skipped, orphaned };
 }
 
 /**
@@ -192,6 +233,16 @@ export function buildOnshapeBomTree(rows: OnshapeBomRow[]): OnshapeBomNode[] {
 
     // Pop until the top of the stack is this row's parent.
     while (stack.length > row.indentLevel) stack.pop();
+
+    // A gap means the row's own parent was DROPPED (no part number, no
+    // addressable source). Attaching it to whatever is on the stack would
+    // silently re-parent a grandchild onto an unrelated assembly, so the
+    // subtree is discarded instead — losing a line is recoverable, wiring a
+    // component into the wrong assembly is not.
+    // Belt and braces: parseOnshapeBom already discards descendants of a
+    // dropped row, so a gap here should be unreachable. Skip rather than
+    // attach to an arbitrary ancestor if it ever happens.
+    if (stack.length < row.indentLevel) continue;
 
     const parent = stack[stack.length - 1];
     if (!parent) roots.push(node);
