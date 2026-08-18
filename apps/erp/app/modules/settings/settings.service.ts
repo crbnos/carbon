@@ -16,7 +16,6 @@ import {
   isBuiltInSectionId,
   toDocumentTemplate
 } from "@carbon/documents/template";
-import { splitSecrets } from "@carbon/ee";
 import type { JSONContent } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -950,44 +949,10 @@ export async function updateDigitalQuoteSetting(
     .eq("id", companyId);
 }
 
-export async function updateIntegrationMetadata(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  integrationId: string,
-  metadata: any,
-  updatedBy?: string
-) {
-  // Split secret material out to Supabase Vault; only the non-secret config is
-  // written to the column. The row already exists (this is an update), so vault
-  // FIRST (fail-closed: if the vault write fails, the plaintext is left intact
-  // rather than stripped-and-lost), then write the stripped config.
-  const { config, secrets } = splitSecrets(integrationId, metadata);
-
-  if (Object.keys(secrets).length > 0) {
-    const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
-    const serviceRole = getCarbonServiceRole();
-    const { error } = await serviceRole.rpc("upsert_integration_secret", {
-      p_company_id: companyId,
-      p_integration_id: integrationId,
-      p_secret: secrets as never
-    });
-    if (error) {
-      return { data: null, error };
-    }
-  }
-
-  return client
-    .from("companyIntegration")
-    .update(
-      sanitize({
-        metadata: config as Json,
-        updatedAt: new Date().toISOString(),
-        updatedBy
-      })
-    )
-    .eq("companyId", companyId)
-    .eq("id", integrationId);
-}
+// NOTE: updateIntegrationMetadata lives in settings.server.ts, NOT here. It needs
+// the service-role client for the Vault RPC, and this file is re-exported by the
+// client barrel (~/modules/settings) — a `@carbon/auth/client.server` import here
+// would pull the service-role client into the browser bundle (Vite blocks it).
 
 export async function updateAccountingEnabledSetting(
   client: SupabaseClient<Database>,

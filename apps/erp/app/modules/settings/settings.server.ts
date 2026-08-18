@@ -481,3 +481,45 @@ export async function invalidateIntegrationHealthCache(
 
   return await redis.del(key);
 }
+
+// Server-only (needs the service-role client for the Vault RPC). Lives here rather
+// than in settings.service.ts because that file is re-exported by the client barrel;
+// a client.server import there would leak the service-role client into the browser
+// bundle. Reached by the MCP direct-executor, which imports this module server-side.
+export async function updateIntegrationMetadata(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string,
+  metadata: any,
+  updatedBy?: string
+) {
+  // Split secret material out to Supabase Vault; only the non-secret config is
+  // written to the column. The row already exists (this is an update), so vault
+  // FIRST (fail-closed: if the vault write fails, the plaintext is left intact
+  // rather than stripped-and-lost), then write the stripped config.
+  const { config, secrets } = splitSecrets(integrationId, metadata);
+
+  if (Object.keys(secrets).length > 0) {
+    const serviceRole = getCarbonServiceRole();
+    const { error } = await serviceRole.rpc("upsert_integration_secret", {
+      p_company_id: companyId,
+      p_integration_id: integrationId,
+      p_secret: secrets as never
+    });
+    if (error) {
+      return { data: null, error };
+    }
+  }
+
+  return client
+    .from("companyIntegration")
+    .update(
+      sanitize({
+        metadata: config as Json,
+        updatedAt: new Date().toISOString(),
+        updatedBy
+      })
+    )
+    .eq("companyId", companyId)
+    .eq("id", integrationId);
+}
