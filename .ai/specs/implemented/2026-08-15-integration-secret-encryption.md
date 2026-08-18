@@ -1,7 +1,8 @@
 # Integration Secret Encryption via Supabase Vault
 
-Status: PLANNED 2026-08-16 (all 8 decisions resolved; plan at
-`.ai/plans/2026-08-16-integration-secret-encryption.md`)
+Status: IMPLEMENTED 2026-08-18 (1C.1/1C.2/1C.3 — verified in the NIST audit; plan at
+`.ai/plans/implemented/2026-08-16-integration-secret-encryption.md`). Residual deploy-
+ordering + stale-comment notes live in `.ai/plans/2026-08-15-nist-800-171-app-remediation.md`.
 
 Moves third-party integration credentials out of the plaintext
 `companyIntegration.metadata` JSON column into encrypted storage, closing NIST

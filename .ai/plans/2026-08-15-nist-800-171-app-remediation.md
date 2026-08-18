@@ -1,253 +1,208 @@
 # NIST SP 800-171 — Carbon Application Remediation Plan
 
-Status: PLANNED 2026-08-15
+Status: **MOSTLY IMPLEMENTED** — audited 2026-08-18. Most Phase 1/2/4 [app] items
+landed on branch `nist-800-110-audit`; this file now tracks **only the residual
+TODOs**. The completed sub-efforts have their own spec+plan under
+`.ai/specs/implemented/` and `.ai/plans/implemented/` (indexed below).
 
 The Carbon-repo half of a two-repo effort. The infrastructure/chart half and the
 full 110-control gap assessment live in the **helm** repo
 (`helm/niamey/docs/nist-800-171-audit.md` and `.../nist-800-171-remediation-plan.md`).
-This plan covers only the items tagged **[app]** there — the code that must change
-in `crbnos/carbon` for a CUI-handling GovCloud deployment to pass an 800-171
-assessment.
+This plan covers only the items tagged **[app]** there.
 
-Builds directly on the TOTP MFA work (`.ai/plans/2026-08-15-totp-mfa.md`) and reuses
-its patterns: the `CONTROLLED_ENVIRONMENT` override, the blocking-gate shell pattern,
-`completeMfaChallenge`/`requireAuthSession` in `session.server.ts`, and the
-`companySettings` toggle precedent.
-
-## Guiding decisions (resolve before building)
-
-1. **`CONTROLLED_ENVIRONMENT` is the CUI switch.** Every hardening below keys off it
-   the way MFA enforcement already does — on and non-overridable when true, opt-in
-   otherwise. No new global flags.
-2. **Password auth is dropped for CUI, not policy-hardened.** Magic-link/OAuth/passkey
-   are already primary; removing `password` from `AUTH_PROVIDERS` under
-   `CONTROLLED_ENVIRONMENT` moots 3.5.7/3.5.8/3.5.9 with near-zero code. (Chosen over
-   building password complexity/history/rotation into GoTrue.)
-3. **Integration secrets go to Supabase Vault**, not a new pgcrypto column scheme —
-   `supabase_vault`/`pgsodium` are already preloaded by the postgres image.
-4. **Auth events are captured by shipping GoTrue's existing `auth.audit_log_entries`**,
-   not by re-instrumenting every login path. App-level emission is added only for
-   permission/role changes and permission-denied events, which GoTrue can't see.
-
-Open questions to confirm with Brad are marked **[OQ]**.
+Guiding decision unchanged: **`CONTROLLED_ENVIRONMENT` is the CUI switch** — every
+hardening keys off it the way MFA enforcement does (on and non-overridable when
+true, opt-in otherwise). No new global flags.
 
 ---
 
-## Phase 1 — Audit accountability & secret confidentiality (P1)
+## Completed (implemented on branch — moved to `implemented/`)
 
-### 1A. Capture authentication & authorization events — AU-2/AU-3 (3.3.1/3.3.2), 3.1.7
+Verified against code + commits during the 2026-08-18 audit.
 
-Today `auditLog_{companyId}` records only business-entity CRUD (`.claude/rules/audit-log-system.md`,
-`packages/database/src/audit.config.ts`, `packages/jobs/src/inngest/functions/events/audit.ts`).
-Missing: login, logout, failed login, MFA challenge, permission/role change,
-permission-denied.
+| Item | Control | Evidence (commit / file) |
+|------|---------|--------------------------|
+| **TOTP MFA foundation** | 3.5.3 | `plans/implemented/2026-08-15-totp-mfa.md`; `mfa.server.ts`, `/mfa` routes, enrollment in `account+/security.tsx`, admin reset |
+| **Session lock + termination** (2.2/2.3) | 3.1.10 / 3.1.11 | `specs+plans/implemented/2026-08-17-session-lock-timeout.md`; commits `c76e15e4c`→`c7a076477` (env clocks, `AuthSession` clocks, `requireAuthSession` enforcement, heartbeat, `/unlock`, `useIdle`, `SessionLockOverlay`, console idle-lock) |
+| **Remove `"0"` permission wildcard** (2.8) | 3.1.5 | `specs+plans/implemented/2026-08-16-remove-global-permission-wildcard.md`; commit `0cbaf1390` (verified in browser `ba340f2d9`) |
+| **Integration secrets → Supabase Vault** (1C.1) | 3.13.16 / SC-28 | `specs/implemented/2026-08-15-…` + `plans/implemented/2026-08-16-integration-secret-encryption.md`; `packages/ee/src/integrations/secrets.ts`, migration `20260817122916_integration-secret-vault.sql`; commits `a21c1840d`,`497ca158d`,`7fc7f26aa`,`ef6116975` |
+| **Backfill + scrub plaintext secrets** (1C.2) | 3.13.16 | `packages/jobs/src/scripts/backfill-integration-secrets.ts` + migration `20260817130939_scrub-integration-plaintext-secrets.sql` (0 plaintext remain); commits `96f2e1cca`,`fa9c10928` |
+| **Constant-time webhook HMAC** (1C.3) | 3.13.x | commit `add16f739` (paperless-parts → `timingSafeEqual`) |
+| **Capture auth events** (1A.1 app) | 3.3.1/3.3.2 | `packages/auth/src/services/auth-events.server.ts`; commits `52cb260d5`,`dc3c55f71` — emits login_success/failed/rate_limited, magic_link_sent, mfa_challenge_*, permission_denied |
+| **Audit permission-denied** (1A.3) | 3.1.7 | `auth.server.ts:394` `logAuthEvent("permission_denied", …)` |
+| **Audit on-by-default + locked under CUI** (1A.4) | 3.3.1 | commit `3393d5404` |
+| **Append-only audit tables** (1B.1) | 3.3.8 / AU-9 | commit `f0ec59811` |
+| **Audit retention ≥ 1 year** (1B.2) | 3.3.1 | `audit-archive.ts` floors hot window at 365d under CUI |
+| **MFA fail-closed under CUI** (2.4) | 3.5.3 | commit `add16f739` (`userHasVerifiedTotpFactor` denies on backend error under CUI) |
+| **Consent-to-monitoring banner** (2.7) | 3.1.9 | MET — `ItarLoginDisclaimer` on ERP+MES login under CUI (no code change) |
+| **Deepen `/health`** (4.2) | 3.14.6 | Redis + DB probes, 2s timeout, always-200 body-status |
+| **Error-detail leak fix** (4.4) | SI-11 | commit `add16f739` (stack/message gated behind DEV; prod shows requestId) |
+| **Analytics inert under CUI** (4.5) | 3.4.6 | `entry.client.tsx` boot assertion refuses to boot if PostHog loads under CUI |
 
-- **1A.1 Ship auth events to CloudWatch (RESOLVED 2026-08-15 → CloudWatch-only, "B").**
-  Web-verified constraint (GoTrue source + supabase issues #2370/#42997): the
-  `auth.audit_log_entries` **table** records ~24 *successful* actions (login, logout,
-  token_refreshed, user_modified, factor challenge) with `actor_id`+`action`+
-  `created_at`, but its `ip_address` is frequently EMPTY, `user_agent` is NOT
-  persisted, and **failed logins are not recorded**. GoTrue's **stdout request logs**
-  DO log every request incl. failures with `remote_addr`/`method`/`path`/`status`/
-  `time`. So "action + timestamp + IP + outcome (incl. failures)" is a THREE-part DoD:
-  1. **[chart]** ship BOTH `auth.audit_log_entries` AND the GoTrue request logs to
-     CloudWatch via fluent-bit; set `GOTRUE_SECURITY_SB_FORWARDED_FOR_ENABLED=true`
-     and have the proxy send the forwarded-for header (else IP stays empty).
-  2. **[app]** Carbon emits its OWN structured auth events via `@carbon/logger`
-     (already CloudWatch-shipped, redacted, request-id correlated) — the authoritative
-     account+IP+outcome record that does not depend on GoTrue's flaky `ip_address`:
-     login success/failure (`login.tsx`, already reads `x-forwarded-for`), per-account
-     lockout (item 2.1), MFA challenge result (`session.server.ts`), permission-denied
-     (item 1A.3).
-  3. **[chart/prog]** documented CloudWatch retention (≥ contract), IAM-restricted log
-     group, AU-5 failure alarm.
-  - No `auth`-schema RPC and no in-app "Authentication tab" — that in-app option was
-    REJECTED for compliance (add it later only as a product feature). Compliant because
-    800-171's audit reviewers are the org's security staff (CloudWatch access), not
-    per-tenant admins, and CloudWatch protection (KMS, IAM, out-of-band, non-mutable
-    delivered events) is stronger than the in-app audit tables (which item 1B hardens).
-    Sources: github.com/supabase/auth/issues/2370, supabase/supabase#42997.
-- **1A.2 Emit permission/role-change events.** On writes to `userPermission`,
-  `employeeTypePermission`, `userToCompany`, and the deactivation flows in
-  `packages/auth/src/services/users.server.ts`, emit an audit entry (actor,
-  target user, before/after permission set).
-  - Approach: add these tables/operations to the audit config path, or emit
-    explicitly from `users.server.ts` since permissions aren't a normal audited
-    entity. Reuse the existing `insert_audit_log_batch` RPC shape.
-- **1A.3 Audit permission-denied.** In `requirePermissions` (`auth.server.ts:382`),
-  emit an audit/log event on the "Access Denied" branch (who, what route/permission,
-  when). Wire to a CloudWatch metric for 4.1 alerting.
-- **1A.4 On-by-default + non-disable under CUI.** Enable audit at company creation;
-  under `CONTROLLED_ENVIRONMENT`, make `disableAuditLog` a no-op / hide the toggle
-  (`enableAuditLog`/`disableAuditLog` in the audit service; company settings UI).
-
-**Verify:** create a company under `CONTROLLED_ENVIRONMENT`; confirm audit is on and
-cannot be turned off; produce one report showing a login, a failed login, an MFA
-challenge, a permission grant, a denied access, and a record edit — each with actor,
-timestamp, source IP.
-
-### 1B. Audit tamper-evidence — AU-9 (3.3.8)
-
-- **1B.1 Append-only tables.** Migration adding a trigger on `auditLog_*` that
-  raises on `UPDATE`/`DELETE` unless the current role is the archive service role
-  used by `delete_old_audit_logs`. Tighten the `USING true` RLS to read-gated by
-  permission (`.claude/rules/audit-log-system.md` line 33 documents the current
-  permissive policy).
-  - Note: `auditLog_*` tables are created dynamically per company — the trigger
-    must be attached by the same `enableAuditLog` path that creates the table, and
-    backfilled onto existing ones by the migration.
-- **1B.2 Retention ≥ 1 year.** Raise `retentionDays` (audit.config); archive
-  (gzip → storage) already exists in `packages/jobs/src/inngest/functions/scheduled/audit-archive.ts`.
-  Object Lock on the archive bucket is a **[chart]** item.
-
-**Verify:** attempt `UPDATE`/`DELETE` on an `auditLog_*` row as a normal user →
-rejected; archive job still succeeds.
-
-### 1C. Encrypt integration secrets — SC-28 (3.13.16)
-
-Xero/QBO/Jira/Linear/Slack/OnShape/exchange-rate credentials are stored **plaintext**
-in `companyIntegration.metadata` (JSON column, `20240119095150_integrations.sql:28`),
-read cleartext in `packages/ee/**` (e.g. `linear/lib/client.ts:33`,
-`slack/lib/service.ts:227`, `accounting/core/models.ts:83`).
-
-- **1C.1 Vault-backed storage.** Store credentials in `vault.secrets`; keep only a
-  vault secret id in `metadata`. Add helpers `putIntegrationSecret`/`getIntegrationSecret`
-  (service-role) and update every EE provider read path to resolve via vault.
-  - Files: `packages/ee/src/**/lib/client.ts` (all providers),
-    `packages/ee/src/accounting/core/models.ts`, integration install/config actions.
-- **1C.2 Backfill + scrub.** One-time job to move existing plaintext metadata secrets
-  into vault and null the plaintext fields. Idempotent (per migration-idempotency
-  lesson).
-- **1C.3 Constant-time HMAC.** `apps/erp/app/routes/api+/webhook.paperless-parts.$companyId.ts:98`
-  uses `signature !== expectedSignature`; switch to `crypto.timingSafeEqual` (match
-  the Xero webhook at `webhook.xero.ts:70`).
-
-**Verify:** DB inspection shows no plaintext tokens in `companyIntegration.metadata`;
-a Xero/QBO/Slack sync still authenticates end-to-end; Paperless webhook still accepts a
-valid signature and rejects a bad one.
+Bonus authz fix on-branch: `15545ecee` — `is_claims_admin` checked the reversed
+permission (`users_update` vs `update_users`).
 
 ---
 
-## Phase 2 — Identity & access hardening (P2)
+## Remaining TODOs [app]
 
-- **2.1 Per-account failed-login lockout — 3.1.8.** The login send path
-  (`apps/erp/app/routes/_public+/login.tsx:95`) rate-limits by IP only. Add an
-  email-keyed counter in `@carbon/kv` (`Ratelimit`/token bucket) with exponential
-  backoff + temporary lock; emit a metric for alerting. Mirror in MES login.
-- **2.2 Session inactivity timeout — 3.1.11 / 3.13.9.** Track last-activity in
-  `requireAuthSession` (`packages/auth/src/services/session.server.ts`); terminate/
-  redirect after an idle threshold (CUI default 15–30 min). Make it a
-  `companySettings` value, forced on under `CONTROLLED_ENVIRONMENT` (reuse the
-  `requireMfa` settings precedent).
-- **2.3 Session lock — 3.1.10 (RESOLVED 2026-08-15 → lock + terminate, BOTH, gated on
-  `CONTROLLED_ENVIRONMENT`).** 3.1.10 (AC-11, session lock) and 3.1.11 (AC-12,
-  termination) are DISTINCT controls, not alternatives — logout-on-idle satisfies
-  3.1.11 but leaves 3.1.10 unmet, so we do both. **Lock** at a short idle threshold
-  (CUI default ~15 min): client idle-detector → full-screen overlay that hides all
-  content (pattern-hiding) and requires a re-challenge (passkey/TOTP/re-auth) to
-  resume, session preserved — reuses the MFA challenge machinery. **Terminate**
-  (item 2.2) at a longer hard bound → destroy session. **Both behaviors are gated on
-  `CONTROLLED_ENVIRONMENT`** (off for normal deployments; on and non-overridable under
-  controlled, per the `requireMfa` precedent) — acceptable because 800-171 applies
-  only to the CUI/controlled boundary. Component under `apps/erp/app/components`; hook
-  into the authenticated shell (`x+/_layout.tsx`). MET-s both 3.1.10 and 3.1.11 (no
-  POA&M needed).
-- **2.4 Close MFA fail-open — 3.5.3.** `userHasVerifiedTotpFactor`
-  (`packages/auth/src/services/mfa.server.ts:64`) currently fails **open** on
-  Redis/GoTrue error. Under `CONTROLLED_ENVIRONMENT`, fail **closed** (deny → `/mfa`
-  or hard error). Extend `mfa-session.test.ts`.
-- **2.5 Drop password grant for CUI — 3.5.7/3.5.8/3.5.9.** Ensure `AUTH_PROVIDERS`
-  excludes `password` under `CONTROLLED_ENVIRONMENT` and the password login/reset
-  routes 404/redirect (`isAuthProviderEnabled`, `packages/env/src/index.ts:118`;
-  `auth.server.ts` `signInWithPassword`/`resetPassword`). Chart also sets
-  `GOTRUE_DISABLE_SIGNUP` / no password provider.
-- **2.6 Auto-disable inactive accounts — 3.5.6.** Scheduled Inngest job deactivating
-  accounts idle > N days (last-login from `auth.audit_log_entries`); on deactivation
+### 1A.2 — Permission/role-change audit events — 3.3.1/3.3.2 — **OPEN**
+
+The mutation paths write permission/membership changes but emit **no** audit event.
+`packages/auth/src/services/users.server.ts` (`deactivateEmployee/Customer/Supplier/User`)
+writes `userPermission`, deletes `userToCompany`, flips `employee.active`, deletes
+`employeeJob` — and only invalidates the Redis cache, never emits. ERP routes
+`x+/users+/deactivate.tsx` and `x+/users+/bulk-edit-permissions.tsx` and their batch
+jobs (`tasks/update-permissions.ts`, `tasks/user-admin.ts`) are equally silent.
+
+- **Approach:** emit an audit entry (actor, target user, before/after permission set,
+  companyId) on writes to `userPermission`/`employeeTypePermission`/`userToCompany` and
+  the deactivation flows. Reuse `logAuthEvent` (add `permission_changed`/`role_changed`
+  to the `AuthEvent` union in `auth-events.server.ts`) OR the existing
+  `insert_audit_log_batch` RPC shape. Service-role writes currently set `actorId := NULL`
+  — thread the acting `userId` through so the actor is recorded.
+- **Verify:** grant then revoke a permission and deactivate a user; confirm each produces
+  an event with actor + target + before/after.
+
+### 2.1 — Per-account failed-login lockout — 3.1.8 — **OPEN**
+
+Both ERP (`_public+/login.tsx:96-110`) and MES logins rate-limit by **IP only**
+(`Ratelimit.slidingWindow(RATE_LIMIT, "1 h")`, key = `ip`). No email-keyed counter,
+no per-account backoff/lock.
+
+- **Approach:** add an email-keyed counter in `@carbon/kv` (`Ratelimit`/token bucket)
+  with exponential backoff + temporary lock; emit a `login_locked`/`lockout` auth event
+  (also closes the "no lockout event" gap in 1A.1). Mirror in MES login.
+- Note: magic-link is passwordless, so this guards enumeration/abuse rather than
+  password guessing — but 3.1.8 asks for the account-scoped limit explicitly.
+- **Verify:** N failed sends for one email locks that email (not just the IP).
+
+### 2.6 — Auto-disable inactive accounts — 3.5.6 — **OPEN**
+
+No scheduled job deactivates idle accounts (confirmed: none of the crons in
+`packages/jobs/src/inngest/functions/scheduled/` read `user.active`/last-sign-in).
+
+- **Approach:** scheduled Inngest job deactivating accounts idle > N days (last-login
+  from `auth.audit_log_entries`); reuse `deactivateEmployee` et al. On deactivation,
   scrub residual `userId` references noted in
-  `.claude/rules/user-employee-job-relationships.md`. Reuse `deactivateEmployee`
-  et al. in `users.server.ts`.
-- **2.8 Remove the `"0"` global-company permission wildcard — 3.1.5 (least privilege).**
-  (Decided 2026-08-15: "we don't use it.") The `"0"` sentinel grants a permission
-  across ALL companies (present + future) and is flagged by the audit as a broad-grant
-  primitive. Remove it: rewrite the ~7 DB authz functions that special-case
-  `'0' = ANY(permission_value)` (`get_claims`/`has_company_permission` — latest defs in
-  `20250201181148_rls-refactor.sql` / `20241210140215_rls-performance.sql`; the API-key
-  company-resolution fn in `20260219162954_api-key-scopes-rate-limits.sql:328`; the
-  claims-admin guard `has_company_permission('update_users','0')` at
-  `20230123004206_claims.sql:18`), the app gate (`auth.server.ts:364`), and the
-  permission-matrix builder (`users.server.ts:1164-1288`); add grant-boundary
-  validation rejecting `"0"`. **Safe-by-construction: expand-then-drop** — the same
-  migration first expands any residual `"0"` grant to the subject's explicit
-  `userToCompany` company IDs (behavior-preserving; no-op if truly unused) BEFORE the
-  functions stop understanding `'0'`, so it cannot lock anyone out (live data not
-  verifiable from this session — stack down, MCP needs auth). Own spec+plan
-  (`.ai/specs/2026-08-16-remove-global-permission-wildcard.md` + `…/plans/2026-08-16-…`).
-  `NOTIFY pgrst` after fn changes.
-- **2.7 Consent-to-monitoring banner — 3.1.9.** Generalize `ItarLoginDisclaimer`
-  (`login.tsx:531`) into a configurable login banner for non-controlled deployments.
+  `.claude/rules/user-employee-job-relationships.md`.
+- **Verify:** an account idle past the threshold is auto-deactivated by the job.
 
-**Verify:** N failed logins locks that account (not just the IP); idle session
-redirects/locks after the threshold; MFA backend error denies rather than admits
-under CUI; password login route is unreachable under CUI; an idle account is
-auto-deactivated by the job.
+### 4.3 — File-upload validation — 3.14.2/3.7.4 — **OPEN** (size limits partial)
 
----
+Only `private` (50 MB) and `temp-staging` (2.5 GB) buckets have `file_size_limit`
+(`20260715150742_temp-staging-bucket.sql`); `public`/`avatars`/`company-templates`/
+feedback have none. **No** bucket sets `allowed_mime_types` (zero hits repo-wide), and
+there is **no** server-side magic-byte check — the serve route
+`file+/preview+/$bucket.$.tsx` maps `Content-Type` from the file **extension** only.
 
-## Phase 4 — Monitoring, integrity, error hygiene (P4, app items)
+- **Approach:** set `allowed_mime_types` + `file_size_limit` on every bucket (migrations);
+  add a server-side magic-byte check (`file-type`/`fileTypeFromBuffer`) on the upload
+  path, not just the serve-time extension map. Quarantine-on-hit handling is app-side;
+  the AV scan (ClamAV/Lambda on `private`) is **[chart]**.
+- **Verify:** oversized / wrong-MIME / spoofed-extension upload is rejected.
 
-- **4.1 Security monitoring hooks — 3.14.6/3.14.7.** Emit CloudWatch metrics from
-  the auth paths (failed-login count from 2.1, permission-denied from 1A.3) and 5xx
-  from `entry.server.tsx:57`. In-boundary error monitoring: self-hosted Sentry **or**
-  OTel exporter → CloudWatch (no external SaaS; respect `CONTROLLED_ENVIRONMENT`).
-  Alarms/dashboards are **[chart]**.
-- **4.2 Deepen `/health` — 3.14.6.** `apps/erp/app/routes/health.ts` pings only Redis;
-  add DB + storage + Inngest reachability (keep it unauthenticated + cheap).
-- **4.3 File-upload validation — 3.14.2/3.7.4.** Set `allowed_mime_types` + size
-  limits on all storage buckets (migrations; several buckets lack limits today);
-  server-side magic-byte check on upload (not just the serve-time extension map in
-  `apps/erp/app/routes/file+/preview+/$bucket.$.tsx:8`). AV scan (ClamAV/Lambda on
-  the `private` bucket) is **[chart]** but the quarantine-on-hit handling is app-side.
-- **4.4 Fix error-detail leak — SI-11 (3.14.6-adjacent).** `packages/react/src/ErrorBoundary/RootErrorBoundary.tsx:96`
-  renders `error.message` + first stack frame to end users, ungated. Gate the
-  message/stack output behind `import.meta.env.DEV`; show a generic 500 + `requestId`
-  in prod.
-- **4.5 Verify analytics inert under CUI — 3.4.6.** Confirm PostHog
-  (`entry.client.tsx:31`) and Vercel Analytics (`root.tsx:247`) are inert when
-  `CONTROLLED_ENVIRONMENT`; add a boot assertion so a misconfig fails fast.
+### 4.1 — Security monitoring hooks (app side) — 3.14.6/3.14.7 — **PARTIAL**
 
-**Verify:** trigger a 500 in prod build → no stack/message shown, only a reference id;
-oversized/wrong-MIME upload rejected; `/health` reports DB/storage/Inngest; failed-auth
-and 5xx metrics appear in CloudWatch.
+App-side structured logging is **done**: `logAuthEvent` (failed-login, rate-limited,
+permission-denied) and `entry.server.tsx handleError` (5xx with requestId) ship JSONL
+to stdout via `@carbon/logger` with stable `authEvent`/`error` fields for downstream
+metric filters. **Remaining app decision:** whether to add self-hosted Sentry **or** an
+OTel exporter in-code (currently a console-only sink; adding one is a deploy-shape change
+per `packages/logger` AGENTS.md). The CloudWatch log group + metric filters + alarms are
+**[chart]** (helm). Decide: metric-filters-from-logs (no app change) vs. in-app exporter.
+
+### 2.5 — Password grant under CUI — 3.5.7/3.5.8/3.5.9 — **MET by architecture** (optional hardening)
+
+There is **no `password` provider anywhere** — `AuthProvider` is
+`email|google|azure|passkey`, primary flow is magic-link, and there is no
+`signInWithPassword`/reset route to reach. The control is satisfied by architecture, not
+by a CUI-conditional 404. **Optional:** add an explicit `CONTROLLED_ENVIRONMENT` assertion
+that `AUTH_PROVIDERS` excludes `password` (defense-in-depth against a future regression).
+Low priority — arguably a no-op today.
 
 ---
 
-## Cross-cutting notes
+## Residuals on completed items (small, non-blocking)
 
-- **Migrations:** several items add migrations (auth-audit RPC, append-only trigger,
-  vault backfill, bucket mime/size limits). Follow the idempotency + timestamp-randomness
-  lessons; run `pnpm run generate:types` before typecheck; DROP/recreate any views that
-  gain columns.
-- **Settings precedent:** 2.2/2.3 add `companySettings` fields — clone the `requireMfa`
-  migration + `security.tsx` toggle + `CONTROLLED_ENVIRONMENT`-forced pattern exactly.
-- **Tests:** extend `packages/auth/src/services/mfa-session.test.ts` (2.4) and add
-  coverage for the lockout counter and session-timeout math; red→green per TDD.
-- **Editions:** most items are all-edition, but the CUI-forcing behavior is keyed to
-  `CONTROLLED_ENVIRONMENT`, independent of `CarbonEdition`.
+- **1A.1 parity:** the `logout` event is defined in the `AuthEvent` union but **never
+  emitted**; **MES login** does not call `logAuthEvent` at all (ERP-only today). Wire both
+  for full coverage.
+- **Session lock browser verification:** the session-lock plan's last task (browser
+  verify via `/test`) is unrun. It now also covers this session's **passkey-unlock**
+  addition and the **MES passkey login** backend — see "This session (uncommitted)" below.
+- **1C deploy ordering:** the backfill is a **manual script**, the scrub is an
+  **auto-applied migration** sorting after it. Correct deploy order: vault migration →
+  run `backfill-integration-secrets.ts` → scrub migration. If scrub runs first it's a
+  harmless no-op (secretRef still NULL), but secret-bearing integrations then throw
+  `IntegrationSecretUnavailableError` on read until the backfill runs or the integration
+  is re-saved. Capture as a runbook/POAM note in helm; also fix the stale
+  "transitional read-fallback" comment in the backfill script header (the fallback was
+  removed from `resolveIntegrationSecrets`).
 
-## Suggested order
+---
 
-1. Quick code fixes first (hours each): **1C.3** (HMAC), **4.4** (error leak),
-   **2.4** (MFA fail-open), **2.5** (drop password grant), **1A.3** (denied-audit),
-   **1A.4** (audit on-by-default).
-2. Then the data-model work: **1A.1/1A.2** (auth+permission audit), **1B.1** (append-only),
-   **1C.1/1C.2** (vault) — these need migrations + a spec-level review. **[OQ]** whether
-   1C warrants its own `.ai/specs/` entry given it touches every EE provider.
-3. Then session/identity: **2.1, 2.2, 2.3, 2.6**.
-4. Then integrity/monitoring: **4.1, 4.2, 4.3, 4.5**.
+## Newly found during the 2026-08-18 audit (not in the original plan)
+
+### N1 — Console PIN stored/compared in plaintext — 3.5.10 — **OPEN**
+
+`apps/mes/app/routes/x+/console.pin-in.tsx` verifies the operator PIN with a plaintext
+equality check (`pin !== storedPin`) against `employee.pin`, which is stored in the
+clear. 3.5.10 requires authenticators to be stored cryptographically-protected.
+
+- **Approach:** hash the PIN at rest (salted; argon2/bcrypt, or at minimum SHA-256+salt)
+  and compare with a constant-time check; update the write path where `employee.pin` is
+  set (employee form / console setup) and a one-time migration to hash existing PINs (or
+  force re-set). Distinct from passkeys — it's the shared-kiosk factor.
+
+### N2 — Passkey assurance posture for CUI — 3.13.11 / 3.5.3 (AAL) — **DECISION (POA&M)**
+
+Passkey registration uses `attestationType:"none"` and allows **syncable** authenticators
+(iCloud Keychain / Google Password Manager), and `authenticatorAttachment:"platform"`
+excludes roaming FIDO2 hardware keys. This is fine for **AAL2** (passkey + user
+verification = MFA, replay-resistant) but cannot *prove* device-bound/AAL3 or FIPS-140
+crypto to a strict assessor.
+
+- **Decision needed (not necessarily code):** either (a) document a risk acceptance that
+  passkeys operate at AAL2 for the CUI boundary, or (b) tighten — `attestation:"direct"`
+  + an approved-AAGUID allowlist (record the `aaguid`, which is already stored) and allow
+  cross-platform authenticators — if an AAL3/hardware-key requirement lands. Confirm the
+  deployment's crypto module FIPS-140 posture (3.13.11) for auth.
+
+---
+
+## This session (uncommitted — commit + verify before it counts)
+
+Extends 2.3 and broadens passkey coverage; **not yet committed, not browser-verified**:
+
+- **Passkey session-lock unlock** (ERP + MES) — `/unlock` JSON branch resumes the locked
+  session in place (rejects a passkey whose `userId` ≠ the locked session's), + overlay
+  and full-page buttons.
+- **MES passkey login backend** — `apps/mes/app/routes/api+/passkey.authenticate.{options,verify}.ts`
+  (previously the MES client called endpoints that did not exist — MES passkey login was
+  non-functional).
+- **`AUTH_PROVIDERS` now includes `passkey`** in `.env`; **Account → Security** list UI
+  full-width fix; **i18n** wrapped + all locales filled.
+- **TODO:** commit these; run a WebAuthn verification pass (virtual authenticator or
+  manual) covering passkey **register → login → unlock** on both apps — this is the
+  outstanding "Task 10" browser proof.
+
+---
 
 ## Not in this repo (tracked in helm/niamey)
 
-Pod `securityContext`, in-cluster mTLS, S3 Object Lock, blocking CI scans + SAST +
-secret-scan + SBOM/signing, CloudWatch alarms/dashboards, the CI OIDC/ARC cutover,
-and all Phase-5 program artifacts (SSP, POA&M, IR plan, ConMon, inheritance
-statements). See `helm/niamey/docs/nist-800-171-remediation-plan.md`.
+Pod `securityContext`, in-cluster mTLS, S3 Object Lock (audit-archive immutability),
+blocking CI scans + SAST + secret-scan + SBOM/signing, CloudWatch alarms/dashboards +
+metric filters, GoTrue log shipping (fluent-bit, `SB_FORWARDED_FOR`), AV scanning, the CI
+OIDC/ARC cutover, and all Phase-5 program artifacts (SSP, POA&M, IR plan, ConMon,
+inheritance statements). See `helm/niamey/docs/nist-800-171-remediation-plan.md`.
+
+## Suggested order for the residual
+
+1. Quick, self-contained: **N1** (hash console PIN), **1A.1 parity** (logout + MES event),
+   **1C** stale-comment fix, **2.5** assertion.
+2. Data-model: **1A.2** (permission/role audit — migration or event emission).
+3. Identity: **2.1** (account lockout), **2.6** (auto-disable inactive).
+4. Integrity/monitoring: **4.3** (upload validation), **4.1** (exporter decision).
+5. Governance: **N2** passkey AAL risk-acceptance (POA&M) — no code unless AAL3 required.
+6. **Commit + WebAuthn-verify this session's passkey work.**

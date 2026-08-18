@@ -1,6 +1,6 @@
 # Remove the `"0"` Global-Company Permission Wildcard
 
-Status: DESIGNED 2026-08-16 (ready for `/plan` → plan written same day)
+Status: IMPLEMENTED 2026-08-18 (2.8 — commit `0cbaf1390`, verified in browser `ba340f2d9`)
 
 Removes the `"0"` sentinel that grants a permission across ALL companies (present
 and future) from Carbon's authorization layer. NIST 800-171 **3.1.5 (least

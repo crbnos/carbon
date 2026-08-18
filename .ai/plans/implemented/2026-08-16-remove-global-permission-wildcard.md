@@ -1,6 +1,8 @@
 # Remove the `"0"` Global-Company Permission Wildcard — implementation plan
 
-**Spec:** .ai/specs/2026-08-16-remove-global-permission-wildcard.md
+Status: IMPLEMENTED 2026-08-18 (commit `0cbaf1390`, verified `ba340f2d9`).
+
+**Spec:** .ai/specs/implemented/2026-08-16-remove-global-permission-wildcard.md
 **Branch:** port-louis (or a dedicated `remove-permission-wildcard`)
 
 ## Progress

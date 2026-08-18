@@ -1,6 +1,8 @@
 # Integration Secret Encryption via Supabase Vault — implementation plan
 
-**Spec:** .ai/specs/2026-08-15-integration-secret-encryption.md
+Status: IMPLEMENTED 2026-08-18 (all tasks; Task 8 blocker resolved by `7fc7f26aa`).
+
+**Spec:** .ai/specs/implemented/2026-08-15-integration-secret-encryption.md
 **Branch:** port-louis (or a dedicated `integration-secret-encryption`)
 
 Implements spec decisions D1–D8. Encrypt third-party integration credentials into

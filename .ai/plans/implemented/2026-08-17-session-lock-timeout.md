@@ -1,6 +1,9 @@
 # Session Lock & Session Termination under CUI — implementation plan
 
-**Spec:** .ai/specs/2026-08-17-session-lock-timeout.md
+Status: IMPLEMENTED 2026-08-18 (residual: `/test` browser verification + passkey-unlock
+addition — see `.ai/plans/2026-08-15-nist-800-171-app-remediation.md`).
+
+**Spec:** .ai/specs/implemented/2026-08-17-session-lock-timeout.md
 **Research:** .ai/research/session-lock-timeout.md
 **Branch:** nist-800-110-audit (single PR #1414)
 

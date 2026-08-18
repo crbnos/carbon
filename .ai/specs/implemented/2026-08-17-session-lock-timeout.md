@@ -1,6 +1,8 @@
 # Session Lock & Session Termination under CUI (NIST 800-171 3.1.10 / 3.1.11)
 
-> Status: draft
+> Status: IMPLEMENTED 2026-08-18 (3.1.10/3.1.11 — commits `c76e15e4c`→`c7a076477`).
+> Residual: browser-verification (`/test`) + passkey-unlock addition tracked in
+> `.ai/plans/2026-08-15-nist-800-171-app-remediation.md`.
 > Author: Brad Barbin (with Claude)
 > Date: 2026-08-17
 
