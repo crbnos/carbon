@@ -124,6 +124,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const queuedRowIds: string[] = [];
 
+  // The model row IS the record that a re-pull is in flight, so its write is the
+  // one that may not fail quietly: without it the page keeps rendering the last
+  // sync while the toast says a pull started, and the compensating write below
+  // has no row to mark should the trigger then fail. The drawing arm stays
+  // best-effort — it refreshes what a previous sync located, and a part with no
+  // drawing is the normal case.
   if (modelRow) {
     const queuedModel = await serviceRole
       .from("onshapeItemSyncState")
@@ -134,9 +140,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       logger.error("Failed to queue Onshape model sync state", {
         error: queuedModel.error
       });
-    } else {
-      queuedRowIds.push(modelRow.id);
+      return data(
+        { error: "Failed to start the Onshape sync" },
+        { status: 500 }
+      );
     }
+    queuedRowIds.push(modelRow.id);
   } else {
     const insertedModel = await serviceRole
       .from("onshapeItemSyncState")
@@ -154,9 +163,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       logger.error("Failed to create Onshape model sync state", {
         error: insertedModel.error
       });
-    } else {
-      queuedRowIds.push(insertedModel.data.id);
+      return data(
+        { error: "Failed to start the Onshape sync" },
+        { status: 500 }
+      );
     }
+    queuedRowIds.push(insertedModel.data.id);
   }
 
   if (drawingRow && drawingQueued) {

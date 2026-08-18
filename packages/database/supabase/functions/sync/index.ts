@@ -405,6 +405,9 @@ serve(async (req: Request) => {
             // The raw BOM row is stored as-is; the engineering facts Carbon reads
             // (release state, mass, material, vendor) are normalized alongside it
             // under stable keys so the engineering data view can use plain JSON paths.
+            // Raw cells keep their header's own casing, so only a header spelled
+            // exactly "engineering" would be displaced by this key — rename the
+            // key, not the raw row, if that ever shows up in a customer's BOM.
             const onshapeMappingMetadata = {
               ...data.data,
               engineering: extractEngineeringFields(data.data),
