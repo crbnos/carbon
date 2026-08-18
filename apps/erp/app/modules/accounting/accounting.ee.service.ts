@@ -843,11 +843,19 @@ export async function getConsolidatedPeriodSeries(
   );
 
   // Elimination-entity ids in this group — read privileged, everything else RLS.
-  const { data: elimRows } = await eliminationClient
+  // Fail loudly on a read error: an empty set here silently routes the
+  // elimination entity through the RLS client (which can't see it), dropping the
+  // reversing entries and reporting un-eliminated intercompany balances as real.
+  const { data: elimRows, error: elimError } = await eliminationClient
     .from("company")
     .select("id")
     .eq("companyGroupId", companyGroupId)
     .eq("isEliminationEntity", true);
+  if (elimError) {
+    throw new Error(
+      `Failed to resolve elimination entities for consolidation: ${elimError.message}`
+    );
+  }
   const elimIds = new Set((elimRows ?? []).map((c) => c.id));
 
   const results = await Promise.all(
@@ -987,12 +995,17 @@ export async function getConsolidatedPeriodSeries(
   });
 
   // Balance sheet: inject the consolidated "Net Income" (current year earnings)
-  // as an equity leaf so the sheet balances. Mirrors the single-company injection
-  // in getFinancialStatementPeriodSeries, but also carries TRANSLATED values
-  // (summed from the already-translated income-statement leaves) so the
-  // translated consolidated view balances too. Pushed as a leaf child of Equity
-  // BEFORE rollUpTranslatedGroups, so it rolls into the Equity subtotal and the
-  // root exactly like a posted account.
+  // as an equity leaf so the sheet balances. The leaf carries both raw and
+  // TRANSLATED period values (translated summed from the already-translated
+  // income-statement leaves). Pushed as a leaf child of Equity BEFORE
+  // rollUpTranslatedGroups, which propagates only the TRANSLATED values into the
+  // Equity subtotal and root — so the TRANSLATED consolidated balance sheet
+  // balances, and the multi-company balance sheet always renders translated
+  // (showTranslated: true). Unlike the single-company path in
+  // getFinancialStatementPeriodSeries, the RAW Equity subtotal is intentionally
+  // left unadjusted here (it would double-count against the rolled-up leaf); a
+  // consumer that needs the raw Net Income reads it from this leaf, not the
+  // subtotal.
   if (args.includeCurrentYearEarnings) {
     const balanceSheetRoot = consolidated.find(
       (a) =>
@@ -4416,11 +4429,19 @@ export async function getConsolidatedBalances(
     companyIds
   );
 
-  const { data: elimRows } = await eliminationClient
+  // Fail loudly on a read error (see getConsolidatedPeriodSeries): an empty set
+  // silently routes the elimination entity through the RLS client, dropping the
+  // reversing entries and over-reporting intercompany balances.
+  const { data: elimRows, error: elimError } = await eliminationClient
     .from("company")
     .select("id")
     .eq("companyGroupId", companyGroupId)
     .eq("isEliminationEntity", true);
+  if (elimError) {
+    throw new Error(
+      `Failed to resolve elimination entities for consolidation: ${elimError.message}`
+    );
+  }
   const elimIds = new Set((elimRows ?? []).map((c) => c.id));
 
   // Get balances for all companies, then translate the already-computed

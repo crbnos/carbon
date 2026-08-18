@@ -150,6 +150,7 @@ DECLARE
   v_lca_id TEXT;
   v_elim_id TEXT;
   v_journal_id TEXT;
+  v_balance_journal_id TEXT;
   v_rev_journal_id TEXT;
   v_period_id TEXT;
   v_journals_created INTEGER := 0;
@@ -184,6 +185,12 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Insufficient permissions to generate elimination entries';
   END IF;
+
+  -- Serialize per company group: two concurrent runs would both read the same
+  -- 'Matched' rows (not locked until the flip at the end) and double-post every
+  -- elimination journal. A transaction-scoped advisory lock makes the second
+  -- caller wait for the first to commit, after which it finds no Matched rows.
+  PERFORM pg_advisory_xact_lock(hashtext(p_company_group_id));
 
   -- Regenerate: reverse every existing elimination journal on the group's
   -- elimination entities that has not already been reversed (post reversing
@@ -352,6 +359,7 @@ BEGIN
       v_period_id, v_elim_id, v_today,
       get_next_sequence('journalEntry', v_elim_id), 'Manual', 'IC Balance'
     ) RETURNING "id" INTO v_journal_id;
+    v_balance_journal_id := v_journal_id;   -- canonical elimination journal for the pair
 
     INSERT INTO "journalLine" (
       "journalId", "accountId", "description", "amount",
@@ -514,9 +522,12 @@ BEGIN
       v_journals_created := v_journals_created + 1;
     END LOOP;
 
-    -- Retire every matched row of the pair (both directions).
+    -- Retire every matched row of the pair (both directions). Point
+    -- eliminationJournalId at the pair's IC Balance journal (the canonical
+    -- reversal of the control lines) — NOT the last IC Revenue journal, which
+    -- v_journal_id now holds and which is loop-order-dependent.
     UPDATE "intercompanyTransaction"
-    SET "status" = 'Eliminated', "eliminationJournalId" = v_journal_id, "updatedAt" = NOW()
+    SET "status" = 'Eliminated', "eliminationJournalId" = v_balance_journal_id, "updatedAt" = NOW()
     WHERE "companyGroupId" = p_company_group_id
       AND "status" = 'Matched'
       AND LEAST("sourceCompanyId", "targetCompanyId") = v_rec."companyA"

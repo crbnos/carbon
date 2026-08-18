@@ -158,6 +158,15 @@ BEGIN
     ASSERT pg_temp.consol(v_grp,'5010')=0, 'S1 fixed-asset: COGS not eliminated';
     ASSERT pg_temp.consol(v_grp,'1350')=60, 'S1 fixed-asset: buyer asset not at group cost (expected 60, got '||pg_temp.consol(v_grp,'1350')||')';
     PERFORM pg_temp.assert_balanced(v_grp,d,'S1 fixed-asset');
+    -- eliminationJournalId must point to the pair's IC Balance journal, not the
+    -- last IC Revenue journal (loop-order-dependent).
+    ASSERT (
+      SELECT bool_and(j."eliminationKind" = 'IC Balance')
+      FROM "intercompanyTransaction" ict
+      JOIN "journal" j ON j."id" = ict."eliminationJournalId"
+      WHERE ict."companyGroupId"=v_grp AND ict."status"='Eliminated'
+        AND ict."documentId" IN ('HARNESS-SALE','HARNESS-PURCH')
+    ), 'S1 fixed-asset: eliminationJournalId does not point to the IC Balance journal';
     RAISE NOTICE 'S1 fixed-asset buyer, fully held ....... PASS';
     RAISE SQLSTATE '22000';
   EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
