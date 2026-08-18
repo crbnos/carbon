@@ -268,7 +268,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companySettings: companySettings.data ?? null,
     customFields: customFields.data ?? [],
     defaults: defaults.data,
-    integrations: integrations.data ?? [],
+    // PROJECTED, never the raw rows. `integrations` selects * from a view that
+    // returns companyIntegration.metadata verbatim — which holds plaintext
+    // OAuth access and refresh tokens and webhook signing secrets. Returning it
+    // here serialises every connected integration's credentials into the HTML
+    // of every authenticated page, reachable by any browser extension or XSS.
+    // The settings page loads the full row itself when it actually needs it.
+    integrations: (integrations.data ?? []).map((integration) => {
+      const metadata = (integration.metadata ?? {}) as Record<string, unknown>;
+      return {
+        id: integration.id,
+        active: integration.active,
+        companyId: integration.companyId,
+        updatedAt: integration.updatedAt,
+        updatedBy: integration.updatedBy,
+        // The only metadata any client-side consumer reads: which Onshape
+        // pipeline the company runs (useOnshapePipeline). A scalar, not a blob.
+        metadata: { pipeline: metadata.pipeline ?? null }
+      };
+    }),
     groups: groups.data,
     permissions: claims?.permissions,
     plan: stripeCustomer?.planId,

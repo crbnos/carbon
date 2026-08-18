@@ -114,6 +114,67 @@ describe("onshape webhook receiver", () => {
       expect(dispatchedTasks()).toEqual([]);
     });
 
+    it("dispatches NOTHING legacy when the company is on the v2 pipeline", async () => {
+      // A company that migrated to v2 with the legacy toggles still on would
+      // otherwise have BOTH pipelines act on one release: duplicate change
+      // notices, and every export run twice. Exactly one pipeline runs.
+      getIntegration.mockResolvedValue(
+        integrationRow({
+          pipeline: "next",
+          assetSyncEnabled: true,
+          releaseImportEnabled: true
+        })
+      );
+
+      const result = await run(makeRequest(releaseEvent()));
+
+      expect(result).toEqual({ success: true });
+      expect(dispatchedTasks()).toEqual([]);
+    });
+
+    it("does not drop a v2 company's event for want of the legacy flags", async () => {
+      // The either-flag gate reads only the LEGACY toggles, which a v2 company
+      // has off — so before pipeline routing existed, a v2 company's releases
+      // were discarded at the gate and nothing said so.
+      getIntegration.mockResolvedValue(integrationRow({ pipeline: "next" }));
+
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const result = await run(makeRequest(releaseEvent()));
+
+      expect(result).toEqual({ success: true });
+      // v2 handlers are not built yet, so nothing dispatches — but the event
+      // reached the dispatch point and was recorded rather than dropped.
+      expect(dispatchedTasks()).toEqual([]);
+      expect(warn).toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it("treats a v2 company with release import off as having no release consumer", async () => {
+      getIntegration.mockResolvedValue(
+        integrationRow({
+          pipeline: "next",
+          attachAssetsOnRelease: false,
+          releaseImportV2: "off"
+        })
+      );
+
+      const result = await run(makeRequest(releaseEvent()));
+
+      expect(result).toEqual({ success: true });
+      expect(dispatchedTasks()).toEqual([]);
+    });
+
+    it('is unaffected by a pipeline value that is not exactly "next"', async () => {
+      getIntegration.mockResolvedValue(
+        integrationRow({ pipeline: "Next", assetSyncEnabled: true })
+      );
+
+      await run(makeRequest(releaseEvent()));
+
+      // Anything that is not exactly "next" is legacy, so legacy still runs.
+      expect(dispatchedTasks()).toEqual(["onshape-revision-sync"]);
+    });
+
     it("dispatches only the asset sync when only asset sync is on", async () => {
       getIntegration.mockResolvedValue(
         integrationRow({ assetSyncEnabled: true })

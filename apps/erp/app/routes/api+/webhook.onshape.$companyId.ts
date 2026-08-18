@@ -164,12 +164,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
     string,
     unknown
   >;
-  const assetSyncEnabled = integrationMetadata.assetSyncEnabled === true;
+  // Which pipeline this company runs. Strict equality against the NEW value, so
+  // an absent key — every existing install — is legacy by construction.
+  const isV2 = integrationMetadata.pipeline === "next";
+
+  // The legacy consumers. On a v2 company these are DEAD regardless of their
+  // stored values: a company that migrated with them left on would otherwise
+  // have both pipelines act on the same release, producing duplicate change
+  // notices and double the export calls. Exactly one pipeline runs.
+  const assetSyncEnabled =
+    !isV2 && integrationMetadata.assetSyncEnabled === true;
   const releaseImportEnabled =
-    integrationMetadata.releaseImportEnabled === true;
-  if (!assetSyncEnabled && !releaseImportEnabled) {
+    !isV2 && integrationMetadata.releaseImportEnabled === true;
+
+  // The v2 consumers, read only when v2 is selected.
+  const v2AttachAssets =
+    isV2 && integrationMetadata.attachAssetsOnRelease !== false;
+  const v2ReleaseImportMode = isV2
+    ? ((integrationMetadata.releaseImportV2 as string | undefined) ??
+      "changeNotice")
+    : "off";
+  const v2ReleaseImportEnabled = isV2 && v2ReleaseImportMode !== "off";
+
+  if (
+    !assetSyncEnabled &&
+    !releaseImportEnabled &&
+    !v2AttachAssets &&
+    !v2ReleaseImportEnabled
+  ) {
     console.log("Onshape webhook: no consumer enabled; ignoring event", {
-      companyId
+      companyId,
+      pipeline: isV2 ? "next" : "legacy"
     });
     return { success: true };
   }
@@ -290,6 +315,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
           releaseId,
           revision
         });
+      }
+
+      if (v2AttachAssets) {
+        // v2 resolves the item through the element mapping, never by part
+        // number, so it cannot reuse onshape-revision-sync. Until that job
+        // exists the event is recorded rather than silently dropped — a
+        // dropped release is indistinguishable from one that worked.
+        console.warn(
+          "Onshape webhook: v2 asset attach is not implemented yet; release not processed",
+          { companyId, messageId, partNumber, revisionId }
+        );
+      }
+
+      if (v2ReleaseImportEnabled) {
+        console.warn(
+          "Onshape webhook: v2 release import is not implemented yet; release not processed",
+          {
+            companyId,
+            messageId,
+            partNumber,
+            releaseId,
+            mode: v2ReleaseImportMode
+          }
+        );
       }
 
       if (releaseImportEnabled) {

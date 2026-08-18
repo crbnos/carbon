@@ -440,6 +440,23 @@ export const onshapeBomImportFunction = inngest.createFunction(
           .single();
 
         if (created.error || !created.data) {
+          if (created.error?.code === "23505") {
+            // The number is taken by an item that is not linked to Onshape.
+            // Find it so its existing material line is PROTECTED: the import
+            // is refusing this row, and a refusal must not delete the line it
+            // refused to touch.
+            const conflicting = await carbon
+              .from("item")
+              .select("id")
+              .eq("readableId", row.partNumber)
+              .eq("revision", row.revision || "0")
+              .eq("companyId", payload.companyId)
+              .maybeSingle();
+            if (conflicting.data?.id) {
+              protectedItemIds.add(conflicting.data.id);
+            }
+          }
+
           outcome.skipped.push({
             partNumber: row.partNumber,
             revision: row.revision,
