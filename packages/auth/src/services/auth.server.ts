@@ -153,6 +153,11 @@ export function makeAuthSession(
     expiresIn:
       (supabaseSession.expires_in ?? 3000) - REFRESH_ACCESS_TOKEN_THRESHOLD,
     expiresAt: supabaseSession.expires_at ?? -1,
+    // Session-lock/termination clocks (NIST 3.1.10/3.1.11). Stamped at every mint
+    // AND on the refresh rebuild; refreshAuthSession then re-preserves the original
+    // createdAt/lastActiveAt so a silent token refresh never resets either clock.
+    createdAt: Date.now(),
+    lastActiveAt: Date.now(),
     ...(options?.mfaVerified ? { mfaVerified: true } : {})
   };
 }

@@ -44,7 +44,8 @@ vi.mock("./auth.server", () => ({
         : null
   ),
   refreshAccessToken: vi.fn(),
-  verifyAuthSession: vi.fn().mockResolvedValue(true)
+  verifyAuthSession: vi.fn().mockResolvedValue(true),
+  logAuthEvent: vi.fn()
 }));
 
 vi.mock("./company.server", () => ({

@@ -12,7 +12,7 @@ client idle UX drives concealment + a throttled activity heartbeat.
 ## Progress
 - [x] Task 1: Add session-timeout constants to `@carbon/env`
 - [x] Task 2: Add `createdAt`/`lastActiveAt` to `AuthSession`
-- [ ] Task 3: Stamp at mint, preserve across refresh; add predicates + `touchAuthSession` (+ unit tests)
+- [x] Task 3: Stamp at mint, preserve across refresh; add predicates + `touchAuthSession` (+ unit tests)
 - [ ] Task 4: Enforce idle-lock + absolute-termination in `requireAuthSession`
 - [ ] Task 5: Heartbeat route (ERP + MES)
 - [ ] Task 6: `/unlock` TOTP route (ERP + MES)

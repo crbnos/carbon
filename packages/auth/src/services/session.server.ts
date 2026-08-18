@@ -7,6 +7,8 @@ import {
   CarbonEdition,
   DOMAIN,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
+  SESSION_ABSOLUTE_MAX_MS,
+  SESSION_IDLE_LOCK_MS,
   SESSION_KEY,
   SESSION_MAX_AGE,
   SESSION_SECRET
@@ -282,6 +284,25 @@ function isExpiringSoon(expiresAt: number) {
   return (expiresAt - REFRESH_ACCESS_TOKEN_THRESHOLD) * 1000 < Date.now();
 }
 
+/**
+ * Absolute session cap (NIST 800-171 3.1.11). A missing `createdAt` counts as
+ * "never expired" — a session minted before this shipped gets stamped on its
+ * next mint/refresh rather than being force-terminated on sight.
+ */
+export function isSessionExpiredAbsolute(session: AuthSession): boolean {
+  if (!session.createdAt) return false;
+  return Date.now() - session.createdAt > SESSION_ABSOLUTE_MAX_MS;
+}
+
+/**
+ * Idle session lock (NIST 800-171 3.1.10). A missing `lastActiveAt` counts as
+ * "not locked" (back-compat) — the heartbeat/unlock stamps it going forward.
+ */
+export function isSessionIdleLocked(session: AuthSession): boolean {
+  if (!session.lastActiveAt) return false;
+  return Date.now() - session.lastActiveAt > SESSION_IDLE_LOCK_MS;
+}
+
 export async function requireAuthSession(
   request: Request,
   {
@@ -335,6 +356,15 @@ export async function refreshAuthSession(
   if (refreshedAuthSession && authSession?.mfaVerified) {
     refreshedAuthSession.mfaVerified = authSession.mfaVerified;
   }
+  // Preserve session age + last-activity across a silent token refresh — a
+  // refresh is neither a re-auth nor user activity, so it must not reset the
+  // absolute-cap clock (3.1.11) or the idle clock (3.1.10).
+  if (refreshedAuthSession && authSession?.createdAt) {
+    refreshedAuthSession.createdAt = authSession.createdAt;
+  }
+  if (refreshedAuthSession && authSession?.lastActiveAt) {
+    refreshedAuthSession.lastActiveAt = authSession.lastActiveAt;
+  }
 
   if (!refreshedAuthSession) {
     const redirectUrl = `${path.to.login}?${makeRedirectToFromHere(request)}`;
@@ -367,6 +397,23 @@ export async function refreshAuthSession(
   }
 
   return refreshedAuthSession;
+}
+
+/**
+ * Re-commit the session cookie with `lastActiveAt = now`. Called by the activity
+ * heartbeat (an active session pings this well within the idle window) and on a
+ * successful unlock. Returns the Set-Cookie string, or null if there is no
+ * session to touch. Only the idle clock moves — `createdAt` (the absolute-cap
+ * clock) is left untouched.
+ */
+export async function touchAuthSession(
+  request: Request
+): Promise<string | null> {
+  const session = await getSession(request);
+  const authSession = await getAuthSession(request);
+  if (!authSession) return null;
+  session.set(SESSION_KEY, { ...authSession, lastActiveAt: Date.now() });
+  return sessionStorage.commitSession(session, { maxAge: SESSION_MAX_AGE });
 }
 
 export async function updateSessionConsole(
