@@ -55,11 +55,23 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
+  // An empty revision means the selection is an UNRELEASED version: Onshape
+  // stamps a revision only on release. Such an import lands on Carbon's initial
+  // revision and carries no released asset, so it is opt-in per company.
+  const isUnreleasedSelection = !input.revision;
+  if (isUnreleasedSelection && !settings.allowUnreleasedSync) {
+    return {
+      success: false,
+      message:
+        "That Onshape version has never been released, and this company only syncs released versions. Release it in Onshape, or turn on unreleased syncing in the integration settings."
+    };
+  }
+
   // Same three refusals the job makes, checked up front so the user sees them
   // now. The job re-checks — this is for the message, not for safety.
   const method = await client
     .from("makeMethod")
-    .select("id, itemId, status, changeOrderId")
+    .select("id, itemId, status, changeOrderId, item(revision)")
     .eq("id", input.makeMethodId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -84,6 +96,23 @@ export async function action({ request }: ActionFunctionArgs) {
   // Link the item being imported INTO to the assembly it came from, so the
   // next import resolves the parent by id like every other row. Without this
   // the top-level item is the one thing in the tree still joined by nothing.
+  // Refuse an unreleased import into an item that already carries a NAMED
+  // revision. Marking a released item as unreleased-sourced is a lie, and the
+  // rows underneath it would all resolve revision-missing anyway.
+  const targetRevision = (method.data.item as { revision?: string } | null)
+    ?.revision;
+  if (
+    isUnreleasedSelection &&
+    targetRevision &&
+    targetRevision !== "0" &&
+    targetRevision !== ""
+  ) {
+    return {
+      success: false,
+      message: `This item is at revision ${targetRevision}. An unreleased Onshape version can only be imported into the initial revision — release it in Onshape first.`
+    };
+  }
+
   if (input.partNumber) {
     try {
       await writeElementMapping(getCarbonServiceRole(), {

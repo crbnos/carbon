@@ -342,6 +342,17 @@ export const onshapeBomImportFunction = inngest.createFunction(
         return outcome;
       }
 
+      // Defense in depth for the route's gate. An Onshape row with no revision
+      // came from a version that was never released.
+      if (
+        !settings.allowUnreleasedSync &&
+        parsed.rows.some((r) => !r.revision)
+      ) {
+        throw new Error(
+          "This Onshape version has never been released and the company only syncs released versions."
+        );
+      }
+
       // Resolve the whole tree in one query, then by revision per row.
       const mappings = await readItemIdsForElements(carbon, {
         companyId: payload.companyId,

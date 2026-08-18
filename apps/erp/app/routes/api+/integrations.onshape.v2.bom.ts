@@ -69,6 +69,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { data: null, error: "Onshape v2 is not enabled for this company" };
   }
 
+  // Mirrors the import's gate so an unreleased version is refused at preview
+  // rather than after the user has read a whole diff.
+  const unreleased = url.searchParams.get("unreleased") === "true";
+  if (unreleased && !settings.allowUnreleasedSync) {
+    return {
+      data: null,
+      error:
+        "That Onshape version has never been released, and this company only syncs released versions."
+    };
+  }
+
   const serviceRole = getCarbonServiceRole();
   const connection = await getOnshapeClient(serviceRole, companyId, userId);
   if (!connection.client) {

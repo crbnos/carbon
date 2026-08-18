@@ -44,7 +44,10 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
-import { parseOnshapeV2Settings } from "@carbon/ee/onshape";
+import {
+  findUnlinkedLegacyOnshapeItems,
+  parseOnshapeV2Settings
+} from "@carbon/ee/onshape";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
@@ -1524,6 +1527,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companyId,
       webhookWanted
     );
+    // Switching to v2 leaves every item the LEGACY pipeline managed invisible to
+    // it: those carry an "onshapeData"/"onshape" mapping and no
+    // "onshapeElement" one, and v2 resolves only through the latter. Say so at
+    // the moment of the switch — a successful save redirects and unmounts the
+    // drawer, so the flash is what the user actually sees.
+    if (onshapeV2.isV2 && webhookResult.ok) {
+      try {
+        const unlinked = await findUnlinkedLegacyOnshapeItems(client, {
+          companyId,
+          limit: 1
+        });
+        if (unlinked.count > 0) {
+          throw redirect(
+            path.to.integrations,
+            await flash(
+              request,
+              success(
+                `Saved. ${unlinked.count} item${unlinked.count === 1 ? "" : "s"} imported by the previous Onshape integration ${unlinked.count === 1 ? "is" : "are"} not linked yet — Onshape v2 will not see ${unlinked.count === 1 ? "it" : "them"} until you use "Link to Onshape" on each.`
+              )
+            )
+          );
+        }
+      } catch (countError) {
+        if (countError instanceof Response) throw countError;
+        // A failed count must not fail the save the user actually asked for.
+        logger.error("Failed to count unlinked legacy Onshape items", {
+          countError
+        });
+      }
+    }
+
     if (webhookWanted && !webhookResult.ok) {
       await invalidateIntegrationHealthCache(integrationId, companyId);
       throw redirect(
