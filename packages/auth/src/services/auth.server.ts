@@ -12,7 +12,9 @@ import { createHash } from "crypto";
 import { redirect } from "react-router";
 import {
   CarbonEdition,
+  CONTROLLED_ENVIRONMENT,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
+  SESSION_IDLE_LOCK_MS,
   STRIPE_BYPASS_COMPANY_IDS,
   VERCEL_URL
 } from "../config/env";
@@ -195,7 +197,12 @@ function getEffectiveUser(
   try {
     const pinIn = JSON.parse(pinRaw);
     const elapsed = Date.now() - pinIn.pinnedAt;
-    if (elapsed > 3600000) return sessionUserId;
+    // Console operator idle window. A controlled environment (ITAR/CUI, NIST
+    // 3.1.10) drops the operator to re-PIN after the standard idle-lock window
+    // instead of the default 1h — pinnedAt is refreshed on every shell
+    // navigation, so this is effectively an inactivity timeout.
+    const maxAge = CONTROLLED_ENVIRONMENT ? SESSION_IDLE_LOCK_MS : 3600000;
+    if (elapsed > maxAge) return sessionUserId;
     return pinIn.userId ?? sessionUserId;
   } catch {
     return sessionUserId;

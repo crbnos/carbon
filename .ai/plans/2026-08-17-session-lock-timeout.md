@@ -18,7 +18,7 @@ client idle UX drives concealment + a throttled activity heartbeat.
 - [x] Task 6: `/unlock` TOTP route (ERP + MES)
 - [x] Task 7: `useIdle` client hook (activity + heartbeat + cross-tab)
 - [x] Task 8: `SessionLockOverlay` + wire into ERP/MES shells
-- [ ] Task 9: MES console idle-lock (tighten pin-in window under CUI)
+- [x] Task 9: MES console idle-lock (tighten pin-in window under CUI)
 - [ ] Task 10: Browser verification via `/test`
 
 ## Dependencies

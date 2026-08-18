@@ -305,6 +305,23 @@ export default function AuthenticatedRoute() {
     heartbeatUrl: "/api/session/heartbeat"
   });
 
+  // Console (shared-kiosk) idle lock (NIST 3.1.10). A controlled-environment
+  // console session is exempt from the session-wide lock above (sessionTimeout.
+  // enabled is false for it) — its lock is the operator pin-in. On idle, reload:
+  // the server-tightened pin-in (console.server) has by then expired, so the
+  // reload surfaces the PinInOverlay and the operator must re-PIN.
+  const { isIdle: consoleIsIdle } = useIdle({
+    enabled: CONTROLLED_ENVIRONMENT && consoleMode,
+    idleMs: sessionTimeout.idleMs,
+    heartbeatMs: sessionTimeout.heartbeatMs,
+    heartbeatUrl: "/api/session/heartbeat"
+  });
+  useEffect(() => {
+    if (consoleIsIdle && typeof window !== "undefined") {
+      window.location.reload();
+    }
+  }, [consoleIsIdle]);
+
   useNProgress();
   useKeyboardWedge({
     test: (input) =>
