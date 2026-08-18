@@ -67,7 +67,7 @@ DO $$ BEGIN
 END $$;
 
 -- 2. Widen intercompanyTransaction.amount to bare NUMERIC (numeric-precision
---    convention; grounded gap — was NUMERIC(19,4)).
+--    convention; grounded gap — was a fixed-precision numeric column).
 ALTER TABLE "intercompanyTransaction" ALTER COLUMN "amount" TYPE NUMERIC;
 
 -- 3. Capture table ----------------------------------------------------------
