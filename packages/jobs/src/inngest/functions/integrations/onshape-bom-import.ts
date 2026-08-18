@@ -1,0 +1,485 @@
+// Onshape v2 BOM import.
+//
+// Replaces the legacy path, which ran inside the `sync` Deno edge function and
+// was synchronously awaited by the request. That single choice is upstream of
+// most of what is wrong with it: the edge runtime only mounts
+// `supabase/functions/`, so it cannot reuse `createRevision` or `get-method`
+// (which is why the revision-preference sort exists in three hand-written
+// copies); it cannot retry; it cannot report progress; and a failure part-way
+// leaves the item tree half-written with nothing to resume from.
+//
+// Here the write is an Inngest job: retries, per-step isolation, and room for
+// the asset pull to run in the same execution.
+//
+// What it does NOT do, deliberately:
+//   * it never matches on part numbers — every row resolves through the
+//     element mapping and then by revision;
+//   * it never deletes-and-rebuilds a material list — see reconcile.ts;
+//   * it never creates a revision of an existing part. A row naming a revision
+//     Carbon does not have is REPORTED, not minted: auto-advancing revisions
+//     from a BOM import is a policy decision that has not been made, and doing
+//     it silently is exactly the class of behaviour this rebuild exists to end.
+
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  buildElementExternalId,
+  buildOnshapeBomTree,
+  getOnshapeClient,
+  getOnshapeV2Settings,
+  type OnshapeBomNode,
+  parseOnshapeBom,
+  readItemIdsForElements,
+  reconcileMethodMaterials,
+  resolveBomRow,
+  writeElementMapping
+} from "@carbon/ee/onshape";
+import { z } from "zod";
+import { inngest } from "../../client";
+
+const PayloadSchema = z.object({
+  companyId: z.string(),
+  userId: z.string(),
+  makeMethodId: z.string(),
+  documentId: z.string(),
+  versionId: z.string(),
+  elementId: z.string()
+});
+
+type Payload = z.infer<typeof PayloadSchema>;
+
+export type OnshapeBomImportOutcome = {
+  imported: number;
+  created: number;
+  updated: number;
+  removed: number;
+  /** Rows the import refused, each with why. */
+  skipped: Array<{ partNumber: string; revision: string; reason: string }>;
+};
+
+type Carbon = ReturnType<typeof getCarbonServiceRole>;
+
+/**
+ * The make method a BOM may be written into.
+ *
+ * Draft only, and never one owned by an open change notice. The legacy writer
+ * resolves a method itself and lands in a change notice's staged BOM often
+ * enough that release then ships whatever the import left — the CO draft is
+ * numbered max+1, so an "newest Draft" lookup finds it.
+ */
+async function assertWritableMethod(
+  carbon: Carbon,
+  methodId: string,
+  companyId: string
+) {
+  const method = await carbon
+    .from("makeMethod")
+    .select("id, itemId, status, changeOrderId, companyId")
+    .eq("id", methodId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (method.error || !method.data) {
+    throw new Error("Make method not found");
+  }
+  if (method.data.status !== "Draft") {
+    throw new Error(
+      `Onshape can only write into a Draft method; this one is ${method.data.status}. Create a new version first.`
+    );
+  }
+  if (method.data.changeOrderId) {
+    throw new Error(
+      "This method belongs to an open change notice. Import into the item's own draft instead, so a release cannot ship what the import left."
+    );
+  }
+  return method.data;
+}
+
+/** Reconcile one method's materials against the children Onshape reports. */
+async function reconcileOne(
+  carbon: Carbon,
+  args: {
+    companyId: string;
+    userId: string;
+    makeMethodId: string;
+    desired: Array<{ itemId: string; quantity: number; order: number }>;
+  }
+) {
+  const existing = await carbon
+    .from("methodMaterial")
+    .select("id, itemId, quantity, order")
+    .eq("makeMethodId", args.makeMethodId)
+    .eq("companyId", args.companyId);
+
+  if (existing.error) {
+    throw new Error(
+      `Failed to read existing materials: ${existing.error.message}`
+    );
+  }
+
+  const plan = reconcileMethodMaterials(
+    (existing.data ?? []).map(
+      (row: {
+        id: string;
+        itemId: string;
+        quantity: number | null;
+        order: number | null;
+      }) => ({
+        id: row.id,
+        itemId: row.itemId,
+        quantity: Number(row.quantity ?? 0),
+        order: Number(row.order ?? 0)
+      })
+    ),
+    args.desired
+  );
+
+  // Only the two columns Onshape owns are written. Everything else on a
+  // surviving row — methodOperationId, scrapQuantity, kit, sourcingType,
+  // storageUnitIds, tags, and its methodMaterialStep children — is untouched
+  // because it is never named here.
+  for (const change of plan.update) {
+    const updated = await carbon
+      .from("methodMaterial")
+      .update({
+        quantity: change.quantity,
+        order: change.order,
+        updatedBy: args.userId,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", change.id)
+      .eq("companyId", args.companyId);
+    if (updated.error) {
+      throw new Error(`Failed to update material: ${updated.error.message}`);
+    }
+  }
+
+  if (plan.insert.length > 0) {
+    // methodMaterial.unitOfMeasureCode is NOT NULL, and the right value is the
+    // component's own unit — not a constant. Onshape's BOM does carry a "Unit
+    // of measure" column, but it describes the CAD quantity rather than
+    // Carbon's stocking unit, so the item is the authority here.
+    const components = await carbon
+      .from("item")
+      .select("id, unitOfMeasureCode")
+      .in(
+        "id",
+        plan.insert.map((line) => line.itemId)
+      )
+      .eq("companyId", args.companyId);
+
+    if (components.error) {
+      throw new Error(
+        `Failed to read component units: ${components.error.message}`
+      );
+    }
+
+    const uomByItem = new Map(
+      (components.data ?? []).map(
+        (item: { id: string; unitOfMeasureCode: string | null }) => [
+          item.id,
+          item.unitOfMeasureCode
+        ]
+      )
+    );
+
+    const inserted = await carbon.from("methodMaterial").insert(
+      plan.insert.map((line) => ({
+        makeMethodId: args.makeMethodId,
+        itemId: line.itemId,
+        quantity: line.quantity,
+        order: line.order,
+        unitOfMeasureCode: uomByItem.get(line.itemId) ?? "EA",
+        companyId: args.companyId,
+        createdBy: args.userId
+      }))
+    );
+    if (inserted.error) {
+      throw new Error(`Failed to add materials: ${inserted.error.message}`);
+    }
+  }
+
+  if (plan.remove.length > 0) {
+    const removed = await carbon
+      .from("methodMaterial")
+      .delete()
+      .in(
+        "id",
+        plan.remove.map((row) => row.id)
+      )
+      .eq("companyId", args.companyId);
+    if (removed.error) {
+      throw new Error(`Failed to remove materials: ${removed.error.message}`);
+    }
+  }
+
+  return {
+    inserted: plan.insert.length,
+    updated: plan.update.length,
+    removed: plan.remove.length
+  };
+}
+
+export const onshapeBomImportFunction = inngest.createFunction(
+  {
+    id: "onshape-bom-import",
+    retries: 3,
+    // One import at a time per make method: two concurrent runs would each
+    // reconcile against a list the other is changing.
+    concurrency: { key: "event.data.makeMethodId", limit: 1 }
+  },
+  { event: "carbon/onshape-bom-import" },
+  async ({ event, step }) => {
+    const payload: Payload = PayloadSchema.parse(event.data);
+    const carbon = getCarbonServiceRole();
+
+    // Re-read the gate every execution, so turning the pipeline back to legacy
+    // also kills an in-flight retry.
+    const settings = await getOnshapeV2Settings(carbon, payload.companyId);
+    if (!settings.isV2) {
+      return { pipelineSkipped: true as const, reason: "pipeline-not-v2" };
+    }
+
+    const result = await step.run("import-bom", async () => {
+      const method = await assertWritableMethod(
+        carbon,
+        payload.makeMethodId,
+        payload.companyId
+      );
+
+      const connection = await getOnshapeClient(
+        carbon,
+        payload.companyId,
+        payload.userId
+      );
+      if (!connection.client) {
+        throw new Error(connection.error ?? "Onshape is not connected");
+      }
+
+      const parsed = parseOnshapeBom(
+        await connection.client.getBillOfMaterials(
+          payload.documentId,
+          payload.versionId,
+          payload.elementId
+        )
+      );
+
+      const outcome: OnshapeBomImportOutcome = {
+        imported: 0,
+        created: 0,
+        updated: 0,
+        removed: 0,
+        skipped: []
+      };
+
+      if (parsed.rows.length === 0) {
+        return outcome;
+      }
+
+      // Resolve the whole tree in one query, then by revision per row.
+      const mappings = await readItemIdsForElements(carbon, {
+        companyId: payload.companyId,
+        refs: parsed.rows.map((row) => ({
+          documentId: row.documentId,
+          elementId: row.elementId,
+          partId: row.partId
+        }))
+      });
+
+      const candidateIds = Array.from(
+        new Set(Array.from(mappings.values()).flat())
+      );
+      const revisionById = new Map<string, string | null>();
+      if (candidateIds.length > 0) {
+        const items = await carbon
+          .from("item")
+          .select("id, revision")
+          .in("id", candidateIds)
+          .eq("companyId", payload.companyId);
+        if (items.error) {
+          throw new Error(
+            `Failed to read mapped items: ${items.error.message}`
+          );
+        }
+        for (const item of items.data ?? []) {
+          revisionById.set(item.id, item.revision);
+        }
+      }
+
+      // itemId per BOM row, minting only genuinely-unknown parts.
+      const itemIdByRow = new Map<string, string>();
+
+      for (const row of parsed.rows) {
+        const externalId = buildElementExternalId({
+          documentId: row.documentId,
+          elementId: row.elementId,
+          partId: row.partId
+        });
+        const claimants = mappings.get(externalId) ?? [];
+        const resolution = resolveBomRow(
+          row.revision,
+          claimants.map((id) => ({
+            itemId: id,
+            revision: revisionById.get(id) ?? null
+          }))
+        );
+
+        if (resolution.kind === "matched") {
+          itemIdByRow.set(row.rowId, resolution.itemId);
+          continue;
+        }
+
+        if (resolution.kind === "ambiguous") {
+          outcome.skipped.push({
+            partNumber: row.partNumber,
+            revision: row.revision,
+            reason: "Two Carbon items claim this Onshape part at this revision"
+          });
+          continue;
+        }
+
+        if (resolution.kind === "revision-missing") {
+          outcome.skipped.push({
+            partNumber: row.partNumber,
+            revision: row.revision,
+            reason:
+              "Carbon has this part but not at this revision. New revisions arrive through release import."
+          });
+          continue;
+        }
+
+        // Genuinely unknown: mint it, then link it, so the next import
+        // resolves it by id rather than rediscovering it.
+        const created = await carbon
+          .from("item")
+          .insert({
+            readableId: row.partNumber,
+            revision: row.revision || "0",
+            name: row.name,
+            description: row.description || null,
+            type: "Part",
+            // Onshape's BOM says nothing reliable about how Carbon should buy
+            // or make a part, so these take Carbon's own defaults rather than
+            // a guess derived from a column that may not exist.
+            replenishmentSystem: "Buy",
+            defaultMethodType: "Pull from Inventory",
+            itemTrackingType: "Inventory",
+            unitOfMeasureCode: "EA",
+            active: true,
+            companyId: payload.companyId,
+            createdBy: payload.userId
+          })
+          .select("id")
+          .single();
+
+        if (created.error || !created.data) {
+          outcome.skipped.push({
+            partNumber: row.partNumber,
+            revision: row.revision,
+            reason:
+              created.error?.code === "23505"
+                ? "A Carbon part already uses this number and revision but is not linked to Onshape. Link it first."
+                : (created.error?.message ?? "Could not create the part")
+          });
+          continue;
+        }
+
+        await carbon.from("part").upsert({
+          id: row.partNumber,
+          companyId: payload.companyId,
+          createdBy: payload.userId
+        });
+
+        await writeElementMapping(carbon, {
+          companyId: payload.companyId,
+          itemId: created.data.id,
+          ref: {
+            documentId: row.documentId,
+            elementId: row.elementId,
+            partId: row.partId
+          },
+          metadata: {
+            versionId: payload.versionId,
+            partNumber: row.partNumber,
+            fromUnreleasedVersion: !row.revision,
+            lastSyncedAt: new Date().toISOString()
+          },
+          createdBy: payload.userId
+        });
+
+        itemIdByRow.set(row.rowId, created.data.id);
+        outcome.created++;
+      }
+
+      // Walk the tree, reconciling each level into the method that owns it.
+      const tree = buildOnshapeBomTree(parsed.rows);
+
+      const reconcileNode = async (
+        makeMethodId: string,
+        children: OnshapeBomNode[]
+      ) => {
+        const desired = children
+          .map((child, index) => {
+            const itemId = itemIdByRow.get(child.row.rowId);
+            return itemId
+              ? { itemId, quantity: child.row.quantity, order: index + 1 }
+              : null;
+          })
+          .filter((line): line is NonNullable<typeof line> => line !== null);
+
+        const counts = await reconcileOne(carbon, {
+          companyId: payload.companyId,
+          userId: payload.userId,
+          makeMethodId,
+          desired
+        });
+
+        outcome.updated += counts.updated;
+        outcome.removed += counts.removed;
+        outcome.imported += desired.length;
+
+        // Recurse into subassemblies that resolved to a Carbon item AND have
+        // children of their own. A childless row is a leaf regardless of how
+        // Carbon classifies the item — the legacy writer resolves a child
+        // method whenever the item is Make, which empties a hand-built BOM on
+        // a part Onshape reports as a leaf.
+        for (const child of children) {
+          if (child.children.length === 0) continue;
+          const childItemId = itemIdByRow.get(child.row.rowId);
+          if (!childItemId) continue;
+
+          const childMethod = await carbon
+            .from("makeMethod")
+            .select("id")
+            .eq("itemId", childItemId)
+            .eq("companyId", payload.companyId)
+            .eq("status", "Draft")
+            .is("changeOrderId", null)
+            .order("version", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (childMethod.error || !childMethod.data) {
+            outcome.skipped.push({
+              partNumber: child.row.partNumber,
+              revision: child.row.revision,
+              reason:
+                "No writable draft method for this subassembly; its children were not imported."
+            });
+            continue;
+          }
+
+          await reconcileNode(childMethod.data.id, child.children);
+        }
+      };
+
+      await reconcileNode(method.id, tree);
+
+      return outcome;
+    });
+
+    // `result` carries its own `skipped` array of refused rows; the run-level
+    // flag is separate, so name it distinctly rather than letting the spread
+    // silently overwrite one with the other.
+    return { pipelineSkipped: false as const, ...result };
+  }
+);

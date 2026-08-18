@@ -556,6 +556,20 @@ export type Events = {
   // change notice, one notice per release package. Dispatched only when
   // releaseImportEnabled is on, so a company that has not opted in produces
   // no runs at all.
+  // v2 BOM import. User-initiated from a specific make method, so the method
+  // is named explicitly rather than resolved — which is what keeps the writer
+  // out of the "which method did this land in" guesswork the legacy path has.
+  "carbon/onshape-bom-import": {
+    data: {
+      companyId: string;
+      userId: string;
+      /** The make method the BOM is written into. Must be Draft and not CO-owned. */
+      makeMethodId: string;
+      documentId: string;
+      versionId: string;
+      elementId: string;
+    };
+  };
   "carbon/onshape-release-import": {
     data: {
       companyId: string;
