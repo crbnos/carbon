@@ -50,6 +50,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // user's client silently requires settings_view on top of the parts
   // permission this route declares.
   const settings = await getOnshapeV2Settings(serviceRole, companyId);
+  // A failed READ is not an opt-out. Wording a transient error as a
+  // configuration state sends the user to change a setting that was
+  // never wrong — and re-saving it re-registers the release webhook.
+  if (settings.readFailed) {
+    return {
+      data: null,
+      error: "Could not read the Onshape settings just now. Try again."
+    };
+  }
   if (!settings.isV2) {
     return { data: null, error: "Onshape v2 is not enabled for this company" };
   }

@@ -1491,6 +1491,9 @@ msgstr "一个操作在其工作中心队列中的位置——车间拿起工作
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "连接 Onshape 时发生意外错误。请重新连接。"
 
+msgid "An unreleased version carries no revision and no released assets, so its parts land on Carbon's initial revision. Pick the released assembly first if there is one."
+msgstr ""
+
 msgid "Analytics"
 msgstr "分析"
 
@@ -7545,6 +7548,9 @@ msgstr "导入 {label} CSV"
 msgid "Import a bill of materials"
 msgstr ""
 
+msgid "Import an unreleased version"
+msgstr ""
+
 msgid "Import from Onshape"
 msgstr ""
 
@@ -10985,6 +10991,9 @@ msgstr "先选择属性"
 
 msgid "Pick a record type…"
 msgstr "选择记录类型…"
+
+msgid "Pick a released assembly once first — Carbon needs to know which Onshape document to look in."
+msgstr ""
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
 msgstr ""
@@ -16123,6 +16132,9 @@ msgstr "未过账单据"
 
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"
+
+msgid "Unreleased"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "未保存的更改"

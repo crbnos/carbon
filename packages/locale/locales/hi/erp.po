@@ -1491,6 +1491,9 @@ msgstr "एक ऑपरेशन की अपने कार्य कें�
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape से कनेक्ट करते समय एक अनपेक्षित त्रुटि हुई। दोबारा कनेक्ट करने का प्रयास करें।"
 
+msgid "An unreleased version carries no revision and no released assets, so its parts land on Carbon's initial revision. Pick the released assembly first if there is one."
+msgstr ""
+
 msgid "Analytics"
 msgstr "विश्लेषण"
 
@@ -7545,6 +7548,9 @@ msgstr "{label} CSV आयात करें"
 msgid "Import a bill of materials"
 msgstr ""
 
+msgid "Import an unreleased version"
+msgstr ""
+
 msgid "Import from Onshape"
 msgstr ""
 
@@ -10985,6 +10991,9 @@ msgstr "पहले एक प्रॉपर्टी चुनें"
 
 msgid "Pick a record type…"
 msgstr "एक रिकॉर्ड प्रकार चुनें…"
+
+msgid "Pick a released assembly once first — Carbon needs to know which Onshape document to look in."
+msgstr ""
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
 msgstr ""
@@ -16123,6 +16132,9 @@ msgstr "अपोस्ट किए गए दस्तावेज़"
 
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
+
+msgid "Unreleased"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"

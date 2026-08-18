@@ -13,6 +13,7 @@ import { useIntegrations } from "./useIntegrations";
 export function useOnshapePipeline(): {
   isConnected: boolean;
   isV2: boolean;
+  allowUnreleasedSync: boolean;
 } {
   const integrations = useIntegrations();
 
@@ -27,8 +28,16 @@ export function useOnshapePipeline(): {
       ? (onshape.metadata as Record<string, unknown>)
       : {};
 
+  const isV2 = isConnected && metadata.pipeline === "next";
+
   return {
     isConnected,
-    isV2: isConnected && metadata.pipeline === "next"
+    isV2,
+    // Same strict reading as the server: only an explicit true offers the
+    // unreleased tab. An absent key means released-only.
+    allowUnreleasedSync:
+      isV2 &&
+      (metadata.allowUnreleasedSync === true ||
+        metadata.allowUnreleasedSync === "true")
   };
 }

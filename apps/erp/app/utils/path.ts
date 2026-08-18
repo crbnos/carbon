@@ -191,6 +191,7 @@ export const path = {
       onShapeV2Import: `${api}/integrations/onshape/v2/import`,
       onShapeV2Link: `${api}/integrations/onshape/v2/link`,
       onShapeV2Revisions: `${api}/integrations/onshape/v2/revisions`,
+      onShapeV2Versions: `${api}/integrations/onshape/v2/versions`,
       onShapeVersions: (documentId: string) =>
         generatePath(`${api}/integrations/onshape/d/${documentId}/versions`),
       outsideOperations: (jobId: string) =>

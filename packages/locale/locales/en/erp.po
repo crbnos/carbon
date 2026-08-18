@@ -1491,6 +1491,9 @@ msgstr "An operation's position in its work center's queue — the order the flo
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "An unexpected error occurred while connecting to Onshape. Try connecting again."
 
+msgid "An unreleased version carries no revision and no released assets, so its parts land on Carbon's initial revision. Pick the released assembly first if there is one."
+msgstr "An unreleased version carries no revision and no released assets, so its parts land on Carbon's initial revision. Pick the released assembly first if there is one."
+
 msgid "Analytics"
 msgstr "Analytics"
 
@@ -7545,6 +7548,9 @@ msgstr "Import {label} CSV"
 msgid "Import a bill of materials"
 msgstr "Import a bill of materials"
 
+msgid "Import an unreleased version"
+msgstr "Import an unreleased version"
+
 msgid "Import from Onshape"
 msgstr "Import from Onshape"
 
@@ -10985,6 +10991,9 @@ msgstr "Pick a property first"
 
 msgid "Pick a record type…"
 msgstr "Pick a record type…"
+
+msgid "Pick a released assembly once first — Carbon needs to know which Onshape document to look in."
+msgstr "Pick a released assembly once first — Carbon needs to know which Onshape document to look in."
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
 msgstr "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
@@ -16123,6 +16132,9 @@ msgstr "Unposted Documents"
 
 msgid "Unreceived POs"
 msgstr "Unreceived POs"
+
+msgid "Unreleased"
+msgstr "Unreleased"
 
 msgid "Unsaved changes"
 msgstr "Unsaved changes"

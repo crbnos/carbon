@@ -59,6 +59,8 @@ export type OnshapeBomImportOutcome = {
   removed: number;
   assetsAttached: number;
   assetsSkipped: number;
+  /** Rows Onshape sent that could not be read at all. */
+  unreadableRows: number;
   /** Rows the import refused, each with why. */
   skipped: Array<{ partNumber: string; revision: string; reason: string }>;
 };
@@ -142,6 +144,8 @@ async function reconcileOne(
     desired: Array<{ itemId: string; quantity: number; order: number }>;
     /** Components the import refused; their lines must survive untouched. */
     protectedItemIds: string[];
+    /** False when the BOM was only partially readable — never delete then. */
+    allowRemoval: boolean;
   }
 ) {
   const existing = await carbon
@@ -253,7 +257,7 @@ async function reconcileOne(
     }
   }
 
-  if (plan.remove.length > 0) {
+  if (plan.remove.length > 0 && args.allowRemoval) {
     const removed = await carbon
       .from("methodMaterial")
       .delete()
@@ -270,7 +274,8 @@ async function reconcileOne(
   return {
     inserted: plan.insert.length,
     updated: plan.update.length,
-    removed: plan.remove.length,
+    removed: args.allowRemoval ? plan.remove.length : 0,
+    keptBecauseUnreadable: args.allowRemoval ? 0 : plan.remove.length,
     protectedCount: plan.protected.length
   };
 }
@@ -335,18 +340,31 @@ export const onshapeBomImportFunction = inngest.createFunction(
         removed: 0,
         assetsAttached: 0,
         assetsSkipped: 0,
+        unreadableRows: 0,
         skipped: []
       };
+
+      outcome.unreadableRows = parsed.skipped + parsed.orphaned;
 
       if (parsed.rows.length === 0) {
         return outcome;
       }
 
-      // Defense in depth for the route's gate. An Onshape row with no revision
-      // came from a version that was never released.
+      // Defense in depth for the route's gate — on the ASSEMBLY, not its rows.
+      //
+      // A child row's Revision cell is that COMPONENT's revision. Standard
+      // content, a purchased part, or anything not covered by the assembly's
+      // release legitimately has none while the assembly itself is released at
+      // a named revision. Testing the children aborts a perfectly ordinary
+      // released import, and since the route has already answered "Import
+      // started", that failure is invisible.
+      //
+      // The queried assembly's own row IS the version's released-ness, which is
+      // why includeTopLevelAssemblyRow is requested at all.
       if (
         !settings.allowUnreleasedSync &&
-        parsed.rows.some((r) => !r.revision)
+        parsed.topLevel &&
+        !parsed.topLevel.revision
       ) {
         throw new Error(
           "This Onshape version has never been released and the company only syncs released versions."
@@ -367,11 +385,15 @@ export const onshapeBomImportFunction = inngest.createFunction(
         new Set(Array.from(mappings.values()).flat())
       );
       const revisionById = new Map<string, string | null>();
-      if (candidateIds.length > 0) {
+      // Chunked: PostgREST builds .in() into the URL, and a large assembly with
+      // several revisions per part produces enough ids to exceed the request
+      // line — which fails as a malformed request, not as "too many ids".
+      const ID_CHUNK = 200;
+      for (let i = 0; i < candidateIds.length; i += ID_CHUNK) {
         const items = await carbon
           .from("item")
           .select("id, revision")
-          .in("id", candidateIds)
+          .in("id", candidateIds.slice(i, i + ID_CHUNK))
           .eq("companyId", payload.companyId);
         if (items.error) {
           throw new Error(
@@ -508,15 +530,70 @@ export const onshapeBomImportFunction = inngest.createFunction(
             // Find it so its existing material line is PROTECTED: the import
             // is refusing this row, and a refusal must not delete the line it
             // refused to touch.
+            // Match item_unique exactly: (readableId, revision, companyId,
+            // type). Omitting `type` matches a Material AND a Part sharing the
+            // number — legal in Carbon — and maybeSingle then errors, leaving
+            // NOTHING protected while the user is told the row was skipped.
             const conflicting = await carbon
               .from("item")
               .select("id")
               .eq("readableId", row.partNumber)
               .eq("revision", row.revision || "0")
               .eq("companyId", payload.companyId)
+              .eq("type", "Part")
               .maybeSingle();
+            if (conflicting.error) {
+              throw new Error(
+                `Could not identify the item already using ${row.partNumber}: ${conflicting.error.message}`
+              );
+            }
             if (conflicting.data?.id) {
               protectedItemIds.add(conflicting.data.id);
+
+              // ADOPT it rather than refusing forever. This branch is reached
+              // not only when a human made the part, but whenever a previous
+              // attempt died between the item insert and its mapping write:
+              // the retry re-runs from the top, the insert 23505s, and without
+              // adoption that part number is poisoned permanently — the item
+              // has no `part` row (so the parts view's inner join hides it) and
+              // no mapping (so every future import re-mints and re-fails).
+              const partRepair = await carbon.from("part").upsert({
+                id: row.partNumber,
+                companyId: payload.companyId,
+                createdBy: payload.userId
+              });
+              if (partRepair.error) {
+                throw new Error(
+                  `Could not repair the part row for ${row.partNumber}: ${partRepair.error.message}`
+                );
+              }
+
+              await writeElementMapping(carbon, {
+                companyId: payload.companyId,
+                itemId: conflicting.data.id,
+                ref: {
+                  documentId: row.documentId,
+                  elementId: row.elementId,
+                  partId: row.partId
+                },
+                metadata: {
+                  versionId: payload.versionId,
+                  partNumber: row.partNumber,
+                  fromUnreleasedVersion: !row.revision,
+                  lastSyncedAt: new Date().toISOString()
+                },
+                createdBy: payload.userId
+              });
+
+              mappings.set(externalId, [
+                ...(mappings.get(externalId) ?? []),
+                conflicting.data.id
+              ]);
+              revisionById.set(conflicting.data.id, row.revision || "0");
+              itemIdByRow.set(row.rowId, conflicting.data.id);
+              rememberAssetRow(row, conflicting.data.id);
+              outcome.created++;
+              continue;
             }
           }
 
@@ -579,6 +656,15 @@ export const onshapeBomImportFunction = inngest.createFunction(
         outcome.created++;
       }
 
+      // One read for the whole walk rather than one per node.
+      const companySettings = await carbon
+        .from("companySettings")
+        .select("plmReleaseControl")
+        .eq("id", payload.companyId)
+        .maybeSingle();
+      const releaseControl =
+        companySettings.data?.plmReleaseControl ?? "enforce";
+
       // Walk the tree, reconciling each level into the method that owns it.
       const tree = buildOnshapeBomTree(parsed.rows);
 
@@ -600,11 +686,24 @@ export const onshapeBomImportFunction = inngest.createFunction(
           userId: payload.userId,
           makeMethodId,
           desired,
-          protectedItemIds: Array.from(protectedItemIds)
+          protectedItemIds: Array.from(protectedItemIds),
+          // If the parser could not read every row, a Carbon line whose row
+          // vanished is INDISTINGUISHABLE from one Onshape genuinely dropped.
+          // Deleting on that basis destroys a line — with its routing link,
+          // scrap and step children — on the strength of a row we admit we
+          // could not read. Add rather than converge, and say so.
+          allowRemoval: outcome.unreadableRows === 0
         });
 
         outcome.updated += counts.updated;
         outcome.removed += counts.removed;
+        if (counts.keptBecauseUnreadable > 0) {
+          outcome.skipped.push({
+            partNumber: makeMethodId,
+            revision: "",
+            reason: `${counts.keptBecauseUnreadable} existing line(s) left alone because ${outcome.unreadableRows} Onshape row(s) could not be read.`
+          });
+        }
         outcome.imported += desired.length;
 
         // Recurse into subassemblies that resolved to a Carbon item AND have
@@ -619,7 +718,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
           const childMethod = await carbon
             .from("makeMethod")
-            .select("id")
+            .select("id, item(revisionStatus)")
             .eq("itemId", childItemId)
             .eq("companyId", payload.companyId)
             .eq("status", "Draft")
@@ -627,6 +726,26 @@ export const onshapeBomImportFunction = inngest.createFunction(
             .order("version", { ascending: false })
             .limit(1)
             .maybeSingle();
+
+          // The PLM lock applies at EVERY level, not just the root. Creating a
+          // method version is not lock-gated, so a Draft method can exist on a
+          // Production subassembly — and writing it here would be the same
+          // escape hatch the root check closes, one level down.
+          const childItem = childMethod.data?.item as {
+            revisionStatus?: string;
+          } | null;
+          if (
+            childItem?.revisionStatus === "Production" &&
+            releaseControl === "enforce"
+          ) {
+            outcome.skipped.push({
+              partNumber: child.row.partNumber,
+              revision: child.row.revision,
+              reason:
+                "This subassembly's revision is in Production and the company enforces release control; its children were not imported."
+            });
+            continue;
+          }
 
           if (childMethod.error || !childMethod.data) {
             outcome.skipped.push({

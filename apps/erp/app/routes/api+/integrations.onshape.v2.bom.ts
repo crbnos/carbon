@@ -69,19 +69,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // user's client silently requires settings_view on top of the parts
   // permission this route declares.
   const settings = await getOnshapeV2Settings(serviceRole, companyId);
-  if (!settings.isV2) {
-    return { data: null, error: "Onshape v2 is not enabled for this company" };
-  }
-
-  // Mirrors the import's gate so an unreleased version is refused at preview
-  // rather than after the user has read a whole diff.
-  const unreleased = url.searchParams.get("unreleased") === "true";
-  if (unreleased && !settings.allowUnreleasedSync) {
+  // A failed READ is not an opt-out. Wording a transient error as a
+  // configuration state sends the user to change a setting that was
+  // never wrong — and re-saving it re-registers the release webhook.
+  if (settings.readFailed) {
     return {
       data: null,
-      error:
-        "That Onshape version has never been released, and this company only syncs released versions."
+      error: "Could not read the Onshape settings just now. Try again."
     };
+  }
+  if (!settings.isV2) {
+    return { data: null, error: "Onshape v2 is not enabled for this company" };
   }
 
   const connection = await getOnshapeClient(serviceRole, companyId, userId);
@@ -100,6 +98,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
     const parsed = parseOnshapeBom(response);
+
+    // Refuse an unreleased version here rather than after the user has read a
+    // whole diff. DERIVED from the assembly's own row, never from a query
+    // parameter the caller supplies — a caller wanting to bypass a
+    // client-asserted flag would simply omit it.
+    if (
+      !settings.allowUnreleasedSync &&
+      parsed.topLevel &&
+      !parsed.topLevel.revision
+    ) {
+      return {
+        data: null,
+        error:
+          "That Onshape version has never been released, and this company only syncs released versions."
+      };
+    }
 
     if (parsed.rows.length === 0) {
       return {
@@ -165,12 +179,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       // picks the member. Resolving on the mapping alone wires the wrong
       // revision into the BOM — observed live, a row naming revision A
       // resolving to the item at revision C.
+      // Drop claimants whose item row did not come back — the same liveness
+      // filter the import job applies. Without it a mapping left behind by a
+      // deleted item reads as `revision: null`, which matches Carbon's INITIAL
+      // revision, so the preview would promise an update against an item that
+      // no longer exists while the import goes on to mint a new one.
       const resolution = resolveBomRow(
         row.revision,
-        claimants.map((id) => ({
-          itemId: id,
-          revision: revisionById.get(id) ?? null
-        }))
+        claimants
+          .filter((id) => revisionById.has(id))
+          .map((id) => ({
+            itemId: id,
+            revision: revisionById.get(id) ?? null
+          }))
       );
 
       const itemId = resolution.kind === "matched" ? resolution.itemId : null;

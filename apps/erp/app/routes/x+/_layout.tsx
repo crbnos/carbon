@@ -284,7 +284,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
         updatedBy: integration.updatedBy,
         // The only metadata any client-side consumer reads: which Onshape
         // pipeline the company runs (useOnshapePipeline). A scalar, not a blob.
-        metadata: { pipeline: metadata.pipeline ?? null }
+        metadata: {
+          pipeline: metadata.pipeline ?? null,
+          // Presentation only: whether to OFFER unreleased versions. Every
+          // route re-reads it server-side and refuses regardless.
+          allowUnreleasedSync: metadata.allowUnreleasedSync ?? null
+        }
       };
     }),
     groups: groups.data,
