@@ -93,7 +93,7 @@ one day at a time — each increment tightens only what it touches.
 
 | # | Drill | Expected |
 |---|---|---|
-| X1 | **Determinism / nervousness** | Trigger regen twice with zero input changes → every `startDate`/`dueDate`/reservation identical. This is the trust test — run it at all three locations |
+| X1 | **Determinism / nervousness** | Trigger regen twice with zero input changes → every `startDate`/`dueDate`/`projectedCompletionAt`/reservation identical. Also: need-by values (`jobOperation.dueDate`) byte-identical across capacity-only changes — targets move only with due-date/routing/lead-time changes. This is the trust test — run it at all three locations |
 | X2 | **ASAP order** | Release the no-due-date ASAP job → it leads the queue (never trails on null due date); displaced jobs' forecasts update in the same regen with "queued behind" attribution |
 | X3 | **Due-date drag** | Dates board drag → single event (no double dispatch), stamp → regen → stamp cleared, slack badge updated |
 | X4 | **Remaining work** | Record 75% quantity on an In-Progress op → its reservation shrinks to ~25% of standard from now; successor ops and `projectedCompletionAt` pull in |
@@ -101,6 +101,7 @@ one day at a time — each increment tightens only what it touches.
 | X6 | **WC deactivation** | Deactivate a work center with queued ops → next regen re-selects its ops onto sibling WCs (event fires from the deactivate route) |
 | X7 | **Capacity view coherence** | Per level: L0 Available = calendar hours (banner); L1 staffed cells show people-hours annotation without replacing calendar Available; Load = Scheduled vs Available on the same calendar days; "Due" tab still shows due-date demand separately |
 | X8 | **Perf sanity** | Seeded volume regen completes well inside the 10s envelope (watch the edge-function logs for one wave) |
+| X9 | **Dual dates** | Pin an op's due date (`OperationDueDatePicker`) → the pin survives regen and UPSTREAM ops' need-bys re-derive from it; add downtime on its work center → `projectedCompletionAt` values move while every `dueDate` target holds byte-identical; the projected-past-need-by op shows the amber behind-target state (BOP / ops board / MES detail) with `hasConflict` still false |
 
 ## Instruments
 

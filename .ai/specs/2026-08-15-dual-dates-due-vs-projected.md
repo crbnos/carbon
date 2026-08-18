@@ -1,6 +1,6 @@
 # Dual Dates — backward due dates vs forward projected completion
 
-> Status: draft (design final — ready for /plan)
+> Status: implemented (browser verification pending)
 > Author: Brad Barbin + Claude
 > Date: 2026-08-15
 > Research: [.ai/research/labor-machine-capacity-scheduling.md](../research/labor-machine-capacity-scheduling.md); industry precedent is the MRP-II/SAP dual-date model — "basic dates" from backward lead-time scheduling vs "production dates" from capacity scheduling — also surveyed in the implemented spec's competitive references
@@ -156,4 +156,5 @@ RPC updates in the same migration (fork newest definitions — `get_active_job_o
 ## Changelog
 
 - 2026-08-15: Planning corrections — schema ships as a NEW forward migration (main-owned `20260721004140` defines `get_job_operation_by_id` later than the branch migration; in-place would be overwritten on fresh deploys) and the backward pass diff-writes `dueDate` (zero writes on quiet regens, per Brad's cost question).
+- 2026-08-18: implementation landed via .ai/plans/2026-08-15-dual-dates-due-vs-projected.md (Tasks 1-11; browser verification pending).
 - 2026-08-15: Created after the full dual-audit (current-branch blast radius + origin/main backward-pass archaeology). Naming per Brad; four autonomous sub-decisions surfaced for veto (startDate kept, recompute-every-regen, calendar day-lengths, pin-without-frozen-window).

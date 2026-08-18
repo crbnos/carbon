@@ -14,15 +14,15 @@ Reference implementation for the backward walk: `git show origin/main:packages/d
 (BackwardSchedulingStrategy, lines ~79–242) — port its logic, do not reinvent it.
 
 ## Progress
-- [ ] Task 1: New migration — jobOperation.projectedCompletionAt + RPC columns
-- [ ] Task 2: Apply migration + regenerate types
-- [ ] Task 3: Engine — need-by calculator module (pure, Deno-tested)
-- [ ] Task 4: Engine — wire need-by pass into run(), split the persist, un-freeze pins
-- [ ] Task 5: Engine — placement-isolation determinism guard + test updates
-- [ ] Task 6: Services — promise-date fallback, timeline/capacity selects, MES threading
-- [ ] Task 7: UI — BOP dual dates + behind-target state
-- [ ] Task 8: UI — ops board ItemCard + MES operation detail projected line
-- [ ] Task 9: Engine — behind-target attribution in the job schedule note
+- [x] Task 1: New migration — jobOperation.projectedCompletionAt + RPC columns
+- [x] Task 2: Apply migration + regenerate types
+- [x] Task 3: Engine — need-by calculator module (pure, Deno-tested)
+- [x] Task 4: Engine — wire need-by pass into run(), split the persist, un-freeze pins
+- [x] Task 5: Engine — placement-isolation determinism guard + test updates
+- [x] Task 6: Services — promise-date fallback, timeline/capacity selects, MES threading
+- [x] Task 7: UI — BOP dual dates + behind-target state
+- [x] Task 8: UI — ops board ItemCard + MES operation detail projected line
+- [x] Task 9: Engine — behind-target attribution in the job schedule note
 - [ ] Task 10: Docs sync
 - [ ] Task 11: i18n extraction
 - [ ] Task 12: Browser verification via /test

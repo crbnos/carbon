@@ -21,7 +21,8 @@ first match.
   **whole LOCATION's** open jobs and runs `new SchedulingEngine(...).run()` once
   per job in one deterministic forward pass (§ Engine pipeline). Modules in
   `packages/database/supabase/functions/lib/scheduling/` (`scheduling-engine.ts`,
-  `dependency-manager.ts`, `date-calculator.ts`, `work-center-selector.ts`,
+  `dependency-manager.ts`, `date-calculator.ts`, `need-by-calculator.ts`,
+  `work-center-selector.ts`,
   `apply-work-center-selections.ts`, `priority-calculator.ts`, `material-manager.ts`,
   `duration-calculator.ts`, `assembly-handler.ts`, `master-data-provider.ts`,
   `machine-availability.ts`, `calendar-utils.ts`, `slot-allocator.ts`,
@@ -32,7 +33,8 @@ first match.
   plant's calendar, not UTC's. `resource-manager.ts` was dead code and
   has been deleted. `machine-availability.ts` / `calendar-utils.ts` /
   `slot-allocator.ts` / `apply-work-center-selections.ts` / `duration-calculator.ts` /
-  `date-utils.ts` / `operator-eligibility.ts` / `people-utils.ts` are pure and have Deno
+  `date-utils.ts` / `operator-eligibility.ts` / `people-utils.ts` /
+  `need-by-calculator.ts` are pure and have Deno
   tests (`deno test lib/scheduling/` from the functions dir), alongside the
   determinism + envelope suites. `date-utils.toIsoDate`
   normalizes pg DATE columns (JS Date at local midnight) to "YYYY-MM-DD" —
@@ -128,10 +130,13 @@ but is legacy — the live invoke target is always `"schedule"`.
 ## Engine pipeline (`scheduling-engine.ts` `run()`)
 
 `initialize → assignMaterials → createDependencies → calculateDates →
-selectWorkCenters → calculatePriorities → persistChanges` (the last is skipped when
-`persist: false`, i.e. the expedite what-if). **There is no backward JIT pass and no
-`initial`/`reschedule` mode split** — everything schedules FORWARD-ASAP, and the
-projected finish IS the overdue forecast (slack is real).
+computeNeedBys → selectWorkCenters → calculatePriorities → persistChanges` (the last
+is skipped when `persist: false`, i.e. the expedite what-if). **There is no backward
+JIT pass in PLACEMENT and no `initial`/`reschedule` mode split** — everything places
+FORWARD-ASAP, and the projected finish IS the overdue forecast (slack is real). The
+backward need-by pass (`computeNeedBys`, below) computes demand-anchored TARGETS
+only; its output is read by nothing in the placement path (spec
+`.ai/specs/2026-08-15-dual-dates-due-vs-projected.md`).
 
 - **Whole-location, deterministic run** (`schedule/index.ts`): one `now` is captured
   once and shared across every job in the batch. The location's open jobs
@@ -149,9 +154,29 @@ projected finish IS the overdue forecast (slack is real).
   operation-level status only — the engine is **status-neutral for JOB status** and
   never flips a job to Ready (release is the app's job-status flow).
 - **Dates** (`date-calculator.ts` → `buildScheduledOperations`): now just durations +
-  pins — `startDate`/`dueDate` start null (a pinned/`manuallyScheduled` op keeps its
-  stored dates), and forward-ASAP placement fills them. Duration =
+  pins — `startDate`/`projectedCompletionAt` start null and forward-ASAP placement
+  fills them for EVERY op, pinned included. `dueDate` (the backward need-by target)
+  also starts null and is seeded from storage only for a pinned/`manuallyScheduled`
+  op, whose value the need-by pass takes as-is. Duration =
   `setup + max(labor, machine)`.
+- **Backward need-by pass** (`computeNeedBys()` → `computeNeedByDates` in
+  `need-by-calculator.ts`, pure): demand-anchored per-op TARGETS diff-written to
+  `jobOperation.dueDate` every regen. Walk = reverse topological order from
+  `job.dueDate` (null due date ⇒ all-null targets); leaves are due on the job due
+  date; an op with dependents is due at the earliest dependent constraint — the
+  dependent's need-by START minus that dependent's `operationLeadTime` working
+  days, minus this op's `assemblyLeadTime` at assembly edges (a sub-make-method
+  feeding its parent); "With Previous" ops copy their partner's target dates; a
+  pinned op's stored `dueDate` is taken as-is AND propagates upstream. Day math
+  runs on real calendars via `calendarAdapters` over the SAME availability-ladder
+  windows placement uses (one shared `loadAvailabilityWindows()` fetch):
+  `calendarHoursPerDay(wc)` sizes duration-in-days, `workingDayTest` skips that
+  calendar's zero-hour days. HARD RULE: targets are outputs, never placement
+  constraints — placement never floors/delays on `op.dueDate` (comments at the
+  floor sites in `work-center-selector.ts`; `determinism.test.ts` pins placement
+  invariance with/without the need-by pass; the one remaining read is the pinned
+  OUTSIDE-PROCESSING passthrough, which keeps its stored window and chains
+  successors after the pinned end). The pass also produces no conflict flags.
 - **Finite placement** (`work-center-selector.ts`): ops are placed in a **deterministic
   topological order** (`topologicalPlacementOrder`, Kahn's algorithm over the dependency
   edges; the ready set is ordered by `jobOperation."order"` then id). Each op is placed
@@ -200,14 +225,26 @@ projected finish IS the overdue forecast (slack is real).
   dispatch-sequencing policy** — the old per-work-center policy table, its rule enum,
   and the FIFO/EDD/SPT/… comparators were all removed; placement order is the only
   sequence.
-- **`persistChanges` (one transaction, only when `persist`)** writes each op's
-  `startDate`/`dueDate` (`dueDate` omitted for pinned ops) + `priority` + `workCenterId` +
-  conflict flags; rebuilds this job's `capacityReservation` rows (delete-by-job where
-  `scenarioId IS NULL`, then bulk insert — a materialized OUTPUT, `WorkCenter`/`Employee`
-  kinds); and writes `job.projectedCompletionAt` (= the max placed end, the forecast
-  finish) while clearing `scheduleOutdatedReason`/`scheduleOutdatedAt` for that job. It
-  also computes the **newly-late** flag (was on-time-or-unforecast before, now projected
-  past `dueDate` on the location calendar) for the wave's digest.
+- **`persistChanges` (one transaction, only when `persist`)** writes, for every op, the
+  forward placement's results — `startDate` (projected start, business day) +
+  `jobOperation.projectedCompletionAt` (exact placed-end instant, timestamptz) +
+  `priority` + `workCenterId` + conflict flags. `dueDate` is the backward need-by and
+  is DIFF-written: only when the computed target differs from the stored value (a
+  quiet regen touches zero `dueDate`s), and never for a `manuallyScheduled` op — a
+  human owns that target. It rebuilds this job's `capacityReservation` rows
+  (delete-by-job where `scenarioId IS NULL`, then bulk insert — a materialized OUTPUT,
+  `WorkCenter`/`Employee` kinds); and writes `job.projectedCompletionAt` (= the max
+  placed end, the forecast finish) while clearing
+  `scheduleOutdatedReason`/`scheduleOutdatedAt` for that job. It also computes the
+  **newly-late** flag (was on-time-or-unforecast before, now projected past `dueDate`
+  on the location calendar) for the wave's digest.
+- **Behind-target attribution (informational only):** when the JOB's verdict is late,
+  `getCause()` appends `composeBehindTarget` (`conflict-messages.ts`) — "First behind
+  target: {op} (due X, projected Y)", the first op in topological order whose
+  projected finish passes its need-by. It rides the job-level cause sentence
+  (expedite dialog) and NEVER sets per-op `hasConflict`; the UI's amber
+  behind-target states (BOP rows, ops-board `ItemCard`, MES operation detail) are
+  computed from the two dates, not from conflicts.
 - **Expedite what-if** (`expediteJobId`): runs only the target job first with the WHOLE
   batch excluded from the snapshot (it claims capacity as if first), `persist: false`,
   and returns `{ projectedCompletionAt, cause }` without touching the database.
@@ -215,46 +252,61 @@ projected finish IS the overdue forecast (slack is real).
 ## Manual scheduling
 
 `jobOperation."manuallyScheduled" BOOLEAN NOT NULL DEFAULT false`
-(`20260525143721_manual-scheduling.sql` — adds only this column). In
-`persistChanges()`: when true, the engine writes `startDate, priority, workCenterId,
-hasConflict, conflictReason` but **deliberately omits `dueDate`** — preserving the
-user's pinned due date across regens. `buildScheduledOperations` (`date-calculator.ts`)
-keeps a pinned op's stored `startDate`/`dueDate` (non-pinned ops start null); forward-ASAP
-placement then reserves and schedules around the pinned window.
+(`20260525143721_manual-scheduling.sql` — adds only this column). Under dual dates a
+pin means **a human owns the need-by TARGET**, not the placement: the backward pass
+takes the pinned op's stored `dueDate` as-is and derives upstream ops' targets from
+it (the pin propagates), and `persistChanges()` never writes `dueDate` for a pinned
+op. Forward placement schedules pinned ops **normally** — the old frozen-window
+branch (reserve the pinned span, skip placement) was REMOVED with the dual-dates
+split, so a pinned op's `startDate`/`projectedCompletionAt` are re-projected every
+regen and may differ from its pin. The one exception is a pinned OUTSIDE-PROCESSING
+op, which skips placement and keeps its stored window (successors chain after the
+pinned end). Pins are set via `updateJobOperationDueDate` (`production.service.ts`,
+sets `manuallyScheduled`) from `OperationDueDatePicker` on the BOP.
 
 ## Conflict detection
 
 `jobOperation."hasConflict" BOOLEAN DEFAULT false` + `"conflictReason" TEXT`
 (`20251123000001_job-operation-conflicts.sql`, plus index
-`idx_job_operation_wc_priority` on `("workCenterId","priority","status")`). With no
-backward pass, conflicts come only from forward-ASAP finite placement: **no feasible
+`idx_job_operation_wc_priority` on `("workCenterId","priority","status")`). Conflicts
+come only from forward-ASAP finite placement: **no feasible
 slot** (machine capacity exhaustion, a work center with no resolved availability
 windows, missing/expired operator qualification, or calendar exhaustion —
 `conflictReason` names the cause), or a placement that **finishes after the job's
-`dueDate`** (the overdue verdict; `jobDueDate` is passed into the selector). Conflicts
+`dueDate`** (the overdue verdict; `jobDueDate` is passed into the selector — the
+per-op need-by targets are NOT a lateness input and NEVER set `hasConflict`; an op
+behind its target only gets the informational amber state). Conflicts
 surface; scheduling never hard-fails. The read RPCs roll it up per job with
 `BOOL_OR(...)` so the board shows a red flag.
 
 ## Read RPCs (display only; do not compute schedules)
 
 ### `get_active_job_operations_by_location(location_id, work_center_ids[])`
-Newest: `20260720121629_capacity-planning.sql` (main's definition + `hasConflict` +
-`conflictReason` output columns; prior revisions `20260531084723_rework-serial-flow.sql`
+Newest: `20260818031629_dual-dates.sql` (forked from `20260720121629_capacity-planning.sql`
++ a `projectedCompletionAt TIMESTAMPTZ` output column; prior revisions:
+capacity-planning added `hasConflict`/`conflictReason`,
+`20260531084723_rework-serial-flow.sql`
 added `quantityReworked`/`reworkId`, `20260304000000` added `operationDueDate`).
 TS wrappers (identical): `apps/mes/app/services/operations.service.ts`
 `getActiveJobOperationsByLocation` and
-`apps/erp/app/modules/production/production.service.ts`. Returns 40 cols incl.:
+`apps/erp/app/modules/production/production.service.ts`. Returns 41 cols incl.:
 `id, jobId, jobMakeMethodId, operationOrder` (← `jo."order"`)`, priority, processId,
 workCenterId, description, setup/labor/machineTime+Unit, operationOrderType` (←
 `jo."operationOrder"`, serial/parallel enum)`, jobReadableId, jobStatus, jobDueDate,
 jobDeadlineType, jobCustomerId, customerName, parentMaterialId, itemReadableId,
 itemDescription, operationStatus` (`'Paused'` if job paused)`, targetQuantity,
 operationQuantity, quantityComplete, quantityReworked, quantityScrapped,
-salesOrderId/LineId/ReadableId, assignee, tags, thumbnailPath, operationDueDate,
-reworkId, hasConflict` (COALESCEd, never null)`, conflictReason`. The ERP ops board
+salesOrderId/LineId/ReadableId, assignee, tags, thumbnailPath, operationDueDate`
+(← `jo."dueDate"`, the need-by target)`,
+reworkId, hasConflict` (COALESCEd, never null)`, conflictReason,
+projectedCompletionAt` (← `jo."projectedCompletionAt"`, the projected finish
+instant). The ERP ops board
 (`schedule+/operations.tsx` → `ItemCard`) and MES schedule loader map
 `hasConflict`/`conflictReason` onto Kanban items (red border + triangle tooltip on
-the ERP card).
+the ERP card); the dual dates drive the amber behind-target state (projected day >
+need-by). The same dual-dates migration also forks `get_job_operation_by_id`
+(newest was `20260721004140_operation-type-consolidation.sql`) to add
+`projectedCompletionAt` for the MES operation detail.
 
 <!-- The old cache said customerName is NOT returned (must join) — WRONG now.
      customerName (← customer.name LEFT JOIN) was added 20251123000000, plus
@@ -300,14 +352,25 @@ capacity-planning migration and drive the dates board's forecast/stale surfaces.
   → stock Mon–Fri 8h, or `alwaysOn` = 24×7), minus maintenance-dispatch downtime.
   Qualified people's shifts only additionally gate ability-gated ops. The old
   "no work-center calendar / availability comes from people's shifts" claim is
-  **wrong** now. Manually scheduled ops are not reallocated — their existing
-  window is reserved as-is.
+  **wrong** now. So is the old "manually scheduled ops keep their window" claim:
+  pinned ops are placed normally every regen (the pin owns only the need-by
+  target; see § Manual scheduling).
 - `jobOperation."order"` (topo position) vs `"operationOrder"` (serial/parallel enum) are
   distinct columns — easy to confuse; the RPC surfaces them as `operationOrder` and
   `operationOrderType` respectively.
 - There is **no `scheduleStatus` enum/column** and no `scheduledStart`/`estimatedEnd`
-  columns — computed dates go into `jobOperation.startDate` / `dueDate`; the job-level
-  forecast finish is `job.projectedCompletionAt`.
+  columns. Dual dates (`20260818031629_dual-dates.sql`): the forward projection goes
+  into `jobOperation.startDate` (projected start day) +
+  `jobOperation.projectedCompletionAt` (projected finish instant, timestamptz);
+  `jobOperation.dueDate` is the backward demand-anchored need-by target (DATE, stable
+  — changes only when the job due date, routing, or lead times change; a pinned op's
+  is human-owned). The job-level forecast finish is `job.projectedCompletionAt`.
+  Consumers that key urgency on op `dueDate` (MES queue sort + overdue flags,
+  the People Capacity view's Demand buckets, `get_picking_schedule` ordering) are
+  deliberately unchanged — they now honestly read "when work is needed", not the
+  sim's last forecast. `getJobPromiseDate` returns `job.projectedCompletionAt` or
+  null (its old max-op-dueDate fallback would now just echo the job due date and
+  was removed).
 - Editing the ERP ops board (`operations.update.tsx`) does NOT re-run the engine and does
   not even notify — it only re-sequences `workCenterId` + `priority`. The dates board
   notifies (`notifyScheduleInputsChanged`), and the debounced wave regenerates the whole
