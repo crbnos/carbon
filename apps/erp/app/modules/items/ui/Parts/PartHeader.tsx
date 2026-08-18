@@ -1,3 +1,4 @@
+import { OnshapeLogo } from "@carbon/ee";
 import {
   Copy,
   DropdownMenu,
@@ -23,7 +24,9 @@ import { Link, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { DetailsTopbar } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { OnshapeLinkPart } from "~/components/OnshapeLinkPart";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
 import { path } from "~/utils/path";
 import type { PartSummary } from "../../types";
 import { CreateChangeNoticeModal } from "../ChangeNotice";
@@ -40,6 +43,8 @@ const PartHeader = () => {
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
   const changeNoticeModal = useDisclosure();
+  const onshapePipeline = useOnshapePipeline();
+  const onshapeLinkModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "item",
     entityId: itemId,
@@ -98,6 +103,20 @@ const PartHeader = () => {
                   <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
                   <Trans>Create Change Notice</Trans>
                 </DropdownMenuItem>
+                {onshapePipeline.isV2 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={!permissions.can("update", "parts")}
+                      onClick={onshapeLinkModal.onOpen}
+                    >
+                      <DropdownMenuIcon
+                        icon={<OnshapeLogo className="h-3.5 w-auto" />}
+                      />
+                      <Trans>Link to Onshape</Trans>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
@@ -117,6 +136,16 @@ const PartHeader = () => {
         <VStack spacing={0} className="flex-shrink justify-center items-end">
           <DetailsTopbar links={links} />
         </VStack>
+        {onshapePipeline.isV2 && onshapeLinkModal.isOpen && (
+          <OnshapeLinkPart
+            itemId={itemId}
+            readableIdWithRevision={
+              routeData?.partSummary?.readableIdWithRevision ?? itemId
+            }
+            isOpen={onshapeLinkModal.isOpen}
+            onClose={onshapeLinkModal.onClose}
+          />
+        )}
         {deleteModal.isOpen && (
           <ConfirmDelete
             action={path.to.deleteItem(itemId)}

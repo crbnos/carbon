@@ -2786,6 +2786,11 @@ msgstr "Coluna Carbon"
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon está configurado da forma como sua empresa funciona, seus dados estão carregados e sua equipe está confiante em usá-lo. Quando isso for verdade, você estará pronto para entrar em operação."
 
+#. placeholder {0}: fetcher.data.carbonId
+#. placeholder {1}: fetcher.data.onshapePartNumber
+msgid "Carbon keeps its own number ({0}); Onshape calls it {1}. They no longer have to match."
+msgstr ""
+
 msgid "Carbon leads"
 msgstr "Carbon lidera"
 
@@ -3766,6 +3771,9 @@ msgid "Could not build PDF. Try again."
 msgstr "Não foi possível criar o PDF. Tente novamente."
 
 msgid "Could not create the part"
+msgstr ""
+
+msgid "Could not link this item"
 msgstr ""
 
 msgid "Could not prepare region image for analysis"
@@ -6890,6 +6898,9 @@ msgstr "Do cliente"
 msgid "From Location"
 msgstr "De Localização"
 
+msgid "From now on Carbon follows this Onshape part by a hidden id rather than by its number."
+msgstr ""
+
 msgid "from on-account credit"
 msgstr "do crédito em conta"
 
@@ -8427,11 +8438,17 @@ msgstr "Ligação"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Ligação (opcional) — ex. /x/settings/…"
 
+msgid "Link {readableIdWithRevision} to Onshape"
+msgstr ""
+
 msgid "Link Jira Issue"
 msgstr "Vincular Problema do Jira"
 
 msgid "Link Linear Issue"
 msgstr "Vincular Problema Linear"
+
+msgid "Link to Onshape"
+msgstr ""
 
 msgid "Link to sales order line"
 msgstr "Vincular à linha do pedido de venda"
@@ -8446,6 +8463,9 @@ msgstr "Problema Vinculado"
 
 msgid "Linked PO"
 msgstr "PO Vinculada"
+
+msgid "Linked to Onshape"
+msgstr ""
 
 msgid "List Options"
 msgstr "Opções de Lista"
@@ -10270,6 +10290,9 @@ msgstr "O Onshape rejeitou a autorização"
 msgid "Onshape Status"
 msgstr "Status do Onshape"
 
+msgid "Onshape will overwrite what it owns"
+msgstr ""
+
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "Oops! O link que você está tentando acessar expirou ou não é mais válido."
 
@@ -10934,6 +10957,9 @@ msgstr "Ordem de Coleta"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Escolha o bin que precisa de estoque, depois escolha os bins de onde puxar."
+
+msgid "Pick the Onshape revision this part corresponds to. Already-linked parts are shown so you can see what is taken."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "Selecionar item rastreado"
@@ -14850,6 +14876,9 @@ msgstr "O custo de inventário reconhecido quando uma remessa é registrada, ava
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "A classe de período de recuperação IRS para este ativo sob MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 anos)."
+
+msgid "The item's name is replaced now, and its bill of materials is replaced on the next import. Everything Onshape does not have is kept: routing and operations, costing, planning, tracking type, unit of measure, supplier parts, posting groups and tags."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "O trabalho cuja operação cobre essa linha de processamento externo; o recebimento da linha fecha a operação contra esse trabalho."

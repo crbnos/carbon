@@ -25,6 +25,7 @@ import {
 import { OnshapeSync } from "~/components/OnshapeSync";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { useIntegrations } from "~/hooks/useIntegrations";
+import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
 import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { MakeMethod, Method } from "../../types";
@@ -105,6 +106,7 @@ function ItemBoMExplorerContent({
   hideSearch?: boolean;
 }) {
   const integrations = useIntegrations();
+  const onshapePipeline = useOnshapePipeline();
   const params = useParams();
   const { selectNode, deselectAllNodes } = useBoMExplorer();
 
@@ -155,7 +157,11 @@ function ItemBoMExplorerContent({
           </BoMExplorerActions>
         </HStack>
       )}
-      {integrations.has("onshape") && (
+      {/* Legacy panel only. A company on the v2 pipeline gets the v2 import
+          surface instead — showing both would let someone write string-matched
+          items with no mapping while v2 is live, which silently poisons the
+          migration. */}
+      {integrations.has("onshape") && !onshapePipeline.isV2 && (
         <div className="flex flex-shrink-0 w-full">
           <OnshapeSync
             makeMethodId={makeMethodId}

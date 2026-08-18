@@ -2786,6 +2786,11 @@ msgstr "Столбец Carbon"
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon настроена в соответствии с тем, как работает ваша компания, ваши данные загружены, и ваша команда уверенно её использует. Когда это произойдёт, вы будете готовы к запуску."
 
+#. placeholder {0}: fetcher.data.carbonId
+#. placeholder {1}: fetcher.data.onshapePartNumber
+msgid "Carbon keeps its own number ({0}); Onshape calls it {1}. They no longer have to match."
+msgstr ""
+
 msgid "Carbon leads"
 msgstr "Carbon ведёт"
 
@@ -3766,6 +3771,9 @@ msgid "Could not build PDF. Try again."
 msgstr "Не удалось создать PDF. Попробуйте еще раз."
 
 msgid "Could not create the part"
+msgstr ""
+
+msgid "Could not link this item"
 msgstr ""
 
 msgid "Could not prepare region image for analysis"
@@ -6890,6 +6898,9 @@ msgstr "От клиента"
 msgid "From Location"
 msgstr "Из местоположения"
 
+msgid "From now on Carbon follows this Onshape part by a hidden id rather than by its number."
+msgstr ""
+
 msgid "from on-account credit"
 msgstr "со счета авансовых платежей"
 
@@ -8427,11 +8438,17 @@ msgstr "Ссылка"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Ссылка (опционально) — например /x/settings/…"
 
+msgid "Link {readableIdWithRevision} to Onshape"
+msgstr ""
+
 msgid "Link Jira Issue"
 msgstr "Связать проблему Jira"
 
 msgid "Link Linear Issue"
 msgstr "Связать проблему Linear"
+
+msgid "Link to Onshape"
+msgstr ""
 
 msgid "Link to sales order line"
 msgstr "Связать со строкой заказа на продажу"
@@ -8446,6 +8463,9 @@ msgstr "Связанная проблема"
 
 msgid "Linked PO"
 msgstr "Связанный ПО"
+
+msgid "Linked to Onshape"
+msgstr ""
 
 msgid "List Options"
 msgstr "Параметры списка"
@@ -10270,6 +10290,9 @@ msgstr "Onshape отклонил авторизацию"
 msgid "Onshape Status"
 msgstr "Статус Onshape"
 
+msgid "Onshape will overwrite what it owns"
+msgstr ""
+
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "Упс! Ссылка, которую вы пытаетесь открыть, истекла или больше не действительна."
 
@@ -10934,6 +10957,9 @@ msgstr "Порядок комплектации"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Выберите контейнер, который нуждается в запасе, затем выберите контейнеры, из которых его извлечь."
+
+msgid "Pick the Onshape revision this part corresponds to. Already-linked parts are shown so you can see what is taken."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
@@ -14850,6 +14876,9 @@ msgstr "Стоимость инвентаря, признаваемая при �
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Класс периода восстановления IRS для этого основного средства в соответствии с MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 лет)."
+
+msgid "The item's name is replaced now, and its bill of materials is replaced on the next import. Everything Onshape does not have is kept: routing and operations, costing, planning, tracking type, unit of measure, supplier parts, posting groups and tags."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Работа, операция которой охватывает эту строку внешней обработки; квитанция по строке закрывает операцию для этой работы."

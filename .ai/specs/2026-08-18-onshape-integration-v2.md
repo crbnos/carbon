@@ -232,7 +232,37 @@ revert a migrated customer to legacy. Change it to merge into existing metadata.
 
 ## Open Questions
 
-None blocking. Resolved during design:
+**Onshape release name and release notes — where do they land in Carbon?**
+(Raised 2026-08-18, deferred.) Onshape's release package carries a name and
+free-text release notes, and both are engineering-meaningful. Today `releaseName`
+is only stashed in the revision mapping's metadata, and the release NOTES are not
+captured anywhere at all — the legacy release import writes its own provenance
+sentence into `reasonForChange` rather than Onshape's text. Candidates: the
+change notice's `reasonForChange` / `description` (both tiptap rich text, so a
+plain string will not render), an item-level note, or a document attached to the
+item. Needs deciding before release import is wired into v2, since that is the
+path that would carry them.
+
+**Extensible custom-field mapping.** (Raised 2026-08-18, deferred — low
+priority.) Onshape carries far more per-part metadata than v1 reads. The live
+BOM response for the RD-410 assembly returns **26 columns**, of which Carbon
+consumes six (`Item`, `Quantity`, `Part number`, `Description`, `Name`,
+`Revision`). The rest are available and currently discarded:
+
+    State, Appearance, Vendor, Project, Product line, Material, Title 1/2/3,
+    Not revision managed, Exclude from all BOMs, Unit of measure, Category,
+    Mass, Center of mass, Inertia, Subassembly BOM behavior, Tessellation
+    quality, + two customer-specific columns
+
+Some map to real Carbon columns (`Unit of measure` → `unitOfMeasureCode`, which
+`TreeData.unitOfMeasure` declares and never populates today; `Material`;
+`Vendor` → supplier). Others are company-specific and belong in `item.customFields`.
+Needs a per-company mapping surface — Onshape column → Carbon field — rather
+than the hardcoded six. Headers carry stable ids alongside display names, so a
+mapping should key on the ID, not the name, which is exactly the fragility v1
+has today.
+
+Resolved during design:
 
 - Unreleased revision representation → initial revision `'0'`, state in mapping metadata.
 - Unreleased item `active` → `true`.
