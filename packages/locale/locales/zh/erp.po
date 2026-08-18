@@ -12389,9 +12389,6 @@ msgstr "返回："
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
-msgid "Reveal"
-msgstr ""
-
 msgid "Revenue"
 msgstr "收入"
 
@@ -17309,9 +17306,6 @@ msgstr "您的项目团队"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "您的真实数据已加载，您已检查样本并批准了它。"
-
-msgid "Your session was locked after a period of inactivity. Re-authenticate to continue where you left off."
-msgstr ""
 
 msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
 msgstr ""

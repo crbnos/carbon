@@ -435,12 +435,35 @@ export async function getIntegrationHealth(
     };
   }
 
+  // Resolve vaulted secrets back into the metadata before the healthcheck
+  // builds its provider/client. Since the secret-vault refactor, credentials no
+  // longer live in the plaintext `metadata` column, so an unresolved metadata
+  // authenticates with nothing and every secret-bearing healthcheck (Rillet,
+  // Xero, Email) would read "unhealthy". `resolveIntegrationSecrets` looks up
+  // the row's `secretRef` itself (the `integrations` view doesn't expose it) and
+  // throws when the secret can't be read — treat that as unhealthy rather than
+  // crashing the whole settings page.
+  let resolvedMetadata: Record<string, any>;
+  try {
+    resolvedMetadata = (await resolveIntegrationSecrets(
+      getCarbonServiceRole(),
+      companyId,
+      integration.id!,
+      (integration.metadata as Record<string, any>) ?? {}
+    )) as Record<string, any>;
+  } catch {
+    return {
+      ...integration,
+      health: "unhealthy"
+    };
+  }
+
   const status = await (
     healthcheck as (
       companyId: string,
       metadata: Record<string, any>
     ) => Promise<boolean>
-  )(companyId, integration.metadata as Record<string, any>);
+  )(companyId, resolvedMetadata);
 
   await redis.set(key, status ? "1" : "0", "EX", INTEGRATION_CACHE_TTL * 5); // Cache for 5 minutes
 

@@ -12389,9 +12389,6 @@ msgstr "Zwraca:"
 msgid "Rev {revision}"
 msgstr "Wer. {revision}"
 
-msgid "Reveal"
-msgstr ""
-
 msgid "Revenue"
 msgstr "Przychody"
 
@@ -17309,9 +17306,6 @@ msgstr "Twój Zespół Projektowy"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Twoje rzeczywiste dane są załadowane i sprawdziłeś próbkę oraz ją zatwierdziłeś."
-
-msgid "Your session was locked after a period of inactivity. Re-authenticate to continue where you left off."
-msgstr ""
 
 msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
 msgstr ""

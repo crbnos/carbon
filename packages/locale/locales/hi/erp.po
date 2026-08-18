@@ -12389,9 +12389,6 @@ msgstr "रिटर्न:"
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
-msgid "Reveal"
-msgstr ""
-
 msgid "Revenue"
 msgstr "राजस्व"
 
@@ -17309,9 +17306,6 @@ msgstr "आपकी प्रोजेक्ट टीम"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "आपका वास्तविक डेटा लोड हो गया है और आपने एक नमूना जांचा है और इसे मंजूरी दे दी है।"
-
-msgid "Your session was locked after a period of inactivity. Re-authenticate to continue where you left off."
-msgstr ""
 
 msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
 msgstr ""

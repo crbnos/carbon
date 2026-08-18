@@ -19,7 +19,6 @@ import {
 import {
   Badge,
   Button,
-  Copy,
   cn,
   Drawer,
   DrawerBody,
@@ -41,7 +40,7 @@ import { SUPPORT_EMAIL } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useFetcher, useParams } from "react-router";
+import { useParams } from "react-router";
 import { Processes } from "~/components/Form";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
@@ -220,8 +219,21 @@ function SettingFieldInner({ setting }: { setting: IntegrationSetting }) {
         </div>
       );
 
+    // A vault-backed credential. The stored secret is never sent to the
+    // browser, so the field loads empty: leaving it empty keeps the vaulted
+    // value, typing a new one replaces it. Rendered as a plain `Password`
+    // (which has its own show/hide toggle) — no separate "Reveal" affordance.
     case "secret":
-      return <SecretField setting={setting} />;
+      return (
+        <div className="w-full">
+          <Password name={setting.name} label={setting.label} />
+          {setting.description && (
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {setting.description}
+            </p>
+          )}
+        </div>
+      );
 
     case "cards":
       return <CardSelector setting={setting} />;
@@ -304,71 +316,6 @@ function SettingFieldInner({ setting }: { setting: IntegrationSetting }) {
     default:
       return null;
   }
-}
-
-/**
- * A masked, vault-backed credential field. The secret is NOT sent to the
- * browser by the loader (it lives in Supabase Vault); the field starts empty.
- * "Reveal" fetches the plaintext on demand from the gated + audited reveal
- * route and fills the field so it can be viewed, copied, or edited. Leaving the
- * field untouched submits an empty value, which the server treats as
- * "unchanged" (anti-overwrite, D4a) — the vaulted secret is never clobbered.
- */
-function SecretField({ setting }: { setting: IntegrationSetting }) {
-  const { t } = useLingui();
-  const { id: integrationId } = useParams();
-  const [value, setValue] = useControlField<string>(setting.name);
-  const current = typeof value === "string" ? value : "";
-  const revealFetcher = useFetcher<{ value?: string; error?: string }>();
-
-  const revealed = revealFetcher.data?.value;
-  useEffect(() => {
-    if (typeof revealed === "string") {
-      setValue(revealed);
-    }
-  }, [revealed, setValue]);
-
-  const reveal = () => {
-    if (!integrationId) return;
-    revealFetcher.submit(
-      { key: setting.name },
-      {
-        method: "post",
-        action: `/x/settings/integrations/${integrationId}/reveal`
-      }
-    );
-  };
-  const isRevealing = revealFetcher.state !== "idle";
-
-  return (
-    <div className="w-full">
-      <div className="flex items-end gap-2">
-        <div className="min-w-0 flex-1">
-          <Password name={setting.name} label={setting.label} />
-        </div>
-        <Button
-          variant="secondary"
-          className="shrink-0"
-          onClick={reveal}
-          isDisabled={isRevealing || !integrationId}
-          isLoading={isRevealing}
-        >
-          {t`Reveal`}
-        </Button>
-        {current.length > 0 && <Copy text={current} className="shrink-0" />}
-      </div>
-      {revealFetcher.data?.error && (
-        <p className="text-xs text-destructive mt-1.5">
-          {revealFetcher.data.error}
-        </p>
-      )}
-      {setting.description && (
-        <p className="text-xs text-muted-foreground mt-1.5">
-          {setting.description}
-        </p>
-      )}
-    </div>
-  );
 }
 
 /**

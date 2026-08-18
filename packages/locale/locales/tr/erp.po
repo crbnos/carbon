@@ -12389,9 +12389,6 @@ msgstr "Döndürür:"
 msgid "Rev {revision}"
 msgstr "Sürüm {revision}"
 
-msgid "Reveal"
-msgstr ""
-
 msgid "Revenue"
 msgstr "Gelir"
 
@@ -17309,9 +17306,6 @@ msgstr "Proje Ekibiniz"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Gerçek verileriniz yüklendi ve bir örneği kontrol ederek onayladınız."
-
-msgid "Your session was locked after a period of inactivity. Re-authenticate to continue where you left off."
-msgstr ""
 
 msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
 msgstr ""

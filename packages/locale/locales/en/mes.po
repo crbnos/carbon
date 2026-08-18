@@ -1488,8 +1488,5 @@ msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 
-msgid "Your session was locked after a period of inactivity. Re-authenticate to continue where you left off."
-msgstr "Your session was locked after a period of inactivity. Re-authenticate to continue where you left off."
-
 msgid "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
 msgstr "Your session was locked after inactivity. Enter the 6-digit code from your authenticator app to resume."
