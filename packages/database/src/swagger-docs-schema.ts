@@ -88916,6 +88916,41 @@ export default {
         tags: ["(rpc) get_companies_with_permission"]
       }
     },
+    "/rpc/attach_audit_log_append_only": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_table_name: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table_name"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) attach_audit_log_append_only"]
+      }
+    },
     "/rpc/get_inventory_tie_out": {
       post: {
         parameters: [

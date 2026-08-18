@@ -75700,6 +75700,10 @@ export type Database = {
           netChange: number
         }[]
       }
+      attach_audit_log_append_only: {
+        Args: { p_table_name: string }
+        Returns: undefined
+      }
       attach_event_trigger: {
         Args: {
           after_sync_functions?: string[]
