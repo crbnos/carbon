@@ -33,9 +33,13 @@ import {
   resolveBomRow,
   writeElementMapping
 } from "@carbon/ee/onshape";
+import { trigger } from "@carbon/lib/trigger";
+import { NotificationEvent } from "@carbon/notifications";
 import { z } from "zod";
 import { inngest } from "../../client";
 import { withRateLimitRetry } from "./onshape-backfill";
+import type { OnshapeBomImportOutcome } from "./onshape-bom-outcome";
+import { summarizeOutcomeForUser } from "./onshape-bom-outcome";
 import {
   groupAssetTargetsByElement,
   pullOnshapeAssetsForElement
@@ -51,19 +55,6 @@ const PayloadSchema = z.object({
 });
 
 type Payload = z.infer<typeof PayloadSchema>;
-
-export type OnshapeBomImportOutcome = {
-  imported: number;
-  created: number;
-  updated: number;
-  removed: number;
-  assetsAttached: number;
-  assetsSkipped: number;
-  /** Rows Onshape sent that could not be read at all. */
-  unreadableRows: number;
-  /** Rows the import refused, each with why. */
-  skipped: Array<{ partNumber: string; revision: string; reason: string }>;
-};
 
 type Carbon = ReturnType<typeof getCarbonServiceRole>;
 
@@ -341,6 +332,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
         assetsAttached: 0,
         assetsSkipped: 0,
         unreadableRows: 0,
+        protectedLines: 0,
         skipped: []
       };
 
@@ -407,9 +399,16 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
       // itemId per BOM row, minting only genuinely-unknown parts.
       const itemIdByRow = new Map<string, string>();
-      // Components of rows the import REFUSED. Their existing material lines
-      // must survive: "skipped" has to mean untouched, not deleted.
-      const protectedItemIds = new Set<string>();
+      // Components of rows the import REFUSED, keyed by the REFUSED ROW.
+      // Their existing material lines must survive: "skipped" has to mean
+      // untouched, not deleted.
+      //
+      // Keyed per row, not per tree, because protection is scoped to the
+      // method the refused row sits in. One flat set protects the component
+      // EVERYWHERE, so a part refused under assembly A also survives under
+      // assembly B — where Onshape really did drop it — and the line stays
+      // forever while `removed` under-reports.
+      const protectedByRow = new Map<string, string[]>();
 
       // Rows whose geometry should be pulled, captured as they RESOLVE. The
       // itemId comes from resolveBomRow, never from the element mapping alone —
@@ -480,7 +479,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
         }
 
         if (resolution.kind === "ambiguous") {
-          for (const id of resolution.itemIds) protectedItemIds.add(id);
+          protectedByRow.set(row.rowId, resolution.itemIds);
           outcome.skipped.push({
             partNumber: row.partNumber,
             revision: row.revision,
@@ -490,7 +489,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
         }
 
         if (resolution.kind === "revision-missing") {
-          for (const id of resolution.siblingItemIds) protectedItemIds.add(id);
+          protectedByRow.set(row.rowId, resolution.siblingItemIds);
           outcome.skipped.push({
             partNumber: row.partNumber,
             revision: row.revision,
@@ -548,8 +547,6 @@ export const onshapeBomImportFunction = inngest.createFunction(
               );
             }
             if (conflicting.data?.id) {
-              protectedItemIds.add(conflicting.data.id);
-
               // ADOPT it rather than refusing forever. This branch is reached
               // not only when a human made the part, but whenever a previous
               // attempt died between the item insert and its mapping write:
@@ -681,12 +678,18 @@ export const onshapeBomImportFunction = inngest.createFunction(
           })
           .filter((line): line is NonNullable<typeof line> => line !== null);
 
+        // Only the refusals among THIS method's own children protect a line
+        // in THIS method.
+        const protectedHere = children.flatMap(
+          (child) => protectedByRow.get(child.row.rowId) ?? []
+        );
+
         const counts = await reconcileOne(carbon, {
           companyId: payload.companyId,
           userId: payload.userId,
           makeMethodId,
           desired,
-          protectedItemIds: Array.from(protectedItemIds),
+          protectedItemIds: protectedHere,
           // If the parser could not read every row, a Carbon line whose row
           // vanished is INDISTINGUISHABLE from one Onshape genuinely dropped.
           // Deleting on that basis destroys a line — with its routing link,
@@ -697,6 +700,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
         outcome.updated += counts.updated;
         outcome.removed += counts.removed;
+        outcome.protectedLines += counts.protectedCount;
         if (counts.keptBecauseUnreadable > 0) {
           outcome.skipped.push({
             partNumber: makeMethodId,
@@ -808,6 +812,45 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
       return outcome;
     });
+
+    // Tell the person who started it what the import actually did.
+    //
+    // Without this the whole outcome dies in the job log: the panel toasts
+    // "Import started" and nothing ever reports back, so a refused row is
+    // indistinguishable from a row that imported cleanly — the user sees a BOM
+    // that is quietly short a line and no reason why.
+    //
+    // Only when something needs attention. A clean import is already visible:
+    // the BOM the user is looking at changes.
+    const needsAttention =
+      result.skipped.length > 0 ||
+      result.unreadableRows > 0 ||
+      result.protectedLines > 0;
+
+    if (needsAttention && payload.userId && payload.userId !== "system") {
+      await step.run("notify-outcome", async () => {
+        try {
+          await trigger("notify", {
+            event: NotificationEvent.IntegrationSync,
+            companyId: payload.companyId,
+            // The provider id, per this event's contract — the in-app row
+            // links to `path.to.integration(id)`.
+            documentId: "onshape",
+            title: `Onshape import finished with ${result.skipped.length} item(s) needing attention`,
+            body: summarizeOutcomeForUser(result),
+            recipient: { type: "user", userId: payload.userId }
+          });
+        } catch (error) {
+          // The BOM is already written. A notification failure must not undo
+          // it, and a retry would re-run the whole import.
+          console.error(
+            `[ONSHAPE BOM IMPORT] ${payload.companyId}: could not notify ${payload.userId}`,
+            error
+          );
+        }
+        return null;
+      });
+    }
 
     // `result` carries its own `skipped` array of refused rows; the run-level
     // flag is separate, so name it distinctly rather than letting the spread

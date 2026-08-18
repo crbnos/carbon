@@ -16,9 +16,10 @@ export enum NotificationEvent {
   ChangeNoticeDone = "change-order-done",
   DigitalQuoteResponse = "digital-quote-response",
   GaugeCalibrationExpired = "gauge-calibration-expired",
-  // Accounting sync needs attention (failed sync operations); like Workflow,
-  // the text is carried on the payload — documentId is the provider id, not a
-  // readable document.
+  // An integration needs attention — failed accounting sync operations, and an
+  // Onshape BOM import that refused rows. Like Workflow, the text is carried on
+  // the payload, so it is not accounting-specific: documentId is the provider
+  // id, not a readable document, and the in-app row links to that integration.
   IntegrationSync = "integrationSync",
   JobAssignment = "job-assignment",
   JobCompleted = "job-completed",
