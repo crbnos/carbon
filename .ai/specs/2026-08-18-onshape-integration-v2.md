@@ -230,6 +230,38 @@ revert a migrated customer to legacy. Change it to merge into existing metadata.
 | Reconcile natural key | Med | `methodMaterial` has no Onshape back-pointer today; v2 writes one, so reconcile keys on the mapping, not on a heuristic. |
 | Legacy BOM import used while on `next` creates unmapped items | Low | Panels are mutually exclusive by construction. |
 
+## Drawing attachment — v1's mechanism does not survive contact with real data
+
+Established 2026-08-18 against the live Carbon Onshape instance.
+
+**The drawing has no part number.** `RD-410 Wandleser RFID Drawing 1`
+(element `3043b4598e6e8d07fa7f3e45`) has `Part number = null`. Released as-is it
+produces a revision the webhook receiver discards, since `partNumber` is required
+to dispatch at all, and the v2 picker filters it out for the same reason.
+
+**Suffix matching is ambiguous for this customer's numbering.** v1 attaches a
+released drawing to its model by stripping the leading letter prefix to a shared
+suffix and ILIKEing `%<suffix>`, refusing when more than one item matches.
+Verified: `RD-410`, `DRW-410` and `PK-410` all reduce to the suffix `-410`, and
+`ILIKE '%-410'` matches **five** items across **two different parts** —
+`PK-410.A/B` and `RD-410.A/B/C`. Any drawing numbered against `RD-410` is
+therefore permanently `ambiguous-item`.
+
+That is not a numbering mistake by the customer; three-digit part numbers
+colliding on a suffix is ordinary. It means **v2 must not attach drawings by
+suffix**. Candidate mechanisms, to be settled with the asset-pull work:
+
+- exact part-number equality between drawing and model, scoped to the same
+  document — unambiguous when a customer numbers a drawing the same as what it
+  documents, which is common;
+- ask Onshape what the drawing references, if an API exposes a drawing's
+  referenced elements, and map through the element id like everything else;
+- a mapping row for the drawing element itself, established when a user links or
+  imports the model, so the join is an id rather than a string either way.
+
+The third is most consistent with the rest of v2 and needs no naming convention
+from the customer.
+
 ## Open Questions
 
 **Onshape release name and release notes — where do they land in Carbon?**
