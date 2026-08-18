@@ -168,6 +168,9 @@ export const OnshapeCreatePart = ({
                   if (selection.partId) {
                     formData.append("partId", selection.partId);
                   }
+                  if (selection.revisionId) {
+                    formData.append("revisionId", selection.revisionId);
+                  }
                   formData.append("replenishmentSystem", replenishmentSystem);
                   formData.append("defaultMethodType", defaultMethodType);
                   formData.append("itemTrackingType", itemTrackingType);

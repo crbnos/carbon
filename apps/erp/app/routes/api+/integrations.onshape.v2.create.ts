@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   getOnshapeClient,
   getOnshapeV2Settings,
+  readItemIdForRevision,
   readItemIdsForElement,
   resolveOnshapeRevision,
   writeElementMapping,
@@ -121,12 +122,45 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (existing.length > 0) {
+    // Two different situations, and conflating them produces a message that is
+    // simply wrong. A company that has released A, B and C has three picker
+    // entries per part, all sharing one elementId — so an element-level hit
+    // usually means "a DIFFERENT revision of this part is already here", not
+    // "you already imported this one".
+    let sameRevisionItemId: string | null = null;
+    if (input.revisionId) {
+      try {
+        sameRevisionItemId = await readItemIdForRevision(client, {
+          companyId,
+          revisionId: input.revisionId
+        });
+      } catch (error) {
+        logger.error("Failed to check existing Onshape revision mapping", {
+          error
+        });
+        return {
+          success: false,
+          message: "Could not check whether this revision is already imported"
+        };
+      }
+    }
+
+    if (sameRevisionItemId) {
+      return {
+        success: false,
+        alreadyLinked: true,
+        itemId: sameRevisionItemId,
+        message:
+          "This exact Onshape revision is already in Carbon. Open that item instead of creating a second one."
+      };
+    }
+
     return {
       success: false,
       alreadyLinked: true,
       itemId: existing[0],
       message:
-        "This Onshape part is already linked to an item in Carbon. Open that item instead of creating a second one."
+        "Another revision of this Onshape part is already in Carbon. New revisions arrive through release import rather than by creating a second part here."
     };
   }
 

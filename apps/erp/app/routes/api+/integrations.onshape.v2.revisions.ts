@@ -44,6 +44,10 @@ export type OnshapeV2Revision = {
   elementType: number;
   partId: string | null;
   releaseId: string | null;
+  /** Immutable id of this released revision. Confirmed present on the live API
+   *  as `id`, though OnshapeRevision is a passthrough type so it is read
+   *  defensively. */
+  revisionId: string | null;
   /** Stable identity for this CAD thing — the picker echoes it straight back. */
   externalId: string;
   /** True when some Carbon item is already linked to this CAD thing. */
@@ -123,6 +127,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           elementType: item.elementType,
           partId: item.partId ?? null,
           releaseId: item.releaseId ?? null,
+          revisionId: typeof item.id === "string" ? item.id : null,
           externalId: buildElementExternalId({
             documentId: item.documentId,
             elementId: item.elementId,

@@ -33,6 +33,7 @@ type Revision = {
   elementType: number;
   partId: string | null;
   releaseId: string | null;
+  revisionId: string | null;
   externalId: string;
   linked: boolean;
 };
