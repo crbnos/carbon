@@ -30,3 +30,11 @@ if git diff --cached --name-only | grep -q '\.service\.ts$'; then
     npx tsx scripts/generate-mcp.ts
     git add apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json
 fi
+
+# Demo-dataset drift only shows up when the datasets actually run. This dry-runs
+# all four (~3s) — each rolls back, so it writes nothing.
+# Set CARBON_SKIP_DATASET_CHECK=1 to skip.
+if [ -z "$CARBON_SKIP_DATASET_CHECK" ] && git diff --cached --name-only | grep -q '^packages/database/'; then
+    echo "Checking demo datasets against the schema..."
+    pnpm db:check:datasets || exit 1
+fi

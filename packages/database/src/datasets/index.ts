@@ -52,28 +52,54 @@ export function datasetForIndustry(industryId: string | null): Dataset | null {
   );
 }
 
+export type ApplyDatasetOptions = {
+  companyId: string;
+  userId: string;
+  dataset: Dataset;
+  timeZone: string;
+  tiers?: number[] | null;
+  log?: (message: string) => void;
+  /**
+   * Tier-by-tier progress for a caller that shows a live UI. Awaited between
+   * tiers, so it must not touch `client` — its transaction is open here.
+   */
+  onProgress?: (p: { done: number; total: number }) => Promise<void>;
+  /**
+   * Clear the company's existing business data before the tiers run, inside the
+   * same transaction. Preserves everything bootstrap created (chart of accounts,
+   * unitOfMeasure, sequences, locations, paymentTerm) because the tiers require
+   * that config to exist — this is NOT the restore engine's tabula-rasa wipe.
+   */
+  wipeFirst?: boolean;
+};
+
 export async function applyDataset(
   client: PoolClient,
-  opts: {
-    companyId: string;
-    userId: string;
-    dataset: Dataset;
-    timeZone: string;
-    tiers?: number[] | null;
-    log?: (message: string) => void;
-    /**
-     * Tier-by-tier progress for a caller that shows a live UI. Awaited between
-     * tiers, so it must not touch `client` — its transaction is open here.
-     */
-    onProgress?: (p: { done: number; total: number }) => Promise<void>;
-    /**
-     * Clear the company's existing business data before the tiers run, inside the
-     * same transaction. Preserves everything bootstrap created (chart of accounts,
-     * unitOfMeasure, sequences, locations, paymentTerm) because the tiers require
-     * that config to exist — this is NOT the restore engine's tabula-rasa wipe.
-     */
-    wipeFirst?: boolean;
+  opts: ApplyDatasetOptions
+): Promise<void> {
+  await client.query("BEGIN");
+  try {
+    await applyDatasetTiers(client, opts);
+    await client.query("COMMIT");
+  } catch (err) {
+    // A dropped connection is the likeliest cause of a mid-seed failure, and
+    // the ROLLBACK rejects too — swallow that so the original error survives.
+    try {
+      await client.query("ROLLBACK");
+    } catch {}
+    throw err;
   }
+}
+
+/**
+ * The tier run itself, WITHOUT a transaction — the caller owns it. `applyDataset`
+ * wraps this in BEGIN/COMMIT; the drift checker (`verify.ts`) rolls it back
+ * instead, which is how it exercises the real insert path without persisting
+ * anything.
+ */
+export async function applyDatasetTiers(
+  client: PoolClient,
+  opts: ApplyDatasetOptions
 ): Promise<void> {
   const {
     companyId,
@@ -92,35 +118,23 @@ export async function applyDataset(
   );
   const selected = selectTiers(tiers ?? null);
 
-  await client.query("BEGIN");
-  try {
-    // Suppresses dispatch_event_batch (pgmq + pg_net). Sync interceptors
-    // still run, so the satellite rows we depend on are still created.
-    await client.query(`SET LOCAL "app.sync_in_progress" = 'true'`);
+  // Suppresses dispatch_event_batch (pgmq + pg_net). Sync interceptors
+  // still run, so the satellite rows we depend on are still created.
+  await client.query(`SET LOCAL "app.sync_in_progress" = 'true'`);
 
-    // Must run before resetSequences, and before any nextSequence() call.
-    await ensureSequences(client, companyId);
+  // Must run before resetSequences, and before any nextSequence() call.
+  await ensureSequences(client, companyId);
 
-    if (wipeFirst) {
-      log("Wiping existing business data...");
-      await wipeCompanyBusinessData(ctx);
-    }
+  if (wipeFirst) {
+    log("Wiping existing business data...");
+    await wipeCompanyBusinessData(ctx);
+  }
 
-    await onProgress?.({ done: 0, total: selected.length });
-    for (let i = 0; i < selected.length; i++) {
-      const tier = selected[i]!;
-      log(`Tier ${tier.n}: ${tier.name}`);
-      await tier.run(ctx);
-      await onProgress?.({ done: i + 1, total: selected.length });
-    }
-
-    await client.query("COMMIT");
-  } catch (err) {
-    // A dropped connection is the likeliest cause of a mid-seed failure, and
-    // the ROLLBACK rejects too — swallow that so the original error survives.
-    try {
-      await client.query("ROLLBACK");
-    } catch {}
-    throw err;
+  await onProgress?.({ done: 0, total: selected.length });
+  for (let i = 0; i < selected.length; i++) {
+    const tier = selected[i]!;
+    log(`Tier ${tier.n}: ${tier.name}`);
+    await tier.run(ctx);
+    await onProgress?.({ done: i + 1, total: selected.length });
   }
 }

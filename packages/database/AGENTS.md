@@ -27,6 +27,7 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 ```bash
 pnpm db:migrate          # Apply pending migrations + regenerate types
 pnpm db:types            # Regenerate types only
+pnpm db:check:datasets   # Dry-run every demo dataset against the schema (writes nothing)
 pnpm --filter @carbon/database typecheck
 ```
 
@@ -68,6 +69,10 @@ company seeded into the same database.
 `bootstrap.ts` sets up the company and `wipe.ts` clears prior data. `cli.ts` and `bootstrap.ts`
 are dev-only. `wipe.ts` is reached from the shared engine via `applyDataset`'s `wipeFirst`
 option, which both the dev CLI and the `company-template` job use; it is not exported on its own.
+
+`pnpm db:check:datasets` (`src/check-datasets.ts` → `datasets/verify.ts`) catches schema drift:
+it applies every dataset to a scratch company inside a transaction it always rolls back, so it
+writes nothing. The pre-commit hook runs it on any `packages/database/**` change.
 
 Per-module seed scripts were folded into this structure: `seed-change-orders.ts` and its
 `db:seed:change-orders` script are gone, replaced by `tiers/08-change-orders.ts`.

@@ -237,6 +237,33 @@ onboarding picker (`industry.tsx` filters on `datasetForIndustry`) rather than s
 provisioning a clean company — a card promising sample data that delivers none is worse
 than no card.
 
+## The drift check
+
+The tiers build every INSERT from `information_schema` at runtime (`datasets/sql.ts`), so no
+typecheck knows a dataset references a column — a migration that drops one breaks the demo
+templates silently, and only when somebody seeds.
+
+```bash
+pnpm db:check:datasets                       # all four
+pnpm db:check:datasets -- --dataset motor    # one
+```
+
+It applies each dataset to a throwaway company and **always rolls back**
+(`datasets/verify.ts` — there is no `COMMIT` in that file, and the `ROLLBACK` is in a
+`finally`), so it writes nothing and is safe to point at your own development database. It is
+reached by extracting two transaction bodies: `seedCompanyReferenceData` (out of `bootstrap`)
+and `applyDatasetTiers` (out of `applyDataset`). Both extracted functions own no transaction,
+which is exactly what lets one caller commit and the other roll back.
+
+The scratch company is attributed to the `system` user, never a real developer's.
+
+It runs from `.husky/pre-commit` whenever a staged file is under `packages/database/`
+(~3s for all four); `CARBON_SKIP_DATASET_CHECK=1` skips it. It exits 0 with a warning when
+the database is unreachable — a hook that fails for reasons you cannot fix is a hook you learn
+to bypass. Two honest limits: a hook is bypassable with `--no-verify`, so this is a safety net
+rather than a gate (CI was declined on cost), and it proves only that the datasets still
+APPLY — not that they still produce the same rows. That is the baseline diff below.
+
 ## Verifying a change to the tiers
 
 The tiers are shared, so a refactor that "looks fine" can silently drop rows. Seed, then
