@@ -112,21 +112,20 @@ export const OnshapeBomImport = ({
         >
           <Trans>Import from Onshape</Trans>
         </Button>
+        {allowUnreleasedSync && (
+          <Button
+            className="w-full"
+            variant="secondary"
+            isDisabled={isDisabled}
+            onClick={unreleasedPicker.onOpen}
+          >
+            <Trans>Import an unreleased version</Trans>
+          </Button>
+        )}
         {isDisabled && disabledReason && (
           <p className="text-xs text-muted-foreground">{disabledReason}</p>
         )}
       </div>
-
-      {allowUnreleasedSync && (
-        <Button
-          className="w-full"
-          variant="secondary"
-          isDisabled={isDisabled}
-          onClick={unreleasedPicker.onOpen}
-        >
-          <Trans>Import an unreleased version</Trans>
-        </Button>
-      )}
 
       <OnshapeUnreleasedPicker
         isOpen={unreleasedPicker.isOpen}
@@ -164,7 +163,12 @@ export const OnshapeBomImport = ({
               <HStack className="items-center gap-2">
                 <OnshapeLogo className="h-5 w-auto" />
                 <ModalTitle>
-                  {selection.partNumber} {selection.revision}
+                  {/* An unreleased assembly can carry no Onshape part number,
+                      and its revision is empty by definition — without the
+                      name fallback the header renders as a single space. */}
+                  {[selection.partNumber, selection.revision]
+                    .filter(Boolean)
+                    .join(" ") || selection.name}
                 </ModalTitle>
               </HStack>
               <ModalDescription>
@@ -174,8 +178,12 @@ export const OnshapeBomImport = ({
                 </Trans>
               </ModalDescription>
             </ModalHeader>
-            <ModalBody>
-              <VStack spacing={4}>
+            {/* ModalContent is a `grid`, so ModalBody is a grid item with the
+                default `min-width: auto` — a row wider than the dialog widens
+                the track instead of being clipped, and the whole list spills
+                out of the modal. Seen with a long Onshape part number. */}
+            <ModalBody className="min-w-0">
+              <VStack spacing={4} className="min-w-0">
                 {isLoadingPreview && (
                   <HStack className="w-full justify-center py-8">
                     <Spinner />
@@ -271,22 +279,30 @@ export const OnshapeBomImport = ({
                             className="flex items-center justify-between gap-3 border-b px-3 py-2 text-sm last:border-b-0"
                           >
                             <div
-                              className="min-w-0"
+                              className="min-w-0 flex-1"
                               style={{
                                 paddingLeft: `${row.indentLevel * 16}px`
                               }}
                             >
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground tabular-nums">
+                              {/* `min-w-0` has to be on the FLEX ROW too, not
+                                  only its parent: a flex item defaults to
+                                  min-width:auto, so `truncate` on the part
+                                  number cannot shrink it and a long number
+                                  pushes the whole list wider than the modal. */}
+                              <div className="flex min-w-0 items-center gap-2">
+                                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                                   {row.item}
                                 </span>
-                                <span className="truncate font-medium">
+                                <span
+                                  className="truncate font-medium"
+                                  title={row.partNumber}
+                                >
                                   {row.partNumber}
                                 </span>
-                                <Badge variant="secondary">
+                                <Badge variant="secondary" className="shrink-0">
                                   {row.revision || t`no revision`}
                                 </Badge>
-                                <span className="text-xs text-muted-foreground tabular-nums">
+                                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                                   &times;{row.quantity}
                                 </span>
                               </div>
