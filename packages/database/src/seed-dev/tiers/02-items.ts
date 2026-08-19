@@ -1,11 +1,22 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   addBomLine,
   addBopOperation,
   createItem,
   type ItemSpec
 } from "../helpers/items.ts";
+import { seedPumpAndMotorModel } from "../helpers/model-storage.ts";
 import { insertId, insertRow } from "../sql.ts";
 import type { Ctx, ItemRef } from "../types.ts";
+
+function textToTiptap(text: string) {
+  return {
+    type: "doc",
+    content: [{ type: "paragraph", content: [{ type: "text", text }] }]
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Satellite item catalog for Orbital Systems Inc.
@@ -124,6 +135,152 @@ const BUY_PARTS: ItemSpec[] = [
     standardCost: 18,
     unitSalePrice: 27,
     leadTime: 10
+  },
+  // Industrial Pump & Motor Buy Parts
+  {
+    readableId: "SEAL-MECH-35MM",
+    name: "Cartridge Mechanical Seal 35mm (Carbon/SiC)",
+    type: "Part",
+    replenishment: "Buy",
+    trackingType: "Batch",
+    standardCost: 420,
+    unitSalePrice: 630,
+    leadTime: 14
+  },
+  {
+    readableId: "BRG-6308-2RS",
+    name: "Deep Groove Ball Bearing 6308-2RS",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 45,
+    unitSalePrice: 68,
+    leadTime: 7
+  },
+  {
+    readableId: "CPLG-FLEX-001",
+    name: "Lovejoy Flexible Jaw Coupling & Spider",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 85,
+    unitSalePrice: 130,
+    leadTime: 10
+  },
+  {
+    readableId: "FST-M16-HEX",
+    name: "M16 x 60mm Grade 8.8 Hex Bolts & Nuts",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 4.5,
+    unitSalePrice: 7,
+    leadTime: 5
+  },
+  {
+    readableId: "GSKT-VITON-SET",
+    name: "Viton O-Ring & Volute Casing Gasket Set",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 35,
+    unitSalePrice: 55,
+    leadTime: 7
+  },
+  {
+    readableId: "CASING-VOLUTE-001",
+    name: "Cast Iron Volute Casing (DN50/DN65)",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 780,
+    unitSalePrice: 1170,
+    leadTime: 14
+  },
+  {
+    readableId: "IMP-SEMIOPEN-001",
+    name: "Stage Impeller",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 450,
+    unitSalePrice: 675,
+    leadTime: 10
+  },
+  {
+    readableId: "SHAFT-PUMP-001",
+    name: "Ground Pump/Motor Shaft (SS410)",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 280,
+    unitSalePrice: 420,
+    leadTime: 7
+  },
+  {
+    readableId: "BASE-PLT-001",
+    name: "Fabricated Channel Steel Baseplate",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 380,
+    unitSalePrice: 570,
+    leadTime: 7
+  },
+  {
+    readableId: "DIFFUSER-STACK-001",
+    name: "Bowl Diffuser Stage",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 190,
+    unitSalePrice: 285,
+    leadTime: 14
+  },
+  {
+    readableId: "SLEEVE-STAGE-001",
+    name: "Inter-Stage Shaft Sleeve",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 28,
+    unitSalePrice: 42,
+    leadTime: 7
+  },
+  {
+    readableId: "MOTOR-HOUSING-001",
+    name: "Cast Iron Motor Housing",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 320,
+    unitSalePrice: 480,
+    leadTime: 21
+  },
+  {
+    readableId: "STATOR-CORE-001",
+    name: "M19 Stator Core",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 210,
+    unitSalePrice: 315,
+    leadTime: 21
+  },
+  {
+    readableId: "ROTOR-CAGE-001",
+    name: "Aluminum Squirrel-Cage Rotor",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 180,
+    unitSalePrice: 270,
+    leadTime: 14
+  },
+  {
+    readableId: "WINDING-001",
+    name: "Copper Stator End-Turn Windings",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 160,
+    unitSalePrice: 240,
+    leadTime: 14
+  },
+  {
+    readableId: "ENDBELL-001",
+    name: "Motor Endbell (DE/NDE)",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 95,
+    unitSalePrice: 145,
+    leadTime: 14
   }
 ];
 
@@ -313,6 +470,45 @@ const MAKE_PARTS: ItemSpec[] = [
     replenishment: "Make",
     standardCost: 0,
     unitSalePrice: 12000
+  },
+  // Industrial pump: Make parents only. Piece-parts are Buy (see BUY_PARTS).
+  {
+    readableId: "PUMP-MOTOR-ASSY-001",
+    name: "Industrial Pump & Motor Assembly",
+    type: "Part",
+    replenishment: "Make",
+    trackingType: "Batch",
+    standardCost: 4800,
+    unitSalePrice: 7200,
+    leadTime: 28
+  },
+  {
+    readableId: "PUMP-WET-END-001",
+    name: "Multi-Stage Bowl Assembly",
+    type: "Part",
+    replenishment: "Make",
+    trackingType: "Batch",
+    standardCost: 2600,
+    unitSalePrice: 3900,
+    leadTime: 21
+  },
+  {
+    readableId: "MOTOR-DRIVE-001",
+    name: "3-Phase Induction Motor",
+    type: "Part",
+    replenishment: "Make",
+    standardCost: 1400,
+    unitSalePrice: 2100,
+    leadTime: 14
+  },
+  {
+    readableId: "BASE-COUPLING-001",
+    name: "Fabricated Base Frame & Transmission Subassembly",
+    type: "Part",
+    replenishment: "Make",
+    standardCost: 650,
+    unitSalePrice: 975,
+    leadTime: 10
   }
 ];
 
@@ -746,6 +942,195 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     );
   }
 
+  // ── Industrial pump (real CAD GLB) ───────────────────────────────────────
+  {
+    const mm = needMM(i, "BASE-COUPLING-001");
+    await addBomLine(ctx, mm, need("BASE-PLT-001"), 1, 1);
+    await addBomLine(ctx, mm, need("CPLG-FLEX-001"), 1, 2);
+    await addBomLine(ctx, mm, need("FST-M16-HEX"), 4, 3);
+    await addBopOperation(
+      ctx,
+      mm,
+      pr["Clean Room Assembly"]!,
+      wc["Clean Room Bay A"],
+      "Baseplate prep and coupling subassembly",
+      1,
+      { laborTime: 1.5 }
+    );
+  }
+
+  {
+    const mm = needMM(i, "PUMP-WET-END-001");
+    await addBomLine(ctx, mm, need("SHAFT-PUMP-001"), 1, 1);
+    await addBomLine(ctx, mm, need("IMP-SEMIOPEN-001"), 12, 2);
+    await addBomLine(ctx, mm, need("DIFFUSER-STACK-001"), 12, 3);
+    await addBomLine(ctx, mm, need("SLEEVE-STAGE-001"), 12, 4);
+    await addBomLine(ctx, mm, need("SEAL-MECH-35MM"), 1, 5);
+    await addBomLine(ctx, mm, need("BRG-6308-2RS"), 2, 6);
+    await addBopOperation(
+      ctx,
+      mm,
+      pr["Clean Room Assembly"]!,
+      wc["Clean Room Bay A"],
+      "Stack bowl stages on the shaft",
+      1,
+      { laborTime: 3.5, operationType: "Assembly" }
+    );
+  }
+
+  {
+    const mm = needMM(i, "MOTOR-DRIVE-001");
+    await addBomLine(ctx, mm, need("MOTOR-HOUSING-001"), 1, 1);
+    await addBomLine(ctx, mm, need("STATOR-CORE-001"), 1, 2);
+    await addBomLine(ctx, mm, need("ROTOR-CAGE-001"), 1, 3);
+    await addBomLine(ctx, mm, need("WINDING-001"), 1, 4);
+    await addBomLine(ctx, mm, need("ENDBELL-001"), 2, 5);
+    await addBopOperation(
+      ctx,
+      mm,
+      pr["Clean Room Assembly"]!,
+      wc["Clean Room Bay A"],
+      "Stator, rotor, windings and endbells",
+      1,
+      { laborTime: 4.0, operationType: "Assembly" }
+    );
+  }
+
+  {
+    const mm = needMM(i, "PUMP-MOTOR-ASSY-001");
+    await addBomLine(ctx, mm, need("MOTOR-DRIVE-001"), 1, 1);
+    await addBomLine(ctx, mm, need("PUMP-WET-END-001"), 1, 2);
+    await addBopOperation(
+      ctx,
+      mm,
+      pr["Clean Room Assembly"]!,
+      wc["Clean Room Bay A"],
+      "Couple motor to bowl assembly",
+      1,
+      { laborTime: 4.0, operationType: "Assembly" }
+    );
+    await addBopOperation(
+      ctx,
+      mm,
+      pr["Final Inspection"]!,
+      wc["QC Bench"],
+      "Hydrostatic pressure test",
+      2,
+      { laborTime: 2.0, operationType: "Inspection" }
+    );
+  }
+
+  ctx.log("pump 3D CAD model and assembly instructions");
+  const { modelUploadId } = await seedPumpAndMotorModel(ctx);
+
+  const pumpAssy = i["PUMP-MOTOR-ASSY-001"];
+  if (pumpAssy && modelUploadId) {
+    await ctx.client.query(
+      `UPDATE item SET "modelUploadId" = $1 WHERE id = $2 AND "companyId" = $3`,
+      [modelUploadId, pumpAssy.id, ctx.companyId]
+    );
+
+    const aiId = await insertId(ctx, "assemblyInstruction", {
+      name: "Industrial Pump & Motor Assembly",
+      modelUploadId,
+      itemId: pumpAssy.id,
+      status: "Published",
+      version: 1
+    });
+
+    const planPath = join(
+      dirname(fileURLToPath(import.meta.url)),
+      "../assets/models/pump-motor/plan.json"
+    );
+    const plan = JSON.parse(readFileSync(planPath, "utf8")) as {
+      steps: Array<{
+        componentNodeIds: string[];
+        motion: Record<string, unknown>;
+      }>;
+    };
+    const stepCopy: Array<{ title: string; instructionText: string }> = [
+      {
+        title: "Shaft into the motor stack",
+        instructionText:
+          "Slide the SS410 shaft through the motor bore. Check TIR under 0.015 mm."
+      },
+      {
+        title: "Rotor cage and end rings",
+        instructionText:
+          "Press the aluminum squirrel-cage rotor and end rings onto the shaft."
+      },
+      {
+        title: "Stator core and copper windings",
+        instructionText:
+          "Lower the M19 stator core and end-turn windings over the rotor."
+      },
+      {
+        title: "Drive-end and non-drive-end endbells",
+        instructionText: "Fit both endbells. Cross-torque fasteners to 28 Nm."
+      },
+      {
+        title: "Motor housing",
+        instructionText:
+          "Slide the cast iron housing over the stator. Align the terminal box."
+      },
+      {
+        title: "Bowl diffuser stack",
+        instructionText:
+          "Stack the bowl diffusers on the pump end. Clock each stage."
+      },
+      {
+        title: "Stage impellers and shaft sleeves",
+        instructionText:
+          "Install each stage impeller with its inter-stage sleeve. Lock the stack."
+      }
+    ];
+
+    for (const [index, planStep] of plan.steps.entries()) {
+      const copy = stepCopy[index] ?? {
+        title: `Step ${index + 1}`,
+        instructionText: ""
+      };
+      await insertRow(ctx, "assemblyInstructionStep", {
+        assemblyInstructionId: aiId,
+        sortOrder: index + 1,
+        title: copy.title,
+        instructionText: copy.instructionText,
+        description: textToTiptap(copy.instructionText),
+        componentNodeIds: planStep.componentNodeIds,
+        motion: planStep.motion,
+        status: "Todo",
+        planConfidence: "high"
+      });
+    }
+
+    const mapPath = join(
+      dirname(fileURLToPath(import.meta.url)),
+      "../assets/models/pump-motor/node-item-map.json"
+    );
+    const nodeItemMap = JSON.parse(readFileSync(mapPath, "utf8")) as Record<
+      string,
+      string | null
+    >;
+    for (const [geometryHash, readableId] of Object.entries(nodeItemMap)) {
+      const item = readableId ? i[readableId] : undefined;
+      if (!item) continue;
+      await insertRow(ctx, "assemblyComponentMapping", {
+        modelUploadId,
+        geometryHash,
+        itemId: item.id,
+        confidence: "high"
+      });
+    }
+
+    const pumpMm = needMM(i, "PUMP-MOTOR-ASSY-001");
+    await ctx.client.query(
+      `UPDATE "methodOperation"
+       SET "assemblyInstructionId" = $1, "operationType" = 'Assembly'
+       WHERE "makeMethodId" = $2 AND "companyId" = $3 AND "order" = 1`,
+      [aiId, pumpMm, ctx.companyId]
+    );
+  }
+
   // ── Supplier parts (which supplier can supply what) ────────────────────────
   ctx.log("supplier parts");
   const supplierLinks: Array<{
@@ -792,6 +1177,24 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       leadTime: 10
     },
     {
+      supplier: "SpaceGrade Fasteners",
+      item: "FST-M16-HEX",
+      price: 4.5,
+      leadTime: 5
+    },
+    {
+      supplier: "SpaceGrade Fasteners",
+      item: "BRG-6308-2RS",
+      price: 45,
+      leadTime: 7
+    },
+    {
+      supplier: "SpaceGrade Fasteners",
+      item: "GSKT-VITON-SET",
+      price: 35,
+      leadTime: 7
+    },
+    {
       supplier: "Orbital Composites",
       item: "MAT-CF-LAM",
       price: 320,
@@ -820,6 +1223,18 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       item: "VLV-SOLENOID-LP",
       price: 950,
       leadTime: 45
+    },
+    {
+      supplier: "PropTech Solutions",
+      item: "SEAL-MECH-35MM",
+      price: 420,
+      leadTime: 14
+    },
+    {
+      supplier: "PropTech Solutions",
+      item: "CPLG-FLEX-001",
+      price: 85,
+      leadTime: 10
     },
     { supplier: "Deep Space RF", item: "RW-010", price: 14500, leadTime: 90 },
     { supplier: "Deep Space RF", item: "ST-050", price: 28000, leadTime: 120 }

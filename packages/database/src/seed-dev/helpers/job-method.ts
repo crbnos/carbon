@@ -35,6 +35,7 @@ type MethodOperationRow = {
   operationLeadTime: string | null;
   operationUnitCost: string | null;
   procedureId: string | null;
+  assemblyInstructionId: string | null;
 };
 
 type MethodMaterialRow = {
@@ -150,6 +151,54 @@ async function ratesFor(ctx: Ctx, workCenterId: string | null): Promise<Rates> {
 // The operator's Instructions tab reads jobOperationStep, not the procedure —
 // the steps are snapshotted onto the operation so a later procedure revision
 // cannot rewrite what the floor was told to do.
+function textToTiptap(text: string | null): object {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return { type: "doc", content: [{ type: "paragraph" }] };
+  return {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: trimmed }]
+      }
+    ]
+  };
+}
+
+async function copyAssemblyInstructionSteps(
+  ctx: Ctx,
+  assemblyInstructionId: string,
+  jobOperationId: string
+): Promise<void> {
+  const steps = await rows<{
+    id: string;
+    title: string | null;
+    instructionText: string | null;
+    description: unknown;
+    required: boolean | null;
+    sortOrder: number;
+    type: string;
+  }>(
+    ctx.client,
+    `SELECT id, title, "instructionText", description, required, "sortOrder", type::text
+     FROM "assemblyInstructionStep"
+     WHERE "assemblyInstructionId" = $1 AND "companyId" = $2
+     ORDER BY "sortOrder"`,
+    [assemblyInstructionId, ctx.companyId]
+  );
+  for (const step of steps) {
+    await insertId(ctx, "jobOperationStep", {
+      operationId: jobOperationId,
+      name: step.title || `Step ${step.sortOrder}`,
+      type: step.type || "Task",
+      description: step.description ?? textToTiptap(step.instructionText),
+      required: step.required ?? false,
+      sortOrder: step.sortOrder,
+      assemblyInstructionStepId: step.id
+    });
+  }
+}
+
 async function copyProcedureSteps(
   ctx: Ctx,
   procedureId: string,
@@ -208,7 +257,8 @@ async function copyLevel(
             "setupTime", "setupUnit"::text, "laborTime", "laborUnit"::text,
             "machineTime", "machineUnit"::text, "operationOrder"::text,
             "operationType"::text, "operationSupplierProcessId",
-            "operationLeadTime", "operationUnitCost", "procedureId"
+            "operationLeadTime", "operationUnitCost", "procedureId",
+            "assemblyInstructionId"
      FROM "methodOperation"
      WHERE "makeMethodId" = $1 AND "companyId" = $2
      ORDER BY "order"`,
@@ -239,6 +289,7 @@ async function copyLevel(
       operationLeadTime: op.operationLeadTime ?? 0,
       operationUnitCost: op.operationUnitCost ?? 0,
       procedureId: op.procedureId,
+      assemblyInstructionId: op.assemblyInstructionId,
       laborRate: rates.laborRate,
       machineRate: rates.machineRate,
       overheadRate: rates.overheadRate,
@@ -249,6 +300,12 @@ async function copyLevel(
     operationMap.set(op.id, jobOperationId);
     if (op.procedureId)
       await copyProcedureSteps(ctx, op.procedureId, jobOperationId);
+    if (op.assemblyInstructionId)
+      await copyAssemblyInstructionSteps(
+        ctx,
+        op.assemblyInstructionId,
+        jobOperationId
+      );
     result.operations += 1;
   }
 

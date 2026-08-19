@@ -1,0 +1,143 @@
+{
+  "version": 3,
+  "unit": "mm",
+  "steps": [
+    {
+      "componentNodeIds": [
+        "node-shaft"
+      ],
+      "motion": {
+        "type": "linear",
+        "direction": [
+          0,
+          0,
+          1
+        ],
+        "distance": 80
+      }
+    },
+    {
+      "componentNodeIds": [
+        "node-rotor-cage",
+        "node-rotor-endring-top",
+        "node-rotor-endring-bot"
+      ],
+      "motion": {
+        "type": "linear",
+        "direction": [
+          0,
+          0,
+          1
+        ],
+        "distance": 160
+      }
+    },
+    {
+      "componentNodeIds": [
+        "node-stator-core",
+        "node-winding-de-ring",
+        "node-winding-nde-ring"
+      ],
+      "motion": {
+        "type": "linear",
+        "direction": [
+          0,
+          0,
+          1
+        ],
+        "distance": 240
+      }
+    },
+    {
+      "componentNodeIds": [
+        "node-endbell-de",
+        "node-endbell-nde"
+      ],
+      "motion": {
+        "type": "linear",
+        "direction": [
+          0,
+          0,
+          1
+        ],
+        "distance": 280
+      }
+    },
+    {
+      "componentNodeIds": [
+        "node-motor-housing"
+      ],
+      "motion": {
+        "type": "linear",
+        "direction": [
+          0,
+          0,
+          1
+        ],
+        "distance": 320
+      }
+    },
+    {
+      "componentNodeIds": [
+        "node-diffuser-00",
+        "node-diffuser-01",
+        "node-diffuser-02",
+        "node-diffuser-03",
+        "node-diffuser-04",
+        "node-diffuser-05",
+        "node-diffuser-06",
+        "node-diffuser-07",
+        "node-diffuser-08",
+        "node-diffuser-09",
+        "node-diffuser-10",
+        "node-diffuser-11"
+      ],
+      "motion": {
+        "type": "linear",
+        "direction": [
+          0,
+          0,
+          -1
+        ],
+        "distance": 220
+      }
+    },
+    {
+      "componentNodeIds": [
+        "node-impeller-00",
+        "node-impeller-01",
+        "node-impeller-02",
+        "node-impeller-03",
+        "node-impeller-04",
+        "node-impeller-05",
+        "node-impeller-06",
+        "node-impeller-07",
+        "node-impeller-08",
+        "node-impeller-09",
+        "node-impeller-10",
+        "node-impeller-11",
+        "node-sleeve-00",
+        "node-sleeve-01",
+        "node-sleeve-02",
+        "node-sleeve-03",
+        "node-sleeve-04",
+        "node-sleeve-05",
+        "node-sleeve-06",
+        "node-sleeve-07",
+        "node-sleeve-08",
+        "node-sleeve-09",
+        "node-sleeve-10",
+        "node-sleeve-11"
+      ],
+      "motion": {
+        "type": "linear",
+        "direction": [
+          0,
+          0,
+          -1
+        ],
+        "distance": 360
+      }
+    }
+  ]
+}

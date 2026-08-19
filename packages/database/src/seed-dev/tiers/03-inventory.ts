@@ -27,7 +27,18 @@ const OPENING_STOCK: Array<{
   { item: "MAT-SYLGARD", qty: 5, cost: 95, shelf: "A2-L1" },
   { item: "MAT-CONFCOAT", qty: 12, cost: 62, shelf: "A2-L1" },
   { item: "CN-MLI-001", qty: 4, cost: 380, shelf: "CleanRoom" },
-  { item: "CN-GREASE-001", qty: 2, cost: 95, shelf: "A1-L3" }
+  { item: "CN-GREASE-001", qty: 2, cost: 95, shelf: "A1-L3" },
+  { item: "SEAL-MECH-35MM", qty: 4, cost: 420, shelf: "A1-L3" },
+  { item: "BRG-6308-2RS", qty: 12, cost: 45, shelf: "A1-L3" },
+  { item: "IMP-SEMIOPEN-001", qty: 24, cost: 450, shelf: "A2-L1" },
+  { item: "DIFFUSER-STACK-001", qty: 24, cost: 190, shelf: "A2-L1" },
+  { item: "SLEEVE-STAGE-001", qty: 24, cost: 28, shelf: "A1-L1" },
+  { item: "SHAFT-PUMP-001", qty: 3, cost: 280, shelf: "A2-L1" },
+  { item: "MOTOR-HOUSING-001", qty: 3, cost: 320, shelf: "A2-L2" },
+  { item: "STATOR-CORE-001", qty: 3, cost: 210, shelf: "A2-L2" },
+  { item: "ROTOR-CAGE-001", qty: 3, cost: 180, shelf: "A2-L2" },
+  { item: "WINDING-001", qty: 3, cost: 160, shelf: "A2-L2" },
+  { item: "ENDBELL-001", qty: 6, cost: 95, shelf: "A2-L2" }
 ];
 
 // Lots/serials that back the tracked slice of the opening stock above.
@@ -56,6 +67,13 @@ const ON_HAND_TRACKED: Array<{
     entities: [
       { readableId: "LOT-AL7075-2608", quantity: 40 },
       { readableId: "LOT-AL7075-2609", quantity: 20 }
+    ]
+  },
+  {
+    item: "SEAL-MECH-35MM",
+    entities: [
+      { readableId: "LOT-SEAL-35-2608", quantity: 2 },
+      { readableId: "LOT-SEAL-35-2609", quantity: 2 }
     ]
   }
 ];

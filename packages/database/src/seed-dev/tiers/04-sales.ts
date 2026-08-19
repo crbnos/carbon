@@ -648,4 +648,87 @@ export async function runTier4(ctx: Ctx): Promise<void> {
 
   ctx.refs.documents["so:toshipinvoice"] = so5;
   ctx.refs.documents["opp:toshipinvoice"] = opp5Id;
+
+  ctx.log("sales order — industrial pump (PolarView)");
+  const pumpItem = ctx.refs.items["PUMP-MOTOR-ASSY-001"]!;
+  const pumpOppId = await insertId(ctx, "opportunity", {
+    customerId: customers.polar
+  });
+  const pumpQuoteId = await nextSequence(ctx, "quote");
+  const pumpQuote = await insertId(ctx, "quote", {
+    quoteId: pumpQuoteId,
+    status: "Sent",
+    customerId: customers.polar,
+    customerLocationId: cLocs.polar ?? null,
+    locationId: plantId,
+    currencyCode: "USD",
+    opportunityId: pumpOppId,
+    expirationDate: "2027-06-30"
+  });
+  await insertRow(ctx, "quotePayment", {
+    id: pumpQuote,
+    paymentTermId,
+    companyId
+  });
+  await insertRow(ctx, "quoteShipment", {
+    id: pumpQuote,
+    locationId: plantId,
+    shippingMethodId,
+    companyId
+  });
+  const pumpQuoteLine = await insertId(ctx, "quoteLine", {
+    quoteId: pumpQuote,
+    itemId: pumpItem.id,
+    itemType: "Part",
+    description: pumpItem.name,
+    methodType: "Make to Order",
+    unitOfMeasureCode: "EA",
+    quantity: [1, 2, 5],
+    status: "Complete",
+    sortOrder: 1
+  });
+  await insertPriceBreaks(ctx, pumpQuote, pumpQuoteLine, [
+    { quantity: 1, unitPrice: 7200, leadTime: 28 },
+    { quantity: 2, unitPrice: 6900, leadTime: 35, discountPercent: 0.04 },
+    { quantity: 5, unitPrice: 6500, leadTime: 42, discountPercent: 0.1 }
+  ]);
+  const pumpSoId = await nextSequence(ctx, "salesOrder");
+  const pumpSo = await insertId(ctx, "salesOrder", {
+    salesOrderId: pumpSoId,
+    status: "Confirmed",
+    customerId: customers.polar,
+    customerLocationId: cLocs.polar ?? null,
+    locationId: plantId,
+    currencyCode: "USD",
+    opportunityId: pumpOppId,
+    orderDate: "2026-03-15"
+  });
+  await insertRow(ctx, "salesOrderPayment", {
+    id: pumpSo,
+    paymentTermId,
+    companyId
+  });
+  await insertRow(ctx, "salesOrderShipment", {
+    id: pumpSo,
+    locationId: plantId,
+    shippingMethodId,
+    customerId: customers.polar,
+    customerLocationId: cLocs.polar ?? null,
+    companyId
+  });
+  const pumpSoLine = await insertId(ctx, "salesOrderLine", {
+    salesOrderId: pumpSo,
+    salesOrderLineType: "Part",
+    itemId: pumpItem.id,
+    description: pumpItem.name,
+    saleQuantity: 1,
+    unitPrice: 7200,
+    unitOfMeasureCode: "EA",
+    locationId: plantId,
+    methodType: "Make to Order",
+    status: "In Progress"
+  });
+  ctx.refs.documents["quote:pump"] = pumpQuote;
+  ctx.refs.documents["so:pump"] = pumpSo;
+  ctx.refs.documents["soline:pump"] = pumpSoLine;
 }

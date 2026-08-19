@@ -115,6 +115,17 @@ const JOBS: JobSpec[] = [
     customer: "Apex Space Research",
     dueDate: "2025-10-03",
     releasedDate: "2025-09-10"
+  },
+  {
+    key: "pump-ready",
+    item: "PUMP-MOTOR-ASSY-001",
+    status: "Ready",
+    quantity: 1,
+    salesOrder: "so:pump",
+    salesOrderLine: "soline:pump",
+    customer: "PolarView Earth",
+    dueDate: "2026-06-15",
+    releasedDate: "2026-04-01"
   }
 ];
 

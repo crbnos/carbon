@@ -1,0 +1,1840 @@
+{
+  "version": 1,
+  "unit": "mm",
+  "sourceUnit": "m",
+  "componentCount": 46,
+  "root": {
+    "nodeId": "root",
+    "name": "Industrial Pump & Motor Assembly",
+    "isAssembly": true,
+    "geometryHash": null,
+    "transform": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "bbox": {
+      "min": [
+        -65.99999964237213,
+        -65.99999964237213,
+        -888.4999752044678
+      ],
+      "max": [
+        65.99999964237213,
+        65.99999964237213,
+        888.4999752044678
+      ]
+    },
+    "volume": null,
+    "color": null,
+    "children": [
+      {
+        "nodeId": "node-shaft",
+        "name": "shaft",
+        "isAssembly": false,
+        "geometryHash": "node-shaft",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-motor-housing",
+        "name": "motor_housing",
+        "isAssembly": false,
+        "geometryHash": "node-motor-housing",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-stator-core",
+        "name": "stator_core",
+        "isAssembly": false,
+        "geometryHash": "node-stator-core",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-winding-de-ring",
+        "name": "winding_de_ring",
+        "isAssembly": false,
+        "geometryHash": "node-winding-de-ring",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-winding-nde-ring",
+        "name": "winding_nde_ring",
+        "isAssembly": false,
+        "geometryHash": "node-winding-nde-ring",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-rotor-cage",
+        "name": "rotor_cage",
+        "isAssembly": false,
+        "geometryHash": "node-rotor-cage",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-rotor-endring-top",
+        "name": "rotor_endring_top",
+        "isAssembly": false,
+        "geometryHash": "node-rotor-endring-top",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-rotor-endring-bot",
+        "name": "rotor_endring_bot",
+        "isAssembly": false,
+        "geometryHash": "node-rotor-endring-bot",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-endbell-de",
+        "name": "endbell_de",
+        "isAssembly": false,
+        "geometryHash": "node-endbell-de",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-endbell-nde",
+        "name": "endbell_nde",
+        "isAssembly": false,
+        "geometryHash": "node-endbell-nde",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-00",
+        "name": "diffuser_00",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-00",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-00",
+        "name": "impeller_00",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-00",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-01",
+        "name": "diffuser_01",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-01",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-01",
+        "name": "impeller_01",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-01",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-02",
+        "name": "diffuser_02",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-02",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-02",
+        "name": "impeller_02",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-02",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-03",
+        "name": "diffuser_03",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-03",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-03",
+        "name": "impeller_03",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-03",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-04",
+        "name": "diffuser_04",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-04",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-04",
+        "name": "impeller_04",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-04",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-05",
+        "name": "diffuser_05",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-05",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-05",
+        "name": "impeller_05",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-05",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-06",
+        "name": "diffuser_06",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-06",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-06",
+        "name": "impeller_06",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-06",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-07",
+        "name": "diffuser_07",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-07",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-07",
+        "name": "impeller_07",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-07",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-08",
+        "name": "diffuser_08",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-08",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-08",
+        "name": "impeller_08",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-08",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-09",
+        "name": "diffuser_09",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-09",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-09",
+        "name": "impeller_09",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-09",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-10",
+        "name": "diffuser_10",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-10",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-10",
+        "name": "impeller_10",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-10",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-diffuser-11",
+        "name": "diffuser_11",
+        "isAssembly": false,
+        "geometryHash": "node-diffuser-11",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-impeller-11",
+        "name": "impeller_11",
+        "isAssembly": false,
+        "geometryHash": "node-impeller-11",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-00",
+        "name": "sleeve_00",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-00",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-01",
+        "name": "sleeve_01",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-01",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-02",
+        "name": "sleeve_02",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-02",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-03",
+        "name": "sleeve_03",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-03",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-04",
+        "name": "sleeve_04",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-04",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-05",
+        "name": "sleeve_05",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-05",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-06",
+        "name": "sleeve_06",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-06",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-07",
+        "name": "sleeve_07",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-07",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-08",
+        "name": "sleeve_08",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-08",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-09",
+        "name": "sleeve_09",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-09",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-10",
+        "name": "sleeve_10",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-10",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      },
+      {
+        "nodeId": "node-sleeve-11",
+        "name": "sleeve_11",
+        "isAssembly": false,
+        "geometryHash": "node-sleeve-11",
+        "transform": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "bbox": {
+          "min": [
+            -65.99999964237213,
+            -65.99999964237213,
+            -888.4999752044678
+          ],
+          "max": [
+            65.99999964237213,
+            65.99999964237213,
+            888.4999752044678
+          ]
+        },
+        "volume": null,
+        "color": null,
+        "children": []
+      }
+    ]
+  }
+}

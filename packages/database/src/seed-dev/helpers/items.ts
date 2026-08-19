@@ -212,6 +212,7 @@ export async function addBopOperation(
     setupTime?: number;
     machineTime?: number;
     operationType?: OperationType;
+    assemblyInstructionId?: string;
     // Required by the UI for an Outside Processing step — without it the job
     // cannot be released and no supplier name renders on the operation.
     operationSupplierProcessId?: string;
@@ -231,6 +232,7 @@ export async function addBopOperation(
     setupTime: opts.setupTime ?? 0,
     machineTime: opts.machineTime ?? 0,
     operationType: opts.operationType ?? "Process",
+    assemblyInstructionId: opts.assemblyInstructionId ?? null,
     operationSupplierProcessId: opts.operationSupplierProcessId ?? null,
     operationLeadTime: opts.operationLeadTime ?? 0,
     operationUnitCost: opts.operationUnitCost ?? 0,
