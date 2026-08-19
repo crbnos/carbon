@@ -1525,6 +1525,9 @@ msgstr "适用于没有自己规则的功能，以及当该计划驱动检验时
 msgid "Apply"
 msgstr "应用"
 
+msgid "Apply a demo template"
+msgstr ""
+
 msgid "Apply available credits"
 msgstr "应用可用额度"
 
@@ -1548,6 +1551,9 @@ msgstr "应用到发票"
 
 msgid "Apply to invoices"
 msgstr "应用于发票"
+
+msgid "applying…"
+msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "接近 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 上限。"
@@ -4833,6 +4839,18 @@ msgstr "需求预测"
 msgid "Demand-Based"
 msgstr "基于需求"
 
+msgid "Demo data"
+msgstr ""
+
+msgid "Demo Data"
+msgstr ""
+
+msgid "Demo data applied"
+msgstr ""
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr ""
+
 msgid "department"
 msgstr "部门"
 
@@ -6551,6 +6569,9 @@ msgstr "此处附加的文件将默认随每封采购订单电子邮件一起发
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "此处附加的文件将随附在发送给此供应商的每份采购订单电子邮件中（除了公司范围的默认设置）。"
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr ""
+
 msgid "Filter"
 msgstr "筛选"
 
@@ -7981,6 +8002,9 @@ msgstr "看板输出"
 
 msgid "Kanbans"
 msgstr "看板"
+
+msgid "Keep"
+msgstr ""
 
 msgid "Keep Current"
 msgstr "保持当前"
@@ -11508,6 +11532,9 @@ msgstr "正在读取文档..."
 msgid "Ready for Quote"
 msgstr "准备报价"
 
+msgid "ready to keep or revert"
+msgstr ""
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "实时库存和车间可见性"
 
@@ -11889,6 +11916,9 @@ msgstr "用源值替换现有定价"
 msgid "Replace PDF"
 msgstr "替换 PDF"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "替换 PDF 将删除此文档上的所有气球标注。功能行及其值保持不变；您可以在新绘图上重新放置气球。"
 
@@ -12088,6 +12118,12 @@ msgstr "反转相关日记账分录"
 
 msgid "Reversed"
 msgstr "已冲销"
+
+msgid "Revert"
+msgstr ""
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "查看"
@@ -15517,6 +15553,9 @@ msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替
 
 msgid "Unknown"
 msgstr "未知"
+
+msgid "unknown error"
+msgstr ""
 
 msgid "unknown location"
 msgstr "未知位置"

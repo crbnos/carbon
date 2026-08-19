@@ -1525,6 +1525,9 @@ msgstr "Kendi kuralı olmayan özelliklere ve bu plan bir muayene yaptırdığı
 msgid "Apply"
 msgstr "Uygula"
 
+msgid "Apply a demo template"
+msgstr ""
+
 msgid "Apply available credits"
 msgstr "Mevcut kredileri uygula"
 
@@ -1548,6 +1551,9 @@ msgstr "Faturaya uygula"
 
 msgid "Apply to invoices"
 msgstr "Faturaları uygula"
+
+msgid "applying…"
+msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Yaklaşan {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB sınırı."
@@ -4833,6 +4839,18 @@ msgstr "Talep Tahminleri"
 msgid "Demand-Based"
 msgstr "Talep Tabanlı"
 
+msgid "Demo data"
+msgstr ""
+
+msgid "Demo Data"
+msgstr ""
+
+msgid "Demo data applied"
+msgstr ""
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr ""
+
 msgid "department"
 msgstr "departman"
 
@@ -6551,6 +6569,9 @@ msgstr "Buraya eklenen dosyalar varsayılan olarak her satın alma siparişi e-p
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "Buraya eklenen dosyalar, bu tedarikçiye gönderilen her satın alma siparişi e-postasında yer alır (şirket genelindeki varsayılanlara ek olarak)."
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr ""
+
 msgid "Filter"
 msgstr "Filtre"
 
@@ -7981,6 +8002,9 @@ msgstr "Kanban Çıktısı"
 
 msgid "Kanbans"
 msgstr "Kanbanlar"
+
+msgid "Keep"
+msgstr ""
 
 msgid "Keep Current"
 msgstr "Mevcut Tut"
@@ -11508,6 +11532,9 @@ msgstr "Belge okunuyor..."
 msgid "Ready for Quote"
 msgstr "Teklif İçin Hazır"
 
+msgid "ready to keep or revert"
+msgstr ""
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Gerçek zamanlı envanter ve atölye tabanı görünürlüğü"
 
@@ -11889,6 +11916,9 @@ msgstr "Mevcut fiyatlandırmayı kaynak değerlerle değiştir"
 msgid "Replace PDF"
 msgstr "PDF'i Değiştir"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF'i değiştirmek bu belgedeki tüm balon yerleşimlerini kaldırır. Özellik satırları ve değerleri kalır; yeni çizim üzerinde tekrar balon yerleştirebilirsiniz."
 
@@ -12088,6 +12118,12 @@ msgstr "İlgili günlük girişlerini tersine çevir"
 
 msgid "Reversed"
 msgstr "Ters Çevrilmiş"
+
+msgid "Revert"
+msgstr ""
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "İncele"
@@ -15517,6 +15553,9 @@ msgstr "Bir işlemde kurtarılamaz olarak raporlanan birimler, bir nedenle — y
 
 msgid "Unknown"
 msgstr "Bilinmeyen"
+
+msgid "unknown error"
+msgstr ""
 
 msgid "unknown location"
 msgstr "bilinmeyen konum"

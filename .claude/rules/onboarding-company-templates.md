@@ -28,20 +28,42 @@ numeric order. The ordering IS the contract: tier 4 can only build a sales order
 tier 2 already created the item and put its id in `ctx.refs`. Tiers read the dataset and
 know nothing about which industry they are inserting.
 
-`applyDataset()` in `datasets/index.ts` is the single entry point both callers use:
+`applyDataset()` in `datasets/index.ts` is the single entry point every caller uses:
 
 ```typescript
-await applyDataset(pgClient, { companyId, userId, dataset, timeZone, tiers?, log?, beforeTiers? });
+await applyDataset(pgClient, { companyId, userId, dataset, timeZone, tiers?, log?, wipeFirst? });
 ```
 
 It resolves today in the company's timezone, builds the context, opens ONE transaction,
 sets `app.sync_in_progress`, ensures sequences, runs the selected tiers in order, and
 commits — or rolls the whole thing back. A half-seeded company is not a possible outcome.
 
-`beforeTiers` exists for one reason: the dev CLI's wipe has to run inside that same
-transaction. Nothing else should use it.
+`wipeFirst` clears the company's existing business data inside that same transaction,
+so apply-onto-a-used-company is all-or-nothing: a tier that throws rolls the wipe back
+too. It replaced an older `beforeTiers` callback that existed only so the dev CLI could
+inject its wipe.
 
-## Two callers, one code path
+## The two wipes are not interchangeable
+
+There are two wipes in this repo and they preserve **opposite** things. Getting this
+wrong is the single easiest way to break a template apply.
+
+| | `datasets/wipe.ts` (`wipeCompanyBusinessData`) | `company-backup.ts` (`selectWipeableTables` + `wipeScopedData`) |
+|---|---|---|
+| Reached by | `applyDataset({ wipeFirst: true })` | `wipeAndLoad` in restore / revert |
+| Scope columns | `companyId` only | `companyId` **and** `companyGroupId` |
+| Chart of accounts, `unitOfMeasure`, `sequence`, `paymentTerm`, `location` | **preserved** | **deleted** |
+| Assumes afterwards | the tiers run against surviving config | a backup reloads everything |
+
+The tiers REQUIRE that config — `buildCtx` resolves the chart of accounts, `EA` and the
+sequences before tier 1. So **apply** uses the dataset wipe, and **revert** uses the
+restore wipe (the snapshot carries the config back, so nothing needs keeping). The
+asymmetry is deliberate: each wipe is paired with whatever repopulates after it.
+
+`wipeCompanyBusinessData` is NOT exported on its own — `wipeFirst` is the only way to
+reach it, so no caller can wipe without also re-seeding.
+
+## Three callers, one code path
 
 **Dev CLI** — `packages/database/src/seed-dev.ts`. Bootstraps a user + company if the
 email is unknown, wipes the company's business data, then calls `applyDataset`.
@@ -50,8 +72,9 @@ email is unknown, wipes the company's business data, then calls `applyDataset`.
 pnpm db:seed:dev -- --email you@example.com --dataset satellite
 ```
 
-`--tiers 1,2,3` and `--skip-wipe` are dev-only conveniences. `bootstrap.ts` and `wipe.ts`
-are dev-only and are never reachable from onboarding.
+`--tiers 1,2,3` and `--skip-wipe` are dev-only conveniences (`--skip-wipe` just passes
+`wipeFirst: false`). `bootstrap.ts` and `cli.ts` are dev-only; `wipe.ts` is now shared,
+reachable only through `wipeFirst`.
 
 **Onboarding** — the browser flow. `industry.tsx` maps the chosen industry to a dataset
 key with `datasetForIndustry(companyData.industryId)`, passes it to
@@ -66,20 +89,68 @@ apply two templates at once, and calls the same `applyDataset`. It runs in Node 
 `@carbon/jobs` — **not** in a Supabase edge function, and it does not go through an
 archive, an upload, or an import.
 
+**Settings → Demo Data** — `apps/erp/app/routes/x+/settings+/demo-data.tsx`, gated by
+`canAccessBackups` (internal email or local dev), the same gate Backups uses. Lists every
+key in `DATASETS` by its own `label`, read in the loader so a new dataset appears with no
+second edit. Applying fires the same `carbon/company-template` event. This is what makes
+a template a thing you can do at any time, not only at signup.
+
+### Snapshot, keep, revert
+
+The event carries `snapshot?: boolean`. Both the Settings page and onboarding set it;
+it is what turns a one-shot into a reversible operation, and it drives `wipeFirst` too —
+wiping without a snapshot would be unrecoverable, so the two never diverge.
+
+With `snapshot: true` the job takes `buildCompanyBackup` into `_pre-template-<runId>`,
+then runs the wipe and tiers in one transaction. The snapshot is **idempotent** — a retry
+reuses `metadata.snapshotPath` rather than retaking it, or an attempt that ran after the
+apply committed would capture the SEEDED state and destroy the user's real data. This is
+the same reuse rule `company-restore.ts` follows, for the same reason.
+
+The marker is written at phase boundaries only — there is deliberately **no** per-table
+progress reporter here, unlike `company-restore.ts`'s throttled `makeProgressReporter`.
+`wipeAndLoad` fires `onProgress` once per table, and a marker write per tick is a
+read-then-write on a JSONB column inside that function's own transaction: a few hundred
+tables becomes a thousand round-trips. The page polls the loader every 2.5 s and shows a
+spinner, so nothing consumes finer progress than `running` / `ready` / `reverting`.
+
+Two more Inngest functions finish the story, sharing one env-scoped concurrency key
+(`'company-template-' + companyId`) with the apply so the three never overlap:
+
+- `companyTemplateFinalizeFunction` (`carbon/company-template-finalize`) — resolves a
+  **settled** run: drops the snapshot folder, then clears the marker. It backs BOTH the
+  Keep button (on `ready`) and Dismiss (on `failed`) — the same operation under two
+  labels. It refuses a `running` or `reverting` marker.
+- `companyTemplateRevertFunction` (`carbon/company-template-revert`) — Revert. Reloads
+  the snapshot through the restore engine's `wipeAndLoad`, restores its assets, then
+  drops the snapshot and clears the marker. On failure it leaves the snapshot on the
+  marker so the revert can be retried.
+
+Nothing outside these functions may delete the marker row. A failed revert keeps its
+`snapshotPath` on purpose, so a bare row-delete from app code strands the only copy of
+the user's pre-apply data in the bucket with nothing pointing at it — which is why
+Dismiss goes through finalize rather than deleting the row itself.
+
 ### Progress and failure
 
 The job writes a marker row in `externalIntegrationMapping` with
-`integration = "company-template"` and clears it on success. So:
+`integration = "company-template"`. So:
 
-- no marker, data present → applied
-- marker with `status: "running"` → in flight
-- marker with `status: "failed"` + `error` → it did not land, and the error says why
+- no marker, data present → applied and resolved
+- `status: "running"` → the apply is in flight
+- `status: "ready"` → applied, waiting on the user's keep/revert decision
+- `status: "reverting"` → the undo is in flight
+- `status: "failed"` + `error` → it did not land, and the error says why
 
 An empty company on its own cannot tell you which of those happened; that is what the
-marker is for.
+marker is for. On the legacy `snapshot: false` path the marker is cleared on success
+instead of settling on `ready`.
 
-Two guards refuse rather than corrupt: an unknown `datasetKey`, and a company that
-already has `item` rows (re-applying would duplicate the entire catalog).
+Two guards refuse rather than corrupt: an unknown `datasetKey`, and a marker for a
+DIFFERENT run that is not `failed` — a pending keep/revert owns the only snapshot of the
+user's real data, so a second apply would overwrite it. (This replaced an older
+`item`-rows guard, whose retry-idempotency job `wipeFirst` plus snapshot reuse now does
+structurally.)
 
 ## Dates are offsets, never literals
 

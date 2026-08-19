@@ -16,6 +16,8 @@ const taskToEvent = {
   "company-restore-finalize": "carbon/company-restore-finalize",
   "company-restore-revert": "carbon/company-restore-revert",
   "company-template": "carbon/company-template",
+  "company-template-finalize": "carbon/company-template-finalize",
+  "company-template-revert": "carbon/company-template-revert",
   "generate-maintenance": "carbon/generate-maintenance",
   "model-thumbnail": "carbon/model-thumbnail",
   "model-optimize": "carbon/model-optimize",

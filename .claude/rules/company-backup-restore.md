@@ -86,7 +86,10 @@ The catalog is **schema-introspected**, not a hand-maintained list:
 - Storage path rewriting: `rewriteStoragePath` (swap `{sourceCompanyId}/` →
   `{targetCompanyId}/` + remapped id segments), `rewriteToTemplateAssetPath`
   (`{co}/…` → `_templates/{industryId}/…`). `STORAGE_PATH_COLUMNS` =
-  `modelPath`, `thumbnailPath`.
+  `thumbnailPath` ONLY. `modelPath` (raw CAD) is deliberately excluded — raw
+  models live in the transient `temp-staging` bucket, not `private`, so a backup
+  never carries them; a restored model keeps its thumbnail and regenerates its 3D
+  artifacts if the raw is re-uploaded.
 - Asset transport: `copyAssetsToBackup` (server-side `storage.copy`
   of `private/{companyId}/…` files into a backup's `.assets/` folder) and
   `restoreAssetsFromBackup` (copy them back to `private/`, rewriting paths +
@@ -185,6 +188,12 @@ State marker: a row on `externalIntegrationMapping`, `integration =
 snapshotPath, foreign, includeGroup }`. `revert` reads the marker and reloads
 `snapshotPath` (using `metadata.includeGroup`). Status is polled by the UI.
 
+**Second caller.** `wipeAndLoad`, `getCompanyGroupId` and `resolveRestoreScope`
+(the extracted `targetGroupId` + `includeGroup` rule) are **exported** and are
+also used by `company-template.ts`: applying a demo template from Settings
+snapshots with `buildCompanyBackup`, and reverting it wipes-and-loads that
+snapshot through exactly this path. See `onboarding-company-templates.md`.
+
 ### Known caveats in the committed code (not yet hardened)
 
 - **Storage restore is best-effort** — copy failures `console.warn` only; the
@@ -253,9 +262,10 @@ company step.
 **`template` is NOT a backup import.** It runs the dev seed's own tier code against the
 new company, so the demo data has exactly one definition:
 `packages/database/src/datasets/` — `tiers/` holds the insertion logic, `data/<key>/`
-holds one industry story each (`satellite` is the only one today), and `applyDataset()` in
-`datasets/index.ts` is the shared entry point. `pnpm db:seed:dev --dataset <key>` and
-onboarding are two callers of that one function.
+holds one industry story each (four today: `satellite`, `robotics`, `precision`, `motor`),
+and `applyDataset()` in `datasets/index.ts` is the shared entry point.
+`pnpm db:seed:dev --dataset <key>`, onboarding, and Settings → Demo Data are callers of
+that one function.
 
 Flow: `provisionOnboardingCompany` (onboarding.server.ts) does a **full** clean
 `seedCompany` (the tiers' pre-flight needs a chart of accounts, a `location`, and

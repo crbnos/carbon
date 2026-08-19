@@ -1525,6 +1525,9 @@ msgstr "उन सुविधाओं पर लागू होता है 
 msgid "Apply"
 msgstr "लागू करें"
 
+msgid "Apply a demo template"
+msgstr ""
+
 msgid "Apply available credits"
 msgstr "उपलब्ध क्रेडिट लागू करें"
 
@@ -1548,6 +1551,9 @@ msgstr "चालान पर लागू करें"
 
 msgid "Apply to invoices"
 msgstr "चालानों पर लागू करें"
+
+msgid "applying…"
+msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB सीमा के करीब पहुंच रहे हैं।"
@@ -4833,6 +4839,18 @@ msgstr "मांग प्रक्षेपण"
 msgid "Demand-Based"
 msgstr "मांग-आधारित"
 
+msgid "Demo data"
+msgstr ""
+
+msgid "Demo Data"
+msgstr ""
+
+msgid "Demo data applied"
+msgstr ""
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr ""
+
 msgid "department"
 msgstr "विभाग"
 
@@ -6551,6 +6569,9 @@ msgstr "यहां संलग्न की गई फाइलें डि�
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "यहां संलग्न की गई फाइलें इस आपूर्तिकर्ता को भेजे गए प्रत्येक क्रय आदेश ईमेल के साथ जाती हैं (कंपनी-व्यापी डिफ़ॉल्ट के अतिरिक्त)।"
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr ""
+
 msgid "Filter"
 msgstr "फ़िल्टर"
 
@@ -7981,6 +8002,9 @@ msgstr "कानबन आउटपुट"
 
 msgid "Kanbans"
 msgstr "कनबन्स"
+
+msgid "Keep"
+msgstr ""
 
 msgid "Keep Current"
 msgstr "वर्तमान रखें"
@@ -11508,6 +11532,9 @@ msgstr "दस्तावेज़ पढ़ा जा रहा है..."
 msgid "Ready for Quote"
 msgstr "उद्धरण के लिए तैयार"
 
+msgid "ready to keep or revert"
+msgstr ""
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "रीयल-टाइम इन्वेंटरी और शॉप-फ्लोर दृश्यमानता"
 
@@ -11889,6 +11916,9 @@ msgstr "मौजूदा मूल्य निर्धारण को स�
 msgid "Replace PDF"
 msgstr "PDF को बदलें"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "पीडीएफ को बदलने से इस दस्तावेज़ पर सभी बैलून प्लेसमेंट हटा दिए जाएंगे। फीचर पंक्तियाँ और उनके मान बने रहते हैं; आप नई ड्राइंग पर फिर से बैलून रख सकते हैं।"
 
@@ -12088,6 +12118,12 @@ msgstr "संबंधित जर्नल प्रविष्टियो�
 
 msgid "Reversed"
 msgstr "उलट दिया गया"
+
+msgid "Revert"
+msgstr ""
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "समीक्षा"
@@ -15517,6 +15553,9 @@ msgstr "एक ऑपरेशन पर अपूरणीय के रूप 
 
 msgid "Unknown"
 msgstr "अज्ञात"
+
+msgid "unknown error"
+msgstr ""
 
 msgid "unknown location"
 msgstr "अज्ञात स्थान"

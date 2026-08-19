@@ -22,6 +22,7 @@ import {
   type DatasetKey,
   resolveCompanyTimeZone
 } from "./types.ts";
+import { wipeCompanyBusinessData } from "./wipe.ts";
 
 export type { Ctx, Dataset, DatasetKey };
 export { resolveCompanyTimeZone };
@@ -60,8 +61,13 @@ export async function applyDataset(
     timeZone: string;
     tiers?: number[] | null;
     log?: (message: string) => void;
-    /** Dev-only work that must share the tiers' transaction (the wipe). */
-    beforeTiers?: (ctx: Ctx) => Promise<void>;
+    /**
+     * Clear the company's existing business data before the tiers run, inside the
+     * same transaction. Preserves everything bootstrap created (chart of accounts,
+     * unitOfMeasure, sequences, locations, paymentTerm) because the tiers require
+     * that config to exist — this is NOT the restore engine's tabula-rasa wipe.
+     */
+    wipeFirst?: boolean;
   }
 ): Promise<void> {
   const {
@@ -71,7 +77,7 @@ export async function applyDataset(
     timeZone,
     tiers = null,
     log = () => {},
-    beforeTiers
+    wipeFirst = false
   } = opts;
 
   const anchor = today(timeZone);
@@ -89,7 +95,10 @@ export async function applyDataset(
     // Must run before resetSequences, and before any nextSequence() call.
     await ensureSequences(client, companyId);
 
-    if (beforeTiers) await beforeTiers(ctx);
+    if (wipeFirst) {
+      log("Wiping existing business data...");
+      await wipeCompanyBusinessData(ctx);
+    }
 
     for (const tier of selected) {
       log(`Tier ${tier.n}: ${tier.name}`);

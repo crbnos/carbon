@@ -1525,6 +1525,9 @@ msgstr "S'applique aux fonctionnalités sans leur propre règle, et au lot lorsq
 msgid "Apply"
 msgstr "Appliquer"
 
+msgid "Apply a demo template"
+msgstr ""
+
 msgid "Apply available credits"
 msgstr "Appliquer les crédits disponibles"
 
@@ -1548,6 +1551,9 @@ msgstr "Appliquer à la facture"
 
 msgid "Apply to invoices"
 msgstr "Appliquer aux factures"
+
+msgid "applying…"
+msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Approche de la limite de {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB."
@@ -4833,6 +4839,18 @@ msgstr "Projections de la demande"
 msgid "Demand-Based"
 msgstr "Basée sur la demande"
 
+msgid "Demo data"
+msgstr ""
+
+msgid "Demo Data"
+msgstr ""
+
+msgid "Demo data applied"
+msgstr ""
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr ""
+
 msgid "department"
 msgstr "département"
 
@@ -6551,6 +6569,9 @@ msgstr "Les fichiers joints ici sont automatiquement envoyés avec chaque email 
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "Les fichiers joints ici sont inclus dans chaque email de bon de commande envoyé à ce fournisseur (en plus des paramètres par défaut à l'échelle de l'entreprise)."
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr ""
+
 msgid "Filter"
 msgstr "Filtre"
 
@@ -7981,6 +8002,9 @@ msgstr "Sortie Kanban"
 
 msgid "Kanbans"
 msgstr "Kanbans"
+
+msgid "Keep"
+msgstr ""
 
 msgid "Keep Current"
 msgstr "Conserver les paramètres actuels"
@@ -11508,6 +11532,9 @@ msgstr "Lecture du document..."
 msgid "Ready for Quote"
 msgstr "Prêt pour devis"
 
+msgid "ready to keep or revert"
+msgstr ""
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Visibilité en temps réel de l'inventaire et de l'atelier"
 
@@ -11889,6 +11916,9 @@ msgstr "Remplacer les tarifs existants par les valeurs source"
 msgid "Replace PDF"
 msgstr "Remplacer le PDF"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Le remplacement du PDF supprime tous les placements de bulles sur ce document. Les lignes de fonctionnalités et leurs valeurs restent ; vous pouvez placer à nouveau des bulles sur le nouveau dessin."
 
@@ -12088,6 +12118,12 @@ msgstr "Inverser les écritures comptables associées"
 
 msgid "Reversed"
 msgstr "Contrepassé"
+
+msgid "Revert"
+msgstr ""
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "Examiner"
@@ -15517,6 +15553,9 @@ msgstr "Unités signalées comme irrécupérables à une opération, avec une ra
 
 msgid "Unknown"
 msgstr "Inconnu"
+
+msgid "unknown error"
+msgstr ""
 
 msgid "unknown location"
 msgstr "localisation inconnue"

@@ -96,6 +96,10 @@ export async function provisionCompanyData(
  * Enqueue the demo template. Callers must already have a headquarters location —
  * the dataset's pre-flight requires one. A failed enqueue is fatal rather than
  * silent, otherwise onboarding reports success over an empty company.
+ *
+ * `snapshot: true` so a signup-time template stays revertible from
+ * Settings → Demo Data later. The company is nearly empty at this point, so the
+ * snapshot costs almost nothing, and it keeps one code path rather than two.
  */
 async function startCompanyTemplate(
   companyId: string,
@@ -108,7 +112,8 @@ async function startCompanyTemplate(
       companyId,
       userId,
       datasetKey: template,
-      templateRunId: nanoid()
+      templateRunId: nanoid(),
+      snapshot: true
     });
   } catch (err) {
     logger.error("Failed to start company template", { error: err });

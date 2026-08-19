@@ -1525,6 +1525,9 @@ msgstr "独自のルールがない機能に適用され、このプランが検
 msgid "Apply"
 msgstr "適用"
 
+msgid "Apply a demo template"
+msgstr ""
+
 msgid "Apply available credits"
 msgstr "利用可能なクレジットを適用"
 
@@ -1548,6 +1551,9 @@ msgstr "請求書に適用"
 
 msgid "Apply to invoices"
 msgstr "請求書に適用"
+
+msgid "applying…"
+msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MBの上限に近づいています。"
@@ -4833,6 +4839,18 @@ msgstr "需要予測"
 msgid "Demand-Based"
 msgstr "需要ベース"
 
+msgid "Demo data"
+msgstr ""
+
+msgid "Demo Data"
+msgstr ""
+
+msgid "Demo data applied"
+msgstr ""
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr ""
+
 msgid "department"
 msgstr "部門"
 
@@ -6551,6 +6569,9 @@ msgstr "ここに添付されたファイルは、デフォルトではすべて
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "ここに添付されたファイルは、このサプライヤーに送信されるすべての発注メールに含まれます（会社全体のデフォルトに加えて）。"
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr ""
+
 msgid "Filter"
 msgstr "フィルター"
 
@@ -7981,6 +8002,9 @@ msgstr "カンバン出力"
 
 msgid "Kanbans"
 msgstr "カンバン"
+
+msgid "Keep"
+msgstr ""
 
 msgid "Keep Current"
 msgstr "現在の設定を保持"
@@ -11508,6 +11532,9 @@ msgstr "ドキュメントを読み込み中..."
 msgid "Ready for Quote"
 msgstr "見積もり準備完了"
 
+msgid "ready to keep or revert"
+msgstr ""
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "リアルタイム在庫と工場フロアの可視性"
 
@@ -11889,6 +11916,9 @@ msgstr "既存の価格を元の値に置き換える"
 msgid "Replace PDF"
 msgstr "PDFを置き換える"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDFを置き換えると、このドキュメント上のすべてのバルーン配置が削除されます。機能行とその値は保持されます。新しい図面上に再度バルーンを配置できます。"
 
@@ -12088,6 +12118,12 @@ msgstr "関連する仕訳エントリを取り消す"
 
 msgid "Reversed"
 msgstr "反転"
+
+msgid "Revert"
+msgstr ""
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "確認"
@@ -15517,6 +15553,9 @@ msgstr "操作で回復不可能として報告される単位(理由付き) —
 
 msgid "Unknown"
 msgstr "不明"
+
+msgid "unknown error"
+msgstr ""
 
 msgid "unknown location"
 msgstr "不明な場所"

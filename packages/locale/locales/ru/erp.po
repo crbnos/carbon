@@ -1525,6 +1525,9 @@ msgstr "Применяется к функциям без собственног
 msgid "Apply"
 msgstr "Применить"
 
+msgid "Apply a demo template"
+msgstr ""
+
 msgid "Apply available credits"
 msgstr "Применить доступные кредиты"
 
@@ -1548,6 +1551,9 @@ msgstr "Применить к счету"
 
 msgid "Apply to invoices"
 msgstr "Применить к счетам"
+
+msgid "applying…"
+msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Приближение к лимиту {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ."
@@ -4833,6 +4839,18 @@ msgstr "Прогнозы спроса"
 msgid "Demand-Based"
 msgstr "На основе спроса"
 
+msgid "Demo data"
+msgstr ""
+
+msgid "Demo Data"
+msgstr ""
+
+msgid "Demo data applied"
+msgstr ""
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr ""
+
 msgid "department"
 msgstr "отдел"
 
@@ -6551,6 +6569,9 @@ msgstr "Файлы, прикрепленные здесь, автоматиче�
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "Файлы, прикрепленные здесь, отправляются вместе с каждым письмом заказа на покупку, отправленным этому поставщику (в дополнение к общекорпоративным значениям по умолчанию)."
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr ""
+
 msgid "Filter"
 msgstr "Фильтр"
 
@@ -7981,6 +8002,9 @@ msgstr "Вывод Kanban"
 
 msgid "Kanbans"
 msgstr "Канбаны"
+
+msgid "Keep"
+msgstr ""
 
 msgid "Keep Current"
 msgstr "Сохранить текущие"
@@ -11508,6 +11532,9 @@ msgstr "Чтение документа..."
 msgid "Ready for Quote"
 msgstr "Готово к предложению"
 
+msgid "ready to keep or revert"
+msgstr ""
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Видимость запасов и производства в реальном времени"
 
@@ -11889,6 +11916,9 @@ msgstr "Заменить существующие цены на значения
 msgid "Replace PDF"
 msgstr "Заменить PDF"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Замена PDF удаляет все размещения выносок в этом документе. Строки функций и их значения остаются; вы можете снова разместить выноски на новом чертеже."
 
@@ -12088,6 +12118,12 @@ msgstr "Отменить связанные записи в журнале"
 
 msgid "Reversed"
 msgstr "Сторнировано"
+
+msgid "Revert"
+msgstr ""
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "Обзор"
@@ -15517,6 +15553,9 @@ msgstr "Единицы, указанные как невозвратные пр�
 
 msgid "Unknown"
 msgstr "Неизвестно"
+
+msgid "unknown error"
+msgstr ""
 
 msgid "unknown location"
 msgstr "неизвестное местоположение"

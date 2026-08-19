@@ -1525,6 +1525,9 @@ msgstr "Applies to features without their own rule, and to the lot when this pla
 msgid "Apply"
 msgstr "Apply"
 
+msgid "Apply a demo template"
+msgstr "Apply a demo template"
+
 msgid "Apply available credits"
 msgstr "Apply available credits"
 
@@ -1548,6 +1551,9 @@ msgstr "Apply to invoice"
 
 msgid "Apply to invoices"
 msgstr "Apply to invoices"
+
+msgid "applying…"
+msgstr "applying…"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -4833,6 +4839,18 @@ msgstr "Demand Projections"
 msgid "Demand-Based"
 msgstr "Demand-Based"
 
+msgid "Demo data"
+msgstr "Demo data"
+
+msgid "Demo Data"
+msgstr "Demo Data"
+
+msgid "Demo data applied"
+msgstr "Demo data applied"
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+
 msgid "department"
 msgstr "department"
 
@@ -6551,6 +6569,9 @@ msgstr "Files attached here ride along on every purchase order email by default.
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+
 msgid "Filter"
 msgstr "Filter"
 
@@ -7981,6 +8002,9 @@ msgstr "Kanban Output"
 
 msgid "Kanbans"
 msgstr "Kanbans"
+
+msgid "Keep"
+msgstr "Keep"
 
 msgid "Keep Current"
 msgstr "Keep Current"
@@ -11508,6 +11532,9 @@ msgstr "Reading the document..."
 msgid "Ready for Quote"
 msgstr "Ready for Quote"
 
+msgid "ready to keep or revert"
+msgstr "ready to keep or revert"
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Real-time inventory and shop-floor visibility"
 
@@ -11889,6 +11916,9 @@ msgstr "Replace existing pricing with source values"
 msgid "Replace PDF"
 msgstr "Replace PDF"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 
@@ -12088,6 +12118,12 @@ msgstr "Reverse the related journal entries"
 
 msgid "Reversed"
 msgstr "Reversed"
+
+msgid "Revert"
+msgstr "Revert"
+
+msgid "reverting…"
+msgstr "reverting…"
 
 msgid "Review"
 msgstr "Review"
@@ -15517,6 +15553,9 @@ msgstr "Units reported as unrecoverable at an operation, with a reason — the a
 
 msgid "Unknown"
 msgstr "Unknown"
+
+msgid "unknown error"
+msgstr "unknown error"
 
 msgid "unknown location"
 msgstr "unknown location"

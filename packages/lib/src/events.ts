@@ -197,6 +197,30 @@ export type Events = {
       userId: string;
       datasetKey: string;
       templateRunId: string;
+      /**
+       * Snapshot the company before wiping, and leave the run parked on a
+       * keep/revert decision instead of clearing the marker. Onboarding and the
+       * Settings page both set this; absent means the legacy fire-and-forget
+       * behaviour.
+       */
+      snapshot?: boolean;
+    };
+  };
+
+  // Keep an applied demo template — drop the pre-apply snapshot and the marker.
+  "carbon/company-template-finalize": {
+    data: {
+      companyId: string;
+      templateRunId: string;
+    };
+  };
+
+  // Undo an applied demo template — wipe and reload the pre-apply snapshot.
+  "carbon/company-template-revert": {
+    data: {
+      companyId: string;
+      userId: string;
+      templateRunId: string;
     };
   };
 

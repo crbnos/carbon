@@ -4,13 +4,33 @@ import { getPostgresConnectionPool } from "@carbon/database/client";
 import { applyDataset, getDataset } from "@carbon/database/datasets";
 import { datetime } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import {
+  backupAssetsDir,
+  backupDir,
+  getCompanyTableCatalog,
+  readBackup,
+  removeStoragePrefix,
+  restoreAssetsFromBackup,
+  writeBackupManifest
+} from "./company-backup";
+import { buildCompanyBackup } from "./company-export";
+import { resolveRestoreScope, wipeAndLoad } from "./company-restore";
 
 export const TEMPLATE_INTEGRATION = "company-template";
 
+// Apply, finalize and revert all take this, so the three can never run
+// concurrently for one company — each assumes the marker is its own.
+const PER_COMPANY_CONCURRENCY = {
+  key: "'company-template-' + event.data.companyId",
+  scope: "env",
+  limit: 1
+} as const;
+
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
-type TemplateStatus = "running" | "failed";
+type TemplateStatus = "running" | "ready" | "failed" | "reverting";
 
 type TemplateMeta = {
   templateRunId: string;
@@ -18,6 +38,10 @@ type TemplateMeta = {
   datasetKey?: string;
   startedAt?: string;
   error?: string | null;
+  /** Folder name of the pre-apply snapshot in this company's bucket. */
+  snapshotPath?: string;
+  /** Scope the forward apply covered, so a revert undoes exactly that. */
+  includeGroup?: boolean;
 };
 
 /**
@@ -47,11 +71,15 @@ async function readTemplateMarker(
 }
 
 /**
- * Upsert the template marker, merging `patch` into its metadata. Cleared on
+ * Upsert the template marker, merging `patch` into its metadata.
+ *
+ * On the legacy fire-and-forget path (no snapshot) the marker is cleared on
  * success — a company holding a `failed` marker is the signal that its demo data
- * never landed, which an empty company alone cannot tell you. Errors throw: a
- * marker that silently failed to write is worse than none, because the contract
- * reads a missing marker as "the job never ran".
+ * never landed, which an empty company alone cannot tell you. On the snapshot
+ * path it instead settles on `ready` and HOLDS the snapshot path until the user
+ * keeps or reverts; clearing it there would strand the snapshot with nothing
+ * pointing at it. Errors throw: a marker that silently failed to write is worse
+ * than none, because the contract reads a missing marker as "the job never ran".
  */
 async function writeTemplateMarker(
   client: ServiceRole,
@@ -114,14 +142,20 @@ export const companyTemplateFunction = inngest.createFunction(
   {
     id: "company-template",
     retries: 1,
-    // Per company so one company can never apply two templates at once, AND
-    // unkeyed so N companies onboarding together cannot outnumber the pool
-    // below — each run holds one of its two connections for a whole transaction.
-    concurrency: [{ limit: 2 }, { key: "event.data.companyId", limit: 1 }]
+    // The unkeyed limit stops N companies onboarding together from outnumbering
+    // the pool below — each run holds one of its two connections for a whole
+    // transaction.
+    concurrency: [{ limit: 2 }, PER_COMPANY_CONCURRENCY]
   },
   { event: "carbon/company-template" },
   async ({ event, step, logger }) => {
-    const { companyId, userId, datasetKey, templateRunId } = event.data;
+    const {
+      companyId,
+      userId,
+      datasetKey,
+      templateRunId,
+      snapshot: takeSnapshot = false
+    } = event.data;
 
     return await step.run("apply-template", async () => {
       const client = getCarbonServiceRole();
@@ -139,33 +173,18 @@ export const companyTemplateFunction = inngest.createFunction(
         throw new NonRetriableError(error);
       }
 
-      // A template is a one-shot on a fresh company. Re-running it would
-      // duplicate the whole catalog, so refuse rather than double-apply.
-      const existingItems = await client
-        .from("item")
-        .select("id", { count: "exact", head: true })
-        .eq("companyId", companyId);
-      if (existingItems.error) {
-        throw new Error(
-          `Failed to count existing items: ${existingItems.error.message}`
+      // A pending keep/revert owns the only snapshot of the user's real data.
+      // Applying again would overwrite it, so refuse until it is resolved. A
+      // marker naming THIS run is a retry of it, not a second apply.
+      const existing = await readTemplateMarker(client, companyId);
+      if (
+        existing &&
+        existing.metadata.templateRunId !== templateRunId &&
+        existing.metadata.status !== "failed"
+      ) {
+        throw new NonRetriableError(
+          "A demo data change is already pending — keep or revert it first."
         );
-      }
-      if ((existingItems.count ?? 0) > 0) {
-        // Refusing is a no-op, never a failure — writing `failed` here would
-        // stamp a correctly-seeded company on the two routine paths that reach
-        // it: onboarding re-entry, and a retry whose first attempt committed but
-        // whose response was lost. A marker naming THIS run is the proof it was
-        // the latter, so clear it and report success.
-        const marker = await readTemplateMarker(client, companyId);
-        const alreadyApplied = marker?.metadata.templateRunId === templateRunId;
-        await clearTemplateMarker(client, companyId);
-        logger.info(
-          alreadyApplied
-            ? "Template already applied by an earlier attempt of this run"
-            : "Company already has items — skipping demo template",
-          { companyId, templateRunId }
-        );
-        return { templateRunId, skipped: true, alreadyApplied };
       }
 
       await writeTemplateMarker(client, {
@@ -182,10 +201,40 @@ export const companyTemplateFunction = inngest.createFunction(
       // Everything past the `running` marker must be able to reach the failure
       // marker. getCompanyTimeZone throws on a read error and pool.connect()
       // throws on its 10s acquisition timeout — outside this try, either would
-      // leave the marker stuck on `running` forever.
+      // leave the marker stuck on `running` forever. The snapshot is inside for
+      // the same reason.
       const pool = getPostgresConnectionPool(2);
       let pgClient: Parameters<typeof applyDataset>[0] | null = null;
       try {
+        let snapshotPath = existing?.metadata.snapshotPath ?? undefined;
+        if (takeSnapshot && !snapshotPath) {
+          // IDEMPOTENT: a prior attempt's snapshot is reused, never retaken — a
+          // retry after the apply committed would otherwise capture the SEEDED
+          // state and overwrite the user's real pre-apply copy.
+          const db = getJobDatabaseClient(1);
+          const { includeGroup } = await resolveRestoreScope(client, companyId);
+          snapshotPath = `_pre-template-${templateRunId}`;
+          const snap = await buildCompanyBackup(client, db, {
+            companyId,
+            userId,
+            label: `Pre-template ${templateRunId}`,
+            includeStorage: "all",
+            name: snapshotPath
+          });
+          await writeBackupManifest(
+            client,
+            companyId,
+            snapshotPath,
+            snap.manifest
+          );
+          await writeTemplateMarker(client, {
+            companyId,
+            userId,
+            templateRunId,
+            patch: { snapshotPath, includeGroup }
+          });
+        }
+
         const timeZone = await getCompanyTimeZone(client, companyId);
 
         // A dedicated pool: applyDataset holds one connection for the whole
@@ -197,6 +246,9 @@ export const companyTemplateFunction = inngest.createFunction(
           userId,
           dataset,
           timeZone,
+          // Tied to takeSnapshot deliberately: wiping without a snapshot would
+          // be unrecoverable, so the two are never allowed to diverge.
+          wipeFirst: takeSnapshot,
           log: (message) => logger.info(message, { companyId, templateRunId })
         });
       } catch (err) {
@@ -215,11 +267,162 @@ export const companyTemplateFunction = inngest.createFunction(
         pgClient?.release();
       }
 
-      // The data landing IS the success signal; a lingering marker would read
-      // as an unfinished run.
-      await clearTemplateMarker(client, companyId);
+      if (takeSnapshot) {
+        // Parked on keep/revert — the marker holds the snapshot until the user
+        // decides.
+        await writeTemplateMarker(client, {
+          companyId,
+          userId,
+          templateRunId,
+          patch: { status: "ready" }
+        });
+      } else {
+        // The data landing IS the success signal; a lingering marker would read
+        // as an unfinished run.
+        await clearTemplateMarker(client, companyId);
+      }
 
       return { templateRunId, datasetKey };
+    });
+  }
+);
+
+/**
+ * Resolve an applied demo template — delete the pre-apply snapshot, then the
+ * marker. Backs BOTH buttons: "Keep" on a `ready` run and "Dismiss" on a `failed`
+ * one. They are the same operation, and routing them here rather than deleting
+ * the row from the app is what keeps the snapshot folder from being orphaned:
+ * a `failed` revert deliberately leaves `snapshotPath` set so the user can retry,
+ * so a bare row-delete would strand the only copy of their pre-apply data.
+ */
+export const companyTemplateFinalizeFunction = inngest.createFunction(
+  {
+    id: "company-template-finalize",
+    retries: 1,
+    concurrency: PER_COMPANY_CONCURRENCY
+  },
+  { event: "carbon/company-template-finalize" },
+  async ({ event, step, logger }) => {
+    const { companyId, templateRunId } = event.data;
+
+    return await step.run("finalize-template", async () => {
+      const client = getCarbonServiceRole();
+      const marker = await readTemplateMarker(client, companyId);
+      if (!marker) return { templateRunId, resolved: false };
+
+      // Only a settled run can be resolved. The shared concurrency key already
+      // serialises the three functions, but an apply is enqueued rather than
+      // held, so a mistimed request could still arrive mid-run and delete the
+      // marker out from under it.
+      const { status } = marker.metadata;
+      if (status !== "ready" && status !== "failed") {
+        throw new NonRetriableError(
+          `Cannot resolve a demo template that is ${status}`
+        );
+      }
+
+      const snapshotPath = marker.metadata.snapshotPath;
+      if (snapshotPath) {
+        await removeStoragePrefix(client, companyId, backupDir(snapshotPath));
+      }
+      await clearTemplateMarker(client, companyId);
+
+      logger.info("Demo template resolved", {
+        companyId,
+        templateRunId,
+        status
+      });
+      return { templateRunId, resolved: true };
+    });
+  }
+);
+
+/** Undo an applied demo template — wipe again and reload the pre-apply snapshot. */
+export const companyTemplateRevertFunction = inngest.createFunction(
+  {
+    id: "company-template-revert",
+    retries: 1,
+    concurrency: PER_COMPANY_CONCURRENCY
+  },
+  { event: "carbon/company-template-revert" },
+  async ({ event, step, logger }) => {
+    const { companyId, userId, templateRunId } = event.data;
+
+    return await step.run("revert-template", async () => {
+      const client = getCarbonServiceRole();
+      const db = getJobDatabaseClient(1);
+
+      const marker = await readTemplateMarker(client, companyId);
+      const snapshotPath = marker?.metadata.snapshotPath;
+      if (!snapshotPath) {
+        logger.info("Nothing to revert — no snapshot on marker", {
+          templateRunId
+        });
+        return { templateRunId, reverted: false };
+      }
+
+      // Flag the run as reverting so the page can show it is in flight. This is
+      // the only write between here and the terminal one: `wipeAndLoad` fires
+      // onProgress once per table, and a marker write per tick would be hundreds
+      // of round-trips against a JSONB column inside its transaction.
+      await writeTemplateMarker(client, {
+        companyId,
+        userId,
+        templateRunId,
+        patch: { status: "reverting", startedAt: datetime.timestamp() }
+      });
+
+      try {
+        // The snapshot is THIS company's own pre-apply data — ids and scope
+        // already belong here, so it loads verbatim (no remap). Wipe + reload the
+        // SAME scope the forward apply covered so the undo is exact. Note this is
+        // the restore engine's tabula-rasa wipe, not the dataset wipe the forward
+        // apply used: the snapshot carries the config back, so nothing is kept.
+        const snapshot = await readBackup(client, companyId, snapshotPath);
+        const { targetGroupId } = await resolveRestoreScope(client, companyId);
+        const catalog = await getCompanyTableCatalog(db);
+        const { rows, idRewrite } = await wipeAndLoad(db, catalog, snapshot, {
+          companyId,
+          userId: "",
+          remap: false,
+          includeGroup: marker?.metadata.includeGroup ?? false,
+          targetGroupId
+        });
+        await restoreAssetsFromBackup(client, {
+          files: snapshot.manifest.storage,
+          srcBucket: companyId,
+          srcPrefix: backupAssetsDir(snapshotPath),
+          sourceCompanyId: companyId,
+          companyId,
+          idRewrite
+        });
+
+        await removeStoragePrefix(client, companyId, backupDir(snapshotPath));
+        await clearTemplateMarker(client, companyId);
+
+        logger.info("Demo template reverted", {
+          companyId,
+          templateRunId,
+          rows
+        });
+        return { templateRunId, reverted: true, rows };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        // Leave the marker (with the snapshot still set) so the user can retry
+        // the revert; surface the failure.
+        await writeTemplateMarker(client, {
+          companyId,
+          userId,
+          templateRunId,
+          patch: { status: "failed", error: `Revert failed: ${message}` }
+        });
+        logger.error("Demo template revert failed", {
+          companyId,
+          templateRunId,
+          error: message
+        });
+        throw err;
+      }
     });
   }
 );

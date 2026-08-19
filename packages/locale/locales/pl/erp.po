@@ -1525,6 +1525,9 @@ msgstr "Dotyczy funkcji bez własnej reguły oraz partii, gdy ten plan prowadzi 
 msgid "Apply"
 msgstr "Zastosuj"
 
+msgid "Apply a demo template"
+msgstr ""
+
 msgid "Apply available credits"
 msgstr "Zastosuj dostępne kredyty"
 
@@ -1548,6 +1551,9 @@ msgstr "Zastosuj do faktury"
 
 msgid "Apply to invoices"
 msgstr "Zastosuj do faktur"
+
+msgid "applying…"
+msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Zbliżanie się do limitu {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB."
@@ -4833,6 +4839,18 @@ msgstr "Prognozy popytu"
 msgid "Demand-Based"
 msgstr "Oparte na popycie"
 
+msgid "Demo data"
+msgstr ""
+
+msgid "Demo Data"
+msgstr ""
+
+msgid "Demo data applied"
+msgstr ""
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr ""
+
 msgid "department"
 msgstr "departament"
 
@@ -6551,6 +6569,9 @@ msgstr "Pliki dołączone tutaj są automatycznie wysyłane z każdym e-mailem z
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "Pliki dołączone tutaj są wysyłane wraz z każdym emailem zamówienia zakupu wysłanym do tego dostawcy (dodatkowo do ustawień domyślnych całej firmy)."
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr ""
+
 msgid "Filter"
 msgstr "Filtr"
 
@@ -7981,6 +8002,9 @@ msgstr "Wyjście Kanban"
 
 msgid "Kanbans"
 msgstr "Kanbany"
+
+msgid "Keep"
+msgstr ""
 
 msgid "Keep Current"
 msgstr "Zachowaj bieżące"
@@ -11508,6 +11532,9 @@ msgstr "Czytanie dokumentu..."
 msgid "Ready for Quote"
 msgstr "Gotowy do wyceny"
 
+msgid "ready to keep or revert"
+msgstr ""
+
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Widoczność zapasów i hali produkcyjnej w czasie rzeczywistym"
 
@@ -11889,6 +11916,9 @@ msgstr "Zastąp istniejące ceny wartościami ze źródła"
 msgid "Replace PDF"
 msgstr "Zamień PDF"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Zastąpienie pliku PDF usuwa wszystkie umieszczenia balonów w tym dokumencie. Wiersze funkcji i ich wartości pozostają; możesz ponownie umieścić balony na nowym rysunku."
 
@@ -12088,6 +12118,12 @@ msgstr "Odwróć powiązane wpisy w dzienniku"
 
 msgid "Reversed"
 msgstr "Wycofane"
+
+msgid "Revert"
+msgstr ""
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "Przegląd"
@@ -15517,6 +15553,9 @@ msgstr "Jednostki zgłaszane jako niemożliwe do odzyskania w operacji, z przycz
 
 msgid "Unknown"
 msgstr "Nieznany"
+
+msgid "unknown error"
+msgstr ""
 
 msgid "unknown location"
 msgstr "nieznana lokalizacja"

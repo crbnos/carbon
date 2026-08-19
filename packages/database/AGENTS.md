@@ -41,7 +41,7 @@ pnpm --filter @carbon/database typecheck
 | `./sampling` | Node-side re-export of `supabase/functions/shared/sampling-engine.ts` (Z1.4 / ISO 2859-1 resolvers) |
 | `./audit` | Audit-log functions (`getEntityAuditLog`, `enableAuditLog`, `syncAuditSubscriptions`, …); `auditConfig` + `AuditEntityType` come from the separate `./audit.config` subpath |
 | `./ratelimit` | `checkApiKeyRateLimit` (Postgres RPC wrapper) |
-| `./datasets` | `applyDataset(pgClient, { companyId, userId, dataset, timeZone })` — the one entry point that fills a company with an industry dataset, in a single transaction; plus `DATASETS`, `getDataset`, `datasetKeys`, `datasetForIndustry`. Consumed by onboarding (`industry.tsx`) and the `company-template` Inngest job. See Dev Seed below |
+| `./datasets` | `applyDataset(pgClient, { companyId, userId, dataset, timeZone, wipeFirst? })` — the one entry point that fills a company with an industry dataset, in a single transaction; `wipeFirst` clears prior business data inside that same transaction while preserving bootstrap config. Plus `DATASETS`, `getDataset`, `datasetKeys`, `datasetForIndustry`. Consumed by onboarding (`industry.tsx`) and the `company-template` Inngest job. See Dev Seed below |
 | `./seed-workflows` | `buildSeedWorkflows` — the seeded workflow definitions (`datasets/tiers/workflow-definitions.ts`) |
 | `.` (root, from `src/timezone.ts` + `src/utils.ts`) | `getCompanyTimeZone(db, companyId)` / `getLocationTimeZone(db, locationId, companyId)` — business-timezone resolvers, overloaded for Supabase client or Kysely handle (they throw on query failure rather than silently falling back); `AnyPostgresClient` + `isKysely` guard for writing such overloads. SQL siblings: `company_today(companyId)` / `location_today(locationId, companyId)` replace `CURRENT_DATE` for business dates in DB functions (SECURITY INVOKER — callers must be SECURITY DEFINER or service-role). ERP routes should prefer the Redis-cached wrappers in `~/modules/shared/timezone.server` |
 
@@ -65,8 +65,9 @@ Dates are signed day-offsets resolved against the company's today — never JS `
 company seeded into the same database.
 
 `pnpm db:seed:dev` runs `src/seed-dev.ts` (the dev CLI); `cli.ts` parses its args,
-`bootstrap.ts` sets up the company and `wipe.ts` clears prior data. All three are dev-only and
-are never reachable from the shared engine or from onboarding.
+`bootstrap.ts` sets up the company and `wipe.ts` clears prior data. `cli.ts` and `bootstrap.ts`
+are dev-only. `wipe.ts` is reached from the shared engine via `applyDataset`'s `wipeFirst`
+option, which both the dev CLI and the `company-template` job use; it is not exported on its own.
 
 Per-module seed scripts were folded into this structure: `seed-change-orders.ts` and its
 `db:seed:change-orders` script are gone, replaced by `tiers/08-change-orders.ts`.

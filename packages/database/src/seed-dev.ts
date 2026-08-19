@@ -22,7 +22,6 @@ import { loadEnv, parseSeedArgs } from "./datasets/cli.ts";
 import { applyDataset, datasetKeys, getDataset } from "./datasets/index.ts";
 import { printSummary } from "./datasets/sql.ts";
 import { resolveCompany, resolveCompanyTimeZone } from "./datasets/types.ts";
-import { wipeCompanyBusinessData } from "./datasets/wipe.ts";
 
 loadEnv();
 
@@ -54,6 +53,8 @@ async function main() {
 
     const timeZone = await resolveCompanyTimeZone(client, companyId);
 
+    if (skipWipe) console.log("Skipping wipe (--skip-wipe).");
+
     await applyDataset(client, {
       companyId,
       userId,
@@ -61,15 +62,7 @@ async function main() {
       timeZone,
       tiers,
       log: (message) => console.log(message),
-      // Dev-only, and must share the tiers' transaction.
-      beforeTiers: async (ctx) => {
-        if (skipWipe) {
-          console.log("Skipping wipe (--skip-wipe).");
-          return;
-        }
-        console.log("Wiping existing business data...");
-        await wipeCompanyBusinessData(ctx);
-      }
+      wipeFirst: !skipWipe
     });
 
     await printSummary(client, companyId);

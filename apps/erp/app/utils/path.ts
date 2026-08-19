@@ -849,6 +849,7 @@ export const path = {
     demandProjection: (itemId: string, locationId: string) =>
       generatePath(`${x}/production/projections/${itemId}/${locationId}`),
     demandProjections: `${x}/production/projections`,
+    demoData: `${x}/settings/demo-data`,
     department: (id: string) => generatePath(`${x}/people/departments/${id}`),
     departments: `${x}/people/departments`,
     depreciationRun: (id: string) =>
