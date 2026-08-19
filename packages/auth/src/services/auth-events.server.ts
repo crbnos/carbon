@@ -15,6 +15,7 @@ export type AuthEvent =
   | "login_success"
   | "login_failed"
   | "login_rate_limited"
+  | "login_locked"
   | "magic_link_sent"
   | "mfa_challenge_success"
   | "mfa_challenge_failed"
@@ -54,6 +55,7 @@ export function logAuthEvent(
   const failed =
     event === "login_failed" ||
     event === "login_rate_limited" ||
+    event === "login_locked" ||
     event === "mfa_challenge_failed" ||
     event === "permission_denied";
   const outcome = fields.outcome ?? (failed ? "failure" : "success");

@@ -20,8 +20,16 @@ every integration** (D6).
 - [x] Task 6: settings cache/writes stop handling secret material
 - [x] Task 7: reveal endpoint — VERIFIED end-to-end (authed → value; unknown key rejected; audit row written)
 - [~] Task 8: masked+reveal UI + anti-overwrite (splitSecrets empty-skip) done; **BLOCKED on one design decision** — the EE config zod schemas `.min(1)`-require secret fields, so post-scrub editing an installed integration without re-entering its secret fails validation. Needs: optionalize secret fields in the config schemas + enforce presence at install/activation.
-- [x] Task 9: backfill script — VERIFIED (vaulted a seeded plaintext apiKey, stamped secretRef)
-- [x] Task 10: scrub + fail-closed — VERIFIED (plaintext gone, vault preserved, **0 plaintext remain**)
+- [x] Task 9+10 (AMENDED 2026-08-18): the manual TS backfill script + the separate
+  `secretRef IS NOT NULL`-gated scrub migration were **consolidated** into a single
+  auto-applied, idempotent migration `20260817132607_backfill-and-scrub-integration-secrets.sql`
+  (vault-move + strip in one pass; RAISEs on an unmapped secret-looking integration).
+  The split was a deploy-ordering hazard: on auto-apply the scrub ran before the manual
+  backfill set `secretRef`, matched zero rows, and never re-ran — leaving plaintext forever.
+  `packages/jobs/src/scripts/backfill-integration-secrets.ts` and
+  `…_scrub-integration-plaintext-secrets.sql` were deleted.
+- [x] Task 9 (superseded): backfill script — VERIFIED (vaulted a seeded plaintext apiKey, stamped secretRef)
+- [x] Task 10 (superseded): scrub + fail-closed — VERIFIED (plaintext gone, vault preserved, **0 plaintext remain**)
 - [x] Task 11: verify — vault round-trip, backfill/scrub on real data, reveal e2e, delete-trigger cascade, ee suite 556, typecheck ee/jobs/erp all PASS
 
 ## Known follow-ups

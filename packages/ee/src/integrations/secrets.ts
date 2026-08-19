@@ -161,7 +161,7 @@ export async function persistIntegrationSecrets(
  * - secret-bearing integration + no `secretRef` -> throw (fail-closed): the
  *   plaintext has been scrubbed, so a missing vault pointer is a broken state,
  *   never "return the secret-free metadata as if complete". (The transitional
- *   plaintext fallback was removed once the scrub migration ran.)
+ *   plaintext fallback was removed with the backfill-and-scrub migration.)
  *
  * Pass `secretRef` from the row when you have it to skip the extra lookup.
  */
