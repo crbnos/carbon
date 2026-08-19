@@ -39,6 +39,17 @@ export interface AttachOnshapeAssetsInput {
   sourceDocument: DocumentSourceType; // e.g. "Part"
   model?: OnshapeModelFile; // raw GLTF -> item's modelUpload (optimized by the assembler)
   documents?: OnshapeAssetFile[]; // drawing PDFs -> item documents
+  /**
+   * What to do when another writer repointed `item.modelUploadId` between this
+   * run's read and its write.
+   *
+   * `"overwrite"` (the default) is the shipped behavior: the update is
+   * unconditional and last writer wins. `"refuse"` makes it a compare-and-set
+   * that throws so the step retries. Refusing is the better answer, but it is a
+   * new failure mode on a path legacy customers already use, so only the v2
+   * pipeline opts in — see .ai/reviews/2026-08-19-onshape-v2-legacy-impact.md.
+   */
+  onConcurrentChange?: "overwrite" | "refuse";
 }
 
 export interface AttachOnshapeAssetsResult {
@@ -186,6 +197,7 @@ export async function attachOnshapeAssetsToItem(
   input: AttachOnshapeAssetsInput
 ): Promise<AttachOnshapeAssetsResult> {
   const { companyId, createdBy, itemId, sourceDocument } = input;
+  const onConcurrentChange = input.onConcurrentChange ?? "overwrite";
 
   // Company root group -> company-wide document visibility (every employee reaches
   // it via groups_for_user). Note: no Carbon doc is company-visible via [userId];
@@ -377,35 +389,50 @@ export async function attachOnshapeAssetsToItem(
         }
       }
 
-      // Compare-and-set on what this run READ. Everything above — the prior
-      // model, whether to preserve it as a document — was decided from
-      // `priorModelId`, so an unconditional update would let a concurrent
-      // attach that has since repointed the item lose its model: the row it
-      // wrote is orphaned, still occupying storage, referenced by nothing.
-      // `eq(column, "")` does NOT match SQL NULL, so the no-prior-model case
-      // needs `is`, not a falsy-coalesced eq — otherwise the very first attach
-      // matches zero rows and every item fails.
-      const itemLinkQuery = carbon
-        .from("item")
-        .update({ modelUploadId: modelId })
-        .eq("id", itemId)
-        .eq("companyId", companyId);
-      const itemLink = await (priorModelId
-        ? itemLinkQuery.eq("modelUploadId", priorModelId)
-        : itemLinkQuery.is("modelUploadId", null)
-      ).select("id");
-      if (itemLink.error) {
-        throw new Error(
-          `attachOnshapeAssetsToItem: item model link failed: ${itemLink.error.message}`
-        );
-      }
-      if ((itemLink.data ?? []).length === 0) {
-        // Someone else won. Refusing is the honest outcome: the model row
-        // exists and can be attached deliberately, whereas overwriting would
-        // silently discard whichever attach landed second.
-        throw new Error(
-          `attachOnshapeAssetsToItem: item ${itemId} was repointed by a concurrent attach; retrying`
-        );
+      if (onConcurrentChange === "refuse") {
+        // Compare-and-set on what this run READ. Everything above — the prior
+        // model, whether to preserve it as a document — was decided from
+        // `priorModelId`, so an unconditional update would let a concurrent
+        // attach that has since repointed the item lose its model: the row it
+        // wrote is orphaned, still occupying storage, referenced by nothing.
+        // `eq(column, "")` does NOT match SQL NULL, so the no-prior-model case
+        // needs `is`, not a falsy-coalesced eq — otherwise the very first
+        // attach matches zero rows and every item fails.
+        const itemLinkQuery = carbon
+          .from("item")
+          .update({ modelUploadId: modelId })
+          .eq("id", itemId)
+          .eq("companyId", companyId);
+        const itemLink = await (priorModelId
+          ? itemLinkQuery.eq("modelUploadId", priorModelId)
+          : itemLinkQuery.is("modelUploadId", null)
+        ).select("id");
+        if (itemLink.error) {
+          throw new Error(
+            `attachOnshapeAssetsToItem: item model link failed: ${itemLink.error.message}`
+          );
+        }
+        if ((itemLink.data ?? []).length === 0) {
+          // Someone else won. Refusing is the honest outcome: the model row
+          // exists and can be attached deliberately, whereas overwriting would
+          // silently discard whichever attach landed second.
+          throw new Error(
+            `attachOnshapeAssetsToItem: item ${itemId} was repointed by a concurrent attach; retrying`
+          );
+        }
+      } else {
+        // Unconditional, last writer wins. Kept as the default so the legacy
+        // revision-sync and backfill paths behave exactly as they do today.
+        const itemLink = await carbon
+          .from("item")
+          .update({ modelUploadId: modelId })
+          .eq("id", itemId)
+          .eq("companyId", companyId);
+        if (itemLink.error) {
+          throw new Error(
+            `attachOnshapeAssetsToItem: item model link failed: ${itemLink.error.message}`
+          );
+        }
       }
       modelUploadId = modelId;
     }

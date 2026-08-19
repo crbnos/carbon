@@ -136,7 +136,13 @@ export async function pullOnshapeAssetsForElement(
           createdBy: args.userId,
           itemId: target.itemId,
           sourceDocument: "Part",
-          model
+          model,
+          // v2 fans out over every target in a release, so two attaches can
+          // reach the same item concurrently. Refuse rather than overwrite: the
+          // step retries (retries: 3, per-element concurrency 1) and re-reads,
+          // where an unconditional write would orphan the loser's uploaded
+          // model row. The legacy paths keep the default.
+          onConcurrentChange: "refuse"
         });
 
         if (attached.modelUploadId) {
