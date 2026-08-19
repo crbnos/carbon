@@ -3,16 +3,10 @@
   "unit": "mm",
   "steps": [
     {
-      "componentNodeIds": [
-        "node-shaft"
-      ],
+      "componentNodeIds": ["node-shaft"],
       "motion": {
         "type": "linear",
-        "direction": [
-          0,
-          0,
-          1
-        ],
+        "direction": [0, 0, 1],
         "distance": 80
       }
     },
@@ -24,11 +18,7 @@
       ],
       "motion": {
         "type": "linear",
-        "direction": [
-          0,
-          0,
-          1
-        ],
+        "direction": [0, 0, 1],
         "distance": 160
       }
     },
@@ -40,40 +30,23 @@
       ],
       "motion": {
         "type": "linear",
-        "direction": [
-          0,
-          0,
-          1
-        ],
+        "direction": [0, 0, 1],
         "distance": 240
       }
     },
     {
-      "componentNodeIds": [
-        "node-endbell-de",
-        "node-endbell-nde"
-      ],
+      "componentNodeIds": ["node-endbell-de", "node-endbell-nde"],
       "motion": {
         "type": "linear",
-        "direction": [
-          0,
-          0,
-          1
-        ],
+        "direction": [0, 0, 1],
         "distance": 280
       }
     },
     {
-      "componentNodeIds": [
-        "node-motor-housing"
-      ],
+      "componentNodeIds": ["node-motor-housing"],
       "motion": {
         "type": "linear",
-        "direction": [
-          0,
-          0,
-          1
-        ],
+        "direction": [0, 0, 1],
         "distance": 320
       }
     },
@@ -94,11 +67,7 @@
       ],
       "motion": {
         "type": "linear",
-        "direction": [
-          0,
-          0,
-          -1
-        ],
+        "direction": [0, 0, -1],
         "distance": 220
       }
     },
@@ -131,11 +100,7 @@
       ],
       "motion": {
         "type": "linear",
-        "direction": [
-          0,
-          0,
-          -1
-        ],
+        "direction": [0, 0, -1],
         "distance": 360
       }
     }
