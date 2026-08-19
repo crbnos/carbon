@@ -351,6 +351,11 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   // The external link is what /share/quote/:id resolves against. It has to be
   // created after the quote (it stores the quote's id) and pointed back at it,
   // which is the same two-step upsertExternalLink does when a quote is created.
+  // externalLink's PK is ("id") alone, so the company-scoped wipe can't reach a
+  // row a previous run left under another company — clear the fixed id first.
+  await ctx.client.query(`DELETE FROM "externalLink" WHERE id = $1`, [
+    NOVASAT_QUOTE_LINK_ID
+  ]);
   const quote2Link = await insertId(ctx, "externalLink", {
     id: NOVASAT_QUOTE_LINK_ID,
     documentType: "Quote",

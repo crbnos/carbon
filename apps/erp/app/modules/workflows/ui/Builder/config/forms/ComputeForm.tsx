@@ -26,7 +26,7 @@ import {
 import { useBuilderStore } from "../../context";
 import { ValueField } from "../../fields/ValueField";
 import { issueForField, partIssuesForField } from "../../issues";
-import { useEntityBatchInput } from "../../useDefinition";
+import { useComputeBatchInput } from "../../useDefinition";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 
@@ -115,16 +115,16 @@ function OperationPicker({ selected, onSelect, label }: OperationPickerProps) {
   );
 }
 
-// ── EntityForm ────────────────────────────────────────────────────────────────
+// ── ComputeForm ───────────────────────────────────────────────────────────────
 
-export function EntityForm({ node, issues }: NodeFormProps<"entity">) {
+export function ComputeForm({ node, issues }: NodeFormProps<"compute">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
 
   const { operation: operationId, inputs } = node.data;
 
   const opDef = operationId ? catalog.getOperation(operationId) : undefined;
-  const batchInput = useEntityBatchInput(node.id, operationId, inputs);
+  const batchInput = useComputeBatchInput(node.id, operationId, inputs);
 
   // Inputs ordered required-first, then optional (preserving catalog order within each)
   const orderedInputNames = useMemo(() => {

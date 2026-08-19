@@ -2904,6 +2904,9 @@ msgstr "Tipos de Aviso de Mudança"
 msgid "Change Notices"
 msgstr "Avisos de Mudança"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr ""
+
 msgid "Change order"
 msgstr "Ordem de mudança"
 
@@ -9125,6 +9128,9 @@ msgstr "Mais"
 
 msgid "More actions"
 msgstr "Mais ações"
+
+msgid "More information"
+msgstr "Mais informações"
 
 msgid "More options"
 msgstr "Mais opções"

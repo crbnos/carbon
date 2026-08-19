@@ -2,7 +2,7 @@
 // them so `@carbon/workflows` can import it and assert every definition still passes
 // `validateDefinition` — the cycle blocks that check from running on this side.
 
-export const FORMAT_VERSION = 3;
+export const FORMAT_VERSION = 4;
 
 /** Mirrors each event's `match` block in the workflow catalog, spelled out here for the
  * same package-cycle reason. `null` is a business moment: it has no table to subscribe to. */
@@ -222,9 +222,9 @@ export function buildSeedWorkflows(refs: {
           data: { events: ["purchaseOrder.status.changed"], origin: "Both" }
         },
         {
-          id: "entity_total",
+          id: "compute_total",
           name: "order_total",
-          type: "entity",
+          type: "compute",
           position: { x: 480, y: 0 },
           expanded: true,
           data: {
@@ -246,7 +246,7 @@ export function buildSeedWorkflows(refs: {
                 combinator: "and",
                 clauses: [
                   {
-                    left: ref("entity_total", "result"),
+                    left: ref("compute_total", "result"),
                     operator: "gt",
                     right: literal(num, 10000)
                   }
@@ -283,8 +283,8 @@ export function buildSeedWorkflows(refs: {
         }
       ],
       edges: [
-        edge("edge_total", "trigger_po_status", "entity_total", "out"),
-        edge("edge_size", "entity_total", "condition_large", "out"),
+        edge("edge_total", "trigger_po_status", "compute_total", "out"),
+        edge("edge_size", "compute_total", "condition_large", "out"),
         edge("edge_flag", "condition_large", "action_flag", "path_large")
       ]
     },

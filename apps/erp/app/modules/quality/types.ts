@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import type { ChangeNoticeStatus } from "~/modules/items";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
   getGaugeCalibrationRecords,
@@ -41,8 +42,7 @@ export type GaugeType = NonNullable<
 export type IssueAssociationKey =
   (typeof nonConformanceAssociationType)[number];
 
-export type IssueAssociationNode = {
-  key: IssueAssociationKey;
+type IssueAssociationNodeBase = {
   name: string;
   pluralName: string;
   module: string;
@@ -54,6 +54,7 @@ export type IssueAssociationNode = {
     type: string;
     quantity?: number;
     disposition?: string | null;
+    status?: ChangeNoticeStatus;
     links?: {
       id: string;
       quantity: number;
@@ -68,6 +69,19 @@ export type IssueAssociationNode = {
     }[];
   }[];
 };
+
+// `changeNotices` is not an association junction — it is the reverse FK
+// changeOrder.nonConformanceId. Modelling it as a read-only variant lets
+// `!node.readOnly` narrow the key, so the add/delete paths can never see it.
+export type IssueAssociationNode =
+  | (IssueAssociationNodeBase & {
+      key: IssueAssociationKey;
+      readOnly?: false;
+    })
+  | (IssueAssociationNodeBase & {
+      key: "changeNotices";
+      readOnly: true;
+    });
 
 export type IssueStatus = Database["public"]["Enums"]["nonConformanceStatus"];
 
