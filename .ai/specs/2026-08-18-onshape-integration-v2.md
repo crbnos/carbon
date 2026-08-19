@@ -339,18 +339,97 @@ Resolved during design:
 
 ## Known gaps
 
-- **Translations.** 52 new English strings ship with empty `msgstr` in 12 locales. That matches
+- **Translations.** 55 new English strings ship with empty `msgstr` in 12 locales. That matches
   upstream practice — `pnpm translate` needs an LLM key and is run as its own pass, not per PR.
 - **Drawing attachment.** Still unsolved; see the drawing section. v2 refuses rather than guessing.
 - **Configuration is not part of identity.** `buildElementExternalId` ignores the Onshape
   configuration, so two configured instances of one element map to the same Carbon family. The
   ASSET pull now carries the configuration through, so a single-configured-instance BOM exports
   the right shape; the multi-instance case needs the id to change too.
-- **A successful unreleased import is unverified end to end.** The refusal paths are verified
-  live; a mint could not be, because every part in the test document already exists in Carbon at
-  a named revision. Verify it on a greenfield company, which is the shape the setting is for.
-- **`releaseImportV2` on a brownfield family.** Verified by reading, not by a live release: the
-  test Onshape company's releases all resolve to items Carbon already holds.
+- **Case- and dot-collision part numbers are untested.** `TB-900` vs `tb-900`, and a part number
+  that itself contains a dot, both land on `readableIdWithRevision`, whose separator is a dot.
+  Non-ASCII and 82-character numbers ARE verified (see below).
+
+## Live verification, 2026-08-19
+
+Both paths the previous revision of this spec listed as unverified are now verified end to end,
+against a real Onshape company, using a purpose-built test document (`TB Test Bench`, a copy of
+the RD-410 document with every part number rewritten so nothing collided with existing data).
+
+**Unreleased import — mint.** An unreleased version imported into a Carbon part created 7 items
+and attached a model to all 8 (the 7 children plus the top-level item), with the tree, the
+per-line quantities and the indent nesting all preserved. The row whose Onshape part number was
+deliberately blanked was refused, not imported. A non-ASCII part number (`TB-902-Ü-Ä-ß`) and an
+82-character one both round-tripped intact through the item, the mapping and the exported
+asset filename.
+
+**releaseImportV2 — a real release.** A real Onshape release of that document at revision A,
+delivered as eight separate `onshape.revision.created` webhooks (six fired concurrently to
+exercise the claim race), produced ONE Draft change notice with EIGHT affected items, and one
+release marker listing all eight parts. Confirmed on the way through:
+
+- Each new revision got its OWN exported asset (`TB-901.A.gltf` … `TB-950.A.gltf`, distinct
+  upload rows, sizes 17247–138667), not a pointer copied from its source item — the
+  `items_createRevision` hazard recorded below is genuinely closed.
+- Both mappings were written for the created item: two `onshapeElement` rows sharing one
+  externalId (one per Carbon revision — the family), and one `onshapeRevision` row keyed by the
+  real Onshape revisionId (the member).
+- `TB-905`, a part number Carbon has never held, was skipped rather than minted.
+
+**Idempotency.** Re-importing the same unreleased BOM reported `0 part(s) created,
+7 line(s) imported` and left the item count at exactly 16 (8 initial + 8 released) — the id-based
+mapping adopts rather than duplicating, which is the whole point of the rebuild.
+
+**Thirteen bugs this pass found and fixed.** None were reachable by reading; all six needed the live
+run.
+
+1. **A minted subassembly was `Buy`.** A row WITH CHILDREN was created `Buy` /
+   `Pull from Inventory`, the same as a leaf. Because `methodMaterial.methodType` is denormalized
+   from the component's `defaultMethodType`, the PARENT's line for that subassembly also read
+   `Pull from Inventory` — so the imported multi-level BOM existed but never exploded in
+   planning, and MRP would have raised a purchase order for a subassembly Carbon had a method
+   for. A row with children is now minted `Make` / `Make to Order`. An EXISTING item that gains
+   children but is still `Buy` is reported through a new `warnings` channel rather than
+   overwritten: replenishment is a Carbon decision Onshape says nothing about.
+2. **BOM-import assets were gated on `attachAssetsOnRelease`.** That setting is about releases
+   that happen with nobody in Carbon, and its own in-app description says a BOM import brings its
+   assets regardless. The gate contradicted both that description and the design decision that
+   assets are not a switch of their own. Verified by setting it false: the import still attaches
+   all 8.
+3. **The outcome notification miscounted.** Its title counted only `skipped`, while it FIRED on
+   four conditions — so a notification raised because a row could not be read announced
+   "0 item(s) needing attention". Title and gate now both come from `countNeedingAttention`.
+4. **The unreleased picker sent the element NAME as the part number.** An Onshape element's name
+   and its part number are different fields that diverge freely; the part number is what becomes
+   the Carbon item. A new v2 elements route reads the real part number from element metadata, and
+   the picker now shows and sends it.
+5. **The unreleased-import button rendered outside its padded column** and was clipped.
+6. **A long part number widened the preview list past the modal.** `ModalBody` is a grid item, so
+   it defaults to `min-width: auto` and a wide child expands the track.
+
+A third adversarial audit was then run over this session's own diff. It confirmed the tree hoist,
+the `rowId` keying, the conflict/adopt paths and the removed `partNumber` gate as safe, and found
+seven more, all fixed:
+
+7. **The Make fix broke the method TREE.** `get_method_tree` resolves a line's sub-method as
+   `COALESCE(materialMakeMethodId, <fallback>)`, and the fallback fires ONLY for
+   `Pull from Inventory`. Minting the subassembly as `Make to Order` while leaving
+   `materialMakeMethodId` null therefore terminated the recursion: the sub-BOM was written to the
+   database but vanished from the BoM explorer, the BOM API, the CSV export and cost roll-up.
+   Confirmed live before fixing — `get_method_tree` returned TB-950 with a null sub-method and
+   none of its four children. The import now points the parent's line at the method it actually
+   reconciled into, which is more precise than the app's own `activeMakeMethods` lookup for an
+   adopted item whose Active method is not the draft being imported to.
+8. The Buy warning never checked the item being imported INTO, which is the one item the import
+   definitely just gave a bill of materials to.
+9. A failed lookup silently dropped every warning, turning "N need attention" into no
+   notification at all.
+10. 50 concurrent Onshape metadata calls with no rate-limit handling, where a 429 rendered as
+    "No part number" — indistinguishable from an assembly that genuinely has none. Now sequential,
+    and a failed read is reported.
+11. The elements route's 50-assembly cap was silent; `truncated` was returned and never read.
+12. An unreleased assembly with no part number rendered the confirm modal's title as one space.
+13. A double period in the joined summary sentence.
 
 ## Audits
 
@@ -376,6 +455,10 @@ twice as well.
 - 2026-08-18: Created.
 - 2026-08-19: Round-2 audit findings fixed; per-item asset pull job added for the create and
   link flows; legacy backfill refused on a v2 company.
+- 2026-08-19: Verified both remaining gaps live against a real Onshape release. Fixed the
+  subassembly replenishment bug that pass found, added the outcome `warnings` channel, added the
+  v2 elements route so the picker shows and sends the real part number rather than the element
+  name, and fixed two modal layout defects.
 - 2026-08-19: All six phases done and audited twice. Corrected the settings table to the shipped
   `releaseImportV2` enum. Recorded the unreleased-version browser, the import-outcome
   notification, and the collision criterion as met.
