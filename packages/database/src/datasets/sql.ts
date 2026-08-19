@@ -176,9 +176,12 @@ export async function one<T extends Row>(
 }
 
 // Strict lookup into a ref bag: a miss is a seed bug, not a runtime "maybe".
-export function need<T>(rec: Record<string, T>, key: string): T {
+// `what` names the kind of thing, so the error says which bag was empty.
+export function need<T>(rec: Record<string, T>, key: string, what?: string): T {
   const value = rec[key];
-  if (value === undefined) throw new Error(`Seed: missing "${key}"`);
+  if (value === undefined) {
+    throw new Error(`Seed: missing ${what ? `${what} ` : ""}"${key}"`);
+  }
   return value;
 }
 

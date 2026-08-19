@@ -163,8 +163,7 @@ async function seedProductionEvents(
 async function seedGenealogy(ctx: Ctx, data: ProductionData): Promise<void> {
   const assembly = data.genealogyAssembly;
   const jobId = need(ctx.refs.documents, `job:${data.genealogyJobKey}`);
-  const satellite = ctx.refs.items[assembly.item];
-  if (!satellite) return;
+  const satellite = need(ctx.refs.items, assembly.item, "item");
 
   const assemblyOperation = await rows<{ id: string }>(
     ctx.client,
@@ -216,8 +215,7 @@ async function seedGenealogy(ctx: Ctx, data: ProductionData): Promise<void> {
   });
 
   for (const input of data.genealogyInputs) {
-    const item = ctx.refs.items[input.item];
-    if (!item) continue;
+    const item = need(ctx.refs.items, input.item, "item");
 
     const childId = await insertId(ctx, "trackedEntity", {
       quantity: input.quantity,

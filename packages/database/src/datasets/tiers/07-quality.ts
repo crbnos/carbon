@@ -1,5 +1,12 @@
 import { resolveDate } from "../dates.ts";
-import { insertId, insertRow, maybeOne, nextSequence, one } from "../sql.ts";
+import {
+  insertId,
+  insertRow,
+  maybeOne,
+  need,
+  nextSequence,
+  one
+} from "../sql.ts";
 import type { Ctx } from "../types.ts";
 
 export async function runTier7(ctx: Ctx): Promise<void> {
@@ -38,8 +45,7 @@ export async function runTier7(ctx: Ctx): Promise<void> {
   for (const [index, spec] of data.nonConformances.entries()) {
     if (!spec.jobOperation) continue;
 
-    const jobId = ctx.refs.documents[spec.jobOperation.job];
-    if (!jobId) continue;
+    const jobId = need(ctx.refs.documents, spec.jobOperation.job, "job");
 
     const operation = await maybeOne<{ id: string; jobReadableId: string }>(
       client,
@@ -64,8 +70,7 @@ export async function runTier7(ctx: Ctx): Promise<void> {
     });
 
     for (const line of spec.items ?? []) {
-      const item = ctx.refs.items[line.item];
-      if (!item) continue;
+      const item = need(ctx.refs.items, line.item, "item");
       await insertRow(ctx, "nonConformanceItem", {
         nonConformanceId: ncrIds[index],
         itemId: item.id,

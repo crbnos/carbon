@@ -28,7 +28,11 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   const { companyId, userId, locationId } = ctx;
   const plantId = ctx.refs.locations.Plant ?? locationId;
   const paymentTermId = ctx.refs.misc.paymentTermId;
-  const shippingMethodId = ctx.refs.shippingMethods["UPS Ground"];
+  const shippingMethodId = need(
+    ctx.refs.shippingMethods,
+    "UPS Ground",
+    "shipping method"
+  );
 
   // companySettings has no companyId column, so the wipe preserves it — the row
   // already exists and only needs the digital-quote flags flipped on. Without

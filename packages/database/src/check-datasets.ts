@@ -83,7 +83,7 @@ async function main() {
 
   try {
     const userId = await resolveCheckUserId(client);
-    if (!userId) skip("this database has no users yet");
+    if (!userId) skip("this database has no users yet (migrations applied?)");
 
     console.log(`Checking ${selected.length} dataset(s) against the schema...`);
     let failed = false;
@@ -118,4 +118,7 @@ async function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error(err instanceof Error ? err.message : err);
+  process.exitCode = 1;
+});

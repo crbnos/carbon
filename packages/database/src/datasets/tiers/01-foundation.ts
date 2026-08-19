@@ -130,8 +130,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   for (const wc of data.workCenters) {
     const id = await insertId(ctx, "workCenter", {
       name: wc.name,
-      departmentId: ctx.refs.departments[wc.dept],
-      requiredAbilityId: ctx.refs.abilities[wc.ability],
+      departmentId: need(ctx.refs.departments, wc.dept, "department"),
+      requiredAbilityId: need(ctx.refs.abilities, wc.ability, "ability"),
       locationId: plantId,
       laborRate: wc.laborRate,
       machineRate: wc.machineRate
@@ -142,8 +142,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // Link work centers to processes
   for (const [wc, proc] of data.workCenterProcessLinks) {
     await insertRow(ctx, "workCenterProcess", {
-      workCenterId: ctx.refs.workCenters[wc],
-      processId: ctx.refs.processes[proc]
+      workCenterId: need(ctx.refs.workCenters, wc, "work center"),
+      processId: need(ctx.refs.processes, proc, "process")
     });
   }
 
@@ -215,8 +215,12 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── Customers ─────────────────────────────────────────────────────────────
   ctx.log("customers");
   for (const c of data.customers) {
-    const statusId = ctx.refs.misc[`cstatus:${c.status}`];
-    const typeId = ctx.refs.misc[`ctype:${c.type}`];
+    const statusId = need(
+      ctx.refs.misc,
+      `cstatus:${c.status}`,
+      "customer status"
+    );
+    const typeId = need(ctx.refs.misc, `ctype:${c.type}`, "customer type");
     const custId = await insertId(ctx, "customer", {
       name: c.name,
       customerTypeId: typeId,
@@ -240,7 +244,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
   // Customer contacts
   for (const cc of data.customerContacts) {
-    const customerId = ctx.refs.customers[cc.customer];
+    const customerId = need(ctx.refs.customers, cc.customer, "customer");
     const contactId = await insertId(ctx, "contact", {
       firstName: cc.firstName,
       lastName: cc.lastName,
@@ -274,7 +278,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── Suppliers ─────────────────────────────────────────────────────────────
   ctx.log("suppliers");
   for (const s of data.suppliers) {
-    const typeId = ctx.refs.misc[`stype:${s.type}`];
+    const typeId = need(ctx.refs.misc, `stype:${s.type}`, "supplier type");
     const supId = await insertId(ctx, "supplier", {
       name: s.name,
       supplierTypeId: typeId,
@@ -296,7 +300,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
   // Supplier contacts + addresses
   for (const sc of data.supplierContacts) {
-    const supplierId = ctx.refs.suppliers[sc.supplier];
+    const supplierId = need(ctx.refs.suppliers, sc.supplier, "supplier");
     const contactId = await insertId(ctx, "contact", {
       firstName: sc.firstName,
       lastName: sc.lastName,
@@ -331,16 +335,14 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── Supplier processes (contract manufacturer) ────────────────────────────
   ctx.log("supplier processes");
   for (const sp of data.supplierProcesses) {
-    const supplierId = ctx.refs.suppliers[sp.supplier];
-    const processId = ctx.refs.processes[sp.process];
-    if (supplierId && processId) {
-      const spId = await insertId(ctx, "supplierProcess", {
-        supplierId,
-        processId,
-        leadTime: 5
-      });
-      ctx.refs.misc[`sp:${sp.supplier}:${sp.process}`] = spId;
-    }
+    const supplierId = need(ctx.refs.suppliers, sp.supplier, "supplier");
+    const processId = need(ctx.refs.processes, sp.process, "process");
+    const spId = await insertId(ctx, "supplierProcess", {
+      supplierId,
+      processId,
+      leadTime: 5
+    });
+    ctx.refs.misc[`sp:${sp.supplier}:${sp.process}`] = spId;
   }
 
   // ── Contractors (need a supplierContact as their identity) ─────────────────
@@ -375,7 +377,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       });
       await insertRow(ctx, "contractorAbility", {
         contractorId: supContactId,
-        abilityId: ctx.refs.abilities[cd.ability]
+        abilityId: need(ctx.refs.abilities, cd.ability, "ability")
       });
     }
   }
@@ -397,8 +399,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // Archived + V2 Active is what gives a procedure a readable history.
   ctx.log("procedures");
   for (const spec of data.procedures) {
-    const processId = ctx.refs.processes[spec.process];
-    if (!processId) continue;
+    const processId = need(ctx.refs.processes, spec.process, "process");
     for (const version of spec.versions) {
       const procedureId = await insertId(ctx, "procedure", {
         name: spec.name,

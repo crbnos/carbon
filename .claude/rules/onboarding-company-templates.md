@@ -259,10 +259,16 @@ The scratch company is attributed to the `system` user, never a real developer's
 
 It runs from `.husky/pre-commit` whenever a staged file is under `packages/database/`
 (~3s for all four); `CARBON_SKIP_DATASET_CHECK=1` skips it. It exits 0 with a warning when
-the database is unreachable — a hook that fails for reasons you cannot fix is a hook you learn
-to bypass. Two honest limits: a hook is bypassable with `--no-verify`, so this is a safety net
-rather than a gate (CI was declined on cost), and it proves only that the datasets still
-APPLY — not that they still produce the same rows. That is the baseline diff below.
+the database is unreachable, has no `user` table, or has no users — a hook that fails for
+reasons you cannot fix is a hook you learn to bypass, and every one of those is the
+developer's environment rather than drift.
+
+Three honest limits. A hook is bypassable with `--no-verify`, so this is a safety net rather
+than a gate (CI was declined on cost). It proves only that the datasets still APPLY — not
+that they still produce the same rows; that is the baseline diff below. And it reads the
+LIVE schema, so a migration you have written but not yet applied is invisible to it — commit
+a column drop before `pnpm db:migrate` and the check passes green, which is exactly the state
+the migration's own author is most likely to be in.
 
 ## Verifying a change to the tiers
 

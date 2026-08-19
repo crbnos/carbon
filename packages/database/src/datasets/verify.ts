@@ -26,23 +26,35 @@ export type VerifyResult = {
   durationMs: number;
 };
 
+/** Postgres `undefined_table` — the database is behind on migrations. */
+const UNDEFINED_TABLE = "42P01";
+
 /**
  * The scratch company needs a real user id for its foreign keys. Prefer the
  * built-in `system` user so the check never attributes anything to a real
- * developer. Returns null on a database with no users at all.
+ * developer.
+ *
+ * Returns null when the check cannot run at all: no users yet, or no `user`
+ * table because the database has not been migrated. Both are the developer's
+ * environment, not dataset drift, so neither may fail a commit.
  */
 export async function resolveCheckUserId(
   client: PoolClient
 ): Promise<string | null> {
-  const system = await client.query<{ id: string }>(
-    `SELECT id FROM "user" WHERE id = 'system'`
-  );
-  if (system.rows[0]) return system.rows[0].id;
+  try {
+    const system = await client.query<{ id: string }>(
+      `SELECT id FROM "user" WHERE id = 'system'`
+    );
+    if (system.rows[0]) return system.rows[0].id;
 
-  const any = await client.query<{ id: string }>(
-    `SELECT id FROM "user" ORDER BY id LIMIT 1`
-  );
-  return any.rows[0]?.id ?? null;
+    const any = await client.query<{ id: string }>(
+      `SELECT id FROM "user" ORDER BY id LIMIT 1`
+    );
+    return any.rows[0]?.id ?? null;
+  } catch (err) {
+    if ((err as { code?: string }).code === UNDEFINED_TABLE) return null;
+    throw err;
+  }
 }
 
 /**
