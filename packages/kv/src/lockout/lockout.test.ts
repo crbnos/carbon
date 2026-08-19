@@ -100,7 +100,16 @@ const createMockRedis = () => {
     set: vi
       .fn()
       .mockImplementation(
-        (key: string, _v: unknown, _ex: string, seconds: number) => {
+        (
+          key: string,
+          _v: unknown,
+          _ex: string,
+          seconds: number,
+          nx?: string
+        ) => {
+          // Honor SET ... NX: a claim on an already-held lock returns null,
+          // which is how the resilient client also signals "not set".
+          if (nx === "NX" && storage.has(key)) return Promise.resolve(null);
           storage.set(key, { pttl: seconds * 1000 });
           return Promise.resolve("OK");
         }
@@ -153,12 +162,13 @@ describe("AccountLockout", () => {
     const res = await lockout.recordFailure("User@X.com ");
     expect(res.locked).toBe(true);
     expect(res.retryAfterSeconds).toBe(DEFAULT_BASE_LOCK_SECONDS);
-    // keyed by the NORMALIZED email
+    // keyed by the NORMALIZED email, claimed atomically with NX
     expect(redis.set).toHaveBeenCalledWith(
       "@carbon/lockout:locked:user@x.com",
       "1",
       "EX",
-      DEFAULT_BASE_LOCK_SECONDS
+      DEFAULT_BASE_LOCK_SECONDS,
+      "NX"
     );
   });
 
@@ -175,6 +185,40 @@ describe("AccountLockout", () => {
     stubWindow(redis, -1);
     const second = await lockout.recordFailure("user@x.com");
     expect(second.retryAfterSeconds).toBe(DEFAULT_BASE_LOCK_SECONDS * 2); // 120
+  });
+
+  it("a concurrent burst engages the lock exactly once (no escalation inflation)", async () => {
+    const lockout = new AccountLockout({ redis });
+    // Every request in the burst clears the window.
+    (redis.eval as ReturnType<typeof vi.fn>).mockResolvedValue([-1, 5]);
+
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () => lockout.recordFailure("user@x.com"))
+    );
+
+    // All observe a lock, all at the BASE duration — one burst is ONE offense,
+    // never eight escalations that inflate the lock toward the cap.
+    expect(results.every((r) => r.locked)).toBe(true);
+    expect(
+      results.every((r) => r.retryAfterSeconds === DEFAULT_BASE_LOCK_SECONDS)
+    ).toBe(true);
+    // The escalation level was incremented once, by the single claim winner.
+    expect(redis.incr).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails OPEN (no phantom lock) when the lock write fails soft", async () => {
+    const lockout = new AccountLockout({ redis });
+    stubWindow(redis, -1); // over the window
+    // The resilient client returns null for the SET when Redis is unreachable.
+    (redis.set as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+
+    const res = await lockout.recordFailure("user@x.com");
+
+    // Must NOT report `{ locked: true, retryAfterSeconds: 0 }` with no stored
+    // lock — a failed claim falls through to status(), which fails open.
+    expect(res).toEqual({ locked: false, retryAfterSeconds: 0 });
+    // No escalation on a claim that never landed.
+    expect(redis.incr).not.toHaveBeenCalled();
   });
 
   it("recordFailure short-circuits to the existing lock without consuming an attempt", async () => {

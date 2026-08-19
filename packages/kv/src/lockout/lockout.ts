@@ -141,6 +141,15 @@ export class AccountLockout {
    * Record one failed/abusive attempt for this account. If it pushes the account
    * past the window's allowance, engage (or escalate) an exponential lock and
    * return `locked: true`. Otherwise `locked: false`.
+   *
+   * Engagement is claimed with a single `SET … NX`, so a concurrent burst that
+   * all clears the window engages the lock exactly ONCE: only the request that
+   * wins the claim increments the escalation level and finalizes the TTL —
+   * losers observe the winner's lock instead of each re-incrementing the level
+   * and overwriting its TTL (which would inflate one burst into repeat
+   * offenses). A failed write (the resilient client returns `null` when Redis is
+   * unreachable) never reports a phantom lock: it falls through to `status()`,
+   * which fails OPEN. A KV blip must never wall a user out of auth.
    */
   async recordFailure(email: string): Promise<LockoutStatus> {
     const id = normalizeLoginIdentifier(email);
@@ -152,14 +161,38 @@ export class AccountLockout {
       const { success } = await this.ratelimit.limit(id);
       if (success) return NOT_LOCKED;
 
-      // Window exceeded → engage/escalate the lock.
+      // Window exceeded → claim the lock. NX makes this the atomic mutual-
+      // exclusion point: exactly one concurrent request wins and owns the
+      // escalation below; a `null` result is either a peer's lock or Redis down.
+      const claimed = await this.redis.set(
+        this.lockKey(id),
+        "1",
+        "EX",
+        this.baseLockSeconds,
+        "NX"
+      );
+      if (claimed !== "OK") {
+        // A peer already engaged → report their lock; Redis down → NOT_LOCKED.
+        // Either way this reads the persisted TTL rather than inventing one, so
+        // there is no `{ locked: true, retryAfterSeconds: 0 }` phantom lock.
+        return this.status(email);
+      }
+
+      // We own the lock (currently at base TTL). Escalate the level ONCE and, if
+      // this is a repeat offense, extend the TTL to match.
       const level = await this.redis.incr(this.levelKey(id));
+      if (typeof level !== "number" || !Number.isFinite(level) || level < 1) {
+        // Redis dropped after the claim — the base-TTL lock we just set stands.
+        return { locked: true, retryAfterSeconds: this.baseLockSeconds };
+      }
       await this.redis.expire(this.levelKey(id), this.levelTtlSeconds);
       const seconds = lockDurationSeconds(level, {
         baseLockSeconds: this.baseLockSeconds,
         maxLockSeconds: this.maxLockSeconds
       });
-      await this.redis.set(this.lockKey(id), "1", "EX", seconds);
+      if (seconds > this.baseLockSeconds) {
+        await this.redis.set(this.lockKey(id), "1", "EX", seconds);
+      }
       // Reset the attempt counter so a fresh window starts after the lock lifts.
       await this.ratelimit.resetUsedTokens(id);
 
