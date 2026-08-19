@@ -559,7 +559,13 @@ impl JobStore {
         match scan.scan_match::<_, String>(&pattern).await {
             Ok(mut iter) => {
                 while let Some(k) = iter.next_item().await {
-                    keys.push(k);
+                    match k {
+                        Ok(k) => keys.push(k),
+                        Err(e) => {
+                            eprintln!("assembler: redis invalidate scan failed: {e}");
+                            return 0;
+                        }
+                    }
                 }
             }
             Err(e) => {
