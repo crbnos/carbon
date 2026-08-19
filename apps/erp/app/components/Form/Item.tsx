@@ -54,6 +54,16 @@ type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   // parts/materials list views. Off by default so pickers that legitimately need a
   // specific revision (BOM, sales/job lines) keep every revision.
   latestRevisionOnly?: boolean;
+  // Instead of hiding an item that fails the eligibility rules, list it greyed
+  // out and unselectable with a plain-language reason on hover. The reader can
+  // still search for it and see that it exists, which a silent omission never
+  // tells them. `includeInactive` still wins: a picker that wants inactive
+  // items selectable keeps them selectable.
+  showIneligible?: boolean;
+  // Item ids the eligibility rules do not apply to — e.g. the placeholder parts
+  // an RFQ-converted quote already references, which are legitimately inactive
+  // until the quote is ordered.
+  eligibleItemIds?: string[];
   inline?: boolean;
   isConfigured?: boolean;
   locationId?: string;
@@ -131,8 +141,10 @@ const Item = ({
 
       if (type !== "Item" && type !== item.type) return false;
 
-      // Filter by active status
-      if (!props.includeInactive && !item.active) return false;
+      // Filter by active status. `showIneligible` keeps the row and lets the
+      // disabled pass below explain it instead.
+      if (!props.includeInactive && !props.showIneligible && !item.active)
+        return false;
 
       // Filter by replenishment system
       if (props.replenishmentSystem) {
@@ -174,7 +186,22 @@ const Item = ({
       };
     };
 
-    let results = filtered.map(toOption);
+    // Why an item cannot be chosen, in the words an end user would use. Null
+    // means it is fine to select.
+    const ineligibilityReason = (item: (typeof items)[number]) => {
+      if (props.includeInactive || !props.showIneligible) return null;
+      if (props.eligibleItemIds?.includes(item.id)) return null;
+      if (!item.active)
+        return t`This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it.`;
+      return null;
+    };
+
+    let results = filtered.map((item) => {
+      const reason = ineligibilityReason(item);
+      return reason
+        ? { ...toOption(item), disabled: true, disabledReason: reason }
+        : toOption(item);
+    });
 
     if (props.whitelist) {
       results = results.filter((item) => props.whitelist?.includes(item.value));
@@ -224,7 +251,9 @@ const Item = ({
     props.blacklist,
     props.latestRevisionOnly,
     props.locationId,
+    props.eligibleItemIds,
     props.replenishmentSystem,
+    props.showIneligible,
     props.value,
     props.whitelist,
     t,

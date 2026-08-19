@@ -15324,6 +15324,9 @@ msgstr "यह आइटम"
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "इस आइटम को एक कॉन्फ़िगरेटर के माध्यम से बनाया जाता है और प्रति-आदेश अपने घटकों को हल करता है; इसके लिए बनाई गई नौकरियां कॉन्फ़िगरेटर के हल बिल को विरासत में पाती हैं।"
 
+msgid "This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it."
+msgstr ""
+
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "इस आइटम के बिल ऑफ मेटेरियल्स में शेल्फ-लाइफ सक्षम इनपुट नहीं हैं, इसलिए BOM से कोई एक्सपायरी की गणना नहीं की जाएगी।"
 

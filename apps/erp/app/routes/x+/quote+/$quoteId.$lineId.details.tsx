@@ -205,10 +205,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .maybeSingle();
 
   if (existingLine.data && existingLine.data.itemId !== d.itemId) {
-    const orderabilityIssue = await getItemOrderabilityIssue(serviceRole, {
-      itemId: d.itemId,
-      companyId
-    });
+    // Exempt an item this quote already uses — an RFQ-converted quote's
+    // placeholder parts are inactive by design until the quote is ordered.
+    const alreadyOnQuote = await serviceRole
+      .from("quoteLine")
+      .select("id")
+      .eq("quoteId", quoteId)
+      .eq("itemId", d.itemId)
+      .eq("companyId", companyId)
+      .limit(1)
+      .maybeSingle();
+
+    const orderabilityIssue = alreadyOnQuote.data
+      ? null
+      : await getItemOrderabilityIssue(serviceRole, {
+          itemId: d.itemId,
+          companyId
+        });
     if (orderabilityIssue) {
       return validationError({
         fieldErrors: {

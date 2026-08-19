@@ -63,13 +63,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  // The picker hides inactive and unreleased-change-order items, but it is only
-  // a client-side filter — this action is also reached by the API and the MCP
-  // tools. Read the item's real state before it lands on the quote.
-  const orderabilityIssue = await getItemOrderabilityIssue(serviceRole, {
-    itemId: d.itemId,
-    companyId
-  });
+  // The picker greys these out, but that is only a client-side rule — this
+  // action is also reached by the API and the MCP tools. Read the item's real
+  // state before it lands on the quote.
+  //
+  // An item this quote already uses is exempt: a quote converted from a sales
+  // RFQ references placeholder parts that stay inactive until the quote is
+  // ordered, and a second line for one of them is legitimate.
+  const alreadyOnQuote = await serviceRole
+    .from("quoteLine")
+    .select("id")
+    .eq("quoteId", quoteId)
+    .eq("itemId", d.itemId)
+    .eq("companyId", companyId)
+    .limit(1)
+    .maybeSingle();
+
+  const orderabilityIssue = alreadyOnQuote.data
+    ? null
+    : await getItemOrderabilityIssue(serviceRole, {
+        itemId: d.itemId,
+        companyId
+      });
   if (orderabilityIssue) {
     return validationError({
       fieldErrors: {
