@@ -264,6 +264,11 @@ export type CompanyTemplateRun = {
   datasetKey: string | null;
   startedAt: string | null;
   error: string | null;
+  /** Phase + done/total while the apply or revert is in flight. */
+  progress: { phase: string; done: number; total: number } | null;
+  /** Whether a pre-apply snapshot exists yet — the UI offers a revert retry on a
+   *  stalled run only when there is actually something to put back. */
+  hasSnapshot: boolean;
 };
 
 /**
@@ -297,17 +302,21 @@ export async function getCompanyTemplateRun(
     datasetKey?: string;
     startedAt?: string;
     error?: string;
+    progress?: { phase: string; done: number; total: number } | null;
+    snapshotPath?: string;
   };
 
-  // `snapshotPath` is deliberately not projected — the job owns the snapshot's
-  // lifecycle end to end, and the client has no use for its location.
+  // Only whether a snapshot EXISTS is projected, never where — the job owns its
+  // lifecycle end to end, and the client has no use for the location.
   return {
     data: {
       templateRunId: meta.templateRunId ?? "",
       status: meta.status ?? "running",
       datasetKey: meta.datasetKey ?? null,
       startedAt: meta.startedAt ?? marker.data.createdAt,
-      error: meta.error ?? null
+      error: meta.error ?? null,
+      progress: meta.progress ?? null,
+      hasSnapshot: Boolean(meta.snapshotPath)
     },
     error: null
   };

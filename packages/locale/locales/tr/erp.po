@@ -1171,6 +1171,9 @@ msgstr "Eklendi"
 msgid "Added for this customer"
 msgstr "Bu müşteri için eklendi"
 
+msgid "Adding demo records"
+msgstr ""
+
 msgid "Adding..."
 msgstr "Ekleniyor..."
 
@@ -1552,7 +1555,10 @@ msgstr "Faturaya uygula"
 msgid "Apply to invoices"
 msgstr "Faturaları uygula"
 
-msgid "applying…"
+msgid "Applying"
+msgstr ""
+
+msgid "Applying demo data"
 msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -2922,6 +2928,9 @@ msgstr "Mal alımı ve tedarikçi faturası arasındaki mahsup hesabı; her ikis
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Mal alımı / fatura alımı eşleştirmesi için mahsup hesabı"
+
+msgid "Clearing demo data"
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "Bağlantıyı kesmek için yeniden tıklayın"
@@ -11299,6 +11308,9 @@ msgstr "Satın Alma Birimi"
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Kayıt değişikliklerini gerçekleştiği anda harici sistemlere gönderin."
 
+msgid "Putting your data back"
+msgstr ""
+
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için QR Kod"
@@ -12053,6 +12065,9 @@ msgstr "Bu varlığı çıkartıldığı depo ve maliyet için kullanılabilir s
 msgid "Restore tracked entities to available"
 msgstr "Takip edilen varlıkları kullanılabilir hale getir"
 
+msgid "Restoring files"
+msgstr ""
+
 msgid "Result"
 msgstr "Sonuç"
 
@@ -12076,6 +12091,9 @@ msgstr "Bir varlığı hurdaya ayırarak veya satarak hizmetten çekmek; net def
 
 msgid "Retry"
 msgstr "Tekrar Dene"
+
+msgid "Retry revert"
+msgstr ""
 
 msgid "Return Home"
 msgstr "Ana Sayfaya Dön"
@@ -12122,7 +12140,7 @@ msgstr "Ters Çevrilmiş"
 msgid "Revert"
 msgstr ""
 
-msgid "reverting…"
+msgid "Reverting"
 msgstr ""
 
 msgid "Review"
@@ -12493,6 +12511,9 @@ msgstr "Kaydedildi"
 
 msgid "Saved Views"
 msgstr "Kaydedilen Görünümler"
+
+msgid "Saving a copy of your current data"
+msgstr ""
 
 msgid "Saving..."
 msgstr "Kaydediliyor..."
@@ -13536,6 +13557,9 @@ msgstr "Başla"
 
 msgid "Started"
 msgstr "Başlangıç"
+
+msgid "Starting…"
+msgstr ""
 
 msgid "State / Province"
 msgstr "Eyalet / İl"
@@ -14946,6 +14970,9 @@ msgstr "Bu, web kancası için benzersiz bir tanımlayıcıdır"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Bu ITAR tarafından kontrol edilen bir ortamdır. Erişim yalnızca ABD vatandaşları ile sınırlıdır."
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr ""
+
 msgid "This is the month your fiscal year starts."
 msgstr "Bu, mali yılınızın başladığı aydır."
 
@@ -15033,6 +15060,9 @@ msgstr "bu tedarikçi"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Bu, uygulamanın tüm kullanıcıları için temayı günceller"
+
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr ""
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Bu sürüm açık bir <0>değişiklik bildirimine</0> aittir. Orada düzenleyin."

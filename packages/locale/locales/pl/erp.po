@@ -1171,6 +1171,9 @@ msgstr "Dodane"
 msgid "Added for this customer"
 msgstr "Dodane dla tego klienta"
 
+msgid "Adding demo records"
+msgstr ""
+
 msgid "Adding..."
 msgstr "Dodawanie..."
 
@@ -1552,7 +1555,10 @@ msgstr "Zastosuj do faktury"
 msgid "Apply to invoices"
 msgstr "Zastosuj do faktur"
 
-msgid "applying…"
+msgid "Applying"
+msgstr ""
+
+msgid "Applying demo data"
 msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -2922,6 +2928,9 @@ msgstr "Konto rozliczeniowe między przyjęciem towaru a fakturą dostawcy; wyr�
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Konto rozliczeniowe dla odboru towaru / dopasowania odboru faktury"
+
+msgid "Clearing demo data"
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "Kliknij ponownie, aby rozłączyć"
@@ -11299,6 +11308,9 @@ msgstr "Jednostka miary zakupu"
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Wyślij zmiany rekordów do systemów zewnętrznych w momencie ich wystąpienia."
 
+msgid "Putting your data back"
+msgstr ""
+
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Kod QR do utworzenia {0} dla tego kanbanu"
@@ -12053,6 +12065,9 @@ msgstr "Przywróć tę jednostkę do dostępnych zapasów w pojemniku i po koszc
 msgid "Restore tracked entities to available"
 msgstr "Przywróć śledzone jednostki do dostępnych"
 
+msgid "Restoring files"
+msgstr ""
+
 msgid "Result"
 msgstr "Wynik"
 
@@ -12076,6 +12091,9 @@ msgstr "Wycofanie środka trwałego z użytkowania poprzez złomowanie lub sprze
 
 msgid "Retry"
 msgstr "Ponów"
+
+msgid "Retry revert"
+msgstr ""
 
 msgid "Return Home"
 msgstr "Wróć do domu"
@@ -12122,7 +12140,7 @@ msgstr "Wycofane"
 msgid "Revert"
 msgstr ""
 
-msgid "reverting…"
+msgid "Reverting"
 msgstr ""
 
 msgid "Review"
@@ -12493,6 +12511,9 @@ msgstr "Zapisano"
 
 msgid "Saved Views"
 msgstr "Zapisane widoki"
+
+msgid "Saving a copy of your current data"
+msgstr ""
 
 msgid "Saving..."
 msgstr "Zapisywanie..."
@@ -13536,6 +13557,9 @@ msgstr "Zacznij od"
 
 msgid "Started"
 msgstr "Rozpoczęto"
+
+msgid "Starting…"
+msgstr ""
 
 msgid "State / Province"
 msgstr "Stan / Prowincja"
@@ -14946,6 +14970,9 @@ msgstr "To jest unikalny identyfikator dla webhooka"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "To jest środowisko kontrolowane przez ITAR. Dostęp jest ograniczony do osób ze Stanów Zjednoczonych."
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr ""
+
 msgid "This is the month your fiscal year starts."
 msgstr "To jest miesiąc, w którym rozpoczyna się Twój rok obrachunkowy."
 
@@ -15033,6 +15060,9 @@ msgstr "ten dostawca"
 
 msgid "This updates the theme for all users of the application"
 msgstr "To aktualizuje motyw dla wszystkich użytkowników aplikacji"
+
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr ""
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Ta wersja należy do otwartego <0>zmiany powiadomienia</0>. Edytuj tam."

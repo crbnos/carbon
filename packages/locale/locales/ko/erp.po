@@ -1171,6 +1171,9 @@ msgstr "추가됨"
 msgid "Added for this customer"
 msgstr "이 고객을 위해 추가됨"
 
+msgid "Adding demo records"
+msgstr ""
+
 msgid "Adding..."
 msgstr "추가 중..."
 
@@ -1552,7 +1555,10 @@ msgstr "인보이스에 적용"
 msgid "Apply to invoices"
 msgstr "인보이스에 적용"
 
-msgid "applying…"
+msgid "Applying"
+msgstr ""
+
+msgid "Applying demo data"
 msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -2922,6 +2928,9 @@ msgstr "입고와 공급업체 인보이스 사이의 경과 계정으로, 둘 �
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "입고/인보이스 수취 매칭을 위한 경과 계정"
+
+msgid "Clearing demo data"
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "다시 클릭하여 연결 해제"
@@ -11299,6 +11308,9 @@ msgstr "구매 단위"
 msgid "Push record changes to external systems the moment they happen."
 msgstr "레코드 변경 사항이 발생하는 즉시 외부 시스템으로 전송합니다."
 
+msgid "Putting your data back"
+msgstr ""
+
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
 msgstr "이 칸반에 대한 {0}을(를) 생성하는 QR 코드"
@@ -12053,6 +12065,9 @@ msgstr "이 항목을 폐기 전 보관 위치 및 원가의 사용 가능한 �
 msgid "Restore tracked entities to available"
 msgstr "추적 개체를 사용 가능 상태로 복원"
 
+msgid "Restoring files"
+msgstr ""
+
 msgid "Result"
 msgstr "결과"
 
@@ -12076,6 +12091,9 @@ msgstr "폐기 또는 매각을 통해 자산을 운용에서 제외하고, 순�
 
 msgid "Retry"
 msgstr "재시도"
+
+msgid "Retry revert"
+msgstr ""
 
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
@@ -12122,7 +12140,7 @@ msgstr "역순됨"
 msgid "Revert"
 msgstr ""
 
-msgid "reverting…"
+msgid "Reverting"
 msgstr ""
 
 msgid "Review"
@@ -12493,6 +12511,9 @@ msgstr "저장됨"
 
 msgid "Saved Views"
 msgstr "저장된 보기"
+
+msgid "Saving a copy of your current data"
+msgstr ""
 
 msgid "Saving..."
 msgstr "저장 중..."
@@ -13536,6 +13557,9 @@ msgstr "…부터 시작"
 
 msgid "Started"
 msgstr "시작됨"
+
+msgid "Starting…"
+msgstr ""
 
 msgid "State / Province"
 msgstr "주/도"
@@ -14946,6 +14970,9 @@ msgstr "웹훅의 고유 식별자입니다"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "이것은 ITAR 통제 환경입니다. 접근은 미국인에게만 제한됩니다."
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr ""
+
 msgid "This is the month your fiscal year starts."
 msgstr "회계연도가 시작되는 월입니다."
 
@@ -15033,6 +15060,9 @@ msgstr "이 공급업체"
 
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
+
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr ""
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "이 버전은 열려 있는 <0>변경 공지</0>에 속합니다. 거기서 편집하세요."

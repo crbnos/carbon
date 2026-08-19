@@ -1171,6 +1171,9 @@ msgstr "Ajouté"
 msgid "Added for this customer"
 msgstr "Ajouté pour ce client"
 
+msgid "Adding demo records"
+msgstr ""
+
 msgid "Adding..."
 msgstr "Ajout en cours..."
 
@@ -1552,7 +1555,10 @@ msgstr "Appliquer à la facture"
 msgid "Apply to invoices"
 msgstr "Appliquer aux factures"
 
-msgid "applying…"
+msgid "Applying"
+msgstr ""
+
+msgid "Applying demo data"
 msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -2922,6 +2928,9 @@ msgstr "Compte de compensation entre la réception de marchandises et la facture
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Compte de compensation pour réception de marchandises / correspondance de réception de facture"
+
+msgid "Clearing demo data"
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "Cliquez à nouveau pour vous déconnecter"
@@ -11299,6 +11308,9 @@ msgstr "Unité de mesure d'achat"
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Poussez les modifications d'enregistrements vers des systèmes externes au moment où elles se produisent."
 
+msgid "Putting your data back"
+msgstr ""
+
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Code QR pour créer un {0} pour ce kanban"
@@ -12053,6 +12065,9 @@ msgstr "Restaurer cette entité au stock disponible dans le bac et au coût d'o�
 msgid "Restore tracked entities to available"
 msgstr "Restaurer les entités suivies en disponibles"
 
+msgid "Restoring files"
+msgstr ""
+
 msgid "Result"
 msgstr "Résultat"
 
@@ -12076,6 +12091,9 @@ msgstr "Mise hors service d'un actif par mise au rebut ou par vente, en comptabi
 
 msgid "Retry"
 msgstr "Réessayer"
+
+msgid "Retry revert"
+msgstr ""
 
 msgid "Return Home"
 msgstr "Retour à l'accueil"
@@ -12122,7 +12140,7 @@ msgstr "Contrepassé"
 msgid "Revert"
 msgstr ""
 
-msgid "reverting…"
+msgid "Reverting"
 msgstr ""
 
 msgid "Review"
@@ -12493,6 +12511,9 @@ msgstr "Enregistré"
 
 msgid "Saved Views"
 msgstr "Vues enregistrées"
+
+msgid "Saving a copy of your current data"
+msgstr ""
 
 msgid "Saving..."
 msgstr "Enregistrement..."
@@ -13536,6 +13557,9 @@ msgstr "Commencez par"
 
 msgid "Started"
 msgstr "Commencé"
+
+msgid "Starting…"
+msgstr ""
 
 msgid "State / Province"
 msgstr "État / Province"
@@ -14946,6 +14970,9 @@ msgstr "Ceci est un identifiant unique pour le webhook"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Ceci est un environnement contrôlé par l'ITAR. L'accès est restreint aux personnes des États-Unis."
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr ""
+
 msgid "This is the month your fiscal year starts."
 msgstr "C'est le mois où votre exercice fiscal commence."
 
@@ -15033,6 +15060,9 @@ msgstr "ce fournisseur"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Cela met à jour le thème pour tous les utilisateurs de l'application"
+
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr ""
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Cette version appartient à un <0>change notice</0> ouvert. Modifiez-le là."

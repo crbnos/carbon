@@ -62,6 +62,11 @@ export async function applyDataset(
     tiers?: number[] | null;
     log?: (message: string) => void;
     /**
+     * Tier-by-tier progress for a caller that shows a live UI. Awaited between
+     * tiers, so it must not touch `client` — its transaction is open here.
+     */
+    onProgress?: (p: { done: number; total: number }) => Promise<void>;
+    /**
      * Clear the company's existing business data before the tiers run, inside the
      * same transaction. Preserves everything bootstrap created (chart of accounts,
      * unitOfMeasure, sequences, locations, paymentTerm) because the tiers require
@@ -77,6 +82,7 @@ export async function applyDataset(
     timeZone,
     tiers = null,
     log = () => {},
+    onProgress,
     wipeFirst = false
   } = opts;
 
@@ -100,9 +106,12 @@ export async function applyDataset(
       await wipeCompanyBusinessData(ctx);
     }
 
-    for (const tier of selected) {
+    await onProgress?.({ done: 0, total: selected.length });
+    for (let i = 0; i < selected.length; i++) {
+      const tier = selected[i]!;
       log(`Tier ${tier.n}: ${tier.name}`);
       await tier.run(ctx);
+      await onProgress?.({ done: i + 1, total: selected.length });
     }
 
     await client.query("COMMIT");

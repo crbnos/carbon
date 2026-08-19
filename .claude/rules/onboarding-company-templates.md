@@ -63,6 +63,11 @@ asymmetry is deliberate: each wipe is paired with whatever repopulates after it.
 `wipeCompanyBusinessData` is NOT exported on its own — `wipeFirst` is the only way to
 reach it, so no caller can wipe without also re-seeding.
 
+`externalIntegrationMapping` is in that wipe's `PRESERVED_TABLES` because the wipe runs
+INSIDE the job whose own marker lives in that table. Without it the apply deleted the row
+holding `snapshotPath`, the `ready` write re-inserted a bare one, and the revert then had
+nothing to put back — a silent, unrecoverable loss of the user's pre-apply data.
+
 ## Three callers, one code path
 
 **Dev CLI** — `packages/database/src/seed-dev.ts`. Bootstraps a user + company if the
@@ -107,12 +112,36 @@ reuses `metadata.snapshotPath` rather than retaking it, or an attempt that ran a
 apply committed would capture the SEEDED state and destroy the user's real data. This is
 the same reuse rule `company-restore.ts` follows, for the same reason.
 
-The marker is written at phase boundaries only — there is deliberately **no** per-table
-progress reporter here, unlike `company-restore.ts`'s throttled `makeProgressReporter`.
-`wipeAndLoad` fires `onProgress` once per table, and a marker write per tick is a
-read-then-write on a JSONB column inside that function's own transaction: a few hundred
-tables becomes a thousand round-trips. The page polls the loader every 2.5 s and shows a
-spinner, so nothing consumes finer progress than `running` / `ready` / `reverting`.
+### Progress
+
+Both the apply and the revert are ONE durable `step.run` lasting minutes, so
+`metadata.progress` (`{ phase, done, total }`) is the only thing between the user and a
+page that looks frozen. Phases are stable KEYS — `snapshot`, `seed` (per tier, from
+`applyDataset`'s `onProgress`), `wipe`, `load` (per table, from `wipeAndLoad`), `files` —
+and `TemplateReviewRow` owns the human copy for each, so the job never bakes in display
+text. It is cleared (`progress: null`) on every terminal write.
+
+Every writer goes through `throttleProgress` in `company-backup.ts`, shared with
+`company-restore.ts`'s `makeProgressReporter`: same-phase ticks inside 250 ms are dropped,
+a phase change or a terminal `done === total` always flushes. Unthrottled this is a
+read-then-write on a JSONB column per table — a few hundred tables becomes a thousand
+round-trips. The write itself goes over supabase-js, its own connection, so it is safe to
+call from inside `wipeAndLoad`'s and `applyDataset`'s open transactions.
+
+The page revalidates its loader every 2.5 s; there is no status API route.
+
+### Recovering a stalled run
+
+If the process dies mid-run, no `catch` fires, and the marker sits on `running` /
+`reverting` forever with every button disabled — the marker's existence is what gates
+Apply. So the review row keeps the Revert button PRESENT (spinning) for the whole run
+rather than hiding it, and after `STALLED_AFTER_MS` (5 min) turns it into "Retry revert",
+enabled only when `hasSnapshot`. Re-firing the revert is safe: it re-reads the snapshot
+from the marker, and the shared concurrency key serialises it behind anything still live.
+
+Only Keep and Dismiss hide their row optimistically — they clear the marker through a job,
+so the row would otherwise linger a poll longer and read as "nothing happened". A revert
+must NOT do that: it keeps running, and the row is the only thing reporting that it is.
 
 Two more Inngest functions finish the story, sharing one env-scoped concurrency key
 (`'company-template-' + companyId`) with the apply so the three never overlap:

@@ -1171,6 +1171,9 @@ msgstr "Добавлено"
 msgid "Added for this customer"
 msgstr "Добавлено для этого клиента"
 
+msgid "Adding demo records"
+msgstr ""
+
 msgid "Adding..."
 msgstr "Добавление..."
 
@@ -1552,7 +1555,10 @@ msgstr "Применить к счету"
 msgid "Apply to invoices"
 msgstr "Применить к счетам"
 
-msgid "applying…"
+msgid "Applying"
+msgstr ""
+
+msgid "Applying demo data"
 msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -2922,6 +2928,9 @@ msgstr "Транзитный счет между поступлением тов
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Счет взаимного зачета для поступления товаров / сопоставления поступления счета"
+
+msgid "Clearing demo data"
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "Нажмите еще раз, чтобы отключить"
@@ -11299,6 +11308,9 @@ msgstr "Единица измерения закупки"
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Отправляйте изменения записей во внешние системы в момент их возникновения."
 
+msgid "Putting your data back"
+msgstr ""
+
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-код для создания {0} для этого канбана"
@@ -12053,6 +12065,9 @@ msgstr "Восстановить эту сущность в доступный �
 msgid "Restore tracked entities to available"
 msgstr "Восстановить отслеживаемые объекты в доступные"
 
+msgid "Restoring files"
+msgstr ""
+
 msgid "Result"
 msgstr "Результат"
 
@@ -12076,6 +12091,9 @@ msgstr "Вывод основного средства из эксплуатац
 
 msgid "Retry"
 msgstr "Повторить"
+
+msgid "Retry revert"
+msgstr ""
 
 msgid "Return Home"
 msgstr "Вернуться на главную"
@@ -12122,7 +12140,7 @@ msgstr "Сторнировано"
 msgid "Revert"
 msgstr ""
 
-msgid "reverting…"
+msgid "Reverting"
 msgstr ""
 
 msgid "Review"
@@ -12493,6 +12511,9 @@ msgstr "Сохранено"
 
 msgid "Saved Views"
 msgstr "Сохраненные представления"
+
+msgid "Saving a copy of your current data"
+msgstr ""
 
 msgid "Saving..."
 msgstr "Сохранение..."
@@ -13536,6 +13557,9 @@ msgstr "Начните с"
 
 msgid "Started"
 msgstr "Начал"
+
+msgid "Starting…"
+msgstr ""
 
 msgid "State / Province"
 msgstr "Штат / Провинция"
@@ -14946,6 +14970,9 @@ msgstr "Это уникальный идентификатор для вебху
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Это среда, контролируемая ITAR. Доступ ограничен для лиц США."
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr ""
+
 msgid "This is the month your fiscal year starts."
 msgstr "Это месяц, когда начинается ваш финансовый год."
 
@@ -15033,6 +15060,9 @@ msgstr "этот поставщик"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"
+
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr ""
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Эта версия принадлежит открытому <0>уведомлению об изменении</0>. Отредактируйте его там."

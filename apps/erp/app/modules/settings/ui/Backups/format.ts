@@ -28,6 +28,14 @@ export function formatBackupName(name: string): string {
     .join(" ");
 }
 
+/** "45s" / "2m 07s" — how long a long-running settings job has been going.
+ *  Shared by the backup progress dialog and the demo-data review row. */
+export function formatElapsed(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(s / 60);
+  return m > 0 ? `${m}m ${String(s % 60).padStart(2, "0")}s` : `${s}s`;
+}
+
 export function formatBackupDate(
   iso: string | null | undefined,
   withTime = true

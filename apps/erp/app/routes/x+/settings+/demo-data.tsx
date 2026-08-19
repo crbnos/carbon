@@ -9,6 +9,7 @@ import { Trans } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useRevalidator } from "react-router";
+import type { CompanyTemplateRun } from "~/modules/settings";
 import { getCompanyTemplateRun } from "~/modules/settings";
 import {
   finalizeCompanyTemplate,
@@ -157,17 +158,43 @@ export default function DemoDataRoute() {
   const { run, datasets } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
 
-  // A resolved row is hidden the moment the user acts, not when the async
-  // finalize/revert lands — otherwise it lingers and reads as "nothing happened".
+  // Keep/Dismiss clear the marker through a job, so the row is hidden the moment
+  // the user acts rather than a poll later. A REVERT is not resolved here — it
+  // keeps running, and the row is the only thing reporting that it is.
   const [resolvedRunIds, setResolvedRunIds] = useState<string[]>([]);
 
-  const active = run !== null && run.status !== "failed";
-  const pending =
-    run !== null && !resolvedRunIds.includes(run.templateRunId) ? run : null;
+  // Apply only ENQUEUES the job, so its fetcher goes idle a moment later with no
+  // marker written yet — without this the button's spinner vanishes and the page
+  // looks like nothing happened. Stands in until the loader sees a real run.
+  const [pendingApplyKey, setPendingApplyKey] = useState<string | null>(null);
+  const hasRun = run !== null;
+  useEffect(() => {
+    if (hasRun) setPendingApplyKey(null);
+  }, [hasRun]);
 
-  // The loader is the only source of run state. The job writes the marker at
-  // phase boundaries, not per table, so there is nothing a faster poll could
-  // show — this revalidate is what moves the row from "applying…" to Keep/Revert.
+  const optimisticRun: CompanyTemplateRun | null =
+    !hasRun && pendingApplyKey !== null
+      ? {
+          templateRunId: "",
+          status: "running",
+          datasetKey: pendingApplyKey,
+          startedAt: null,
+          error: null,
+          progress: null,
+          hasSnapshot: false
+        }
+      : null;
+
+  const active =
+    (run !== null && run.status !== "failed") || pendingApplyKey !== null;
+  const pending =
+    (run !== null && !resolvedRunIds.includes(run.templateRunId)
+      ? run
+      : null) ?? optimisticRun;
+
+  // The loader is the only source of run state — this revalidate is what moves
+  // the row from "applying…" to Keep/Revert. The job throttles its own marker
+  // writes, so a faster poll would only re-read the same row.
   useEffect(() => {
     if (!active) return;
     const id = setInterval(() => revalidator.revalidate(), 2500);
@@ -175,8 +202,8 @@ export default function DemoDataRoute() {
   }, [active, revalidator]);
 
   const datasetLabel = useMemo(
-    () => datasets.find((d) => d.key === run?.datasetKey)?.label ?? null,
-    [datasets, run]
+    () => datasets.find((d) => d.key === pending?.datasetKey)?.label ?? null,
+    [datasets, pending]
   );
 
   return (
@@ -201,7 +228,11 @@ export default function DemoDataRoute() {
         />
       )}
 
-      <TemplateCards datasets={datasets} disabled={active} />
+      <TemplateCards
+        datasets={datasets}
+        disabled={active}
+        onApply={setPendingApplyKey}
+      />
     </VStack>
   );
 }

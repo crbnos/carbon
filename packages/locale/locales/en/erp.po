@@ -1171,6 +1171,9 @@ msgstr "Added"
 msgid "Added for this customer"
 msgstr "Added for this customer"
 
+msgid "Adding demo records"
+msgstr "Adding demo records"
+
 msgid "Adding..."
 msgstr "Adding..."
 
@@ -1552,8 +1555,11 @@ msgstr "Apply to invoice"
 msgid "Apply to invoices"
 msgstr "Apply to invoices"
 
-msgid "applying…"
-msgstr "applying…"
+msgid "Applying"
+msgstr "Applying"
+
+msgid "Applying demo data"
+msgstr "Applying demo data"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -2922,6 +2928,9 @@ msgstr "Clearing account between goods receipt and supplier invoice; balances wh
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Clearing account for goods received / invoice received matching"
+
+msgid "Clearing demo data"
+msgstr "Clearing demo data"
 
 msgid "Click again to disconnect"
 msgstr "Click again to disconnect"
@@ -11299,6 +11308,9 @@ msgstr "Purchasing Unit of Measure"
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Push record changes to external systems the moment they happen."
 
+msgid "Putting your data back"
+msgstr "Putting your data back"
+
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR Code to create a {0} for this kanban"
@@ -12053,6 +12065,9 @@ msgstr "Restore this entity to available stock at the bin and cost it was scrapp
 msgid "Restore tracked entities to available"
 msgstr "Restore tracked entities to available"
 
+msgid "Restoring files"
+msgstr "Restoring files"
+
 msgid "Result"
 msgstr "Result"
 
@@ -12076,6 +12091,9 @@ msgstr "Retiring an asset from service by scrapping or sale, booking any gain or
 
 msgid "Retry"
 msgstr "Retry"
+
+msgid "Retry revert"
+msgstr "Retry revert"
 
 msgid "Return Home"
 msgstr "Return Home"
@@ -12122,8 +12140,8 @@ msgstr "Reversed"
 msgid "Revert"
 msgstr "Revert"
 
-msgid "reverting…"
-msgstr "reverting…"
+msgid "Reverting"
+msgstr "Reverting"
 
 msgid "Review"
 msgstr "Review"
@@ -12493,6 +12511,9 @@ msgstr "Saved"
 
 msgid "Saved Views"
 msgstr "Saved Views"
+
+msgid "Saving a copy of your current data"
+msgstr "Saving a copy of your current data"
 
 msgid "Saving..."
 msgstr "Saving..."
@@ -13536,6 +13557,9 @@ msgstr "Start with"
 
 msgid "Started"
 msgstr "Started"
+
+msgid "Starting…"
+msgstr "Starting…"
 
 msgid "State / Province"
 msgstr "State / Province"
@@ -14946,6 +14970,9 @@ msgstr "This is a unique identifier for the webhook"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+
 msgid "This is the month your fiscal year starts."
 msgstr "This is the month your fiscal year starts."
 
@@ -15033,6 +15060,9 @@ msgstr "this supplier"
 
 msgid "This updates the theme for all users of the application"
 msgstr "This updates the theme for all users of the application"
+
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr "This usually takes a few seconds. You can leave the page — it keeps running."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "This version belongs to an open <0>change notice</0>. Edit it there."

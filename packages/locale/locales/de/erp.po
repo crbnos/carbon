@@ -1171,6 +1171,9 @@ msgstr "Hinzugefügt"
 msgid "Added for this customer"
 msgstr "Für diesen Kunden hinzugefügt"
 
+msgid "Adding demo records"
+msgstr ""
+
 msgid "Adding..."
 msgstr "Wird hinzugefügt..."
 
@@ -1552,7 +1555,10 @@ msgstr "Auf Rechnung anwenden"
 msgid "Apply to invoices"
 msgstr "Auf Rechnungen anwenden"
 
-msgid "applying…"
+msgid "Applying"
+msgstr ""
+
+msgid "Applying demo data"
 msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -2922,6 +2928,9 @@ msgstr "Verrechnungskonto zwischen Wareneingang und Lieferantenrechnung; wird au
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Verrechnungskonto für Wareneingang / Rechnungseingang Abgleich"
+
+msgid "Clearing demo data"
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "Klicken Sie erneut, um die Verbindung zu trennen"
@@ -11299,6 +11308,9 @@ msgstr "Einkaufsmaßeinheit"
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Übertragen Sie Datensatzänderungen in dem Moment an externe Systeme, in dem sie auftreten."
 
+msgid "Putting your data back"
+msgstr ""
+
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-Code zum Erstellen eines {0} für diesen Kanban"
@@ -12053,6 +12065,9 @@ msgstr "Diese Entität zum verfügbaren Bestand in dem Behälter und den Kosten 
 msgid "Restore tracked entities to available"
 msgstr "Nachverfolgter Entitäten als verfügbar wiederherstellen"
 
+msgid "Restoring files"
+msgstr ""
+
 msgid "Result"
 msgstr "Ergebnis"
 
@@ -12076,6 +12091,9 @@ msgstr "Außerdienststellung eines Vermögenswerts durch Verschrottung oder Verk
 
 msgid "Retry"
 msgstr "Erneut versuchen"
+
+msgid "Retry revert"
+msgstr ""
 
 msgid "Return Home"
 msgstr "Zur Startseite zurück"
@@ -12122,7 +12140,7 @@ msgstr "Rückgängig gemacht"
 msgid "Revert"
 msgstr ""
 
-msgid "reverting…"
+msgid "Reverting"
 msgstr ""
 
 msgid "Review"
@@ -12493,6 +12511,9 @@ msgstr "Gespeichert"
 
 msgid "Saved Views"
 msgstr "Gespeicherte Ansichten"
+
+msgid "Saving a copy of your current data"
+msgstr ""
 
 msgid "Saving..."
 msgstr "Wird gespeichert..."
@@ -13536,6 +13557,9 @@ msgstr "Beginnen Sie mit"
 
 msgid "Started"
 msgstr "Gestartet"
+
+msgid "Starting…"
+msgstr ""
 
 msgid "State / Province"
 msgstr "Bundesland / Provinz"
@@ -14946,6 +14970,9 @@ msgstr "Dies ist eine eindeutige Kennung für den Webhook"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Dies ist eine ITAR-kontrollierte Umgebung. Der Zugriff ist auf U.S. Personen beschränkt."
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr ""
+
 msgid "This is the month your fiscal year starts."
 msgstr "Dies ist der Monat, in dem Ihr Geschäftsjahr beginnt."
 
@@ -15033,6 +15060,9 @@ msgstr "dieser Lieferant"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Dies aktualisiert das Design für alle Benutzer der Anwendung"
+
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr ""
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Diese Version gehört zu einer offenen <0>Änderungsmitteilung</0>. Bearbeiten Sie sie dort."

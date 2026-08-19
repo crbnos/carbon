@@ -1171,6 +1171,9 @@ msgstr "जोड़ा गया"
 msgid "Added for this customer"
 msgstr "इस ग्राहक के लिए जोड़ा गया"
 
+msgid "Adding demo records"
+msgstr ""
+
 msgid "Adding..."
 msgstr "जोड़ा जा रहा है..."
 
@@ -1552,7 +1555,10 @@ msgstr "चालान पर लागू करें"
 msgid "Apply to invoices"
 msgstr "चालानों पर लागू करें"
 
-msgid "applying…"
+msgid "Applying"
+msgstr ""
+
+msgid "Applying demo data"
 msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -2922,6 +2928,9 @@ msgstr "माल की प्राप्ति और आपूर्ति�
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "माल की प्राप्ति / चालान प्राप्ति मिलान के लिए समाशोधन खाता"
+
+msgid "Clearing demo data"
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "डिस्कनेक्ट करने के लिए फिर से क्लिक करें"
@@ -11299,6 +11308,9 @@ msgstr "क्रय माप की इकाई"
 msgid "Push record changes to external systems the moment they happen."
 msgstr "रिकॉर्ड परिवर्तनों को बाहरी सिस्टम में तुरंत भेजें जब वे होते हैं।"
 
+msgid "Putting your data back"
+msgstr ""
+
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
 msgstr "इस कनबन के लिए {0} बनाने के लिए QR कोड"
@@ -12053,6 +12065,9 @@ msgstr "इस इकाई को उसी बिन और लागत प�
 msgid "Restore tracked entities to available"
 msgstr "ट्रैक किए गए इकाइयों को उपलब्ध में पुनः स्थापित करें"
 
+msgid "Restoring files"
+msgstr ""
+
 msgid "Result"
 msgstr "परिणाम"
 
@@ -12076,6 +12091,9 @@ msgstr "स्क्रैपिंग या बिक्री द्वार
 
 msgid "Retry"
 msgstr "पुनः प्रयास करें"
+
+msgid "Retry revert"
+msgstr ""
 
 msgid "Return Home"
 msgstr "घर लौटें"
@@ -12122,7 +12140,7 @@ msgstr "उलट दिया गया"
 msgid "Revert"
 msgstr ""
 
-msgid "reverting…"
+msgid "Reverting"
 msgstr ""
 
 msgid "Review"
@@ -12493,6 +12511,9 @@ msgstr "सहेजा गया"
 
 msgid "Saved Views"
 msgstr "सहेजे गए दृश्य"
+
+msgid "Saving a copy of your current data"
+msgstr ""
 
 msgid "Saving..."
 msgstr "सहेज रहे हैं..."
@@ -13536,6 +13557,9 @@ msgstr "शुरुआत करें"
 
 msgid "Started"
 msgstr "शुरू किया गया"
+
+msgid "Starting…"
+msgstr ""
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
@@ -14946,6 +14970,9 @@ msgstr "यह वेबहुक के लिए एक अद्विती�
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "यह एक ITAR-नियंत्रित वातावरण है। पहुंच U.S. व्यक्तियों तक सीमित है।"
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr ""
+
 msgid "This is the month your fiscal year starts."
 msgstr "यह वह महीना है जब आपका वित्तीय वर्ष शुरू होता है।"
 
@@ -15033,6 +15060,9 @@ msgstr "यह आपूर्तिकर्ता"
 
 msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम को अपडेट करता है"
+
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr ""
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "यह संस्करण एक खुली <0>परिवर्तन सूचना</0> के अंतर्गत है। इसे वहाँ संपादित करें।"

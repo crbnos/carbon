@@ -1171,6 +1171,9 @@ msgstr "追加済み"
 msgid "Added for this customer"
 msgstr "このカスタマー向けに追加"
 
+msgid "Adding demo records"
+msgstr ""
+
 msgid "Adding..."
 msgstr "追加中..."
 
@@ -1552,7 +1555,10 @@ msgstr "請求書に適用"
 msgid "Apply to invoices"
 msgstr "請求書に適用"
 
-msgid "applying…"
+msgid "Applying"
+msgstr ""
+
+msgid "Applying demo data"
 msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -2922,6 +2928,9 @@ msgstr "商品受領と仕入先請求書間の相殺勘定; 両方が転記さ�
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "商品受領/請求書受領照合用相殺勘定"
+
+msgid "Clearing demo data"
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "再度クリックして切断"
@@ -11299,6 +11308,9 @@ msgstr "購買単位"
 msgid "Push record changes to external systems the moment they happen."
 msgstr "レコードの変更が発生した瞬間に外部システムにプッシュします。"
 
+msgid "Putting your data back"
+msgstr ""
+
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
 msgstr "このカンバンの{0}を作成するためのQRコード"
@@ -12053,6 +12065,9 @@ msgstr "このエンティティを、スクラップされた元のビンと原
 msgid "Restore tracked entities to available"
 msgstr "追跡対象エンティティを利用可能に復元"
 
+msgid "Restoring files"
+msgstr ""
+
 msgid "Result"
 msgstr "結果"
 
@@ -12076,6 +12091,9 @@ msgstr "除却または売却により資産を稼働から除外し、正味簿
 
 msgid "Retry"
 msgstr "再試行"
+
+msgid "Retry revert"
+msgstr ""
 
 msgid "Return Home"
 msgstr "ホームに戻る"
@@ -12122,7 +12140,7 @@ msgstr "反転"
 msgid "Revert"
 msgstr ""
 
-msgid "reverting…"
+msgid "Reverting"
 msgstr ""
 
 msgid "Review"
@@ -12493,6 +12511,9 @@ msgstr "保存済み"
 
 msgid "Saved Views"
 msgstr "保存済みビュー"
+
+msgid "Saving a copy of your current data"
+msgstr ""
 
 msgid "Saving..."
 msgstr "保存中..."
@@ -13536,6 +13557,9 @@ msgstr "まず"
 
 msgid "Started"
 msgstr "開始"
+
+msgid "Starting…"
+msgstr ""
 
 msgid "State / Province"
 msgstr "都道府県"
@@ -14946,6 +14970,9 @@ msgstr "これはウェブフックの一意の識別子です"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "これはITAR管理環境です。アクセスは米国人に限定されています。"
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr ""
+
 msgid "This is the month your fiscal year starts."
 msgstr "これはあなたの会計年度が始まる月です。"
 
@@ -15033,6 +15060,9 @@ msgstr "このサプライヤー"
 
 msgid "This updates the theme for all users of the application"
 msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
+
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr ""
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "このバージョンはオープンな<0>変更通知</0>に属しています。そこで編集してください。"

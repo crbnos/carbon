@@ -3,7 +3,7 @@ import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
-import type { Catalog, CompanyBackup } from "./company-backup";
+import type { Catalog, CompanyBackup, JobProgress } from "./company-backup";
 import {
   assertBackupImportable,
   assertWipeSafe,
@@ -20,6 +20,7 @@ import {
   removeStoragePrefix,
   restoreAssetsFromBackup,
   selectWipeableTables,
+  throttleProgress,
   wipeScopedData,
   writeBackupManifest
 } from "./company-backup";
@@ -214,10 +215,6 @@ export async function wipeAndLoad(
 }
 
 type RestoreStatus = "running" | "ready" | "failed" | "reverting";
-/** Live progress of the current phase. `phase` is a stable KEY
- *  (`snapshot`/`wipe`/`load`/`files`); the UI maps it to a human label per mode
- *  (restore vs revert), so the job never bakes in display copy. */
-type JobProgress = { phase: string; done: number; total: number };
 type RestoreMeta = {
   restoreRunId: string;
   status: RestoreStatus;
@@ -343,35 +340,16 @@ async function writeRestoreMarker(
   }
 }
 
-// Throttled progress writer: drop same-phase ticks within the window, always
-// flush a phase change or a terminal done===total. The marker write is a separate
-// connection, so this is safe to call inside the wipe+load transaction.
-const PROGRESS_THROTTLE_MS = 250;
+// The marker write is a separate connection, so this is safe to call inside the
+// wipe+load transaction.
 function makeProgressReporter(
   client: ServiceRole,
   companyId: string,
   restoreRunId: string
 ): (p: JobProgress) => Promise<void> {
-  let lastAt = 0;
-  let lastPhase = "";
-  return async (progress) => {
-    const now = Date.now();
-    const terminal = progress.done >= progress.total;
-    if (
-      progress.phase === lastPhase &&
-      !terminal &&
-      now - lastAt < PROGRESS_THROTTLE_MS
-    ) {
-      return;
-    }
-    lastPhase = progress.phase;
-    lastAt = now;
-    await writeRestoreMarker(client, {
-      companyId,
-      restoreRunId,
-      patch: { progress }
-    });
-  };
+  return throttleProgress((progress) =>
+    writeRestoreMarker(client, { companyId, restoreRunId, patch: { progress } })
+  );
 }
 
 async function deleteRestoreMarker(

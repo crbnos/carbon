@@ -1171,6 +1171,9 @@ msgstr "已添加"
 msgid "Added for this customer"
 msgstr "为此客户添加"
 
+msgid "Adding demo records"
+msgstr ""
+
 msgid "Adding..."
 msgstr "添加中..."
 
@@ -1552,7 +1555,10 @@ msgstr "应用到发票"
 msgid "Apply to invoices"
 msgstr "应用于发票"
 
-msgid "applying…"
+msgid "Applying"
+msgstr ""
+
+msgid "Applying demo data"
 msgstr ""
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
@@ -2922,6 +2928,9 @@ msgstr "商品收据和供应商发票之间的清算账户; 当两者都已过�
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "商品收据/发票收据匹配的清算账户"
+
+msgid "Clearing demo data"
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "再次单击以断开连接"
@@ -11299,6 +11308,9 @@ msgstr "采购计量单位"
 msgid "Push record changes to external systems the moment they happen."
 msgstr "将记录更改实时推送到外部系统。"
 
+msgid "Putting your data back"
+msgstr ""
+
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
 msgstr "二维码以为此看板创建{0}"
@@ -12053,6 +12065,9 @@ msgstr "将此实体恢复到报废时所在的仓位和成本的可用库存。
 msgid "Restore tracked entities to available"
 msgstr "将跟踪的实体恢复为可用"
 
+msgid "Restoring files"
+msgstr ""
+
 msgid "Result"
 msgstr "结果"
 
@@ -12076,6 +12091,9 @@ msgstr "通过报废或出售将资产退出使用，将收益或损失计入账
 
 msgid "Retry"
 msgstr "重试"
+
+msgid "Retry revert"
+msgstr ""
 
 msgid "Return Home"
 msgstr "返回首页"
@@ -12122,7 +12140,7 @@ msgstr "已冲销"
 msgid "Revert"
 msgstr ""
 
-msgid "reverting…"
+msgid "Reverting"
 msgstr ""
 
 msgid "Review"
@@ -12493,6 +12511,9 @@ msgstr "已保存"
 
 msgid "Saved Views"
 msgstr "已保存视图"
+
+msgid "Saving a copy of your current data"
+msgstr ""
 
 msgid "Saving..."
 msgstr "保存中..."
@@ -13536,6 +13557,9 @@ msgstr "从以下开始"
 
 msgid "Started"
 msgstr "开始于"
+
+msgid "Starting…"
+msgstr ""
 
 msgid "State / Province"
 msgstr "州/省"
@@ -14946,6 +14970,9 @@ msgstr "这是webhook的唯一标识符"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "这是一个 ITAR 受控环境。访问仅限于美国人。"
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr ""
+
 msgid "This is the month your fiscal year starts."
 msgstr "这是您的财政年度开始的月份。"
 
@@ -15033,6 +15060,9 @@ msgstr "此供应商"
 
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"
+
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr ""
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "此版本属于开放的<0>变更通知</0>。请在那里编辑。"

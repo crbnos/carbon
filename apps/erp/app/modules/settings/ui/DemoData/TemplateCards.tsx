@@ -9,6 +9,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
+import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
 
@@ -19,12 +20,22 @@ import { path } from "~/utils/path";
  */
 export function TemplateCards({
   datasets,
-  disabled
+  disabled,
+  onApply
 }: {
   datasets: { key: string; label: string }[];
   disabled: boolean;
+  /** Fired on click so the page can show the run before the job writes its
+   *  marker — this fetcher goes idle as soon as the event is QUEUED. Called with
+   *  null if the action refused, so the stand-in row doesn't spin forever. */
+  onApply: (datasetKey: string | null) => void;
 }) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{ success: boolean }>();
+
+  const refused = fetcher.state === "idle" && fetcher.data?.success === false;
+  useEffect(() => {
+    if (refused) onApply(null);
+  }, [refused, onApply]);
 
   return (
     <Card className="w-full">
@@ -55,12 +66,13 @@ export function TemplateCards({
                   fetcher.state !== "idle" &&
                   fetcher.formData?.get("datasetKey") === dataset.key
                 }
-                onClick={() =>
+                onClick={() => {
+                  onApply(dataset.key);
                   fetcher.submit(
                     { intent: "apply", datasetKey: dataset.key },
                     { method: "post", action: path.to.demoData }
-                  )
-                }
+                  );
+                }}
               >
                 <Trans>Apply</Trans>
               </Button>

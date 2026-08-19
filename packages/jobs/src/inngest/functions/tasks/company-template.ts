@@ -10,9 +10,11 @@ import {
   backupAssetsDir,
   backupDir,
   getCompanyTableCatalog,
+  type JobProgress,
   readBackup,
   removeStoragePrefix,
   restoreAssetsFromBackup,
+  throttleProgress,
   writeBackupManifest
 } from "./company-backup";
 import { buildCompanyBackup } from "./company-export";
@@ -42,6 +44,8 @@ type TemplateMeta = {
   snapshotPath?: string;
   /** Scope the forward apply covered, so a revert undoes exactly that. */
   includeGroup?: boolean;
+  /** Live phase progress, so a run that takes minutes doesn't look hung. */
+  progress?: JobProgress | null;
 };
 
 /**
@@ -122,6 +126,19 @@ async function writeTemplateMarker(
   }
 }
 
+/**
+ * Throttled progress writer. Both the apply and the revert run as ONE durable
+ * step, so this marker is the only thing the page can read while they work.
+ */
+function makeProgressReporter(
+  client: ServiceRole,
+  args: { companyId: string; userId: string; templateRunId: string }
+): (p: JobProgress) => Promise<void> {
+  return throttleProgress((progress) =>
+    writeTemplateMarker(client, { ...args, patch: { progress } })
+  );
+}
+
 async function clearTemplateMarker(
   client: ServiceRole,
   companyId: string
@@ -198,6 +215,12 @@ export const companyTemplateFunction = inngest.createFunction(
         }
       });
 
+      const report = makeProgressReporter(client, {
+        companyId,
+        userId,
+        templateRunId
+      });
+
       // Everything past the `running` marker must be able to reach the failure
       // marker. getCompanyTimeZone throws on a read error and pool.connect()
       // throws on its 10s acquisition timeout — outside this try, either would
@@ -219,7 +242,8 @@ export const companyTemplateFunction = inngest.createFunction(
             userId,
             label: `Pre-template ${templateRunId}`,
             includeStorage: "all",
-            name: snapshotPath
+            name: snapshotPath,
+            onProgress: (p) => report({ ...p, phase: "snapshot" })
           });
           await writeBackupManifest(
             client,
@@ -249,7 +273,10 @@ export const companyTemplateFunction = inngest.createFunction(
           // Tied to takeSnapshot deliberately: wiping without a snapshot would
           // be unrecoverable, so the two are never allowed to diverge.
           wipeFirst: takeSnapshot,
-          log: (message) => logger.info(message, { companyId, templateRunId })
+          log: (message) => logger.info(message, { companyId, templateRunId }),
+          // Safe inside applyDataset's open transaction: the marker write goes
+          // over supabase-js (its own connection), never `pgClient`.
+          onProgress: (p) => report({ ...p, phase: "seed" })
         });
       } catch (err) {
         await writeTemplateMarker(client, {
@@ -259,6 +286,7 @@ export const companyTemplateFunction = inngest.createFunction(
           patch: {
             status: "failed",
             datasetKey,
+            progress: null,
             error: (err as Error).message
           }
         });
@@ -274,7 +302,7 @@ export const companyTemplateFunction = inngest.createFunction(
           companyId,
           userId,
           templateRunId,
-          patch: { status: "ready" }
+          patch: { status: "ready", progress: null }
         });
       } else {
         // The data landing IS the success signal; a lingering marker would read
@@ -355,21 +383,44 @@ export const companyTemplateRevertFunction = inngest.createFunction(
       const marker = await readTemplateMarker(client, companyId);
       const snapshotPath = marker?.metadata.snapshotPath;
       if (!snapshotPath) {
-        logger.info("Nothing to revert — no snapshot on marker", {
+        // Settle as failed rather than returning quietly: the marker is what
+        // blocks a new apply, so a silent no-op leaves the user with a Revert
+        // button that does nothing and no way forward. Failed offers Dismiss.
+        logger.error("Nothing to revert — no snapshot on marker", {
+          companyId,
           templateRunId
         });
+        if (marker) {
+          await writeTemplateMarker(client, {
+            companyId,
+            userId,
+            templateRunId,
+            patch: {
+              status: "failed",
+              progress: null,
+              error:
+                "No snapshot was recorded for this run, so it cannot be reverted."
+            }
+          });
+        }
         return { templateRunId, reverted: false };
       }
 
-      // Flag the run as reverting so the page can show it is in flight. This is
-      // the only write between here and the terminal one: `wipeAndLoad` fires
-      // onProgress once per table, and a marker write per tick would be hundreds
-      // of round-trips against a JSONB column inside its transaction.
+      // Flag the run as reverting so the page can show it is in flight.
       await writeTemplateMarker(client, {
         companyId,
         userId,
         templateRunId,
-        patch: { status: "reverting", startedAt: datetime.timestamp() }
+        patch: {
+          status: "reverting",
+          startedAt: datetime.timestamp(),
+          progress: null
+        }
+      });
+      const report = makeProgressReporter(client, {
+        companyId,
+        userId,
+        templateRunId
       });
 
       try {
@@ -386,8 +437,10 @@ export const companyTemplateRevertFunction = inngest.createFunction(
           userId: "",
           remap: false,
           includeGroup: marker?.metadata.includeGroup ?? false,
-          targetGroupId
+          targetGroupId,
+          onProgress: report
         });
+        await report({ phase: "files", done: 0, total: 1 });
         await restoreAssetsFromBackup(client, {
           files: snapshot.manifest.storage,
           srcBucket: companyId,
@@ -414,7 +467,11 @@ export const companyTemplateRevertFunction = inngest.createFunction(
           companyId,
           userId,
           templateRunId,
-          patch: { status: "failed", error: `Revert failed: ${message}` }
+          patch: {
+            status: "failed",
+            progress: null,
+            error: `Revert failed: ${message}`
+          }
         });
         logger.error("Demo template revert failed", {
           companyId,
