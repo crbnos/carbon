@@ -646,7 +646,7 @@ function normalizeSupersessionMode(
 
 // -----------------------------------------------------------------------------
 // getItemOrderabilityIssue — can this item be put on a customer- or supplier-
-// facing document line?
+// facing document line? Returns why not, in plain language, or null.
 //
 // Two states say no:
 //   inactive   — the item was deactivated, or it is a change-order draft that
@@ -660,7 +660,15 @@ function normalizeSupersessionMode(
 // place as a provenance back-link, so the owning CO's status is what decides.
 // Pass a service-role client: reading `changeOrder` requires `parts_view`,
 // which a sales user need not have.
+//
+// A missing item returns null: that is the foreign key's problem, and reporting
+// it here would mask the real error.
 // -----------------------------------------------------------------------------
+
+// Release IS the Implementation -> Done transition (applyChangeNotice), so
+// every other status leaves the items the change order minted as drafts.
+const RELEASED_CHANGE_ORDER_STATUS = "Done";
+
 export async function getItemOrderabilityIssue(
   client: SupabaseClient<Database>,
   args: { itemId: string; companyId: string }
@@ -674,8 +682,10 @@ export async function getItemOrderabilityIssue(
 
   if (item.error || !item.data) return null;
 
-  const name = item.data.readableIdWithRevision;
+  const name = item.data.readableIdWithRevision ?? "This item";
 
+  // Checked before `active` because it is the more specific, more actionable
+  // reason, and because a draft can be switched Active by hand.
   if (item.data.changeOrderId) {
     const changeOrder = await client
       .from("changeOrder")
@@ -684,7 +694,10 @@ export async function getItemOrderabilityIssue(
       .eq("companyId", args.companyId)
       .maybeSingle();
 
-    if (changeOrder.data && changeOrder.data.status !== "Done") {
+    if (
+      changeOrder.data &&
+      changeOrder.data.status !== RELEASED_CHANGE_ORDER_STATUS
+    ) {
       return `${name} was created by change order ${changeOrder.data.changeOrderId}, which has not been released yet.`;
     }
   }

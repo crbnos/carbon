@@ -39,12 +39,13 @@ import ToolForm from "~/modules/items/ui/Tools/ToolForm";
 import type { ItemType, MethodItemType } from "~/modules/shared";
 import { itemType, methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
-import { latestRevisionByReadableId } from "~/stores/items";
 import { path } from "~/utils/path";
 import { MethodItemTypeIcon } from "../Icons";
 import { ItemLifecycleBadge } from "../ItemLifecycleBadge";
 import type { EntityKey } from "./emptyStates";
 import { useEmptyState } from "./emptyStates";
+import type { ItemIneligibility } from "./itemPickerSelection";
+import { getItemPickerEntries } from "./itemPickerSelection";
 
 type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   isReadOnly?: boolean;
@@ -133,134 +134,93 @@ const Item = ({
   const [value, setValue] = useControlField<string | undefined>(name);
   const resolvedIsOptional = isOptional ?? fieldIsOptional ?? false;
 
+  const entries = useMemo(
+    () =>
+      getItemPickerEntries(items, {
+        type,
+        validItemTypes,
+        replenishmentSystem: props.replenishmentSystem,
+        latestRevisionOnly: props.latestRevisionOnly,
+        whitelist: props.whitelist,
+        blacklist: props.blacklist,
+        includeInactive: props.includeInactive,
+        showIneligible: props.showIneligible,
+        eligibleItemIds: props.eligibleItemIds,
+        selectedId: value || (props.value as string | undefined)
+      }),
+    [
+      items,
+      props.blacklist,
+      props.eligibleItemIds,
+      props.includeInactive,
+      props.latestRevisionOnly,
+      props.replenishmentSystem,
+      props.showIneligible,
+      props.value,
+      props.whitelist,
+      type,
+      validItemTypes,
+      value
+    ]
+  );
+
   const options = useMemo(() => {
-    let filtered = items.filter((item) => {
-      // Filter by type
-      // @ts-expect-error
-      if (validItemTypes && !validItemTypes.includes(item.type)) return false;
-
-      if (type !== "Item" && type !== item.type) return false;
-
-      // Filter by active status. `showIneligible` keeps the row and lets the
-      // disabled pass below explain it instead.
-      if (!props.includeInactive && !props.showIneligible && !item.active)
-        return false;
-
-      // Filter by replenishment system
-      if (props.replenishmentSystem) {
-        const systemMatches =
-          item.replenishmentSystem === props.replenishmentSystem ||
-          item.replenishmentSystem === "Buy and Make" ||
-          props.replenishmentSystem === item.replenishmentSystem;
-
-        if (!systemMatches) return false;
+    // Plain-language wording for each reason an item cannot be chosen. The rule
+    // itself lives in getItemPickerEntries; this is only how it reads.
+    const ineligibilityMessage = (reason: ItemIneligibility) => {
+      switch (reason) {
+        case "inactive":
+          return t`This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it.`;
+        default:
+          return "";
       }
+    };
 
-      return true;
-    });
-
-    // Collapse to a single current revision per part.
-    if (props.latestRevisionOnly) {
-      filtered = latestRevisionByReadableId(filtered);
-    }
-
-    const toOption = (item: (typeof items)[number]) => {
+    const toOption = ({
+      item,
+      ineligibility,
+      isCurrentValue
+    }: (typeof entries)[number]) => {
       const scopedQuantity = props.locationId
         ? item.quantityByLocation?.[props.locationId]
         : item.quantityOnHand;
+
+      // The current value is already saved on the record, so it stays
+      // selectable and is labelled instead of greyed out.
+      const readableId =
+        ineligibility && isCurrentValue ? (
+          <span className="flex items-center gap-1.5">
+            {item.readableIdWithRevision}
+            <Status color="gray">{t`Inactive`}</Status>
+          </span>
+        ) : (
+          item.readableIdWithRevision
+        );
+
       return {
         value: item.id,
         label: item.supersessionMode ? (
           <span className="flex items-center gap-1.5">
-            {item.readableIdWithRevision}
+            {readableId}
             <ItemLifecycleBadge mode={item.supersessionMode} />
           </span>
         ) : (
-          item.readableIdWithRevision
+          readableId
         ),
         helper: item.name,
         helperRight:
           scopedQuantity !== undefined
             ? `${scopedQuantity} ${item.unitOfMeasureCode}`
-            : undefined
+            : undefined,
+        disabled: !!ineligibility && !isCurrentValue,
+        disabledReason: ineligibility
+          ? ineligibilityMessage(ineligibility)
+          : undefined
       };
     };
 
-    // Why an item cannot be chosen, in the words an end user would use. Null
-    // means it is fine to select.
-    const ineligibilityReason = (item: (typeof items)[number]) => {
-      if (props.includeInactive || !props.showIneligible) return null;
-      if (props.eligibleItemIds?.includes(item.id)) return null;
-      if (!item.active)
-        return t`This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it.`;
-      return null;
-    };
-
-    let results = filtered.map((item) => {
-      const reason = ineligibilityReason(item);
-      return reason
-        ? { ...toOption(item), disabled: true, disabledReason: reason }
-        : toOption(item);
-    });
-
-    if (props.whitelist) {
-      results = results.filter((item) => props.whitelist?.includes(item.value));
-    }
-
-    if (props.blacklist) {
-      results = results.filter(
-        (item) => !props.blacklist?.includes(item.value)
-      );
-    }
-
-    // A record can legitimately point at an item the filters now exclude — it
-    // was deactivated after the line was written, for instance. Dropping it
-    // would render the field blank and let the next save rewrite the record
-    // silently, so the current value is always kept selectable. It stays out of
-    // the list only when a caller explicitly blacklisted it.
-    const selectedId = value || (props.value as string | undefined);
-    if (
-      selectedId &&
-      !results.some((r) => r.value === selectedId) &&
-      !props.blacklist?.includes(selectedId)
-    ) {
-      const selected = items.find((i) => i.id === selectedId);
-      if (selected) {
-        const option = toOption(selected);
-        results = [
-          selected.active
-            ? option
-            : {
-                ...option,
-                label: (
-                  <span className="flex items-center gap-1.5">
-                    {option.label}
-                    <Status color="gray">{t`Inactive`}</Status>
-                  </span>
-                )
-              },
-          ...results
-        ];
-      }
-    }
-
-    return results;
-  }, [
-    items,
-    props?.includeInactive,
-    props.blacklist,
-    props.latestRevisionOnly,
-    props.locationId,
-    props.eligibleItemIds,
-    props.replenishmentSystem,
-    props.showIneligible,
-    props.value,
-    props.whitelist,
-    t,
-    type,
-    validItemTypes,
-    value
-  ]);
+    return entries.map(toOption);
+  }, [entries, props.locationId, t]);
 
   const selectTypeModal = useDisclosure();
   const newItemsModal = useDisclosure();
