@@ -73,16 +73,30 @@ Carbon item.
 Refusals go through the existing `warnings` channel so they reach the import-outcome
 notification rather than vanishing.
 
-### 3. Relax the webhook part-number gate
+### 3. Webhook part-number gate — probably NOT needed
 
-`apps/erp/app/routes/api+/webhook.onshape.$companyId.ts:292` refuses to dispatch a
-`revision.created` without a `partNumber`. A drawing has none — the RD-410 drawing's
-`Part number` is null, re-confirmed 2026-08-19 — so the release path never reaches the resolver
-however good the join is.
+Superseded 2026-08-19 by an attempted release in the Onshape UI. **Onshape will not release a
+drawing without a part number.** The Create Release candidate dialog renders the drawing's Part
+number field empty, red and required, and blocks the release until it is filled.
 
-Needs a drawing-shaped exception that does not weaken the gate for models. Keep the existing
-refusal for anything that is neither, and keep it ahead of the v2 branch so legacy dispatch is
-unaffected.
+So the premise recorded earlier — a drawing has no part number, therefore
+`webhook.onshape.$companyId.ts:292` discards its revision — describes an *unreleased* drawing.
+A drawing that has actually been released necessarily carries a number, and the gate never fires
+for it. `TB-900-DRW` was assigned to the TB Test Bench drawing this way and persisted.
+
+Do not relax that gate on the strength of the old reasoning. Confirm against a real released
+drawing first; the gate may need no change at all.
+
+Two related observations from the same attempt:
+
+- **Releasing a drawing pulls its whole model tree into the candidate.** The TB Test Bench
+  drawing produced a 10-item candidate: the drawing at revision A plus the assembly, the
+  subassembly and seven parts, all bumping A → B and all marked "Item has not changed since its
+  last revision." A released drawing therefore arrives in the same release package as its
+  models, which makes `releaseId` grouping a viable fallback join if the references call ever
+  fails.
+- **Category is `Drawing`.** The item's properties panel shows Category = Drawing, distinct from
+  the `/elements` listing's `elementType` of `APPLICATION`.
 
 ### 4. Call it from the three paths
 
@@ -99,10 +113,23 @@ of the original complaints about v1.
 - **Version-level behaviour.** The references probe ran at workspace level (`/w/{wid}/`). The
   drawing is not in version `05ba9d4e8ffbcbc9cee29003` at all, so `/v/{vid}/` is unverified —
   and a release reads at a version.
-- **Does this customer release drawings?** If the drawing is never part of a released version,
-  the release path is moot and only the import/create paths matter.
 
-All three want one real drawing release to settle them. Worth doing before building step 3.
+All of these want one real drawing release to settle them.
+
+### Blocked: the drawing will not release
+
+Attempted 2026-08-19 in the Onshape UI on TB Test Bench. Every action button — Apply, Submit,
+Release — stays disabled while the drawing row shows a red **"Drawing has a pending update"**.
+Filling the part number, the release name and notes, and adding an approver each cleared their
+own validation without enabling the release. No update control for the drawing is exposed in the
+document UI or the accessibility tree.
+
+The drawing's views are stale against the model and Onshape wants them regenerated first. That
+has to be resolved — in the drawing editor, or by whoever knows where that control lives — before
+any of the three questions above can be answered.
+
+Nothing was released: TB Test Bench's newest version is still `TB-REL-001` and no revision
+exists for `TB-900-DRW`.
 
 ## Out of scope
 
