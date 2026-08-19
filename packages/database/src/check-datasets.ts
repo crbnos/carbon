@@ -13,7 +13,10 @@
  *   pnpm db:check:datasets -- --dataset motor    # one (repeatable)
  */
 
+import { readdirSync } from "node:fs";
+import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { PoolClient } from "pg";
 import { getPostgresConnectionPool } from "./client.ts";
@@ -41,6 +44,34 @@ Arguments:
 function skip(reason: string): never {
   console.log(`⚠ Dataset drift check skipped — ${reason}`);
   process.exit(0);
+}
+
+/**
+ * A stale database fails the check for a column that DOES exist on `main`, so
+ * without this the failure tells you to go fix the datasets when the real fix
+ * is `pnpm db:migrate`. Returns 0 when the count can't be established — this
+ * only ever adds a hint, so guessing wrong must never change the verdict.
+ */
+async function countPendingMigrations(client: PoolClient): Promise<number> {
+  try {
+    const dir = path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "..",
+      "supabase",
+      "migrations"
+    );
+    const onDisk = readdirSync(dir)
+      .filter((f) => f.endsWith(".sql"))
+      .map((f) => f.split("_")[0] ?? "");
+
+    const applied = await client.query<{ version: string }>(
+      `SELECT version FROM supabase_migrations.schema_migrations`
+    );
+    const seen = new Set(applied.rows.map((r) => r.version));
+    return onDisk.filter((v) => !seen.has(v)).length;
+  } catch {
+    return 0;
+  }
 }
 
 async function main() {
@@ -103,8 +134,14 @@ async function main() {
     }
 
     if (failed) {
+      const pending = await countPendingMigrations(client);
       console.error(
-        `\nThe demo datasets no longer match the schema. Fix them in packages/database/src/datasets/ — onboarding's demo templates and pnpm db:seed:dev both run this code.`
+        pending > 0
+          ? `\nYour database is ${pending} migration(s) behind, so this may not be dataset drift at all — run pnpm db:migrate and check again before changing anything.`
+          : `\nThe demo datasets no longer match the schema. Fix them in packages/database/src/datasets/ — onboarding's demo templates and pnpm db:seed:dev both run this code.`
+      );
+      console.error(
+        `Re-run on its own with: pnpm db:check:datasets\nCommit anyway with:     CARBON_SKIP_DATASET_CHECK=1 git commit ...`
       );
       process.exitCode = 1;
     }

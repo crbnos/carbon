@@ -36,5 +36,9 @@ fi
 # Set CARBON_SKIP_DATASET_CHECK=1 to skip.
 if [ -z "$CARBON_SKIP_DATASET_CHECK" ] && git diff --cached --name-only | grep -q '^packages/database/'; then
     echo "Checking demo datasets against the schema..."
-    pnpm db:check:datasets || exit 1
+    # --silent so pnpm's ELIFECYCLE trailer doesn't bury the script's own advice.
+    if ! pnpm --silent db:check:datasets; then
+        echo "Commit blocked: the demo datasets no longer apply. See above."
+        exit 1
+    fi
 fi
