@@ -15433,6 +15433,9 @@ msgstr "este item"
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Este item é construído por meio de um configurador e resolve seus componentes por pedido; os trabalhos criados para ele herdam a BOM resolvida do configurador."
 
+msgid "This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it."
+msgstr "Este item está inativo, portanto não pode ser adicionado aqui. Alguém o desativou no Mestre de Item — reative-o na página do item para usá-lo."
+
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "A lista de materiais deste item não possui entradas com shelf-life ativado, portanto nenhuma data de validade será calculada a partir da BOM."
 

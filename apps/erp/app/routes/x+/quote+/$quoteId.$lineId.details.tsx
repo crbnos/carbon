@@ -18,6 +18,7 @@ import {
 import { CadModel, DeferredFiles } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData, useUser } from "~/hooks";
+import { getItemOrderabilityIssue } from "~/modules/items/items.server";
 import type {
   Quotation,
   QuotationOperation,
@@ -191,6 +192,55 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // transaction. Previously the line update committed on its own, and a
   // resolver failure left it saved with its new breaks unpriced.
   const serviceRole = getCarbonServiceRole();
+
+  // Only when the line is being pointed at a DIFFERENT item: an existing line
+  // whose item was deactivated later still has to be editable (quantities,
+  // prices), and blocking that would strand the quote. Mirrors the picker,
+  // which keeps the current value selectable but offers nothing new.
+  const existingLine = await serviceRole
+    .from("quoteLine")
+    .select("itemId")
+    .eq("id", lineId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  // A failed read says nothing about which item the line points at, so it
+  // cannot be read as "unchanged" — that would skip the guard entirely.
+  if (existingLine.error) {
+    return validationError({
+      fieldErrors: {
+        itemId: "This quote line could not be read. Try again."
+      }
+    });
+  }
+
+  if (!existingLine.data || existingLine.data.itemId !== d.itemId) {
+    // Exempt an item this quote already uses — an RFQ-converted quote's
+    // placeholder parts are inactive by design until the quote is ordered.
+    const alreadyOnQuote = await serviceRole
+      .from("quoteLine")
+      .select("id")
+      .eq("quoteId", quoteId)
+      .eq("itemId", d.itemId)
+      .eq("companyId", companyId)
+      .limit(1)
+      .maybeSingle();
+
+    const orderabilityIssue = alreadyOnQuote.data
+      ? null
+      : await getItemOrderabilityIssue(serviceRole, {
+          itemId: d.itemId,
+          companyId
+        });
+    if (orderabilityIssue) {
+      return validationError({
+        fieldErrors: {
+          itemId: `${orderabilityIssue} It cannot be quoted.`
+        }
+      });
+    }
+  }
+
   const existingPrices = await serviceRole
     .from("quoteLinePrice")
     .select("quantity")

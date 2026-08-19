@@ -6,6 +6,7 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getItemOrderabilityIssue } from "~/modules/items/items.server";
 import {
   getQuote,
   isQuoteLocked,
@@ -61,6 +62,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+
+  // The picker greys these out, but that is only a client-side rule — this
+  // action is also reached by the API and the MCP tools. Read the item's real
+  // state before it lands on the quote.
+  //
+  // An item this quote already uses is exempt: a quote converted from a sales
+  // RFQ references placeholder parts that stay inactive until the quote is
+  // ordered, and a second line for one of them is legitimate.
+  const alreadyOnQuote = await serviceRole
+    .from("quoteLine")
+    .select("id")
+    .eq("quoteId", quoteId)
+    .eq("itemId", d.itemId)
+    .eq("companyId", companyId)
+    .limit(1)
+    .maybeSingle();
+
+  const orderabilityIssue = alreadyOnQuote.data
+    ? null
+    : await getItemOrderabilityIssue(serviceRole, {
+        itemId: d.itemId,
+        companyId
+      });
+  if (orderabilityIssue) {
+    return validationError({
+      fieldErrors: {
+        itemId: `${orderabilityIssue} It cannot be quoted.`
+      }
+    });
+  }
+
   const createQuotationLine = await upsertQuoteLine(serviceRole, {
     ...d,
     companyId,

@@ -15433,6 +15433,9 @@ msgstr "ten element"
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Ten artykuł jest zbudowany za pośrednictwem konfiguratora i rozwiązuje jego komponenty na zamówienie; zadania dla niego dziedziczą rozwiązaną BOM konfiguratora."
 
+msgid "This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it."
+msgstr "Ten element jest nieaktywny, więc nie można go tutaj dodać. Ktoś wyłączył go w kartotece elementów — włącz go ponownie na stronie elementu, aby go użyć."
+
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Rachunek materiałów tego artykułu nie ma wejść z włączoną polityką przechowywania, dlatego żaden termin ważności nie będzie obliczony z rachunku materiałów."
 
