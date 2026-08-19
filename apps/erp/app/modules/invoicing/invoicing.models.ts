@@ -456,6 +456,19 @@ export const invoiceSettlementValidator = invoiceSettlementBase
 // 20260630151500_invoice-dust-forgiveness.sql.
 export const INVOICE_DUST_THRESHOLD = 0.01;
 
+/**
+ * Convert a company-base amount into document currency.
+ * Invoice views sum `unitPrice` (base); `convertedUnitPrice = unitPrice * exchangeRate`.
+ * Example: USD base 1000, EUR order, exchangeRate 0.9 → 900.
+ */
+export function toDocumentCurrency(
+  baseAmount: number,
+  exchangeRate: number | null | undefined
+): number {
+  const rate = Number(exchangeRate);
+  return baseAmount * (Number.isFinite(rate) && rate !== 0 ? rate : 1);
+}
+
 // An invoice is payable when it's posted with an outstanding balance of at least
 // one cent — i.e. not draft/pending, voided, already fully paid, or down to dust.
 // Shared by the sales (AR) and purchase (AP) invoice headers; the caller AND-s in

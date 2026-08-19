@@ -1773,7 +1773,7 @@ export async function getSalesOrderInvoicesByIds(
 ) {
   return client
     .from("salesInvoices")
-    .select("id, invoiceTotal, balance, status, currencyCode")
+    .select("id, invoiceTotal, balance, status, currencyCode, exchangeRate")
     .eq("companyId", companyId)
     .in("id", invoiceIds);
 }

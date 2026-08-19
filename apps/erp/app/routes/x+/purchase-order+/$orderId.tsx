@@ -17,6 +17,7 @@ import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
+import { toDocumentCurrency } from "~/modules/invoicing";
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
@@ -579,7 +580,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         continue;
       }
 
-      const invoiceTotal = invoice.orderTotal ?? 0;
       const invoiceCurrency = invoice.currencyCode;
 
       // Avoid mixing currencies in the same displayed number.
@@ -592,7 +592,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         continue;
       }
 
-      const openBalance = Math.max(0, Number(invoice.balance ?? invoiceTotal));
+      // orderTotal/balance come from base-currency unitPrice; the summary
+      // renders in the purchase order currency via the invoice exchangeRate.
+      const rawTotal = invoice.orderTotal ?? 0;
+      const invoiceTotal = toDocumentCurrency(rawTotal, invoice.exchangeRate);
+      const openBalance = toDocumentCurrency(
+        Math.max(0, Number(invoice.balance ?? rawTotal)),
+        invoice.exchangeRate
+      );
       const settled = Math.max(0, invoiceTotal - openBalance);
 
       invoicedAmount += invoiceTotal;

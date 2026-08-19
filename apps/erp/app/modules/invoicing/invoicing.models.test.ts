@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   invoiceSettlementValidator,
   isInvoicePayable,
-  paymentValidator
+  paymentValidator,
+  toDocumentCurrency
 } from "./invoicing.models";
 
 describe("paymentValidator", () => {
@@ -157,6 +158,20 @@ describe("invoiceSettlementValidator", () => {
       sourceExchangeRate: -1
     });
     expect(r.success).toBe(false);
+  });
+});
+
+describe("toDocumentCurrency", () => {
+  it("converts base-currency invoice totals into the order currency", () => {
+    // USD base, EUR order, exchangeRate 0.9: base 1000 displays as €900.
+    expect(toDocumentCurrency(1000, 0.9)).toBe(900);
+  });
+
+  it("leaves the amount unchanged when the rate is missing or 1", () => {
+    expect(toDocumentCurrency(1000, 1)).toBe(1000);
+    expect(toDocumentCurrency(1000, null)).toBe(1000);
+    expect(toDocumentCurrency(1000, undefined)).toBe(1000);
+    expect(toDocumentCurrency(1000, 0)).toBe(1000);
   });
 });
 

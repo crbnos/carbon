@@ -7,6 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
+import { toDocumentCurrency } from "~/modules/invoicing";
 import {
   getCustomer,
   getOpportunity,
@@ -127,7 +128,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         continue;
       }
 
-      const invoiceTotal = invoice.invoiceTotal ?? 0;
       const invoiceCurrency = invoice.currencyCode;
 
       // Avoid mixing currencies in the same displayed number.
@@ -140,10 +140,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         continue;
       }
 
+      // invoiceTotal/balance come from base-currency unitPrice; the summary
+      // renders in the sales order currency via the invoice exchangeRate.
+      const rawTotal = invoice.invoiceTotal ?? 0;
+      const invoiceTotal = toDocumentCurrency(rawTotal, invoice.exchangeRate);
+
       // Paid = settled amount on the invoice (total − open balance). Using the
       // view balance captures partial payments; the prior status==="Paid" gate
       // only counted fully-settled invoices.
-      const openBalance = Math.max(0, Number(invoice.balance ?? invoiceTotal));
+      const openBalance = toDocumentCurrency(
+        Math.max(0, Number(invoice.balance ?? rawTotal)),
+        invoice.exchangeRate
+      );
       const settled = Math.max(0, invoiceTotal - openBalance);
 
       invoicedAmount += invoiceTotal;
