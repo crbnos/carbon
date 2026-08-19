@@ -51,7 +51,8 @@ const emptyEmployee = (locationId?: string | null): EmployeeRow => ({
   firstName: "",
   lastName: "",
   employeeType: "",
-  locationId: locationId ?? ""
+  locationId: locationId ?? "",
+  usPersonAttestation: false
 });
 
 function EmployeeRows({
