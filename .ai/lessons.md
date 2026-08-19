@@ -824,6 +824,26 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/src/audit.config.ts` (`fkDisplayRegistry`, `fkDisplayHops`, `snapshotFields`), `packages/jobs/src/inngest/functions/events/fk-snapshots.ts` + `audit.ts`, and any migration adding reference columns to tables listed in `auditConfig.entities`.
 
+## An `isolation: "worktree"` subagent forks from `main`, not the parent's current branch
+
+**Context:** Dispatching three `Agent` subagents with `isolation: "worktree"` to run `/feature` autonomously for NIST items, each told it was "forked from branch `nist-800-110-audit`" and building on code that lives ONLY on that branch (`packages/auth/src/services/auth-events.server.ts` etc., absent from `main`).
+
+**Problem:** The worktree the Agent tool creates forks from the repo's default (`main`), NOT the parent session's current branch HEAD. A subagent that trusts the "you are on <branch>" framing is actually on a `main`-based commit missing all the branch's work. Two of three agents noticed (the referenced file was absent at HEAD) and re-branched from `origin/nist-800-110-audit`; the third did not — it **vendored a duplicate** of the branch-only `auth-events.server.ts`, and its PR branch dragged in ~70 files of `main`-only work plus the duplicate, so the PR was unmergeable and had to be rebuilt by hand.
+
+**Rule:** When an agent's task depends on unmerged branch code, do not assume the worktree is based on that branch. In the dispatch prompt, require the agent to `git fetch origin` and explicitly branch from `origin/<intended-base>`, set the PR `--base` to it, and **verify the base before writing code** (confirm a known branch-only file exists at HEAD; STOP and report if it is missing rather than recreating/vendoring it). When a delivered branch looks wrong, check `git merge-base <base> <deliveredBranch>` against the base HEAD — a merge-base far back means it forked from the wrong place. To salvage a mis-based branch, extract only its real new files onto a fresh branch off the correct base (don't cherry-pick its whole divergent history).
+
+**Applies to:** any `Agent` call with `isolation: "worktree"` whose work builds on unmerged branch state; PR base selection for agent-produced branches.
+
+## Resolve merge conflicts in GENERATED files by regenerating, not by hand-editing the markers
+
+**Context:** Merging `origin/main` into a long-lived feature branch where both sides had added migrations. The only conflicts were generated outputs: `packages/database/src/types.ts` + `functions/lib/types.ts` (one FK-relationship hunk each) and `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`.
+
+**Problem:** Git auto-combined most of the generated output but left one view's relationship list conflicting. Hand-picking a side drops one branch's relationships (the view genuinely has all the columns); union-merging risks duplicating entries; either way the result may not match what the real generator emits from the COMBINED schema. Generated files are outputs, not source — resolving their conflict markers by hand is guessing at the generator.
+
+**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` + `functions/lib/types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres (not the full stack; the chained swagger step needs PostgREST and can fail harmlessly). `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`swagger-docs-schema.ts`, `tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
+
+**Applies to:** merging `main` into any branch with migrations on both sides; conflicts in `packages/database/src/types.ts`, `functions/lib/types.ts`, `swagger-docs-schema.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`, and any committed generated artifact.
+
 ## A flip/refactor must not add ledger rows to a code path that deliberately posted none
 
 **Context:** Implementing the batch-split identity flip (spec `2026-08-04-batch-split-identity-flip.md`) via a shared `buildBatchSplitRecords` builder that emits a 2-row net-zero `Batch Split` `itemLedger` pair. Wired it into all five split writers uniformly, including `post-shipment`'s Purchase-Order-sourced block.
