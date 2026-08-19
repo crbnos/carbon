@@ -20,6 +20,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Status,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -118,6 +119,10 @@ const Item = ({
   const translateItemType = useTranslatedItemType();
   const [items] = useItems();
 
+  const { getInputProps, error, isOptional: fieldIsOptional } = useField(name);
+  const [value, setValue] = useControlField<string | undefined>(name);
+  const resolvedIsOptional = isOptional ?? fieldIsOptional ?? false;
+
   const options = useMemo(() => {
     let filtered = items.filter((item) => {
       // Filter by type
@@ -147,7 +152,7 @@ const Item = ({
       filtered = latestRevisionByReadableId(filtered);
     }
 
-    let results = filtered.map((item) => {
+    const toOption = (item: (typeof items)[number]) => {
       const scopedQuantity = props.locationId
         ? item.quantityByLocation?.[props.locationId]
         : item.quantityOnHand;
@@ -167,14 +172,49 @@ const Item = ({
             ? `${scopedQuantity} ${item.unitOfMeasureCode}`
             : undefined
       };
-    });
+    };
+
+    let results = filtered.map(toOption);
 
     if (props.whitelist) {
       results = results.filter((item) => props.whitelist?.includes(item.value));
     }
 
     if (props.blacklist) {
-      return results.filter((item) => !props.blacklist?.includes(item.value));
+      results = results.filter(
+        (item) => !props.blacklist?.includes(item.value)
+      );
+    }
+
+    // A record can legitimately point at an item the filters now exclude — it
+    // was deactivated after the line was written, for instance. Dropping it
+    // would render the field blank and let the next save rewrite the record
+    // silently, so the current value is always kept selectable. It stays out of
+    // the list only when a caller explicitly blacklisted it.
+    const selectedId = value || (props.value as string | undefined);
+    if (
+      selectedId &&
+      !results.some((r) => r.value === selectedId) &&
+      !props.blacklist?.includes(selectedId)
+    ) {
+      const selected = items.find((i) => i.id === selectedId);
+      if (selected) {
+        const option = toOption(selected);
+        results = [
+          selected.active
+            ? option
+            : {
+                ...option,
+                label: (
+                  <span className="flex items-center gap-1.5">
+                    {option.label}
+                    <Status color="gray">{t`Inactive`}</Status>
+                  </span>
+                )
+              },
+          ...results
+        ];
+      }
     }
 
     return results;
@@ -185,19 +225,18 @@ const Item = ({
     props.latestRevisionOnly,
     props.locationId,
     props.replenishmentSystem,
+    props.value,
     props.whitelist,
+    t,
     type,
-    validItemTypes
+    validItemTypes,
+    value
   ]);
 
   const selectTypeModal = useDisclosure();
   const newItemsModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  const { getInputProps, error, isOptional: fieldIsOptional } = useField(name);
-  const [value, setValue] = useControlField<string | undefined>(name);
-  const resolvedIsOptional = isOptional ?? fieldIsOptional ?? false;
 
   useEffect(() => {
     if (props.value !== null && props.value !== undefined)

@@ -6,6 +6,7 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getItemOrderabilityIssue } from "~/modules/items/items.server";
 import {
   getQuote,
   isQuoteLocked,
@@ -61,6 +62,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+
+  // The picker hides inactive and unreleased-change-order items, but it is only
+  // a client-side filter — this action is also reached by the API and the MCP
+  // tools. Read the item's real state before it lands on the quote.
+  const orderabilityIssue = await getItemOrderabilityIssue(serviceRole, {
+    itemId: d.itemId,
+    companyId
+  });
+  if (orderabilityIssue) {
+    return validationError({
+      fieldErrors: {
+        itemId: `${orderabilityIssue} It cannot be quoted.`
+      }
+    });
+  }
+
   const createQuotationLine = await upsertQuoteLine(serviceRole, {
     ...d,
     companyId,

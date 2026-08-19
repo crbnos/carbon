@@ -643,3 +643,55 @@ function normalizeSupersessionMode(
     ? (mode as Database["public"]["Enums"]["supersessionMode"])
     : "Consume First";
 }
+
+// -----------------------------------------------------------------------------
+// getItemOrderabilityIssue — can this item be put on a customer- or supplier-
+// facing document line?
+//
+// Two states say no:
+//   inactive   — the item was deactivated, or it is a change-order draft that
+//                has not been released (drafts are minted `active: false` and
+//                only `applyChangeNotice` flips them active).
+//   unreleased — the item was minted by a change order that is not 'Done'.
+//                `active` alone misses this: nothing stops a user toggling
+//                Active on a draft revision's item page before its CO ships.
+//
+// `item.changeOrderId` is NOT a draft marker on its own — release leaves it in
+// place as a provenance back-link, so the owning CO's status is what decides.
+// Pass a service-role client: reading `changeOrder` requires `parts_view`,
+// which a sales user need not have.
+// -----------------------------------------------------------------------------
+export async function getItemOrderabilityIssue(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; companyId: string }
+): Promise<string | null> {
+  const item = await client
+    .from("item")
+    .select("readableIdWithRevision, active, changeOrderId")
+    .eq("id", args.itemId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (item.error || !item.data) return null;
+
+  const name = item.data.readableIdWithRevision;
+
+  if (item.data.changeOrderId) {
+    const changeOrder = await client
+      .from("changeOrder")
+      .select("changeOrderId, status")
+      .eq("id", item.data.changeOrderId)
+      .eq("companyId", args.companyId)
+      .maybeSingle();
+
+    if (changeOrder.data && changeOrder.data.status !== "Done") {
+      return `${name} was created by change order ${changeOrder.data.changeOrderId}, which has not been released yet.`;
+    }
+  }
+
+  if (!item.data.active) {
+    return `${name} is inactive.`;
+  }
+
+  return null;
+}
