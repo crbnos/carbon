@@ -2795,6 +2795,9 @@ msgstr "Carbonクライアントが見つかりません"
 msgid "Carbon column"
 msgstr "Carbonカラム"
 
+msgid "Carbon could not read every part number from Onshape, so an assembly shown without one may in fact have one. Try again, or check it in Onshape before importing."
+msgstr ""
+
 msgid "Carbon could not read every release in this Onshape company, so a version marked Unreleased here may in fact be released. Check in Onshape before importing one."
 msgstr ""
 
@@ -9933,6 +9936,9 @@ msgstr "親ソースはまだ記録されていません。計画ページの「
 msgid "No part ID"
 msgstr "パーツIDなし"
 
+msgid "No part number"
+msgstr ""
+
 msgid "No parts"
 msgstr "部品がありません"
 
@@ -13727,6 +13733,9 @@ msgstr "{parentCurrency}で表示"
 
 msgid "Showing the first 500 lines"
 msgstr "最初の 500 行を表示中"
+
+msgid "Showing the first assemblies only — this version has more than Carbon lists here."
+msgstr ""
 
 msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 msgstr ""

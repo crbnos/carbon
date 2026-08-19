@@ -18,8 +18,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuChevronRight, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import type { loader as elementsLoader } from "~/routes/api+/integrations.onshape.d.$did.v.$vid.elements";
 import type { loader as documentsLoader } from "~/routes/api+/integrations.onshape.documents";
+import type { loader as elementsLoader } from "~/routes/api+/integrations.onshape.v2.elements";
 import type { loader as versionsLoader } from "~/routes/api+/integrations.onshape.v2.versions";
 import { path } from "~/utils/path";
 import type { OnshapeSelection } from "./OnshapeRevisionPicker";
@@ -84,17 +84,23 @@ export const OnshapeUnreleasedPicker = ({
     if (!document) return;
     setVersion(chosen);
     setStep("element");
-    elements.load(path.to.api.onShapeElements(document.id, chosen.id));
+    elements.load(
+      `${path.to.api.onShapeV2Elements}?did=${encodeURIComponent(document.id)}&vid=${encodeURIComponent(chosen.id)}`
+    );
   };
 
-  const chooseElement = (chosen: { id: string; name: string }) => {
+  const chooseElement = (chosen: {
+    id: string;
+    name: string;
+    partNumber?: string | null;
+  }) => {
     if (!document || !version) return;
     onSelect({
-      // An unreleased version carries no revision, so the part number Carbon
-      // has to work with is the element's own name. The import route treats
-      // both as optional link hints, not as the join — resolution is by
-      // element id either way.
-      partNumber: chosen.name,
+      // The element NAME and its PART NUMBER are different Onshape fields and
+      // diverge freely. The part number is what becomes the Carbon item, so it
+      // is what travels — the name is only a label. Neither is the join;
+      // resolution is by element id either way.
+      partNumber: chosen.partNumber ?? "",
       revision: "",
       name: chosen.name,
       documentId: document.id,
@@ -119,14 +125,19 @@ export const OnshapeUnreleasedPicker = ({
   // The documents loader answers `{ data: [] }` on failure and
   // `{ data: { items } }` on success, so the array case is the error case.
   const documentRows = documents.data?.data;
-  const rows: Array<{ id: string; name: string; released?: boolean }> =
+  const rows: Array<{
+    id: string;
+    name: string;
+    released?: boolean;
+    partNumber?: string | null;
+  }> =
     step === "document"
       ? Array.isArray(documentRows)
         ? []
         : (documentRows?.items ?? [])
       : step === "version"
         ? (versions.data?.data?.versions ?? [])
-        : (elements.data?.data ?? []);
+        : (elements.data?.data?.elements ?? []);
 
   return (
     <Modal
@@ -211,6 +222,29 @@ export const OnshapeUnreleasedPicker = ({
               </div>
             )}
 
+            {step === "element" && elements.data?.data?.truncated && (
+              <p className="w-full text-xs text-muted-foreground">
+                <Trans>
+                  Showing the first assemblies only — this version has more than
+                  Carbon lists here.
+                </Trans>
+              </p>
+            )}
+
+            {step === "element" &&
+              elements.data?.data?.partNumbersIncomplete && (
+                <div className="flex w-full items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+                  <LuTriangleAlert className="mt-0.5 shrink-0 text-amber-600" />
+                  <span>
+                    <Trans>
+                      Carbon could not read every part number from Onshape, so
+                      an assembly shown without one may in fact have one. Try
+                      again, or check it in Onshape before importing.
+                    </Trans>
+                  </span>
+                </div>
+              )}
+
             {step === "version" && versions.data?.data?.truncated && (
               <p className="w-full text-xs text-muted-foreground">
                 <Trans>
@@ -249,7 +283,19 @@ export const OnshapeUnreleasedPicker = ({
                       else chooseElement(row);
                     }}
                   >
-                    <span className="truncate">{row.name}</span>
+                    {step === "element" ? (
+                      <span className="min-w-0 truncate">
+                        <span className="font-medium">
+                          {row.partNumber ?? t`No part number`}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {" "}
+                          {row.name}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="truncate">{row.name}</span>
+                    )}
                     {step === "version" &&
                       (row.released ? (
                         <Badge variant="green">

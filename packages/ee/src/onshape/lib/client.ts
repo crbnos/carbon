@@ -246,6 +246,30 @@ export class OnshapeClient {
     );
   }
 
+  /**
+   * An element's metadata properties, which is where an ASSEMBLY's part number
+   * lives. `getElements` returns only the element's NAME, and the two diverge
+   * freely — an assembly named "RD-410 Wandleser RFID" can carry part number
+   * TB-900. Anything that needs the part number before it has a BOM has to ask
+   * for it here.
+   */
+  async getElementMetadata(
+    documentId: string,
+    versionId: string,
+    elementId: string
+  ): Promise<{
+    properties?: Array<{
+      propertyId?: string;
+      name?: string;
+      value?: unknown;
+    }>;
+  }> {
+    return this.request(
+      "GET",
+      `/api/v10/metadata/d/${documentId}/v/${versionId}/e/${elementId}`
+    );
+  }
+
   async getBillOfMaterials(
     documentId: string,
     versionId: string,

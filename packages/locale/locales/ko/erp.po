@@ -2795,6 +2795,9 @@ msgstr "Carbon 클라이언트를 찾을 수 없음"
 msgid "Carbon column"
 msgstr "Carbon 열"
 
+msgid "Carbon could not read every part number from Onshape, so an assembly shown without one may in fact have one. Try again, or check it in Onshape before importing."
+msgstr ""
+
 msgid "Carbon could not read every release in this Onshape company, so a version marked Unreleased here may in fact be released. Check in Onshape before importing one."
 msgstr ""
 
@@ -9933,6 +9936,9 @@ msgstr "아직 기록된 상위 소스가 없습니다. 계획 페이지에서 �
 msgid "No part ID"
 msgstr "품목 ID 없음"
 
+msgid "No part number"
+msgstr ""
+
 msgid "No parts"
 msgstr "부품 없음"
 
@@ -13727,6 +13733,9 @@ msgstr "{parentCurrency}로 표시"
 
 msgid "Showing the first 500 lines"
 msgstr "처음 500줄을 표시하고 있습니다"
+
+msgid "Showing the first assemblies only — this version has more than Carbon lists here."
+msgstr ""
 
 msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 msgstr ""

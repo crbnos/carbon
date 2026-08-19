@@ -2795,6 +2795,9 @@ msgstr "Cliente Carbon não encontrado"
 msgid "Carbon column"
 msgstr "Coluna Carbon"
 
+msgid "Carbon could not read every part number from Onshape, so an assembly shown without one may in fact have one. Try again, or check it in Onshape before importing."
+msgstr ""
+
 msgid "Carbon could not read every release in this Onshape company, so a version marked Unreleased here may in fact be released. Check in Onshape before importing one."
 msgstr ""
 
@@ -9933,6 +9936,9 @@ msgstr "Nenhuma fonte pai registrada ainda. Clique em Recalcular na página de p
 msgid "No part ID"
 msgstr "Sem ID de peça"
 
+msgid "No part number"
+msgstr ""
+
 msgid "No parts"
 msgstr "Nenhuma peça"
 
@@ -13727,6 +13733,9 @@ msgstr "Exibindo em {parentCurrency}"
 
 msgid "Showing the first 500 lines"
 msgstr "Mostrando as primeiras 500 linhas"
+
+msgid "Showing the first assemblies only — this version has more than Carbon lists here."
+msgstr ""
 
 msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 msgstr ""

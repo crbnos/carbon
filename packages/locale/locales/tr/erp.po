@@ -2795,6 +2795,9 @@ msgstr "Carbon istemcisi bulunamadı"
 msgid "Carbon column"
 msgstr "Carbon sütunu"
 
+msgid "Carbon could not read every part number from Onshape, so an assembly shown without one may in fact have one. Try again, or check it in Onshape before importing."
+msgstr ""
+
 msgid "Carbon could not read every release in this Onshape company, so a version marked Unreleased here may in fact be released. Check in Onshape before importing one."
 msgstr ""
 
@@ -9933,6 +9936,9 @@ msgstr "Henüz üst kaynaklar kaydedilmedi. Atıfı yenilemek için planlama say
 msgid "No part ID"
 msgstr "Parça kimliği yok"
 
+msgid "No part number"
+msgstr ""
+
 msgid "No parts"
 msgstr "Parça yok"
 
@@ -13727,6 +13733,9 @@ msgstr "{parentCurrency} cinsinden gösteriliyor"
 
 msgid "Showing the first 500 lines"
 msgstr "İlk 500 satır gösteriliyor"
+
+msgid "Showing the first assemblies only — this version has more than Carbon lists here."
+msgstr ""
 
 msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 msgstr ""
