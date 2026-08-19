@@ -51,11 +51,13 @@ Six kinds, in palette order.
 | **Trigger** | Starts the workflow. One per workflow, and nothing can connect into it. |
 | **Condition** | Sends the run down one path. Each path is a set of clauses, with an optional **"Otherwise"**. |
 | **Action** | Does the work — notifies, creates, updates, or calls out. Has separate **Success** and **Failure** handles. |
-| **Record** | Works out a number from a record, such as an order total or a scrap percentage. |
+| **Compute** | Works out a number from a record, such as an order total or a scrap percentage. |
 | **Find** | Looks a record up so later steps can use it. |
 | **Filter** | Keeps only the items in a list that match your rules. |
 
-Despite the name, a **Record** step is read-only: its picker is titled **"Operation"** and it computes a value, such as a purchase order's total, a sales order's line count, a job's scrap percentage or earliest operation start, or an item's quantity on hand. Everything that *writes* is an **Action** step.
+A **Compute** step is read-only. Its picker is titled **"Operation"**, and it works out a value such as a purchase order's total, a sales order's line count, a job's scrap percentage or earliest operation start, or an item's quantity on hand. Everything that *writes* is an **Action** step.
+
+Workflows you built before the rename are unaffected — they open as **Compute** steps and keep whatever step names you gave them.
 
 **Actions** come in three families. Four create records — a job, an issue, a purchase order, or a sales order — and each runs through the same service Carbon's own screens use, so sequences, defaults, and required fields behave identically. Ten update an existing record, one per watched record type. The last two are **"Notify someone"** and **"Call an outside URL"**.
 

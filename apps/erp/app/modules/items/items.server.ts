@@ -7,7 +7,11 @@ import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { data } from "react-router";
-import { activateMethodVersion, upsertItemSupersession } from "~/modules/items";
+import {
+  activateMethodVersion,
+  findChangeNoticesForItem,
+  upsertItemSupersession
+} from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 import type { plmReleaseControl } from "./items.models";
@@ -15,6 +19,7 @@ import {
   canEditChangeNoticeEngineering,
   canEditChangeNoticeWorkflow,
   changeNoticeLockedMessage,
+  changeNoticeOpenStatuses,
   supersessionModes
 } from "./items.models";
 
@@ -260,6 +265,37 @@ export async function requireChangeNoticeEditable(
     checkFn: (status) => !canEdit(status),
     message: changeNoticeLockedMessage(existing.data.status)
   });
+}
+
+// The inverse gate: an item owned by an open change notice must not get a manual
+// revision, because the notice authors it. Fails closed — a lookup we couldn't
+// read cannot prove the item is free.
+export async function requireItemChangeNoticeUnlocked(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; companyId: string }
+): Promise<{ error: { message: string }; data: null } | null> {
+  const open = await findChangeNoticesForItem(client, {
+    itemId: args.itemId,
+    companyId: args.companyId,
+    statuses: changeNoticeOpenStatuses
+  });
+
+  if (open.error) {
+    return {
+      error: { message: "Could not check open change notices for this item" },
+      data: null
+    };
+  }
+
+  if (open.data.length === 0) return null;
+
+  const ids = open.data.map((co) => co.changeOrderId).join(", ");
+  return {
+    error: {
+      message: `This item is open in change notice ${ids}. Release it to create new revisions.`
+    },
+    data: null
+  };
 }
 
 // Child rows (affected items, action tasks) are addressed by their own id, so

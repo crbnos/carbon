@@ -1,6 +1,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import type { ActionFunctionArgs } from "react-router";
 import { userContext } from "~/context";
 import { getCompanySettings } from "~/services/inventory.service";
@@ -112,6 +113,20 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
         message: "Failed to update picking list status"
       };
     }
+
+    // Discriminated on the status for the same reason as the ERP route: a list
+    // that goes Partial and later Completed must produce two events.
+    trackWorkEvent(
+      "picking_list_completed",
+      {
+        companyId,
+        userId: effectiveUserId,
+        pickingListId,
+        finalStatus: finalStatus,
+        source: "mes"
+      },
+      { discriminator: finalStatus }
+    );
 
     return { success: true };
   }

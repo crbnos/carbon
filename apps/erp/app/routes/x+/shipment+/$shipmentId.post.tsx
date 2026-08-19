@@ -8,6 +8,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
@@ -191,6 +192,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  /** Set by the catch below when the post was rolled back to Draft. */
+  let reverted = false;
+
   try {
     // Get shipment details to check if it's related to a sales order
     const { data: shipment } = await serviceRole
@@ -340,6 +344,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   } catch (thrown) {
     if (thrown instanceof Response) throw thrown;
+    reverted = true;
     await client
       .from("shipment")
       .update({
@@ -355,6 +360,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId,
     actorId: userId
   });
+
+  // See the receipt post route: below the catch still runs after a rollback,
+  // so the flag is what makes this "the post stuck", not the position.
+  if (!reverted) {
+    trackWorkEvent("shipment_posted", {
+      companyId,
+      userId,
+      shipmentId,
+      sourceDocument: shipmentForSurface?.sourceDocument ?? null
+    });
+  }
 
   if (expiredWarning) {
     throw redirect(

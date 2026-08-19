@@ -40,6 +40,7 @@ import {
   LuContainer,
   LuEllipsisVertical,
   LuFileText,
+  LuGitPullRequestArrow,
   LuHandCoins,
   LuQrCode,
   LuSearch,
@@ -54,6 +55,7 @@ import { Customer, Item, Supplier } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
+import { ChangeNoticeStatus } from "~/modules/items/ui/ChangeNotice";
 import type { MethodItemType } from "~/modules/shared";
 import type { action as associationAction } from "~/routes/x+/issue+/$id.association.new";
 import { useItems } from "~/stores";
@@ -208,7 +210,7 @@ export function IssueAssociationItem({
             )}
           </div>
         </button>
-        {permissions.can("create", node.module) && (
+        {!node.readOnly && permissions.can("create", node.module) && (
           <IconButton
             aria-label={t`Add`}
             size="sm"
@@ -239,11 +241,15 @@ export function IssueAssociationItem({
               >
                 <Link
                   to={getAssociationLink(child, node.key)}
-                  className="flex pr-7 h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-2 text-sm hover:bg-accent w-full font-medium whitespace-nowrap"
+                  className={cn(
+                    "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-2 text-sm hover:bg-accent w-full font-medium whitespace-nowrap",
+                    // Read-only rows have no ⋮ button, so they keep that space.
+                    node.readOnly ? "pr-1" : "pr-7"
+                  )}
                 >
-                  <LevelLine isSelected={false} />
-                  <div className="flex flex-grow justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                  <LevelLine isSelected={false} className="shrink-0" />
+                  <div className="flex flex-grow min-w-0 justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2 [&>svg]:shrink-0">
                       {getAssociationIcon(node.key)}
                       <span className="truncate">
                         {child.documentReadableId}
@@ -252,9 +258,14 @@ export function IssueAssociationItem({
                     {node.key === "items" && (
                       <Count count={child.quantity ?? 0} />
                     )}
+                    {node.key === "changeNotices" && child.status && (
+                      <div className="shrink-0">
+                        <ChangeNoticeStatus status={child.status} />
+                      </div>
+                    )}
                   </div>
                 </Link>
-                {permissions.can("delete", node.module) && (
+                {!node.readOnly && permissions.can("delete", node.module) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <IconButton
@@ -283,7 +294,7 @@ export function IssueAssociationItem({
           )}
         </div>
       )}
-      {newAssociationModal.isOpen && (
+      {newAssociationModal.isOpen && !node.readOnly && (
         <NewAssociationModal
           open={newAssociationModal.isOpen}
           onClose={newAssociationModal.onClose}
@@ -296,7 +307,7 @@ export function IssueAssociationItem({
   );
 }
 
-function getAssociationIcon(key: IssueAssociationKey) {
+function getAssociationIcon(key: IssueAssociationNode["key"]) {
   switch (key) {
     case "items":
       return <AiOutlinePartition />;
@@ -318,6 +329,8 @@ function getAssociationIcon(key: IssueAssociationKey) {
       return <LuQrCode />;
     case "inspections":
       return <LuClipboardCheck className="text-teal-600" />;
+    case "changeNotices":
+      return <LuGitPullRequestArrow className="text-purple-600" />;
     default:
       return <LuFileText />;
   }
@@ -1042,7 +1055,7 @@ function NewAssociationModal({
 
 function getAssociationLink(
   child: IssueAssociationNode["children"][number],
-  key: IssueAssociationKey
+  key: IssueAssociationNode["key"]
 ) {
   switch (key) {
     case "jobOperations":
@@ -1070,6 +1083,8 @@ function getAssociationLink(
       return path.to.supplier(child.documentId);
     case "inspections":
       return path.to.inspection(child.documentId);
+    case "changeNotices":
+      return path.to.changeNotice(child.documentId);
     default:
       return "#";
   }

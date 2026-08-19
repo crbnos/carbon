@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -121,6 +122,12 @@ export async function action(args: ActionFunctionArgs) {
     outputs: { salesInvoice: { id: invoiceId }, postedBy: { id: userId } },
     companyId,
     actorId: userId
+  });
+
+  trackWorkEvent("sales_invoice_posted", {
+    companyId,
+    userId,
+    salesInvoiceId: invoiceId
   });
 
   const acceptLanguage = request.headers.get("accept-language");

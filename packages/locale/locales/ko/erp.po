@@ -2920,6 +2920,9 @@ msgstr "변경 공지 유형"
 msgid "Change Notices"
 msgstr "변경 공지"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr ""
+
 msgid "Change order"
 msgstr "변경 주문"
 
@@ -9162,6 +9165,9 @@ msgstr "더 보기"
 
 msgid "More actions"
 msgstr "추가 작업"
+
+msgid "More information"
+msgstr "자세한 정보"
 
 msgid "More options"
 msgstr "추가 옵션"
