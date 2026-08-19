@@ -662,7 +662,9 @@ function normalizeSupersessionMode(
 // which a sales user need not have.
 //
 // A missing item returns null: that is the foreign key's problem, and reporting
-// it here would mask the real error.
+// it here would mask the real error. A failed READ is not the same thing — it
+// says nothing about the item, so it blocks rather than waving the line
+// through on a database blip.
 // -----------------------------------------------------------------------------
 
 // Release IS the Implementation -> Done transition (applyChangeNotice), so
@@ -680,7 +682,15 @@ export async function getItemOrderabilityIssue(
     .eq("companyId", args.companyId)
     .maybeSingle();
 
-  if (item.error || !item.data) return null;
+  if (item.error) {
+    logger.error("Failed to read item for orderability check", {
+      error: item.error,
+      itemId: args.itemId
+    });
+    return "This item's status could not be checked.";
+  }
+
+  if (!item.data) return null;
 
   const name = item.data.readableIdWithRevision ?? "This item";
 
@@ -693,6 +703,14 @@ export async function getItemOrderabilityIssue(
       .eq("id", item.data.changeOrderId)
       .eq("companyId", args.companyId)
       .maybeSingle();
+
+    if (changeOrder.error) {
+      logger.error("Failed to read change order for orderability check", {
+        error: changeOrder.error,
+        changeOrderId: item.data.changeOrderId
+      });
+      return `${name} could not be checked against the change order that created it.`;
+    }
 
     if (
       changeOrder.data &&

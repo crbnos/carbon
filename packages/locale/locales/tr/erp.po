@@ -15325,7 +15325,7 @@ msgid "This item is built via a configurator and resolves its components per-ord
 msgstr "Bu öğe bir configuratör aracılığıyla oluşturulmuş ve bileşenlerini siparişe göre çözer; bunun için oluşturulan işler configuratörün çözülmüş BOM'unu devralır."
 
 msgid "This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it."
-msgstr ""
+msgstr "Bu malzeme pasif olduğu için buraya eklenemez. Malzeme ana verisinde kapatılmış — kullanmak için malzemenin sayfasından yeniden etkinleştirin."
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Bu ürünün malzeme listesindeki hiçbir bileşeni raf ömrü özelliğine sahip değil, bu nedenle BOM'dan bir son kullanma tarihi hesaplanmayacaktır."

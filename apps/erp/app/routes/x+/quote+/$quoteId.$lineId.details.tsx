@@ -204,7 +204,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .eq("companyId", companyId)
     .maybeSingle();
 
-  if (existingLine.data && existingLine.data.itemId !== d.itemId) {
+  // A failed read says nothing about which item the line points at, so it
+  // cannot be read as "unchanged" — that would skip the guard entirely.
+  if (existingLine.error) {
+    return validationError({
+      fieldErrors: {
+        itemId: "This quote line could not be read. Try again."
+      }
+    });
+  }
+
+  if (!existingLine.data || existingLine.data.itemId !== d.itemId) {
     // Exempt an item this quote already uses — an RFQ-converted quote's
     // placeholder parts are inactive by design until the quote is ordered.
     const alreadyOnQuote = await serviceRole

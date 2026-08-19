@@ -165,14 +165,18 @@ const Item = ({
   );
 
   const options = useMemo(() => {
-    // Plain-language wording for each reason an item cannot be chosen. The rule
-    // itself lives in getItemPickerEntries; this is only how it reads.
-    const ineligibilityMessage = (reason: ItemIneligibility) => {
-      switch (reason) {
-        case "inactive":
-          return t`This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it.`;
-        default:
-          return "";
+    // How each reason an item cannot be chosen reads: the badge on a current
+    // value, and the tooltip on a greyed row. The rule itself lives in
+    // getItemPickerEntries; this is only the wording. Keyed by the whole
+    // ItemIneligibility union on purpose — adding a reason without wording it
+    // here is a compile error, not an empty tooltip under an `Inactive` badge.
+    const ineligibilityCopy: Record<
+      ItemIneligibility,
+      { badge: string; message: string }
+    > = {
+      inactive: {
+        badge: t`Inactive`,
+        message: t`This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it.`
       }
     };
 
@@ -191,7 +195,9 @@ const Item = ({
         ineligibility && isCurrentValue ? (
           <span className="flex items-center gap-1.5">
             {item.readableIdWithRevision}
-            <Status color="gray">{t`Inactive`}</Status>
+            <Status color="gray">
+              {ineligibilityCopy[ineligibility].badge}
+            </Status>
           </span>
         ) : (
           item.readableIdWithRevision
@@ -214,7 +220,7 @@ const Item = ({
             : undefined,
         disabled: !!ineligibility && !isCurrentValue,
         disabledReason: ineligibility
-          ? ineligibilityMessage(ineligibility)
+          ? ineligibilityCopy[ineligibility].message
           : undefined
       };
     };

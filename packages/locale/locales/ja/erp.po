@@ -15325,7 +15325,7 @@ msgid "This item is built via a configurator and resolves its components per-ord
 msgstr "このアイテムはコンフィグレータを使用して構築され、注文ごとにコンポーネントを解決します。このために作成されたジョブは、コンフィグレータの解決されたBOMを継承します。"
 
 msgid "This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it."
-msgstr ""
+msgstr "このアイテムは非アクティブなため、ここに追加できません。アイテムマスターで無効に設定されています。使用するには、アイテムのページで再度有効にしてください。"
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "このアイテムの部品表には、棚卸し有効期限が有効になっている入力がないため、BOMから有効期限は計算されません。"

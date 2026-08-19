@@ -15325,7 +15325,7 @@ msgid "This item is built via a configurator and resolves its components per-ord
 msgstr "Este artículo se construye a través de un configurador y resuelve sus componentes por pedido; los trabajos creados para él heredan la BOM resuelta del configurador."
 
 msgid "This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it."
-msgstr ""
+msgstr "Este artículo está inactivo, por lo que no se puede agregar aquí. Alguien lo desactivó en el Maestro de Artículos — vuelva a activarlo desde la página del artículo para usarlo."
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "La lista de materiales de este artículo no tiene entradas con vida útil habilitada, por lo que no se calculará ninguna fecha de vencimiento a partir de la lista de materiales."

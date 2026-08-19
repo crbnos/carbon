@@ -58,16 +58,21 @@ describe("getLockVerdict", () => {
 type Row = Record<string, unknown> | null;
 
 // Stands in for the two reads the guard makes: the `item` row and, when that
-// row names a change order, the `changeOrder` row.
-function fakeClient(rows: { item?: Row; changeOrder?: Row }) {
+// row names a change order, the `changeOrder` row. A table listed in `errors`
+// reads as a failed query instead of a row.
+function fakeClient(
+  rows: { item?: Row; changeOrder?: Row },
+  errors: { item?: boolean; changeOrder?: boolean } = {}
+) {
   return {
     from(table: string) {
+      const failed = errors[table as keyof typeof errors] === true;
       const builder = {
         select: () => builder,
         eq: () => builder,
         maybeSingle: async () => ({
-          data: rows[table as keyof typeof rows] ?? null,
-          error: null
+          data: failed ? null : (rows[table as keyof typeof rows] ?? null),
+          error: failed ? { message: `failed to read ${table}` } : null
         })
       };
       return builder;
@@ -109,6 +114,30 @@ describe("getItemOrderabilityIssue", () => {
     expect(await getItemOrderabilityIssue(client, args)).toBe(
       "P000001.A was created by change order ECO-000001, which has not been released yet."
     );
+  });
+
+  // A failed read says nothing about the item, so it blocks. Treating it as
+  // "no issue" would let a database blip wave an inactive item onto a quote.
+  it("blocks when the item read fails", async () => {
+    const client = fakeClient({}, { item: true });
+
+    expect(await getItemOrderabilityIssue(client, args)).toBe(
+      "This item's status could not be checked."
+    );
+  });
+
+  it("blocks when the change order read fails", async () => {
+    const client = fakeClient({ item: revision }, { changeOrder: true });
+
+    expect(await getItemOrderabilityIssue(client, args)).toBe(
+      "P000001.A could not be checked against the change order that created it."
+    );
+  });
+
+  // A missing row is the foreign key's problem, not the guard's — reporting it
+  // here would mask the real error.
+  it("passes an item that does not exist", async () => {
+    expect(await getItemOrderabilityIssue(fakeClient({}), args)).toBeNull();
   });
 
   // Release leaves changeOrderId in place as a provenance link, so the column
