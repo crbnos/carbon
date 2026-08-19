@@ -96,15 +96,24 @@ export const WORK_CENTERS = [
   }
 ];
 
-// Link work centers to processes
+// Link work centers to processes. Most cells run several — the clean room in
+// particular is where layup, assembly and potting all have to happen.
 export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["CNC Mill", "Machining"],
+  ["CNC Mill", "Composite Layup"],
   ["TIG Welder Cell", "Welding"],
+  ["TIG Welder Cell", "Machining"],
   ["Clean Room Bay A", "Clean Room Assembly"],
+  ["Clean Room Bay A", "Composite Layup"],
+  ["Clean Room Bay A", "Potting & Conformal Coat"],
   ["PCB Lab", "PCB Assembly"],
+  ["PCB Lab", "Potting & Conformal Coat"],
   ["TVAC Chamber 1", "Thermal Vacuum Test"],
+  ["TVAC Chamber 1", "Final Inspection"],
   ["QC Bench", "Final Inspection"],
-  ["Potting Station", "Potting & Conformal Coat"]
+  ["QC Bench", "Thermal Vacuum Test"],
+  ["Potting Station", "Potting & Conformal Coat"],
+  ["Potting Station", "Clean Room Assembly"]
 ];
 
 export const PLANT: PlantSpec = {

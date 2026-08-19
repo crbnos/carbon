@@ -115,15 +115,26 @@ export const WORK_CENTERS = [
   }
 ];
 
+// Most cells run more than one process — a machining cell also checks its own
+// work, and the inspection bench covers all three inspection stages.
 export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["CNC Turning Cell", "CNC Machining"],
+  ["CNC Turning Cell", "In-Process Inspection"],
   ["Lamination Press", "Lamination Stacking"],
+  ["Lamination Press", "CNC Machining"],
   ["Winding Line 1", "Coil Winding"],
+  ["Winding Line 1", "In-Process Inspection"],
   ["Impregnation Oven", "Varnish Impregnation"],
   ["Balancing Cell", "Rotor Balancing"],
+  ["Balancing Cell", "CNC Machining"],
+  ["Balancing Cell", "In-Process Inspection"],
   ["Motor Assembly Bench", "Motor Assembly"],
+  ["Motor Assembly Bench", "In-Process Inspection"],
   ["Dyno Test Cell", "Final Test & Inspection"],
-  ["CMM Inspection Bench", "In-Process Inspection"]
+  ["Dyno Test Cell", "In-Process Inspection"],
+  ["CMM Inspection Bench", "In-Process Inspection"],
+  ["CMM Inspection Bench", "Incoming Inspection"],
+  ["CMM Inspection Bench", "Final Test & Inspection"]
 ];
 
 export const PLANT: PlantSpec = {

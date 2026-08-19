@@ -96,15 +96,24 @@ export const WORK_CENTERS = [
   }
 ];
 
-// Link work centers to processes
+// Link work centers to processes. Most cells are capable of several — the
+// integration cell in particular absorbs subassembly work when it is idle.
 export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["CNC Mill Cell", "CNC Machining"],
+  ["CNC Mill Cell", "Sheet Metal Fabrication"],
   ["Gearbox Bench", "Gearbox Assembly"],
+  ["Gearbox Bench", "Final Inspection"],
   ["SMT Line", "PCB Assembly"],
+  ["SMT Line", "Burn-In Test"],
   ["Harness Bench", "Harness Build"],
+  ["Harness Bench", "PCB Assembly"],
   ["Integration Cell 1", "Robot Integration"],
+  ["Integration Cell 1", "Gearbox Assembly"],
+  ["Integration Cell 1", "Harness Build"],
   ["Burn-In Rack", "Burn-In Test"],
-  ["Inspection Bench", "Final Inspection"]
+  ["Burn-In Rack", "Final Inspection"],
+  ["Inspection Bench", "Final Inspection"],
+  ["Inspection Bench", "Burn-In Test"]
 ];
 
 export const PLANT: PlantSpec = {

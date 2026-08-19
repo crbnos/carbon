@@ -106,11 +106,16 @@ export const WORK_CENTERS = [
 // center can appear more than once here.
 export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["VMC Cell 1", "CNC Milling"],
+  ["VMC Cell 1", "Deburr & Finish"],
   ["VMC Cell 2", "CNC Milling"],
+  ["VMC Cell 2", "Deburr & Finish"],
   ["Turning Cell", "CNC Turning"],
+  ["Turning Cell", "CNC Milling"],
   ["Wire EDM Cell", "Wire EDM"],
+  ["Wire EDM Cell", "Deburr & Finish"],
   ["Fab & Weld Bay", "Sheet Metal Fabrication"],
   ["Fab & Weld Bay", "Welding"],
+  ["Fab & Weld Bay", "Deburr & Finish"],
   ["Finish & Assembly Bench", "Deburr & Finish"],
   ["Finish & Assembly Bench", "Mechanical Assembly"],
   ["CMM Lab", "Final Inspection"]
