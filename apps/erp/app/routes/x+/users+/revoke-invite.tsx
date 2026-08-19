@@ -30,6 +30,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { users } = validation.data;
 
+  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+
   const serviceRole = getCarbonServiceRole();
 
   const usersToRevoke = await serviceRole
@@ -52,7 +54,8 @@ export async function action({ request }: ActionFunctionArgs) {
       serviceRole,
       usersToRevoke.data[0].id,
       companyId,
-      userId
+      userId,
+      ip
     );
     if (!deactivate.success) {
       return data(
@@ -71,7 +74,8 @@ export async function action({ request }: ActionFunctionArgs) {
         id,
         type: "deactivate" as const,
         companyId,
-        actorId: userId
+        actorId: userId,
+        ip
       }
     }));
 

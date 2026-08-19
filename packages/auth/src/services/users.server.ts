@@ -104,7 +104,8 @@ export async function deactivateCustomer(
   serviceRole: SupabaseClient<Database>,
   userId: string,
   companyId: string,
-  actorId?: string
+  actorId?: string,
+  ip?: string
 ): Promise<Result> {
   const currentPermissions = await serviceRole
     .from("userPermission")
@@ -188,6 +189,7 @@ export async function deactivateCustomer(
     afterRole: null,
     before,
     after: permissions,
+    ip,
     reason: "deactivate"
   });
 
@@ -198,7 +200,8 @@ export async function deactivateEmployee(
   serviceRole: SupabaseClient<Database>,
   userId: string,
   companyId: string,
-  actorId?: string
+  actorId?: string,
+  ip?: string
 ): Promise<Result> {
   const currentPermissions = await serviceRole
     .from("userPermission")
@@ -284,6 +287,7 @@ export async function deactivateEmployee(
     afterRole: null,
     before,
     after: permissions,
+    ip,
     reason: "deactivate"
   });
 
@@ -294,7 +298,8 @@ export async function deactivateUser(
   serviceRole: SupabaseClient<Database>,
   userId: string,
   companyId: string,
-  actorId?: string
+  actorId?: string,
+  ip?: string
 ) {
   const userToCompany = await serviceRole
     .from("userToCompany")
@@ -333,21 +338,24 @@ export async function deactivateUser(
         serviceRole,
         userId,
         companyId,
-        actorId
+        actorId,
+        ip
       );
     } else if (invite.data.role === "employee") {
       result = await deactivateEmployee(
         serviceRole,
         userId,
         companyId,
-        actorId
+        actorId,
+        ip
       );
     } else if (invite.data.role === "supplier") {
       result = await deactivateSupplier(
         serviceRole,
         userId,
         companyId,
-        actorId
+        actorId,
+        ip
       );
     } else {
       throw new Error("Invalid user role");
@@ -358,21 +366,24 @@ export async function deactivateUser(
         serviceRole,
         userId,
         companyId,
-        actorId
+        actorId,
+        ip
       );
     } else if (userToCompany.data?.role === "employee") {
       result = await deactivateEmployee(
         serviceRole,
         userId,
         companyId,
-        actorId
+        actorId,
+        ip
       );
     } else if (userToCompany.data?.role === "supplier") {
       result = await deactivateSupplier(
         serviceRole,
         userId,
         companyId,
-        actorId
+        actorId,
+        ip
       );
     } else {
       throw new Error("Invalid user role");
@@ -409,7 +420,8 @@ export async function deactivateSupplier(
   serviceRole: SupabaseClient<Database>,
   userId: string,
   companyId: string,
-  actorId?: string
+  actorId?: string,
+  ip?: string
 ): Promise<Result> {
   const currentPermissions = await serviceRole
     .from("userPermission")
@@ -493,6 +505,7 @@ export async function deactivateSupplier(
     afterRole: null,
     before,
     after: permissions,
+    ip,
     reason: "deactivate"
   });
 

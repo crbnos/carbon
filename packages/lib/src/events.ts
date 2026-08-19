@@ -236,6 +236,8 @@ export type Events = {
       // The acting admin's userId — recorded as the actor on the audit event
       // (NIST 800-171 3.3.1/3.3.2). Optional for backward-compatible replays.
       actorId?: string;
+      // Source IP of the request that triggered the change (AU-3 source-of-event).
+      ip?: string;
     };
   };
 
@@ -268,6 +270,8 @@ export type Events = {
           // The acting admin's userId — recorded as the actor on the audit
           // event (NIST 800-171 3.3.1/3.3.2). Optional for replay safety.
           actorId?: string;
+          // Source IP of the request that triggered the change (AU-3 source-of-event).
+          ip?: string;
         }
       | {
           id: string;

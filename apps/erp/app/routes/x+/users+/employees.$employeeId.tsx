@@ -128,12 +128,15 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+
   const result = await updateEmployee(client, {
     id,
     employeeType,
     permissions,
     companyId,
-    actorId: userId
+    actorId: userId,
+    ip
   });
 
   throw redirect(path.to.employeeAccounts, await flash(request, result));

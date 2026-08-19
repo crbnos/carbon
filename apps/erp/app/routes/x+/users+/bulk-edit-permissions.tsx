@@ -48,13 +48,16 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+
   const batchPayload = userIds.map((id) => ({
     payload: {
       id,
       permissions,
       addOnly,
       companyId,
-      actorId: userId
+      actorId: userId,
+      ip
     }
   }));
 

@@ -27,6 +27,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { users, redirectTo } = validation.data;
 
+  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+
   if (users.includes(userId)) {
     throw redirect(
       safeRedirect(redirectTo),
@@ -41,7 +43,8 @@ export async function action({ request }: ActionFunctionArgs) {
       client,
       targetUserId,
       companyId,
-      userId
+      userId,
+      ip
     );
 
     throw redirect(safeRedirect(redirectTo), await flash(request, result));
@@ -51,7 +54,8 @@ export async function action({ request }: ActionFunctionArgs) {
         id,
         type: "deactivate" as const,
         companyId,
-        actorId: userId
+        actorId: userId,
+        ip
       }
     }));
 

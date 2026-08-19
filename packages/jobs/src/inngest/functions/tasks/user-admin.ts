@@ -34,7 +34,8 @@ export const userAdminFunction = inngest.createFunction(
             serviceRole,
             payload.id,
             payload.companyId,
-            payload.actorId
+            payload.actorId,
+            payload.ip
           );
           if (result.success && CarbonEdition === Edition.Cloud) {
             await updateSubscriptionQuantityForCompany(payload.companyId);

@@ -59,7 +59,8 @@ describe("logPermissionChange", () => {
 
     expect(info).toHaveBeenCalledTimes(1);
     const [message, payload] = info.mock.calls[0]!;
-    expect(message).toBe("auth.permission_changed");
+    expect(message).toContain("auth.permission_changed");
+    expect(message).toContain("actor=usr_admin");
     expect(payload).toMatchObject({
       authEvent: "permission_changed",
       outcome: "success",
@@ -73,7 +74,7 @@ describe("logPermissionChange", () => {
     });
   });
 
-  it("records an unattributed change when actor is missing", () => {
+  it("stamps a system actor when actor is missing (never unattributed)", () => {
     logPermissionChange({
       targetUserId: "usr_target",
       companyId: COMPANY,
@@ -81,9 +82,22 @@ describe("logPermissionChange", () => {
       after: { sales_view: [COMPANY] }
     });
     const [, payload] = info.mock.calls[0]!;
-    expect(payload.actor).toBeUndefined();
+    expect(payload.actor).toBe("system");
     expect(payload.granted).toEqual(["sales_view"]);
     expect(payload.revoked).toEqual([]);
+  });
+
+  it("records the source ip when provided", () => {
+    logPermissionChange({
+      actor: "usr_admin",
+      targetUserId: "usr_target",
+      companyId: COMPANY,
+      ip: "203.0.113.7",
+      before: {},
+      after: { sales_view: [COMPANY] }
+    });
+    const [, payload] = info.mock.calls[0]!;
+    expect(payload.ip).toBe("203.0.113.7");
   });
 });
 
@@ -97,12 +111,14 @@ describe("logRoleChange", () => {
       afterRole: null,
       before: { sales_view: [COMPANY, OTHER], parts_view: [COMPANY] },
       after: { sales_view: [OTHER], parts_view: [] },
+      ip: "203.0.113.7",
       reason: "deactivate"
     });
 
     expect(info).toHaveBeenCalledTimes(1);
     const [message, payload] = info.mock.calls[0]!;
-    expect(message).toBe("auth.role_changed");
+    expect(message).toContain("auth.role_changed");
+    expect(message).toContain("ip=203.0.113.7");
     expect(payload).toMatchObject({
       authEvent: "role_changed",
       outcome: "success",
@@ -114,6 +130,7 @@ describe("logRoleChange", () => {
       before: ["parts_view", "sales_view"],
       after: [],
       revoked: ["parts_view", "sales_view"],
+      ip: "203.0.113.7",
       reason: "deactivate"
     });
   });

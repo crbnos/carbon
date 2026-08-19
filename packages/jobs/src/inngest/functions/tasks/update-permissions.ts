@@ -41,7 +41,8 @@ export async function updatePermissions(
     permissions,
     companyId,
     addOnly = false,
-    actorId
+    actorId,
+    ip
   }: {
     id: string;
     addOnly: boolean;
@@ -51,6 +52,7 @@ export async function updatePermissions(
     >;
     companyId: string;
     actorId?: string;
+    ip?: string;
   }
 ): Promise<Result> {
   if (await client.rpc("is_claims_admin", { company: companyId })) {
@@ -197,6 +199,7 @@ export async function updatePermissions(
       actor: actorId,
       targetUserId: id,
       companyId,
+      ip,
       before: beforePermissions,
       after: updatedPermissions,
       reason: addOnly ? "bulk-add" : "bulk-edit"

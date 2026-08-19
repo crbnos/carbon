@@ -2,6 +2,15 @@ import { getLogger } from "@carbon/logger";
 
 const log = getLogger("auth", "events");
 
+/**
+ * Recorded as the actor when a permission/role change has no attributable human
+ * — an automated job, a replay, or a system-initiated revocation. NIST 800-171
+ * 3.3.2 requires every audited action to be traceable to an identity; a blank
+ * actor is a traceability gap, so an unattributed change is stamped `system`
+ * rather than omitted.
+ */
+export const SYSTEM_ACTOR = "system";
+
 export type AuthEvent =
   | "login_success"
   | "login_failed"
@@ -49,10 +58,22 @@ export function logAuthEvent(
     event === "permission_denied";
   const outcome = fields.outcome ?? (failed ? "failure" : "success");
   const payload = { authEvent: event, outcome, ...fields };
+  // Append the identity fields to the human-readable message so they are visible
+  // in the dev ANSI console (whose formatter renders only the message, not the
+  // structured properties). The properties above remain the machine-readable
+  // source of truth for JSONL / CloudWatch — this line is a readable echo, not a
+  // replacement.
+  const target = fields.targetUserId;
+  const message =
+    `auth.${event}` +
+    (fields.actor != null ? ` actor=${fields.actor}` : "") +
+    (target != null ? ` target=${String(target)}` : "") +
+    (fields.ip != null ? ` ip=${fields.ip}` : "") +
+    (fields.outcome != null || failed ? ` outcome=${outcome}` : "");
   if (outcome === "failure") {
-    log.warn(`auth.${event}`, payload);
+    log.warn(message, payload);
   } else {
-    log.info(`auth.${event}`, payload);
+    log.info(message, payload);
   }
 }
 
@@ -86,21 +107,24 @@ export function grantedPermissionKeys(
  * by the granular permission-edit path (the `update-permissions` batch job).
  */
 export function logPermissionChange(fields: {
-  /** The acting admin's userId. `undefined` records an unattributed/system change. */
+  /** The acting admin's userId. Falls back to {@link SYSTEM_ACTOR} when absent. */
   actor?: string | null;
   /** The user whose permissions changed. */
   targetUserId: string;
   companyId: string;
   before: Record<string, string[]> | null | undefined;
   after: Record<string, string[]> | null | undefined;
+  /** Source IP of the request that made the change (AU-3 "source of event"). */
+  ip?: string | null;
   reason?: string;
 }): void {
   const before = grantedPermissionKeys(fields.before, fields.companyId);
   const after = grantedPermissionKeys(fields.after, fields.companyId);
   logAuthEvent("permission_changed", {
-    actor: fields.actor ?? undefined,
+    actor: fields.actor ?? SYSTEM_ACTOR,
     targetUserId: fields.targetUserId,
     companyId: fields.companyId,
+    ip: fields.ip ?? undefined,
     before,
     after,
     granted: after.filter((key) => !before.includes(key)),
@@ -119,7 +143,7 @@ export function logPermissionChange(fields: {
  * trail (deactivation revokes access as well as removing the role).
  */
 export function logRoleChange(fields: {
-  /** The acting admin's userId. `undefined` records an unattributed/system change. */
+  /** The acting admin's userId. Falls back to {@link SYSTEM_ACTOR} when absent. */
   actor?: string | null;
   /** The user whose role changed. */
   targetUserId: string;
@@ -128,12 +152,15 @@ export function logRoleChange(fields: {
   afterRole?: string | null;
   before?: Record<string, string[]> | null;
   after?: Record<string, string[]> | null;
+  /** Source IP of the request that made the change (AU-3 "source of event"). */
+  ip?: string | null;
   reason?: string;
 }): void {
   const payload: Record<string, unknown> = {
-    actor: fields.actor ?? undefined,
+    actor: fields.actor ?? SYSTEM_ACTOR,
     targetUserId: fields.targetUserId,
     companyId: fields.companyId,
+    ip: fields.ip ?? undefined,
     beforeRole: fields.beforeRole ?? null,
     afterRole: fields.afterRole ?? null,
     reason: fields.reason

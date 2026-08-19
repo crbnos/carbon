@@ -1396,13 +1396,15 @@ export async function updateEmployee(
     employeeType,
     permissions,
     companyId,
-    actorId
+    actorId,
+    ip
   }: {
     id: string;
     employeeType: string;
     permissions: Record<string, CompanyPermission>;
     companyId: string;
     actorId?: string;
+    ip?: string;
   }
 ): Promise<Result> {
   const updateEmployeeEmployeeType = await client
@@ -1412,7 +1414,7 @@ export async function updateEmployee(
   if (updateEmployeeEmployeeType.error)
     return error(updateEmployeeEmployeeType.error, "Failed to update employee");
 
-  return updatePermissions(client, { id, permissions, companyId, actorId });
+  return updatePermissions(client, { id, permissions, companyId, actorId, ip });
 }
 
 export async function updatePermissions(
@@ -1422,13 +1424,15 @@ export async function updatePermissions(
     permissions,
     companyId,
     addOnly = false,
-    actorId
+    actorId,
+    ip
   }: {
     id: string;
     permissions: Record<string, CompanyPermission>;
     companyId: string;
     addOnly?: boolean;
     actorId?: string;
+    ip?: string;
   }
 ): Promise<Result> {
   if (await client.rpc("is_claims_admin", { company: companyId })) {
@@ -1575,6 +1579,7 @@ export async function updatePermissions(
       actor: actorId,
       targetUserId: id,
       companyId,
+      ip,
       before: beforePermissions,
       after: updatedPermissions,
       reason: addOnly ? "add" : "edit"
