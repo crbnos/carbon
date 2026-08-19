@@ -123,87 +123,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         );
       }
 
-      // Onshape only stamps revisions on RELEASED versions, so rows from an
-      // unreleased version/workspace carry an empty Revision and can only
-      // exact-match a revision-0 item. Fall back to the LATEST existing
-      // revision of the same readableId so re-syncing an unreleased version
-      // updates the items the company already uses instead of silently
-      // creating a parallel revision-less item tree.
-      let latestRevisionByReadableId: Map<
-        string,
-        {
-          itemId: string;
-          defaultMethodType: string;
-          replenishmentSystem: string;
-        }
-      > | null = null;
-
-      const bareReadableIds = Array.from(
-        new Set(
-          flattenedData
-            .filter((row) => {
-              // biome-ignore lint/complexity/useLiteralKeys: consistency with surrounding code
-              const partNumber = row["Part number"] || row["Name"];
-              return (
-                // biome-ignore lint/complexity/useLiteralKeys: consistency with surrounding code
-                !row["Revision"] &&
-                partNumber &&
-                !itemsMap?.has(getReadableIdWithRevision(partNumber, ""))
-              );
-            })
-            // biome-ignore lint/complexity/useLiteralKeys: consistency with surrounding code
-            .map((row) => row["Part number"] || row["Name"])
-        )
-      );
-
-      if (bareReadableIds.length) {
-        const revisionItems = await client
-          .from("item")
-          .select(
-            "id, readableId, revision, createdAt, defaultMethodType, replenishmentSystem"
-          )
-          .in("readableId", bareReadableIds)
-          .eq("companyId", companyId);
-
-        const isInitialRevision = (r: string | null) => !r || r === "0";
-        latestRevisionByReadableId = new Map();
-        for (const readableId of bareReadableIds) {
-          const candidates = (revisionItems.data ?? [])
-            .filter((item) => item.readableId === readableId)
-            .sort((a, b) => {
-              // Named revisions beat the initial one; newest wins the tie —
-              // same preference as the latest_items CTE in the list views.
-              const aInitial = isInitialRevision(a.revision) ? 1 : 0;
-              const bInitial = isInitialRevision(b.revision) ? 1 : 0;
-              if (aInitial !== bInitial) return aInitial - bInitial;
-              return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
-            });
-          const best = candidates[0];
-          if (best) {
-            latestRevisionByReadableId.set(readableId, {
-              itemId: best.id,
-              defaultMethodType: best.defaultMethodType,
-              replenishmentSystem: best.replenishmentSystem
-            });
-          }
-        }
-      }
-
       const flattenedDataWithMetadata = flattenedData.map((row) => {
-        // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-        const partNumber = row["Part number"] || row["Name"];
-        const item =
-          itemsMap?.get(
-            getReadableIdWithRevision(
-              partNumber,
-              // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-              row["Revision"]
-            )
-          ) ??
-          // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-          (!row["Revision"]
-            ? latestRevisionByReadableId?.get(partNumber)
-            : undefined);
+        const item = itemsMap?.get(
+          getReadableIdWithRevision(
+            // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
+            row["Part number"] || row["Name"],
+            // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
+            row["Revision"]
+          )
+        );
         let replenishmentSystem = item?.replenishmentSystem;
         let defaultMethodType = item?.defaultMethodType;
 

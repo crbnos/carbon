@@ -3,6 +3,14 @@
 **PAUSED 2026-08-14 — awaiting details from Heaviside before Phase 2.** State: Phase 1 done,
 verified, uncommitted. Pickup steps in "Picking this up later" at the bottom.
 
+**2026-08-19 — Phase 1's code was REVERTED out of `feat/onshape-v2`.** It is correct and worth
+shipping, but it changes the legacy BOM import that existing customers use today, ungated, and the
+ERP route and the `sync` edge function deploy on separate unordered workflows — an app-ahead-of-
+function window wipes and rebuilds an existing released revision's BOM. It ships as its own PR with
+its own deployment plan. The commit is still in the branch history: `git cherry-pick 20faf4496`
+onto `main` reconstructs it. Reasoning and evidence:
+`.ai/reviews/2026-08-19-onshape-v2-legacy-impact.md`.
+
 Branch: `feat/onshape-import-revisions`. Driven by Heaviside report: re-syncing a BOM after a
 revision does not update sub-parts. Reference docs (project dir, outside repo):
 `onshape-release-actions.md` (the three Onshape UI routes that fire `onshape.revision.created`),
