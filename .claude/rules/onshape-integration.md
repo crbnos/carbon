@@ -913,8 +913,24 @@ backstop (`onshape-release-import.ts:413`).
 **v2 refuses drawings outright** (`onshape-release-v2.ts:105`,
 `v2.revisions.ts:128`, `lib/resolve.ts:61`) because the suffix heuristic is
 disproved on real data: RD-410, DRW-410 and PK-410 all reduce to `-410`, matching
-five items across two parts. A mapping-based mechanism does not exist yet, so a
-v2 company's drawing PDFs do not land anywhere.
+five items across two parts. Nothing is built, so a v2 company's drawing PDFs do
+not land anywhere.
+
+**The join is solved but unbuilt** (verified live 2026-08-19).
+`GET /api/v10/appelements/d/{did}/{wvm}/{wvmid}/e/{eid}/references` returns the
+drawing's referenced elements; `{targetDocumentId}:{targetElementId}` is exactly
+`buildElementExternalId`'s format, so it is a primary-key lookup into
+`externalIntegrationMapping`. For the RD-410 drawing it returns the RD-410
+assembly plus the BOM element on the sheet — dedupe, drop non-model element
+types, one survivor. See `.ai/plans/2026-08-19-onshape-drawing-attachment.md`.
+
+Two traps for whoever builds it. A drawing's `elementType` in the `/elements`
+listing is **`APPLICATION`, not `DRAWING`** — the references endpoint 400s on
+every other type — so the `elementType === 2` assumption in the refusal branches
+is unverified for webhooks and must not be inherited blindly. And
+`webhook.onshape.$companyId.ts:292` refuses to dispatch without a `partNumber`,
+which a drawing does not have, so the release path never reaches any resolver
+until that gate gains an exception.
 
 ## Legacy BOM import path
 

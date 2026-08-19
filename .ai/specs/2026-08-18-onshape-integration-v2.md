@@ -214,6 +214,8 @@ revert a migrated customer to legacy. Change it to merge into existing metadata.
 4. **Done.** BOM import v2 — identity-retaining parser, Inngest writer, reconcile.
 5. **Done.** Asset pull for the whole imported tree, in the same job.
 6. **Done.** Webhook routing to the v2 pipeline, plus a v2 release job.
+7. **Next.** Drawing attachment — join verified 2026-08-19, nothing built. Plan:
+   `.ai/plans/2026-08-19-onshape-drawing-attachment.md`.
 
 Also built, beyond the original list: unreleased-version syncing
 (`allowUnreleasedSync` gated everywhere, versions loader, refusals) and the
@@ -245,7 +247,8 @@ migration warning on switching a company to v2.
       user is looking at was the only one in the tree never given geometry. Verified live —
       `RD-410.A.gltf` at 138667 bytes against the SA-800 subassembly's 78410.
       Drawing PDFs are NOT attached — v1's suffix matching is disproved on real data
-      (see the drawing section above) and no replacement mechanism is settled.
+      (see the drawing section above). The replacement mechanism is now settled and verified
+      (`appelements/.../references`), but not built; it is Phase 7.
 - [x] Two Onshape elements claiming one `readableId` are refused with both sources named —
       verified live: `EL-402.A` was refused while `EL-402.C` held the mapping, and the refusal
       names both. (The inverse — two legitimate REVISIONS of one part reading as a collision —
@@ -285,18 +288,64 @@ therefore permanently `ambiguous-item`.
 
 That is not a numbering mistake by the customer; three-digit part numbers
 colliding on a suffix is ordinary. It means **v2 must not attach drawings by
-suffix**. Candidate mechanisms, to be settled with the asset-pull work:
+suffix**.
 
-- exact part-number equality between drawing and model, scoped to the same
-  document — unambiguous when a customer numbers a drawing the same as what it
-  documents, which is common;
-- ask Onshape what the drawing references, if an API exposes a drawing's
-  referenced elements, and map through the element id like everything else;
-- a mapping row for the drawing element itself, established when a user links or
-  imports the model, so the join is an id rather than a string either way.
+### Resolved 2026-08-19: Onshape names the referenced element outright
 
-The third is most consistent with the rest of v2 and needs no naming convention
-from the customer.
+Verified live against the connected Onshape account. The join is an id lookup,
+not a string match, and needs no naming convention from the customer.
+
+    GET /api/v10/appelements/d/{did}/{wvm}/{wvmid}/e/{eid}/references
+
+Against `3043b4598e6e8d07fa7f3e45` (`RD-410 Wandleser RFID Drawing 1`) it returns
+200 with **9 reference records resolving to 2 distinct targets**:
+
+| `targetElementId` | What it is |
+|---|---|
+| `71d063cabedf14392964ab6d` | `RD-410 Wandleser RFID` — the ASSEMBLY the drawing documents |
+| `7eaf0733dba8077e29eef6d2` | the BILLOFMATERIALS element embedded on the sheet |
+
+Each record carries `targetDocumentId`, `targetElementId` and
+`targetConfiguration`. `{targetDocumentId}:{targetElementId}` is exactly what
+`buildElementExternalId` produces:
+`fd15a005d9711c2535b11835:71d063cabedf14392964ab6d` is byte-identical to a row
+already in `externalIntegrationMapping`, resolving to `RD-410.A`. Confirmed by
+direct lookup against the local database.
+
+**Resolution rule.** Dedupe the targets, drop element types that are not a Part
+Studio or Assembly (which removes the BOM element), and exactly one survives →
+its mapping row is the item to attach the PDF to. Two or more surviving model
+targets is a drawing that genuinely documents more than one thing; refuse. That
+is a real ambiguity criterion, unlike the accidental collision suffix matching
+produced.
+
+**A drawing's `elementType` is `APPLICATION`, not `DRAWING`.** The `/elements`
+listing returns `APPLICATION` for this drawing, and the references endpoint
+rejects every other element type with `400 "Element must be an application"` —
+it is purpose-built for this one. Both v2 refusal branches
+(`resolve.ts:61`, `onshape-release-v2.ts:105`) test numeric `elementType === 2`
+(DRAWING). Whether a released drawing's webhook carries `2` is **untested**;
+confirm before relying on either branch. Currently masked because the part-number
+gate below fires first.
+
+**The webhook gate blocks the release path regardless.**
+`webhook.onshape.$companyId.ts:292` refuses to dispatch without a `partNumber`,
+and a drawing has none. It needs a drawing-shaped exception or the resolver is
+never reached on release, however good the join is.
+
+**Untested:** probed at workspace level (`/w/{wid}/`). The drawing is not present
+in version `05ba9d4e8ffbcbc9cee29003` (rev A), which holds only the part studio,
+two assemblies and two BOM elements — so version-level behaviour is unverified,
+and whether this customer releases drawings at all is unknown.
+
+**Already built, currently unused:** `createDrawingTranslation` (PDF export,
+`client.ts:437`) and `syncOnshapeDrawingAssetsToItem`
+(`onshape-sync-element.ts:314`). Only the join was missing.
+
+Superseded candidates, kept for the record: exact part-number equality scoped to
+the document (fails — the drawing has no part number), and a user-established
+mapping row for the drawing element (still the right fallback for a drawing whose
+references resolve to more than one model).
 
 ## Open Questions
 
@@ -341,7 +390,10 @@ Resolved during design:
 
 - **Translations.** 55 new English strings ship with empty `msgstr` in 12 locales. That matches
   upstream practice — `pnpm translate` needs an LLM key and is run as its own pass, not per PR.
-- **Drawing attachment.** Still unsolved; see the drawing section. v2 refuses rather than guessing.
+- **Drawing attachment.** Not built. The join is no longer the unknown — it is solved and verified
+  (see the drawing section): `appelements/.../references` names the referenced element id directly.
+  What remains is wrapping the endpoint, a resolver, and relaxing the webhook's part-number gate.
+  Until then v2 refuses rather than guessing.
 - **Configuration is not part of identity.** `buildElementExternalId` ignores the Onshape
   configuration, so two configured instances of one element map to the same Carbon family. The
   ASSET pull now carries the configuration through, so a single-configured-instance BOM exports
@@ -462,3 +514,9 @@ twice as well.
 - 2026-08-19: All six phases done and audited twice. Corrected the settings table to the shipped
   `releaseImportV2` enum. Recorded the unreleased-version browser, the import-outcome
   notification, and the collision criterion as met.
+- 2026-08-19: Drawing attachment unblocked. Verified live that
+  `appelements/d/{did}/{wvm}/{wvmid}/e/{eid}/references` returns the referenced element id, so the
+  drawing → model join is an id lookup into the existing mapping. Recorded the resolution rule, the
+  `APPLICATION` vs `DRAWING` elementType discrepancy, and the webhook part-number gate that still
+  blocks the release path. Scoped as Phase 7 —
+  `.ai/plans/2026-08-19-onshape-drawing-attachment.md`.
