@@ -924,13 +924,15 @@ drawing's referenced elements; `{targetDocumentId}:{targetElementId}` is exactly
 assembly plus the BOM element on the sheet — dedupe, drop non-model element
 types, one survivor. See `.ai/plans/2026-08-19-onshape-drawing-attachment.md`.
 
-Two traps for whoever builds it. A drawing's `elementType` in the `/elements`
-listing is **`APPLICATION`, not `DRAWING`** — the references endpoint 400s on
-every other type — so the `elementType === 2` assumption in the refusal branches
-is unverified for webhooks and must not be inherited blindly. And
-`webhook.onshape.$companyId.ts:292` refuses to dispatch without a `partNumber`,
-which a drawing does not have, so the release path never reaches any resolver
-until that gate gains an exception.
+Two things to know. A drawing's `elementType` in the `/elements` listing is
+**`APPLICATION`, not `DRAWING`** — the references endpoint 400s on every other
+type — but that is the listing API's string encoding, not the numeric one. The
+revisions API reports `1` for every released assembly and `0` for every released
+part, matching the scheme the refusal branches assume, so `2` for a drawing is
+sound. And `webhook.onshape.$companyId.ts:292` refuses to dispatch without a
+`partNumber` — but Onshape itself will not release a drawing without one (its
+release dialog makes the field required), so that gate likely never fires for a
+released drawing and should not be relaxed on the old reasoning.
 
 ## Legacy BOM import path
 

@@ -106,10 +106,13 @@ of the original complaints about v1.
 
 ## Open questions to settle first
 
-- **Does the webhook carry `elementType === 2` for a released drawing?** Both v2 refusal branches
-  (`resolve.ts:61`, `onshape-release-v2.ts:105`) assume so, but the REST listing calls a drawing
-  `APPLICATION`. If the numeric code differs, those branches are dead and the new code must not
-  inherit the same assumption. Untestable without a real drawing release.
+- **Does the webhook carry `elementType === 2` for a released drawing?** Largely resolved
+  2026-08-19: the company revisions API reports `elementType=1` for every released assembly
+  (RD-410, SA-800, TB-900, TB-950) and `elementType=0` for every released part (EL-402, PK-410,
+  MC-101 …), which is exactly the numeric scheme `resolve.ts:61` and `onshape-release-v2.ts:105`
+  assume. The `APPLICATION` label is the `/elements` listing's *string* encoding — a different
+  API, not a contradiction. `2` for a drawing is unproven only because no released drawing
+  exists; there is no longer a reason to doubt it.
 - **Version-level behaviour.** The references probe ran at workspace level (`/w/{wid}/`). The
   drawing is not in version `05ba9d4e8ffbcbc9cee29003` at all, so `/v/{vid}/` is unverified —
   and a release reads at a version.
