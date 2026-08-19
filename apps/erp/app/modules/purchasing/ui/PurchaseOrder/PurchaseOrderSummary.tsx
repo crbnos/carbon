@@ -21,7 +21,12 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { DateTime, MethodIcon, SupplierAvatar } from "~/components";
+import {
+  DateTime,
+  MethodIcon,
+  RevisionSuffix,
+  SupplierAvatar
+} from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
@@ -473,7 +478,12 @@ const PurchaseOrderSummary = ({
       <CardHeader>
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
-            <CardTitle>{routeData?.purchaseOrder.purchaseOrderId}</CardTitle>
+            <CardTitle className="flex items-center gap-0">
+              <span>{routeData?.purchaseOrder.purchaseOrderId}</span>
+              <RevisionSuffix
+                revisionId={routeData?.purchaseOrder?.revisionId}
+              />
+            </CardTitle>
             <CardDescription>
               <Trans>Purchase Order</Trans>
             </CardDescription>

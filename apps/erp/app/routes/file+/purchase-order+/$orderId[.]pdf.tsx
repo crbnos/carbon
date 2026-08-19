@@ -1,5 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { ensureFont, PurchaseOrderPDF } from "@carbon/documents/pdf";
+import {
+  ensureFont,
+  getPurchaseOrderDisplayId,
+  PurchaseOrderPDF
+} from "@carbon/documents/pdf";
 import {
   collectSectionIds,
   resolveTemplate,
@@ -197,7 +201,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const headers = new Headers({
     "Content-Type": "application/pdf",
-    "Content-Disposition": `inline; filename="${company.data.name} - ${purchaseOrder.data.purchaseOrderId}.pdf"`
+    "Content-Disposition": `inline; filename="${company.data.name} - ${getPurchaseOrderDisplayId(purchaseOrder.data)}.pdf"`
   });
   return new Response(new Uint8Array(body), { status: 200, headers });
 }

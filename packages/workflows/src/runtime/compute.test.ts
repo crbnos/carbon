@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createFixtureCatalog } from "../definition/catalog";
-import type { EntityNode } from "../definition/schema";
-import { entityExecutor } from "./entity";
+import type { ComputeNode } from "../definition/schema";
+import { computeExecutor } from "./compute";
 import { createRuntimeContext } from "./fixtures";
 import type { RuntimeValue, WorkflowServices } from "./types";
 import { entityValue, primitiveValue } from "./values";
@@ -17,11 +17,11 @@ const jobRef = {
 
 const node = (
   operation = "job.totalScrap",
-  inputs: EntityNode["data"]["inputs"] = { job: jobRef }
-): EntityNode => ({
+  inputs: ComputeNode["data"]["inputs"] = { job: jobRef }
+): ComputeNode => ({
   id: "scrap",
   name: "scrap",
-  type: "entity",
+  type: "compute",
   position: { x: 0, y: 0 },
   data: { operation, inputs }
 });
@@ -36,7 +36,7 @@ const unreachable: WorkflowServices["runOperation"] = async () => {
   throw new Error("the service should not have been called");
 };
 
-describe("entityExecutor", () => {
+describe("computeExecutor", () => {
   it("puts the operation's value on `result` and follows the out handle", async () => {
     const calls: Array<[string, Record<string, RuntimeValue>]> = [];
     const ctx = contextWith(async (operationId, inputs) => {
@@ -44,7 +44,7 @@ describe("entityExecutor", () => {
       return { ok: true, value: primitiveValue("number", 12) };
     });
 
-    expect(await entityExecutor.execute(node(), ctx)).toEqual({
+    expect(await computeExecutor.execute(node(), ctx)).toEqual({
       status: "Succeeded",
       outputs: { result: primitiveValue("number", 12) },
       handle: "out"
@@ -55,7 +55,7 @@ describe("entityExecutor", () => {
   });
 
   it("skips with the resolver's own reason when an input cannot be resolved", async () => {
-    const result = await entityExecutor.execute(
+    const result = await computeExecutor.execute(
       node("job.totalScrap", {
         job: { kind: "ref", nodeId: "gone", output: "result", path: [] }
       }),
@@ -68,7 +68,7 @@ describe("entityExecutor", () => {
   });
 
   it("fails with the service's error", async () => {
-    const result = await entityExecutor.execute(
+    const result = await computeExecutor.execute(
       node(),
       contextWith(async () => ({
         ok: false,
@@ -82,17 +82,17 @@ describe("entityExecutor", () => {
   });
 
   it("reports the operation's declared permission", () => {
-    expect(entityExecutor.permission(node(), catalog)).toEqual({
+    expect(computeExecutor.permission(node(), catalog)).toEqual({
       module: "production",
       action: "view"
     });
     expect(
-      entityExecutor.permission(node("job.gone"), catalog)
+      computeExecutor.permission(node("job.gone"), catalog)
     ).toBeUndefined();
   });
 
   it("skips when the operation is no longer in the catalog", async () => {
-    const result = await entityExecutor.execute(
+    const result = await computeExecutor.execute(
       node("job.gone"),
       contextWith(unreachable)
     );

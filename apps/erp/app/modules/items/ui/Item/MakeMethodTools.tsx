@@ -115,8 +115,8 @@ const MakeMethodTools = ({
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
 
   // Version creation is locked while an open change notice owns this item
-  const openChangeNotices = useItemOpenChangeNotices(type, itemId);
-  const isChangeNoticeLocked = openChangeNotices.length > 0;
+  const { changeNotices: openChangeNotices, isLocked: isChangeNoticeLocked } =
+    useItemOpenChangeNotices(type, itemId);
 
   const activeMethod =
     makeMethods.find((m) => m.id === activeMethodId) ?? makeMethods[0];
@@ -306,6 +306,7 @@ const MakeMethodTools = ({
                             <DropdownMenuSubContent>
                               <ItemChangeNoticeLock
                                 changeNotices={openChangeNotices}
+                                isLocked={isChangeNoticeLocked}
                               >
                                 <DropdownMenuItem
                                   disabled={isChangeNoticeLocked}
@@ -334,6 +335,7 @@ const MakeMethodTools = ({
                               <DropdownMenuSeparator />
                               <ItemChangeNoticeLock
                                 changeNotices={openChangeNotices}
+                                isLocked={isChangeNoticeLocked}
                               >
                                 <DropdownMenuItem
                                   disabled={
@@ -358,7 +360,10 @@ const MakeMethodTools = ({
                     })}
                   <DropdownMenuSeparator />
                   {permissions.can("create", "production") && (
-                    <ItemChangeNoticeLock changeNotices={openChangeNotices}>
+                    <ItemChangeNoticeLock
+                      changeNotices={openChangeNotices}
+                      isLocked={isChangeNoticeLocked}
+                    >
                       <DropdownMenuItem
                         disabled={isChangeNoticeLocked}
                         onClick={newVersionModal.onOpen}

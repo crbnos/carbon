@@ -166,7 +166,7 @@ describe("a workflow end to end", () => {
         },
         {
           id: "total",
-          type: "entity",
+          type: "compute",
           position: { x: 0, y: 1 },
           data: {
             operation: "purchaseOrder.total",
@@ -601,7 +601,7 @@ describe("a workflow end to end", () => {
         },
         {
           id: "scrap",
-          type: "entity",
+          type: "compute",
           position: { x: 0, y: 1 },
           data: {
             operation: "job.totalScrapQuantity",

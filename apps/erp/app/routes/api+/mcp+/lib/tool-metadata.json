@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-19T12:15:13.142Z",
+  "generated": "2026-08-19T12:36:16.759Z",
   "totalTools": 1443,
   "modules": 15,
   "tools": [
@@ -26938,6 +26938,31 @@
       }
     },
     {
+      "name": "purchasing_reopenPurchaseOrderAsRevision",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "reopen purchase order as revision",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "{\n    id,\n    companyId,\n    updatedBy\n  }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
       "name": "purchasing_updateSupplierAccounting",
       "module": "purchasing",
       "classification": "WRITE",
@@ -42103,37 +42128,6 @@
           "digitalQuoteEnabled",
           "digitalQuoteNotificationGroup",
           "digitalQuoteIncludesPurchaseOrders"
-        ]
-      }
-    },
-    {
-      "name": "settings_updateIntegrationMetadata",
-      "module": "settings",
-      "classification": "WRITE",
-      "description": "update integration metadata",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "integrationId",
-        "metadata",
-        "updatedBy"
-      ],
-      "injectAuth": [
-        "companyId",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "integrationId": {
-            "type": "string"
-          },
-          "metadata": {}
-        },
-        "required": [
-          "integrationId",
-          "metadata"
         ]
       }
     },

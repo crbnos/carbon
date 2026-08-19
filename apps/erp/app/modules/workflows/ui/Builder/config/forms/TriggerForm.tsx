@@ -155,7 +155,13 @@ function EventPicker({
                   return (
                     <CommandItem
                       key={id}
-                      value={custom === undefined ? id : `${id} ${custom}`}
+                      // Search runs on `value`, so the visible label has to be in it —
+                      // the id alone is never what someone types, and never translated.
+                      value={
+                        custom === undefined
+                          ? `${id} ${label(id)}`
+                          : `${id} ${custom}`
+                      }
                       disabled={isReadOnly}
                       onSelect={() => {
                         onSelect(id);
@@ -196,7 +202,7 @@ function EventPicker({
                 {momentIds.map((id) => (
                   <CommandItem
                     key={id}
-                    value={id}
+                    value={`${id} ${label(id)}`}
                     disabled={isReadOnly}
                     onSelect={() => {
                       onSelect(id);
@@ -562,7 +568,14 @@ export function TriggerForm({ node, isReadOnly }: NodeFormProps<"trigger">) {
 
           {/* Origin selector */}
           <div className="space-y-2">
-            <Section>
+            <Section
+              hint={
+                <Trans>
+                  Everything else covers people, imports, integrations and the
+                  API — anything that is not one of your workflows.
+                </Trans>
+              }
+            >
               <Trans>Triggered by</Trans>
             </Section>
             <ToggleGroup
@@ -596,12 +609,6 @@ export function TriggerForm({ node, isReadOnly }: NodeFormProps<"trigger">) {
                 <Trans>Both</Trans>
               </ToggleGroupItem>
             </ToggleGroup>
-            <p className="text-xs text-muted-foreground">
-              <Trans>
-                Everything else covers people, imports, integrations and the API
-                — anything that is not one of your workflows.
-              </Trans>
-            </p>
           </div>
         </>
       ) : (

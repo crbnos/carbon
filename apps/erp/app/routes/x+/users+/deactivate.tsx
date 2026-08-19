@@ -27,6 +27,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { users, redirectTo } = validation.data;
 
+  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+
   if (users.includes(userId)) {
     throw redirect(
       safeRedirect(redirectTo),
@@ -37,7 +39,13 @@ export async function action({ request }: ActionFunctionArgs) {
   if (users.length === 1) {
     const [targetUserId] = users;
     // deactivateUser() handles Stripe subscription quantity update internally
-    const result = await deactivateUser(client, targetUserId, companyId);
+    const result = await deactivateUser(
+      client,
+      targetUserId,
+      companyId,
+      userId,
+      ip
+    );
 
     throw redirect(safeRedirect(redirectTo), await flash(request, result));
   } else {
@@ -45,7 +53,9 @@ export async function action({ request }: ActionFunctionArgs) {
       payload: {
         id,
         type: "deactivate" as const,
-        companyId
+        companyId,
+        actorId: userId,
+        ip
       }
     }));
 

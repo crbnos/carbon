@@ -110,6 +110,10 @@ msgstr "{0}개 문제 — 발행되지 않음"
 msgid "{0} Processes"
 msgstr "공정 {0}개"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0}이 등록되었습니다"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "잔액이 있는 공급업체 {0}곳"
@@ -189,6 +193,10 @@ msgstr "{name} 삭제됨"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount}개 부품이 건너뜀 — 만들 것이 없음"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel}이(가) 리비전 {0}으로 편집을 위해 다시 열립니다. 공급자에게 이미 보낸 문서는 주문을 확정하고 재전송할 때까지 변경되지 않습니다."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
@@ -1062,6 +1070,9 @@ msgstr "결정에 대한 메모를 추가하세요..."
 msgid "Add Approval Requirement"
 msgstr "승인 요구사항 추가"
 
+msgid "Add Authenticator App"
+msgstr "인증 앱 추가"
+
 msgid "Add Calibration Record"
 msgstr "교정 기록 추가"
 
@@ -1136,6 +1147,9 @@ msgstr "파트너 추가"
 
 msgid "Add parts"
 msgstr "부품 추가"
+
+msgid "Add Passkey"
+msgstr "패스키 추가"
 
 msgid "Add path"
 msgstr "경로 추가"
@@ -1685,7 +1699,7 @@ msgstr "보관됨"
 msgid "Archived Logs"
 msgstr "보관된 로그"
 
-#. placeholder {0}: quote.quoteId
+#. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
 msgid "Are you sure you want to accept quote {0} for {1}?"
 msgstr "{1}에 대한 견적 {0}을(를) 승인하시겠습니까?"
@@ -1704,9 +1718,8 @@ msgstr "{0}을(를) 취소하시겠습니까? 취소되면 다시 열 때까지 
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}을(를) 취소하시겠습니까? 관련된 모든 공급업체 견적도 함께 취소됩니다."
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "{0}을(를) 취소하시겠습니까? 주문이 종료됩니다."
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "{orderLabel}을(를) 취소하시겠습니까? 주문이 종료됩니다."
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "이 작업을 취소하시겠습니까? 더 이상 현장에서 사용할 수 없게 됩니다."
@@ -1762,14 +1775,17 @@ msgstr "이 공정작업에서 {0}을(를) 삭제하시겠습니까? 이 작업�
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}을(를) 삭제하시겠습니까?"
 
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "{0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "{name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "{orderLabel}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -1995,6 +2011,9 @@ msgstr "이 칸반 카드를 삭제하시겠습니까? 이 작업은 되돌릴 �
 
 msgid "Are you sure you want to delete this maintenance dispatch? This cannot be undone."
 msgstr "이 유지보수 작업지시를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "이 패스키를 삭제하시겠습니까? 더 이상 로그인할 수 없습니다."
 
 msgid "Are you sure you want to delete this quality document?"
 msgstr "이 품질 문서를 삭제하시겠습니까?"
@@ -2260,6 +2279,9 @@ msgstr "감사 로그"
 
 msgid "Authentication Error"
 msgstr "인증 오류"
+
+msgid "Authenticator app"
+msgstr "인증 앱"
 
 msgid "Authenticator QR code"
 msgstr "인증자 QR 코드"
@@ -2903,6 +2925,9 @@ msgstr "변경 공지 유형"
 
 msgid "Change Notices"
 msgstr "변경 공지"
+
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr "변경 공지를 로드할 수 없어 새 버전과 개정이 차단되었습니다. 다시 로드하세요."
 
 msgid "Change order"
 msgstr "변경 주문"
@@ -3880,6 +3905,9 @@ msgstr "칸반 생성"
 msgid "Create new rule"
 msgstr "새 규칙 생성"
 
+msgid "Create PO Revision"
+msgstr "구매주문 리비전 생성"
+
 msgid "Create Production Event"
 msgstr "생산 이벤트 생성"
 
@@ -4763,6 +4791,12 @@ msgstr "품목 삭제"
 msgid "Delete Partner"
 msgstr "파트너 삭제"
 
+msgid "Delete passkey"
+msgstr "패스키 삭제"
+
+msgid "Delete Passkey"
+msgstr "패스키 삭제"
+
 msgid "Delete Payment"
 msgstr "결제 삭제"
 
@@ -5571,6 +5605,9 @@ msgstr "품목 수정"
 msgid "Edit Partner"
 msgstr "파트너 수정"
 
+msgid "Edit Passkey"
+msgstr "패스키 편집"
+
 msgid "Edit Payment"
 msgstr "결제 수정"
 
@@ -5902,6 +5939,9 @@ msgstr "텍스트 입력…"
 
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "인증자 앱에서 6자리 코드를 입력하세요"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "계속하려면 인증 앱의 6자리 코드를 입력하세요."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
@@ -6443,6 +6483,9 @@ msgstr "리스크 조회 실패"
 msgid "Failed to fetch suggestions"
 msgstr "제안 조회 실패"
 
+msgid "Failed to get options"
+msgstr "옵션을 가져올 수 없습니다"
+
 msgid "Failed to initialize Carbon client"
 msgstr "Carbon 클라이언트 초기화 실패"
 
@@ -6512,6 +6555,9 @@ msgstr "계정 이동 실패: {0}"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "썸네일 재생성 실패"
+
+msgid "Failed to register passkey"
+msgstr "패스키 등록에 실패했습니다"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "이미지를 삭제하지 못했습니다: {errorMessage}"
@@ -8277,6 +8323,9 @@ msgstr "마지막 실행"
 msgid "Last synced: <0/>"
 msgstr "마지막 동기화: <0/>"
 
+msgid "Last used"
+msgstr "마지막 사용"
+
 msgid "Latest operation end"
 msgstr "최신 작업 종료"
 
@@ -9129,6 +9178,9 @@ msgstr "더 보기"
 msgid "More actions"
 msgstr "추가 작업"
 
+msgid "More information"
+msgstr "자세한 정보"
+
 msgid "More options"
 msgstr "추가 옵션"
 
@@ -9846,6 +9898,9 @@ msgstr "품목 ID 없음"
 msgid "No parts"
 msgstr "부품 없음"
 
+msgid "No passkeys registered yet."
+msgstr "등록된 패스키가 없습니다."
+
 msgid "No payables"
 msgstr "매입채무가 없습니다"
 
@@ -10447,8 +10502,14 @@ msgstr "선택적 페이지 및 섹션"
 msgid "Options"
 msgstr "옵션"
 
+msgid "or"
+msgstr "또는"
+
 msgid "OR"
 msgstr "또는"
+
+msgid "Or enter this secret manually:"
+msgstr "또는 이 시크릿을 수동으로 입력하세요:"
 
 msgid "Order"
 msgstr "주문"
@@ -10715,6 +10776,18 @@ msgstr "합격"
 
 msgid "Passed"
 msgstr "합격됨"
+
+msgid "Passkey name"
+msgstr "패스키 이름"
+
+msgid "Passkey unlock failed"
+msgstr "패스키 잠금 해제 실패"
+
+msgid "Passkeys"
+msgstr "패스키"
+
+msgid "Passkeys are disabled"
+msgstr "패스키가 비활성화되었습니다"
 
 msgid "Path"
 msgstr "경로"
@@ -12011,6 +12084,9 @@ msgstr "기존 자산 등록"
 msgid "Registered"
 msgstr "등록됨"
 
+msgid "Registration failed"
+msgstr "등록 실패"
+
 msgid "Registration Number"
 msgstr "등록 번호"
 
@@ -12087,6 +12163,9 @@ msgstr "{0} 제거"
 msgid "Remove {label}"
 msgstr "제거 {label}"
 
+msgid "Remove authenticator app"
+msgstr "인증 앱 제거"
+
 msgid "Remove clause"
 msgstr "절 제거"
 
@@ -12134,6 +12213,9 @@ msgstr "이 저장 유형을 참조하는 모든 저장 단위에서 제거하�
 
 msgid "Remove tool"
 msgstr "도구 제거"
+
+msgid "Remove two-factor authentication"
+msgstr "2단계 인증 제거"
 
 msgid "Removed"
 msgstr "제거됨"
@@ -12241,6 +12323,9 @@ msgstr "승인 요청"
 msgid "Requested Date"
 msgstr "요청일"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "이 회사를 열기 전에 인증자 앱을 요구합니다. 다른 회사는 영향을 받지 않습니다. <0>직원 계정 페이지</0>를 방문하여 각 사람의 상태를 확인하세요."
 
@@ -12273,6 +12358,9 @@ msgstr "필수 조치(순서대로)"
 
 msgid "Required Date"
 msgstr "필요일"
+
+msgid "Required in a controlled environment — audit logging cannot be turned off."
+msgstr "통제된 환경에서 필수입니다 — 감사 로깅을 끌 수 없습니다."
 
 msgid "Requirement"
 msgstr "요구사항"
@@ -12827,6 +12915,9 @@ msgstr "스캔 또는 검색..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 엔티티를 스캔하거나 선택하여 샘플 열로 추가한 후 그리드에 결과를 기록하세요."
 
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "인증 앱(예: Google Authenticator 또는 1Password)으로 이 QR 코드를 스캔한 후 표시된 6자리 코드를 입력하세요."
+
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "인증자 앱으로 이것을 스캔한 후 표시된 6자리 코드를 입력하세요."
 
@@ -12988,6 +13079,9 @@ msgstr "완료할 시간(초)"
 
 msgid "Seconds/Piece"
 msgstr "초/개"
+
+msgid "Secret copied to clipboard"
+msgstr "시크릿이 클립보드에 복사되었습니다"
 
 msgid "Section"
 msgstr "섹션"
@@ -13306,6 +13400,9 @@ msgstr "서비스"
 msgid "Services"
 msgstr "서비스"
 
+msgid "Session locked"
+msgstr "세션이 잠겼습니다"
+
 msgid "Set a target"
 msgstr "목표 설정"
 
@@ -13341,6 +13438,9 @@ msgstr "인증자 앱 설정"
 
 msgid "Set up the right way"
 msgstr "올바른 방식으로 설정하기"
+
+msgid "Set up two-factor authentication"
+msgstr "2단계 인증 설정"
 
 msgid "Set up your company with a step-by-step implementation plan covering setup, data, training, and go-live."
 msgstr "설정, 데이터, 교육, 도입까지 단계별 실행 계획으로 귀사를 구축하세요."
@@ -13617,6 +13717,9 @@ msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"
 msgid "Shown to the user when this rule fails."
 msgstr "이 규칙이 실패할 때 사용자에게 표시됩니다."
 
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "매직 링크 대신 생체 인식으로 로그인하세요. 패스키는 Face ID, Touch ID 또는 기기 PIN으로 보호됩니다."
+
 msgid "Sign in with Email"
 msgstr "이메일로 로그인"
 
@@ -13635,6 +13738,9 @@ msgstr "로그아웃"
 msgid "Sign Out"
 msgstr "로그아웃"
 
+msgid "Sign out instead"
+msgstr "대신 로그아웃"
+
 msgid "Sign-off review before moving to the next step"
 msgstr "다음 단계로 넘어가기 전 서명 검토"
 
@@ -13649,6 +13755,9 @@ msgstr "서명된 수량 — 아웃바운드 이동의 경우 음수"
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "로그인에는 인증자 앱의 일회용 코드도 필요합니다"
+
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "로그인할 때 더 이상 코드가 필요하지 않습니다. 확인하려면 인증 앱의 현재 6자리 코드를 입력하세요."
 
 msgid "Sites & locations"
 msgstr "사이트 및 위치"
@@ -15375,6 +15484,9 @@ msgstr "이 경로는 다음에 실행할 작업만 결정합니다."
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "이 기간에는 게시된 분개가 없으며 영구적으로 삭제할 수 있습니다. 이는 되돌릴 수 없습니다."
 
+msgid "this purchase order"
+msgstr "이 구매주문"
+
 msgid "This Quarter"
 msgstr "이번 분기"
 
@@ -15833,8 +15945,17 @@ msgstr "2단계"
 msgid "Two-factor authentication"
 msgstr "2단계 인증"
 
+msgid "Two-factor authentication disabled"
+msgstr "2단계 인증이 비활성화되었습니다"
+
+msgid "Two-factor authentication enabled"
+msgstr "2단계 인증이 활성화되었습니다"
+
 msgid "Two-Factor Authentication Enforcement"
 msgstr "2단계 인증 적용"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "2단계 인증이 활성화되지 않았습니다."
 
 msgid "Type"
 msgstr "유형"
@@ -15865,6 +15986,9 @@ msgstr "유형"
 
 msgid "U.S. Person Attestation"
 msgstr "미국인 증명"
+
+msgid "Unable to unlock"
+msgstr "잠금 해제할 수 없습니다"
 
 msgid "Unapplied"
 msgstr "미적용"
@@ -15967,6 +16091,9 @@ msgstr "작업을 판매주문에서 연결 해제하시겠습니까?"
 
 msgid "Unlock"
 msgstr "잠금 해제"
+
+msgid "Unlock with passkey"
+msgstr "패스키로 잠금 해제"
 
 msgid "Unmapped accounts"
 msgstr "매핑되지 않은 계정"
@@ -17309,6 +17436,9 @@ msgstr "프로젝트 팀"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "실제 데이터가 로드되었고 샘플을 확인하여 승인했습니다."
+
+msgid "Your session was locked after inactivity."
+msgstr "비활성화 후 세션이 잠겼습니다."
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "원본 데이터에 접근 가능하고 어느 정도 정리되어 있음"

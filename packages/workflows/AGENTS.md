@@ -24,9 +24,11 @@ Specs: `.ai/specs/2026-07-30-workflows-foundation.md` (schema, validator, runtim
 - Upgrade an older stored shape only inside `migrateDefinition` in `src/definition/normalize.ts`.
   It is private and runs on the **raw JSON before** the current-schema parse — a document old
   enough to need upgrading cannot satisfy the current schema, so migrating after that parse could
-  never run. It carries one upgrade today: v1 → v2 resets a lookup node's `match` to `[]` because
-  its shape changed, which discards nothing (no v1 lookup could be activated).
-- Bump `CURRENT_DEFINITION_FORMAT_VERSION` (now **3**, in `src/definition/schema.ts`) when the
+  never run. It carries three upgrades today: v1 → v2 resets a lookup node's `match` to `[]` because
+  its shape changed (no v1 lookup could be activated); v2 → v3 backfills node `name`s from
+  the old `title`; v3 → v4 renames the `entity` node type to `compute`, leaving stored node
+  names alone — a name is an identifier other nodes reference.
+- Bump `CURRENT_DEFINITION_FORMAT_VERSION` (now **4**, in `src/definition/schema.ts`) when the
   stored shape changes, and add the upgrade to `migrateDefinition` in the same change.
 - Pass a `WorkflowCatalog` into `validateDefinition`. `createWorkflowCatalog()` in
   `src/catalog/catalog.ts` is the real one — events, entities, actions and operations behind one
@@ -107,7 +109,7 @@ src/runtime/
 ├── compare.ts   # operator semantics + clause evaluation
 ├── condition.ts # the Condition executor
 ├── filter.ts    # the Filter executor
-├── entity.ts    # the Entity executor — one catalog operation
+├── compute.ts   # the Compute executor — one catalog operation
 ├── lookup.ts    # the Lookup executor — one search
 ├── action.ts    # the Action executor — one item, never a loop
 ├── executors.ts # EXECUTORS: node kind -> executor. A kind with no entry refuses to run

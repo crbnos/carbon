@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { Permission, Result } from "../types";
 import { error, success } from "../utils/result";
+import { logRoleChange } from "./auth-events.server";
 import {
   getClaims,
   getPermissionCacheKey,
@@ -102,7 +103,9 @@ async function loadUserClaims(userId: string, companyId: string) {
 export async function deactivateCustomer(
   serviceRole: SupabaseClient<Database>,
   userId: string,
-  companyId: string
+  companyId: string,
+  actorId?: string,
+  ip?: string
 ): Promise<Result> {
   const currentPermissions = await serviceRole
     .from("userPermission")
@@ -114,12 +117,17 @@ export async function deactivateCustomer(
     return error(currentPermissions.error, "Failed to get user permissions");
   }
 
-  const permissions = Object.entries(
-    (currentPermissions.data?.permissions ?? {}) as Record<string, string[]>
-  ).reduce<Record<string, string[]>>((acc, [key, value]) => {
-    acc[key] = value.filter((id) => id !== companyId);
-    return acc;
-  }, {});
+  const before = (currentPermissions.data?.permissions ?? {}) as Record<
+    string,
+    string[]
+  >;
+  const permissions = Object.entries(before).reduce<Record<string, string[]>>(
+    (acc, [key, value]) => {
+      acc[key] = value.filter((id) => id !== companyId);
+      return acc;
+    },
+    {}
+  );
 
   const companyGroups = await serviceRole
     .from("group")
@@ -173,13 +181,27 @@ export async function deactivateCustomer(
     );
   }
 
+  logRoleChange({
+    actor: actorId,
+    targetUserId: userId,
+    companyId,
+    beforeRole: "customer",
+    afterRole: null,
+    before,
+    after: permissions,
+    ip,
+    reason: "deactivate"
+  });
+
   return success("Sucessfully deactivated customer");
 }
 
 export async function deactivateEmployee(
   serviceRole: SupabaseClient<Database>,
   userId: string,
-  companyId: string
+  companyId: string,
+  actorId?: string,
+  ip?: string
 ): Promise<Result> {
   const currentPermissions = await serviceRole
     .from("userPermission")
@@ -191,12 +213,17 @@ export async function deactivateEmployee(
     return error(currentPermissions.error, "Failed to get user permissions");
   }
 
-  const permissions = Object.entries(
-    (currentPermissions.data?.permissions ?? {}) as Record<string, string[]>
-  ).reduce<Record<string, string[]>>((acc, [key, value]) => {
-    acc[key] = value.filter((id) => id !== companyId);
-    return acc;
-  }, {});
+  const before = (currentPermissions.data?.permissions ?? {}) as Record<
+    string,
+    string[]
+  >;
+  const permissions = Object.entries(before).reduce<Record<string, string[]>>(
+    (acc, [key, value]) => {
+      acc[key] = value.filter((id) => id !== companyId);
+      return acc;
+    },
+    {}
+  );
 
   const companyGroups = await serviceRole
     .from("group")
@@ -252,13 +279,27 @@ export async function deactivateEmployee(
     return error(employeeDeactivate.error, "Failed to deactivate employee");
   }
 
+  logRoleChange({
+    actor: actorId,
+    targetUserId: userId,
+    companyId,
+    beforeRole: "employee",
+    afterRole: null,
+    before,
+    after: permissions,
+    ip,
+    reason: "deactivate"
+  });
+
   return success("Sucessfully deactivated employee");
 }
 
 export async function deactivateUser(
   serviceRole: SupabaseClient<Database>,
   userId: string,
-  companyId: string
+  companyId: string,
+  actorId?: string,
+  ip?: string
 ) {
   const userToCompany = await serviceRole
     .from("userToCompany")
@@ -293,21 +334,57 @@ export async function deactivateUser(
     }
 
     if (invite.data.role === "customer") {
-      result = await deactivateCustomer(serviceRole, userId, companyId);
+      result = await deactivateCustomer(
+        serviceRole,
+        userId,
+        companyId,
+        actorId,
+        ip
+      );
     } else if (invite.data.role === "employee") {
-      result = await deactivateEmployee(serviceRole, userId, companyId);
+      result = await deactivateEmployee(
+        serviceRole,
+        userId,
+        companyId,
+        actorId,
+        ip
+      );
     } else if (invite.data.role === "supplier") {
-      result = await deactivateSupplier(serviceRole, userId, companyId);
+      result = await deactivateSupplier(
+        serviceRole,
+        userId,
+        companyId,
+        actorId,
+        ip
+      );
     } else {
       throw new Error("Invalid user role");
     }
   } else {
     if (userToCompany.data?.role === "customer") {
-      result = await deactivateCustomer(serviceRole, userId, companyId);
+      result = await deactivateCustomer(
+        serviceRole,
+        userId,
+        companyId,
+        actorId,
+        ip
+      );
     } else if (userToCompany.data?.role === "employee") {
-      result = await deactivateEmployee(serviceRole, userId, companyId);
+      result = await deactivateEmployee(
+        serviceRole,
+        userId,
+        companyId,
+        actorId,
+        ip
+      );
     } else if (userToCompany.data?.role === "supplier") {
-      result = await deactivateSupplier(serviceRole, userId, companyId);
+      result = await deactivateSupplier(
+        serviceRole,
+        userId,
+        companyId,
+        actorId,
+        ip
+      );
     } else {
       throw new Error("Invalid user role");
     }
@@ -342,7 +419,9 @@ export async function deactivateUser(
 export async function deactivateSupplier(
   serviceRole: SupabaseClient<Database>,
   userId: string,
-  companyId: string
+  companyId: string,
+  actorId?: string,
+  ip?: string
 ): Promise<Result> {
   const currentPermissions = await serviceRole
     .from("userPermission")
@@ -354,12 +433,17 @@ export async function deactivateSupplier(
     return error(currentPermissions.error, "Failed to get user permissions");
   }
 
-  const permissions = Object.entries(
-    (currentPermissions.data?.permissions ?? {}) as Record<string, string[]>
-  ).reduce<Record<string, string[]>>((acc, [key, value]) => {
-    acc[key] = value.filter((id) => id !== companyId);
-    return acc;
-  }, {});
+  const before = (currentPermissions.data?.permissions ?? {}) as Record<
+    string,
+    string[]
+  >;
+  const permissions = Object.entries(before).reduce<Record<string, string[]>>(
+    (acc, [key, value]) => {
+      acc[key] = value.filter((id) => id !== companyId);
+      return acc;
+    },
+    {}
+  );
 
   const companyGroups = await serviceRole
     .from("group")
@@ -412,6 +496,18 @@ export async function deactivateSupplier(
       "Failed to remove supplier account"
     );
   }
+
+  logRoleChange({
+    actor: actorId,
+    targetUserId: userId,
+    companyId,
+    beforeRole: "supplier",
+    afterRole: null,
+    before,
+    after: permissions,
+    ip,
+    reason: "deactivate"
+  });
 
   return success("Sucessfully deactivated supplier");
 }

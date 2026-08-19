@@ -104,6 +104,7 @@ const SALES_ORDER_MERGE_FIELDS: MergeField[] = [
 
 const PURCHASE_ORDER_MERGE_FIELDS: MergeField[] = [
   { token: "order.number", label: "PO Number", group: "Order" },
+  { token: "order.revision", label: "Revision", group: "Order" },
   { token: "order.date", label: "Order Date", group: "Order" },
   {
     token: "order.supplierReference",
@@ -120,6 +121,7 @@ const PURCHASE_ORDER_MERGE_FIELDS: MergeField[] = [
 
 const QUOTE_MERGE_FIELDS: MergeField[] = [
   { token: "quote.number", label: "Quote Number", group: "Quote" },
+  { token: "quote.revision", label: "Revision", group: "Quote" },
   { token: "quote.expirationDate", label: "Expiration Date", group: "Quote" },
   {
     token: "quote.customerReference",

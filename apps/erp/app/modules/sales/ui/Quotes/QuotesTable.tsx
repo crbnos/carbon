@@ -1,3 +1,4 @@
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import {
   BarProgress,
   HStack,
@@ -27,6 +28,7 @@ import {
   Hyperlink,
   ItemThumbnail,
   New,
+  RevisionSuffix,
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -78,11 +80,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             <Hyperlink to={path.to.quoteDetails(row.original.id!)}>
               <div className="flex justify-start items-center gap-0">
                 <span>{row.original.quoteId}</span>
-                {(row.original.revisionId ?? 0) > 0 && (
-                  <span className="text-muted-foreground">
-                    -{row.original.revisionId}
-                  </span>
-                )}
+                <RevisionSuffix revisionId={row.original.revisionId} />
               </div>
             </Hyperlink>
           </HStack>
@@ -334,8 +332,10 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         <ConfirmDelete
           action={path.to.deleteQuote(selectedQuotation.id)}
           isOpen={deleteQuotationModal.isOpen}
-          name={selectedQuotation.quoteId!}
-          text={t`Are you sure you want to delete ${selectedQuotation.quoteId!}? This cannot be undone.`}
+          name={getQuoteDisplayId(selectedQuotation)}
+          text={t`Are you sure you want to delete ${getQuoteDisplayId(
+            selectedQuotation
+          )}? This cannot be undone.`}
           onCancel={() => {
             deleteQuotationModal.onClose();
             setSelectedQuotation(null);

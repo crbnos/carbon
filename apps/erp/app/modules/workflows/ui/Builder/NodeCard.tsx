@@ -1,6 +1,6 @@
 import { cn } from "@carbon/react";
 import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { HANDLE_CLASS } from "./handles";
@@ -20,6 +20,26 @@ const BODY_TYPE = [
 
 const INTERACTIVE =
   "input,textarea,select,button,a,[role=button],[role=combobox],[contenteditable=true]";
+
+// The keys React Flow acts on itself: Delete removes the node, the arrows nudge it,
+// Enter and Space select it.
+const CANVAS_KEYS = new Set([
+  "Delete",
+  "Backspace",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "Enter",
+  " "
+]);
+
+/** Bubble phase, so the field or dropdown that owns the key has already had it —
+ * stopping in capture swallowed every dropdown's arrow keys. Escape passes through:
+ * Radix closes an overlay from a listener on the document. */
+export function stopCanvasKeys(event: KeyboardEvent) {
+  if (CANVAS_KEYS.has(event.key)) event.stopPropagation();
+}
 
 // Body drags, controls don't. Toggles `nodrag` in the capture phase, which beats
 // React Flow's listener; stopPropagation here would wedge every Radix dropdown open.
@@ -148,7 +168,11 @@ export function NodeCard({
       {/* Never clip: the condition form draws its own handles, and they straddle the
           card's right border. Every control inside is `min-w-0` instead. */}
       {isExpanded && children && (
-        <div ref={bodyRef} className={cn("border-t px-2.5 py-2", BODY_TYPE)}>
+        <div
+          ref={bodyRef}
+          className={cn("border-t px-2.5 py-2", BODY_TYPE)}
+          onKeyDown={stopCanvasKeys}
+        >
           {children}
         </div>
       )}

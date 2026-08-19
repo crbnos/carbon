@@ -1,4 +1,4 @@
-import { error, success } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -40,6 +40,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Table might not exist yet, that's ok
   }
 
+  // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1): audit logging is on
+  // by default and cannot be turned off. Enable it on demand for any controlled
+  // company that isn't already capturing.
+  if (CONTROLLED_ENVIRONMENT && !enabled) {
+    try {
+      await enableAuditLog(client, companyId);
+      enabled = true;
+    } catch {
+      // Best-effort; the write path degrades gracefully if it can't enable here.
+    }
+  }
+
   // Sync subscriptions to pick up any newly added auditable tables
   if (enabled) {
     try {
@@ -62,7 +74,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     enabled,
-    archives
+    archives,
+    controlled: CONTROLLED_ENVIRONMENT
   };
 }
 
@@ -101,6 +114,19 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     case "disable": {
+      // Controlled environments cannot turn audit logging off (3.3.1).
+      if (CONTROLLED_ENVIRONMENT) {
+        throw redirect(
+          path.to.auditLog,
+          await flash(
+            request,
+            error(
+              null,
+              "Audit logging cannot be disabled in a controlled environment"
+            )
+          )
+        );
+      }
       try {
         await disableAuditLog(client, companyId);
         throw redirect(
@@ -147,7 +173,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function AuditLogRoute() {
-  const { enabled, archives } = useLoaderData<typeof loader>();
+  const { enabled, archives, controlled } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "AUDIT_LOG" });
 
   if (isGated) {
@@ -172,7 +198,11 @@ export default function AuditLogRoute() {
             </Button>
           )}
         </div>
-        <AuditLogSettings enabled={enabled} archives={archives} />
+        <AuditLogSettings
+          enabled={enabled}
+          archives={archives}
+          controlled={controlled}
+        />
         {enabled && <Outlet />}
       </VStack>
     </ScrollArea>

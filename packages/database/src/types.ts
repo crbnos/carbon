@@ -6948,6 +6948,7 @@ export type Database = {
           companyId: string
           id: string
           metadata: Json
+          secretRef: string | null
           updatedAt: string
           updatedBy: string | null
         }
@@ -6956,6 +6957,7 @@ export type Database = {
           companyId: string
           id: string
           metadata?: Json
+          secretRef?: string | null
           updatedAt?: string
           updatedBy?: string | null
         }
@@ -6964,6 +6966,7 @@ export type Database = {
           companyId?: string
           id?: string
           metadata?: Json
+          secretRef?: string | null
           updatedAt?: string
           updatedBy?: string | null
         }
@@ -71929,6 +71932,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["customerCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -71937,13 +71947,6 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -75858,6 +75861,10 @@ export type Database = {
           netChange: number
         }[]
       }
+      attach_audit_log_append_only: {
+        Args: { p_table_name: string }
+        Returns: undefined
+      }
       attach_event_trigger: {
         Args: {
           after_sync_functions?: string[]
@@ -76005,6 +76012,10 @@ export type Database = {
           p_entity_id: string
           p_entity_type: string
         }
+        Returns: undefined
+      }
+      delete_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string }
         Returns: undefined
       }
       delete_old_audit_logs: {
@@ -76528,6 +76539,10 @@ export type Database = {
           targetHasCompanyId: boolean
           targetTable: string
         }[]
+      }
+      get_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string }
+        Returns: Json
       }
       get_inventory_quantities: {
         Args: { company_id: string; item_id?: string; location_id: string }
@@ -77879,7 +77894,7 @@ export type Database = {
         Args: { p_company_id: string; p_entries: Json[] }
         Returns: number
       }
-      is_claims_admin: { Args: never; Returns: boolean }
+      is_claims_admin: { Args: { company: string }; Returns: boolean }
       is_last_job_operation: {
         Args: { operation_id: string }
         Returns: boolean
@@ -78456,6 +78471,10 @@ export type Database = {
           p_tracked_entity_id?: string
         }
         Returns: undefined
+      }
+      upsert_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string; p_secret: Json }
+        Returns: string
       }
       upsert_to_search_index: {
         Args: {

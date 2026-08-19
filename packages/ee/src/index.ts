@@ -64,6 +64,14 @@ export const getIntegrationConfigById = (id: IntegrationID) => {
   return integrations.find((integration) => integration.id === id);
 };
 
+export {
+  IntegrationSecretUnavailableError,
+  persistIntegrationSecrets,
+  resolveIntegrationSecrets,
+  SECRET_KEYS,
+  splitSecrets
+} from "./integrations/secrets";
+
 /**
  * Quick-install connectors are external link-outs with no DB state.
  * Each user connects individually. Currently empty — the section is hidden

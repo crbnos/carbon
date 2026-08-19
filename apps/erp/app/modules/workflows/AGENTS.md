@@ -1,6 +1,6 @@
 # Workflows Module
 
-Customer-authored automation. A workflow is a graph of nodes (trigger, condition, entity, lookup, filter, action) stored as a versioned definition; the engine in `packages/jobs` walks it. This module is the ERP front end: the list page, the full-screen builder canvas, versioning and publishing.
+Customer-authored automation. A workflow is a graph of nodes (trigger, condition, compute, lookup, filter, action) stored as a versioned definition; the engine in `packages/jobs` walks it. This module is the ERP front end: the list page, the full-screen builder canvas, versioning and publishing.
 
 The definition schema, validator, catalogs, matcher and engine all live outside this module in `packages/workflows` and `packages/jobs`. Read `packages/workflows/AGENTS.md` before touching anything that imports `@carbon/workflows`.
 

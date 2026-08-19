@@ -88,6 +88,8 @@ describe("isDefaultNodeName", () => {
       "trigger",
       "action",
       "condition",
+      "compute",
+      // The old spelling of `compute`. Saved workflows still carry these names.
       "entity",
       "lookup",
       "filter"

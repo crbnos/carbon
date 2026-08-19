@@ -163,6 +163,8 @@
   "no-legacy-rls::20250128094053_traceability.sql::has_company_permission(",
   "no-legacy-rls::20260115143000_purchasing-rfq.sql::has_company_permission(",
   "no-legacy-rls::20260430000001_tax-status.sql::has_company_permission(",
+  "no-legacy-rls::20260817030612_remove-global-permission-wildcard.sql::has_company_permission(",
+  "no-legacy-rls::20260817040245_fix-is-claims-admin-permission-key.sql::has_company_permission(",
   "no-local-timezone::apps/erp/app/modules/accounting/accounting.ee.service.ts::new Date().toISOString().split(\"T\")[0]",
   "no-local-timezone::apps/erp/app/modules/items/items.service.ts::new Date().toISOString().split(\"T\")[0]",
   "no-local-timezone::apps/erp/app/modules/sales/sales.service.ts::new Date().toISOString().split(\"T\")[0]",

@@ -5861,13 +5861,29 @@ serve(async (req: Request) => {
             quoteId = await getNextSequence(trx, "quote", companyId);
           }
 
+          // Each revision needs its own link row (the share page resolves a
+          // quote by externalLinkId), but documentId is unique per document —
+          // qualify it with the revision so a revision of Q000001 doesn't
+          // collide with the original's link.
+          //
+          // A conflict here can only mean an ORPHAN: revisions are numbered
+          // max(revisionId) + 1, so this documentId can't belong to a live
+          // quote — the previous holder was deleted and deleteQuote leaves the
+          // link row behind. Reuse it rather than failing the whole copy.
+          const linkDocumentId =
+            revisionId > 0 ? `${quoteId}-${revisionId}` : quoteId;
           const externalLinkId = await trx
             .insertInto("externalLink")
             .values({
-              documentId: quoteId,
+              documentId: linkDocumentId,
               documentType: "Quote",
               companyId,
             })
+            .onConflict((oc) =>
+              oc
+                .columns(["documentId", "documentType", "companyId"])
+                .doUpdateSet({ documentId: linkDocumentId })
+            )
             .returning(["id"])
             .executeTakeFirstOrThrow();
 

@@ -376,6 +376,11 @@ export async function runTier5(ctx: Ctx): Promise<void> {
 
     // Same two steps as supplier-quote finalize: create the external link, then
     // point the quote at it — that id is what /share/supplier-quote/:id reads.
+    // Fixed id + a PK of ("id") alone: the company-scoped wipe can leave a row
+    // from a run under another company, so clear it before re-creating.
+    await ctx.client.query(`DELETE FROM "externalLink" WHERE id = $1`, [
+      spec.externalLinkId
+    ]);
     await insertRow(ctx, "externalLink", {
       id: spec.externalLinkId,
       documentType: "SupplierQuote",

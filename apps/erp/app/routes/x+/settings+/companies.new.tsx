@@ -1,7 +1,13 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import {
+  assertIsPost,
+  CONTROLLED_ENVIRONMENT,
+  error,
+  success
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { enableAuditLog } from "@carbon/database/audit";
 import { validationError, validator } from "@carbon/form";
 import {
   Modal,
@@ -82,6 +88,12 @@ export async function action({ request }: ActionFunctionArgs) {
       path.to.companies,
       await flash(request, error(seed.error, "Failed to seed company"))
     );
+  }
+
+  // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1) capture audit from
+  // day one — enable it at company creation.
+  if (CONTROLLED_ENVIRONMENT) {
+    await enableAuditLog(client, companyId).catch(() => {});
   }
 
   const locationInsert = await upsertLocation(client, {

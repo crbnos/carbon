@@ -1385,6 +1385,7 @@ serve(async (req: Request) => {
 
           // Posting stamps dateIssued with today, so recompute dateDue from
           // the payment term to keep it consistent with the new issue date.
+          // With no payment term the invoice still gets one, via Net 30.
           const paymentTerm = salesInvoice.data?.paymentTermId
             ? await trx
                 .selectFrom("paymentTerm")
@@ -1393,9 +1394,7 @@ serve(async (req: Request) => {
                 .where("companyId", "=", companyId)
                 .executeTakeFirst()
             : undefined;
-          const dateDue = paymentTerm
-            ? calculateDueDate(today, paymentTerm)
-            : null;
+          const dateDue = calculateDueDate(today, paymentTerm);
 
           await trx
             .updateTable("salesInvoice")
