@@ -411,10 +411,12 @@ function KanbanSchedule() {
         header: t`Assignee`,
         filter: {
           type: "static",
-          options: people.map((person) => ({
-            label: person.name,
-            value: person.id
-          }))
+          options: people
+            .filter((person) => person.shopEmployee !== false)
+            .map((person) => ({
+              label: person.name,
+              value: person.id
+            }))
         }
       }
     ];

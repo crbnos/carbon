@@ -559,6 +559,7 @@ function JobDetails({ job }: { job: Job }) {
                       id={operation.id!}
                       table="jobOperation"
                       size="sm"
+                      shopEmployeesOnly
                       onChange={(selected) => {
                         setJobOperations((prev) =>
                           prev.map((op) =>

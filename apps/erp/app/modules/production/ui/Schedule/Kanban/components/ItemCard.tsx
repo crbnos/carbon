@@ -405,6 +405,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
             id={item.id!}
             size="sm"
             value={item.assignee ?? undefined}
+            shopEmployeesOnly
           />
           <JobOperationTags operation={item} availableTags={tags} />
         </HStack>

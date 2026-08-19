@@ -42,7 +42,8 @@ export const employeeJobValidator = z.object({
   startDate: zfd.text(z.string().optional()),
   locationId: zfd.text(z.string().optional()),
   shiftId: zfd.text(z.string().optional()),
-  managerId: zfd.text(z.string().optional())
+  managerId: zfd.text(z.string().optional()),
+  shopEmployee: zfd.checkbox()
 });
 
 export const holidayValidator = z.object({

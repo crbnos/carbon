@@ -30,9 +30,12 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   `active BOOLEAN DEFAULT FALSE`, `pin` (console mode). Added in `20241208004151_invites.sql`.
 - **`employeeJob`** — job title / org placement. PK `(id, companyId)`; `id → user.id`.
   `title`, `startDate DATE`, `locationId → location.id`, `departmentId → department.id`,
-  `shiftId → shift.id`, `managerId → user.id`, `tags TEXT[]`, `customFields` JSONB,
+  `shiftId → shift.id`, `managerId → user.id`, `tags TEXT[]`,
+  `shopEmployee BOOLEAN NOT NULL DEFAULT TRUE`, `customFields` JSONB,
   `updatedAt`, `updatedBy → user.id`. Created `20230224035103_shifts.sql`; `departmentId`/`tags`
-  added later. (`workCellId` existed briefly, then dropped in `20240819115702_work-centers.sql`.)
+  added later; `shopEmployee` added `20260724143012_employee-shop-employee.sql` (gates whether an
+  employee is offered in the production operation-assignee picker). (`workCellId` existed briefly,
+  then dropped in `20240819115702_work-centers.sql`.)
 - **`employeeType`** — per-company role definition. PK `id`. `name`, `companyId → company.id`,
   `protected BOOLEAN`.
 - **`employeeTypePermission`** — permissions granted by an employee type. PK `(employeeTypeId, module)`.
@@ -61,9 +64,11 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 
 ## Views (read-only joins)
 
-- **`employees`** — newest in `20260529160000_employees-view-status.sql`. Joins `user` + `employee`
+- **`employees`** — newest in `20260724143012_employee-shop-employee.sql` (previously
+  `20260529160000_employees-view-status.sql`). Joins `user` + `employee`
   (+ `employeeJob`/`location` for `locationId`, `locationName`). Aliases `fullName AS "name"`. Adds a
-  computed `status` (`'Active' | 'Invited' | 'Inactive'`) from `employee.active` and the `invite` table.
+  computed `status` (`'Active' | 'Invited' | 'Inactive'`) from `employee.active` and the `invite` table,
+  plus `shopEmployee` (`COALESCE(employeeJob.shopEmployee, TRUE)` — no job record ⇒ TRUE).
   Filter is `WHERE u.active = TRUE` (on **user**, not employee), so inactive employees of an active user
   still appear — filter on `active`/`status` when you only want active employees.
 - **`employeeSummary`** — `20240103010721_employee-summary.sql`. `user` + `employee` + LEFT JOIN

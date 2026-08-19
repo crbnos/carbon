@@ -295,6 +295,7 @@ function makeItem(
             id={operation.id!}
             size="sm"
             value={operation.assignee ?? undefined}
+            shopEmployeesOnly
           />
         </HStack>
         <HStack>

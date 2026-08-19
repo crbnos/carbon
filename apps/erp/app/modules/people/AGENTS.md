@@ -4,7 +4,7 @@ Employee management, departments, shifts, holidays, time tracking (clock in/out,
 
 ## Key Domain Concepts
 
-- **People vs Users vs Employees** — `user` is the global auth identity. `employee` is a per-company record with composite PK `(id, companyId)` where `id → user.id`. `employeeJob` holds title, location, department, shift, and manager. See `.claude/rules/user-employee-job-relationships.md`.
+- **People vs Users vs Employees** — `user` is the global auth identity. `employee` is a per-company record with composite PK `(id, companyId)` where `id → user.id`. `employeeJob` holds title, location, department, shift, manager, and `shopEmployee` (a boolean, default TRUE, that gates whether the employee is offered in the production operation-assignee picker — office staff like bookkeepers are unchecked). See `.claude/rules/user-employee-job-relationships.md`.
 - **Departments** — hierarchical organizational units via `parentDepartmentId`. Used for org structure and reporting.
 - **Shifts** — work schedules with day-of-week boolean flags (`monday`..`sunday`), start/end times, and location. Assigned to employees via `employeeJob.shiftId`.
 - **Holidays** — company-specific non-working days with year grouping.
@@ -42,7 +42,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=people
 
 | Table / View | Purpose |
 |---|---|
-| `employeeJob` | Job details: title, startDate, locationId, departmentId, shiftId, managerId |
+| `employeeJob` | Job details: title, startDate, locationId, departmentId, shiftId, managerId, shopEmployee |
 | `employeeSummary` (view) | Denormalized employee info with names |
 | `department` | Org units with `parentDepartmentId` hierarchy |
 | `shift` / `shifts` (view) | Work schedules: day flags, times, location |
