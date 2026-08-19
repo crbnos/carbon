@@ -74,6 +74,11 @@ export type OnshapeSkipReason =
 // completion write).
 const NON_TERMINAL_RUN_STATUSES: OnshapeSyncRunStatus[] = ["queued", "running"];
 
+// Postgres foreign_key_violation. The only FK an item-state write can break is
+// "runId" -> onshapeSyncRun, reachable when retention prunes a run while that
+// run's own job is still reporting into it.
+const FOREIGN_KEY_VIOLATION = "23503";
+
 /** An item row that has sat in `queued` longer than this reads as stalled. */
 export const ITEM_SYNC_STALL_MS = 10 * 60 * 1000;
 
@@ -170,25 +175,43 @@ export async function upsertItemSyncState(
       throw new Error(existing.error.message);
     }
 
+    // A run pruned mid-flight must cost the attribution, not the outcome: the
+    // status and identifiers are the record of what happened to this asset, and
+    // "runId" only says which bulk run noticed it.
+    const withoutRunAttribution = { ...row, runId: null };
+
     if (existing.data) {
-      const updated = await carbon
-        .from("onshapeItemSyncState")
-        .update({
-          ...row,
-          updatedBy: input.userId,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("id", existing.data.id)
-        .eq("companyId", input.companyId);
+      const existingRowId = existing.data.id;
+      const updateState = (values: typeof row) =>
+        carbon
+          .from("onshapeItemSyncState")
+          .update({
+            ...values,
+            updatedBy: input.userId,
+            updatedAt: new Date().toISOString()
+          })
+          .eq("id", existingRowId)
+          .eq("companyId", input.companyId);
+
+      let updated = await updateState(row);
+      if (updated.error?.code === FOREIGN_KEY_VIOLATION && row.runId) {
+        updated = await updateState(withoutRunAttribution);
+      }
       if (updated.error) {
         throw new Error(updated.error.message);
       }
       return { applied: true };
     }
 
-    const inserted = await carbon
-      .from("onshapeItemSyncState")
-      .insert({ ...row, createdBy: input.userId });
+    const insertState = (values: typeof row) =>
+      carbon
+        .from("onshapeItemSyncState")
+        .insert({ ...values, createdBy: input.userId });
+
+    let inserted = await insertState(row);
+    if (inserted.error?.code === FOREIGN_KEY_VIOLATION && row.runId) {
+      inserted = await insertState(withoutRunAttribution);
+    }
     if (inserted.error) {
       throw new Error(inserted.error.message);
     }

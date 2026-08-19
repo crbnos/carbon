@@ -25,7 +25,7 @@ is why all four v2 features are currently impossible. v2's foundation is one new
 concern: **persist sync state at two granularities** (per item+asset, per run), then
 hang each feature off it.
 
-```
+```text
                     TRIGGERS                       CORE                    STATE (new tables)
   ┌────────────────────────────────┐
   │ webhook onshape.revision.created│──┐
@@ -88,7 +88,7 @@ FKs (lessons.md), proper RLS. All statuses below are TEXT with CHECK constraints
 
 ### `onshapeItemSyncState` — one row per item × asset kind (fixes OV#1 clobbering)
 
-```
+```text
 id            TEXT PK DEFAULT id('osis')   -- composite PK (id, companyId) per repo convention
 companyId     TEXT NOT NULL
 itemId        TEXT NOT NULL          -- single-column FK → item(id) (D13B: adding a
@@ -114,7 +114,7 @@ INDEX (companyId, status), INDEX (companyId, updatedAt)
 
 State machine (also goes as an ASCII comment atop `onshape-sync-state.ts`):
 
-```
+```text
             route writes            job step writes
   (none) ──▶ queued ──▶ running ──▶ synced | skipped(reason) | failed(error)
                │                        ▲
@@ -131,7 +131,7 @@ State machine (also goes as an ASCII comment atop `onshape-sync-state.ts`):
 
 ### `onshapeSyncRun` — one row per backfill run
 
-```
+```text
 id            TEXT PK DEFAULT id('osr')
 companyId     TEXT NOT NULL          -- composite FK → company
 status        TEXT NOT NULL CHECK IN ('queued','running','completed','failed','cancelled')
@@ -151,7 +151,7 @@ INDEX (companyId, createdAt DESC)
 
 Run lifecycle (D12/D13 — terminal states are always explicit writes):
 
-```
+```text
   route insert          job onFailure ──▶ failed(error)
   queued ──▶ running ──▶ completed
      │           │
@@ -530,7 +530,7 @@ Onshape panel where a BOM sync is actually run.
 
 ### Interaction-state table
 
-```
+```text
 FEATURE          | LOADING          | EMPTY                  | ERROR                       | SUCCESS            | PARTIAL
 -----------------|------------------|------------------------|-----------------------------|--------------------|------------------------
 OnshapeBlock     | skeleton line    | "Not linked to Onshape"| failed chip + short reason  | chips + rel. times | per-asset chips diverge

@@ -55,8 +55,14 @@ export function OnshapeSyncCoverage({
 
   return (
     <Tooltip>
+      {/* The span carries focus itself: the tooltip is the only place the two
+          denominators are explained, so a mouse-only trigger hides the meaning
+          of the numbers beside it. */}
       <TooltipTrigger asChild>
-        <span className="text-xs text-muted-foreground tabular-nums">
+        <span
+          tabIndex={0}
+          className="text-xs text-muted-foreground tabular-nums rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           {t`Models ${modelsSynced}/${modelsTracked}`}
           {drawingsTracked > 0
             ? ` · ${t`Drawings ${drawingsSynced}/${drawingsTracked}`}`

@@ -119,6 +119,14 @@ export async function action({ request }: ActionFunctionArgs) {
     .range(RUN_RETENTION_COUNT - 1, RUN_RETENTION_COUNT - 1)
     .maybeSingle();
 
+  if (retentionBoundary.error) {
+    // Not fatal — the run is already queued and retention is housekeeping — but
+    // an unreported failure here means pruning silently stops happening at all.
+    logger.error("Failed to read the Onshape sync run retention boundary", {
+      error: retentionBoundary.error
+    });
+  }
+
   if (retentionBoundary.data?.createdAt) {
     const pruned = await serviceRole
       .from("onshapeSyncRun")

@@ -272,7 +272,14 @@ function RunCounter({
   // Focusable only when there is a breakdown to read: the tooltip is the only
   // place that detail exists, and an unfocusable trigger makes it mouse-only.
   const counter = (
-    <CardAttribute tabIndex={breakdown ? 0 : undefined}>
+    <CardAttribute
+      tabIndex={breakdown ? 0 : undefined}
+      className={
+        breakdown
+          ? "rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          : undefined
+      }
+    >
       <CardAttributeLabel>{label}</CardAttributeLabel>
       <span className="text-sm font-medium tabular-nums">
         {value.toLocaleString()}
