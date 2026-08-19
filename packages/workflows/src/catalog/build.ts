@@ -74,6 +74,9 @@ export interface BuiltActionInput {
   /** What the builder seeds a new node with. Nothing reads it at run time. */
   defaultValue?: string;
   template?: boolean;
+  /** Prose a person reads: a record dropped in renders as a link when the caller
+   * supplies a resolver. Not set on webhook bodies. */
+  linkify?: boolean;
   /** Table a non-entity foreign key points at, so the update executor can scope the
    * value to the company. Resolved here so a dropped fk note fails CI rather than
    * silently disabling that check at run time. */
@@ -613,6 +616,7 @@ export function buildCatalog(
         ...(spec.choices ? { choices: spec.choices } : {}),
         ...(spec.defaultValue ? { defaultValue: spec.defaultValue } : {}),
         ...(spec.template ? { template: true } : {}),
+        ...(spec.linkify ? { linkify: true } : {}),
         ...(spec.pairs ? { pairs: true } : {}),
         ...(spec.showWhen ? { showWhen: spec.showWhen } : {})
       };

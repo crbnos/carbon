@@ -1,7 +1,7 @@
 import { cn, IconButton } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { EdgeProps } from "@xyflow/react";
-import { EdgeLabelRenderer, getSmoothStepPath, useStore } from "@xyflow/react";
+import { EdgeLabelRenderer, getBezierPath, useStore } from "@xyflow/react";
 import { memo, useEffect, useState } from "react";
 import { LuX } from "react-icons/lu";
 import { useBuilderStore } from "../context";
@@ -25,7 +25,8 @@ function WorkflowEdgeImpl({
   const anySelected = useStore((s) => s.nodes.some((n) => n.selected));
   const highlighted = selected || isNodeSelected;
 
-  const isReadOnly = useBuilderStore((s) => s.isReadOnly);
+  const canChangeDefinition = useBuilderStore((s) => s.canChangeDefinition);
+  const isReadOnly = !canChangeDefinition;
   const onEdgesChange = useBuilderStore((s) => s.onEdgesChange);
   const [armed, setArmed] = useState(false);
 
@@ -37,14 +38,13 @@ function WorkflowEdgeImpl({
     return () => clearTimeout(timer);
   }, [armed]);
 
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
     targetX,
     targetY,
-    targetPosition,
-    borderRadius: 12
+    targetPosition
   });
 
   return (

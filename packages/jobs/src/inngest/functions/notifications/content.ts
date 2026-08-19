@@ -1311,6 +1311,9 @@ export function getNotificationEmailComponent(args: {
         ctaLabel: args.ctaLabel,
         ctaUrl: args.ctaUrl,
         details: args.content.details,
+        // Only a link on our own origin is rendered as an anchor; anything else in a
+        // customer-authored body stays literal text.
+        erpUrl: ERP_URL,
         heading: args.heading,
         message: args.content.description,
         preview: args.heading,

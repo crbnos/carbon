@@ -75,12 +75,13 @@ export function expectedClauseRightType(
 }
 
 /**
- * Whether a value of this type has a reading inside a sentence. A record does not —
- * it would flatten to whichever column happened to look name-ish, or to its raw id.
- * The property the user meant is one hop further in.
+ * Whether a value of this type has a reading inside a sentence. A record does: it prints
+ * as its readable id (`renderValue` falls back to `readableId ?? name ?? id`), which is
+ * exactly what someone means by "…for SO000123" — and in a notification body it becomes
+ * the link to that record. A LIST of records does not: a run of ids in a sentence has no
+ * good reading, and the property the author meant is one hop further in.
  */
 export function rendersAsText(type: ValueType): boolean {
-  if (type.kind === "entity") return false;
   return type.kind !== "list" || type.of.kind !== "entity";
 }
 

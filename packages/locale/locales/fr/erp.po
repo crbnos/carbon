@@ -448,7 +448,7 @@ msgstr "Le statut d'un travail change"
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Une liste est connectée à {0}, donc cette étape s'exécute une fois pour chaque élément et retourne une liste de résultats."
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
+#. placeholder {0}: inputLabel(batch.input)
 msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
 msgstr "Une liste est connectée à {0}, donc cette étape s'exécute une fois pour chaque élément — jusqu'à {MAX_LIST_ITEMS}."
 
@@ -4161,6 +4161,9 @@ msgstr "Champ personnalisé"
 
 msgid "Custom Fields"
 msgstr "Champs personnalisés"
+
+msgid "Custom fields are not available for items yet."
+msgstr ""
 
 msgid "Custom SOW · we manage"
 msgstr "SOW personnalisé · nous gérons"
@@ -8432,8 +8435,8 @@ msgstr "Options de liste"
 msgid "List Parameters"
 msgstr "Paramètres de liste"
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
-#. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
+#. placeholder {0}: inputLabel(batch.first)
+#. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Les listes sont connectées à la fois à {0} et {1}, donc cette étape ne peut pas savoir sur laquelle répéter. Laissez une liste sur une seule d'entre elles."
 
@@ -9517,6 +9520,9 @@ msgstr "Nouvelle Ligne de Transfert"
 
 msgid "New Unit of Measure"
 msgstr "Nouvelle Unité de Mesure"
+
+msgid "New version"
+msgstr ""
 
 msgid "New Version"
 msgstr "Nouvelle Version"
@@ -15416,8 +15422,17 @@ msgstr "Cette version appartient au change notice <0>{0}</0>. Modifiez-le là."
 msgid "This version cannot be opened"
 msgstr "Cette version ne peut pas être ouverte"
 
+msgid "This version is live"
+msgstr ""
+
+msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
+msgstr ""
+
 msgid "This version is live. Create a new version to edit."
 msgstr "Cette version est en direct. Créez une nouvelle version pour modifier."
+
+msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "La définition de cette version n'a pas pu être lue."

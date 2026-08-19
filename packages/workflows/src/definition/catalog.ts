@@ -32,6 +32,9 @@ export interface CatalogInput {
   defaultValue?: string;
   /** Prose that may interleave text and variables; the builder renders a chip editor. */
   template?: boolean;
+  /** This input is prose a person reads, so a record dropped into it renders as a link
+   * when the caller supplies a resolver. Webhook bodies deliberately do not set this. */
+  linkify?: boolean;
   /** Table a non-entity foreign key points at, so the write can be scoped to the company. */
   scopeTable?: string;
   /** The column rejects null; an input resolving to nothing is skipped, not written. */
@@ -81,6 +84,10 @@ export interface WorkflowCatalog {
   getEntity(name: string): CatalogEntity | undefined;
   /** Allowed values for an entity's column, or undefined when it is not an enum. */
   getEnum(entity: string, property: string): readonly string[] | undefined;
+  /** The customer's own name for a property, when it is a custom field. */
+  getPropertyLabel(entity: string, property: string): string | undefined;
+  /** The customer's own name for an action input, when it is a custom field. */
+  getInputLabel(actionId: string, input: string): string | undefined;
 }
 
 /** The type at the end of a property path, or undefined where it does not exist. */
@@ -272,6 +279,9 @@ export function createFixtureCatalog(
     getEntity: (name) => entities.get(name),
     getEnum: options.omitEnums
       ? () => undefined
-      : (entity, property) => FIXTURE_ENUMS[entity]?.[property]
+      : (entity, property) => FIXTURE_ENUMS[entity]?.[property],
+    // The fixtures carry no custom fields, so nothing here has a customer-given name.
+    getPropertyLabel: () => undefined,
+    getInputLabel: () => undefined
   };
 }

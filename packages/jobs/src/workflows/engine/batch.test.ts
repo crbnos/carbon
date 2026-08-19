@@ -21,7 +21,15 @@ vi.mock("./ledger", () => ({
   failInterruptedSteps: vi.fn(async () => 0)
 }));
 vi.mock("./owner", () => ({
-  getOwnerClient: vi.fn(async () => ({})),
+  // The engine reads the company custom fields through this client; a bare {} has no
+  // `.from`, so the stub answers that one query with an empty list.
+  getOwnerClient: vi.fn(async () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({ eq: async () => ({ data: [], error: null }) })
+      })
+    })
+  })),
   readOwnerPermissions: vi.fn(async () => ({})),
   hasPermission: () => true
 }));
@@ -192,6 +200,7 @@ describe("batch mode", () => {
 
     expect(ids).toEqual([
       "load",
+      "custom-fields",
       "permissions",
       // The trigger is recorded before the walk starts at its successors.
       "node:t1",
@@ -212,6 +221,7 @@ describe("batch mode", () => {
 
     expect(ids).toEqual([
       "load",
+      "custom-fields",
       "permissions",
       "node:t1",
       "node:look",

@@ -14,6 +14,8 @@ type Props = {
   invalid?: string;
   onRemove: () => void;
   onReopen: () => void;
+  /** The version is published: show the value, refuse every edit. */
+  isReadOnly?: boolean;
 };
 
 const BROKEN_CHIP_CLASS =
@@ -27,7 +29,8 @@ export function VariableChip({
   typeName,
   invalid,
   onRemove,
-  onReopen
+  onReopen,
+  isReadOnly = false
 }: Props) {
   const { t } = useLingui();
   // The step is gone, so there is no name left to show — the chip has to say so itself.
@@ -49,6 +52,7 @@ export function VariableChip({
       <button
         type="button"
         onClick={onReopen}
+        disabled={isReadOnly}
         className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap"
       >
         {label}
@@ -61,6 +65,7 @@ export function VariableChip({
           event.stopPropagation();
           onRemove();
         }}
+        disabled={isReadOnly}
         className="shrink-0 rounded-full opacity-60 transition-opacity hover:opacity-100"
       >
         <LuX className="size-3" />

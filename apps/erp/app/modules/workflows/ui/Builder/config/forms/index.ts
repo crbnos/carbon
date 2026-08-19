@@ -21,6 +21,8 @@ export type NodeFormProps<K extends WorkflowNodeType = WorkflowNodeType> = {
   };
   /** Issues for this node, so forms can highlight the affected field. */
   issues?: WorkflowIssue[];
+  /** The version is published: render every control disabled rather than inert. */
+  isReadOnly?: boolean;
 };
 
 /** Spelled out: a missing kind is a TS2741, not a blank panel. */
@@ -39,4 +41,5 @@ export const NODE_FORMS: {
 export type AnyNodeForm = ComponentType<{
   node: BuilderNode;
   issues?: WorkflowIssue[];
+  isReadOnly?: boolean;
 }>;

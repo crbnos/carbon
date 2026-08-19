@@ -1,11 +1,31 @@
 import type { TermId } from "@carbon/glossary";
-import { createWorkflowCatalog } from "@carbon/workflows";
+import type { WorkflowCatalog } from "@carbon/workflows";
+import { buildCatalogOverlay, createWorkflowCatalog } from "@carbon/workflows";
 import { WORKFLOW_FIELD_HELP } from "@carbon/workflows/help";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import { useLingui } from "@lingui/react";
+import { useMemo } from "react";
+import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
 
-/** One instance for the whole builder; the catalog is immutable committed data. */
-export const catalog = createWorkflowCatalog();
+/** The company's catalog: shipped entries plus this company's custom fields.
+ * There is deliberately no module singleton — a call site that forgets the hook is a
+ * compile error, not a picker that quietly lists no custom fields. */
+export function useWorkflowCatalog(): WorkflowCatalog {
+  const schemas = useCustomFieldsSchema();
+  return useMemo(() => {
+    const defs = Object.entries(schemas).flatMap(([table, fields]) =>
+      (fields ?? []).map((field) => ({
+        table,
+        id: field.id,
+        name: field.name,
+        dataTypeId: field.dataTypeId,
+        listOptions: field.listOptions,
+        active: field.active
+      }))
+    );
+    return createWorkflowCatalog(buildCatalogOverlay(defs));
+  }, [schemas]);
+}
 
 /** Translates a catalog label key; falls back to the key's last segment when absent. */
 export function useWorkflowLabel(): (key: string, fallback?: string) => string {

@@ -183,3 +183,19 @@ becomes visible — `Ran 100 of 150; 50 were not used.` The node's outputs are a
 list of each successful item's primary output, in item order. A failed item does
 not stop the graph but does mark the **run** Failed, so a partial batch never
 shows a customer a green tick.
+
+## Per-run additions (round 2)
+
+- **`custom-fields` step.** `executeWorkflowRun` now runs one extra durable step between
+  `"load"` and `"permissions"`, reading the company's active `customField` rows through the
+  **owner's** client and building a `CatalogOverlay` from them. The catalog is constructed from
+  that overlay, so a custom field is simply a declared property everywhere downstream —
+  `resolve.ts`'s `entity.properties[segment]` gate, `values.ts`'s `fromColumn` coercion and
+  `compare.ts` all work unchanged. A refused read and a company with no custom fields are the
+  same answer: the run proceeds against the shipped catalog alone. Step ids are therefore
+  `"load"`, `"custom-fields"`, `"permissions"`, `` `node:${nodeId}` ``, `"finish"`.
+- **`ctx.linkFor`.** `contextFor` supplies an optional `(of, id) => string | null` that turns a
+  record into the existing `${ERP_URL}/api/link?...` URL. `renderTemplate` uses it ONLY for
+  inputs the catalog marks `linkify` (today: the notify action's `message`), wrapping an entity
+  part as `[readableId](url)`. A webhook body has no `linkify`, so it still renders a bare
+  readable id with no markdown. `packages/workflows` constructs no URL — it calls the callback.

@@ -98,3 +98,82 @@ describe("renderTemplate", () => {
     });
   });
 });
+
+describe("renderTemplate with a link resolver", () => {
+  const order = () =>
+    entityValue("purchaseOrder", "po_1", { readableId: "PO000123" });
+
+  it("leaves a record as its readable id when no resolver is supplied", async () => {
+    const ctx = createRuntimeContext({
+      outputs: { n1: { record: order() } }
+    });
+    const result = await renderTemplate(
+      template(text("Check "), ref("record")),
+      ctx
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: primitiveValue("string", "Check PO000123")
+    });
+  });
+
+  it("wraps a record in a markdown link when one is supplied", async () => {
+    const ctx = createRuntimeContext({
+      outputs: { n1: { record: order() } }
+    });
+    const result = await renderTemplate(
+      template(text("Check "), ref("record")),
+      ctx,
+      { linkFor: (of, id) => `https://erp.test/link?of=${of}&id=${id}` }
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: primitiveValue(
+        "string",
+        "Check [PO000123](https://erp.test/link?of=purchaseOrder&id=po_1)"
+      )
+    });
+  });
+
+  // An entity with no page in the app: the id still reads, it just is not clickable.
+  it("falls back to the plain id when the resolver returns null", async () => {
+    const ctx = createRuntimeContext({
+      outputs: { n1: { record: order() } }
+    });
+    const result = await renderTemplate(template(ref("record")), ctx, {
+      linkFor: () => null
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      value: primitiveValue("string", "PO000123")
+    });
+  });
+
+  it("never wraps a non-record part", async () => {
+    const ctx = createRuntimeContext({
+      outputs: { n1: { total: primitiveValue("number", 42) } }
+    });
+    const result = await renderTemplate(template(ref("total")), ctx, {
+      linkFor: () => "https://erp.test/x"
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      value: primitiveValue("string", "42")
+    });
+  });
+
+  it("never wraps a null value", async () => {
+    const ctx = createRuntimeContext({
+      outputs: { n1: { record: nullValue() } }
+    });
+    const result = await renderTemplate(template(ref("record")), ctx, {
+      linkFor: () => "https://erp.test/x"
+    });
+
+    expect(result).toEqual({ ok: true, value: primitiveValue("string", "") });
+  });
+});

@@ -7,7 +7,11 @@ import type React from "react";
 import { memo, useEffect, useMemo } from "react";
 import { LuX } from "react-icons/lu";
 import OperatorCombobox from "~/modules/storage-rules/ui/OperatorCombobox";
-import { catalog, propertyLabelKey, useWorkflowLabel } from "../catalog";
+import {
+  propertyLabelKey,
+  useWorkflowCatalog,
+  useWorkflowLabel
+} from "../catalog";
 import { Field } from "../fields/Field";
 import type { FieldContext } from "../fields/types";
 import { ValueField } from "../fields/ValueField";
@@ -51,6 +55,8 @@ type ClauseRowProps = {
   /** Validator field path for this row, e.g. `clauses.0` or `paths.<id>.clauses.0`. */
   fieldPath: string;
   issues?: WorkflowIssue[];
+  /** The version is published: show the value, refuse every edit. */
+  isReadOnly?: boolean;
 };
 
 function ClauseRowImpl({
@@ -64,10 +70,12 @@ function ClauseRowImpl({
   entity,
   grip,
   fieldPath,
-  issues
+  issues,
+  isReadOnly
 }: ClauseRowProps) {
   const { t } = useLingui();
   const label = useWorkflowLabel();
+  const catalog = useWorkflowCatalog();
   const typeOfValue = useValueTypeResolver(context.nodeId);
 
   // Derive the left operand's type for operator selection
@@ -85,7 +93,7 @@ function ClauseRowImpl({
     // "value" mode: a literal carries its own type, but a picked variable is a
     // reference and has to be resolved against the graph.
     return clause.left ? typeOfValue(clause.left) : undefined;
-  }, [leftMode, clause.left, entity, typeOfValue]);
+  }, [leftMode, clause.left, entity, typeOfValue, catalog]);
 
   const availableOps = useMemo<readonly Operator[]>(
     () => (leftType ? operatorsForType(leftType) : []),
@@ -107,11 +115,15 @@ function ClauseRowImpl({
     if (leftMode !== "column" || !entity) return [];
     return Object.entries(catalog.getEntity(entity)?.properties ?? {}).map(
       ([col]) => ({
-        label: label(propertyLabelKey(entity, col), col),
+        // A custom field has no translated key — fall back to the customer's own name.
+        label: label(
+          propertyLabelKey(entity, col),
+          catalog.getPropertyLabel(entity, col) ?? col
+        ),
         value: col
       })
     );
-  }, [leftMode, entity, label]);
+  }, [leftMode, entity, label, catalog]);
 
   const currentColumn =
     leftMode === "column" &&
@@ -126,7 +138,7 @@ function ClauseRowImpl({
       leftMode === "column" && entity && currentColumn
         ? catalog.getEnum(entity, currentColumn)
         : undefined,
-    [leftMode, entity, currentColumn]
+    [leftMode, entity, currentColumn, catalog]
   );
 
   return (
@@ -143,6 +155,7 @@ function ClauseRowImpl({
                 placeholder={t`Pick a property`}
                 value={currentColumn}
                 options={columnOptions}
+                isReadOnly={isReadOnly}
                 onChange={(col) => {
                   const colType = entity
                     ? catalog.getEntity(entity)?.properties[col]
@@ -192,6 +205,7 @@ function ClauseRowImpl({
                 `${fieldPath}.left`,
                 `${fieldPath}.field`
               )}
+              isReadOnly={isReadOnly}
             />
           )}
 
@@ -205,7 +219,7 @@ function ClauseRowImpl({
                 })
               }
               available={Array.from(availableOps)}
-              disabled={!leftType}
+              disabled={!leftType || isReadOnly}
             />
           </Field>
 
@@ -228,6 +242,7 @@ function ClauseRowImpl({
                 `${fieldPath}.right`,
                 `${fieldPath}.value`
               )}
+              isReadOnly={isReadOnly}
             />
           ) : (
             <Field label={t`Value`}>
@@ -245,7 +260,7 @@ function ClauseRowImpl({
         variant="ghost"
         size="sm"
         onClick={() => onRemove(index)}
-        isDisabled={!canRemove}
+        isDisabled={!canRemove || isReadOnly}
         className={cn(
           "shrink-0",
           !canRemove && "opacity-0 pointer-events-none"

@@ -8,7 +8,7 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 
 - **Workflow** — the `workflow` row. Carries `ownerId`, `active` (the on/off kill switch), and `activeVersionId` (the promoted version pointer). The pointer and the boolean are separate columns on purpose: turning a workflow off and back on restores whichever version was promoted.
 - **Version** — a `workflowVersion` row holding `nodes`, `edges` and `formatVersion`. Numbered, never named.
-- **Canvas state** — `workflow.canvasState` JSONB: `{ x, y, zoom, panOnScroll }`. Per workflow (not per user, not per version), written by `$id.canvas.tsx` through `updateWorkflowCanvasState`, restored as `defaultViewport`. Node collapse is NOT here — `expanded` lives on each node in the definition and rides the autosave. Both `/save` and `/canvas` are excluded from `shouldRevalidate`; revalidating on a canvas write would snap the viewport back to where it was on load.
+- **Canvas state** — `workflow.canvasState` JSONB: `{ x, y, zoom, panOnScroll }`. Per workflow (not per user, not per version), written by `$id.canvas.tsx` through `updateWorkflowCanvasState`, restored as `defaultViewport`. Node collapse is NOT here — `expanded` lives on each node in the definition and rides the autosave. `/save`, `/canvas` and `/positions` are all excluded from `shouldRevalidate`; revalidating on a canvas write would snap the viewport back to where it was on load, and revalidating on a positions write would remount the builder store mid-drag.
 - **Definition** — `{ formatVersion, nodes, edges }`, validated by `workflowDefinitionSchema` from `@carbon/workflows`. `CURRENT_DEFINITION_FORMAT_VERSION` is **3**; the SQL column default is a stale **1**, so the app always writes the constant explicitly.
 - **Publish** — validate → set `activeVersionId` → set `active` → `syncWorkflowTriggers` → wake the scheduler. One route does all five; splitting them leaves a workflow that looks active and never fires.
 - **The live version is read-only.** Editing a live workflow means creating a new version, the same rule released item revisions follow.
@@ -17,7 +17,7 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 
 ### Always
 - MUST read a version through `readWorkflowVersion(row)` from `@carbon/workflows` — the only legal read path. On `{ ok: false }` render the failure and **do not mount the canvas**; a blank canvas would let an autosave overwrite a definition nobody could see.
-- MUST call `checkWorkflowVersionLock` in every mutating route. The live-version lock is enforced server-side, not only in the UI.
+- MUST call `checkWorkflowVersionLock` in every mutating route. The live-version lock is enforced server-side, not only in the UI. The ONE deliberate exception is `$id.positions.tsx` — node positions carry no behaviour, and `updateWorkflowNodePositions` writes only `position`, only onto node ids that already exist, so that route cannot change what a workflow does even when called by hand.
 - MUST write `formatVersion: CURRENT_DEFINITION_FORMAT_VERSION` on every definition write.
 - MUST scope every query by `companyId`.
 - MUST build version insert/update objects with every key explicitly present — PostgREST writes `NULL` for a present-but-`undefined` key, which would null `nodes`/`edges` past their `'[]'` defaults.
@@ -52,7 +52,8 @@ modules/workflows/
 ├── types.ts                # BuilderNode / BuilderEdge React Flow aliases
 ├── index.ts                # barrel (does NOT export workflows.server)
 └── ui/
-    ├── WorkflowsTable.tsx, WorkflowForm.tsx, WorkflowLockAlert.tsx
+    ├── WorkflowsTable.tsx, WorkflowForm.tsx, WorkflowLockAlert.tsx,
+    │   WorkflowActiveSwitch.tsx, WorkflowsUpgradeOverlay.tsx
     ├── useWorkflowsSubmodules.tsx
     └── Builder/            # canvas, store, node cards, palette, versions, issues
 ```
@@ -67,13 +68,15 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 - `insertWorkflowVersion` / `updateWorkflowDefinition` / `deleteWorkflowVersion`
 - `updateWorkflowOwner` — takes the session user, never a submitted id
 - `getWorkflowLockFlags` / `checkWorkflowVersionLock` (server) — the live-version lock
+- `updateWorkflowNodePositions` (service) — the positions-only writer behind `$id.positions.tsx`
 - `publishWorkflowVersion` / `setWorkflowActive` (server) — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `requirePermissions` is the only authorization gate
 
 ## Builder Notes
 
 - One zustand store per builder instance, vanilla `createStore` in a ref behind a context — the `DocumentTemplateEditor` idiom. React Flow keeps viewport and interaction state.
 - **No undo.** Deliberate; recovery is via versions.
-- Autosave is a 1s debounce posting to `$id.save.tsx`. The route exports `shouldRevalidate` returning false for `/save` — without it every autosave re-seeds the canvas from server state mid-edit.
+- Autosave is a 1s debounce with two modes. An editable version posts the whole definition to `$id.save.tsx`; a LIVE version posts positions only, to `$id.positions.tsx`. The route exports `shouldRevalidate` returning false for both — without it every autosave re-seeds the canvas from server state mid-edit.
+- The builder store has TWO read-only reasons, not one: `canChangeDefinition` (`canEdit && !isVersionLocked`) gates config, nodes, edges and `expanded`; `canMoveNodes` (`canEdit` alone) gates dragging and auto-arrange. Movement follows PERMISSION, not the lock, so a published workflow can still be tidied. Every store mutator is gated on one of them — `updateNodeData` in particular, since every node config form funnels through it.
 - **A draft saves half-filled; only publishing demands completeness.** `clauseSchema.right` and `lookupMatchSchema.value` are optional and `lookupMatchSchema.field` may be `""`, so a node the user is still filling in round-trips through `workflowDefinitionSchema` (and therefore `readWorkflowVersion`) instead of failing autosave. `validateDefinition`'s config layer is what reports each gap as `INCOMPLETE_CONFIG` and blocks publish. Never re-tighten those three fields to make a runtime path simpler — the runtime skips with a reason (`compare.ts`, `lookup.ts`) precisely so it does not have to. When `/save` does return `ok: false`, `Autosave.tsx` raises the server's `error` string as a toast and the route logs the zod issues.
 - Drawn loops are blocked at connection time by `isValidConnection` + `wouldCreateCycle`. The validator's `CYCLE` check stays as the backstop.
 - Converging edges are allowed: the engine is a first-arrival OR-join by design.

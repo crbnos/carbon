@@ -17,7 +17,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
-import { catalog, useWorkflowLabel } from "../catalog";
+import { useWorkflowCatalog, useWorkflowLabel } from "../catalog";
 import { useBuilderStore, useBuilderStoreApi } from "../context";
 import { humanizeField } from "../nodes/meta";
 import type { TestRunResult } from "../store";
@@ -116,6 +116,7 @@ function Dialog({
 }) {
   const { t } = useLingui();
   const label = useWorkflowLabel();
+  const catalog = useWorkflowCatalog();
   const closeTestRun = useBuilderStore((s) => s.closeTestRun);
   const definition = useDefinition();
 

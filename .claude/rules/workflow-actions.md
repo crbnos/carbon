@@ -297,8 +297,8 @@ matcher's subscription reconciler is already careful never to touch a company's
   `GONE` ("This step is no longer available.") means the catalog no longer has it,
   `NO_DISPATCH` means the dispatcher was never injected, `UNKNOWN_RESULT` means a
   `call` action declares no `record` output to hand back.
-- `toPlainValue` lives in `update.ts` and is imported by `create.ts` so both
-  convert identically. Don't fork it.
+- `toPlainValue` lives in `actions/values.ts` and is imported by BOTH `update.ts` and
+  `create.ts` so they convert identically. Don't fork it.
 - `update.ts` and `search.ts` both cast the client to an untyped `SupabaseClient`
   before `.from(table)`. The table is only known at run time, and typing it costs a
   ~350-way instantiation `apps/erp` cannot afford.

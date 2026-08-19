@@ -448,7 +448,7 @@ msgstr "작업의 상태가 변경됨"
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "목록이 {0}에 연결되어 있으므로 이 단계는 각 항목마다 한 번씩 실행되고 결과 목록을 반환합니다."
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
+#. placeholder {0}: inputLabel(batch.input)
 msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
 msgstr "목록이 {0}에 연결되어 있으므로 이 단계는 그 안의 각 항목마다 한 번씩 실행됩니다 — 최대 {MAX_LIST_ITEMS}개까지."
 
@@ -4161,6 +4161,9 @@ msgstr "사용자 정의 필드"
 
 msgid "Custom Fields"
 msgstr "사용자 정의 필드"
+
+msgid "Custom fields are not available for items yet."
+msgstr ""
 
 msgid "Custom SOW · we manage"
 msgstr "맞춤 SOW · 저희가 관리"
@@ -8432,8 +8435,8 @@ msgstr "목록 옵션"
 msgid "List Parameters"
 msgstr "목록 파라미터"
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
-#. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
+#. placeholder {0}: inputLabel(batch.first)
+#. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "{0}과 {1} 모두에 목록이 연결되어 있어서 이 단계에서 어느 것을 반복할지 알 수 없습니다. 목록을 하나에만 남기세요."
 
@@ -9517,6 +9520,9 @@ msgstr "새 이동 라인"
 
 msgid "New Unit of Measure"
 msgstr "새 측정 단위"
+
+msgid "New version"
+msgstr ""
 
 msgid "New Version"
 msgstr "새 버전"
@@ -15416,8 +15422,17 @@ msgstr "이 버전은 변경 공지 <0>{0}</0>에 속합니다. 거기서 편집
 msgid "This version cannot be opened"
 msgstr "이 버전을 열 수 없습니다."
 
+msgid "This version is live"
+msgstr ""
+
+msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
+msgstr ""
+
 msgid "This version is live. Create a new version to edit."
 msgstr "이 버전은 활성입니다. 편집할 새 버전을 만드십시오."
+
+msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "이 버전의 정의를 읽을 수 없습니다."

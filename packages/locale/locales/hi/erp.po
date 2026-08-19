@@ -448,7 +448,7 @@ msgstr "किसी नौकरी की स्थिति में पर�
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "एक सूची {0} में जुड़ी हुई है, इसलिए यह चरण प्रत्येक आइटम के लिए एक बार चलता है और परिणामों की एक सूची लौटाता है।"
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
+#. placeholder {0}: inputLabel(batch.input)
 msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
 msgstr "एक सूची {0} में जुड़ी हुई है, इसलिए यह चरण इसमें प्रत्येक आइटम के लिए एक बार चलता है — {MAX_LIST_ITEMS} तक।"
 
@@ -4161,6 +4161,9 @@ msgstr "कस्टम फील्ड"
 
 msgid "Custom Fields"
 msgstr "कस्टम फील्ड्स"
+
+msgid "Custom fields are not available for items yet."
+msgstr ""
 
 msgid "Custom SOW · we manage"
 msgstr "कस्टम SOW · हम प्रबंधित करते हैं"
@@ -8432,8 +8435,8 @@ msgstr "सूची विकल्प"
 msgid "List Parameters"
 msgstr "सूची पैरामीटर"
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
-#. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
+#. placeholder {0}: inputLabel(batch.first)
+#. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "सूचियां दोनों {0} और {1} में वायर्ड हैं, इसलिए यह चरण नहीं बता सकता कि किस पर दोहराना है। एक सूची को केवल एक पर छोड़ें।"
 
@@ -9517,6 +9520,9 @@ msgstr "नई ट्रांसफर लाइन"
 
 msgid "New Unit of Measure"
 msgstr "नई माप की इकाई"
+
+msgid "New version"
+msgstr ""
 
 msgid "New Version"
 msgstr "नया संस्करण"
@@ -15416,8 +15422,17 @@ msgstr "यह संस्करण परिवर्तन सूचना <0
 msgid "This version cannot be opened"
 msgstr "यह version खोला नहीं जा सकता"
 
+msgid "This version is live"
+msgstr ""
+
+msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
+msgstr ""
+
 msgid "This version is live. Create a new version to edit."
 msgstr "यह version live है। संपादित करने के लिए एक नया version बनाएं।"
+
+msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "इस version की परिभाषा को पढ़ा नहीं जा सका।"

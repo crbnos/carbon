@@ -48,6 +48,8 @@ type Props = {
   /** Fires as focus enters and leaves. Lets the field hold back advice about a value
    * the user is still in the middle of typing. */
   onFocusChange?: (focused: boolean) => void;
+  /** The version is published: show the value, refuse every edit. */
+  isReadOnly?: boolean;
 };
 
 export function InlineValueEditor({
@@ -63,7 +65,8 @@ export function InlineValueEditor({
   maxRows,
   minRows,
   multiline,
-  onFocusChange
+  onFocusChange,
+  isReadOnly = false
 }: Props) {
   const { t } = useLingui();
   const store = useBuilderStoreApi();
@@ -97,10 +100,12 @@ export function InlineValueEditor({
     <div
       className="min-w-0 flex-1"
       onFocusCapture={() => {
+        if (isReadOnly) return;
         publishVariableMenuData(getData);
         onFocusChange?.(true);
       }}
       onBlurCapture={() => {
+        if (isReadOnly) return;
         onFocusChange?.(false);
         const parts = toEditorParts(value, nodeName);
         const trimmed = withoutTrailingSpace(parts);
@@ -124,6 +129,7 @@ export function InlineValueEditor({
         renderTokenLabel={leafOfLabel}
         maxRows={maxRows}
         minRows={minRows}
+        isReadOnly={isReadOnly}
         className={cn("w-full", hasIssue && "border-destructive")}
       />
     </div>

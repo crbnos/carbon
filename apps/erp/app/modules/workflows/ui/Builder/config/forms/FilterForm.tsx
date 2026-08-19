@@ -38,7 +38,11 @@ const newClause = (): Clause => ({
   }
 });
 
-export function FilterForm({ node, issues }: NodeFormProps<"filter">) {
+export function FilterForm({
+  node,
+  issues,
+  isReadOnly
+}: NodeFormProps<"filter">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const { t } = useLingui();
 
@@ -105,6 +109,7 @@ export function FilterForm({ node, issues }: NodeFormProps<"filter">) {
           <PopoverTrigger asChild>
             <button
               type="button"
+              disabled={isReadOnly}
               className="flex w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span
@@ -124,7 +129,10 @@ export function FilterForm({ node, issues }: NodeFormProps<"filter">) {
             onTouchMove={(e) => e.stopPropagation()}
           >
             <Command>
-              <CommandInput placeholder={t`Search list variables…`} />
+              <CommandInput
+                placeholder={t`Search list variables…`}
+                disabled={isReadOnly}
+              />
               <CommandList className="max-h-64 overflow-y-auto">
                 <CommandEmpty>
                   <Trans>No list variables available upstream.</Trans>
@@ -134,6 +142,7 @@ export function FilterForm({ node, issues }: NodeFormProps<"filter">) {
                     <CommandItem
                       key={`${v.nodeId}:${v.output}`}
                       value={`${v.nodeName} ${v.output} ${describeValueType(v.type)}`}
+                      disabled={isReadOnly}
                       onSelect={() => handleSourceSelect(v.nodeId, v.output)}
                       className="flex flex-col items-start gap-0.5 px-3 py-2"
                     >
@@ -154,6 +163,7 @@ export function FilterForm({ node, issues }: NodeFormProps<"filter">) {
             type="button"
             className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
             onClick={handleClearSource}
+            disabled={isReadOnly}
           >
             <Trans>Clear</Trans>
           </button>
@@ -174,6 +184,7 @@ export function FilterForm({ node, issues }: NodeFormProps<"filter">) {
             <CombinatorToggle
               value={combinator}
               onChange={(v) => updateNodeData(node.id, { combinator: v })}
+              isReadOnly={isReadOnly}
             />
           </div>
 
@@ -188,12 +199,14 @@ export function FilterForm({ node, issues }: NodeFormProps<"filter">) {
                 context={context}
                 fieldPath={`clauses.${i}`}
                 issues={issues}
+                isReadOnly={isReadOnly}
               />
               {i < clauses.length - 1 && (
                 <div className="flex justify-center py-1">
                   <CombinatorToggle
                     value={combinator}
                     onChange={(v) => updateNodeData(node.id, { combinator: v })}
+                    isReadOnly={isReadOnly}
                   />
                 </div>
               )}
@@ -206,6 +219,7 @@ export function FilterForm({ node, issues }: NodeFormProps<"filter">) {
             size="sm"
             leftIcon={<LuPlus />}
             onClick={handleAddClause}
+            isDisabled={isReadOnly}
           >
             <Trans>Add rule</Trans>
           </Button>

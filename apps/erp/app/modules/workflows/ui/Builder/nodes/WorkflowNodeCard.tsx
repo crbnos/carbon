@@ -63,7 +63,10 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const isConnected = useBuilderStore(selectIsConnected(id));
   const cardIssues = isConnected ? nodeIssues : [];
 
-  const isReadOnly = useBuilderStore((state) => state.isReadOnly);
+  const canChangeDefinition = useBuilderStore(
+    (state) => state.canChangeDefinition
+  );
+  const isReadOnly = !canChangeDefinition;
 
   const isOwner = useBuilderStore((state) => state.isOwner);
   const openTestRun = useBuilderStore((state) => state.openTestRun);
@@ -225,7 +228,12 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
       >
         {builderNode && (
           <div className="space-y-3">
-            <Form key={id} node={builderNode} issues={nodeIssues} />
+            <Form
+              key={id}
+              node={builderNode}
+              issues={nodeIssues}
+              isReadOnly={isReadOnly}
+            />
           </div>
         )}
         {hasFailureHandle && !hasFailureEdge && (

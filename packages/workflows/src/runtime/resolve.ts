@@ -40,10 +40,26 @@ export function renderValue(value: RuntimeValue): string {
   return value.value === null ? "" : String(value.value);
 }
 
+/**
+ * A record in prose reads as its id, and becomes a markdown link when the caller knows
+ * where it lives. Every other value renders exactly as `renderValue` does.
+ */
+function renderPart(
+  value: RuntimeValue,
+  linkFor?: (of: string, id: string) => string | null
+): string {
+  const text = renderValue(value);
+  if (linkFor === undefined || value.kind !== "entity" || text === "")
+    return text;
+  const href = linkFor(value.of, value.id);
+  return href === null ? text : `[${text}](${href})`;
+}
+
 /** An unresolvable part fails the whole template; a blank would be a silent lie. */
 export async function renderTemplate(
   template: Template,
-  ctx: RuntimeContext
+  ctx: RuntimeContext,
+  options?: { linkFor?: (of: string, id: string) => string | null }
 ): Promise<Resolution> {
   const pieces: string[] = [];
   for (const part of template.parts) {
@@ -56,7 +72,7 @@ export async function renderTemplate(
         ? await resolveItem(part, ctx)
         : await resolveRef(part, ctx);
     if (!resolved.ok) return resolved;
-    pieces.push(renderValue(resolved.value));
+    pieces.push(renderPart(resolved.value, options?.linkFor));
   }
   return { ok: true, value: primitiveValue("string", pieces.join("")) };
 }

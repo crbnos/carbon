@@ -36,7 +36,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "action.notify.input.aboutId": msg`About`,
   "action.notify.input.aboutType": msg`Kind of record`,
   "action.notify.input.message": msg`Message`,
-  "action.notify.input.role": msg`Role`,
+  "action.notify.input.role": msg`Group`,
   "action.notify.input.subject": msg`Subject`,
   "action.notify.input.user": msg`Person`,
   "action.purchaseOrder.create.input.orderDate": msg`Order date`,

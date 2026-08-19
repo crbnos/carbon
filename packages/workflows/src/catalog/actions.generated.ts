@@ -140,7 +140,8 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
       message: {
         type: { kind: "primitive", of: "string" },
         required: false,
-        template: true
+        template: true,
+        linkify: true
       },
       aboutId: { type: { kind: "primitive", of: "string" }, required: false },
       aboutType: { type: { kind: "primitive", of: "string" }, required: false }

@@ -51,6 +51,9 @@ export type VariableTextProps = {
   menuComponent?: MentionListComponent;
   /** Shortens the text drawn inside a token chip. The stored label is untouched. */
   renderTokenLabel?: (label: string) => string;
+  /** Renders the same value but refuses edits. The Tiptap shell stays, so the
+   * read-only rendition matches the editable one exactly. */
+  isReadOnly?: boolean;
 };
 
 export type VariableTextHandle = {
@@ -166,7 +169,8 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
       maxRows = 5,
       minRows = 1,
       menuComponent,
-      renderTokenLabel
+      renderTokenLabel,
+      isReadOnly = false
     },
     ref
   ) {
@@ -249,6 +253,11 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
       editor.commands.setContent(partsToDoc(valueRef.current), false);
     }, [key]);
 
+    // The editor is created once, so a lock that arrives later has to be applied here.
+    useEffect(() => {
+      editorRef.current?.setEditable(!isReadOnly);
+    }, [isReadOnly]);
+
     useImperativeHandle(ref, () => ({
       insertToken: (token) => {
         const editor = editorRef.current;
@@ -276,6 +285,7 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
           <EditorContent
             initialContent={initialContent}
             extensions={extensions}
+            editable={!isReadOnly}
             editorProps={{
               handleKeyDown(_view, event) {
                 // Never swallow the popup's Enter: ProseMirror consults these props

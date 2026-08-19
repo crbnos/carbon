@@ -1,7 +1,7 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { Kysely, Transaction } from "kysely";
 import { z } from "zod";
-import { WORKFLOW_EVENTS } from "./catalog";
+import { getCatalogEvent } from "./catalog";
 import { nextRunAfter } from "./definition/schedule";
 import { nodeSchema, type Origin } from "./definition/schema";
 import type { Schedule } from "./definition/types";
@@ -56,7 +56,9 @@ export function deriveWorkflowSubscriptions(
 ): DesiredSubscription[] {
   const byTable = new Map<string, Set<"INSERT" | "UPDATE" | "DELETE">>();
   for (const eventId of eventIds) {
-    const match = WORKFLOW_EVENTS[eventId]?.match;
+    // Resolved, not indexed: a custom-field trigger's id is per company and is parsed
+    // rather than looked up, and it still needs an UPDATE subscription on its table.
+    const match = getCatalogEvent(eventId)?.match;
     if (!match || !("table" in match)) continue;
     const ops = byTable.get(match.table) ?? new Set();
     ops.add(match.operation);

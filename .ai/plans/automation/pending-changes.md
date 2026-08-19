@@ -65,4 +65,17 @@ Currently nodes are colored differently per type. Change to:
 
 ---
 
+## 8–15. Round 2 (2026-08-19)
+
+Custom fields in workflows (trigger + read + write), linking a record inside a message,
+strict read-only on the live version with node rearranging still allowed, "Role" → "Group"
+limited to employee groups, minimal grid, curved edges.
+
+Designed in `.ai/specs/2026-08-19-workflow-improvements-round-2.md`
+(research: `.ai/research/2026-08-19-workflow-improvements-round-2.md`).
+**Implemented** — plan and per-task record in
+`.ai/plans/2026-08-19-workflow-improvements-round-2.md`.
+
+---
+
 <!-- Add more changes below as the user describes them -->

@@ -2173,6 +2173,8 @@ export const path = {
     workflowCanvas: (id: string) => generatePath(`${x}/workflow/${id}/canvas`),
     workflowDelete: (id: string) => generatePath(`${x}/workflows/delete/${id}`),
     workflowNew: `${x}/workflows/new`,
+    workflowPositions: (id: string) =>
+      generatePath(`${x}/workflow/${id}/positions`),
     workflowPublish: (id: string) =>
       generatePath(`${x}/workflow/${id}/publish`),
     workflowRename: (id: string) => generatePath(`${x}/workflows/${id}/rename`),
