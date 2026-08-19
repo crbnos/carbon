@@ -22,8 +22,8 @@ import { IoMdAdd, IoMdClose } from "react-icons/io";
 import { LuCheck, LuCircleAlert } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import type { z } from "zod";
-import { Input, Location, Select, Submit } from "~/components/Form";
-import { useUser } from "~/hooks";
+import { Boolean, Input, Location, Select, Submit } from "~/components/Form";
+import { useFlags, useUser } from "~/hooks";
 import type { getEmployeeTypes } from "~/modules/users";
 import {
   bulkCreateEmployeeValidator,
@@ -65,6 +65,7 @@ function EmployeeRows({
   onRowsChange: () => void;
 }) {
   const { t } = useLingui();
+  const { isControlledEnvironment } = useFlags();
   const employeeTypeFetcher =
     useFetcher<Awaited<ReturnType<typeof getEmployeeTypes>>>();
 
@@ -150,6 +151,15 @@ function EmployeeRows({
                 name={`employees[${index}].locationId`}
                 label={t`Location`}
               />
+              {isControlledEnvironment && (
+                <div className="md:col-span-2">
+                  <Boolean
+                    name={`employees[${index}].usPersonAttestation`}
+                    label={t`U.S. Person Attestation`}
+                    description={t`I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62`}
+                  />
+                </div>
+              )}
             </div>
           </div>
         );
@@ -239,10 +249,7 @@ const BulkInviteEmployeesModal = () => {
           </ModalBody>
           <ModalFooter>
             <HStack>
-              <Button
-                variant="solid"
-                onClick={() => navigate(path.to.employeeAccounts)}
-              >
+              <Button variant="solid" onClick={() => navigate(-1)}>
                 <Trans>Cancel</Trans>
               </Button>
               <Submit isLoading={formFetcher.state !== "idle"}>

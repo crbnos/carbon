@@ -1,10 +1,17 @@
-import { assertIsPost, getAppUrl, RESEND_DOMAIN, success } from "@carbon/auth";
+import {
+  assertIsPost,
+  CONTROLLED_ENVIRONMENT,
+  getAppUrl,
+  RESEND_DOMAIN,
+  success
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/resend.server";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 import type {
@@ -63,7 +70,24 @@ export async function action({ request }: ActionFunctionArgs) {
 
   for (const [index, employee] of employees.entries()) {
     const email = employee.email.toLowerCase();
-    const { firstName, lastName, locationId, employeeType } = employee;
+    const {
+      firstName,
+      lastName,
+      locationId,
+      employeeType,
+      usPersonAttestation
+    } = employee;
+
+    if (CONTROLLED_ENVIRONMENT && !usPersonAttestation) {
+      results.push({
+        index,
+        email,
+        success: false,
+        message:
+          "You must confirm a reasonable basis that this individual is a U.S. person"
+      });
+      continue;
+    }
 
     const result = await createEmployeeAccount(client, {
       email,
@@ -72,7 +96,9 @@ export async function action({ request }: ActionFunctionArgs) {
       employeeType,
       locationId,
       companyId,
-      createdBy: userId
+      createdBy: userId,
+      attestedBy: CONTROLLED_ENVIRONMENT ? userId : null,
+      attestedAt: CONTROLLED_ENVIRONMENT ? datetime.timestamp() : null
     });
 
     if (!result.success) {
@@ -103,7 +129,8 @@ export async function action({ request }: ActionFunctionArgs) {
             companyName: company.data.name,
             inviteLink: `${getAppUrl()}/invite/${result.code}`,
             ip,
-            location
+            location,
+            controlledEnvironment: CONTROLLED_ENVIRONMENT
           })
         )
       });
