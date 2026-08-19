@@ -142,12 +142,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // signing secret, the cached onshapeCompanyId). Harmless-looking until the
     // pipeline selector: a reconnect would silently move a migrated company
     // back to the legacy pipeline. Read the existing metadata and merge, so a
-    // reconnect only ever refreshes credentials/scope/baseUrl.
+    // reconnect only ever refreshes credentials/scope/baseUrl (and re-resolves
+    // the cached Onshape company id — see below).
     const existing = await getIntegration(serviceRole, Onshape.id, companyId);
-    const existingMetadata =
+    const existingMetadataRaw =
       existing.data?.metadata && typeof existing.data.metadata === "object"
         ? (existing.data.metadata as Record<string, unknown>)
         : {};
+
+    // `onshapeCompanyId` is the one key that must NOT survive a reconnect. It
+    // is a cache of the Onshape tenant the PREVIOUS token belonged to, and
+    // `resolveAndStoreOnshapeCompanyId` returns a stored value without ever
+    // re-checking it. Reconnecting with a different Onshape account (a personal
+    // login replaced by the company one, or a tenant migration) would otherwise
+    // keep resolving to the old tenant forever — registering the release
+    // webhook against a company this token can no longer read. Dropping it
+    // costs one `getCompanies()` call on the next use and cannot go stale.
+    const { onshapeCompanyId: _staleCompanyId, ...existingMetadata } =
+      existingMetadataRaw;
 
     const createdIntegration = await upsertCompanyIntegration(serviceRole, {
       id: Onshape.id,
