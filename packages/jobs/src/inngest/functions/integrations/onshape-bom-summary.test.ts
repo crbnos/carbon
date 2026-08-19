@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { OnshapeBomImportOutcome } from "./onshape-bom-outcome";
-import { summarizeOutcomeForUser } from "./onshape-bom-outcome";
+import {
+  countNeedingAttention,
+  summarizeOutcomeForUser
+} from "./onshape-bom-outcome";
 
 const outcome = (
   overrides: Partial<OnshapeBomImportOutcome> = {}
@@ -15,6 +18,7 @@ const outcome = (
   unreadableRows: 0,
   protectedLines: 0,
   skipped: [],
+  warnings: [],
   ...overrides
 });
 
@@ -105,5 +109,46 @@ describe("summarizeOutcomeForUser", () => {
     );
     expect(text).toContain("1 part(s) created");
     expect(text).toContain("2 existing part(s) linked to Onshape");
+  });
+
+  it("reports a warning even when nothing was refused", () => {
+    const text = summarizeOutcomeForUser(
+      outcome({
+        imported: 4,
+        created: 4,
+        warnings: [
+          "SA-800 now has a bill of materials but is still set to Buy in Carbon, so it will be purchased rather than made. Change its replenishment to Make if that is wrong."
+        ]
+      })
+    );
+    expect(text).toContain("4 line(s) imported");
+    expect(text).toContain("SA-800 now has a bill of materials");
+  });
+});
+
+describe("countNeedingAttention", () => {
+  it("is zero for a clean import, so nothing is notified", () => {
+    expect(countNeedingAttention(outcome({ imported: 7, created: 7 }))).toBe(0);
+  });
+
+  it("counts an unreadable row, which the old title reported as zero", () => {
+    expect(
+      countNeedingAttention(outcome({ imported: 7, unreadableRows: 1 }))
+    ).toBe(1);
+  });
+
+  it("counts refusals, protected lines and warnings together", () => {
+    expect(
+      countNeedingAttention(
+        outcome({
+          skipped: [
+            { partNumber: "SA-800", revision: "", reason: "Ambiguous" }
+          ],
+          unreadableRows: 2,
+          protectedLines: 3,
+          warnings: ["still set to Buy"]
+        })
+      )
+    ).toBe(7);
   });
 });

@@ -43,7 +43,10 @@ import { z } from "zod";
 import { inngest } from "../../client";
 import { withRateLimitRetry } from "./onshape-backfill";
 import type { OnshapeBomImportOutcome } from "./onshape-bom-outcome";
-import { summarizeOutcomeForUser } from "./onshape-bom-outcome";
+import {
+  countNeedingAttention,
+  summarizeOutcomeForUser
+} from "./onshape-bom-outcome";
 import {
   groupAssetTargetsByElement,
   isTransientExportError,
@@ -446,7 +449,8 @@ export const onshapeBomImportFunction = inngest.createFunction(
         assetsSkipped: 0,
         unreadableRows: 0,
         protectedLines: 0,
-        skipped: []
+        skipped: [],
+        warnings: []
       };
 
       outcome.unreadableRows = parsed.skipped + parsed.orphaned;
@@ -476,6 +480,22 @@ export const onshapeBomImportFunction = inngest.createFunction(
           "This Onshape version has never been released and the company only syncs released versions."
         );
       }
+
+      // Which rows are ASSEMBLIES as far as this BOM is concerned. Derived from
+      // the tree rather than from "the next row is deeper", because the tree
+      // drops a row whose indent jumps by more than one — a row whose only
+      // apparent child was dropped as an orphan is a leaf, and minting it as
+      // something to manufacture would leave an empty make method behind.
+      const bomTree = buildOnshapeBomTree(parsed.rows);
+      const rowIdsWithChildren = new Set<string>();
+      const collectParents = (nodes: OnshapeBomNode[]) => {
+        for (const node of nodes) {
+          if (node.children.length === 0) continue;
+          rowIdsWithChildren.add(node.row.rowId);
+          collectParents(node.children);
+        }
+      };
+      collectParents(bomTree);
 
       // Resolve the whole tree in one query, then by revision per row.
       const mappings = await readItemIdsForElements(carbon, {
@@ -723,10 +743,26 @@ export const onshapeBomImportFunction = inngest.createFunction(
             description: row.description || null,
             type: "Part",
             // Onshape's BOM says nothing reliable about how Carbon should buy
-            // or make a part, so these take Carbon's own defaults rather than
-            // a guess derived from a column that may not exist.
-            replenishmentSystem: "Buy",
-            defaultMethodType: "Pull from Inventory",
+            // or make a LEAF part, so those take Carbon's own defaults rather
+            // than a guess derived from a column that may not exist.
+            //
+            // A row with children is different in kind, and not a guess at all:
+            // this import is about to give it a make method and fill it with
+            // materials. Minting it as Buy / Pull from Inventory contradicts
+            // the tree being written in the same transaction — MRP would plan
+            // a purchase order for a subassembly Carbon knows how to build,
+            // and because `methodMaterial.methodType` is denormalized from
+            // this column, the PARENT's line would read Pull from Inventory
+            // and never explode. The nested BOM would exist and never plan.
+            ...(rowIdsWithChildren.has(row.rowId)
+              ? {
+                  replenishmentSystem: "Make" as const,
+                  defaultMethodType: "Make to Order" as const
+                }
+              : {
+                  replenishmentSystem: "Buy" as const,
+                  defaultMethodType: "Pull from Inventory" as const
+                }),
             itemTrackingType: "Inventory",
             unitOfMeasureCode: "EA",
             active: true,
@@ -859,7 +895,12 @@ export const onshapeBomImportFunction = inngest.createFunction(
         companySettings.data?.plmReleaseControl ?? "enforce";
 
       // Walk the tree, reconciling each level into the method that owns it.
-      const tree = buildOnshapeBomTree(parsed.rows);
+      const tree = bomTree;
+
+      // Keyed by ITEM, not by row: Onshape's indented rowId is per instance
+      // PATH, so one subassembly used in two places is two rows and would
+      // otherwise warn about the same part twice.
+      const warnedBuyItemIds = new Set<string>();
 
       const reconcileNode = async (
         makeMethodId: string,
@@ -918,7 +959,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
           const childMethod = await carbon
             .from("makeMethod")
-            .select("id, item(revisionStatus)")
+            .select("id, item(revisionStatus, replenishmentSystem)")
             .eq("itemId", childItemId)
             .eq("companyId", payload.companyId)
             .eq("status", "Draft")
@@ -933,7 +974,9 @@ export const onshapeBomImportFunction = inngest.createFunction(
           // escape hatch the root check closes, one level down.
           const childItem = childMethod.data?.item as {
             revisionStatus?: string;
+            replenishmentSystem?: string;
           } | null;
+
           if (
             childItem?.revisionStatus === "Production" &&
             releaseControl === "enforce"
@@ -957,11 +1000,84 @@ export const onshapeBomImportFunction = inngest.createFunction(
             continue;
           }
 
+          // An EXISTING item this BOM gives children to, but which Carbon still
+          // calls Buy. A newly minted subassembly is created as Make, so this
+          // only ever fires for an item that was already here — and
+          // replenishment is a Carbon decision Onshape says nothing about, so it
+          // is reported rather than overwritten. Left silent it is invisible and
+          // expensive: MRP plans a purchase order for something Carbon now has a
+          // method for, and the parent's line stays Pull from Inventory so the
+          // sub-tree never explodes.
+          //
+          // AFTER the two guards above, because a subassembly whose children
+          // were refused did not in fact get a bill of materials, and warning
+          // about one it does not have sends the reader to change a setting that
+          // would not have helped.
+          if (childItem?.replenishmentSystem === "Buy") {
+            warnedBuyItemIds.add(childItemId);
+          }
+
+          // Point the PARENT's line at the method the children are about to be
+          // written into. `get_method_tree` resolves a line's sub-method as
+          // COALESCE(materialMakeMethodId, <fallback>), and the fallback only
+          // fires for `Pull from Inventory` — so a `Make to Order` line with a
+          // null column terminates the recursion and the whole sub-BOM vanishes
+          // from the BoM explorer, the BOM API, the CSV export and cost
+          // roll-up, while still sitting in the database. Verified live: minting
+          // a subassembly as Make (which MRP needs) is what exposed this.
+          //
+          // The app's own writer resolves this from `activeMakeMethods`; the
+          // import uses the method it actually reconciled into instead, which
+          // is the same row for a freshly minted item and the RIGHT row for an
+          // adopted one whose Active method is not the draft being imported to.
+          const linked = await carbon
+            .from("methodMaterial")
+            .update({ materialMakeMethodId: childMethod.data.id })
+            .eq("makeMethodId", makeMethodId)
+            .eq("itemId", childItemId)
+            .eq("companyId", payload.companyId);
+          if (linked.error) {
+            throw new Error(
+              `Could not link ${child.row.partNumber} to its sub-method: ${linked.error.message}`
+            );
+          }
+
           await reconcileNode(childMethod.data.id, child.children);
         }
       };
 
       await reconcileNode(method.id, tree);
+
+      // The item being imported INTO is not one of `parsed.rows`, so the child
+      // loop above never sees it — yet it is the one this import definitely just
+      // gave a bill of materials to, and it fails in exactly the same way.
+      const targetItem = await carbon
+        .from("item")
+        .select("replenishmentSystem")
+        .eq("id", method.itemId)
+        .eq("companyId", payload.companyId)
+        .maybeSingle();
+      if (targetItem.data?.replenishmentSystem === "Buy") {
+        warnedBuyItemIds.add(method.itemId);
+      }
+
+      if (warnedBuyItemIds.size > 0) {
+        const warned = await carbon
+          .from("item")
+          .select("id, readableIdWithRevision")
+          .in("id", Array.from(warnedBuyItemIds))
+          .eq("companyId", payload.companyId);
+        if (warned.error) {
+          throw new Error(
+            `Could not read the items to warn about: ${warned.error.message}`
+          );
+        }
+        for (const item of warned.data ?? []) {
+          outcome.warnings.push(
+            `${item.readableIdWithRevision} now has a bill of materials but is still set to Buy in Carbon, so it will be purchased rather than made. Change its replenishment to Make if that is wrong.`
+          );
+        }
+      }
 
       // The TOP-LEVEL item's own model. It is not one of `parsed.rows` —
       // Onshape returns the queried assembly separately from its components,
@@ -983,76 +1099,69 @@ export const onshapeBomImportFunction = inngest.createFunction(
           method.itemId
         );
       }
+      for (const group of groupAssetTargetsByElement(assetRows)) {
+        try {
+          const pulled = await withRateLimitRetry(
+            () =>
+              pullOnshapeAssetsForElement(carbon, connection.client, {
+                companyId: payload.companyId,
+                userId: payload.userId,
+                documentId: group.documentId,
+                versionId: group.versionId,
+                elementId: group.elementId,
+                targets: group.targets
+              }),
+            `assets for element ${group.elementId}`
+          );
+          outcome.assetsAttached += pulled.attached.length;
+          outcome.assetsSkipped += pulled.skipped.length;
 
-      // Assets last: the BOM is the thing the user asked for, and a rate limit
-      // or an oversized export must not cost them the import. Grouped by
-      // element so seven bodies in one Part Studio cost one client and one
-      // thumbnail fetch rather than seven of each.
-      if (settings.attachAssetsOnRelease) {
-        for (const group of groupAssetTargetsByElement(assetRows)) {
-          try {
-            const pulled = await withRateLimitRetry(
-              () =>
-                pullOnshapeAssetsForElement(carbon, connection.client, {
-                  companyId: payload.companyId,
-                  userId: payload.userId,
-                  documentId: group.documentId,
-                  versionId: group.versionId,
-                  elementId: group.elementId,
-                  targets: group.targets
-                }),
-              `assets for element ${group.elementId}`
-            );
-            outcome.assetsAttached += pulled.attached.length;
-            outcome.assetsSkipped += pulled.skipped.length;
-
-            // The optimise chain is the caller's responsibility — the attach
-            // helper says so, and both legacy callers do it. It relocates the
-            // raw out of ephemeral staging into the durable bucket, and it is
-            // what renders a thumbnail from the GLB, which is the ONLY
-            // thumbnail a per-body item can get.
-            for (const ok of pulled.attached) {
-              try {
-                await trigger("model-optimize", {
-                  companyId: payload.companyId,
-                  modelUploadId: ok.modelUploadId,
-                  userId: payload.userId
-                });
-              } catch (error) {
-                console.error(
-                  `[ONSHAPE BOM IMPORT] could not queue optimisation for ${ok.modelUploadId}`,
-                  error
-                );
-              }
-            }
-
-            for (const skip of pulled.skipped) {
-              outcome.skipped.push({
-                partNumber: skip.itemId,
-                revision: "",
-                reason: `Model not attached: ${skip.reason}`
+          // The optimise chain is the caller's responsibility — the attach
+          // helper says so, and both legacy callers do it. It relocates the
+          // raw out of ephemeral staging into the durable bucket, and it is
+          // what renders a thumbnail from the GLB, which is the ONLY
+          // thumbnail a per-body item can get.
+          for (const ok of pulled.attached) {
+            try {
+              await trigger("model-optimize", {
+                companyId: payload.companyId,
+                modelUploadId: ok.modelUploadId,
+                userId: payload.userId
               });
+            } catch (error) {
+              console.error(
+                `[ONSHAPE BOM IMPORT] could not queue optimisation for ${ok.modelUploadId}`,
+                error
+              );
             }
-          } catch (error) {
-            // A TRANSIENT failure is not an outcome to report — it is a reason
-            // to run again. withRateLimitRetry has already turned a 429 into a
-            // RetryAfterError by this point; catching it here would spend the
-            // job's ten retries on nothing and leave every remaining row of the
-            // assembly permanently modelless.
-            if (error instanceof RetryAfterError) throw error;
-            if (isTransientExportError(error)) throw error;
+          }
 
-            // The BOM is already written and correct; report a PERMANENT asset
-            // failure rather than throwing the whole import away over geometry.
-            outcome.assetsSkipped += group.targets.length;
+          for (const skip of pulled.skipped) {
             outcome.skipped.push({
-              partNumber: group.elementId,
+              partNumber: skip.itemId,
               revision: "",
-              reason: `Models not attached: ${
-                error instanceof Error ? error.message : "export failed"
-              }`
+              reason: `Model not attached: ${skip.reason}`
             });
           }
+        } catch (error) {
+          // A TRANSIENT failure is not an outcome to report — it is a reason
+          // to run again. withRateLimitRetry has already turned a 429 into a
+          // RetryAfterError by this point; catching it here would spend the
+          // job's ten retries on nothing and leave every remaining row of the
+          // assembly permanently modelless.
+          if (error instanceof RetryAfterError) throw error;
+          if (isTransientExportError(error)) throw error;
+
+          // The BOM is already written and correct; report a PERMANENT asset
+          // failure rather than throwing the whole import away over geometry.
+          outcome.assetsSkipped += group.targets.length;
+          outcome.skipped.push({
+            partNumber: group.elementId,
+            revision: "",
+            reason: `Models not attached: ${
+              error instanceof Error ? error.message : "export failed"
+            }`
+          });
         }
       }
 
@@ -1068,10 +1177,8 @@ export const onshapeBomImportFunction = inngest.createFunction(
     //
     // Only when something needs attention. A clean import is already visible:
     // the BOM the user is looking at changes.
-    const needsAttention =
-      result.skipped.length > 0 ||
-      result.unreadableRows > 0 ||
-      result.protectedLines > 0;
+    const attentionCount = countNeedingAttention(result);
+    const needsAttention = attentionCount > 0;
 
     if (needsAttention && payload.userId && payload.userId !== "system") {
       await step.run("notify-outcome", async () => {
@@ -1082,7 +1189,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
             // The provider id, per this event's contract — the in-app row
             // links to `path.to.integration(id)`.
             documentId: "onshape",
-            title: `Onshape import finished with ${result.skipped.length} item(s) needing attention`,
+            title: `Onshape import finished with ${attentionCount} item(s) needing attention`,
             body: summarizeOutcomeForUser(result),
             recipient: { type: "user", userId: payload.userId }
           });

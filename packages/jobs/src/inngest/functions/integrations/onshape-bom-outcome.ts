@@ -19,7 +19,33 @@ export type OnshapeBomImportOutcome = {
   protectedLines: number;
   /** Rows the import refused, each with why. */
   skipped: Array<{ partNumber: string; revision: string; reason: string }>;
+  /**
+   * Things the import DID, that a person still needs to know about. Distinct
+   * from `skipped`: nothing was refused, so counting these as refusals would
+   * misreport a successful import.
+   */
+  warnings: string[];
 };
+
+/**
+ * How many things about this import a person has to look at.
+ *
+ * The SAME number decides whether to notify and what the notification is
+ * titled — deriving them separately is how the title came to say "0 item(s)
+ * needing attention" on a notification that only fired because a row could not
+ * be read. A refusal, an unreadable row, a protected line and a warning are all
+ * things the user has to look at, so all four count.
+ */
+export function countNeedingAttention(
+  outcome: OnshapeBomImportOutcome
+): number {
+  return (
+    outcome.skipped.length +
+    outcome.unreadableRows +
+    outcome.protectedLines +
+    outcome.warnings.length
+  );
+}
 
 /** How many refusals to name before the rest become a count. */
 const MAX_LISTED_SKIPS = 5;
@@ -76,6 +102,12 @@ export function summarizeOutcomeForUser(
         ? `${listed} and ${remaining} more — ${reason}`
         : `${listed} — ${reason}`
     );
+  }
+
+  // Trailing periods are stripped because the parts are joined with ". " — a
+  // warning written as a full sentence would otherwise read "… wrong.. ".
+  for (const warning of outcome.warnings) {
+    parts.push(warning.replace(/\.\s*$/, ""));
   }
 
   return parts.join(". ");
