@@ -166,7 +166,11 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  if (input.partNumber) {
+  // The element mapping is written for every import, not only when a part
+  // number came along. `partNumber` is provenance — an assembly that carries
+  // none in Onshape is still importable, and gating the LINK on it left that
+  // item silently unlinked, which is the one thing v2 exists to guarantee.
+  {
     // Never write a mapping straight from the POST body. Every other v2 write
     // re-resolves the selection against Onshape first, so a hand-posted form
     // cannot stamp an item with an element it does not own.
@@ -190,6 +194,17 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (input.revision) {
+      // A named revision is only verifiable against Onshape's company-wide
+      // revision list, which is keyed by part number. Without one there is
+      // nothing to check the claim against, so it is refused rather than
+      // written unverified.
+      if (!input.partNumber) {
+        return {
+          success: false,
+          message:
+            "This selection names a revision but no part number, so Carbon cannot verify it against Onshape."
+        };
+      }
       const onshape = await getOnshapeClient(serviceRole, companyId, userId);
       if (!onshape.client) {
         return {
