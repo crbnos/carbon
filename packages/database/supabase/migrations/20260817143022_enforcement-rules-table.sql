@@ -169,11 +169,17 @@ FOR SELECT USING (
 -- DIFFERENT permissions (storage item pins: parts_*; sales pins: sales_*).
 -- The EXISTS resolves the pinned rule's family and applies that family's
 -- permission, so the merge changes no caller's authorization.
+--
+-- The outer row is qualified by table name on purpose. An unqualified
+-- "companyId" inside the subquery binds to the INNER table (r), turning the
+-- tenant correlation into r."companyId" = r."companyId" — always true. Note
+-- "ruleId" needs no qualification because enforcementRule has no such column,
+-- which is exactly what makes the mistake hard to see.
 CREATE POLICY "INSERT" ON "public"."enforcementRuleItemAssignment"
 FOR INSERT WITH CHECK (
   EXISTS (
     SELECT 1 FROM "enforcementRule" r
-    WHERE r."id" = "ruleId" AND r."companyId" = "companyId"
+    WHERE r."id" = "ruleId" AND r."companyId" = "enforcementRuleItemAssignment"."companyId"
       AND (
         (r."family" = 'storage' AND r."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_create'))::text[]))
         OR
@@ -186,7 +192,7 @@ CREATE POLICY "UPDATE" ON "public"."enforcementRuleItemAssignment"
 FOR UPDATE USING (
   EXISTS (
     SELECT 1 FROM "enforcementRule" r
-    WHERE r."id" = "ruleId" AND r."companyId" = "companyId"
+    WHERE r."id" = "ruleId" AND r."companyId" = "enforcementRuleItemAssignment"."companyId"
       AND (
         (r."family" = 'storage' AND r."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_update'))::text[]))
         OR
@@ -199,7 +205,7 @@ CREATE POLICY "DELETE" ON "public"."enforcementRuleItemAssignment"
 FOR DELETE USING (
   EXISTS (
     SELECT 1 FROM "enforcementRule" r
-    WHERE r."id" = "ruleId" AND r."companyId" = "companyId"
+    WHERE r."id" = "ruleId" AND r."companyId" = "enforcementRuleItemAssignment"."companyId"
       AND (
         (r."family" = 'storage' AND r."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_delete'))::text[]))
         OR

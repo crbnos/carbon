@@ -126,6 +126,17 @@ export async function evaluateSalesRuleLines({
 
   const { rules, assignmentsByItemId } = rulesRes;
 
+  // Same reasoning as the item load below: a failed rule fetch returns an empty
+  // `rules` array, which reads as "nothing to enforce" and lets the line through.
+  if (rulesRes.error) {
+    throw new Error(
+      `Sales rule evaluation could not load rules: ${
+        (rulesRes.error as { message?: string }).message ??
+        String(rulesRes.error)
+      }`
+    );
+  }
+
   // A failed item load must never pass silently. Without item rows every
   // BROADCAST rule is skipped (`!itemForLine` below), so a bad select turns
   // enforcement off with no signal — which is exactly how a missing column
@@ -296,14 +307,33 @@ export async function resolveSalesOrderShipTo(
       .from("salesOrderShipment")
       .select("dropShipment, customerId, customerLocationId")
       .eq("id", salesOrderId)
+      .eq("companyId", companyId)
       .maybeSingle()
   ]);
 
+  // This resolves WHERE the goods go, which is what country rules gate on.
+  // Guessing on a failed read would evaluate the wrong destination.
+  if (orderRes.error || shipmentRes.error) {
+    const err = orderRes.error ?? shipmentRes.error;
+    throw new Error(
+      `Sales rule evaluation could not resolve the ship-to for ${salesOrderId}: ${
+        (err as { message?: string })?.message ?? String(err)
+      }`
+    );
+  }
+
   const shipment = shipmentRes.data;
-  if (shipment?.dropShipment && shipment.customerLocationId) {
+  if (shipment?.dropShipment) {
+    // A drop shipment's real destination is the shipment's, never the header's.
+    // If it is missing we return null rather than falling back: the header
+    // address is a DIFFERENT country, so falling back would silently clear a
+    // rule that should have blocked. Null flows into the engine's required-field
+    // semantics and surfaces "Customer location is required" at the rule's
+    // severity. (The form validator requires the pair, but the column is
+    // nullable, so API and legacy rows can still reach here without it.)
     return {
       customerId: shipment.customerId ?? orderRes.data?.customerId ?? null,
-      customerLocationId: shipment.customerLocationId
+      customerLocationId: shipment.customerLocationId ?? null
     };
   }
 

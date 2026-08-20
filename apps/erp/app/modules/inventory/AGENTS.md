@@ -81,12 +81,12 @@ import { inventoryAdjustmentValidator, receiptValidator } from "~/modules/invent
 
 ## Storage Rules (sub-area)
 
-Configurable if-condition-then-error/warn rules evaluated on **warehouse/MES transaction surfaces** (`transactionSurface`: receipt, shipment, stockTransfer, warehouseTransfer, inventoryAdjustment, place, pick, operationStart, operationFinish, materialIssue, materialReceive). Lives **inside** this module: validators in `inventory.models.ts`, CRUD in `inventory.service.ts`, UI in `ui/StorageRules/`. There is no `modules/storage-rules` directory — a rule feature is not its own domain.
+Configurable if-condition-then-error/warn rules evaluated on **warehouse/MES transaction surfaces** (the storage-legal subset of `enforcementRuleSurface`: receipt, shipment, stockTransfer, warehouseTransfer, inventoryAdjustment, place, pick, operationStart, operationFinish, materialIssue, materialReceive). Lives **inside** this module: validators in `inventory.models.ts`, CRUD in `inventory.service.ts`, UI in `ui/StorageRules/`. There is no `modules/storage-rules` directory — a rule feature is not its own domain.
 
 Sibling feature to **sales rules** (`~/modules/sales`, sales-document surfaces). Both share the engine in `@carbon/utils` (`rules.ts` + `field-registry.ts` + the zod AST mirror in `rules-schema.ts`), the evaluator/violation UI in `@carbon/ee/rules(.server)`, AND the `enforcementRule` table — one table for both families, discriminated by `family`.
 
 - **Rule** — `enforcementRule` row (`family = 'storage'`; the table is shared with sales rules, so every read/write here MUST filter `family = 'storage'`): `conditionAst` JSONB, `severity` (`error` blocks; `warn` blocks until acknowledged), `targetType` (`item` | `workCenter`, enum `enforcementRuleTargetType`), `surfaces`, `appliesToAll` (workCenter broadcast gate) and the `filteredItem*` columns (item scoping). Assignments are polymorphic across `enforcementRuleItemAssignment` / `enforcementRuleWorkCenterAssignment` — `targetType` picks the table. The item table is shared with the sales family: resolve pinned rules against a family-filtered fetch, never a PostgREST embed.
-- **Evaluator** — `@carbon/ee/rules.server`: `evaluateLinesForSurface`, `isBlocked`, `dedupeViolations`, plan gate `isStorageRulesEnabledForCompany`.
+- **Evaluator** — `@carbon/ee/rules.server`: `evaluateLinesForSurface`, `isBlocked`, `dedupeViolations`, plan gate `isStorageRulesEnabledForCompany`. Its item load swallows query errors, which silently skips every broadcast rule — a known gap kept for behavior compatibility (see the comment at the call site). New evaluators must throw instead.
 - **One modal** — posting actions return `{ violations, ruleNames }`; callers submit via `useRuleViolations` and render `RuleViolationModal`. Do not fork a second violation UI.
 
 ### Storage Rules safety

@@ -41,20 +41,20 @@ export type Severity = "error" | "warn";
 /**
  * Which entity a rule applies to. Drives the field registry slice the
  * builder shows the author, and the assignment table the loader joins.
- * Mirrors the Postgres ENUM `storageRuleTargetType`.
+ * Mirrors the Postgres ENUM `enforcementRuleTargetType`.
  */
 export const TARGET_TYPES = ["item", "workCenter"] as const;
 export type TargetType = (typeof TARGET_TYPES)[number];
 
 /**
- * Transaction surfaces a rule may opt into. Mirrors the Postgres ENUM
- * `transactionSurface`. After `bun run db:types` regenerates the database
- * types, tighten this to:
+ * Warehouse/MES transaction surfaces a STORAGE rule may opt into — the
+ * storage-legal subset of the Postgres ENUM `enforcementRuleSurface`.
  *
- *   import type { Database } from "@carbon/database";
- *   ...as const satisfies readonly Database["public"]["Enums"]["transactionSurface"][];
- *
- * The runtime array stays the source of truth for the validator's `z.enum`.
+ * Deliberately NOT tightened to the generated DB enum: that enum spans both rule
+ * families, so satisfying it would let a storage rule declare a sales surface.
+ * The split lives here and in the matching `enforcementRule_storage_surfaces`
+ * CHECK constraint; this runtime array is the source of truth for the
+ * validator's `z.enum`.
  */
 export const TRANSACTION_SURFACES = [
   "receipt",
@@ -72,10 +72,11 @@ export const TRANSACTION_SURFACES = [
 export type TransactionSurface = (typeof TRANSACTION_SURFACES)[number];
 
 /**
- * Sales-document surfaces an SALES RULE may opt into. Mirrors the Postgres
- * ENUM `salesRuleSurface`. Sales rules reuse this engine (same AST, operators,
- * compiler, evaluator) but fire when items are added to sales documents, not
- * on warehouse transactions.
+ * Sales-document surfaces a SALES rule may opt into — the sales-legal subset of
+ * the Postgres ENUM `enforcementRuleSurface`, mirrored by the
+ * `enforcementRule_sales_surfaces` CHECK constraint. Sales rules reuse this
+ * engine (same AST, operators, compiler, evaluator) but fire when items are
+ * added to sales documents, not on warehouse transactions.
  */
 export const SALES_RULE_SURFACES = ["quoteLine", "salesOrderLine"] as const;
 export type SalesRuleSurface = (typeof SALES_RULE_SURFACES)[number];
@@ -370,13 +371,13 @@ export const __resetStorageRulesCache = (): void => {
 export const __storageRulesCacheSize = (): number => cache.size;
 
 // ---------------------------------------------------------------------------
-// Sales rules — sales-document rules (salesRule table) reusing this engine
+// Sales rules — sales-document rules (`enforcementRule`, family `sales`) reusing this engine
 // ---------------------------------------------------------------------------
 
 /**
- * Raw `salesRule` row shape the compiler needs. Unlike `StorageRuleRow` there
+ * Raw sales-family `enforcementRule` row shape the compiler needs. Unlike `StorageRuleRow` there
  * is no `targetType` column — sales rules are always item-target — and
- * `surfaces` holds `SalesRuleSurface` values (Postgres ENUM `salesRuleSurface`).
+ * `surfaces` holds `SalesRuleSurface` values (the sales subset of the Postgres ENUM `enforcementRuleSurface`).
  */
 export type SalesRuleRow = {
   id: string;

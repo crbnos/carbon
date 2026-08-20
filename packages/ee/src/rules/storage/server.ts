@@ -411,6 +411,14 @@ export async function evaluateLinesForSurface({
             .from("item")
             // `itemPostingGroupId` lives on the 1:1 `itemCost` row — embed it
             // so the `item.itemPostingGroupId` rule field resolves.
+            //
+            // ASYMMETRY, deliberate: the sales evaluator THROWS when this load
+            // fails, because zero items means every broadcast rule is skipped
+            // and enforcement silently switches off. The same is true here, but
+            // this path ships today and turning a silent pass into a hard failure
+            // would change behavior for live receipt/shipment posting — so it is
+            // left as-is and tracked separately rather than changed inside a
+            // refactor. Do not copy this shape into a new evaluator.
             .select(
               "id, type, replenishmentSystem, itemTrackingType, name, readableId, itemCost(itemPostingGroupId)"
             )
