@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {此零件包含在1个开放的更改单中} other {此零件包含在#个开放的更改单中}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {此物品包含在1个未完成的更改单中} other {此物品包含在#个未完成的更改单中}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -8109,7 +8109,7 @@ msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "项目：项目主数据、物料清单、工艺流程、工程变更、CAD"
 
 msgid "Its design may change before the change notice is released."
-msgstr "在变更通知发布前，其设计可能会发生变化。"
+msgstr "在更改单发布前，其设计可能会发生变化。"
 
 msgid "Job"
 msgstr "工作"

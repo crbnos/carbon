@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(escluso per questo cliente)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {Questa parte è in 1 avviso di modifica aperto} other {Questa parte è in # avvisi di modifica aperti}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {Questo articolo è in 1 avviso di modifica aperto} other {Questo articolo è in # avvisi di modifica aperti}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"

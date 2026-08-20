@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(wykluczone dla tego klienta)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {Ta część znajduje się na 1 otwartym zgłoszeniu zmian} other {Ta część znajduje się na # otwartych zgłoszeniach zmian}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {Ten przedmiot znajduje się na 1 otwartym zgłoszeniu zmian} other {Ten przedmiot znajduje się na # otwartych zgłoszeniach zmian}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -8109,7 +8109,7 @@ msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Pozycje: główny katalog pozycji, BOM, Bill of Process, zmiany inżynierskie, CAD"
 
 msgid "Its design may change before the change notice is released."
-msgstr "Jego projekt może się zmienić przed wydaniem powiadomienia o zmianach."
+msgstr "Projekt może ulec zmianie przed wydaniem zgłoszenia zmian."
 
 msgid "Job"
 msgstr "Zadanie"

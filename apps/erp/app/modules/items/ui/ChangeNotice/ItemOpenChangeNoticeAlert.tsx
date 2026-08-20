@@ -28,8 +28,8 @@ const ItemOpenChangeNoticeAlert = ({
             <h3 className="text-sm font-medium leading-none tracking-tight">
               <Plural
                 value={open.length}
-                one="This part is on 1 open change notice"
-                other="This part is on # open change notices"
+                one="This item is on 1 open change notice"
+                other="This item is on # open change notices"
               />
             </h3>
             <p className="text-xs text-muted-foreground">
@@ -43,7 +43,7 @@ const ItemOpenChangeNoticeAlert = ({
               <Link
                 key={co.id}
                 to={path.to.changeNotice(co.id)}
-                className="inline-flex"
+                className="inline-flex rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Badge
                   variant="outline"

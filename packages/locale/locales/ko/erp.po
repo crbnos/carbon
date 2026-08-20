@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(이 고객에게는 제외됨)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {이 부품은 1개의 미완료 변경 공지에 포함되어 있습니다} other {이 부품은 #개의 미완료 변경 공지에 포함되어 있습니다}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {이 품목은 1개의 미완료 변경 공지에 포함되어 있습니다} other {이 품목은 #개의 미완료 변경 공지에 포함되어 있습니다}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -8109,7 +8109,7 @@ msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "품목: 품목 마스터, BOM, 공정(BOP), 설계 변경, CAD"
 
 msgid "Its design may change before the change notice is released."
-msgstr "변경 통지가 발행되기 전에 디자인이 변경될 수 있습니다."
+msgstr "변경 공지가 발행되기 전에 설계가 변경될 수 있습니다."
 
 msgid "Job"
 msgstr "작업"
