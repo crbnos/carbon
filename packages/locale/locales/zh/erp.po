@@ -15493,6 +15493,9 @@ msgstr "您的实现中心的此页面正在构建中。请从命令中心开始
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "此零件在此位置有 {quantityOnHand} 件现货。\"无库存\"意味着它既不会被计划也不会被消耗。"
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "此零件将在更改单 {activationLockId} 发布后激活。"
+
 msgid "This part is being phased out."
 msgstr "这个零件正在逐步淘汰。"
 
@@ -15541,6 +15544,9 @@ msgstr "此存储类型当前被 {usageCount} 个存储单元{0}使用。"
 
 msgid "this supplier"
 msgstr "此供应商"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "此工具将在更改单 {activationLockId} 发布后激活。"
 
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"

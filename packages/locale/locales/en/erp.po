@@ -15493,6 +15493,9 @@ msgstr "This page of your Implementation Hub is being built. Start from the comm
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "This part is activated when change notice {activationLockId} is released."
+
 msgid "This part is being phased out."
 msgstr "This part is being phased out."
 
@@ -15541,6 +15544,9 @@ msgstr "This storage type is currently used by {usageCount} storage unit{0}."
 
 msgid "this supplier"
 msgstr "this supplier"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "This tool is activated when change notice {activationLockId} is released."
 
 msgid "This updates the theme for all users of the application"
 msgstr "This updates the theme for all users of the application"

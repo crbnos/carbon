@@ -15493,6 +15493,9 @@ msgstr "구현 허브의 이 페이지는 준비 중입니다. 완성될 때까�
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "이 품목은 이 위치에 {quantityOnHand}개가 보유되어 있습니다. 재고 없음으로 설정하면 계획 및 소비 대상에서 제외됩니다."
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "이 품목은 변경 공지 {activationLockId}이(가) 릴리즈되면 활성화됩니다."
+
 msgid "This part is being phased out."
 msgstr "이 품목은 단계적으로 단종되는 중입니다."
 
@@ -15541,6 +15544,9 @@ msgstr "이 저장 유형은 현재 저장 단위 {usageCount}개{0}에서 사�
 
 msgid "this supplier"
 msgstr "이 공급업체"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "이 공구는 변경 공지 {activationLockId}이(가) 릴리즈되면 활성화됩니다."
 
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"

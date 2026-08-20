@@ -15493,6 +15493,9 @@ msgstr "Bu Implementation Hub sayfası şu anda inşa edilmektedir. Biz bitirirk
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "Bu parça bu konumda {quantityOnHand} adet stokta bulunmaktadır. Stok Yok, bunun ne planlanacağı ne de tüketileceği anlamına gelir."
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "Bu parça, {activationLockId} değişiklik bildirisi yayınlandığında etkinleştirilir."
+
 msgid "This part is being phased out."
 msgstr "Bu parça aşamalı olarak kullanımdan kaldırılıyor."
 
@@ -15541,6 +15544,9 @@ msgstr "Bu depolama türü şu anda {usageCount} depolama birimi{0} tarafından 
 
 msgid "this supplier"
 msgstr "bu tedarikçi"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "Bu alet, {activationLockId} değişiklik bildirisi yayınlandığında etkinleştirilir."
 
 msgid "This updates the theme for all users of the application"
 msgstr "Bu, uygulamanın tüm kullanıcıları için temayı günceller"

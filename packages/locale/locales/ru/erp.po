@@ -15493,6 +15493,9 @@ msgstr "Эта страница вашего Implementation Hub находитс
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "Эта деталь имеет {quantityOnHand} на складе в этом месте. Режим \"No Stock\" означает, что она не будет ни планироваться, ни использоваться."
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "Эта деталь будет активирована после выпуска уведомления об изменении {activationLockId}."
+
 msgid "This part is being phased out."
 msgstr "Эта деталь снимается с производства."
 
@@ -15541,6 +15544,9 @@ msgstr "Этот тип хранилища в настоящее время ис
 
 msgid "this supplier"
 msgstr "этот поставщик"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "Этот инструмент будет активирован после выпуска уведомления об изменении {activationLockId}."
 
 msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"

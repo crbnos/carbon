@@ -15493,6 +15493,9 @@ msgstr "आपके Implementation Hub का यह पृष्ठ बना�
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "यह पार्ट इस स्थान पर {quantityOnHand} की मात्रा में उपलब्ध है। No Stock का अर्थ है कि इसकी न तो योजना बनाई जाएगी और न ही इसका उपयोग किया जाएगा।"
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "यह पार्ट तब सक्रिय होता है जब परिवर्तन सूचना {activationLockId} जारी की जाती है।"
+
 msgid "This part is being phased out."
 msgstr "यह पार्ट चरणबद्ध तरीके से बंद किया जा रहा है।"
 
@@ -15541,6 +15544,9 @@ msgstr "यह स्टोरेज प्रकार वर्तमान �
 
 msgid "this supplier"
 msgstr "यह आपूर्तिकर्ता"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "यह उपकरण तब सक्रिय होता है जब परिवर्तन सूचना {activationLockId} जारी की जाती है।"
 
 msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम को अपडेट करता है"

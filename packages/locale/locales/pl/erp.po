@@ -15493,6 +15493,9 @@ msgstr "Ta strona Twojego Implementation Hub jest w trakcie budowy. Zacznij od c
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "Ta część ma {quantityOnHand} na stanie w tej lokalizacji. Brak zapasów oznacza, że nie będzie ani planowana, ani zużywana."
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "Ta część zostanie aktywowana po wydaniu zgłoszenia zmian {activationLockId}."
+
 msgid "This part is being phased out."
 msgstr "Ta część jest wycofywana."
 
@@ -15541,6 +15544,9 @@ msgstr "Ten typ magazynu jest obecnie używany przez {usageCount} jednostkę mag
 
 msgid "this supplier"
 msgstr "ten dostawca"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "To narzędzie zostanie aktywowane po wydaniu zgłoszenia zmian {activationLockId}."
 
 msgid "This updates the theme for all users of the application"
 msgstr "To aktualizuje motyw dla wszystkich użytkowników aplikacji"

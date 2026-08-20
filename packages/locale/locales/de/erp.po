@@ -15493,6 +15493,9 @@ msgstr "Diese Seite deines Implementation Hub wird gerade aufgebaut. Starten Sie
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "Dieses Teil hat {quantityOnHand} auf Lager an diesem Standort. „Kein Bestand\" bedeutet, dass es weder geplant noch verbraucht wird."
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "Dieses Teil wird aktiviert, wenn die Änderungsmitteilung {activationLockId} freigegeben wird."
+
 msgid "This part is being phased out."
 msgstr "Dieses Teil wird schrittweise eingestellt."
 
@@ -15541,6 +15544,9 @@ msgstr "Dieser Speichertyp wird derzeit von {usageCount} Speichereinheit{0} verw
 
 msgid "this supplier"
 msgstr "dieser Lieferant"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "Dieses Werkzeug wird aktiviert, wenn die Änderungsmitteilung {activationLockId} freigegeben wird."
 
 msgid "This updates the theme for all users of the application"
 msgstr "Dies aktualisiert das Design für alle Benutzer der Anwendung"

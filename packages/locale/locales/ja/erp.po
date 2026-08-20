@@ -15493,6 +15493,9 @@ msgstr "このページのImplementation Hubは現在構築中です。完成す
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "このパーツはこの場所に{quantityOnHand}個あります。「在庫なし」は計画にも消費にも含まれないことを意味します。"
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "この部品は、変更通知 {activationLockId} がリリースされると有効になります。"
+
 msgid "This part is being phased out."
 msgstr "このパーツは段階的に廃止されています。"
 
@@ -15541,6 +15544,9 @@ msgstr "このストレージタイプは現在{usageCount}個のストレージ
 
 msgid "this supplier"
 msgstr "このサプライヤー"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "この工具は、変更通知 {activationLockId} がリリースされると有効になります。"
 
 msgid "This updates the theme for all users of the application"
 msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
