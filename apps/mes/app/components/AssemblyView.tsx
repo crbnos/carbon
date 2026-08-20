@@ -936,8 +936,12 @@ export function AssemblyView({
     // A link may carry a per-step quantity (the BOM line split across steps:
     // 5 screws here, 5 on another step). The row on THIS step then shows and
     // flips by the current step's share, matching the per-step backflush.
+    // UNTRACKED only: tracked (serial/batch) parts are issued by scanning and
+    // their quantityIssued is attributed per line, not per step — pairing a
+    // per-step requirement with line-level issued would overstate completion
+    // on later steps, so tracked cards keep the whole-line numbers.
     const linkShare =
-      step?.id != null
+      !isTrackedMat && step?.id != null
         ? ((m.jobOperationStepQuantities ?? {})[step.id] ?? null)
         : null;
     const perUnit = linkShare ?? m.quantity ?? 0;
