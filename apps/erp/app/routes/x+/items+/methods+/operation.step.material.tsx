@@ -18,6 +18,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const methodOperationStepId = String(formData.get("stepId") ?? "");
   const linked = formData.get("linked") === "true";
   // Per-step share of the BOM line; absent/blank = the full line quantity.
+  // Zero is refused — a step that uses none of a part should be unlinked.
   const rawQuantity = formData.get("quantity");
   const quantity =
     rawQuantity === null || String(rawQuantity).trim() === ""
@@ -27,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (
     !methodMaterialId ||
     !methodOperationStepId ||
-    (quantity !== null && (!Number.isFinite(quantity) || quantity < 0))
+    (quantity !== null && (!Number.isFinite(quantity) || quantity <= 0))
   ) {
     return data({ success: false }, { status: 400 });
   }

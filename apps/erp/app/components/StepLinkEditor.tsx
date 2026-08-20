@@ -33,7 +33,9 @@ export type StepLinkItem = {
 
 // Compact per-step quantity editor on a linked row. Commits on blur/Enter via
 // react-aria's NumberField; only fires when the value actually changed, so a
-// plain blur never re-posts. Defaults to the full BOM line quantity.
+// plain blur never re-posts. Defaults to the full BOM line quantity. Zero (and
+// cleared/invalid input) is refused — a step that uses none of a part should
+// not be linked to it — and the controlled value snaps the field back.
 function LinkedQuantity({
   item,
   isDisabled,
@@ -52,7 +54,9 @@ function LinkedQuantity({
       formatOptions={INPUT_FORMAT.quantity}
       isDisabled={isDisabled}
       onChange={(next) => {
-        if (Number.isFinite(next) && next !== value) onCommit(next);
+        if (Number.isFinite(next) && next > 0 && next !== value) {
+          onCommit(next);
+        }
       }}
       className="w-20 shrink-0"
       aria-label="Quantity"
